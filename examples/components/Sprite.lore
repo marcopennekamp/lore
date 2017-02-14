@@ -1,0 +1,4 @@
+
+record Sprite {
+  mut image: Image
+}

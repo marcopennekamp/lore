@@ -1,0 +1,41 @@
+class Skeleton extends Entity2D
+component healthState: HealthState
+
+// Anonymous components allow multiple attributes and functions to be grouped
+// under the same namespace, without the need to declare a type first.
+component regeneration: class {
+  const amount: Float = 5.0
+  const interval: Int = 30
+  mut counter: Int = 1
+
+  function tick() {
+    if counter `mod` interval == 0 {
+      this:heal(regeneration.amount) // TODO: How to use `this` to refer to the entity in an anonymous component?
+      // Idea: Give 'this' the maximum inferable type in the current scope.
+      // In the current case, it should be Skeleton + regeneration.type,
+      // which gives 'this' access to the components of Skeleton.
+    }
+    counter += 1
+  }
+
+  function enable() {
+    state = default // TODO: Maybe we should introduce special syntax for this, since we don't want to pollute the general namespace.
+  }
+
+  function disable() {
+    state = disabled
+  }
+
+  // Classes can be in different states, which change the behavior of a class.
+  // In this example, we can disable the regeneration for a while.
+  state disabled {
+    function tick() { /* Do nothing, as regeneration is disabled. */ }
+  }
+}
+
+// TODO: Even with this small example, tick is already declared twice in the component-closure of Skeleton.
+// Maybe we should only expose component functions and fields that are marked as such. Others need to be accessed via
+// their fully qualified name, instead of this:x.
+function tick() {
+  regeneration.tick()
+}

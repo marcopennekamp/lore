@@ -1,0 +1,12 @@
+
+record HealthState {
+  mut health: Int
+
+  function heal(amount: Int) {
+    health += amount
+  }
+
+  function damage(amount: Int) {
+    health -= amount
+  }
+}
