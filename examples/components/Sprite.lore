@@ -1,4 +1,4 @@
 
-record Sprite {
+record Sprite requires Position {
   mut image: Image
 }

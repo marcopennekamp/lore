@@ -1,3 +1,6 @@
+// With all the declared components, the type of Skeleton is something like:
+// Skeleton has Position has Sprite has HealthState has <anonymous: regeneration>
+// Note that Skeleton inherits the components of Entity2D.
 class Skeleton extends Entity2D
 component healthState: HealthState
 
