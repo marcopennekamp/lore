@@ -6,14 +6,14 @@ In this document we introduce one of the core features of Lore: A statically typ
 
 ## Motivation
 
-In notable engines with entity-component systems such as Unity or Defold, components are added to and possibly removed from an entity at runtime. Both the engine editor and the compiler of the scripting language thus can't guarantee that an entity has a specific component. This has profound implications on the code quality of a game:
+In notable engines with entity-component systems such as Unity, components are added to and possibly removed from an entity at runtime. Both the engine editor and the compiler of the scripting language thus can't guarantee that an entity has a specific component. This has profound implications on the code quality of a game:
 
 - **Correctness:** Static type systems are a powerful feature of many programming languages. They allow the programmer to declare which expressions may produce which kinds of values and how these relate to each other. This helps the compiler to disallow programs that might be unsound – for example, programs where an undefined method is used or programs where a function receives an argument that has the wrong type. We can think of a render function that can only render entities with the `Sprite` component. If entities are typed at runtime, we can at best guess whether an entity will have the required component to make it renderable. In contrast, using a suitable static type system will give us stronger error checks and correctness guarantees.
 - **Maintainability:** Removing components from an entity during refactoring can prove tedious if you can't trace the places in your codebase where the missing component is used. Especially in game development, where code is scarcely covered by tests, such a refactoring might lead to bugs that aren't found until the game has already been released. In contrast, using statically typed components would prompt the compiler to display an error for each misuse of the now missing component.
-- **Simplicity:** Often, you have to get the component before you can use it. In Unity, for example, you have to use the [`GetComponent`](https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html) method of a game object to get one of its components. This also requires you to remember the type of the component. Even worse, `GetComponent` may return null if the component is not attached to the entity, bringing us right back to the problem of correctness, or, alternatively, added complexity through null checks. In contrast, statically typed components give us direct access to a component: `player.GetComponent<Stats>().health` becomes `player.stats.health` or even `player:health` in Lore, if the name *health* is a member of exactly one component of the player object, so that it can be attributed to exactly one component. 
+- **Simplicity:** Often, you have to get the component before you can use it. In Unity, for example, you have to use the [`GetComponent`](https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html) method of a game object to get one of its components. This also requires you to remember the type of the component. Even worse, `GetComponent` may return null if the component is not attached to the entity, bringing us right back to the problem of correctness, or, alternatively, added complexity through null checks. In contrast, statically typed components give us direct access to a component: `player.GetComponent<Stats>().health` becomes `player.stats.health`. 
 - **Code Completion:** Code completion in editors can sometimes rely on good heuristics, but a static type system makes finding the right names and signatures for code completion both easier and more reliable.
 
-We believe that these reasons pose ample incentive to explore the idea of using a static type system for entity-component systems. We also believe that these features need to be added on a language level, because treating the components as a design pattern will lead to issues of usability or expressiveness, or both.
+We believe that these reasons pose ample incentive to explore the idea of using a static type system for entity-component systems. We also believe that these features need to be added on a language level, because treating the components as a design pattern will lead to issues of usability and expressiveness.
 
 
 
@@ -37,7 +37,27 @@ A component is an attribute that is declared in the following way:
 
 The component `part` of type `Part`, which may be any type, is an attribute of the type `A`. The type `A` can also be written as `A has Part`, which means that `Part` is a compent of `A`.
 
-The `has` type qualifier is defined in the following sense: Let C<sub>1</sub>, ..., C<sub>n</sub> be the types of all the components of a type `A`. Then `A` can also be written as <code>A has C<sub>1</sub> has ... has C<sub>n</sub></code>. 
+The `has` type qualifier is defined in the following sense: Let C<sub>1</sub>, ..., C<sub>n</sub> be the types of all the components of a type `A`. Then `A` satisfies the type <code>A has C<sub>1</sub> has ... has C<sub>n</sub></code>. 
+
+Components are required to be immutable. Refer to the Subtyping section below for more information.
+
+
+### Component Dependencies
+
+A component should be able to require access to other components of the object it is attached to.
+
+    record Sprite requires Position {
+      mut image: Image
+    }
+    
+    
+### Adding and Removing Typed Components
+
+While adding components to and removing components from an entity can be achieved even with typed components, we can't update existing entity types at runtime to compensate for an added or removed component. However, behaviour such as this is exactly what we want to disallow with typed components **most of the time**. We don't want to accidentally pass an entity that does not have a Sprite to the `render(entity: Any has Position has Sprite)` function. If we use this code with our entity, surely we should not be able to remove the Sprite component.
+
+However, in some cases it is beneficial to have a more dynamic entity type. Maybe some entity only really has some component in certain cases. In that case, we also probably want functions that are only executed if the specific component is currently part of the entity. 
+
+Solution: dynamic entity types, monads / syntactic support for runtime component resolution
 
 
 ### Implementation with Intersection Types
@@ -82,13 +102,12 @@ Note that rule (3) implies that `Has[C]` as defined above is covariant in `C`, w
    
 Even though a `EuropeanHuman` only has a temperature in celsius, we want to put it in the freezer. We need rule (3) to justify the subtyping `EuropeanHuman has CelciusTemperature <: Any has Temperature`.
 
-Because of rule (3), component references may not be changed from outside the class that defines the component (TODO: We may even have to make the reference constant, think more about this). To see why, consider the following scenario: We want to implement the method `update` of `Freezer` from the example above, so we want to replace the temperature components in each object. But we don't know the actual type of the component, just that it is a subtype of `Temperature`. If we were able to replace it with, say, `FahrenheitTemperature`, all the `EuropeanHumans` would complain about a temperature system that is unknown to them, or more precisely, the runtime would not be able to assign an object of `FahrenheitTemperature` to a `CelsiusTemperature` variable, because Fahrenheit is certainly not Celsius.
-
+Because of rule (3), component references may not be changed from outside the class that defines the component. To see why, consider the following scenario: We want to implement the method `update` of `Freezer` from the example above, so we want to replace the temperature components in each object. But we don't know the actual type of the component, just that it is a subtype of `Temperature`. If we were able to replace it with, say, `FahrenheitTemperature`, all the `EuropeanHumans` would complain about a temperature system that is unknown to them, or more precisely, the runtime would not be able to assign an object of `FahrenheitTemperature` to a `CelsiusTemperature` variable, because Fahrenheit is certainly not Celsius.
 
 
 ### Transitivity of the has-Relation
 
-Components are regular types that may be included as components in any other type. This allows the programmer to create a component hierarchy, which poses the following question to the language designer: **Are components of components first-class components?**
+This section aims to show why the has-relation is not transitive. 
 
 In other words, suppose we have the following type:
 
@@ -100,12 +119,18 @@ Now we have the following type:
 
     A has Part
     
-The question is, does **A** have the type `A has Part` or the type `A has Part has P1 has P2` by transitivity? This has practical implications: 
+The question is, does **A** satisfy the type `A has Part` or the type `A has Part has P1 has P2` by transitivity? Of course, the answer to that question decides how we interpret component hierarchies.
 
-1. If a function requires a type with a particular component, whether the has-relation is transitive may decide if the function can be applied to the type. 
-2. Similarly, the `:`-Operator will behave differently depending on the transitivity of `has`. A strong argument against transitivity is that, with more complex component hierarchies, the transitive closure of a type becomes increasingly complex, to a point where accessing the entire namespace of functions and attributes with the `:`-Operator will either be ambiguous too often or simply too much to handle for a programmer's mind. 
+A brief argument can be formulated with intersection types. Let's consider the example above: `A has Part` vs. `A has Part has P1 has P2`. We have:
 
-We can also look at the nature of components to suggest that a sensible has-relation should not be transitive. Consider the following types:
+<pre><code>A &#8745; Has[Part] = A &#8745; Has[Part &#8745; Has[P1] &#8745; Has[P2]] 
+              &#8800; A &#8745; Has[Part &#8745; Has[P1] &#8745; Has[P2]] &#8745; Has[P1] &#8745; Has[P2]
+              = A &#8745; Has[Part] &#8745; Has[P1] &#8745; Has[P2]
+</code></pre>
+
+We can see that components of components will be nested inside the type argument of `Has`. This syntactic approach strongly suggests that `has` should not be transitive.
+
+We can also look at an example to suggest that a sensible has-relation should not be transitive. Consider the following types:
 
     record Space {
       const x: Real
@@ -127,41 +152,4 @@ We can also look at the nature of components to suggest that a sensible has-rela
       ...
     }
     
-In this example, the time of the clock should not be the same as the time of the position. If `has` was transitive, a clock would have the type `Clock has Position has Time has Space`, even though the time is exclusive to the position in spacetime and not the time on the clock. Note that this also shows a problem with the `:`-operator, which needs to be addressed (TODO): When writing `clock:time`, we would expect it to give us the time that is on the clock, if we hadn't inspected the entity further. However, this will give us the time component of the clock entity in spacetime, which is an entirely different meaning. While this will most likely result in a type error if used in a calculation, since `Time` is a record type, it is still confusing to the programmer.
-
-Another argument on the transitivity question can be formulated with intersection types. Let's consider the example from the beginning of this section: `A has Part` vs. `A has Part has P1 has P2`. We have:
-
-<pre><code>A &#8745; Has[Part] = A &#8745; Has[Part &#8745; Has[P1] &#8745; Has[P2]] 
-              &#8800; A &#8745; Has[Part &#8745; Has[P1] &#8745; Has[P2]] &#8745; Has[P1] &#8745; Has[P2]
-              = A &#8745; Has[Part] &#8745; Has[P1] &#8745; Has[P2]
-</code></pre>
-
-We can see that components of components will be nested inside the type argument of `Has`. This syntactic approach strongly suggests that `has` should not be transitive.
-
-At this point, we will dismiss the idea of a transitive has-relation. 
-
-
-### The `:`-Operator
-
-
-
-### Component Dependencies
-
-A component should be able to require access to other components of the object it is attached to.
-
-    record Sprite requires Position {
-      mut image: Image
-    }
-    
-    
-### Adding and Removing Typed Components
-
-While adding components to and removing components from an entity can be achieved even with typed components, we can't update existing entity types at runtime to compensate for an added or removed component. However, behaviour such as this is exactly what we want to disallow with typed components **most of the time**. We don't want to accidentally pass an entity that does not have a Sprite to the `render(entity: Any has Position has Sprite)` function. If we use this code with our entity, surely we should not be able to remove the Sprite component.
-
-However, in some cases it is beneficial to have a more dynamic entity type. Maybe some entity only really has some component in certain cases. In that case, we also probably want functions that are only executed if the specific component is currently part of the entity. 
-
-Solution: dynamic entity types, monads / syntactic support for runtime component resolution
-
-
-
-
+In this example, the time of the clock should not be the same as the time of the position. If `has` was transitive, a clock would have the type `Clock has Position has Time has Space`, even though the time is exclusive to the position in spacetime and not the time on the clock.
