@@ -37,16 +37,37 @@ The component `part` of type `Part`, which may be any type, is an attribute of t
 
 The `has` type qualifier is defined in the following sense: Let C<sub>1</sub>, ..., C<sub>n</sub> be the types of all the components of a type `A`. Then `A` satisfies the type <code>A has C<sub>1</sub> has ... has C<sub>n</sub></code>.
 
+TODO: How are components initialised?
+
 
 ### Component Dependencies
 
-A component should be able to require access to other components of the object it is attached to.
+Some components may depend on other components. For example, an AI component may rely on a position component. We want to provide a language-native way to deal with such dependencies.
 
-    record Sprite requires Position {
-      mut image: Image
+Consider the following example:
+
+    class LemmingAI {
+      require component position: Position
+      function walk() {
+        ...
+        position.move(x = 1) // Always forward!
+      }
     }
     
+Here, LemmingAI requires a Position component. It will be automatically wired provided the Position component exists in the entity that contains a LemmingAI component.
+
+All types may require components, including interfaces:
+
+    interface AI {
+      require component position: Position
+      function walk(): Unit
+    }
+
+TODO: How can we deal with circular dependencies?
+
+TODO: How can we instantiate classes that require components without making them components?
     
+
 ### Adding and Removing Typed Components
 
 While adding components to and removing components from an entity can be achieved even with typed components, we can't update existing entity types at runtime to compensate for an added or removed component. However, behaviour such as this is exactly what we want to disallow with typed components **most of the time**. We don't want to accidentally pass an entity that does not have a Sprite to the `render(entity: Any has Position has Sprite)` function. If we use this code with our entity, surely we should not be able to remove the Sprite component.
