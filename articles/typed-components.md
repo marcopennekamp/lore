@@ -60,6 +60,12 @@ However, in some cases it is beneficial to have a more dynamic entity type. Mayb
 Solution: dynamic entity types, monads / syntactic support for runtime component resolution
 
 
+
+## Component Theory
+
+This section is more theoretical and might not be easy to understand for some readers. While the topics discussed here are important, it is not a requirement for using components in Lore. 
+
+
 ### Implementation with Intersection Types
 
 The component type system defined here is a subset of type systems that support intersection types. Namely, we have a single parametric type `Has[C]` that signals that a component `C` is present. For a type <code>A has C<sub>1</sub> has ... has C<sub>n</sub></code>, the corresponding type using intersection types would be <code>A &#8745; Has[C<sub>1</sub>] &#8745; ... &#8745; Has[C<sub>n</sub>]</code>. For example, a type `Player has Position has Sprite has Stats` would become <code>Player &#8745; Has[Position] &#8745; Has[Sprite] &#8745; Has[Stats]</code>.
@@ -113,13 +119,13 @@ In other words, suppose we have the following type:
 
     Part has P1 has P2
     
-Here, **P1** is a component of **Part**, as is **P2**.
+Here, `P1` is a component of `Part`, as is `P2`.
 
 Now we have the following type:
 
     A has Part
     
-The question is, does **A** satisfy the type `A has Part` or the type `A has Part has P1 has P2` by transitivity? Of course, the answer to that question decides how we interpret component hierarchies.
+The question is, does `A` satisfy the type `A has Part` or the type `A has Part has P1 has P2` by transitivity? Of course, the answer to that question decides how we interpret component hierarchies.
 
 A brief argument can be formulated with intersection types. Let's consider the example above: `A has Part` vs. `A has Part has P1 has P2`. We have:
 
