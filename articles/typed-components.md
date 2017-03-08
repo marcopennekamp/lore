@@ -29,17 +29,13 @@ To achieve that, we will keep the language as general as possible, so that it ma
 
 ### Definition
 
-A component is an attribute that is declared in the following way: 
+A component is an attribute of a type `A` that is declared in the following way: 
 
-    class A {
-        component part: Part
-    }
+    component part: Part
 
 The component `part` of type `Part`, which may be any type, is an attribute of the type `A`. The type `A` can also be written as `A has Part`, which means that `Part` is a compent of `A`.
 
-The `has` type qualifier is defined in the following sense: Let C<sub>1</sub>, ..., C<sub>n</sub> be the types of all the components of a type `A`. Then `A` satisfies the type <code>A has C<sub>1</sub> has ... has C<sub>n</sub></code>. 
-
-Components are required to be immutable. Refer to the Subtyping section below for more information.
+The `has` type qualifier is defined in the following sense: Let C<sub>1</sub>, ..., C<sub>n</sub> be the types of all the components of a type `A`. Then `A` satisfies the type <code>A has C<sub>1</sub> has ... has C<sub>n</sub></code>.
 
 
 ### Component Dependencies
@@ -58,6 +54,18 @@ While adding components to and removing components from an entity can be achieve
 However, in some cases it is beneficial to have a more dynamic entity type. Maybe some entity only really has some component in certain cases. In that case, we also probably want functions that are only executed if the specific component is currently part of the entity. 
 
 Solution: dynamic entity types, monads / syntactic support for runtime component resolution
+
+
+### Referential Immutability
+
+Component references are required to be immutable because of the following reasons:
+
+1. Subtyping rule (3) allows component subtyping. If we want to replace a component, we must be sure that we replace it with a valid type. This is not possible if we are potentially dealing with a subtype of a component. The solution is to disallow replacement of components, i.e. make components immutable.
+2. Since components may declare dependencies and components may be passed around like other ordinary values, it is sensible to require that a component is always tied to a specific entity. Allowing mutable components may lead to bugs that are hard to detect when a component of an entity is replaced by another component, but not all references to the component are updated.
+
+We may suggest a workaround for component immutability in the future, for example container types, but in general, components should be viewed as referentially immutable.
+
+Note that, while the **reference** is immutable, the component **itself** does not have to be immutable. You can, of course, still model changing state in Lore, but that change needs to be applied inside the component, not by replacing a component.
 
 
 
