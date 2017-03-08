@@ -33,11 +33,13 @@ A component is an attribute of a type `A` that is declared in the following way:
 
     component part: Part
 
-The component `part` of type `Part`, which may be any type, is an attribute of the type `A`. The type `A` can also be written as `A has Part`, which means that `Part` is a compent of `A`.
+The component `part` of type `Part`, which may be any type, is an attribute of the type `A`. The type `A` can also be written as `A has Part`, which means that `Part` is a component of `A`.
 
 The `has` type qualifier is defined in the following sense: Let C<sub>1</sub>, ..., C<sub>n</sub> be the types of all the components of a type `A`. Then `A` satisfies the type <code>A has C<sub>1</sub> has ... has C<sub>n</sub></code>.
 
 TODO: How are components initialised?
+
+TODO: How can we access components of a generic type `Any has Part`, where the name of the component is not known?
 
 
 ### Component Dependencies
