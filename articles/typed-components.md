@@ -37,9 +37,14 @@ The component `part` of type `Part`, which may be any type, is an attribute of t
 
 The `has` type qualifier is defined in the following sense: Let C<sub>1</sub>, ..., C<sub>n</sub> be the types of all the components of a type `A`. Then `A` satisfies the type <code>A has C<sub>1</sub> has ... has C<sub>n</sub></code>.
 
-TODO: How are components initialised?
 
-TODO: How can we access components of a generic type `Any has Part`, where the name of the component is not known?
+### Initialisation
+
+All components must be passed as special arguments to the constructor when you create a new object of the class. For example:
+
+    val car = Car(chassis, wheels)()
+
+TODO: We have a big problem here. If we consider component dependencies, how do we create a component first (e.g. a wheel) that will later depend on one of the other components of the Car (e.g. the chassis).
 
 
 ### Component Dependencies
@@ -68,7 +73,12 @@ All types may require components, including interfaces:
 TODO: How can we deal with circular dependencies?
 
 TODO: How can we instantiate classes that require components without making them components?
+
+
+### Accessing Components    
     
+TODO: How can we access components of a generic type `Any has Part`, where the name of the component is not known?
+
 
 ### Adding and Removing Typed Components
 
