@@ -42,7 +42,9 @@ The `has` type qualifier is defined in the following sense: Let C<sub>1</sub>, .
 
 All components must be passed as special arguments to the constructor when you create a new object of the class. For example:
 
-    val car = Car(chassis, wheels)()
+    val car = Car(chassis, wheels)
+
+Components that depend on other components may be instantiated via partial application and then passed to the constructor of `A`. In fact, any function `(A1, ..., An) => T`, where `T` is the expected argument, may be passed instead. If `A1` through `An` are components of `A`, an object of `T` is automatically created from the components. Obviously, circular dependencies do not work in this case and 
 
 TODO: We have a big problem here. If we consider component dependencies, how do we create a component first (e.g. a wheel) that will later depend on one of the other components of the Car (e.g. the chassis).
 
@@ -70,7 +72,7 @@ All types may require components, including interfaces:
       function walk(): Unit
     }
 
-TODO: How can we deal with circular dependencies?
+Circular dependencies are not allowed. This is checked at compile time. 
 
 TODO: How can we instantiate classes that require components without making them components?
 
