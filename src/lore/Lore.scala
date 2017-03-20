@@ -1,7 +1,7 @@
 package lore
 
 import lore.algebra._
-import lore.parser.SpcExpressionParser
+import lore.parser.{FpExpressionParser, SpcExpressionParser}
 import matryoshka.implicits._
 import matryoshka.data.Mu
 
@@ -12,12 +12,19 @@ object Lore {
     val source = Source.fromFile("calculation.lore").getLines.mkString
 
     // Parse with scala-parser-combinators
-    val parser = new SpcExpressionParser
-    val expression = parser.parseExpression[Mu[Expr]](source)
-    val result = expression.cata(Expr.eval) // ⇒ 24
-    println("SPC result: " + result)
+    {
+      val parser = new SpcExpressionParser[Mu[Expr]]()
+      val expression = parser.parseExpression(source)
+      val result = expression.cata(Expr.eval) // ⇒ 24
+      println("SPC result: " + result)
+    }
 
-    // Parse with Parboiled2
-    // ...
+    // Parse with FastParse
+    {
+      val parser = new FpExpressionParser[Mu[Expr]]()
+      val expression = parser.parseExpression(source)
+      val result = expression.cata(Expr.eval)
+      println("FP  result: " + result)
+    }
   }
 }
