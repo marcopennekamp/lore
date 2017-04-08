@@ -29,52 +29,54 @@ To achieve that, we will keep the language as general as possible, so that it ma
 
 ### Definition
 
-A component is an attribute of a type `A` that is declared in the following way: 
+A component type is declared in the following way:
 
-    component part: Part
+    component Part { ... }
 
-The component `part` of type `Part`, which may be any type, is an attribute of the type `A`. The type `A` can also be written as `A has Part`, which means that `Part` is a component of `A`.
+Component values (simply called components) can be declared as special attributes:
+    
+    class A {
+      component part: Part
+    }
 
-The `has` type qualifier is defined in the following sense: Let C<sub>1</sub>, ..., C<sub>n</sub> be the types of all the components of a type `A`. Then `A` satisfies the type <code>A has C<sub>1</sub> has ... has C<sub>n</sub></code>.
+The component `part` of type `Part` is an attribute of the type `A`. The type `A` satisfies the typing `A has Part`, which means that `Part` is a component of `A`.
+
+The `has` type qualifier is defined in the following sense: Let C<sub>1</sub>, ..., C<sub>n</sub> be the component types of a type `A`. Then `A` satisfies the type <code>A has C<sub>1</sub> has ... has C<sub>n</sub></code>.
 
 
 ### Initialisation
 
-All components must be passed as special arguments to the constructor when you create a new object of the class. For example:
+Components can't be initialised without being bound to an owner. The constructor of a component `C` does not produce a value of `C`, but rather a value of `Bindable[C]`, where `Bindable` is a container type that prohibits access to the `C` value.
 
-    val car = Car(chassis, wheels)
+Similarly, an owner type's constructor will ask for a `Bindable[C]`. Such a compiler-generated constructor is the **only** way to free a unbound component from its shackles. The compiler will ensure that the owner and component are properly bound to each other. 
 
-Components that depend on other components may be instantiated via partial application and then passed to the constructor of `A`. In fact, any function `(A1, ..., An) => T`, where `T` is the expected argument, may be passed instead. If `A1` through `An` are components of `A`, an object of `T` is automatically created from the components. Obviously, circular dependencies do not work in this case and 
-
-TODO: We have a big problem here. If we consider component dependencies, how do we create a component first (e.g. a wheel) that will later depend on one of the other components of the Car (e.g. the chassis).
+Of course, there is no way to create a `Bindable[C]` from an already existing `C` value. Since types with component attributes require a `Bindable[C]`, not a `C`, no already bound component can possibly be bound to two different objects. 
 
 
-### Component Dependencies
+### The Owner Declaration
 
 Some components may depend on other components. For example, an AI component may rely on a position component. We want to provide a language-native way to deal with such dependencies.
 
-Consider the following example:
+Since every component belongs to exactly one object, called the *owner*, at all times, a component may access its owner. In addition to that, the component may **require** the owner to be of some type `T`. This allows the component access to *other* components that the owner type also consists of. Refining the owner type can be achieved in the following way:
 
-    class LemmingAI {
-      require component position: Position
+    component A {
+      owned_by id: T
+      ...
+    }
+
+The `id` is freely choosable, but should be called `owner` or something similar if no additional information is known about the owner type.
+
+We want to illustrate this with the following example:
+
+    component LemmingAI { 
+      owned_by owner: _ has Position
       function walk() {
         ...
-        position.move(x = 1) // Always forward!
+        owner.Position.move(x = 1) // Always forward!
       }
     }
     
-Here, LemmingAI requires a Position component. It will be automatically wired provided the Position component exists in the entity that contains a LemmingAI component.
-
-All types may require components, including interfaces:
-
-    interface AI {
-      require component position: Position
-      function walk(): Unit
-    }
-
-Circular dependencies are not allowed. This is checked at compile time. 
-
-TODO: How can we instantiate classes that require components without making them components?
+Here, `LemmingAI` requires its owner to have a `Position` component, which allows us to access said component.
 
 
 ### Accessing Components    
