@@ -6,7 +6,7 @@ import matryoshka._
 import matryoshka.implicits._
 
 class FpExpressionParser[T]()(implicit T: Corecursive.Aux[T, Expr]) extends ExpressionParser[T] {
-  val White = WhitespaceApi.Wrapper{
+  val White = WhitespaceApi.Wrapper {
     import fastparse.all._
     NoTrace(" ".rep)
   }
