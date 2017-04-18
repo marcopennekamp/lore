@@ -10,7 +10,7 @@ In notable engines with entity-component systems such as Unity, components are a
 
 - **Correctness:** Static type systems are a powerful feature of many programming languages. They allow the programmer to declare which expressions may produce which kinds of values and how these relate to each other. This helps the compiler to disallow programs that might be unsound – for example, programs where an undefined method is used or programs where a function receives an argument that has the wrong type. We can think of a render function that can only render entities with the `Sprite` component. If entities are typed at runtime, we can at best guess whether an entity will have the required component to make it renderable. In contrast, using a suitable static type system will give us stronger error checks and correctness guarantees.
 - **Maintainability:** Removing components from an entity during refactoring can prove tedious if you can't trace the places in your codebase where the missing component is used. Especially in game development, where code is scarcely covered by tests, such a refactoring might lead to bugs that aren't found until the game has already been released. In contrast, using statically typed components would prompt the compiler to display an error for each misuse of the now missing component.
-- **Simplicity:** Often, you have to get the component before you can use it. In Unity, for example, you have to use the [`GetComponent`](https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html) method of a game object to get one of its components. This also requires you to remember the type of the component. Even worse, `GetComponent` may return null if the component is not attached to the entity, bringing us right back to the problem of correctness, or, alternatively, added complexity through null checks. In contrast, statically typed components give us direct access to a component: `player.GetComponent<Stats>().health` becomes `player.stats.health`. 
+- **Simplicity:** Often, you have to get the component before you can use it. In Unity, for example, you have to use the [`GetComponent`](https://docs.unity3d.com/ScriptReference/GameObject.GetComponent.html) method of a game object to get one of its components. This also requires you to remember the type of the component. Even worse, `GetComponent` may return null if the component is not attached to the entity, bringing us right back to the problem of correctness, or, alternatively, added complexity through null checks. In contrast, statically typed components give us direct access to a component: `player.GetComponent<Stats>().health` becomes `player.stats.health`.
 - **Code Completion:** Code completion in editors can sometimes rely on good heuristics, but a static type system makes finding the right names and signatures for code completion both easier and more reliable.
 
 We believe that these reasons pose ample incentive to explore the idea of using a static type system for entity-component systems. We also believe that these features need to be added on a language level, because treating the components as a design pattern will lead to issues of usability and expressiveness.
@@ -34,7 +34,7 @@ A component type is declared in the following way:
     component Part { ... }
 
 Component values (simply called components) can be declared as special attributes:
-    
+
     class A {
       component part: Part
     }
@@ -43,14 +43,16 @@ The component `part` of type `Part` is an attribute of the type `A`. The type `A
 
 The `has` type qualifier is defined in the following sense: Let C<sub>1</sub>, ..., C<sub>n</sub> be the component types of a type `A`. Then `A` satisfies the type <code>A has C<sub>1</sub> has ... has C<sub>n</sub></code>.
 
+TODO: What about two or more components of the same type that just have different names? How can we have an `Any has Position has Position`?
+
 
 ### Initialisation
 
 Components can't be initialised without being bound to an owner. The constructor of a component `C` does not produce a value of `C`, but rather a value of `Bindable[C]`, where `Bindable` is a container type that prohibits access to the `C` value.
 
-Similarly, an owner type's constructor will ask for a `Bindable[C]`. Such a compiler-generated constructor is the **only** way to free a unbound component from its shackles. The compiler will ensure that the owner and component are properly bound to each other. 
+Similarly, an owner type's constructor will ask for a `Bindable[C]`. Such a compiler-generated constructor is the **only** way to free an unbound component. The compiler will ensure that the owner and component are properly bound to each other.
 
-Of course, there is no way to create a `Bindable[C]` from an already existing `C` value. Since types with component attributes require a `Bindable[C]`, not a `C`, no already bound component can possibly be bound to two different objects. 
+Of course, there is no way to create a `Bindable[C]` from an already existing `C` value. Since types with component attributes require a `Bindable[C]`, not a `C`, no already bound component can possibly be bound to two different objects.
 
 
 ### The Owner Declaration
@@ -68,27 +70,47 @@ The `id` is freely choosable, but should be called `owner` or something similar 
 
 We want to illustrate this with the following example:
 
-    component LemmingAI { 
+    component LemmingAI {
       owned_by owner: _ has Position
       function walk() {
         ...
         owner.Position.move(x = 1) // Always forward!
       }
     }
-    
+
 Here, `LemmingAI` requires its owner to have a `Position` component, which allows us to access said component.
 
 
 ### Accessing Components    
-    
+
 TODO: How can we access components of a generic type `Any has Part`, where the name of the component is not known?
 
+
+### Importing from a Component
+
+In some cases, it's useful to be able to access a component attribute or function directly from the owner. Introducing an operator that would cover all component names is however convoluted, because it would lead to obscure naming issues. For example, see the spacetime-clock example below. It's therefore advisable to construct the component-context namespace **explicitly**.
+
+You can import names like this:
+
+    component position: Position
+    import {x, y, z} from position
+
+The names will be available for use just like direct declarations in the owner.
+
+Whether renaming imported names will be supported in the future is up for discussion. Right now we think that if a name needs to be changed for an import to be unambiguous, one should rather access the member through the component instead.
+
+#### Immutable Imports
+
+When importing attributes, the import adopts the mutability of the component attribute. You can also force an import to be immutable by using the `const` qualifier.
+
+    import {const health} from healthState
+    
 
 ### Adding and Removing Typed Components
 
 While adding components to and removing components from an entity can be achieved even with typed components, we can't update existing entity types at runtime to compensate for an added or removed component. However, behaviour such as this is exactly what we want to disallow with typed components **most of the time**. We don't want to accidentally pass an entity that does not have a Sprite to the `render(entity: Any has Position has Sprite)` function. If we use this code with our entity, surely we should not be able to remove the Sprite component.
 
-However, in some cases it is beneficial to have a more dynamic entity type. Maybe some entity only really has some component in certain cases. In that case, we also probably want functions that are only executed if the specific component is currently part of the entity. 
+However, in some cases it is beneficial to have a more dynamic entity type. Maybe some entity only really has some component in certain cases. In that case, we also probably want functions that are only executed if the specific component is currently part of the entity.
 
 Solution: dynamic entity types, monads / syntactic support for runtime component resolution
 
@@ -108,7 +130,7 @@ Note that, while the **reference** is immutable, the component **itself** does n
 
 ## Component Theory
 
-This section is more theoretical and might not be easy to understand for some readers. While the topics discussed here are important, it is not a requirement for using components in Lore. 
+This section is more theoretical and might not be easy to understand for some readers. While the topics discussed here are important, it is not a requirement for using components in Lore.
 
 
 ### Implementation with Intersection Types
@@ -135,22 +157,22 @@ Note that rule (3) implies that `Has[C]` as defined above is covariant in `C`, w
     interface Temperature {
       const kelvin: Real
     }
-    
+
     class CelsiusTemperature implements Temperature {
       const celsius: Real
       override kelvin = celsius + 273.15
     }
-    
+
     class EuropeanHuman {
       component temp: CelsiusTemperature
       ...
     }
-    
+
     class Freezer {
       const objects: List[Any has Temperature]
       function update(): Unit = ... // For all objects, update temperature.
     }
-   
+
 Even though a `EuropeanHuman` only has a temperature in celsius, we want to put it in the freezer. We need rule (3) to justify the subtyping `EuropeanHuman has CelciusTemperature <: Any has Temperature`.
 
 Because of rule (3), component references may not be changed from outside the class that defines the component. To see why, consider the following scenario: We want to implement the method `update` of `Freezer` from the example above, so we want to replace the temperature components in each object. But we don't know the actual type of the component, just that it is a subtype of `Temperature`. If we were able to replace it with, say, `FahrenheitTemperature`, all the `EuropeanHumans` would complain about a temperature system that is unknown to them, or more precisely, the runtime would not be able to assign an object of `FahrenheitTemperature` to a `CelsiusTemperature` variable, because Fahrenheit is certainly not Celsius.
@@ -158,23 +180,23 @@ Because of rule (3), component references may not be changed from outside the cl
 
 ### Transitivity of the has-Relation
 
-This section aims to show why the has-relation is not transitive. 
+This section aims to show why the has-relation is not transitive.
 
 In other words, suppose we have the following type:
 
     Part has P1 has P2
-    
+
 Here, `P1` is a component of `Part`, as is `P2`.
 
 Now we have the following type:
 
     A has Part
-    
+
 The question is, does `A` satisfy the type `A has Part` or the type `A has Part has P1 has P2` by transitivity? Of course, the answer to that question decides how we interpret component hierarchies.
 
 A brief argument can be formulated with intersection types. Let's consider the example above: `A has Part` vs. `A has Part has P1 has P2`. We have:
 
-<pre><code>A &#8745; Has[Part] = A &#8745; Has[Part &#8745; Has[P1] &#8745; Has[P2]] 
+<pre><code>A &#8745; Has[Part] = A &#8745; Has[Part &#8745; Has[P1] &#8745; Has[P2]]
               &#8800; A &#8745; Has[Part &#8745; Has[P1] &#8745; Has[P2]] &#8745; Has[P1] &#8745; Has[P2]
               = A &#8745; Has[Part] &#8745; Has[P1] &#8745; Has[P2]
 </code></pre>
@@ -188,19 +210,19 @@ We can also look at an example to suggest that a sensible has-relation should no
       const y: Real
       const z: Real
     }
-    
+
     record Time {
       const seconds: Real
     }
-    
+
     record Position {
       component space: Space
       component time: Time
     }
-    
+
     class Clock {
       component pos: Position
       ...
     }
-    
+
 In this example, the time of the clock should not be the same as the time of the position. If `has` was transitive, a clock would have the type `Clock has Position has Time has Space`, even though the time is exclusive to the position in spacetime and not the time on the clock.
