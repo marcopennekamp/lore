@@ -1,12 +1,16 @@
 // With all the declared components, the type of Skeleton is something like:
 // Skeleton has Position has Sprite has HealthState has Anonymous<regeneration>
 // Note that Skeleton inherits the components of Entity2D.
+
+// TODO: It would be nice if we could have "file types" in the sense that you declare the whole file to be the body of a class. This gets rid of one level of indentation for "script"-style classes and gives a more "scripty" feel like you have in lua.
 class Skeleton extends Entity2D
+
 component healthState: HealthState
 import {const health, heal, damage} from healthState
 
 // Anonymous components allow multiple attributes and functions to be grouped
 // under the same namespace, without the need to declare a type first.
+// TODO: The regeneration can scarcely be bound to the type if we can't construct a value of this anonymous class. How can we instantiate this component?
 component regeneration: class {
   const amount: Float = 5.0
   const interval: Int = 30

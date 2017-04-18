@@ -43,7 +43,7 @@ The component `part` of type `Part` is an attribute of the type `A`. The type `A
 
 The `has` type qualifier is defined in the following sense: Let C<sub>1</sub>, ..., C<sub>n</sub> be the component types of a type `A`. Then `A` satisfies the type <code>A has C<sub>1</sub> has ... has C<sub>n</sub></code>.
 
-TODO: What about two or more components of the same type that just have different names? How can we have an `Any has Position has Position`?
+TODO: What about two or more components of the same type that just have different names? How can we have an `_ has Position has Position`?
 
 
 ### Initialisation
@@ -83,7 +83,7 @@ Here, `LemmingAI` requires its owner to have a `Position` component, which allow
 
 ### Accessing Components    
 
-TODO: How can we access components of a generic type `Any has Part`, where the name of the component is not known?
+TODO: How can we access components of a generic type `_ has Part`, where the name of the component is not known?
 
 
 ### Importing from a Component
@@ -104,11 +104,11 @@ Whether renaming imported names will be supported in the future is up for discus
 When importing attributes, the import adopts the mutability of the component attribute. You can also force an import to be immutable by using the `const` qualifier.
 
     import {const health} from healthState
-    
+
 
 ### Adding and Removing Typed Components
 
-While adding components to and removing components from an entity can be achieved even with typed components, we can't update existing entity types at runtime to compensate for an added or removed component. However, behaviour such as this is exactly what we want to disallow with typed components **most of the time**. We don't want to accidentally pass an entity that does not have a Sprite to the `render(entity: Any has Position has Sprite)` function. If we use this code with our entity, surely we should not be able to remove the Sprite component.
+While adding components to and removing components from an entity can be achieved even with typed components, we can't update existing entity types at runtime to compensate for an added or removed component. However, behaviour such as this is exactly what we want to disallow with typed components **most of the time**. We don't want to accidentally pass an entity that does not have a Sprite to the `render(entity: _ has Position has Sprite)` function. If we use this code with our entity, surely we should not be able to remove the Sprite component.
 
 However, in some cases it is beneficial to have a more dynamic entity type. Maybe some entity only really has some component in certain cases. In that case, we also probably want functions that are only executed if the specific component is currently part of the entity.
 
@@ -169,11 +169,11 @@ Note that rule (3) implies that `Has[C]` as defined above is covariant in `C`, w
     }
 
     class Freezer {
-      const objects: List[Any has Temperature]
+      const objects: List[_ has Temperature]
       function update(): Unit = ... // For all objects, update temperature.
     }
 
-Even though a `EuropeanHuman` only has a temperature in celsius, we want to put it in the freezer. We need rule (3) to justify the subtyping `EuropeanHuman has CelciusTemperature <: Any has Temperature`.
+Even though a `EuropeanHuman` only has a temperature in celsius, we want to put it in the freezer. We need rule (3) to justify the subtyping `EuropeanHuman has CelciusTemperature <: _ has Temperature`.
 
 Because of rule (3), component references may not be changed from outside the class that defines the component. To see why, consider the following scenario: We want to implement the method `update` of `Freezer` from the example above, so we want to replace the temperature components in each object. But we don't know the actual type of the component, just that it is a subtype of `Temperature`. If we were able to replace it with, say, `FahrenheitTemperature`, all the `EuropeanHumans` would complain about a temperature system that is unknown to them, or more precisely, the runtime would not be able to assign an object of `FahrenheitTemperature` to a `CelsiusTemperature` variable, because Fahrenheit is certainly not Celsius.
 
