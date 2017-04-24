@@ -29,30 +29,42 @@ To achieve that, we will keep the language as general as possible, so that it ma
 
 ### Definition
 
-A component type is declared in the following way:
-
-    component Part { ... }
-
-Component values (simply called components) can be declared as special attributes:
+Components can be declared in any class where attributes can be declared (although without a name):
 
     class A {
-      component part: Part
+      component Part
     }
 
-The component `part` of type `Part` is an attribute of the type `A`. The type `A` satisfies the typing `A has Part`, which means that `Part` is a component of `A`.
+Thus, the type `A` has the component `Part`. The component can be accessed like an attribute, `a.Part`, with the type name as the accessor name.
 
-The `has` type qualifier is defined in the following sense: Let C<sub>1</sub>, ..., C<sub>n</sub> be the component types of a type `A`. Then `A` satisfies the type <code>A has C<sub>1</sub> has ... has C<sub>n</sub></code>.
-
-TODO: What about two or more components of the same type that just have different names? How can we have an `_ has Position has Position`?
+The type `A` satisfies the typing `A has Part`, which means that `Part` is a component of `A`. The `has` type qualifier is defined in the following sense: Let C<sub>1</sub>, ..., C<sub>n</sub> be the components of a type `A`. Then `A` satisfies the type <code>A has C<sub>1</sub> has ... has C<sub>n</sub></code>.
 
 
-### Initialisation
+### Component naming and multiple components of the same type
 
-Components can't be initialised without being bound to an owner. The constructor of a component `C` does not produce a value of `C`, but rather a value of `Bindable[C]`, where `Bindable` is a container type that prohibits access to the `C` value.
+Note that the name of a component is the same as the name of its type. We chose this approach because the `has`-relation doesn't distinguish names. Having two components of the same type was distinguishable inside the class definition (since those components would be different attributes), but not in the type itself. We would have had either to add names to the `has T` part of a type or remove "named" components. The former option would have made passing around components virtually impossible: A hypothetical type `A has position: Position` would not have satisfied a type `_ has pos: Position`. Because of this, we chose the latter option.
 
-Similarly, an owner type's constructor will ask for a `Bindable[C]`. Such a compiler-generated constructor is the **only** way to free an unbound component. The compiler will ensure that the owner and component are properly bound to each other.
+This opens up another question: Suppose I have a `Wheel` and want to add 4 of them to a `Car`. You can't simply add 4 components of the same type. The solution would be to use some kind of wrapper type, for example:
 
-Of course, there is no way to create a `Bindable[C]` from an already existing `C` value. Since types with component attributes require a `Bindable[C]`, not a `C`, no already bound component can possibly be bound to two different objects.
+* `(Wheel, Wheel, Wheel, Wheel)` (verbose, hard to use)
+* `List[Wheel]` (doesn't encode the number of wheels)
+* `FixedList[Wheel, 4]` (just an idea...)
+* `WheelSet` (a class with 4 normal attributes; probably the best solution, but hardest to set up)
+
+
+### Component Instantiation
+
+Since components do not have special types, but yet they may interact with their owner value, we need two ways to create values: Standard instantiation and component instantiation. This section deals with component instantiation.
+
+Components can't be initialised without being bound to an owner. To create a bindable component, the component constructor needs to be called with the `@` prefix: `@Position(1, 2, 3)`. The outcome is a value of type `@C` (speak "bindable C"), where `@` is a container type that prohibits access to the `C` value.
+
+Similarly, an owner type's constructor will ask for a `@C`. Such a compiler-generated constructor is the **only** way to free an unbound component. The compiler will ensure that the owner and component are properly bound to each other.
+
+Of course, there is no way to create a `@C` from an already existing `C` value. Since types with components require a `@C`, not a `C`, no already bound component can possibly be bound to two different objects.
+
+Types that use their owner may only be instantiated through component instantiation. This is determined by the compiler. Values of other types may exist in either of the two modes.
+
+TODO: Starting to use the owner value (even by accident) could have effects not only on the implementation of a class, but on all the places where it is used in a non-component capacity. We should consider making the "component-only state" a bit more explicit (i.e. introducing a qualifier that needs to be present for the owner type to be usable). This would still allow us to use classes as components that don't use an owner value, but add a fail-safe mechanism to classes which may need access to their owner value at some point in the future.
 
 
 ### The Owner Declaration
@@ -68,6 +80,8 @@ Since every component belongs to exactly one object, called the *owner*, at all 
 
 The `id` is freely choosable, but should be called `owner` or something similar if no additional information is known about the owner type.
 
+TODO: This syntax is ugly. We should also reconsider allowing to rename the owner value (confer the concept of `this`).
+
 We want to illustrate this with the following example:
 
     component LemmingAI {
@@ -81,23 +95,20 @@ We want to illustrate this with the following example:
 Here, `LemmingAI` requires its owner to have a `Position` component, which allows us to access said component.
 
 
-### Accessing Components    
-
-TODO: How can we access components of a generic type `_ has Part`, where the name of the component is not known?
-
-
 ### Importing from a Component
 
 In some cases, it's useful to be able to access a component attribute or function directly from the owner. Introducing an operator that would cover all component names is however convoluted, because it would lead to obscure naming issues. For example, see the spacetime-clock example below. It's therefore advisable to construct the component-context namespace **explicitly**.
 
 You can import names like this:
 
-    component position: Position
-    import {x, y, z} from position
+    component Position
+    import {x, y, z} from Position
 
 The names will be available for use just like direct declarations in the owner.
 
 Whether renaming imported names will be supported in the future is up for discussion. Right now we think that if a name needs to be changed for an import to be unambiguous, one should rather access the member through the component instead.
+
+TODO: We should perhaps keep the `component` and `import` statements closer together. Something like `component Position with import {x, y, z}`, so that the import can't be placed too far from the component, and doesn't take up another line.
 
 #### Immutable Imports
 
@@ -164,7 +175,7 @@ Note that rule (3) implies that `Has[C]` as defined above is covariant in `C`, w
     }
 
     class EuropeanHuman {
-      component temp: CelsiusTemperature
+      component CelsiusTemperature
       ...
     }
 
@@ -176,6 +187,8 @@ Note that rule (3) implies that `Has[C]` as defined above is covariant in `C`, w
 Even though a `EuropeanHuman` only has a temperature in celsius, we want to put it in the freezer. We need rule (3) to justify the subtyping `EuropeanHuman has CelciusTemperature <: _ has Temperature`.
 
 Because of rule (3), component references may not be changed from outside the class that defines the component. To see why, consider the following scenario: We want to implement the method `update` of `Freezer` from the example above, so we want to replace the temperature components in each object. But we don't know the actual type of the component, just that it is a subtype of `Temperature`. If we were able to replace it with, say, `FahrenheitTemperature`, all the `EuropeanHumans` would complain about a temperature system that is unknown to them, or more precisely, the runtime would not be able to assign an object of `FahrenheitTemperature` to a `CelsiusTemperature` variable, because Fahrenheit is certainly not Celsius.
+
+TODO: Component subtyping leads to a diamond problem. Consider a `WorldCitizen` with two components: `CelsiusTemperature` and `FahrenheitTemperature`. Which component is chosen if we want to assign it to a value of type `_ has Temperature`? Of course, we could simply throw a compilation error, but how do we solve the problem then? How can we put a citizen of the world into our freezer?
 
 
 ### Transitivity of the has-Relation
@@ -216,12 +229,12 @@ We can also look at an example to suggest that a sensible has-relation should no
     }
 
     record Position {
-      component space: Space
-      component time: Time
+      component Space
+      component Time
     }
 
     class Clock {
-      component pos: Position
+      component Position
       ...
     }
 

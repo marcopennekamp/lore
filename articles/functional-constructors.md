@@ -26,38 +26,40 @@ TODO: Where do you declare constructors if they are not an instance method?
 
 Each constructible type `X` defines a *root constructor* `X: (T1, ..., Tn) => X` for some types `T1` through `Tn`. You **must** use this constructor to create instances of `X`. Any other constructor function will use the root constructor to create objects of `X`.
 
-It is generated as follows: Attributes (including components) are added to the constructor's parameter list in the order that they appear in inside the type's body. Each parameter adopts the appropriate type of the attribute. A component attribute of type `C` will result in a parameter type `Bindable[C]`, because component objects need to be bound to the owner object. Default attribute values are added as default argument values to the root constructor.
+It is generated as follows: Attributes and components are added to the constructor's parameter list in the order that they appear in inside the type's body. Each attribute parameter adopts the appropriate type of the attribute. A component of type `C` will result in a parameter type `@C`, because component objects need to be bound to the owner object. Default attribute values are added as default argument values to the root constructor.
 
 For example, take the following class:
 
     class Skeleton extends Entity2D {
-        component healthState: HealthState
-        import {const health, heal, damage} from healthState
+        component HealthState
+        import {const health, heal, damage} from HealthState
         private const boneCount: Int = 5
         ...
     }
 
 The root constructor of `Skeleton` has the following signature:
 
-    Skeleton(position: Bindable[Position],
-             sprite: Bindable[Sprite],
-             healthState: Bindable[healthState],
+    Skeleton(Position: @Position,
+             Sprite: @Sprite,
+             HealthState: @HealthState,
              boneCount: Int = 5)
 
-The attributes `position` and `sprite` are derived from the `Entity2D` superclass. The default attribute value for `boneCount` ends up as a default argument value.
+The attributes `Position` and `Sprite` are derived from the `Entity2D` constructor. The default attribute value for `boneCount` ends up as a default argument value.
+
+TODO: How can we call non-root constructors of a supertype if the root constructor implicitly constructs the Entity2D type. Perhaps we should allow specifying the constructor that should be used to initialise the base type (and then we have the problem that such a constructor, being an ordinary function, returns an Entity2D type instead of initialising a Skeleton type).
 
 
 ### Overwriting Root Constructors
 
-It is sometimes inconvenient when private attributes are exposed through the root constructor, especially when it comes to attributes like `boneCount` in the example above. In such and other cases, you can overwrite the root constructor as follows:
+It is sometimes inconvenient to expose private attributes through the root constructor, especially when it comes to attributes like `boneCount` in the example above. In such and other cases, you can overwrite the root constructor as follows:
 
     class Clock {
-        component position: Position
+        component Position
         private mut time: Float = 0.0
     }
 
     object Clock {
-        constructor Clock(position: Bindable[Position]) = this(position) // Note that the time parameter is assigned its default value.
+        constructor Clock(Position: @Position) = this(position) // Note that the time parameter receives its default value.
     }
 
 TODO: Can we find a better syntax than `this(...)` for this?
