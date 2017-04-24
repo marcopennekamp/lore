@@ -1,0 +1,33 @@
+
+class Regeneration {
+  const amount: Float
+  const interval: Int
+  private mut counter: Int = 1
+
+  function tick() {
+    if counter `mod` interval == 0 {
+      owner.heal(regeneration.amount)
+    }
+    counter += 1
+  }
+
+  function enable() {
+    state = default // TODO: Maybe we should introduce special syntax for this, since we don't want to pollute the general namespace with state names.
+  }
+
+  function disable() {
+    state = disabled
+  }
+
+  // Classes can be in different states, which change the behavior of a class.
+  // In this example, we can disable the regeneration for a while.
+  state disabled {
+    function tick() { /* Do nothing, as regeneration is disabled. */ }
+  }
+}
+
+object Regeneration {
+  constructor Regeneration(amount: Float, interval: Int) = this(amount = amount, interval = interval)
+  // TODO: This sucks.. Too verbose. Can we get to a syntax where you can add and remove fields from the default constructor? Something like:
+  constructor default = this(counter = 1, ...)
+}

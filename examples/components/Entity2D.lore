@@ -1,5 +1,5 @@
 
 class Entity2D {
-  component position: Position
-  component sprite: Sprite
+  component Position
+  component Sprite
 }

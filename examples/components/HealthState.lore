@@ -1,5 +1,5 @@
 
-record HealthState {
+class HealthState {
   mut health: Int
 
   function heal(amount: Int) {
