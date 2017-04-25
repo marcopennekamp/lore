@@ -62,6 +62,8 @@ Similarly, an owner type's constructor will ask for a `@C`. Such a compiler-gene
 
 Of course, there is no way to create a `@C` from an already existing `C` value. Since types with components require a `@C`, not a `C`, no already bound component can possibly be bound to two different objects.
 
+TODO: For the bindings to work properly, we need to invalidate an `@C` value once it has been passed to some function, i.e. we need to make sure that it's only unpacked at most once. We may want to have a look at Rust and borrow ideas from the borrow checker. 
+
 Types that use their owner may only be instantiated through component instantiation. This is determined by the compiler. Values of other types may exist in either of the two modes.
 
 TODO: Starting to use the owner value (even by accident) could have effects not only on the implementation of a class, but on all the places where it is used in a non-component capacity. We should consider making the "component-only state" a bit more explicit (i.e. introducing a qualifier that needs to be present for the owner type to be usable). This would still allow us to use classes as components that don't use an owner value, but add a fail-safe mechanism to classes which may need access to their owner value at some point in the future.
