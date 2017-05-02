@@ -2,14 +2,12 @@
 // Skeleton has Position has Sprite has HealthState has Regeneration
 // Note that Skeleton inherits the components of Entity2D.
 
-// TODO: It would be nice if we could have "file types" in the sense that you declare the whole file to be the body of a class. This gets rid of one level of indentation for "script"-style classes and gives a more "scripty" feel like you have in lua.
-class Skeleton extends Entity2D
+// TODO: It would be nice if we could have "file types" in the sense that you declare the whole file to be the body of a class. 
+// This gets rid of one level of indentation for "script"-style classes and gives a more "scripty" feel like you have in lua.
+class Skeleton extends Entity2D {
+  :: HealthState import {health, ...} // ... captures all attributes qualified with `export`
+  :: Regeneration = Regeneration amount=5 interval=30
 
-component HealthState
-import {const health, heal, damage} from HealthState
-
-component Regeneration = Regeneration(amount = 5, interval = 30)
-
-function tick() {
-  Regeneration.tick()
+  // TODO: What symbol do we use for function composition if the dot is used for attribute access?
+  action tick :: Unit -> Unit = Regeneration.tick
 }

@@ -1,7 +1,7 @@
 
 // TODO: An immutable position would be nice, but then we have to make the component itself mutable.
 class Position {
-  mut x: Float
-  mut y: Float
-  mut z: Float
+  mut x :: Float
+  mut y :: Float
+  mut z :: Float
 }
