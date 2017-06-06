@@ -1,5 +1,5 @@
 
 class Sprite {
-  owner :: _ has Position
+  owner :: +Position
   mut image :: Image
 }

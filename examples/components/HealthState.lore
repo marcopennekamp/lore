@@ -3,9 +3,9 @@ class HealthState {
   mut health :: Int
 
   // Attributes with values are not included in the generated constructor!
-  export action heal :: Int amount -> Unit = { health += amount }
+  action heal amount :: Int -> Unit = { health += amount }
 
   // An export requires any owner of this component to import the specified name.
   // This allows us to use some important imports with _ has X typings.
-  export action damage :: Int amount -> Unit = { health += amount }
+  action damage amount :: Int -> Unit = { health += amount }
 }

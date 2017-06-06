@@ -5,19 +5,21 @@ Lore defines a small set of type constructors that can be used to declare new ty
 
 ## Function Types
 
-A function type `A => B` is the type of an anonymous function with input `A` and output `B`. The `=>` symbol is right-associative, e.g. a function type `A => B => C` is the same as `A => (B => C)`. This allows us to support currying.
+A function type `A -> B` is the type of an anonymous function with input `A` and output `B`. The `->` symbol is right-associative, e.g. a function type `A -> B -> C` is the same as `A -> (B -> C)`. This allows us to support currying.
 
 
 ## Tuples
 
 A tuple type `(A1, A2, ..., An)` is the product type of types `A1` through `An`. The values of a tuple are called elements. The ith element can be accessed as an attribute `_i`. 
 
-Elements may be named, in which case the type is denoted as `(a1: A1, a2: A2, ..., an: An)`. Instead of accessing the ith element with `_i`, it is accessible via `ai`. Such a type is called *named* tuple.
-
 
 ## Unions
 
 
+
+## Maps
+
+Underlying type of classes.
 
 
 
@@ -27,11 +29,11 @@ A nominal is a type with a single inhabiting value of the same name. In combinat
 
 A nominal can be defined as follows:
 
-    nominal Red
+    :Red
 
 They can also be defined in-place, for example in sum types:
 
-    type Color = nominal Red | nominal Green | nominal Blue
+    type Color = :Red | :Green | :Blue
 
 
 ### Application: Enumerations

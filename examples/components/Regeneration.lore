@@ -1,12 +1,12 @@
 
 class Regeneration {
-  owner :: _ has HealthState
+  owner :: +HealthState
   amount :: Float
   interval :: Int
   private mut counter :: Int = 1
 
   // The `action` qualifier allows the attribute to change the state of the class.
-  action tick :: Unit -> Unit = {
+  action tick () :: Unit -> Unit = {
     if counter `mod` interval == 0 {
       owner.heal amount
     }

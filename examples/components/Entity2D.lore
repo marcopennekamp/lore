@@ -1,5 +1,5 @@
 
 class Entity2D {
-  :: Position // Component declaration.
-  :: Sprite
+  component Position
+  component Sprite
 }
