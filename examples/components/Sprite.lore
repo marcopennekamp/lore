@@ -1,5 +1,5 @@
 
-class Sprite {
-  owner :: +Position
-  mut image :: Image
+schema Sprite {
+  owner: +Position
+  mut image: Image
 }

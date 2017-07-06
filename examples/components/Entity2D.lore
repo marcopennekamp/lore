@@ -1,5 +1,5 @@
 
-class Entity2D {
+schema Entity2D {
   component Position
   component Sprite
 }

@@ -1,11 +1,8 @@
 
-class HealthState {
-  mut health :: Int
-
-  // Attributes with values are not included in the generated constructor!
-  action heal amount :: Int -> Unit = { health += amount }
-
-  // An export requires any owner of this component to import the specified name.
-  // This allows us to use some important imports with _ has X typings.
-  action damage amount :: Int -> Unit = { health += amount }
+schema HealthState {
+  mut health: Int
 }
+
+// Declaring the first parameter as mut will allow mutable fields to be mutated.
+function heal(mut hs: HealthState, amount: Int): Unit = { hs.health += amount }
+function damage(mut hs: HealthState, amount: Int): Unit = { hs.health -= amount }

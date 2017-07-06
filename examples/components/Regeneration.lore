@@ -1,15 +1,15 @@
 
-class Regeneration {
-  owner :: +HealthState
-  amount :: Float
-  interval :: Int
-  private mut counter :: Int = 1
+schema Regeneration {
+  owner: +HealthState
+  amount: Float
+  interval: Int
+  private mut counter: Int = 1 // private hides the field from any function defined outside the current file.
+}
 
-  // The `action` qualifier allows the attribute to change the state of the class.
-  action tick () :: Unit -> Unit = {
-    if counter `mod` interval == 0 {
-      owner.heal amount
-    }
-    counter += 1
+function tick(mut r: Regeneration): Unit = {
+  if r.counter `mod` r.interval == 0 {
+    // Any function that takes a value as its first argument can be called by using the dot notation.
+    r.owner.HealthState.heal(amount)
   }
+  r.counter += 1
 }
