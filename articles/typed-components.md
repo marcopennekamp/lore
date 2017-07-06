@@ -37,7 +37,7 @@ Components can be declared in any class where attributes can be declared (althou
 
 Thus, the type `A` has the component `Part`. The component can be accessed like an attribute, `a.Part`, with the type name as the accessor name.
 
-The type `A` satisfies the typing `A +Part`, which means that `Part` is a component of `A`. The `+` (pronounced has) type qualifier is defined in the following sense: Let C<sub>1</sub>, ..., C<sub>n</sub> be the components of a type `A`. Then `A` satisfies the type <code>A +C<sub>1</sub> ... +C<sub>n</sub></code>.
+The type `A` satisfies the typing `A +Part`, which means that `Part` is a component of `A`. The `+` (pronounced "has") type qualifier is defined in the following sense: Let C<sub>1</sub>, ..., C<sub>n</sub> be the components of a type `A`. Then `A` satisfies the type <code>A +C<sub>1</sub> ... +C<sub>n</sub></code>.
 
 
 ### Component naming and multiple components of the same type
