@@ -14,3 +14,7 @@ project/plugins/project/
 
 # IntelliJ Idea
 .idea
+
+# LaTeX
+.texpadtmp
+main.pdf

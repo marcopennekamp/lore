@@ -1,0 +1,26 @@
+\chapter{Multi-Functions}
+
+Functions of the same name belong to an accordingly named set of functions. Such a function set is called a \textit{multi-function}. A function that belongs to a multi-function is also called an \textit{instance} of that multi-function. Multi-functions can be called like ordinary functions. The actual function being called is chosen at runtime as the function that is most specific regarding the subtyping relation comparing the actual (dynamic) argument types with its parameter types. We call this kind of invocation \textit{multiple dispatch}. 
+
+Multi-Functions are useful, because they allow functions to be implemented with varying levels of generality. They lend themselves well to a varying ensemble of features and concerns:
+\begin{itemize}
+	\item \textbf{Ad-hoc Polymorphism} is supported natively, since multiple dispatch is a superset of single dispatch, which is used to implement ad-hoc polymorphism in object-oriented languages.
+	\item \textbf{Intersection Types} composed of component, interface or semantic types can be used to define a sufficiently specific type for a given operation. Furthermore, varying degrees of increasingly specific intersection types can be used to specialise a function in different ways. This sufficiently specific type can be used to implement a function which would otherwise have been confined to a class hierarchy in object-oriented programming, thus sacrificing flexibility.
+	\item \textbf{Dynamic specialisation and generalisation} of values can be used to specialise or generalise\footnote{Of course supposing that the generalised type still satisfies the type boundaries that its value is subject to.} the type of a value at \textit{runtime}. Since the actual function being called is chosen at runtime when calling a multi-function, we can write functions that implement an operation for a given specialised type.
+	\item \textbf{Extendability} is improved by the ability to define multi-functions \textit{across} files and compilation units. This supports features such as C$^\sharp$'s extension methods or Scala's implicit classes in a more concise way.
+\end{itemize}
+
+\noindent In this chapter, we will look at the formal definition of functions and multi-functions and specify the syntax of function declarations and definitions. After laying out the basics, we will define the rules of multiple dispatch and examine edge cases. We will see how ad-hoc polymorphism, intersection types and dynamic specialisation/generalisation can be used as proposed above.
+
+
+
+\section{Functions and Multi-Functions}
+
+\begin{definition}
+	A function $f$ is a mapping from an input type $\tau_1$ to an output type $\tau_2$.
+\end{definition}
+
+
+
+\todo{Intersections with semantic types can be used to define a state, as used in Papyrus script (https://www.creationkit.com/index.php?title=States_(Papyrus)).}
+
