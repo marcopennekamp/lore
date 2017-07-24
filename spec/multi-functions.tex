@@ -10,15 +10,36 @@ Multi-Functions are useful, because they allow functions to be implemented with 
 	\item \textbf{Extendability} is improved by the ability to define multi-functions \textit{across} files and compilation units. This supports features such as C$^\sharp$'s extension methods or Scala's implicit classes in a more concise way.
 \end{itemize}
 
-\noindent In this chapter, we will look at the formal definition of functions and multi-functions and specify the syntax of function declarations and definitions. After laying out the basics, we will define the rules of multiple dispatch and examine edge cases. We will see how ad-hoc polymorphism, intersection types and dynamic specialisation/generalisation can be used as proposed above.
+\noindent In this chapter, we will look at the the syntax of function declarations and define functions and multi-functions. After laying out the basics, we will define the rules of multiple dispatch and examine edge cases. We will see how ad-hoc polymorphism, intersection types and dynamic specialisation/generalisation can be used as proposed above.
 
 
 
 \section{Functions and Multi-Functions}
 
-\begin{definition}
-	A function $f$ is a mapping from an input type $\tau_1$ to an output type $\tau_2$.
-\end{definition}
+\begin{grammar}
+\nt{func-def} &\produce \rh{\nt{func-head} = \nt{expr}} \\
+\nt{func-head} &\produce \rh{\tn{function} \nt{id}\lpar\nt{func-params}\rpar [\tn{:} \nt{type}]\once} \\
+\nt{func-params} &\produce \rh{\nt{func-param} [\tn{,} \nt{func-param}]\onceplus} \\
+&\alt \rh{\nt{func-param}\once} \\
+\nt{func-param} &\produce \rh{\nt{id} [\tn{:} \nt{type}]\once}
+\end{grammar}
+
+\noindent A \textbf{function} $f$ is a mapping from an input type $in(f)$ to an output type $out(f)$. Each function has a name, which we denote $name(f)$. Note that the $\nt{id}$ of a function is not necessarily equal to its full name.\todo{Read more here...} The body $body(f)$ of the function is defined by an expression $e = body(f)$, which must be a subtype of $out(f)$.
+
+The input type of a function $f$ is defined as follows: Let $[\tau_1, ..., \tau_n]$ be the list of parameter types for each parameter $p_i \in \{ 1, ..., n \}$. Then we have $in(f) = (\tau_1, ..., \tau_n)$, i.e. an n-tuple over the list of parameter types.
+
+We denote the set of all possible functions as $\textsc{Func}$.
+
+\bigskip
+
+\noindent A \textbf{multi-function} $\mathcal{F}$ is defined as follows, where $name(\mathcal{F})$ denotes its name:
+\begin{equation*}
+	\mathcal{F} = \{ f \in \textsc{Func} \mid name(f) = name(\mathcal{F}) \}
+\end{equation*}
+
+\noindent That is, a multi-function is a set of functions that share the same name. A function $f \in \mathcal{F}$ is also called an \textbf{instance} of $\mathcal{F}$.
+
+
 
 
 

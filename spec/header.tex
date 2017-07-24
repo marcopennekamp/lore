@@ -1,6 +1,9 @@
 % Mathematics.
 \usepackage{amsmath, amssymb}
 
+% For using the lstlisting environment.
+\usepackage{listings} 
+
 % Removes TODO notes from the Latex output, but supports LaTeX editors that
 % show TODO notes in a list or window.
 \newcommand{\todo}[1]{}
@@ -12,3 +15,17 @@
 \newtheorem{theorem}{Theorem}[section]
 \theorembodyfont{\upshape}
 \newtheorem{definition}[theorem]{Definition}
+
+% A typewriter/mathematics environment for grammar definitions.
+\newenvironment{grammar}{\csname align*\endcsname}{\endalign}
+%\lstnewenvironment{grammar}[0]{\renewcommand\lstlistingname{Grammar}\lstset{mathescape=true}}{}
+\newcommand{\produce}[0]{\rightarrow}
+\newcommand{\nt}[1]{\text{\underline{#1}}}
+\newcommand{\tn}[1]{\texttt{#1}}
+\newcommand{\alt}[0]{\hspace{0.15cm}\mid\hspace{0.1cm}}
+\newcommand{\rh}[1]{\text{#1}}
+\newcommand{\lpar}[0]{\texttt{(}}
+\newcommand{\rpar}[0]{\texttt{)}}
+\newcommand{\once}[0]{$^?$}
+\newcommand{\onceplus}[0]{$^+$}
+\newcommand{\many}[0]{$^*$}
