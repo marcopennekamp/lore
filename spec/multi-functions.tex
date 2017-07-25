@@ -1,6 +1,6 @@
 \chapter{Multi-Functions}
 
-Functions of the same name belong to an accordingly named set of functions. Such a function set is called a \textit{multi-function}. A function that belongs to a multi-function is also called an \textit{instance} of that multi-function. Multi-functions can be called like ordinary functions. The actual function being called is chosen at runtime as the function that is most specific in the set of functions fulfilling the contravariant subtyping relation comparing the actual (dynamic) argument types with each function's parameter types. We call this kind of invocation \textit{multiple dispatch}. 
+Functions of the same name belong to an accordingly named set of functions. Such a function set is called a \textit{multi-function}. A function that belongs to a multi-function is also called an \textit{instance} of that multi-function. Multi-functions can be called like ordinary functions. The actual function being called is chosen at runtime as the function that is most specific in the set of functions fulfilling the subtyping relation comparing the actual (dynamic) argument types with each function's parameter types. We call this kind of invocation \textit{multiple dispatch}. 
 
 Multi-Functions are useful, because they allow functions to be implemented with varying levels of generality. They lend themselves well to a varying ensemble of features and concerns:
 \begin{itemize}
@@ -73,16 +73,20 @@ function concat(a: LinkedList[a], b: LinkedList[a]) = ... // f3
 
 \section{Multiple Dispatch}
 
-To define multiple dispatch formally, we first need an operation that allows us to reduce the set of multi-function instances to only those functions that could be called with a given tuple of arguments, represented by a type bound.
+To define multiple dispatch formally, we first need an operation that allows us to reduce the set of multi-function instances to only those functions that could be called with a given tuple of arguments.
 
-\todo{Shouldn't we dispatch on the whole function type (including the output) to check if the covariant return type also satisfies the type bound? Or do we enforce that output types are covariant in respect to all possible function definitions?}
+\todo{What about output types?}
 
-We define a function $\mffit : \typeset \rightarrow \mfset \rightarrow \powerset{\funcset}$ as follows:
+\todo{How can we support contravariant parameter types seen in object-oriented programming? Should we allow the declaration of "non-dispatch" parameters that won't be used for multiple dispatch and can thus be contravariant?}
+
+\medskip
+
+\noindent We define a function $\mffit : \typeset \rightarrow \mfset \rightarrow \powerset{\funcset}$ as follows:
 \begin{equation*}
-	\mffit(b)((\wildcard, F)) = \{ f \in F \mid \funcin(f) \geq b \}
+	\mffit(t)((\wildcard, F)) = \{ f \in F \mid \funcin(f) \geq t \}
 \end{equation*}
 
-\noindent That is, we look at all functions $f \in F$ and choose only those whose input type is a supertype of the given type bound $b$. We choose the supertyping relation and not the subtyping relation, because function inputs are contravariant and thus the subtyping relation regarding function types is reversed in the input.
+\noindent That is, we look at all functions $f \in F$ and choose only those whose input type is a supertype of the given argument type $t$. We choose the supertyping relation and not the subtyping relation, because a function may be called with more specific argument types than the function expects.
 
 \begin{example}
 	Suppose we have the multi-function $\mathcal{F}_\idval{concat}$. We get the following results when applying $\mffit$:
@@ -110,6 +114,19 @@ We define a function $\mffit : \typeset \rightarrow \mfset \rightarrow \powerset
 	
 	\noindent We choose all three functions, because $\type{ToString} > \type{List[a]} > \type{LinkedList[a]}$ and $ \type{LinkedList[a]} > \type{LinkedList[a] \& Sorted}$. The latter is true, because the intersection with $\type{Sorted}$ makes the $\type{LinkedList[a]}$ type more specific.
 \end{example}
+
+
+\noindent Let $\mfmin : \powerset{\funcset} \rightarrow \powerset{\funcset}$ be the function defined as follows:
+\begin{align*}
+	\mfmin(B) = \{ f \in B \mid (\funcin(f') \comparable \funcin(f)) \implies \funcin(f') \geq \funcin(f) \text{, for } f' \in B \}
+\end{align*}
+
+\noindent That is, $\mfmin$ is a function that extracts the most specific functions from a multi-function fit. Note that there may be multiple such functions, if their input types are not comparable, or none at all, if the fit is empty. We will explore both cases in the next example.
+
+\begin{example}
+	
+\end{example}
+
 
 
 
