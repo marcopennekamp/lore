@@ -1,6 +1,6 @@
 \chapter{Multi-Functions}
 
-Functions of the same name belong to an accordingly named set of functions. Such a function set is called a \textit{multi-function}. A function that belongs to a multi-function is also called an \textit{instance} of that multi-function. Multi-functions can be called like ordinary functions. The actual function being called is chosen at runtime as the function that is most specific regarding the subtyping relation comparing the actual (dynamic) argument types with its parameter types. We call this kind of invocation \textit{multiple dispatch}. 
+Functions of the same name belong to an accordingly named set of functions. Such a function set is called a \textit{multi-function}. A function that belongs to a multi-function is also called an \textit{instance} of that multi-function. Multi-functions can be called like ordinary functions. The actual function being called is chosen at runtime as the function that is most general in the set of functions fulfilling the subtyping relation comparing the actual (dynamic) argument types with each function's parameter types. We call this kind of invocation \textit{multiple dispatch}. 
 
 Multi-Functions are useful, because they allow functions to be implemented with varying levels of generality. They lend themselves well to a varying ensemble of features and concerns:
 \begin{itemize}
@@ -56,14 +56,14 @@ function add(a: Int, b: Int): Int = a + b
 	F = \{ f \in \funcset \mid \funcname(f) = n \}
 \end{equation*}
 
-\noindent That is, a multi-function is a set of functions that share the same name. By convention, we sometimes write $f \in \mathcal{F}$ for $f \in F$. A function $f \in \mathcal{F}$ is also called an \textbf{instance} of $\mathcal{F}$.
+\noindent That is, a multi-function is a set of functions that share the same name. By convention, we sometimes write $f \in \mathcal{F}$ for $f \in F$. A function $f \in \mathcal{F}$ is also called an \textbf{instance} of $\mathcal{F}$. We denote the set of multi-functions as $\mfset$.
 
 \begin{example}
 	Consider the following function definitions:
 	\begin{lstlisting}
 function concat(a: ToString, b: ToString) = ...
-function concat(a: List[A], b: List[A]) = ...
-function concat(a: LinkedList[A], b: LinkedList[B]) = ...
+function concat(a: List[a], b: List[a]) = ...
+function concat(a: LinkedList[a], b: LinkedList[a]) = ...
 	\end{lstlisting}
 	
 	\noindent Assuming no other function with the name \idval{concat} exists, we have the multi-function $\mathcal{F}_\idval{concat} = (\idval{concat}, F)$, where $F$ is the set of \idval{concat} functions defined above.
@@ -71,6 +71,16 @@ function concat(a: LinkedList[A], b: LinkedList[B]) = ...
 
 
 
+\section{Multiple Dispatch}
+
+To define multiple dispatch formally, we first need an operation that allows us to reduce the set of multi-function instances to only those functions that fit a given type bound.
+
+We define a function $\mffit : \typeset \rightarrow \mfset \rightarrow \powerset{\funcset}$ as follows:
+\begin{equation*}
+	\mffit(b)((\wildcard, F)) = \{ f \in F \mid \funcin(f) \leq b \}
+\end{equation*}
+
+\noindent That is, we look at all functions $f \in F$ and choose only those whose input type is a subtype of the given type bound $b$.
 
 
 
