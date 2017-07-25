@@ -1,8 +1,46 @@
 % Mathematics.
 \usepackage{amsmath, amssymb}
 
+% Pretty monospace font.
+\usepackage{inconsolata}
+
 % For using the lstlisting environment.
-\usepackage{listings} 
+\usepackage{listings}
+\lstset{basicstyle=\small\ttfamily,breaklines=true} % Set listings font to inconsolata (the default tt-font after the usepackage for inconsolata.
+
+% Example environment.
+% Thanks to https://tex.stackexchange.com/a/265697.
+\usepackage{fontspec}
+\usepackage[most]{tcolorbox}
+\usepackage{xparse}
+\newcounter{example}
+\NewDocumentEnvironment{example}{ O{} }
+{
+\colorlet{colexam}{black} % Global example color
+\newtcolorbox[use counter=example]{examplebox}{%
+    % Example Frame Start
+    empty,% Empty previously set parameters
+    title={\tiny Example \\ \tiny \nobreakspace},% use \thetcbcounter to access the example counter text
+    % Attaching a box requires an overlay
+    attach boxed title to top left,
+       % Ensures proper line breaking in longer titles
+       minipage boxed title,
+    % (boxed title style requires an overlay)
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=3mm,overlay={}},
+    coltitle=colexam,fonttitle=\bfseries,
+    before=\par\medskip\noindent,parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
+       before upper=\csname @totalleftmargin\endcsname0pt, % Use instead of parbox=true. This ensures parskip is inherited by box.
+    % Handles box when it exists on one page only
+    overlay unbroken={\draw[colexam,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    % Handles multipage box: first page
+    overlay first={\draw[colexam,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    % Handles multipage box: middle page
+    overlay middle={\draw[colexam,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    % Handles multipage box: last page
+    overlay last={\draw[colexam,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },%
+    }
+\begin{examplebox}}
+{\end{examplebox}\endlist}
 
 % Removes TODO notes from the Latex output, but supports LaTeX editors that
 % show TODO notes in a list or window.
@@ -15,6 +53,11 @@
 \newtheorem{theorem}{Theorem}[section]
 \theorembodyfont{\upshape}
 \newtheorem{definition}[theorem]{Definition}
+
+% Commands for examples.
+\newcommand{\idval}[1]{\text{\texttt{#1}}}
+\newcommand{\type}[1]{\text{#1}}
+\newcommand{\expr}[1]{\text{\texttt{#1}}}
 
 % A typewriter/mathematics environment for grammar definitions.
 \newenvironment{grammar}{\csname align*\endcsname}{\endalign}
@@ -29,3 +72,10 @@
 \newcommand{\once}[0]{$^?$}
 \newcommand{\onceplus}[0]{$^+$}
 \newcommand{\many}[0]{$^*$}
+
+% Commands and operators for functions and multi-functions.
+\newcommand{\funcset}[0]{\textsc{Func}} % The set of all functions.
+\DeclareMathOperator{\funcname}{name} % A function name.
+\DeclareMathOperator{\funcin}{in} % The parameter type of a function.
+\DeclareMathOperator{\funcout}{out} % The return type of a function.
+\DeclareMathOperator{\funcbody}{body} % The body of a function.

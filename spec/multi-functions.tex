@@ -24,20 +24,41 @@ Multi-Functions are useful, because they allow functions to be implemented with 
 \nt{func-param} &\produce \rh{\nt{id} [\tn{:} \nt{type}]\once}
 \end{grammar}
 
-\noindent A \textbf{function} $f$ is a mapping from an input type $in(f)$ to an output type $out(f)$. Each function has a name, which we denote $name(f)$. Note that the $\nt{id}$ of a function is not necessarily equal to its full name.\todo{Read more here...} The body $body(f)$ of the function is defined by an expression $e = body(f)$, which must be a subtype of $out(f)$.
+\noindent A \textbf{function} $f$ is a mapping from an input type $\funcin(f)$ to an output type $\funcout(f)$. Each function has a name, which we denote $\funcname(f)$. Note that the $\nt{id}$ of a function is not necessarily equal to its full name.\todo{Read more here...} The $\funcbody(f)$ of a function is an expression $e = \funcbody(f)$. The type of $e$ must be a subtype of $\funcout(f)$.
 
-The input type of a function $f$ is defined as follows: Let $[\tau_1, ..., \tau_n]$ be the list of parameter types for each parameter $p_i \in \{ 1, ..., n \}$. Then we have $in(f) = (\tau_1, ..., \tau_n)$, i.e. an n-tuple over the list of parameter types.
+The input type of a function $f$ is defined as follows: Let $[\tau_1, ..., \tau_n]$ be the list of parameter types for each parameter $p_i \in \{ 1, ..., n \}$. Then we have $\funcin(f) = (\tau_1, ..., \tau_n)$, i.e. an n-tuple over the list of parameter types.
 
-We denote the set of all possible functions as $\textsc{Func}$.
+We denote the set of all possible functions as $\funcset$.
 
-\bigskip
+\begin{example}
+	Consider the following definition for a function add:
+	\begin{lstlisting}
+function add(a: Int, b: Int): Int = a + b
+	\end{lstlisting}
+	
+	\noindent We will call the defined function $f$. We have the following properties:
+	\begin{align*}
+		\funcname(f) &= \idval{add} \\
+		\funcin(f) &= \type{(Int, Int)} \\
+		\funcout(f) &= \type{Int} \\
+		\funcbody(f) &= \expr{a + b}
+	\end{align*}
+\end{example}
 
-\noindent A \textbf{multi-function} $\mathcal{F}$ is defined as follows, where $name(\mathcal{F})$ denotes its name:
+\noindent A \textbf{multi-function} is a 2-tuple $\mathcal{F} = (n, F)$ where:
+\begin{itemize}
+	\item $n$ is the name of the multi-function.
+	\item $F$ is the set of functions belonging to the multi-function.
+\end{itemize}
+
+\noindent We define $F$ as the following set:
 \begin{equation*}
-	\mathcal{F} = \{ f \in \textsc{Func} \mid name(f) = name(\mathcal{F}) \}
+	F = \{ f \in \funcset \mid \funcname(f) = n \}
 \end{equation*}
 
 \noindent That is, a multi-function is a set of functions that share the same name. A function $f \in \mathcal{F}$ is also called an \textbf{instance} of $\mathcal{F}$.
+
+
 
 
 
