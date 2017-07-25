@@ -1,6 +1,6 @@
 \chapter{Multi-Functions}
 
-Functions of the same name belong to an accordingly named set of functions. Such a function set is called a \textit{multi-function}. A function that belongs to a multi-function is also called an \textit{instance} of that multi-function. Multi-functions can be called like ordinary functions. The actual function being called is chosen at runtime as the function that is most general in the set of functions fulfilling the subtyping relation comparing the actual (dynamic) argument types with each function's parameter types. We call this kind of invocation \textit{multiple dispatch}. 
+Functions of the same name belong to an accordingly named set of functions. Such a function set is called a \textit{multi-function}. A function that belongs to a multi-function is also called an \textit{instance} of that multi-function. Multi-functions can be called like ordinary functions. The actual function being called is chosen at runtime as the function that is most specific in the set of functions fulfilling the contravariant subtyping relation comparing the actual (dynamic) argument types with each function's parameter types. We call this kind of invocation \textit{multiple dispatch}. 
 
 Multi-Functions are useful, because they allow functions to be implemented with varying levels of generality. They lend themselves well to a varying ensemble of features and concerns:
 \begin{itemize}
@@ -61,26 +61,55 @@ function add(a: Int, b: Int): Int = a + b
 \begin{example}
 	Consider the following function definitions:
 	\begin{lstlisting}
-function concat(a: ToString, b: ToString) = ...
-function concat(a: List[a], b: List[a]) = ...
-function concat(a: LinkedList[a], b: LinkedList[a]) = ...
+function concat(a: ToString, b: ToString) = ... // f1
+function concat(a: List[a], b: List[a]) = ... // f2
+function concat(a: LinkedList[a], b: LinkedList[a]) = ... // f3
 	\end{lstlisting}
 	
-	\noindent Assuming no other function with the name \idval{concat} exists, we have the multi-function $\mathcal{F}_\idval{concat} = (\idval{concat}, F)$, where $F$ is the set of \idval{concat} functions defined above.
+	\noindent Assuming no other function with the name \idval{concat} exists, we have the multi-function $\mathcal{F}_\idval{concat} = (\idval{concat}, F)$, where $F = \{ f_1, f_2, f_3 \}$ is the set of \idval{concat} functions defined above.
 \end{example}
 
 
 
 \section{Multiple Dispatch}
 
-To define multiple dispatch formally, we first need an operation that allows us to reduce the set of multi-function instances to only those functions that fit a given type bound.
+To define multiple dispatch formally, we first need an operation that allows us to reduce the set of multi-function instances to only those functions that could be called with a given tuple of arguments, represented by a type bound.
+
+\todo{Shouldn't we dispatch on the whole function type (including the output) to check if the covariant return type also satisfies the type bound? Or do we enforce that output types are covariant in respect to all possible function definitions?}
 
 We define a function $\mffit : \typeset \rightarrow \mfset \rightarrow \powerset{\funcset}$ as follows:
 \begin{equation*}
-	\mffit(b)((\wildcard, F)) = \{ f \in F \mid \funcin(f) \leq b \}
+	\mffit(b)((\wildcard, F)) = \{ f \in F \mid \funcin(f) \geq b \}
 \end{equation*}
 
-\noindent That is, we look at all functions $f \in F$ and choose only those whose input type is a subtype of the given type bound $b$.
+\noindent That is, we look at all functions $f \in F$ and choose only those whose input type is a supertype of the given type bound $b$. We choose the supertyping relation and not the subtyping relation, because function inputs are contravariant and thus the subtyping relation regarding function types is reversed in the input.
+
+\begin{example}
+	Suppose we have the multi-function $\mathcal{F}_\idval{concat}$. We get the following results when applying $\mffit$:
+	\begin{equation*}
+		\mffit(\type{(String, String)})(\mathcal{F}_\idval{concat}) = \{ f_1 \}
+	\end{equation*}	
+	
+	\noindent Only $f_1$ is chosen, because $\type{List[a]}$ is not a supertype of $\type{String}$ and neither is $\type{LinkedList[a]}$. $\type{ToString}$ is a supertype of $\type{String}$, since there is an implementation of $\mathtt{toString}$ for $\type{String}$. 
+	
+	\medskip
+	
+	\noindent Consider the next application of $\mffit$:
+	\begin{equation*}
+		\mffit(\type{(LinkedList[Int], List[Int])})(\mathcal{F}_\idval{concat}) = \{ f_1, f_2 \}
+	\end{equation*}
+	
+	\noindent Here, we choose $f_1$ and $f_2$, because the input types of both functions are supertypes of the argument types. $f_3$ is not chosen, since $\type{LinkedList[a]} \not\geq \type{List[a]}$ in the second argument type.
+	
+	\medskip
+	
+	\noindent Finally, let's consider the following application:
+	\begin{equation*}
+		\mffit(\type{(LinkedList[Int], LinkedList[Int] \& Sorted)})(\mathcal{F}_\idval{concat}) = \{ f_1, f_2, f_3 \}
+	\end{equation*}
+	
+	\noindent We choose all three functions, because $\type{ToString} > \type{List[a]} > \type{LinkedList[a]}$ and $ \type{LinkedList[a]} > \type{LinkedList[a] \& Sorted}$. The latter is true, because the intersection with $\type{Sorted}$ makes the $\type{LinkedList[a]}$ type more specific.
+\end{example}
 
 
 
