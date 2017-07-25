@@ -18,3 +18,7 @@ project/plugins/project/
 # LaTeX
 .texpadtmp
 main.pdf
+*.aux
+*.toc
+*.thm
+*.synctex.gz
