@@ -51,12 +51,23 @@ function add(a: Int, b: Int): Int = a + b
 	\item $F$ is the set of functions belonging to the multi-function.
 \end{itemize}
 
-\noindent We define $F$ as the following set:
+\noindent We define $F$ as follows:
 \begin{equation*}
 	F = \{ f \in \funcset \mid \funcname(f) = n \}
 \end{equation*}
 
-\noindent That is, a multi-function is a set of functions that share the same name. A function $f \in \mathcal{F}$ is also called an \textbf{instance} of $\mathcal{F}$.
+\noindent That is, a multi-function is a set of functions that share the same name. By convention, we sometimes write $f \in \mathcal{F}$ for $f \in F$. A function $f \in \mathcal{F}$ is also called an \textbf{instance} of $\mathcal{F}$.
+
+\begin{example}
+	Consider the following function definitions:
+	\begin{lstlisting}
+function concat(a: ToString, b: ToString) = ...
+function concat(a: List[A], b: List[A]) = ...
+function concat(a: LinkedList[A], b: LinkedList[B]) = ...
+	\end{lstlisting}
+	
+	\noindent Assuming no other function with the name \idval{concat} exists, we have the multi-function $\mathcal{F}_\idval{concat} = (\idval{concat}, F)$, where $F$ is the set of \idval{concat} functions defined above.
+\end{example}
 
 
 
