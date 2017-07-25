@@ -31,13 +31,13 @@
     before=\par\medskip\noindent,parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
        before upper=\csname @totalleftmargin\endcsname0pt, % Use instead of parbox=true. This ensures parskip is inherited by box.
     % Handles box when it exists on one page only
-    overlay unbroken={\draw[colexam,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay unbroken={\draw[colexam,line width=1.5pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
     % Handles multipage box: first page
-    overlay first={\draw[colexam,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay first={\draw[colexam,line width=1.5pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
     % Handles multipage box: middle page
-    overlay middle={\draw[colexam,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay middle={\draw[colexam,line width=1.5pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
     % Handles multipage box: last page
-    overlay last={\draw[colexam,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },%
+    overlay last={\draw[colexam,line width=1.5pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },%
     }
 \begin{examplebox}}
 {\end{examplebox}\endlist}
