@@ -61,9 +61,9 @@ function add(a: Int, b: Int): Int = a + b
 \begin{example}
 	Consider the following function definitions:
 	\begin{lstlisting}
-function concat(a: ToString, b: ToString) = ... // f1
-function concat(a: List[a], b: List[a]) = ... // f2
-function concat(a: LinkedList[a], b: LinkedList[a]) = ... // f3
+function concat(x: ToString, y: ToString) = ... // f1
+function concat(x: List[a], y: List[a]) = ... // f2
+function concat(x: LinkedList[a], y: LinkedList[a]) = ... // f3
 	\end{lstlisting}
 	
 	\noindent Assuming no other function with the name \idval{concat} exists, we have the multi-function $\mathcal{F}_\idval{concat} = (\idval{concat}, F)$, where $F = \{ f_1, f_2, f_3 \}$ is the set of \idval{concat} functions defined above.
