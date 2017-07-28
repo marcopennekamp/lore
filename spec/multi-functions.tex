@@ -79,14 +79,16 @@ To define multiple dispatch formally, we first need an operation that allows us 
 
 \todo{How can we support contravariant parameter types seen in object-oriented programming? Should we allow the declaration of "non-dispatch" parameters that won't be used for multiple dispatch and can thus be contravariant?}
 
+\todo{We should look at type parameters and include them in the dispatch. See: https://docs.julialang.org/en/release-0.4/manual/methods/#parametric-methods}
+
 \medskip
 
 \noindent We define a function $\mffit : \typeset \rightarrow \mfset \rightarrow \powerset{\funcset}$ as follows:
 \begin{equation*}
-	\mffit(t)((\wildcard, F)) = \{ f \in F \mid \funcin(f) \geq t \}
+	\mffit(t)(\mathcal{F}) = \{ f \in \mathcal{F} \mid \funcin(f) \geq t \}
 \end{equation*}
 
-\noindent That is, we look at all functions $f \in F$ and choose only those whose input type is a supertype of the given argument type $t$. We choose the supertyping relation and not the subtyping relation, because a function may be called with more specific argument types than the function expects.
+\noindent That is, we look at all functions $f \in F$ and choose only those whose input type is a supertype of the given argument type $t$. We can not choose functions that have a more specific input type than the given argument type, because we need to call that function with valid arguments. We take functions with a more general input type into account, because such a function can be called with a subtype of the input type, i.e. with more specific arguments than needed.
 
 \begin{example}
 	Suppose we have the multi-function $\mathcal{F}_\idval{concat}$. We get the following results when applying $\mffit$:
@@ -124,10 +126,44 @@ To define multiple dispatch formally, we first need an operation that allows us 
 \noindent That is, $\mfmin$ is a function that extracts the most specific functions from a multi-function fit. Note that there may be multiple such functions, if their input types are not comparable, or none at all, if the fit is empty. We will explore both cases in the next example.
 
 \begin{example}
+	We will first look at an example with the multi-function $\mathcal{F}_\idval{concat}$. Suppose we have a fit $B = \{ f_1, f_2 \}$. We apply $\mfmin$ as follows:
+	\begin{equation*}
+		Min(\{ f_1, f_2 \}) = \{ f_2 \} \text{, because } f_1 > f_2
+	\end{equation*}
 	
+	\noindent A set with exactly one element is the result that we need to go through with multiple dispatch. If the set was empty, we would not have found a suitable function to call. Perhaps even worse, if the set contains more than one element, we have an ambiguity and can not decide which function should be called. The following example shows that such an ambiguity exists.
+	
+	\bigskip
+	
+	\noindent Assume we have the following two functions:
+	\begin{lstlisting}
+function area(x: Circle) = pi * x.radius * x.radius // f1
+function area(x: +BoundingBox) = { // f2
+  val b = x.BoundingBox
+  val width = b.maxX - b.minX
+  val height = b.maxY - b.minY
+  width * height
+} 
+	\end{lstlisting}
+	
+	\noindent That is, we can calculate the area both for a circle and for an object that has a BoundingBox component.\footnote{This is not a particularly nice example, since a BoundingBox should not be used to calculate an area, but let's just say that some incredibly wacky programmer decided to go with it.} We call the associated multi-function $\mathcal{F}_{\idval{area}}$. Now, what about a Circle that has a BoundingBox as a component? In other words, suppose we call the multi-function $\mathcal{F}_{\idval{area}}$ with an argument of the type $t = \type{Circle \& +BoundingBox}$. We have the following properties:
+	\begin{align*}
+		B = Fit(t)(\mathcal{F}_{\idval{area}}) &= \{ f_1, f_2 \} \\
+		Min(B) &= \{ f_1, f_2 \}
+	\end{align*}
+	
+	\noindent The first result comes from the fact that for any types \type{a} and \type{b}, it holds that $\type{a} \geq \type{a \& b}$, and thus $\type{Circle} \geq \type{Circle \& +BoundingBox}$, as well as $\type{+BoundingBox} \geq \type{Circle \& +BoundingBox}$.
+	
+	The second result is due to the fact that \type{Circle} and \type{+BoundingBox} are \textit{incomparable}, i.e. $\type{Circle} \incomparable +BoundingBox$, since the two types are neither equal, nor is one less or greater than the other.
+	
+	Since the most specific function is not unique, we should abort the compilation with an error (preferably) or even exit the program with a runtime error. We could call all associated functions, but this is likely not intended by the developer (and would thus only make sense if we make the programmer use a keyword at the call-site to switch the feature on), it's also not clear how to aggregate the return types and finally the call order of the functions is not determined.
+	
+	There are other instances of such an ambiguity, especially involving multiple function parameters (e.g. \type{(Int, a)} vs. \type{(a, Int)}), but the example above should be sufficient to illustrate the concept.
+	
+	\bigskip
+	
+	\noindent In closing the example, we will look at the conditions needed to produce an empty fit. Let's assume we calculate the fit for a type $t = \type{Rectangle}$ in the multi-function $\mathcal{F}_{\idval{area}}$. Provided that Rectangle does not have a BoundingBox component, the fit will be empty, because neither \type{Circle} nor \type{+BoundingBox} are a supertype of \type{Rectangle}.
 \end{example}
-
-
 
 
 
