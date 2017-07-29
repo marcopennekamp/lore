@@ -15,7 +15,6 @@ We are currently writing the language specification. No working software has bee
 We are planning to support the following targets:
 * Javascript, because of its ubiquity
 * Lua, because of its heavy use in game development
-* SourceScript3, for shits and giggles
 
 Both targets have the additional advantage that they are easy to interface with and each have an excellent VM/JIT implementation avaliable for comfortable performance.
 
