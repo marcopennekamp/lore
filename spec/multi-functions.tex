@@ -80,6 +80,8 @@ To define multiple dispatch formally, we first need an operation that allows us 
 
 \todo{We should look at type parameters and include them in the dispatch. See: https://docs.julialang.org/en/release-0.4/manual/methods/#parametric-methods}
 
+\todo{How do we treat functions with the same name but a different amount of parameters?}
+
 \begin{definition}
 	We define a function $\mffit : \typeset \rightarrow \mfset \rightarrow \powerset{\funcset}$ as follows:
 	\begin{equation*}
@@ -164,6 +166,25 @@ There are other instances of such an ambiguity, especially involving multiple fu
 	
 \noindent In closing the example, we will look at the conditions needed to produce an empty fit. Let's assume we calculate the fit for a type $t = \type{Rectangle}$ in the multi-function $\mathcal{F}_{\idval{area}}$. Provided that Rectangle does not have a BoundingBox component, the fit will be empty, because neither \type{Circle} nor \type{+BoundingBox} are a supertype of \type{Rectangle}.
 
+\bigskip
+
+\noindent Having defined the $\mffit$ and $\mfmin$ functions, we can finally turn our attention to defining \textit{multi-function calls}.
+
+\begin{definition}
+	Suppose we have a function call expression as follows:
+	\begin{equation*}
+		N(e_1, ..., e_n)
+	\end{equation*}
+	
+	\noindent A \textbf{multi-function call} is an operation with the following semantics: Let $\mathcal{F}$ be the multi-function with the name $N$. Let $t = (t_1, ..., t_n)$ with $e_1 : t_1, ..., e_n : t_n$ be the tuple type of the arguments. Let $B = \mffit(t)(\mathcal{F})$ be the fit of $\mathcal{F}$. Let $C = \mfmin(B)$ be the set of most specific functions in the fit $B$. We distinguish the following cases:
+	\begin{itemize}
+		\item If $C = \emptyset$, there is no function that fits the argument type. Thus, we throw an \textit{empty-fit} compile-time error.
+		\item If $C = \{ f \}$, that is, there is exactly one most specific function, we simply call the function $f$.
+		\item If $C = \{ f_1, ..., f_k \}$ for $k \geq 2$, that is, we have an ambiguity, we throw an \textit{ambiguous-call} compile-time or run-time error.
+	\end{itemize}
+\end{definition}
+
+\noindent Note that we have to distinguish between compile-time and run-time errors. We will examine these notions in the next section.
 
 
 
