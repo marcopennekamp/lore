@@ -188,5 +188,20 @@ There are other instances of such an ambiguity, especially involving multiple fu
 
 
 
+\section{Empty-Fit and Ambiguous-Call Errors}
+
+In the definition of \textit{multi-function calls} we had to distinguish between compile-time and run-time errors. In particular, we defined the \textit{empty-fit} error as compile-time-only, while the \textit{ambiguous-call} error may either occur at compile-time or run-time. Of course, compile-time errors are always preferable to run-time errors. However, with the expressiveness of the type system of Lore, we can not get around the possibility of a run-time error for the ambiguity case. We will see why in this section.
+
+\bigskip
+
+\noindent First, we will look at the compile-time-only property of the \textit{empty-fit} error. We will prove that the error must only occur at compile-time by looking at a call of a multi-function $\mathcal{F}$. Let $t$ be the tuple type of the argument values deduced at compile-time. Let $B = \mffit(t)(\mathcal{F})$ and $C = \mfmin(B)$. Let's assume we call the multi-function at run-time with an argument type $t'$. Let $B' = \mffit(t')(\mathcal{F})$ and $C' = \mfmin(B')$. 
+
+Assume that $C' = \emptyset$, but $|C| = 1$.\footnote{We can safely assume that $|C| \leq 2$, since otherwise the code would not compile because of an ambiguity error.} That is, calling the multi-function at compile-time was valid, but we can't find any fitting function to call at run-time. Since $C \neq \emptyset$, we have $B \neq \emptyset$, so there exists an $f \in B$ such that $\funcin(f) \geq t$ (by definition of the fit). Now, we observe that $t'$ specialises the argument type $t$, so that $t \geq t'$ holds. This is the only way in which the run-time type of the argument can change. In particular, $t$ can not be generalised, because it is the upper-bound for any actual argument types and thus generalising $t$ would lead to a type-checking error. From $t \geq t'$, it follows, by transitivity of the subtyping relation, that $\funcin(f) \geq t'$ and thus $f \in B'$ (by definition of the fit). Finally, we can derive that $f \in C'$, which contradicts $C' = \emptyset$. Thus we have proven that the \textit{empty-fit} error can only occur at compile-time.
+
+\bigskip
+
+
+
+
 \todo{Intersections with semantic types can be used to define a state, as used in Papyrus script (https://www.creationkit.com/index.php?title=States_(Papyrus)).}
 
