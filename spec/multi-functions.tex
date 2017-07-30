@@ -205,5 +205,24 @@ Moving on to the \textit{ambiguous-call} error, we can show with a simple exampl
 More generally, we can observe that intersection types are precisely the feature that make our version of multiple dispatch ambiguous.\todo{Proof needed.} If we have two functions $f_1 : \type{t1}$ and $f_2 : \type{t2}$ that have the same name, we can introduce a run-time ambiguity with the intersection type \type{t1 \& t2}.
 
 
+
+\section{Constraints on Return Types}
+
+So far we have only talked about \textit{parameter types} of multi-function instances. We also have to account for return types of functions, because we must ensure type safety.
+
+First of all, we can not incorporate the return type into the multiple dispatch process. Doing so would jeopardise our type inference mechanism, which will frequently rely on function return types.
+
+\begin{definition}
+	To ensure type safety, we will impose the following \textbf{constraint on return types}, assuming $\mathcal{F}$ is a multi-function and $f, f' \in \mathcal{F}$:
+	\begin{equation*}
+		\funcin(f) \geq \funcin(f') \implies \funcout(f) \geq \funcout(f')
+	\end{equation*}
+\end{definition}
+
+\noindent That is, assume $f'$ specialises $f$. If we have a value $v$ with a compile-time type of $\funcin(f)$ in a function call expression $f(v)$, we can assume a return type of $\funcout(f)$. Since $f'$ is called instead of $f$ if $v$ is run-time specialised to $\funcin(f')$, we must ensure that the return type of $f'$ satisfies the type bound $\funcout(f)$. Otherwise, a value might be returned that does not fit the type that was deemed valid at compile-time, which leads to a run-time error at best.
+
+If a function fails to satisfy this constraint, an \textit{invalid-return-type} error will be thrown at compile-time.
+
+
 \todo{Intersections with semantic types can be used to define a state, as used in Papyrus script (https://www.creationkit.com/index.php?title=States_(Papyrus)).}
 
