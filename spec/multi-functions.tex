@@ -119,7 +119,7 @@ To define multiple dispatch formally, we first need an operation that allows us 
 \noindent We choose all three functions, because $\type{ToString} > \type{List[a]} > \type{LinkedList[a]}$ and $ \type{LinkedList[a]} > \type{LinkedList[a] \& Sorted}$. The latter is true, because the intersection with $\type{Sorted}$ makes the $\type{LinkedList[a]}$ type more specific.
 
 
-\begin{definition}
+\begin{definition} \label{def:mfmin}
 	Let $\mfmin : \powerset{\funcset} \rightarrow \powerset{\funcset}$ be the function defined as follows:
 	\begin{align*}
 		\mfmin(B) = \{ f \in B \mid (\funcin(f') \comparable \funcin(f)) \implies \funcin(f') \geq \funcin(f) \text{, for } f' \in B \}
@@ -200,7 +200,9 @@ Assume that $C' = \emptyset$, but $|C| = 1$.\footnote{We can safely assume that 
 
 \bigskip
 
+Moving on to the \textit{ambiguous-call} error, we can show with a simple example that such an error might only be caught at run-time. Let's look at the ambiguity example below definition \ref{def:mfmin} again. We have two functions $f_1 : \type{Circle \fto Real}$ and $f_2 : \type{+BoundingBox \fto Real}$. At compile-time, in an expression $\idval{area}(c)$, $f_2$ is the unique most specific function to call given a variable $c : \type{+BoundingBox}$. Since $\type{Circle \& +BoundingBox}$ is a subtype of $\type{+BoundingBox}$, we may safely pass such an argument at run-time. The problem is that the additional intersection type allows both \texttt{area}-functions to be called, as can be seen in the original example, instead of only the one that takes a \type{+BoundingBox} argument. This leads to an ambiguity error at \textit{run-time}.
 
+More generally, we can observe that intersection types are precisely the feature that make our version of multiple dispatch ambiguous.\todo{Proof needed.} If we have two functions $f_1 : \type{t1}$ and $f_2 : \type{t2}$ that have the same name, we can introduce a run-time ambiguity with the intersection type \type{t1 \& t2}.
 
 
 \todo{Intersections with semantic types can be used to define a state, as used in Papyrus script (https://www.creationkit.com/index.php?title=States_(Papyrus)).}
