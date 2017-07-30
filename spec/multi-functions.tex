@@ -10,7 +10,7 @@ Multi-Functions are useful, because they allow functions to be implemented with 
 	\item \textbf{Extendability} is improved by the ability to define multi-functions \textit{across} files and compilation units. This supports features such as C$^\sharp$'s extension methods or Scala's implicit classes in a more concise way.
 \end{itemize}
 
-\noindent In this chapter, we will look at the the syntax of function declarations and define functions and multi-functions. After laying out the basics, we will define the rules of multiple dispatch and examine edge cases. We will see how ad-hoc polymorphism, intersection types and dynamic specialisation/generalisation can be used as proposed above.
+\noindent In this chapter, we will look at the the syntax of function declarations and define functions and multi-functions. After laying out the basics, we will define the rules of multiple dispatch and examine edge cases. We will see how ad-hoc polymorphism, intersection types and dynamic specialisation and generalisation can be used as proposed above. 
 
 
 
@@ -23,6 +23,8 @@ Multi-Functions are useful, because they allow functions to be implemented with 
 &\alt \rh{\nt{func-param}\once} \\
 \nt{func-param} &\produce \rh{\nt{id} [\tn{:} \nt{type}]\once}
 \end{grammar}
+
+\todo{Add abstract functions. We need them for compile-time correctness of multiple dispatch on specialised types. Example: Suppose we have a union type T = A | B. We write two functions f : A -> X and f : B -> X. But since calling f(v) with v : T does not give us any function in the fit, because both defined functions are too specific for the general type T, we need to be able to define a more general function that does not need an implementation itself, i.e. abstract functions.}
 
 \begin{definition}
 	A \textbf{function} $f$ is a mapping from an input type $\funcin(f)$ to an output type $\funcout(f)$. Each function has a name, which we denote $\funcname(f)$. Note that the $\nt{id}$ of a function is not necessarily equal to its full name.\todo{Read more here...} The $\funcbody(f)$ of a function is an expression $e = \funcbody(f)$. The type of $e$ must be a subtype of $\funcout(f)$.
@@ -79,6 +81,8 @@ To define multiple dispatch formally, we first need an operation that allows us 
 \todo{We should look at type parameters and include them in the dispatch. See: https://docs.julialang.org/en/release-0.4/manual/methods/#parametric-methods}
 
 \todo{How do we treat functions with the same name but a different amount of parameters?}
+
+\todo{Explicate the distinction between compile-time and run-time multiple dispatch. Also in the context of abstract functions.}
 
 \begin{definition}
 	We define a function $\mffit : \typeset \rightarrow \mfset \rightarrow \powerset{\funcset}$ as follows:
@@ -220,6 +224,7 @@ First of all, we can not incorporate the return type into the multiple dispatch 
 \noindent That is, assume $f'$ specialises $f$. If we have a value $v$ with a compile-time type of $\funcin(f)$ in a function call expression $f(v)$, we can assume a return type of $\funcout(f)$. Since $f'$ is called instead of $f$ if $v$ is run-time specialised to $\funcin(f')$, we must ensure that the return type of $f'$ satisfies the type bound $\funcout(f)$. Otherwise, a value might be returned that does not fit the type that was deemed valid at compile-time, which leads to a run-time error at best.
 
 If a function fails to satisfy this constraint, an \textit{invalid-return-type} error will be thrown at compile-time.
+
 
 
 \todo{Intersections with semantic types can be used to define a state, as used in Papyrus script (https://www.creationkit.com/index.php?title=States_(Papyrus)).}
