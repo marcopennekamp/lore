@@ -178,19 +178,27 @@ There are other instances of such an ambiguity, especially involving multiple fu
 		N(e_1, ..., e_n)
 	\end{equation*}
 	
-	\noindent A \textbf{multi-function call} is an operation with the following semantics: Let $\mathcal{F}$ be the multi-function with the name $N$. Let $t = (t_1, ..., t_n)$ with $e_1 : t_1, ..., e_n : t_n$ be the tuple type of the arguments. Let $B = \mffit(t)(\mathcal{F})$ be the fit of $\mathcal{F}$. Let $C = \mfmin(B)$ be the set of most specific functions in the fit $B$. We distinguish the following cases:
+	\noindent A \textbf{multi-function call} is an operation with the following compile-time constraints and run-time semantics: Let $\mathcal{F}$ be the multi-function with the name $N$. Let $t = (t_1, ..., t_n)$ with $e_1 : t_1, ..., e_n : t_n$ be the tuple type of the arguments. Let $B = \mffit(t)(\mathcal{F})$ be the fit of $\mathcal{F}$. Let $C = \mfmin(B)$ be the set of most specific functions in the fit $B$. 
+	
+	At \textit{compile-time}, we need to check whether the function to call would be unique if the run-time argument type was $t$. That is, if the run-time argument type would match the type bound $t$ exactly. We distinguish the following cases:
 	\begin{itemize}
-		\item If $C = \emptyset$, there is no function that fits the argument type. Thus, we throw an \textit{empty-fit} compile-time error.
-		\item If $C = \{ f \}$, that is, there is exactly one most specific function, we simply call the function $f$.
-		\item If $C = \{ f_1, ..., f_k \}$ for $k \geq 2$, that is, we have an ambiguity, we throw an \textit{ambiguous-call} compile-time or run-time error.
+		\item If $C = \emptyset$, there is no function that fits the argument type. Thus, we throw an \textit{empty-fit} error.
+		\item If $C = \{ f \}$, that is, there is exactly one most specific function, the multi-function call passes the compile-time check.
+		\item If $C = \{ f_1, ..., f_k \}$ for $k \geq 2$, that is, we have an ambiguity, we throw an \textit{ambiguous-call} error.
+	\end{itemize}
+	
+	\noindent At \textit{run-time}, the actual argument types might specialise the compile-time type bound $t$. Let $t' = (t'_1, ..., t'_n)$ be the run-time argument tuple type. Let $B' = \mffit(t')(\mathcal{F})$ and $C' = \mfmin(B')$. Since $C' \neq \emptyset$ at run-time\footnote{The \textit{empty-fit} error is always caught at compile-time. Refer to section \ref{section:empty-fit-ambiguous-call} for a proof.}, we only distinguish two cases:
+	\begin{itemize}
+		\item If $C = \{ f \}$, we call the function $f$.
+		\item If $C = \{ f_1, ..., f_k \}$ for $k \geq 2$, we throw an \textit{ambiguous-call} error.
 	\end{itemize}
 \end{definition}
 
-\noindent Note that we have to distinguish between compile-time and run-time errors. We will examine these notions in the next section.
+\noindent Note that we have to distinguish between compile-time and run-time errors, which we will talk more about in the next section.
 
 
 
-\section{Empty-Fit and Ambiguous-Call Errors}
+\section{Empty-Fit and Ambiguous-Call Errors} \label{section:empty-fit-ambiguous-call}
 
 In the definition of \textit{multi-function calls} we had to distinguish between compile-time and run-time errors. In particular, we defined the \textit{empty-fit} error as compile-time-only, while the \textit{ambiguous-call} error may either occur at compile-time or run-time. Of course, compile-time errors are always preferable to run-time errors. However, with the expressiveness of the type system of Lore, we can not get around the possibility of a run-time error for the ambiguity case. We will see why in this section.
 
