@@ -17,17 +17,15 @@ Multi-Functions are useful, because they allow functions to be implemented with 
 \section{Functions and Multi-Functions}
 
 \begin{grammar}
-\nt{func-def} &\produce \rh{\nt{func-head} = \nt{expr}} \\
+\nt{func-def} &\produce \rh{\nt{func-head} [= \nt{expr}]\once} \\
 \nt{func-head} &\produce \rh{\tn{function} \nt{id}\lpar\nt{func-params}\rpar [\tn{:} \nt{type}]\once} \\
 \nt{func-params} &\produce \rh{\nt{func-param} [\tn{,} \nt{func-param}]\onceplus} \\
 &\alt \rh{\nt{func-param}\once} \\
 \nt{func-param} &\produce \rh{\nt{id} [\tn{:} \nt{type}]\once}
 \end{grammar}
 
-\todo{Add abstract functions. We need them for compile-time correctness of multiple dispatch on specialised types. Example: Suppose we have a union type T = A | B. We write two functions f : A -> X and f : B -> X. But since calling f(v) with v : T does not give us any function in the fit, because both defined functions are too specific for the general type T, we need to be able to define a more general function that does not need an implementation itself, i.e. abstract functions.}
-
 \begin{definition}
-	A \textbf{function} $f$ is a mapping from an input type $\funcin(f)$ to an output type $\funcout(f)$. Each function has a name, which we denote $\funcname(f)$. Note that the $\nt{id}$ of a function is not necessarily equal to its full name.\todo{Read more here...} The $\funcbody(f)$ of a function is an expression $e = \funcbody(f)$. The type of $e$ must be a subtype of $\funcout(f)$.
+	A \textbf{function} $f$ is a mapping from an input type $\funcin(f)$ to an output type $\funcout(f)$. Each function has a name, which we denote $\funcname(f)$. Note that the $\nt{id}$ of a function is not necessarily equal to its full name.\todo{Read more here...} The $\funcbody(f)$ of a function is an expression $\funcbody(f)$. The type of $\funcbody(f)$ must be a subtype of $\funcout(f)$. The body may be empty, in which case we write $\funcbody(f) = \none$ and call the function \textit{abstract}. An abstract function may not be called at run-time.
 
 	The input type of a function $f$ is defined as follows: Let $[\tau_1, ..., \tau_n]$ be the list of parameter types for each parameter $p_i \in \{ 1, ..., n \}$. Then we have $\funcin(f) = (\tau_1, ..., \tau_n)$, i.e. an n-tuple over the list of parameter types.
 
@@ -185,7 +183,7 @@ There are other instances of such an ambiguity, especially involving multiple fu
 	
 	\noindent At \textit{run-time}, the actual argument types might specialise the compile-time type bound $t$. Let $t' = (t'_1, ..., t'_n)$ be the run-time argument tuple type. Let $B' = \mffit(t')(\mathcal{F})$ and $C' = \mfmin(B')$. Since $C' \neq \emptyset$ at run-time\footnote{The \textit{empty-fit} error is always caught at compile-time. Refer to section \ref{section:empty-fit-ambiguous-call} for a proof.}, we only distinguish two cases:
 	\begin{itemize}
-		\item If $C = \{ f \}$, we call the function $f$.
+		\item If $C = \{ f \}$, we call the function $f$, unless it is abstract, in which case we throw an \textit{abstract-call} error.
 		\item If $C = \{ f_1, ..., f_k \}$ for $k \geq 2$, we throw an \textit{ambiguous-call} error.
 	\end{itemize}
 \end{definition}
@@ -228,6 +226,12 @@ First of all, we can not incorporate the return type into the multiple dispatch 
 \noindent That is, assume $f'$ specialises $f$. If we have a value $v$ with a compile-time type of $\funcin(f)$ in a function call expression $f(v)$, we can assume a return type of $\funcout(f)$. Since $f'$ is called instead of $f$ if $v$ is run-time specialised to $\funcin(f')$, we must ensure that the return type of $f'$ satisfies the type bound $\funcout(f)$. Otherwise, a value might be returned that does not fit the type that was deemed valid at compile-time, which leads to a run-time error at best.
 
 If a function fails to satisfy this constraint, an \textit{invalid-return-type} error will be thrown at compile-time.
+
+
+
+\section{Abstract Function Constraints and Usage}
+
+\todo{Usage example: Suppose we have a union type T = A | B. We write two functions f : A -> X and f : B -> X. But since calling f(v) with v : T does not give us any function in the fit, because both defined functions are too specific for the general type T, we need to be able to define a more general function that does not need an implementation itself, i.e. abstract functions.}
 
 
 
