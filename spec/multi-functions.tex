@@ -76,8 +76,6 @@ function concat(x: LinkedList[a], y: LinkedList[a]) = ... // f3
 
 To define multiple dispatch formally, we first need an operation that allows us to reduce the set of multi-function instances to only those functions that could be called with a given tuple of arguments.
 
-\todo{How can we support contravariant parameter types seen in object-oriented programming? Should we allow the declaration of "non-dispatch" parameters that won't be used for multiple dispatch and can thus be contravariant?}
-
 \todo{We should look at type parameters and include them in the dispatch. See: https://docs.julialang.org/en/release-0.4/manual/methods/#parametric-methods}
 
 \todo{How do we treat functions with the same name but a different amount of parameters?}
