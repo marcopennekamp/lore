@@ -225,7 +225,7 @@ First of all, we can not incorporate the return type into the multiple dispatch 
 
 \noindent That is, assume $f'$ specialises $f$. If we have a value $v$ with a compile-time type of $\funcin(f)$ in a function call expression $f(v)$, we can assume a return type of $\funcout(f)$. Since $f'$ is called instead of $f$ if $v$ is run-time specialised to $\funcin(f')$, we must ensure that the return type of $f'$ satisfies the type bound $\funcout(f)$. Otherwise, a value might be returned that does not fit the type that was deemed valid at compile-time.
 
-If a function fails to satisfy this constraint, an \textit{invalid-return-type} error will be thrown at compile-time.
+If a multi-function fails to satisfy this constraint, an \textit{invalid-return-type} error will be thrown at compile-time, mentioning all offending function definitions.
 
 
 
