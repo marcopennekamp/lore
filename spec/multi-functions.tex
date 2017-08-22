@@ -242,11 +242,17 @@ We want abstract functions to provide a guarantee that a multi-function call alw
 
 \noindent That is, for all \textit{direct} subtypes of $\funcin(f)$, there needs to be an implemented function ($\funcbody(f') = \none$) \textit{unless} the function call can be deferred to $f'$ as an abstract function, in which case $f'$ has to satisfy the totality constraint.
 
-We have a second requirement for abstract functions: The input type of the abstract function must not be instantiable, otherwise the run-time dispatch could land at that function (which has no implementation). We call this the \textbf{abstract input requirement}.
+If a multi-function $\mathcal{F}$ does not satisfy the totality constraint, a \textit{missing-implementation} error is thrown, which includes a list of input types that need to be covered.
+
+\medskip
+
+\noindent We have a second requirement for abstract functions: The input type of the abstract function must not be instantiable, otherwise the run-time dispatch could land at that function (which has no implementation). We call this the \textbf{abstract input requirement}.
 
 \begin{definition}
 	Let $\mathcal{F}$ be a multi-function. The following \textbf{abstract input requirement} must be satisfied for all abstract functions $f \in \mathcal{F}$: The type $\funcin(f)$ must be abstract, i.e. not instantiable.
 \end{definition}
+
+\medskip
 
 \todo{Usage example: Suppose we have a union type T = A | B. We write two functions f : A -> X and f : B -> X. But since calling f(v) with v : T does not give us any function in the fit, because both defined functions are too specific for the general type T, we need to be able to define a more general function that does not need an implementation itself, i.e. abstract functions.}
 
