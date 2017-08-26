@@ -183,7 +183,7 @@ There are other instances of such an ambiguity, especially involving multiple fu
 	
 	\noindent At \textit{run-time}, the actual argument types might specialise the compile-time type bound $t$. Let $t' = (t'_1, ..., t'_n)$ be the run-time argument tuple type. Let $B' = \mffit(t')(\mathcal{F})$ and $C' = \mfmin(B')$. Since $C' \neq \emptyset$ at run-time\footnote{The \textit{empty-fit} error is always caught at compile-time. Refer to section \ref{section:empty-fit-ambiguous-call} for a proof.}, we only distinguish two cases:
 	\begin{itemize}
-		\item If $C = \{ f \}$, we call the function $f$, unless it is abstract, in which case we throw an \textit{abstract-call} error.
+		\item If $C = \{ f \}$, we call the function $f$. Note that $f$ cannot be abstract, because of the totality constraint on abstract functions, defined in section \ref{section:abstract-function-constraints}.
 		\item If $C = \{ f_1, ..., f_k \}$ for $k \geq 2$, we throw an \textit{ambiguous-call} error.
 	\end{itemize}
 \end{definition}
@@ -229,7 +229,7 @@ If a multi-function fails to satisfy this constraint, an \textit{invalid-return-
 
 
 
-\section{Abstract Function Constraints and Usage}
+\section{Abstract Function Constraints and Usage} \label{section:abstract-function-constraints}
 
 We want abstract functions to provide a guarantee that a multi-function call always finds a non-abstract function to call at run-time. More precisely, we define a constraint on abstract functions called the \textbf{totality constraint}.
 
