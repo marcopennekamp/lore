@@ -231,7 +231,11 @@ If a multi-function fails to satisfy this constraint, an \textit{invalid-return-
 
 \section{Abstract Function Constraints and Usage} \label{section:abstract-function-constraints}
 
-We want abstract functions to provide a guarantee that a multi-function call always finds a non-abstract function to call at run-time. More precisely, we define a constraint on abstract functions called the \textbf{totality constraint}.
+We want abstract functions to provide a guarantee that a multi-function call always finds a non-abstract function to call at run-time. To achieve this, we must ensure the following two properties:
+\begin{enumerate}
+	\item Abstract functions must be fully implemented, which is formalised in a constraint called the \textbf{totality constraint}.
+	\item The input type of an abstract function must be abstract itself, which is formalised in a constraint called the \textbf{input abstractness constraint}.
+\end{enumerate}
 
 \begin{definition}
 	Let $\mathcal{F}$ be a multi-function. The following \textbf{totality constraint} $T(f)$ must be satisfied for all abstract functions $f \in \mathcal{F}$. The definition contains the notion of a \textit{direct} subtype, which we define as a strict subtype $s$ of a type $t$, such that there is no type $r$ that satisfies $s < r < t$. We write the set of all direct subtypes of a type $t$ as $\typedirect(t)$.
@@ -247,13 +251,13 @@ The second condition of $T(f)$ is required due to a small edge case: If the inpu
 
 If a multi-function $\mathcal{F}$ does not satisfy the totality constraint, a \textit{missing-implementation} error is thrown, which includes a list of input types that need to be covered.
 
-\medskip
-
-\noindent Functions with an abstract input type must be abstract functions, which is formalised in the following definition.
-
 \begin{definition}
-	Let $\mathcal{F}$ be a multi-function. The following condition must be satisfied for all functions $f \in \mathcal{F}$: If the type $\funcin(f)$ is abstract, i.e. not instantiable, then $f$ must be abstract, i.e. $\funcbody(f) = \none$.
+	Let $\mathcal{F}$ be a multi-function. The following \textbf{input abstractness constraint} must be satisfied for all abstract functions $f \in \mathcal{F}$: The input type $\funcin(f)$ must be abstract, i.e. not instantiable.
 \end{definition}
+
+\noindent To appreciate the need for this constraint, consider the following: Assume we define an abstract function $f$ (belonging to a multi-function $\mathcal{F}$) with an input type \type{A}, which is an ordinary (non-abstract) record type. The type \type{A} has two direct subtypes \type{A1} and \type{A2}. Even if we satisfied the totality constraint for $f$ by defining two implementations $f_1$ and $f_2$, we could call $\mathcal{F}$ with an argument $a : \type{A}$, which would attempt to call $f$, because $f_1$ and $f_2$ are not contained in the fit of the call. Thus, we would attempt to call an abstract function at run-time, contradicting the goal stated above.
+
+If an abstract function $f$ does not satisfy the input abstractness constraint, an \textit{input-type-not-abstract} error is thrown.
 
 \medskip
 
