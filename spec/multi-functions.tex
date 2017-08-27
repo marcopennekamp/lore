@@ -172,7 +172,7 @@ There are other instances of such an ambiguity, especially involving multiple fu
 		N(e_1, ..., e_n)
 	\end{equation*}
 	
-	\noindent A \textbf{multi-function call} is an operation with the following compile-time constraints and run-time semantics: Let $\mathcal{F}$ be the multi-function with the name $N$. Let $t = (t_1, ..., t_n)$ with $e_1 : t_1, ..., e_n : t_n$ be the tuple type of the arguments. Let $B = \mffit(t)(\mathcal{F})$ be the fit of $\mathcal{F}$. Let $C = \mfmin(B)$ be the set of most specific functions in the fit $B$. 
+	\noindent A \textbf{multi-function call} is an operation with compile-time constraints and run-time semantics as defined in this section. Let $\mathcal{F}$ be the multi-function with the name $N$. Let $t = (t_1, ..., t_n)$ be the tuple type of the arguments with $e_1 : t_1, ..., e_n : t_n$. Let $B = \mffit(t)(\mathcal{F})$ be the fit of $\mathcal{F}$. Let $C = \mfmin(B)$ be the set of most specific functions in the fit $B$. 
 	
 	At \textit{compile-time}, we need to check whether the function to call would be unique if the run-time argument type was $t$. That is, if the run-time argument type would match the type bound $t$ exactly. We distinguish the following cases:
 	\begin{itemize}
@@ -234,13 +234,16 @@ If a multi-function fails to satisfy this constraint, an \textit{invalid-return-
 We want abstract functions to provide a guarantee that a multi-function call always finds a non-abstract function to call at run-time. More precisely, we define a constraint on abstract functions called the \textbf{totality constraint}.
 
 \begin{definition}
-	Let $\mathcal{F}$ be a multi-function. The following \textbf{totality constraint} $T(f)$ must be satisfied for all abstract functions $f \in \mathcal{F}$ and all \textit{direct}\footnote{We define a direct subtype $s$ of a type $t$ as a type $s < t$, such that there is no type $r$ with $s < r < t$.} subtypes $s$ of $\funcin(f)$:
-	\begin{equation*}
-		\exists f' \in \mathcal{F}.\; \funcin(f') = s \land (\funcbody(f') = \none \lor T(f'))
-	\end{equation*}
+	Let $\mathcal{F}$ be a multi-function. The following \textbf{totality constraint} $T(f)$ must be satisfied for all abstract functions $f \in \mathcal{F}$. The definition contains the notion of a \textit{direct} subtype, which we define as a strict subtype $s$ of a type $t$, such that there is no type $r$ that satisfies $s < r < t$. We write the set of all direct subtypes of a type $t$ as $\typedirect(t)$.
+	\begin{align*}
+		P(s) &\iff \exists f' \in \mathcal{F}.\; \funcin(f') = s \land (\funcbody(f') \neq \none \lor T(f')) \\
+		T(f) &\iff (\forall s \in \typedirect(\funcin(f)).\; P(s)) \land (\exists s.\; s \in \typedirect(\funcin(f)))
+	\end{align*}
 \end{definition}
 
-\noindent That is, for all \textit{direct} subtypes of $\funcin(f)$, there needs to be an implemented function ($\funcbody(f') = \none$) \textit{unless} the function call can be deferred to an abstract function $f'$, in which case $f'$ has to satisfy the totality constraint.
+\noindent That is, for all \textit{direct} subtypes of $\funcin(f)$, there needs to be an implemented function ($\funcbody(f') \neq \none$) \textit{unless} the function call can be deferred to an abstract function $f'$, in which case $f'$ has to satisfy the totality constraint.
+
+The second condition of $T(f)$ is required due to a small edge case: If the input type $\funcin(f)$ of an abstract function $f \in \mathcal{F}$ does not have any direct subtypes, the first condition is satisfied, while our goal that we must always be able to find a non-abstract function to call at run-time is not met. Thus we require there to be at least one direct subtype.
 
 If a multi-function $\mathcal{F}$ does not satisfy the totality constraint, a \textit{missing-implementation} error is thrown, which includes a list of input types that need to be covered.
 
