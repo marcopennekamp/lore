@@ -216,7 +216,7 @@ So far we have only talked about \textit{parameter types} of multi-function inst
 
 First of all, we can not incorporate the return type into the multiple dispatch process. Doing so would jeopardise our type inference mechanism, which will frequently rely on function return types. To ensure type safety, we will impose a constraint on return types.
 
-\begin{definition}
+\begin{definition} \label{def:constraint-return-types}
 	Let $\mathcal{F}$ be a multi-function. The following \textbf{constraint on return types} must be satisfied for all $f, f' \in \mathcal{F}$:
 	\begin{equation*}
 		\funcin(f) \geq \funcin(f') \implies \funcout(f) \geq \funcout(f')
@@ -237,7 +237,7 @@ We want abstract functions to provide a guarantee that a multi-function call alw
 	\item The input type of an abstract function must be abstract itself, which is formalised in a constraint called the \textbf{input abstractness constraint}.
 \end{enumerate}
 
-\begin{definition}
+\begin{definition} \label{def:totality-constraint}
 	Let $\mathcal{F}$ be a multi-function. The following \textbf{totality constraint} $T(f)$ must be satisfied for all abstract functions $f \in \mathcal{F}$. The definition contains the notion of a \textit{direct} subtype, which we define as a strict subtype $s$ of a type $t$, such that there is no type $r$ that satisfies $s < r < t$. We write the set of all direct subtypes of a type $t$ as $\typedirect(t)$.
 	\begin{align*}
 		P(s) &\iff \exists f' \in \mathcal{F}.\; \funcin(f') = s \land (\funcbody(f') \neq \none \lor T(f')) \\
@@ -251,7 +251,7 @@ The second condition of $T(f)$ is required due to a small edge case: If the inpu
 
 If a multi-function $\mathcal{F}$ does not satisfy the totality constraint, a \textit{missing-implementation} error is thrown, which includes a list of input types that need to be covered.
 
-\begin{definition}
+\begin{definition} \label{def:input-abstractness-constraint}
 	Let $\mathcal{F}$ be a multi-function. The following \textbf{input abstractness constraint} must be satisfied for all abstract functions $f \in \mathcal{F}$: The input type $\funcin(f)$ must be abstract, i.e. not instantiable.
 \end{definition}
 
@@ -261,7 +261,38 @@ If an abstract function $f$ does not satisfy the input abstractness constraint, 
 
 \medskip
 
-\todo{Usage example: Suppose we have a union type T = A | B. We write two functions f : A -> X and f : B -> X. But since calling f(v) with v : T does not give us any function in the fit, because both defined functions are too specific for the general type T, we need to be able to define a more general function that does not need an implementation itself, i.e. abstract functions.}
+\noindent We will finish this section with a usage example. Suppose we have the following types:
+\begin{lstlisting}
+type T = A | B
+record A { ... }
+record B { ... }
+\end{lstlisting}
+
+\noindent That is, \texttt{T} is a union type, while \texttt{A} and \texttt{B} are ordinary record types. We also have the following two functions:
+\begin{lstlisting}
+function f(a: A): A = ...
+function f(b: B): B = ...
+\end{lstlisting}
+
+\noindent Suppose we have a value \texttt{v} of type \texttt{T}. If we try to call \texttt{f(v)}, we will get an empty fit error at compile-time, because both functions are too specific for the general type \texttt{T}, even though at run-time, we are \textbf{certain} that one of the two functions must be called, because \texttt{v} must either have the type \texttt{A} or \texttt{B}.
+
+This is one instance where abstract functions are useful. We define the following additional function to fix the problem:
+\begin{lstlisting}
+function f(t: T): T
+\end{lstlisting}
+
+\noindent This function is obviously abstract, because it has no body. It satisfies the \textbf{totality constraint}, since the two direct subtypes \texttt{A} and \texttt{B} each have an associated implemented function. The \textbf{input abstractness constraint} is also satisfied, because union types are by definition abstract. We can now call the function \texttt{f} with a value \texttt{v} of type \texttt{T} without getting a compilation error. The call should lead to the expected semantics. 
+
+Note that the \textbf{constraint on return types} from definition \ref{def:constraint-return-types} is also satisfied:
+\begin{enumerate}
+	\item For \texttt{f(a: A)}: $\type{T} \geq \type{A}$.
+	\item For \texttt{f(b: B)}: $\type{T} \geq \type{B}$.
+\end{enumerate}
+
+\noindent This concludes our usage example about abstract functions.
+
+
+
 
 
 
