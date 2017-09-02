@@ -299,15 +299,32 @@ Note that the \textbf{constraint on return types} from definition \ref{def:const
 
 We can use intersection types to refine a value's type and dispatch based on the presence of such an intersection type at run-time. For example, we could define a \texttt{search} function on a list as follows:
 \begin{lstlisting}
-    function search(list: List[a]): a = // f1
+    function search(list: List[a]): a =
       // search with linear search
-    function search(list: List[a] & Sorted): a = // f2
+    function search(list: List[a] & Sorted): a =
       // search with binary search
 \end{lstlisting}
 
 \noindent That is, in the type system we can encode that some lists are sorted, and for those lists we can specialise the \texttt{search} function so that it uses a more efficient algorithm, that is, binary search instead of linear search.
 
+\medskip
 
+\noindent Another use case for intersection types in the context of multiple dispatch arises from the concept of components. Suppose we have a function \texttt{density} that calculates the population density of an object, which needs to have the components \texttt{+Population} and \texttt{+Area}. That property can be modelled with an intersection type \texttt{+Population \& +Area}. The function is thus defined as follows:
+\begin{lstlisting}
+    function density(v: +Population & +Area): Float = 
+      v.Population / v.Area
+\end{lstlisting}
+
+\noindent No matter whether the object is a city, a country or a planet, the density function will be able to calculate the density as long as the object has a population and an area.
+
+Suppose we have objects where the total amount of water area is known. We can specialise the function \texttt{density} to include this circumstance:
+\begin{lstlisting}
+    function density(v: +Population & +Area & 
+        +WaterArea): Float =
+      v.Population / (v.Area - v.WaterArea)
+\end{lstlisting}
+
+\noindent In cases where \texttt{+WaterArea} is present, the dispatcher chooses the second function, which makes the calculation more accurate. If \texttt{+WaterArea} is not present, the original \texttt{density} function is called instead.
 
 
 
