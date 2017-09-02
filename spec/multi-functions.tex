@@ -297,6 +297,18 @@ Note that the \textbf{constraint on return types} from definition \ref{def:const
 
 \section{Multi-Functions and Intersection Types}
 
+We can use intersection types to refine a value's type and dispatch based on the presence of such an intersection type at run-time. For example, we could define a \texttt{search} function on a list as follows:
+\begin{lstlisting}
+    function search(list: List[a]): a = // f1
+      // search with linear search
+    function search(list: List[a] & Sorted): a = // f2
+      // search with binary search
+\end{lstlisting}
+
+\noindent That is, we can encode that some lists are sorted in the type system, and for those lists we can specialise the \texttt{search} function so it uses a more efficient algorithm, binary search instead of linear search.
+
+
+
 
 
 \section{Dynamic Specialisation and Generalisation}
