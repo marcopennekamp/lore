@@ -1,0 +1,89 @@
+\chapter{Types}
+
+In this chapter, we will lay out the basics of Lore's type system. We will define value types and semantic types, and draw a distinction between them. At the end, we will also look at typing rules that allow us to reason about types.
+
+Note that we have not yet added type constructor precedence to the grammar presented in this chapter. This will be refined at a later date. \todo{Add type constructor precedence rules.}
+
+
+
+\section{The Role of Types}
+
+
+
+\section{Value Types}
+
+Types that describe the shape or structure of a value are called \textit{value types}.
+
+
+\subsection{Product Types}
+
+\begin{grammar}
+\nt{value-type} &\produce \rh{\lpar\nt{types}\rpar} \\
+\nt{types} &\produce \rh{\nt{type} [\tn{,} \nt{type}]\many}
+\end{grammar}
+
+\noindent \textit{Product types} describe corresponding tuple values. A product type $(\tau_1, ..., \tau_n)$ for some $n \in \Nats$ is inhabited by tuples of the form $(a_1, ..., a_n)$ with $a_i : \tau_i$ for all $1 \leq i \leq n$.
+
+
+\subsection{Function Types}
+
+\begin{grammar}
+\nt{value-type} &\produce \rh{\nt{type} \tn{->} \nt{type}}
+\end{grammar}
+
+\noindent \textit{Function types} describe corresponding function values. That is, a function that maps an input value $a : \tau_1$ to an output value $b : \tau_2$ has the type $\tau_1 \fto \tau_2$. The type constructor is right-associative.
+
+
+\subsection{Nominal Types}
+
+\begin{grammar}
+\nt{value-type} &\produce \rh{\tn{'}\nt{id}}
+\end{grammar}
+
+\noindent \textit{Nominal types} describe corresponding nominal values.
+
+
+
+\section{Semantic Types}
+
+\subsection{Intersection Types}
+
+\begin{grammar}
+\nt{semantic-type} &\produce \rh{\nt{type} \tn{\&} \nt{type}}
+\end{grammar}
+
+\noindent An \textit{intersection type} $\tau_1 \mathintersect ... \mathintersect \tau_n$ for some $n \in \Nats$ is inhabited by all values $a$ that satisfy all typing judgments $a : \tau_i$ for all $1 \leq i \leq n$. The value set of an intersection type can thus be interpreted as the intersection of the value sets of all types $\tau_1, ..., \tau_n$.
+
+This definition implies that an intersection type may have an empty value set. Intersection types are associative and commutative.
+
+
+\subsection{Sum Types}
+
+\begin{grammar}
+\nt{semantic-type} &\produce \rh{\nt{type} \tn{|} \nt{type}}
+\end{grammar}
+
+\noindent A \textit{sum type} $\tau_1 \mathsum ... \mathsum \tau_n$ for some $n \in \Nats$ is inhabited by all values $a : \tau_i$ for any $1 \leq i \leq n$. 
+
+Sum types are associative and commutative.
+
+
+\subsection{Interface Types}
+
+\noindent An \textit{interface type} is the type that corresponds to a particular interface. An interface type signals that the functions defined in the interface must be callable with a value of that type. Since interfaces by themselves can not be instantiated, interface types are semantic types. 
+
+
+\subsection{Component Types}
+
+\begin{grammar}
+\nt{semantic-type} &\produce \rh{\tn{+}\nt{type}}
+\end{grammar}
+
+\noindent A \textit{component type} $\type{+C}$ signals that a value of that type has a component of type $\type{C}$.
+
+
+\subsection{Label Types}
+
+\noindent A \textit{label type} is a type that may be used to further specify or distinguish values by their type, but in itself provides no further information than its name. This is the only type that has no internal structure and should thus be preferred if only a type label is desired.
+
+
