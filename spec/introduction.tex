@@ -1,3 +1,10 @@
 \chapter{Introduction}
 
 Unicorns are $\mathbb{PRETTY}$.
+
+
+\section{Ideas}
+
+\begin{itemize}
+  \item Semantic types are often used to label values that have a special property. For example, a list may be sorted, a file may be open and a matrix may be symmetric. Many of these properties can be checked quite easily. We can apply this observation to the notion of \textbf{design by contract} as follows: For a semantic type that is added to a specific value type, we can specify a function that checks whether the semantic type may be applied in the context of a specific value. These functions are applied during development and testing, may be optionally turned on in production, and lead to runtime errors if the contract is violated.
+\end{itemize}
