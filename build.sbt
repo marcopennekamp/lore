@@ -1,6 +1,6 @@
 name := "lore"
 
-version := "1.0"
+version := "0.1.0"
 
 scalaVersion := "2.11.8"
 scalacOptions ++= Seq(
@@ -12,9 +12,8 @@ scalacOptions ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "com.slamdata" % "matryoshka-core_2.11" % "0.18.2",
-  "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5",
-  "com.lihaoyi" %% "fastparse" % "0.4.2"
+  "org.scalaz" %% "scalaz-core" % "7.2.20",
+  "com.lihaoyi" %% "fastparse" % "1.0.0"
 )
 
 // ? types.
