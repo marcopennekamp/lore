@@ -1,6 +1,6 @@
 type ToString
-type List
-type LinkedList
+type List <: ToString
+type LinkedList <: LinkedList
 type Sorted
 
 function concat(x: ToString, y: ToString) = ()
