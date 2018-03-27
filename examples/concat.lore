@@ -1,0 +1,12 @@
+type ToString
+type List
+type LinkedList
+type Sorted
+
+function concat(x: ToString, y: ToString) = ()
+function concat(x: List, y: List) = ()
+function concat(x: LinkedList, y: LinkedList) = ()
+
+call concat with (ToString, ToString)
+call concat with (LinkedList, List)
+call concat with (LinkedList, LinkedList & Sorted)
