@@ -5,8 +5,8 @@ Functions of the same name belong to an accordingly named set of functions. Such
 Multi-Functions are useful, because they allow functions to be implemented with varying levels of generality. They lend themselves well to a varying ensemble of features and concerns:
 \begin{itemize}
 	\item \textbf{Single Dispatch} is supported natively, since multiple dispatch is a superset of single dispatch.
-	\item \textbf{Intersection Types} composed of component, interface or semantic types can be used to define a sufficiently specific type for a given operation. Furthermore, varying degrees of increasingly specific intersection types can be used to specialise a function in different ways. This sufficiently specific type can be used to implement a function which would otherwise have been confined to a class hierarchy in object-oriented programming, thus sacrificing flexibility.
-	\item \textbf{Dynamic specialisation and generalisation} of values can be used to specialise or generalise\footnote{Of course supposing that the generalised type still satisfies the type boundaries that its value is subject to.} the type of a value at \textit{runtime}. Since the actual function being called is chosen at runtime when calling a multi-function, we can write functions that implement an operation for a given specialised type.
+	\item \textbf{Intersection Types} composed of component, interface or semantic types can be used to define a sufficiently specific type for a given operation without referring to value types. Furthermore, varying degrees of increasingly specific intersection types can be used to specialise a function in different ways. This sufficiently specific type can be used to implement a function which would otherwise have been confined to a class hierarchy in object-oriented programming.
+	\item \textbf{Dynamic specialisation and generalisation} of values can be used to specialise or generalise\footnote{Of course supposing that the generalised type still satisfies the type boundaries that its value is subject to.} the semantic type of a value at \textit{runtime}. Since the actual function being called is chosen at runtime when calling a multi-function, we can write functions that implement an operation for a given specialised type.
 	\item \textbf{Extendability} is improved by the ability to define multi-functions \textit{across} files and compilation units. This supports features such as C$^\sharp$'s extension methods or Scala's implicit classes in a more concise way.
 \end{itemize}
 
@@ -25,7 +25,7 @@ Multi-Functions are useful, because they allow functions to be implemented with 
 \end{grammar}
 
 \begin{definition}
-	A \textbf{function} $f$ is a mapping from an input type $\funcin(f)$ to an output type $\funcout(f)$. Each function has a name, which we denote $\funcname(f)$. Note that the $\nt{id}$ of a function is not necessarily equal to its full name.\todo{Read more here...} The $\funcbody(f)$ of a function is an expression $\funcbody(f)$. The type of $\funcbody(f)$ must be a subtype of $\funcout(f)$. The body may be empty, in which case we write $\funcbody(f) = \none$ and call the function \textit{abstract}. An abstract function may not be called at run-time.
+	A \textbf{function} $f$ is a mapping from an input type $\funcin(f)$ to an output type $\funcout(f)$. Each function has a full name, which we denote $\funcname(f)$. Note that the $\nt{id}$ of a function is not necessarily equal to its full name (we will introduce modules or packages in a future revision of the spec). The body of a function is an expression $\funcbody(f)$. The type of $\funcbody(f)$ must be a subtype of $\funcout(f)$. The body may be empty, in which case we write $\funcbody(f) = \none$ and call the function \textit{abstract}. An abstract function may not be called at run-time.
 
 	The input type of a function $f$ is defined as follows: Let $[\tau_1, ..., \tau_n]$ be the list of parameter types for each parameter $p_i \in \{ 1, ..., n \}$. Then we have $\funcin(f) = (\tau_1, ..., \tau_n)$, i.e. an n-tuple over the list of parameter types.
 
@@ -154,7 +154,7 @@ We will first look at an example with the multi-function $\mathcal{F}_\idval{con
 	
 \noindent The first result comes from the fact that for any types \type{a} and \type{b}, it holds that $\type{a} \geq \type{a \& b}$, and thus $\type{Circle} \geq \type{Circle \& +BoundingBox}$, as well as $\type{+BoundingBox} \geq \type{Circle \& +BoundingBox}$.
 	
-The second result is due to the fact that \type{Circle} and \type{+BoundingBox} are \textit{incomparable}, i.e. $\type{Circle} \incomparable +BoundingBox$, since the two types are neither equal, nor is one less or greater than the other.
+The second result is due to the fact that \type{Circle} and \type{+BoundingBox} are \textit{incomparable}, i.e. $\type{Circle} \incomparable \type{+BoundingBox}$, since the two types are neither equal, nor is one less or greater than the other.
 	
 Since the most specific function is not unique, we should abort the compilation with an error (preferably) or even exit the program with a runtime error. We could call all associated functions, but this is likely not intended by the developer (and would thus only make sense if we make the programmer use a keyword at the call-site to switch the feature on), it's also not clear how to aggregate the return types and finally the call order of the functions is not determined.
 	
@@ -200,7 +200,7 @@ In the definition of \textit{multi-function calls} we had to distinguish between
 
 \bigskip
 
-\noindent First, we will look at the compile-time-only property of the \textit{empty-fit} error. We will prove that the error must only occur at compile-time by looking at a call of a multi-function $\mathcal{F}$. Let $t$ be the tuple type of the argument values deduced at compile-time. Let $B = \mffit(t)(\mathcal{F})$ and $C = \mfmin(B)$. Let's assume we call the multi-function at run-time with an argument type $t'$. Let $B' = \mffit(t')(\mathcal{F})$ and $C' = \mfmin(B')$. 
+\noindent First, we will look at the compile-time-only property of the \textit{empty-fit} error. We will prove that the error can only occur at compile-time by looking at a call of a multi-function $\mathcal{F}$. Let $t$ be the tuple type of the argument values deduced at compile-time. Let $B = \mffit(t)(\mathcal{F})$ and $C = \mfmin(B)$. Let's assume we call the multi-function at run-time with an argument type $t'$. Let $B' = \mffit(t')(\mathcal{F})$ and $C' = \mfmin(B')$. 
 
 Assume that $C' = \emptyset$, but $|C| = 1$.\footnote{We can safely assume that $|C| \leq 2$, since otherwise the code would not compile because of an ambiguity error.} That is, calling the multi-function at compile-time was valid, but we can't find any fitting function to call at run-time. Since $C \neq \emptyset$, we have $B \neq \emptyset$, so there exists an $f \in B$ such that $\funcin(f) \geq t$ (by definition of the fit). Now, we observe that $t'$ specialises the argument type $t$, so that $t \geq t'$ holds. This is the only way in which the run-time type of the argument can change. In particular, $t$ can not be generalised, because it is the upper-bound for any actual argument types and thus generalising $t$ would lead to a type-checking error. From $t \geq t'$, it follows, by transitivity of the subtyping relation, that $\funcin(f) \geq t'$ and thus $f \in B'$ (by definition of the fit). Finally, we can derive that $f \in C'$, which contradicts $C' = \emptyset$. Thus we have proven that the \textit{empty-fit} error can only occur at compile-time.
 
@@ -270,7 +270,7 @@ If an abstract function $f$ does not satisfy the input abstractness constraint, 
     record B { ... }
 \end{lstlisting}
 
-\noindent That is, \texttt{T} is a union type, while \texttt{A} and \texttt{B} are ordinary record types. We also have the following two functions:
+\noindent That is, \texttt{T} is a sum type, while \texttt{A} and \texttt{B} are ordinary record types. We also have the following two functions:
 \begin{lstlisting}
     function f(a: A): A = ...
     function f(b: B): B = ...
@@ -283,7 +283,7 @@ This is one instance where abstract functions are useful. We define the followin
     function f(t: T): T
 \end{lstlisting}
 
-\noindent This function is obviously abstract, because it has no body. It satisfies the \textbf{totality constraint}, since the two direct subtypes \texttt{A} and \texttt{B} each have an associated implemented function. The \textbf{input abstractness constraint} is also satisfied, because union types are by definition abstract. We can now call the function \texttt{f} with a value \texttt{v} of type \texttt{T} without getting a compilation error. The call should lead to the expected semantics. 
+\noindent This function is obviously abstract, because it has no body. It satisfies the \textbf{totality constraint}, since the two direct subtypes \texttt{A} and \texttt{B} each have an associated implemented function. The \textbf{input abstractness constraint} is also satisfied, because sum types are by definition abstract.\footnote{This may not be so obvious, but there is no way to instantiate a value of a sum type directly: You always have to instantiate the value corresponding to one of the subtypes.} We can now call the function \texttt{f} with a value \texttt{v} of type \texttt{T} without getting a compilation error. The call should lead to the expected semantics. 
 
 Note that the \textbf{constraint on return types} from definition \ref{def:constraint-return-types} is also satisfied:
 \begin{enumerate}
