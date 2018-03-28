@@ -8,8 +8,8 @@ Unicorns are $\mathbb{PRETTY}$.
 \subsection{Design by Contract}
 Semantic types are often used to label values that have a special property. For example, a list may be sorted, a file may be open and a matrix may be symmetric. Many of these properties can be checked quite easily. We can apply this observation to the notion of \textbf{design by contract} as follows: For a semantic type that is added to a specific value type, we can specify a function that checks whether the semantic type may be applied in the context of a specific value. These functions are applied during development and testing, may be optionally turned on in production, and lead to runtime errors if the contract is violated.
 
-\subsection{Type Modes and Type-Polymorphic Functions}
-Suppose we have a type \type{A} with exactly two modes of existence \type{M1} and \type{M2}, which are defined as simple label types. Values of \type{A} can only exist in mode 1 or mode 2, but \textbf{not} standing alone. How can we encode this in the type system?\footnote{\textbf{Intersection types} are of no use here, because we can neither limit the other type used with \type{A} in an intersection type, nor can we require that \type{A} must always be used in an intersection type. \textbf{Subtyping} is not the solution either, because we would get (at least combinatorial) problems once we have two or more different mode types.}
+\subsection{Type Modes and Covariant, Part Type Parameters}
+Suppose we have a type \type{A} with exactly two modes of existence \type{M1} and \type{M2}, which are defined as simple label types. Values of \type{A} can only exist in mode 1 or mode 2, but \textbf{not} stand alone. How can we encode this in the type system?\footnote{\textbf{Intersection types} are of no use here, because we can neither limit the other type used with \type{A} in an intersection type, nor can we require that \type{A} must always be used in an intersection type.}
 
 One way to do this would utilise parametric types. Consider the following code:
 
@@ -17,17 +17,26 @@ One way to do this would utilise parametric types. Consider the following code:
     label type M1
     label type M2
     type M = M1 | M2
-    class A[m <: M] { ... }
+    class A[covariant m <: M] { ... }
 \end{lstlisting}
 
-We can instantiate \type{A} only as \type{A[M1]} or \type{A[M2]}.\footnote{This is only true, because the sum type can't be extended outside its definition, so we can't create more direct subtypes of \type{M}.} We can then define two functions, one for each mode, as such:
+We can instantiate \type{A} only as \type{A[M1]} or \type{A[M2]}.\footnote{This is only true, because the sum type can't be extended outside its definition, so we can't create more \textit{direct} subtypes of \type{M}.} Because \type{A} is covariant in \type{m}, we have that $\type{A[M1]} < \type{A[M]}$ and $\type{A[M2]} < \type{A[M]}$. However, \type{A[M]} is not necessarily abstract. This means we couldn't define an abstract function for \type{A[M]}. 
+
+A \textit{quick fix} is to introduce a new keyword for type parameters that make the containing type abstract if they are themselves abstract. We'll call this a \texttt{part}-type parameter:
 
 \begin{lstlisting}
+    class A[part covariant m <: M] { ... }
+\end{lstlisting}
+
+We can then finally define the abstract function and the two concrete functions, one for each mode, as such:
+
+\begin{lstlisting}
+    function do(a: A[M]): Unit = ...
     function do(a: A[M1]): Unit = ...
     function do(a: A[M2]): Unit = ...
 \end{lstlisting}
 
-Note that it is not clear how to support this conceptually. We can't use multiple dispatch here, because \type{A[M1]} is not a subtype of a purported type \type{A}. Rather, \type{A} is a \textbf{type constructor}. One idea would be to allow declaring functions as \textit{type-polymorphic}, which would be an addition to single functions, not to multi-functions. This would be a mechanism that activates after the target function of a multiple dispatch call has been found. A type-polymorphic function would then do another dispatch based on the type parameters of its parameters, akin to pattern matching.\footnote{We should consider whether we should add a dispatch loop: Multiple dispatch until a type-polymorphic function is found, type-polymorphic dispatch, multiple dispatch again, and so on. This would be useful in cases where, for example, \type{A[M1]} has been extended with subclasses, and needs further multiple dispatch after reaching the \texttt{do(a: A[M2])} function.} This can't be decided at compile-time, because we can write an infinite chain of generic functions, and generating every possible instance of a function with a type parameter such as above could quickly lead to combinatorial explosion.\footnote{For example, if we have 6 of such classes with \textit{four} modes, and we use each of these 6 classes in one function in a generic way, there are suddenly 4096 different functions that have to be generated because of different call combinations.}
+Multiple-dispatch will then dispatch to the correct function depending on the runtime type of a value \texttt{a : A[M]}.
 
 
 
