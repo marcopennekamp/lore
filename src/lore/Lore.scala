@@ -1,6 +1,8 @@
 package lore
 
 import lore.ast._
+import lore.exceptions.FunctionNotFoundException
+import lore.execution.Context
 import lore.parser.{FileParser, FpExpressionParser}
 
 import scala.io.Source
@@ -24,5 +26,15 @@ object Lore {
     println()
     println("Elements: ")
     elements.foreach(println)
+
+    val context = Context.build(elements)
+
+    println()
+    println("Function fit for each call statement:")
+    context.calls.foreach { call =>
+      val multiFunction = context.multiFunctions.getOrElse(call.functionName, throw FunctionNotFoundException(call.functionName))
+      val fit = multiFunction.fit(call.argumentType)
+      println(fit)
+    }
   }
 }
