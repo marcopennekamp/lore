@@ -32,11 +32,11 @@ class FileParser() {
       if (intersectionTypes.isEmpty) {
         TypeVariable(firstType)
       } else {
-        IntersectionType((TypeVariable(firstType) +: intersectionTypes).toSet)
+        IntersectionTypeExpression((TypeVariable(firstType) +: intersectionTypes).toSet)
       }
     }
     val tuple = P("(" ~ typeExpression ~ ("," ~ typeExpression).rep ~ ")").map { case (firstType, restTypes) =>
-      TupleType(firstType +: restTypes)
+      TupleTypeExpression(firstType +: restTypes)
     }
     P(intersectionOrVariable | tuple)
   }
@@ -49,14 +49,12 @@ class FileParser() {
     P("function" ~ identifier ~ "(" ~ parameterDeclaration.? ~ ("," ~ parameterDeclaration).rep ~ ")" ~ "=" ~ "()").map {
       case (name, firstParameter, restParameters) =>
         val parameters = firstParameter.map(_ +: restParameters).getOrElse(restParameters)
-        println(parameters)
         FunctionDeclaration(name, parameters)
     }
   }
 
   val callWith: P[CallWith] = {
-    P("call" ~ identifier.log("identifier") ~ "with" ~ typeExpression).log("callWith").map { case (functionName, typeExpr) =>
-      println("Call with")
+    P("call" ~ identifier ~ "with" ~ typeExpression).map { case (functionName, typeExpr) =>
       CallWith(functionName, typeExpr)
     }
   }
