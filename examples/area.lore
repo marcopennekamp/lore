@@ -1,0 +1,12 @@
+type BoundingBox
+type Circle
+type Rectangle
+
+function area(x: Circle) = ()
+function area(x: BoundingBox) = ()
+
+call area with (Circle)
+call area with (BoundingBox)
+call area with (Circle & BoundingBox)
+call area with (Rectangle)
+call area with (Rectangle & BoundingBox)
