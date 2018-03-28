@@ -34,7 +34,10 @@ object Lore {
     context.calls.foreach { call =>
       val multiFunction = context.multiFunctions.getOrElse(call.functionName, throw FunctionNotFoundException(call.functionName))
       val fit = multiFunction.fit(call.argumentType)
-      println(fit)
+      val min = fit.multiMin
+      println(s"Fit: $fit")
+      println(s"Min: $min")
+      println()
     }
   }
 }
