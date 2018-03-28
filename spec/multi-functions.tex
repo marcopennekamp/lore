@@ -119,7 +119,7 @@ To define multiple dispatch formally, we first need an operation that allows us 
 \begin{definition} \label{def:mfmin}
 	Let $\mfmin : \powerset{\funcset} \rightarrow \powerset{\funcset}$ be the function defined as follows:
 	\begin{align*}
-		\mfmin(B) = \{ f \in B \mid (\funcin(f') \comparable \funcin(f)) \implies \funcin(f') \geq \funcin(f) \text{, for } f' \in B \}
+		\mfmin(B) = \{ f \in B \mid \nexists f' \in B.\; \funcin(f') \leq \funcin(f) \}
 	\end{align*}
 \end{definition}
 
@@ -154,9 +154,9 @@ We will first look at an example with the multi-function $\mathcal{F}_\idval{con
 	
 \noindent The first result comes from the fact that for any types \type{a} and \type{b}, it holds that $\type{a} \geq \type{a \& b}$, and thus $\type{Circle} \geq \type{Circle \& +BoundingBox}$, as well as $\type{+BoundingBox} \geq \type{Circle \& +BoundingBox}$.
 	
-The second result is due to the fact that \type{Circle} and \type{+BoundingBox} are \textit{incomparable}, i.e. $\type{Circle} \incomparable \type{+BoundingBox}$, since the two types are neither equal, nor is one less or greater than the other.
+The second result is due to the fact that \type{Circle} and \type{+BoundingBox} are \textit{incomparable}, i.e. $\type{Circle} \nleq \type{+BoundingBox}$ and $\type{+BoundingBox} \nleq \type{Circle}$.
 	
-Since the most specific function is not unique, we should abort the compilation with an error (preferably) or even exit the program with a runtime error. We could call all associated functions, but this is likely not intended by the developer (and would thus only make sense if we make the programmer use a keyword at the call-site to switch the feature on), it's also not clear how to aggregate the return types and finally the call order of the functions is not determined.
+Since the most specific function is not unique, we should abort the compilation with an error (preferably) or even exit the program with a runtime error.
 	
 There are other instances of such an ambiguity, especially involving multiple function parameters (e.g. \type{(Int, a)} vs. \type{(a, Int)}), but the example above should be sufficient to illustrate the concept.
 	
