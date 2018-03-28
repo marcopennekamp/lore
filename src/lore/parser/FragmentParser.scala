@@ -3,7 +3,7 @@ package lore.parser
 import fastparse.WhitespaceApi
 import lore.ast._
 
-class FileParser() {
+class FragmentParser() {
   private val White = WhitespaceApi.Wrapper {
     import fastparse.all._
     NoTrace(" ".rep)

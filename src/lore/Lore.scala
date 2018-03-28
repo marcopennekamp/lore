@@ -3,7 +3,7 @@ package lore
 import lore.ast._
 import lore.exceptions.FunctionNotFoundException
 import lore.execution.Context
-import lore.parser.{FileParser, FpExpressionParser}
+import lore.parser.{FragmentParser, FpExpressionParser}
 
 import scala.io.Source
 
@@ -20,7 +20,7 @@ object Lore {
     // A new line is added at the end so the last statement has a closing newline.
     val source = Source.fromFile(s"examples/${args(0)}.lore").getLines.filter(_.trim.nonEmpty).mkString("\n") + "\n"
     println(source)
-    val parser = new FileParser()
+    val parser = new FragmentParser()
     val elements = parser.parse(source)
 
     println()
