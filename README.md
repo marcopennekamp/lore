@@ -22,4 +22,4 @@ Apart from these core features, I also have concepts and ideas in mind for moder
 
 I am currently writing the language specification. There is no Lore compiler, yet. We have a small experimental compiler that is used to test several multiple-dispatch concepts and implement core algorithms. 
 
-We are planning to support Javascript as a target, because of its ubiquity. JS has the advantage that it is easy to interface with and each have an excellent VM/JIT implementation available for sufficient performance.
+We are planning to support Javascript as a target, because of its ubiquity. Javascript has the advantage that it is easy to interface with and has an excellent VM/JIT implementation.
