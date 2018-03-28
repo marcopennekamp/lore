@@ -18,7 +18,7 @@ object Lore {
 
   def main(args: Array[String]): Unit = {
     // A new line is added at the end so the last statement has a closing newline.
-    val source = Source.fromFile("examples/concat.lore").getLines.filter(_.trim.nonEmpty).mkString("\n") + "\n"
+    val source = Source.fromFile(s"examples/${args(0)}.lore").getLines.filter(_.trim.nonEmpty).mkString("\n") + "\n"
     println(source)
     val parser = new FileParser()
     val elements = parser.parse(source)
