@@ -233,33 +233,13 @@ If a multi-function fails to satisfy this constraint, an \textit{invalid-return-
 
 \section{Abstract Function Constraints and Usage} \label{section:abstract-function-constraints}
 
-We want abstract functions to provide a guarantee that a multi-function call always finds a non-abstract function to call at run-time. To achieve this, we must ensure the following two properties:
+We want abstract functions to provide the guarantee that multiple dispatch always finds a concrete function to call at run-time. To achieve this, we must ensure the following two properties:
 \begin{enumerate}
-	\item Abstract functions must be fully implemented, which is formalised in a constraint called the \textbf{totality constraint}.
-	\item The input type of an abstract function must be abstract itself, which is formalised in a constraint called the \textbf{input abstractness constraint}.
+	\item Abstract functions must be fully implemented, which is formalised in the \textbf{totality constraint}.
+	\item The input type of an abstract function must be abstract itself, which is formalised in the \textbf{input abstractness constraint}.
 \end{enumerate}
 
 \begin{definition} \label{def:totality-constraint}
-	Let $\mathcal{F}$ be a multi-function. The following \textbf{totality constraint} $T(f)$ must be satisfied for all abstract functions $f \in \mathcal{F}$. The definition contains the notion of a \textit{direct} subtype, which we define as a strict subtype $s$ of a type $t$, such that there is no type $r$ that satisfies $s < r < t$. We write the set of all direct subtypes of a type $t$ as $\typedirect(t)$.
-	\begin{align*}
-		P(s) &\iff \exists f' \in \mathcal{F}.\; \funcin(f') = s \land (\funcbody(f') \neq \none \lor T(f')) \\
-		T(f) &\iff (\forall s \in \typedirect(\funcin(f)).\; P(s)) \land (\exists s.\; s \in \typedirect(\funcin(f)))
-	\end{align*}
-\end{definition}
-
-\noindent That is, for all \textit{direct} subtypes of $\funcin(f)$, there needs to be an implemented function ($\funcbody(f') \neq \none$) \textit{unless} the function call can be deferred to an abstract function $f'$, in which case $f'$ has to satisfy the totality constraint.
-
-The second condition of $T(f)$ is required due to a small edge case: If the input type $\funcin(f)$ of an abstract function $f \in \mathcal{F}$ does not have any direct subtypes, the first condition is satisfied, while our goal that we must always be able to find a non-abstract function to call at run-time is not met. Thus we require there to be at least one direct subtype.
-
-If a multi-function $\mathcal{F}$ does not satisfy the totality constraint, a \textit{missing-implementation} error is thrown, which includes a list of input types that need to be covered.
-
-\textbf{Problem with the definition:} The above definition does not consider intersection types. There is a limited, but \textbf{very large} set of \textit{direct subtypes} if you consider intersection types to be direct subtypes. That is, consider a type \type{A} and a label type \type{L}. Trivially, $\type{A \& L} < \type{A}$, and specifically, there is no other type that could be sandwiched between the two. But of course, it makes no sense to require an implementation. A value of type \type{A \& L} will be handled just like a value of the base type. 
-
-We have one interesting property: Since \type{A} must be abstract, \type{A \& L} is also abstract. But we can't blanket-remove abstract subtypes from the definition, because a true direct subtype \type{B} of \type{A} may also be abstract.
-
-So perhaps we should change the constraint from an algorithm-like definition rather to a description of what we want to achieve. This can be put much more succinctly: All possible subtypes of an abstract function's input type should be covered by one concrete function implementation. This ensures that all possible values are dispatched to a concrete function implementation.
-
-\begin{definition} \label{def:totality-constraint2}
 	Let $\mathcal{F}$ be a multi-function. The following \textbf{totality constraint} must be satisfied for all abstract functions $f \in \mathcal{F}$:
 	\begin{align*}
 		\forall s < \funcin(f).\; \neg \typeabstract(s) \implies \exists f' \in \mathcal{F}.\; \neg \funcabstract(f') \land \mffit(s)(\mathcal{F}) \neq \emptyset
@@ -268,14 +248,16 @@ So perhaps we should change the constraint from an algorithm-like definition rat
 
 \noindent That is, all instantiable subtypes $s$ of $f$'s input type must be covered by at least one concrete function. This ensures that all input values with which the function can ever be called are dispatched to a concrete function.
 
-
-
+If a multi-function $\mathcal{F}$ does not satisfy the totality constraint, a \textit{missing-implementation} error is thrown, which includes a list of input types that need to be covered.
 
 \begin{definition} \label{def:input-abstractness-constraint}
-	Let $\mathcal{F}$ be a multi-function. The following \textbf{input abstractness constraint} must be satisfied for all abstract functions $f \in \mathcal{F}$: The input type $\funcin(f)$ must be abstract, i.e. not instantiable.
+	Let $\mathcal{F}$ be a multi-function. The following \textbf{input abstractness constraint} must be satisfied for all abstract functions $f \in \mathcal{F}$: 
+	\begin{align*}
+		\funcabstract(\funcin(f))
+	\end{align*}
 \end{definition}
 
-\noindent To appreciate the need for this constraint, consider the following: Assume we define an abstract function $f$ (belonging to a multi-function $\mathcal{F}$) with an input type \type{A}, which is an ordinary (non-abstract) record type. The type \type{A} has two direct subtypes \type{A1} and \type{A2}. Even if we satisfied the totality constraint for $f$ by defining two implementations $f_1$ and $f_2$, we could call $\mathcal{F}$ with an argument $a : \type{A}$, which would attempt to call $f$, because $f_1$ and $f_2$ are not contained in the fit of the call. Thus, we would attempt to call an abstract function at run-time, contradicting the goal stated above.
+\noindent To appreciate the need for this constraint, consider the following: Assume we define an abstract function $f \in \mathcal{F}$ with an input type \type{A}, which is a concrete record type. The type \type{A} has two direct subtypes \type{A1} and \type{A2}. Even if we satisfied the totality constraint for $f$ by defining two implementations $f_1$ and $f_2$, we could call $\mathcal{F}$ with an argument $a : \type{A}$, which would attempt to call $f$, because $f_1$ and $f_2$ are not contained in the fit of the call. Thus, we would attempt to call an abstract function at run-time, contradicting the goal stated above.
 
 If an abstract function $f$ does not satisfy the input abstractness constraint, an \textit{input-type-not-abstract} error is thrown.
 
@@ -288,7 +270,7 @@ If an abstract function $f$ does not satisfy the input abstractness constraint, 
     record B { ... }
 \end{lstlisting}
 
-\noindent That is, \texttt{T} is a sum type, while \texttt{A} and \texttt{B} are ordinary record types. We also have the following two functions:
+\noindent That is, \texttt{T} is a sum type, while \texttt{A} and \texttt{B} are concrete record types. We also have the following two functions:
 \begin{lstlisting}
     function f(a: A): A = ...
     function f(b: B): B = ...
@@ -301,7 +283,7 @@ This is one instance where abstract functions are useful. We define the followin
     function f(t: T): T
 \end{lstlisting}
 
-\noindent This function is obviously abstract, because it has no body. It satisfies the \textbf{totality constraint}, since the two direct subtypes \texttt{A} and \texttt{B} each have an associated implemented function. The \textbf{input abstractness constraint} is also satisfied, because sum types are by definition abstract.\footnote{This may not be so obvious, but there is no way to instantiate a value of a sum type directly: You always have to instantiate the value corresponding to one of the subtypes.} We can now call the function \texttt{f} with a value \texttt{v} of type \texttt{T} without getting a compilation error. The call should lead to the expected semantics. 
+\noindent This function is obviously abstract, because it has no body. It satisfies the \textbf{totality constraint}, since the concrete subtypes \texttt{A} and \texttt{B} each have an associated concrete function. The \textbf{input abstractness constraint} is also satisfied, because sum types are by definition abstract.\footnote{This may not be so obvious, but there is no way to instantiate a value of a sum type directly: You always have to instantiate the value corresponding to one of the subtypes.} We can now call the function \texttt{f} with a value \texttt{v} of type \texttt{T} without getting a compilation error. The call should lead to the expected semantics. 
 
 Note that the \textbf{constraint on return types} from definition \ref{def:constraint-return-types} is also satisfied:
 \begin{enumerate}
@@ -310,6 +292,30 @@ Note that the \textbf{constraint on return types} from definition \ref{def:const
 \end{enumerate}
 
 \noindent This concludes our usage example about abstract functions.
+
+
+
+\section{Totality Constraint Verification}
+
+It is not obvious how to check the totality constraint defined in the last section. In this section, we will develop an algorithm that can verify the constraint for an arbitrary abstract function.
+
+\begin{definition} \label{def:totality-constraint-old}
+	Let $\mathcal{F}$ be a multi-function. The following \textbf{totality constraint} $T(f)$ must be satisfied for all abstract functions $f \in \mathcal{F}$. The definition contains the notion of a \textit{direct} subtype, which we define as a strict subtype $s$ of a type $t$, such that there is no type $r$ that satisfies $s < r < t$. We write the set of all direct subtypes of a type $t$ as $\typedirect(t)$.
+	\begin{align*}
+		P(s) &\iff \exists f' \in \mathcal{F}.\; \funcin(f') = s \land (\funcbody(f') \neq \none \lor T(f')) \\
+		T(f) &\iff (\forall s \in \typedirect(\funcin(f)).\; P(s)) \land (\exists s.\; s \in \typedirect(\funcin(f)))
+	\end{align*}
+\end{definition}
+
+\noindent That is, for all \textit{direct} subtypes of $\funcin(f)$, there needs to be an implemented function ($\funcbody(f') \neq \none$) \textit{unless} the function call can be deferred to an abstract function $f'$, in which case $f'$ has to satisfy the totality constraint.
+
+The second condition of $T(f)$ is required due to a small edge case: If the input type $\funcin(f)$ of an abstract function $f \in \mathcal{F}$ does not have any direct subtypes, the first condition is satisfied, while our goal that we must always be able to find a non-abstract function to call at run-time is not met. Thus we require there to be at least one direct subtype.
+
+\textbf{Problem with the definition:} The above definition does not consider intersection types. There is a limited, but \textbf{very large} set of \textit{direct subtypes} if you consider intersection types to be direct subtypes. That is, consider a type \type{A} and a label type \type{L}. Trivially, $\type{A \& L} < \type{A}$, and specifically, there is no other type that could be sandwiched between the two. But of course, it makes no sense to require an implementation. A value of type \type{A \& L} will be handled just like a value of the base type. 
+
+We have one interesting property: Since \type{A} must be abstract, \type{A \& L} is also abstract. But we can't blanket-remove abstract subtypes from the definition, because a true direct subtype \type{B} of \type{A} may also be abstract.
+
+So perhaps we should change the constraint from an algorithm-like definition rather to a description of what we want to achieve. This can be put much more succinctly: All possible subtypes of an abstract function's input type should be covered by one concrete function implementation. This ensures that all possible values are dispatched to a concrete function implementation.
 
 
 
