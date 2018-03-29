@@ -53,6 +53,15 @@
 \newtheorem{theorem}{Theorem}[section]
 \theorembodyfont{\upshape}
 \newtheorem{definition}[theorem]{Definition}
+\newtheorem{lemma}[theorem]{Lemma}
+
+\theoremstyle{nonumberplain}
+\theoremheaderfont{\itshape}
+\theorembodyfont{\normalfont}
+\theoremseparator{.\,—}
+\theoremsymbol{}
+\newtheorem{proof}{Proof}
+
 
 % Commands for examples.
 \newcommand{\idval}[1]{\text{\texttt{#1}}}
@@ -95,3 +104,4 @@
 \DeclareMathOperator{\mfmin}{Min} % The most specific functions of a multi-function fit.
 \DeclareMathOperator{\typedirect}{direct}
 \DeclareMathOperator{\typeabstract}{abstract}
+\DeclareMathOperator{\verifytotality}{verify-totality}
