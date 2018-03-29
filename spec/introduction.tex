@@ -3,10 +3,12 @@
 Unicorns are $\mathbb{PRETTY}$.
 
 
+
 \section{Ideas and Concerns}
 
 \subsection{Design by Contract}
 Semantic types are often used to label values that have a special property. For example, a list may be sorted, a file may be open and a matrix may be symmetric. Many of these properties can be checked quite easily. We can apply this observation to the notion of \textbf{design by contract} as follows: For a semantic type that is added to a specific value type, we can specify a function that checks whether the semantic type may be applied in the context of a specific value. These functions are applied during development and testing, may be optionally turned on in production, and lead to runtime errors if the contract is violated.
+
 
 \subsection{Type Modes and Covariant, Part Type Parameters}
 Suppose we have a type \type{A} with exactly two modes of existence \type{M1} and \type{M2}, which are defined as simple label types. Values of \type{A} can only exist in mode 1 or mode 2, but \textbf{not} stand alone. How can we encode this in the type system?\footnote{\textbf{Intersection types} are of no use here, because we can neither limit the other type used with \type{A} in an intersection type, nor can we require that \type{A} must always be used in an intersection type.}
@@ -37,6 +39,13 @@ We can then finally define the abstract function and the two concrete functions,
 \end{lstlisting}
 
 Multiple-dispatch will then dispatch to the correct function depending on the runtime type of a value \texttt{a : A[M]}.
+
+
+\subsection{Definition of Abstract Types}
+An abstract type is a type for which the following holds: Let $I_\tau$ be the set of instantiable values of a type $\tau$. Let $I_{sub} = \bigcup_{\sigma < \tau} values(\sigma)$ be the set of instantiable values of all subtypes of $\tau$. Type $\tau$ is abstract, if and only if $I_\tau - I_{sub} = \emptyset$.
+
+
+
 
 
 
