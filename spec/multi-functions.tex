@@ -242,11 +242,11 @@ We want abstract functions to provide the guarantee that multiple dispatch alway
 \begin{definition} \label{def:totality-constraint}
 	Let $\mathcal{F}$ be a multi-function. The following \textbf{totality constraint} must be satisfied for all abstract functions $f \in \mathcal{F}$:
 	\begin{align*}
-		\forall s < \funcin(f).\; \neg \typeabstract(s) \implies \exists f' \in \mathcal{F}.\; \neg \funcabstract(f') \land \mffit(s)(\mathcal{F}) \neq \emptyset
+		\forall s < \funcin(f).\; \neg \typeabstract(s) \implies \exists f' \in \mathcal{F}.\; \neg \funcabstract(f') \land f' \in \mffit(s)(\mathcal{F})
 	\end{align*}
 \end{definition}
 
-\noindent That is, all instantiable subtypes $s$ of $f$'s input type must be covered by at least one concrete function. This ensures that all input values with which the function can ever be called are dispatched to a concrete function.
+\noindent That is, all concrete subtypes $s$ of $f$'s input type must be covered by at least one concrete function. This ensures that all input values with which the function can ever be called are dispatched to a concrete function.
 
 If a multi-function $\mathcal{F}$ does not satisfy the totality constraint, a \textit{missing-implementation} error is thrown, which includes a list of input types that need to be covered.
 
