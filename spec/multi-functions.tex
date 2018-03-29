@@ -253,6 +253,12 @@ The second condition of $T(f)$ is required due to a small edge case: If the inpu
 
 If a multi-function $\mathcal{F}$ does not satisfy the totality constraint, a \textit{missing-implementation} error is thrown, which includes a list of input types that need to be covered.
 
+\textbf{Problem with the definition:} The above definition does not consider intersection types. There is a limited, but \textbf{very large} set of \textit{direct subtypes} if you consider intersection types to be direct subtypes. That is, consider a type \type{A} and a label type \type{L}. Trivially, $\type{A & L} < \type{A}$, and specifically, there is no other type that could be sandwiched between the two. But of course, it makes no sense to require an implementation. A value of type \type{A & L} will be handled just like a value of the base type. 
+
+We have one interesting property: Since \type{A} must be abstract, \type{A & L} is also abstract. But we can't blanket-remove abstract subtypes from the definition, because a true direct subtype \type{B} of \type{A} may also be abstract.
+
+So perhaps we should change the constraint from an algorithm-like definition rather to a description of what we want to achieve. This can be put much more succinctly: All possible subtypes of an abstract function's input type should be covered by one concrete function implementation. This ensures that all possible values are dispatched to a concrete function implementation.
+
 \begin{definition} \label{def:input-abstractness-constraint}
 	Let $\mathcal{F}$ be a multi-function. The following \textbf{input abstractness constraint} must be satisfied for all abstract functions $f \in \mathcal{F}$: The input type $\funcin(f)$ must be abstract, i.e. not instantiable.
 \end{definition}
