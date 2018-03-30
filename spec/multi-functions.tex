@@ -334,8 +334,8 @@ We will see that this is entirely possible. First, we will define a lemma that w
           F exists f' => abstract(f') and is-verified(F, f)
                          and fit(s)(F) contains f'
     
-    function find-direct-subtypes(t: tuple-type):
-      t as sequence
+    function find-direct-subtypes(tt: tuple-type):
+      tt as sequence
         map t => if abstract(t) then direct-subtypes(t) 
                                 else [t]
         product  
