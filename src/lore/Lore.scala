@@ -24,9 +24,16 @@ object Lore {
     val elements = parser.parse(source)
     val context = Context.build(elements)
 
+    // Print types for debugging.
+    println("Types:")
+    context.types.values.foreach { t =>
+      println(s"  $t")
+    }
+
+    // Print functions for debugging.
     context.multiFunctions.values.foreach { mf =>
       println()
-      println(s"${mf.name}")
+      println(s"${mf.name}:")
       mf.functions.foreach(f => println(s"  $f"))
     }
 
