@@ -322,22 +322,18 @@ We will see that this is entirely possible. First, we will define a lemma that w
         forall f => is-verified(F, f)
       
     function is-verified(F: multi-function, f: function):
-      val direct-subtypes = find-direct-subtypes(in(f))
-      direct-subtypes
-        filter s => not abstract(s)
+      find-direct-declared-subtypes(in(f))
         forall s => 
-          F exists f' => not abstract(f') 
-                         and fit(s)(F) contains f'
-      direct-subtypes
-        filter s => abstract(s)
-        forall s =>
-          F exists f' => abstract(f') and is-verified(F, f)
-                         and fit(s)(F) contains f'
+          F exists f' => 
+            (not abstract(f') 
+              or abstract(f') and is-verified(F, f))
+            and fit(s)(F) contains f'
     
     function find-direct-declared-subtypes(tt: tuple-type):
       tt as sequence
-        map t => if abstract(t) then direct-declared-subtypes(t) 
-                                else [t]
+        map t => if abstract(t) 
+                 then direct-declared-subtypes(t) 
+                 else [t]
         product  
 	\end{lstlisting}
 \end{definition}
@@ -345,8 +341,6 @@ We will see that this is entirely possible. First, we will define a lemma that w
 \noindent In the algorithm above, direct declared subtypes are types that are explicitly marked as direct subtypes, such as immediate subclasses. In the function \texttt{find-direct-declared-subtypes}, a product of all individual direct declared subtypes is built to get tuple types that subtype the original input type.
 
 The central idea for proving (and improving) this algorithm is the observation that only looking at the directly declared subtypes is sufficient to prove the totality constraint for all subtypes. One step in this direction is lemma \ref{lemma:totality-constraint-intersection-fit}.
-
-One caveat is that there may be abstract direct subtypes that are relevant now, because we are only looking at direct subtypes. The algorithm above solves this by checking whether the totality constraint is verified for an abstract function that fits the abstract subtype.
 
 
 
