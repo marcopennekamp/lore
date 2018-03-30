@@ -322,7 +322,7 @@ We will see that this is entirely possible. First, we will define a lemma that w
         forall f => is-verified(F, f)
       
     function is-verified(F: multi-function, f: function):
-      val direct-subtypes = find-direct-subtypes(f)
+      val direct-subtypes = find-direct-subtypes(in(f))
       direct-subtypes
         filter s => not abstract(s)
         forall s => 
@@ -334,8 +334,8 @@ We will see that this is entirely possible. First, we will define a lemma that w
           F exists f' => abstract(f') and is-verified(F, f)
                          and fit(s)(F) contains f'
     
-    function find-direct-subtypes(f: function):
-      in(f) as sequence
+    function find-direct-subtypes(t: tuple-type):
+      t as sequence
         map t => if abstract(t) then direct-subtypes(t) 
                                 else [t]
         product  
