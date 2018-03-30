@@ -10,4 +10,10 @@ trait Type {
     * Whether this type is a subtype of the given type.
     */
   def isSubtype(other: Type): Boolean
+
+  /**
+    *
+    * @return A verbose string representation of the type.
+    */
+  def verbose: String = toString
 }

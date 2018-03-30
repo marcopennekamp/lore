@@ -27,7 +27,7 @@ object Lore {
     // Print types for debugging.
     println("Types:")
     context.types.values.foreach { t =>
-      println(s"  $t")
+      println(s"  ${t.verbose}")
     }
 
     // Print functions for debugging.
