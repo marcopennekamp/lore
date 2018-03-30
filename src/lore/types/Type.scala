@@ -14,6 +14,11 @@ trait Type {
   def isSubtype(other: Type): Boolean
 
   /**
+    * @return Whether this type is a strict subtype of the given type.
+    */
+  def isStrictSubtype(other: Type): Boolean = isSubtype(other) && this != other
+
+  /**
     * @return The set of direct declared subtypes, that is, explicitly declared immediate subtypes, for example
     *         immediate subclasses or direct sub-label types.
     */
