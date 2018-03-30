@@ -6,5 +6,5 @@ function f(t: T)
 function f(a: A) = ()
 function f(b: B) = ()
 
-call f with A
-call f with B
+call f with (A)
+call f with (B)
