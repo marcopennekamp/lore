@@ -38,6 +38,9 @@ object Lore {
     }
 
     println()
+    context.verify()
+
+    println()
     println("Function fit for each call statement:")
     context.calls.foreach { call =>
       val multiFunction = context.multiFunctions.getOrElse(call.functionName, throw FunctionNotFoundException(call.functionName))

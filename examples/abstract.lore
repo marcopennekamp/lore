@@ -1,10 +1,15 @@
 type A
+type A1 <: A
+type A2 <: A
 type B
 type T = A | B
 
 function f(t: T)
-function f(a: A) = ()
+function f(a: A)
+function f(a: A1) = ()
+function f(a: A2) = ()
 function f(b: B) = ()
 
 call f with A
 call f with B
+call f with A2

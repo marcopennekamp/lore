@@ -2,12 +2,26 @@ package lore.execution
 
 import lore.ast._
 import lore.exceptions.TypeNotFoundException
-import lore.functions.{LoreFunction, MultiFunction, Parameter}
+import lore.functions.{LoreFunction, MultiFunction, Parameter, TotalityConstraint}
 import lore.types._
 
 import scala.collection.mutable
 
-class Context(val types: Map[String, Type], val multiFunctions: Map[String, MultiFunction], val calls: Seq[Call])
+class Context(val types: Map[String, Type], val multiFunctions: Map[String, MultiFunction], val calls: Seq[Call]) {
+  implicit private val context = this
+
+  def verify(): Unit = {
+    multiFunctions.values.foreach { mf =>
+      val violatingFunctions = TotalityConstraint.verify(mf)
+      if (violatingFunctions.nonEmpty) {
+        println(s"The multi-function ${mf.name} has abstract functions that do not satisfy the totality constraint:")
+        violatingFunctions.foreach { f =>
+          println(s"  $f")
+        }
+      }
+    }
+  }
+}
 
 object Context {
 
