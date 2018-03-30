@@ -17,5 +17,6 @@ case class IntersectionType(types: Set[Type]) extends Type {
     }
   }
 
+  override def isAbstract = true // TODO: Really?
   override def toString = "(" + types.mkString(" & ") + ")"
 }

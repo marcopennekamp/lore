@@ -12,5 +12,10 @@ case class TupleType(components: Seq[Type]) extends Type {
     }
   }
 
+  /**
+    * @return Whether the tuple type is abstract. A tuple type is abstract if one of its component types is abstract.
+    */
+  override def isAbstract = components.exists(_.isAbstract)
+
   override def toString = "(" + components.mkString(", ") + ")"
 }
