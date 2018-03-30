@@ -19,15 +19,16 @@ object Lore {
   def main(args: Array[String]): Unit = {
     // A new line is added at the end so the last statement has a closing newline.
     val source = Source.fromFile(s"examples/${args(0)}.lore").getLines.filter(_.trim.nonEmpty).mkString("\n") + "\n"
-    println(source)
+    //println(source)
     val parser = new FragmentParser()
     val elements = parser.parse(source)
-
-    println()
-    println("Elements: ")
-    elements.foreach(println)
-
     val context = Context.build(elements)
+
+    context.multiFunctions.values.foreach { mf =>
+      println()
+      println(s"${mf.name}")
+      mf.functions.foreach(f => println(s"  $f"))
+    }
 
     println()
     println("Function fit for each call statement:")

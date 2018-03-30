@@ -46,10 +46,10 @@ class FragmentParser() {
   }
 
   val functionDeclaration: P[FunctionDeclaration] = {
-    P("function" ~ identifier ~ "(" ~ parameterDeclaration.? ~ ("," ~ parameterDeclaration).rep ~ ")" ~ "=" ~ "()").map {
-      case (name, firstParameter, restParameters) =>
+    P("function" ~ identifier ~ "(" ~ parameterDeclaration.? ~ ("," ~ parameterDeclaration).rep ~ ")" ~ ("=" ~ "()".!).?).map {
+      case (name, firstParameter, restParameters, body) =>
         val parameters = firstParameter.map(_ +: restParameters).getOrElse(restParameters)
-        FunctionDeclaration(name, parameters)
+        FunctionDeclaration(name, parameters, isAbstract = body.isEmpty)
     }
   }
 

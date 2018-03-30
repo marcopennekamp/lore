@@ -1,0 +1,10 @@
+type T
+type A <: T
+type B <: T
+
+function f(t: T)
+function f(a: A) = ()
+function f(b: B) = ()
+
+call f with A
+call f with B

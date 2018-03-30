@@ -43,11 +43,11 @@ object Context {
           .map(supertypeName => getType(supertypeName))
           .getOrElse(AnyType)
         types.put(name, LabelType(name, supertype))
-      case FunctionDeclaration(name, parameterDeclarations) =>
+      case FunctionDeclaration(name, parameterDeclarations, isAbstract) =>
         val parameters = parameterDeclarations.map { decl =>
           Parameter(decl.name, evaluateTypeExpression(decl.typeExpression))
         }
-        addFunction(LoreFunction(name, parameters))
+        addFunction(LoreFunction(name, parameters, isAbstract))
       case CallWith(functionName, typeExpression) =>
         val argumentType = evaluateTypeExpression(typeExpression)
         calls += Call(functionName, argumentType)
