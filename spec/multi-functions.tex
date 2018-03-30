@@ -334,15 +334,15 @@ We will see that this is entirely possible. First, we will define a lemma that w
           F exists f' => abstract(f') and is-verified(F, f)
                          and fit(s)(F) contains f'
     
-    function find-direct-subtypes(tt: tuple-type):
+    function find-direct-declared-subtypes(tt: tuple-type):
       tt as sequence
-        map t => if abstract(t) then direct-subtypes(t) 
+        map t => if abstract(t) then direct-declared-subtypes(t) 
                                 else [t]
         product  
 	\end{lstlisting}
 \end{definition}
 
-\noindent In the algorithm above, direct subtypes are directly declared subtypes of a type. In the function \texttt{find-direct-subtypes}, a product of all individual direct subtypes is built to get tuple types that subtype the original input type.
+\noindent In the algorithm above, direct declared subtypes are types that are explicitly marked as direct subtypes, such as immediate subclasses. In the function \texttt{find-direct-declared-subtypes}, a product of all individual direct declared subtypes is built to get tuple types that subtype the original input type.
 
 The central idea for proving (and improving) this algorithm is the observation that only looking at the directly declared subtypes is sufficient to prove the totality constraint for all subtypes. One step in this direction is lemma \ref{lemma:totality-constraint-intersection-fit}.
 
