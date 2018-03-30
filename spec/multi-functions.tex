@@ -325,8 +325,9 @@ We will see that this is entirely possible. First, we will define a lemma that w
       find-direct-declared-subtypes(in(f))
         forall s => 
           F exists f' => 
-            (not abstract(f') 
-              or abstract(f') and is-verified(F, f))
+                in(f') < in(f)
+            and (not abstract(f') 
+                  or abstract(f') and is-verified(F, f))
             and fit(s)(F) contains f'
     
     function find-direct-declared-subtypes(tt: tuple-type):
@@ -341,6 +342,8 @@ We will see that this is entirely possible. First, we will define a lemma that w
 \noindent In the algorithm above, direct declared subtypes are types that are explicitly marked as direct subtypes, such as immediate subclasses. In the function \texttt{find-direct-declared-subtypes}, a product of all individual direct declared subtypes is built to get tuple types that subtype the original input type.
 
 The central idea for proving (and improving) this algorithm is the observation that only looking at the directly declared subtypes is sufficient to prove the totality constraint for all subtypes. One step in this direction is lemma \ref{lemma:totality-constraint-intersection-fit}.
+
+Requiring \texttt{in(f') < in(f)} in \texttt{is-verified} uses the strict hierarchy of function input types to ensure that there is no infinite recursion.
 
 
 
