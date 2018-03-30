@@ -34,23 +34,29 @@ object Context {
         case IntersectionTypeExpression(expressions) =>
           val types = expressions.map(evaluateTypeExpression)
           IntersectionType(types)
+        case SumTypeExpression(expressions) =>
+          val types = expressions.map(evaluateTypeExpression)
+          SumType(types)
       }
     }
 
     statements.foreach {
-      case TypeDeclaration(name, maybeSupertypeName) =>
+      case LabelTypeDeclaration(name, maybeSupertypeName) =>
         val supertype = maybeSupertypeName
           .map(supertypeName => getType(supertypeName))
           .getOrElse(AnyType)
         types.put(name, LabelType(name, supertype))
+      case TypeDeclaration(name, typeExpression) =>
+        val tpe = evaluateTypeExpression(typeExpression)
+        types.put(name, tpe)
       case FunctionDeclaration(name, parameterDeclarations, isAbstract) =>
         val parameters = parameterDeclarations.map { decl =>
           Parameter(decl.name, evaluateTypeExpression(decl.typeExpression))
         }
         addFunction(LoreFunction(name, parameters, isAbstract))
       case CallWith(functionName, typeExpression) =>
-        val argumentType = evaluateTypeExpression(typeExpression)
-        calls += Call(functionName, argumentType)
+        val argumentTypes = evaluateTypeExpression(typeExpression)
+        calls += Call(functionName, argumentTypes.toTuple)
     }
 
     new Context(types.toMap, multiFunctions.toMap, calls)

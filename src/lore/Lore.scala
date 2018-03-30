@@ -22,7 +22,7 @@ object Lore {
     //println(source)
     val parser = new FragmentParser()
     val elements = parser.parse(source)
-    val context = Context.build(elements)
+    implicit val context = Context.build(elements)
 
     // Print types for debugging.
     println("Types:")
