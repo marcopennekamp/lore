@@ -3,7 +3,7 @@ package lore.functions
 import lore.execution.Context
 import scalaz.std.list._
 import scalaz.syntax.traverse._
-import lore.types.TupleType
+import lore.types.{Subtyping, TupleType}
 
 object TotalityConstraint {
 
@@ -21,7 +21,7 @@ object TotalityConstraint {
   private def isVerified(mf: MultiFunction)(f: LoreFunction)(implicit context: Context): Boolean = {
     findDirectDeclaredSubtypes(f.inputType).forall { subtype =>
       mf.functions.exists { f2 =>
-        f2.inputType.isStrictSubtype(f.inputType) &&
+        Subtyping.isStrictSubtype(f2.inputType, f.inputType) &&
           (!f2.isAbstract || (f2.isAbstract && isVerified(mf)(f2))) &&
           mf.fit(subtype).contains(f2)
       }
