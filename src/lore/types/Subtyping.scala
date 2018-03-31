@@ -24,7 +24,9 @@ object Subtyping {
       case (s1: SumType, s2: SumType) => s1.types.forall(sc1 => s2.types.exists(sc2 => isSubtype(sc1, sc2)))
       // A type t1 is the subtype of a sum type s2, if t1 is a subtype of any of the types in s2.
       case (_, s2: SumType) => s2.types.exists(sc2 => isSubtype(t1, sc2))
-      // TODO: Subtyping for (sum type, other type). A rule: A <: C and B <: C => A | B <: C
+      // A sum type s1 is the subtype of a non-sum type t2, if all individual types in s2 are subtypes of t2.
+      // More formally: A <= C and B <= C implies A | B <= C
+      case (s1: SumType, _) => s1.types.forall(sc1 => isSubtype(sc1, t2))
 
       // A tuple type tt1 is the subtype of a tuple type tt2, if both types have the same component types and each
       // component type of tt1 is a subtype of the component type in tt2 that is at the same position.
