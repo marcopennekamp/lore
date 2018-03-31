@@ -2,14 +2,17 @@ type A
 type A1 <: A
 type A2 <: A
 type B
-type T = A | B
+type C
+type T = A | B | C
 
 function f(t: T)
 function f(a: A)
 function f(a: A1) = ()
 function f(a: A2) = ()
 function f(b: B) = ()
+function f(c: C) = ()
 
-call f with A
+call f with A1
 call f with B
 call f with A2
+call f with C

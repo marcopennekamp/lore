@@ -33,22 +33,31 @@ class FragmentParser() {
     P(normalTypeDeclaration | labelType)
   }
 
-  val typeExpression: P[TypeExpression] = {
-    val sumType = P(identifier ~ ("|" ~ typeExpression).rep(min = 1)).map { case (firstType, types) =>
+  val sumType: P[SumTypeExpression] = {
+    val innerTypeExpression = P(intersectionType | tupleType | typeVariable | enclosedType)
+    P(identifier ~ ("|" ~/ innerTypeExpression).rep(min = 1)).map { case (firstType, types) =>
       SumTypeExpression((TypeVariable(firstType) +: types).toSet)
     }
-    val intersectionOrVariable = P(identifier ~ ("&" ~ typeExpression).rep).map { case (firstType, types) =>
-      if (types.isEmpty) {
-        TypeVariable(firstType)
-      } else {
-        IntersectionTypeExpression((TypeVariable(firstType) +: types).toSet)
-      }
+  }
+
+  val intersectionType: P[IntersectionTypeExpression] = {
+    val innerTypeExpression = P(tupleType | typeVariable | enclosedType)
+    P(identifier ~ ("&" ~ innerTypeExpression).rep(min = 1)).map { case (firstType, types) =>
+      IntersectionTypeExpression((TypeVariable(firstType) +: types).toSet)
     }
-    val tuple = P("(" ~ typeExpression ~ ("," ~ typeExpression).rep ~ ")").map { case (firstType, restTypes) =>
+  }
+
+  val tupleType: P[TupleTypeExpression] = {
+    P("(" ~ typeExpression ~ ("," ~ typeExpression).rep ~ ")").map { case (firstType, restTypes) =>
       TupleTypeExpression(firstType +: restTypes)
     }
-    P(sumType | intersectionOrVariable | tuple)
   }
+
+  val typeVariable: P[TypeVariable] = P(identifier).map(TypeVariable)
+
+  val enclosedType: P[TypeExpression] = P("(" ~ typeExpression ~ ")")
+
+  val typeExpression: P[TypeExpression] = P(sumType | intersectionType | tupleType | typeVariable | enclosedType)
 
   val parameterDeclaration: P[ParameterDeclaration] = {
     P(identifier ~ ":" ~ typeExpression).map { case (name, expr) => ParameterDeclaration(name, expr) }
