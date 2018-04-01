@@ -1,15 +1,10 @@
 package lore.parser
 
-import fastparse.WhitespaceApi
 import lore.ast._
 
-class ExpressionParser() {
-  val White = WhitespaceApi.Wrapper {
-    import fastparse.all._
-    NoTrace(" ".rep)
-  }
+object ExpressionParser extends IgnoreWhitespace {
+  import whitespaceApi._
   import fastparse.noApi._
-  import White._
 
   val boolExpr: P[BoolExpr] = {
     val bool: P[Bool] = P(StringIn("true", "false").!).map(v => Bool(v.toBoolean))
