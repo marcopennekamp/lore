@@ -3,15 +3,15 @@ package lore
 import lore.ast._
 import lore.exceptions.FunctionNotFoundException
 import lore.execution.Context
-import lore.parser.{FragmentParser, FpExpressionParser}
+import lore.parser.{FragmentParser, ExpressionParser}
 
 import scala.io.Source
 
 object Lore {
   def testCalculation(): Unit = {
     val source = Source.fromFile("examples/calculation.lore").getLines.mkString
-    val parser = new FpExpressionParser()
-    val expression = parser.parseExpression(source)
+    val parser = new ExpressionParser()
+    val expression = parser.parse(source)
     val result = ExprAlgebra.evaluate(ExprAlgebra.evalAlgebra)(expression)
     println("FP  result: " + result)
   }
