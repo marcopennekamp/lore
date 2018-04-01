@@ -3,7 +3,7 @@ package lore
 import lore.ast._
 import lore.exceptions.FunctionNotFoundException
 import lore.execution.Context
-import lore.parser.{FragmentParser, ExpressionParser}
+import lore.parser.ExpressionParser
 
 import scala.io.Source
 
@@ -16,11 +16,7 @@ object Lore {
   }
 
   def main(args: Array[String]): Unit = {
-    // A new line is added at the end so the last statement has a closing newline.
-    val source = Source.fromFile(s"examples/${args(0)}.lore").getLines.filter(_.trim.nonEmpty).mkString("\n") + "\n"
-    //println(source)
-    val elements = FragmentParser.parse(source)
-    implicit val context = Context.build(elements)
+    implicit val context = Context.fromExample(args(0))
 
     // Print types for debugging.
     println("Types:")
@@ -36,7 +32,8 @@ object Lore {
     }
 
     println()
-    context.verify()
+    val verificationResult = context.verify()
+    verificationResult.print()
 
     println()
     println("Function fit for each call statement:")

@@ -2,29 +2,72 @@ package lore.execution
 
 import lore.ast._
 import lore.exceptions.TypeNotFoundException
+import lore.execution.Context._
 import lore.functions.{LoreFunction, MultiFunction, Parameter, TotalityConstraint}
+import lore.parser.FragmentParser
 import lore.types._
 
 import scala.collection.mutable
+import scala.io.Source
 
 class Context(val types: Map[String, Type], val multiFunctions: Map[String, MultiFunction], val calls: Seq[Call]) {
   implicit private val context = this
 
-  def verify(): Unit = {
-    multiFunctions.values.foreach { mf =>
+  def verify(): VerificationResult = {
+    val multiFunctionErrors = multiFunctions.values.flatMap { mf =>
       val violatingFunctions = TotalityConstraint.verify(mf)
       if (violatingFunctions.nonEmpty) {
-        println(s"The multi-function ${mf.name} has abstract functions that do not satisfy the totality constraint:")
-        violatingFunctions.foreach { f =>
-          println(s"  $f")
-        }
+        Seq((mf, MultiFunctionError(violatingFunctions.map((_, TotalityConstraintViolation)).toMap)))
+      } else {
+        Seq.empty
       }
+    }.toMap
+
+    if (multiFunctionErrors.nonEmpty) {
+      VerificationFailure(multiFunctionErrors)
+    } else {
+      VerificationSuccess
     }
   }
 }
 
 object Context {
 
+  sealed trait FunctionError
+  case object TotalityConstraintViolation extends FunctionError
+
+  case class MultiFunctionError(functionErrors: Map[LoreFunction, FunctionError])
+
+  sealed trait VerificationResult {
+    def print(): Unit
+  }
+  case object VerificationSuccess extends VerificationResult {
+    override def print(): Unit = println("Context verification was successful.")
+  }
+  case class VerificationFailure(multiFunctionErrors: Map[MultiFunction, MultiFunctionError]) extends VerificationResult {
+    override def print(): Unit = {
+      multiFunctionErrors.foreach { case (mf, mfe) =>
+        println(s"The multi-function ${mf.name} has functions that are not valid:")
+        mfe.functionErrors.foreach { case (f, fe) =>
+          println(s"  $f has a $fe")
+        }
+      }
+    }
+  }
+
+  /**
+    * @return An unverified context built from the example source.
+    */
+  def fromExample(name: String): Context = {
+    // A new line is added at the end so the last statement has a closing newline.
+    val source = Source.fromFile(s"examples/$name.lore").getLines.filter(_.trim.nonEmpty).mkString("\n") + "\n"
+    val elements = FragmentParser.parse(source)
+    Context.build(elements)
+  }
+
+  /**
+    * @return An unverified context built from the given sequence of program elements.
+    */
   def build(statements: Seq[TopLevelElement]): Context = {
     val types = mutable.HashMap[String, Type]()
     val multiFunctions = mutable.HashMap[String, MultiFunction]()
