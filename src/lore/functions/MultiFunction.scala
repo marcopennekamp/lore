@@ -9,4 +9,11 @@ case class MultiFunction(name: String, functions: Set[LoreFunction]) {
     functions.filter(f => Subtyping.isSubtype(t, f.inputType))
   }
 
+  /**
+    * @return The function with the exact given input type.
+    */
+  def function(inputType: Type): Option[LoreFunction] = {
+    functions.find(f => f.inputType == inputType)
+  }
+
 }
