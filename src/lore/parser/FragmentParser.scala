@@ -30,14 +30,8 @@ object FragmentParser extends IgnoreWhitespace {
     }
   }
 
-  val callWith: P[CallWith] = {
-    P("call" ~ identifier ~ "with" ~ typeExpression).map { case (functionName, typeExpr) =>
-      CallWith(functionName, typeExpr)
-    }
-  }
-
   val file: P[Seq[TopLevelElement]] = {
-    P(((typeDeclaration | functionDeclaration | callWith) ~ "\n").rep ~ End)
+    P(((typeDeclaration | functionDeclaration) ~ "\n").rep ~ End)
   }
 
   def parse(source: String): Seq[TopLevelElement] = {

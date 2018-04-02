@@ -10,7 +10,7 @@ import lore.types._
 import scala.collection.mutable
 import scala.io.Source
 
-class Context(val types: Map[String, Type], val multiFunctions: Map[String, MultiFunction], val calls: Seq[Call]) {
+class Context(val types: Map[String, Type], val multiFunctions: Map[String, MultiFunction]) {
   implicit private val context = this
 
   def verify(): VerificationResult = {
@@ -71,7 +71,6 @@ object Context {
   def build(statements: Seq[TopLevelElement]): Context = {
     val types = mutable.HashMap[String, Type]()
     val multiFunctions = mutable.HashMap[String, MultiFunction]()
-    val calls = mutable.ListBuffer[Call]()
 
     def getType(name: String): Type = {
       types.getOrElse(name, throw TypeNotFoundException(name))
@@ -111,12 +110,9 @@ object Context {
           Parameter(decl.name, evaluateTypeExpression(decl.typeExpression))
         }
         addFunction(LoreFunction(name, parameters, isAbstract))
-      case CallWith(functionName, typeExpression) =>
-        val argumentTypes = evaluateTypeExpression(typeExpression)
-        calls += Call(functionName, argumentTypes.toTuple)
     }
 
-    new Context(types.toMap, multiFunctions.toMap, calls)
+    new Context(types.toMap, multiFunctions.toMap)
   }
 
 }

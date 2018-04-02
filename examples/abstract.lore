@@ -11,8 +11,3 @@ function f(a: A1) = ()
 function f(a: A2) = ()
 function f(b: B) = ()
 function f(c: C) = ()
-
-call f with A1
-call f with B
-call f with A2
-call f with C
