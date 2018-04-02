@@ -1,20 +1,8 @@
 package lore
 
-import lore.ast._
-import lore.exceptions.FunctionNotFoundException
 import lore.execution.Context
-import lore.parser.ExpressionParser
-
-import scala.io.Source
 
 object Lore {
-  def testCalculation(): Unit = {
-    val source = Source.fromFile("examples/calculation.lore").getLines.mkString
-    val expression = ExpressionParser.parse(source)
-    val result = ExprAlgebra.evaluate(ExprAlgebra.evalAlgebra)(expression)
-    println("FP  result: " + result)
-  }
-
   def main(args: Array[String]): Unit = {
     implicit val context = Context.fromExample(args(0))
 
