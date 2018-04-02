@@ -2,7 +2,7 @@ package lore.types
 
 import lore.execution.Context
 
-class IntersectionType private (val types: Set[Type]) extends Type {
+case class IntersectionType private (types: Set[Type]) extends Type {
   /**
     * Whether any one of the intersection type's types is a subtype of the given candidate type.
     */
