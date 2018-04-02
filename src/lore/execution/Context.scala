@@ -90,10 +90,10 @@ object Context {
           TupleType(types)
         case IntersectionTypeExpression(expressions) =>
           val types = expressions.map(evaluateTypeExpression)
-          IntersectionType(types)
+          IntersectionType.construct(types)
         case SumTypeExpression(expressions) =>
           val types = expressions.map(evaluateTypeExpression)
-          SumType(types)
+          SumType.construct(types)
       }
     }
 
