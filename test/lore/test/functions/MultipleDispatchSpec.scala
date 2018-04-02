@@ -30,4 +30,18 @@ class MultipleDispatchSpec extends BaseSpec with TypeSyntax {
     test(('LinkedList & 'Sorted, 'LinkedList & 'Sorted), setToString ++ setList ++ setLinkedList ++ setLinkedListSorted, setLinkedListSorted)
   }
 
+  it should "be correctly defined for area" in {
+    implicit val context = areaContext
+    val area = context.multiFunctions("area")
+    val test = testFitAndMin(area) _
+    val setCircle = Set(area.exact('Circle))
+    val setBoundingBox = Set(area.exact('BoundingBox))
+
+    test('Circle, setCircle, setCircle)
+    test('BoundingBox, setBoundingBox, setBoundingBox)
+    test('Circle & 'BoundingBox, setCircle ++ setBoundingBox, setCircle ++ setBoundingBox)
+    test('Rectangle, Set.empty, Set.empty)
+    test('Rectangle & 'BoundingBox, setBoundingBox, setBoundingBox)
+  }
+
 }
