@@ -22,3 +22,4 @@ main.pdf
 *.toc
 *.thm
 *.synctex.gz
+*.out
