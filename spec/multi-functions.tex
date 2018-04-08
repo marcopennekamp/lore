@@ -388,6 +388,19 @@ Suppose we have objects where the total amount of water area is known. We can sp
 
 \section{Implementing Extension Methods}
 
+\href{https://en.wikipedia.org/wiki/Extension_method}{Extension methods} can be implemented in Lore without requiring a special syntax, because functions aren't tied to types, but still support single and multiple dispatch.
+
+For example, we could extend the \type{String} type with a \texttt{reverse} function (assuming it isn't included in the standard library):
+\begin{lstlisting}
+    function reverse(str: String): String = ...
+\end{lstlisting}
+
+\noindent The "extension method" can be defined anywhere. It can be used like a normal function in any part of the code, assuming it's available in a given scope.
+
+
+
+
+
 
 
 
