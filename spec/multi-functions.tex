@@ -384,18 +384,43 @@ Suppose we have objects where the total amount of water area is known. We can sp
 
 \todo{Intersections with semantic types can be used to define a state, as used in Papyrus script (https://www.creationkit.com/index.php?title=States_(Papyrus)).}
 
+Each value in Lore is tagged with a core value type and additional semantic types. Dynamic specialisation and generalisation are features that allow us to \textit{safely} add and remove semantic types to/from a value at runtime.
+
+Let's look at the lists example again. We may have the following \texttt{sort} function:
+\begin{lstlisting}
+    function sort(list: List[a]): List[a] & Sorted =
+      val list2: List[a] = ... // Sort the list.
+      list2.attach[Sorted]
+\end{lstlisting}
+
+\noindent This function sorts the list and subsequently \textit{attaches} the semantic type \texttt{Sorted} to it. A subsequent call to \texttt{search} (as defined above) will then multiple-dispatch to the more efficient method.
+
+(One problem with this approach is that we have to manually remove the \texttt{Sorted} type if the list becomes somehow unsorted. This is really hard on the programmer, because he or she has to track this additional state at least while writing the lists API. Maybe we can automate that or at least allow specifying invariants that are checked at the beginning and end of a method? \todo{Manual removal of Sorted type.})
+
+It may not always be so simple. Suppose we have a type $\type{Rectangle} \mathsum (\type{Circle} \mathintersect \type{Red})$ with $\type{Red}$ being a semantic type. We want to remove the semantic type. For that, we can use pattern matching on types:
+\begin{lstlisting}
+    val shape: Rectangle | (Circle & Red)
+    val shape2 = shape.as[a | (b & Red) => a | b]
+    // shape2: Rectangle | Circle
+\end{lstlisting}
+
+\noindent We can also remove all occurrences of any semantic type's subtypes from a complex type:
+\begin{lstlisting}
+    val shape: (Rectangle & Blue) | (Circle & Red)
+    val shape2 = shape.remove[Color]
+    // shape2: Rectangle | Circle
+\end{lstlisting}
+
 
 
 \section{Implementing Extension Methods}
 
-\href{https://en.wikipedia.org/wiki/Extension_method}{Extension methods} can be implemented in Lore without requiring a special syntax, because functions aren't tied to types, but still support single and multiple dispatch.
-
-For example, we could extend the \type{String} type with a \texttt{reverse} function (assuming it isn't included in the standard library):
+\href{https://en.wikipedia.org/wiki/Extension_method}{Extension methods} can be implemented in Lore without requiring a special syntax, because functions aren't tied to types, but still support single and multiple dispatch. For example, we could extend the \type{String} type with a \texttt{reverse} function:
 \begin{lstlisting}
     function reverse(str: String): String = ...
 \end{lstlisting}
 
-\noindent The "extension method" can be defined anywhere. It can be used like a normal function in any part of the code, assuming it's available in a given scope.
+\noindent The "extension method" can be defined anywhere. It can be used like a normal function in any part of the code, assuming it's imported to a given scope.
 
 
 
