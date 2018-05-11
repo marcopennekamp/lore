@@ -43,11 +43,6 @@ Multiple-dispatch will then dispatch to the correct function depending on the ru
 This problem is interesting because it hints at the idea that abstractness is a feature of concrete types, not of type constructors (as would be the case with parameterized types).
 
 
-\subsection{Definition of Abstract Types}
-An abstract type is a type for which the following holds: Let $I_\tau$ be the set of instantiable values of a type $\tau$. Let $I_{sub} = \bigcup_{\sigma < \tau} values(\sigma)$ be the set of instantiable values of all subtypes of $\tau$. Type $\tau$ is abstract, if and only if $I_\tau - I_{sub} = \emptyset$.
-
-
-
 
 
 

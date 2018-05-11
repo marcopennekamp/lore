@@ -10,6 +10,26 @@ Note that we have not yet added type constructor precedence to the grammar prese
 
 
 
+\section{Type Properties}
+
+\subsection{Values}
+A type $\tau$ has a \textbf{set of values} associated with it, written $\typevalues(\tau)$. We define as follows:
+\begin{align*}
+	\typevalues(\tau) = \{ v \mid v : \tau \}
+\end{align*}
+
+\noindent It's only relevant whether $v \in \typevalues(\tau)$ can be typed as $v : \tau$. The value may also "belong" to a subtype of $\tau$. Keep this in mind when we define abstractness, because the set of values of an abstract type is usually not empty (except in the case of a "void" type).
+
+
+\subsection{Abstractness}
+An \textbf{abstract type} is a type that does not define instantiable values on its own. Conversely, a \textbf{concrete type} is a type that is not abstract.
+
+Formally, we define abstractness as follows. Let $V_\tau = \typevalues(\tau)$ be the set of instantiable values of a type $\tau$. Let $V_{sub} = \bigcup_{\sigma < \tau} \typevalues(\sigma)$ be the set of instantiable values of all subtypes of $\tau$. Type $\tau$ is abstract if and only if $V_\tau - V_{sub} = \emptyset$. In other words, $\tau$ does not define any instances itself, but receives all of its values from subtypes.
+
+(Alternative definition: A type $\tau$ is abstract if and only if for all $v \in \typevalues(\tau)$, there is a type $\sigma < \tau$ with $v \in \typevalues(\sigma)$.)
+
+
+
 \section{Value Types}
 
 Types that describe the shape or structure of a value are called \textit{value types}.

@@ -395,7 +395,7 @@ Let's look at the lists example again. We may have the following \texttt{sort} f
 
 \noindent This function sorts the list and subsequently \textit{attaches} the semantic type \texttt{Sorted} to it. A subsequent call to \texttt{search} (as defined above) will then multiple-dispatch to the more efficient method.
 
-(One problem with this approach is that we have to manually remove the \texttt{Sorted} type if the list becomes somehow unsorted. This is really hard on the programmer, because he or she has to track this additional state at least while writing the lists API. Maybe we can automate that or at least allow specifying invariants that are checked at the beginning and end of a method? \todo{Manual removal of Sorted type.})
+(One problem with this approach is that we have to manually remove the \texttt{Sorted} type if the list becomes somehow unsorted. This is really hard on the programmer, because he or she has to track this additional state at least while writing the lists API. Maybe we can automate that or at least allow specifying invariants that are checked at the beginning and end of a method?) \todo{Manual removal of Sorted type.}
 
 It may not always be so simple. Suppose we have a type $\type{Rectangle} \mathsum (\type{Circle} \mathintersect \type{Red})$ with $\type{Red}$ being a semantic type. We want to remove the semantic type. For that, we can use pattern matching on types:
 \begin{lstlisting}
