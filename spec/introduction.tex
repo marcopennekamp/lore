@@ -22,7 +22,7 @@ One way to do this would utilise parametric types. Consider the following code:
     class A[covariant m <: M] { ... }
 \end{lstlisting}
 
-We can instantiate \type{A} only as \type{A[M1]} or \type{A[M2]}.\footnote{This is only true, because the sum type can't be extended outside its definition, so we can't create more \textit{direct} subtypes of \type{M}.} Because \type{A} is covariant in \type{m}, we have that $\type{A[M1]} < \type{A[M]}$ and $\type{A[M2]} < \type{A[M]}$. However, \type{A[M]} is not necessarily abstract. This means we couldn't define an abstract function for \type{A[M]}. 
+We can instantiate \type{A} only as \type{A[M1]} or \type{A[M2]}.\footnote{This is only true, because the sum type can't be extended outside its definition, so we can't create more \textit{direct} subtypes of \type{M}.} Because \type{A} is covariant in \type{m}, we have that $\type{A[M1]} < \type{A[M]}$ and $\type{A[M2]} < \type{A[M]}$. However, \type{A[M]} is not necessarily abstract. This means we couldn't define an abstract function for \type{A[M]}. On the other hand, if we could make \type{A} abstract for all type parameters, we couldn't define concrete functions for \type{A[M1]} or \type{A[M2]}.
 
 A \textit{quick fix} is to introduce a new keyword for type parameters that make the containing type abstract if they are themselves abstract. We'll call this a \texttt{part}-type parameter:
 
@@ -39,6 +39,8 @@ We can then finally define the abstract function and the two concrete functions,
 \end{lstlisting}
 
 Multiple-dispatch will then dispatch to the correct function depending on the runtime type of a value \texttt{a : A[M]}.
+
+This problem is interesting because it hints at the idea that abstractness is a feature of concrete types, not of type constructors (as would be the case with parameterized types).
 
 
 \subsection{Definition of Abstract Types}
