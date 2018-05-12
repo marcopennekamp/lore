@@ -24,9 +24,7 @@ A type $\tau$ has a \textbf{set of values} associated with it, written $\typeval
 \subsection{Abstractness}
 An \textbf{abstract type} is a type that does not define instantiable values on its own. Conversely, a \textbf{concrete type} is a type that is not abstract.
 
-Formally, we define abstractness as follows. Let $V_\tau = \typevalues(\tau)$ be the set of instantiable values of a type $\tau$. Let $V_{sub} = \bigcup_{\sigma < \tau} \typevalues(\sigma)$ be the set of instantiable values of all subtypes of $\tau$. Type $\tau$ is abstract if and only if $V_\tau - V_{sub} = \emptyset$. In other words, $\tau$ does not define any instances itself, but receives all of its values from subtypes.
-
-(Alternative definition: A type $\tau$ is abstract if and only if for all $v \in \typevalues(\tau)$, there is a type $\sigma < \tau$ with $v \in \typevalues(\sigma)$.)
+Formally, a type $\tau$ is abstract if and only if for all $v \in \typevalues(\tau)$, there is a type $\sigma < \tau$ with $v \in \typevalues(\sigma)$.
 
 Since it's hard to quantify over values, abstractness will be decidable nominally or by the structure of the types.
 
