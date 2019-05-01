@@ -4,6 +4,13 @@ In this document we introduce one of the core features of Lore: A statically typ
 
 
 
+#### Ideas
+
+- Each class has a list of its components which can be iterated, filtered, etc. to facilitate delegation to all eligible components. For example, an entity could be responsible for updating its own components.
+- Don't declare components as `component X { }`. Instead, declare them as classes that can be used as components or as normal values. Only an owner declaration would require an object to also be a component.
+
+
+
 ## Motivation
 
 In notable engines with entity-component systems such as Unity, components are added to and possibly removed from an entity at runtime. Both the engine editor and the compiler of the scripting language thus can't guarantee that an entity has a specific component. This has profound implications on the code quality of a game:
@@ -168,17 +175,17 @@ Note that rule (3) implies that `Has[C]` as defined above is covariant in `C`, w
     interface Temperature {
       const kelvin :: Real
     }
-
+    
     class CelsiusTemperature implements Temperature {
       const celsius :: Real
       override kelvin = celsius + 273.15
     }
-
+    
     class EuropeanHuman {
       component CelsiusTemperature
       ...
     }
-
+    
     class Freezer {
       const objects :: List[+Temperature]
       action update () :: Unit -> Unit = ... // For all objects, update temperature.
@@ -223,16 +230,16 @@ We can also look at an example to suggest that a sensible has-relation should no
       const y :: Real
       const z :: Real
     }
-
+    
     class Time {
       const seconds :: Real
     }
-
+    
     class Position {
       component Space
       component Time
     }
-
+    
     class Clock {
       component Position
       ...
