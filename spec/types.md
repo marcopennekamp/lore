@@ -54,6 +54,5 @@ proposition Sorted[A[T] <: Iterable[T], T] = (it: A[T]) => it.isSorted
 And of course, propositions can also be defined over component types:
 
 ```
-proposition Dead[+Health] = (e: +Health) => e.health.isDead
+proposition Dead = (e: +Health) => e.health.isDead
 ```
-
