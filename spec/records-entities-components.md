@@ -94,3 +94,14 @@ val e = E(...)(c1 = C1(...), btv = C2(...))
 ```
 
 That is, each entity's constructor is associated with an additional parameter list which expects the components as values.
+
+##### Inheritance
+
+An entity may also inherit from another entity or record. The case of **entity inheritance** is particularly interesting, since we can override component definitions:
+
+```
+entity Skeleton extends Monster {
+  component PoisonImmunity overrides Immunity
+  component Bones
+}
+```
