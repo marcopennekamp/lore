@@ -31,7 +31,15 @@ A **proposition type** models a statement `A => Boolean` over a value of type `A
 
 A value `v : A` may only be described by a proposition `P` if `P(v)` is `true`. Thus, the proposition type tells us something about the value as an efficient encoding in the type. This is particularly useful for multiple dispatch in conjunction with dynamic type specialisation.
 
-**Idea:** A **dependent proposition** defines a set of propositions over some value `a`. For example:
+A proposition type is defined as such, where `expr` evaluates to a `Boolean`:
+
+```
+proposition P = (a: A) => expr
+```
+
+###### Dependent Propositions (Idea)
+
+A **dependent proposition** defines a set of propositions over some value `a`. For example:
 
 ```
 proposition MaxSize[T](size: Int) = (list: List[T]) => list.size <= size
