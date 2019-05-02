@@ -70,3 +70,27 @@ val jeremy = Account(1, "Jeremy", 15.37)
 ```
 
 As you can see, the constructor takes the underlying values as arguments and doesn't require any envelope boilerplate.
+
+
+
+### Entities
+
+An **entity** is a record associated with one or more components. In addition to property definitions permitted in records, an entity type may also define components.
+
+```
+entity E(...) {
+  component C1
+  component btv: C2
+  component C3 = ...
+}
+```
+
+A component may be **unnamed**, in which case the type's *default naming scheme* is invoked. A component can be optionally named and may have a default value. Only one component of the same type may be part of an entity.
+
+Entities are **instantiated** as follows, taking the definition of `E` from above:
+
+```
+val e = E(...)(c1 = C1(...), btv = C2(...))
+```
+
+That is, each entity's constructor is associated with an additional parameter list which expects the components as values.
