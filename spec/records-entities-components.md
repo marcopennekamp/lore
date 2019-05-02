@@ -23,3 +23,35 @@ A record `A` may **inherit** from another record `B`. This allows `A` to inherit
 ```
 record A extends B
 ```
+
+##### Ad-hoc Envelope Types
+
+Lore supports [envelope types](types.md) already, but to make "type all the things!" particularly easy, Lore allows you to **create ad-hoc open envelope types when defining records:**
+
+```
+record Position(val x: Real as XCoord, val y: Real as YCoord, val z: Real as ZCoord)
+```
+
+Looks stupid? Wait until you accidentally pass an x-coordinate as a y-coordinate in C++.
+
+Each envelope type becomes part of the namespace of the record, so the code above is in effect like declaring the following:
+
+```
+namespace Position {
+  envelope XCoord(Real)
+  envelope YCoord(Real)
+  envelope ZCoord(Real)
+}
+```
+
+However, the ad-hoc definition has the additional advantage that **envelope types are constructed internally**. Take the following example:
+
+```
+record Account(id: Int as Id, name: String as Name, score: Real as Score)
+val jeremy = Account(1, "Jeremy", 15.37)
+> jeremy.id : Account.Id
+> jeremy.name : Account.Name
+> jeremy.score : Account.Score
+```
+
+As you can see, the constructor takes the underlying values as arguments and doesn't require any envelope boilerplate.
