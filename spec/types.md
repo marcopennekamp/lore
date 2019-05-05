@@ -29,7 +29,7 @@ Similar to Scala, types and values should have notations that mirror each other.
 
 ##### Product Types
 
-**Product types** describe corresponding tuple values. A product type is denoted `(T1, ..., Tn)` for an arbitrary number of types `n`. A tuple value is denoted `(a1, ..., an)` with `ai : Ti` for all `1 <= i <= n`.
+**Product types** describe corresponding tuple values. A product type is denoted `(T1, ..., Tn)` for some arbitrary number of types `n >= 1`. A tuple value is denoted `(a1, ..., an)` with `ai : Ti` for all `1 <= i <= n`.
 
 ###### Examples
 
@@ -55,6 +55,19 @@ val hello: Person => String = p => "Hello, ${p.name}. How are you today?"
 > hello(marco) = "Hello, Marco. How are you today?"
 val currentWealth: () => Real = p.wealth
 > currentWealth(medianPerson) = 100000.0
+```
+
+
+
+##### Intersection Types
+
+Assume an **intersection type** `T1 & ... & Tn` for some arbitrary number of types `n >= 2`. Any value `v` that satisfies typings `v : Ti` for all `1 <= i <= n` also has the type `T1 & ... & Tn`. Intersection types are associative and commutative.
+
+###### Examples
+
+```
+// Moves the entity based on its relative amount of health.
+action move(entity: +Position & +Health) = ...
 ```
 
 
