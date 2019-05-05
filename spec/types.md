@@ -73,16 +73,22 @@ singleton T
 
 **TODO:** `object` would be another possible name, too.
 
+Singletons can also be defined **in-place** in other type expressions (for example in a return type):
+
+```
+A => ('B | 'C)
+```
+
+In such a case, the singleton type will become part of the namespace of the current type expression. In a method definition, this would be the namespace containing the method, for example.
+
 ###### Examples
 
 Singleton types are especially useful in conjunction with unit types:
 
 ```
 record User /* ... */
-singleton UserNotFound
-singleton IncorrectPassword
-type LoginResult = User | UserNotFound | IncorrectPassword
-val result: LoginResult = UserNotFound
+type LoginResult = User | 'UserNotFound | 'IncorrectPassword
+val result: LoginResult = userNotFound
 ```
 
 
