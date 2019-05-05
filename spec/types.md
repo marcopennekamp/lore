@@ -1,6 +1,6 @@
 # Types
 
-In this chapter, we lay out the basics of Lore's type system. We define all kinds of types. At the end, we also look at typing rules that allow us to reason about types. Note that we have not yet added type constructor precedence to the grammar presented in this chapter. This will be refined at a later date. 
+In this chapter, we lay out the basics of Lore's type system. We define all kinds of types. At the end, we also look at typing rules that allow us to reason about types. Note that we have not yet added type constructor precedence to the grammar presented in this chapter. This will be refined at a later date.
 
 - **TODO:** Add type constructor precedence rules.
 - **TODO:** Add typing rules.
@@ -36,6 +36,25 @@ Similar to Scala, types and values should have notations that mirror each other.
 ```
 val t1: (String, String, Int) = ("Hello", "World", "v2")
 val t2: ((Int, Int), Real) = ((1, 2), 5.44)
+```
+
+
+
+##### Function Types
+
+**Function types** describe corresponding function values. That is, a function that maps an input value `a : A` to an output value `b : B` has the type `A => B`. This type constructor is right-associative.
+
+A **parameter list** is represented as a tuple. So for example, if we have a function with three parameters `(a: A, b: B, c: C)` and a returned type `R`, its function type would be `(A, B, C) => R`. This is equally possible for the output type, so `R` might be a tuple such as `(D, E, (F, G))`.
+
+###### Examples
+
+```
+val f: Int => Int = x => x * 2
+> f(2) = 4
+val hello: Person => String = p => "Hello, ${p.name}. How are you today?"
+> hello(marco) = "Hello, Marco. How are you today?"
+val currentWealth: () => Real = p.wealth
+> currentWealth(medianPerson) = 100000.0
 ```
 
 
