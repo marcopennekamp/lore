@@ -61,13 +61,25 @@ val currentWealth: () => Real = p.wealth
 
 ##### Intersection Types
 
-Assume an **intersection type** `T1 & ... & Tn` for some arbitrary number of types `n >= 2`. Any value `v` that satisfies typings `v : Ti` for all `1 <= i <= n` also has the type `T1 & ... & Tn`. Intersection types are associative and commutative.
+Assume an **intersection type** `T1 & ... & Tn` for some arbitrary number of types `n >= 2`. Any value `v` that satisfies the typing `v : Ti` for *all* `1 <= i <= n` also has the type `T1 & ... & Tn`. The type constructor is associative and commutative.
 
 ###### Examples
 
 ```
 // Moves the entity based on its relative amount of health.
 action move(entity: +Position & +Health) = ...
+```
+
+
+
+##### Sum Types
+
+A **sum type** `T1 | ... | Tn` for some `n >= 2` describes values `v` that satisfy the typing `v : Ti` for *any* `1 <= i <= n`. The type constructor is associative and commutative.
+
+###### Examples
+
+```
+type Option[A] = 'None | Some[A]
 ```
 
 
