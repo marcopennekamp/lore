@@ -59,6 +59,34 @@ val currentWealth: () => Real = p.wealth
 
 
 
+##### Singleton Types
+
+A **singleton type** describes exactly one shapeless value. A singleton type `T` has exactly one value associated with it called `t` (the lowerCamelCase variant of the UpperCamelCase name `T`).
+
+A singleton type is **defined** as such:
+
+```
+singleton T
+```
+
+**TODO:** Should we add inheritance (pretty useful) and data/properties (questionable) to singleton types? Especially the former would allow multiple dispatch over singleton types.
+
+**TODO:** `object` would be another possible name, too.
+
+###### Examples
+
+Singleton types are especially useful in conjunction with unit types:
+
+```
+record User /* ... */
+singleton UserNotFound
+singleton IncorrectPassword
+type LoginResult = User | UserNotFound | IncorrectPassword
+val result: LoginResult = UserNotFound
+```
+
+
+
 ##### Envelope Types
 
 An **envelope type** puts a value of another type "in an envelope." This means that, while the envelope can always be opened to read the letter, a letter may not be passed as an envelope unless it's put into the envelope *with the right address* first.
