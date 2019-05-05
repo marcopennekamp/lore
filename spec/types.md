@@ -13,11 +13,15 @@ In this chapter, we lay out the basics of Lore's type system. We define all kind
 
 
 
-### Basic Definitions
+### Basic Considerations
 
 ##### Typing
 
 Given a type $\tau$ and a value $v$, we write $v : \tau$ iff $v$ has the type $\tau$.
+
+##### Mirror Notation
+
+Similar to Scala, types and values should have notations that mirror each other. For example, for a tuple `(a, b, c)`, the product/tuple type should be denoted `(A, B, C)`.
 
 
 
