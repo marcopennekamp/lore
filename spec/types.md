@@ -27,6 +27,17 @@ Similar to Scala, types and values should have notations that mirror each other.
 
 ### List of Types
 
+##### Product Types
+
+**Product types** describe corresponding tuple values. A product type is denoted `(T1, ..., Tn)` for an arbitrary number of types `n`. A tuple value is denoted `(a1, ..., an)` with `ai : Ti` for all `1 <= i <= n`.
+
+###### Examples
+
+```
+val t1: (String, String, Int) = ("Hello", "World", "v2")
+val t2: ((Int, Int), Real) = ((1, 2), 5.44)
+```
+
 
 
 ##### Envelope Types
@@ -40,7 +51,7 @@ In concrete terms, this means that:
 3. If a value of type `E` is expected, `V` may not be used without first constructing a value of `E` from it explicitly.
 4. For convenience, any properties of the underlying value can be accessed through the envelope value directly.
 
-An envelope type is **defined and constructed** as such:
+An envelope type is **defined and constructed** as such (note that the type and value notations mirror each other):
 
 ```
 envelope E(V)
