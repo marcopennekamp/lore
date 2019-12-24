@@ -5,9 +5,10 @@ import lore.execution.Context.VerificationSuccess
 import lore.functions.{LoreFunction, MultiFunction}
 import lore.types.Type
 import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.{MatchResult, Matcher}
 
-abstract class BaseSpec extends FlatSpec with Matchers with OptionValues with Inside with Inspectors {
+abstract class BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside with Inspectors {
 
   lazy val abstractContext = Context.fromExample("abstract")
   lazy val areaContext = Context.fromExample("area")
