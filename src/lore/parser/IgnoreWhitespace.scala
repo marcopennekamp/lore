@@ -1,12 +1,9 @@
 package lore.parser
 
-import fastparse.WhitespaceApi
+import fastparse._
 
 trait IgnoreWhitespace {
-  private val White = WhitespaceApi.Wrapper {
-    import fastparse.all._
-    NoTrace(" ".rep)
+  implicit val whitespace = { implicit ctx: ParsingRun[_] =>
+    NoTrace(CharsWhileIn(" \t", 0))
   }
-
-  protected val whitespaceApi = White
 }

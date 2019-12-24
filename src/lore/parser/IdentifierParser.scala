@@ -1,12 +1,12 @@
 package lore.parser
 
-import fastparse.all._
+import fastparse._
 
-object IdentifierParser {
-  val lowercase  = P( CharIn('a' to 'z') )
-  val uppercase  = P( CharIn('A' to 'Z') )
-  val letter     = P( lowercase | uppercase )
-  val digit      = P( CharIn('0' to '9') )
+object IdentifierParser extends IgnoreWhitespace {
+  def lowercase[_ : P]  = P( CharIn("a-z") )
+  def uppercase[_ : P]  = P( CharIn("A-Z") )
+  def letter[_ : P]     = P( lowercase | uppercase )
+  def digit[_ : P]      = P( CharIn("0-9") )
 
-  val identifier: P[String] = P( (letter | "_") ~ (letter | digit | "_").rep ).!
+  def identifier[_ : P]: P[String] = P( (letter | "_") ~ (letter | digit | "_").rep ).!
 }
