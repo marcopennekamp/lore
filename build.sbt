@@ -2,25 +2,26 @@ name := "lore"
 
 version := "0.1.0"
 
-scalaVersion := "2.12.6"
+scalaVersion := "2.13.1"
 scalacOptions ++= Seq(
   "-feature",
   "-language:implicitConversions",
   "-language:postfixOps",
   "-language:higherKinds",
-  "-language:reflectiveCalls"
+  "-language:reflectiveCalls",
+  "-deprecation"
 )
 
 libraryDependencies ++= Seq(
-  "org.scalaz" %% "scalaz-core" % "7.2.20",
-  "com.lihaoyi" %% "fastparse" % "1.0.0",
-  "org.scalactic" %% "scalactic" % "3.0.5",
-  "org.scalatest" %% "scalatest" % "3.0.5" % "test"
+  "org.scalaz" %% "scalaz-core" % "7.2.29",
+  "com.lihaoyi" %% "fastparse" % "2.1.3",
+  "org.scalactic" %% "scalactic" % "3.1.0",
+  "org.scalatest" %% "scalatest" % "3.1.0" % "test"
 )
 
 // ? types.
 resolvers += Resolver.sonatypeRepo("releases")
-addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.3")
+addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full)
 
 scalaSource in Compile := { (baseDirectory in Compile)(_ / "src") }.value
 scalaSource in Test := { (baseDirectory in Test)(_ / "test") }.value
