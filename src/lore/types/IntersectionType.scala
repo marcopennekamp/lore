@@ -10,9 +10,24 @@ case class IntersectionType private (types: Set[Type]) extends Type {
     types.exists(t => Subtyping.isSubtype(t, candidateSupertype))
   }
 
-  override def directDeclaredSubtypes(implicit context: Context) = Set.empty // TODO: Really?
-  override def isAbstract = false // TODO: Really?
-  override def toString = "(" + types.mkString(" & ") + ")"
+  /**
+    * The set of direct declared subtypes for an intersection type consists of the combinatorially constructed
+    * direct declared subtypes of each component type.
+    */
+  override def directDeclaredSubtypes(implicit context: Context) = {
+    Subtyping.directDeclaredSubtypeCombinations(types.toList).map(_.toSet).map(IntersectionType(_))
+  }
+
+  /**
+    * An intersection type is abstract if any of its component types are abstract.
+    *
+    * The reasoning is that the value inhabiting the intersection type will need to have each component type as its
+    * type. So there can't be a value that has a type as its exact type (not a subtype) that is abstract. Hence, any
+    * one abstract component can turn an intersection type abstract.
+    */
+  override def isAbstract = types.exists(_.isAbstract)
+
+  override def toString = "[" + types.mkString(" & ") + "]"
 }
 
 object IntersectionType {

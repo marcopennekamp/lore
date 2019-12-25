@@ -5,7 +5,7 @@ import lore.execution.Context
 case class SumType private (types: Set[Type]) extends Type {
   override def directDeclaredSubtypes(implicit context: Context) = types
   override def isAbstract = true
-  override def toString = "(" + types.mkString(" | ") + ")"
+  override def toString = "[" + types.mkString(" | ") + "]"
 }
 
 object SumType {
