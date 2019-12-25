@@ -150,7 +150,7 @@ envelope Players(List[Player])
 envelope Height(Real)
 ```
 
-Alternative syntax: `type Real as Height`
+Possible alternative syntax: `type Real as Height`
 
 ###### Envelope Types are not Type Aliases
 
