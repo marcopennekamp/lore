@@ -8,20 +8,20 @@ object TypeParser extends IgnoreWhitespace {
 
   def sumType[_ : P]: P[SumTypeExpression] = {
     def innerTypeExpression = P(intersectionType | tupleType | typeVariable | enclosedType)
-    P(identifier ~ ("|" ~/ innerTypeExpression).rep(1)).map { case (firstType, types) =>
-      SumTypeExpression((TypeVariable(firstType) +: types).toSet)
+    P(innerTypeExpression ~ ("|" ~ innerTypeExpression).rep(1)).map { case (firstType, types) =>
+      SumTypeExpression((firstType +: types).toSet)
     }
   }
 
   def intersectionType[_ : P]: P[IntersectionTypeExpression] = {
     def innerTypeExpression = P(tupleType | typeVariable | enclosedType)
-    P(identifier ~ ("&" ~ innerTypeExpression).rep(1)).map { case (firstType, types) =>
-      IntersectionTypeExpression((TypeVariable(firstType) +: types).toSet)
+    P(innerTypeExpression ~ ("&" ~ innerTypeExpression).rep(1)).map { case (firstType, types) =>
+      IntersectionTypeExpression((firstType +: types).toSet)
     }
   }
 
   def tupleType[_ : P]: P[TupleTypeExpression] = {
-    P("(" ~ typeExpression ~ ("," ~ typeExpression).rep ~ ")").map { case (firstType, restTypes) =>
+    P("(" ~ typeExpression ~ ("," ~ typeExpression).rep(1) ~ ")").map { case (firstType, restTypes) =>
       TupleTypeExpression(firstType +: restTypes)
     }
   }

@@ -32,7 +32,7 @@ object FragmentParser extends IgnoreWhitespace {
   }
 
   def file[_ : P]: P[Seq[TopLevelElement]] = {
-    P(((typeDeclaration | functionDeclaration) ~ "\n").rep ~ End)
+    P(((typeDeclaration | functionDeclaration) ~/ "\n").rep ~ End)
   }
 
   def parse(source: String): Seq[TopLevelElement] = {
