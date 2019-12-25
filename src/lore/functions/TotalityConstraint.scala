@@ -27,21 +27,20 @@ object TotalityConstraint {
     * @return Whether the given abstract function satisfies the totality constraint.
     */
   private def isVerified(mf: MultiFunction)(f: LoreFunction)(implicit context: Context): Boolean = {
-    findDirectDeclaredSubtypes(f.inputType).forall { subtype =>
+    // We need to use the direct declared subtypes of the ABSTRACT parameters. An example will clear this up:
+    //    Say we have types abstract A, A1 <: A, A2 <: A, non-abstract B, B1 <: B, B2 <: B.
+    //    An abstract function f(a: A, b: B) with a non-abstract B must also cover the case f(a: AX, b: B), not just for
+    //    B1 and B2, if the given value of type B is neither B1 nor B2, since it could just be B. Hence, we cannot use
+    //    directDeclaredSubtypes, because it would substitute B1 and B2 for B, leaving B out of the equation entirely.
+    f.inputType.abstractDirectDeclaredSubtypes.forall { subtype =>
       mf.functions.exists { f2 =>
         Subtyping.isStrictSubtype(f2.inputType, f.inputType) &&
+          // TODO: The isVerified might be unnecessary since it gets checked anyway. This means we are essentially
+          //       verifying f2 twice or more times.
           (!f2.isAbstract || (f2.isAbstract && isVerified(mf)(f2))) &&
           mf.fit(subtype).contains(f2)
       }
     }
-  }
-
-  private def findDirectDeclaredSubtypes(tupleType: TupleType)(implicit context: Context): Set[TupleType] = {
-    tupleType.components
-      .map(t => if (t.isAbstract) t.directDeclaredSubtypes.toList else List(t))
-      .toList.sequence
-      .map(types => TupleType(types))
-      .toSet
   }
 
 }

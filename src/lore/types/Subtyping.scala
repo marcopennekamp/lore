@@ -81,4 +81,16 @@ object Subtyping {
       .toSet
   }
 
+  /**
+    * Returns all combinations of direct declared subtypes of abstract types, leaving non-abstract types as they are.
+    *
+    * Compare to [[directDeclaredSubtypeCombinations]].
+    */
+  def abstractDirectDeclaredSubtypeCombinations(types: List[Type])(implicit context: Context): Set[List[Type]] = {
+    types
+      .map(t => if (t.isAbstract) t.directDeclaredSubtypes.toList else List(t))
+      .sequence
+      .toSet
+  }
+
 }

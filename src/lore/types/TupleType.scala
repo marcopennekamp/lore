@@ -14,6 +14,10 @@ case class TupleType(components: Seq[Type]) extends Type {
     Subtyping.directDeclaredSubtypeCombinations(components.toList).map(TupleType(_))
   }
 
+  def abstractDirectDeclaredSubtypes(implicit context: Context): Set[TupleType] = {
+    Subtyping.abstractDirectDeclaredSubtypeCombinations(components.toList).map(TupleType(_))
+  }
+
   /**
     * Since this is already a tuple, there is no need to enclose it in another tuple.
     */
