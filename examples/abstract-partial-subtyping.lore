@@ -1,0 +1,10 @@
+type A
+type A1 <: A
+type A2 <: A
+type B
+type B1 <: B
+type B2 <: B
+
+function f(a: A, b: B)
+function f(a: A1, b: B) = ()
+function f(a: A2, b: B) = ()

@@ -7,6 +7,14 @@ import lore.types.{Subtyping, TupleType}
 
 object TotalityConstraint {
 
+  /*
+   * We have the following interesting case:
+   *   Say we have types abstract X, A < X, B < X, C < X and a component +T. We have an abstract function with
+   *   input X & +T that is implemented by a function with input (A | B) & +T, and a function with input C & +T.
+   *   The totality constraint is checked such that the above situation is legal. This is implemented in the file
+   *   abstract-sum-totality.lore.
+   */
+
   /**
     * @return The set of functions that are not fully implemented. If the set is empty, the multi-function satisfies
     *         the totality constraint.

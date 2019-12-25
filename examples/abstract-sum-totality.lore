@@ -1,0 +1,9 @@
+type X
+type A <: X
+type B <: X
+type C <: X
+type T
+
+function f(v: X & T)
+function f(v: (A | B) & T) = ()
+function f(v: C & T) = ()
