@@ -3,7 +3,7 @@ package lore.execution
 import lore.ast._
 import lore.exceptions.TypeNotFoundException
 import lore.execution.Context._
-import lore.functions.{LoreFunction, MultiFunction, Parameter, TotalityConstraint}
+import lore.functions.{InputAbstractnessConstraint, LoreFunction, MultiFunction, Parameter, TotalityConstraint}
 import lore.parser.FragmentParser
 import lore.types._
 
@@ -15,9 +15,11 @@ class Context(val types: Map[String, Type], val multiFunctions: Map[String, Mult
 
   def verify(): VerificationResult = {
     val multiFunctionErrors = multiFunctions.values.flatMap { mf =>
-      val violatingFunctions = TotalityConstraint.verify(mf)
-      if (violatingFunctions.nonEmpty) {
-        Seq((mf, MultiFunctionError(violatingFunctions.map((_, TotalityConstraintViolation)).toMap)))
+      val violations =
+        TotalityConstraint.verify(mf).map((_, TotalityConstraintViolation)) ++
+        InputAbstractnessConstraint.verify(mf).map((_, InputAbstractnessConstraintViolation))
+      if (violations.nonEmpty) {
+        Seq((mf, MultiFunctionError(violations.toMap)))
       } else {
         Seq.empty
       }
@@ -35,6 +37,7 @@ object Context {
 
   sealed trait FunctionError
   case object TotalityConstraintViolation extends FunctionError
+  case object InputAbstractnessConstraintViolation extends FunctionError
 
   case class MultiFunctionError(functionErrors: Map[LoreFunction, FunctionError])
 
