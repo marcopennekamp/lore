@@ -7,7 +7,7 @@ import scalaz.syntax.traverse._
 object Subtyping {
 
   val rules: Seq[PartialFunction[(Type, Type), Boolean]] = Seq(
-    // TODO: Comment.
+    // A label type l1 is a subtype of l2 if l1 and l2 are equal or any of l1's supertypes (in line) are equal to l2.
     { case (l1: LabelType, l2: LabelType) =>  l1 == l2 || isSubtype(l1.supertype, l2) },
 
     // An intersection type i1 is the subtype of an intersection type i2, if all types in i2 are subsumed by i1.
@@ -50,6 +50,7 @@ object Subtyping {
     */
   def isSubtype(t1: Type, t2: Type): Boolean = {
     // TODO: We might need to use a more complex theorem solver with proper typing rules instead of such an ad-hoc/greedy algorithm.
+    // TODO: We can easily optimise this by looping over all rules and returning true when the first rule return true.
     rules.map(rule => rule.isDefinedAt((t1, t2)) && rule.apply((t1, t2))).exists(identity)
   }
 

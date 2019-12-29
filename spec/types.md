@@ -25,11 +25,23 @@ Similar to Scala, types and values should have notations that mirror each other.
 
 
 
+### Definitions
+
+#### Abstract Types
+
+A type is called **abstract** when no values inhabit the type directly (without allowing values that inhabit subtypes). Each kind of type defines its own criteria for abstractness, which will be supplied below.
+
+
+
 ### List of Types
 
 ##### Product Types
 
-**Product types** describe corresponding tuple values. A product type is denoted `(T1, ..., Tn)` for some arbitrary number of types `n >= 1`. A tuple value is denoted `(a1, ..., an)` with `ai : Ti` for all `1 <= i <= n`.
+**Product types** describe corresponding tuple values. A product type is denoted `(T1, ..., Tn)` for some arbitrary number of types `n >= 1`. A tuple value is denoted `(a1, ..., an)` with `ai : Ti` for all `1 <= i <= n`. Any value or type at any position is called a **component** of the tuple.
+
+###### Abstractness
+
+A product type is abstract if **any of its component types are abstract**.
 
 ###### Examples
 
@@ -46,6 +58,10 @@ val t2: ((Int, Int), Real) = ((1, 2), 5.44)
 
 A **parameter list** is represented as a tuple. So for example, if we have a function with three parameters `(a: A, b: B, c: C)` and a returned type `R`, its function type would be `(A, B, C) => R`. This is equally possible for the output type, so `R` might be a tuple such as `(D, E, (F, G))`.
 
+###### Abstractness
+
+A function type is **never abstract** as at least one function will always be definable for any input/output type combination.
+
 ###### Examples
 
 ```
@@ -61,7 +77,15 @@ val currentWealth: () => Real = p.wealth
 
 ##### Intersection Types
 
-Assume an **intersection type** `T1 & ... & Tn` for some arbitrary number of types `n >= 2`. Any value `v` that satisfies the typing `v : Ti` for *all* `1 <= i <= n` also has the type `T1 & ... & Tn`. The type constructor is associative and commutative.
+Assume an **intersection type** `T1 & ... & Tn` for some arbitrary number of types `n >= 2`. Any value `v` that satisfies the typing `v : Ti` for *all* `1 <= i <= n` also has the type `T1 & ... & Tn`. The type constructor is associative and commutative. We call any type `Ti` a **component type**.
+
+###### Abstractness
+
+An intersection type is abstract if **any of its component types are abstract**.
+
+If we think of values inhabiting a type as sets, the intersection type would be akin to taking the set intersection between all value sets. If at least one of these sets is empty, the intersection is also empty, hence the intersection type would be abstract.
+
+Note that there is a second case in which the intersection of values is incompatible, i.e. we have two non-empty sets that are disjunct. We would theoretically have to assign abstractness to such an intersection type, but this is not computationally feasible in all cases. And in any case, such a type would be useless for practical purposes, since no function could ever be called with such an input type and no value could ever be assigned to a variable having such a type, as no value could ever satisfy the constraints. The whole idea of abstractness is that we can specialise functions and work with the subtypes, but specialising such an intersection type would only reduce the value set, hence there still wouldn't be any values we could call a function with.
 
 ###### Examples
 
@@ -76,11 +100,45 @@ action move(entity: +Position & +Health) = ...
 
 A **sum type** `T1 | ... | Tn` for some `n >= 2` describes values `v` that satisfy the typing `v : Ti` for *any* `1 <= i <= n`. The type constructor is associative and commutative.
 
+###### Abstractness
+
+A sum type is abstract if **all of its component types are abstract**. (**TODO:** Is this correct?)
+
+**TODO:** Does this line up with how we specialise functions?
+
 ###### Examples
 
 ```
 type Option[A] = 'None | Some[A]
 ```
+
+
+
+##### Record Types
+
+**TODO:** Write. (This type includes entity types.)
+
+###### Abstractness
+
+A record type is abstract if it has been **declared abstract**.
+
+
+
+##### Component Types
+
+###### Abstractness
+
+A component type is abstract if its **underlying type is abstract**.
+
+
+
+##### Label Types
+
+###### Abstractness
+
+A label type is **never abstract**.
+
+**TODO:** Why?
 
 
 
@@ -105,6 +163,10 @@ A => ('B | 'C)
 ```
 
 In such a case, the singleton type will become part of the namespace of the current type expression. In a method definition, this would be the namespace containing the method, for example.
+
+###### Abstractness
+
+Singleton types are **never abstract**.
 
 ###### Examples
 
@@ -141,6 +203,10 @@ Envelope types have two important **advantages:**
 
 - They provide a convenient way to **document** your code without writing comments. For example, take a function `score: String => Real`. With envelope types, this could be `score: Player.Name => Player.Score `. Much clearer, right?
 - They improve **correctness resilience** through type checking. Since you can't pass the underlying value without constructing an envelope, you will not accidentally pass any value that doesn't (theoretically) belong there. For example, take the `score` function from above. You will have a hard time passing your grandma's name (who certainly doesn't play games!) or even another envelope type such as `Location.Name`.
+
+###### Abstractness
+
+An envelope type is abstract if its **underlying type is abstract**.
 
 ###### Examples
 

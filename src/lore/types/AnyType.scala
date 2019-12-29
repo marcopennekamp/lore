@@ -6,6 +6,10 @@ object AnyType extends Type {
   // TODO: Really?
   //       This should rather be the set of all types which have no supertype, i.e. direct descendants of Any.
   override def directDeclaredSubtypes(implicit context: Context) = Set.empty
-  override def isAbstract = true // TODO: Really?
+
+  /**
+    * The Any type is abstract because, while all values have the type Any, the type doesn't add any value itself.
+    */
+  override def isAbstract = true
   override def toString = "any"
 }
