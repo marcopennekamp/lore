@@ -7,17 +7,13 @@ In this chapter, we lay out the basics of Lore's type system. We define all kind
 
 
 
-### The Role of Types
+#### The Role of Types
 
 **TODO**
 
 
 
-### Basic Considerations
-
-##### Typing
-
-Given a type $\tau$ and a value $v$, we write $v : \tau$ iff $v$ has the type $\tau$.
+#### Conceptual Considerations
 
 ##### Mirror Notation
 
@@ -25,23 +21,63 @@ Similar to Scala, types and values should have notations that mirror each other.
 
 
 
-### Definitions
+#### Definitions
 
-#### Abstract Types
+##### Type Statements
 
-A type is called **abstract** when no values inhabit the type directly (without allowing values that inhabit subtypes). Each kind of type defines its own criteria for abstractness, which will be supplied below.
+Given a type $t$ and a value $v$ of that type, we write $v : t$ to denote that $v$ has the **type** $t$.
+
+Given a type $t$ and a subtype $s$, we write $s \leq t$ to denote that $s$ is a **subtype** of $t$. 
+
+Given a type $t$ and a subtype $s$ and $t \neq s$, we write $s < t$ to denote that $s$ is a **strict subtype** of $t$.
 
 
 
-### List of Types
+##### Values and Defined Values
+
+Conceptually, a type $t$ has a set of **values** $\mathrm{val}(t)$ and a set of **own values** $\mathrm{ownval}(t)$.
+
+$val(t) = \{ v \mid v : t \}$, i.e. the set of all values that inhabit the type.
+
+$ownval(t) = \{ v \mid v : t \land \forall s < t. \neg (v : s) \}$, i.e. the set of all values that inhabit the type but not any of its subtypes.
+
+
+
+##### Abstract Types
+
+A type $t$ is **abstract** if and only if $\mathrm{ownval}(t) = \empty$. That is, a type is abstract if all values that inhabit the type also inhabit one of its subtypes, and thus it doesn't define any values itself. Each kind of type has its own criteria for abstractness, which will be supplied and proven below.
+
+
+
+#### List of Types
 
 ##### Product Types
 
 **Product types** describe corresponding tuple values. A product type is denoted `(T1, ..., Tn)` for some arbitrary number of types `n >= 1`. A tuple value is denoted `(a1, ..., an)` with `ai : Ti` for all `1 <= i <= n`. Any value or type at any position is called a **component** of the tuple.
 
+###### Own Values
+
+**Property 1:** $\mathrm{ownval}(T) = \mathrm{ownval}(A_1) \times \dots \times \mathrm{ownval}(A_n)$ given $T = (A_1, \dots, A_n)$.
+
+**Proof:** $\mathrm{ownval}(T) \subseteq \mathrm{ownval}(A_1) \times \dots \times \mathrm{ownval}(A_n)$
+
+Let $t = (a_1, \dots, a_n) \in \mathrm{ownval}(T)$. Assume there is an $a_i \notin \mathrm{ownval}(A_i)$. Hence, there is a subtype $S_i < A_i$ for which $a_i $ inhabits $S_i$, since $a_i : A_i$ will still need to hold. For $t$ to be an own value of $T$, it must hold for all $S < T$ that $t$ does not inhabit $S$. However, if $a_i$ inhabits $S_i$, $t$ inhabits a type $S = (S_1, \dots, S_n) < T$ with $S_j = A_j$ for all $j \neq i$. Thus, $t$ cannot be an own value of $T$, proving the statement by contradiction.
+
+**Proof:** $\mathrm{ownval}(T) \supseteq \mathrm{ownval}(A_1) \times \dots \times \mathrm{ownval}(A_n)$
+
+Let $t = (a_1, \dots, a_n) \in \mathrm{ownval}(A_1) \times \dots \times \mathrm{ownval}(A_n)$ and $t : T$. Assume there is such a $t$ for which $t \notin \mathrm{ownval}(T)$. Since $t$ inhabits $T$, there would have to be a subtype $S < T$ for which $t \in \mathrm{ownval}(S)$, with $S_i \leq A_i$ and $S_j < A_j$ for at least one $j$. We know that $\mathrm{ownval}(S) \subseteq \mathrm{ownval}(S_1) \times \dots \times \mathrm{ownval}(S_n)$ and hence $a_j \in \mathrm{ownval}(S_j)$. But this contradicts the definition of $t$ whereby $a_j \in \mathrm{ownval}(A_j)$, since own value sets are necessarily disjunct. We prove that tuple $t$ as defined must be an own value of T.
+
 ###### Abstractness
 
-A product type is abstract if **any of its component types are abstract**.
+A product type is abstract if and only if **any of its component types are abstract**.
+
+**Proof:** *If any component type is abstract then the product type is abstract.*
+
+Let $T = (A_1, ..., A_n)$ with at least one abstract type $A_i$. For the purposes of a proof of contradiction, assume that a tuple $t = (a_1, …, a_n)$ with $a_j : A_j$ and $t \in \mathrm{ownval}(T)$ exists. If it did, $T$ would not be abstract. Since $t$ is an own value of $T$, it follows from Property 1 that $a_i$ must be an own value of $A_i$. This contradicts the assumption that $A_i$ is abstract as abstract types have no own values. Hence, $t$ cannot exist and thus $\mathrm{ownval}(T) = \empty$. Ultimately, $T$ is abstract.
+
+**Proof:** *If the product type is abstract then at least one component type is abstract.*
+
+Let $T = (A_1, ..., A_n)$ be an abstract product type. Hence, we have $\mathrm{ownval}(T) = \empty$. We know from Theorem 1 that $\mathrm{ownval}(T) = \mathrm{ownval}(A_1) \times ... \times \mathrm{ownval}(A_n)$. If all $A_i$ had at least one own value, $T$ would also have at least one own value. To achieve the empty set, at least one factor in the Cartesian product must be empty itself, hence at least one component type must have an empty own value set and thus be abstract.
 
 ###### Examples
 
@@ -268,7 +304,7 @@ Note that this proposition is an assertion over the *entity* and not the compone
 
 
 
-### Type Properties
+#### Type Properties
 
 ##### Default Naming Scheme
 
