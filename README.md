@@ -7,7 +7,7 @@ To learn more about the language, read the [introduction](spec/01-introduction.m
 
 
 
-#### State of the Project
+### State of the Project
 
 **I am currently writing the language specification.** There is no Lore compiler, yet. We have a small experimental compiler that is used to test several multiple-dispatch concepts and implement core algorithms. 
 

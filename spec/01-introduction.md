@@ -10,7 +10,7 @@ Apart from these core features, we also have concepts and ideas in mind for mode
 
 
 
-#### Origins
+### Origins
 
 Components and multi-functions were **inspired by entity-component systems** and other concerns in game development. I was looking for a workable language that had a great type system to use with components and found none. I love the guarantees that a robust type system can give, so I was really disappointed.
 
