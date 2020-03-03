@@ -19,3 +19,59 @@ Multi-functions are useful because they allow functions to be implemented with v
 - **Extendability** is improved by the ability to define multi-functions *across* files and compilation units. This supports features such as C#'s extension methods or Scala's implicit classes in a concise and native way.
 
 **In this chapter,** we will look at the syntax of function declarations and define functions and multi-functions. After laying out the basics, we will define the rules of multiple dispatch and examine constraints and edge cases. We will see how intersection types, dynamic specialization and generalization, and extension methods can be used as sugggested above.
+
+
+
+### Functions and Multi-Functions
+
+```
+func-def    --> func-head ['=' expr]?
+func-head   --> 'function' id '(' func-params ')' [':' type]?
+func-params --> func-param [',' func-param]+
+             |  func-param?
+func-param  --> id [':' type]?
+```
+
+*Definition.* A **function** $f$ is a mapping from an input type $\mathrm{in}(f)$ to an output type $\mathrm{out}(f)$. Each function has a **full name**, which we denote $\mathrm{name}(f)$. Note that the `id` of a function (as specified in the grammar above) is *not* necessarily equal to its full name, as the name could further be qualified with modules or packages (which we will introduce in a later revision of the spec), which are part of the full name of a function.
+
+The **body** of a function is an *expression* $\mathrm{body}(f)$. The type of $\mathrm{body}(f)$ must be a *subtype* of $\mathrm{out}(f)$. A body may be empty, in which case we write $\mathrm{body}(f) = ()$ and call the function **abstract**. An abstract function may not be called at run-time.
+
+The **input type** of a function $f$ is defined as follows: Let $[t_1, \dots, t_n]$ be the list of parameter types for each parameter $p_i$. Then we have $\mathrm{in}(f) = (t_1, \dots, t_n)$, that is, an n-tuple of the given parameter types.
+
+We denote the **set of all possible functions** as $\mathbb{F}$.
+
+<hr>
+
+*Example.* Consider the following definition for a function `add`:
+
+```
+function add(a: Int, b: Int): Int = a + b
+```
+
+We will call the defined function $f$. Then we have the following properties:
+
+- $\mathrm{name}(f) = \mathrm{add}$
+- $\mathrm{in}(f) = (\mathrm{Int}, \mathrm{Int})$
+- $\mathrm{out}(f) = \mathrm{Int}$
+- $\mathrm{body}(f) =$ `a + b`
+
+<hr>
+
+*Definition.* A **multi-function** is a pair $\mathcal{F} = (\mathrm{name}, F)$ where:
+
+- $\mathrm{name}$ is the **name** of the multi-function (and all its associated functions).
+- $F$ is the **set of instances** of the multi-function.
+
+We define $F$ as follows: For any multi-function $\mathcal{F} = (n, F)$, we have $F = \{ f \in \mathbb{F} \mid \mathrm{name}(f) = n \}$. That is, a multi-function is a set of functions sharing the same name. By convention, we sometimes write $f \in \mathcal{F}$ for $f \in F$. We denote the set of multi-functions as $\mathbb{M}$.
+
+<hr>
+
+*Example.* Consider the following function definitions:
+
+```
+function concat(x: ToString, y: ToString)           = ... // f1
+function concat(x: List[a], y: List[a])             = ... // f2
+function concat(x: LinkedList[a], y: LinkedList[a]) = ... // f3
+```
+
+Assuming no other function with the name `concat` exists, we have the multi-function $\mathcal{F}_\mathrm{concat} = (\mathrm{concat}, F)$ with $F = \{ f_1, f_2, f_3 \}$ being the set of `concat` functions defined above.
