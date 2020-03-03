@@ -2,7 +2,7 @@
 
 **Lore** is a general-purpose programming language featuring multi-functions, a type-safe entity-component system, and intersection and semantic types.
 
-To learn more about the language, read the [introduction](spec/introduction.md) to our spec.
+To learn more about the language, read the [introduction](spec/01-introduction.md) to our spec.
 
 
 
