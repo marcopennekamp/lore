@@ -51,8 +51,8 @@ function add(a: Int, b: Int): Int = a + b
 We will call the defined function $f$. Then we have the following properties:
 
 - $\mathrm{name}(f) = \mathrm{add}$
-- $\mathrm{in}(f) = (\mathrm{Int}, \mathrm{Int})$
-- $\mathrm{out}(f) = \mathrm{Int}$
+- $\mathrm{in}(f) = (\texttt{Int}, \texttt{Int})$
+- $\mathrm{out}(f) = \texttt{Int}$
 - $\mathrm{body}(f) =$ `a + b`
 
 <hr>
@@ -75,3 +75,40 @@ function concat(x: LinkedList[a], y: LinkedList[a]) = ... // f3
 ```
 
 Assuming no other function with the name `concat` exists, we have the multi-function $\mathcal{F}_\mathrm{concat} = (\mathrm{concat}, F)$ with $F = \{ f_1, f_2, f_3 \}$ being the set of `concat` functions defined above.
+
+
+
+### Multiple Dispatch
+
+To define **multiple dispatch** formally, we first need an operation that allows us to reduce the set of multi-function instances to only those functions that could be invoked with a given tuple of arguments.
+
+*Definition.* The **fit** of a multi-function for a given argument type $t$ is the set of functions that could be invoked with a value of type $t$. We define the function $\mathrm{Fit} : \mathbb{T} \rightarrow \mathbb{M} \rightarrow \mathcal{P}(\mathbb{F})$—with $\mathbb{T}$ being the set of all possible types—as follows: 
+$$
+\mathrm{Fit}(t)(\mathcal{F}) = \{ f \in \mathcal{F} \mid \mathcal{in}(f) \geq t \}.
+$$
+That is, we look at all functions $f \in \mathcal{F}$ and choose only those whose **input types are a supertype** of the given argument type $t$. Hence, we choose functions which could be called with the given argument type. We cannot choose functions that have a more specific input type than the given argument type, because we need to invoke the function with valid arguments. 
+
+We take functions with a **more general input type** into account, because such functions *can* be invoked with a subtype of the input type, i.e. with more specific arguments than needed. This is important for the case in which we cannot find a function that specifically meets the argument type $t$.
+
+<hr>
+
+*Example.* Suppose we have the multi-function $\mathcal{F}_\mathrm{concat}$ defined earlier. We get the following results when applying $\mathrm{Fit}$:
+$$
+\mathrm{Fit}(\texttt{(String, String)})(\mathcal{F}_\mathrm{concat}) = \{ f_1 \}
+$$
+Only $f_1$ fits, because  $\texttt{List[a]}$ is not a supertype of $\texttt{String}$ and neither is $\texttt{LinkedList[a]}$. $\texttt{ToString}$ is a supertype of $\texttt{String}$ and hence $f_1$ fits.
+
+Consider the next application of $\mathrm{Fit}$:
+$$
+\mathrm{Fit}(\texttt{(LinkedList[Int], List[Int])})(\mathcal{F}_\mathrm{concat}) = \{ f_1, f_2 \}
+$$
+Both $f_1$ and $f_2$ fit because the input types of both functions are supertypes of the argument types. $f_3$ does not fit since $\texttt{LinkedList[a]} \ngeq \texttt{List[a]}$ for the second argument type.
+
+Finally, let's consider the following application:
+$$
+\mathrm{Fit}(\texttt{(LinkedList[Int], LinkedList[Int] & Sorted)})(\mathcal{F}_\mathrm{concat}) = \{ f_1, f_2, f_3 \}
+$$
+All three functions fit, because $\texttt{ToString} > \texttt{List[a]} > \texttt{LinkedList[a]}$ and $\texttt{LinkedList[a]} > \texttt{LinkedList[a] & Sorted}$, as the qualification with the intersection type makes the original type more specific.
+
+
+
