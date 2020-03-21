@@ -1,6 +1,6 @@
 # Multi-Functions
 
-**Multi-functions** are an exceedingly important feature of Lore. They allow specialising a function via any of the parameters, thereby allowing dynamic dispatch over more than one argument. This feature is also called **multiple dispatch**.
+**Multi-functions** are an exceedingly important feature of Lore. They allow specializing a function via any of the parameters, thereby allowing dynamic dispatch over more than one argument. This feature is also called **multiple dispatch**.
 
 *Definition.* A **multi-function** is a set of all functions that share the same name. Such an individual function is also called an **instance** of its multi-function. 
 
@@ -18,7 +18,7 @@ Multi-functions are useful because they allow functions to be implemented with v
 
 - **Extendability** is improved by the ability to define multi-functions *across* files and compilation units. This supports features such as C#'s extension methods or Scala's implicit classes in a concise and native way.
 
-**In this chapter,** we will look at the syntax of function declarations and define functions and multi-functions. After laying out the basics, we will define the rules of multiple dispatch and examine constraints and edge cases. We will see how intersection types, dynamic specialization and generalization, and extension methods can be used as sugggested above.
+**In this chapter,** we will look at the syntax of function declarations and define functions and multi-functions. After laying out the basics, we will define the rules of multiple dispatch and examine constraints and edge cases. We will see how intersection types, dynamic specialization and generalization, and extension methods can be used as suggested above.
 
 
 
@@ -40,7 +40,7 @@ The **input type** of a function $f$ is defined as follows: Let $[t_1, \dots, t_
 
 We denote the **set of all possible functions** as $\mathbb{F}$.
 
-<hr>
+---
 
 *Example.* Consider the following definition for a function `add`:
 
@@ -55,7 +55,7 @@ We will call the defined function $f$. Then we have the following properties:
 - $\mathrm{out}(f) = \texttt{Int}$
 - $\mathrm{body}(f) =$ `a + b`
 
-<hr>
+---
 
 *Definition.* A **multi-function** is a pair $\mathcal{F} = (\mathrm{name}, F)$ where:
 
@@ -64,7 +64,8 @@ We will call the defined function $f$. Then we have the following properties:
 
 We define $F$ as follows: For any multi-function $\mathcal{F} = (n, F)$, we have $F = \{ f \in \mathbb{F} \mid \mathrm{name}(f) = n \}$. That is, a multi-function is a set of functions sharing the same name. By convention, we sometimes write $f \in \mathcal{F}$ for $f \in F$. We denote the set of multi-functions as $\mathbb{M}$.
 
-<hr>
+---
+
 
 *Example.* Consider the following function definitions:
 
@@ -90,7 +91,7 @@ That is, we look at all functions $f \in \mathcal{F}$ and choose only those whos
 
 We take functions with a **more general input type** into account, because such functions *can* be invoked with a subtype of the input type, i.e. with more specific arguments than needed. This is important for the case in which we cannot find a function that specifically meets the argument type $t$.
 
-<hr>
+---
 
 *Example.* Suppose we have the multi-function $\mathcal{F}_\mathrm{concat}$ defined earlier. We get the following results when applying $\mathrm{Fit}$:
 $$
