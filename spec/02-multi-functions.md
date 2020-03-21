@@ -226,5 +226,21 @@ More generally, we can observe that intersection types are precisely the feature
 
 
 
+### Constraints on Return Types
+
+So far we have only considered *parameter types* of multi-function instances. We also have to account for return types of functions.
+
+First of all, we cannot incorporate the return type into the multiple-dispatch process. Doing so would jeopardise our type inference mechanism, which majorly relies on stable function return types. To ensure type safety, we impose a constraint on return types.
+
+*Definition.* Let $\mathcal{F}$ be a multi-function. The following **constraint on return types** must be satisfied for all $f, f' \in \mathcal{F}$:
+$$
+\mathrm{in}(f) \geq \mathrm{in}(f') \implies \mathrm{out}(f) \geq \mathrm{out}(f')
+$$
+That is, assume $f'$ specializes $f$. If we have a value $v$ with a compile-time type of $\mathrm{in}(f)$ in a function call `f(v)` , we can assume a return type of $\mathrm{out}(f)$. Since $f'$ is called instead of $f$ if $v$ is run-time specialized to $\mathrm{in}(f')$, we must ensure that the return type of $f'$ satisfies the type bound $\mathrm{out}(f)$.
+
+If a multi-function fails to satisfy this constraint, an `invalid-return-type` error will be thrown at compile-time, mentioning all offending function definitions.
+
+
+
 
 
