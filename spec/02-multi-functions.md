@@ -16,9 +16,13 @@ Multi-functions are useful because they allow functions to be implemented with v
 
 - **Dynamic Specialization and Generalization** of values can be used to specialize or generalize the semantic type of a value *at runtime*. Since the actual function being called is chosen at runtime when calling a multi-function, we can write functions that implement an operation for a given temporarily specialized argument.
 
+  *This feature is not planned for the first running language version.*
+
 - **Extendability** is improved by the ability to define multi-functions *across* files and compilation units. This supports features such as C#'s extension methods or Scala's implicit classes in a concise and native way.
 
-**In this chapter,** we will look at the syntax of function declarations and define functions and multi-functions. After laying out the basics, we will define the rules of multiple dispatch and examine constraints and edge cases. We will see how intersection types, dynamic specialization and generalization, and extension methods can be used as suggested above.
+**In this chapter,** we will look at the syntax of function declarations and define functions and multi-functions. After laying out the basics, we will define the rules of multiple dispatch and examine constraints and edge cases. We will see how intersection types and extension methods can be used as suggested above.
+
+*Note that the syntax is very much in flux.*
 
 
 

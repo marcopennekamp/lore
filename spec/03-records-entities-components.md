@@ -1,6 +1,6 @@
 # Records, Entities and Components
 
-
+**TODO:** What about attaching components at run-time? We need that feature, but probably not for the first language version. This should be developed hand-in-hand with dynamic specialization.
 
 
 
