@@ -3,9 +3,7 @@
 // functions over subsets of components of Skeleton, while we still have access to all other components we need.
 // And everything without dynamically getting components like you do in Unity.
 
-// TODO: Can we find another word for schema? Prototype? I don't like class or struct or record, since it sounds
-//       so technical.
-schema Position {
+class Position {
   // Only 'mut' fields are able to be mutated.
   mut x: Float
   mut y: Float
@@ -17,18 +15,18 @@ schema Position {
 // a component or not. A component can also be part of multiple entities; there are no basic restrictions to this
 // at this time. We might restrict it later, but that will require advanced language features, and I want to
 // concentrate on core features first.
-schema Sprite owned by +Position {
+class Sprite owned by +Position {
   mut image: Image
 }
 
-schema Entity2D {
+class Entity2D {
   component Position
   component Sprite
 }
 
 // TODO: Shouldn't this be called just Health? Can we use an envelope type for this? Think about how envelope types
 //       could be used as components in general. Is this wise considering extendability?
-schema HealthState {
+class HealthState {
   mut health: Int
 }
 
@@ -44,7 +42,7 @@ function damage(entity: +HealthState, amount: Int): Unit = { entity.HealthState.
 // Idea for later: Object destructuring right in the function arguments.
 // function heal({ HealthState }: +HealthState, amount: Int): Unit = { HealthState.health += amount }
 
-schema Regeneration owned by +HealthState {
+class Regeneration owned by +HealthState {
   amount: Float
   interval: Int
   private mut counter: Int = 1 // private hides the field from any function defined outside the current file.
@@ -70,7 +68,7 @@ function tick(entity: +Regeneration): Unit = {
 //   Skeleton & +Position & +Sprite & +HealthState & +Regeneration
 // Note that Skeleton inherits the components of Entity2D.
 
-schema Skeleton extends Entity2D {
+class Skeleton extends Entity2D {
   component HealthState
   component Regeneration = Regeneration(amount = 5, interval = 30) // We can declare default component values.
 }

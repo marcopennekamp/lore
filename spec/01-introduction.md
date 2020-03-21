@@ -35,7 +35,7 @@ On the **language** side:
   - Notably, we are not yet supporting the definition of anonymous functions.
   - In the long run, almost all symbolic operations will be backed by multi-functions. For example, the comparison operator can be simply defined as a function. But to keep it simple for now, we will define a basic set of symbolic operations and then require standard multi-function calls. So, for example, comparing two strings would mean calling `areEqual(str1, str2)`.
 - **TODO:** One **big question** is how far we'll support Javascript interop in the MVL. We would have to introduce dictionaries (values and type), dynamic types (as a type called Dynamic or alternatively when types are omitted from declarations), and duck typing.
-- **Not supported:** Namespacing/modules, import/require.
+- **Not supported:** Namespacing/modules, import/require, class/function/field visibility.
   - For this basic version of Lore, we will just compile all files in the source dictionary together and then invoke a main function. We won't yet support namespaces or imports.
 
 On the **implementation** side:

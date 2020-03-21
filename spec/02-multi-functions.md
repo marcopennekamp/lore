@@ -32,6 +32,8 @@ func-params --> func-param [',' func-param]+
 func-param  --> id [':' type]?
 ```
 
+#### Functions
+
 *Definition.* A **function** $f$ is a mapping from an input type $\mathrm{in}(f)$ to an output type $\mathrm{out}(f)$. Each function has a **full name**, which we denote $\mathrm{name}(f)$. Note that the `id` of a function (as specified in the grammar above) is *not* necessarily equal to its full name, as the name could further be qualified with modules or packages (which we will introduce in a later revision of the spec), which are part of the full name of a function.
 
 The **body** of a function is an *expression* $\mathrm{body}(f)$. The type of $\mathrm{body}(f)$ must be a *subtype* of $\mathrm{out}(f)$. A body may be empty, in which case we write $\mathrm{body}(f) = ()$ and call the function **abstract**. An abstract function may not be called at run-time.
@@ -55,7 +57,7 @@ We will call the defined function $f$. Then we have the following properties:
 - $\mathrm{out}(f) = \texttt{Int}$
 - $\mathrm{body}(f) =$ `a + b`
 
----
+#### Multi-Functions
 
 *Definition.* A **multi-function** is a pair $\mathcal{F} = (\mathrm{name}, F)$ where:
 
@@ -82,6 +84,8 @@ Assuming no other function with the name `concat` exists, we have the multi-func
 ### Multiple Dispatch
 
 To define **multiple dispatch** formally, we first need an operation that allows us to reduce the set of multi-function instances to only those functions that could be invoked with a given tuple of arguments.
+
+#### Fit
 
 *Definition.* The **fit** of a multi-function for a given argument type $t$ is the set of functions that could be invoked with a value of type $t$. We define the function $\mathrm{Fit} : \mathbb{T} \rightarrow \mathbb{M} \rightarrow \mathcal{P}(\mathbb{F})$—with $\mathbb{T}$ being the set of all possible types—as follows: 
 $$
@@ -111,9 +115,9 @@ $$
 $$
 All three functions fit, because $\texttt{ToString} > \texttt{List[a]} > \texttt{LinkedList[a]}$ and $\texttt{LinkedList[a]} > \texttt{LinkedList[a] & Sorted}$, as the qualification with the intersection type makes the original type more specific.
 
----
+#### Min
 
-*Definition.* Let $\mathrm{Min} : \mathcal{P}(\mathbb{F}) \rightarrow \mathcal{P}(\mathbb{F})$ be the function defined as follows:
+*Definition.* Let $\mathrm{Min} : \mathcal{P}(\mathbb{F}) \rightarrow \mathcal{P}(\mathbb{F})$ be the function that extracts the **most specific functions** from a given fit. We define:
 $$
 \mathrm{Min}(B) = \{ f \in B \mid \nexists f' \in B. \mathrm{in}(f') \leq \mathrm{in}(f) \}
 $$
@@ -161,7 +165,38 @@ Since the most specific function is not unique, we must abort the compilation wi
 
 In closing the example, we will look at the conditions needed to produce an empty fit. Let's assume we calculate the fit for $\mathcal{F}_\mathrm{area}$ called with an argument of type $\texttt{Rectangle}$. Provided that $\texttt{Rectangle}$ doesn't have a $\texttt{BoundingBox}$ component, the fit will be empty, because neither $\texttt{Circle}$ nor $\texttt{+BoundingBox}$ are a supertype of $\texttt{Rectangle}$.
 
+#### Multi-Function Calls
 
+Having defined the $\mathrm{Fit}$ and $\mathrm{Min}$ functions, we can finally turn our attention to defining *multi-function calls*.
+
+*Definition.* Suppose we have a function call expression as follows:
+
+```
+N(e_1, ..., e_n)
+```
+
+Let $\mathcal{F}$ be a multi-function and $N$ its name. Let $t = (t_1, \dots, t_n)$ be the tuple type of the arguments $e_1 : t_1, \dots, e_n : t_n$. Let $B = \mathrm{Fit}(t)(\mathcal{F})$ be the fit of $\mathcal{F}$. Let $C = \mathrm{Min}(B)$ be the set of most specific functions in the fit $B$.
+
+A **multi-function call** is an operation with compile-time constraints and run-time semantics:
+
+- At **compile-time**, we need to check whether the function to call would be unique assuming $t$ was also the run-time argument type. Of course, one of the arguments $e_i$ might be a subtype of $t_i$, but we can only catch these problems at run-time. We can at least test that the type bound fits at all.
+
+  We distinguish the following cases:
+
+  - If $C = \empty$, there is no function that fits the argument type. We throw an `empty-fit` error.
+  - If $|C| = 1$, that is, there is exactly one most specific function to call, the multi-function call passes the compile-time check.
+  - If $|C| > 1$, that is, we have an ambiguity already at compile-time, we throw an `ambiguous-call` error.
+
+- At **run-time**, the actual argument types might specialize the compile-time type bound $t$. Let $t' = (t'_1, \dots, t'_n)$ be the run-time input type. Let $B' = \mathrm{Fit}(t')(\mathcal{F})$ and $C' = \mathrm{Min}(B')$. The `empty-fit` error is always caught at compile-time (refer to the next section for a proof). Thus, we know that $C' \neq \empty$ at run-time, and so we only distinguish two cases:
+
+  - If $|C| = 1$ with $f \in C$, we call the function $f$. Note that $f$ cannot be abstract because of the totality constraint on abstract function, defined in a following section.
+  - If $|C| > 1$, we throw an `ambiguous-call` error.
+
+Note that we have to distinguish between compile-time and run-time errors,
+which we will talk more about in the next section. Also note that the
+compile-time constraints do not refer to the abstractness of the function
+$f$, since the point of an abstract function is exactly that the compile-time
+checks pass while we require specialisation of the argument types at runtime.
 
 
 
