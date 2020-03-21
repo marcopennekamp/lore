@@ -200,3 +200,31 @@ checks pass while we require specialisation of the argument types at runtime.
 
 
 
+### Empty-Fit and Ambiguous-Call Errors
+
+In the definition of multi-function calls we had to **distinguish between compile-**
+**time and run-time errors**. In particular, we defined the `empty-fit` error
+as compile-time-only, while the `ambiguous-call` error may either occur at
+compile-time or run-time. Of course, compile-time errors are always prefer-
+able to run-time errors. However, with the expressiveness of the type system
+of Lore, we can not get around the possibility of a run-time error for the
+ambiguity case. We will see why in this section.
+
+#### Proof: Empty-Fit can only occur at compile-time
+
+First, let's look at the compile-time-only property of the `empty-fit` error. We will prove that the error can only occur at compile-time by looking at a call of a multi-function $\mathcal{F}$.
+
+*Proof.* Let $t$ be the argument type deduced at compile-time. Let $B = \mathrm{Fit}(t)(\mathcal{F})$ and $C = \mathrm{Min}(B)$. Assume we call $\mathcal{F}$ at run-time with an argument type $t'$.  Let $B' = \mathrm{Fit}(t')(\mathcal{F})$ and $C' = \mathrm{Min}(B')$.
+
+Assume that $C' = \empty$ but $|C| = 1$. That is, calling $\mathcal{F}$ at compile-time was valid, but we can't find any fitting function to call at run-time with the argument type $t'$.  Since $C \neq \empty$, we know that $B \neq \empty$, so there exists an $f \in B$ such that $\mathrm{in}(f) \geq t$ (by definition of $\mathrm{Fit}$). Now, we observe that $t'$ specializes the argument type $t$, so that $t  \geq t'$ holds. This is the only way in which the run-time type of the argument can change. In particular, $t$ can not be generalized, because it is the upper-bound for any actual argument types. Trivially, we have $\mathrm{in}(f) \geq t \geq t'$, hence $f \in B'$ (by definition of $\mathrm{Fit}$). Finally, we can derive that $f \in C'$ *or* that there must exist another function $g \in C'$ with $\mathrm{in}(g) < \mathrm{in}(f)$. In both cases, there is some function in $C'$, which contradicts $C' = \empty$. This proves that the `empty-fit` error can only occur at compile-time.
+
+#### Proof: Ambiguous-Call can occur at run-time
+
+Moving on to the `ambiguous-call` error, we can show with a simple example that such an error might only be caught at run-time. Let's look at the ambiguity example shown above again. We have two functions $f_1 : \mathtt{Circle} \rightarrow \mathtt{Real}$ and $f_2 : \mathtt{+BoundingBox} \rightarrow \mathtt{Real}$. At compile-time, in an expression `area(c)`, $f_1$ is the unique most specific function to call given a variable `c : Circle`. Since $\texttt{Circle & +BoundingBox}$ is a subtype of $\texttt{+BoundingBox}$, such an argument may be passed at run-time. The problem is that the additional interection type allows both `area`-functions to be called, as could be seen when we computed the Min-set in the example. This leads to an ambiguity error at *run-time*.
+
+More generally, we can observe that intersection types are precisely the feature that make multiple-dispatch ambiguous.
+
+
+
+
+
