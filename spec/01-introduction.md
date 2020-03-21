@@ -15,3 +15,33 @@ Apart from these core features, we also have concepts and ideas in mind for mode
 Components and multi-functions were **inspired by entity-component systems** and other concerns in game development. I was looking for a workable language that had a great type system to use with components and found none. I love the guarantees that a robust type system can give, so I was really disappointed.
 
 The idea of **using intersection types and semantic types with multi-functions** came to me while working on my Bachelor's thesis. My thesis was about software synthesis, and the system I worked with relied heavily on semantic types to specify intricate details about values (e.g. that a list is sorted, and much more complicated notions). I suspect that this semantic specification is also great for specializing functions in a multiple dispatch context, which is one thing I want to find out by working on Lore.
+
+
+
+### Minimum Viable Language
+
+At this early stage of design and development, my goal is to **create a minimum viable language** that satisfies the **most important language goals**. While I have lots of ideas about what kind of quality of life features ought to be included in a modern programming language, the core ideas—ultimately what sets Lore apart from other languages—are more important. As I am a one-man team working on this project sporadically, my goal is to create a minimum viable specification and compiler that is just one thing: usable.
+
+Hence, here is a **list of features** that will make up the minimum viable language; anything beyond that is fluff—happy fluff, however—that might be added at a later time.
+
+On the **language** side:
+
+- **Functions:** Multi-functions, function declarations, multiple dispatch, compile-time constraints.
+- **Classes:** Properties, fields, constructors, mutability, component declarations, `owned by` declarations, simple polymorphism, abstract classes.
+- **Types:** Product types, function types, intersection types, class types, component types, label types, abstractness, simple parametric types for lists.
+  - Notably, we are excluding sum types for now, as well as less important types such as singleton and envelope types.
+- **Values:** Numbers, strings, booleans, objects (class instantiation), tuples, lists.
+- **Expressions:** Literals, very basic operators (such as addition; not even list operations), function calls, conditional expressions, loops, variable assignments, blocks.
+  - Notably, we are not yet supporting the definition of anonymous functions.
+  - In the long run, almost all symbolic operations will be backed by multi-functions. For example, the comparison operator can be simply defined as a function. But to keep it simple for now, we will define a basic set of symbolic operations and then require standard multi-function calls. So, for example, comparing two strings would mean calling `areEqual(str1, str2)`.
+- **TODO:** One **big question** is how far we'll support Javascript interop in the MVL. We would have to introduce dictionaries (values and type), dynamic types (as a type called Dynamic or alternatively when types are omitted from declarations), and duck typing.
+- **Not supported:** Namespacing/modules, import/require.
+  - For this basic version of Lore, we will just compile all files in the source dictionary together and then invoke a main function. We won't yet support namespaces or imports.
+
+On the **implementation** side:
+
+- **Parser**
+- **Abstract Syntax Tree**
+- **Correctness checks** for constraints, types, and anything else that needs checking.
+- **Transpiler** from the AST to Javascript.
+- A **Javascript run-time** that handles multiple-dispatch.

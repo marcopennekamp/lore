@@ -26,6 +26,8 @@ schema Entity2D {
   component Sprite
 }
 
+// TODO: Shouldn't this be called just Health? Can we use an envelope type for this? Think about how envelope types
+//       could be used as components in general. Is this wise considering extendability?
 schema HealthState {
   mut health: Int
 }
