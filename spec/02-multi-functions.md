@@ -111,5 +111,57 @@ $$
 $$
 All three functions fit, because $\texttt{ToString} > \texttt{List[a]} > \texttt{LinkedList[a]}$ and $\texttt{LinkedList[a]} > \texttt{LinkedList[a] & Sorted}$, as the qualification with the intersection type makes the original type more specific.
 
+---
+
+*Definition.* Let $\mathrm{Min} : \mathcal{P}(\mathbb{F}) \rightarrow \mathcal{P}(\mathbb{F})$ be the function defined as follows:
+$$
+\mathrm{Min}(B) = \{ f \in B \mid \nexists f' \in B. \mathrm{in}(f') \leq \mathrm{in}(f) \}
+$$
+That is, Min extracts the most specific functions from a multi-function fit. Note that there may be multiple such functions if their input types are not comparable, or none at all if the fit is empty. We will explore both cases in the next example.
+
+---
+
+*Example.* Suppose we have the multi-function $\mathcal{F}_\mathrm{concat}$ defined earlier and a fit $B = \{ f_1, f_2 \}$. We apply $\mathrm{Min}$ as follows:
+$$
+\mathrm{Min}(\{ f_1, f_2 \}) = \{ f_2 \}
+$$
+This is because $\mathrm{in}(f_2) < \mathrm{in}(f_1)$, as lists are subtypes of ToString.
+
+---
+
+A Min-set with exactly one element is *the* result we need for multiple dispatch to be applicable. If the set was empty, we would not have found a suitable function to call. Perhaps even worse, if the set contains more than one element, we have an ambiguity and cannot decide which function to call. The following example shows that such an ambiguity exists.
+
+---
+
+*Example.* Assume we have the following two functions (note that at this stage, the syntax is just a placeholder):
+
+```
+function area(x: Circle) = // f1
+  pi * x.radius * x.radius
+function area(x: +BoundingBox) = { // f2
+  const b = x.BoundingBox
+  const width = b.maxX - b.minX
+  const height = b.maxY - b.minY
+  width * height
+}
+```
+
+That is, we can calculate an area both for a circle and for an object that has a BoundingBox component. (This is not a particularly nice example, since a BoundingBox should not be used to calculate an area, but let's just say some wacky programmer decided to go with it.)
+
+We can call the associated multi-function $\mathcal{F}_\mathrm{area}$. Now, what about a Circle that has a BoundingBox as a component? In other words, suppose we call $\mathcal{F}_\mathrm{area}$ with an argument of type $t = \texttt{Circle & +BoundingBox}$. We have the following properties:
+$$
+B = \mathrm{Fit}(t)(\mathcal{F}_\mathrm{area}) = \{ f_1, f_2 \} \\
+\mathrm{Min}(B) = \{ f_1, f_2 \}
+$$
+For any types $\texttt{a}$ and $\texttt{b}$, it holds that $\texttt{a} \geq \texttt{a & b}$. Thus, we have $\texttt{Circle} \geq \texttt{Circle & +BoundingBox}$ and $\texttt{+BoundingBox} \geq \texttt{Circle & +BoundingBox}$. Hence the argument type fits both functions.
+
+$\texttt{Circle}$ and $\texttt{+BoundingBox}$ are also *incomparable*, so neither is a subtype of the other. This means that both $f_1$ and $f_2$ have to be contained in the Min-set, as neither function can be ruled out given the argument type.
+
+Since the most specific function is not unique, we must abort the compilation with an error (preferably) or even throw a runtime error.
+
+In closing the example, we will look at the conditions needed to produce an empty fit. Let's assume we calculate the fit for $\mathcal{F}_\mathrm{area}$ called with an argument of type $\texttt{Rectangle}$. Provided that $\texttt{Rectangle}$ doesn't have a $\texttt{BoundingBox}$ component, the fit will be empty, because neither $\texttt{Circle}$ nor $\texttt{+BoundingBox}$ are a supertype of $\texttt{Rectangle}$.
+
+
+
 
 
