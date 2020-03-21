@@ -1,8 +1,0 @@
-
-schema HealthState {
-  mut health: Int
-}
-
-// Declaring the first parameter as mut will allow mutable fields to be mutated.
-function heal(mut hs: HealthState, amount: Int): Unit = { hs.health += amount }
-function damage(mut hs: HealthState, amount: Int): Unit = { hs.health -= amount }
