@@ -15,8 +15,12 @@ object FragmentParser extends IgnoreWhitespace {
     LabelTypeDeclaration(name, supertypeName)
   }
 
+  def classType[_ : P] = P("abstract".?.! ~ "class" ~ identifier ~ ("<:" ~ identifier).?).map { case (abstractKeyword, name, supertypeName) =>
+    ClassTypeDeclaration(name, supertypeName, abstractKeyword == "abstract")
+  }
+
   def typeDeclaration[_ : P]: P[TopLevelElement] = {
-    P(normalTypeDeclaration | labelType)
+    P(normalTypeDeclaration | labelType | classType)
   }
 
   def parameterDeclaration[_ : P]: P[ParameterDeclaration] = {

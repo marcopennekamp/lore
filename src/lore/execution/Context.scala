@@ -79,6 +79,10 @@ object Context {
       types.getOrElse(name, throw TypeNotFoundException(name))
     }
 
+    def resolveSupertype(maybeName: Option[String]): Type = {
+      maybeName.map(name => getType(name)).getOrElse(AnyType)
+    }
+
     def addFunction(function: LoreFunction): Unit = {
       val multiFunction = multiFunctions.getOrElse(function.name, MultiFunction(function.name, Set()))
       multiFunctions.put(function.name, MultiFunction(function.name, Set(function) ++ multiFunction.functions))
@@ -100,11 +104,10 @@ object Context {
     }
 
     statements.foreach {
-      case LabelTypeDeclaration(name, maybeSupertypeName) =>
-        val supertype = maybeSupertypeName
-          .map(supertypeName => getType(supertypeName))
-          .getOrElse(AnyType)
-        types.put(name, LabelType(name, supertype))
+      case LabelTypeDeclaration(name, supertypeName) =>
+        types.put(name, LabelType(name, resolveSupertype(supertypeName)))
+      case ClassTypeDeclaration(name, supertypeName, isAbstract) =>
+        types.put(name, ClassType(name, resolveSupertype(supertypeName), isAbstract))
       case TypeDeclaration(name, typeExpression) =>
         val tpe = evaluateTypeExpression(typeExpression)
         types.put(name, tpe)
