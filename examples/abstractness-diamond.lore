@@ -3,6 +3,11 @@ class AI <: A
 abstract class B
 class BI <: B
 
+/**
+ * This example is meant to fail totality constraint validation. In simple terms, we want to ensure that
+ * abstract functions which are specialized with one concrete type but never fully aren't magically valid.
+ * This example is also mentioned in the spec.
+ */
 function f(a: A, b: B)
 function f(a: AI, b: B)
 function f(a: A, b: BI)
