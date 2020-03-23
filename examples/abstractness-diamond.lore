@@ -1,0 +1,8 @@
+abstract class A
+class AI <: A
+abstract class B
+class BI <: B
+
+function f(a: A, b: B)
+function f(a: AI, b: B)
+function f(a: A, b: BI)
