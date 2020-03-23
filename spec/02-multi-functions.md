@@ -246,5 +246,54 @@ If a multi-function fails to satisfy this constraint, an `invalid-return-type` e
 
 
 
+### Abstract Function Constraints and Usage
 
+We want **abstract functions to guarantee that multiple dispatch always finds at least one concrete function** to call at run-time. To achieve this, we must ensure the following two properties:
+
+1. The input type of an abstract function must be abstract itself, which is formalized in the **input abstractness constraint**.
+2. Abstract functions must be covered by functions accepting all possible concrete subtypes of the input type, which is formalized in the **totality constraint**.
+
+#### Input Abstractness Constraint
+
+*Definition.* Let $\mathcal{F}$ be a mult-function. The following **input abstractness constraint** must be satisfied for all abstract function $f \in \mathcal{F}$:
+$$
+\mathrm{abstract}(\mathrm{in}(f))
+$$
+
+#### Totality Constraint
+
+*Definition.* Let $\mathcal{F}$ be a multi-function. The following **totality constraint** must be satisfied for all abstract functions $f \in \mathcal{F}$:
+$$
+\forall s < \mathrm{in}(f). \neg \mathrm{abstract}(s) \implies [\exists f' \in \mathcal{F}. \mathrm{in}(f') < \mathrm{in}(f) \and f' \in \mathrm{Fit}(s)(\mathcal{F})]
+$$
+That is, all concrete subtypes $s$ of $f$'s input type must be covered by at least one function $f'$ whose input type is a strict subtype of $\mathrm{in}(f)$. Together with the input abstractness constraint, this ensures that all input values with which the function can ever be called are dispatched to a *concrete* function.
+
+If a multi-function $\mathcal{F}$ does not satisfy the totality constraint, a `missing-implementation` error is thrown, which includes a list of input types that need to be covered.
+
+---
+
+Contrary to intuition, for the definition of the totality constraint, **it does not matter whether $f'$ is abstract or not**. If $f'$ is not abstract, the potential argument type $s$ is trivially covered by $f'$. If $f'$ *is* abstract, the totality constraint also needs to hold for $f'$. 
+
+There is a valid concern: Can't we just define abstract functions down to the leaves of the dispatch tree and never provide an implementation? Yes! But the *input abstractness constraint* ensures that functions over concrete input types cannot be abstract themselves. This **guarantees an implementation *if* there are concrete subtypes** of a given abstract type. If there are no concrete subtypes, of course we want to allow defining functions without ever supplying an implementation; such an implementation can be, for example, provided by a library user after subtyping.
+
+*Example.* To demonstrate what we **discussed above**, take the following constellation of functions:
+
+```
+abstract class A { }
+class AI extends A { }
+abstract class B { }
+class BI extends B { }
+
+function f(a: A, b: B)   // f1
+function f(a: AI, b: B)  // f2
+function f(a: A, b: BI)  // f3
+```
+
+This code would not compile. While `f1` is fully covered, neither `f2` nor `f3` are covered themselves and thus don't satisfy the totality constraint. Let's add another function `f4`:
+
+```
+function f(a: AI, b: BI) // f4
+```
+
+Now, the totality constraint is satisfied for all functions. But then the code compiles, which it shouldn't, right? *Wrong.* The *input abstractness constraint* makes `f4` invalid. The idea that functions need to be implemented for concrete values might not be encoded in the totality constraint, but it is still checked within the system.
 
