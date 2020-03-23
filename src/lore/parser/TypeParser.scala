@@ -2,8 +2,9 @@ package lore.parser
 
 import lore.ast._
 import fastparse._
+import ScalaWhitespace._
 
-object TypeParser extends IgnoreWhitespace {
+object TypeParser {
   import IdentifierParser.identifier
 
   def sumType[_ : P]: P[SumTypeExpression] = {
