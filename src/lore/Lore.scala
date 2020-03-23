@@ -4,7 +4,13 @@ import lore.execution.Context
 
 object Lore {
   def main(args: Array[String]): Unit = {
-    implicit val context = Context.fromExample(args(0))
+    val maybeContext = Context.fromExample(args(0))
+    if (maybeContext.isEmpty) {
+      println("The context couldn't be created due to an error (likely mentioned above). Aborting Lore execution...")
+      return
+    }
+
+    implicit val context = maybeContext.get
 
     // Print types for debugging.
     println("Types:")

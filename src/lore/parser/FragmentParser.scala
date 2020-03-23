@@ -45,10 +45,12 @@ object FragmentParser {
     P(topDeclaration.repX(0, Space.terminators) ~~ Space.WL0 ~~ End)
   }
 
-  def parse(source: String): Seq[TopLevelElement] = {
+  def parse(source: String): Option[Seq[TopLevelElement]] = {
     fastparse.parse(source, file(_)) match {
-      case Parsed.Success(result, _) => result
-      case Parsed.Failure(_, _, info) => sys.error("Parsing failure! " + info)
+      case Parsed.Success(result, _) => Some(result)
+      case Parsed.Failure(label, index, extra) =>
+        println(s"Parsing failure: ${extra.trace().aggregateMsg}")
+        None
     }
   }
 }
