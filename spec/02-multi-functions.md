@@ -246,7 +246,7 @@ If a multi-function fails to satisfy this constraint, an `invalid-return-type` e
 
 
 
-### Abstract Function Constraints and Usage
+### Abstract Function Constraints
 
 We want **abstract functions to guarantee that multiple dispatch always finds at least one concrete function** to call at run-time. To achieve this, we must ensure the following two properties:
 
@@ -259,6 +259,9 @@ We want **abstract functions to guarantee that multiple dispatch always finds at
 $$
 \mathrm{abstract}(\mathrm{in}(f))
 $$
+To appreciate the need for this constraint, consider the following: Assume we define an abstract function $f \in \mathcal{F}$ with an input type $\texttt{A}$, which is a concrete class type. The type $\texttt{A}$ has two direct subtypes $\texttt{A1}$ and $\texttt{A2}$. Even if we satisfied the totality constraint for $f$ by defining two implementations $f_1$ and $f_2$, we could call $\mathcal{F}$ with an argument $a : \texttt{A}$. This would attempt to call an abstract function at run-time, illustrating the need for the input abstractness constraint.
+
+If an abstract function $f$ does not satisfy this constraint, an `input-type-not-abstract` error is raised.
 
 #### Totality Constraint
 
@@ -268,7 +271,7 @@ $$
 $$
 That is, all concrete subtypes $s$ of $f$'s input type must be covered by at least one function $f'$ whose input type is a strict subtype of $\mathrm{in}(f)$. Together with the input abstractness constraint, this ensures that all input values with which the function can ever be called are dispatched to a *concrete* function.
 
-If a multi-function $\mathcal{F}$ does not satisfy the totality constraint, a `missing-implementation` error is thrown, which includes a list of input types that need to be covered.
+If a multi-function $\mathcal{F}$ does not satisfy the totality constraint, a `missing-implementation` error is raised, which includes a list of input types that need to be covered.
 
 ---
 
