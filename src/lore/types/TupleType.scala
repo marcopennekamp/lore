@@ -1,8 +1,5 @@
 package lore.types
 
-import scalaz.std.list._
-import scalaz.syntax.traverse._
-
 import lore.execution.Context
 
 case class TupleType(components: Seq[Type]) extends Type {

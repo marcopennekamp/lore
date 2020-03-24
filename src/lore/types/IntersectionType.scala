@@ -32,7 +32,7 @@ case class IntersectionType private (types: Set[Type]) extends Type {
 
 object IntersectionType {
   /**
-    * Constructs the intersection type from the given types and it them if necessary.
+    * Constructs the intersection type from the given types and flattens it if necessary.
     */
   def construct(types: Set[Type]): IntersectionType = {
     new IntersectionType(types.flatMap {

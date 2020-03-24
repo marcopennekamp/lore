@@ -28,8 +28,8 @@ On the **language** side:
 
 - **Functions:** Multi-functions, function declarations, multiple dispatch, compile-time constraints.
 - **Classes:** Properties, fields, constructors, mutability, component declarations, `owned by` declarations, simple polymorphism, abstract classes.
-- **Types:** Product types, function types, intersection types, class types, component types, label types, abstractness, simple parametric types for lists, type inference.
-  - Notably, we are excluding sum types for now, as well as less important types such as singleton and envelope types.
+- **Types:** Product types, function types, intersection types, sum types, class types, component types, label types, abstractness, simple parametric types for lists, type inference.
+  - Notably, we are excluding less important types such as singleton and envelope types.
 - **Values:** Numbers, strings, booleans, objects (class instantiation), tuples, lists.
 - **Expressions:** Literals, very basic operators (such as addition; not even list operations), function calls, conditional expressions, loops, variable assignments, blocks.
   - Notably, we are not yet supporting the definition of anonymous functions.

@@ -57,7 +57,7 @@ object Subtyping {
     */
   def isSubtype(t1: Type, t2: Type): Boolean = {
     // TODO: We might need to use a more complex theorem solver with proper typing rules instead of such an ad-hoc/greedy algorithm.
-    // TODO: We can easily optimise this by looping over all rules and returning true when the first rule return true.
+    // TODO: We can easily optimise this by looping over all rules and returning true when the first rule returns true.
     rules.map(rule => rule.isDefinedAt((t1, t2)) && rule.apply((t1, t2))).exists(identity)
   }
 

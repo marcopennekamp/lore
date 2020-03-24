@@ -8,7 +8,7 @@ object AnyType extends Type {
   override def directDeclaredSubtypes(implicit context: Context) = Set.empty
 
   /**
-    * The Any type is abstract because, while all values have the type Any, the type doesn't add any value itself.
+    * The Any type is abstract because, while all values have the type Any, the type doesn't define any value itself.
     */
   override def isAbstract = true
   override def toString = "any"
