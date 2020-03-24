@@ -42,6 +42,9 @@ function damage(entity: +HealthState, amount: Int): Unit = { entity.HealthState.
 // Idea for later: Object destructuring right in the function arguments.
 // function heal({ HealthState }: +HealthState, amount: Int): Unit = { HealthState.health += amount }
 
+// Idea for later: Declare functions that return unit and mutate state as actions.
+// action heal(entity: +HealthState, amount: Int) { entity.HealthState.health += amount }
+
 class Regeneration owned by +HealthState {
   amount: Float
   interval: Int

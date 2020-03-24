@@ -7,7 +7,7 @@ import scalaz.syntax.traverse._
 object Subtyping {
 
   /**
-    * We define subtyping like this so that we can test all rules when the pattern matches multiple rules..
+    * We define subtyping like this so that we can test all rules when the pattern matches multiple rules.
     * The alternative would be using a case expression, which would greedily hone in on the first pattern
     * match, unless we use guards, which would make the code quite messy.
     */
@@ -33,8 +33,8 @@ object Subtyping {
     // More formally: A <= C and B <= C implies A | B <= C
     { case (s1: SumType, t2) => s1.types.forall(sc1 => isSubtype(sc1, t2)) },
 
-    // A tuple type tt1 is the subtype of a tuple type tt2, if both types have the same component types and each
-    // component type of tt1 is a subtype of the component type in tt2 that is at the same position.
+    // A tuple type tt1 is the subtype of a tuple type tt2, if both types have the same number of component types
+    // and each component type of tt1 is a subtype of the component type in tt2 that is at the same position.
     {
       case (tt1: TupleType, tt2: TupleType) =>
         tt1.components.size == tt2.components.size && tt1.components.zip(tt2.components).forall {
