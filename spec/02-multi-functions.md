@@ -300,3 +300,37 @@ function f(a: AI, b: BI) // f4
 
 Now, the totality constraint is satisfied for all functions. But then the code compiles, which it shouldn't, right? *Wrong.* The *input abstractness constraint* makes `f4` invalid. The idea that functions need to be implemented for concrete values might not be encoded in the totality constraint, but it is still checked within the system.
 
+#### Example
+
+We will finish this section with a usage example. Suppose we have the following types:
+
+```
+class A { ... }
+class B { ... }
+type T = A | B
+```
+
+That is, $\texttt{T}$ is a sum type, while $\texttt{A}$ and $\texttt{B}$ are concrete class types. We also have the following two functions:
+
+```
+function f(a: A): A = { ... }
+function f(b: B): B = { ... }
+```
+
+Suppose we have a value $v$ of type $\texttt{T}$. If we try to call `f(v)`, we will get an empty-fit error at compile time, because both functions are too specific for the more general type $\texttt{T}$. At run-time, of course, *we* are certain that one of the functions must be called, because $v$ must either have type $\texttt{A}$ or $\texttt{B}$. But of course the compiler doesn't know.
+
+This demonstrates the usefulness of abstract functions. We define the following additional function to fix our issue:
+
+```
+function f(t: T): T
+```
+
+This function is abstract because it has no definition. It satisfies the totality constraint because the concrete subtypes $\texttt{A}$ and $\texttt{B}$ each have an associated concrete function. The input abstractness constraint is also satisfied as sum types are abstract by definition. (**TODO:** Is this true?) We can now call the function $f$ with a value $v$ without getting a compilation error.
+
+Note that the *constraint on return types* as defined earlier is also satisfied:
+
+1. For `f(a: A)`: $\texttt{T} \geq \texttt{A}$
+2. For `f(b: B)`: $\texttt{T} \geq \texttt{B}$
+
+This concludes our usage example about abstract functions.
+
