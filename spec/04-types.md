@@ -35,11 +35,19 @@ Given a type $t$ and a subtype $s$ and $t \neq s$, we write $s < t$ to denote th
 
 ##### Values and Defined Values
 
-Conceptually, a type $t$ has a set of **values** $\mathrm{val}(t)$ and a set of **own values** $\mathrm{ownval}(t)$.
+Conceptually, some types $t$ have a set of **values** $\mathrm{val}(t)$ and a set of **own values** $\mathrm{ownval}(t)$.
+$$
+\mathrm{val}(t) = \{ v \mid v : t \} \\
+\mathrm{ownval}(t) = \{ v \mid v : t \land [\forall s < t. \neg (v : s)] \}
+$$
+That is, $\mathrm{val}$ describes the set of all values that inhabit the given type, while $\mathrm{ownval}$ describes the set of all values that inhabit the given type but not any of its subtypes (that also have ownvals).
 
-$val(t) = \{ v \mid v : t \}$, i.e. the set of all values that inhabit the type.
+It doesn't make sense to define these sets for all types. In general, defining $\texttt{ownval}$ is **useful for types that describe their own values**. These are: Class types, product types, function types (although thinking about function ownvals is largely useless), component types, and singleton types.
 
-$ownval(t) = \{ v \mid v : t \land \forall s < t. \neg (v : s) \}$, i.e. the set of all values that inhabit the type but not any of its subtypes.
+The following types **do not define an ownval set**:
+
+- **Intersection types and sum types** are classic *semantic type constructors* that serve a strict type-theoretic purpose. We do not need to think of them in terms of value sets. As they only "limit" or "aggregate" values, they don't define values themselves.
+- Likewise, **label types** might not be type constructors, but they are *semantic types* that merely augment existing types with additional information for the type system; they do not "touch" values in any way and thus don't define values themselves.
 
 
 
