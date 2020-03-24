@@ -302,7 +302,7 @@ Now, the totality constraint is satisfied for all functions. But then the code c
 
 #### Example
 
-We will finish this section with a usage example. Suppose we have the following types:
+Suppose we have the following types:
 
 ```
 class A { ... }
@@ -333,4 +333,24 @@ Note that the *constraint on return types* as defined earlier is also satisfied:
 2. For `f(b: B)`: $\texttt{T} \geq \texttt{B}$
 
 This concludes our usage example about abstract functions.
+
+#### Totality Constraint Verification
+
+It is not obvious **how to check the totality constraint**. In this section, we will develop an algorithm that can verify the constraint for an arbitrary abstract function.
+
+Following the definition of the constraint, the crux of the algorithm is to identify the set of subtypes that need to be checked. The check itself is trivial since it only involves finding a specialized function that fits the subtype.
+
+We will see that this is entirely possible. First, we define a lemma that will allow us to ignore all added intersection types.
+
+---
+
+*Lemma 2.1.* Let $\mathcal{F}$ be a multi-function and $f \in \mathcal{F}$ an abstract function. Let $s < \mathrm{in}(f)$ be a subtype for which a fitting function $f'$ with $\mathrm{in}(f') < \mathrm{in}(f)$ exists. Then for any type $t$, the subtype $s \texttt{ & } t$ also has $f'$ as a fitting function. 
+
+*Proof.* For any intersection type $\texttt{A & B}$, it's clear that $\texttt{A & B} < \texttt{A}$. Thus, we have $s \texttt{ & } t < s \leq \mathrm{in}(f')$ and thus, trivially, $s \texttt{ & } t$ also fits $f'$.
+
+This lemma allows us to ignore infinite sets of intersection types when building the set of subtypes to be checked.
+
+---
+
+
 
