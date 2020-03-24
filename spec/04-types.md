@@ -53,7 +53,9 @@ The following types **do not define an ownval set**:
 
 ##### Abstract Types
 
-A type $t$ is **abstract** if and only if $\mathrm{ownval}(t) = \empty$. That is, a type is abstract if all values that inhabit the type also inhabit one of its subtypes, and thus it doesn't define any values itself. Each kind of type has its own criteria for abstractness, which will be supplied and proven below.
+In general, a type $t$ is **abstract** if and only if $\mathrm{ownval}(t) = \empty$. That is, a type is abstract if all values that inhabit the type also inhabit one of its subtypes, and thus it doesn't define any values itself. Each kind of type has its own criteria for abstractness, which will be supplied and proven below.
+
+Some types **don't have an $\mathtt{ownval}$ set**. In these cases, we define their abstractness over some other kind of type property, most likely in an algebraic manner.
 
 
 
@@ -104,7 +106,7 @@ A **parameter list** is represented as a tuple. So for example, if we have a fun
 
 ###### Abstractness
 
-A function type is **never abstract** as at least one function will always be definable for any input/output type combination.
+A function type is **never abstract** as at least one function will always be definable for any input/output type combination, such as a function ignoring the input and returning an arbitrary constant.
 
 ###### Examples
 
@@ -113,7 +115,7 @@ val f: Int => Int = x => x * 2
 > f(2) = 4
 val hello: Person => String = p => "Hello, ${p.name}. How are you today?"
 > hello(marco) = "Hello, Marco. How are you today?"
-val currentWealth: () => Real = p.wealth
+val currentWealth: Person => Real = p.wealth
 > currentWealth(medianPerson) = 100000.0
 ```
 
@@ -121,21 +123,37 @@ val currentWealth: () => Real = p.wealth
 
 ##### Intersection Types
 
-Assume an **intersection type** `T1 & ... & Tn` for some arbitrary number of types $n >= 2$. Any value $v$ that satisfies the typing $v : Ti$ for *all* $1 <= i <= n$ also inhabits the type $T1 \& ... \& Tn$. The type constructor is associative and commutative. We call any type $T_i$ a **component type**.
+Assume an **intersection type** `T1 & ... & Tn` for some arbitrary number of types $n >= 2$. Any value $v$ that satisfies the typing $v : \texttt{Ti}$ for *all* $1 \leq i \leq n$ also inhabits the type $\texttt{T1 & ... & Tn}$. The type constructor is associative and commutative. We call any type $\texttt{Ti}$ a **component type**.
 
 ###### Abstractness
 
-An intersection type is abstract iff **any of its component types are abstract**.
+An intersection type is considered abstract iff **any of its component types are abstract**. Note that intersection types don't have an ownval set.
 
 If we think of values inhabiting a type as sets, the intersection type would be akin to taking the set intersection between all value sets. If at least one of these sets is empty, the intersection is also empty, hence the intersection type would be abstract.
 
 Note that there is a second case in which the intersection of values is incompatible, i.e. we have two non-empty sets that are disjunct. We would theoretically have to assign abstractness to such an intersection type, but this is not computationally feasible in all cases. And in any case, such a type would be useless for practical purposes, since no function could ever be called with such an input type and no value could ever be assigned to a variable having such a type, as no value could ever satisfy the constraints. The whole idea of abstractness is that we can specialize functions and work with the subtypes, but specializing such an intersection type would only reduce the value set, hence there still wouldn't be any values we could call a function with.
 
+###### Should all intersection types be abstract?
+
+Some people might object that *all* intersection types should be abstract since they strictly don't define their own values. Right? **Not at all.** We specifically need to have concrete intersection types. Take the following example:
+
+```
+class A { ... }
+class B { ... }
+
+function f(v: +A & +B)
+
+// entity: Entity & +A & +B
+f(entity)
+```
+
+Clearly, this code shouldn't compile. We can easily call `f` with the argument `entity`, which *will not* dispatch to any other function but the declared `f`. So how can this function be abstract? Only if we make the mistake and treat *all* intersection types as abstract. `+A & +B` must be treated as a concrete type, since `A` and `B` are both concrete. Anything else would be PL homicide.
+
 ###### Examples
 
 ```
 // Moves the entity based on its relative amount of health.
-action move(entity: +Position & +Health) = ...
+function move(entity: +Position & +Health) = ...
 ```
 
 
