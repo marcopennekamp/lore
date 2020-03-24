@@ -160,13 +160,31 @@ function move(entity: +Position & +Health) = ...
 
 ##### Sum Types
 
-A **sum type** `T1 | ... | Tn` for some $n >= 2$ describes values $v$ that satisfy the typing $v : Ti$ for *any* $1 <= i <= n$. The type constructor is associative and commutative.
+A **sum type** `T1 | ... | Tn` for some $n \geq 2$ describes values $v$ that satisfy the typing $v : \texttt{Ti}$ for *any* $1 \leq i \leq n$. The type constructor is associative and commutative.
 
 ###### Abstractness
 
-A sum type is abstract iff **all of its component types are abstract**. (**TODO:** Is this correct?)
+A sum type is **always abstract**. This might not be clear, so we have collected some reasons for this.
 
-**TODO:** Does this line up with how we specialize functions?
+**Reasons:**
+
+- **Pragmatic:** We need sum types to be abstract to be able to define abstract functions that can be specialized via multiple-dispatch. Take the following example:
+
+  ```
+  class Character { ... }
+  type Class = 'Berserker | 'Druid | 'Occultist
+  
+  // Let's assume we create a character with a list of skills based
+  // on a predetermined class.
+  function create(c: Class): Character
+  function create(c: 'Berserker): Character = { ... }
+  function create(c: 'Druid): Character = { ... }
+  function create(c: 'Occultist): Character = { ... }
+  ```
+
+- **Hierarchical:** As you can also see in the example above, sum types can model ad-hoc class hierarchies. The sum type itself acts very much like an empty abstract class.
+
+- **No need to be concrete:** If a sum type is an input type for a function, like `create` above, it does not need to be concrete, as the specialization for the specific components will cover all possible values that inhabit the sum type.
 
 ###### Examples
 
@@ -176,13 +194,13 @@ type Option[A] = 'None | Some[A]
 
 
 
-##### Record Types
+##### Class Types
 
 **TODO:** Write. (This type includes entity types.)
 
 ###### Abstractness
 
-A record type is abstract if it has been **declared abstract**.
+A class type is abstract if it has been **declared abstract**.
 
 
 
@@ -201,6 +219,9 @@ A component type is abstract if its **underlying type is abstract**.
 A label type is **never abstract**.
 
 **TODO:** Why? Shouldn't it always be abstract?
+
+- If they are always abstract, we can define an abstract function `f(v: Class & Label)` over a concrete class type Class that gets called with a dynamically specialized type. That is, we create an object of type Class, attach the label type Label, and call the abstract function. It won't be able to dispatch to subclasses, as the class doesn't need to have subclasses. So that's obviously not correct.
+- **TODO:** Can we find a similar counterexample for *never abstract*?
 
 
 
