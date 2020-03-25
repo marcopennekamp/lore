@@ -1,0 +1,24 @@
+/**
+ * This example demonstrates how to implement functions generally for label types.
+ * It would only start to make sense once we have dynamic specialization and generalization, of course.
+ */
+
+// A label for any dead entity.
+label L
+function f(x: L) = () // Some implementation that accesses g and h.
+function g(x: L)
+function h(x: L)
+
+// Two classes that define ad-hoc functions for the label type. Note that the idea is that A and B are specialized
+// at RUN-TIME to subtype the label type. This means that we can't check at compile-time whether A or B actually
+// implement g or h.
+// However, we could introduce run-time totality checks for dynamic specialization. (TODO: Consider this.)
+class A
+function g(a: A & L) = ()
+function h(a: A & L) = ()
+
+class B
+function g(b: B & L) = ()
+function h(a: B & L) = ()
+
+// We can then call f with A or B if they also subtype L: f(a) and f(b).
