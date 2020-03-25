@@ -353,5 +353,33 @@ This lemma allows us to **ignore infinite sets of intersection types** when buil
 
 *Theorem 2.2.* Let $\mathcal{F}$ be a multi-function and $f \in \mathcal{F}$ an abstract function. To check the totality constraint, it suffices to check the constraint for all *abstract-resolved direct subtypes* instead of all possible subtypes. Thus, we can restrict the set of checked subtypes to a computable amount.
 
+*Definition.* The **abstract-resolved direct subtypes** $\mathrm{ards}: \mathbb{T} \rightarrow \mathcal{P}(\mathbb{T})$ of any type $t$ are recursively defined as follows:
+$$
+\neg\mathrm{abstract}(t) \implies \mathrm{ards}(t) = \{ t \} \tag{concrete}
+$$
+
+$$
+\mathrm{is\_declared}(t) \implies \mathrm{ards}(t) = \mathrm{sub}_{D_1}(t)
+$$
+
+$$
+t = (t_1, \dots, t_n) \implies \mathrm{ards}(t) = \mathrm{ards}(t_1) \times \dots \times \mathrm{ards}(t_n)
+$$
+
+$$
+t = (t_1 \texttt{ & } \dots \texttt{ & } t_n) \implies \mathrm{ards}(t) = \mathrm{ards}(t_1) \otimes \dots \otimes \mathrm{ards}(t_n)
+$$
+
+$$
+t = (t_1 \mid \dots \mid t_n) \implies \mathrm{ards}(t) = \bigcup^{n}_{i = 1} [\mathrm{ards}(t_i)]
+$$
+
+Some **explanations** are in order:
+
+- **concrete:** If $t$ is concrete, we do not return subtypes but only $t$ itself. Say we have an abstract function `f(a: A, b: B)` with `A` being abstract and `B` a concrete type. We don't want to force `B` to be specialized, as only `A` is abstract and therefore a function like `f(a: AI, b: B)` would be legal (assuming `AI` is a subtype of `A`). This rule includes function types, since they can never be abstract.
+
+- Note that we are ignoring the `Any` type, since declaring an abstract function over it is pure madness. (**TODO:** Maybe we should just disallow using any with abstract functions altogether.)
+
+
 
 
