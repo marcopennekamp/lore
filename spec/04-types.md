@@ -186,6 +186,12 @@ val currentWealth: Person => Real = p.wealth
 
 Assume an **intersection type** `T1 & ... & Tn` for some arbitrary number of types $n >= 2$. Any value $v$ that satisfies the typing $v : \texttt{Ti}$ for *all* $1 \leq i \leq n$ also inhabits the type $\texttt{T1 & ... & Tn}$. The type constructor is associative and commutative. We call any type $\texttt{Ti}$ a **component type**.
 
+We also define a **construction operation** that constructs intersection types from sets of types. Let $\mathcal{T}_1, \mathcal{T}_2$ be sets of types. Then we define:
+$$
+\mathcal{T}_1 \otimes \mathcal{T}_2 = \{ t_1 \texttt{ & } t_2 \mid t_1 \in \mathcal{T}_1, t_2 \in \mathcal{T}_2 \}
+$$
+
+
 ###### Abstractness
 
 An intersection type is considered abstract iff **any of its component types are abstract**. Note that intersection types don't have an ownval set.
