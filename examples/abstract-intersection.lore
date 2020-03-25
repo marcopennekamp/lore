@@ -1,0 +1,18 @@
+abstract class A
+abstract class B
+abstract class C
+abstract class D
+class A1 <: A
+class A2 <: A
+class B1 <: B
+class B2 <: B
+class C1 <: C
+class C2 <: C
+class D1 <: D
+
+function f(v: (A & B) | (C & D))
+function f(v: A1 & B1) = ()
+function f(v: A1 & B2) = ()
+function f(v: A2 & B) = ()
+function f(v: C1 & D1) = ()
+function f(v: C2 & D1) = ()
