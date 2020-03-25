@@ -59,7 +59,7 @@ object Context {
   }
 
   /**
-    * @return An unverified context built from the example source.
+    * Creates an unverified context from the example source.
     */
   def fromExample(name: String): Option[Context] = {
     // A new line is added at the end so the last statement has a closing newline.
@@ -72,7 +72,7 @@ object Context {
   }
 
   /**
-    * @return An unverified context built from the given sequence of program elements.
+    * Creates an unverified context from the given sequence of program elements.
     */
   def build(statements: Seq[TopLevelElement]): Context = {
     val types = mutable.HashMap[String, Type]()
