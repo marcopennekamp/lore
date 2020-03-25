@@ -8,11 +8,11 @@ object FragmentParser {
   import IdentifierParser.identifier
   import TypeParser.typeExpression
 
-  def normalTypeDeclaration[_ : P] = P("type" ~ identifier ~ "=" ~/ typeExpression).map { case (name, expression) =>
+  def normalTypeDeclaration[_ : P] = P("type" ~/ identifier ~ "=" ~ typeExpression).map { case (name, expression) =>
     TypeDeclaration(name, expression)
   }
 
-  def labelType[_ : P] = P("type" ~ identifier ~ ("<:" ~/ identifier).?).map { case (name, supertypeName) =>
+  def labelType[_ : P] = P("label" ~/ identifier ~ ("<:" ~ identifier).?).map { case (name, supertypeName) =>
     LabelTypeDeclaration(name, supertypeName)
   }
 

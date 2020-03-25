@@ -1,6 +1,6 @@
-type BoundingBox
-type Circle
-type Rectangle
+label BoundingBox
+label Circle
+label Rectangle
 
 function area(x: Circle) = ()
 function area(x: BoundingBox) = ()

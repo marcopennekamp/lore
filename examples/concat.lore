@@ -1,7 +1,7 @@
-type ToString
-type List <: ToString
-type LinkedList <: List
-type Sorted
+label ToString
+label List <: ToString
+label LinkedList <: List
+label Sorted
 
 function concat(x: ToString, y: ToString) = ()
 function concat(x: List, y: List) = ()

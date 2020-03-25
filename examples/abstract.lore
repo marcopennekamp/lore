@@ -1,8 +1,8 @@
-type A
-type A1 <: A
-type A2 <: A
-type B
-type C
+label A
+label A1 <: A
+label A2 <: A
+label B
+label C
 type T = A | B | C
 
 function f(t: T)
