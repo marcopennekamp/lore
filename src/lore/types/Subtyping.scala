@@ -45,7 +45,6 @@ object Subtyping {
 
     // The any type is subtype of none (except itself) and supertype of all types.
     { case (_, AnyType) => true },
-    { case (AnyType, _) => false },
   )
 
   /**
