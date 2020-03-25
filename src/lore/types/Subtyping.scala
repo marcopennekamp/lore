@@ -85,13 +85,13 @@ object Subtyping {
 
     t match {
       case _ if !t.isAbstract => Set(t)
+      case dt: DeclaredType => dt.directDeclaredSubtypes
       case TupleType(components) => combinations(components.map(abstractResolvedDirectSubtypes)).map(TupleType)
       case IntersectionType(types) => combinations(types.map(abstractResolvedDirectSubtypes).toList).map(IntersectionType.construct)
       case SumType(types) => types.flatMap(abstractResolvedDirectSubtypes)
       // TODO: Really? This should rather be the set of all types which have no supertype, i.e. direct descendants of Any.
       //       Or maybe, rather, let's not fuck with Any for abstract functions.
-      case _: LabelType => Set.empty
-      case dt: DeclaredType => dt.directDeclaredSubtypes
+      case _ if t == AnyType => Set.empty
     }
   }
 
