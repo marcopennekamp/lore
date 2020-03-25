@@ -3,17 +3,18 @@
 In this chapter, we lay out the basics of Lore's type system. We define all kinds of types. At the end, we also look at typing rules that allow us to reason about types. Note that we have not yet added type constructor precedence to the grammar presented in this chapter. This will be refined at a later date.
 
 - **TODO:** Add type constructor precedence rules.
-- **TODO:** Add typing rules.
+- **TODO:** Add all typing rules (especially subtyping rules).
+- **TODO:** This should probably be placed before multi-functions.md, because we are defining a lot of stuff here that is used in multi-functions.md.
 
 
 
-#### The Role of Types
+### The Role of Types
 
 **TODO**
 
 
 
-#### Conceptual Considerations
+### Conceptual Considerations
 
 ##### Mirror Notation
 
@@ -21,7 +22,7 @@ Similar to Scala, types and values should have notations that mirror each other.
 
 
 
-#### Definitions
+### Definitions
 
 ##### Type Statements
 
@@ -29,13 +30,34 @@ Given a type $t$ and a value $v$ of that type, we write $v : t$ to denote that $
 
 Given a type $t$ and a subtype $s$, we write $s \leq t$ to denote that $s$ is a **subtype** of $t$. 
 
-Given a type $t$ and a subtype $s$ and $t \neq s$, we write $s < t$ to denote that $s$ is a **strict subtype** of $t$.
+Given a type $t$ and a subtype $s$ with $t \neq s$, we write $s < t$ to denote that $s$ is a **strict subtype** of $t$.
 
 
+##### Declared Types
+
+Some types in Lore have to be defined via **declaration** instead of by means of construction (intersection types, for example, are constructed types). Declared types are **class and label types**.
+
+Declared types are inherently placed in a **hierarchy**. A declared type may declare its **supertype**. For a declared type $t$, we construct the set $\mathrm{sub}_{D_1}(t)$ of **direct declared (strict) subtypes** as follows: For all types $s$ whose supertype is declared to be $t$, we have $s \in \mathrm{sub}_{D_1}(t)$.
+
+Additionally, **we define:**
+
+- A function $\mathrm{is\_declared}(t)$ that is true iff $t$ is a **declared type**.
+
+- A **set of declared types** $\mathbb{T}_D = \{ t \in \mathbb{T} \mid \mathrm{is\_declared}(t) \}$.
+
+- A set $\mathrm{sub}_D(t)$ which contains all **declared (strict) subtypes** of $t$:
+  $$
+  \mathrm{sub}_D(t) = \mathrm{sub}_{D_1}(t) \cup \bigcup_{t' \in \mathrm{sub}_{D_1}(t)} \{ s \mid s \in \mathrm{sub}_D(t') \}
+  $$
+
+- Given a declared type $t$ and a subtype $s$, we write $s <_1 t$ to denote that $s$ is a **direct declared subtype** of $t$ and define:
+  $$
+  s <_1 t \iff s \in \mathrm{sub}_{D_1}(t)
+  $$
 
 ##### Values and Defined Values
 
-Conceptually, some types $t$ have a set of **values** $\mathrm{val}(t)$ and a set of **own values** $\mathrm{ownval}(t)$.
+Conceptually, some types $t$ have a set of **values** $\mathrm{val}(t)$ and a set of **own values** $\mathrm{ownval}(t)$. (TODO: Rename ownval to $\mathrm{val}_\mathrm{own}$?)
 $$
 \mathrm{val}(t) = \{ v \mid v : t \} \\
 \mathrm{ownval}(t) = \{ v \mid v : t \land [\forall s < t. \neg (v : s)] \}
