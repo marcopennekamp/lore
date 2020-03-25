@@ -6,16 +6,17 @@ import lore.functions.{LoreFunction, MultiFunction}
 import lore.types.Type
 import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.{MatchResult, Matcher}
 
 abstract class BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside with Inspectors {
 
-  lazy val abstractContext = Context.fromExample("abstract")
-  lazy val areaContext = Context.fromExample("area")
-  lazy val concatContext = Context.fromExample("concat")
+  lazy val abstractContext: Context = Context.fromExample("abstract").value
+  lazy val areaContext: Context = Context.fromExample("area").value
+  lazy val concatContext: Context = Context.fromExample("concat").value
 
   def prepareContext(exampleName: String): Context = {
-    val context = Context.fromExample(exampleName)
+    val context = Context.fromExample(exampleName).value
     context.verify() should be (VerificationSuccess)
     context
   }
