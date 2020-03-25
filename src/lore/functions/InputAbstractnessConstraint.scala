@@ -1,8 +1,6 @@
 package lore.functions
 
 import lore.execution.Context
-import lore.functions.TotalityConstraint.findDirectDeclaredSubtypes
-import lore.types.Subtyping
 
 object InputAbstractnessConstraint {
 

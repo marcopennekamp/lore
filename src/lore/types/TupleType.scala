@@ -1,29 +1,15 @@
 package lore.types
 
-import lore.execution.Context
-
-case class TupleType(components: Seq[Type]) extends Type {
-  /**
-    * The set of direct declared subtypes for a tuple type consists of the combinatorially constructed
-    * direct declared subtypes of each component type.
-    */
-  override def directDeclaredSubtypes(implicit context: Context) = {
-    Subtyping.directDeclaredSubtypeCombinations(components.toList).map(TupleType(_))
-  }
-
-  def abstractDirectDeclaredSubtypes(implicit context: Context): Set[TupleType] = {
-    Subtyping.abstractDirectDeclaredSubtypeCombinations(components.toList).map(TupleType(_))
-  }
-
+case class TupleType(components: List[Type]) extends Type {
   /**
     * Since this is already a tuple, there is no need to enclose it in another tuple.
     */
-  override def toTuple = this
+  override def toTuple: TupleType = this
 
   /**
     * Whether the tuple type is abstract. A tuple type is abstract if one of its component types is abstract.
     */
-  override def isAbstract = components.exists(_.isAbstract)
+  override def isAbstract: Boolean = components.exists(_.isAbstract)
 
-  override def toString = "(" + components.mkString(", ") + ")"
+  override def toString: String = "(" + components.mkString(", ") + ")"
 }

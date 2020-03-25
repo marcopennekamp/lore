@@ -23,7 +23,7 @@ object TypeParser {
 
   def tupleType[_ : P]: P[TupleTypeExpression] = {
     P("(" ~ typeExpression ~ ("," ~ typeExpression).rep(1) ~ ")").map { case (firstType, restTypes) =>
-      TupleTypeExpression(firstType +: restTypes)
+      TupleTypeExpression(firstType +: restTypes.toList)
     }
   }
 

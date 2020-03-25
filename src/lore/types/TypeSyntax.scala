@@ -7,7 +7,7 @@ trait TypeSyntax {
   implicit def toTupleTypeSS(tuple: (String, String))(implicit context: Context): TupleType = toTupleTypeTT((toType(tuple._1), toType(tuple._2)))
   implicit def toTupleTypeTS(tuple: (Type, String))(implicit context: Context): TupleType = toTupleTypeTT((tuple._1, toType(tuple._2)))
   implicit def toTupleTypeST(tuple: (String, Type))(implicit context: Context): TupleType = toTupleTypeTT((toType(tuple._1), tuple._2))
-  implicit def toTupleTypeTT(tuple: (Type, Type))(implicit context: Context): TupleType = TupleType(Seq(tuple._1, tuple._2))
+  implicit def toTupleTypeTT(tuple: (Type, Type))(implicit context: Context): TupleType = TupleType(List(tuple._1, tuple._2))
   implicit class TypeOperators(t1: Type) {
     def &(t2: Type)(implicit context: Context): Type = IntersectionType.construct(Set(t1, t2))
     def |(t2: Type)(implicit context: Context): Type = SumType.construct(Set(t1, t2))

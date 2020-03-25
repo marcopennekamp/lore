@@ -32,10 +32,12 @@ object TotalityConstraint {
     //    An abstract function f(a: A, b: B) with a non-abstract B must also cover the case f(a: AX, b: B), not just for
     //    B1 and B2, if the given value of type B is neither B1 nor B2, since it could just be B. Hence, we cannot use
     //    directDeclaredSubtypes, because it would substitute B1 and B2 for B, leaving B out of the equation entirely.
-    f.inputType.abstractDirectDeclaredSubtypes.forall { subtype =>
-      mf.functions.exists { f2 =>
+    Subtyping.abstractResolvedDirectSubtypes(f.inputType).forall { subtype =>
+      val isValid = mf.functions.exists { f2 =>
         Subtyping.isStrictSubtype(f2.inputType, f.inputType) && mf.fit(subtype).contains(f2)
       }
+      if (!isValid) println(s"Missing totality constraint validation for $subtype")
+      isValid
     }
   }
 

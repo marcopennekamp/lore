@@ -2,8 +2,8 @@ package lore.types
 
 import lore.execution.Context
 
-case class ClassType(name: String, supertype: Type, override val isAbstract: Boolean) extends Type {
-  override def directDeclaredSubtypes(implicit context: Context) = {
+case class ClassType(name: String, supertype: Type, override val isAbstract: Boolean) extends DeclaredType {
+  override def directDeclaredSubtypes(implicit context: Context): Set[Type] = {
     context.types.values.filter(_.isInstanceOf[ClassType]).map(_.asInstanceOf[ClassType]).filter(_.supertype == this).toSet
   }
   override def toString = s"$name"

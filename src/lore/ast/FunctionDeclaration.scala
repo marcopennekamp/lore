@@ -1,3 +1,3 @@
 package lore.ast
 
-case class FunctionDeclaration(name: String, parameters: Seq[ParameterDeclaration], isAbstract: Boolean) extends TopLevelElement
+case class FunctionDeclaration(name: String, parameters: List[ParameterDeclaration], isAbstract: Boolean) extends TopLevelElement

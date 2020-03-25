@@ -2,6 +2,9 @@ package lore.types
 
 import lore.execution.Context
 
+// TODO: Idea... To test (simple) equality of intersection types, we can keep the component types sorted by some
+//       stable criterion. This would remove the need to take commutativity into account when comparing for equality.
+
 case class IntersectionType private (types: Set[Type]) extends Type {
   /**
     * Whether any one of the intersection type's types is a subtype of the given candidate type.
@@ -11,23 +14,15 @@ case class IntersectionType private (types: Set[Type]) extends Type {
   }
 
   /**
-    * The set of direct declared subtypes for an intersection type consists of the combinatorially constructed
-    * direct declared subtypes of each component type.
-    */
-  override def directDeclaredSubtypes(implicit context: Context) = {
-    Subtyping.directDeclaredSubtypeCombinations(types.toList).map(_.toSet).map(IntersectionType(_))
-  }
-
-  /**
     * An intersection type is abstract if any of its component types are abstract.
     *
     * The reasoning is that the value inhabiting the intersection type will need to have each component type as its
     * type. So there can't be a value that has a type as its exact type (not a subtype) that is abstract. Hence, any
     * one abstract component can turn an intersection type abstract.
     */
-  override def isAbstract = types.exists(_.isAbstract)
+  override def isAbstract: Boolean = types.exists(_.isAbstract)
 
-  override def toString = "[" + types.mkString(" & ") + "]"
+  override def toString: String = "[" + types.mkString(" & ") + "]"
 }
 
 object IntersectionType {
@@ -41,4 +36,6 @@ object IntersectionType {
       case t => Set(t)
     })
   }
+
+  def construct(types: List[Type]): IntersectionType = construct(types.toSet)
 }

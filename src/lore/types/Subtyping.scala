@@ -1,6 +1,7 @@
 package lore.types
 
 import lore.execution.Context
+import scalaz.Monad
 import scalaz.std.list._
 import scalaz.syntax.traverse._
 
@@ -72,33 +73,27 @@ object Subtyping {
   def isStrictSubtype(t1: Type, t2: Type): Boolean = t1 != t2 && isSubtype(t1, t2)
 
   /**
-    * Returns all combinations of all the direct declared subtypes of the given list of types. If a type in the list
-    * has no direct declared subtype, the type is taken as itself. Preserves the order of types.
+    * A set of direct subtypes that are resolved IF the given type is abstract.
     *
-    * For each type in the given list, there are two cases to handle:
-    *   1. A type that has no direct declared subtypes. This means that for the purposes of this
-    *      method, we will assume the type has no subtypes. We will instead take the component type
-    *      as is, so result types are still generated.
-    *   2. A type that has direct declared subtypes. This is the normal case in which we take
-    *      the list of direct declared subtypes to build all combinatorially feasible result types.
+    * This is an implementation of the 'ards' function as defined in the spec. See the spec for more information.
     */
-  def directDeclaredSubtypeCombinations(types: List[Type])(implicit context: Context): Set[List[Type]] = {
-    types
-      .map(t => if (t.directDeclaredSubtypes.isEmpty) List(t) else t.directDeclaredSubtypes.toList)
-      .sequence
-      .toSet
-  }
+  def abstractResolvedDirectSubtypes(t: Type)(implicit context: Context): Set[Type] = {
+    implicit val setMonad: Monad[Set] = new Monad[Set] {
+      override def point[A](a: => A): Set[A] = Set(a)
+      override def bind[A, B](fa: Set[A])(f: A => Set[B]): Set[B] = fa.flatMap(f)
+    }
+    def combinations(components: List[Set[Type]]) = components.sequence.toSet
 
-  /**
-    * Returns all combinations of direct declared subtypes of abstract types, leaving non-abstract types as they are.
-    *
-    * Compare to [[directDeclaredSubtypeCombinations]].
-    */
-  def abstractDirectDeclaredSubtypeCombinations(types: List[Type])(implicit context: Context): Set[List[Type]] = {
-    types
-      .map(t => if (t.isAbstract) t.directDeclaredSubtypes.toList else List(t))
-      .sequence
-      .toSet
+    t match {
+      case _ if !t.isAbstract => Set(t)
+      case TupleType(components) => combinations(components.map(abstractResolvedDirectSubtypes)).map(TupleType)
+      case IntersectionType(types) => combinations(types.map(abstractResolvedDirectSubtypes).toList).map(IntersectionType.construct)
+      case SumType(types) => types.flatMap(abstractResolvedDirectSubtypes)
+      // TODO: Really? This should rather be the set of all types which have no supertype, i.e. direct descendants of Any.
+      //       Or maybe, rather, let's not fuck with Any for abstract functions.
+      case _: LabelType => Set.empty
+      case dt: DeclaredType => dt.directDeclaredSubtypes
+    }
   }
 
 }
