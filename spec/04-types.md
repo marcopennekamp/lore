@@ -71,8 +71,6 @@ The following types **do not define an ownval set**:
 - **Intersection types and sum types** are classic *semantic type constructors* that serve a strict type-theoretic purpose. We do not need to think of them in terms of value sets. As they only "limit" or "aggregate" values, they don't define values themselves.
 - Likewise, **label types** might not be type constructors, but they are *semantic types* that merely augment existing types with additional information for the type system; they do not "touch" values in any way and thus don't define values themselves.
 
-
-
 ##### Abstract Types
 
 In general, a type $t$ is **abstract** if and only if $\mathrm{ownval}(t) = \empty$. That is, a type is abstract if all values that inhabit the type also inhabit one of its subtypes, and thus it doesn't define any values itself. Each kind of type has its own criteria for abstractness, which will be supplied and proven below.
@@ -81,7 +79,48 @@ Some types **don't have an $\mathtt{ownval}$ set**. In these cases, we define th
 
 
 
-#### List of Types
+### Typing Rules
+
+For now, we are only defining subtyping rules here.
+
+##### Declared Types
+
+$$
+\frac{\mathrm{is\_declared}(s) \and \mathrm{is\_declared}(t) \and s \in \mathrm{sub}_D(t)}{s \leq t}
+$$
+Note that the current compiler implements this rule for labels and classes separately. If we unify the hierarchy in a tree, we can implement this rule for declared types in general.
+
+##### Intersection Types
+
+$$
+\frac{\forall t' \in \{ t_1, \dots, t_m \}. [\exists s' \in \{ s_1, \dots, s_n \}. s' \leq t' ]}{(s_1 \texttt{ & } \dots \texttt{ & } s_n) \leq (t_1 \texttt{ & } \dots \texttt{ & } t_m)}
+$$
+
+If $n = 1$ or $m = 1$, we have special cases in the implementation, but the rule above also covers those cases. In case of $n = 1$, we determine whether any type $s$ is a subtype of intersection type $t$ by checking that $s$ be the subtype of *all* components of $t$. In case of $m = 1$, we determine whether any type $t$ is the supertype of intersection type $s$ by checking that $t$ is the supertype of *any* component of $s$.
+
+##### Sum Types
+
+$$
+\frac{\forall s' \in \{ s_1, \dots, s_n \}. [\exists t' \in \{ t_1, \dots, t_m \}. s' \leq t']}{(s_1 \mid \dots \mid s_n) \leq (t_1 \mid \dots \mid t_m) }
+$$
+
+As with intersection types, we implement special cases for $n = 1$ and $m = 1$, but they are also covered by the rule above.
+
+##### Product Types
+
+$$
+\frac{\forall i \in \{ 1, \dots, n \}. s_i \leq t_i}{(s_1, \dots, s_n) \leq (t_1, \dots, t_n)}
+$$
+
+##### Any Type
+
+$$
+\frac{}{s \leq \mathrm{Any}}
+$$
+
+
+
+### List of Types
 
 ##### Product Types
 
