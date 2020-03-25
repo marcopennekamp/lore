@@ -257,7 +257,7 @@ type Option[A] = 'None | Some[A]
 
 ##### Class Types
 
-**TODO:** Write. (This type includes entity types.)
+**Class types** are *declared types* that describe user-defined data structures.
 
 ###### Abstractness
 
@@ -274,6 +274,8 @@ A component type is abstract if its **underlying type is abstract**.
 
 
 ##### Label Types
+
+**Label types** are *declared types* that describe values without defining any on their own. A concrete value can never have a label type as its only type, so when looking at types for concrete values, label types *always* occur in conjunction with an intersection type. We can declare parameters using only label types, but would then have to call other functions (which are, eventually, specialized) that can use the label type.
 
 ###### Abstractness
 
