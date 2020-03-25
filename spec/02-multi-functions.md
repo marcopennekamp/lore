@@ -197,10 +197,9 @@ A **multi-function call** is an operation with compile-time constraints and run-
   - If $|C| > 1$, we throw an `ambiguous-call` error.
 
 Note that we have to distinguish between compile-time and run-time errors,
-which we will talk more about in the next section. Also note that the
-compile-time constraints do not refer to the abstractness of the function
+which we will talk more about in the next section. Also note that the compile-time constraints do not refer to the abstractness of the function
 $f$, since the point of an abstract function is exactly that the compile-time
-checks pass while we require specialisation of the argument types at runtime.
+checks pass while we require specialization of the argument types at runtime.
 
 
 
@@ -224,7 +223,7 @@ Assume that $C' = \empty$ but $|C| = 1$. That is, calling $\mathcal{F}$ at compi
 
 #### Proof: Ambiguous-Call can occur at run-time
 
-Moving on to the `ambiguous-call` error, we can show with a simple example that such an error might only be caught at run-time. Let's look at the ambiguity example shown above again. We have two functions $f_1 : \mathtt{Circle} \rightarrow \mathtt{Real}$ and $f_2 : \mathtt{+BoundingBox} \rightarrow \mathtt{Real}$. At compile-time, in an expression `area(c)`, $f_1$ is the unique most specific function to call given a variable `c : Circle`. Since $\texttt{Circle & +BoundingBox}$ is a subtype of $\texttt{+BoundingBox}$, such an argument may be passed at run-time. The problem is that the additional interection type allows both `area`-functions to be called, as could be seen when we computed the Min-set in the example. This leads to an ambiguity error at *run-time*.
+Moving on to the `ambiguous-call` error, we can show with a simple example that such an error might only be caught at run-time. Let's look at the ambiguity example shown above again. We have two functions $f_1 : \mathtt{Circle} \rightarrow \mathtt{Real}$ and $f_2 : \mathtt{+BoundingBox} \rightarrow \mathtt{Real}$. At compile-time, in an expression `area(c)`, $f_1$ is the unique most specific function to call given a variable `c : Circle`. Since $\texttt{Circle & +BoundingBox}$ is a subtype of $\texttt{+BoundingBox}$, such an argument may be passed at run-time. The problem is that the additional intersection type allows both `area`-functions to be called, as could be seen when we computed the Min-set in the example. This leads to an ambiguity error at *run-time*.
 
 More generally, we can observe that intersection types are precisely the feature that make multiple-dispatch ambiguous.
 
@@ -234,7 +233,7 @@ More generally, we can observe that intersection types are precisely the feature
 
 So far we have only considered *parameter types* of multi-function instances. We also have to account for return types of functions.
 
-First of all, we cannot incorporate the return type into the multiple-dispatch process. Doing so would jeopardise our type inference mechanism, which majorly relies on stable function return types. To ensure type safety, we impose a constraint on return types.
+First of all, we cannot incorporate the return type into the multiple-dispatch process. Doing so would jeopardize our type inference mechanism, which relies on stable function return types. To ensure type safety, we impose a constraint on return types.
 
 *Definition.* Let $\mathcal{F}$ be a multi-function. The following **constraint on return types** must be satisfied for all $f, f' \in \mathcal{F}$:
 $$
@@ -255,7 +254,7 @@ We want **abstract functions to guarantee that multiple dispatch always finds at
 
 #### Input Abstractness Constraint
 
-*Definition.* Let $\mathcal{F}$ be a mult-function. The following **input abstractness constraint** must be satisfied for all abstract function $f \in \mathcal{F}$:
+*Definition.* Let $\mathcal{F}$ be a multi-function. The following **input abstractness constraint** must be satisfied for all abstract function $f \in \mathcal{F}$:
 $$
 \mathrm{abstract}(\mathrm{in}(f))
 $$
@@ -267,9 +266,9 @@ If an abstract function $f$ does not satisfy this constraint, an `input-type-not
 
 *Definition.* Let $\mathcal{F}$ be a multi-function. The following **totality constraint** must be satisfied for all abstract functions $f \in \mathcal{F}$:
 $$
-\forall s < \mathrm{in}(f). \neg \mathrm{abstract}(s) \implies [\exists f' \in \mathcal{F}. \mathrm{in}(f') < \mathrm{in}(f) \and f' \in \mathrm{Fit}(s)(\mathcal{F})]
+\forall s < \mathrm{in}(f). [\exists f' \in \mathcal{F}. \mathrm{in}(f') < \mathrm{in}(f) \and f' \in \mathrm{Fit}(s)(\mathcal{F})]
 $$
-That is, all concrete subtypes $s$ of $f$'s input type must be covered by at least one function $f'$ whose input type is a strict subtype of $\mathrm{in}(f)$. Together with the input abstractness constraint, this ensures that all input values with which the function can ever be called are dispatched to a *concrete* function.
+That is, all subtypes $s$ of $f$'s input type must be covered by at least one function $f'$ whose input type is a strict subtype of $\mathrm{in}(f)$. Together with the input abstractness constraint, this ensures that all input values with which the function can ever be called are dispatched to a *concrete* function.
 
 If a multi-function $\mathcal{F}$ does not satisfy the totality constraint, a `missing-implementation` error is raised, which includes a list of input types that need to be covered.
 
@@ -348,9 +347,11 @@ We will see that this is entirely possible. First, we define a lemma that will a
 
 *Proof.* For any intersection type $\texttt{A & B}$, it's clear that $\texttt{A & B} < \texttt{A}$. Thus, we have $s \texttt{ & } t < s \leq \mathrm{in}(f')$ and thus, trivially, $s \texttt{ & } t$ also fits $f'$.
 
-This lemma allows us to ignore infinite sets of intersection types when building the set of subtypes to be checked.
+This lemma allows us to **ignore infinite sets of intersection types** when building the set of subtypes to be checked.
 
 ---
+
+*Theorem 2.2.* Let $\mathcal{F}$ be a multi-function and $f \in \mathcal{F}$ an abstract function. To check the totality constraint, it suffices to check the constraint for all *abstract-resolved direct subtypes* instead of all possible subtypes. Thus, we can restrict the set of checked subtypes to a computable amount.
 
 
 
