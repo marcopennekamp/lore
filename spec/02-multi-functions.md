@@ -424,3 +424,34 @@ Since $f$ is an abstract function, $\mathrm{in}(f)$ must be an abstract type. Ot
 
 In that case, a subtype is chosen to be the result of the function. So we have that at least one component of $\mathrm{in}(f)$ must be both abstract *and* a subtype of it. This means that, necessarily, any type in $\mathrm{ards}(\mathrm{in}(f))$ is a subtype of the input type, and thus the statement to show is proven. (The case $s < s'$ trivially holds, of course.)
 
+**(2.2)** We show:
+$$
+\forall s. (s < \mathrm{in}(f) \and \neg\mathrm{abstract}(s) \implies s \leq s' \and s' \in \mathrm{ards}(\mathrm{in}(f)))
+$$
+This is the tricky part. Let $s$ be any *concrete* subtype of $\mathrm{in}(f)$. We show that an $s' \in \mathrm{ards}(\mathrm{in}(f))$ exists for which $s \leq s'$ holds by *playing a game*.
+
+The rules of this game are simple:
+
+1. The **antagonist** constructs a *concrete* subtype $s$ of $\mathrm{in}(f)$ which is not in $\mathrm{ards}(\mathrm{in}(f)))$.
+2. The **hero** proves that $s$ is actually a subtype of an $s' \in \mathrm{ards}(\mathrm{in}(f))$.
+
+The statement is shown when the antagonist has exhausted all of her options. The base type from which the antagonist can construct a type shall be $t = \mathrm{in}(f)$, which is, at its base, a tuple type. The antagonist can change the type in any way as long as the end product is a subtype of $t$.
+
+We consider the following **turns:**
+
+1. The antagonist recognizes that she **cannot add new product types**, that is transforming a part of $t$ that is not already a product into a product, since then $s$ would not be a subtype of $t$. The hero is delighted that the antagonist doesn't throw useless cases at her.
+
+2. The antagonist tries to change an abstract *declared type* $d$ within $t$. To replace the declared type, she necessarily has to choose a strict subtype $d' < d$. But then the hero points out that $\mathrm{ards}(t)$ is already doing exactly that, so the antagonist's $s$ would be a subtype of at least one $s'$.
+
+3. The antagonist chooses to change a *concrete* declared type to some subtype. But then, as $t$ must be abstract, the antagonist didn't get rid of the abstractness of $s$ and thus isn't making a valid turn for the purposes of the game. The hero points out as much. And if the antagonist changes both a concrete and an abstract declared type, case (2) holds.
+
+   
+
+
+
+
+
+
+
+To prove this theorem, we have to show that all subtypes of $t$ which are *not* part of $\mathrm{ards}(t)$ are subtypes of at least one $t' \in \mathrm{ards}(t)$.
+
