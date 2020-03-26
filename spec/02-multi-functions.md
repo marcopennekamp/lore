@@ -387,4 +387,23 @@ $$
 $$
 with $P(s) \iff \neg\mathrm{abstract}(s) \implies [\exists f' \in \mathcal{F}. \mathrm{in}(f') < \mathrm{in}(f) \and f' \in \mathrm{Fit}(s)(\mathcal{F})]$.
 
+*Proof.* We will take this proof in a few steps. From the premise, we can of course assume that all $s \in \mathrm{ards}(in(f))$ satisfy $P(s)$.
+
+**(1)** First of all, we show the following property for all types $s$:
+$$
+s \in \mathrm{ards}(\mathrm{in}(f)) \implies (\forall s' < s. P(s'))
+$$
+Expand the definitions of $P$ and $\mathrm{Fit}$:
+$$
+\forall s' < s. P(s') \\
+\iff \forall s' < s. (\neg\mathrm{abstract}(s') \implies [\exists f' \in \mathcal{F}. \mathrm{in}(f') < \mathrm{in}(f) \and f' \in \{ g \in \mathcal{F} \mid s' \leq \mathrm{in}(g) \}]) \\
+\iff \forall s' < s. (\neg\mathrm{abstract}(s') \implies [\exists f' \in \mathcal{F}. \mathrm{in}(f') < \mathrm{in}(f) \and s' \leq \mathrm{in}(f')])
+$$
+Take the $f'$ for which $P(s)$ is true (there must be at least one according to the premise). We have $\mathrm{in}(f') < \mathrm{in}(f)$ and $s \leq \mathrm{in}(f')$. This same $f'$ fits $s'$, since $s' < s \leq \mathrm{in}(f')$, so we prove that $P(s')$ is true for all $s' < s$.
+
+This already **shows the theorem *for a significant number of subtypes***. Our goal is now to identify the subtypes we still have to cover for the proof to be total. Those are:
+$$
+S = \{ s \mid s < \mathrm{in}(f) \and \neg\mathrm{abstract}(s) \} - \mathrm{ards}(\mathrm{in}(f)) - \{ s' \mid s' < s \and s \in \mathrm{ards}(\mathrm{in}(f)) \} \\
+\iff S = \{ s \mid s < \mathrm{in}(f) \and \neg\mathrm{abstract}(s) \} - \{ s' \mid s' \leq s \and s \in \mathrm{ards}(\mathrm{in}(f)) \}
+$$
 
