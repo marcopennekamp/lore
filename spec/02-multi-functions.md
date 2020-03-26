@@ -266,9 +266,9 @@ If an abstract function $f$ does not satisfy this constraint, an `input-type-not
 
 *Definition.* Let $\mathcal{F}$ be a multi-function. The following **totality constraint** must be satisfied for all abstract functions $f \in \mathcal{F}$:
 $$
-\forall s < \mathrm{in}(f). [\exists f' \in \mathcal{F}. \mathrm{in}(f') < \mathrm{in}(f) \and f' \in \mathrm{Fit}(s)(\mathcal{F})]
+\forall s < \mathrm{in}(f). \neg\mathrm{abstract}(s) \implies [\exists f' \in \mathcal{F}. \mathrm{in}(f') < \mathrm{in}(f) \and f' \in \mathrm{Fit}(s)(\mathcal{F})]
 $$
-That is, all subtypes $s$ of $f$'s input type must be covered by at least one function $f'$ whose input type is a strict subtype of $\mathrm{in}(f)$. Together with the input abstractness constraint, this ensures that all input values with which the function can ever be called are dispatched to a *concrete* function.
+That is, all concrete subtypes $s$ of $f$'s input type must be covered by at least one function $f'$ whose input type is a strict subtype of $\mathrm{in}(f)$. Together with the input abstractness constraint, this ensures that all input values with which the function can ever be called are dispatched to a *concrete* function.
 
 If a multi-function $\mathcal{F}$ does not satisfy the totality constraint, a `missing-implementation` error is raised, which includes a list of input types that need to be covered.
 
@@ -349,9 +349,9 @@ We will see that this is entirely possible. First, we define a lemma that will a
 
 This lemma allows us to **ignore infinite sets of intersection types** when building the set of subtypes to be checked.
 
----
+**TODO:** We can probably just inline this in 2.2 of theorem 2.2's proof.
 
-*Theorem 2.2.* Let $\mathcal{F}$ be a multi-function and $f \in \mathcal{F}$ an abstract function. To check the totality constraint, it suffices to check the constraint for all *abstract-resolved direct subtypes* instead of all possible subtypes. Thus, we can restrict the set of checked subtypes to a computable amount.
+---
 
 *Definition.* The **abstract-resolved direct subtypes** $\mathrm{ards}: \mathbb{T} \rightarrow \mathcal{P}(\mathbb{T})$ of any type $t$ are recursively defined as follows:
 $$
