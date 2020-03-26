@@ -406,4 +406,21 @@ $$
 S = \{ s \mid s < \mathrm{in}(f) \and \neg\mathrm{abstract}(s) \} - \mathrm{ards}(\mathrm{in}(f)) - \{ s' \mid s' < s \and s \in \mathrm{ards}(\mathrm{in}(f)) \} \\
 \iff S = \{ s \mid s < \mathrm{in}(f) \and \neg\mathrm{abstract}(s) \} - \{ s' \mid s' \leq s \and s \in \mathrm{ards}(\mathrm{in}(f)) \}
 $$
+**(2)** We want to show:
+$$
+S = \empty
+$$
+Therefore, we have to show:
+$$
+\forall s. (s < \mathrm{in}(f) \and \neg\mathrm{abstract}(s) \implies s \leq s' \and s' \in \mathrm{ards}(\mathrm{in}(f)))
+$$
+If that is true, the subtrahend subsumes the minuend and thus $S$ would be empty.
+
+**(2.1)** We show: TODO DELETE THIS CASE
+$$
+\forall s. (s \leq s' \and s' \in \mathrm{ards}(\mathrm{in}(f)) \implies s < \mathrm{in}(f))
+$$
+Since $f$ is an abstract function, $\mathrm{in}(f)$ must be an abstract type. Otherwise, the input abstractness constraint would be violated. First we look at the definition of $\mathrm{ards}$ for tuples, intersection types and sum types. All of these defer to further recursive $\mathrm{ards}$ calls. We inevitably end up at an **abstract declared type**. (**TODO:** We have to prove that type abstractness ultimately comes down to declared types being abstract…) 
+
+In that case, a subtype is chosen to be the result of the function. So we have that at least one component of $\mathrm{in}(f)$ must be both abstract *and* a subtype of it. This means that, necessarily, any type in $\mathrm{ards}(\mathrm{in}(f))$ is a subtype of the input type, and thus the statement to show is proven. (The case $s < s'$ trivially holds, of course.)
 
