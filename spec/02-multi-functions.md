@@ -379,6 +379,12 @@ Some **explanations** are in order:
 - **concrete:** If $t$ is concrete, we do not return subtypes but only $t$ itself. Say we have an abstract function `f(a: A, b: B)` with `A` being abstract and `B` a concrete type. We don't want to force `B` to be specialized, as only `A` is abstract and therefore a function like `f(a: AI, b: B)` would be legal (assuming `AI` is a subtype of `A`). This rule includes function types, since they can never be abstract. In fact, we *have* to keep `B` as general as possible to ensure that values of `B` are also covered by an implementation and not just subtype values.
 - Note that we are ignoring the `Any` type, since declaring an abstract function over it is pure madness. (**TODO:** Maybe we should just disallow using any with abstract functions altogether.)
 
+---
 
+*Theorem 2.2.* Let $\mathcal{F}$ be a multi-function and $f \in \mathcal{F}$ an abstract function. To check the totality constraint, it suffices to check the constraint for all *abstract-resolved direct subtypes* instead of all possible subtypes. Thus, we can **restrict the set of checked subtypes to a computable amount**. Formally:
+$$
+\forall s \in \mathrm{ards}(\mathrm{in}(f)). P(s) \implies \forall s < \mathrm{in}(f). P(s)
+$$
+with $P(s) \iff \neg\mathrm{abstract}(s) \implies [\exists f' \in \mathcal{F}. \mathrm{in}(f') < \mathrm{in}(f) \and f' \in \mathrm{Fit}(s)(\mathcal{F})]$.
 
 
