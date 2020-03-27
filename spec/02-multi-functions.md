@@ -373,11 +373,14 @@ Some **explanations** are in order:
 
 *Theorem 2.1.* Let $\mathcal{F}$ be a multi-function and $f \in \mathcal{F}$ an abstract function. To check the totality constraint, it suffices to check the constraint for all *abstract-resolved direct subtypes* instead of all possible subtypes. Thus, we can **restrict the set of checked subtypes to a computable amount**. Formally:
 $$
-\forall s \in \mathrm{ards}(\mathrm{in}(f)). P(s) \implies \forall s < \mathrm{in}(f). P(s)
+\forall s \in \mathrm{ards}(\mathrm{in}(f)). P'(s) \implies \forall s < \mathrm{in}(f). P(s)
 $$
-with $P(s) \iff \neg\mathrm{abstract}(s) \implies [\exists f' \in \mathcal{F}. \mathrm{in}(f') < \mathrm{in}(f) \and f' \in \mathrm{Fit}(s)(\mathcal{F})]$.
-
-*Proof.* We will take this proof in a few steps. From the premise, we can of course assume that all $s \in \mathrm{ards}(in(f))$ satisfy $P(s)$.
+with: 
+$$
+P(s) \iff \neg\mathrm{abstract}(s) \implies P'(s) \\
+P'(s) \iff \exists f' \in \mathcal{F}. \mathrm{in}(f') < \mathrm{in}(f) \and f' \in \mathrm{Fit}(s)(\mathcal{F})
+$$
+*Proof.* We will take this proof in a few steps. From the premise, we can of course assume that all $s \in \mathrm{ards}(\mathrm{in}(f))$ satisfy $P'(s)$.
 
 **(1)** First of all, we show the following property for all types $s$:
 $$
@@ -389,7 +392,7 @@ $$
 \iff \forall s' < s. (\neg\mathrm{abstract}(s') \implies [\exists f' \in \mathcal{F}. \mathrm{in}(f') < \mathrm{in}(f) \and f' \in \{ g \in \mathcal{F} \mid s' \leq \mathrm{in}(g) \}]) \\
 \iff \forall s' < s. (\neg\mathrm{abstract}(s') \implies [\exists f' \in \mathcal{F}. \mathrm{in}(f') < \mathrm{in}(f) \and s' \leq \mathrm{in}(f')])
 $$
-Take the $f'$ for which $P(s)$ is true (there must be at least one according to the premise). We have $\mathrm{in}(f') < \mathrm{in}(f)$ and $s \leq \mathrm{in}(f')$. This same $f'$ fits $s'$, since $s' < s \leq \mathrm{in}(f')$, so we prove that $P(s')$ is true for all $s' < s$.
+Take the $f'$ for which $P'(s)$ is true (there must be at least one according to the premise). We have $\mathrm{in}(f') < \mathrm{in}(f)$ and $s \leq \mathrm{in}(f')$. This same $f'$ fits $s'$, since $s' < s \leq \mathrm{in}(f')$, so we prove that $P(s')$ is true for all $s' < s$. Note that $P'(s) \implies P(s)$, as the former is a *stricter* version of the statement.
 
 This already **shows the theorem *for a significant number of subtypes***. Our goal is now to identify the subtypes we still have to cover for the proof to be total. Those are:
 $$
@@ -413,17 +416,17 @@ The rules of this game are simple:
 1. The **antagonist** constructs a *concrete* subtype $s$ of $\mathrm{in}(f)$ which is not in $\mathrm{ards}(\mathrm{in}(f)))$.
 2. The **hero** proves that $s$ is actually a subtype of an $s' \in \mathrm{ards}(\mathrm{in}(f))$.
 
-The statement is shown when the antagonist has exhausted all of her options. The base type from which the antagonist can construct a type shall be $t = \mathrm{in}(f)$, which is necessarily a tuple type. The antagonist can change the type in any way as long as the end product is a strict subtype of $t$.
+The statement is shown when the antagonist has exhausted all of her options. The base type from which the antagonist can construct a type shall be $t = \mathrm{in}(f)$, which is necessarily a tuple type. The antagonist can change the type in any way as long as the end product is a strict, concrete subtype of $t$.
 
 We consider the following **turns:**
 
 1. The antagonist recognizes that she **cannot insert new product types**, that is, transform a part of $t$ that is not already a product type into a product type, since then $s$ would not be a subtype of $t$. (Product types can only be subtypes of product types and Any.) The hero is delighted that the antagonist doesn't throw futile cases at her.
-2. The antagonist tries to change an **abstract declared type** $d$ within $t$. To replace the declared type, she necessarily has to choose a strict subtype $d' < d$. But then the hero points out that $\mathrm{ards}(t)$ is already doing exactly that, so the antagonist's $s$ would be a subtype of at least one $s'$.
+2. The antagonist tries to change an **abstract declared type** $d$ within $t$. To replace the declared type, she necessarily has to choose a strict subtype $d' < d$. But then the hero points out that $\mathrm{ards}(t)$ is already replacing all abstract types with all their direct subtypes, so the antagonist's $s$ would be equal to at least one $s'$ or a subtype of it.
 3. The antagonist chooses to change a **concrete declared type** to some subtype. But then, as $t$ must be abstract, the antagonist didn't get rid of the abstractness of $s$ and thus isn't making a valid turn for the purposes of the game. The hero points out as much. And if the antagonist changes both a concrete and an abstract declared type, case (2) holds.
 4. The antagonist tries to narrow an existing part $d$ within $t$ with an **intersection type**. We define $d' = d \texttt{ & } u$ for some arbitrary type $u$. Considering intersection type subtyping rules, we have $d' < d$. The antagonist also has to replace all abstract types so that $s$ is concrete. Thus, we have a subtype $s < t$ that is *equal* to a type $s' \in \mathrm{ards}(\mathrm{in}(f))$ except that there is a part $d'$ instead of $d$. By the rules of subtyping, the hero points out that $d' < d \implies s < s' < t$ and thus the move isn't valid.
 5. The antagonist, otherwise out of options, attempts to introduce a **sum type**. Taking any part $d$ within $t$, we define $d' = d \mid u$ for some arbitrary type $u$. But then, by the rules of subtyping, $d'$ is not a subtype of $d$; quite the contrary, as $d < d'$. Thus, if the antagonist introduces a sum type, $s < t$ does not hold and the antagonist cannot make this move.
 
-Ultimately, the hero claims victory, showing that $S$ is empty. This means that there are **no strict subtypes of $\mathrm{in}(f)$ that are not a subtype of one of the types in $\mathrm{ards}(\mathrm{in}(f))$**. Thus, if we prove $P(s)$ for all types in $\mathrm{ards}(\mathrm{in}(f))$, we prove $P(s)$ *for all strict subtypes of $\mathrm{in}(f)$*.
+Ultimately, the hero claims victory, showing that $S$ is empty. This means that there are **no strict subtypes of $\mathrm{in}(f)$ that are not a subtype of one of the types in $\mathrm{ards}(\mathrm{in}(f))$**. Thus, if we prove $P'(s)$ for all types in $\mathrm{ards}(\mathrm{in}(f))$, we prove $P(s)$ *for all strict subtypes of $\mathrm{in}(f)$*.
 
 **Theorem 2.1** has been proven.
 
