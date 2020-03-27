@@ -416,42 +416,28 @@ $$
 $$
 If that is true, the subtrahend subsumes the minuend and thus $S$ would be empty.
 
-**(2.1)** We show: TODO DELETE THIS CASE
-$$
-\forall s. (s \leq s' \and s' \in \mathrm{ards}(\mathrm{in}(f)) \implies s < \mathrm{in}(f))
-$$
-Since $f$ is an abstract function, $\mathrm{in}(f)$ must be an abstract type. Otherwise, the input abstractness constraint would be violated. First we look at the definition of $\mathrm{ards}$ for tuples, intersection types and sum types. All of these defer to further recursive $\mathrm{ards}$ calls. We inevitably end up at an **abstract declared type**. (**TODO:** We have to prove that type abstractness ultimately comes down to declared types being abstract…) 
-
-In that case, a subtype is chosen to be the result of the function. So we have that at least one component of $\mathrm{in}(f)$ must be both abstract *and* a subtype of it. This means that, necessarily, any type in $\mathrm{ards}(\mathrm{in}(f))$ is a subtype of the input type, and thus the statement to show is proven. (The case $s < s'$ trivially holds, of course.)
-
-**(2.2)** We show:
-$$
-\forall s. (s < \mathrm{in}(f) \and \neg\mathrm{abstract}(s) \implies s \leq s' \and s' \in \mathrm{ards}(\mathrm{in}(f)))
-$$
-This is the tricky part. Let $s$ be any *concrete* subtype of $\mathrm{in}(f)$. We show that an $s' \in \mathrm{ards}(\mathrm{in}(f))$ exists for which $s \leq s'$ holds by *playing a game*.
+Let $s$ be any *concrete* subtype of $\mathrm{in}(f)$. We show that an $s' \in \mathrm{ards}(\mathrm{in}(f))$ exists for which $s \leq s'$ holds by *playing a game*.
 
 The rules of this game are simple:
 
 1. The **antagonist** constructs a *concrete* subtype $s$ of $\mathrm{in}(f)$ which is not in $\mathrm{ards}(\mathrm{in}(f)))$.
 2. The **hero** proves that $s$ is actually a subtype of an $s' \in \mathrm{ards}(\mathrm{in}(f))$.
 
-The statement is shown when the antagonist has exhausted all of her options. The base type from which the antagonist can construct a type shall be $t = \mathrm{in}(f)$, which is, at its base, a tuple type. The antagonist can change the type in any way as long as the end product is a subtype of $t$.
+The statement is shown when the antagonist has exhausted all of her options. The base type from which the antagonist can construct a type shall be $t = \mathrm{in}(f)$, which is necessarily a tuple type. The antagonist can change the type in any way as long as the end product is a strict subtype of $t$.
 
 We consider the following **turns:**
 
-1. The antagonist recognizes that she **cannot add new product types**, that is transforming a part of $t$ that is not already a product into a product, since then $s$ would not be a subtype of $t$. The hero is delighted that the antagonist doesn't throw useless cases at her.
+1. The antagonist recognizes that she **cannot insert new product types**, that is, transform a part of $t$ that is not already a product type into a product type, since then $s$ would not be a subtype of $t$. (Product types can only be subtypes of product types and Any.) The hero is delighted that the antagonist doesn't throw futile cases at her.
+2. The antagonist tries to change an **abstract declared type** $d$ within $t$. To replace the declared type, she necessarily has to choose a strict subtype $d' < d$. But then the hero points out that $\mathrm{ards}(t)$ is already doing exactly that, so the antagonist's $s$ would be a subtype of at least one $s'$.
+3. The antagonist chooses to change a **concrete declared type** to some subtype. But then, as $t$ must be abstract, the antagonist didn't get rid of the abstractness of $s$ and thus isn't making a valid turn for the purposes of the game. The hero points out as much. And if the antagonist changes both a concrete and an abstract declared type, case (2) holds.
+4. The antagonist tries to narrow an existing part $d$ within $t$ with an **intersection type**. We define $d' = d \texttt{ & } u$ for some arbitrary type $u$. Considering intersection type subtyping rules, we have $d' < d$. The antagonist also has to replace all abstract types so that $s$ is concrete. Thus, we have a subtype $s < t$ that is *equal* to a type $s' \in \mathrm{ards}(\mathrm{in}(f))$ except that there is a part $d'$ instead of $d$. By the rules of subtyping, the hero points out that $d' < d \implies s < s' < t$ and thus the move isn't valid.
+5. The antagonist, otherwise out of options, attempts to introduce a **sum type**. Taking any part $d$ within $t$, we define $d' = d \mid u$ for some arbitrary type $u$. But then, by the rules of subtyping, $d'$ is not a subtype of $d$; quite the contrary, as $d < d'$. Thus, if the antagonist introduces a sum type, $s < t$ does not hold and the antagonist cannot make this move.
 
-2. The antagonist tries to change an abstract *declared type* $d$ within $t$. To replace the declared type, she necessarily has to choose a strict subtype $d' < d$. But then the hero points out that $\mathrm{ards}(t)$ is already doing exactly that, so the antagonist's $s$ would be a subtype of at least one $s'$.
+Ultimately, the hero claims victory, showing that $S$ is empty. This means that there are **no strict subtypes of $\mathrm{in}(f)$ that are not a subtype of one of the types in $\mathrm{ards}(\mathrm{in}(f))$**. Thus, if we prove $P(s)$ for all types in $\mathrm{ards}(\mathrm{in}(f))$, we prove $P(s)$ *for all strict subtypes of $\mathrm{in}(f)$*.
 
-3. The antagonist chooses to change a *concrete* declared type to some subtype. But then, as $t$ must be abstract, the antagonist didn't get rid of the abstractness of $s$ and thus isn't making a valid turn for the purposes of the game. The hero points out as much. And if the antagonist changes both a concrete and an abstract declared type, case (2) holds.
+**Theorem 2.2** has been proven.
 
-   
-
-
+---
 
 
-
-
-
-To prove this theorem, we have to show that all subtypes of $t$ which are *not* part of $\mathrm{ards}(t)$ are subtypes of at least one $t' \in \mathrm{ards}(t)$.
 
