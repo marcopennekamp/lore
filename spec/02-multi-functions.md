@@ -343,16 +343,6 @@ We will see that this is entirely possible. First, we define a lemma that will a
 
 ---
 
-*Lemma 2.1.* Let $\mathcal{F}$ be a multi-function and $f \in \mathcal{F}$ an abstract function. Let $s < \mathrm{in}(f)$ be a subtype for which a fitting function $f'$ with $\mathrm{in}(f') < \mathrm{in}(f)$ exists. Then for any type $t$, the subtype $s \texttt{ & } t$ also has $f'$ as a fitting function. 
-
-*Proof.* For any intersection type $\texttt{A & B}$, it's clear that $\texttt{A & B} < \texttt{A}$. Thus, we have $s \texttt{ & } t < s \leq \mathrm{in}(f')$ and thus, trivially, $s \texttt{ & } t$ also fits $f'$.
-
-This lemma allows us to **ignore infinite sets of intersection types** when building the set of subtypes to be checked.
-
-**TODO:** We can probably just inline this in 2.2 of theorem 2.2's proof.
-
----
-
 *Definition.* The **abstract-resolved direct subtypes** $\mathrm{ards}: \mathbb{T} \rightarrow \mathcal{P}(\mathbb{T})$ of any type $t$ are recursively defined as follows:
 $$
 \neg\mathrm{abstract}(t) \implies \mathrm{ards}(t) = \{ t \} \tag{concrete}
@@ -381,7 +371,7 @@ Some **explanations** are in order:
 
 ---
 
-*Theorem 2.2.* Let $\mathcal{F}$ be a multi-function and $f \in \mathcal{F}$ an abstract function. To check the totality constraint, it suffices to check the constraint for all *abstract-resolved direct subtypes* instead of all possible subtypes. Thus, we can **restrict the set of checked subtypes to a computable amount**. Formally:
+*Theorem 2.1.* Let $\mathcal{F}$ be a multi-function and $f \in \mathcal{F}$ an abstract function. To check the totality constraint, it suffices to check the constraint for all *abstract-resolved direct subtypes* instead of all possible subtypes. Thus, we can **restrict the set of checked subtypes to a computable amount**. Formally:
 $$
 \forall s \in \mathrm{ards}(\mathrm{in}(f)). P(s) \implies \forall s < \mathrm{in}(f). P(s)
 $$
@@ -435,7 +425,7 @@ We consider the following **turns:**
 
 Ultimately, the hero claims victory, showing that $S$ is empty. This means that there are **no strict subtypes of $\mathrm{in}(f)$ that are not a subtype of one of the types in $\mathrm{ards}(\mathrm{in}(f))$**. Thus, if we prove $P(s)$ for all types in $\mathrm{ards}(\mathrm{in}(f))$, we prove $P(s)$ *for all strict subtypes of $\mathrm{in}(f)$*.
 
-**Theorem 2.2** has been proven.
+**Theorem 2.1** has been proven.
 
 ---
 
