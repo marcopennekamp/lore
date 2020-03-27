@@ -432,5 +432,20 @@ Ultimately, the hero claims victory, showing that $S$ is empty. This means that 
 
 ---
 
+*Definition.* Using theorem 2.1 as our base for restricting the space of subtypes we have to consider, we formulate the following **algorithm for checking the totality constraint:**
 
+```
+// Assume we have access to a function ards as it is defined above.
 
+function verifyTotality(F: MultiFunction): Boolean = {
+  F.filter(f => abstract(f)).forall(f => isVerified(F, f))
+}
+
+function isVerified(F: MultiFunction, f: Function): Boolean = {
+  ards(in(f)).forall(s => { F.exists(f' => {
+    in(f') < in(f) and Fit(s)(F).contains(f')
+  })})
+}
+```
+
+The algorithm simply iterates over $s \in \mathrm{ards}(\mathrm{in}(f))$ and checks $P'(s)$.
