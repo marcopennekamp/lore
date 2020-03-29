@@ -464,6 +464,21 @@ The algorithm simply iterates over $s \in \mathrm{ards}(\mathrm{in}(f))$ and che
 
 
 
+### Multi-Functions and Intersection Types
+
+We can use intersection types to **refine dispatch** based on the presence of such an intersection type at run-time For example, we could define a function on a list as follows:
+
+```
+function search(list: List[a]): a = {
+  // implement linear search
+}
+function search(list: List[a] & Sorted): a = {
+  // implement binary search
+}
+```
+
+That is, using the type system, we can encode that some lists are sorted, and for those lists **specialize** the `search` function so that it uses a more efficient algorithm.
+
 ### Multi-Function Values?
 
 (Making it possible to pass multi-functions around like "normal" functions.)
