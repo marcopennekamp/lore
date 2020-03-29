@@ -534,3 +534,20 @@ We also want to note that no matter what kind of entity we are dealing with, as 
 ### Multi-Function Values?
 
 (Making it possible to pass multi-functions around like "normal" functions.)
+
+
+
+### Implementing Extension Methods
+
+**Extension methods** can be implemented in Lore without requiring a special
+syntax, because functions aren’t tied to types, but still support single and
+multiple dispatch. For example, we could extend the `String` type with a
+reverse function:
+
+```
+function reverse ( str : String ): String = { ... }
+```
+
+The ”extension method” can be defined anywhere. It can be used like a
+normal function in any part of the code, assuming it’s imported to a given
+scope.
