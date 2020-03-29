@@ -1,9 +1,7 @@
 package lore.functions
 
 import lore.execution.Context
-import scalaz.std.list._
-import scalaz.syntax.traverse._
-import lore.types.{Subtyping, TupleType}
+import lore.types.Subtyping
 
 object TotalityConstraint {
 

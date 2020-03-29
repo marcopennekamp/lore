@@ -51,13 +51,13 @@ class Regeneration owned by +HealthState {
   private mut counter: Int = 1 // private hides the field from any function defined outside the current file.
 }
 
-// We could try to define tick as
+// We could try to define the function as
 //   function tick(mut r: Regeneration): Unit
 // but then we can't access the owner, since we don't know if Regeneration has been attached to an entity yet!
 // Instead, we define it as follows, which makes sure that Regeneration is attached to an entity. Since we require
 // Regeneration to be attached to entities that also have a HealthState, we can access the health state without
 // declaring it explicitly.
-function tick(entity: +Regeneration): Unit = {
+function updateHealth(entity: +Regeneration): Unit = {
   const r = entity.Regeneration
   if r.counter `mod` r.interval == 0 {
     // Idea for later: Any function that takes a value as its first argument can be called by using the dot notation.
@@ -76,4 +76,4 @@ class Skeleton extends Entity2D {
   component Regeneration = Regeneration(amount = 5, interval = 30) // We can declare default component values.
 }
 
-function tick(s: Skeleton): Unit = s.Regeneration.tick()
+function tick(s: Skeleton): Unit = updateHealth(s)
