@@ -449,3 +449,21 @@ function isVerified(F: MultiFunction, f: Function): Boolean = {
 ```
 
 The algorithm simply iterates over $s \in \mathrm{ards}(\mathrm{in}(f))$ and checks $P'(s)$.
+
+
+
+### Compile-Time Fixing
+
+(Fixing a function to call at compile time, i.e. bypassing run-time dynamic dispatch, which is our way to support "super" types of construct.)
+
+
+
+### Preferred Functions?
+
+(If the min-set has multiple functions, we don't throw an ambiguity error if there is exactly one *preferred* function. Alternatively, we can define priorities for functions, zero being the lowest. I don't yet know whether this is a great or a horrible idea.)
+
+
+
+### Multi-Function Values?
+
+(Making it possible to pass multi-functions around like "normal" functions.)
