@@ -479,6 +479,58 @@ function search(list: List[a] & Sorted): a = {
 
 That is, using the type system, we can encode that some lists are sorted, and for those lists **specialize** the `search` function so that it uses a more efficient algorithm.
 
+---
+
+Another use case for intersection types in the context of multiple dispatch arises with the concept of **component types**. 
+
+Let's say an `Entity` (in this case a base type for any living actor on the screen) is afflicted by a list of damage over time (DoT) effects. Each DoT is modeled as a class that is passed, together with the entity (and its various components), to a multi-function called `applyDot`. We can then use dynamic dispatch to implement the DoT effect **based on the entity's available components**.
+
+```
+class Entity
+class Health owned by Entity
+class Resistances owned by Entity
+class Damage
+label Immune
+abstract class Dot
+class BleedDot
+class PlagueDot
+class TruefireDot
+
+function applyDamage(e: +Health, damage: Damage) {
+  e.Health.amount -= damage.amount
+}
+function applyDamage(e: +Health & +Resistances, damage: Damage) {
+  const resistance = e.Resistances.get(damage.type)
+  const damageAfterResistances = damage.scale(1.0 - resistance)
+  // We can fix the function we want to call at compile-time!
+  // This is akin to a "super" call in e.g. Java.
+  applyDamage[+Health, Damage](e, damageAfterResistances)
+}
+// TODO: The following is just an idea: If we have multiple functions in min, we invoke the function that has a higher priority. All functions have a priority of 0, unless declared otherwise. Is this a cool and useful feature or a recipe for a mess?
+// If we don't do this, we would have to implement the effects of Immune twice: once with +Health and once with +Health & +Resistances.
+preferred function applyDamage(e: +Health & Immune, damage: Damage) {
+ // Do nothing.
+}
+
+function applyDot(dot: Dot, e: +Health) {
+  applyDamage(e, dot.damage)
+}
+function applyDot(dot: PlagueDot, e: +Health) {
+  applyDot[Dot, +Health](dot, e)
+  // Spread the plague to other nearby entities.
+}
+function applyDot(dot: TruefireDot, e: +Health & +Resistances) {
+  // Reduce resistances of the entity for one second.
+  applyDot[Dot, +Health](dot, e)
+}
+```
+
+One highlight in the example above is how the truefire DoT effect reduces resistances, but only if the entity has resistances. If not, multiple dispatch will simply call the base `applyDot` function.
+
+We also want to note that no matter what kind of entity we are dealing with, as long as it has a `Health` component, the functions defined above can be used for it. You can see that Lore makes it possible to implement "domains" of concerns over entities in a modular fashion.
+
+
+
 ### Multi-Function Values?
 
 (Making it possible to pass multi-functions around like "normal" functions.)
