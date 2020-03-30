@@ -466,6 +466,33 @@ With `T1` etc. representing the desired input type and `a1` etc. the arguments. 
 
 The goal is, ultimately, to have `f.fixed[T1, T2, …]` return a **function value**. As we are not supporting anonymous functions *for now*, the `fixed` operation will require arguments to be passed. This restriction will be relaxed as soon as we support function values.
 
+---
+
+The most obvious example is invoking a **"super"** function of some other, more specialized function. Here is the basic pattern:
+
+```
+// Assuming A1 < A and A2 < A.
+function f(a: A) = {
+  // ... some general implementation
+}
+function f(a: A1) = {
+  // ... some actions specific to A1
+  // Then call the "super" function to handle the general case.
+  f.fixed[A](a)
+}
+function f(a: A2) = {
+  // First call the "super" function to handle the general case.
+  f.fixed[A](a)
+  // ... some actions specific to A2
+}
+```
+
+
+
+### Multi-Function Values?
+
+(Making it possible to pass multi-functions around like "normal" functions. This would be the unfixed version of fixing the callee, as described above.)
+
 
 
 ### Preferred Functions?
@@ -541,12 +568,6 @@ We also want to note that no matter what kind of entity we are dealing with, as 
 
 
 
-### Multi-Function Values?
-
-(Making it possible to pass multi-functions around like "normal" functions.)
-
-
-
 ### Implementing Extension Methods
 
 **Extension methods** can be implemented in Lore without requiring a special
@@ -555,7 +576,7 @@ multiple dispatch. For example, we could extend the `String` type with a
 reverse function:
 
 ```
-function reverse ( str : String ): String = { ... }
+function reverse(str : String): String = { ... }
 ```
 
 The ”extension method” can be defined anywhere. It can be used like a
