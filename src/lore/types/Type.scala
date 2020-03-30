@@ -1,7 +1,5 @@
 package lore.types
 
-import lore.execution.Context
-
 // TODO: Type equality should be defined as A <= B and B <= A, although this might lead to performance issues,
 //       especially with the rampant use of Sets.
 

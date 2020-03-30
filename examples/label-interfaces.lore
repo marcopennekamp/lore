@@ -13,6 +13,8 @@ function h(x: L)
 // at RUN-TIME to subtype the label type. This means that we can't check at compile-time whether A or B actually
 // implement g or h.
 // However, we could introduce run-time totality checks for dynamic specialization. (TODO: Consider this.)
+// Alternatively, everywhere a type is specialized with a label type, we check at compile-time that
+// the required functions are declared.
 class A
 function g(a: A & L) = ()
 function h(a: A & L) = ()

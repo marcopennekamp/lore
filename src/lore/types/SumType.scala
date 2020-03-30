@@ -1,7 +1,5 @@
 package lore.types
 
-import lore.execution.Context
-
 case class SumType private (types: Set[Type]) extends Type {
   override def isAbstract = true
   override def toString: String = "[" + types.mkString(" | ") + "]"
