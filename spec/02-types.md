@@ -1,15 +1,11 @@
 # Types
 
-In this chapter, we lay out the basics of Lore's type system. We define properties of types, specific kinds of types, and consider subtyping rules.
+In this chapter, we lay out the **basics of Lore's type system**. We define properties of types, specific kinds of types, and consider subtyping rules.
+
+Beyond the usual guarantees and documentation that a type system provides, types in Lore are central to **program flow and composition**. The type hierarchy of Lore directly plays into the definition of multi-functions and the run-time dispatch of function calls. The flexibility of the type system supports the many free ways in which Lore programs can be composed.
 
 - **TODO:** Add type constructor precedence rules.
 - **TODO:** Add type equivalence rules.
-
-
-
-### The Role of Types
-
-**TODO**
 
 
 
