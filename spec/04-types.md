@@ -166,29 +166,6 @@ val t2: ((Int, Int), Real) = ((1, 2), 5.44)
 
 
 
-##### Function Types
-
-**Function types** describe corresponding function values. That is, a function that maps an input value $a : A$ to an output value $b : B$ has the type `A => B`. This type constructor is right-associative.
-
-A **parameter list** is represented as a tuple. So for example, if we have a function with three parameters `(a: A, b: B, c: C)` and a returned type `R`, its function type would be `(A, B, C) => R`. This is equally possible for the output type, so `R` might be a tuple such as `(D, E, (F, G))`.
-
-###### Abstractness
-
-A function type is **never abstract** as at least one function will always be definable for any input/output type combination, such as a function ignoring the input and returning an arbitrary constant.
-
-###### Examples
-
-```
-val f: Int => Int = x => x * 2
-> f(2) = 4
-val hello: Person => String = p => "Hello, ${p.name}. How are you today?"
-> hello(marco) = "Hello, Marco. How are you today?"
-val currentWealth: Person => Real = p.wealth
-> currentWealth(medianPerson) = 100000.0
-```
-
-
-
 ##### Intersection Types
 
 Assume an **intersection type** `T1 & ... & Tn` for some arbitrary number of types $n >= 2$. Any value $v$ that satisfies the typing $v : \texttt{Ti}$ for *all* $1 \leq i \leq n$ also inhabits the type $\texttt{T1 & ... & Tn}$. The type constructor is associative and commutative. We call any type $\texttt{Ti}$ a **component type**.
@@ -300,6 +277,35 @@ A label type is **never abstract**.
 
 - If they are always abstract, we can define an abstract function `f(v: Class & Label)` over a concrete class type Class that gets called with a dynamically specialized type. That is, we create an object of type Class, attach the label type Label, and call the abstract function. It won't be able to dispatch to subclasses, as the class doesn't need to have subclasses. So that's obviously not correct.
 - **TODO:** Can we find a similar counterexample for *never abstract*?
+
+
+
+### Benched Types
+
+These types will not be included in the minimum viable language, but fully conceptualized and added some time later.
+
+
+
+##### Function Types
+
+**Function types** describe corresponding function values. That is, a function that maps an input value $a : A$ to an output value $b : B$ has the type `A => B`. This type constructor is right-associative.
+
+A **parameter list** is represented as a tuple. So for example, if we have a function with three parameters `(a: A, b: B, c: C)` and a returned type `R`, its function type would be `(A, B, C) => R`. This is equally possible for the output type, so `R` might be a tuple such as `(D, E, (F, G))`.
+
+###### Abstractness
+
+A function type is **never abstract** as at least one function will always be definable for any input/output type combination, such as a function ignoring the input and returning an arbitrary constant.
+
+###### Examples
+
+```
+val f: Int => Int = x => x * 2
+> f(2) = 4
+val hello: Person => String = p => "Hello, ${p.name}. How are you today?"
+> hello(marco) = "Hello, Marco. How are you today?"
+val currentWealth: Person => Real = p.wealth
+> currentWealth(medianPerson) = 100000.0
+```
 
 
 
