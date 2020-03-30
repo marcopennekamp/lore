@@ -1,10 +1,9 @@
 # Types
 
-In this chapter, we lay out the basics of Lore's type system. We define all kinds of types. At the end, we also look at typing rules that allow us to reason about types. Note that we have not yet added type constructor precedence to the grammar presented in this chapter. This will be refined at a later date.
+In this chapter, we lay out the basics of Lore's type system. We define properties of types, specific kinds of types, and consider subtyping rules.
 
 - **TODO:** Add type constructor precedence rules.
-- **TODO:** Add all typing rules (especially subtyping rules).
-- **TODO:** This should probably be placed before multi-functions.md, because we are defining a lot of stuff here that is used in multi-functions.md.
+- **TODO:** Add type equivalence rules.
 
 
 

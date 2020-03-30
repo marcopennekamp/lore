@@ -26,10 +26,11 @@ Hence, here is a **list of features** that will make up the minimum viable langu
 
 On the **language** side:
 
-- **Functions:** Multi-functions, function declarations, multiple dispatch, compile-time constraints.
-- **Classes:** Properties, fields, constructors, mutability, component declarations, `owned by` declarations, simple polymorphism, abstract classes.
-- **Types:** Product types, function types, intersection types, sum types, class types, component types, label types, abstractness, simple parametric types for lists, type inference.
+- **Types:** Product types, intersection types, sum types, class types, component types, label types, abstractness, simple parametric types for lists, type inference.
+  - We are excluding function types for now, but will add them very soon after a minimum version has been achieved.
   - Notably, we are excluding less important types such as singleton and envelope types.
+- **Functions:** Multi-functions, function declarations, multiple dispatch, compile-time constraints, callee fixing.
+- **Classes:** Properties, fields, constructors, mutability, component declarations, `owned by` declarations, simple polymorphism, abstract classes.
 - **Values:** Numbers, strings, booleans, objects (class instantiation), tuples, lists.
 - **Expressions:** Literals, very basic operators (such as addition; not even list operations), function calls, conditional expressions, loops, variable assignments, blocks.
   - Notably, we are not yet supporting the definition of anonymous functions.
@@ -43,6 +44,6 @@ On the **implementation** side:
 
 - **Parser**
 - **Abstract Syntax Tree**
-- **Correctness checks** for constraints, types, and anything else that needs checking.
+- **Correctness checks** for multi-function constraints, types, and anything else that needs checking.
 - **Transpiler** from the AST to Javascript.
 - A **Javascript run-time** that handles multiple-dispatch.
