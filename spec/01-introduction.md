@@ -26,12 +26,12 @@ Hence, here is a **list of features** that will make up the minimum viable langu
 
 On the **language** side:
 
-- **Types:** Product types, intersection types, sum types, class types, component types, label types, abstractness, simple parametric types for lists, type inference.
+- **Types:** Intersection types, sum types, product types, list types, map types, class types, component types, label types, abstractness, type inference.
   - We are excluding function types for now, but will add them very soon after a minimum version has been achieved.
   - Notably, we are excluding less important types such as singleton and envelope types.
 - **Functions:** Multi-functions, function declarations, multiple dispatch, compile-time constraints, callee fixing.
 - **Classes:** Properties, fields, constructors, mutability, component declarations, `owned by` declarations, simple polymorphism, abstract classes.
-- **Values:** Numbers, strings, booleans, objects (class instantiation), tuples, lists.
+- **Values:** Numbers, strings, booleans, objects (class instantiation), tuples, lists, maps.
 - **Expressions:** Literals, very basic operators (such as addition; not even list operations), function calls, conditional expressions, loops, variable assignments, blocks.
   - Notably, we are not yet supporting the definition of anonymous functions.
   - In the long run, almost all symbolic operations will be backed by multi-functions. For example, the comparison operator can be simply defined as a function. But to keep it simple for now, we will define a basic set of symbolic operations and then require standard multi-function calls. So, for example, comparing two strings would mean calling `areEqual(str1, str2)`.

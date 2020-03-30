@@ -116,6 +116,12 @@ Obviously this is a completely fabricated example, but you can see how the algor
 
 
 
+### Parametric Types
+
+Eventually, the goal will be to implement **parametric types** across the board, and provide this feature for classes, functions, and anywhere else it makes sense. For now, we want to keep the MVL simple and forgo parametric types altogether.
+
+
+
 ### Typing Rules
 
 For now, we are only defining subtyping rules here.
@@ -163,46 +169,13 @@ $$
 
 
 
-### List of Types
+### Type Inference
 
-##### Product Types
-
-**Product types** describe corresponding tuple values. A product type is denoted `(T1, ..., Tn)` for some arbitrary number of types $n \geq 1$. A tuple value is denoted `(a1, ..., an)` with $a_i : T_i$ for all $1 \leq i \leq n$. Any value or type at any position is called a **component** of the tuple.
-
-###### Own Values
-
-**Property 1:** $\mathrm{ownval}(T) = \mathrm{ownval}(A_1) \times \dots \times \mathrm{ownval}(A_n)$ given $T = (A_1, \dots, A_n)$.
-
-**Proof:** $\mathrm{ownval}(T) \subseteq \mathrm{ownval}(A_1) \times \dots \times \mathrm{ownval}(A_n)$
-
-Let $t = (a_1, \dots, a_n) \in \mathrm{ownval}(T)$. Assume there is an $a_i \notin \mathrm{ownval}(A_i)$. Hence, there is a subtype $S_i < A_i$ for which $a_i $ inhabits $S_i$, since $a_i : A_i$ will still need to hold. For $t$ to be an own value of $T$, it must hold for all $S < T$ that $t$ does not inhabit $S$. However, if $a_i$ inhabits $S_i$, $t$ inhabits a type $S = (S_1, \dots, S_n) < T$ with $S_j = A_j$ for all $j \neq i$. Thus, $t$ cannot be an own value of $T$, proving the statement by contradiction.
-
-**Proof:** $\mathrm{ownval}(T) \supseteq \mathrm{ownval}(A_1) \times \dots \times \mathrm{ownval}(A_n)$
-
-Let $t = (a_1, \dots, a_n) \in \mathrm{ownval}(A_1) \times \dots \times \mathrm{ownval}(A_n)$ and $t : T$. Assume there is such a $t$ for which $t \notin \mathrm{ownval}(T)$. Since $t$ inhabits $T$, there would have to be a subtype $S < T$ for which $t \in \mathrm{ownval}(S)$, with $S_i \leq A_i$ and $S_j < A_j$ for at least one $j$. We know that $\mathrm{ownval}(S) \subseteq \mathrm{ownval}(S_1) \times \dots \times \mathrm{ownval}(S_n)$ and hence $a_j \in \mathrm{ownval}(S_j)$. But this contradicts the definition of $t$ whereby $a_j \in \mathrm{ownval}(A_j)$, since own value sets are necessarily disjunct. We prove that tuple $t$ as defined must be an own value of T.
-
-###### Abstractness
-
-A product type is abstract if and only if **any of its component types are abstract**.
-
-**Proof:** *If any component type is abstract then the product type is abstract.*
-
-Let $T = (A_1, ..., A_n)$ with at least one abstract type $A_i$. For the purposes of a proof of contradiction, assume that a tuple $t = (a_1, …, a_n)$ with $a_j : A_j$ and $t \in \mathrm{ownval}(T)$ exists. If it did, $T$ would not be abstract. Since $t$ is an own value of $T$, it follows from Property 1 that $a_i$ must be an own value of $A_i$. This contradicts the assumption that $A_i$ is abstract as abstract types have no own values. Hence, $t$ cannot exist and thus $\mathrm{ownval}(T) = \empty$. Ultimately, $T$ is abstract.
-
-**Proof:** *If the product type is abstract then at least one component type is abstract.*
-
-Let $T = (A_1, ..., A_n)$ be an abstract product type. Hence, we have $\mathrm{ownval}(T) = \empty$. We know from Theorem 1 that $\mathrm{ownval}(T) = \mathrm{ownval}(A_1) \times ... \times \mathrm{ownval}(A_n)$. If all $A_i$ had at least one own value, $T$ would also have at least one own value. To achieve the empty set, at least one factor in the Cartesian product must be empty itself, hence at least one component type must have an empty own value set and thus be abstract.
-
-###### Examples
-
-```
-val t1: (String, String, Int) = ("Hello", "World", "v2")
-val t2: ((Int, Int), Real) = ((1, 2), 5.44)
-```
+We will define and implement an algorithm that will perform **type inference**, i.e. deciding the type for a giving expression, for correctness checks and *local variable declarations*. Function return types will *not* benefit from type inference, as we want function declarations to be stable.
 
 
 
-##### Intersection Types
+### Intersection Types
 
 Assume an **intersection type** `T1 & ... & Tn` for some arbitrary number of types $n >= 2$. Any value $v$ that satisfies the typing $v : \texttt{Ti}$ for *all* $1 \leq i \leq n$ also inhabits the type $\texttt{T1 & ... & Tn}$. The type constructor is associative and commutative. We call any type $\texttt{Ti}$ a **component type**.
 
@@ -212,7 +185,7 @@ $$
 $$
 
 
-###### Abstractness
+##### Abstractness
 
 An intersection type is considered abstract iff **any of its component types are abstract**. Note that intersection types don't have an ownval set.
 
@@ -220,7 +193,7 @@ If we think of values inhabiting a type as sets, the intersection type would be 
 
 Note that there is a second case in which the intersection of values is incompatible, i.e. we have two non-empty sets that are disjunct. We would theoretically have to assign abstractness to such an intersection type, but this is not computationally feasible in all cases. And in any case, such a type would be useless for practical purposes, since no function could ever be called with such an input type and no value could ever be assigned to a variable having such a type, as no value could ever satisfy the constraints. The whole idea of abstractness is that we can specialize functions and work with the subtypes, but specializing such an intersection type would only reduce the value set, hence there still wouldn't be any values we could call a function with.
 
-###### Should all intersection types be abstract?
+##### Should all intersection types be abstract?
 
 Some people might object that *all* intersection types should be abstract since they strictly don't define their own values. Right? **Not at all.** We specifically need to have concrete intersection types. Take the following example:
 
@@ -236,7 +209,7 @@ f(entity)
 
 Clearly, this code shouldn't compile. We can easily call `f` with the argument `entity`, which *will not* dispatch to any other function but the declared `f`. So how can this function be abstract? Only if we make the mistake and treat *all* intersection types as abstract. `+A & +B` must be treated as a concrete type, since `A` and `B` are both concrete. Anything else would be PL homicide.
 
-###### Examples
+##### Examples
 
 ```
 // Moves the entity based on its relative amount of health.
@@ -245,11 +218,11 @@ function move(entity: +Position & +Health) = ...
 
 
 
-##### Sum Types
+### Sum Types
 
 A **sum type** `T1 | ... | Tn` for some $n \geq 2$ describes values $v$ that satisfy the typing $v : \texttt{Ti}$ for *any* $1 \leq i \leq n$. The type constructor is associative and commutative.
 
-###### Abstractness
+##### Abstractness
 
 A sum type is **always abstract**. This might not be clear, so we have collected some reasons for this.
 
@@ -281,33 +254,86 @@ type Option[A] = 'None | Some[A]
 
 
 
-##### Class Types
+### Product Types
+
+**Product types** describe corresponding tuple values. A product type is denoted `(T1, ..., Tn)` for some arbitrary number of types $n \geq 1$. A tuple value is denoted `(a1, ..., an)` with $a_i : T_i$ for all $1 \leq i \leq n$. Any value or type at any position is called a **component** of the tuple.
+
+##### Own Values
+
+**Property 1:** $\mathrm{ownval}(T) = \mathrm{ownval}(A_1) \times \dots \times \mathrm{ownval}(A_n)$ given $T = (A_1, \dots, A_n)$.
+
+**Proof:** $\mathrm{ownval}(T) \subseteq \mathrm{ownval}(A_1) \times \dots \times \mathrm{ownval}(A_n)$
+
+Let $t = (a_1, \dots, a_n) \in \mathrm{ownval}(T)$. Assume there is an $a_i \notin \mathrm{ownval}(A_i)$. Hence, there is a subtype $S_i < A_i$ for which $a_i $ inhabits $S_i$, since $a_i : A_i$ will still need to hold. For $t$ to be an own value of $T$, it must hold for all $S < T$ that $t$ does not inhabit $S$. However, if $a_i$ inhabits $S_i$, $t$ inhabits a type $S = (S_1, \dots, S_n) < T$ with $S_j = A_j$ for all $j \neq i$. Thus, $t$ cannot be an own value of $T$, proving the statement by contradiction.
+
+**Proof:** $\mathrm{ownval}(T) \supseteq \mathrm{ownval}(A_1) \times \dots \times \mathrm{ownval}(A_n)$
+
+Let $t = (a_1, \dots, a_n) \in \mathrm{ownval}(A_1) \times \dots \times \mathrm{ownval}(A_n)$ and $t : T$. Assume there is such a $t$ for which $t \notin \mathrm{ownval}(T)$. Since $t$ inhabits $T$, there would have to be a subtype $S < T$ for which $t \in \mathrm{ownval}(S)$, with $S_i \leq A_i$ and $S_j < A_j$ for at least one $j$. We know that $\mathrm{ownval}(S) \subseteq \mathrm{ownval}(S_1) \times \dots \times \mathrm{ownval}(S_n)$ and hence $a_j \in \mathrm{ownval}(S_j)$. But this contradicts the definition of $t$ whereby $a_j \in \mathrm{ownval}(A_j)$, since own value sets are necessarily disjunct. We prove that tuple $t$ as defined must be an own value of T.
+
+##### Abstractness
+
+A product type is abstract if and only if **any of its component types are abstract**.
+
+**Proof:** *If any component type is abstract then the product type is abstract.*
+
+Let $T = (A_1, ..., A_n)$ with at least one abstract type $A_i$. For the purposes of a proof of contradiction, assume that a tuple $t = (a_1, …, a_n)$ with $a_j : A_j$ and $t \in \mathrm{ownval}(T)$ exists. If it did, $T$ would not be abstract. Since $t$ is an own value of $T$, it follows from Property 1 that $a_i$ must be an own value of $A_i$. This contradicts the assumption that $A_i$ is abstract as abstract types have no own values. Hence, $t$ cannot exist and thus $\mathrm{ownval}(T) = \empty$. Ultimately, $T$ is abstract.
+
+**Proof:** *If the product type is abstract then at least one component type is abstract.*
+
+Let $T = (A_1, ..., A_n)$ be an abstract product type. Hence, we have $\mathrm{ownval}(T) = \empty$. We know from Theorem 1 that $\mathrm{ownval}(T) = \mathrm{ownval}(A_1) \times ... \times \mathrm{ownval}(A_n)$. If all $A_i$ had at least one own value, $T$ would also have at least one own value. To achieve the empty set, at least one factor in the Cartesian product must be empty itself, hence at least one component type must have an empty own value set and thus be abstract.
+
+##### Examples
+
+```
+val t1: (String, String, Int) = ("Hello", "World", "v2")
+val t2: ((Int, Int), Real) = ((1, 2), 5.44)
+```
+
+
+
+### List Types
+
+**List types** describe corresponding lists. A list type is denoted `[T]` with `T` being the element type. Lists are **always concrete**. List types are *invariant* and don't have any subtyping rules.
+
+**TODO:** We could make *immutable* list types covariant.
+
+
+
+### Map Types
+
+**Map types** describe corresponding maps. A map type is denoted `A -> B` with `A` being the key type and `B` being the value type. Maps are **always concrete**. Map types are *invariant* and don't have any subtyping rules.
+
+**TODO:** We could make *immutable* map types covariant.
+
+
+
+### Class Types
 
 **Class types** are *declared types* that describe user-defined data structures.
 
-###### Abstractness
+##### Abstractness
 
 A class type is abstract if it has been **declared abstract**.
 
 
 
-##### Component Types
+### Component Types
 
 **Component types** describe values that have a specific component.
 
-###### Abstractness
+##### Abstractness
 
 A component type is abstract if its **underlying type is abstract**.
 
 
 
-##### Label Types
+### Label Types
 
 **Label types** are *declared types* that describe values without defining any on their own. A concrete value can never have a label type as its only type, so when looking at types for concrete values, label types *always* occur in conjunction with an intersection type. We can declare parameters using only label types, but would then have to call other functions (which are, eventually, specialized) that can use the label type.
 
 In other words, **labels can exist in two modes:** As types in their own right and as **type augmentations**. In the role of an augmentation, they are attached to some non-label type via an intersection type. As an augmentation, the label type is a component of an intersection type that has at least one non-label component.
 
-###### Abstractness
+##### Abstractness
 
 A label type is **neither abstract nor concrete** as an augmentation and **abstract** on its own.
 
