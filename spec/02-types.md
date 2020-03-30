@@ -268,14 +268,19 @@ A component type is abstract if its **underlying type is abstract**.
 
 **Label types** are *declared types* that describe values without defining any on their own. A concrete value can never have a label type as its only type, so when looking at types for concrete values, label types *always* occur in conjunction with an intersection type. We can declare parameters using only label types, but would then have to call other functions (which are, eventually, specialized) that can use the label type.
 
+In other words, **labels can exist in two modes:** As types in their own right and as **type augmentations**. In the role of an augmentation, they are attached to some non-label type via an intersection type. As an augmentation, the label type is a component of an intersection type that has at least one non-label component.
+
 ###### Abstractness
 
-A label type is **never abstract**.
+A label type is **neither abstract nor concrete** as an augmentation and **abstract** on its own.
 
-**TODO:** Why? Shouldn't it always be abstract?
+**Reasoning:**
 
-- If they are always abstract, we can define an abstract function `f(v: Class & Label)` over a concrete class type Class that gets called with a dynamically specialized type. That is, we create an object of type Class, attach the label type Label, and call the abstract function. It won't be able to dispatch to subclasses, as the class doesn't need to have subclasses. So that's obviously not correct.
-- **TODO:** Can we find a similar counterexample for *never abstract*?
+1. An **augmentation** label type takes backseat preference compared to a declared class type or any other type. 
+
+   This is to avoid the following scenario: Assume that augmentations *could* be abstract. Define an abstract function `f(v: Class & Label)` over a concrete class type `Class` that gets called with a dynamically specialized type. That is, we create an object of type `Class`, attach the label type `Label`, and call the abstract function. It won't be able to dispatch to specializing functions, as the class doesn't need to have subclasses, and there is no implementation to be found. So `Class & Label` obviously shouldn't be an abstract type.
+
+2. In other cases, label types **standing on their own** are abstract, as they are not *augmenting* any type, and we want to be able to declare abstract functions over self-standing label types.
 
 
 
