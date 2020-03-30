@@ -64,12 +64,13 @@ $$
 $$
 That is, $\mathrm{val}$ describes the set of all values that inhabit the given type, while $\mathrm{ownval}$ describes the set of all values that inhabit the given type but not any of its subtypes (that also have ownvals).
 
-It doesn't make sense to define these sets for all types. In general, defining $\texttt{ownval}$ is **useful for types that describe their own values**. These are: Class types, product types, function types (although thinking about function ownvals is largely useless), component types, and singleton types.
+It doesn't make sense to define these sets for all types. In general, defining $\texttt{ownval}$ is **useful for types that describe their own values**. These are: Class types, product types, function types (although thinking about function ownvals is largely useless), and singleton types.
 
 The following types **do not define an ownval set**:
 
 - **Intersection types and sum types** are classic *semantic type constructors* that serve a strict type-theoretic purpose. We do not need to think of them in terms of value sets. As they only "limit" or "aggregate" values, they don't define values themselves.
 - Likewise, **label types** might not be type constructors, but they are *semantic types* that merely augment existing types with additional information for the type system; they do not "touch" values in any way and thus don't define values themselves.
+- **Component types** describe *partial* shapes of already existing values. Thus, it makes little sense to speak about "own" values in the context of components.
 
 ##### Abstract Types
 
@@ -89,6 +90,12 @@ $$
 \frac{\mathrm{is\_declared}(s) \and \mathrm{is\_declared}(t) \and s \in \mathrm{sub}_D(t)}{s \leq t}
 $$
 Note that the current compiler implements this rule for labels and classes separately. If we unify the hierarchy in a tree, we can implement this rule for declared types in general.
+
+##### Component Types
+
+$$
+\frac{s \leq t}{\mathtt{+}s \leq \mathtt{+}t}
+$$
 
 ##### Intersection Types
 
@@ -272,6 +279,8 @@ A class type is abstract if it has been **declared abstract**.
 
 
 ##### Component Types
+
+**Component types** describe values that have a specific component.
 
 ###### Abstractness
 
