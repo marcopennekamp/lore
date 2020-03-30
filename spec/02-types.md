@@ -73,6 +73,45 @@ In general, a type $t$ is **abstract** if and only if $\mathrm{ownval}(t) = \emp
 
 Some types **don't have an $\mathtt{ownval}$ set**. In these cases, we define their abstractness over some other kind of type property, most likely in an algebraic manner.
 
+##### Default Naming Scheme
+
+In some instances, for example when accessing elements of a tuple, a name is required which is not readily available. To facilitate this, for every named type, Lore defines a **default naming scheme** that names the property.
+
+We have the following **rules**, given a type `T` to name:
+
+1. If `T` is a **class** type, take the lower camel case name of `T`.
+
+2. If `T` is a **component** type `+A`, take the name `hasA`.
+
+3. If `T` is an **intersection** type `T_1 & T_2 & ...`, name `T` according to the following rules:
+
+   1. If `T_i` shall not be named, ignore it.
+
+   2. Choose any `T_i` based on the following precedence:
+
+      Class types = intersection types > component types. Only choose `T_i` with the highest precedence.
+
+   3. If *exactly one* `T_i` has been chosen, determine the name of that type. Otherwise, don't name `T`.
+
+4. The following kinds of types **shall not be named:** Product types, function types, sum types, label types. One may attempt to name some of these (such as naming each part of a sum type and concatenating it together with "Or"), but the point is to provide a *simple* algorithm for *default* cases.
+
+Additional rules affect the **naming of tuple elements:**
+
+1. If any derived name appears multiple times in the tuple, these names are **enumerated** starting from 1. For example, `t1`, `t2`, etc.
+2. If an element at position `i` (0-indexed) **cannot be named**, it must be accessed using the `get` function.
+
+###### Example
+
+```
+const stuff: (Skeleton & Dead, +Health, Skeleton & Minotaur, (Player & Alive) & (+Health | +Wealth))
+stuff.skeleton
+stuff.hasHealth // Referring to an entity that has a health component, not the component itself.
+get(stuff, 2) // Can't derive a name from Skeleton & Minotaur, since both are entities.
+stuff.player
+```
+
+Obviously this is a completely fabricated example, but you can see how the algorithm works.
+
 
 
 ### Typing Rules
@@ -434,36 +473,3 @@ proposition Dead = (e: +Health) => e.health.isDepleted
 Note that this proposition is an assertion over the *entity* and not the component's type itself. Interpreting the context, this means that the entity is dead, *not* the health component.
 
 
-
-#### Type Properties
-
-##### Default Naming Scheme
-
-In some instances, for example when accessing elements of a tuple or when accessing the component of an entity, a name is required which is not readily available. To facilitate this, for every named type Lore defines a **default naming scheme** that names the property.
-
-We have the following rules, given a type `T` to name:
-
-1. If `T` is a record or envelope type, take the lowerCamelCase name of `T`.
-2. If `T` is a component type `+A`, take the name `hasA`.
-3. If `T` is an intersection type `T_1 & T_2 & ...`, name `T` according to the following rules:
-   1. If `T_i` shall not be named, ignore it.
-   2. Choose any `T_i` based on the following precedence: Record types = envelope types = intersection types > component types. Only choose `T_i` with the highest precedence.
-   3. If one `T_i` has been chosen, determine the name of that type. Otherwise (either none or too many types have been chosen), don't name `T`.
-4. The following kinds of types shall not be named: Product types, function types, sum types, proposition types, label types. One may attempt to name some of these (such as naming each part of a sum type and concatenating it together with "Or"), but the point is to provide a *simple* algorithm for *default* cases.
-
-Additional rules affect the naming of tuple elements:
-
-1. If any derived name appears multiple times in the tuple, these names are enumerated starting from 1. For example, `t1`, `t2`, etc.
-2. If an element at position `i` can not be named, it shall be referred to as `_i`.
-
-###### Example
-
-```
-val stuff: (Skeleton & Dead, +Health, Skeleton & Minotaur, (Player & Alive) & (+Health | +Wealth))
-stuff.skeleton
-stuff.hasHealth
-stuff._3 // Can't derive a name from Skeleton & Minotaur, since both are entities.
-stuff.player
-```
-
-Obviously this is a completely fabricated example, but you can see how the algorithm works.
