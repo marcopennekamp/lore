@@ -353,6 +353,10 @@ $$
 $$
 
 $$
+t = \mathtt{+}t' \implies \mathrm{ards}(t) = \{ \texttt{+}s \mid s \in \mathrm{ards}(t') \}
+$$
+
+$$
 t = (t_1, \dots, t_n) \implies \mathrm{ards}(t) = \mathrm{ards}(t_1) \times \dots \times \mathrm{ards}(t_n)
 $$
 
@@ -367,7 +371,7 @@ $$
 Some **explanations** are in order:
 
 - **concrete:** If $t$ is concrete, we do not return subtypes but only $t$ itself. Say we have an abstract function `f(a: A, b: B)` with `A` being abstract and `B` a concrete type. We don't want to force `B` to be specialized, as only `A` is abstract and therefore a function like `f(a: AI, b: B)` would be legal (assuming `AI` is a subtype of `A`). This rule includes function types, since they can never be abstract. In fact, we *have* to keep `B` as general as possible to ensure that values of `B` are also covered by an implementation and not just subtype values.
-- Note that we are ignoring the `Any` type, since declaring an abstract function over it is pure madness. (**TODO:** Maybe we should just disallow using any with abstract functions altogether.)
+- Note that we are ignoring the `Any` type, since declaring an abstract function over it is pure madness. (**TODO:** Maybe we should just disallow using Any with abstract functions altogether.)
 
 ---
 
@@ -420,9 +424,9 @@ The statement is shown when the antagonist has exhausted all of her options. The
 
 We consider the following **turns:**
 
-1. The antagonist recognizes that she **cannot insert new product types**, that is, transform a part of $t$ that is not already a product type into a product type, since then $s$ would not be a subtype of $t$. (Product types can only be subtypes of product types and Any.) The hero is delighted that the antagonist doesn't throw futile cases at her.
-2. The antagonist tries to change an **abstract declared type** $d$ within $t$. To replace the declared type, she necessarily has to choose a strict subtype $d' < d$. But then the hero points out that $\mathrm{ards}(t)$ is already replacing all abstract types with all their direct subtypes, so the antagonist's $s$ would be equal to at least one $s'$ or a subtype of it.
-3. The antagonist chooses to change a **concrete declared type** to some subtype. But then, as $t$ must be abstract, the antagonist didn't get rid of the abstractness of $s$ and thus isn't making a valid turn for the purposes of the game. The hero points out as much. And if the antagonist changes both a concrete and an abstract declared type, case (2) holds.
+1. The antagonist recognizes that she **cannot insert new product types, component types, or declared types**, that is, transform a part of $t$ that is not already a product/component/declared type into a product/component/declared type, since then $s$ would not be a subtype of $t$. (These types can only be subtypes of types of the same kind and Any.) The hero is delighted that the antagonist doesn't throw futile cases at her.
+2. The antagonist tries to change an **abstract declared or component type** $d$ within $t$. To replace the type, she necessarily has to choose a strict subtype $d' < d$. But then the hero points out that $\mathrm{ards}(t)$ is already replacing all abstract types with all their direct subtypes, so the antagonist's $s$ would be equal to at least one $s'$ or a subtype of it.
+3. The antagonist chooses to change a **concrete declared or component type** to some subtype. But then, as $t$ must be abstract, the antagonist didn't get rid of the abstractness of $s$ and thus isn't making a valid turn for the purposes of the game. The hero points out as much. And if the antagonist changes both a concrete and an abstract declared or component type, case (2) holds.
 4. The antagonist tries to narrow an existing part $d$ within $t$ with an **intersection type**. We define $d' = d \texttt{ & } u$ for some arbitrary type $u$. Considering intersection type subtyping rules, we have $d' < d$. The antagonist also has to replace all abstract types so that $s$ is concrete. Thus, we have a subtype $s < t$ that is *equal* to a type $s' \in \mathrm{ards}(\mathrm{in}(f))$ except that there is a part $d'$ instead of $d$. By the rules of subtyping, the hero points out that $d' < d \implies s < s' < t$ and thus the move isn't valid.
 5. The antagonist, otherwise out of options, attempts to introduce a **sum type**. Taking any part $d$ within $t$, we define $d' = d \mid u$ for some arbitrary type $u$. But then, by the rules of subtyping, $d'$ is not a subtype of $d$; quite the contrary, as $d < d'$. Thus, if the antagonist introduces a sum type, $s < t$ does not hold and the antagonist cannot make this move.
 
