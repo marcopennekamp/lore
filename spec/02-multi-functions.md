@@ -452,9 +452,19 @@ The algorithm simply iterates over $s \in \mathrm{ards}(\mathrm{in}(f))$ and che
 
 
 
-### Compile-Time Fixing
+### Fixing the Callee at Compile-Time
 
-(Fixing a function to call at compile time, i.e. bypassing run-time dynamic dispatch, which is our way to support "super" types of construct.)
+Sometimes, we might want to ensure *at compile-time* that we call a specific function instead of dispatching dynamically at run-time. We call this **fixing the callee at compile-time**.
+
+The mechanics are simple. To **fix the callee**, simply invoke a function as such:
+
+```
+f.fixed[T1, T2, ...](a1, a2, ...)
+```
+
+With `T1` etc. representing the desired input type and `a1` etc. the arguments. At compile-time, the compiler will calculate the Fit and Min sets as if the arguments had the types `T1`, `T2`, etc. *at run-time*. The callee will be chosen at compile time and called with the given arguments at run-time.
+
+The goal is, ultimately, to have `f.fixed[T1, T2, …]` return a **function value**. As we are not supporting anonymous functions *for now*, the `fixed` operation will require arguments to be passed. This restriction will be relaxed as soon as we support function values.
 
 
 
@@ -504,7 +514,7 @@ function applyDamage(e: +Health & +Resistances, damage: Damage) {
   const damageAfterResistances = damage.scale(1.0 - resistance)
   // We can fix the function we want to call at compile-time!
   // This is akin to a "super" call in e.g. Java.
-  applyDamage[+Health, Damage](e, damageAfterResistances)
+  applyDamage.fixed[+Health, Damage](e, damageAfterResistances)
 }
 // TODO: The following is just an idea: If we have multiple functions in min, we invoke the function that has a higher priority. All functions have a priority of 0, unless declared otherwise. Is this a cool and useful feature or a recipe for a mess?
 // If we don't do this, we would have to implement the effects of Immune twice: once with +Health and once with +Health & +Resistances.
@@ -516,12 +526,12 @@ function applyDot(dot: Dot, e: +Health) {
   applyDamage(e, dot.damage)
 }
 function applyDot(dot: PlagueDot, e: +Health) {
-  applyDot[Dot, +Health](dot, e)
-  // Spread the plague to other nearby entities.
+  applyDot.fixed[Dot, +Health](dot, e)
+  // ... Spread the plague to other nearby entities.
 }
 function applyDot(dot: TruefireDot, e: +Health & +Resistances) {
-  // Reduce resistances of the entity for one second.
-  applyDot[Dot, +Health](dot, e)
+  // ... Reduce resistances of the entity for one second.
+  applyDot.fixed[Dot, +Health](dot, e)
 }
 ```
 
