@@ -75,6 +75,8 @@ Some types **don't have an $\mathtt{ownval}$ set**. In these cases, we define th
 
 ##### Default Naming Scheme
 
+*Not considered for implementation of the MVL.*
+
 In some instances, for example when accessing elements of a tuple, a name is required which is not readily available. To facilitate this, for every named type, Lore defines a **default naming scheme** that names the property.
 
 We have the following **rules**, given a type `T` to name:
