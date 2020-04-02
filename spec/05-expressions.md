@@ -35,6 +35,16 @@ For now, we want to keep literal grammar to a minimum. Hence, we do not support 
 
 
 
+##### Booleans
+
+**TODO:** Long-term, we could define booleans within Lore as singleton types.
+
+**TODO:** We could make `Boolean` abstract, introduce two subtypes `True` and `False`, and allow dispatching on boolean "types". This is definitely ~~a whacky~~ an idea, and either very cool or very stupid. One problem I see is that when a boolean could be dispatched on as a flag, what we really want is a label type: `function contains(list: [a], value: a, isSorted: Boolean)` and `function contains(list: [a], value: a, isSorted: True)` etc. compared to `function contains(list: [a], value: a)` and `function contains(list: [a] & Sorted, value: a)`.
+
+Lore supports **booleans**. Their type is `Boolean`. We will implement them using the standard Javascript boolean type. There are two boolean **values:** `true` and `false`. 
+
+
+
 ##### Strings
 
 Lore supports UTF-8 **strings**. Their type is `String`. We will implement strings using the standard Javascript string type. Javascript's string functions will *not* be available by default; instead, Lore will define its own functions.
@@ -49,7 +59,7 @@ The following **escaped characters** are available: `\n`, `\t`, `\'`, `\$`.
 
 We will add **multi-line strings** in another version of Lore.
 
-###### Examples
+###### Example
 
 What's possible now:
 
