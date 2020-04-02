@@ -297,7 +297,7 @@ val t2: ((Int, Int), Real) = ((1, 2), 5.44)
 
 **TODO:** We could make *immutable* list types covariant.
 
-**TODO:** Maybe introduce a special type for indexed lists, such as `#[A]`, which could be used if fast index-based access is required. Since this is mainly for performance reasons, we can add it when the MVL is done.
+**TODO:** Maybe introduce a special type for indexed lists, such as `#[A]`, which could be used if fast index-based access is required. Since this is mainly for performance reasons, we can add it when the MVL is done. (For now, we use Javascript arrays to implement lists, so this is the default anyway.)
 
 
 

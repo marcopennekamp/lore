@@ -106,3 +106,37 @@ Lore supports **lists** as first-class constructs. A list is a homogenous, linea
 You can **construct** a list by putting comma-separated elements inside square brackets: `[a, b, c]`. The empty list is denoted simply `[]`.
 
 Later, we can add **list comprehensions**.
+
+
+
+##### Maps
+
+Lore supports **maps** as first-class constructs. A map is a homogenous, indexed collection of key/value pairs. Map types are denoted `A -> B`. For now, maps are implemented using initially empty Javascript objects.
+
+You can **construct** a map with the following syntax: `%{ k1 -> v1, k2 -> v2, k3 -> v3 }`. The empty map is denoted `%{ }`.
+
+**Note:** Native **Javascript objects** will likely be represented as maps with a string key and a dynamic value type. Of course, we have not yet introduced the dynamic type, and so this will not be possible just yet.
+
+###### Example
+
+We can define a map from strings to integers:
+
+```
+const points = %{ 'Ameela' -> 120, 'Bart' -> 14, 'Morrigan' -> 50 }
+// points: String -> Int
+```
+
+
+
+##### Instantiation
+
+Lore supports **object instantiation**, i.e. the construction of an object value given a class constructor.
+
+**TODO:** Write this once we have written the classes and components spec document.
+
+
+
+
+
+
+
