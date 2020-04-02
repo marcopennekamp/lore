@@ -2,6 +2,8 @@
 
 **TODO:** What about attaching components at run-time? We need that feature, but probably not for the first language version. This should be developed hand-in-hand with dynamic specialization.
 
+**TODO:** How do we create classes that override component types? In general, class property types can't be overridden in subclasses, because properties can both be set and gotten by the parent class. But: Shouldn't classes be covariant in the components they define, as components cannot be swapped out, only set with the constructor?
+
 
 
 ### Records
