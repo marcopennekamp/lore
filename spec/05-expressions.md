@@ -10,6 +10,8 @@ This document outlines all valid **expressions** found in Lore.
 
 *On the first day, there was the **value**.* We cannot define complex expressions without having values first. We also consider their types, if they haven't been defined yet.
 
+
+
 ##### Numbers
 
 **TODO:** Can `Real` and `Int` be extended?
@@ -95,3 +97,12 @@ get(t, 0) // a
 get(t, 2) // c
 ```
 
+
+
+##### Lists
+
+Lore supports **lists** as first-class constructs. A list is a homogenous, linear collection of an arbitrary number of elements. List types are denoted `[A]`. For now, lists are implemented using Javascript arrays, so they are vector-like structures. We will eventually differentiate between indexed lists and linked lists.
+
+You can **construct** a list by putting comma-separated elements inside square brackets: `[a, b, c]`. The empty list is denoted simply `[]`.
+
+Later, we can add **list comprehensions**.
