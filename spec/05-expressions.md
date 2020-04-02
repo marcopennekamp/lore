@@ -79,3 +79,19 @@ const p: Person = ...
 const announcement = '${p.name}, you have $k apples. Please claim your ${if (k < 10) 'free' else '1000\$'} apple at the reception.'
 ```
 
+
+
+##### Tuples
+
+Lore supports **tuples**. As described by product types, tuples are fixed-size, heterogenous lists of values. Tuples are simply created by putting parentheses around comma-separated values: `(a, b, c)`. A tuple value's type is the product type of the respective element types.
+
+###### Example
+
+**TODO:** How can we define `get` such that it supports tuples of arbitrary length? Give every tuple type a supertype called `Product` and implement `get` via multiple dispatch?
+
+```
+const t = (a, b, c)
+get(t, 0) // a
+get(t, 2) // c
+```
+
