@@ -6,13 +6,7 @@ This document outlines all valid **expressions** found in Lore.
 
 
 
-### Literals & Value Constructors
-
-*On the first day, there was the **value**.* We cannot define complex expressions without having values first. We also consider their types, if they haven't been defined yet.
-
-
-
-##### Numbers
+### Numbers
 
 **TODO:** Can `Real` and `Int` be extended?
 
@@ -35,9 +29,26 @@ For now, we want to keep literal grammar to a minimum. Hence, we do not support 
 - **Integers:** `x` or `-x`, x being any number from 0 to MAX_SAFE_INTEGER.
 - **Reals:** `x.y` or `-x.y`, with both x and y being numbers. We do not allow notations such as `.0` or `1.`.
 
+##### Arithmetic Operators
+
+The following **arithmetic operators** can be used on numbers. Note that the remainder operator will be implemented as a function.
+
+```
+a + b  // Addition
+a - b  // Subtraction
+a * b  // Multiplication
+a / b  // Division
+-a     // Negation
+```
+
+Arithmetic operations have the following **conversion rules:** 
+
+- If both arguments are real or integer, the result is also of the same type.
+- If one of the arguments is real, the result will also be real.
 
 
-##### Booleans
+
+### Booleans
 
 **TODO:** Long-term, we could define booleans within Lore as singleton types.
 
@@ -47,7 +58,7 @@ Lore supports **booleans**. Their type is `Boolean`. We will implement them usin
 
 
 
-##### Strings
+### Strings
 
 Lore supports UTF-8 **strings**. Their type is `String`. We will implement strings using the standard Javascript string type. Javascript's string functions will *not* be available by default; instead, Lore will define its own functions.
 
@@ -83,7 +94,7 @@ const announcement = '${p.name}, you have $k apples. Please claim your ${if (k <
 
 
 
-##### Tuples
+### Tuples
 
 Lore supports **tuples**. As described by product types, tuples are fixed-size, heterogenous lists of values. Tuples are simply created by putting parentheses around comma-separated values: `(a, b, c)`. A tuple value's type is the product type of the respective element types.
 
@@ -99,7 +110,7 @@ get(t, 2) // c
 
 
 
-##### Lists
+### Lists
 
 Lore supports **lists** as first-class constructs. A list is a homogenous, linear collection of an arbitrary number of elements. List types are denoted `[A]`. For now, lists are implemented using Javascript arrays, so they are vector-like structures. We will eventually differentiate between indexed lists and linked lists.
 
@@ -109,7 +120,7 @@ Later, we can add **list comprehensions**.
 
 
 
-##### Maps
+### Maps
 
 Lore supports **maps** as first-class constructs. A map is a homogenous, indexed collection of key/value pairs. Map types are denoted `A -> B`. For now, maps are implemented using initially empty Javascript objects.
 
@@ -128,7 +139,7 @@ const points = %{ 'Ameela' -> 120, 'Bart' -> 14, 'Morrigan' -> 50 }
 
 
 
-##### Instantiation
+### Objects
 
 Lore supports **object instantiation**, i.e. the construction of an object value given a class constructor.
 
