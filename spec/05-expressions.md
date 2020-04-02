@@ -31,20 +31,41 @@ Internally, integers are represented as reals, but with additional **guarantees 
 For now, we want to keep literal grammar to a minimum. Hence, we do not support scientific notation and only support base 10. Here are the **valid number formats:**
 
 - **Integers:** `x` or `-x`, x being any number from 0 to MAX_SAFE_INTEGER.
-- **Reals:** `x.y` or `-x.y`, with both x and y being numbers.
+- **Reals:** `x.y` or `-x.y`, with both x and y being numbers. We do not allow notations such as `.0` or `1.`.
 
 
 
 ##### Strings
 
-**Strings** are interpolated by default.
+Lore supports UTF-8 **strings**. Their type is `String`. We will implement strings using the standard Javascript string type. Javascript's string functions will *not* be available by default; instead, Lore will define its own functions.
+
+Conceptually, a string is *not* a list of characters. **A string is just a string.** If you access a single character at a specific index either with iteration or the `character` function, you will get another string. We believe this is a more unified framework than adding a type just for characters. (Not to mention that, if we called a type `Character`, we'd clash with game developers who might want to have a type `Character`. We'll implement namespaces, of course, but even then, it'll be useful not to have this type name reserved.)
+
+A string is always written within **single quotes**: `'text'`. We reserve the ability to use the double quotes symbol for string-related features later on or something else entirely.
+
+Strings are **interpolated** by default. You will be able to use `${expr}` for complex expressions, but for now `$s`, the shorthand for single variables, is the only way to interpolate strings.
+
+The following **escaped characters** are available: `\n`, `\t`, `\'`, `\$`.
+
+We will add **multi-line strings** in another version of Lore.
 
 ###### Examples
 
+What's possible now:
+
 ```
-val k = 10
-val p: Person = /* ... */
-val announcement = "${p.name}, you have $k apples. Please claim your ${if (k < 10) "free" else "very costly"} apple at the reception."
-val s = "'I'm rich! I made 1000\$ today!' he said. 'You're a moron, Peter,' Adelaide said."
+const k = 10
+const p: Person = ...
+const name = p.name
+const price = if (k < 10) 'free' else '1000\$'
+const announcement = '$name, you have $k apples. Please claim your $price apple at the reception.'
+```
+
+Once we allow interpolating complex expressions, this will be possible:
+
+```
+const k = 10
+const p: Person = ...
+const announcement = '${p.name}, you have $k apples. Please claim your ${if (k < 10) 'free' else '1000\$'} apple at the reception.'
 ```
 
