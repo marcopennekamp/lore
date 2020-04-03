@@ -278,6 +278,69 @@ Note that either `expr` (or even `cond`) may be a block. The else part is, of co
 
 
 
+### Repetition
+
+**Repetitions** represent repeating control flow. For now, we support loops and iteration.
+
+##### Loops
+
+In Lore, a **loop** repeats some piece of code until a given boolean expression is false. This is expressed by the archetypal Repeat-While:
+
+```
+repeat while (cond) expr
+repeat expr while (cond)
+```
+
+The first version checks the condition first, then executes the expression (if the condition is true). The second version executes the expression first, then checks the condition (and terminates the loop if the condition is false).
+
+##### Iteration
+
+An **iteration** iterates over some kind of collection. We define the archetypal For as such:
+
+```
+for (e1 in col1, e2 in col2, ...) expr
+```
+
+In the syntax above, `col2` is fully iterated for each `e1` and so on, so supplying multiple `in` declarations effectively turns the For into **nested iteration**.
+
+For now, we only define iteration for **elements in lists and maps**. Ultimately, we want any type defining a monadic `flatMap` to be iterable with a For expression.
+
+As we don't support pattern matching yet, **map iteration** looks like this:
+
+```
+for (kv in m) {
+  const key = get(kv, 0)
+  const value = get(kv, 1)
+}
+```
+
+To iterate over a list of indices, you can use a **range** function. Conceptually, it creates a *lazily* evaluated list of indices. We might ultimately support ranges with prettier operators.
+
+```
+for (i in range(0, 10)) { // 0 inclusive, 10 exclusive
+  println(i)
+}
+```
+
+Internally, we can of course replace the range construction with a standard index-increment for-loop. Using a range is certainly more concise and clearer than writing `for (const i = 0; i < 10; i += 1)`. Not that that's Lore code, but it *could* be. *Shudder.*
+
+##### Yield
+
+All repetitions return a list of values. When a loop is entered, conceptually, we create an empty list to which elements are supposed to be appended. The **yield expression** is the way to append a value to that list. The yield expression itself evaluates to `()`. It does *not* interrupt program flow, that is, you can yield twice or more in the same iteration.
+
+```
+const names = for (animal in animals) yield animal.name
+```
+
+If `yield` is used, the Lore compiler requires that the value returned by the repetition expression is used, i.e. either assigned to a variable or enclosed in a larger expression.
+
+In the actual implementation, we can of course **optimize** two cases:
+
+- When the value of a repetition isn't assigned or used, we can forgo creating and filling a list.
+- If there are no `yield` expressions within the block of a repetition, we can simply designate the empty list as the result.
+
+
+
 ### Variable Assignments
 
 **Note:** Assignments return the Unit type.
