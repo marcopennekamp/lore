@@ -240,6 +240,32 @@ Blocks also give you the luxury of **lexical scoping**, so make sure you declare
 
 
 
+### Multi-Function Calls
+
+**TODO:** In a later version of Lore, we can support a feature such as Swift's trailing closures, maybe add some way to pass two or more closures.
+
+**Multi-Function calls** are the heart of Lore. Their syntax is simple:
+
+```
+name(a1, a2, ...)
+```
+
+That's it! Types will be checked, values will be dispatched, and some function will be called. The **semantics** of multi-function calls are defined in [multi-functions](03-multi-functions.md).
+
+We say *multi-function call*, because it only becomes a function call at run-time, when a function has been chosen according to the dispatch semantics. At compile-time, we are calling a whole multi-function with a bounded but unknown input type.
+
+##### Fixed Invocation
+
+Instead of dispatching at run-time, you can **fix a function to call at compile-time**, as defined in *Fixing the Callee at Compile-Time*. The syntax for this is as such:
+
+```
+f.fixed[T1, T2, ...](a1, a2, ...)
+```
+
+In the long term, `f.fixed[T1, T2, ...]` is supposed to return a function value. As we are not supporting these for now, the whole syntax is parsed and compiled as one big expression.
+
+
+
 ### Variable Assignments
 
 **Note:** Assignments return the Unit type.
