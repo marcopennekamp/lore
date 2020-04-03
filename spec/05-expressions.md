@@ -266,6 +266,18 @@ In the long term, `f.fixed[T1, T2, ...]` is supposed to return a function value.
 
 
 
+### Conditional Expressions
+
+Lore will support a variety of **conditional expressions** (especially switch expressions). For now, we will have to make do with If:
+
+```
+if (cond) expr1 else expr2
+```
+
+Note that either `expr` (or even `cond`) may be a block. The else part is, of course, optional.
+
+
+
 ### Variable Assignments
 
 **Note:** Assignments return the Unit type.
