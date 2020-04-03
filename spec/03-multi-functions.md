@@ -38,11 +38,13 @@ func-param  --> id [':' type]?
 
 #### Functions
 
-*Definition.* A **function** $f$ is a mapping from an input type $\mathrm{in}(f)$ to an output type $\mathrm{out}(f)$. Each function has a **full name**, which we denote $\mathrm{name}(f)$. Note that the `id` of a function (as specified in the grammar above) is *not* necessarily equal to its full name, as the name could further be qualified with modules or packages (which we will introduce in a later revision of the spec), which are part of the full name of a function.
+*Definition.* A **function** $f$ is a mapping from an input type $\mathrm{in}(f)$ to an output type $\mathrm{out}(f)$ (also called the *return type*). Each function has a **full name**, which we denote $\mathrm{name}(f)$. Note that the `id` of a function (as specified in the grammar above) is *not* necessarily equal to its full name, as the name could further be qualified with modules or packages (which we will introduce in a later revision of the spec), which are part of the full name of a function.
 
 The **body** of a function is an *expression* $\mathrm{body}(f)$. The type of $\mathrm{body}(f)$ must be a *subtype* of $\mathrm{out}(f)$. A body may be empty, in which case we write $\mathrm{body}(f) = ()$ and call the function **abstract**. An abstract function may not be called at run-time.
 
 The **input type** of a function $f$ is defined as follows: Let $[t_1, \dots, t_n]$ be the list of parameter types for each parameter $p_i$. Then we have $\mathrm{in}(f) = (t_1, \dots, t_n)$, that is, an n-tuple of the given parameter types.
+
+Declaring a function's **output type** is optional. If the output type is omitted, it is by default assumed to be the unit type `()`. In such a case, whatever body evaluates to is ignored and the unit tuple `()` is returned instead.
 
 We denote the **set of all possible functions** as $\mathbb{F}$.
 
