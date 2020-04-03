@@ -223,6 +223,31 @@ To **define order** for a given type, specialize the function `isLessThan(a, b)`
 
 
 
+### Blocks
+
+A **block** is a sequence of expressions, the last of which becomes the value of the block. Yes, *blocks are expressions*. You can write code like this:
+
+```
+const results = {
+  const a = 5
+  const b = 10.0
+  const c = getReason()
+  if (c == 'business') a * b else a / b
+}
+```
+
+Blocks also give you the luxury of **lexical scoping**, so make sure you declare variables exactly where you need them. In the example above, neither a, b, nor c are visible outside the block, so you don't need to pollute the outer scope with some truly temporary variables.
+
+
+
 ### Variable Assignments
 
 **Note:** Assignments return the Unit type.
+
+
+
+### Return
+
+The **return** *statement* returns a value from a function. We admit, even though we managed to turn even variable assignments into expressions (without making it messy, like in C), there is just no way a special control statement like return could be an expression. The syntax is simply `return expr`, with expr simply evaluating to the value to return.
+
+**Note:** Use return only if you 'desperately' need to return early from a function. Prefer *using blocks and control structures as expressions*.

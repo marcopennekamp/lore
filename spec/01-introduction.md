@@ -31,7 +31,7 @@ On the **language** side:
   - Notably, we are excluding less important types such as singleton and envelope types.
 - **Functions:** Multi-functions, function declarations, multiple dispatch, compile-time constraints, callee fixing.
 - **Classes:** Properties, fields, constructors, mutability, component declarations, `owned by` declarations, simple polymorphism, abstract classes.
-- **Expressions:** Literals and value constructors (numbers, strings, booleans, tuples, lists, maps, instantiation), very basic operators (such as addition; not even list operations), blocks, function calls, conditional expressions, loops, variable assignments.
+- **Expressions:** Literals and value constructors (numbers, strings, booleans, tuples, lists, maps, instantiation), very basic operators (such as addition; not even list operations), blocks, function calls, conditional expressions, loops, variable assignments, return.
   - Notably, we are not yet supporting the definition of anonymous functions.
   - In the long run, almost all symbolic operations will be backed by multi-functions. For example, the comparison operator can be simply defined as a function. But to keep it simple for now, we will define a basic set of symbolic operations and then require standard multi-function calls. So, for example, comparing two strings would mean calling `areEqual(str1, str2)`.
 - **TODO:** One **big question** is how far we'll support Javascript interop in the MVL. We would have to introduce dictionaries (values and type), dynamic types (as a type called Dynamic or alternatively when types are omitted from declarations), and duck typing.
