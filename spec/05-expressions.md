@@ -56,6 +56,20 @@ Arithmetic operations have the following **conversion rules:**
 
 Lore supports **booleans**. Their type is `Boolean`. We will implement them using the standard Javascript boolean type. There are two boolean **values:** `true` and `false`. 
 
+##### Logical Operators
+
+The following **logical operators** can be used on booleans. All arguments have to be `Boolean` values.
+
+```
+a & b  // Conjunction
+a | b  // Disjunction
+~a     // Logical Not
+```
+
+We define *logical not* using a **tilde** so we can reserve the `?!` combo of characters for handling optional values.
+
+**TODO:** We could consider, once we have introduced nullable/optional values (`Int?`), to turn the logical operators into operators that accept any argument types and return "truthy" values.
+
 
 
 ### Strings
@@ -108,6 +122,10 @@ get(t, 0) // a
 get(t, 2) // c
 ```
 
+##### Unit
+
+Lore supports a **unit** value, which is simply the empty tuple. It is written `()` and has the type `()`. The unit value is special in Lore, as it is the *default return type* of functions. If you do not declare a return type, Lore assumes you don't want to return anything, and so the empty tuple is returned. Additionally, unit is the return type and value of variable assignments.
+
 
 
 ### Lists
@@ -151,3 +169,6 @@ Lore supports **object instantiation**, i.e. the construction of an object value
 
 
 
+### Variable Assignments
+
+**Note:** Assignments return the Unit type.
