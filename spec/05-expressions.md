@@ -46,6 +46,10 @@ Arithmetic operations have the following **conversion rules:**
 - If both arguments are real or integer, the result is also of the same type.
 - If one of the arguments is real, the result will also be real.
 
+##### Equality and Order
+
+Numbers are equal and ordered in accordance with the rules of sanity. Integers and reals can be mixed in comparisons without any issues.
+
 
 
 ### Booleans
@@ -69,6 +73,10 @@ a | b  // Disjunction
 We define *logical not* using a **tilde** so we can reserve the `?!` combo of characters for handling optional values.
 
 **TODO:** We could consider, once we have introduced nullable/optional values (`Int?`), to turn the logical operators into operators that accept any argument types and return "truthy" values.
+
+##### Equality and Order
+
+True is equal to true, false is equal to false. Booleans are not ordered.
 
 
 
@@ -106,6 +114,16 @@ const p: Person = ...
 const announcement = '${p.name}, you have $k apples. Please claim your ${if (k < 10) 'free' else '1000\$'} apple at the reception.'
 ```
 
+##### String Operators
+
+One might expect the plus operator to support **string concatenation**. This is not the case in Lore. In most cases, *interpolation* will be the preferable option compared to operative concatenation. In all other cases, most likely when you're working algorithmically with strings, concatenation is provided as a function.
+
+(**Note:** This will obviously change when we introduce user-defined operators.)
+
+##### Equality and Order
+
+Two strings are equal if they have the same length and characters. Strings are ordered alphabetically.
+
 
 
 ### Tuples
@@ -126,6 +144,10 @@ get(t, 2) // c
 
 Lore supports a **unit** value, which is simply the empty tuple. It is written `()` and has the type `()`. The unit value is special in Lore, as it is the *default return type* of functions. If you do not declare a return type, Lore assumes you don't want to return anything, and so the empty tuple is returned. Additionally, unit is the return type and value of variable assignments.
 
+##### Equality and Order
+
+Two tuples are equal if they have the same size and their elements are equal.
+
 
 
 ### Lists
@@ -135,6 +157,10 @@ Lore supports **lists** as first-class constructs. A list is a homogenous, linea
 You can **construct** a list by putting comma-separated elements inside square brackets: `[a, b, c]`. The empty list is denoted simply `[]`.
 
 Later, we can add **list comprehensions**.
+
+##### Equality and Order
+
+Two lists are equal if they have the same lengths and each of their elements, considered in order, are equal. Lists are not ordered by default.
 
 
 
@@ -155,6 +181,10 @@ const points = %{ 'Ameela' -> 120, 'Bart' -> 14, 'Morrigan' -> 50 }
 // points: String -> Int
 ```
 
+##### Equality and Order
+
+Two maps are equal if for each key/value pair in the first map, there is a key/value pair in the second map, and vice versa. Maps don't define an order by default.
+
 
 
 ### Objects
@@ -163,9 +193,33 @@ Lore supports **object instantiation**, i.e. the construction of an object value
 
 **TODO:** Write this once we have written the classes and components spec document.
 
+##### Equality and Order
+
+Object equality is defined as **referential equality** by default.
 
 
 
+### Comparison Operators
+
+Lore supports the following **comparison operators:**
+
+```
+a == b   // Equality
+a =/= b  // Inequality
+a < b    // Less than
+a <= b   // Less than or equal
+a > b    // Greater than
+a >= b   // Greater than or equal
+```
+
+To **define equality** for a given type, you can specialize the function `isEqual(a, b)`. Inequality is strictly defined as `~isEqual(a, b)`.
+
+```
+function isEqual(c1: Car, c2: Car): Boolean = ...
+function isEqual(c1: SportsCar, c2: CheapCar): Boolean = false
+```
+
+To **define order** for a given type, specialize the function `isLessThan(a, b)`. The *greater than* operator is strictly defined as `~(a < b) & a =/= b`.
 
 
 
