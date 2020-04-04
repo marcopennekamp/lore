@@ -37,6 +37,7 @@ On the **language** side:
 - **TODO:** One **big question** is how far we'll support Javascript interop in the MVL. We would have to introduce dictionaries (values and type), dynamic types (as a type called Dynamic or alternatively when types are omitted from declarations), and duck typing.
 - **Not supported:** Namespacing/modules, import/require, class/function/field visibility, dynamic specialization and generalization, pattern matching.
   - For this basic version of Lore, we will just compile all files in the source dictionary together and then invoke a main function. We won't yet support namespaces or imports.
+    - **TODO:** We should reconsider whether we shouldn't support basic namespaces. (Maybe even without imports.) The problem is that we have some Lore types and functions which really should be part of a namespace, such as `range` (could be part of a `collections` namespace, or the `lore` namespace) and `println` (could be part of a `lore` namespace).
   - Dynamic specialization and generalization: This is a super-powerful feature which will probably be a headache to implement, so I'm leaving it out of the first version for now. It's better to focus on it once a base has been established.
 
 On the **implementation** side:

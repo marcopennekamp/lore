@@ -4,6 +4,8 @@ This document outlines all valid **expressions** found in Lore.
 
 **TODO:** How do we implement type casts / conversions?
 
+**TODO:** Consider introducing Swift-style `guard` statements with a twist: They operate within blocks. If the condition is false, continue the code, otherwise *return the value of the else part from the block*. I think this could be super useful in game development.
+
 
 
 ### Numbers
