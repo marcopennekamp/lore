@@ -1,4 +1,4 @@
-# Records, Entities and Components
+# Classes, Entities and Components
 
 **TODO:** What about attaching components at run-time? We need that feature, but probably not for the first language version. This should be developed hand-in-hand with dynamic specialization.
 
@@ -6,9 +6,13 @@
 
 
 
-### Records
+### Classes
 
-A **record** is a nominal data type which defines a set of properties from an associated constructor.
+A **class** is a nominal data type which defines a set of properties.
+
+
+
+
 
 ```
 record R(val a: A, b: B, mut c: C) {
@@ -79,7 +83,9 @@ As you can see, the constructor takes the underlying values as arguments and doe
 
 ### Entities
 
-An **entity** is a record associated with one or more components. In addition to property definitions permitted in records, an entity type may also define components.
+**Idea:** Every entity defines a list of components which can be filtered and iterated over.
+
+An **entity** is a class associated with one or more components. In addition to property definitions permitted in records, an entity type may also define components.
 
 ```
 entity E(...) {
