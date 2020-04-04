@@ -349,8 +349,47 @@ You can access the **property** of an object with the `.` notation. The type of 
 
 
 
+### Variable Declarations and Assignments
+
+A **variable declaration** lets you define a new variable, while an **assignment** lets you assign a value to a variable or property.
+
+Here is the **syntax** of declarations and assignments:
+
+```
+const x: T = v1  // immutable variable declaration
+let x: T = v1    // mutable variable declaration
+x = v2           // variable assignment (only valid if x is mutable)
+```
+
+A **declaration** creates a new variable. The type of the variable will be inferred from the assignment, but you can specify the type manually. For now, values need to be manually assigned to declared variables, even if they are desired to be `0`, `''`, `[]`, etc. That is, there are no default assignments. In the future, we can introduce a multi-function `lore.default` (dispatching on some kind of type object, maybe `Type[T]`) that returns a default value for a type (`lore` would be the namespace of this function, which would be the namespace for special language definitions).
+
+Variables can be **mutable or immutable**. Only mutable variables can be assigned to after setting their value with the initial declaration. We recommend to declare all variables as immutable unless mutability is specifically needed.
+
+An **assignment** overwrites the value of a variable with some new value. The value on the right side must be compatible with the type of the variable. The name on the left side may be a variable or a property:
+
+```
+const x = 0.0
+x = 5                        // Variable assignment
+character.name = 'Weislaus'  // Property assignment
+character.Position.x = x     // Deep property assignment
+```
+
+Both declarations and assignments are technically expressions and they return the **unit type**. However, there is an additional restriction for declarations and assignments: They can only stand in specific places in the program, and never embedded within most expressions. This ensures that the order of execution for assignments is well defined. An assignment will never be able to mingle with an expression that uses the newly assigned value on the same line.
+
+Assignments and declarations are **legal** in the following places:
+
+```
+// Assignments are legal at the top level of blocks.
+{ const x = 0 }
+
+// Assignments are legal as the body of conditionals and repetitions.
+if (y == 0) x = 0 else x = 5
+repeat while (i < 10) i = i + 1
+for (entity in entities) count = count + 1
+```
+
+
+
 ### Return
 
-The **return** *statement* returns a value from a function. We admit, even though we managed to turn even variable assignments into expressions (without making it messy, like in C), there is just no way a special control statement like return could be an expression. The syntax is simply `return expr`, with expr simply evaluating to the value to return.
-
-**Note:** Use return only if you 'desperately' need to return early from a function. Prefer *using blocks and control structures as expressions*.
+The **return** *statement* returns a value from a function. The syntax is `return expr`, with `expr` evaluating to the value to return. Use return only if you 'desperately' need to return early from a function. Prefer *using blocks and control structures as expressions*.
