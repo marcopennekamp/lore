@@ -30,7 +30,7 @@ On the **language** side:
   - We are excluding function types for now, but will add them very soon after a minimum version has been achieved.
   - Notably, we are excluding less important types such as singleton and envelope types.
 - **Functions:** Multi-functions, function declarations, multiple dispatch, compile-time constraints, callee fixing.
-- **Classes:** Properties, fields, constructors, mutability, component declarations, `owned by` declarations, simple polymorphism, abstract classes.
+- **Classes:** Classes and entities, properties, constructors, mutability, component declarations, `owned by` declarations, simple polymorphism, abstract classes.
 - **Expressions:** Literals and value constructors (numbers, strings, booleans, tuples, lists, maps, instantiation), very basic operators (such as addition; not even list operations), blocks, multi-function calls, conditional expressions, repetition, property access, variable declarations and assignments, return.
   - Notably, we are not yet supporting the definition of anonymous functions.
   - In the long run, almost all symbolic operations will be backed by multi-functions. For example, the comparison operator can be simply defined as a function. But to keep it simple for now, we will define a basic set of symbolic operations and then require standard multi-function calls. So, for example, comparing two strings would mean calling `areEqual(str1, str2)`.
@@ -58,8 +58,10 @@ Once we have formulated the MVL, we can deliver **themed updates** that focus on
 - The **Closure** Update (anonymous functions, function types, variable capture, function call expressions)
 - The **Option** Update (Option types, option handling)
 - The **Refined Dispatch** Update (Differentiating between dispatchable and static parameters, multiple parameter lists?, dot notation for multi-function calls, multi-functions as operators)
-- The **Useful Types** Update (Singleton types, envelope types, records, ad-hoc envelope types)
+- The **Useful Types** Update (Singleton types, envelope types)
+- The **Defaults** Update (Default multi-function arguments, default class properties, variable declarations to a default)
+- The **Classes** Update (Records, derived properties, ad-hoc envelope types)
 - The **Matchbox** Update (Pattern matching across the board, switch/match expression)
 - The **Monads** Update (Monadic collections, monadic options, generalized `for`)
 - The **Torchlight** Update (Visibility for types, functions, properties, and potentially namespaces)
-- The **Specialization** Update (Dynamic specialization, attaching components at run-time)
+- The **Specialization** Update (Dynamic specialization, attaching components at run-time, dynamic generalization, removing components at run-time)
