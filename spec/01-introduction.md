@@ -47,3 +47,19 @@ On the **implementation** side:
 - **Correctness checks** for multi-function constraints, types, and anything else that needs checking.
 - **Transpiler** from the AST to Javascript.
 - A **Javascript run-time** that handles multiple-dispatch.
+
+
+
+### Going Beyond the MVL
+
+Once we have formulated the MVL, we can deliver **themed updates** that focus on a specific cross-cutting feature. For example, we could update with the following themes:
+
+- The **Namespace** Update (namespaces, companion namespaces, imports)
+- The **Closure** Update (anonymous functions, function types, variable capture, function call expressions)
+- The **Option** Update (Option types, option handling)
+- The **Refined Dispatch** Update (Differentiating between dispatchable and static parameters, multiple parameter lists?, dot notation for multi-function calls, multi-functions as operators)
+- The **Useful Types** Update (Singleton types, envelope types, records, ad-hoc envelope types)
+- The **Matchbox** Update (Pattern matching across the board, switch/match expression)
+- The **Monads** Update (Monadic collections, monadic options, generalized `for`)
+- The **Torchlight** Update (Visibility for types, functions, properties, and potentially namespaces)
+- The **Specialization** Update (Dynamic specialization, attaching components at run-time)
