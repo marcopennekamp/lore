@@ -343,9 +343,9 @@ In the actual implementation, we can of course **optimize** two cases:
 
 
 
-### Variable Assignments
+### Property Access
 
-**Note:** Assignments return the Unit type.
+You can access the **property** of an object with the `.` notation. The type of the expression is the type of the property. The syntax is simply: `object.property`.
 
 
 
