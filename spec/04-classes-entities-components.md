@@ -53,14 +53,73 @@ A class `A` may **inherit** from another class `B`. This allows `A` to inherit a
 class A extends B
 ```
 
+##### Extensions for Later
 
+- **Visibility declarations** like public, private, protected, etc. Whatever we need.
 
+- **Default values** for properties.
 
+- **Derived properties** are properties that depend on other properties and can't be passed through the constructor. By default, a `derived` property is computed once after all non-derived properties and derived properties ordered before the given property have been initialized. You can also declare a `computed` property that is recomputed every time it is accessed. (Computed may not be the best term for this, however.)
 
+  While derived properties could also be implemented by multi-functions, they provide the ability to define a property about the data that is **invariant** and can't be changed through function specialisation.
 
+  ```
+  class RightTriangle {
+    a: Real
+    b: Real
+    derived c: Real = sqrt(pow(a, 2) * pow(b, 2))
+  }
+  ```
 
+- **Syntactic sugar for functions**, as seen below. These functions would simply be immutable properties that hold an anonymous function. This can be useful in some specific cases, but could also lead to bad code style or confused new language users if these kinds of functions are erroneously preferred over multi-functions. Maybe we shouldn't make it easy to declare such functions.
 
+  ```
+  class C {
+    function f(a: A): B = ...
+    // is the same as
+    f: A => B = { a => ... }
+  }
+  ```
 
+- Some kind of companion object as known from Scala? Or rather **companion namespaces**? (Also see the `namespace Position` declaration in the example below.)
+
+- **Ad-hoc envelope types:** Lore will support [envelope types](types.md). To make "type all the things!" particularly easy, Lore allows you to **create ad-hoc open envelope types when defining classes:**
+
+  ```
+  class Position {
+    x: Real as XCoord
+    y: Real as YCoord
+    z: Real as ZCoord
+  }
+  ```
+
+  Looks stupid? Wait until you accidentally pass an x-coordinate as a y-coordinate in C++.
+
+  Each envelope type becomes part of the namespace of the class, so the code above implicitly declares the following:
+
+  ```
+  namespace Position {
+    envelope XCoord(Real)
+    envelope YCoord(Real)
+    envelope ZCoord(Real)
+  }
+  ```
+
+  However, the ad-hoc definition has the additional advantage that **envelope types are constructed internally**. Take the following example:
+
+  ```
+  class Account {
+    id: Int as Id
+    name: String as Name
+    score: Real as Score
+  }
+  val jeremy = Account(1, "Jeremy", 15.37)
+  > jeremy.id : Account.Id
+  > jeremy.name : Account.Name
+  > jeremy.score : Account.Score
+  ```
+
+  As you can see, the constructor takes the underlying values as arguments and doesn't require any envelope boilerplate.
 
 
 
