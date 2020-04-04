@@ -2,82 +2,65 @@
 
 **TODO:** What about attaching components at run-time? We need that feature, but probably not for the first language version. This should be developed hand-in-hand with dynamic specialization.
 
-**TODO:** How do we create classes that override component types? In general, class property types can't be overridden in subclasses, because properties can both be set and gotten by the parent class. But: Shouldn't classes be covariant in the components they define, as components cannot be swapped out, only set with the constructor?
+**TODO:** How do we create classes that override component types? In general, class property types can't be overridden in subclasses, because properties can both be set and gotten by the parent class. But: Shouldn't classes be covariant in the components they define, as components cannot be swapped out, only set with the constructor? So if a type `Entity3D` has a component `Position3D`, shouldn't a subtype `Entity2D` be able to have a `Position2D`?
+
+**Idea:** Add a Record data type (or maybe named case class, simple class, struct, etc.), which is akin to case classes in Scala. The user will be able to pattern-match values of this type, which is not possible with classes. A record can't have components, but will be able to become a component of some entity.
+
+```
+record Position(x: Real, y: Real, z: Real) {
+  derived isOrigin: Boolean = x == y && y == z && z == 0.0
+}
+```
+
+
+
 
 
 
 ### Classes
 
-A **class** is a nominal data type which defines a set of properties.
-
-
-
-
+A **class** is a nominal data type defining a set of properties. Class instances are called objects. The syntax is as follows:
 
 ```
-record R(val a: A, b: B, mut c: C) {
-  val d: D = ...
-  mut e: E = ...
-  def f: F = ...
+class C {
+  a: A
+  mut b: B
 }
-val r = R(a, b, c)
-r.a
-// r.b <-- illegal!
+const c = C(a, b)
 ```
 
-The **constructor** of a record `A` can be accessed via the same name: `A(...)`. Each parameter of the constructor is not treated as a property of the record (i.e. it won't be accessible as a property outside the record) unless it is declared as `val` or `mut`. So for example, a constructor `R(val a: A, b: B, mut c: C)` would define the properties `a` and `c`, although `b` would be available to all definitions inside `R` (private to the record).
+Each class defines exactly one **constructor**. The constructor of a class `A` can be accessed as `A(...)`. Its parameters are simply all the properties in their order of declaration. For example, the declaration above would have the associated constructor `C(a: A, b: B): C`. Any other "constructors" will have to be defined using standard multi-functions. More on that later.
 
-The body of the record is used to define additional **properties**. A property is either a **definition** (denoted `def`) or a **value** (denoted `val` or `mut`). A property declared as `mut` is mutable. A definition is recomputed every time the property is accessed, while a value is computed only once. While definitions could also be implemented by multi-functions, they provide the ability to define a property about the data that is invariant and can't be changed through type specialisation.
+A **property** is either *immutable* (denoted without a keyword) or *mutable* (denoted `mut`). Only mutable properties can be modified after the object has been constructed.
 
-Properties are **accessed** via the dot notation. See `r.a` in the example above. Although the dot notation is overloaded for multi-function invocation, property access takes precedence. In such a case, you can always invoke the multi-function without using the dot-notation.
+Properties are **accessed** via the dot notation. See [05-expressions](05-expressions.md).
 
 ###### Example
 
 ```
-record Position(val x: Real, val y: Real, val z: Real) {
-  val isOrigin: Boolean = x == y && y == z && z == 0.0
+class Position {
+  x: Real
+  y: Real
+  z: Real
 }
 ```
 
 ##### Inheritance
 
-A record `A` may **inherit** from another record `B`. This allows `A` to inherit and override all properties `B` defines and also puts `A` into a subtyping relation `A < B`.
+A class `A` may **inherit** from another class `B`. This allows `A` to inherit all properties of `B` and also puts `A` into a subtyping relation `A < B`.
 
 ```
-record A extends B
+class A extends B
 ```
 
-##### Ad-hoc Envelope Types
 
-Lore supports [envelope types](types.md) already, but to make "type all the things!" particularly easy, Lore allows you to **create ad-hoc open envelope types when defining records:**
 
-```
-record Position(val x: Real as XCoord, val y: Real as YCoord, val z: Real as ZCoord)
-```
 
-Looks stupid? Wait until you accidentally pass an x-coordinate as a y-coordinate in C++.
 
-Each envelope type becomes part of the namespace of the record, so the code above is in effect like declaring the following:
 
-```
-namespace Position {
-  envelope XCoord(Real)
-  envelope YCoord(Real)
-  envelope ZCoord(Real)
-}
-```
 
-However, the ad-hoc definition has the additional advantage that **envelope types are constructed internally**. Take the following example:
 
-```
-record Account(id: Int as Id, name: String as Name, score: Real as Score)
-val jeremy = Account(1, "Jeremy", 15.37)
-> jeremy.id : Account.Id
-> jeremy.name : Account.Name
-> jeremy.score : Account.Score
-```
 
-As you can see, the constructor takes the underlying values as arguments and doesn't require any envelope boilerplate.
 
 
 
