@@ -95,6 +95,41 @@ Every constructor has to **terminate** in a `this` or `construct` statement, eit
 
 **Construction, not initialization:** A constructor does not have access to object properties or the new instance. A constructor is supposed to *construct* an instance, not *initialize* it. If a class is so complex that it needs to be initialized after a value has been constructed, you should require a separate initialization step. Of course, you can perform arbitrary calculations before the `this`/`construct` call, but you'll have to work with the attributes.
 
+###### Throwing Super into the Mix
+
+Things get slightly more complicated when we consider **superclasses**. For the sake of flexibility, we want to allow calling any superclass constructor in combination with any class constructor. This is possible with an extension to the `construct` statement:
+
+```
+class Character {
+  name: String
+  
+  // Just for illustration purposes.
+  Character(name: String) {
+    construct(name)
+  }
+  
+  fromArchetype(archetype: Archetype) {
+    // We defer to the default constructor.
+    this(archetype.name)
+  }
+}
+
+class Player extends Character {
+  money: Real
+  
+  // Again, just for illustration.
+  Player(money: Real, name: String) {
+    construct(money) with super(name)
+  }
+  
+  // Make sure we call the fromArchetype constructor of Character.
+  fromArchetype(archetype: Archetype) {
+    construct(0) with super.fromArchetype(archetype)
+  }
+}
+```
+
+We can add a `with super(...)` to the construct statement which allows us to **call any superclass constructor**.
 
 ##### Post-MVL Extensions
 
