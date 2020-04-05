@@ -4,6 +4,8 @@
 
 **TODO:** How do we create classes that override component types? In general, class property types can't be overridden in subclasses, because properties can both be set and gotten by the parent class. But: Shouldn't classes be covariant in the components they define, as components cannot be swapped out, only set with the constructor? So if a type `Entity3D` has a component `Position3D`, shouldn't a subtype `Entity2D` be able to have a `Position2D`?
 
+**TODO:** We can make *immutable* properties in general overridable.
+
 **Idea:** Add a Record data type (or maybe named case class, simple class, struct, etc.), which is akin to case classes in Scala. The user will be able to pattern-match values of this type, which is not possible with classes. A record can't have components, but will be able to become a component of some entity.
 
 ```
@@ -53,7 +55,9 @@ A class `A` may **inherit** from another class `B`. This allows `A` to inherit a
 class A extends B
 ```
 
-##### Extensions for Later
+**TODO:** How does inheritance work with constructors? How can a subclass invoke the super constructor? How can we define a constructor that calls another functional constructor?
+
+##### Post-MVL Extensions
 
 - **Visibility declarations** like public, private, protected, etc. Whatever we need.
 
@@ -123,37 +127,51 @@ class A extends B
 
 
 
-### Entities
+### Entities & Components
 
-**Idea:** Every entity defines a list of components which can be filtered and iterated over.
-
-An **entity** is a class associated with one or more components. In addition to property definitions permitted in records, an entity type may also define components.
+An **entity** is a class associated with one or more components. In addition to property definitions permitted in classes, an entity type may also define components:
 
 ```
-entity E(...) {
+entity E {
+  x: A
   component C1
-  component btv: C2
-  component C3 = ...
+  component C2
+  y: B
 }
 ```
 
-A component may be **unnamed**, in which case the type's *default naming scheme* is invoked. A component can be optionally named and may have a default value. Only one component of the same type may be part of an entity.
+A component *must* be a **class or envelope**. This requirement is simple when we consider that components must also be **unnamed**, because component types such as `+C1` don't carry name information. Thus, the name of a component is the same as the name of its type. Only one component of the same type may be part of an entity.
 
-Entities are **instantiated** as follows, taking the definition of `E` from above:
+Here, the type `E` **has** a component `C1`. The component can be **accessed** like an attribute, `e.C1`, with the type name as the accessor name. 
+
 
 ```
-val e = E(...)(c1 = C1(...), btv = C2(...))
 ```
-
-That is, each entity's constructor is associated with an additional parameter list which expects the components as values.
 
 ##### Inheritance
 
-An entity may also inherit from another entity or record. The case of **entity inheritance** is particularly interesting, since we can override component definitions:
+An entity may also inherit from another entity or class. The case of **entity inheritance** is particularly interesting, since we can override component definitions:
 
 ```
 entity Skeleton extends Monster {
   component PoisonImmunity overrides Immunity
   component Bones
 }
+
+class Position2D extends Position3D {
+  // redefine z as always 0
+}
+
+entity Entity2D extends Entity3D {
+  component Position2D overrides Position3D
+}
 ```
+
+This is specifically possible because *component properties are immutable*. The parent class cannot reassign its own components, so we are free to require more specific types for sub-entities.
+##### Post-MVL Extensions
+
+- Compare to property/class extensions: **Visibility**, **default** values, **derived** components (excluding computed components).
+- Every entity defines a **list of components** which can be filtered and iterated over.
+
+
+
