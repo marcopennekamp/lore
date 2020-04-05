@@ -135,6 +135,8 @@ We can add a `with super(...)` to the construct statement which allows us to **c
 
 - **Visibility declarations** like public, private, protected, etc. Whatever we need.
 
+  - It should be possible to make the **default constructor private** so that class users have to use one of the named constructors.
+
 - **Default values** for properties.
 
 - **Derived properties** are properties that depend on other properties and can't be passed through the constructor. By default, a `derived` property is computed once after all non-derived properties and derived properties ordered before the given property have been initialized. You can also declare a `computed` property that is recomputed every time it is accessed. (Computed may not be the best term for this, however.)
@@ -226,11 +228,13 @@ Once assigned to an entity, a component cannot be replaced or removed: **compone
 
 ##### Instantiation
 
-Entities are **instantiated** like classes, with the simple addition that component declarations are also added as parameters in the order of declaration. For example, the entity declard above would have the following constructor:
+Entities are **instantiated** like classes, with the simple addition that component declarations are also added as parameters in their order of declaration. For example, the entity declard above would have the following default constructor:
 
 ```
 E(x: A, c1: C1, c2: C2, y: B)
 ```
+
+In fact, components are treated exactly like properties when constructors are concerned. All the same features and rules apply with entities as they do with classes.
 
 ##### Inheritance
 
