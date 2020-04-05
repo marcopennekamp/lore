@@ -1,21 +1,24 @@
-# Classes, Entities and Components
+# Classes, Entities, and Components
 
-**TODO:** What about attaching components at run-time? We need that feature, but probably not for the first language version. This should be developed hand-in-hand with dynamic specialization.
+In this document, we consider **classes, entities, and components**.
 
-**TODO:** How do we create classes that override component types? In general, class property types can't be overridden in subclasses, because properties can both be set and gotten by the parent class. But: Shouldn't classes be covariant in the components they define, as components cannot be swapped out, only set with the constructor? So if a type `Entity3D` has a component `Position3D`, shouldn't a subtype `Entity2D` be able to have a `Position2D`?
+While classes are hugely important in Lore, the true focus of the language lies on **entities and components**. A component, in short, is a set of properties that is *also* part of a larger entity. It is thus not the component itself which brings the flexibility, but the **combination of multiple components** in one entity. The novelty that I believe Lore brings to the table is that we can define functions over arbitrary combinations of components. We could define a function over a combination `+Position & +HealthState` that is then usable by *all* entities that have these two components. This allows a programmer to separate and mix data in such a way that maximum flexibility can be achieved—I believe this is especially useful for game development, but could be equally useful in general purpose contexts. My job as a language designer is to give you the tools so *you* can figure out the useful contexts.
 
-**TODO:** We can make *immutable* properties in general overridable.
+**A modest list of TODOs:**
 
-**Idea:** Add a Record data type (or maybe named case class, simple class, struct, etc.), which is akin to case classes in Scala. The user will be able to pattern-match values of this type, which is not possible with classes. A record can't have components, but will be able to become a component of some entity.
+- **TODO:** What about attaching components at run-time? We need that feature, but probably not for the first language version. This should be developed hand-in-hand with dynamic specialization.
 
-```
-record Position(x: Real, y: Real, z: Real) {
-  derived isOrigin: Boolean = x == y && y == z && z == 0.0
-}
-```
+- **TODO:** How do we create classes that override component types? In general, class property types can't be overridden in subclasses, because properties can both be set and gotten by the parent class. But: Shouldn't classes be covariant in the components they define, as components cannot be swapped out, only set with the constructor? So if a type `Entity3D` has a component `Position3D`, shouldn't a subtype `Entity2D` be able to have a `Position2D`?
 
+- **TODO:** We can make *immutable* properties in general overridable.
 
+- **Idea:** Add a Record data type (or maybe named case class, simple class, struct, etc.), which is akin to case classes in Scala. The user will be able to pattern-match values of this type, which is not possible with classes. A record can't have components, but will be able to become a component of some entity.
 
+  ```
+  record Position(x: Real, y: Real, z: Real) {
+    derived isOrigin: Boolean = x == y && y == z && z == 0.0
+  }
+  ```
 
 
 
