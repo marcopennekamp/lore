@@ -28,21 +28,20 @@ While classes are hugely important in Lore, the true focus of the language lies 
 
 ### Classes
 
-A **class** is a nominal data type defining a set of properties. Class instances are called objects. The syntax is as follows:
+A **class** is a nominal data type defining a set of properties and constructors. Class instances are called objects. The syntax is as follows:
 
 ```
 class C {
   a: A
   mut b: B
+  // constructor syntax defined later
 }
 const c = C(a, b)
 ```
 
-Each class defines exactly one **constructor**. The constructor of a class `A` can be accessed as `A(...)`. Its parameters are simply all the properties in their order of declaration. For example, the declaration above would have the associated constructor `C(a: A, b: B): C`. Any other "constructors" will have to be defined using standard multi-functions. More on that later.
+A **property** is either *immutable* (denoted without a keyword) or *mutable* (denoted `mut`). Only mutable properties can be modified after the object has been constructed. Properties are **accessed** via the dot notation. See [05-expressions](05-expressions.md).
 
-A **property** is either *immutable* (denoted without a keyword) or *mutable* (denoted `mut`). Only mutable properties can be modified after the object has been constructed.
-
-Properties are **accessed** via the dot notation. See [05-expressions](05-expressions.md).
+A **constructor** is a function that creates an instance of the class it's declared within. Constructors are special in that they must be used to create a new instance of a class. There is no other way to define instantiation.
 
 ###### Example
 
@@ -51,6 +50,7 @@ class Position {
   x: Real
   y: Real
   z: Real
+  // Implicit default constructor: Position(x: Real, y: Real, z: Real)
 }
 ```
 
