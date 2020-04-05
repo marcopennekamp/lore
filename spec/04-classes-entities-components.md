@@ -144,8 +144,16 @@ A component *must* be a **class or envelope**. This requirement is simple when w
 
 Here, the type `E` **has** a component `C1`. The component can be **accessed** like an attribute, `e.C1`, with the type name as the accessor name. 
 
+When a component `C1` is declared like this, the type `E` satisfies the typing `E & +C1`. The `+C1` is read as **"has C1"** and is a type *describing the entity*, not the component. For example, when we have a variable `e: +C1`, `e` is not C1 itself but rather the entity with a component of type `C1`.
+
+Once assigned to an entity, a component cannot be replaced or removed: **components are immutable**. (**TODO:** Consider mutable components for cases where an immutable class needs to be a component? In general, it would be possible to replace components. The only time we need immutability is when we want to override a component in a subclass.)
+
+##### Instantiation
+
+Entities are **instantiated** like classes, with the simple addition that component declarations are also added as parameters in the order of declaration. For example, the entity declard above would have the following constructor:
 
 ```
+E(x: A, c1: C1, c2: C2, y: B)
 ```
 
 ##### Inheritance
