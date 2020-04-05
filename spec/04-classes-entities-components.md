@@ -176,6 +176,64 @@ entity Entity2D extends Entity3D {
 ```
 
 This is specifically possible because *component properties are immutable*. The parent class cannot reassign its own components, so we are free to require more specific types for sub-entities.
+
+##### Ownership
+
+Some components may **depend** on other components. For example, an AI component may rely on a position component. We want to provide a native way to deal with such dependencies.
+
+When declaring a class, you can declare that the class viewed as a component must be **owned** by an entity of a specific type. This effectively puts a constraint on the type of the component's entity:
+
+```
+// Require an entity that gets displayed via a sprite to also have a position.
+class Sprite owned by +Position { ... }
+```
+
+This constraint is *only relevant for component declarations*. It does not in any way affect the ability to create instances of the declared class. We **guarantee at compile-time** that an entity declaring a component can in fact own it; if not, we throw a compilation error. The check simply tests whether the type bounds given by the component are compatible with the entity.
+
+An ownership restriction may be **any kind of type**. We don't guarantee that any entity can satisfy this type, but we don't place any systematic restraints on the type. In general, you will want to restrict ownership for two use cases:
+
+- You need to **access another component of the entity**. You wouldn't be able to implement this component without access to the other component.
+- You want to restrict a component to a **specific entity type**. For example, you could restrict a component `Loot` to the `Monster` entity type.
+
+Having declared an ownership constraint, you can then **access the owner type** as follows:
+
+```
+function draw(e: +Sprite) = {
+  draw(e.Sprite.image, e.Position)
+}
+```
+
+Even though we have only declared the entity to have the Sprite component, as the ownership of a Sprite is restricted to entities that also have a Position component, we can be sure that `e` **also has a Position component**. Lore recognizes this and allows you to access that other component.
+
+Ownership restrictions are passed down via **inheritance**. A subclass must keep the current restrictions. 
+
+- **TODO:** Can subclasses add new restrictions? I think this would lead to runtime errors… Like this:
+
+  ```
+  class A
+  class A1 extends A
+  class B owned by +A
+  class B1 extends B owned by +A1
+  
+  entity E {
+    component A
+    component B
+  }
+  
+  function create(): E = {
+    const a = A()
+    const b: B = B1()
+    // At this point, b is not obviously B1, as it could have come
+    // from somewher else entirely. This might be obvious to the
+    // compiler, but not in the more complicated circumstances.
+    E(a, b)
+  }
+  ```
+
+  All checks seem to pass, but because B1 narrows the ownership restriction, B1 is *not* owned by an entity `+A1`. Allowing subclasses to narrow this restriction would be very useful, but is sadly not feasible in this way. We will need to contemplate this further to perhaps find a better solution.
+
+Note that one object can be a component of **multiple entities**. For example, you could share a health state between two bosses in a boss fight. We don't want to remove this freedom and so Lore requires diligence of the programmer when it comes to component instantiation.
+
 ##### Adding Multiple Components of the Same Type
 
 Suppose we have a `Wheel` and want to add four of them to a `Car`. You can't simply add four components of the same type. The solution would be to use some kind of wrapper type. Both of these possible representations are illegal as components: `(Wheel, Wheel, Wheel, Wheel)` and `[Wheel]`. In fact, you will need to create a new class, for example named `WheelSet`, which holds the wheels however it wants. You can then declare it as a component and access it via `e.WheelSet`.
