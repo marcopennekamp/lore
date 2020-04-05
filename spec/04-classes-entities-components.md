@@ -146,7 +146,9 @@ Here, the type `E` **has** a component `C1`. The component can be **accessed** l
 
 When a component `C1` is declared like this, the type `E` satisfies the typing `E & +C1`. The `+C1` is read as **"has C1"** and is a type *describing the entity*, not the component. For example, when we have a variable `e: +C1`, `e` is not C1 itself but rather the entity with a component of type `C1`.
 
-Once assigned to an entity, a component cannot be replaced or removed: **components are immutable**. (**TODO:** Consider mutable components for cases where an immutable class needs to be a component? In general, it would be possible to replace components. The only time we need immutability is when we want to override a component in a subclass.)
+Once assigned to an entity, a component cannot be replaced or removed: **components are immutable**. Note that, while the *reference* is immutable, the component *itself* does not have to be immutable. You can, of course, still model changing state in Lore, but that change needs to be applied inside the component, not by replacing a component.
+
+(**TODO:** Consider mutable components for cases where an immutable class needs to be a component? In general, it would be possible to replace components. The only time we need immutability is when we want to override a component in a subclass.)
 
 ##### Instantiation
 
@@ -195,7 +197,7 @@ An ownership restriction may be **any kind of type**. We don't guarantee that an
 - You need to **access another component of the entity**. You wouldn't be able to implement this component without access to the other component.
 - You want to restrict a component to a **specific entity type**. For example, you could restrict a component `Loot` to the `Monster` entity type.
 
-Having declared an ownership constraint, you can then **access the owner type** as follows:
+Having declared an ownership constraint, a variable of type `+Sprite` will also give you **access to the owner's types:**
 
 ```
 function draw(e: +Sprite) = {
@@ -205,7 +207,7 @@ function draw(e: +Sprite) = {
 
 Even though we have only declared the entity to have the Sprite component, as the ownership of a Sprite is restricted to entities that also have a Position component, we can be sure that `e` **also has a Position component**. Lore recognizes this and allows you to access that other component.
 
-Ownership restrictions are passed down via **inheritance**. A subclass must keep the current restrictions. 
+Ownership restrictions are passed down via **inheritance**. A subclass must keep the current restrictions.
 
 - **TODO:** Can subclasses add new restrictions? I think this would lead to runtime errors… Like this:
 
@@ -234,6 +236,19 @@ Ownership restrictions are passed down via **inheritance**. A subclass must keep
 
 Note that one object can be a component of **multiple entities**. For example, you could share a health state between two bosses in a boss fight. We don't want to remove this freedom and so Lore requires diligence of the programmer when it comes to component instantiation.
 
+###### Example
+
+Let's see another example:
+
+```
+class LemmingAI owned by +Position { }
+
+function walk(entity: +LemmingAI) = {
+  // Always forward! (To the right in a sidescrolling game.)
+  entity.Position.translateX(1)
+}
+```
+
 ##### Adding Multiple Components of the Same Type
 
 Suppose we have a `Wheel` and want to add four of them to a `Car`. You can't simply add four components of the same type. The solution would be to use some kind of wrapper type. Both of these possible representations are illegal as components: `(Wheel, Wheel, Wheel, Wheel)` and `[Wheel]`. In fact, you will need to create a new class, for example named `WheelSet`, which holds the wheels however it wants. You can then declare it as a component and access it via `e.WheelSet`.
@@ -241,7 +256,18 @@ Suppose we have a `Wheel` and want to add four of them to a `Car`. You can't sim
 ##### Post-MVL Extensions
 
 - Compare to property/class extensions: **Visibility**, **default** values, **derived** components (excluding computed components).
+
 - Every entity defines a **list of components** which can be filtered and iterated over.
+
+- **Importing Component Properties:** We could support importing properties from a component into the entity namespace. Properties x, y, and z would be available for use just as if they were directly declared within the entity.
+
+  ```
+  entity Entity {
+    component Position import {x, y, z}
+  }
+  ```
+
+  - One issue with this is that this syntactic sugar only applies when the **entity type is available directly**, obviously. If we define a function over `e: +Position`, we wouldn't be able to access `x` directly from `e` (`e.x`), but would still have to write `e.Position.x`. Only when we declare `e: Entity` can we write `e.x`.
 
 
 
