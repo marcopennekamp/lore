@@ -20,6 +20,10 @@ While classes are hugely important in Lore, the true focus of the language lies 
   }
   ```
 
+- **TODO:** Component subtyping leads to a diamond problem. Consider an entity with two components: `CelsiusTemperature` and `FahrenheitTemperature`. Which component is chosen if we want to assign the entity to a variable of type `+Temperature`? This hints that we need to exclude whole hierarchies of types when we consider which components can be mutually part of the same entity.
+
+  - Going further, will we get problems with `Any`? What happens when we assign an entity to `+Any`? (Ouch.)
+
 
 
 ### Classes
@@ -271,6 +275,3 @@ Suppose we have a `Wheel` and want to add four of them to a `Car`. You can't sim
   ```
 
   - One issue with this is that this syntactic sugar only applies when the **entity type is available directly**, obviously. If we define a function over `e: +Position`, we wouldn't be able to access `x` directly from `e` (`e.x`), but would still have to write `e.Position.x`. Only when we declare `e: Entity` can we write `e.x`.
-
-
-

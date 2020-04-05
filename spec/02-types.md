@@ -311,7 +311,7 @@ val t2: ((Int, Int), Real) = ((1, 2), 5.44)
 
 ### Class Types
 
-**Class types** are *declared types* that describe user-defined data structures.
+**Class types** are *declared types* that describe user-defined data structures. **Entity types** are essentially class types marked as an entity.
 
 ##### Abstractness
 
@@ -321,7 +321,7 @@ A class type is abstract if it has been **declared abstract**.
 
 ### Component Types
 
-**Component types** describe values that have a specific component.
+A **component type** describes an arbitrary entity that has a specific component. The type reasons only about having that one specific component; all other components and types belonging to the actual entity are unknown to the component type.
 
 ##### Abstractness
 
