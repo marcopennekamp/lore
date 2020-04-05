@@ -176,6 +176,10 @@ entity Entity2D extends Entity3D {
 ```
 
 This is specifically possible because *component properties are immutable*. The parent class cannot reassign its own components, so we are free to require more specific types for sub-entities.
+##### Adding Multiple Components of the Same Type
+
+Suppose we have a `Wheel` and want to add four of them to a `Car`. You can't simply add four components of the same type. The solution would be to use some kind of wrapper type. Both of these possible representations are illegal as components: `(Wheel, Wheel, Wheel, Wheel)` and `[Wheel]`. In fact, you will need to create a new class, for example named `WheelSet`, which holds the wheels however it wants. You can then declare it as a component and access it via `e.WheelSet`.
+
 ##### Post-MVL Extensions
 
 - Compare to property/class extensions: **Visibility**, **default** values, **derived** components (excluding computed components).
