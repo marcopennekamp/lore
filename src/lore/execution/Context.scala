@@ -2,6 +2,7 @@ package lore.execution
 
 import lore.ast._
 import lore.compiler.CompilationErrors
+import lore.definitions.{ClassDefinition, LabelDefinition}
 import lore.execution.Context._
 import lore.functions.{InputAbstractnessConstraint, LoreFunction, MultiFunction, Parameter, TotalityConstraint}
 import lore.parser.FragmentParser
@@ -82,8 +83,8 @@ object Context {
       types.getOrElse(name, throw CompilationErrors.TypeNotFound(name))
     }
 
-    def resolveSupertype(maybeName: Option[String]): Type = {
-      maybeName.map(name => getType(name)).getOrElse(AnyType)
+    def resolveSupertype(maybeName: Option[String]): Option[Type] = {
+      maybeName.map(name => getType(name))
     }
 
     def addFunction(function: LoreFunction): Unit = {
@@ -108,9 +109,27 @@ object Context {
 
     statements.foreach {
       case LabelTypeDeclaration(name, supertypeName) =>
-        types.put(name, LabelType(name, resolveSupertype(supertypeName)))
+        val supertype = resolveSupertype(supertypeName)
+        supertype match {
+          // Note that we can't match Option[LabelType] directly because of JVM type erasure.
+          case Some(_: LabelType) | None =>
+            val tpe = new LabelType(supertype.asInstanceOf[Option[LabelType]])
+            val definition = new LabelDefinition(name, tpe)
+            tpe.initialize(definition)
+            types.put(name, tpe)
+          case _ => throw CompilationErrors.LabelMustExtendLabel(name)
+        }
       case ClassTypeDeclaration(name, supertypeName, isAbstract) =>
-        types.put(name, ClassType(name, resolveSupertype(supertypeName), isAbstract))
+        // TODO: Duplicate code?
+        val supertype = resolveSupertype(supertypeName)
+        supertype match {
+          case Some(_: ClassType) | None =>
+            val tpe = new ClassType(supertype.asInstanceOf[Option[ClassType]], isAbstract)
+            val definition = new ClassDefinition(name, tpe)
+            tpe.initialize(definition)
+            types.put(name, tpe)
+          case _ => throw CompilationErrors.ClassMustExtendClass(name)
+        }
       case TypeDeclaration(name, typeExpression) =>
         val tpe = evaluateTypeExpression(typeExpression)
         types.put(name, tpe)
