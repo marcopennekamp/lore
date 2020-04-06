@@ -19,9 +19,9 @@ object Subtyping {
     { case (c1: ClassType, c2: ClassType) => c1 == c2 || isSubtype(c1.supertype, c2) },
 
     // An intersection type i1 is the subtype of an intersection type i2, if all types in i2 are subsumed by i1.
-    { case (i1: IntersectionType, i2: IntersectionType) => i2.types.forall(ic2 => i1.isComponentTypeSubtypeOf(ic2)) },
+    { case (i1: IntersectionType, i2: IntersectionType) => i2.types.forall(ic2 => i1.isAnyComponentSubtypeOf(ic2)) },
     // An intersection type i1 is the subtype of another type t2 if one component of i1 is a subtype of t2.
-    { case (i1: IntersectionType, t2) => i1.isComponentTypeSubtypeOf(t2) },
+    { case (i1: IntersectionType, t2) => i1.isAnyComponentSubtypeOf(t2) },
     // A non-intersection type t1 is the subtype of an intersection type i2, if t1 is the subtype of all types in i2.
     { case (t1, i2: IntersectionType) => i2.types.forall(ic2 => isSubtype(t1, ic2)) },
 

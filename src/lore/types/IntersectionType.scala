@@ -10,7 +10,7 @@ case class IntersectionType private (types: Set[Type]) extends Type {
   /**
     * Whether any one of the intersection type's types is a subtype of the given candidate type.
     */
-  def isComponentTypeSubtypeOf(candidateSupertype: Type): Boolean = {
+  def isAnyComponentSubtypeOf(candidateSupertype: Type): Boolean = {
     types.exists(t => Subtyping.isSubtype(t, candidateSupertype))
   }
 
