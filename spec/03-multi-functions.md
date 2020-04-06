@@ -26,17 +26,7 @@ Multi-functions are useful because they allow functions to be implemented with v
 
 
 
-### Functions and Multi-Functions
-
-```
-func-def    --> func-head ['=' expr]?
-func-head   --> 'function' id '(' func-params ')' [':' type]?
-func-params --> func-param [',' func-param]+
-             |  func-param?
-func-param  --> id [':' type]?
-```
-
-#### Functions
+### Functions
 
 *Definition.* A **function** $f$ is a mapping from an input type $\mathrm{in}(f)$ to an output type $\mathrm{out}(f)$ (also called the *return type*). Each function has a **full name**, which we denote $\mathrm{name}(f)$. Note that the `id` of a function (as specified in the grammar above) is *not* necessarily equal to its full name, as the name could further be qualified with modules or packages (which we will introduce in a later revision of the spec), which are part of the full name of a function.
 
@@ -44,9 +34,18 @@ The **body** of a function is an *expression* $\mathrm{body}(f)$. The type of $\
 
 The **input type** of a function $f$ is defined as follows: Let $[t_1, \dots, t_n]$ be the list of parameter types for each parameter $p_i$. Then we have $\mathrm{in}(f) = (t_1, \dots, t_n)$, that is, an n-tuple of the given parameter types.
 
-Declaring a function's **output type** is optional. If the output type is omitted, it is by default assumed to be the unit type `()`. In such a case, whatever body evaluates to is ignored and the unit tuple `()` is returned instead.
+Lore defines two kinds of functions: **regular functions** and **actions**. Actions are a special subset of regular functions whose output type is always `()`, the unit type. Whatever the body of an action evaluates to is ignored and the unit tuple `()` is returned instead.
 
 We denote the **set of all possible functions** as $\mathbb{F}$.
+
+The **syntax** looks as follows:
+
+```
+function name(p1: Input1, p2: Input2, ...): Output = expr
+action name(p1: Input1, p2: Input2, ...) { }
+```
+
+Even though **actions** are defined with a special syntax, they are treated just like functions both in this specification and in the compiler. An action `action f(a: A, b: B, ...) { }` can be declared equivalently as `function f(a: A, b: B, ...): () = { }`. While regular functions can have any expression as their body, an action body has to be a block.
 
 ---
 
@@ -63,7 +62,9 @@ We will call the defined function $f$. Then we have the following properties:
 - $\mathrm{out}(f) = \texttt{Int}$
 - $\mathrm{body}(f) =$ `a + b`
 
-#### Multi-Functions
+
+
+### Multi-Functions
 
 *Definition.* A **multi-function** is a pair $\mathcal{F} = (\mathrm{name}, F)$ where:
 
@@ -91,7 +92,9 @@ Assuming no other function with the name `concat` exists, we have the multi-func
 
 To define **multiple dispatch** formally, we first need an operation that allows us to reduce the set of multi-function instances to only those functions that could be invoked with a given tuple of arguments.
 
-#### Fit
+---
+
+##### Fit
 
 *Definition.* The **fit** of a multi-function for a given argument type $t$ is the set of functions that could be invoked with a value of type $t$. We define the function $\mathrm{Fit} : \mathbb{T} \rightarrow \mathbb{M} \rightarrow \mathcal{P}(\mathbb{F})$—with $\mathbb{T}$ being the set of all possible types—as follows: 
 $$
@@ -121,7 +124,9 @@ $$
 $$
 All three functions fit, because $\texttt{ToString} > \texttt{List[a]} > \texttt{LinkedList[a]}$ and $\texttt{LinkedList[a]} > \texttt{LinkedList[a] & Sorted}$, as the qualification with the intersection type makes the original type more specific.
 
-#### Min
+---
+
+##### Min
 
 *Definition.* Let $\mathrm{Min} : \mathcal{P}(\mathbb{F}) \rightarrow \mathcal{P}(\mathbb{F})$ be the function that extracts the **most specific functions** from a given fit. We define:
 $$
@@ -171,7 +176,9 @@ Since the most specific function is not unique, we must abort the compilation wi
 
 In closing the example, we will look at the conditions needed to produce an empty fit. Let's assume we calculate the fit for $\mathcal{F}_\mathrm{area}$ called with an argument of type $\texttt{Rectangle}$. Provided that $\texttt{Rectangle}$ doesn't have a $\texttt{BoundingBox}$ component, the fit will be empty, because neither $\texttt{Circle}$ nor $\texttt{+BoundingBox}$ are a supertype of $\texttt{Rectangle}$.
 
-#### Multi-Function Calls
+---
+
+##### Multi-Function Calls
 
 Having defined the $\mathrm{Fit}$ and $\mathrm{Min}$ functions, we can finally turn our attention to defining *multi-function calls*.
 
@@ -215,7 +222,9 @@ able to run-time errors. However, with the expressiveness of the type system
 of Lore, we can not get around the possibility of a run-time error for the
 ambiguity case. We will see why in this section.
 
-#### Proof: Empty-Fit can only occur at compile-time
+---
+
+##### Proof: Empty-Fit can only occur at compile-time
 
 First, let's look at the compile-time-only property of the `empty-fit` error. We will prove that the error can only occur at compile-time by looking at a call of a multi-function $\mathcal{F}$.
 
@@ -223,7 +232,9 @@ First, let's look at the compile-time-only property of the `empty-fit` error. We
 
 Assume that $C' = \empty$ but $|C| = 1$. That is, calling $\mathcal{F}$ at compile-time was valid, but we can't find any fitting function to call at run-time with the argument type $t'$.  Since $C \neq \empty$, we know that $B \neq \empty$, so there exists an $f \in B$ such that $\mathrm{in}(f) \geq t$ (by definition of $\mathrm{Fit}$). Now, we observe that $t'$ specializes the argument type $t$, so that $t  \geq t'$ holds. This is the only way in which the run-time type of the argument can change. In particular, $t$ can not be generalized, because it is the upper-bound for any actual argument types. Trivially, we have $\mathrm{in}(f) \geq t \geq t'$, hence $f \in B'$ (by definition of $\mathrm{Fit}$). Finally, we can derive that $f \in C'$ *or* that there must exist another function $g \in C'$ with $\mathrm{in}(g) < \mathrm{in}(f)$. In both cases, there is some function in $C'$, which contradicts $C' = \empty$. This proves that the `empty-fit` error can only occur at compile-time.
 
-#### Proof: Ambiguous-Call can occur at run-time
+---
+
+##### Proof: Ambiguous-Call can occur at run-time
 
 Moving on to the `ambiguous-call` error, we can show with a simple example that such an error might only be caught at run-time. Let's look at the ambiguity example shown above again. We have two functions $f_1 : \mathtt{Circle} \rightarrow \mathtt{Real}$ and $f_2 : \mathtt{+BoundingBox} \rightarrow \mathtt{Real}$. At compile-time, in an expression `area(c)`, $f_1$ is the unique most specific function to call given a variable `c : Circle`. Since $\texttt{Circle & +BoundingBox}$ is a subtype of $\texttt{+BoundingBox}$, such an argument may be passed at run-time. The problem is that the additional intersection type allows both `area`-functions to be called, as could be seen when we computed the Min-set in the example. This leads to an ambiguity error at *run-time*.
 
@@ -254,7 +265,9 @@ We want **abstract functions to guarantee that multiple dispatch always finds at
 1. The input type of an abstract function must be abstract itself, which is formalized in the **input abstractness constraint**.
 2. Abstract functions must be covered by functions accepting all possible concrete subtypes of the input type, which is formalized in the **totality constraint**.
 
-#### Input Abstractness Constraint
+---
+
+##### Input Abstractness Constraint
 
 *Definition.* Let $\mathcal{F}$ be a multi-function. The following **input abstractness constraint** must be satisfied for all abstract function $f \in \mathcal{F}$:
 $$
@@ -264,7 +277,9 @@ To appreciate the need for this constraint, consider the following: Assume we de
 
 If an abstract function $f$ does not satisfy this constraint, an `input-type-not-abstract` error is raised.
 
-#### Totality Constraint
+---
+
+##### Totality Constraint
 
 *Definition.* Let $\mathcal{F}$ be a multi-function. The following **totality constraint** must be satisfied for all abstract functions $f \in \mathcal{F}$:
 $$
@@ -301,7 +316,9 @@ function f(a: AI, b: BI) // f4
 
 Now, the totality constraint is satisfied for all functions. But then the code compiles, which it shouldn't, right? *Wrong.* The *input abstractness constraint* makes `f4` invalid. The idea that functions need to be implemented for concrete values might not be encoded in the totality constraint, but it is still checked within the system.
 
-#### Example
+---
+
+##### Example
 
 Suppose we have the following types:
 
@@ -335,7 +352,9 @@ Note that the *constraint on return types* as defined earlier is also satisfied:
 
 This concludes our usage example about abstract functions.
 
-#### Totality Constraint Verification
+---
+
+##### Totality Constraint Verification
 
 It is not obvious **how to check the totality constraint**. In this section, we will develop an algorithm that can verify the constraint for an arbitrary abstract function.
 
@@ -474,7 +493,7 @@ The goal is, ultimately, to have `f.fixed[T1, T2, …]` return a **function valu
 
 ---
 
-The most obvious example is invoking a **"super"** function of some other, more specialized function. Here is the basic pattern:
+*Example.* The most obvious example is invoking a **"super"** function of some other, more specialized function. Here is the basic pattern:
 
 ```
 // Assuming A1 < A and A2 < A.
