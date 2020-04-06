@@ -335,7 +335,7 @@ A **component type** describes an arbitrary entity that has a specific component
 
 ##### Abstractness
 
-A component type is abstract if its **underlying type is abstract**.
+A component type is abstract if its **underlying type is abstract**. This is easy to see. Since at run-time, an entity assumes the *actual types* of each of its components, an entity that has a component of an abstract type A simply cannot exist. Every entity will have one of A's subtypes as a component.
 
 
 

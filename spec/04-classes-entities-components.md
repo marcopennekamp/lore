@@ -228,6 +228,8 @@ Here, the type `E` **has** a component `C1`. The component can be **accessed** l
 
 When a component `C1` is declared like this, the type `E` satisfies the typing `E & +C1`. The `+C1` is read as **"has C1"** and is a type *describing the entity*, not the component. For example, when we have a variable `e: +C1`, `e` is not C1 itself but rather the entity with a component of type `C1`.
 
+At run-time, `E` might actually be a type `E & +C3` given `C3 < C1`, if a value of `C3` was assigned as a component as opposed to a value of `C1`. This has profound implications for **multiple dispatch:** Entities are dispatched based on their *actual* type and the *types of their components at run-time*.
+
 Once assigned to an entity, a component cannot be replaced or removed: **components are immutable**. Note that, while the *reference* is immutable, the component *itself* does not have to be immutable. You can, of course, still model changing state in Lore, but that change needs to be applied inside the component, not by replacing a component.
 
 (**TODO:** Consider mutable components for cases where an immutable class needs to be a component? In general, it would be possible to replace components. The only time we need immutability is when we want to override a component in a subclass.)
