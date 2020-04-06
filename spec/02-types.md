@@ -139,6 +139,12 @@ $$
 \frac{s \leq t}{\mathtt{+}s \leq \mathtt{+}t}
 $$
 
+$$
+\frac{\mathrm{is\_component}(t, s)}{s \leq \mathtt{+}t}
+$$
+
+The second rule ensures that entity types $s$ that have a component of type $t$ are seen as a subtype of the component type $\mathtt{+}t$.
+
 ##### Intersection Types
 
 $$
@@ -309,13 +315,17 @@ val t2: ((Int, Int), Real) = ((1, 2), 5.44)
 
 
 
-### Class Types
+### Data Types
 
-**Class types** are *declared types* that describe user-defined data structures. **Entity types** are essentially class types marked as an entity.
+**Data types** are *declared types* that describe user-defined data structures. Lore knows the following data types:
+
+- **Class types** describe corresponding `class` declarations.
+- **Entity types** describe corresponding `entity` declarations.
+  - An entity type $t_e$ defines a predicate $\mathrm{is\_component}(t_c, t_e)$ which is true if the data type $t_c$ is a component of $t_e$.
 
 ##### Abstractness
 
-A class type is abstract if it has been **declared abstract**.
+A data type is abstract if it has been **declared abstract**.
 
 
 
