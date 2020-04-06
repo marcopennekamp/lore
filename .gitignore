@@ -15,11 +15,5 @@ project/plugins/project/
 # IntelliJ Idea
 .idea
 
-# LaTeX
-.texpadtmp
+# Old Specification
 main.pdf
-*.aux
-*.toc
-*.thm
-*.synctex.gz
-*.out

@@ -1,0 +1,39 @@
+/**
+ * This example shows how we can implement implicit interfaces in Lore.
+ * Imagine a situation in which we want to save an object. We have a code generator that generates the implementation
+ * of an action 'save' for any class extending Saveable as long as all its attributes are Saveable as well. One of the
+ * attributes is an object 'obj' of a class 'Obj' defined outside our own code, in a library which we do not want to
+ * modify. Unfortunately, said object does not implement the Saveable interface. With implicit interfaces, we can
+ * implement the interface without modifying the original code. Our code generator can do the following:
+ *   1. For each attribute a of A that is to be saved, check if A < Saveable.
+ *   2. If A is Saveable, simply call save(a).
+ *   3. Otherwise, we specialise the type of 'a' at run-time, by calling save(a & Saveable). This will narrow the type
+ *      of 'a' to A & Saveable, but also introduce a new check: The specialisation is only valid if A & Saveable
+ *      implements 'save'.
+ * Also compare to label-interfaces.lore.
+ */
+
+label Saveable
+action save(object: Saveable)
+
+// A standard 2D position that can be saved.
+class Position extends Saveable {
+  x: Real
+  y: Real
+}
+
+// The following action will be generated:
+// action save(object: Position)
+
+class Character extends Saveable {
+  component Position
+  component ExternalPhysics
+}
+
+// Assuming that ExternalPhysics isn't Saveable, we define the following action.
+action save(object: ExternalPhysics & Saveable) {
+  // Save the physics object.
+}
+
+// Now, the code generator should be able to call save(character.ExternalPhysics) and thus generate the save
+// function for Character, too.
