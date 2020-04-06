@@ -1,7 +1,7 @@
 package lore.execution
 
 import lore.ast._
-import lore.exceptions.TypeNotFoundException
+import lore.compiler.CompilationErrors
 import lore.execution.Context._
 import lore.functions.{InputAbstractnessConstraint, LoreFunction, MultiFunction, Parameter, TotalityConstraint}
 import lore.parser.FragmentParser
@@ -11,7 +11,7 @@ import scala.collection.mutable
 import scala.io.Source
 
 class Context(val types: Map[String, Type], val multiFunctions: Map[String, MultiFunction]) {
-  implicit private val context = this
+  implicit private val context: Context = this
 
   def verify(): VerificationResult = {
     val multiFunctionErrors = multiFunctions.values.flatMap { mf =>
@@ -79,7 +79,7 @@ object Context {
     val multiFunctions = mutable.HashMap[String, MultiFunction]()
 
     def getType(name: String): Type = {
-      types.getOrElse(name, throw TypeNotFoundException(name))
+      types.getOrElse(name, throw CompilationErrors.TypeNotFound(name))
     }
 
     def resolveSupertype(maybeName: Option[String]): Type = {
