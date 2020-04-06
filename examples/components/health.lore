@@ -4,7 +4,7 @@
 // And everything without dynamically getting components like you do in Unity.
 
 class Position {
-  // Only 'mut' fields are able to be mutated.
+  // Only 'mut' fields are mutable.
   mut x: Float
   mut y: Float
   mut z: Float
@@ -12,9 +12,8 @@ class Position {
 
 // We can restrict the types that Sprite can be owned by. However, this will only apply when Sprite is used as a
 // component. Sprite can still be created and passed to any function that expects a Sprite, no matter whether it's
-// a component or not. A component can also be part of multiple entities; there are no basic restrictions to this
-// at this time. We might restrict it later, but that will require advanced language features, and I want to
-// concentrate on core features first.
+// a component or not. A component can also be part of multiple entities; there are no basic restrictions to this,
+// as explained in the specification.
 class Sprite owned by +Position {
   mut image: Image
 }
@@ -24,8 +23,10 @@ class Entity2D {
   component Sprite
 }
 
-// TODO: Shouldn't this be called just Health? Can we use an envelope type for this? Think about how envelope types
-//       could be used as components in general. Is this wise considering extendability?
+// Once envelope types are available, we can use the envelope to represent the health state (simply calling it Health).
+// This might not be wise in one case: If we later want to add more values to the health state, we'd have to change
+// all instances where the Health envelope was used. The programmer should weigh these concerns and choose the
+// appropriate type to represent the component.
 class HealthState {
   mut health: Int
 }

@@ -448,11 +448,25 @@ An envelope type is abstract if its **underlying type is abstract**.
 
 ```
 envelope PhoneNumber(String)
-envelope Players(List[Player])
+envelope Players([Player])
 envelope Height(Real)
 ```
 
 Possible alternative syntax: `type Real as Height`
+
+```
+class Person {
+  name: String
+  age: Int
+}
+
+envelope Citizen(Person)
+
+const citizen = Citizen(Person('Edward', 29))
+citizen.name // => 'Edward'
+```
+
+
 
 ###### Envelope Types are not Type Aliases
 
