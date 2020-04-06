@@ -37,7 +37,7 @@ case class IntersectionType private (types: Set[Type]) extends Type {
     exceptLabels.exists(_.isAbstract)
   }
 
-  override def toString: String = "[" + types.mkString(" & ") + "]"
+  override def toString: String = s"(${types.mkString(" & ")})"
 }
 
 object IntersectionType {

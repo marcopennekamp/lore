@@ -2,7 +2,7 @@ package lore.types
 
 case class SumType private (types: Set[Type]) extends Type {
   override def isAbstract = true
-  override def toString: String = "[" + types.mkString(" | ") + "]"
+  override def toString: String = s"(${types.mkString(" | ")})"
 }
 
 object SumType {

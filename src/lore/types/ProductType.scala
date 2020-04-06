@@ -11,5 +11,5 @@ case class ProductType(components: List[Type]) extends Type {
     */
   override def isAbstract: Boolean = components.exists(_.isAbstract)
 
-  override def toString: String = "(" + components.mkString(", ") + ")"
+  override def toString: String = s"(${components.mkString(", ")})"
 }
