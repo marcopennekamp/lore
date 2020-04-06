@@ -346,3 +346,26 @@ Suppose we have a `Wheel` and want to add four of them to a `Car`. You can't sim
   ```
 
   - One issue with this is that this syntactic sugar only applies when the **entity type is available directly**, obviously. If we define a function over `e: +Position`, we wouldn't be able to access `x` directly from `e` (`e.x`), but would still have to write `e.Position.x`. Only when we declare `e: Entity` can we write `e.x`.
+  
+- **Component life cycle functions:** We can add an action `onAttached(c: C, e: +C)` (in the Lore namespace) that is called when a component `C` has been attached to an entity `+C`. Its default implementation would be for the type `Any, +Any` and simply do nothing, so it would then be possible to specialize the function for any kind of component type, without the *need* to do so.
+
+  ```
+  action onAttached(component: Any, entity: +Any) {
+    // Do nothing.
+  }
+  
+  action onAttached(a: A, entity: +A) {
+    // A has been attached to an arbitrary entity.
+  }
+  
+  action onAttached(a: A, entity: +A & +B) {
+    // One special case for any entity that also has a B component.
+  }
+  
+  action onAttached(a: A, entity: SomeEntity) {
+    // Another implementation that requires the entity to be of some
+    // concrete entity type.
+  }
+  ```
+
+  We need the **first parameter** since we want to associate `onAttached` with one specific component. If we didn't have this first parameter, we'd essentially define `onAttached` for multiple components, such as `entity: +A & +B`. Without the first parameter, there is no way to differentiate whether this `onAttached` should belong to A or B.

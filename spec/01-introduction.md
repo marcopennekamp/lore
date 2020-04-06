@@ -64,4 +64,4 @@ Once we have formulated the MVL, we can deliver **themed updates** that focus on
 - The **Matchbox** Update (Pattern matching across the board, switch/match expression)
 - The **Monads** Update (Monadic collections, monadic options, generalized `for`)
 - The **Torchlight** Update (Visibility for types, functions, properties, and potentially namespaces)
-- The **Specialization** Update (Dynamic specialization, attaching components at run-time, dynamic generalization, removing components at run-time)
+- The **Specialization** Update (Dynamic specialization, attaching components at run-time, dynamic generalization, removing components at run-time, component life cycle functions)
