@@ -139,6 +139,8 @@ We can add a `with super(...)` to the construct statement which allows us to **c
 
 - **Default values** for properties.
 
+- Easy **getters and setters** for properties.
+
 - **Derived properties** are properties that depend on other properties and can't be passed through the constructor. By default, a `derived` property is computed once after all non-derived properties and derived properties ordered before the given property have been initialized. You can also declare a `computed` property that is recomputed every time it is accessed. (Computed may not be the best term for this, however.)
 
   While derived properties could also be implemented by multi-functions, they provide the ability to define a property about the data that is **invariant** and can't be changed through function specialisation.

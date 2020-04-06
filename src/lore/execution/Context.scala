@@ -125,7 +125,7 @@ object Context {
         supertype match {
           case Some(_: ClassType) | None =>
             val tpe = new ClassType(supertype.asInstanceOf[Option[ClassType]], isAbstract)
-            val definition = new ClassDefinition(name, tpe)
+            val definition = new ClassDefinition(name, tpe, List.empty) // TODO: Parse properties and such.
             tpe.initialize(definition)
             types.put(name, tpe)
           case _ => throw CompilationErrors.ClassMustExtendClass(name)

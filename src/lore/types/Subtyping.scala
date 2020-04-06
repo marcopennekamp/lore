@@ -20,8 +20,8 @@ object Subtyping {
 
     // A component type p1 is a subtype of p2 if p1's underlying type is a subtype of p2's underlying type.
     { case (p1: ComponentType, p2: ComponentType) => isSubtype(p1.dataType, p2.dataType) },
-    // An entity type e1 is a subtype of a component type p2 if e1 has a component of type p1 that is a subtype of p2.
-    // TODO: Implement.
+    // An entity type e1 is a subtype of a component type p2 if e1 has a component type p1 that is a subtype of p2.
+    { case (e1: EntityType, p2: ComponentType) => e1.componentTypes.exists(p1 => isSubtype(p1, p2)) },
 
     // An intersection type i1 is the subtype of an intersection type i2, if all types in i2 are subsumed by i1.
     { case (i1: IntersectionType, i2: IntersectionType) => i2.types.forall(ic2 => i1.isAnyComponentSubtypeOf(ic2)) },

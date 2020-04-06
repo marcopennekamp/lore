@@ -60,7 +60,7 @@ Once we have formulated the MVL, we can deliver **themed updates** that focus on
 - The **Refined Dispatch** Update (Differentiating between dispatchable and static parameters, multiple parameter lists?, dot notation for multi-function calls, multi-functions as operators)
 - The **Useful Types** Update (Singleton types, envelope types)
 - The **Defaults** Update (Default multi-function arguments, default class properties, variable declarations to a default)
-- The **Classes** Update (Records, derived properties, ad-hoc envelope types, extending label types)
+- The **Classes** Update (Records, derived properties, getters and setters, ad-hoc envelope types, extending label types)
 - The **Matchbox** Update (Pattern matching across the board, switch/match expression)
 - The **Monads** Update (Monadic collections, monadic options, generalized `for`)
 - The **Torchlight** Update (Visibility for types, functions, properties, and potentially namespaces)
