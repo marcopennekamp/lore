@@ -163,6 +163,12 @@ We can add a `with super(...)` to the construct statement which allows us to **c
 
 - Some kind of companion object as known from Scala? Or rather **companion namespaces**? (Also see the `namespace Position` declaration in the example below.)
 
+- Allow classes to extend **label types:**
+
+  ```
+  class A is Saveable and Sorted
+  ```
+
 - **Ad-hoc envelope types:** Lore will support [envelope types](types.md). To make "type all the things!" particularly easy, Lore allows you to **create ad-hoc open envelope types when defining classes:**
 
   ```
