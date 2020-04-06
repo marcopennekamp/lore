@@ -5,9 +5,9 @@ package lore.types
 
 trait Type {
   /**
-    * Returns a singleton tuple type enclosing this type, unless this type is already a tuple type.
+    * Returns a singleton product type enclosing this type, unless this type is already a product type.
     */
-  def toTuple: TupleType = TupleType(List(this))
+  def toTuple: ProductType = ProductType(List(this))
 
   /**
     *

@@ -188,7 +188,7 @@ Having defined the $\mathrm{Fit}$ and $\mathrm{Min}$ functions, we can finally t
 N(e_1, ..., e_n)
 ```
 
-Let $\mathcal{F}$ be a multi-function and $N$ its name. Let $t = (t_1, \dots, t_n)$ be the tuple type of the arguments $e_1 : t_1, \dots, e_n : t_n$. Let $B = \mathrm{Fit}(t)(\mathcal{F})$ be the fit of $\mathcal{F}$. Let $C = \mathrm{Min}(B)$ be the set of most specific functions in the fit $B$.
+Let $\mathcal{F}$ be a multi-function and $N$ its name. Let $t = (t_1, \dots, t_n)$ be the product type of the arguments $e_1 : t_1, \dots, e_n : t_n$. Let $B = \mathrm{Fit}(t)(\mathcal{F})$ be the fit of $\mathcal{F}$. Let $C = \mathrm{Min}(B)$ be the set of most specific functions in the fit $B$.
 
 A **multi-function call** is an operation with compile-time constraints and run-time semantics:
 
@@ -441,7 +441,7 @@ The rules of this game are simple:
 1. The **antagonist** constructs a *concrete* subtype $s$ of $\mathrm{in}(f)$ which is not in $\mathrm{ards}(\mathrm{in}(f)))$.
 2. The **hero** proves that $s$ is actually a subtype of an $s' \in \mathrm{ards}(\mathrm{in}(f))$.
 
-The statement is shown when the antagonist has exhausted all of her options. The base type from which the antagonist can construct a type shall be $t = \mathrm{in}(f)$, which is necessarily a tuple type. The antagonist can change the type in any way as long as the end product is a strict, concrete subtype of $t$.
+The statement is shown when the antagonist has exhausted all of her options. The base type from which the antagonist can construct a type shall be $t = \mathrm{in}(f)$, which is necessarily a product type. The antagonist can change the type in any way as long as the end product is a strict, concrete subtype of $t$.
 
 We consider the following **turns:**
 

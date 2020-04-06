@@ -8,22 +8,22 @@ object TypeParser {
   import IdentifierParser.identifier
 
   def sumType[_ : P]: P[SumTypeExpression] = {
-    def innerTypeExpression = P(intersectionType | tupleType | typeVariable | enclosedType)
+    def innerTypeExpression = P(intersectionType | productType | typeVariable | enclosedType)
     P(innerTypeExpression ~ ("|" ~ innerTypeExpression).rep(1)).map { case (firstType, types) =>
       SumTypeExpression((firstType +: types).toSet)
     }
   }
 
   def intersectionType[_ : P]: P[IntersectionTypeExpression] = {
-    def innerTypeExpression = P(tupleType | typeVariable | enclosedType)
+    def innerTypeExpression = P(productType | typeVariable | enclosedType)
     P(innerTypeExpression ~ ("&" ~ innerTypeExpression).rep(1)).map { case (firstType, types) =>
       IntersectionTypeExpression((firstType +: types).toSet)
     }
   }
 
-  def tupleType[_ : P]: P[TupleTypeExpression] = {
+  def productType[_ : P]: P[ProductTypeExpression] = {
     P("(" ~ typeExpression ~ ("," ~ typeExpression).rep(1) ~ ")").map { case (firstType, restTypes) =>
-      TupleTypeExpression(firstType +: restTypes.toList)
+      ProductTypeExpression(firstType +: restTypes.toList)
     }
   }
 
@@ -31,5 +31,5 @@ object TypeParser {
 
   def enclosedType[_ : P]: P[TypeExpression] = P("(" ~ typeExpression ~ ")")
 
-  def typeExpression[_ : P]: P[TypeExpression] = P(sumType | intersectionType | tupleType | typeVariable | enclosedType)
+  def typeExpression[_ : P]: P[TypeExpression] = P(sumType | intersectionType | productType | typeVariable | enclosedType)
 }

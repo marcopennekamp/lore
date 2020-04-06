@@ -4,10 +4,10 @@ import lore.execution.Context
 
 trait TypeSyntax {
   implicit def toType(name: String)(implicit context: Context): Type = context.types(name)
-  implicit def toTupleTypeSS(tuple: (String, String))(implicit context: Context): TupleType = toTupleTypeTT((toType(tuple._1), toType(tuple._2)))
-  implicit def toTupleTypeTS(tuple: (Type, String))(implicit context: Context): TupleType = toTupleTypeTT((tuple._1, toType(tuple._2)))
-  implicit def toTupleTypeST(tuple: (String, Type))(implicit context: Context): TupleType = toTupleTypeTT((toType(tuple._1), tuple._2))
-  implicit def toTupleTypeTT(tuple: (Type, Type))(implicit context: Context): TupleType = TupleType(List(tuple._1, tuple._2))
+  implicit def toProductTypeSS(tuple: (String, String))(implicit context: Context): ProductType = toProductTypeTT((toType(tuple._1), toType(tuple._2)))
+  implicit def toProductTypeTS(tuple: (Type, String))(implicit context: Context): ProductType = toProductTypeTT((tuple._1, toType(tuple._2)))
+  implicit def toProductTypeST(tuple: (String, Type))(implicit context: Context): ProductType = toProductTypeTT((toType(tuple._1), tuple._2))
+  implicit def toProductTypeTT(tuple: (Type, Type))(implicit context: Context): ProductType = ProductType(List(tuple._1, tuple._2))
   implicit class TypeOperators(t1: Type) {
     def &(t2: Type)(implicit context: Context): Type = IntersectionType.construct(Set(t1, t2))
     def |(t2: Type)(implicit context: Context): Type = SumType.construct(Set(t1, t2))

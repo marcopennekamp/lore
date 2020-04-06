@@ -94,9 +94,9 @@ object Context {
     def evaluateTypeExpression(expression: TypeExpression): Type = {
       expression match {
         case TypeVariable(name) => getType(name)
-        case TupleTypeExpression(expressions) =>
+        case ProductTypeExpression(expressions) =>
           val types = expressions.map(evaluateTypeExpression)
-          TupleType(types)
+          ProductType(types)
         case IntersectionTypeExpression(expressions) =>
           val types = expressions.map(evaluateTypeExpression)
           IntersectionType.construct(types)

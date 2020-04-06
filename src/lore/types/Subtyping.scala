@@ -34,10 +34,10 @@ object Subtyping {
     // More formally: A <= C and B <= C implies A | B <= C
     { case (s1: SumType, t2) => s1.types.forall(sc1 => isSubtype(sc1, t2)) },
 
-    // A tuple type tt1 is the subtype of a tuple type tt2, if both types have the same number of component types
+    // A product type tt1 is the subtype of a product type tt2, if both types have the same number of component types
     // and each component type of tt1 is a subtype of the component type in tt2 that is at the same position.
     {
-      case (tt1: TupleType, tt2: TupleType) =>
+      case (tt1: ProductType, tt2: ProductType) =>
         tt1.components.size == tt2.components.size && tt1.components.zip(tt2.components).forall {
           case (ttc1, ttc2) => isSubtype(ttc1, ttc2)
         }
@@ -86,7 +86,7 @@ object Subtyping {
     t match {
       case _ if !t.isAbstract => Set(t)
       case dt: DeclaredType => dt.directDeclaredSubtypes
-      case TupleType(components) => combinations(components.map(abstractResolvedDirectSubtypes)).map(TupleType)
+      case ProductType(components) => combinations(components.map(abstractResolvedDirectSubtypes)).map(ProductType)
       case IntersectionType(types) => combinations(types.map(abstractResolvedDirectSubtypes).toList).map(IntersectionType.construct)
       case SumType(types) => types.flatMap(abstractResolvedDirectSubtypes)
       // TODO: Really? This should rather be the set of all types which have no supertype, i.e. direct descendants of Any.

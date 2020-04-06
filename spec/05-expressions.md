@@ -134,7 +134,7 @@ Lore supports **tuples**. As described by product types, tuples are fixed-size, 
 
 ###### Example
 
-**TODO:** How can we define `get` such that it supports tuples of arbitrary length? Give every tuple type a supertype called `Product` and implement `get` via multiple dispatch?
+**TODO:** How can we define `get` such that it supports tuples of arbitrary length? Give every product type a supertype called `Product` and implement `get` via multiple dispatch?
 
 ```
 const t = (a, b, c)
