@@ -74,7 +74,7 @@ a | b  // Disjunction
 
 We define *logical not* using a **tilde** so we can reserve the `?!` combo of characters for handling optional values.
 
-**TODO:** We could consider, once we have introduced nullable/optional values (`Int?`), to turn the logical operators into operators that accept any argument types and return "truthy" values.
+**TODO:** We could consider, once we have introduced nullable/optional values (`Int?`), to turn the logical operators into operators that accept any argument types and return "truthy" values. Compare to Clojure, Elixir, or Javascript.
 
 ##### Equality and Order
 
@@ -191,13 +191,25 @@ Two maps are equal if for each key/value pair in the first map, there is a key/v
 
 ### Objects
 
-Lore supports **object instantiation**, i.e. the construction of an object value given a class constructor.
+Lore supports **object instantiation**, i.e. the construction of an object value given a class constructor. The syntax is:
 
-**TODO:** Write this once we have written the classes and components spec document.
+```
+// Assuming another value b: B
+const a = A(b)        // Default constructor
+const a = A.fromB(b)  // Named constructor 'fromB'
+```
 
 ##### Equality and Order
 
 Object equality is defined as **referential equality** by default.
+
+
+
+### Property Access
+
+You can access the **property** of an object with the `.` notation. The type of the expression is the type of the property. The syntax is simply: `object.property`.
+
+Although the dot notation will eventually be overloaded for multi-function invocation, **property access takes precedence**. In such a case, you can always invoke the multi-function without using the dot-notation.
 
 
 
@@ -340,14 +352,6 @@ In the actual implementation, we can of course **optimize** two cases:
 
 - When the value of a repetition isn't assigned or used, we can forgo creating and filling a list.
 - If there are no `yield` expressions within the block of a repetition, we can simply designate the empty list as the result.
-
-
-
-### Property Access
-
-You can access the **property** of an object with the `.` notation. The type of the expression is the type of the property. The syntax is simply: `object.property`.
-
-Although the dot notation will eventually be overloaded for multi-function invocation, **property access takes precedence**. In such a case, you can always invoke the multi-function without using the dot-notation.
 
 
 
