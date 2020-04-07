@@ -183,7 +183,7 @@ We will define and implement an algorithm that will perform **type inference**, 
 
 ### Intersection Types
 
-Assume an **intersection type** `T1 & ... & Tn` for some arbitrary number of types $n >= 2$. Any value $v$ that satisfies the typing $v : \texttt{Ti}$ for *all* $1 \leq i \leq n$ also inhabits the type $\texttt{T1 & ... & Tn}$. The type constructor is associative and commutative. We call any type $\texttt{Ti}$ a **component type**.
+Assume an **intersection type** `T1 & ... & Tn` for some arbitrary number of types $n >= 2$. Any value $v$ that satisfies the typing $v : \texttt{Ti}$ for *all* $1 \leq i \leq n$ also inhabits the type $\texttt{T1 & ... & Tn}$. The type constructor is associative and commutative. We call any type $\texttt{Ti}$ a **component** of the type.
 
 We also define a **construction operation** that constructs intersection types from sets of types. Let $\mathcal{T}_1, \mathcal{T}_2$ be sets of types. Then we define:
 $$
@@ -315,6 +315,18 @@ val t2: ((Int, Int), Real) = ((1, 2), 5.44)
 
 
 
+### Component Types
+
+A **component type** describes an arbitrary entity that has a specific component. The type reasons only about having that one specific component; all other components and types belonging to the actual entity are unknown to the component type.
+
+For any declared type `A`, its component type is denoted `+A`.
+
+##### Abstractness
+
+A component type is abstract if its **underlying type is abstract**. This is easy to see. Since at run-time, an entity assumes the *actual types* of each of its components, an entity that has a component of an abstract type A simply cannot exist. Every entity will have one of A's subtypes as a component.
+
+
+
 ### Data Types
 
 **Data types** are *declared types* that describe user-defined data structures. Lore knows the following data types:
@@ -326,16 +338,6 @@ val t2: ((Int, Int), Real) = ((1, 2), 5.44)
 ##### Abstractness
 
 A data type is abstract if it has been **declared abstract**.
-
-
-
-### Component Types
-
-A **component type** describes an arbitrary entity that has a specific component. The type reasons only about having that one specific component; all other components and types belonging to the actual entity are unknown to the component type.
-
-##### Abstractness
-
-A component type is abstract if its **underlying type is abstract**. This is easy to see. Since at run-time, an entity assumes the *actual types* of each of its components, an entity that has a component of an abstract type A simply cannot exist. Every entity will have one of A's subtypes as a component.
 
 
 
