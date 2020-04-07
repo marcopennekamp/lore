@@ -13,3 +13,7 @@ case class ProductType(components: List[Type]) extends Type {
 
   override def toString: String = s"(${components.mkString(", ")})"
 }
+
+object ProductType {
+  val UnitType: ProductType = ProductType(List.empty)
+}
