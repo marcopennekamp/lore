@@ -7,11 +7,15 @@ sealed trait DeclNode
 object DeclNode {
   /**
     * Function declarations. These include action declarations, which are resolved as "syntactic sugar" by the parser.
+    *
+    * @param body Notably, a function body is NOT a TopLevelExprNode. Rather, it may be a block which can then
+    *             represent TopLevelExprNode.
     */
   case class FunctionNode(
     name: String, parameters: List[ParameterNode], isAbstract: Boolean,
-    outputType: TypeExprNode, body: Expr,
+    outputType: TypeExprNode, body: ExprNode,
   ) extends DeclNode
+
   case class ParameterNode(name: String, tpe: TypeExprNode)
 }
 
@@ -39,6 +43,20 @@ object TypeDeclNode {
   case class PropertyNode(name: String, tpe: TypeExprNode, isMutable: Boolean) extends MemberNode
   case class ComponentNode(name: String, nominalType: TypeExprNode.NominalNode) extends MemberNode
 
-  // TODO: Implement constructor AST.
-  case class ConstructorNode()
+  /**
+    * @param name The default constructor has no name.
+    */
+  case class ConstructorNode(
+    name: Option[String], parameters: List[DeclNode.ParameterNode], body: ExprNode.BlockNode,
+    continuation: ConstructorNode.ContinuationNode
+  )
+  object ConstructorNode {
+    /**
+      * The continuation of the construction is deferred to some other constructor or the internal
+      * construction mechanism.
+      */
+    sealed trait ContinuationNode
+    case class ConstructorCallNode(arguments: List[ExprNode]) extends ContinuationNode
+    case class ConstructNode(arguments: List[ExprNode], withSuper: Option[List[ExprNode]]) extends ContinuationNode
+  }
 }
