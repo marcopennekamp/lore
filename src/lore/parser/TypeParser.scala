@@ -7,29 +7,29 @@ import ScalaWhitespace._
 object TypeParser {
   import IdentifierParser.identifier
 
-  def sumType[_ : P]: P[SumTypeExpression] = {
+  def sumType[_ : P]: P[TypeExprNode.SumNode] = {
     def innerTypeExpression = P(intersectionType | productType | typeVariable | enclosedType)
     P(innerTypeExpression ~ ("|" ~ innerTypeExpression).rep(1)).map { case (firstType, types) =>
-      SumTypeExpression((firstType +: types).toSet)
+      TypeExprNode.SumNode((firstType +: types).toSet)
     }
   }
 
-  def intersectionType[_ : P]: P[IntersectionTypeExpression] = {
+  def intersectionType[_ : P]: P[TypeExprNode.IntersectionNode] = {
     def innerTypeExpression = P(productType | typeVariable | enclosedType)
     P(innerTypeExpression ~ ("&" ~ innerTypeExpression).rep(1)).map { case (firstType, types) =>
-      IntersectionTypeExpression((firstType +: types).toSet)
+      TypeExprNode.IntersectionNode((firstType +: types).toSet)
     }
   }
 
-  def productType[_ : P]: P[ProductTypeExpression] = {
+  def productType[_ : P]: P[TypeExprNode.ProductNode] = {
     P("(" ~ typeExpression ~ ("," ~ typeExpression).rep(1) ~ ")").map { case (firstType, restTypes) =>
-      ProductTypeExpression(firstType +: restTypes.toList)
+      TypeExprNode.ProductNode(firstType +: restTypes.toList)
     }
   }
 
-  def typeVariable[_ : P]: P[TypeVariable] = P(identifier).map(TypeVariable)
+  def typeVariable[_ : P]: P[TypeExprNode.NominalNode] = P(identifier).map(TypeExprNode.NominalNode)
 
-  def enclosedType[_ : P]: P[TypeExpression] = P("(" ~ typeExpression ~ ")")
+  def enclosedType[_ : P]: P[TypeExprNode] = P("(" ~ typeExpression ~ ")")
 
-  def typeExpression[_ : P]: P[TypeExpression] = P(sumType | intersectionType | productType | typeVariable | enclosedType)
+  def typeExpression[_ : P]: P[TypeExprNode] = P(sumType | intersectionType | productType | typeVariable | enclosedType)
 }
