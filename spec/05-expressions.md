@@ -399,3 +399,27 @@ for (entity in entities) count = count + 1
 ### Return
 
 The **return** *statement* returns a value from a function. The syntax is `return expr`, with `expr` evaluating to the value to return. Use return only if you 'desperately' need to return early from a function. Prefer *using blocks and control structures as expressions*.
+
+
+
+### Operator Precedence
+
+Our **operator precedence** is as follows, from lowest to highest precedence:
+
+```
+|
+&
+== =/=
+< <= > >=
++ -
+* /
+~
+atoms (including function application)
+```
+
+Note that we don't view assignments as operators. **Complex expressions** such as conditionals and blocks cannot stand as an operand; you will have to enclose them in parentheses to use them with addition, for example:
+
+```
+5 + ({ 10 }) + (if (a == b) 5 else 15)
+```
+
