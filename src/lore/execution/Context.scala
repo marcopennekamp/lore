@@ -1,6 +1,6 @@
 package lore.execution
 
-import lore.ast._
+import lore.ast.{DeclNode, TypeDeclNode, TypeExprNode}
 import lore.compiler.CompilationErrors
 import lore.definitions.{ClassDefinition, LabelDefinition}
 import lore.execution.Context._
@@ -75,7 +75,7 @@ object Context {
   /**
     * Creates an unverified context from the given sequence of program elements.
     */
-  def build(statements: Seq[TopLevelElement]): Context = {
+  def build(statements: Seq[DeclNode]): Context = {
     val types = mutable.HashMap[String, Type]()
     val multiFunctions = mutable.HashMap[String, MultiFunction]()
 
@@ -92,23 +92,23 @@ object Context {
       multiFunctions.put(function.name, MultiFunction(function.name, Set(function) ++ multiFunction.functions))
     }
 
-    def evaluateTypeExpression(expression: TypeExpression): Type = {
+    def evaluateTypeExpression(expression: TypeExprNode): Type = {
       expression match {
-        case TypeVariable(name) => getType(name)
-        case ProductTypeExpression(expressions) =>
+        case TypeExprNode.NominalNode(name) => getType(name)
+        case TypeExprNode.ProductNode(expressions) =>
           val types = expressions.map(evaluateTypeExpression)
           ProductType(types)
-        case IntersectionTypeExpression(expressions) =>
+        case TypeExprNode.IntersectionNode(expressions) =>
           val types = expressions.map(evaluateTypeExpression)
           IntersectionType.construct(types)
-        case SumTypeExpression(expressions) =>
+        case TypeExprNode.SumNode(expressions) =>
           val types = expressions.map(evaluateTypeExpression)
           SumType.construct(types)
       }
     }
 
     statements.foreach {
-      case LabelTypeDeclaration(name, supertypeName) =>
+      case TypeDeclNode.LabelNode(name, supertypeName) =>
         val supertype = resolveSupertype(supertypeName)
         supertype match {
           // Note that we can't match Option[LabelType] directly because of JVM type erasure.
@@ -119,7 +119,7 @@ object Context {
             types.put(name, tpe)
           case _ => throw CompilationErrors.LabelMustExtendLabel(name)
         }
-      case ClassTypeDeclaration(name, supertypeName, isAbstract) =>
+      case TypeDeclNode.ClassNode(name, supertypeName, isAbstract, _, _) =>
         // TODO: Duplicate code?
         val supertype = resolveSupertype(supertypeName)
         supertype match {
@@ -130,12 +130,12 @@ object Context {
             types.put(name, tpe)
           case _ => throw CompilationErrors.ClassMustExtendClass(name)
         }
-      case TypeDeclaration(name, typeExpression) =>
+      case TypeDeclNode.AliasNode(name, typeExpression) =>
         val tpe = evaluateTypeExpression(typeExpression)
         types.put(name, tpe)
-      case FunctionDeclaration(name, parameterDeclarations, isAbstract) =>
+      case DeclNode.FunctionNode(name, parameterDeclarations, isAbstract, _, _) =>
         val parameters = parameterDeclarations.map { decl =>
-          Parameter(decl.name, evaluateTypeExpression(decl.typeExpression))
+          Parameter(decl.name, evaluateTypeExpression(decl.tpe))
         }
         addFunction(LoreFunction(name, parameters, isAbstract))
     }
