@@ -49,10 +49,10 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class RealLiteralNode(value: Double) extends ExprNode
   case class IntLiteralNode(value: Int) extends ExprNode
-  case class AdditionNode(expressions: List[ExprNode]) extends ExprNode
-  case class SubtractionNode(expressions: List[ExprNode]) extends ExprNode
-  case class MultiplicationNode(expressions: List[ExprNode]) extends ExprNode
-  case class DivisionNode(expressions: List[ExprNode]) extends ExprNode
+  case class AdditionNode(left: ExprNode, right: ExprNode) extends ExprNode
+  case class SubtractionNode(left: ExprNode, right: ExprNode) extends ExprNode
+  case class MultiplicationNode(left: ExprNode, right: ExprNode) extends ExprNode
+  case class DivisionNode(left: ExprNode, right: ExprNode) extends ExprNode
   case class NegationNode(expr: ExprNode) extends ExprNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -62,12 +62,12 @@ object ExprNode {
   case class ConjunctionNode(expressions: List[ExprNode]) extends ExprNode
   case class DisjunctionNode(expressions: List[ExprNode]) extends ExprNode
   case class LogicalNotNode(expr: ExprNode) extends ExprNode
-  case class EqualsNode(expressions: List[ExprNode]) extends ExprNode
-  case class NotEqualsNode(expressions: List[ExprNode]) extends ExprNode
-  case class LessThanNode(expressions: List[ExprNode]) extends ExprNode
-  case class LessThanEqualsNode(expressions: List[ExprNode]) extends ExprNode
-  case class GreaterThanNode(expressions: List[ExprNode]) extends ExprNode
-  case class GreaterThanEqualsNode(expressions: List[ExprNode]) extends ExprNode
+  case class EqualsNode(left: ExprNode, right: ExprNode) extends ExprNode
+  case class NotEqualsNode(left: ExprNode, right: ExprNode) extends ExprNode
+  case class LessThanNode(left: ExprNode, right: ExprNode) extends ExprNode
+  case class LessThanEqualsNode(left: ExprNode, right: ExprNode) extends ExprNode
+  case class GreaterThanNode(left: ExprNode, right: ExprNode) extends ExprNode
+  case class GreaterThanEqualsNode(left: ExprNode, right: ExprNode) extends ExprNode
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

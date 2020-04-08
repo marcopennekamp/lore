@@ -5,9 +5,24 @@ import fastparse._
 import ScalaWhitespace._
 
 object StatementParser {
-  // A helper parser (generator?) that parses sequences of same operators.
-  def binary[A, _: P](op: => P[Unit], part: P[ExprNode], node: List[ExprNode] => A): P[A] = {
+  // A helper parser (generator?) that parses binary operators.
+  def binary[A, _: P](op: => P[Unit], part: => P[ExprNode], node: (ExprNode, ExprNode) => A): P[A] = {
+    P(part ~ op ~ part).map(node.tupled)
+  }
+
+  // A helper parser that parses an arbitrary number of operands connected by a single operator.
+  def xary[A, _: P](op: => P[Unit], part: => P[ExprNode], node: List[ExprNode] => A): P[A] = {
     P(part ~ (op ~ part).rep(1)).map(aggregate(node))
+  }
+
+  // A helper parser that parses chains of possibly varying operators.
+  def chain[_: P](op: => P[Unit], part: => P[ExprNode], opsToNodes: Map[String, (ExprNode, ExprNode) => ExprNode]): P[ExprNode] = {
+    P(part ~ (op.! ~ part).rep(1)).map {
+      case (left, expressions) =>
+        expressions.foldLeft(left){ case (left, (op, right)) =>
+          opsToNodes(op)(left, right)
+        }
+    }
   }
 
   // There is only one "true" statement: return.
@@ -22,21 +37,22 @@ object StatementParser {
   def expression[_: P]: P[ExprNode] = P(disjunction)
 
   // The specific hierarchy implements operator precedence.
-  // TODO: This contains a bug. We cannot parse expressions such as a + b - c + d, because the parser looks for either
-  //       + or -, but doesn't allow both.
-  private def disjunction[_: P]: P[ExprNode] = P(binary("|", conjunction, ExprNode.DisjunctionNode) | conjunction)
-  private def conjunction[_: P]: P[ExprNode] = P(binary("&", equality, ExprNode.ConjunctionNode) | equality)
+  private def disjunction[_: P]: P[ExprNode] = P(xary("|", conjunction, ExprNode.DisjunctionNode) | conjunction)
+  private def conjunction[_: P]: P[ExprNode] = P(xary("&", equality, ExprNode.ConjunctionNode) | equality)
   private def equality[_: P]: P[ExprNode] = P(binary("==", comparison, ExprNode.EqualsNode) | binary("=/=", comparison, ExprNode.NotEqualsNode) | comparison)
   private def comparison[_: P]: P[ExprNode] = {
-    // TODO: Comparison operators should only accept two operands!
     P(
       binary("<", additive, ExprNode.LessThanNode) | binary("<=", additive, ExprNode.LessThanEqualsNode) |
         binary(">", additive, ExprNode.GreaterThanNode) | binary(">=", additive, ExprNode.GreaterThanEqualsNode) |
         additive
     )
   }
-  private def additive[_: P]: P[ExprNode] = P(binary("+", multiplicative, ExprNode.AdditionNode) | binary("-", multiplicative, ExprNode.SubtractionNode) | multiplicative)
-  private def multiplicative[_: P]: P[ExprNode] = P(binary("*", unary, ExprNode.MultiplicationNode) | binary("/", unary, ExprNode.DivisionNode) | unary)
+  private def additive[_: P]: P[ExprNode] = {
+    P(chain("+" | "-", multiplicative, Map("+" -> ExprNode.AdditionNode, "-" -> ExprNode.SubtractionNode)) | multiplicative)
+  }
+  private def multiplicative[_: P]: P[ExprNode] = {
+    P(chain("*" | "/", multiplicative, Map("*" -> ExprNode.MultiplicationNode, "/" -> ExprNode.DivisionNode)) | unary)
+  }
   private def unary[_: P]: P[ExprNode] = P(negation | logicalNot | atom)
   private def negation[_: P]: P[ExprNode] = P("-" ~/ atom).map(ExprNode.NegationNode)
   private def logicalNot[_: P]: P[ExprNode] = P("~" ~/ atom).map(ExprNode.LogicalNotNode)
