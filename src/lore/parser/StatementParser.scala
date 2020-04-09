@@ -5,16 +5,6 @@ import fastparse._
 import ScalaWhitespace._
 
 object StatementParser {
-  // A helper parser (generator?) that parses binary operators.
-  def binary[A, _: P](op: => P[Unit], part: => P[ExprNode], node: (ExprNode, ExprNode) => A): P[A] = {
-    P(part ~ op ~ part).map(node.tupled)
-  }
-
-  // A helper parser that parses an arbitrary number of operands connected by a single operator.
-  def xary[A, _: P](op: => P[Unit], part: => P[ExprNode], node: List[ExprNode] => A): P[A] = {
-    P(part ~ (op ~ part).rep(1)).map(aggregate(node))
-  }
-
   // A helper parser that parses chains of possibly varying operators.
   def chain[_: P](op: => P[Unit], part: => P[ExprNode], opsToNodes: Map[String, (ExprNode, ExprNode) => ExprNode]): P[ExprNode] = {
     P(part ~ (op.! ~ part).rep(1)).map {
@@ -37,8 +27,8 @@ object StatementParser {
   def expression[_: P]: P[ExprNode] = P(disjunction)
 
   // The specific hierarchy implements operator precedence.
-  private def disjunction[_: P]: P[ExprNode] = P(xary("|", conjunction, ExprNode.DisjunctionNode) | conjunction)
-  private def conjunction[_: P]: P[ExprNode] = P(xary("&", equality, ExprNode.ConjunctionNode) | equality)
+  private def disjunction[_: P]: P[ExprNode] = P(xaryList("|", conjunction, ExprNode.DisjunctionNode) | conjunction)
+  private def conjunction[_: P]: P[ExprNode] = P(xaryList("&", equality, ExprNode.ConjunctionNode) | equality)
   private def equality[_: P]: P[ExprNode] = P(binary("==", comparison, ExprNode.EqualsNode) | binary("=/=", comparison, ExprNode.NotEqualsNode) | comparison)
   private def comparison[_: P]: P[ExprNode] = {
     P(
