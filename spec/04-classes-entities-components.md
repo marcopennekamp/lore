@@ -1,5 +1,7 @@
 # Classes, Entities, and Components
 
+[Previous File](03-multi-functions.md) [Next File](05-expressions.md)
+
 In this document, we consider **classes, entities, and components**.
 
 While classes are hugely important in Lore, the true focus of the language lies on **entities and components**. A component, in short, is a set of properties that is *also* part of a larger entity. It is thus not the component itself which brings the flexibility, but the **combination of multiple components** in one entity. The novelty that I believe Lore brings to the table is that we can define functions over arbitrary combinations of components. We could define a function over a combination `+Position & +HealthState` that is then usable by *all* entities that have these two components. This allows a programmer to separate and mix data in such a way that maximum flexibility can be achieved—I believe this is especially useful for game development, but could be equally useful in general purpose contexts. My job as a language designer is to give you the tools so *you* can figure out the useful contexts.

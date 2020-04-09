@@ -1,5 +1,7 @@
 # Multi-Functions
 
+[Previous File](02-types.md) [Next File](04-classes-entities-components.md)
+
 **Multi-functions** are an exceedingly important feature of Lore. They allow specializing a function via any of the parameters, thereby allowing dynamic dispatch over more than one argument. This feature is also called **multiple dispatch**.
 
 *Definition.* A **multi-function** is a set of all functions that share the same name. Such an individual function is also called an **instance** of its multi-function. 

@@ -1,5 +1,7 @@
 # Expressions
 
+[Previous File](04-classes-entities-components.md)
+
 This document outlines all valid **expressions** found in Lore.
 
 **TODO:** How do we implement type casts / conversions?

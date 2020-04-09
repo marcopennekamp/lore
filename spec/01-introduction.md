@@ -1,5 +1,7 @@
 # Introduction
 
+[Next File](02-types.md)
+
 **Lore** is a general-purpose programming language featuring multi-functions, a type-safe entity-component system, and intersection and semantic types. We explore the combination of **experimental features** that come together to form a sum greater than the parts. These are:
 
 - **Multi-functions** are dynamic dispatch functions that are completely independent from classes and dispatch on more than one parameter. They are intrinsically interesting, but they also tie together the other experimental features.
