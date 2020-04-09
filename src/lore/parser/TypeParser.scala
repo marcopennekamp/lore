@@ -7,29 +7,31 @@ import ScalaWhitespace._
 object TypeParser {
   import LexicalParser.identifier
 
-  def sumType[_: P]: P[TypeExprNode.SumNode] = {
-    def innerTypeExpression = P(intersectionType | productType | typeVariable | enclosedType)
-    P(innerTypeExpression ~ ("|" ~ innerTypeExpression).rep(1)).map { case (firstType, types) =>
-      TypeExprNode.SumNode((firstType +: types).toSet)
-    }
-  }
+  // The parser hierarchy, again, implements "operator precedence". Hence parsers also may be ordered differently
+  // than they are declared in the AST files.
+  def typeExpression[_: P]: P[TypeExprNode] = P(sumType)
 
-  def intersectionType[_: P]: P[TypeExprNode.IntersectionNode] = {
-    def innerTypeExpression = P(productType | typeVariable | enclosedType)
-    P(innerTypeExpression ~ ("&" ~ innerTypeExpression).rep(1)).map { case (firstType, types) =>
-      TypeExprNode.IntersectionNode((firstType +: types).toSet)
-    }
-  }
+  private def sumType[_: P]: P[TypeExprNode] = P(xarySet("|", intersectionType, TypeExprNode.SumNode) | intersectionType)
 
-  def productType[_: P]: P[TypeExprNode.ProductNode] = {
-    P("(" ~ typeExpression ~ ("," ~ typeExpression).rep(1) ~ ")").map { case (firstType, restTypes) =>
-      TypeExprNode.ProductNode(firstType +: restTypes.toList)
-    }
-  }
+  private def intersectionType[_: P]: P[TypeExprNode] = P(xarySet("&", mapType, TypeExprNode.IntersectionNode) | mapType)
 
-  def typeVariable[_: P]: P[TypeExprNode.NominalNode] = P(identifier).map(TypeExprNode.NominalNode)
+  private def mapType[_: P]: P[TypeExprNode] = P(binary("->", atom, TypeExprNode.MapNode) | atom)
 
-  def enclosedType[_: P]: P[TypeExprNode] = P("(" ~ typeExpression ~ ")")
+  private def atom[_: P]: P[TypeExprNode] = P(unitType | productType | listType | componentType | nominalType | enclosedType)
 
-  def typeExpression[_: P]: P[TypeExprNode] = P(sumType | intersectionType | productType | typeVariable | enclosedType)
+  private def unitType[_: P]: P[TypeExprNode] = P("(" ~ ")").map(_ => TypeExprNode.UnitNode)
+
+  /**
+    * The parser for product types doesn't support tuples of length 1 because of the ambiguity with the enclosedType
+    * parser. Since length-1 tuple types are generally useless, we think this is fine as is.
+    */
+  private def productType[_: P]: P[TypeExprNode.ProductNode] = P("(" ~ xaryList(",", typeExpression, TypeExprNode.ProductNode) ~ ")")
+
+  private def listType[_: P]: P[TypeExprNode.ListNode] = P("[" ~ typeExpression ~ "]").map(TypeExprNode.ListNode)
+
+  private def componentType[_: P]: P[TypeExprNode.ComponentNode] = P("+" ~/ nominalType).map(TypeExprNode.ComponentNode)
+
+  private def nominalType[_: P]: P[TypeExprNode.NominalNode] = P(identifier).map(TypeExprNode.NominalNode)
+
+  private def enclosedType[_: P]: P[TypeExprNode] = P("(" ~ typeExpression ~ ")")
 }
