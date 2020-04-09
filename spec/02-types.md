@@ -181,6 +181,21 @@ We will define and implement an algorithm that will perform **type inference**, 
 
 
 
+### Constructor Precedence
+
+Type constructors have the following **precedence** (lowest priority first):
+
+```
+|                     // sum types
+&                     // intersection types
+->                    // map types
+() (,) [] + (...) id  // unit, product, list, component, enclosed, declared types
+```
+
+Map types have a higher precedence than other atomic types, because the operator is binary. It's debatable whether map types or intersection types should have higher precedence.
+
+
+
 ### Intersection Types
 
 Assume an **intersection type** `T1 & ... & Tn` for some arbitrary number of types $n >= 2$. Any value $v$ that satisfies the typing $v : \texttt{Ti}$ for *all* $1 \leq i \leq n$ also inhabits the type $\texttt{T1 & ... & Tn}$. The type constructor is associative and commutative. We call any type $\texttt{Ti}$ a **component** of the type.
