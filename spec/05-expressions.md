@@ -10,6 +10,24 @@ This document outlines all valid **expressions** found in Lore.
 
 
 
+### Top-Level Expressions
+
+**Top-level expressions** are a special type of expression which may only appear in the following places:
+
+```
+// They are legal at the top level of blocks.
+{ const x = 0 }
+
+// They are legal as the body of conditionals and repetitions.
+if (y == 0) x = 0 else x = 5
+repeat while (i < 10) i = i + 1
+for (entity in entities) count = count + 1
+```
+
+Top-level expressions are currently **variable declarations**, **assignments**, and **yields**.
+
+
+
 ### Numbers
 
 **TODO:** Can `Real` and `Int` be extended?
@@ -355,11 +373,13 @@ In the actual implementation, we can of course **optimize** two cases:
 - When the value of a repetition isn't assigned or used, we can forgo creating and filling a list.
 - If there are no `yield` expressions within the block of a repetition, we can simply designate the empty list as the result.
 
+A yield is a **top-level expression**.
+
 
 
 ### Variable Declarations and Assignments
 
-A **variable declaration** lets you define a new variable, while an **assignment** lets you assign a value to a variable or property.
+A **variable declaration** lets you define a new variable, while an **assignment** lets you assign a value to a variable or property. Both are **top-level expressions**.
 
 Here is the **syntax** of declarations and assignments:
 
@@ -383,18 +403,6 @@ character.Position.x = x     // Deep property assignment
 ```
 
 Both declarations and assignments are technically expressions and they return the **unit type**. However, there is an additional restriction for declarations and assignments: They can only stand in specific places in the program, and never embedded within most expressions. This ensures that the order of execution for assignments is well defined. An assignment will never be able to mingle with an expression that uses the newly assigned value on the same line.
-
-Assignments and declarations are **legal** in the following places:
-
-```
-// Assignments are legal at the top level of blocks.
-{ const x = 0 }
-
-// Assignments are legal as the body of conditionals and repetitions.
-if (y == 0) x = 0 else x = 5
-repeat while (i < 10) i = i + 1
-for (entity in entities) count = count + 1
-```
 
 
 
