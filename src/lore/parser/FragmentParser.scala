@@ -38,7 +38,7 @@ object FragmentParser {
 
   def topDeclaration[_: P]: P[DeclNode] = P(typeDeclaration | functionDeclaration)
 
-  def file[_: P]: P[Seq[DeclNode]] = {
+  def fragment[_: P]: P[Seq[DeclNode]] = {
     // We repeat topDeclaration an arbitrary amount of times, terminated by Space.terminators. The repX in contrast
     // to rep does not take whitespace into account. We don't want it to consume the newline that needs to be consumed
     // by Space.terminators!
@@ -46,7 +46,7 @@ object FragmentParser {
   }
 
   def parse(source: String): Option[Seq[DeclNode]] = {
-    fastparse.parse(source, file(_)) match {
+    fastparse.parse(source, fragment(_)) match {
       case Parsed.Success(result, _) => Some(result)
       case Parsed.Failure(label, index, extra) =>
         println(s"Parsing failure: ${extra.trace().aggregateMsg}")

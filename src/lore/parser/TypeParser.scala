@@ -7,8 +7,8 @@ import ScalaWhitespace._
 object TypeParser {
   import LexicalParser.identifier
 
-  // The parser hierarchy, again, implements "operator precedence". Hence parsers also may be ordered differently
-  // than they are declared in the AST files.
+  // The parser hierarchy implements "operator precedence". Hence parsers also may be ordered differently
+  // than their nodes are declared in the AST files.
   def typeExpression[_: P]: P[TypeExprNode] = P(sumType)
 
   private def sumType[_: P]: P[TypeExprNode] = P(xarySet("|", intersectionType, TypeExprNode.SumNode) | intersectionType)
@@ -29,7 +29,7 @@ object TypeParser {
 
   private def listType[_: P]: P[TypeExprNode.ListNode] = P("[" ~ typeExpression ~ "]").map(TypeExprNode.ListNode)
 
-  private def componentType[_: P]: P[TypeExprNode.ComponentNode] = P("+" ~/ nominalType).map(TypeExprNode.ComponentNode)
+  private def componentType[_: P]: P[TypeExprNode.ComponentNode] = P("+" ~ nominalType).map(TypeExprNode.ComponentNode)
 
   private def nominalType[_: P]: P[TypeExprNode.NominalNode] = P(identifier).map(TypeExprNode.NominalNode)
 
