@@ -5,7 +5,7 @@ import lore.types.Type
 /**
   * All statements and expressions.
   */
-sealed trait StmtNode
+sealed trait StmtNode extends Node
 object StmtNode {
   case class ReturnNode(expr: ExprNode) extends StmtNode
 }

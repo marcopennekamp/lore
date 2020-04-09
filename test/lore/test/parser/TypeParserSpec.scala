@@ -3,20 +3,11 @@ package lore.test.parser
 import lore.ast.TypeExprNode
 import lore.parser.TypeParser
 import lore.test.BaseSpec
-import org.scalatest.Assertion
-import fastparse._
 
-class TypeParserSpec extends BaseSpec {
+class TypeParserSpec extends BaseSpec with ParserSpecExtensions[TypeExprNode] {
   import TypeExprNode._
 
-  private implicit class CheckParseExtension(source: String) {
-    def -->(expected: TypeExprNode): Assertion = {
-      fastparse.parse(source, TypeParser.typeExpression(_)) match {
-        case Parsed.Success(result, _) => result shouldEqual expected
-        case Parsed.Failure(_, _, extra) => fail(s"Couldn't parse the source $source. ${extra.trace().aggregateMsg}.")
-      }
-    }
-  }
+  override def parser = TypeParser.typeExpression(_)
 
   private val A = NominalNode("A")
   private val B = NominalNode("B")

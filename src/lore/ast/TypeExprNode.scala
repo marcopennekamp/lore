@@ -3,7 +3,7 @@ package lore.ast
 /**
   * All type expressions.
   */
-sealed trait TypeExprNode
+sealed trait TypeExprNode extends Node
 object TypeExprNode {
   /**
     * Just a type name suspended in the aether.
