@@ -5,6 +5,8 @@ import fastparse._
 import ScalaWhitespace._
 
 object StatementParser {
+  import LexicalParser.identifier
+
   // A helper parser that parses chains of possibly varying operators.
   def chain[_: P](op: => P[Unit], part: => P[ExprNode], opsToNodes: Map[String, (ExprNode, ExprNode) => ExprNode]): P[ExprNode] = {
     P(part ~ (op.! ~ part).rep(1)).map {
@@ -20,8 +22,17 @@ object StatementParser {
   private def returnStatement[_: P]: P[StmtNode] = P("return" ~/ expression).map(StmtNode.ReturnNode)
 
   // Parse a handful of top-level expressions before jumping into the deep end.
-  def topLevelExpression[_: P]: P[TopLevelExprNode] = P(expression)
-  // TODO: Add top-level expression parsers.
+  def topLevelExpression[_: P]: P[TopLevelExprNode] = P(variableDeclaration | assignment | `yield` | expression)
+  private def variableDeclaration[_: P]: P[TopLevelExprNode.VariableDeclarationNode] = {
+    P(("const" | "let").! ~ identifier ~ "=" ~ expression).map { case (qualifier, name, value) =>
+      TopLevelExprNode.VariableDeclarationNode(name, value, qualifier == "const")
+    }
+  }
+  private def assignment[_: P]: P[TopLevelExprNode.AssignmentNode] = P(address ~ "=" ~ expression).map(TopLevelExprNode.AssignmentNode.tupled)
+  private def address[_: P]: P[TopLevelExprNode.AddressNode] = P(propertyAddress | variableAddress)
+  private def variableAddress[_: P]: P[TopLevelExprNode.VariableAddressNode] = P(identifier).map(TopLevelExprNode.VariableAddressNode)
+  private def propertyAddress[_: P]: P[TopLevelExprNode.PropertyAddressNode] = P(address ~~ "." ~~ identifier).map(TopLevelExprNode.PropertyAddressNode.tupled)
+  private def `yield`[_: P]: P[TopLevelExprNode.YieldNode] = P("yield" ~ expression).map(TopLevelExprNode.YieldNode)
 
   // Parse expressions. Finally!
   def expression[_: P]: P[ExprNode] = P(disjunction)
