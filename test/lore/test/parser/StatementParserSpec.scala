@@ -53,9 +53,29 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   "Operators" should "be parsed correctly" in {
     val a = VariableNode("a")
     val b = VariableNode("b")
+    val c = VariableNode("c")
     "a + b" --> AdditionNode(a, b)
     "a + { b }" --> AdditionNode(a, BlockNode(List(b)))
     "a < b" --> LessThanNode(a, b)
+    "a + -b" --> AdditionNode(a, NegationNode(b))
+    "~(a == b) | (a < ~b) & (~a < c)" --> DisjunctionNode(List(
+      LogicalNotNode(EqualsNode(a, b)),
+      ConjunctionNode(List(
+        LessThanNode(a, LogicalNotNode(b)),
+        LessThanNode(LogicalNotNode(a), c),
+      )),
+    ))
+    "~a & ~b & c + -a * -b" --> ConjunctionNode(List(
+      LogicalNotNode(a),
+      LogicalNotNode(b),
+      AdditionNode(
+        c,
+        MultiplicationNode(
+          NegationNode(a),
+          NegationNode(b),
+        ),
+      ),
+    ))
   }
 
   "Comparisons" should "be parsed correctly" in {

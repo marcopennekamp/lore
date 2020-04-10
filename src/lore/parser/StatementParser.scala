@@ -43,7 +43,7 @@ object StatementParser {
     }
   }
 
-  def operatorExpression[_: P] = {
+  def operatorExpression[_: P]: P[ExprNode] = {
     import PrecedenceParser._
     PrecedenceParser.parser(
       operator = StringIn("|", "&", "==", "=/=", "<", "<=", ">", ">=", "+", "-", "*", "/"),
@@ -63,24 +63,6 @@ object StatementParser {
         "/" -> BinaryOperator(6, ExprNode.DivisionNode),
       ),
     )
-  }
-
-  // The specific hierarchy implements operator precedence.
-  private def disjunction[_: P]: P[ExprNode] = P(xaryList("|", conjunction, ExprNode.DisjunctionNode) | conjunction)
-  private def conjunction[_: P]: P[ExprNode] = P(xaryList("&", equality, ExprNode.ConjunctionNode) | equality)
-  private def equality[_: P]: P[ExprNode] = P(binary("==", comparison, ExprNode.EqualsNode) | binary("=/=", comparison, ExprNode.NotEqualsNode) | comparison)
-  private def comparison[_: P]: P[ExprNode] = {
-    P(
-      binary("<", additive, ExprNode.LessThanNode) | binary("<=", additive, ExprNode.LessThanEqualsNode) |
-        binary(">", additive, ExprNode.GreaterThanNode) | binary(">=", additive, ExprNode.GreaterThanEqualsNode) |
-        additive
-    )
-  }
-  private def additive[_: P]: P[ExprNode] = {
-    P(chain("+" | "-", multiplicative, Map("+" -> ExprNode.AdditionNode, "-" -> ExprNode.SubtractionNode)) | multiplicative)
-  }
-  private def multiplicative[_: P]: P[ExprNode] = {
-    P(chain("*" | "/", unary, Map("*" -> ExprNode.MultiplicationNode, "/" -> ExprNode.DivisionNode)) | unary)
   }
 
   // We apply NoCut here to allow the parser to backtrack if it doesn't find a multiplication/addition operator, while
