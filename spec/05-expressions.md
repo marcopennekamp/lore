@@ -112,7 +112,7 @@ A string is always written within **single quotes**: `'text'`. We reserve the ab
 
 Strings are **interpolated** by default. You will be able to use `${expr}` for complex expressions, but for now `$s`, the shorthand for single variables, is the only way to interpolate strings.
 
-The following **escaped characters** are available: `\n`, `\t`, `\'`, `\$`.
+The following **escaped characters** are available: `\n`, `\r`, `\t`, `\'`, `\$`, `\\`, as well as Unicode escapes such as `\u0008`.
 
 We will add **multi-line strings** in another version of Lore.
 
@@ -377,16 +377,17 @@ A yield is a **top-level expression**.
 
 
 
-### Variable Declarations and Assignments
+### Variable Declarations, Assignments, and Expressions
 
-A **variable declaration** lets you define a new variable, while an **assignment** lets you assign a value to a variable or property. Both are **top-level expressions**.
+A **variable declaration** lets you define a new variable, while an **assignment** lets you assign a value to a variable or property. Both are **top-level expressions**. A **variable expression** is simply an expression that evaluates to the value of its mentioned variable.
 
-Here is the **syntax** of declarations and assignments:
+Here is the **syntax** of declarations, assignments, and variable expressions:
 
 ```
 const x: T = v1  // immutable variable declaration
 let x: T = v1    // mutable variable declaration
 x = v2           // variable assignment (only valid if x is mutable)
+x				 // evaluates to v2
 ```
 
 A **declaration** creates a new variable. The type of the variable will be inferred from the assignment, but you can specify the type manually. For now, values need to be manually assigned to declared variables, even if they are desired to be `0`, `''`, `[]`, etc. That is, there are no default assignments. In the future, we can introduce a multi-function `lore.default` (dispatching on some kind of type object, maybe `Type[T]`) that returns a default value for a type (`lore` would be the namespace of this function, which would be the namespace for special language definitions).
