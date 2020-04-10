@@ -35,7 +35,13 @@ object StatementParser {
   private def `yield`[_: P]: P[TopLevelExprNode.YieldNode] = P("yield" ~ expression).map(TopLevelExprNode.YieldNode)
 
   // Parse expressions. Finally!
-  def expression[_: P]: P[ExprNode] = P(disjunction)
+  def expression[_: P]: P[ExprNode] = P(ifElse | disjunction)
+
+  private def ifElse[_: P]: P[ExprNode] = {
+    P("if" ~ "(" ~ expression ~ ")" ~ statement ~ ("else" ~ statement).?).map {
+      case (condition, onTrue, onFalse) => ExprNode.IfElseNode(condition, onTrue, onFalse.getOrElse(ExprNode.UnitNode))
+    }
+  }
 
   // The specific hierarchy implements operator precedence.
   private def disjunction[_: P]: P[ExprNode] = P(xaryList("|", conjunction, ExprNode.DisjunctionNode) | conjunction)
