@@ -3,7 +3,6 @@ package lore.parser
 import lore.ast._
 import fastparse._
 import ScalaWhitespace._
-import lore.ast.ExprNode.{IntLiteralNode, RealLiteralNode}
 
 object StatementParser {
   import LexicalParser.identifier
@@ -63,8 +62,8 @@ object StatementParser {
     // I don't want to put atom before negation, because I want the parser to handle the minus symbol before considering
     // atoms. However, the way it'd work with a naive implementation of this parser, a negative number would be parsed
     // as NegationNode(IntLiteralNode(x)). Hence we handle this specific case here.
-    case ExprNode.IntLiteralNode(x) => IntLiteralNode(-x)
-    case ExprNode.RealLiteralNode(x) => RealLiteralNode(-x)
+    case ExprNode.IntLiteralNode(x) => ExprNode.IntLiteralNode(-x)
+    case ExprNode.RealLiteralNode(x) => ExprNode.RealLiteralNode(-x)
     case expr => ExprNode.NegationNode(expr)
   }
   private def logicalNot[_: P]: P[ExprNode] = P("~" ~ atom).map(ExprNode.LogicalNotNode)

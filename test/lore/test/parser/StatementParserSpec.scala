@@ -1,14 +1,13 @@
 package lore.test.parser
 
-import lore.test.BaseSpec
 import fastparse._
 import lore.ast._
 import lore.parser.StatementParser
+import lore.test.BaseSpec
 
 class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
-  import StmtNode._
-  import TopLevelExprNode._
   import ExprNode._
+  import TopLevelExprNode._
 
   override def parser[_: P] = StatementParser.statement
 
@@ -27,7 +26,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     "'test $x\\n\\t\\u0394'" --> ConcatenationNode(List(
       StringLiteralNode("test "),
       vx,
-      StringLiteralNode("\n\t\u0394")
+      StringLiteralNode("\n\t\u0394"),
     ))
     "'$myLongVariable'" --> VariableNode("myLongVariable")
     "'${x}'" --> vx
@@ -53,12 +52,31 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     ))
   }
 
+  it should "parse literals correctly" in {
+    "0" --> IntLiteralNode(0)
+    "-15" --> IntLiteralNode(-15)
+    "0.0" --> RealLiteralNode(0)
+    "1.5" --> RealLiteralNode(1.5)
+    "-1.5" --> RealLiteralNode(-1.5)
+    ".5".fails
+    "1.".fails
+    "true" --> BoolLiteralNode(true)
+    "false" --> BoolLiteralNode(false)
+  }
+
   it should "parse operators correctly" in {
     "a + b" --> AdditionNode(va, vb)
     "a - b" --> SubtractionNode(va, vb)
     "a * b + b * a" --> AdditionNode(MultiplicationNode(va, vb), MultiplicationNode(vb, va))
     "a / b" --> DivisionNode(va, vb)
     "a < b" --> LessThanNode(va, vb)
+    "a <= b" --> LessThanEqualsNode(va, vb)
+    "a > b" --> GreaterThanNode(va, vb)
+    "a >= b" --> GreaterThanEqualsNode(va, vb)
+    "a == b" --> EqualsNode(va, vb)
+    "a =/= b" --> NotEqualsNode(va, vb)
+    "a | b | c" --> DisjunctionNode(List(va, vb, vc))
+    "a & b & c" --> ConjunctionNode(List(va, vb, vc))
   }
 
   it should "parse complex operator expressions correctly" in {
