@@ -42,7 +42,7 @@ object FragmentParser {
     // We repeat topDeclaration an arbitrary amount of times, terminated by Space.terminators. The repX in contrast
     // to rep does not take whitespace into account. We don't want it to consume the newline that needs to be consumed
     // by Space.terminators!
-    Space.WL0 ~~ P(topDeclaration.repX(0, Space.terminators) ~~ Space.WL0 ~~ End)
+    P(Space.WL0 ~~ topDeclaration.repX(0, Space.terminators) ~~ Space.WL0 ~~ End)
   }
 
   def parse(source: String): Option[Seq[DeclNode]] = {
