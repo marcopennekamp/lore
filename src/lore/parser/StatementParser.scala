@@ -7,16 +7,6 @@ import ScalaWhitespace._
 object StatementParser {
   import LexicalParser.identifier
 
-  // A helper parser that parses chains of possibly varying operators.
-  def chain[_: P](op: => P[Unit], part: => P[ExprNode], opsToNodes: Map[String, (ExprNode, ExprNode) => ExprNode]): P[ExprNode] = {
-    P(part ~ (op.! ~ part).rep(1)).map {
-      case (left, expressions) =>
-        expressions.foldLeft(left){ case (left, (op, right)) =>
-          opsToNodes(op)(left, right)
-        }
-    }
-  }
-
   // There is only one "true" statement: return.
   def statement[_: P]: P[StmtNode] = P(returnStatement | topLevelExpression)
   private def returnStatement[_: P]: P[StmtNode] = P("return" ~ expression).map(StmtNode.ReturnNode)

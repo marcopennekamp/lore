@@ -28,7 +28,9 @@ object TypeParser {
     * The parser for product types doesn't support tuples of length 1 because of the ambiguity with the enclosedType
     * parser. Since length-1 tuple types are generally useless, we think this is fine as is.
     */
-  private def productType[_: P]: P[TypeExprNode.ProductNode] = P("(" ~ xaryList(",", typeExpression, TypeExprNode.ProductNode) ~ ")")
+  private def productType[_: P]: P[TypeExprNode.ProductNode] = {
+    P("(" ~ typeExpression ~ ("," ~ typeExpression).rep(1) ~ ")").map { case (e, es) => TypeExprNode.ProductNode(e +: es.toList) }
+  }
 
   private def listType[_: P]: P[TypeExprNode.ListNode] = P("[" ~ typeExpression ~ "]").map(TypeExprNode.ListNode)
 
