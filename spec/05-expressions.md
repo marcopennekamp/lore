@@ -118,18 +118,6 @@ We will add **multi-line strings** in another version of Lore.
 
 ###### Example
 
-What's possible now:
-
-```
-const k = 10
-const p: Person = ...
-const name = p.name
-const price = if (k < 10) 'free' else '1000\$'
-const announcement = '$name, you have $k apples. Please claim your $price apple at the reception.'
-```
-
-Once we allow interpolating complex expressions, this will be possible:
-
 ```
 const k = 10
 const p: Person = ...

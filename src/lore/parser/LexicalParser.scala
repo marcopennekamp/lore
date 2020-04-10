@@ -54,16 +54,16 @@ object LexicalParser {
   }
 
   def interpolation[_: P]: P[ExprNode] = {
-    def simple = P("$" ~/ identifier).map(ExprNode.VariableNode)
-    def block = P("${" ~/ Space.WS ~ StatementParser.expression ~ Space.WS ~ "}")
-    P(simple | block)
+    def simple = P(identifier).map(ExprNode.VariableNode)
+    def block = P("{" ~ StatementParser.expression ~ "}")
+    P("$" ~/ (block | simple))
   }
 
   def escape[_: P]: P[String] = {
     def unicodeEscape = P("u" ~ (hexDigit ~ hexDigit ~ hexDigit ~ hexDigit).!).map {
       string => Integer.parseInt(string, 16).toChar.toString
     }
-    def basicEscape = P(CharIn("nrt'$\\]").!).map {
+    def basicEscape = P(CharIn("""nrt'$\\""").!).map {
       case "n" => "\n"
       case "r" => "\r"
       case "t" => "\t"

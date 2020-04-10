@@ -18,8 +18,8 @@ object StatementParser {
   }
 
   // There is only one "true" statement: return.
-  def statement[_: P]: P[StmtNode] = P((returnStatement | topLevelExpression) ~ End)
-  private def returnStatement[_: P]: P[StmtNode] = P("return" ~/ expression).map(StmtNode.ReturnNode)
+  def statement[_: P]: P[StmtNode] = P(returnStatement | topLevelExpression)
+  private def returnStatement[_: P]: P[StmtNode] = P("return" ~ expression).map(StmtNode.ReturnNode)
 
   // Parse a handful of top-level expressions before jumping into the deep end.
   def topLevelExpression[_: P]: P[TopLevelExprNode] = P(variableDeclaration | assignment | `yield` | expression)
@@ -58,8 +58,8 @@ object StatementParser {
   // We apply NoCut here to allow the parser to backtrack if it doesn't find a multiplication/addition operator, while
   // still allowing cuts inside of unary applications and atoms.
   private def unary[_: P]: P[ExprNode] = NoCut(P(negation | logicalNot | atom))
-  private def negation[_: P]: P[ExprNode] = P("-" ~/ atom).map(ExprNode.NegationNode)
-  private def logicalNot[_: P]: P[ExprNode] = P("~" ~/ atom).map(ExprNode.LogicalNotNode)
+  private def negation[_: P]: P[ExprNode] = P("-" ~ atom).map(ExprNode.NegationNode)
+  private def logicalNot[_: P]: P[ExprNode] = P("~" ~ atom).map(ExprNode.LogicalNotNode)
   private def atom[_: P]: P[ExprNode] = {
     def int: P[ExprNode.IntLiteralNode] = P(LexicalParser.integer).map(ExprNode.IntLiteralNode)
     def real: P[ExprNode.RealLiteralNode] = P(LexicalParser.real).map(ExprNode.RealLiteralNode)

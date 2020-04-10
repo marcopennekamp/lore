@@ -107,7 +107,7 @@ object ExprNode {
   // Object expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class InstantiationNode(typeName: String, constructorName: Option[String], arguments: List[ExprNode]) extends ExprNode
-  case class PropertyAccessNode(instance: ExprNode, propertyName: String) extends ExprNode
+  case class PropertyAccessNode(instance: ExprNode, names: List[String]) extends ExprNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Block expressions. Note that blocks can hold statements.
