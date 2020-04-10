@@ -67,9 +67,31 @@ object StatementParser {
   private def negation[_: P]: P[ExprNode] = P("-" ~ atom).map(ExprNode.NegationNode)
   private def logicalNot[_: P]: P[ExprNode] = P("~" ~ atom).map(ExprNode.LogicalNotNode)
   private def atom[_: P]: P[ExprNode] = {
-    def int: P[ExprNode.IntLiteralNode] = P(LexicalParser.integer).map(ExprNode.IntLiteralNode)
-    def real: P[ExprNode.RealLiteralNode] = P(LexicalParser.real).map(ExprNode.RealLiteralNode)
-    def booleanLiteral: P[ExprNode.BoolLiteralNode] = P(StringIn("true", "false").!).map(_.toBoolean).map(ExprNode.BoolLiteralNode)
+    P(literal | accessiblePostfix)
+  }
+  private def literal[_: P]: P[ExprNode] = {
+    def int = P(LexicalParser.integer).map(ExprNode.IntLiteralNode)
+    def real = P(LexicalParser.real).map(ExprNode.RealLiteralNode)
+    def booleanLiteral = P(StringIn("true", "false").!).map(_.toBoolean).map(ExprNode.BoolLiteralNode)
     P(int | real | booleanLiteral | LexicalParser.string)
   }
+
+  private def accessiblePostfix[_: P]: P[ExprNode] = {
+    def propertyAccess = P(("." ~ identifier).rep)
+    P(accessible ~ propertyAccess).map { case (instance, propertyNames) =>
+      if (propertyNames.nonEmpty) {
+        ExprNode.PropertyAccessNode(instance, propertyNames.toList)
+      } else {
+        instance
+      }
+    }
+  }
+
+  /**
+    * All expressions immediately accessible via postfix dot notation.
+    */
+  private def accessible[_: P]: P[ExprNode] = P(variable | enclosed | block)
+  private def variable[_: P]: P[ExprNode] = P(identifier).map(ExprNode.VariableNode)
+  private def enclosed[_: P]: P[ExprNode] = P("(" ~ expression ~ ")")
+  private def block[_: P]: P[ExprNode] = P("{" ~ statement.repX(0, Space.terminators) ~ "}").map(_.toList).map(ExprNode.BlockNode)
 }
