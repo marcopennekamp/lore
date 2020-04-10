@@ -35,12 +35,34 @@ object StatementParser {
   private def `yield`[_: P]: P[TopLevelExprNode.YieldNode] = P("yield" ~ expression).map(TopLevelExprNode.YieldNode)
 
   // Parse expressions. Finally!
-  def expression[_: P]: P[ExprNode] = P(ifElse | disjunction)
+  def expression[_: P]: P[ExprNode] = P(ifElse | operatorExpression)
 
   private def ifElse[_: P]: P[ExprNode] = {
     P("if" ~ "(" ~ expression ~ ")" ~ statement ~ ("else" ~ statement).?).map {
       case (condition, onTrue, onFalse) => ExprNode.IfElseNode(condition, onTrue, onFalse.getOrElse(ExprNode.UnitNode))
     }
+  }
+
+  def operatorExpression[_: P] = {
+    import PrecedenceParser._
+    PrecedenceParser.parser(
+      operator = StringIn("|", "&", "==", "=/=", "<", "<=", ">", ">=", "+", "-", "*", "/"),
+      operand = unary,
+      operatorMeta = Map(
+        "|" -> XaryOperator(1, ExprNode.DisjunctionNode),
+        "&" -> XaryOperator(2, ExprNode.ConjunctionNode),
+        "==" -> BinaryOperator(3, ExprNode.EqualsNode),
+        "=/=" -> BinaryOperator(3, ExprNode.NotEqualsNode),
+        "<" -> BinaryOperator(4, ExprNode.LessThanNode),
+        "<=" -> BinaryOperator(4, ExprNode.LessThanEqualsNode),
+        ">" -> BinaryOperator(4, ExprNode.GreaterThanNode),
+        ">=" -> BinaryOperator(4, ExprNode.GreaterThanEqualsNode),
+        "+" -> BinaryOperator(5, ExprNode.AdditionNode),
+        "-" -> BinaryOperator(5, ExprNode.SubtractionNode),
+        "*" -> BinaryOperator(6, ExprNode.MultiplicationNode),
+        "/" -> BinaryOperator(6, ExprNode.DivisionNode),
+      ),
+    )
   }
 
   // The specific hierarchy implements operator precedence.
