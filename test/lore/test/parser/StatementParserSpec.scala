@@ -91,9 +91,9 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     }
   }
 
-  it should "should be parsed within 50 milliseconds" in {
-    timed(50) { () =>
-      val repetitions = 3
+  "A block-rich expression repeated 10,000 times" should "should be parsed within 5 seconds" in {
+    timed(5000) { () =>
+      val repetitions = 10000
       "{" + "a + { if (a < 10) a + 10 else b + 10 } + b\n".repeat(repetitions) + "}" --> BlockNode(
         List.fill(repetitions)(
           AdditionNode(
