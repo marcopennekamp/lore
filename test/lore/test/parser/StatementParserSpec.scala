@@ -102,6 +102,17 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     ))
   }
 
+  it should "parse tuple, list, and map constructors correctly" in {
+    "()" --> UnitNode
+    "(a, b)" --> TupleNode(List(va, vb))
+    "(a + b, a * c, x < 5.3)" --> TupleNode(List(
+      AdditionNode(va, vb), MultiplicationNode(va, vc), LessThanNode(vx, RealLiteralNode(5.3)),
+    ))
+    "('Hello', 'World')" --> TupleNode(List(StringLiteralNode("Hello"), StringLiteralNode("World")))
+    // TODO: Test list constructors.
+    // TODO: Test map constructors.
+  }
+
   it should "parse conditionals and repetitions correctly" in {
     "if (true) false" --> IfElseNode(BoolLiteralNode(true), BoolLiteralNode(false), UnitNode)
     "if (i < 25) { i = i + 1 }" --> IfElseNode(
@@ -114,6 +125,10 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
       )),
       UnitNode
     )
+    // TODO: Test else branch.
+    // TODO: What happens with a dangling else?
+    // TODO: Test repeat loops.
+    // TODO: Test for loops.
   }
 
   it should "parse a block-rich expression within 50 milliseconds" in {
@@ -152,6 +167,8 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   }
 
   "Statements and top-level expressions" should "only appear in blocks, conditionals, and repetitions" in {
-
+    // TODO: Test return statements.
+    // TODO: Test yield statements.
+    // TODO: Test assignments.
   }
 }
