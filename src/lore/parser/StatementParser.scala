@@ -3,6 +3,7 @@ package lore.parser
 import lore.ast._
 import fastparse._
 import ScalaWhitespace._
+import lore.ast.ExprNode.{IntLiteralNode, RealLiteralNode}
 
 object StatementParser {
   import LexicalParser.identifier
@@ -58,16 +59,24 @@ object StatementParser {
   // We apply NoCut here to allow the parser to backtrack if it doesn't find a multiplication/addition operator, while
   // still allowing cuts inside of unary applications and atoms.
   private def unary[_: P]: P[ExprNode] = NoCut(P(negation | logicalNot | atom))
-  private def negation[_: P]: P[ExprNode] = P("-" ~ atom).map(ExprNode.NegationNode)
+  private def negation[_: P]: P[ExprNode] = P("-" ~ atom).map {
+    // I don't want to put atom before negation, because I want the parser to handle the minus symbol before considering
+    // atoms. However, the way it'd work with a naive implementation of this parser, a negative number would be parsed
+    // as NegationNode(IntLiteralNode(x)). Hence we handle this specific case here.
+    case ExprNode.IntLiteralNode(x) => IntLiteralNode(-x)
+    case ExprNode.RealLiteralNode(x) => RealLiteralNode(-x)
+    case expr => ExprNode.NegationNode(expr)
+  }
   private def logicalNot[_: P]: P[ExprNode] = P("~" ~ atom).map(ExprNode.LogicalNotNode)
   private def atom[_: P]: P[ExprNode] = {
     P(literal | accessiblePostfix)
   }
   private def literal[_: P]: P[ExprNode] = {
-    def int = P(LexicalParser.integer).map(ExprNode.IntLiteralNode)
     def real = P(LexicalParser.real).map(ExprNode.RealLiteralNode)
+    def int = P(LexicalParser.integer).map(ExprNode.IntLiteralNode)
     def booleanLiteral = P(StringIn("true", "false").!).map(_.toBoolean).map(ExprNode.BoolLiteralNode)
-    P(int | real | booleanLiteral | LexicalParser.string)
+    // Reals have to be parsed before ints so that ints don't consume the portion of the real before the fraction.
+    P(real | int | booleanLiteral | LexicalParser.string)
   }
 
   private def accessiblePostfix[_: P]: P[ExprNode] = {
