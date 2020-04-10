@@ -103,13 +103,29 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   }
 
   it should "parse tuple, list, and map constructors correctly" in {
+    // Tuple constructors.
     "()" --> UnitNode
     "(a, b)" --> TupleNode(List(va, vb))
     "(a + b, a * c, x < 5.3)" --> TupleNode(List(
       AdditionNode(va, vb), MultiplicationNode(va, vc), LessThanNode(vx, RealLiteralNode(5.3)),
     ))
     "('Hello', 'World')" --> TupleNode(List(StringLiteralNode("Hello"), StringLiteralNode("World")))
-    // TODO: Test list constructors.
+
+    // List constructors.
+    "[]" --> ListNode(List.empty)
+    "[a, b]" --> ListNode(List(va, vb))
+    "[(a, b), (c, c)]" --> ListNode(List(TupleNode(List(va, vb)), TupleNode(List(vc, vc))))
+    "[[a, b], ['test', 'me', 'well $c'], ['container']]" --> ListNode(List(
+      ListNode(List(va, vb)),
+      ListNode(List(
+        StringLiteralNode("test"), StringLiteralNode("me"), ConcatenationNode(List(StringLiteralNode("well "), vc)),
+      )),
+      ListNode(List(StringLiteralNode("container"))),
+    ))
+    "[a + b, a * c, x < 5.3]" --> ListNode(List(
+      AdditionNode(va, vb), MultiplicationNode(va, vc), LessThanNode(vx, RealLiteralNode(5.3)),
+    ))
+
     // TODO: Test map constructors.
   }
 
