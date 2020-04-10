@@ -25,8 +25,17 @@ abstract class BaseSpec extends AnyFlatSpec with Matchers with OptionValues with
     def exact(inputType: Type): LoreFunction = multiFunction.function(inputType).get
   }
 
-  val beAbstract = new Matcher[LoreFunction] {
-    def apply(f: LoreFunction) = MatchResult(f.isAbstract, s"$f was not abstract", s"$f was abstract")
+  val beAbstract: Matcher[LoreFunction] = (f: LoreFunction) => MatchResult(f.isAbstract, s"$f was not abstract", s"$f was abstract")
+
+  /**
+    * Checks that the assertion is within the milliseconds time limit.
+    */
+  def timed(timeLimit: Int)(assertion: () => Assertion): Assertion = {
+    val time1 = System.currentTimeMillis
+    assertion()
+    val time2 = System.currentTimeMillis
+    val difference = (time2 - time1).toInt
+    difference should be < timeLimit
   }
 
 }
