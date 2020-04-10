@@ -25,3 +25,6 @@ addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVers
 
 scalaSource in Compile := { (baseDirectory in Compile)(_ / "src") }.value
 scalaSource in Test := { (baseDirectory in Test)(_ / "test") }.value
+
+// Show time measurements of individual tests.
+testOptions in Test += Tests.Argument("-oD")
