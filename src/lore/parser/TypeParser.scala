@@ -9,15 +9,15 @@ object TypeParser {
 
   // The parser hierarchy implements "operator precedence". Hence parsers also may be ordered differently
   // than their nodes are declared in the AST files.
-  def typeExpression[_: P]: P[TypeExprNode] = P(sumType)
+  def typeExpression[_: P]: P[TypeExprNode] = NoCut(P(sumType))
 
   private def sumType[_: P]: P[TypeExprNode] = P(xarySet("|", intersectionType, TypeExprNode.SumNode) | intersectionType)
 
-  private def intersectionType[_: P]: P[TypeExprNode] = P(xarySet("&", mapType, TypeExprNode.IntersectionNode) | mapType)
+  private def intersectionType[_: P]: P[TypeExprNode] = NoCut(P(xarySet("&", mapType, TypeExprNode.IntersectionNode) | mapType))
 
-  private def mapType[_: P]: P[TypeExprNode] = P(binary("->", atom, TypeExprNode.MapNode) | atom)
+  private def mapType[_: P]: P[TypeExprNode] = NoCut(P(binary("->", atom, TypeExprNode.MapNode) | atom))
 
-  private def atom[_: P]: P[TypeExprNode] = P(unitType | productType | listType | componentType | nominalType | enclosedType)
+  private def atom[_: P]: P[TypeExprNode] = NoCut(P(unitType | productType | listType | componentType | nominalType | enclosedType))
 
   private def unitType[_: P]: P[TypeExprNode] = P("(" ~ ")").map(_ => TypeExprNode.UnitNode)
 
@@ -27,11 +27,11 @@ object TypeParser {
     */
   private def productType[_: P]: P[TypeExprNode.ProductNode] = P("(" ~ xaryList(",", typeExpression, TypeExprNode.ProductNode) ~ ")")
 
-  private def listType[_: P]: P[TypeExprNode.ListNode] = P("[" ~ typeExpression ~ "]").map(TypeExprNode.ListNode)
+  private def listType[_: P]: P[TypeExprNode.ListNode] = P("[" ~/ typeExpression ~ "]").map(TypeExprNode.ListNode)
 
-  private def componentType[_: P]: P[TypeExprNode.ComponentNode] = P("+" ~ nominalType).map(TypeExprNode.ComponentNode)
+  private def componentType[_: P]: P[TypeExprNode.ComponentNode] = P("+" ~/ nominalType).map(TypeExprNode.ComponentNode)
 
   private def nominalType[_: P]: P[TypeExprNode.NominalNode] = P(identifier).map(TypeExprNode.NominalNode)
 
-  private def enclosedType[_: P]: P[TypeExprNode] = P("(" ~ typeExpression ~ ")")
+  private def enclosedType[_: P]: P[TypeExprNode] = P("(" ~/ NoCut(typeExpression) ~ ")")
 }

@@ -52,9 +52,12 @@ object StatementParser {
     P(chain("+" | "-", multiplicative, Map("+" -> ExprNode.AdditionNode, "-" -> ExprNode.SubtractionNode)) | multiplicative)
   }
   private def multiplicative[_: P]: P[ExprNode] = {
-    P(chain("*" | "/", multiplicative, Map("*" -> ExprNode.MultiplicationNode, "/" -> ExprNode.DivisionNode)) | unary)
+    P(chain("*" | "/", unary, Map("*" -> ExprNode.MultiplicationNode, "/" -> ExprNode.DivisionNode)) | unary)
   }
-  private def unary[_: P]: P[ExprNode] = P(negation | logicalNot | atom)
+
+  // We apply NoCut here to allow the parser to backtrack if it doesn't find a multiplication/addition operator, while
+  // still allowing cuts inside of unary applications and atoms.
+  private def unary[_: P]: P[ExprNode] = NoCut(P(negation | logicalNot | atom))
   private def negation[_: P]: P[ExprNode] = P("-" ~/ atom).map(ExprNode.NegationNode)
   private def logicalNot[_: P]: P[ExprNode] = P("~" ~/ atom).map(ExprNode.LogicalNotNode)
   private def atom[_: P]: P[ExprNode] = {
