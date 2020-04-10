@@ -29,9 +29,9 @@ object StatementParser {
     }
   }
   private def assignment[_: P]: P[TopLevelExprNode.AssignmentNode] = P(address ~ "=" ~ expression).map(TopLevelExprNode.AssignmentNode.tupled)
-  private def address[_: P]: P[TopLevelExprNode.AddressNode] = P(propertyAddress | variableAddress)
-  private def variableAddress[_: P]: P[TopLevelExprNode.VariableAddressNode] = P(identifier).map(TopLevelExprNode.VariableAddressNode)
-  private def propertyAddress[_: P]: P[TopLevelExprNode.PropertyAddressNode] = P(address ~~ "." ~~ identifier).map(TopLevelExprNode.PropertyAddressNode.tupled)
+  private def address[_: P]: P[TopLevelExprNode.AddressNode] = {
+    P(identifier ~~ ("." ~~ identifier).rep).map { case (s1, strings) => TopLevelExprNode.AddressNode(s1 +: strings.toList) }
+  }
   private def `yield`[_: P]: P[TopLevelExprNode.YieldNode] = P("yield" ~ expression).map(TopLevelExprNode.YieldNode)
 
   // Parse expressions. Finally!

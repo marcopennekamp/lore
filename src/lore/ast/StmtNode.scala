@@ -28,9 +28,10 @@ object TopLevelExprNode {
   case class VariableDeclarationNode(name: String, value: ExprNode, isMutable: Boolean) extends TopLevelExprNode
   case class AssignmentNode(address: AddressNode, value: ExprNode) extends TopLevelExprNode
 
-  sealed trait AddressNode
-  case class VariableAddressNode(name: String) extends AddressNode
-  case class PropertyAddressNode(address: AddressNode, propertyName: String) extends AddressNode
+  /**
+    * An address of the form `a.b.c` and so on. The first element in the list is the leftmost name.
+    */
+  case class AddressNode(names: List[String])
 
   /**
     * Yield is a part of top-level expressions, because we don't want a programmer to yield in the middle of
@@ -44,6 +45,11 @@ object TopLevelExprNode {
   */
 sealed trait ExprNode extends TopLevelExprNode
 object ExprNode {
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Variable expressions.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  case class VariableNode(name: String) extends ExprNode
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Numeric expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -128,6 +134,6 @@ object ExprNode {
     */
   case class RepeatWhileNode(condition: ExprNode, body: StmtNode, deferCheck: Boolean) extends ExprNode
 
-  case class IterationNode(extractions: List[ExtractionNode], body: StmtNode) extends ExprNode
-  case class ExtractionNode(variableName: String, collection: ExprNode)
+  case class IterationNode(extractions: List[ExtractorNode], body: StmtNode) extends ExprNode
+  case class ExtractorNode(variableName: String, collection: ExprNode)
 }
