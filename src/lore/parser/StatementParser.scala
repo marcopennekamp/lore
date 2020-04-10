@@ -61,6 +61,6 @@ object StatementParser {
     def int: P[ExprNode.IntLiteralNode] = P(LexicalParser.integer).map(ExprNode.IntLiteralNode)
     def real: P[ExprNode.RealLiteralNode] = P(LexicalParser.real).map(ExprNode.RealLiteralNode)
     def booleanLiteral: P[ExprNode.BoolLiteralNode] = P(StringIn("true", "false").!).map(_.toBoolean).map(ExprNode.BoolLiteralNode)
-    P(int | real | booleanLiteral)
+    P(int | real | booleanLiteral | LexicalParser.string)
   }
 }
