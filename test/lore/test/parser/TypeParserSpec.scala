@@ -3,11 +3,12 @@ package lore.test.parser
 import lore.ast.TypeExprNode
 import lore.parser.TypeParser
 import lore.test.BaseSpec
+import fastparse.P
 
 class TypeParserSpec extends BaseSpec with ParserSpecExtensions[TypeExprNode] {
   import TypeExprNode._
 
-  override def parser = TypeParser.typeExpression(_)
+  override def parser[_: P] = TypeParser.typeExpression
 
   private val A = NominalNode("A")
   private val B = NominalNode("B")
@@ -26,6 +27,7 @@ class TypeParserSpec extends BaseSpec with ParserSpecExtensions[TypeExprNode] {
   }
 
   it should "correctly parse complex types" in {
+    "A | B | C" --> SumNode(Set(A, B, C))
     "A -> B" --> MapNode(A, B)
     "[(A, B, C) & D & +E]" --> ListNode(IntersectionNode(Set(ProductNode(List(A, B, C)), D, ComponentNode(E))))
     "A | (B, C) | +D" --> SumNode(Set(A, ProductNode(List(B, C)), ComponentNode(D)))
@@ -38,5 +40,16 @@ class TypeParserSpec extends BaseSpec with ParserSpecExtensions[TypeExprNode] {
     "A & B -> C & D | E" --> SumNode(Set(IntersectionNode(Set(A, MapNode(B, C), D)), E))
     "(A & B) -> (C & (D | E))" --> MapNode(IntersectionNode(Set(A, B)), IntersectionNode(Set(C, SumNode(Set(D, E)))))
     "A | B & C -> D" --> SumNode(Set(A, IntersectionNode(Set(B, MapNode(C, D)))))
+  }
+
+  it should "fail on incorrect type syntax" in {
+    "A & B &".fails
+    "| A | B".fails
+    "[A | B & [C -> [D]]".fails
+    "(A, B]".fails
+    "A -> (".fails
+    "[A -> (B | )]".fails
+    "(A, B, C,)".fails
+    "(A,,B, C)".fails
   }
 }
