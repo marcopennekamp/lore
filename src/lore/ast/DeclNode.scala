@@ -36,7 +36,7 @@ object TypeDeclNode {
   ) extends TypeDeclNode
 
   case class EntityNode(
-    name: String, supertypeName: Option[String], ownedBy: TypeExprNode, isAbstract: Boolean,
+    name: String, supertypeName: Option[String], ownedBy: Option[TypeExprNode], isAbstract: Boolean,
     members: List[MemberNode], constructors: List[ConstructorNode],
   ) extends TypeDeclNode
 

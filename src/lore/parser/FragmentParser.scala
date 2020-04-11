@@ -64,7 +64,13 @@ object FragmentParser {
     }
   }
 
-  def entity[_: P]: P[TypeDeclNode.EntityNode] = ???
+  def entity[_: P]: P[TypeDeclNode.EntityNode] = {
+    def ownedBy = P(("owned by" ~ typeExpression).?)
+    P("abstract".?.! ~ "entity" ~/ identifier ~ ownedBy ~ `extends` ~ classBody(property | component)).map {
+      case (abstractKeyword, name, ownedBy, supertypeName, (members, constructors)) =>
+        TypeDeclNode.EntityNode(name, supertypeName, ownedBy, abstractKeyword == "abstract", members, constructors)
+    }
+  }
 
   def classBody[Member, _: P](member: => P[Member]): P[(List[Member], List[TypeDeclNode.ConstructorNode])] = {
     def members = P(member.repX(sep = Space.terminators)).map(_.toList)
