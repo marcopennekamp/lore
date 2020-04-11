@@ -28,3 +28,6 @@ scalaSource in Test := { (baseDirectory in Test)(_ / "test") }.value
 
 // Show time measurements of individual tests.
 testOptions in Test += Tests.Argument("-oD")
+
+// Set lore.Lore as the main object. All other main functions are meant to be run via the IDE.
+mainClass in (Compile, run) := Some("lore.Lore")
