@@ -175,8 +175,42 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     "if (b) return a else return c" --> IfElseNode(vb, ReturnNode(va), ReturnNode(vc))
     // Dangling else! What will the parser choose?
     "if (x) if (b) a else c" --> IfElseNode(vx, IfElseNode(vb, va, vc), UnitNode)
-    // TODO: Test repeat loops.
-    // TODO: Test for loops.
+
+    // Repeat-while repetitions.
+    "repeat while (a > b) a = a / 2" --> RepeatWhileNode(
+      GreaterThanNode(va, vb),
+      AssignmentNode(AddressNode(List("a")), DivisionNode(va, IntLiteralNode(2))),
+      deferCheck = false,
+    )
+    "repeat { println('Morning, World') } while (sunRisesOn(earth))" --> RepeatWhileNode(
+      CallNode("sunRisesOn", None, List(VariableNode("earth"))),
+      BlockNode(List(
+        CallNode("println", None, List(StringLiteralNode("Morning, World"))),
+      )),
+      deferCheck = true,
+    )
+
+    // Iterations.
+    """
+    |{
+    |  const people = ['abra', 'betty', 'carl']
+    |  for (person in people) println('Hey, $person!')
+    |}
+    |""".stripMargin --> BlockNode(List(
+      VariableDeclarationNode("people", ListNode(List(
+        StringLiteralNode("abra"), StringLiteralNode("betty"), StringLiteralNode("carl"),
+      )), isMutable = false),
+      IterationNode(
+        List(ExtractorNode("person", VariableNode("people"))),
+        CallNode("println", None, List(
+          ConcatenationNode(List(StringLiteralNode("Hey, "), VariableNode("person"), StringLiteralNode("!")))
+        )),
+      ),
+    ))
+    "for (a in as, b in bs) yield a + b" --> IterationNode(
+      List(ExtractorNode("a", VariableNode("as")), ExtractorNode("b", VariableNode("bs"))),
+      YieldNode(AdditionNode(va, vb)),
+    )
   }
 
   it should "parse instantiation, multi-function calls, and fixed function calls correctly" in {

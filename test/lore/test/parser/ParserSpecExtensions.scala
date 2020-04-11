@@ -3,15 +3,15 @@ package lore.test.parser
 import fastparse._
 import lore.test.BaseSpec
 import org.scalatest.Assertion
-
 import ScalaWhitespace._
+import lore.parser.Space
 
 trait ParserSpecExtensions[Node <: lore.ast.Node] { base: BaseSpec =>
   def parser[_: P]: P[Node]
 
   implicit class CheckParseExtension(source: String) {
     private def parse(onSuccess: Node => Assertion, onFailure: String => Assertion): Assertion = {
-      def file[_: P] = P(parser ~ End)
+      def file[_: P] = P(Space.WL ~ parser ~ Space.WL ~ End)
       fastparse.parse(source, file(_)) match {
         case Parsed.Success(result, _) => onSuccess(result)
         case Parsed.Failure(_, _, extra) => onFailure(extra.trace().aggregateMsg)
