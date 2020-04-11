@@ -10,7 +10,7 @@ import ScalaWhitespace._
   */
 object FragmentParser {
   import LexicalParser.identifier
-  import StatementParser.{expression, block}
+  import StatementParser.{statement, expression, block, arguments}
   import TypeParser.typeExpression
 
   def parse(source: String): Option[Seq[DeclNode]] = {
@@ -29,13 +29,16 @@ object FragmentParser {
     P(Space.WL ~~ topDeclaration.repX(0, Space.terminators) ~~ Space.WL ~~ End)
   }
 
-  def topDeclaration[_: P]: P[DeclNode] = P(functionDeclaration | actionDeclaration | typeDeclaration)
+  def topDeclaration[_: P]: P[DeclNode] = P(function | action | typeDeclaration)
 
-  def functionDeclaration[_: P]: P[DeclNode.FunctionNode] = {
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Function declarations.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  def function[_: P]: P[DeclNode.FunctionNode] = {
     P("function" ~/ identifier ~ parameters ~ ":" ~ typeExpression ~ ("=" ~ expression).?).map(DeclNode.FunctionNode.tupled)
   }
 
-  def actionDeclaration[_: P]: P[DeclNode.FunctionNode] = {
+  def action[_: P]: P[DeclNode.FunctionNode] = {
     P("action" ~/ identifier ~ parameters ~ block.?).map {
       case (name, parameters, body) => DeclNode.FunctionNode(name, parameters, TypeExprNode.UnitNode, body)
     }
@@ -46,17 +49,40 @@ object FragmentParser {
     P("(" ~ parameter.rep(sep = ",") ~ ")").map(_.toList)
   }
 
-  def typeDeclaration[_: P]: P[TypeDeclNode] = P(normalTypeDeclaration | labelType | classType)
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Type Declarations.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  def typeDeclaration[_: P]: P[TypeDeclNode] = P(alias | label | `class`)
 
-  def normalTypeDeclaration[_: P]: P[TypeDeclNode.AliasNode] = P("type" ~/ identifier ~ "=" ~ typeExpression).map { case (name, expression) =>
-    TypeDeclNode.AliasNode(name, expression)
+  def alias[_: P]: P[TypeDeclNode.AliasNode] = P("type" ~/ identifier ~ "=" ~ typeExpression).map(TypeDeclNode.AliasNode.tupled)
+  def label[_: P]: P[TypeDeclNode.LabelNode] = P("label" ~/ identifier ~ `extends`).map(TypeDeclNode.LabelNode.tupled)
+
+  def `class`[_: P]: P[TypeDeclNode.ClassNode] = {
+    P("abstract".?.! ~ "class" ~/ identifier ~ `extends` ~ classBody(property)).map {
+      case (abstractKeyword, name, supertypeName, (properties, constructors)) =>
+        TypeDeclNode.ClassNode(name, supertypeName, abstractKeyword == "abstract", properties, constructors)
+    }
   }
 
-  def labelType[_: P]: P[TypeDeclNode.LabelNode] = P("label" ~/ identifier ~ ("<:" ~ identifier).?).map { case (name, supertypeName) =>
-    TypeDeclNode.LabelNode(name, supertypeName)
-  }
+  def entity[_: P]: P[TypeDeclNode.EntityNode] = ???
 
-  def classType[_: P]: P[TypeDeclNode.ClassNode] = P("abstract".?.! ~ "class" ~/ identifier ~ ("<:" ~ identifier).?).map { case (abstractKeyword, name, supertypeName) =>
-    TypeDeclNode.ClassNode(name, supertypeName, abstractKeyword == "abstract", List.empty, List.empty) // TODO: Pass properties and constructors.
+  def classBody[Member, _: P](member: => P[Member]): P[(List[Member], List[TypeDeclNode.ConstructorNode])] = {
+    def members = P(member.repX(sep = Space.terminators)).map(_.toList)
+    def constructors = P(constructor.repX(sep = Space.terminators)).map(_.toList)
+    P("{" ~ members ~ constructors ~ "}")
+  }
+  def `extends`[_: P]: P[Option[String]] = P(("extends" ~ identifier).?)
+  def property[_: P]: P[TypeDeclNode.PropertyNode] = P("mut".?.! ~ identifier ~ ":" ~ typeExpression).map {
+    case (mutKeyword, name, tpe) => TypeDeclNode.PropertyNode(name, tpe, mutKeyword == "mut")
+  }
+  def component[_: P]: P[TypeDeclNode.ComponentNode] = P("component" ~ identifier ~ ("overrides" ~ identifier).?).map(TypeDeclNode.ComponentNode.tupled)
+  def constructor[_: P]: P[TypeDeclNode.ConstructorNode] = {
+    def constructorCall = P(("." ~ identifier).? ~ arguments).map(TypeDeclNode.ConstructorCallNode.tupled)
+    def thisCall = P("this" ~ constructorCall)
+    def superCall = P("super" ~ constructorCall)
+    def constructCall = P("construct" ~ arguments ~ ("with" ~ superCall).?).map(TypeDeclNode.ConstructNode.tupled)
+    def continuation = P(thisCall | constructCall)
+    def statements = P(statement.repX(0, Space.terminators)).map(_.toList)
+    P(identifier ~ parameters ~ "{" ~ statements ~ continuation ~ "}").map(TypeDeclNode.ConstructorNode.tupled)
   }
 }

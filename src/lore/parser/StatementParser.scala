@@ -116,7 +116,7 @@ object StatementParser {
 
   private def fixedCall[_: P]: P[ExprNode] = P(identifier ~ ".fixed" ~ typeArguments ~ arguments).map(ExprNode.FixedFunctionCallNode.tupled)
   private def call[_: P]: P[ExprNode] = P(identifier ~ ("." ~ identifier).? ~ arguments).map(ExprNode.CallNode.tupled)
-  private def arguments[_: P]: P[List[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toList)
+  def arguments[_: P]: P[List[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toList)
   private def typeArguments[_: P]: P[List[TypeExprNode]] = P("[" ~ TypeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toList)
   private def variable[_: P]: P[ExprNode] = P(identifier).map(ExprNode.VariableNode)
   def block[_: P]: P[ExprNode] = P("{" ~ statement.repX(0, Space.terminators) ~ "}").map(_.toList).map(ExprNode.BlockNode)

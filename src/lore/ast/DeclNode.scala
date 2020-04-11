@@ -36,28 +36,27 @@ object TypeDeclNode {
   ) extends TypeDeclNode
 
   case class EntityNode(
-    name: String, supertypeName: Option[String], isAbstract: Boolean,
+    name: String, supertypeName: Option[String], ownedBy: TypeExprNode, isAbstract: Boolean,
     members: List[MemberNode], constructors: List[ConstructorNode],
   ) extends TypeDeclNode
 
   sealed trait MemberNode
   case class PropertyNode(name: String, tpe: TypeExprNode, isMutable: Boolean) extends MemberNode
-  case class ComponentNode(name: String, nominalType: TypeExprNode.NominalNode) extends MemberNode
+  case class ComponentNode(name: String, overrides: Option[String]) extends MemberNode
 
   /**
-    * @param name The default constructor has no name.
+    * This node is the default constructor if its name equals the name of the class it belongs to.
     */
   case class ConstructorNode(
-    name: Option[String], parameters: List[DeclNode.ParameterNode], body: ExprNode.BlockNode,
-    continuation: ConstructorNode.ContinuationNode
+    name: String, parameters: List[DeclNode.ParameterNode],
+    body: List[StmtNode], continuation: ContinuationNode
   )
-  object ConstructorNode {
-    /**
-      * The continuation of the construction is deferred to some other constructor or the internal
-      * construction mechanism.
-      */
-    sealed trait ContinuationNode
-    case class ConstructorCallNode(arguments: List[ExprNode]) extends ContinuationNode
-    case class ConstructNode(arguments: List[ExprNode], withSuper: Option[List[ExprNode]]) extends ContinuationNode
-  }
+
+  /**
+    * The continuation of the construction is deferred to some other constructor or the internal
+    * construction mechanism.
+    */
+  sealed trait ContinuationNode
+  case class ConstructorCallNode(name: Option[String], arguments: List[ExprNode]) extends ContinuationNode
+  case class ConstructNode(arguments: List[ExprNode], withSuper: Option[ConstructorCallNode]) extends ContinuationNode
 }

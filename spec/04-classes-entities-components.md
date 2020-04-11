@@ -45,6 +45,13 @@ A **property** is either *immutable* (denoted without a keyword) or *mutable* (d
 
 A **constructor** is a function that creates an instance of the class it's declared within. Constructors are special in that they must be used to create a new instance of a class. There is no other way to define instantiation.
 
+A class can be **abstract:**
+
+```
+abstract class Score { }
+function points(score: Score) = ...
+```
+
 ###### Example
 
 ```
@@ -86,6 +93,10 @@ class Position {
   from2D(x: Real, y: Real) {
     this(x, y, 0)
   }
+  
+  from1D(x: Real) {
+    this.from2D(x, 0)
+  }
 }
 
 Position.from2D(1.0, 1.5) // => Position(1.0, 1.5, 0.0)
@@ -107,12 +118,12 @@ class Character {
   
   // Just for illustration purposes.
   Character(name: String) {
-    construct(name)
+    construct(name) 
   }
   
   fromArchetype(archetype: Archetype) {
     // We defer to the default constructor.
-    this(archetype.name)
+    this(archetype.name) 
   }
 }
 
