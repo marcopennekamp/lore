@@ -1,6 +1,6 @@
 label ToString
-label List <: ToString
-label LinkedList <: List
+label List extends ToString
+label LinkedList extends List
 label Sorted
 
 function concat(x: ToString, y: ToString): ToString = ()

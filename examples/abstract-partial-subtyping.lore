@@ -1,9 +1,9 @@
 label A
-label A1 <: A
-label A2 <: A
+label A1 extends A
+label A2 extends A
 label B
-label B1 <: B
-label B2 <: B
+label B1 extends B
+label B2 extends B
 class E
 
 function f(a: A, b: B): E

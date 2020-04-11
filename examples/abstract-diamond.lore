@@ -1,7 +1,7 @@
 abstract class A
-class AI <: A
+class AI extends A
 abstract class B
-class BI <: B
+class BI extends B
 
 /**
  * This example is meant to fail totality constraint validation. In simple terms, we want to ensure that

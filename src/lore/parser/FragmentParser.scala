@@ -75,7 +75,10 @@ object FragmentParser {
   private def classBody[Member, _: P](member: => P[Member]): P[(List[Member], List[TypeDeclNode.ConstructorNode])] = {
     def members = P(member.repX(sep = Space.terminators)).map(_.toList)
     def constructors = P(constructor.repX(sep = Space.terminators)).map(_.toList)
-    P("{" ~ members ~ constructors ~ "}")
+    P(("{" ~ members ~ constructors ~ "}").?).map {
+      case None => (List.empty, List.empty)
+      case Some(x) => x
+    }
   }
   private def `extends`[_: P]: P[Option[String]] = P(("extends" ~ identifier).?)
   private def property[_: P]: P[TypeDeclNode.PropertyNode] = P("mut".?.! ~ identifier ~ ":" ~ typeExpression).map {

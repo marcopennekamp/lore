@@ -1,7 +1,7 @@
 label X
-label A <: X
-label B <: X
-label C <: X
+label A extends X
+label B extends X
+label C extends X
 label T
 
 action f(v: X & T)

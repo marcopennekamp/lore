@@ -1,3 +1,6 @@
+// NOTE: This example currently doesn't compile because Position (a class) attempts to extend Saveable (a label).
+//       We will introduce classes being able to subtype labels in a future version of the language.
+
 /**
  * This example shows how we can implement implicit interfaces in Lore.
  * Imagine a situation in which we want to save an object. We have a code generator that generates the implementation
@@ -26,7 +29,7 @@ class Position extends Saveable {
 // of course, just an example.
 // action save(object: Position)
 
-class Character extends Saveable {
+entity Character extends Saveable {
   component Position
   component ExternalPhysics
 }

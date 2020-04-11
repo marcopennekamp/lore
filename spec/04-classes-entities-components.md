@@ -342,7 +342,7 @@ Note that one object can be a component of **multiple entities**. For example, y
 Let's see another example:
 
 ```
-class LemmingAI owned by +Position extends AI { }
+class LemmingAI owned by +Position extends AI
 
 function walk(entity: +LemmingAI) = {
   // Always forward! (To the right in a sidescrolling game.)

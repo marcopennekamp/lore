@@ -1,6 +1,6 @@
 label A
-label A1 <: A
-label A2 <: A
+label A1 extends A
+label A2 extends A
 label B
 label C
 type T = A | B | C
