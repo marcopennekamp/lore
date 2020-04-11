@@ -293,10 +293,10 @@ In the long term, `f.fixed[T1, T2, ...]` is supposed to return a function value.
 Lore will support a variety of **conditional expressions** (especially switch expressions). For now, we will have to make do with If:
 
 ```
-if (cond) expr1 else expr2
+if (cond) statement2 else statement2
 ```
 
-Note that either `expr` (or even `cond`) may be a block. The else part is, of course, optional. The so-called **dangling else** is always parsed as belonging to the `if` closest to it.
+Note that either `statement` (or even `cond`) may be a block. The else part is, of course, optional. The so-called **dangling else** is always parsed as belonging to the `if` closest to it.
 
 
 
@@ -309,18 +309,18 @@ Note that either `expr` (or even `cond`) may be a block. The else part is, of co
 In Lore, a **loop** repeats some piece of code until a given boolean expression is false. This is expressed by the archetypal Repeat-While:
 
 ```
-repeat while (cond) expr
-repeat expr while (cond)
+repeat while (cond) statement
+repeat statement while (cond)
 ```
 
-The first version checks the condition first, then executes the expression (if the condition is true). The second version executes the expression first, then checks the condition (and terminates the loop if the condition is false).
+The first version checks the condition first, then executes the statement (if the condition is true). The second version executes the expression first, then checks the condition (and terminates the loop if the condition is false).
 
 ##### Iteration
 
 An **iteration** iterates over some kind of collection. We define the archetypal For as such:
 
 ```
-for (e1 in col1, e2 in col2, ...) expr
+for (e1 in col1, e2 in col2, ...) statement
 ```
 
 In the syntax above, `col2` is fully iterated for each `e1` and so on, so supplying multiple `in` declarations effectively turns the For into **nested iteration**.
