@@ -179,6 +179,29 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     // TODO: Test for loops.
   }
 
+  it should "parse instantiation, multi-function calls, and fixed function calls correctly" in {
+    "const point = Point(1, 5)" --> VariableDeclarationNode(
+      "point", CallNode("Point", None, List(IntLiteralNode(1), IntLiteralNode(5))), isMutable = false,
+    )
+    "let position = Position3D.from2D(5.5, 6.7)" --> VariableDeclarationNode(
+      "position", CallNode("Position3D", Some("from2D"), List(RealLiteralNode(5.5), RealLiteralNode(6.7))),
+      isMutable = true,
+    )
+    "concat('stringA', 'stringB', 'stringC')" --> CallNode(
+      "concat", None, List(StringLiteralNode("stringA"), StringLiteralNode("stringB"), StringLiteralNode("stringC")),
+    )
+    "applyDot.fixed[Dot, +Health](dot, e)" --> FixedFunctionCallNode(
+      "applyDot", List(TypeExprNode.NominalNode("Dot"), TypeExprNode.ComponentNode(TypeExprNode.NominalNode("Health"))),
+      List(VariableNode("dot"), VariableNode("e")),
+    )
+
+    // Calls that aren't fix can't accept type arguments.
+    "applyDot.fx[Dot, +Health](dot, e)".fails
+    "Point[Int](1, 5)".fails
+    "Position3D.from2D[Real](5.5, 6.7)".fails
+    "concat[String]('stringA', 'stringB', 'stringC')".fails
+  }
+
   it should "parse a block-rich expression within 50 milliseconds" in {
     timed(50) { () =>
       "{ a + { b } + { b }.x + b }" --> BlockNode(List(
