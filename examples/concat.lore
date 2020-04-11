@@ -3,7 +3,7 @@ label List <: ToString
 label LinkedList <: List
 label Sorted
 
-function concat(x: ToString, y: ToString) = ()
-function concat(x: List, y: List) = ()
-function concat(x: LinkedList, y: LinkedList) = ()
-function concat(x: LinkedList, y: LinkedList & Sorted) = ()
+function concat(x: ToString, y: ToString): ToString = ()
+function concat(x: List, y: List): List = ()
+function concat(x: LinkedList, y: LinkedList): LinkedList = ()
+function concat(x: LinkedList, y: LinkedList & Sorted): LinkedList = ()

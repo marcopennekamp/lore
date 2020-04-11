@@ -119,7 +119,7 @@ object StatementParser {
   private def arguments[_: P]: P[List[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toList)
   private def typeArguments[_: P]: P[List[TypeExprNode]] = P("[" ~ TypeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toList)
   private def variable[_: P]: P[ExprNode] = P(identifier).map(ExprNode.VariableNode)
-  private def block[_: P]: P[ExprNode] = P("{" ~ statement.repX(0, Space.terminators) ~ "}").map(_.toList).map(ExprNode.BlockNode)
+  def block[_: P]: P[ExprNode] = P("{" ~ statement.repX(0, Space.terminators) ~ "}").map(_.toList).map(ExprNode.BlockNode)
   private def list[_: P]: P[ExprNode] = P("[" ~ (expression ~ ("," ~ expression).rep).? ~ "]").map {
     case None => ExprNode.ListNode(List.empty)
     case Some((left, expressions)) => ExprNode.ListNode(left +: expressions.toList)

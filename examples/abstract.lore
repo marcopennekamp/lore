@@ -5,9 +5,9 @@ label B
 label C
 type T = A | B | C
 
-function f(t: T)
-function f(a: A)
-function f(a: A1) = ()
-function f(a: A2) = ()
-function f(b: B) = ()
-function f(c: C) = ()
+action f(t: T)
+action f(a: A)
+action f(a: A1) { }
+action f(a: A2) { }
+action f(b: B) { }
+action f(c: C) { }

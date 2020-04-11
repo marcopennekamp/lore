@@ -133,11 +133,11 @@ object Context {
       case TypeDeclNode.AliasNode(name, typeExpression) =>
         val tpe = evaluateTypeExpression(typeExpression)
         types.put(name, tpe)
-      case DeclNode.FunctionNode(name, parameterDeclarations, isAbstract, _, _) =>
+      case functionNode@DeclNode.FunctionNode(name, parameterDeclarations, outputType, body) =>
         val parameters = parameterDeclarations.map { decl =>
           Parameter(decl.name, evaluateTypeExpression(decl.tpe))
         }
-        addFunction(LoreFunction(name, parameters, isAbstract))
+        addFunction(LoreFunction(name, parameters, functionNode.isAbstract))
     }
 
     new Context(types.toMap, multiFunctions.toMap)

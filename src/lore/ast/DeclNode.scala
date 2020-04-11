@@ -12,9 +12,10 @@ object DeclNode {
     *             represent TopLevelExprNode.
     */
   case class FunctionNode(
-    name: String, parameters: List[ParameterNode], isAbstract: Boolean,
-    outputType: TypeExprNode, body: ExprNode,
-  ) extends DeclNode
+    name: String, parameters: List[ParameterNode], outputType: TypeExprNode, body: Option[ExprNode],
+  ) extends DeclNode {
+    def isAbstract: Boolean = body.isEmpty
+  }
 
   case class ParameterNode(name: String, tpe: TypeExprNode)
 }

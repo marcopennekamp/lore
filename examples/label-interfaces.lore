@@ -4,9 +4,9 @@
  */
 
 label L
-function f(x: L) = () // Some implementation that accesses g and h.
-function g(x: L)
-function h(x: L)
+function f(x: L): Int = () // Some implementation that accesses g and h.
+function g(x: L): Real
+function h(x: L): Real
 
 // Two classes that define ad-hoc functions for the label type. Note that the idea is that A and B are specialized
 // at RUN-TIME to subtype the label type. This means that we can't check at compile-time whether A or B actually
@@ -14,11 +14,11 @@ function h(x: L)
 // TODO: Everywhere a type is specialized with a label type, we check at compile-time that the required functions are
 //       declared.
 class A
-function g(a: A & L) = ()
-function h(a: A & L) = ()
+function g(a: A & L): Real = ()
+function h(a: A & L): Real = ()
 
 class B
-function g(b: B & L) = ()
-function h(a: B & L) = ()
+function g(b: B & L): Real = ()
+function h(a: B & L): Real = ()
 
 // We can then call f with A or B if they also subtype L: f(a) and f(b).

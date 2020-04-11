@@ -4,6 +4,6 @@ label B <: X
 label C <: X
 label T
 
-function f(v: X & T)
-function f(v: (A | B) & T) = ()
-function f(v: C & T) = ()
+action f(v: X & T)
+action f(v: (A | B) & T) { }
+action f(v: C & T) { }
