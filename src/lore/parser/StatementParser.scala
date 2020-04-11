@@ -15,7 +15,7 @@ object StatementParser {
   def topLevelExpression[_: P]: P[TopLevelExprNode] = P(variableDeclaration | assignment | `yield` | expression)
   private def variableDeclaration[_: P]: P[TopLevelExprNode.VariableDeclarationNode] = {
     P(("const" | "let").! ~ identifier ~ "=" ~ expression).map { case (qualifier, name, value) =>
-      TopLevelExprNode.VariableDeclarationNode(name, value, qualifier == "const")
+      TopLevelExprNode.VariableDeclarationNode(name, value, qualifier == "let")
     }
   }
   private def assignment[_: P]: P[TopLevelExprNode.AssignmentNode] = P(address ~ "=" ~ expression).map(TopLevelExprNode.AssignmentNode.tupled)
@@ -92,7 +92,12 @@ object StatementParser {
   /**
     * All expressions immediately accessible via postfix dot notation.
     */
-  private def accessible[_: P]: P[ExprNode] = P(variable | block | list | map | enclosed)
+  private def accessible[_: P]: P[ExprNode] = P(fixedCall | call | variable | block | list | map | enclosed)
+
+  private def fixedCall[_: P]: P[ExprNode] = P(identifier ~ ".fixed" ~ typeArguments ~ arguments).map(ExprNode.FixedFunctionCallNode.tupled)
+  private def call[_: P]: P[ExprNode] = P(identifier ~ ("." ~ identifier).? ~ arguments).map(ExprNode.CallNode.tupled)
+  private def arguments[_: P]: P[List[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toList)
+  private def typeArguments[_: P]: P[List[TypeExprNode]] = P("[" ~ TypeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toList)
   private def variable[_: P]: P[ExprNode] = P(identifier).map(ExprNode.VariableNode)
   private def block[_: P]: P[ExprNode] = P("{" ~ statement.repX(0, Space.terminators) ~ "}").map(_.toList).map(ExprNode.BlockNode)
   private def list[_: P]: P[ExprNode] = P("[" ~ (expression ~ ("," ~ expression).rep).? ~ "]").map {
