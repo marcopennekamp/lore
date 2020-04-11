@@ -141,6 +141,6 @@ object ExprNode {
     */
   case class RepeatWhileNode(condition: ExprNode, body: StmtNode, deferCheck: Boolean) extends ExprNode
 
-  case class IterationNode(extractions: List[ExtractorNode], body: StmtNode) extends ExprNode
+  case class IterationNode(extractors: List[ExtractorNode], body: StmtNode) extends ExprNode
   case class ExtractorNode(variableName: String, collection: ExprNode)
 }

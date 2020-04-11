@@ -25,11 +25,31 @@ object StatementParser {
   private def `yield`[_: P]: P[TopLevelExprNode.YieldNode] = P("yield" ~ expression).map(TopLevelExprNode.YieldNode)
 
   // Parse expressions. Finally!
-  def expression[_: P]: P[ExprNode] = P(ifElse | operatorExpression)
+  def expression[_: P]: P[ExprNode] = P(ifElse | repeatWhile | iteration | operatorExpression)
 
   private def ifElse[_: P]: P[ExprNode] = {
     P("if" ~ "(" ~ expression ~ ")" ~ statement ~ ("else" ~ statement).?).map {
       case (condition, onTrue, onFalse) => ExprNode.IfElseNode(condition, onTrue, onFalse.getOrElse(ExprNode.UnitNode))
+    }
+  }
+
+  //   case class RepeatWhileNode(condition: ExprNode, body: StmtNode, deferCheck: Boolean) extends ExprNode // TODO: Write parser.
+
+  private def repeatWhile[_: P]: P[ExprNode.RepeatWhileNode] = {
+    def whileCond = P("while" ~ "(" ~ expression ~ ")")
+    def checkBefore = P(whileCond ~ statement).map {
+      case (cond, body) => ExprNode.RepeatWhileNode(cond, body, deferCheck = false)
+    }
+    def checkAfter = P(statement ~ whileCond).map {
+      case (body, cond) => ExprNode.RepeatWhileNode(cond, body, deferCheck = true)
+    }
+    P("repeat" ~ (checkBefore | checkAfter))
+  }
+
+  private def iteration[_: P]: P[ExprNode.IterationNode] = {
+    def extractor = P(identifier ~ "in" ~ expression).map(ExprNode.ExtractorNode.tupled)
+    P("for" ~ "(" ~ extractor.rep(1, sep = ",") ~ ")" ~ statement).map {
+      case (extractors, stat) => ExprNode.IterationNode(extractors.toList, stat)
     }
   }
 
