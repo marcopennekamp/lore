@@ -92,12 +92,16 @@ object StatementParser {
   /**
     * All expressions immediately accessible via postfix dot notation.
     */
-  private def accessible[_: P]: P[ExprNode] = P(variable | block | list | enclosed)
+  private def accessible[_: P]: P[ExprNode] = P(variable | block | list | map | enclosed)
   private def variable[_: P]: P[ExprNode] = P(identifier).map(ExprNode.VariableNode)
   private def block[_: P]: P[ExprNode] = P("{" ~ statement.repX(0, Space.terminators) ~ "}").map(_.toList).map(ExprNode.BlockNode)
   private def list[_: P]: P[ExprNode] = P("[" ~ (expression ~ ("," ~ expression).rep).? ~ "]").map {
     case None => ExprNode.ListNode(List.empty)
     case Some((left, expressions)) => ExprNode.ListNode(left +: expressions.toList)
+  }
+  private def map[_: P]: P[ExprNode] = {
+    def keyValue = P(expression ~ "->" ~ expression).map(ExprNode.KeyValueNode.tupled)
+    P("%{" ~ keyValue.rep(sep = ",") ~ "}").map(_.toList).map(ExprNode.MapNode)
   }
 
   /**

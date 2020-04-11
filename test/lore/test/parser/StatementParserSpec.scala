@@ -126,7 +126,22 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
       AdditionNode(va, vb), MultiplicationNode(va, vc), LessThanNode(vx, RealLiteralNode(5.3)),
     ))
 
-    // TODO: Test map constructors.
+    // Map constructors.
+    "%{ }" --> MapNode(List.empty)
+    "%{ a -> 5, b -> 10 }" --> MapNode(List(KeyValueNode(va, IntLiteralNode(5)), KeyValueNode(vb, IntLiteralNode(10))))
+    "%{ 'foo' -> (a, b), 'bar' -> (c, c) }" --> MapNode(List(
+      KeyValueNode(StringLiteralNode("foo"), TupleNode(List(va, vb))),
+      KeyValueNode(StringLiteralNode("bar"), TupleNode(List(vc, vc))),
+    ))
+    "%{ a -> %{ 'test' -> 'me' }, b -> %{ 'test' -> 'well $c' } }" --> MapNode(List(
+      KeyValueNode(va, MapNode(List(KeyValueNode(StringLiteralNode("test"), StringLiteralNode("me"))))),
+      KeyValueNode(vb, MapNode(List(KeyValueNode(StringLiteralNode("test"), ConcatenationNode(List(StringLiteralNode("well "), vc)))))),
+    ))
+    "%{ 1 -> a + b, 5 -> a * c, 10 -> x < 5.3 }" --> MapNode(List(
+      KeyValueNode(IntLiteralNode(1), AdditionNode(va, vb)),
+      KeyValueNode(IntLiteralNode(5), MultiplicationNode(va, vc)),
+      KeyValueNode(IntLiteralNode(10), LessThanNode(vx, RealLiteralNode(5.3))),
+    ))
   }
 
   it should "parse conditionals and repetitions correctly" in {
