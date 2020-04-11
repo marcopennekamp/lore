@@ -1,6 +1,7 @@
 package lore.test.parser
 
 import fastparse._
+import lore.ast.StmtNode.ReturnNode
 import lore.ast._
 import lore.parser.StatementParser
 import lore.test.BaseSpec
@@ -156,8 +157,24 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
       )),
       UnitNode
     )
-    // TODO: Test else branch.
-    // TODO: What happens with a dangling else?
+    "if (i <= 25) { i = i + 1 } else { i = i - 1 }" --> IfElseNode(
+      LessThanEqualsNode(vi, IntLiteralNode(25)),
+      BlockNode(List(
+        AssignmentNode(
+          AddressNode(List("i")),
+          AdditionNode(vi, IntLiteralNode(1)),
+        ),
+      )),
+      BlockNode(List(
+        AssignmentNode(
+          AddressNode(List("i")),
+          SubtractionNode(vi, IntLiteralNode(1)),
+        ),
+      )),
+    )
+    "if (b) return a else return c" --> IfElseNode(vb, ReturnNode(va), ReturnNode(vc))
+    // Dangling else! What will the parser choose?
+    "if (x) if (b) a else c" --> IfElseNode(vx, IfElseNode(vb, va, vc), UnitNode)
     // TODO: Test repeat loops.
     // TODO: Test for loops.
   }

@@ -296,7 +296,7 @@ Lore will support a variety of **conditional expressions** (especially switch ex
 if (cond) expr1 else expr2
 ```
 
-Note that either `expr` (or even `cond`) may be a block. The else part is, of course, optional.
+Note that either `expr` (or even `cond`) may be a block. The else part is, of course, optional. The so-called **dangling else** is always parsed as belonging to the `if` closest to it.
 
 
 
