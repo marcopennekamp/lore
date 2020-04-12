@@ -31,7 +31,7 @@ class HealthState {
   mut health: Int
 }
 
-action heal(entity: +HealthState, amount: Int) { entity.HealthState.health += amount }
+action heal(entity: +HealthState, amount: Int) { entity.HealthState.health += amount }
 action damage(entity: +HealthState, amount: Int) { entity.HealthState.health -= amount }
 
 // Idea for later: Even mutable fields are immutable by default, unless a variable is declared as mutable. So declaring
