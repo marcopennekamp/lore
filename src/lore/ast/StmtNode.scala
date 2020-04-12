@@ -50,7 +50,16 @@ object TopLevelExprNode {
     * Yield is a part of top-level expressions, because we don't want a programmer to yield in the middle of
     * an expression.
     */
-  case class YieldNode(expr: ExprNode) extends ExprNode
+  case class YieldNode(expr: ExprNode) extends TopLevelExprNode
+
+  /**
+    * The continuation of the construction is deferred to some other constructor or the internal construction
+    * mechanism. Even though a continuation is only legal as the very last statement of a constructor block,
+    * we parse it as a top-level expression to avoid ambiguities with function calls.
+    */
+  sealed trait ContinuationNode extends TopLevelExprNode
+  case class ConstructorCallNode(name: Option[String], arguments: List[ExprNode]) extends ContinuationNode
+  case class ConstructNode(arguments: List[ExprNode], withSuper: Option[ConstructorCallNode]) extends ContinuationNode
 }
 
 /**

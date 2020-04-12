@@ -85,12 +85,6 @@ object FragmentParser {
   }
   private def component[_: P]: P[TypeDeclNode.ComponentNode] = P("component" ~ identifier ~ ("overrides" ~ identifier).?).map(TypeDeclNode.ComponentNode.tupled)
   private def constructor[_: P]: P[TypeDeclNode.ConstructorNode] = {
-    def constructorCall = P(("." ~ identifier).? ~ arguments).map(TypeDeclNode.ConstructorCallNode.tupled)
-    def thisCall = P("this" ~ constructorCall)
-    def superCall = P("super" ~ constructorCall)
-    def constructCall = P("construct" ~ arguments ~ ("with" ~ superCall).?).map(TypeDeclNode.ConstructNode.tupled)
-    def continuation = P(thisCall | constructCall)
-    def statements = P(statement.repX(0, Space.terminators)).map(_.toList)
-    P(identifier ~ parameters ~ "{" ~ statements ~ continuation ~ "}").map(TypeDeclNode.ConstructorNode.tupled)
+    P(identifier ~ parameters ~ block).map(TypeDeclNode.ConstructorNode.tupled)
   }
 }

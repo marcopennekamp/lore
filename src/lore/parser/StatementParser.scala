@@ -12,7 +12,7 @@ object StatementParser {
   private def returnStatement[_: P]: P[StmtNode] = P("return" ~ expression).map(StmtNode.ReturnNode)
 
   // Parse a handful of top-level expressions before jumping into the deep end.
-  def topLevelExpression[_: P]: P[TopLevelExprNode] = P(variableDeclaration | assignment | `yield` | expression)
+  def topLevelExpression[_: P]: P[TopLevelExprNode] = P(variableDeclaration | assignment | `yield` | continuation | expression)
   private def variableDeclaration[_: P]: P[TopLevelExprNode.VariableDeclarationNode] = {
     P(("const" | "let").! ~ identifier ~ TypeParser.typing.? ~ "=" ~ expression).map { case (qualifier, name, tpe, value) =>
       TopLevelExprNode.VariableDeclarationNode(name, qualifier == "let", tpe, value)
@@ -31,6 +31,13 @@ object StatementParser {
     P(identifier ~~ ("." ~~ identifier).rep).map { case (s1, strings) => TopLevelExprNode.AddressNode(s1 +: strings.toList) }
   }
   private def `yield`[_: P]: P[TopLevelExprNode.YieldNode] = P("yield" ~ expression).map(TopLevelExprNode.YieldNode)
+  private def continuation[_: P] = {
+    def constructorCall = P(("." ~ identifier).? ~ arguments).map(TopLevelExprNode.ConstructorCallNode.tupled)
+    def thisCall = P("this" ~ constructorCall)
+    def superCall = P("super" ~ constructorCall)
+    def constructCall = P("construct" ~ arguments ~ ("with" ~ superCall).?).map(TopLevelExprNode.ConstructNode.tupled)
+    P(thisCall | constructCall)
+  }
 
   // Parse expressions. Finally!
   def expression[_: P]: P[ExprNode] = P(ifElse | repeatWhile | iteration | operatorExpression)

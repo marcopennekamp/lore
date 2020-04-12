@@ -44,17 +44,8 @@ object TypeDeclNode {
 
   /**
     * This node is the default constructor if its name equals the name of the class it belongs to.
+    *
+    * The node is only valid if the last statement of the body is a continuation node.
     */
-  case class ConstructorNode(
-    name: String, parameters: List[DeclNode.ParameterNode],
-    body: List[StmtNode], continuation: ContinuationNode
-  )
-
-  /**
-    * The continuation of the construction is deferred to some other constructor or the internal
-    * construction mechanism.
-    */
-  sealed trait ContinuationNode
-  case class ConstructorCallNode(name: Option[String], arguments: List[ExprNode]) extends ContinuationNode
-  case class ConstructNode(arguments: List[ExprNode], withSuper: Option[ConstructorCallNode]) extends ContinuationNode
+  case class ConstructorNode(name: String, parameters: List[DeclNode.ParameterNode], body: ExprNode)
 }
