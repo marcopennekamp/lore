@@ -1,6 +1,6 @@
 # Expressions
 
-[Previous File](04-classes-entities-components.md)
+[Previous File](04-classes-entities-components.md) [Next File](06-compiler.md)
 
 This document outlines all valid **expressions** found in Lore.
 
