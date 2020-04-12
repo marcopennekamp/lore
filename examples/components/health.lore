@@ -18,7 +18,7 @@ class Sprite owned by +Position {
   mut image: Image
 }
 
-class Entity2D {
+entity Entity2D {
   component Position
   component Sprite
 }
@@ -68,7 +68,7 @@ action updateHealth(entity: +Regeneration) {
 //   Skeleton & +Position & +Sprite & +HealthState & +Regeneration
 // Note that Skeleton inherits the components of Entity2D.
 
-class Skeleton extends Entity2D {
+entity Skeleton extends Entity2D {
   component HealthState
   component Regeneration
   // Idea for later: Declare default component values:

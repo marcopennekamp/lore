@@ -61,11 +61,11 @@ object FragmentParser {
   // The only difference between classes and entities is that only entities can contain component declarations.
   // Once we have moved beyond the parsing stage, the compiler sees both classes and entities as ClassNodes, ClassTypes,
   // CLassDefinitions, etc.
-  private def `class`[_: P]: P[TypeDeclNode.ClassNode] = P(dataType(property))
-  private def entity[_: P]: P[TypeDeclNode.ClassNode] = P(dataType(property | component))
+  private def `class`[_: P]: P[TypeDeclNode.ClassNode] = P(dataType("class", property))
+  private def entity[_: P]: P[TypeDeclNode.ClassNode] = P(dataType("entity", property | component))
 
-  private def dataType[_: P](member: => P[TypeDeclNode.MemberNode]): P[TypeDeclNode.ClassNode] = {
-    P("abstract".?.! ~ "class" ~/ identifier ~ `extends` ~ ownedBy ~ classBody(member)).map {
+  private def dataType[_: P](kind: => P[Unit], member: => P[TypeDeclNode.MemberNode]): P[TypeDeclNode.ClassNode] = {
+    P("abstract".?.! ~ kind ~/ identifier ~ `extends` ~ ownedBy ~ classBody(member)).map {
       case (abstractKeyword, name, supertypeName, ownedBy, (properties, constructors)) =>
         TypeDeclNode.ClassNode(name, supertypeName, ownedBy, abstractKeyword == "abstract", properties, constructors)
     }
