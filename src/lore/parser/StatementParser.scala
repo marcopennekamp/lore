@@ -19,7 +19,7 @@ object StatementParser {
     }
   }
   private def assignment[_: P]: P[TopLevelExprNode.AssignmentNode] = {
-    P(address ~ ("=" | "+=" | "-=" | "*=" | "/=").! ~ expression).map {
+    P(address ~ StringIn("=", "+=", "-=", "*=", "/=").! ~ expression).map {
       case (address, "=", rhs) => TopLevelExprNode.AssignmentNode(address, rhs)
       case (address, "+=", rhs) => TopLevelExprNode.AssignmentNode(address, ExprNode.AdditionNode(address.toExpression, rhs))
       case (address, "-=", rhs) => TopLevelExprNode.AssignmentNode(address, ExprNode.SubtractionNode(address.toExpression, rhs))

@@ -147,7 +147,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
 
   it should "parse conditionals and repetitions correctly" in {
     "if (true) false" --> IfElseNode(BoolLiteralNode(true), BoolLiteralNode(false), UnitNode)
-    "if (i < 25) { i = i + 1 }" --> IfElseNode(
+    "if (i < 25) { i += 1 }" --> IfElseNode(
       LessThanNode(vi, IntLiteralNode(25)),
       BlockNode(List(
         AssignmentNode(
@@ -157,7 +157,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
       )),
       UnitNode
     )
-    "if (i <= 25) { i = i + 1 } else { i = i - 1 }" --> IfElseNode(
+    "if (i <= 25) { i += 1 } else { i -= 1 }" --> IfElseNode(
       LessThanEqualsNode(vi, IntLiteralNode(25)),
       BlockNode(List(
         AssignmentNode(
@@ -177,7 +177,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     "if (x) if (b) a else c" --> IfElseNode(vx, IfElseNode(vb, va, vc), UnitNode)
 
     // Repeat-while repetitions.
-    "repeat while (a > b) a = a / 2" --> RepeatWhileNode(
+    "repeat while (a > b) a /= 2" --> RepeatWhileNode(
       GreaterThanNode(va, vb),
       AssignmentNode(AddressNode(List("a")), DivisionNode(va, IntLiteralNode(2))),
       deferCheck = false,
