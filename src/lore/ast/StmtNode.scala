@@ -25,7 +25,7 @@ sealed trait TopLevelExprNode extends StmtNode {
 }
 
 object TopLevelExprNode {
-  case class VariableDeclarationNode(name: String, value: ExprNode, isMutable: Boolean) extends TopLevelExprNode
+  case class VariableDeclarationNode(name: String, isMutable: Boolean, tpe: Option[TypeExprNode], value: ExprNode) extends TopLevelExprNode
   case class AssignmentNode(address: AddressNode, value: ExprNode) extends TopLevelExprNode
 
   /**

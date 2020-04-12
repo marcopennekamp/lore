@@ -7,6 +7,8 @@ import ScalaWhitespace._
 object TypeParser {
   import LexicalParser.identifier
 
+  def typing[_: P]: P[TypeExprNode] = P(":" ~ typeExpression)
+
   def typeExpression[_: P]: P[TypeExprNode] = {
     import PrecedenceParser._
     PrecedenceParser.parser(

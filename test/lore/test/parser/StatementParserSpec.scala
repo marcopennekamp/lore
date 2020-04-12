@@ -193,13 +193,17 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     // Iterations.
     """
     |{
-    |  const people = ['abra', 'betty', 'carl']
-    |  for (person in people) println('Hey, $person!')
+    |  const people: [String] = ['abra', 'betty', 'carl']
+    |  for (name in people) println('Hey, $name!')
     |}
     |""".stripMargin --> BlockNode(List(
-      VariableDeclarationNode("people", ListNode(List(
-        StringLiteralNode("abra"), StringLiteralNode("betty"), StringLiteralNode("carl"),
-      )), isMutable = false),
+      VariableDeclarationNode(
+        "people", isMutable = false,
+        Some(TypeExprNode.ListNode(TypeExprNode.NominalNode("String"))),
+        ListNode(List(
+          StringLiteralNode("abra"), StringLiteralNode("betty"), StringLiteralNode("carl"),
+        )),
+      ),
       IterationNode(
         List(ExtractorNode("person", VariableNode("people"))),
         CallNode("println", None, List(
@@ -215,11 +219,12 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
 
   it should "parse instantiation, multi-function calls, and fixed function calls correctly" in {
     "const point = Point(1, 5)" --> VariableDeclarationNode(
-      "point", CallNode("Point", None, List(IntLiteralNode(1), IntLiteralNode(5))), isMutable = false,
+      "point", isMutable = false, None,
+      CallNode("Point", None, List(IntLiteralNode(1), IntLiteralNode(5))),
     )
-    "let position = Position3D.from2D(5.5, 6.7)" --> VariableDeclarationNode(
-      "position", CallNode("Position3D", Some("from2D"), List(RealLiteralNode(5.5), RealLiteralNode(6.7))),
-      isMutable = true,
+    "let position: Position3D = Position3D.from2D(5.5, 6.7)" --> VariableDeclarationNode(
+      "position", isMutable = true, Some(TypeExprNode.NominalNode("Position3D")),
+      CallNode("Position3D", Some("from2D"), List(RealLiteralNode(5.5), RealLiteralNode(6.7))),
     )
     "concat('stringA', 'stringB', 'stringC')" --> CallNode(
       "concat", None, List(StringLiteralNode("stringA"), StringLiteralNode("stringB"), StringLiteralNode("stringC")),

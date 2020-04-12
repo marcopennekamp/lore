@@ -14,8 +14,8 @@ object StatementParser {
   // Parse a handful of top-level expressions before jumping into the deep end.
   def topLevelExpression[_: P]: P[TopLevelExprNode] = P(variableDeclaration | assignment | `yield` | expression)
   private def variableDeclaration[_: P]: P[TopLevelExprNode.VariableDeclarationNode] = {
-    P(("const" | "let").! ~ identifier ~ "=" ~ expression).map { case (qualifier, name, value) =>
-      TopLevelExprNode.VariableDeclarationNode(name, value, qualifier == "let")
+    P(("const" | "let").! ~ identifier ~ TypeParser.typing.? ~ "=" ~ expression).map { case (qualifier, name, tpe, value) =>
+      TopLevelExprNode.VariableDeclarationNode(name, qualifier == "let", tpe, value)
     }
   }
   private def assignment[_: P]: P[TopLevelExprNode.AssignmentNode] = {

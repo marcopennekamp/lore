@@ -30,13 +30,13 @@ object FragmentParser {
     P(Space.WL ~~ topDeclaration.repX(0, Space.terminators) ~~ Space.WL ~~ End)
   }
 
-  private def topDeclaration[_: P]: P[DeclNode] = P(function | action | typeDeclaration)
+  def topDeclaration[_: P]: P[DeclNode] = P(function | action | typeDeclaration)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Function declarations.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def function[_: P]: P[DeclNode.FunctionNode] = {
-    P("function" ~/ identifier ~ parameters ~ ":" ~ typeExpression ~ ("=" ~ expression).?).map(DeclNode.FunctionNode.tupled)
+    P("function" ~/ identifier ~ parameters ~ TypeParser.typing ~ ("=" ~ expression).?).map(DeclNode.FunctionNode.tupled)
   }
 
   private def action[_: P]: P[DeclNode.FunctionNode] = {
@@ -46,7 +46,7 @@ object FragmentParser {
   }
 
   private def parameters[_: P]: P[List[DeclNode.ParameterNode]] = {
-    def parameter = P(identifier ~ ":" ~ typeExpression).map(DeclNode.ParameterNode.tupled)
+    def parameter = P(identifier ~ TypeParser.typing).map(DeclNode.ParameterNode.tupled)
     P("(" ~ parameter.rep(sep = ",") ~ ")").map(_.toList)
   }
 
@@ -80,7 +80,7 @@ object FragmentParser {
   }
   private def ownedBy[_: P]: P[Option[TypeExprNode]] = P(("owned by" ~ typeExpression).?)
   private def `extends`[_: P]: P[Option[String]] = P(("extends" ~ identifier).?)
-  private def property[_: P]: P[TypeDeclNode.PropertyNode] = P("mut".?.! ~ identifier ~ ":" ~ typeExpression).map {
+  private def property[_: P]: P[TypeDeclNode.PropertyNode] = P("mut".?.! ~ identifier ~ TypeParser.typing).map {
     case (mutKeyword, name, tpe) => TypeDeclNode.PropertyNode(name, tpe, mutKeyword == "mut")
   }
   private def component[_: P]: P[TypeDeclNode.ComponentNode] = P("component" ~ identifier ~ ("overrides" ~ identifier).?).map(TypeDeclNode.ComponentNode.tupled)
