@@ -12,12 +12,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
 
   override def parser[_: P] = StatementParser.statement
 
-  private val va = VariableNode("a")
-  private val vb = VariableNode("b")
-  private val vc = VariableNode("c")
-  private val vi = VariableNode("i")
-  private val vk = VariableNode("k")
-  private val vx = VariableNode("x")
+  import TestNodes._
 
   "The statement parser" should "parse strings, escapes, and interpolations correctly" in {
     "''" --> StringLiteralNode("")
@@ -199,7 +194,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     |""".stripMargin --> BlockNode(List(
       VariableDeclarationNode(
         "people", isMutable = false,
-        Some(TypeExprNode.ListNode(TypeExprNode.NominalNode("String"))),
+        Some(TypeExprNode.ListNode(tString)),
         ListNode(List(
           StringLiteralNode("abra"), StringLiteralNode("betty"), StringLiteralNode("carl"),
         )),

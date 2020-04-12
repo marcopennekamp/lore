@@ -27,17 +27,17 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[DeclNode] {
     |""".stripMargin --> FunctionNode(
       "pow",
       List(
-        ParameterNode("x", TypeExprNode.NominalNode("Real")),
-        ParameterNode("exp", TypeExprNode.NominalNode("Int")),
+        ParameterNode("x", tReal),
+        ParameterNode("exp", tInt),
       ),
-      TypeExprNode.NominalNode("Real"),
+      tReal,
       Some(BlockNode(List(
         VariableDeclarationNode("e", isMutable = true, None, VariableNode("exp")),
         VariableDeclarationNode("result", isMutable = true, None, RealLiteralNode(1.0)),
         RepeatWhileNode(
           GreaterThanNode(VariableNode("e"), IntLiteralNode(0)),
           BlockNode(List(
-            AssignmentNode(AddressNode(List("result")), MultiplicationNode(VariableNode("result"), VariableNode("x"))),
+            AssignmentNode(AddressNode(List("result")), MultiplicationNode(VariableNode("result"), vx)),
             AssignmentNode(AddressNode(List("e")), SubtractionNode(VariableNode("e"), IntLiteralNode(1))),
           )),
           deferCheck = false,
