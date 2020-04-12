@@ -205,9 +205,9 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
         )),
       ),
       IterationNode(
-        List(ExtractorNode("person", VariableNode("people"))),
+        List(ExtractorNode("name", VariableNode("people"))),
         CallNode("println", None, List(
-          ConcatenationNode(List(StringLiteralNode("Hey, "), VariableNode("person"), StringLiteralNode("!")))
+          ConcatenationNode(List(StringLiteralNode("Hey, "), VariableNode("name"), StringLiteralNode("!")))
         )),
       ),
     ))
