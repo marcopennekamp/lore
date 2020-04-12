@@ -5,9 +5,9 @@
 
 class Position {
   // Only 'mut' fields are mutable.
-  mut x: Float
-  mut y: Float
-  mut z: Float
+  mut x: Real
+  mut y: Real
+  mut z: Real
 }
 
 // We can restrict the types that Sprite can be owned by. However, this will only apply when Sprite is used as a
@@ -45,9 +45,11 @@ action damage(entity: +HealthState, amount: Int) { entity.HealthState.health -= 
 // action heal({ HealthState }: +HealthState, amount: Int) { HealthState.health += amount }
 
 class Regeneration owned by +HealthState {
-  amount: Float
+  amount: Real
   interval: Int
-  private mut counter: Int = 1 // private hides the field from any function defined outside the current file.
+  // Idea for later: private hides the field from any function defined outside the current file.
+  // private mut counter: Int = 1
+  mut counter: Int
 }
 
 // We could try to define the function as
@@ -75,6 +77,6 @@ entity Skeleton extends Entity2D {
   // component Regeneration = Regeneration(amount = 5, interval = 30)
 }
 
-action tick(s: Skeleton) = {
+action tick(s: Skeleton) {
   updateHealth(s)
 }

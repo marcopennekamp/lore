@@ -31,7 +31,20 @@ object TopLevelExprNode {
   /**
     * An address of the form `a.b.c` and so on. The first element in the list is the leftmost name.
     */
-  case class AddressNode(names: List[String])
+  case class AddressNode(names: List[String]) {
+    assert(names.nonEmpty)
+
+    /**
+      * Converts the address to an expression node, either a variable or a property access node.
+      */
+    def toExpression: ExprNode = {
+      if (names.tail.nonEmpty) {
+        ExprNode.PropertyAccessNode(ExprNode.VariableNode(names.head), names.tail)
+      } else {
+        ExprNode.VariableNode(names.head)
+      }
+    }
+  }
 
   /**
     * Yield is a part of top-level expressions, because we don't want a programmer to yield in the middle of

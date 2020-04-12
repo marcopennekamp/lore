@@ -393,6 +393,15 @@ character.Position.x = x     // Deep property assignment
 
 Both declarations and assignments are technically expressions and they return the **unit type**. However, there is an additional restriction for declarations and assignments: They can only stand in specific places in the program, and never embedded within most expressions. This ensures that the order of execution for assignments is well defined. An assignment will never be able to mingle with an expression that uses the newly assigned value on the same line.
 
+Lore offers the following **assignment shorthands:**
+
+```
+a += b  // a = a + b
+a -= b  // a = a - b
+a *= b  // a = a * b
+a /= b  // a = a / b
+```
+
 
 
 ### Return

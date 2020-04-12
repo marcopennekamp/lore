@@ -18,7 +18,15 @@ object StatementParser {
       TopLevelExprNode.VariableDeclarationNode(name, value, qualifier == "let")
     }
   }
-  private def assignment[_: P]: P[TopLevelExprNode.AssignmentNode] = P(address ~ "=" ~ expression).map(TopLevelExprNode.AssignmentNode.tupled)
+  private def assignment[_: P]: P[TopLevelExprNode.AssignmentNode] = {
+    P(address ~ ("=" | "+=" | "-=" | "*=" | "/=").! ~ expression).map {
+      case (address, "=", rhs) => TopLevelExprNode.AssignmentNode(address, rhs)
+      case (address, "+=", rhs) => TopLevelExprNode.AssignmentNode(address, ExprNode.AdditionNode(address.toExpression, rhs))
+      case (address, "-=", rhs) => TopLevelExprNode.AssignmentNode(address, ExprNode.SubtractionNode(address.toExpression, rhs))
+      case (address, "*=", rhs) => TopLevelExprNode.AssignmentNode(address, ExprNode.MultiplicationNode(address.toExpression, rhs))
+      case (address, "/=", rhs) => TopLevelExprNode.AssignmentNode(address, ExprNode.DivisionNode(address.toExpression, rhs))
+    }
+  }
   private def address[_: P]: P[TopLevelExprNode.AddressNode] = {
     P(identifier ~~ ("." ~~ identifier).rep).map { case (s1, strings) => TopLevelExprNode.AddressNode(s1 +: strings.toList) }
   }
@@ -87,9 +95,8 @@ object StatementParser {
     case expr => ExprNode.NegationNode(expr)
   }
   private def logicalNot[_: P]: P[ExprNode] = P("~" ~ atom).map(ExprNode.LogicalNotNode)
-  private def atom[_: P]: P[ExprNode] = {
-    P(literal | accessiblePostfix)
-  }
+
+  private def atom[_: P]: P[ExprNode] = P(literal | accessiblePostfix)
   private def literal[_: P]: P[ExprNode] = {
     def real = P(LexicalParser.real).map(ExprNode.RealLiteralNode)
     def int = P(LexicalParser.integer).map(ExprNode.IntLiteralNode)
@@ -97,7 +104,6 @@ object StatementParser {
     // Reals have to be parsed before ints so that ints don't consume the portion of the real before the fraction.
     P(real | int | booleanLiteral | LexicalParser.string)
   }
-
   private def accessiblePostfix[_: P]: P[ExprNode] = {
     def propertyAccess = P(("." ~ identifier).rep)
     P(accessible ~ propertyAccess).map { case (instance, propertyNames) =>

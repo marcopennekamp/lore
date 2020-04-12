@@ -76,7 +76,9 @@ object Context {
     * Creates an unverified context from the given sequence of program elements.
     */
   def build(statements: Seq[DeclNode]): Context = {
-    val types = mutable.HashMap[String, Type]()
+    val types = mutable.HashMap[String, Type](
+      "Int" -> BasicType.Int, "Real" -> BasicType.Real, "Boolean" -> BasicType.Boolean, "String" -> BasicType.String,
+    )
     val multiFunctions = mutable.HashMap[String, MultiFunction]()
 
     def getType(name: String): Type = {
