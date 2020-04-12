@@ -46,4 +46,27 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[DeclNode] {
       ))),
     )
   }
+
+  it should "parse action declarations correctly" in {
+    """
+    |  action attack(source: +Arms, target: +Health) {
+    |    const power = combinedPower(source.Arms)
+    |    damage(target, power)
+    |  }
+    """.stripMargin --> FunctionNode(
+      "attack",
+      List(
+        ParameterNode("source", TypeExprNode.ComponentNode(TypeExprNode.NominalNode("Arms"))),
+        ParameterNode("target", TypeExprNode.ComponentNode(TypeExprNode.NominalNode("Health"))),
+      ),
+      TypeExprNode.UnitNode,
+      Some(BlockNode(List(
+        VariableDeclarationNode(
+          "power", isMutable = false, None,
+          CallNode("combinedPower", None, List(PropertyAccessNode(VariableNode("source"), List("Arms")))),
+        ),
+        CallNode("damage", None, List(VariableNode("target"), VariableNode("power"))),
+      ))),
+    )
+  }
 }
