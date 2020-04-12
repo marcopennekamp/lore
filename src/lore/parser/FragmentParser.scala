@@ -3,6 +3,7 @@ package lore.parser
 import lore.ast._
 import fastparse._
 import ScalaWhitespace._
+import lore.parser.FragmentParser.{classBody, property}
 
 /**
   * The parsers contained in this parser collection all parse top-level declarations that can occur in a
@@ -57,21 +58,18 @@ object FragmentParser {
   private def alias[_: P]: P[TypeDeclNode.AliasNode] = P("type" ~/ identifier ~ "=" ~ typeExpression).map(TypeDeclNode.AliasNode.tupled)
   private def label[_: P]: P[TypeDeclNode.LabelNode] = P("label" ~/ identifier ~ `extends`).map(TypeDeclNode.LabelNode.tupled)
 
-  private def `class`[_: P]: P[TypeDeclNode.ClassNode] = {
-    P("abstract".?.! ~ "class" ~/ identifier ~ `extends` ~ classBody(property)).map {
-      case (abstractKeyword, name, supertypeName, (properties, constructors)) =>
-        TypeDeclNode.ClassNode(name, supertypeName, abstractKeyword == "abstract", properties, constructors)
+  // The only difference between classes and entities is that only entities can contain component declarations.
+  // Once we have moved beyond the parsing stage, the compiler sees both classes and entities as ClassNodes, ClassTypes,
+  // CLassDefinitions, etc.
+  private def `class`[_: P]: P[TypeDeclNode.ClassNode] = P(dataType(property))
+  private def entity[_: P]: P[TypeDeclNode.ClassNode] = P(dataType(property | component))
+
+  private def dataType[_: P](member: => P[TypeDeclNode.MemberNode]): P[TypeDeclNode.ClassNode] = {
+    P("abstract".?.! ~ "class" ~/ identifier ~ `extends` ~ ownedBy ~ classBody(member)).map {
+      case (abstractKeyword, name, supertypeName, ownedBy, (properties, constructors)) =>
+        TypeDeclNode.ClassNode(name, supertypeName, ownedBy, abstractKeyword == "abstract", properties, constructors)
     }
   }
-
-  private def entity[_: P]: P[TypeDeclNode.EntityNode] = {
-    def ownedBy = P(("owned by" ~ typeExpression).?)
-    P("abstract".?.! ~ "entity" ~/ identifier ~ ownedBy ~ `extends` ~ classBody(property | component)).map {
-      case (abstractKeyword, name, ownedBy, supertypeName, (members, constructors)) =>
-        TypeDeclNode.EntityNode(name, supertypeName, ownedBy, abstractKeyword == "abstract", members, constructors)
-    }
-  }
-
   private def classBody[Member, _: P](member: => P[Member]): P[(List[Member], List[TypeDeclNode.ConstructorNode])] = {
     def members = P(member.repX(sep = Space.terminators)).map(_.toList)
     def constructors = P(constructor.repX(sep = Space.terminators)).map(_.toList)
@@ -80,6 +78,7 @@ object FragmentParser {
       case Some(x) => x
     }
   }
+  private def ownedBy[_: P]: P[Option[TypeExprNode]] = P(("owned by" ~ typeExpression).?)
   private def `extends`[_: P]: P[Option[String]] = P(("extends" ~ identifier).?)
   private def property[_: P]: P[TypeDeclNode.PropertyNode] = P("mut".?.! ~ identifier ~ ":" ~ typeExpression).map {
     case (mutKeyword, name, tpe) => TypeDeclNode.PropertyNode(name, tpe, mutKeyword == "mut")

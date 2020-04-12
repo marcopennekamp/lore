@@ -93,17 +93,21 @@ object Context {
     }
 
     def evaluateTypeExpression(expression: TypeExprNode): Type = {
+      val eval = evaluateTypeExpression _
       expression match {
         case TypeExprNode.NominalNode(name) => getType(name)
-        case TypeExprNode.ProductNode(expressions) =>
-          val types = expressions.map(evaluateTypeExpression)
-          ProductType(types)
-        case TypeExprNode.IntersectionNode(expressions) =>
-          val types = expressions.map(evaluateTypeExpression)
-          IntersectionType.construct(types)
-        case TypeExprNode.SumNode(expressions) =>
-          val types = expressions.map(evaluateTypeExpression)
-          SumType.construct(types)
+        case TypeExprNode.IntersectionNode(expressions) => IntersectionType.construct(expressions.map(eval))
+        case TypeExprNode.SumNode(expressions) => SumType.construct(expressions.map(eval))
+        case TypeExprNode.ProductNode(expressions) => ProductType(expressions.map(eval))
+        case TypeExprNode.UnitNode => ProductType.UnitType
+        case TypeExprNode.ListNode(element) => ListType(eval(element))
+        case TypeExprNode.MapNode(key, value) => MapType(eval(key), eval(value))
+        case TypeExprNode.ComponentNode(underlying) => eval(underlying) match {
+          case tpe: ClassType => ComponentType(tpe)
+          // TODO: Pass a proper name to the error. This requires us to reconstruct the type, though, with .toString
+          //       for nodes. We should also attach line numbers and file names to nodes!
+          case _ => throw CompilationErrors.ComponentTypeMustContainClass("")
+        }
       }
     }
 
@@ -119,13 +123,13 @@ object Context {
             types.put(name, tpe)
           case _ => throw CompilationErrors.LabelMustExtendLabel(name)
         }
-      case TypeDeclNode.ClassNode(name, supertypeName, isAbstract, _, _) =>
-        // TODO: Duplicate code?
+      case TypeDeclNode.ClassNode(name, supertypeName, ownedByNode, isAbstract, _, _) =>
         val supertype = resolveSupertype(supertypeName)
+        val ownedBy = ownedByNode.map(evaluateTypeExpression)
         supertype match {
           case Some(_: ClassType) | None =>
-            val tpe = new ClassType(supertype.asInstanceOf[Option[ClassType]], isAbstract)
-            val definition = new ClassDefinition(name, tpe, List.empty) // TODO: Parse properties and such.
+            val tpe = new ClassType(supertype.asInstanceOf[Option[ClassType]], ownedBy, isAbstract)
+            val definition = new ClassDefinition(name, tpe, List.empty) // TODO: Process properties and such.
             tpe.initialize(definition)
             types.put(name, tpe)
           case _ => throw CompilationErrors.ClassMustExtendClass(name)

@@ -1,8 +1,8 @@
 package lore.types
 
-case class ComponentType(dataType: DataType) extends Type {
+case class ComponentType(underlying: ClassType) extends Type {
   /**
-    * A component type is abstract if its underlying data type is abstract. See the specification for an explanation.
+    * A component type is abstract if its underlying class type is abstract. See the specification for an explanation.
     */
-  override def isAbstract: Boolean = dataType.isAbstract
+  override def isAbstract: Boolean = underlying.isAbstract
 }

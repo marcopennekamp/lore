@@ -30,12 +30,10 @@ object TypeDeclNode {
 
   case class LabelNode(name: String, supertypeName: Option[String]) extends TypeDeclNode
 
+  /**
+    * Either a class or an entity depending on whether members contains a component.
+    */
   case class ClassNode(
-    name: String, supertypeName: Option[String], isAbstract: Boolean,
-    properties: List[PropertyNode], constructors: List[ConstructorNode],
-  ) extends TypeDeclNode
-
-  case class EntityNode(
     name: String, supertypeName: Option[String], ownedBy: Option[TypeExprNode], isAbstract: Boolean,
     members: List[MemberNode], constructors: List[ConstructorNode],
   ) extends TypeDeclNode
