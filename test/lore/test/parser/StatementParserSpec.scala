@@ -1,7 +1,6 @@
 package lore.test.parser
 
 import fastparse._
-import lore.ast.StmtNode.ReturnNode
 import lore.ast._
 import lore.parser.StatementParser
 import lore.test.BaseSpec
@@ -167,7 +166,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
         ),
       )),
     )
-    "if (b) return a else return c" --> IfElseNode(vb, ReturnNode(va), ReturnNode(vc))
+    "if (b) return a else return c" --> IfElseNode(vb, StmtNode.ReturnNode(va), StmtNode.ReturnNode(vc))
     // Dangling else! What will the parser choose?
     "if (x) if (b) a else c" --> IfElseNode(vx, IfElseNode(vb, va, vc), UnitNode)
 
@@ -237,10 +236,10 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   }
 
   it should "assign the correct indices" in {
-    "(a + b, a * c, x < 5.3)".parsed match {
+    inside("(a + b, a * c, x < 5.3)".parsed) {
       case tuple: TupleNode =>
         tuple.index shouldEqual 0
-        tuple.expressions match {
+        inside(tuple.expressions) {
           case Seq(add: AdditionNode, mult: MultiplicationNode, comp: LessThanNode) =>
             add.index shouldEqual 1
             add.left.index shouldEqual 1
@@ -253,29 +252,29 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
             comp.right.index shouldEqual 19
         }
     }
-    "if (i <= 25) { i += 1 } else { i -= 1 }".parsed match {
+    inside("if (i <= 25) { i += 1 } else { i -= 1 }".parsed) {
       case ifElse: IfElseNode =>
         ifElse.index shouldEqual 0
-        ifElse.condition match {
+        inside(ifElse.condition) {
           case lt: LessThanEqualsNode =>
             lt.index shouldEqual 4
             lt.left.index shouldEqual 4
             lt.right.index shouldEqual 9
         }
-        ifElse.onTrue match {
+        inside(ifElse.onTrue) {
           case block: BlockNode =>
             block.index shouldEqual 13
-            block.statements match {
+            inside(block.statements) {
               case Seq(assign: AssignmentNode) =>
                 assign.index shouldEqual 15
                 assign.address.index shouldEqual 15
                 assign.value.index shouldEqual 20
             }
         }
-        ifElse.onFalse match {
+        inside(ifElse.onFalse) {
           case block: BlockNode =>
             block.index shouldEqual 29
-            block.statements match {
+            inside(block.statements) {
               case Seq(assign: AssignmentNode) =>
                 assign.index shouldEqual 31
                 assign.address.index shouldEqual 31
@@ -284,16 +283,67 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
         }
     }
 
-    "let position: Position3D = Position3D.from2D(5.5, 6.7)".parsed match {
-      case _ =>
+    inside("let position: Position3D = Position3D.from2D(5.5, 6.7)".parsed) {
+      case decl: VariableDeclarationNode =>
+        decl.index shouldEqual 0
+        decl.tpe.value.index shouldEqual 14
+        inside(decl.value) {
+          case call: CallNode =>
+            call.index shouldEqual 27
+            inside(call.arguments) {
+              case Seq(rl1: RealLiteralNode, rl2: RealLiteralNode) =>
+                rl1.index shouldEqual 45
+                rl2.index shouldEqual 50
+            }
+        }
     }
 
-    "applyDot.fixed[Dot, +Health](dot, e)".parsed match {
-      case _ =>
+    inside("applyDot.fixed[Dot, +Health](dot, e)".parsed) {
+      case call: FixedFunctionCallNode =>
+        call.index shouldEqual 0
+        inside(call.types) {
+          case Seq(t1: TypeExprNode.NominalNode, t2: TypeExprNode.ComponentNode) =>
+            t1.index shouldEqual 15
+            t2.index shouldEqual 20
+            t2.underlying.index shouldEqual 21
+        }
+        inside(call.arguments) {
+          case Seq(dot: VariableNode, e: VariableNode) =>
+            dot.index shouldEqual 29
+            e.index shouldEqual 34
+        }
     }
 
-    "%{ a -> %{ 'test' -> 'me' }, b -> %{ 'test' -> 'well $c' } }".parsed match {
-      case _ =>
+    inside("%{ a -> %{ 'test' -> 'me' }, b -> %{ 'test' -> 'well $c' } }".parsed) {
+      case map: MapNode =>
+        map.index shouldEqual 0
+        inside(map.kvs) {
+          case Seq(a: KeyValueNode, b: KeyValueNode) =>
+            a.index shouldEqual 3
+            a.key.index shouldEqual 3
+            inside(a.value) {
+              case innerMap: MapNode =>
+                innerMap.index shouldEqual 8
+                inside(innerMap.kvs) {
+                  case Seq(test: KeyValueNode) =>
+                    test.index shouldEqual 11
+                    test.key.index shouldEqual 11
+                    test.value.index shouldEqual 21
+                }
+            }
+            b.index shouldEqual 29
+            b.key.index shouldEqual 29
+            inside(b.value) {
+              case innerMap: MapNode =>
+                innerMap.index shouldEqual 34
+                inside(innerMap.kvs) {
+                  case Seq(test: KeyValueNode) =>
+                    test.index shouldEqual 37
+                    test.key.index shouldEqual 37
+                    test.value.index shouldEqual 47
+                }
+            }
+        }
     }
   }
 
