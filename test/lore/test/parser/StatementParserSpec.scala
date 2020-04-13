@@ -236,6 +236,67 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     "concat[String]('stringA', 'stringB', 'stringC')".fails
   }
 
+  it should "assign the correct indices" in {
+    "(a + b, a * c, x < 5.3)".parsed match {
+      case tuple: TupleNode =>
+        tuple.index shouldEqual 0
+        tuple.expressions match {
+          case Seq(add: AdditionNode, mult: MultiplicationNode, comp: LessThanNode) =>
+            add.index shouldEqual 1
+            add.left.index shouldEqual 1
+            add.right.index shouldEqual 5
+            mult.index shouldEqual 8
+            mult.left.index shouldEqual 8
+            mult.right.index shouldEqual 12
+            comp.index shouldEqual 15
+            comp.left.index shouldEqual 15
+            comp.right.index shouldEqual 19
+        }
+    }
+    "if (i <= 25) { i += 1 } else { i -= 1 }".parsed match {
+      case ifElse: IfElseNode =>
+        ifElse.index shouldEqual 0
+        ifElse.condition match {
+          case lt: LessThanEqualsNode =>
+            lt.index shouldEqual 4
+            lt.left.index shouldEqual 4
+            lt.right.index shouldEqual 9
+        }
+        ifElse.onTrue match {
+          case block: BlockNode =>
+            block.index shouldEqual 13
+            block.statements match {
+              case Seq(assign: AssignmentNode) =>
+                assign.index shouldEqual 15
+                assign.address.index shouldEqual 15
+                assign.value.index shouldEqual 20
+            }
+        }
+        ifElse.onFalse match {
+          case block: BlockNode =>
+            block.index shouldEqual 29
+            block.statements match {
+              case Seq(assign: AssignmentNode) =>
+                assign.index shouldEqual 31
+                assign.address.index shouldEqual 31
+                assign.value.index shouldEqual 36
+            }
+        }
+    }
+
+    "let position: Position3D = Position3D.from2D(5.5, 6.7)".parsed match {
+      case _ =>
+    }
+
+    "applyDot.fixed[Dot, +Health](dot, e)".parsed match {
+      case _ =>
+    }
+
+    "%{ a -> %{ 'test' -> 'me' }, b -> %{ 'test' -> 'well $c' } }".parsed match {
+      case _ =>
+    }
+  }
+
   it should "parse a block-rich expression within 50 milliseconds" in {
     timed(50) { () =>
       "{ a + { b } + { b }.x + b }" --> BlockNode(List(

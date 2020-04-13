@@ -72,7 +72,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[DeclNode] {
     )
   }
 
-  it should "set indices to the correct values" in {
+  it should "assign the correct indices" in {
     "function add(a: Real, b: Real): Real = a + b".parsed match {
       case fn: FunctionNode =>
         fn.index shouldEqual 0
