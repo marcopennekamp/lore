@@ -72,6 +72,20 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[DeclNode] {
     )
   }
 
+  it should "set indices to the correct values" in {
+    "function add(a: Real, b: Real): Real = a + b".parsed match {
+      case fn: FunctionNode =>
+        fn.index shouldEqual 0
+        fn.parameters match {
+          case Seq(a, b) =>
+            a.index shouldEqual 13
+            b.index shouldEqual 22
+        }
+        fn.outputType.index shouldEqual 32
+        fn.body.value.index shouldEqual 39
+    }
+  }
+
   "The type declaration parser" should "parse class, property and constructor declarations correctly" in {
     """
     |  class Position {
