@@ -17,7 +17,13 @@ object DeclNode {
     def isAbstract: Boolean = body.isEmpty
   }
 
-  case class ParameterNode(name: String, tpe: TypeExprNode)
+  object FunctionNode {
+    def fromAction(name: String, parameters: List[ParameterNode], body: Option[ExprNode]): FunctionNode = {
+      DeclNode.FunctionNode(name, parameters, TypeExprNode.UnitNode, body)
+    }
+  }
+
+  case class ParameterNode(name: String, tpe: TypeExprNode) extends Node
 }
 
 /**
@@ -38,7 +44,7 @@ object TypeDeclNode {
     members: List[MemberNode], constructors: List[ConstructorNode],
   ) extends TypeDeclNode
 
-  sealed trait MemberNode
+  sealed trait MemberNode extends Node
   case class PropertyNode(name: String, tpe: TypeExprNode, isMutable: Boolean) extends MemberNode
   case class ComponentNode(name: String, overrides: Option[String]) extends MemberNode
 
@@ -47,5 +53,5 @@ object TypeDeclNode {
     *
     * The node is only valid if the last statement of the body is a continuation node.
     */
-  case class ConstructorNode(name: String, parameters: List[DeclNode.ParameterNode], body: ExprNode)
+  case class ConstructorNode(name: String, parameters: List[DeclNode.ParameterNode], body: ExprNode) extends Node
 }
