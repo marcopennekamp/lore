@@ -1,9 +1,8 @@
 package lore.parser
 
-import lore.ast._
+import fastparse.ScalaWhitespace._
 import fastparse._
-import ScalaWhitespace._
-import lore.parser.FragmentParser.{classBody, property}
+import lore.ast._
 
 /**
   * The parsers contained in this parser collection all parse top-level declarations that can occur in a
@@ -11,7 +10,7 @@ import lore.parser.FragmentParser.{classBody, property}
   */
 object FragmentParser {
   import LexicalParser.identifier
-  import StatementParser.{statement, expression, block, arguments}
+  import StatementParser.{block, expression}
   import TypeParser.typeExpression
 
   def parse(source: String): Option[Seq[DeclNode]] = {
@@ -30,23 +29,21 @@ object FragmentParser {
     P(Space.WL ~~ topDeclaration.repX(0, Space.terminators) ~~ Space.WL ~~ End)
   }
 
-  def topDeclaration[_: P]: P[DeclNode] = P(function | action | typeDeclaration)
+  def topDeclaration[_: P]: P[DeclNode] = P(Index ~ (function | action | typeDeclaration)).map(withIndex(identity _))
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Function declarations.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def function[_: P]: P[DeclNode.FunctionNode] = {
-    P("function" ~/ identifier ~ parameters ~ TypeParser.typing ~ ("=" ~ expression).?).map(DeclNode.FunctionNode.tupled)
+    P("function" ~/ identifier ~ parameters ~ TypeParser.typing ~ ("=" ~ expression).?).map((DeclNode.FunctionNode.apply _).tupled)
   }
 
   private def action[_: P]: P[DeclNode.FunctionNode] = {
-    P("action" ~/ identifier ~ parameters ~ block.?).map {
-      case (name, parameters, body) => DeclNode.FunctionNode(name, parameters, TypeExprNode.UnitNode, body)
-    }
+    P("action" ~/ identifier ~ parameters ~ block.?).map((DeclNode.FunctionNode.fromAction _).tupled)
   }
 
   private def parameters[_: P]: P[List[DeclNode.ParameterNode]] = {
-    def parameter = P(identifier ~ TypeParser.typing).map(DeclNode.ParameterNode.tupled)
+    def parameter = P(Index ~ identifier ~ TypeParser.typing).map(withIndex(DeclNode.ParameterNode))
     P("(" ~ parameter.rep(sep = ",") ~ ")").map(_.toList)
   }
 
@@ -80,11 +77,13 @@ object FragmentParser {
   }
   private def ownedBy[_: P]: P[Option[TypeExprNode]] = P(("owned by" ~ typeExpression).?)
   private def `extends`[_: P]: P[Option[String]] = P(("extends" ~ identifier).?)
-  private def property[_: P]: P[TypeDeclNode.PropertyNode] = P("mut".?.! ~ identifier ~ TypeParser.typing).map {
-    case (mutKeyword, name, tpe) => TypeDeclNode.PropertyNode(name, tpe, mutKeyword == "mut")
+  private def property[_: P]: P[TypeDeclNode.PropertyNode] = P(Index ~ "mut".?.! ~ identifier ~ TypeParser.typing).map {
+    case (index, mutKeyword, name, tpe) => withIndex(TypeDeclNode.PropertyNode)(index, name, tpe, mutKeyword == "mut")
   }
-  private def component[_: P]: P[TypeDeclNode.ComponentNode] = P("component" ~ identifier ~ ("overrides" ~ identifier).?).map(TypeDeclNode.ComponentNode.tupled)
+  private def component[_: P]: P[TypeDeclNode.ComponentNode] = {
+    P(Index ~ "component" ~ identifier ~ ("overrides" ~ identifier).?).map(withIndex(TypeDeclNode.ComponentNode))
+  }
   private def constructor[_: P]: P[TypeDeclNode.ConstructorNode] = {
-    P(identifier ~ parameters ~ block).map(TypeDeclNode.ConstructorNode.tupled)
+    P(Index ~ identifier ~ parameters ~ block).map(withIndex(TypeDeclNode.ConstructorNode))
   }
 }
