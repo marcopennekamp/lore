@@ -40,7 +40,10 @@ object TypeParser {
 
   private def componentType[_: P]: P[TypeExprNode.ComponentNode] = P("+" ~ nominalType).map(TypeExprNode.ComponentNode)
 
-  private def nominalType[_: P]: P[TypeExprNode.NominalNode] = P(identifier).map(TypeExprNode.NominalNode)
+  /**
+    * Parses a nominal type. Assigns the index itself because it's used by componentType.
+    */
+  private def nominalType[_: P]: P[TypeExprNode.NominalNode] = P(Index ~ identifier).map(withIndex(TypeExprNode.NominalNode))
 
   private def enclosedType[_: P]: P[TypeExprNode] = P("(" ~ typeExpression ~ ")")
 }
