@@ -2,7 +2,7 @@ package lore.parser
 
 import fastparse._
 import NoWhitespace._
-import lore.ast.ExprNode
+import lore.ast._
 
 /**
   * Lexical objects are sensitive to whitespace, so we define them in this separate object.
@@ -54,7 +54,7 @@ object LexicalParser {
   }
 
   def interpolation[_: P]: P[ExprNode] = {
-    def simple = P(identifier).map(ExprNode.VariableNode)
+    def simple = P(Index ~ identifier).map(withIndex(ExprNode.VariableNode))
     def block = P("{" ~ StatementParser.expression ~ "}")
     P("$" ~/ (block | simple))
   }

@@ -31,7 +31,7 @@ object TopLevelExprNode {
   /**
     * An address of the form `a.b.c` and so on. The first element in the list is the leftmost name.
     */
-  case class AddressNode(names: List[String]) {
+  case class AddressNode(names: List[String]) extends Node {
     assert(names.nonEmpty)
 
     /**
@@ -123,7 +123,7 @@ object ExprNode {
   // Map expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class MapNode(kvs: List[KeyValueNode]) extends ExprNode
-  case class KeyValueNode(key: ExprNode, value: ExprNode)
+  case class KeyValueNode(key: ExprNode, value: ExprNode) extends Node
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Object expressions.

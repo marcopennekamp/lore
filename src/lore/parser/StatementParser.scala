@@ -23,14 +23,15 @@ object StatementParser {
   private def assignment[_: P]: P[TopLevelExprNode.AssignmentNode] = {
     P(address ~ StringIn("=", "+=", "-=", "*=", "/=").! ~ expression).map {
       case (address, "=", rhs) => TopLevelExprNode.AssignmentNode(address, rhs)
-      case (address, "+=", rhs) => TopLevelExprNode.AssignmentNode(address, ExprNode.AdditionNode(address.toExpression, rhs))
-      case (address, "-=", rhs) => TopLevelExprNode.AssignmentNode(address, ExprNode.SubtractionNode(address.toExpression, rhs))
-      case (address, "*=", rhs) => TopLevelExprNode.AssignmentNode(address, ExprNode.MultiplicationNode(address.toExpression, rhs))
-      case (address, "/=", rhs) => TopLevelExprNode.AssignmentNode(address, ExprNode.DivisionNode(address.toExpression, rhs))
+      case (address, "+=", rhs) => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.AdditionNode)(rhs.index, address.toExpression, rhs))
+      case (address, "-=", rhs) => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.SubtractionNode)(rhs.index, address.toExpression, rhs))
+      case (address, "*=", rhs) => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.MultiplicationNode)(rhs.index, address.toExpression, rhs))
+      case (address, "/=", rhs) => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.DivisionNode)(rhs.index, address.toExpression, rhs))
     }
   }
   private def address[_: P]: P[TopLevelExprNode.AddressNode] = {
-    P(identifier ~~ ("." ~~ identifier).rep).map { case (s1, strings) => TopLevelExprNode.AddressNode(s1 +: strings.toList) }
+    def identifiers = P(identifier.rep(1, sep = ".")).map(_.toList)
+    P(Index ~ identifiers).map(withIndex(TopLevelExprNode.AddressNode))
   }
   private def `yield`[_: P]: P[TopLevelExprNode.YieldNode] = P("yield" ~ expression).map(TopLevelExprNode.YieldNode)
   private def continuation[_: P] = {
@@ -138,12 +139,9 @@ object StatementParser {
     def statements = P(statement.repX(0, Space.terminators).map(_.toList))
     P(Index ~ "{" ~ statements ~ "}").map(withIndex(ExprNode.BlockNode))
   }
-  private def list[_: P]: P[ExprNode] = P("[" ~ (expression ~ ("," ~ expression).rep).? ~ "]").map {
-    case None => ExprNode.ListNode(List.empty)
-    case Some((left, expressions)) => ExprNode.ListNode(left +: expressions.toList)
-  }
+  private def list[_: P]: P[ExprNode] = P("[" ~ expression.rep(sep = ",") ~ "]").map(_.toList).map(ExprNode.ListNode)
   private def map[_: P]: P[ExprNode] = {
-    def keyValue = P(expression ~ "->" ~ expression).map(ExprNode.KeyValueNode.tupled)
+    def keyValue = P(Index ~ expression ~ "->" ~ expression).map(withIndex(ExprNode.KeyValueNode))
     P("%{" ~ keyValue.rep(sep = ",") ~ "}").map(_.toList).map(ExprNode.MapNode)
   }
 
