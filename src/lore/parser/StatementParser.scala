@@ -9,10 +9,12 @@ object StatementParser {
 
   // There is only one "true" statement: return.
   def statement[_: P]: P[StmtNode] = P(returnStatement | topLevelExpression)
-  private def returnStatement[_: P]: P[StmtNode] = P("return" ~ expression).map(StmtNode.ReturnNode)
+  private def returnStatement[_: P]: P[StmtNode] = P(Index ~ "return" ~ expression).map(withIndex(StmtNode.ReturnNode))
 
   // Parse a handful of top-level expressions before jumping into the deep end.
-  def topLevelExpression[_: P]: P[TopLevelExprNode] = P(variableDeclaration | assignment | `yield` | continuation | expression)
+  def topLevelExpression[_: P]: P[TopLevelExprNode] = {
+    P(Index ~ (variableDeclaration | assignment | `yield` | continuation | expression)).map(withIndex(identity _))
+  }
   private def variableDeclaration[_: P]: P[TopLevelExprNode.VariableDeclarationNode] = {
     P(("const" | "let").! ~ identifier ~ TypeParser.typing.? ~ "=" ~ expression).map { case (qualifier, name, tpe, value) =>
       TopLevelExprNode.VariableDeclarationNode(name, qualifier == "let", tpe, value)
@@ -40,15 +42,13 @@ object StatementParser {
   }
 
   // Parse expressions. Finally!
-  def expression[_: P]: P[ExprNode] = P(ifElse | repeatWhile | iteration | operatorExpression)
+  def expression[_: P]: P[ExprNode] = P(Index ~ (ifElse | repeatWhile | iteration | operatorExpression)).map(withIndex(identity _))
 
   private def ifElse[_: P]: P[ExprNode] = {
     P("if" ~ "(" ~ expression ~ ")" ~ statement ~ ("else" ~ statement).?).map {
       case (condition, onTrue, onFalse) => ExprNode.IfElseNode(condition, onTrue, onFalse.getOrElse(ExprNode.UnitNode))
     }
   }
-
-  //   case class RepeatWhileNode(condition: ExprNode, body: StmtNode, deferCheck: Boolean) extends ExprNode // TODO: Write parser.
 
   private def repeatWhile[_: P]: P[ExprNode.RepeatWhileNode] = {
     def whileCond = P("while" ~ "(" ~ expression ~ ")")
@@ -92,7 +92,7 @@ object StatementParser {
 
   // We apply NoCut here to allow the parser to backtrack if it doesn't find a multiplication/addition operator, while
   // still allowing cuts inside of unary applications and atoms.
-  private def unary[_: P]: P[ExprNode] = NoCut(P(negation | logicalNot | atom))
+  private def unary[_: P]: P[ExprNode] = NoCut(P(Index ~ (negation | logicalNot | atom))).map(withIndex(identity _))
   private def negation[_: P]: P[ExprNode] = P("-" ~ atom).map {
     // I don't want to put atom before negation, because I want the parser to handle the minus symbol before considering
     // atoms. However, the way it'd work with a naive implementation of this parser, a negative number would be parsed
@@ -103,7 +103,7 @@ object StatementParser {
   }
   private def logicalNot[_: P]: P[ExprNode] = P("~" ~ atom).map(ExprNode.LogicalNotNode)
 
-  private def atom[_: P]: P[ExprNode] = P(literal | accessiblePostfix)
+  private def atom[_: P]: P[ExprNode] = P(Index ~ (literal | accessiblePostfix)).map(withIndex(identity _))
   private def literal[_: P]: P[ExprNode] = {
     def real = P(LexicalParser.real).map(ExprNode.RealLiteralNode)
     def int = P(LexicalParser.integer).map(ExprNode.IntLiteralNode)
@@ -124,6 +124,8 @@ object StatementParser {
 
   /**
     * All expressions immediately accessible via postfix dot notation.
+    *
+    * Any possible indices are already applied by withIndex in atom.
     */
   private def accessible[_: P]: P[ExprNode] = P(fixedCall | call | variable | block | list | map | enclosed)
 
@@ -132,7 +134,10 @@ object StatementParser {
   def arguments[_: P]: P[List[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toList)
   private def typeArguments[_: P]: P[List[TypeExprNode]] = P("[" ~ TypeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toList)
   private def variable[_: P]: P[ExprNode] = P(identifier).map(ExprNode.VariableNode)
-  def block[_: P]: P[ExprNode] = P("{" ~ statement.repX(0, Space.terminators) ~ "}").map(_.toList).map(ExprNode.BlockNode)
+  def block[_: P]: P[ExprNode] = {
+    def statements = P(statement.repX(0, Space.terminators).map(_.toList))
+    P(Index ~ "{" ~ statements ~ "}").map(withIndex(ExprNode.BlockNode))
+  }
   private def list[_: P]: P[ExprNode] = P("[" ~ (expression ~ ("," ~ expression).rep).? ~ "]").map {
     case None => ExprNode.ListNode(List.empty)
     case Some((left, expressions)) => ExprNode.ListNode(left +: expressions.toList)

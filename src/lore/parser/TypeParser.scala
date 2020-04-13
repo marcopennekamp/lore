@@ -22,7 +22,9 @@ object TypeParser {
     )
   }
 
-  private def atom[_: P]: P[TypeExprNode] = P(unitType | productType | listType | componentType | nominalType | enclosedType)
+  private def atom[_: P]: P[TypeExprNode] = {
+    P(Index ~ (unitType | productType | listType | componentType | nominalType | enclosedType)).map(withIndex(identity _))
+  }
 
   private def unitType[_: P]: P[TypeExprNode] = P("(" ~ ")").map(_ => TypeExprNode.UnitNode)
 
