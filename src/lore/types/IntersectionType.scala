@@ -1,8 +1,5 @@
 package lore.types
 
-// TODO: Idea... To test (simple) equality of intersection types, we can keep the component types sorted by some
-//       stable criterion. This would remove the need to take commutativity into account when comparing for equality.
-
 case class IntersectionType private (types: Set[Type]) extends Type {
   // An intersection type must not be empty!
   assert(types.nonEmpty)
