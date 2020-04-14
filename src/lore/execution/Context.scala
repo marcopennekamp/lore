@@ -1,7 +1,7 @@
 package lore.execution
 
 import lore.ast.{DeclNode, TypeDeclNode, TypeExprNode}
-import lore.compiler.CompilationErrors
+import lore.compiler.Feedback
 import lore.definitions.{ClassDefinition, LabelDefinition}
 import lore.execution.Context._
 import lore.functions.{InputAbstractnessConstraint, LoreFunction, MultiFunction, Parameter, TotalityConstraint}
@@ -81,8 +81,9 @@ object Context {
     )
     val multiFunctions = mutable.HashMap[String, MultiFunction]()
 
-    def getType(name: String): Type = {
-      types.getOrElse(name, throw CompilationErrors.TypeNotFound(name))
+    /* def getType(name: String): Type = {
+      //types.getOrElse(name, throw CompilationError.TypeNotFound(name))
+      types(name)
     }
 
     def resolveSupertype(maybeName: Option[String]): Option[Type] = {
@@ -108,7 +109,7 @@ object Context {
           case tpe: ClassType => ComponentType(tpe)
           // TODO: Pass a proper name to the error. This requires us to reconstruct the type, though, with .toString
           //       for nodes. We should also attach line numbers and file names to nodes!
-          case _ => throw CompilationErrors.ComponentTypeMustContainClass("")
+          case _ => throw Feedback.ComponentTypeMustContainClass("")
         }
       }
     }
@@ -123,7 +124,7 @@ object Context {
             val definition = new LabelDefinition(name, tpe)
             tpe.initialize(definition)
             types.put(name, tpe)
-          case _ => throw CompilationErrors.LabelMustExtendLabel(name)
+          case _ => throw Feedback.LabelMustExtendLabel(name)
         }
       case TypeDeclNode.ClassNode(name, supertypeName, ownedByNode, isAbstract, _, _) =>
         val supertype = resolveSupertype(supertypeName)
@@ -134,7 +135,7 @@ object Context {
             val definition = new ClassDefinition(name, tpe, List.empty) // TODO: Process properties and such.
             tpe.initialize(definition)
             types.put(name, tpe)
-          case _ => throw CompilationErrors.ClassMustExtendClass(name)
+          case _ => throw Feedback.ClassMustExtendClass(name)
         }
       case TypeDeclNode.AliasNode(name, typeExpression) =>
         val tpe = evaluateTypeExpression(typeExpression)
@@ -146,7 +147,8 @@ object Context {
         addFunction(LoreFunction(name, parameters, functionNode.isAbstract))
     }
 
-    new Context(types.toMap, multiFunctions.toMap)
+    new Context(types.toMap, multiFunctions.toMap) */
+    ???
   }
 
 }
