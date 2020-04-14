@@ -14,6 +14,7 @@ scalacOptions ++= Seq(
 
 libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-core" % "7.2.29",
+  "org.scala-graph" %% "graph-core" % "1.13.2",
   "com.lihaoyi" %% "fastparse" % "2.1.3",
   "org.scalactic" %% "scalactic" % "3.1.0",
   "org.scalatest" %% "scalatest" % "3.1.0" % "test"

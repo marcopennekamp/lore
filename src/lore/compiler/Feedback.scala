@@ -84,4 +84,8 @@ object Feedback {
   case class LabelMustExtendLabel(node: TypeDeclNode.LabelNode) extends Error(node) {
     override def message = s"The label ${node.name} does not extend a label but some other type."
   }
+
+  case class TypeAlreadyExists(node: TypeDeclNode) extends Error(node) {
+    override def message = s"The type ${node.name} is already declared somewhere else."
+  }
 }

@@ -16,14 +16,6 @@ sealed trait Compilation[+A] {
   def infos: List[InfoFeedback]
 
   /**
-    * Continues the compilation in `fa` or aggregates further errors in `fb`.
-    */
-  def continue[B](fa: A => B, fb: List[Error] => List[Error]): Compilation[B] = this match {
-    case Result(a, infos) => Result(fa(a), infos)
-    case Errors(errors, infos)  => Errors(fb(errors), infos)
-  }
-
-  /**
     * Maps the result value of type A to a compilation resulting in B. In the context of compilations, flatMap is
     * to be understood as a "chain of computation" which is broken as soon as the first error appears.
     */
@@ -32,6 +24,9 @@ sealed trait Compilation[+A] {
     case _ => this.asInstanceOf[Compilation[B]]
   }
 
+  /**
+    * Maps the result value of type A to a new value of type B.
+    */
   def map[B](f: A => B): Compilation[B] = flatMap(a => Result(f(a), List.empty))
 
   /**
@@ -40,6 +35,14 @@ sealed trait Compilation[+A] {
   def withInfos(infos: List[InfoFeedback]): Compilation[A] = this match {
     case Result(a, infos2) => Result(a, infos ++ infos2)
     case Errors(errors, infos2) => Errors(errors, infos ++ infos2)
+  }
+
+  /**
+    * Applies f to all errors and infos contained in this compilation.
+    */
+  def applyToFeedback(f: Feedback => Unit): Compilation[A] = this match {
+    case Result(_, infos) => infos.foreach(f); this
+    case Errors(errors, infos) => errors.foreach(f); infos.foreach(f); this
   }
 }
 
