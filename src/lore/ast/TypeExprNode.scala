@@ -16,5 +16,5 @@ object TypeExprNode {
   case object UnitNode extends TypeExprNode
   case class ListNode(element: TypeExprNode) extends TypeExprNode
   case class MapNode(key: TypeExprNode, value: TypeExprNode) extends TypeExprNode
-  case class ComponentNode(underlying: TypeExprNode) extends TypeExprNode
+  case class ComponentNode(underlyingName: String) extends TypeExprNode
 }

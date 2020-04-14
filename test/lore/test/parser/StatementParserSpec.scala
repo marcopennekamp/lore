@@ -305,7 +305,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
           case Seq(t1: TypeExprNode.NominalNode, t2: TypeExprNode.ComponentNode) =>
             t1.index shouldEqual 15
             t2.index shouldEqual 20
-            t2.underlying.index shouldEqual 21
+            t2.underlyingName.index shouldEqual 21
         }
         inside(call.arguments) {
           case Seq(dot: VariableNode, e: VariableNode) =>

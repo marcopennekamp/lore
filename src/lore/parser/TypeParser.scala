@@ -38,7 +38,7 @@ object TypeParser {
 
   private def listType[_: P]: P[TypeExprNode.ListNode] = P("[" ~ typeExpression ~ "]").map(TypeExprNode.ListNode)
 
-  private def componentType[_: P]: P[TypeExprNode.ComponentNode] = P("+" ~ nominalType).map(TypeExprNode.ComponentNode)
+  private def componentType[_: P]: P[TypeExprNode.ComponentNode] = P("+" ~ identifier).map(TypeExprNode.ComponentNode)
 
   /**
     * Parses a nominal type. Assigns the index itself because it's used by componentType.
