@@ -47,6 +47,11 @@ case class Result[+A](value: A, override val infos: List[InfoFeedback]) extends 
 case class Errors[+A](errors: List[Error], override val infos: List[InfoFeedback]) extends Compilation[A]
 
 object Compilation {
+  def fail(errors: Error*): Compilation[Nothing] = Errors(errors.toList, List.empty)
+  def failInfo(errors: Error*)(infos: InfoFeedback*): Compilation[Nothing] = Errors(errors.toList, infos.toList)
+  def succeed[A](a: A): Compilation[A] = Result(a, List.empty)
+  def succeedInfo[A](a: A)(infos: InfoFeedback*): Compilation[A] = Result(a, infos.toList)
+
   implicit class CompilationListExtension[A](compilations: List[Compilation[A]]) {
     /**
       * Combines all the compilations from a list into a single compilation. If any of the compilations have
