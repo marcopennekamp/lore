@@ -42,11 +42,11 @@ A set of **ASTs**, each bundled within a fragment data structure. Each node of t
 
 
 
-#### Phase 2: Registry Declaration
+#### Phase 2: Declaration Resolution
 
-All declarations, across multiple fragments, are registered in a **Registry**, which is meant to first learn about all available declarations across fragment boundaries. This is practically necessary because type and function declarations depend on other type declarations, such as a class depending on a superclass that it extends, and these declarations may appear out-of-order in the same fragment or even arbitrarily across multiple fragments.
+All declarations, across multiple fragments, are added to a **Dependency Resolver**, which is meant to first learn about all available declarations across fragment boundaries. This is practically necessary because type and function declarations depend on other type declarations, such as a class depending on a superclass that it extends, and these declarations may appear out-of-order in the same fragment or even arbitrarily across multiple fragments.
 
-Once all names have been registered with their associated ASTs, we have to **resolve declared types hierarchically**. During the registration step, types are added to a graph with directed edges signifying relationships between types (such as subtyping). We sort this graph topologically and then start to resolve types beginning with the root types, i.e. those which don't depend on any other types.
+Once all names have been registered with their associated ASTs, we have to **resolve declared types hierarchically**. During the dependency resolution step, types are added to a graph with directed edges signifying relationships between types (such as subtyping). We sort this graph topologically and then start to resolve types beginning with the root types, i.e. those which don't depend on any other types.
 
 Class **members** have to be handled with special care: For example, let's say we have the following classes `A` and `B`:
 
@@ -64,7 +64,7 @@ Regardless of whether this is even instantiable, it is undoubtedly a valid piece
 
 In other cases, we might find **cyclical subtyping relationships** (`A extends B` and `B extends A`). These are, obviously, not valid, and so the dependency graph should recognize these cycles and raise an appropriate error.
 
-Once declared types have been resolved, we can build the **Definition** instances for all high-level declarations. A Definition is a smart representation of a declaration's AST. It carries all information in processed forms, such as Type instances instead of TypeExprNodes, except for function and constructor bodies: we keep working with these (partial) ASTs until the representation is transpiled to Javascript. Each function/constructor body AST is part of the respective Definition.
+Once declared types have been resolved, we can build the **Definition** instances for all high-level declarations and register them in the **Registry**. A Definition is a smart representation of a declaration's AST. It carries all information in processed forms, such as Type instances instead of TypeExprNodes, except for function and constructor bodies: we keep working with these (partial) ASTs until the representation is transpiled to Javascript. Each function/constructor body AST is part of the respective Definition.
 
 
 
