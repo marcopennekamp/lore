@@ -96,4 +96,26 @@ object Compilation {
       }
     }
   }
+
+  /**
+    * A type `Option[Compilation[A]]` models an optional compilation resulting in a value of type A. For example,
+    * we might only want to compile something if some value of Option[T] exists, then map it to a compilation:
+    * `maybeT.map(t => compile(t)): Option[Compilation[A]]`.
+    */
+  implicit class OptionalCompilationExtension[A](option: Option[Compilation[A]]) {
+    /**
+      * Turns the optional compilation "inside out", which means that:
+      *   - If the present value is None, we didn't actually compile anything, and so we claim that we have
+      *     succeeded in compiling to a None value: Compilation.succeed(None).
+      *   - If the present value is Some, we compiled something, and so we map the value of the compilation
+      *     to Some.
+      *
+      * This is useful if we have a compilation that is optional, but then want to treat the case where no
+      * compilation happened as if the compilation resulted in a None value.
+      */
+    def toCompiledOption: Compilation[Option[A]] = option match {
+      case None => Compilation.succeed(None)
+      case Some(compilation) => compilation.map(Some(_))
+    }
+  }
 }
