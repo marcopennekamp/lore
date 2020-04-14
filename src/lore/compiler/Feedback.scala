@@ -65,19 +65,23 @@ trait InfoFeedback extends Feedback {
 abstract class Warning(override val index: ast.Index) extends InfoFeedback
 
 object Feedback {
-  class FunctionNotFound(name: String, node: ExprNode.CallNode) extends Error(node) {
+  case class FunctionNotFound(name: String, node: ExprNode.CallNode) extends Error(node) {
     override def message = s"The function $name does not exist in the current scope."
   }
 
-  class TypeNotFound(name: String, node: TypeExprNode) extends Error(node) {
+  case class TypeNotFound(name: String, node: TypeExprNode) extends Error(node) {
     override def message = s"The type $name does not exist in the current scope."
   }
 
-  class ClassMustExtendClass(node: TypeDeclNode.ClassNode) extends Error(node) {
+  case class ComponentTypeMustContainClass(node: TypeExprNode.ComponentNode) extends Error(node) {
+    override def message: String = s"The component type +${node.underlyingName} must contain a class type. ${node.underlyingName} is not a class."
+  }
+
+  case class ClassMustExtendClass(node: TypeDeclNode.ClassNode) extends Error(node) {
     override def message = s"The class ${node.name} does not extend a class but some other type."
   }
 
-  class LabelMustExtendLabel(node: TypeDeclNode.LabelNode) extends Error(node) {
+  case class LabelMustExtendLabel(node: TypeDeclNode.LabelNode) extends Error(node) {
     override def message = s"The label ${node.name} does not extend a label but some other type."
   }
 }

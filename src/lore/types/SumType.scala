@@ -16,4 +16,6 @@ object SumType {
       case t => Set(t)
     })
   }
+
+  def construct(types: List[Type]): SumType = construct(types.toSet)
 }
