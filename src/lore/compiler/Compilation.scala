@@ -1,21 +1,26 @@
 package lore.compiler
 
-// TODO: How can we handle warnings?
+// TODO: Performance-wise, it might be worth to use doubly-linked lists here, if performance ever becomes a problem.
 
 /**
   * Represents a compilation to a value of type A. Either results in a Result[A] or an Errors object.
   *
-  * We could use a Try[A], but we don't want to collect exceptions, rather [[CompilationError]]s. We could also use
+  * We could use a Try[A], but we don't want to collect exceptions, rather [[Feedback]]s. We could also use
   * an Either[List[CompilationError], A], but this is unwieldy and I'd like to have access to the implementation code
   * to add features later.
   */
 sealed trait Compilation[+A] {
   /**
+    * A list of info feedback that is always carried forward through operations such as flatMap and combine.
+    */
+  def infos: List[InfoFeedback]
+
+  /**
     * Continues the compilation in `fa` or aggregates further errors in `fb`.
     */
-  def continue[B](fa: A => B, fb: List[CompilationError] => List[CompilationError]): Compilation[B] = this match {
-    case Result(a) => Result(fa(a))
-    case Errors(errors)  => Errors(fb(errors))
+  def continue[B](fa: A => B, fb: List[Error] => List[Error]): Compilation[B] = this match {
+    case Result(a, infos) => Result(fa(a), infos)
+    case Errors(errors, infos)  => Errors(fb(errors), infos)
   }
 
   /**
@@ -23,15 +28,23 @@ sealed trait Compilation[+A] {
     * to be understood as a "chain of computation" which is broken as soon as the first error appears.
     */
   def flatMap[B](f: A => Compilation[B]): Compilation[B] = this match {
-    case Result(a) => f(a)
+    case Result(a, infos) => f(a).withInfos(infos)
     case _ => this.asInstanceOf[Compilation[B]]
   }
 
-  def map[B](f: A => B): Compilation[B] = flatMap(a => Result(f(a)))
+  def map[B](f: A => B): Compilation[B] = flatMap(a => Result(f(a), List.empty))
+
+  /**
+    * Attaches the given list of infos to a copy of the current compilation.
+    */
+  def withInfos(infos: List[InfoFeedback]): Compilation[A] = this match {
+    case Result(a, infos2) => Result(a, infos ++ infos2)
+    case Errors(errors, infos2) => Errors(errors, infos ++ infos2)
+  }
 }
 
-case class Result[+A](value: A) extends Compilation[A]
-case class Errors[+A](errors: List[CompilationError]) extends Compilation[A]
+case class Result[+A](value: A, override val infos: List[InfoFeedback]) extends Compilation[A]
+case class Errors[+A](errors: List[Error], override val infos: List[InfoFeedback]) extends Compilation[A]
 
 object Compilation {
   implicit class CompilationListExtension[A](compilations: List[Compilation[A]]) {
@@ -49,12 +62,17 @@ object Compilation {
       // The decision is very simple: If the list of errors is not empty, there is at least one compilation that has
       // failed, and thus the whole compilation has failed with the given errors.
       var results = List.empty[A]
-      var errors = List.empty[CompilationError]
+      var errors = List.empty[Error]
+      var infos = List.empty[InfoFeedback]
       compilations.foreach {
-        case Result(value) => results = value :: results
-        case Errors(list) => errors = list ::: errors
+        case Result(value, infos2) =>
+          results = value :: results
+          infos = infos2 ::: infos
+        case Errors(errors2, infos2) =>
+          errors = errors2 ::: errors
+          infos = infos2 ::: infos
       }
-      if (errors.nonEmpty) Errors(errors) else Result(results)
+      if (errors.nonEmpty) Errors(errors, infos) else Result(results, infos)
     }
   }
 }
