@@ -44,7 +44,7 @@ A set of **ASTs**, each bundled within a fragment data structure. Each node of t
 
 #### Phase 2: Declaration Resolution
 
-All declarations, across multiple fragments, are added to a **Dependency Resolver**, which is meant to first learn about all available declarations across fragment boundaries. This is practically necessary because type and function declarations depend on other type declarations, such as a class depending on a superclass that it extends, and these declarations may appear out-of-order in the same fragment or even arbitrarily across multiple fragments.
+All declarations, across multiple fragments, are added to a **Declaration Resolver**, which is meant to first learn about all available declarations across fragment boundaries. This is practically necessary because type and function declarations depend on other type declarations, such as a class depending on a superclass that it extends, and these declarations may appear out-of-order in the same fragment or even arbitrarily across multiple fragments.
 
 Once all names have been registered with their associated ASTs, we have to **resolve declared types hierarchically**. During the dependency resolution step, types are added to a graph with directed edges signifying relationships between types (such as subtyping). We sort this graph topologically and then start to resolve types beginning with the root types, i.e. those which don't depend on any other types.
 

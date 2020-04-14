@@ -29,18 +29,21 @@ object DeclNode {
 /**
   * Top-level type declarations.
   */
-sealed trait TypeDeclNode extends DeclNode
+sealed trait TypeDeclNode extends DeclNode {
+  def name: String
+}
+
 object TypeDeclNode {
   // TODO: We need to add type aliases to the spec... or remove them from the implementation.
-  case class AliasNode(name: String, tpe: TypeExprNode) extends TypeDeclNode
+  case class AliasNode(override val name: String, tpe: TypeExprNode) extends TypeDeclNode
 
-  case class LabelNode(name: String, supertypeName: Option[String]) extends TypeDeclNode
+  case class LabelNode(override val name: String, supertypeName: Option[String]) extends TypeDeclNode
 
   /**
     * Either a class or an entity depending on whether members contains a component.
     */
   case class ClassNode(
-    name: String, supertypeName: Option[String], ownedBy: Option[TypeExprNode], isAbstract: Boolean,
+    override val name: String, supertypeName: Option[String], ownedBy: Option[TypeExprNode], isAbstract: Boolean,
     members: List[MemberNode], constructors: List[ConstructorNode],
   ) extends TypeDeclNode
 
