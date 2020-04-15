@@ -64,6 +64,32 @@ class DeclarationResolver {
     }.combine.map(_ => ()).applyToFeedback(_.associate(fragment))
   }
 
+  /**
+    * Find multiple cycles in the graph. Cycles with the same elements and order, but different starting nodes, are
+    * only returned once. The function is useful for finding multiple dependency cycles so that users can quickly
+    * fix them.
+    *
+    * This function is not guaranteed to find ALL cycles, but there is a good chance that it does.
+    */
+  private def distinctCycles: List[dependencyGraph.Cycle] = {
+    var cycles = List.empty[dependencyGraph.Cycle]
+    for (node <- dependencyGraph.nodes) {
+      node.partOfCycle.foreach { cycle =>
+        // We have found a cycle. Now we need to ensure that it isn't in the list yet.
+        if (!cycles.exists(_.sameAs(cycle))) {
+          cycles = cycle :: cycles
+        }
+
+        // This is not the most efficient way to compare cycles. We are operating on the assumption that dependency
+        // cycles will be a rare occurrence: if a cycle happens, the programmer is inclined to fix it right away.
+        // In the current implementation, any new cycle inserted into the list has to be compared to all other cycles.
+        // That is fine if we don't find more than 100 cycles or so. Should we ever have performance issues stemming
+        // from this section of the code, we can introduce a hashing function that is stable in respect to a cycle's
+        // starting node, and thus likely throws only same cycles into the same bucket.
+      }
+    }
+    cycles
+  }
   def buildRegistry(): C[Registry] = {
     // TODO: Idea: Build a graph with type declarations as nodes and edges being subtyping relationships. Then perform
     //       topographic sort.
