@@ -11,5 +11,5 @@ package object compiler {
   /**
     * A wrapper for nodes to carry information of which fragment they originate from.
     */
-  case class FragmentNode[A <: Node](node: A, fragment: Fragment)
+  case class FragmentNode[+A <: Node](node: A, fragment: Fragment)
 }

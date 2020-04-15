@@ -1,6 +1,7 @@
 package lore.compiler
 
 import lore.ast
+import lore.ast.TypeDeclNode.DeclaredNode
 import lore.ast.{ExprNode, Node, TypeDeclNode, TypeExprNode}
 
 /**
@@ -50,6 +51,11 @@ abstract class Error(override val index: ast.Index) extends Feedback {
   def this(node: Node) {
     this(node.index)
   }
+
+  def this(fragmentNode: FragmentNode[Node]) {
+    this(fragmentNode.node.index)
+    associate(fragmentNode.fragment)
+  }
 }
 
 /**
@@ -87,5 +93,16 @@ object Feedback {
 
   case class TypeAlreadyExists(node: TypeDeclNode) extends Error(node) {
     override def message = s"The type ${node.name} is already declared somewhere else."
+  }
+
+  /**
+    * @param occurrence One of the type declarations where the cycles occurs, so that we can report one error location.
+    */
+  case class InheritanceCycle(cycle: List[String], occurrence: FragmentNode[TypeDeclNode]) extends Error(occurrence) {
+    override def message: String = """
+    |An inheritance cycle between the following types has been detected: ${cycle.mkString(",")}.
+    |A class or label A cannot inherit from a class/label B that also inherits from A directly or indirectly. The
+    |subtyping relationships of declared types must result in a directed, acyclic graph.
+    """.stripMargin.replaceAll("\n", " ").trim
   }
 }
