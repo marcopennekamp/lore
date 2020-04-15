@@ -16,6 +16,14 @@ sealed trait Compilation[+A] {
   def infos: List[InfoFeedback]
 
   /**
+    * Returns the result value or the alternative if this compilation is an error.
+    */
+  def getOrElse[B >: A](alternative: => B): B = this match {
+    case Result(a, _) => a
+    case Errors(_, _) => alternative
+  }
+
+  /**
     * Maps the result value of type A to a compilation resulting in B. In the context of compilations, flatMap is
     * to be understood as a "chain of computation" which is broken as soon as the first error appears.
     */
@@ -28,6 +36,23 @@ sealed trait Compilation[+A] {
     * Maps the result value of type A to a new value of type B.
     */
   def map[B](f: A => B): Compilation[B] = flatMap(a => Result(f(a), List.empty))
+
+  /**
+    * Executes the function `f` with the contained value if the compilation is a result.
+    */
+  def foreach(f: A => Unit): Unit = this match {
+    case Result(a, _) => f(a)
+    case _ => ()
+  }
+
+  /**
+    * Filters the result value, provided this compilation has been successful so far. If the predicate is false,
+    * the compilation results in the given errors.
+    */
+  def require(p: A => Boolean)(errors: Error*): Compilation[A] = this match {
+    case r@Result(a, infos) => if (p(a)) r else Errors(errors.toList, infos)
+    case x => x
+  }
 
   /**
     * Attaches the given list of infos to a copy of the current compilation.
