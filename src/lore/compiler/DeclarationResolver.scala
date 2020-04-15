@@ -1,10 +1,8 @@
 package lore.compiler
 
 import lore.ast.{DeclNode, TypeDeclNode}
-import scalax.collection.GraphEdge
-import scalax.collection.mutable.Graph
-import scalax.collection.GraphPredef._
 import scalax.collection.GraphEdge._
+import scalax.collection.mutable.Graph
 
 /**
   * Declarations can occur unordered. This is not only true within a file, but especially across multiple files. We
@@ -24,7 +22,8 @@ class DeclarationResolver {
   private val multiFunctionDeclarations: mutable.HashMap[String, List[FragmentNode[DeclNode.FunctionNode]]] = mutable.HashMap()
 
   /**
-    * A mutable dependency graph, the nodes being type names.
+    * A mutable dependency graph, the nodes being type names. A type Any is the root of all declared types. Edges are
+    * directed from supertype to subtype.
     */
   private val dependencyGraph: Graph[String, DiEdge] = Graph()
   private implicit val edgeFactory = DiEdge
@@ -39,10 +38,9 @@ class DeclarationResolver {
       case aliasNode: TypeDeclNode.AliasNode =>
         typeDeclarations.put(aliasNode.name, declaration)
         // TODO: Disallow cycles for alias types. (For now.)
-      case declaredNode: TypeDeclNode.DeclaredNode =>
-        // Covers labels and classes.
+      case declaredNode: TypeDeclNode.DeclaredNode => // Covers labels and classes.
         typeDeclarations.put(declaredNode.name, declaration)
-        declaredNode.supertypeName.foreach(supertypeName => dependencyGraph.addEdge(declaredNode.name, supertypeName))
+        dependencyGraph.addEdge(declaredNode.supertypeName.getOrElse("Any"), declaredNode.name)
     }
 
     Compilation.succeed(())
