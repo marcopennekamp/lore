@@ -19,6 +19,7 @@ import scala.collection.mutable
 
 class DeclarationResolver {
   private val typeDeclarations: mutable.HashMap[String, FragmentNode[TypeDeclNode]] = mutable.HashMap()
+  private var aliasDeclarations: List[TypeDeclNode.AliasNode] = List.empty
   private val multiFunctionDeclarations: mutable.HashMap[String, List[FragmentNode[DeclNode.FunctionNode]]] = mutable.HashMap()
 
   /**
@@ -37,7 +38,10 @@ class DeclarationResolver {
     declaration.node match {
       case aliasNode: TypeDeclNode.AliasNode =>
         typeDeclarations.put(aliasNode.name, declaration)
+        aliasDeclarations = aliasNode :: aliasDeclarations
         // TODO: Disallow cycles for alias types. (For now.)
+        //       Actually, if we define an alias type like `type A = B | A`, there will already be an error:
+        //       Type not found "A". So we might not actually need to change anything.
       case declaredNode: TypeDeclNode.DeclaredNode => // Covers labels and classes.
         typeDeclarations.put(declaredNode.name, declaration)
         dependencyGraph.addEdge(declaredNode.supertypeName.getOrElse("Any"), declaredNode.name)
