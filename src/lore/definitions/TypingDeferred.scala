@@ -11,6 +11,10 @@ import lore.types.Type
 trait TypingDeferred[+T <: Type] {
   protected def resolveType: () => C[T]
 
+  // TODO: I am quite aware that this implementation results in two evaluations of resolveType. I don't think this
+  //       will cause any issues, neither logical nor performance issues, but we might want to watch out for this
+  //       anyway.
+
   /**
     * Verifies whether the given definition has a correct type. If not, all compilation errors are passed via the
     * returned compilation instance.

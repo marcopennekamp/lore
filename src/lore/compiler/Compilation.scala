@@ -86,6 +86,7 @@ object Compilation {
   def succeedInfo[A](a: A)(infos: InfoFeedback*): Compilation[A] = Result(a, infos.toList)
 
   implicit class CompilationListExtension[A](compilations: List[Compilation[A]]) {
+    // TODO: Rename to simultaneous.
     /**
       * Combines all the compilations from a list into a single compilation. If any of the compilations have
       * resulted in an error, the combined compilation results in an error. This operation collects all errors
@@ -119,6 +120,7 @@ object Compilation {
     */
   implicit class CompilationPairExtension[A, B](cs: (Compilation[A], Compilation[B])) {
     // TODO: If we want to expand this to heterogeneous lists of arbitrary length, we should consider using shapeless.
+    // TODO: Rename to simultaneous.
     def combine: Compilation[(A, B)] = {
       cs match {
         case (Result(a, infosA), Result(b, infosB)) => Result((a, b), infosA ::: infosB)

@@ -1,5 +1,6 @@
 package lore.definitions
 
+import lore.compiler.C
 import lore.types.{ClassType, Type}
 
 /**
@@ -14,6 +15,12 @@ class ClassDefinition(
   val constructors: List[ConstructorDefinition],
 ) extends DeclaredTypeDefinition {
   override def supertypeDefinition: Option[ClassDefinition] = tpe.supertype.map(_.definition)
+  override def verifyDeferredTypings: C[Unit] = {
+    (
+      localMembers.map(_.verifyType).combine,
+      constructors.flatMap(_.parameters).map(_.verifyType).combine
+    ).combine.map(_ => ())
+  }
 
   /**
     * The list of all members belonging to this class, including superclass members.

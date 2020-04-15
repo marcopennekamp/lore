@@ -13,7 +13,7 @@ object FunctionDeclarationResolver {
   }
 */
   def resolveConstructorNode(node: TypeDeclNode.ConstructorNode)(implicit registry: Registry): ConstructorDefinition = {
-    new ConstructorDefinition(
+    ConstructorDefinition(
       node.name,
       node.parameters.map(resolveParameterNode),
       node.body,

@@ -156,9 +156,15 @@ class DeclarationResolver {
       }.combine
     }
 
-    // TODO: Validate member and parameter types.
+    // As you know, we deferred validating member and parameter types with TypingDeferred. We will have to do this now,
+    // to ensure that all types can be resolved correctly.
+    val withVerifiedDeferredTypings = withResolvedAliasTypes.flatMap { _ =>
+      // TODO: We need to associate these compilations with a specific fragment.
+      registry.getTypeDefinitions.values.map(definition => definition.verifyDeferredTypings).toList.combine
+    }
+
     // TODO: Resolve function declarations and add them to the registry.
 
-    withResolvedAliasTypes.map(_ => registry)
+    withVerifiedDeferredTypings.map(_ => registry)
   }
 }

@@ -5,7 +5,7 @@ import lore.definitions.DeclaredTypeDefinition
 import lore.functions.MultiFunction
 import lore.types._
 
-import scala.collection.mutable
+import scala.collection.{MapView, mutable}
 
 /**
   * The Registry holds all Definitions and Types known to the compiler.
@@ -53,6 +53,11 @@ class Registry {
       case Some(definition) => Compilation.succeed(definition)
     }
   }
+
+  /**
+    * Returns all type definitions accessible via an immutable map view.
+    */
+  def getTypeDefinitions: MapView[String, DeclaredTypeDefinition] = typeDefinitions.view
 
   // TODO: Also introduce getClassDefinition and getLabelDefinition. Use require/isInstanceOf and asInstanceOf.
 
