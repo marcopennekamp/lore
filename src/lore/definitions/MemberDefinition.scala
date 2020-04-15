@@ -1,18 +1,19 @@
 package lore.definitions
 
-import lore.compiler.C
+import lore.compiler.{C, Position}
 import lore.types.{ClassType, ComponentType, Type}
 
 /**
   * A data type member, that is, either a property or a component.
   */
-sealed trait MemberDefinition[+T <: Type] extends TypingDeferred[T] {
+sealed trait MemberDefinition[+T <: Type] extends Definition with TypingDeferred[T] {
   def name: String
   def isMutable: Boolean = false
 }
 
 class PropertyDefinition(
-  override val name: String, override val resolveType: () => C[Type], override val isMutable: Boolean
+  override val name: String, override val resolveType: () => C[Type], override val isMutable: Boolean,
+  override val position: Position,
 ) extends MemberDefinition[Type]
 
 /**
@@ -20,7 +21,8 @@ class PropertyDefinition(
   * @param overrides The component name of the superclass that this component overrides.
   */
 class ComponentDefinition(
-  override val name: String, override val resolveType: () => C[ClassType], val overrides: Option[String]
+  override val name: String, override val resolveType: () => C[ClassType], val overrides: Option[String],
+  override val position: Position,
 ) extends MemberDefinition[ClassType] {
   val componentType: ComponentType = ComponentType(tpe)
 }

@@ -1,5 +1,8 @@
 package lore
 
+import lore.compiler.{Fragment, Position}
+
+
 package object ast {
   type Index = Int
 
@@ -8,6 +11,11 @@ package object ast {
       * The start index of the current node in the original source code.
       */
     var index: Index = 0
+
+    /**
+      * Creates a fragment position from the node's index and the given fragment.
+      */
+    def fragmentPosition(implicit fragment: Fragment): Position = Position(fragment, index)
   }
 
   private def withIndexImpl[T, R <: Node](construct: T => R, index: Index, t: T): R = {

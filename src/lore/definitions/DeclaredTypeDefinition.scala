@@ -6,7 +6,7 @@ import lore.types.DeclaredType
 /**
   * The definition of a declared type.
   */
-trait DeclaredTypeDefinition {
+trait DeclaredTypeDefinition extends Definition {
   def name: String
   def tpe: DeclaredType
   def supertypeDefinition: Option[DeclaredTypeDefinition]

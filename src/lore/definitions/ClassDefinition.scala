@@ -1,6 +1,6 @@
 package lore.definitions
 
-import lore.compiler.C
+import lore.compiler.{C, Fragment, Position}
 import lore.types.{ClassType, Type}
 
 /**
@@ -13,6 +13,7 @@ class ClassDefinition(
   override val tpe: ClassType,
   val localMembers: List[MemberDefinition[Type]],
   val constructors: List[ConstructorDefinition],
+  override val position: Position,
 ) extends DeclaredTypeDefinition {
   override def supertypeDefinition: Option[ClassDefinition] = tpe.supertype.map(_.definition)
   override def verifyDeferredTypings: C[Unit] = {

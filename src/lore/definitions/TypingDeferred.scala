@@ -8,7 +8,7 @@ import lore.types.Type
   * types that are registered after the current class type. Hence, we pass a `resolveType` function to the a
   * definition that has its typing deferred, which is then lazily evaluated to `tpe`.
   */
-trait TypingDeferred[+T <: Type] {
+trait TypingDeferred[+T <: Type] { self: Definition =>
   protected def resolveType: () => C[T]
 
   // TODO: I am quite aware that this implementation results in two evaluations of resolveType. I don't think this
@@ -21,7 +21,7 @@ trait TypingDeferred[+T <: Type] {
     *
     * This should be called before `tpe` is accessed!
     */
-  def verifyType: C[Unit] = resolveType().map(_ => ())
+  def verifyType: C[Unit] = resolveType().map(_ => ()).associate(position.fragment)
 
   /**
     * The resolved and verified type of the definition.

@@ -8,15 +8,15 @@ object DeclaredTypeResolver {
   /**
     * Resolves a declared type declaration.
     */
-  def resolveDeclaredNode(node: TypeDeclNode.DeclaredNode)(implicit registry: Registry): C[DeclaredTypeDefinition] = {
-    node match {
+  def resolveDeclaredNode(node: TypeDeclNode.DeclaredNode)(implicit registry: Registry, fragment: Fragment): C[DeclaredTypeDefinition] = {
+    (node match {
       case labelNode: TypeDeclNode.LabelNode => resolveLabelNode(labelNode)
       case classNode: TypeDeclNode.ClassNode => resolveClassNode(classNode)
-    }
+    }).associate(fragment)
   }
 
 
-  private def resolveLabelNode(node: TypeDeclNode.LabelNode)(implicit registry: Registry): C[LabelDefinition] = {
+  private def resolveLabelNode(node: TypeDeclNode.LabelNode)(implicit registry: Registry, fragment: Fragment): C[LabelDefinition] = {
     for {
       supertype <- node.supertypeName.map(name => registry.resolveType(name, node)).toCompiledOption.require { option =>
         // Ensure that, if the label type extends another type, that type is also a label type.
@@ -24,13 +24,13 @@ object DeclaredTypeResolver {
       }(Error.LabelMustExtendLabel(node))
     } yield {
       val tpe = new LabelType(supertype.asInstanceOf[Option[LabelType]])
-      val definition = new LabelDefinition(node.name, tpe)
+      val definition = new LabelDefinition(node.name, tpe, node.fragmentPosition)
       tpe.initialize(definition)
       definition
     }
   }
 
-  private def resolveClassNode(node: TypeDeclNode.ClassNode)(implicit registry: Registry): C[ClassDefinition] = {
+  private def resolveClassNode(node: TypeDeclNode.ClassNode)(implicit registry: Registry, fragment: Fragment): C[ClassDefinition] = {
     // TODO: This should be a simultaneous compilation rather than a sequential one, as we can resolve the
     //       owned-by type, members, and constructors in parallel. This would allow us to display member errors
     //       even when there is also an error with the owned-by declaration.
@@ -44,24 +44,24 @@ object DeclaredTypeResolver {
       constructors = node.constructors.map(FunctionDeclarationResolver.resolveConstructorNode)
     } yield {
       val tpe = new ClassType(supertype.asInstanceOf[Option[ClassType]], ownedBy, node.isAbstract)
-      val definition = new ClassDefinition(node.name, tpe, members, constructors)
+      val definition = new ClassDefinition(node.name, tpe, members, constructors, node.fragmentPosition)
       tpe.initialize(definition)
       definition
     }
   }
 
-  private def resolveMemberNode(node: TypeDeclNode.MemberNode)(implicit registry: Registry): C[MemberDefinition[Type]] = {
+  private def resolveMemberNode(node: TypeDeclNode.MemberNode)(implicit registry: Registry, fragment: Fragment): C[MemberDefinition[Type]] = {
     node match {
       case TypeDeclNode.PropertyNode(name, tpe, isMutable) =>
         val resolveType = () => TypeExpressionEvaluator.evaluate(tpe)
-        Compilation.succeed(new PropertyDefinition(name, resolveType, isMutable))
+        Compilation.succeed(new PropertyDefinition(name, resolveType, isMutable, node.fragmentPosition))
       case componentNode@TypeDeclNode.ComponentNode(name, overrides) =>
         val resolveType = () => {
           registry.resolveType(name, node)
             .require(_.isInstanceOf[ClassType])(Error.ComponentMustBeClass(componentNode))
             .map(_.asInstanceOf[ClassType])
         }
-        Compilation.succeed(new ComponentDefinition(name, resolveType, overrides))
+        Compilation.succeed(new ComponentDefinition(name, resolveType, overrides, node.fragmentPosition))
     }
   }
 }

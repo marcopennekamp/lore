@@ -38,11 +38,11 @@ sealed trait Feedback {
     * The position of the feedback instance within its associated fragment. Before you call [[position]], you must
     * first ensure that [[associate]] has been called.
     */
-  lazy val position: Fragment.Position = {
+  lazy val position: Position = {
     if (fragment == null) {
       throw new IllegalStateException(s"Can't create a position for the feedback instance $this without an associated fragment.")
     }
-    Fragment.Position(fragment, index)
+    Position(fragment, index)
   }
 }
 

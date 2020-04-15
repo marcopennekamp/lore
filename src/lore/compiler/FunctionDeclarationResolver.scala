@@ -12,15 +12,16 @@ object FunctionDeclarationResolver {
     addFunction(LoreFunction(name, parameters, functionNode.isAbstract))
   }
 */
-  def resolveConstructorNode(node: TypeDeclNode.ConstructorNode)(implicit registry: Registry): ConstructorDefinition = {
+  def resolveConstructorNode(node: TypeDeclNode.ConstructorNode)(implicit registry: Registry, fragment: Fragment): ConstructorDefinition = {
     ConstructorDefinition(
       node.name,
       node.parameters.map(resolveParameterNode),
       node.body,
+      node.fragmentPosition,
     )
   }
 
-  private def resolveParameterNode(node: DeclNode.ParameterNode)(implicit registry: Registry): ParameterDefinition = {
-    new ParameterDefinition(node.name, () => TypeExpressionEvaluator.evaluate(node.tpe))
+  private def resolveParameterNode(node: DeclNode.ParameterNode)(implicit registry: Registry, fragment: Fragment): ParameterDefinition = {
+    new ParameterDefinition(node.name, () => TypeExpressionEvaluator.evaluate(node.tpe), node.fragmentPosition)
   }
 }

@@ -140,12 +140,12 @@ class DeclarationResolver {
     // of the predefined types.
     val withRegisteredDefinitions = typeResolutionOrder.tail.map { typeName =>
       assert(typeDeclarations.contains(typeName))
-      val FragmentNode(node, fragment) = typeDeclarations(typeName)
+      implicit val FragmentNode(node, fragment) = typeDeclarations(typeName)
       node match {
         case _: TypeDeclNode.AliasNode =>
           throw new RuntimeException("At this point in the compilation step, an alias type should not be resolved.")
         case node: TypeDeclNode.DeclaredNode =>
-          DeclaredTypeResolver.resolveDeclaredNode(node).associate(fragment).map(registry.registerTypeDefinition)
+          DeclaredTypeResolver.resolveDeclaredNode(node).map(registry.registerTypeDefinition)
       }
     }.combine
 
@@ -159,7 +159,7 @@ class DeclarationResolver {
     // As you know, we deferred validating member and parameter types with TypingDeferred. We will have to do this now,
     // to ensure that all types can be resolved correctly.
     val withVerifiedDeferredTypings = withResolvedAliasTypes.flatMap { _ =>
-      // TODO: We need to associate these compilations with a specific fragment.
+      // verifyDeferredTypings associates
       registry.getTypeDefinitions.values.map(definition => definition.verifyDeferredTypings).toList.combine
     }
 
