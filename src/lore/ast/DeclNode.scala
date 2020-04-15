@@ -60,5 +60,5 @@ object TypeDeclNode {
     *
     * The node is only valid if the last statement of the body is a continuation node.
     */
-  case class ConstructorNode(name: String, parameters: List[DeclNode.ParameterNode], body: ExprNode) extends Node
+  case class ConstructorNode(name: String, parameters: List[DeclNode.ParameterNode], body: ExprNode.BlockNode) extends Node
 }
