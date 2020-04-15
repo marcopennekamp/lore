@@ -1,6 +1,7 @@
 package lore.compiler
 
 import lore.ast.{DeclNode, TypeDeclNode}
+import lore.types.Type
 import scalax.collection.GraphEdge._
 import scalax.collection.mutable.Graph
 
@@ -120,9 +121,16 @@ class DeclarationResolver {
       )
     }
 
-    // At this point, we know our dependency graph is a directed, acyclic graph. We can start topological sort at
-    // the root of the graph, Any.
+    // At this point, we know our dependency graph is a directed, acyclic graph. We can start a topological sort.
+    val typeResolutionOrder = dependencyGraph.topologicalSort.fold(
+      _ => throw new RuntimeException(
+        "Topological sort on the dependency graph found a cycle, even though we verified earlier that there was no such cycle."
+      ),
+      order => order.toList.map(_.value)
+    )
 
+    // The first element in the type resolution order must be Any, as it's the ultimate root type.
+    assert(typeResolutionOrder.head == "Any")
 
     // TODO: Idea: Build a graph with type declarations as nodes and edges being subtyping relationships. Then perform
     //       topographic sort.

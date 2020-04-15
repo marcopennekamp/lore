@@ -1,19 +1,24 @@
 package lore.definitions
 
-import lore.types.ClassType
+import lore.types.{ClassType, Type}
 
 /**
   * The definition of both a class and an entity.
   *
   * @param localMembers The members declared within this class/entity. Does not include supertype properties.
   */
-class ClassDefinition(override val name: String, override val tpe: ClassType, val localMembers: List[MemberDefinition]) extends DeclaredTypeDefinition {
+class ClassDefinition(
+  override val name: String,
+  override val tpe: ClassType,
+  val localMembers: List[MemberDefinition[Type]],
+  val constructors: List[ConstructorDefinition],
+) extends DeclaredTypeDefinition {
   override def supertypeDefinition: Option[ClassDefinition] = tpe.supertype.map(_.definition)
 
   /**
     * The list of all members belonging to this class, including superclass members.
     */
-  lazy val members: List[MemberDefinition] = supertypeDefinition.map(_.members).getOrElse(List.empty) ++ localMembers
+  lazy val members: List[MemberDefinition[Type]] = supertypeDefinition.map(_.members).getOrElse(List.empty) ++ localMembers
 
   /**
     * The list of all properties belonging to this class, including superclass properties.

@@ -4,7 +4,7 @@ import lore.ast.{DeclNode, TypeDeclNode, TypeExprNode}
 import lore.compiler.Feedback
 import lore.definitions.{ClassDefinition, LabelDefinition}
 import lore.execution.Context._
-import lore.functions.{InputAbstractnessConstraint, LoreFunction, MultiFunction, Parameter, TotalityConstraint}
+import lore.functions.{InputAbstractnessConstraint, LoreFunction, MultiFunction, TotalityConstraint}
 import lore.parser.FragmentParser
 import lore.types._
 

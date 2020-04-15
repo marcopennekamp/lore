@@ -18,3 +18,13 @@ trait Type {
     */
   def verbose: String = toString
 }
+
+object Type {
+  val predefinedTypes: Map[String, Type] = Map(
+    "Int" -> BasicType.Int,
+    "Real" -> BasicType.Real,
+    "Boolean" -> BasicType.Boolean,
+    "String" -> BasicType.String,
+    "Any" -> AnyType,
+  )
+}
