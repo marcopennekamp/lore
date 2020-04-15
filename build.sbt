@@ -9,6 +9,7 @@ scalacOptions ++= Seq(
   "-language:postfixOps",
   "-language:higherKinds",
   "-language:reflectiveCalls",
+  "-language:existentials",
   "-deprecation"
 )
 

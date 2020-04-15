@@ -90,7 +90,35 @@ class DeclarationResolver {
     }
     cycles
   }
+
+  /**
+    * Builds the registry from all the declarations.
+    */
   def buildRegistry(): C[Registry] = {
+    // At this point, the dependency graph has been built. Since Any is the supertype of all declared types without
+    // a supertype, the graph should be connected.
+    assert(dependencyGraph.isConnected)
+
+    // We attempt to report as many cycles as possible so the user doesn't have to run the compiler multiple times
+    // just to find all dependency cycles.
+    if (dependencyGraph.isCyclic) {
+      val cycles = distinctCycles
+      assert(cycles.nonEmpty)
+      return Compilation.fail(
+        cycles.map { cycle =>
+          val occurrence = typeDeclarations.getOrElse(
+            cycle.startNode,
+            throw new RuntimeException("Type declarations didn't contain a declaration that was part of the dependency graph."),
+          )
+          Feedback.InheritanceCycle(cycle.nodes.map(_.value).toList, occurrence)
+        }: _*
+      )
+    }
+
+    // At this point, we know our dependency graph is a directed, acyclic graph. We can start topological sort at
+    // the root of the graph, Any.
+
+
     // TODO: Idea: Build a graph with type declarations as nodes and edges being subtyping relationships. Then perform
     //       topographic sort.
     ???
