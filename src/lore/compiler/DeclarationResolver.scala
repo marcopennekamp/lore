@@ -20,7 +20,7 @@ import scala.collection.mutable
 
 class DeclarationResolver {
   private val typeDeclarations: mutable.HashMap[String, FragmentNode[TypeDeclNode]] = mutable.HashMap()
-  private var aliasDeclarations: List[TypeDeclNode.AliasNode] = List.empty
+  private var aliasDeclarations: List[FragmentNode[TypeDeclNode.AliasNode]] = List.empty
   private val multiFunctionDeclarations: mutable.HashMap[String, List[FragmentNode[DeclNode.FunctionNode]]] = mutable.HashMap()
 
   /**
@@ -39,7 +39,7 @@ class DeclarationResolver {
     declaration.node match {
       case aliasNode: TypeDeclNode.AliasNode =>
         typeDeclarations.put(aliasNode.name, declaration)
-        aliasDeclarations = aliasNode :: aliasDeclarations
+        aliasDeclarations = declaration.asInstanceOf[FragmentNode[TypeDeclNode.AliasNode]] :: aliasDeclarations
         // TODO: Disallow cycles for alias types. (For now.)
         //       Actually, if we define an alias type like `type A = B | A`, there will already be an error:
         //       Type not found "A". So we might not actually need to change anything.
@@ -66,7 +66,7 @@ class DeclarationResolver {
     fragment.declarations.map {
       case function: DeclNode.FunctionNode => addFunctionDeclaration(FragmentNode(function, fragment))
       case tpe: TypeDeclNode => addTypeDeclaration(FragmentNode(tpe, fragment))
-    }.combine.map(_ => ()).applyToFeedback(_.associate(fragment))
+    }.combine.map(_ => ()).associate(fragment)
   }
 
   /**
@@ -132,8 +132,33 @@ class DeclarationResolver {
     // The first element in the type resolution order must be Any, as it's the ultimate root type.
     assert(typeResolutionOrder.head == "Any")
 
-    // TODO: Idea: Build a graph with type declarations as nodes and edges being subtyping relationships. Then perform
-    //       topographic sort.
-    ???
+    // Now that we have a proper order, we can start building the Registry.
+    implicit val registry: Registry = new Registry()
+
+    // First, we resolve all declared types in their proper resolution order.
+    // With .tail, we exclude Any, since we don't need to add that to the registry, as it is already a part
+    // of the predefined types.
+    val withRegisteredDefinitions = typeResolutionOrder.tail.map { typeName =>
+      assert(typeDeclarations.contains(typeName))
+      val FragmentNode(node, fragment) = typeDeclarations(typeName)
+      node match {
+        case _: TypeDeclNode.AliasNode =>
+          throw new RuntimeException("At this point in the compilation step, an alias type should not be resolved.")
+        case node: TypeDeclNode.DeclaredNode =>
+          DeclaredTypeResolver.resolveDeclaredNode(node).associate(fragment).map(registry.registerTypeDefinition)
+      }
+    }.combine
+
+    // Now that all declared types have been resolved, we can resolve alias types.
+    val withResolvedAliasTypes = withRegisteredDefinitions.flatMap { _ =>
+      aliasDeclarations.map { case FragmentNode(node, fragment) =>
+        TypeExpressionEvaluator.evaluate(node.tpe).associate(fragment).map(tpe => registry.registerType(node.name, tpe))
+      }.combine
+    }
+
+    // TODO: Validate member and parameter types.
+    // TODO: Resolve function declarations and add them to the registry.
+
+    withResolvedAliasTypes.map(_ => registry)
   }
 }

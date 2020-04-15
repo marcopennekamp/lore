@@ -4,18 +4,17 @@ import lore.ast.TypeDeclNode
 import lore.definitions._
 import lore.types.{ClassType, LabelType, Type}
 
-object TypeDeclarationResolver {
+object DeclaredTypeResolver {
   /**
-    * Resolves a given type declaration. Alias types are resolved merely to a type object, while labels and classes
-    * are resolved to [[DeclaredTypeDefinition]].
+    * Resolves a declared type declaration.
     */
-  def resolve(node: TypeDeclNode)(implicit registry: Registry): C[Either[Type, DeclaredTypeDefinition]] = {
+  def resolveDeclaredNode(node: TypeDeclNode.DeclaredNode)(implicit registry: Registry): C[DeclaredTypeDefinition] = {
     node match {
-      case TypeDeclNode.AliasNode(_, tpe) => TypeExpressionEvaluator.evaluate(tpe).map(Left(_))
-      case labelNode: TypeDeclNode.LabelNode => resolveLabelNode(labelNode).map(Right(_))
-      case classNode: TypeDeclNode.ClassNode => resolveClassNode(classNode).map(Right(_))
+      case labelNode: TypeDeclNode.LabelNode => resolveLabelNode(labelNode)
+      case classNode: TypeDeclNode.ClassNode => resolveClassNode(classNode)
     }
   }
+
 
   private def resolveLabelNode(node: TypeDeclNode.LabelNode)(implicit registry: Registry): C[LabelDefinition] = {
     for {
@@ -42,7 +41,7 @@ object TypeDeclarationResolver {
       }(Error.ClassMustExtendClass(node))
       ownedBy <- node.ownedBy.map(TypeExpressionEvaluator.evaluate).toCompiledOption
       members <- node.members.map(resolveMemberNode).combine
-      constructors <- node.constructors.map(FunctionDeclarationResolver.resolveConstructorNode).combine
+      constructors = node.constructors.map(FunctionDeclarationResolver.resolveConstructorNode)
     } yield {
       val tpe = new ClassType(supertype.asInstanceOf[Option[ClassType]], ownedBy, node.isAbstract)
       val definition = new ClassDefinition(node.name, tpe, members, constructors)
