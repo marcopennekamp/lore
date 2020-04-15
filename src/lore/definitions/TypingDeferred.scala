@@ -27,6 +27,8 @@ trait TypingDeferred[+T <: Type] {
 
 object TypingDeferred {
   def assertVerified[T](compilation: C[T]): T = {
-    compilation.getOrElse("A definition type could not be resolved. This should have been verified by DeclarationResolver.")
+    compilation.getOrElse(
+      throw new RuntimeException("A definition type could not be resolved. This should have been verified by DeclarationResolver.")
+    )
   }
 }

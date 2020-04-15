@@ -1,7 +1,6 @@
 package lore.compiler
 
 import lore.ast
-import lore.ast.TypeDeclNode.DeclaredNode
 import lore.ast.{ExprNode, Node, TypeDeclNode, TypeExprNode}
 
 /**
@@ -25,9 +24,14 @@ sealed trait Feedback {
     */
   def associate(fragment: Fragment): Unit = {
     if (this.fragment != null) {
-      throw new IllegalStateException(s"The feedback instance $this may not be associated with a fragment twice.")
+      println("An attempt to associate an already associated feedback instance with a fragment was blocked.")
+      // We only throw an exception if the feedback would be associated with two different fragment instances.
+      if (this.fragment != fragment) {
+        throw new IllegalStateException(s"A feedback instance $this may not be associated with two different fragments.")
+      }
+    } else {
+      this.fragment = fragment
     }
-    this.fragment = fragment
   }
 
   /**

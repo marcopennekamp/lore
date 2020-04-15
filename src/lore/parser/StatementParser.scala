@@ -135,7 +135,7 @@ object StatementParser {
   def arguments[_: P]: P[List[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toList)
   private def typeArguments[_: P]: P[List[TypeExprNode]] = P("[" ~ TypeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toList)
   private def variable[_: P]: P[ExprNode] = P(identifier).map(ExprNode.VariableNode)
-  def block[_: P]: P[ExprNode] = {
+  def block[_: P]: P[ExprNode.BlockNode] = {
     def statements = P(statement.repX(0, Space.terminators).map(_.toList))
     P(Index ~ "{" ~ statements ~ "}").map(withIndex(ExprNode.BlockNode))
   }
