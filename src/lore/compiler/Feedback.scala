@@ -43,6 +43,18 @@ sealed trait Feedback {
 }
 
 /**
+  * Any Feedback OTHER than Error which is supposed to be merely informative and not severe.
+  */
+trait InfoFeedback extends Feedback {
+  override def isSevere = false
+}
+
+/**
+  * The base class for compilation warnings. Proper warnings must extend this class.
+  */
+abstract class Warning(override val index: ast.Index) extends InfoFeedback
+
+/**
   * The base class for compilation errors. Proper errors must extend this class.
   */
 abstract class Error(override val index: ast.Index) extends Feedback {
@@ -58,24 +70,12 @@ abstract class Error(override val index: ast.Index) extends Feedback {
   }
 }
 
-/**
-  * Any Feedback OTHER than Error which is supposed to be merely informative and not severe.
-  */
-trait InfoFeedback extends Feedback {
-  override def isSevere = false
-}
-
-/**
-  * The base class for compilation warnings. Proper warnings must extend this class.
-  */
-abstract class Warning(override val index: ast.Index) extends InfoFeedback
-
-object Feedback {
+object Error {
   case class FunctionNotFound(name: String, node: ExprNode.CallNode) extends Error(node) {
     override def message = s"The function $name does not exist in the current scope."
   }
 
-  case class TypeNotFound(name: String, node: TypeExprNode) extends Error(node) {
+  case class TypeNotFound(name: String, node: Node) extends Error(node) {
     override def message = s"The type $name does not exist in the current scope."
   }
 
@@ -85,6 +85,10 @@ object Feedback {
 
   case class ClassMustExtendClass(node: TypeDeclNode.ClassNode) extends Error(node) {
     override def message = s"The class ${node.name} does not extend a class but some other type."
+  }
+
+  case class ComponentMustBeClass(node: TypeDeclNode.ComponentNode) extends Error(node) {
+    override def message = s"The component ${node.name} is not a valid class type."
   }
 
   case class LabelMustExtendLabel(node: TypeDeclNode.LabelNode) extends Error(node) {

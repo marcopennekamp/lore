@@ -26,12 +26,12 @@ class DeclarationResolver {
     * directed from supertype to subtype.
     */
   private val dependencyGraph: Graph[String, DiEdge] = Graph()
-  private implicit val edgeFactory = DiEdge
+  private implicit val edgelordFactory = DiEdge
 
   def addTypeDeclaration(declaration: FragmentNode[TypeDeclNode]): C[Unit] = {
     // Immediately stop the processing of this type declaration if the name is already taken.
-    if (typeDeclarations.contains(declaration.node.name)) {
-      return Compilation.fail(Feedback.TypeAlreadyExists(declaration.node))
+    if (typeDeclarations.contains(declaration.node.name) || Type.predefinedTypes.contains(declaration.node.name)) {
+      return Compilation.fail(Error.TypeAlreadyExists(declaration.node))
     }
 
     declaration.node match {
@@ -110,7 +110,8 @@ class DeclarationResolver {
             cycle.startNode,
             throw new RuntimeException("Type declarations didn't contain a declaration that was part of the dependency graph."),
           )
-          Feedback.InheritanceCycle(cycle.nodes.map(_.value).toList, occurrence)
+          // These errors are being associated with their fragments through the passed FragmentNode occurrence.
+          Error.InheritanceCycle(cycle.nodes.map(_.value).toList, occurrence)
         }: _*
       )
     }

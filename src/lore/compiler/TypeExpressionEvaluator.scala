@@ -19,7 +19,7 @@ object TypeExpressionEvaluator {
         (eval(key), eval(value)).combine.map(MapType.tupled)
       case componentNode@TypeExprNode.ComponentNode(underlying) => registry.resolveType(underlying, componentNode).flatMap {
         case tpe: ClassType => Compilation.succeed(ComponentType(tpe))
-        case _ => Compilation.fail(Feedback.ComponentTypeMustContainClass(componentNode))
+        case _ => Compilation.fail(Error.ComponentTypeMustContainClass(componentNode))
       }
     }
   }
