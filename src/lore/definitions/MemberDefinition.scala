@@ -1,7 +1,7 @@
 package lore.definitions
 
 import lore.compiler.{C, Position}
-import lore.types.{ClassType, ComponentType, Type}
+import lore.types.{ClassType, ComponentType, Type, TypingDeferred}
 
 /**
   * A data type member, that is, either a property or a component.

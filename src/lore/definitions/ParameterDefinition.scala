@@ -1,7 +1,7 @@
 package lore.definitions
 
 import lore.compiler.{C, Position}
-import lore.types.Type
+import lore.types.{Type, TypingDeferred}
 
 class ParameterDefinition(
   val name: String,

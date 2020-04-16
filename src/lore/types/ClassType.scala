@@ -4,7 +4,7 @@ import lore.definitions.ClassDefinition
 import lore.execution.Context
 
 class ClassType(
-  val supertype: Option[ClassType], val ownedBy: Option[Type], val isAbstract: Boolean
+  val supertype: Option[ClassType], val ownedBy: Option[OwnedBy], val isAbstract: Boolean
 ) extends DeclaredType with DeclaredType.DefinitionProperty[ClassDefinition] {
   /**
     * The list of component types belonging to the entity type.
@@ -20,4 +20,3 @@ class ClassType(
   }
   override def verbose = s"${if (isAbstract) s"abstract class" else "class"} $toString extends ${supertype.getOrElse(AnyType)}"
 }
-

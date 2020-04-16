@@ -2,7 +2,7 @@ package lore.compiler
 
 import lore.ast.TypeDeclNode
 import lore.definitions._
-import lore.types.{ClassType, LabelType, Type}
+import lore.types.{ClassType, LabelType, OwnedBy, Type}
 
 object DeclaredTypeResolver {
   /**
@@ -38,7 +38,7 @@ object DeclaredTypeResolver {
         // Ensure that, if the class type extends another type, that type is also a class type.
         option.forall(_.isInstanceOf[ClassType])
       }(Error.ClassMustExtendClass(node))
-      ownedBy <- node.ownedBy.map(TypeExpressionEvaluator.evaluate).toCompiledOption
+      ownedBy = node.ownedBy.map(ob => new OwnedBy(() => TypeExpressionEvaluator.evaluate(ob)))
       members <- node.members.map(resolveMemberNode).combine
       constructors = node.constructors.map(FunctionDeclarationResolver.resolveConstructorNode)
     } yield {

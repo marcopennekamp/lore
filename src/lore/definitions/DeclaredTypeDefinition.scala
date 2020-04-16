@@ -1,7 +1,7 @@
 package lore.definitions
 
 import lore.compiler.C
-import lore.types.DeclaredType
+import lore.types.{DeclaredType, TypingDeferred}
 
 /**
   * The definition of a declared type.

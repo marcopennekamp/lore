@@ -1,14 +1,13 @@
-package lore.definitions
+package lore.types
 
 import lore.compiler.C
-import lore.types.Type
 
 /**
   * As noted in the compiler specification, certain types cannot be resolved immediately, as they might reference
-  * types that are registered after the current class type. Hence, we pass a `resolveType` function to the a
-  * definition that has its typing deferred, which is then lazily evaluated to `tpe`.
+  * types that are registered after the current class type. Hence, we pass a `resolveType` function to a definition
+  * or type that has its typing deferred, which is then lazily evaluated to `tpe`.
   */
-trait TypingDeferred[+T <: Type] { self: Definition =>
+trait TypingDeferred[+T <: Type] {
   protected def resolveType: () => C[T]
 
   // TODO: I am quite aware that this implementation results in two evaluations of resolveType. I don't think this
@@ -16,7 +15,7 @@ trait TypingDeferred[+T <: Type] { self: Definition =>
   //       anyway.
 
   /**
-    * Verifies whether the given definition has a correct type. If not, all compilation errors are passed via the
+    * Verifies whether the resolved type is correct. If not, all compilation errors are passed via the
     * returned compilation instance.
     *
     * This should be called before `tpe` is accessed!
@@ -24,7 +23,7 @@ trait TypingDeferred[+T <: Type] { self: Definition =>
   def verifyType: C[Unit] = resolveType().map(_ => ())
 
   /**
-    * The resolved and verified type of the definition.
+    * The resolved and verified type.
     */
   lazy val tpe: T = TypingDeferred.assertVerified(resolveType())
 }
@@ -32,7 +31,7 @@ trait TypingDeferred[+T <: Type] { self: Definition =>
 object TypingDeferred {
   def assertVerified[T](compilation: C[T]): T = {
     compilation.getOrElse(
-      throw new RuntimeException("A definition type could not be resolved. This should have been verified by DeclarationResolver.")
+      throw new RuntimeException("A deferred type could not be resolved. This should have been verified in DeclarationResolver.")
     )
   }
 }
