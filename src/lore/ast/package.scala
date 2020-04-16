@@ -15,7 +15,7 @@ package object ast {
     /**
       * Creates a fragment position from the node's index and the given fragment.
       */
-    def fragmentPosition(implicit fragment: Fragment): Position = Position(fragment, index)
+    def position(implicit fragment: Fragment): Position = Position(fragment, index)
   }
 
   private def withIndexImpl[T, R <: Node](construct: T => R, index: Index, t: T): R = {

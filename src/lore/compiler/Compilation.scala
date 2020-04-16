@@ -69,11 +69,6 @@ sealed trait Compilation[+A] {
     case Result(_, infos) => infos.foreach(f); this
     case Errors(errors, infos) => errors.foreach(f); infos.foreach(f); this
   }
-
-  /**
-    * Associates any feedback (both errors and infos) with the given fragment.
-    */
-  def associate(fragment: Fragment): Compilation[A] = applyToFeedback(_.associate(fragment))
 }
 
 case class Result[+A](value: A, override val infos: List[InfoFeedback]) extends Compilation[A]

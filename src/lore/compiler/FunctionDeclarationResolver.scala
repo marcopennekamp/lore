@@ -17,11 +17,11 @@ object FunctionDeclarationResolver {
       node.name,
       node.parameters.map(resolveParameterNode),
       node.body,
-      node.fragmentPosition,
+      node.position,
     )
   }
 
   private def resolveParameterNode(node: DeclNode.ParameterNode)(implicit registry: Registry, fragment: Fragment): ParameterDefinition = {
-    new ParameterDefinition(node.name, () => TypeExpressionEvaluator.evaluate(node.tpe), node.fragmentPosition)
+    new ParameterDefinition(node.name, () => TypeExpressionEvaluator.evaluate(node.tpe), node.position)
   }
 }

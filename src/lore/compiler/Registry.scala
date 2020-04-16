@@ -44,7 +44,7 @@ class Registry {
   /**
     * Get a type definition from the registry, for example when looking for a superclass.
     */
-  def getTypeDefinition(name: String, associatedNode: Node): C[DeclaredTypeDefinition] = {
+  def getTypeDefinition(name: String, associatedNode: Node)(implicit fragment: Fragment): C[DeclaredTypeDefinition] = {
     // TODO: Do we even need this? We could just get a type and through it its definition. For example, we could
     //       add a function getClassType which also ensures that the type is a class type. If not, we can throw
     //       an ClassTypeExpected error.
@@ -66,7 +66,7 @@ class Registry {
     *
     * @param associatedNode The node where the type name occurs, to be used for error building.
     */
-  def resolveType(name: String, associatedNode: Node): C[Type] = {
+  def resolveType(name: String, associatedNode: Node)(implicit fragment: Fragment): C[Type] = {
     // TODO: We should rename this to getType or something similar.
     types.get(name) match {
       case None => Compilation.fail(Error.TypeNotFound(name, associatedNode))
@@ -77,7 +77,7 @@ class Registry {
   /**
     * Resolves the declared supertype with the given name.
     */
-  def resolveSupertype(maybeName: Option[String], associatedNode: TypeExprNode): C[Option[Type]] = {
+  def resolveSupertype(maybeName: Option[String], associatedNode: TypeExprNode)(implicit fragment: Fragment): C[Option[Type]] = {
     maybeName.map(name => resolveType(name, associatedNode)).toCompiledOption
   }
 

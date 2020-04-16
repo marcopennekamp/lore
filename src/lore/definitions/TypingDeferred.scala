@@ -21,7 +21,7 @@ trait TypingDeferred[+T <: Type] { self: Definition =>
     *
     * This should be called before `tpe` is accessed!
     */
-  def verifyType: C[Unit] = resolveType().map(_ => ()).associate(position.fragment)
+  def verifyType: C[Unit] = resolveType().map(_ => ())
 
   /**
     * The resolved and verified type of the definition.

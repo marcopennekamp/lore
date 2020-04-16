@@ -9,41 +9,13 @@ import lore.ast.{ExprNode, Node, TypeDeclNode, TypeExprNode}
   * the parser). The fragment is associated with when feedback is aggregated.
   */
 sealed trait Feedback {
-  def index: ast.Index
+  def position: Position
   def message: String
 
   /**
     * Whether the feedback necessitates the termination of compilation.
     */
   def isSevere: Boolean
-
-  private var fragment: Fragment = _
-
-  /**
-    * Associates the feedback object with the given fragment.
-    */
-  def associate(fragment: Fragment): Unit = {
-    if (this.fragment != null) {
-      println("An attempt to associate an already associated feedback instance with a fragment was blocked.")
-      // We only throw an exception if the feedback would be associated with two different fragment instances.
-      if (this.fragment != fragment) {
-        throw new IllegalStateException(s"A feedback instance $this may not be associated with two different fragments.")
-      }
-    } else {
-      this.fragment = fragment
-    }
-  }
-
-  /**
-    * The position of the feedback instance within its associated fragment. Before you call [[position]], you must
-    * first ensure that [[associate]] has been called.
-    */
-  lazy val position: Position = {
-    if (fragment == null) {
-      throw new IllegalStateException(s"Can't create a position for the feedback instance $this without an associated fragment.")
-    }
-    Position(fragment, index)
-  }
 }
 
 /**
@@ -56,50 +28,49 @@ trait InfoFeedback extends Feedback {
 /**
   * The base class for compilation warnings. Proper warnings must extend this class.
   */
-abstract class Warning(override val index: ast.Index) extends InfoFeedback
+abstract class Warning(override val position: Position) extends InfoFeedback
 
 /**
   * The base class for compilation errors. Proper errors must extend this class.
   */
-abstract class Error(override val index: ast.Index) extends Feedback {
+abstract class Error(override val position: Position) extends Feedback {
   override def isSevere = true
 
-  def this(node: Node) {
-    this(node.index)
+  def this(node: Node)(implicit fragment: Fragment) {
+    this(node.position)
   }
 
   def this(fragmentNode: FragmentNode[Node]) {
-    this(fragmentNode.node.index)
-    associate(fragmentNode.fragment)
+    this(fragmentNode.position)
   }
 }
 
 object Error {
-  case class FunctionNotFound(name: String, node: ExprNode.CallNode) extends Error(node) {
+  case class FunctionNotFound(name: String, node: ExprNode.CallNode)(implicit fragment: Fragment) extends Error(node) {
     override def message = s"The function $name does not exist in the current scope."
   }
 
-  case class TypeNotFound(name: String, node: Node) extends Error(node) {
+  case class TypeNotFound(name: String, node: Node)(implicit fragment: Fragment) extends Error(node) {
     override def message = s"The type $name does not exist in the current scope."
   }
 
-  case class ComponentTypeMustContainClass(node: TypeExprNode.ComponentNode) extends Error(node) {
+  case class ComponentTypeMustContainClass(node: TypeExprNode.ComponentNode)(implicit fragment: Fragment) extends Error(node) {
     override def message: String = s"The component type +${node.underlyingName} must contain a class type. ${node.underlyingName} is not a class."
   }
 
-  case class ClassMustExtendClass(node: TypeDeclNode.ClassNode) extends Error(node) {
+  case class ClassMustExtendClass(node: TypeDeclNode.ClassNode)(implicit fragment: Fragment) extends Error(node) {
     override def message = s"The class ${node.name} does not extend a class but some other type."
   }
 
-  case class ComponentMustBeClass(node: TypeDeclNode.ComponentNode) extends Error(node) {
+  case class ComponentMustBeClass(node: TypeDeclNode.ComponentNode)(implicit fragment: Fragment) extends Error(node) {
     override def message = s"The component ${node.name} is not a valid class type."
   }
 
-  case class LabelMustExtendLabel(node: TypeDeclNode.LabelNode) extends Error(node) {
+  case class LabelMustExtendLabel(node: TypeDeclNode.LabelNode)(implicit fragment: Fragment) extends Error(node) {
     override def message = s"The label ${node.name} does not extend a label but some other type."
   }
 
-  case class TypeAlreadyExists(node: TypeDeclNode) extends Error(node) {
+  case class TypeAlreadyExists(node: TypeDeclNode)(implicit fragment: Fragment) extends Error(node) {
     override def message = s"The type ${node.name} is already declared somewhere else."
   }
 

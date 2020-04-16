@@ -4,7 +4,7 @@ import lore.ast.TypeExprNode
 import lore.types.{ClassType, ComponentType, IntersectionType, ListType, MapType, ProductType, SumType, Type}
 
 object TypeExpressionEvaluator {
-  def evaluate(expression: TypeExprNode)(implicit registry: Registry): C[Type] = {
+  def evaluate(expression: TypeExprNode)(implicit registry: Registry, fragment: Fragment): C[Type] = {
     val eval = evaluate _
     expression match {
       case TypeExprNode.NominalNode(name) => registry.resolveType(name, expression)

@@ -33,7 +33,7 @@ class DeclarationResolver {
   def addTypeDeclaration(declaration: FragmentNode[TypeDeclNode]): C[Unit] = {
     // Immediately stop the processing of this type declaration if the name is already taken.
     if (typeDeclarations.contains(declaration.node.name) || Type.predefinedTypes.contains(declaration.node.name)) {
-      return Compilation.fail(Error.TypeAlreadyExists(declaration.node))
+      return Compilation.fail(Error.TypeAlreadyExists(declaration.node)(declaration.fragment))
     }
 
     declaration.node match {
@@ -66,7 +66,7 @@ class DeclarationResolver {
     fragment.declarations.map {
       case function: DeclNode.FunctionNode => addFunctionDeclaration(FragmentNode(function, fragment))
       case tpe: TypeDeclNode => addTypeDeclaration(FragmentNode(tpe, fragment))
-    }.combine.map(_ => ()).associate(fragment)
+    }.combine.map(_ => ())
   }
 
   /**
@@ -151,8 +151,9 @@ class DeclarationResolver {
 
     // Now that all declared types have been resolved, we can resolve alias types.
     val withResolvedAliasTypes = withRegisteredDefinitions.flatMap { _ =>
-      aliasDeclarations.map { case FragmentNode(node, fragment) =>
-        TypeExpressionEvaluator.evaluate(node.tpe).associate(fragment).map(tpe => registry.registerType(node.name, tpe))
+      aliasDeclarations.map { case FragmentNode(node, _fragment) =>
+        implicit val fragment = _fragment
+        TypeExpressionEvaluator.evaluate(node.tpe).map(tpe => registry.registerType(node.name, tpe))
       }.combine
     }
 

@@ -9,10 +9,10 @@ object DeclaredTypeResolver {
     * Resolves a declared type declaration.
     */
   def resolveDeclaredNode(node: TypeDeclNode.DeclaredNode)(implicit registry: Registry, fragment: Fragment): C[DeclaredTypeDefinition] = {
-    (node match {
+    node match {
       case labelNode: TypeDeclNode.LabelNode => resolveLabelNode(labelNode)
       case classNode: TypeDeclNode.ClassNode => resolveClassNode(classNode)
-    }).associate(fragment)
+    }
   }
 
 
@@ -24,7 +24,7 @@ object DeclaredTypeResolver {
       }(Error.LabelMustExtendLabel(node))
     } yield {
       val tpe = new LabelType(supertype.asInstanceOf[Option[LabelType]])
-      val definition = new LabelDefinition(node.name, tpe, node.fragmentPosition)
+      val definition = new LabelDefinition(node.name, tpe, node.position)
       tpe.initialize(definition)
       definition
     }
@@ -44,7 +44,7 @@ object DeclaredTypeResolver {
       constructors = node.constructors.map(FunctionDeclarationResolver.resolveConstructorNode)
     } yield {
       val tpe = new ClassType(supertype.asInstanceOf[Option[ClassType]], ownedBy, node.isAbstract)
-      val definition = new ClassDefinition(node.name, tpe, members, constructors, node.fragmentPosition)
+      val definition = new ClassDefinition(node.name, tpe, members, constructors, node.position)
       tpe.initialize(definition)
       definition
     }
@@ -54,14 +54,14 @@ object DeclaredTypeResolver {
     node match {
       case TypeDeclNode.PropertyNode(name, tpe, isMutable) =>
         val resolveType = () => TypeExpressionEvaluator.evaluate(tpe)
-        Compilation.succeed(new PropertyDefinition(name, resolveType, isMutable, node.fragmentPosition))
+        Compilation.succeed(new PropertyDefinition(name, resolveType, isMutable, node.position))
       case componentNode@TypeDeclNode.ComponentNode(name, overrides) =>
         val resolveType = () => {
           registry.resolveType(name, node)
             .require(_.isInstanceOf[ClassType])(Error.ComponentMustBeClass(componentNode))
             .map(_.asInstanceOf[ClassType])
         }
-        Compilation.succeed(new ComponentDefinition(name, resolveType, overrides, node.fragmentPosition))
+        Compilation.succeed(new ComponentDefinition(name, resolveType, overrides, node.position))
     }
   }
 }
