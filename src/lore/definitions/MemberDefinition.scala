@@ -24,5 +24,5 @@ class ComponentDefinition(
   override val name: String, override val resolveType: () => C[ClassType], val overrides: Option[String],
   override val position: Position,
 ) extends MemberDefinition[ClassType] {
-  val componentType: ComponentType = ComponentType(tpe)
+  lazy val componentType: ComponentType = ComponentType(tpe)
 }
