@@ -1,9 +1,15 @@
 package lore
 
+import java.nio.file.{Files, Path}
+
+import lore.compiler.LoreCompiler
 import lore.execution.Context
+import lore.parser.FragmentParser
+
+import scala.io.Source
 
 object Lore {
-  def main(args: Array[String]): Unit = {
+  /* def main(args: Array[String]): Unit = {
     val maybeContext = Context.fromExample(args(0))
     if (maybeContext.isEmpty) {
       println("The context couldn't be created due to an error (likely mentioned above). Aborting Lore execution...")
@@ -28,5 +34,17 @@ object Lore {
     println()
     val verificationResult = context.verify()
     verificationResult.print()
+  } */
+
+  def main(args: Array[String]): Unit = {
+    import scala.jdk.CollectionConverters._
+
+    val exampleName = args(0)
+    val sourcePath = Path.of("examples", s"$exampleName.lore")
+    val source = Files.lines(sourcePath).iterator().asScala.toList.filter(_.trim.nonEmpty).mkString("\n") + "\n"
+    val compiler = new LoreCompiler(List(
+      LoreCompiler.SourceFragment(exampleName, source)
+    ))
+    compiler.compile()
   }
 }

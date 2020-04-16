@@ -13,20 +13,21 @@ object FragmentParser {
   import StatementParser.{block, expression}
   import TypeParser.typeExpression
 
-  def parse(source: String): Option[Seq[DeclNode]] = {
+  /**
+    * Attempts to parse the fragment, either returning an error message (left) or a list of DeclNodes.
+    */
+  def parse(source: String): Either[String, List[DeclNode]] = {
     fastparse.parse(source, fragment(_)) match {
-      case Parsed.Success(result, _) => Some(result)
-      case Parsed.Failure(label, index, extra) =>
-        println(s"Parsing failure: ${extra.trace().aggregateMsg}")
-        None
+      case Parsed.Failure(_, _, extra) => Left(s"Parsing failure: ${extra.trace().aggregateMsg}")
+      case Parsed.Success(result, _) => Right(result)
     }
   }
 
-  def fragment[_: P]: P[Seq[DeclNode]] = {
+  def fragment[_: P]: P[List[DeclNode]] = {
     // We repeat topDeclaration an arbitrary amount of times, terminated by Space.terminators. The repX in contrast
     // to rep does not take whitespace into account. We don't want it to consume the newline that needs to be consumed
     // by Space.terminators!
-    P(Space.WL ~~ topDeclaration.repX(0, Space.terminators) ~~ Space.WL ~~ End)
+    P(Space.WL ~~ topDeclaration.repX(0, Space.terminators) ~~ Space.WL ~~ End).map(_.toList)
   }
 
   def topDeclaration[_: P]: P[DeclNode] = P(Index ~ (function | action | typeDeclaration)).map(withIndex(identity _))

@@ -15,7 +15,6 @@ object DeclaredTypeResolver {
     }
   }
 
-
   private def resolveLabelNode(node: TypeDeclNode.LabelNode)(implicit registry: Registry, fragment: Fragment): C[LabelDefinition] = {
     for {
       supertype <- node.supertypeName.map(name => registry.resolveType(name, node)).toCompiledOption.require { option =>

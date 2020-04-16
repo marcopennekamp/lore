@@ -5,8 +5,7 @@ import lore.ast.{ExprNode, Node, TypeDeclNode, TypeExprNode}
 
 /**
   * A Feedback instance is a compiler report. The most notable Feedback types are warnings and errors.
-  * Feedback instances are always associated with a specific position in a fragment (the index given by
-  * the parser). The fragment is associated with when feedback is aggregated.
+  * Feedback instances are always associated with a specific [[Position]].
   */
 sealed trait Feedback {
   def position: Position

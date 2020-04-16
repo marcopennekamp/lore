@@ -60,19 +60,6 @@ object Context {
   }
 
   /**
-    * Creates an unverified context from the example source.
-    */
-  def fromExample(name: String): Option[Context] = {
-    // A new line is added at the end so the last statement has a closing newline.
-    val source = Source.fromFile(s"examples/$name.lore").getLines.filter(_.trim.nonEmpty).mkString("\n") + "\n"
-    val elements = FragmentParser.parse(source)
-    if (elements.isEmpty) {
-      println("Parsing failed with an error. Aborting context creation...")
-    }
-    elements.map(Context.build)
-  }
-
-  /**
     * Creates an unverified context from the given sequence of program elements.
     */
   def build(statements: Seq[DeclNode]): Context = {

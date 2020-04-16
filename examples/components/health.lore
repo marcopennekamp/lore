@@ -10,6 +10,10 @@ class Position {
   mut z: Real
 }
 
+class Image {
+  path: String
+}
+
 // We can restrict the types that Sprite can be owned by. However, this will only apply when Sprite is used as a
 // component. Sprite can still be created and passed to any function that expects a Sprite, no matter whether it's
 // a component or not. A component can also be part of multiple entities; there are no basic restrictions to this,

@@ -46,6 +46,7 @@ class DeclarationResolver {
       case declaredNode: TypeDeclNode.DeclaredNode => // Covers labels and classes.
         typeDeclarations.put(declaredNode.name, declaration)
         dependencyGraph.addEdge(declaredNode.supertypeName.getOrElse("Any"), declaredNode.name)
+        println(s"Added declared type ${declaredNode.name} to declaration resolver.")
     }
 
     Compilation.succeed(())
@@ -56,11 +57,12 @@ class DeclarationResolver {
       case None => Some(List(declaration))
       case Some(functions) => Some(declaration :: functions)
     }
+    println(s"Added function ${declaration.node.name} to declaration resolver.")
     Compilation.succeed(())
   }
 
   /**
-    * Adds a fragment to the declaration resolver. Also associates feedback received up to here with the given fragment.
+    * Adds a fragment to the declaration resolver.
     */
   def addFragment(fragment: Fragment): C[Unit] = {
     fragment.declarations.map {
@@ -115,7 +117,6 @@ class DeclarationResolver {
             cycle.startNode,
             throw new RuntimeException("Type declarations didn't contain a declaration that was part of the dependency graph."),
           )
-          // These errors are being associated with their fragments through the passed FragmentNode occurrence.
           Error.InheritanceCycle(cycle.nodes.map(_.value).toList, occurrence)
         }: _*
       )
@@ -152,7 +153,7 @@ class DeclarationResolver {
     // Now that all declared types have been resolved, we can resolve alias types.
     val withResolvedAliasTypes = withRegisteredDefinitions.flatMap { _ =>
       aliasDeclarations.map { case FragmentNode(node, _fragment) =>
-        implicit val fragment = _fragment
+        implicit val fragment: Fragment = _fragment
         TypeExpressionEvaluator.evaluate(node.tpe).map(tpe => registry.registerType(node.name, tpe))
       }.combine
     }
@@ -160,7 +161,6 @@ class DeclarationResolver {
     // As you know, we deferred validating member and parameter types with TypingDeferred. We will have to do this now,
     // to ensure that all types can be resolved correctly.
     val withVerifiedDeferredTypings = withResolvedAliasTypes.flatMap { _ =>
-      // verifyDeferredTypings associates
       registry.getTypeDefinitions.values.map(definition => definition.verifyDeferredTypings).toList.combine
     }
 
