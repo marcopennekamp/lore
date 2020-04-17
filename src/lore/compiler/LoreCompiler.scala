@@ -1,30 +1,22 @@
 package lore.compiler
 
 import lore.compiler.LoreCompiler.SourceFragment
-import lore.compiler.phases.Phase1
+import lore.compiler.phases.{Phase1, Phase2}
 
 /**
   * The compiler instance orchestrates compilation through all phases.
   */
 class LoreCompiler(val sources: List[SourceFragment]) {
-  private var fragments: List[Fragment] = List.empty
-
-  def compile(): Unit = {
-    // Phase 1: Parse source files into a list of fragments.
-    val phase1 = new Phase1(sources)
-    fragments = phase1.result match {
-      case Errors(_, _) =>
-        println("Parsing failed with errors. Aborting compilation...")
-        return
-      case Result(fragments, _) =>
-        println("Phase 1: Parsing was successful.")
-        fragments
-    }
-
-    // TODO: Phase 2: Resolve declarations using DeclarationResolver and build the Registry.
-    val declarationResolver = new DeclarationResolver
-    println(fragments.map(declarationResolver.addFragment).simultaneous.map(_ => ()))
-    println(declarationResolver.buildRegistry())
+  /**
+    * Compiles the given sources, either resulting in a list of errors and warnings or a completed compilation.
+    */
+  def compile(): C[Registry] = { // TODO: Unit isn't the actual return type. We need to figure that out later.
+    for {
+      // Phase 1: Parse source files into a list of fragments.
+      fragments <- new Phase1(sources).result
+      // Phase 2: Resolve declarations using DeclarationResolver and build the Registry.
+      registry <- new Phase2(fragments).result
+    } yield registry
   }
 }
 

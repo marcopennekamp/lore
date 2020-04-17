@@ -30,7 +30,7 @@ class DeclarationResolver {
   private val dependencyGraph: Graph[String, DiEdge] = Graph()
   private implicit val edgelordFactory = DiEdge
 
-  def addTypeDeclaration(declaration: FragmentNode[TypeDeclNode]): C[Unit] = {
+  private def addTypeDeclaration(declaration: FragmentNode[TypeDeclNode]): C[Unit] = {
     // Immediately stop the processing of this type declaration if the name is already taken.
     if (typeDeclarations.contains(declaration.node.name) || Type.predefinedTypes.contains(declaration.node.name)) {
       return Compilation.fail(Error.TypeAlreadyExists(declaration.node)(declaration.fragment))
@@ -52,7 +52,7 @@ class DeclarationResolver {
     Compilation.succeed(())
   }
 
-  def addFunctionDeclaration(declaration: FragmentNode[DeclNode.FunctionNode]): C[Unit] = {
+  private def addFunctionDeclaration(declaration: FragmentNode[DeclNode.FunctionNode]): C[Unit] = {
     multiFunctionDeclarations.updateWith(declaration.node.name) {
       case None => Some(List(declaration))
       case Some(functions) => Some(declaration :: functions)
@@ -64,7 +64,7 @@ class DeclarationResolver {
   /**
     * Adds a fragment to the declaration resolver.
     */
-  def addFragment(fragment: Fragment): C[Unit] = {
+  private def addFragment(fragment: Fragment): C[Unit] = {
     fragment.declarations.map {
       case function: DeclNode.FunctionNode => addFunctionDeclaration(FragmentNode(function, fragment))
       case tpe: TypeDeclNode => addTypeDeclaration(FragmentNode(tpe, fragment))
@@ -101,7 +101,11 @@ class DeclarationResolver {
   /**
     * Builds the registry from all the declarations.
     */
-  def buildRegistry(): C[Registry] = {
+  def buildRegistry(fragments: List[Fragment]): C[Registry] = {
+    // First of all, we add all fragments to the data structures.
+    val withAddedFragments = fragments.map(addFragment).simultaneous
+    if (withAddedFragments.isError) return withAddedFragments.asInstanceOf[Compilation[Registry]]
+
     // At this point, the dependency graph has been built. Since Any is the supertype of all declared types without
     // a supertype, the graph should be connected.
     assert(dependencyGraph.isConnected)
