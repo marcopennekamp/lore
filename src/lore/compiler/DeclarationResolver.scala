@@ -68,7 +68,7 @@ class DeclarationResolver {
     fragment.declarations.map {
       case function: DeclNode.FunctionNode => addFunctionDeclaration(FragmentNode(function, fragment))
       case tpe: TypeDeclNode => addTypeDeclaration(FragmentNode(tpe, fragment))
-    }.combine.map(_ => ())
+    }.simultaneous.map(_ => ())
   }
 
   /**
@@ -148,20 +148,20 @@ class DeclarationResolver {
         case node: TypeDeclNode.DeclaredNode =>
           DeclaredTypeResolver.resolveDeclaredNode(node).map(registry.registerTypeDefinition)
       }
-    }.combine
+    }.simultaneous
 
     // Now that all declared types have been resolved, we can resolve alias types.
     val withResolvedAliasTypes = withRegisteredDefinitions.flatMap { _ =>
       aliasDeclarations.map { case FragmentNode(node, _fragment) =>
         implicit val fragment: Fragment = _fragment
         TypeExpressionEvaluator.evaluate(node.tpe).map(tpe => registry.registerType(node.name, tpe))
-      }.combine
+      }.simultaneous
     }
 
     // As you know, we deferred validating member and parameter types with TypingDeferred. We will have to do this now,
     // to ensure that all types can be resolved correctly.
     val withVerifiedDeferredTypings = withResolvedAliasTypes.flatMap { _ =>
-      registry.getTypeDefinitions.values.map(definition => definition.verifyDeferredTypings).toList.combine
+      registry.getTypeDefinitions.values.map(definition => definition.verifyDeferredTypings).toList.simultaneous
     }
 
     // TODO: Resolve function declarations and add them to the registry.

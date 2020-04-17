@@ -23,7 +23,7 @@ class LoreCompiler(val sources: List[SourceFragment]) {
 
     // TODO: Phase 2: Resolve declarations using DeclarationResolver and build the Registry.
     val declarationResolver = new DeclarationResolver
-    println(fragments.map(declarationResolver.addFragment).combine.map(_ => ()))
+    println(fragments.map(declarationResolver.addFragment).simultaneous.map(_ => ()))
     println(declarationResolver.buildRegistry())
   }
 }

@@ -37,7 +37,7 @@ object DeclaredTypeResolver {
         // Ensure that, if the class type extends another type, that type is also a class type.
         option.forall(_.isInstanceOf[ClassType])
       }(Error.ClassMustExtendClass(node)),
-      node.members.map(resolveMemberNode).combine,
+      node.members.map(resolveMemberNode).simultaneous,
     ).simultaneous.map { case (supertype, members) =>
       val constructors = node.constructors.map(FunctionDeclarationResolver.resolveConstructorNode)
       val ownedBy = node.ownedBy.map(ob => new OwnedBy(() => TypeExpressionEvaluator.evaluate(ob)))

@@ -1,6 +1,5 @@
 package lore.compiler
 
-import shapeless.ops.hlist
 import shapeless.ops.hlist.{RightFolder, Tupler}
 import shapeless.syntax.std.tuple._
 import shapeless.{Generic, HList, HNil, LUBConstraint, Poly2}
@@ -9,10 +8,6 @@ import shapeless.{Generic, HList, HNil, LUBConstraint, Poly2}
 
 /**
   * Represents a compilation to a value of type A. Either results in a Result[A] or an Errors object.
-  *
-  * We could use a Try[A], but we don't want to collect exceptions, rather [[Feedback]]s. We could also use
-  * an Either[List[CompilationError], A], but this is unwieldy and I'd like to have access to the implementation code
-  * to add features later.
   */
 sealed trait Compilation[+A] {
   /**
@@ -63,8 +58,8 @@ sealed trait Compilation[+A] {
     * Attaches the given list of infos to a copy of the current compilation.
     */
   def withInfos(infos: List[InfoFeedback]): Compilation[A] = this match {
-    case Result(a, infos2) => Result(a, infos ++ infos2)
-    case Errors(errors, infos2) => Errors(errors, infos ++ infos2)
+    case Result(a, infos2) => Result(a, infos ::: infos2)
+    case Errors(errors, infos2) => Errors(errors, infos ::: infos2)
   }
 
   /**
@@ -86,13 +81,12 @@ object Compilation {
   def succeedInfo[A](a: A)(infos: InfoFeedback*): Compilation[A] = Result(a, infos.toList)
 
   implicit class CompilationListExtension[A](compilations: List[Compilation[A]]) {
-    // TODO: Rename to simultaneous.
     /**
       * Combines all the compilations from a list into a single compilation. If any of the compilations have
       * resulted in an error, the combined compilation results in an error. This operation collects all errors
       * in unspecified order.
       */
-    def combine: Compilation[List[A]] = {
+    def simultaneous: Compilation[List[A]] = {
       // We could also implement this using foldLeft, which would perhaps be more functional in style, but the
       // present definition is actually easier to parse, as foldLeft requires matching on two compilations for each
       // iteration.
@@ -127,7 +121,7 @@ object Compilation {
         case (ca, cb) =>
           // As either ca or cb is guaranteed to be a failed compilation, combine will simply aggregate the errors
           // and hence also produce an Errors object. This makes the type cast valid.
-          List(ca, cb).combine.asInstanceOf[Compilation[A :: B]]
+          List(ca, cb).simultaneous.asInstanceOf[Compilation[A :: B]]
       }
     }
   }

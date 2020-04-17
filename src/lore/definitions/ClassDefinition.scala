@@ -20,8 +20,8 @@ class ClassDefinition(
   override def verifyDeferredTypings: C[Unit] = {
     (
       tpe.ownedBy.map(_.verifyType).toCompiledOption,
-      localMembers.map(_.verifyType).combine,
-      constructors.flatMap(_.parameters).map(_.verifyType).combine,
+      localMembers.map(_.verifyType).simultaneous,
+      constructors.flatMap(_.parameters).map(_.verifyType).simultaneous,
     ).simultaneous.map(_ => ())
   }
 

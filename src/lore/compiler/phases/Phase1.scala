@@ -19,6 +19,6 @@ class Phase1(sources: List[SourceFragment]) extends Phase[List[Fragment]] {
         case Left(errorMessage) => println(s"${source.name}: $errorMessage"); Compilation.fail()
         case Right(nodes) => Compilation.succeed(new Fragment(source.name, nodes))
       }
-    }.combine
+    }.simultaneous
   }
 }
