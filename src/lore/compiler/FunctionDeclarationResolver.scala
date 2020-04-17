@@ -1,17 +1,21 @@
 package lore.compiler
 
 import lore.ast.{DeclNode, TypeDeclNode}
-import lore.definitions.{ConstructorDefinition, ParameterDefinition}
+import lore.definitions.{ConstructorDefinition, FunctionDefinition, ParameterDefinition}
+import lore.compiler.Compilation._
 
 object FunctionDeclarationResolver {
-/*
-  def resolveFunctionNode(node: DeclNode.FunctionNode)(implicit registry: Registry): FunctionDefinition = {
-    val parameters = parameterDeclarations.map { decl =>
-      Parameter(decl.name, evaluateTypeExpression(decl.tpe))
+  def resolveFunctionNode(node: DeclNode.FunctionNode)(implicit registry: Registry, fragment: Fragment): C[FunctionDefinition] = {
+    (
+      // We verify parameter types right away, because all types should have been declared at this point. Functions are
+      // resolved after all type declarations.
+      node.parameters.map(resolveParameterNode).map(p => p.verifyType.map(_ => p)).simultaneous,
+      TypeExpressionEvaluator.evaluate(node.outputType),
+    ).simultaneous.map { case (parameters, outputType) =>
+      FunctionDefinition(node.name, parameters, outputType, node.body, node.position)
     }
-    addFunction(LoreFunction(name, parameters, functionNode.isAbstract))
   }
-*/
+
   def resolveConstructorNode(node: TypeDeclNode.ConstructorNode)(implicit registry: Registry, fragment: Fragment): ConstructorDefinition = {
     ConstructorDefinition(
       node.name,

@@ -1,6 +1,7 @@
 package lore.compiler
 
 import lore.ast.{DeclNode, TypeDeclNode}
+import lore.definitions.MultiFunctionDefinition
 import lore.types.Type
 import scalax.collection.GraphEdge._
 import scalax.collection.mutable.Graph
@@ -163,13 +164,22 @@ class DeclarationResolver {
     }
 
     // As you know, we deferred validating member and parameter types with TypingDeferred. We will have to do this now,
-    // to ensure that all types can be resolved correctly.
-    val withVerifiedDeferredTypings = withResolvedAliasTypes.flatMap { _ =>
-      registry.getTypeDefinitions.values.map(definition => definition.verifyDeferredTypings).toList.simultaneous
+    // to ensure that all types can be resolved correctly. Simultaneously, we also resolve function types. We do this in
+    // parallel to report all "type could not be found" errors that can be found at this stage.
+    val withVerifiedTypesAndResolvedFunctions = withResolvedAliasTypes.flatMap { _ =>
+      (
+        registry.getTypeDefinitions.values.map(definition => definition.verifyDeferredTypings).toList.simultaneous,
+        multiFunctionDeclarations.map { case (name, fragmentNodes) =>
+          fragmentNodes.map { case FragmentNode(node, _fragment) =>
+            implicit val fragment: Fragment = _fragment
+            FunctionDeclarationResolver.resolveFunctionNode(node)
+          }.simultaneous.map { functions =>
+            MultiFunctionDefinition(name, functions)
+          }
+        }.toList.simultaneous,
+      ).simultaneous
     }
 
-    // TODO: Resolve function declarations and add them to the registry.
-
-    withVerifiedDeferredTypings.map(_ => registry)
+    withVerifiedTypesAndResolvedFunctions.map(_ => registry)
   }
 }

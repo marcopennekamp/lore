@@ -2,6 +2,6 @@ package lore.definitions
 
 import lore.compiler.Position
 
-trait Definition {
+trait PositionedDefinition {
   def position: Position
 }

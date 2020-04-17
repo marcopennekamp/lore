@@ -6,7 +6,7 @@ import lore.types.{ClassType, ComponentType, Type, TypingDeferred}
 /**
   * A data type member, that is, either a property or a component.
   */
-sealed trait MemberDefinition[+T <: Type] extends Definition with TypingDeferred[T] {
+sealed trait MemberDefinition[+T <: Type] extends PositionedDefinition with TypingDeferred[T] {
   def name: String
   def isMutable: Boolean = false
 }
