@@ -17,7 +17,7 @@ object DeclaredTypeResolver {
 
   private def resolveLabelNode(node: TypeDeclNode.LabelNode)(implicit registry: Registry, fragment: Fragment): C[LabelDefinition] = {
     for {
-      supertype <- node.supertypeName.map(name => registry.getType(name, node)).toCompiledOption.require { option =>
+      supertype <- node.supertypeName.map(name => registry.resolveType(name, node)).toCompiledOption.require { option =>
         // Ensure that, if the label type extends another type, that type is also a label type.
         option.forall(_.isInstanceOf[LabelType])
       }(Error.LabelMustExtendLabel(node))
@@ -33,7 +33,7 @@ object DeclaredTypeResolver {
     // Resolve supertype and members simultaneously for same-run error reporting. Owned-by and constructor types
     // are resolved in the deferred typing verification phase.
     (
-      node.supertypeName.map(name => registry.getType(name, node)).toCompiledOption.require { option =>
+      node.supertypeName.map(name => registry.resolveType(name, node)).toCompiledOption.require { option =>
         // Ensure that, if the class type extends another type, that type is also a class type.
         option.forall(_.isInstanceOf[ClassType])
       }(Error.ClassMustExtendClass(node)),
@@ -55,7 +55,7 @@ object DeclaredTypeResolver {
         Compilation.succeed(new PropertyDefinition(name, resolveType, isMutable, node.position))
       case componentNode@TypeDeclNode.ComponentNode(name, overrides) =>
         val resolveType = () => {
-          registry.getType(name, node)
+          registry.resolveType(name, node)
             .require(_.isInstanceOf[ClassType])(Error.ComponentMustBeClass(componentNode))
             .map(_.asInstanceOf[ClassType])
         }

@@ -33,6 +33,11 @@ class Registry {
   }
 
   /**
+    * Returns all registered types, accessible via an immutable map view.
+    */
+  def getTypes: MapView[String, Type] = types.view
+
+  /**
     * Whether a type with the name `name` has been registered.
     */
   def hasType(name: String): Boolean = types.contains(name)
@@ -47,7 +52,7 @@ class Registry {
     *
     * @param associatedNode The node where the type name occurs, to be used for error building.
     */
-  def getType(name: String, associatedNode: Node)(implicit fragment: Fragment): C[Type] = {
+  def resolveType(name: String, associatedNode: Node)(implicit fragment: Fragment): C[Type] = {
     getType(name) match {
       case None => Compilation.fail(Error.TypeNotFound(name, associatedNode))
       case Some(tpe) => Compilation.succeed(tpe)
@@ -66,7 +71,7 @@ class Registry {
   }
 
   /**
-    * Returns all type definitions accessible via an immutable map view.
+    * Returns all registered type definitions, accessible via an immutable map view.
     */
   def getTypeDefinitions: MapView[String, DeclaredTypeDefinition] = typeDefinitions.view
 
@@ -92,7 +97,7 @@ class Registry {
   /**
     * Gets a multi-function with the given name. If it cannot be found, the operation fails with a compilation error.
     */
-  def getMultiFunction(name: String, position: Position): C[MultiFunctionDefinition] = {
+  def resolveMultiFunction(name: String, position: Position): C[MultiFunctionDefinition] = {
     getMultiFunction(name) match {
       case None => Compilation.fail(Error.MultiFunctionNotFound(name, position))
       case Some(mf) => Compilation.succeed(mf)
