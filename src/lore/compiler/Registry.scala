@@ -90,6 +90,11 @@ class Registry {
   }
 
   /**
+    * Returns all registered multi-functions, accessible via an immutable map view.
+    */
+  def getMultiFunctions: MapView[String, MultiFunctionDefinition] = multiFunctions.view
+
+  /**
     * Searches for a multi-function with the given name.
     */
   def getMultiFunction(name: String): Option[MultiFunctionDefinition] = multiFunctions.get(name)
