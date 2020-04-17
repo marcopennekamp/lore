@@ -2,7 +2,7 @@ package lore
 
 import java.nio.file.{Files, Path}
 
-import lore.compiler.LoreCompiler
+import lore.compiler.{Errors, FeedbackPrinter, LoreCompiler, Result}
 import lore.execution.Context
 import lore.parser.FragmentParser
 
@@ -45,6 +45,15 @@ object Lore {
     val compiler = new LoreCompiler(List(
       LoreCompiler.SourceFragment(exampleName, source)
     ))
-    compiler.compile()
+    val result = compiler.compile()
+    result match {
+      case Errors(errors, infos) =>
+        println("Compilation failed with errors.")
+        println(FeedbackPrinter.print(errors ++ infos))
+      case Result(value, infos) =>
+        println(FeedbackPrinter.print(infos))
+        println(s"Compilation result: $value")
+        // TODO: Properly do something with the result.
+    }
   }
 }

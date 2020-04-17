@@ -3,6 +3,8 @@ package lore.parser
 import fastparse.ScalaWhitespace._
 import fastparse._
 import lore.ast._
+import lore.compiler.Fragment
+import lore.compiler.LoreCompiler.SourceFragment
 
 /**
   * The parsers contained in this parser collection all parse top-level declarations that can occur in a
@@ -16,10 +18,11 @@ object FragmentParser {
   /**
     * Attempts to parse the fragment, either returning an error message (left) or a list of DeclNodes.
     */
-  def parse(source: String): Either[String, List[DeclNode]] = {
-    fastparse.parse(source, fragment(_)) match {
+  def parse(source: SourceFragment): Either[String, Fragment] = {
+    val input = ParserInput.fromString(source.code)
+    fastparse.parse(input, fragment(_)) match {
       case Parsed.Failure(_, _, extra) => Left(s"Parsing failure: ${extra.trace().aggregateMsg}")
-      case Parsed.Success(result, _) => Right(result)
+      case Parsed.Success(result, _) => Right(new Fragment(source.name, input, result))
     }
   }
 
