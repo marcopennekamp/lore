@@ -12,6 +12,11 @@ sealed trait Feedback {
   def message: String
 
   /**
+    * The kind of feedback, to be appear with the error message, such as Warning or Error.
+    */
+  def kind: String
+
+  /**
     * Whether the feedback necessitates the termination of compilation.
     */
   def isSevere: Boolean
@@ -27,13 +32,16 @@ trait InfoFeedback extends Feedback {
 /**
   * The base class for compilation warnings. Proper warnings must extend this class.
   */
-abstract class Warning(override val position: Position) extends InfoFeedback
+abstract class Warning(override val position: Position) extends InfoFeedback {
+  override val kind = "warning"
+}
 
 /**
   * The base class for compilation errors. Proper errors must extend this class.
   */
 abstract class Error(override val position: Position) extends Feedback {
   override def isSevere = true
+  override val kind = "error"
 
   def this(node: Node)(implicit fragment: Fragment) {
     this(node.position)

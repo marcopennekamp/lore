@@ -24,6 +24,11 @@ sealed trait Compilation[+A] {
   }
 
   /**
+    * Whether the current compilation resulted in an error.
+    */
+  def isError: Boolean
+
+  /**
     * Maps the result value of type A to a compilation resulting in B. In the context of compilations, flatMap is
     * to be understood as a "chain of computation" which is broken as soon as the first error appears.
     */
@@ -71,8 +76,12 @@ sealed trait Compilation[+A] {
   }
 }
 
-case class Result[+A](value: A, override val infos: List[InfoFeedback]) extends Compilation[A]
-case class Errors[+A](errors: List[Error], override val infos: List[InfoFeedback]) extends Compilation[A]
+case class Result[+A](value: A, override val infos: List[InfoFeedback]) extends Compilation[A] {
+  override def isError = false
+}
+case class Errors[+A](errors: List[Error], override val infos: List[InfoFeedback]) extends Compilation[A] {
+  override def isError = true
+}
 
 object Compilation {
   def fail(errors: Error*): Compilation[Nothing] = Errors(errors.toList, List.empty)
