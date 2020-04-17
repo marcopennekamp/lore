@@ -1,6 +1,6 @@
 package lore.definitions
 
-import lore.compiler.Verification
+import lore.compiler.Compilation.Verification
 import lore.types.{DeclaredType, TypingDeferred}
 
 /**

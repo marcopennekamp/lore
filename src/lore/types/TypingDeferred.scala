@@ -1,6 +1,7 @@
 package lore.types
 
-import lore.compiler.{C, Verification}
+import lore.compiler.C
+import lore.compiler.Compilation.Verification
 
 /**
   * As noted in the compiler specification, certain types cannot be resolved immediately, as they might reference

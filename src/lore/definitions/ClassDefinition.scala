@@ -1,7 +1,7 @@
 package lore.definitions
 
-import lore.compiler.Compilation.CompilationHListExtension
-import lore.compiler.{Position, Verification}
+import lore.compiler.Compilation._
+import lore.compiler.Position
 import lore.types.{ClassType, Type}
 
 /**

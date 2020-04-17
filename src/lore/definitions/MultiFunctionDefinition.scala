@@ -1,6 +1,7 @@
 package lore.definitions
 
-import lore.compiler.{Compilation, Error, Verification}
+import lore.compiler.Compilation.Verification
+import lore.compiler.{Compilation, Error}
 import lore.types.{Subtyping, Type}
 
 case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinition]) {

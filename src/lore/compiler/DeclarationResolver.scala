@@ -1,6 +1,7 @@
 package lore.compiler
 
 import lore.ast.{DeclNode, TypeDeclNode}
+import lore.compiler.Compilation.Verification
 import lore.definitions.MultiFunctionDefinition
 import lore.types.Type
 import scalax.collection.GraphEdge._
@@ -30,14 +31,6 @@ class DeclarationResolver {
     */
   private val dependencyGraph: Graph[String, DiEdge] = Graph()
   private implicit val edgelordFactory = DiEdge
-
-  /**
-    * A node in the graph. isDeclared is set to true only if the type is declared in the current Lore project.
-    */
-  private case class GraphNode(name: String, var isDeclared: Boolean = false)
-  private object GraphNode {
-    val Any = GraphNode("Any", isDeclared = true)
-  }
 
   private def addTypeDeclaration(declaration: FragmentNode[TypeDeclNode]): Verification = {
     // Immediately stop the processing of this type declaration if the name is already taken.

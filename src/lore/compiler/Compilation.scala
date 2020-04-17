@@ -97,6 +97,22 @@ object Compilation {
   def succeed[A](a: A): Compilation[A] = Result(a, List.empty)
   def succeedInfo[A](a: A)(infos: InfoFeedback*): Compilation[A] = Result(a, infos.toList)
 
+  /**
+    * An abbreviation for Compilation[Unit]. A verification is an operation that returns nothing of note when
+    * it is successful and fails with a set of errors if it isn't.
+    */
+  type Verification = Compilation[Unit]
+
+  object Verification {
+    /**
+      * Creates a verification result from the given error list. If the list is empty, the verification is assumed to
+      * be successful. Otherwise, the verification fails with the given errors.
+      */
+    def apply(errors: List[Error]): Verification = {
+      if (errors.nonEmpty) Errors(errors, List.empty) else Result((), List.empty)
+    }
+  }
+
   implicit class CompilationListExtension[A](compilations: List[Compilation[A]]) {
     /**
       * Combines all the compilations from a list into a single compilation. If any of the compilations have

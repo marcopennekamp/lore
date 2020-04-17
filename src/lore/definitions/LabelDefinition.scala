@@ -1,5 +1,6 @@
 package lore.definitions
-import lore.compiler.{Compilation, Position, Verification}
+import lore.compiler.Compilation.Verification
+import lore.compiler.{Compilation, Position}
 import lore.types.LabelType
 
 class LabelDefinition(
