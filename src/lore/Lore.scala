@@ -48,11 +48,15 @@ object Lore {
     val result = compiler.compile()
     result match {
       case Errors(errors, infos) =>
-        println("Compilation failed with errors.")
+        println()
+        println(s"${FeedbackPrinter.tagError} Compilation failed with errors:")
         println(FeedbackPrinter.print(errors ++ infos))
+        println()
       case Result(value, infos) =>
+        println()
+        println(s"${FeedbackPrinter.tagSuccess} Compilation was successful:")
         println(FeedbackPrinter.print(infos))
-        println(s"Compilation result: $value")
+        println(s"${FeedbackPrinter.tagSuccess} Compilation result: $value")
         // TODO: Properly do something with the result.
     }
   }

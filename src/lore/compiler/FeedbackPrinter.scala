@@ -1,6 +1,10 @@
 package lore.compiler
 
 object FeedbackPrinter {
+  val tagError = s"[${Console.RED}error${Console.RESET}]"
+  val tagWarning = s"[${Console.YELLOW}warning${Console.RESET}]"
+  val tagSuccess = s"[${Console.GREEN}success${Console.RESET}]"
+
   /**
     * Prints a list of feedback to a string.
     */
@@ -10,7 +14,7 @@ object FeedbackPrinter {
 
     // Now print each error with the proper index.
     sorted.map { feedback =>
-      s"[${feedback.kind}] ${feedback.position.fragment.name} at ${feedback.position.prettyIndex}:\n${feedback.message}"
+      s"${feedback.consoleTag} ${feedback.position.fragment.name} (${feedback.position.prettyIndex}): ${feedback.message}"
     }.mkString("\n")
   }
 }
