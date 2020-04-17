@@ -10,19 +10,25 @@ scalacOptions ++= Seq(
   "-language:higherKinds",
   "-language:reflectiveCalls",
   "-language:existentials",
-  "-deprecation"
+  "-deprecation",
 )
 
 libraryDependencies ++= Seq(
   "org.scalaz" %% "scalaz-core" % "7.2.29",
+  "com.chuusai" %% "shapeless" % "2.3.3",
   "org.scala-graph" %% "graph-core" % "1.13.2",
   "com.lihaoyi" %% "fastparse" % "2.1.3",
   "org.scalactic" %% "scalactic" % "3.1.0",
-  "org.scalatest" %% "scalatest" % "3.1.0" % "test"
+  "org.scalatest" %% "scalatest" % "3.1.0" % "test",
+)
+
+// Sonatype repos.
+resolvers ++= Seq(
+  Resolver.sonatypeRepo("releases"),
+  Resolver.sonatypeRepo("snapshots"),
 )
 
 // ? types.
-resolvers += Resolver.sonatypeRepo("releases")
 addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVersion.full)
 
 scalaSource in Compile := { (baseDirectory in Compile)(_ / "src") }.value

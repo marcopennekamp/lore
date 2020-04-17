@@ -1,5 +1,9 @@
 package lore.compiler
 
+import shapeless.ops.hlist
+import shapeless.syntax.std.tuple._
+import shapeless.{HList, HNil, LUBConstraint, Poly2}
+
 // TODO: Performance-wise, it might be worth to use doubly-linked lists here, if performance ever becomes a problem.
 
 /**
@@ -124,6 +128,35 @@ object Compilation {
           // and hence also produce an Errors object. This makes the type cast valid.
           List(ca, cb).combine.asInstanceOf[Compilation[(A, B)]]
       }
+    }
+  }
+
+  object polyOp {
+    import shapeless.::
+
+    /**
+      * A polymorphic function used for simultaneous reduction of HList compilations.
+      */
+    object simultaneous extends Poly2 {
+      implicit def caseCompilation[A, B <: HList]: Case.Aux[Compilation[A], Compilation[B], Compilation[A :: B]] = at[Compilation[A], Compilation[B]] {
+        case (Result(a, infosA), Result(b, infosB)) => Result(a :: b, infosA ::: infosB)
+        case (ca, cb) =>
+          // As either ca or cb is guaranteed to be a failed compilation, combine will simply aggregate the errors
+          // and hence also produce an Errors object. This makes the type cast valid.
+          List(ca, cb).combine.asInstanceOf[Compilation[A :: B]]
+      }
+    }
+  }
+
+  /**
+    * Models simultaneous compilation on shapeless HLists.
+    */
+  implicit class CompilationHListExtension[L <: HList, R <: HList](compilations: L)(
+    implicit val folder: hlist.RightFolder.Aux[L, Compilation[HNil], polyOp.simultaneous.type, Compilation[R]],
+    implicit val lub: LUBConstraint[L, Compilation[_]],
+  ) {
+    def simultaneous: Compilation[R] = {
+      compilations.foldRight(Result(HNil, List.empty) : Compilation[HNil])(polyOp.simultaneous)
     }
   }
 
