@@ -30,18 +30,17 @@ object DeclaredTypeResolver {
   }
 
   private def resolveClassNode(node: TypeDeclNode.ClassNode)(implicit registry: Registry, fragment: Fragment): C[ClassDefinition] = {
-    // TODO: This should be a simultaneous compilation rather than a sequential one, as we can resolve the
-    //       owned-by type, members, and constructors in parallel. This would allow us to display member errors
-    //       even when there is also an error with the owned-by declaration.
-    for {
-      supertype <- node.supertypeName.map(name => registry.resolveType(name, node)).toCompiledOption.require { option =>
+    // Resolve supertype and members simultaneously for same-run error reporting. Owned-by and constructor types
+    // are resolved in the deferred typing verification phase.
+    (
+      node.supertypeName.map(name => registry.resolveType(name, node)).toCompiledOption.require { option =>
         // Ensure that, if the class type extends another type, that type is also a class type.
         option.forall(_.isInstanceOf[ClassType])
-      }(Error.ClassMustExtendClass(node))
-      ownedBy = node.ownedBy.map(ob => new OwnedBy(() => TypeExpressionEvaluator.evaluate(ob)))
-      members <- node.members.map(resolveMemberNode).combine
-      constructors = node.constructors.map(FunctionDeclarationResolver.resolveConstructorNode)
-    } yield {
+      }(Error.ClassMustExtendClass(node)),
+      node.members.map(resolveMemberNode).combine,
+    ).simultaneous.map { case (supertype, members) =>
+      val constructors = node.constructors.map(FunctionDeclarationResolver.resolveConstructorNode)
+      val ownedBy = node.ownedBy.map(ob => new OwnedBy(() => TypeExpressionEvaluator.evaluate(ob)))
       val tpe = new ClassType(supertype.asInstanceOf[Option[ClassType]], ownedBy, node.isAbstract)
       val definition = new ClassDefinition(node.name, tpe, members, constructors, node.position)
       tpe.initialize(definition)

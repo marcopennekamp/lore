@@ -115,23 +115,6 @@ object Compilation {
     }
   }
 
-  /**
-    * Models simultaneous compilation resulting in a value of type (A, B).
-    */
-  implicit class CompilationPairExtension[A, B](cs: (Compilation[A], Compilation[B])) {
-    // TODO: If we want to expand this to heterogeneous lists of arbitrary length, we should consider using shapeless.
-    // TODO: Rename to simultaneous.
-    def combine: Compilation[(A, B)] = {
-      cs match {
-        case (Result(a, infosA), Result(b, infosB)) => Result((a, b), infosA ::: infosB)
-        case (ca, cb) =>
-          // As either ca or cb is guaranteed to be a failed compilation, combine will simply aggregate the errors
-          // and hence also produce an Errors object. This makes the type cast valid.
-          List(ca, cb).combine.asInstanceOf[Compilation[(A, B)]]
-      }
-    }
-  }
-
   object polyOp {
     import shapeless.::
 
