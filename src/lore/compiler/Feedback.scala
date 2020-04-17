@@ -85,8 +85,8 @@ object Error {
     * @param occurrence One of the type declarations where the cycles occurs, so that we can report one error location.
     */
   case class InheritanceCycle(cycle: List[String], occurrence: FragmentNode[TypeDeclNode]) extends Error(occurrence) {
-    override def message: String = """
-    |An inheritance cycle between the following types has been detected: ${cycle.mkString(",")}.
+    override def message: String = s"""
+    |An inheritance cycle between the following types has been detected: ${cycle.mkString(", ")}.
     |A class or label A cannot inherit from a class/label B that also inherits from A directly or indirectly. The
     |subtyping relationships of declared types must result in a directed, acyclic graph.
     """.stripMargin.replaceAll("\n", " ").trim

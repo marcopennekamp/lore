@@ -31,6 +31,14 @@ class DeclarationResolver {
   private val dependencyGraph: Graph[String, DiEdge] = Graph()
   private implicit val edgelordFactory = DiEdge
 
+  /**
+    * A node in the graph. isDeclared is set to true only if the type is declared in the current Lore project.
+    */
+  private case class GraphNode(name: String, var isDeclared: Boolean = false)
+  private object GraphNode {
+    val Any = GraphNode("Any", isDeclared = true)
+  }
+
   private def addTypeDeclaration(declaration: FragmentNode[TypeDeclNode]): C[Unit] = {
     // Immediately stop the processing of this type declaration if the name is already taken.
     if (typeDeclarations.contains(declaration.node.name) || Type.predefinedTypes.contains(declaration.node.name)) {
@@ -47,7 +55,6 @@ class DeclarationResolver {
       case declaredNode: TypeDeclNode.DeclaredNode => // Covers labels and classes.
         typeDeclarations.put(declaredNode.name, declaration)
         dependencyGraph.addEdge(declaredNode.supertypeName.getOrElse("Any"), declaredNode.name)
-        println(s"Added declared type ${declaredNode.name} to declaration resolver.")
     }
 
     Compilation.succeed(())
@@ -58,7 +65,6 @@ class DeclarationResolver {
       case None => Some(List(declaration))
       case Some(functions) => Some(declaration :: functions)
     }
-    println(s"Added function ${declaration.node.name} to declaration resolver.")
     Compilation.succeed(())
   }
 
@@ -107,9 +113,32 @@ class DeclarationResolver {
     val withAddedFragments = fragments.map(addFragment).simultaneous
     if (withAddedFragments.isError) return withAddedFragments.asInstanceOf[Compilation[Registry]]
 
-    // At this point, the dependency graph has been built. Since Any is the supertype of all declared types without
-    // a supertype, the graph should be connected.
-    assert(dependencyGraph.isConnected)
+    // TODO: If we want to support external libraries, we should add these here, especially to the dependency graph.
+    //       Supporting external libraries will need a redesign of some of the early aspects. I am assuming that the
+    //       compiler will produce a manifest of all type and function signatures when it compiles a project. This
+    //       manifest can then be used to add externally declared types and functions to the current project. However,
+    //       we will have to redesign Definition structures so that constructor and function bodies are optional when
+    //       a definition has been declared as "external".
+
+    // At this point, the dependency graph has been built. However, not all types in this graph will be valid, declared
+    // types. As supertype declarations can refer to non-existent types, we have to take care that all names added to
+    // the graph which don't have a corresponding type declaration must be removed again.
+    for (node <- dependencyGraph.nodes) {
+      if (node.value != "Any" && !typeDeclarations.contains(node.value)) {
+        // The type was never declared and is thus invalid! We cannot, however, simply remove the node. The node will
+        // have a dependant which should rather be Any for the purposes of this graph. For example, let's say we have
+        // a type A that extends a type B. B doesn't exist. Then A should, for the purposes of cycle detection, derive
+        // from Any.
+        for (edge <- node.edges) {
+          if (!(edge.from == node)) {
+            throw new RuntimeException("An undeclared type name should not depend on any types itself in the dependency graph.")
+          }
+          val dependant = edge.to
+          dependencyGraph.addEdge("Any", dependant)
+        }
+        dependencyGraph.remove(node.value)
+      }
+    }
 
     // We attempt to report as many cycles as possible so the user doesn't have to run the compiler multiple times
     // just to find all dependency cycles.
@@ -126,6 +155,12 @@ class DeclarationResolver {
         }: _*
       )
     }
+
+    // Now that spurious names have been removed and the graph has been shown not to have any cycles, since Any should
+    // be the supertype of all declared types without a supertype, the graph should be connected. Note that we first
+    // need to detect cycles, because if the graph has a dependency cycle, that component of the graph will not be
+    // connected to Any, and thus the graph won't be connected.
+    assert(dependencyGraph.isConnected)
 
     // At this point, we know our dependency graph is a directed, acyclic graph. We can start a topological sort.
     val typeResolutionOrder = dependencyGraph.topologicalSort.fold(

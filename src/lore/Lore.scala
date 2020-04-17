@@ -48,16 +48,18 @@ object Lore {
     val result = compiler.compile()
     result match {
       case Errors(errors, infos) =>
+        val feedback = errors ++ infos
         println()
         println(s"${FeedbackPrinter.tagError} Compilation failed with errors:")
-        println(FeedbackPrinter.print(errors ++ infos))
+        if (feedback.nonEmpty) println(FeedbackPrinter.print(feedback))
         println()
       case Result(value, infos) =>
         println()
         println(s"${FeedbackPrinter.tagSuccess} Compilation was successful:")
-        println(FeedbackPrinter.print(infos))
+        if(infos.nonEmpty) println(FeedbackPrinter.print(infos))
         println(s"${FeedbackPrinter.tagSuccess} Compilation result: $value")
-        // TODO: Properly do something with the result.
+        println()
+        // TODO: Do something with the result.
     }
   }
 }
