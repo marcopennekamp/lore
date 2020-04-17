@@ -104,8 +104,8 @@ object Compilation {
       * in unspecified order.
       */
     def simultaneous: Compilation[List[A]] = {
-      // We could also implement this using foldLeft, which would perhaps be more functional in style, but the
-      // present definition is actually easier to parse, as foldLeft requires matching on two compilations for each
+      // We could also implement this using foldRight, which would perhaps be more functional in style, but the
+      // present definition is actually easier to parse, as foldRight requires matching on two compilations for each
       // iteration.
       // This implementation, on the other hand, does not need to match on two compilations. We collect all values
       // and errors independently, then decide whether the combined compilation is a list of errors or results.
@@ -114,7 +114,8 @@ object Compilation {
       var results = List.empty[A]
       var errors = List.empty[Error]
       var infos = List.empty[InfoFeedback]
-      compilations.foreach {
+      // We have to reverse the list first since prepending to results will effectively swap the direction of the list.
+      compilations.reverse.foreach {
         case Result(value, infos2) =>
           results = value :: results
           infos = infos2 ::: infos
