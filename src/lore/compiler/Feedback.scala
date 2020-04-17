@@ -89,6 +89,10 @@ object Error {
     override def message = s"The function ${definition.signature} is already declared somewhere else."
   }
 
+  case class MultiFunctionNotFound(name: String, pos: Position) extends Error(pos) {
+    override def message = s"The multi-function $name does not exist in the current scope."
+  }
+
   /**
     * @param occurrence One of the type declarations where the cycles occurs, so that we can report one error location.
     */
