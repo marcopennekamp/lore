@@ -39,7 +39,7 @@ class DeclarationResolver {
     val Any = GraphNode("Any", isDeclared = true)
   }
 
-  private def addTypeDeclaration(declaration: FragmentNode[TypeDeclNode]): C[Unit] = {
+  private def addTypeDeclaration(declaration: FragmentNode[TypeDeclNode]): Verification = {
     // Immediately stop the processing of this type declaration if the name is already taken.
     if (typeDeclarations.contains(declaration.node.name) || Type.predefinedTypes.contains(declaration.node.name)) {
       return Compilation.fail(Error.TypeAlreadyExists(declaration.node)(declaration.fragment))
@@ -60,7 +60,7 @@ class DeclarationResolver {
     Compilation.succeed(())
   }
 
-  private def addFunctionDeclaration(declaration: FragmentNode[DeclNode.FunctionNode]): C[Unit] = {
+  private def addFunctionDeclaration(declaration: FragmentNode[DeclNode.FunctionNode]): Verification = {
     multiFunctionDeclarations.updateWith(declaration.node.name) {
       case None => Some(List(declaration))
       case Some(functions) => Some(declaration :: functions)
@@ -71,7 +71,7 @@ class DeclarationResolver {
   /**
     * Adds a fragment to the declaration resolver.
     */
-  private def addFragment(fragment: Fragment): C[Unit] = {
+  private def addFragment(fragment: Fragment): Verification = {
     fragment.declarations.map {
       case function: DeclNode.FunctionNode => addFunctionDeclaration(FragmentNode(function, fragment))
       case tpe: TypeDeclNode => addTypeDeclaration(FragmentNode(tpe, fragment))
@@ -199,22 +199,23 @@ class DeclarationResolver {
     }
 
     // As you know, we deferred validating member and parameter types with TypingDeferred. We will have to do this now,
-    // to ensure that all types can be resolved correctly. Simultaneously, we also resolve function types. We do this in
-    // parallel to report all "type could not be found" errors that can be found at this stage.
-    val withVerifiedTypesAndResolvedFunctions = withResolvedAliasTypes.flatMap { _ =>
+    // to ensure that all types can be resolved correctly. Simultaneously, we also resolve and register functions.
+    // We do this in parallel to report all "type could not be found" errors that can be found at this stage.
+    val withVerifiedTypesAndRegisteredFunctions = withResolvedAliasTypes.flatMap { _ =>
       (
         registry.getTypeDefinitions.values.map(definition => definition.verifyDeferredTypings).toList.simultaneous,
         multiFunctionDeclarations.map { case (name, fragmentNodes) =>
           fragmentNodes.map { case FragmentNode(node, _fragment) =>
             implicit val fragment: Fragment = _fragment
             FunctionDeclarationResolver.resolveFunctionNode(node)
-          }.simultaneous.map { functions =>
-            MultiFunctionDefinition(name, functions)
+          }.simultaneous.flatMap { functions =>
+            val multiFunction = MultiFunctionDefinition(name, functions)
+            multiFunction.verify.map(_ => registry.registerMultiFunction(multiFunction))
           }
         }.toList.simultaneous,
       ).simultaneous
     }
 
-    withVerifiedTypesAndResolvedFunctions.map(_ => registry)
+    withVerifiedTypesAndRegisteredFunctions.map(_ => registry)
   }
 }

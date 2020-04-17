@@ -1,7 +1,7 @@
 package lore.parser
 
+import fastparse.NoWhitespace._
 import fastparse._
-import NoWhitespace._
 import lore.ast._
 
 /**

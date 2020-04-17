@@ -1,6 +1,6 @@
 package lore.types
 
-import lore.compiler.C
+import lore.compiler.{C, Verification}
 
 /**
   * As noted in the compiler specification, certain types cannot be resolved immediately, as they might reference
@@ -20,7 +20,7 @@ trait TypingDeferred[+T <: Type] {
     *
     * This should be called before `tpe` is accessed!
     */
-  def verifyType: C[Unit] = resolveType().map(_ => ())
+  def verifyType: Verification = resolveType().map(_ => ())
 
   /**
     * The resolved and verified type.

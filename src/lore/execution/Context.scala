@@ -1,15 +1,11 @@
 package lore.execution
 
-import lore.ast.{DeclNode, TypeDeclNode, TypeExprNode}
-import lore.compiler.Feedback
-import lore.definitions.{ClassDefinition, LabelDefinition}
+import lore.ast.DeclNode
 import lore.execution.Context._
 import lore.functions.{InputAbstractnessConstraint, LoreFunction, MultiFunction, TotalityConstraint}
-import lore.parser.FragmentParser
 import lore.types._
 
 import scala.collection.mutable
-import scala.io.Source
 
 class Context(val types: Map[String, Type], val multiFunctions: Map[String, MultiFunction]) {
   implicit private val context: Context = this

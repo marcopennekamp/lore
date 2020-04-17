@@ -3,10 +3,6 @@ package lore
 import java.nio.file.{Files, Path}
 
 import lore.compiler.{Errors, FeedbackPrinter, LoreCompiler, Result}
-import lore.execution.Context
-import lore.parser.FragmentParser
-
-import scala.io.Source
 
 object Lore {
   /* def main(args: Array[String]): Unit = {

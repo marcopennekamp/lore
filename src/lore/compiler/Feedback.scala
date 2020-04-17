@@ -1,7 +1,7 @@
 package lore.compiler
 
-import lore.ast
 import lore.ast.{ExprNode, Node, TypeDeclNode, TypeExprNode}
+import lore.definitions.{FunctionDefinition, PositionedDefinition}
 
 /**
   * A Feedback instance is a compiler report. The most notable Feedback types are warnings and errors.
@@ -50,6 +50,10 @@ abstract class Error(override val position: Position) extends Feedback {
   def this(fragmentNode: FragmentNode[Node]) {
     this(fragmentNode.position)
   }
+
+  def this(definition: PositionedDefinition) {
+    this(definition.position)
+  }
 }
 
 object Error {
@@ -79,6 +83,10 @@ object Error {
 
   case class TypeAlreadyExists(node: TypeDeclNode)(implicit fragment: Fragment) extends Error(node) {
     override def message = s"The type ${node.name} is already declared somewhere else."
+  }
+
+  case class FunctionAlreadyExists(definition: FunctionDefinition) extends Error(definition) {
+    override def message = s"The function ${definition.signature} is already declared somewhere else."
   }
 
   /**

@@ -1,7 +1,7 @@
 package lore.parser
 
+import fastparse.NoWhitespace._
 import fastparse._
-import NoWhitespace._
 
 /**
   * Some of the whitespace handling code has been copied from Li Haoyi's scalaparse implementation.

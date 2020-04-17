@@ -1,7 +1,7 @@
 package lore.definitions
 
 import lore.compiler.Compilation.CompilationHListExtension
-import lore.compiler.{C, Position}
+import lore.compiler.{Position, Verification}
 import lore.types.{ClassType, Type}
 
 /**
@@ -17,7 +17,7 @@ class ClassDefinition(
   override val position: Position,
 ) extends DeclaredTypeDefinition {
   override def supertypeDefinition: Option[ClassDefinition] = tpe.supertype.map(_.definition)
-  override def verifyDeferredTypings: C[Unit] = {
+  override def verifyDeferredTypings: Verification = {
     (
       tpe.ownedBy.map(_.verifyType).toCompiledOption,
       localMembers.map(_.verifyType).simultaneous,

@@ -1,6 +1,6 @@
 package lore.definitions
 
-import lore.compiler.C
+import lore.compiler.Verification
 import lore.types.{DeclaredType, TypingDeferred}
 
 /**
@@ -14,5 +14,5 @@ trait DeclaredTypeDefinition extends PositionedDefinition {
   /**
     * Verifies all deferred typings introduced via [[TypingDeferred]].
     */
-  def verifyDeferredTypings: C[Unit]
+  def verifyDeferredTypings: Verification
 }

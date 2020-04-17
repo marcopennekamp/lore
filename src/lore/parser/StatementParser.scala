@@ -1,8 +1,8 @@
 package lore.parser
 
-import lore.ast._
+import fastparse.ScalaWhitespace._
 import fastparse._
-import ScalaWhitespace._
+import lore.ast._
 
 object StatementParser {
   import LexicalParser.identifier
