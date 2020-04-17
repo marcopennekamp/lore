@@ -1,7 +1,7 @@
 package lore.types
 
+import lore.compiler.Registry
 import lore.definitions.DeclaredTypeDefinition
-import lore.execution.Context
 
 /**
   * A declared type as defined by the spec.
@@ -16,7 +16,7 @@ trait DeclaredType extends Type {
     * Returns the set of explicitly declared immediate subtypes, for example direct subclasses or direct
     * sub-label types.
     */
-  def directDeclaredSubtypes(implicit context: Context): Set[Type]
+  def directDeclaredSubtypes(implicit registry: Registry): Set[Type]
 
   /**
     * A verbose string representation of the type.

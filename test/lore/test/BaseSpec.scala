@@ -14,12 +14,7 @@ abstract class BaseSpec extends AnyFlatSpec with Matchers with OptionValues with
   lazy val areaRegistry: Registry = prepareRegistry("area")
   lazy val concatRegistry: Registry = prepareRegistry("concat")
 
-  def prepareRegistry(exampleName: String): Registry = {
-    val registry = Lore.fromExample(exampleName).toOption.value
-    // TODO: Verify the Registry, too. Probably using phase 3.
-    //registry.verify() should be (VerificationSuccess)
-    registry
-  }
+  def prepareRegistry(exampleName: String): Registry = Lore.fromExample(exampleName).toOption.value
 
   implicit class MultiFunctionExtension(multiFunction: MultiFunctionDefinition) {
     def exactGet(inputType: Type): FunctionDefinition = multiFunction.exact(inputType).get

@@ -1,6 +1,7 @@
-package lore.types
+package lore.test.types
 
 import lore.compiler.Registry
+import lore.types.{IntersectionType, ProductType, SumType, Type}
 
 trait TypeSyntax {
   implicit def toType(name: String)(implicit registry: Registry): Type = registry.getType(name).get

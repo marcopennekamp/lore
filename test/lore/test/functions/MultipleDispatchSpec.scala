@@ -2,7 +2,8 @@ package lore.test.functions
 
 import lore.definitions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.test.BaseSpec
-import lore.types.{Type, TypeSyntax}
+import lore.test.types.TypeSyntax
+import lore.types.Type
 import org.scalatest.Assertion
 
 class MultipleDispatchSpec extends BaseSpec with TypeSyntax {
@@ -15,16 +16,11 @@ class MultipleDispatchSpec extends BaseSpec with TypeSyntax {
   "The multi-function fit and min" should "be correctly defined for concat.lore" in {
     implicit val registry = concatRegistry
     val concat = registry.getMultiFunction("concat").value
-    println(concat.functions)
     val test = testFitAndMin(concat) _
     val setToString = Set(concat.exactGet(("ToString", "ToString")))
-    println(1)
     val setList = Set(concat.exactGet(("List", "List")))
-    println(2)
     val setLinkedList = Set(concat.exactGet(("LinkedList", "LinkedList")))
-    println(3)
     val setLinkedListSorted = Set(concat.exactGet(("LinkedList", "LinkedList" & "Sorted")))
-    println(4)
 
     test(("ToString", "ToString"), setToString, setToString)
     test(("ToString", "List"), setToString, setToString)

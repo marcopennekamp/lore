@@ -1,6 +1,6 @@
 package lore.types
 
-import lore.execution.Context
+import lore.compiler.Registry
 import scalaz.Monad
 import scalaz.std.list._
 import scalaz.syntax.traverse._
@@ -81,7 +81,9 @@ object Subtyping {
     *
     * This is an implementation of the 'ards' function as defined in the spec. See the spec for more information.
     */
-  def abstractResolvedDirectSubtypes(t: Type)(implicit context: Context): Set[Type] = {
+  def abstractResolvedDirectSubtypes(t: Type)(implicit registry: Registry): Set[Type] = {
+    // TODO: Using Set like this (which is much slower than List) could be a major performance hog down the line.
+    //       We should watch out for any performance problems stemming from ards evaluation.
     implicit val setMonad: Monad[Set] = new Monad[Set] {
       override def point[A](a: => A): Set[A] = Set(a)
       override def bind[A, B](fa: Set[A])(f: A => Set[B]): Set[B] = fa.flatMap(f)

@@ -1,7 +1,7 @@
 package lore.types
 
+import lore.compiler.Registry
 import lore.definitions.ClassDefinition
-import lore.execution.Context
 
 class ClassType(
   val supertype: Option[ClassType], val ownedBy: Option[OwnedBy], val isAbstract: Boolean
@@ -12,8 +12,9 @@ class ClassType(
   lazy val componentTypes: List[ComponentType] = this.definition.components.map(_.componentType)
   def isEntity: Boolean = this.definition.isEntity
 
-  override def directDeclaredSubtypes(implicit context: Context): Set[Type] = {
-    context.types.values.flatMap {
+  override def directDeclaredSubtypes(implicit registry: Registry): Set[Type] = {
+    // TODO: Replace with a calculation from a proper subtyping tree.
+    registry.getTypes.values.flatMap {
       case t: ClassType if t.supertype.contains(this) => Some(t)
       case _ => None
     }.toSet
