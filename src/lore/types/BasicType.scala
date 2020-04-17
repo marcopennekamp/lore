@@ -2,7 +2,7 @@ package lore.types
 
 abstract class BasicType(name: String) extends Type {
   override def isAbstract: Boolean = false
-  override def toString: String = name
+  override def string(precedence: TypePrecedence): String = name
 }
 
 object BasicType {

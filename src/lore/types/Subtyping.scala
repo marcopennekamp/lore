@@ -86,7 +86,7 @@ object Subtyping {
       override def point[A](a: => A): Set[A] = Set(a)
       override def bind[A, B](fa: Set[A])(f: A => Set[B]): Set[B] = fa.flatMap(f)
     }
-    def combinations(components: List[Set[Type]]) = components.sequence.toSet
+    def combinations(components: List[Set[Type]]) = components.sequence
 
     t match {
       case _ if !t.isAbstract => Set(t)

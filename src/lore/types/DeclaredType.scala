@@ -18,7 +18,12 @@ trait DeclaredType extends Type {
     */
   def directDeclaredSubtypes(implicit context: Context): Set[Type]
 
-  override def toString: String = definition.name
+  /**
+    * A verbose string representation of the type.
+    */
+  def verbose: String = toString
+
+  override def string(precedence: TypePrecedence): String = definition.name
 }
 
 object DeclaredType {

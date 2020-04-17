@@ -1,6 +1,6 @@
 package lore.types
 
-case class IntersectionType private (types: Set[Type]) extends Type {
+case class IntersectionType private (types: Set[Type]) extends Type with OperatorType {
   // An intersection type must not be empty!
   assert(types.nonEmpty)
 
@@ -34,20 +34,24 @@ case class IntersectionType private (types: Set[Type]) extends Type {
     exceptLabels.exists(_.isAbstract)
   }
 
-  override def toString: String = s"(${types.mkString(" & ")})"
+  override protected def precedence: TypePrecedence = TypePrecedence.Intersection
+  override protected def operands: List[Type] = types.toList
+  override protected def operator: String = "&"
 }
 
 object IntersectionType {
   /**
-    * Constructs the intersection type from the given types and flattens it if necessary.
+    * Constructs type from the given types and flattens it if necessary. If the resulting intersection type
+    * has only one component, this type is returned instead.
     */
-  def construct(types: Set[Type]): IntersectionType = {
-    new IntersectionType(types.flatMap {
+  def construct(types: Set[Type]): Type = {
+    val intersection = new IntersectionType(types.flatMap {
       // If the directly nested type is an intersection type, flatten it.
       case t: IntersectionType => t.types
       case t => Set(t)
     })
+    if (intersection.types.size == 1) intersection.types.head else intersection
   }
 
-  def construct(types: List[Type]): IntersectionType = construct(types.toSet)
+  def construct(types: List[Type]): Type = construct(types.toSet)
 }

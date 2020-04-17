@@ -6,5 +6,5 @@ case class ListType(element: Type) extends Type {
     */
   override def isAbstract = false
 
-  override def toString: String = s"[$element]"
+  override def string(parentPrecedence: TypePrecedence): String = s"[${element.string(TypePrecedence.Parenthesized)}]"
 }

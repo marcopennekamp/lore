@@ -6,5 +6,5 @@ case class ComponentType(underlying: ClassType) extends Type {
     */
   override def isAbstract: Boolean = underlying.isAbstract
 
-  override def toString: String = s"+$underlying"
+  override def string(precedence: TypePrecedence): String = s"+$underlying"
 }
