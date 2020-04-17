@@ -74,6 +74,14 @@ sealed trait Compilation[+A] {
     case Result(_, infos) => infos.foreach(f); this
     case Errors(errors, infos) => errors.foreach(f); infos.foreach(f); this
   }
+
+  /**
+    * Converts the compilation to an option, discarding all feedback.
+    */
+  def toOption: Option[A] = this match {
+    case Result(a, _) => Some(a)
+    case Errors(_, _) => None
+  }
 }
 
 case class Result[+A](value: A, override val infos: List[InfoFeedback]) extends Compilation[A] {
