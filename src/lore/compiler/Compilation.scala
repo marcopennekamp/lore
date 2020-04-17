@@ -1,8 +1,9 @@
 package lore.compiler
 
 import shapeless.ops.hlist
+import shapeless.ops.hlist.{RightFolder, Tupler}
 import shapeless.syntax.std.tuple._
-import shapeless.{HList, HNil, LUBConstraint, Poly2}
+import shapeless.{Generic, HList, HNil, LUBConstraint, Poly2}
 
 // TODO: Performance-wise, it might be worth to use doubly-linked lists here, if performance ever becomes a problem.
 
@@ -151,12 +152,22 @@ object Compilation {
   /**
     * Models simultaneous compilation on shapeless HLists.
     */
-  implicit class CompilationHListExtension[L <: HList, R <: HList](compilations: L)(
-    implicit val folder: hlist.RightFolder.Aux[L, Compilation[HNil], polyOp.simultaneous.type, Compilation[R]],
-    implicit val lub: LUBConstraint[L, Compilation[_]],
+  implicit class CompilationHListExtension[T, EL <: HList, L <: HList, RL <: HList, RT](compilations: T)(
+    // Provides a means to convert the tuple T to the entry HList EL.
+    implicit val gen: Generic.Aux[T, EL],
+    // Provides a means to convert the entry HList EL to the HList L.
+    // TODO: Why do we need this?
+    val elToL: EL =:= L,
+    // Provides a means to fold the HList L to the result HList RL via the polyOp.simultaneous operator.
+    val folder: RightFolder.Aux[L, Compilation[HNil], polyOp.simultaneous.type, Compilation[RL]],
+    // Provides a means to convert the result HList to a result tuple.
+    val tupler: Tupler.Aux[RL, RT],
+    // Ensures that only Compilations are part of the input HList.
+    val lub: LUBConstraint[EL, Compilation[_]],
   ) {
-    def simultaneous: Compilation[R] = {
-      compilations.foldRight(Result(HNil, List.empty) : Compilation[HNil])(polyOp.simultaneous)
+    def simultaneous: Compilation[RT] = {
+      // I can't believe this actually works. Many thanks to Travis Brown for his answers on StackOverflow.
+      elToL(gen.to(compilations)).foldRight(succeed(HNil: HNil))(polyOp.simultaneous).map(tupler(_))
     }
   }
 
