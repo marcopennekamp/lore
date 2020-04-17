@@ -58,8 +58,8 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[DeclNode] {
     """.stripMargin --> FunctionNode(
       "attack",
       List(
-        ParameterNode("source", TypeExprNode.ComponentNode(TypeExprNode.NominalNode("Arms"))),
-        ParameterNode("target", TypeExprNode.ComponentNode(TypeExprNode.NominalNode("Health"))),
+        ParameterNode("source", TypeExprNode.ComponentNode("Arms")),
+        ParameterNode("target", TypeExprNode.ComponentNode("Health")),
       ),
       TypeExprNode.UnitNode,
       Some(BlockNode(List(

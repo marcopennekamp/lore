@@ -224,7 +224,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
       "concat", None, List(StringLiteralNode("stringA"), StringLiteralNode("stringB"), StringLiteralNode("stringC")),
     )
     "applyDot.fixed[Dot, +Health](dot, e)" --> FixedFunctionCallNode(
-      "applyDot", List(TypeExprNode.NominalNode("Dot"), TypeExprNode.ComponentNode(TypeExprNode.NominalNode("Health"))),
+      "applyDot", List(TypeExprNode.NominalNode("Dot"), TypeExprNode.ComponentNode("Health")),
       List(VariableNode("dot"), VariableNode("e")),
     )
 
@@ -305,7 +305,6 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
           case Seq(t1: TypeExprNode.NominalNode, t2: TypeExprNode.ComponentNode) =>
             t1.index shouldEqual 15
             t2.index shouldEqual 20
-            t2.underlyingName.index shouldEqual 21
         }
         inside(call.arguments) {
           case Seq(dot: VariableNode, e: VariableNode) =>

@@ -1,8 +1,8 @@
 package lore.test
 
-import lore.execution.Context
-import lore.execution.Context.VerificationSuccess
-import lore.functions.{LoreFunction, MultiFunction}
+import lore.Lore
+import lore.compiler.Registry
+import lore.definitions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.types.Type
 import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
@@ -10,22 +10,22 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.{MatchResult, Matcher}
 
 abstract class BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside with Inspectors {
+  lazy val abstractRegistry: Registry = prepareRegistry("abstract")
+  lazy val areaRegistry: Registry = prepareRegistry("area")
+  lazy val concatRegistry: Registry = prepareRegistry("concat")
 
-  lazy val abstractContext: Context = Context.fromExample("abstract").value
-  lazy val areaContext: Context = Context.fromExample("area").value
-  lazy val concatContext: Context = Context.fromExample("concat").value
-
-  def prepareContext(exampleName: String): Context = {
-    val context = Context.fromExample(exampleName).value
-    context.verify() should be (VerificationSuccess)
-    context
+  def prepareRegistry(exampleName: String): Registry = {
+    val registry = Lore.fromExample(exampleName).toOption.value
+    // TODO: Verify the Registry, too. Probably using phase 3.
+    //registry.verify() should be (VerificationSuccess)
+    registry
   }
 
-  implicit class MultiFunctionExtension(multiFunction: MultiFunction) {
-    def exact(inputType: Type): LoreFunction = multiFunction.function(inputType).get
+  implicit class MultiFunctionExtension(multiFunction: MultiFunctionDefinition) {
+    def exactGet(inputType: Type): FunctionDefinition = multiFunction.exact(inputType).get
   }
 
-  val beAbstract: Matcher[LoreFunction] = (f: LoreFunction) => MatchResult(f.isAbstract, s"$f was not abstract", s"$f was abstract")
+  val beAbstract: Matcher[FunctionDefinition] = (f: FunctionDefinition) => MatchResult(f.isAbstract, s"$f was not abstract", s"$f was abstract")
 
   /**
     * Checks that the assertion is within the milliseconds time limit.
@@ -37,5 +37,4 @@ abstract class BaseSpec extends AnyFlatSpec with Matchers with OptionValues with
     val difference = (time2 - time1).toInt
     difference should be < timeLimit
   }
-
 }

@@ -23,14 +23,14 @@ class TypeParserSpec extends BaseSpec with ParserSpecExtensions[TypeExprNode] {
     // A single type in parentheses is unambiguously parsed as an enclosed type, not a product type.
     "(A)" --> A
     "[A]" --> ListNode(A)
-    "+A" --> ComponentNode(A)
+    "+A" --> ComponentNode(A.name)
   }
 
   it should "correctly parse complex types" in {
     "A | B | C" --> SumNode(Set(A, B, C))
     "A -> B" --> MapNode(A, B)
-    "[(A, B, C) & D & +E]" --> ListNode(IntersectionNode(Set(ProductNode(List(A, B, C)), D, ComponentNode(E))))
-    "A | (B, C) | +D" --> SumNode(Set(A, ProductNode(List(B, C)), ComponentNode(D)))
+    "[(A, B, C) & D & +E]" --> ListNode(IntersectionNode(Set(ProductNode(List(A, B, C)), D, ComponentNode(E.name))))
+    "A | (B, C) | +D" --> SumNode(Set(A, ProductNode(List(B, C)), ComponentNode(D.name)))
     "(A, (), B)" --> ProductNode(List(A, UnitNode, B))
     "[A -> B | C -> D]" --> ListNode(SumNode(Set(MapNode(A, B), MapNode(C, D))))
   }
