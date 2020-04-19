@@ -70,7 +70,26 @@ Once declared types have been resolved, we can build the **Definition** instance
 
 #### Representation 3: Definitions
 
-The chief representation of the Lore program is now a set of **Definition** and **Type** instances, both held in the **Registry**. Function/constructor bodies are embedded as ASTs into their respective Definitions. Functions are ordered into their **multi-function** structure and independent of fragment boundaries.
+The chief representation of the Lore program is now a set of **Definition** and **Type** instances, both held in the **Registry**. Function/constructor bodies are embedded as ASTs into their respective Definitions. Functions are ordered into their **multi-function** structure, which are independent of fragment boundaries.
+
+
+
+#### Phase 3: Types and Constraints
+
+This phase **types** all definitions and verifies specific **constraints:** 
+
+- It verifies constraints about **classes and entities**, such as classes not being able to extend entities.
+- It deduces **member types** and checks that all members (properties and components) are valid according to all constraints (inheritance, overriding, etc.).
+- It deduces **types in function/constructor bodies** (all nodes) and ensures that function/constructor declarations adhere to type boundaries. This step includes typing and checking **expressions** for type correctness and other possible constraints. 
+- It also checks constraints over **multi-functions** such as the input abstractness constraint and totality constraint.
+
+
+
+#### Representation 4: Typed Definitions
+
+At this point, all Definitions, especially functions and constructors, have been **typed**. Expressions are still represented in their AST form, although nodes have been augmented with type information.
+
+
 
 
 
