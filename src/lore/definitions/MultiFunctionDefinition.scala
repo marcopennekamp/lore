@@ -21,14 +21,14 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
   }
 
   /**
-    * Verifies that all functions declared in the multi-function have a different signature.
+    * Verifies that all functions declared in the multi-function have a unique signature.
     */
-  def verify: Verification = {
+  def verifyUnique: Verification = {
     // Of course, all functions added to the multi-function must have the same name. If that is not the case,
     // there is something very wrong with the compiler.
     functions.foreach(function => assert(function.name == name))
 
-    // Also verify that all functions have different signatures.
+    // Then verify that all functions have different signatures.
     functions.map { function =>
       if (functions.filterNot(_ == function).map(_.signature).contains(function.signature)) {
         // We have found a function with a duplicated signature!

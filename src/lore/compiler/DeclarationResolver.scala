@@ -194,7 +194,7 @@ class DeclarationResolver {
     // As you know, we deferred validating member and parameter types with TypingDeferred. We will have to do this now,
     // to ensure that all types can be resolved correctly. Simultaneously, we also resolve and register functions.
     // We do this in parallel to report all "type could not be found" errors that can be found at this stage.
-    val withVerifiedTypesAndRegisteredFunctions = withResolvedAliasTypes.flatMap { _ =>
+    val withVerifiedTypingsAndRegisteredFunctions = withResolvedAliasTypes.flatMap { _ =>
       (
         registry.getTypeDefinitions.values.map(definition => definition.verifyDeferredTypings).toList.simultaneous,
         multiFunctionDeclarations.map { case (name, fragmentNodes) =>
@@ -203,12 +203,12 @@ class DeclarationResolver {
             FunctionDeclarationResolver.resolveFunctionNode(node)
           }.simultaneous.flatMap { functions =>
             val multiFunction = MultiFunctionDefinition(name, functions)
-            multiFunction.verify.map(_ => registry.registerMultiFunction(multiFunction))
+            multiFunction.verifyUnique.map(_ => registry.registerMultiFunction(multiFunction))
           }
         }.toList.simultaneous,
       ).simultaneous
     }
 
-    withVerifiedTypesAndRegisteredFunctions.map(_ => registry)
+    withVerifiedTypingsAndRegisteredFunctions.map(_ => registry)
   }
 }

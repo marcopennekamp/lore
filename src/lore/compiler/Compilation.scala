@@ -105,7 +105,7 @@ object Compilation {
     * An abbreviation for Compilation[Unit]. A verification is an operation that returns nothing of note when
     * it is successful and fails with a set of errors if it isn't.
     */
-  type Verification = Compilation[Unit]
+  type Verification = Compilation[Unit] // TODO: Or rather Compilation[Nothing]?
 
   object Verification {
     /**
