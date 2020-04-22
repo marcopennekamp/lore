@@ -13,10 +13,8 @@ object Subtyping {
     * match, unless we use guards, which would make the code quite messy.
     */
   val rules: Seq[PartialFunction[(Type, Type), Boolean]] = Seq(
-    // A label type l1 is a subtype of l2 if l1 and l2 are equal or any of l1's supertypes (in line) are equal to l2.
-    { case (l1: LabelType, l2: LabelType) =>  l1 == l2 || isSubtype(l1.supertype.getOrElse(AnyType), l2) },
-    // Class types are handled in the same way as label types.
-    { case (c1: ClassType, c2: ClassType) => c1 == c2 || isSubtype(c1.supertype.getOrElse(AnyType), c2) },
+    // A declared type d1 is a subtype of d2 if d1 and d2 are equal or any of d1's hierarchical supertypes equal to d2.
+    { case (d1: DeclaredType, d2: DeclaredType) =>  d1 == d2 || isSubtype(d1.supertype.getOrElse(AnyType), d2) },
 
     // A component type p1 is a subtype of p2 if p1's underlying type is a subtype of p2's underlying type.
     { case (p1: ComponentType, p2: ComponentType) => isSubtype(p1.underlying, p2.underlying) },

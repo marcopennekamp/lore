@@ -8,6 +8,10 @@ import shapeless.{Generic, HList, HNil, LUBConstraint, Poly2}
 
 /**
   * Represents a compilation to a value of type A. Either results in a Result[A] or an Errors object.
+  *
+  * This trait should be used to represent compilations that can result in a <b>user error</b>. Internal assertions
+  * don't need to be wrapped in a Compilation and should instead lead to runtime errors, as they uncover compiler
+  * bugs instead of user errors.
   */
 sealed trait Compilation[+A] {
   /**

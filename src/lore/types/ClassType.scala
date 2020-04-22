@@ -4,7 +4,7 @@ import lore.compiler.Registry
 import lore.definitions.ClassDefinition
 
 class ClassType(
-  val supertype: Option[ClassType], val ownedBy: Option[OwnedBy], val isAbstract: Boolean
+  override val supertype: Option[ClassType], val ownedBy: Option[OwnedBy], val isAbstract: Boolean
 ) extends DeclaredType with DeclaredType.DefinitionProperty[ClassDefinition] {
   /**
     * The list of component types belonging to the entity type.

@@ -13,6 +13,11 @@ trait DeclaredType extends Type {
   def definition: DeclaredTypeDefinition
 
   /**
+    * The supertype of the declared type.
+    */
+  def supertype: Option[DeclaredType]
+
+  /**
     * Returns the set of explicitly declared immediate subtypes, for example direct subclasses or direct
     * sub-label types.
     */
