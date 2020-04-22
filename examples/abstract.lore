@@ -1,8 +1,8 @@
-label A
-label A1 extends A
-label A2 extends A
-label B
-label C
+abstract class A
+class A1 extends A
+class A2 extends A
+class B
+class C
 type T = A | B | C
 
 action f(t: T)
