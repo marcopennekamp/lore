@@ -1,8 +1,9 @@
 package lore.definitions
 
+import lore.ast.{StmtNode, StmtVisitor, TopLevelExprNode, VerificationStmtVisitor}
 import lore.compiler.Compilation.Verification
-import lore.compiler.{Compilation, Error, Registry}
-import lore.functions.{InputAbstractnessConstraint, TotalityConstraint}
+import lore.compiler.{Compilation, Error, Fragment, InputAbstractnessConstraint, Registry, TotalityConstraint}
+import lore.definitions.MultiFunctionDefinition.NoContinuationVisitor
 import lore.types.{Subtyping, Type}
 
 case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinition]) {
@@ -40,24 +41,37 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
     }.simultaneous.map(_ => ())
   }
 
+
+
+
   /**
     * Verifies that the multi-function adheres to the input abstractness and totality constraints. Also verifies
     * that at no position in any function body may there be a continuation node.
     */
   def verifyConstraints(implicit registry: Registry): Verification = {
-    // TODO: Actually use this.
     (
       InputAbstractnessConstraint.verify(this),
       TotalityConstraint.verify(this),
-      // None of the functions may contain a continuation node in their bodies.
+      // Verify that none of the functions contain a continuation node in their bodies.
       functions.map { function =>
+        implicit val fragment = function.position.fragment
         function.body match {
           case None => Compilation.succeed(())
           case Some(expression) =>
-            // TODO: Verify.
-            Compilation.succeed(())
+            val visitor = new NoContinuationVisitor()
+            StmtVisitor.visit(visitor)(expression)
         }
       }.simultaneous,
     ).simultaneous.map(_ => ())
+  }
+}
+
+object MultiFunctionDefinition {
+  class NoContinuationVisitor()(implicit fragment: Fragment) extends VerificationStmtVisitor {
+    override def visitXary: PartialFunction[(StmtNode, List[Compilation[Unit]]), Compilation[Unit]] = {
+      case (node: TopLevelExprNode.ContinuationNode, _) =>
+        Compilation.fail(Error.IllegalContinuation(node))
+      case args => super.visitXary(args)
+    }
   }
 }

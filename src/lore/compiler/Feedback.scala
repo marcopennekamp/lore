@@ -1,6 +1,6 @@
 package lore.compiler
 
-import lore.ast.{ExprNode, Node, TypeDeclNode, TypeExprNode}
+import lore.ast.{ExprNode, Node, StmtNode, TopLevelExprNode, TypeDeclNode, TypeExprNode}
 import lore.definitions.{FunctionDefinition, PositionedDefinition}
 
 /**
@@ -57,6 +57,8 @@ abstract class Error(override val position: Position) extends Feedback {
 }
 
 object Error {
+  // TODO: Consider moving more error definitions to their point of use if they're only used in one place.
+
   case class FunctionNotFound(name: String, node: ExprNode.CallNode)(implicit fragment: Fragment) extends Error(node) {
     override def message = s"The function $name does not exist in the current scope."
   }
@@ -91,6 +93,10 @@ object Error {
 
   case class MultiFunctionNotFound(name: String, pos: Position) extends Error(pos) {
     override def message = s"The multi-function $name does not exist in the current scope."
+  }
+
+  case class IllegalContinuation(node: TopLevelExprNode.ContinuationNode)(implicit fragment: Fragment) extends Error(node) {
+    override def message = s"A continuation is only valid as the very last top-level expression of a constructor block."
   }
 
   /**

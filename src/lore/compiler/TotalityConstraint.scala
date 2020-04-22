@@ -1,7 +1,6 @@
-package lore.functions
+package lore.compiler
 
 import lore.compiler.Compilation.Verification
-import lore.compiler.{Error, Registry}
 import lore.definitions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.types.{Subtyping, Type}
 
