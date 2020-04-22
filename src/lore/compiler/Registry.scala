@@ -16,6 +16,7 @@ class Registry {
   private val types = mutable.HashMap[String, Type](Type.predefinedTypes.toList:_*)
   private val typeDefinitions = mutable.HashMap[String, DeclaredTypeDefinition]()
   private val multiFunctions = mutable.HashMap[String, MultiFunctionDefinition]()
+  val declaredTypeHierarchy = new DeclaredTypeHierarchy()
 
   /**
     * Registers a type with the specific name.
@@ -29,7 +30,12 @@ class Registry {
       )
     }
     types.put(name, tpe)
-    // TODO: Build a declared type hierarchy graph that can be used to resolve sets of subtypes of a given declared type.
+
+    // If this is a declared type, also register it in the declared type hierarchy.
+    tpe match {
+      case declaredType: DeclaredType => declaredTypeHierarchy.addType(declaredType)
+      case _ =>
+    }
   }
 
   /**
