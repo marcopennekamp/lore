@@ -21,7 +21,10 @@ trait DeclaredType extends Type {
     * Returns the set of explicitly declared immediate subtypes, for example direct subclasses or direct
     * sub-label types.
     */
-  def directDeclaredSubtypes(implicit registry: Registry): Set[Type]
+  def directDeclaredSubtypes(implicit registry: Registry): Set[Type] = {
+    // We need the .toSet at the end to cast DeclaredType to Type, since sets are invariant.
+    registry.declaredTypeHierarchy.getDirectSubtypes(this).toSet
+  }
 
   /**
     * A verbose string representation of the type.
