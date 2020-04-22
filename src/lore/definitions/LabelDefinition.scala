@@ -1,6 +1,6 @@
 package lore.definitions
 import lore.compiler.Compilation.Verification
-import lore.compiler.{Compilation, Position}
+import lore.compiler.{Compilation, Position, Registry}
 import lore.types.LabelType
 
 class LabelDefinition(
@@ -10,4 +10,8 @@ class LabelDefinition(
 ) extends DeclaredTypeDefinition {
   override def supertypeDefinition: Option[LabelDefinition] = tpe.supertype.map(_.definition)
   override def verifyDeferredTypings: Verification = Compilation.succeed(())
+  override def verifyConstraints(implicit registry: Registry): Verification = {
+    // TODO: Do we need to check any constraints here at all?
+    Compilation.succeed(())
+  }
 }

@@ -6,8 +6,6 @@ import lore.definitions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.types.{Subtyping, Type}
 
 object TotalityConstraint {
-  // TODO: Actually apply this verification.
-
   /*
    * We have the following interesting case:
    *   Say we have types abstract X, A < X, B < X, C < X and a component +T. We have an abstract function with

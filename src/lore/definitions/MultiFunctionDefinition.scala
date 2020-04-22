@@ -1,7 +1,8 @@
 package lore.definitions
 
 import lore.compiler.Compilation.Verification
-import lore.compiler.{Compilation, Error}
+import lore.compiler.{Compilation, Error, Registry}
+import lore.functions.{InputAbstractnessConstraint, TotalityConstraint}
 import lore.types.{Subtyping, Type}
 
 case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinition]) {
@@ -37,5 +38,26 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
         Compilation.succeed(())
       }
     }.simultaneous.map(_ => ())
+  }
+
+  /**
+    * Verifies that the multi-function adheres to the input abstractness and totality constraints. Also verifies
+    * that at no position in any function body may there be a continuation node.
+    */
+  def verifyConstraints(implicit registry: Registry): Verification = {
+    // TODO: Actually use this.
+    (
+      InputAbstractnessConstraint.verify(this),
+      TotalityConstraint.verify(this),
+      // None of the functions may contain a continuation node in their bodies.
+      functions.map { function =>
+        function.body match {
+          case None => Compilation.succeed(())
+          case Some(expression) =>
+            // TODO: Verify.
+            Compilation.succeed(())
+        }
+      }.simultaneous,
+    ).simultaneous.map(_ => ())
   }
 }

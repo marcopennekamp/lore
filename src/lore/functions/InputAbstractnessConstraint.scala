@@ -5,8 +5,6 @@ import lore.compiler.{Error, Registry}
 import lore.definitions.{FunctionDefinition, MultiFunctionDefinition}
 
 object InputAbstractnessConstraint {
-  // TODO: Actually apply this verification.
-
   /**
     * Checks whether the given multi-function satisfies the input abstractness constraint.
     */
