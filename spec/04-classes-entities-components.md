@@ -71,6 +71,10 @@ A class `A` may **inherit** from another class `B`. This allows `A` to inherit a
 class A extends B
 ```
 
+**Constraints:**
+
+- **Classes** may not inherit from **entities**.
+
 ##### Constructors
 
 Constructors are special functions which can use the **construct** statement. The construct statement takes as arguments all of the class's properties in their order of declaration. For example, the declaration in the introduction would have the associated construct statement `construct(a, b)` for `a: A` and `b: A`. This statement simply assign the given arguments to the properties and thus creates an object. Ultimately, this statement is the only way to *create* a new instance.
@@ -241,7 +245,7 @@ A component *must* be a **class or envelope**. This requirement is simple when w
 
 Here, the type `E` **has** a component `C1`. The component can be **accessed** like an attribute, `e.C1`, with the type name as the accessor name. 
 
-When a component `C1` is declared like this, the type `E` satisfies the typing `E & +C1`. The `+C1` is read as **"has C1"** and is a type *describing the entity*, not the component. For example, when we have a variable `e: +C1`, `e` is not C1 itself but rather the entity with a component of type `C1`.
+When a component `C1` is declared like this, the type `E` satisfies the typing `E & +C1`. The `+C1` is read as **"has C1"** and is a type *describing the entity*, not the component. For example, when we have a variable `e: +C1`, `e` is *not* C1 itself but rather the entity with a component of type `C1`.
 
 At run-time, `E` might actually be a type `E & +C3` given `C3 < C1`, if a value of `C3` was assigned as a component as opposed to a value of `C1`. This has profound implications for **multiple dispatch:** Entities are dispatched based on their *actual* type and the *types of their components at run-time*.
 
@@ -251,7 +255,7 @@ Once assigned to an entity, a component cannot be replaced or removed: **compone
 
 ##### Instantiation
 
-Entities are **instantiated** like classes, with the simple addition that component declarations are also added as parameters in their order of declaration. For example, the entity declard above would have the following default constructor:
+Entities are **instantiated** like classes, with the simple addition that component declarations are also added as parameters in their order of declaration. For example, the entity declared above would have the following default constructor:
 
 ```
 E(x: A, c1: C1, c2: C2, y: B)
@@ -308,34 +312,39 @@ function draw(e: +Sprite) = {
 
 Even though we have only declared the entity to have the Sprite component, as the ownership of a Sprite is restricted to entities that also have a Position component, we can be sure that `e` **also has a Position component**. Lore recognizes this and allows you to access that other component.
 
-Ownership restrictions are passed down via **inheritance**. A subclass must keep the current restrictions.
+Ownership restrictions are passed down via **inheritance**. A subclass may keep the current restrictions or **subtype them**. This is not fully type-safe at compile-time. For example, consider this piece of code:
 
-- **TODO:** Can subclasses add new restrictions? I think this would lead to runtime errors… Like this:
+```
+class A
+class A1 extends A
+class B owned by +A
+class B1 extends B owned by +A1
 
-  ```
-  class A
-  class A1 extends A
-  class B owned by +A
-  class B1 extends B owned by +A1
-  
-  entity E {
-    component A
-    component B
-  }
-  
-  function create(): E = {
-    const a = A()
-    const b: B = B1()
-    // At this point, b is not obviously B1, as it could have come
-    // from somewher else entirely. This might be obvious to the
-    // compiler, but not in the more complicated circumstances.
-    E(a, b)
-  }
-  ```
+entity E {
+  component A
+  component B
+}
 
-  All checks seem to pass, but because B1 narrows the ownership restriction, B1 is *not* owned by an entity `+A1`. Allowing subclasses to narrow this restriction would be very useful, but is sadly not feasible in this way. We will need to contemplate this further to perhaps find a better solution.
+function create(): E = {
+  const a = A()
+  const b: B = B1()
+  E(a, b)
+}
+```
 
-Note that one object can be a component of **multiple entities**. For example, you could share a health state between two bosses in a boss fight. We don't want to remove this freedom and so Lore requires diligence of the programmer when it comes to component instantiation.
+The compiler approves this layout, but because `B1` narrows the ownership restriction, `B1` is *not* owned by an entity `+A1`. It is clear that this code cannot go ahead as is. The question is when we throw the error. We have two ways to go about this:
+
+- We could make owned-by declarations **invariant**. That is, when an owned-by type has been declared, it has to be replicated across the whole inheritance hierarchy. I don't see another (straight-forward) way to solve this while still keeping component subtyping intact. We would either have to get rid of the ability to use subclasses as components (e.g. use `B1` in place of `B`), or we would have to get rid of the ability to subtype ownership restrictions.
+
+- What do we do if we can't check it at compile-time? **We check it at run-time!** That is, instead of giving compile-time guarantees that ownership restrictions hold, we check ownership each time an entity is instantiated. At compile-time, we only check ownership for the declared component types. This means that ownership won't be arbitrary. **We will still check what we can at compile-time.**
+
+  At run-time, we get down into the actual component types, that is, potentially their subtypes. Components being immutable, we only have to check this when an entity is instantiated, so there are, I feel, few enough points of failure.
+
+In the end we have to choose between safety and flexibility. I believe Lore should be flexible rather than safe; multi-functions aren't perfectly safe, either. For example, we always run the risk to arrive at ambiguous calls at run-time, which might never have been caught at compile-time. Instantiating entities is in the same rough category of run-time errors. Hence, we have chosen the second option, to **allow subtyping owned-by types**, with a **hybrid checking model**.
+
+Besides, I believe this will follow the **actual usage patterns** of the language. A constellation such as the example above could be very common. One might desire to have different kinds of `Position` components tied to different kinds of `Speed` components. If we don't allow subtyping owned-by types, that will not stop Lore users who *want* to subtype owned-by types. And so they might resort to a less idiomatic solution such as type-casting, or throwing runtime exceptions (once we actually add exceptions) from one branch of multiple dispatch, that is, the branch that is not supposed to exist.
+
+Note that one object can be a component of **multiple entities**. For example, you could share a health state between two bosses in a boss fight. We don't want to remove this freedom and so Lore asks extra diligence of the programmer when it comes to component instantiation.
 
 ###### Example
 
