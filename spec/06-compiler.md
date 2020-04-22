@@ -76,18 +76,28 @@ The chief representation of the Lore program is now a set of **Definition** and 
 
 #### Phase 3: Types and Constraints
 
-This phase **types** all definitions and verifies specific **constraints:** 
+At first, this phase verifies specific **constraints** simultaneously:
 
-- It verifies constraints about **classes and entities**, such as classes not being able to extend entities.
-- It deduces **member types** and checks that all members (properties and components) are valid according to all constraints (inheritance, overriding, etc.).
-- It deduces **types in function/constructor bodies** (all nodes) and ensures that function/constructor declarations adhere to type boundaries. This step includes typing and checking **expressions** for type correctness and other possible constraints. 
-- It also checks constraints over **multi-functions** such as the input abstractness constraint and totality constraint.
+- Constraints for **classes and entities:** 
+  1. Non-entity classes may not **extend** entities. 
+  2. The owned-by type of a class must be a **subtype of the owned-by type** of its superclass. If the class or superclass has no owned-by type, assume Any.
+  3. Each owned-by type of a component's class (the type declared at compile-time) must be **compatible with the entity** the component is declared in. This does not cover all the necessary run-time checks, but gives a basic level of type safety.
+  4. Each component **overriding** another component must be a subtype of the overridden component.
+  5. Each constructor must end with a **continuation** node and may not have such a node in any other place.
+- Constraints for **multi-functions:** 
+  1. **Input abstractness constraint**
+  2. **Totality constraint**
+  3. At no position in the function body may there be a **continuation** node.
+
+Then, this phase **types** all definitions. It deduces **types in function/constructor bodies** (all nodes) and ensures that function/constructor signatures adhere to type boundaries. This step includes typing and checking **expressions** for type correctness and other possible constraints.
+
+Note that we don't even attempt to ascribe types to function bodies if the above constraints don't hold. We don't necessarily have to separate these steps, but it makes building the compiler easier.
 
 
 
 #### Representation 4: Typed Definitions
 
-At this point, all Definitions, especially functions and constructors, have been **typed**. Expressions are still represented in their AST form, although nodes have been augmented with type information.
+At this point, all Definitions, especially functions and constructors, have been **typed**. Expressions are still represented in their AST form, although nodes have been augmented with type information. We can be reasonably sure that all definitions are soundly typed and that the most important constraints hold.
 
 
 
