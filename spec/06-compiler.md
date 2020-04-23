@@ -84,8 +84,9 @@ At first, this phase verifies specific **constraints** simultaneously:
   1. Non-entity classes may not **extend** entities. 
   2. The owned-by type of a class must be a **subtype of the owned-by type** of its superclass. If the class or superclass has no owned-by type, assume Any.
   3. Each owned-by type of a component's class (the type declared at compile-time) must be **compatible with the entity** the component is declared in. This does not cover all the necessary run-time checks, but gives a basic level of type safety.
-  4. Each component **overriding** another component must be a subtype of the overridden component.
-  5. Each constructor must end with a **continuation** node and may not have such a node in any other place.
+  4. Class properties and components must be **unique**. They may not have already been declared in a superclass and they may not be declared twice in the given class.
+  5. Each component **overriding** another component must be a subtype of the overridden component.
+  6. Each constructor must end with a **continuation** node and may not have such a node in any other place.
 - Constraints for **multi-functions:**
   1. All function signatures must be **unique**.
   2. At no position in the function body may there be a **continuation** node.

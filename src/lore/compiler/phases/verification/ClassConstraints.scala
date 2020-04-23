@@ -3,7 +3,7 @@ package lore.compiler.phases.verification
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
 import lore.compiler.{Compilation, Registry}
-import lore.definitions.{ClassDefinition, ComponentDefinition}
+import lore.definitions.{ClassDefinition, ComponentDefinition, MemberDefinition}
 import lore.types.{AnyType, Subtyping, Type}
 
 object ClassConstraints {
@@ -19,19 +19,29 @@ object ClassConstraints {
     override def message = s"The class ${definition.name} cannot own the component ${component.name} due to the component's owned-by restriction."
   }
 
+  case class MemberAlreadyExistsInSuperclass(definition: ClassDefinition, member: MemberDefinition[Type]) extends Error(member) {
+    override def message = s"The member ${member.name} is already declared in a superclass of class ${definition.name}."
+  }
+
+  case class MemberDuplicateDeclaration(definition: ClassDefinition, member: MemberDefinition[Type]) extends Error(member) {
+    override def message = s"The member ${member.name} is already declared twice in the class ${definition.name}."
+  }
+
   /**
     * Verifies:
-    *   1. Non-entity classes may not **extend** entities.
+    *   1. Non-entity classes may not extend entities.
     *   2. The owned-by type of a class must be a subtype of the owned-by type of its superclass. If the class
     *      or superclass has no owned-by type, assume Any.
-    *   3. If a component member has an ownedBy type, we verify that the component can be in fact owned by this entity.
-    *   4. Each component **overriding** another component must be a subtype of the overridden component.
-    *   5. Each constructor must end with a **continuation** node and may not have such a node in any other place.
+    *   3. Class properties and components must be unique.
+    *   4. If a component member has an ownedBy type, we verify that the component can be in fact owned by this entity.
+    *   5. Each component overriding another component must be a subtype of the overridden component.
+    *   6. Each constructor must end with a continuation node and may not have such a node in any other place.
     */
   def verify(definition: ClassDefinition)(implicit registry: Registry): Verification = {
     (
       verifyEntityInheritance(definition),
       verifyOwnedBy(definition),
+      verifyMembersUnique(definition),
       definition.localComponents.map(verifyCanOwn(definition, _)).simultaneous,
     ).simultaneous.verification
   }
@@ -40,6 +50,7 @@ object ClassConstraints {
     * Verifies that the given class does not extend an entity if it is itself not an entity.
     */
   def verifyEntityInheritance(definition: ClassDefinition): Verification = {
+    println(definition.name + " " + definition.isEntity + " " + definition.supertypeDefinition.exists(_.isEntity))
     // If the definition is not an entity, its supertype may not be an entity.
     if (!definition.isEntity && definition.supertypeDefinition.exists(_.isEntity)) {
       Compilation.fail(ClassMayNotExtendEntity(definition))
@@ -62,6 +73,27 @@ object ClassConstraints {
     if (!Subtyping.isSubtype(ownedBy, superOwnedBy)) {
       Compilation.fail(OwnedByMustBeSubtype(definition, ownedBy, superOwnedBy))
     } else Verification.succeed
+  }
+
+  /**
+    * Verifies that this class's local members are unique and haven't already been declared in a superclass
+    * or twice in the given class.
+    */
+  def verifyMembersUnique(definition: ClassDefinition): Verification = {
+    val superMembers = definition.supertypeDefinition.map(_.members).getOrElse(List.empty)
+    val superMemberNames = superMembers.map(_.name)
+    definition.localMembers.map { member =>
+      (
+
+        if (superMemberNames.contains(member.name)) {
+          Compilation.fail(MemberAlreadyExistsInSuperclass(definition, member))
+        } else Verification.succeed,
+
+        if (definition.localMembers.filterNot(_ == member).map(_.name).contains(member.name)) {
+          Compilation.fail(MemberDuplicateDeclaration(definition, member))
+        } else Verification.succeed,
+        ).simultaneous
+    }.simultaneous.verification
   }
 
   /**
