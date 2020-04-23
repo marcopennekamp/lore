@@ -18,13 +18,6 @@ class ClassDefinition(
   override val position: Position,
 ) extends DeclaredTypeDefinition {
   override def supertypeDefinition: Option[ClassDefinition] = tpe.supertype.map(_.definition)
-  override def verifyDeferredTypings: Verification = {
-    (
-      tpe.ownedBy.map(_.verifyDeferredTyping).toCompiledOption,
-      localMembers.map(_.verifyDeferredTyping).simultaneous,
-      constructors.flatMap(_.parameters).map(_.verifyDeferredTyping).simultaneous,
-    ).simultaneous.map(_ => ())
-  }
 
   /**
     * Verifies:

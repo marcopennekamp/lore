@@ -86,10 +86,11 @@ At first, this phase verifies specific **constraints** simultaneously:
   3. Each owned-by type of a component's class (the type declared at compile-time) must be **compatible with the entity** the component is declared in. This does not cover all the necessary run-time checks, but gives a basic level of type safety.
   4. Each component **overriding** another component must be a subtype of the overridden component.
   5. Each constructor must end with a **continuation** node and may not have such a node in any other place.
-- Constraints for **multi-functions:** 
-  1. **Input abstractness constraint**
-  2. **Totality constraint**
-  3. At no position in the function body may there be a **continuation** node.
+- Constraints for **multi-functions:**
+  1. All function signatures must be **unique**.
+  2. At no position in the function body may there be a **continuation** node.
+  3. **Input abstractness constraint**
+  4. **Totality constraint**
 
 Then, this phase **types** all definitions. It deduces **types in function/constructor bodies** (all nodes) and ensures that function/constructor signatures adhere to type boundaries. This step includes typing and checking **expressions** for type correctness and other possible constraints.
 

@@ -1,5 +1,6 @@
 package lore.compiler
 
+import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.{Error, Feedback, InfoFeedback}
 import shapeless.ops.hlist.{RightFolder, Tupler}
 import shapeless.syntax.std.tuple._
@@ -87,6 +88,11 @@ sealed trait Compilation[+A] {
     case Result(a, _) => Some(a)
     case Errors(_, _) => None
   }
+
+  /**
+    * Converts the compilation into a verification, effectively discarding the result value.
+    */
+  def verification: Verification = map(_ => ())
 }
 
 case class Result[+A](value: A, override val infos: List[InfoFeedback]) extends Compilation[A] {
@@ -118,7 +124,7 @@ object Compilation {
       * Creates a verification result from the given error list. If the list is empty, the verification is assumed to
       * be successful. Otherwise, the verification fails with the given errors.
       */
-    def apply(errors: List[Error]): Verification = {
+    def fromErrors(errors: List[Error]): Verification = {
       if (errors.nonEmpty) Errors(errors, List.empty) else Result((), List.empty)
     }
   }

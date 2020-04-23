@@ -4,7 +4,7 @@ import lore.ast.{DeclNode, TypeDeclNode}
 import lore.compiler.Compilation.{C, Verification}
 import lore.compiler.feedback.Error
 import lore.compiler.{Compilation, Fragment, Registry, TypeExpressionEvaluator}
-import lore.definitions.MultiFunctionDefinition
+import lore.definitions.{ClassDefinition, MultiFunctionDefinition}
 import lore.types.Type
 import scalax.collection.GraphEdge._
 import scalax.collection.mutable.Graph
@@ -198,14 +198,19 @@ class DeclarationResolver {
     // We do this in parallel to report all "type could not be found" errors that can be found at this stage.
     val withVerifiedTypingsAndRegisteredFunctions = withResolvedAliasTypes.flatMap { _ =>
       (
-        registry.getTypeDefinitions.values.map(definition => definition.verifyDeferredTypings).toList.simultaneous,
+        // Resolve deferred typings.
+        registry.getTypeDefinitions.values.map {
+          case definition: ClassDefinition => DeferredTypingResolver.resolveDeferredTypings(definition)
+          case _ => Compilation.succeed(()) // We do not have to verify any deferred typings for labels.
+        }.toList.simultaneous,
+        // Resolve and register functions.
         multiFunctionDeclarations.map { case (name, fragmentNodes) =>
           fragmentNodes.map { case FragmentNode(node, _fragment) =>
             implicit val fragment: Fragment = _fragment
             FunctionDeclarationResolver.resolveFunctionNode(node)
-          }.simultaneous.flatMap { functions =>
+          }.simultaneous.map { functions =>
             val multiFunction = MultiFunctionDefinition(name, functions)
-            multiFunction.verifyUnique.map(_ => registry.registerMultiFunction(multiFunction))
+            registry.registerMultiFunction(multiFunction)
           }
         }.toList.simultaneous,
       ).simultaneous

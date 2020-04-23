@@ -89,10 +89,6 @@ object Error {
     override def message = s"The type ${node.name} is already declared somewhere else."
   }
 
-  case class FunctionAlreadyExists(definition: FunctionDefinition) extends Error(definition) {
-    override def message = s"The function ${definition.signature} is already declared somewhere else."
-  }
-
   case class MultiFunctionNotFound(name: String, pos: Position) extends Error(pos) {
     override def message = s"The multi-function $name does not exist in the current scope."
   }

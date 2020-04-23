@@ -13,11 +13,6 @@ trait DeclaredTypeDefinition extends PositionedDefinition {
   def supertypeDefinition: Option[DeclaredTypeDefinition]
 
   /**
-    * Verifies all deferred typings introduced via [[TypingDeferred]].
-    */
-  def verifyDeferredTypings: Verification
-
-  /**
     * Verifies all constraints for a given declared type.
     */
   def verifyConstraints(implicit registry: Registry): Verification
