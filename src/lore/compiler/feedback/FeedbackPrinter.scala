@@ -1,4 +1,4 @@
-package lore.compiler
+package lore.compiler.feedback
 
 object FeedbackPrinter {
   val tagError = s"[${Console.RED}error${Console.RESET}]"

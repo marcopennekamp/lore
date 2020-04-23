@@ -1,4 +1,4 @@
-package lore.parser
+package lore.compiler.phases.parsing
 
 import fastparse.ScalaWhitespace._
 import fastparse._

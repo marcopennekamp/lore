@@ -1,6 +1,8 @@
-package lore.compiler
+package lore.compiler.feedback
 
-import lore.ast.{ExprNode, Node, StmtNode, TopLevelExprNode, TypeDeclNode, TypeExprNode}
+import lore.ast._
+import lore.compiler.phases.resolution.FragmentNode
+import lore.compiler.Fragment
 import lore.definitions.{FunctionDefinition, PositionedDefinition}
 
 /**

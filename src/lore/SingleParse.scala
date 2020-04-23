@@ -2,7 +2,7 @@ package lore
 
 import fastparse.ScalaWhitespace._
 import fastparse._
-import lore.parser.StatementParser
+import lore.compiler.phases.parsing.StatementParser
 
 /**
   * This object can be run (for example from within the IDE) to parse a single statement (or other code if the parser

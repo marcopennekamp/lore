@@ -2,7 +2,9 @@ package lore
 
 import java.nio.file.{Files, Path}
 
-import lore.compiler.{C, Errors, FeedbackPrinter, LoreCompiler, Registry, Result}
+import lore.compiler.Compilation.C
+import lore.compiler.feedback.FeedbackPrinter
+import lore.compiler.{Errors, LoreCompiler, Registry, Result}
 import lore.types.DeclaredType
 
 object Lore {

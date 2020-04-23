@@ -1,6 +1,7 @@
-package lore.compiler
+package lore.compiler.feedback
 
 import lore.ast.Index
+import lore.compiler.Fragment
 
 /**
   * A position identifies a code location across a whole Lore project.

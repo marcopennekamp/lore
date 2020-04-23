@@ -1,6 +1,8 @@
 package lore.compiler
 
 import lore.ast.TypeExprNode
+import lore.compiler.Compilation.C
+import lore.compiler.feedback.Error
 import lore.types._
 
 object TypeExpressionEvaluator {

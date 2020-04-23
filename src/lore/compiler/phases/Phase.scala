@@ -1,6 +1,6 @@
 package lore.compiler.phases
 
-import lore.compiler.C
+import lore.compiler.Compilation.C
 
 trait Phase[Result] {
   /**

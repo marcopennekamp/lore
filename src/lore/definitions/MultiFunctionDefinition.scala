@@ -2,7 +2,9 @@ package lore.definitions
 
 import lore.ast.{StmtNode, StmtVisitor, TopLevelExprNode, VerificationStmtVisitor}
 import lore.compiler.Compilation.Verification
-import lore.compiler.{Compilation, Error, Fragment, InputAbstractnessConstraint, Registry, TotalityConstraint}
+import lore.compiler.phases.verification.{InputAbstractnessConstraint, TotalityConstraint}
+import lore.compiler.{Compilation, Fragment, Registry}
+import lore.compiler.feedback.Error
 import lore.definitions.MultiFunctionDefinition.NoContinuationVisitor
 import lore.types.{Subtyping, Type}
 

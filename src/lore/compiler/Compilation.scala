@@ -1,5 +1,6 @@
 package lore.compiler
 
+import lore.compiler.feedback.{Feedback, InfoFeedback, Error}
 import shapeless.ops.hlist.{RightFolder, Tupler}
 import shapeless.syntax.std.tuple._
 import shapeless.{Generic, HList, HNil, LUBConstraint, Poly2}
@@ -100,6 +101,11 @@ object Compilation {
   def failInfo(errors: Error*)(infos: InfoFeedback*): Compilation[Nothing] = Errors(errors.toList, infos.toList)
   def succeed[A](a: A): Compilation[A] = Result(a, List.empty)
   def succeedInfo[A](a: A)(infos: InfoFeedback*): Compilation[A] = Result(a, infos.toList)
+
+  /**
+    * An abbreviation for Compilation[A].
+    */
+  type C[+A] = Compilation[A]
 
   /**
     * An abbreviation for Compilation[Unit]. A verification is an operation that returns nothing of note when

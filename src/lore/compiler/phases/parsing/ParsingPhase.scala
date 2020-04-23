@@ -1,10 +1,11 @@
-package lore.compiler.phases
+package lore.compiler.phases.parsing
 
+import lore.compiler.Compilation.C
 import lore.compiler.LoreCompiler.SourceFragment
-import lore.compiler.{C, Compilation, Fragment}
-import lore.parser.FragmentParser
+import lore.compiler.phases.Phase
+import lore.compiler.{Compilation, Fragment}
 
-class Phase1(sources: List[SourceFragment]) extends Phase[List[Fragment]] {
+class ParsingPhase(sources: List[SourceFragment]) extends Phase[List[Fragment]] {
   override lazy val result: C[List[Fragment]] = parseAll()
 
   /**

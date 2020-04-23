@@ -2,7 +2,7 @@ package lore.test.parser
 
 import fastparse.P
 import lore.ast._
-import lore.parser.FragmentParser
+import lore.compiler.phases.parsing.FragmentParser
 import lore.test.BaseSpec
 
 class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[DeclNode] {

@@ -2,7 +2,7 @@ package lore.test.parser
 
 import fastparse._
 import lore.ast._
-import lore.parser.StatementParser
+import lore.compiler.phases.parsing.StatementParser
 import lore.test.BaseSpec
 
 class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {

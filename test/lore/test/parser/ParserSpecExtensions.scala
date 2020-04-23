@@ -4,7 +4,7 @@ import fastparse._
 import lore.test.BaseSpec
 import org.scalatest.Assertion
 import ScalaWhitespace._
-import lore.parser.Space
+import lore.compiler.phases.parsing.Space
 
 trait ParserSpecExtensions[Node <: lore.ast.Node] { base: BaseSpec =>
   def parser[_: P]: P[Node]

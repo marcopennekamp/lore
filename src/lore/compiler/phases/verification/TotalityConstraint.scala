@@ -1,6 +1,8 @@
-package lore.compiler
+package lore.compiler.phases.verification
 
 import lore.compiler.Compilation.Verification
+import lore.compiler.Registry
+import lore.compiler.feedback.Error
 import lore.definitions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.types.{Subtyping, Type}
 

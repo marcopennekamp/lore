@@ -1,6 +1,7 @@
 package lore.definitions
 
-import lore.compiler.{C, Position}
+import lore.compiler.Compilation.C
+import lore.compiler.feedback.Position
 import lore.types.{Type, TypingDeferred}
 
 class ParameterDefinition(

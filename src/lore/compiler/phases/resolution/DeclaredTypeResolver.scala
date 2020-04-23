@@ -1,6 +1,9 @@
-package lore.compiler
+package lore.compiler.phases.resolution
 
 import lore.ast.TypeDeclNode
+import lore.compiler.Compilation.C
+import lore.compiler.{Compilation, Fragment, Registry, TypeExpressionEvaluator}
+import lore.compiler.feedback.Error
 import lore.definitions._
 import lore.types.{ClassType, LabelType, OwnedBy, Type}
 

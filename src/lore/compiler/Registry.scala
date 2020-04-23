@@ -1,6 +1,8 @@
 package lore.compiler
 
 import lore.ast.Node
+import lore.compiler.Compilation.C
+import lore.compiler.feedback.{Position, Error}
 import lore.definitions.{DeclaredTypeDefinition, MultiFunctionDefinition}
 import lore.types._
 

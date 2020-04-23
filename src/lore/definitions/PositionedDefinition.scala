@@ -1,6 +1,6 @@
 package lore.definitions
 
-import lore.compiler.Position
+import lore.compiler.feedback.Position
 
 trait PositionedDefinition {
   def position: Position

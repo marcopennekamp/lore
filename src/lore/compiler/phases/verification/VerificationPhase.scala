@@ -1,9 +1,10 @@
-package lore.compiler.phases
+package lore.compiler.phases.verification
 
 import lore.compiler.Compilation._
 import lore.compiler.Registry
+import lore.compiler.phases.Phase
 
-class Phase3()(implicit registry: Registry) extends Phase[Unit] {
+class VerificationPhase()(implicit registry: Registry) extends Phase[Unit] {
   override def result: Verification = {
     val withVerifiedConstraints = (
       // Verify declared type constraints.

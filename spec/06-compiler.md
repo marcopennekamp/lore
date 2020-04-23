@@ -30,7 +30,7 @@ Hence, starting off, the **initial representation** of Lore is text in the form 
 
 
 
-#### Phase 1: Parser
+#### Phase 1: Parsing
 
 Each fragment is **parsed** using fastparse into an AST representation. As of now, error reporting in this stage isn't good, as fastparse's error reporting is quite unwieldy out of the box. We will need to spend more time to make it usable.
 
@@ -74,9 +74,11 @@ The chief representation of the Lore program is now a set of **Definition** and 
 
 
 
-#### Phase 3: Types and Constraints
+#### Phase 3: Verification – Types and Constraints
 
 At first, this phase verifies specific **constraints** simultaneously:
+
+
 
 - Constraints for **classes and entities:** 
   1. Non-entity classes may not **extend** entities. 

@@ -1,7 +1,7 @@
 package lore.definitions
 
 import lore.ast.ExprNode
-import lore.compiler.Position
+import lore.compiler.feedback.Position
 import lore.types.{ProductType, Subtyping, Type}
 
 case class FunctionDefinition(

@@ -1,7 +1,10 @@
 package lore.compiler
 
+import lore.compiler.Compilation.C
 import lore.compiler.LoreCompiler.SourceFragment
-import lore.compiler.phases.{Phase1, Phase2, Phase3}
+import lore.compiler.phases.verification.VerificationPhase
+import lore.compiler.phases.parsing.ParsingPhase
+import lore.compiler.phases.resolution.ResolutionPhase
 
 /**
   * The compiler instance orchestrates compilation through all phases.
@@ -13,11 +16,11 @@ class LoreCompiler(val sources: List[SourceFragment]) {
   def compile(): C[Registry] = { // TODO: Registry isn't the actual return type. We need to figure that out later.
     for {
       // Phase 1: Parse source files into a list of fragments.
-      fragments <- new Phase1(sources).result
+      fragments <- new ParsingPhase(sources).result
       // Phase 2: Resolve declarations using DeclarationResolver and build the Registry.
-      registry <- new Phase2(fragments).result
+      registry <- new ResolutionPhase(fragments).result
       // Phase 3: Check constraints and ascribe types.
-      _ <- new Phase3()(registry).result
+      _ <- new VerificationPhase()(registry).result
     } yield registry
   }
 }

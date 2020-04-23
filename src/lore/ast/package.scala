@@ -1,7 +1,7 @@
 package lore
 
-import lore.compiler.{Fragment, Position}
-
+import lore.compiler.Fragment
+import lore.compiler.feedback.Position
 
 package object ast {
   type Index = Int
