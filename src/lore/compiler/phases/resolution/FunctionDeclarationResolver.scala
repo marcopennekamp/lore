@@ -10,7 +10,7 @@ object FunctionDeclarationResolver {
     (
       // We verify parameter types right away, because all types should have been declared at this point. Functions are
       // resolved after all type declarations.
-      node.parameters.map(resolveParameterNode).map(p => p.verifyType.map(_ => p)).simultaneous,
+      node.parameters.map(resolveParameterNode).map(p => p.verifyDeferredTyping.map(_ => p)).simultaneous,
       TypeExpressionEvaluator.evaluate(node.outputType),
     ).simultaneous.map { case (parameters, outputType) =>
       FunctionDefinition(node.name, parameters, outputType, node.body, node.position)

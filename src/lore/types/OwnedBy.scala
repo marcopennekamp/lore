@@ -8,4 +8,4 @@ import lore.compiler.Compilation.C
   * declare a type itself and has no bearing on the class type directly (for purposes of declaration resolution), it
   * can easily be deferred.
   */
-class OwnedBy(override val resolveType: () => C[Type]) extends TypingDeferred[Type]
+class OwnedBy(override val typeResolver: () => C[Type]) extends TypingDeferred[Type]

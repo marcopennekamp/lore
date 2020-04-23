@@ -13,7 +13,7 @@ sealed trait MemberDefinition[+T <: Type] extends PositionedDefinition with Typi
 }
 
 class PropertyDefinition(
-  override val name: String, override val resolveType: () => C[Type], override val isMutable: Boolean,
+  override val name: String, override val typeResolver: () => C[Type], override val isMutable: Boolean,
   override val position: Position,
 ) extends MemberDefinition[Type]
 
@@ -22,7 +22,7 @@ class PropertyDefinition(
   * @param overrides The component name of the superclass that this component overrides.
   */
 class ComponentDefinition(
-  override val name: String, override val resolveType: () => C[ClassType], val overrides: Option[String],
+  override val name: String, override val typeResolver: () => C[ClassType], val overrides: Option[String],
   override val position: Position,
 ) extends MemberDefinition[ClassType] {
   lazy val componentType: ComponentType = ComponentType(tpe)

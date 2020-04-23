@@ -6,7 +6,7 @@ import lore.types.{Type, TypingDeferred}
 
 class ParameterDefinition(
   val name: String,
-  override val resolveType: () => C[Type],
+  override val typeResolver: () => C[Type],
   override val position: Position,
 ) extends PositionedDefinition with TypingDeferred[Type] {
   override def toString = s"$name: $tpe"

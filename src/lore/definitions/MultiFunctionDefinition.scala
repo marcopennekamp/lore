@@ -44,9 +44,6 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
     }.simultaneous.map(_ => ())
   }
 
-
-
-
   /**
     * Verifies that the multi-function adheres to the input abstractness and totality constraints. Also verifies
     * that at no position in any function body may there be a continuation node.
