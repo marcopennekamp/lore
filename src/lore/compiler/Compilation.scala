@@ -120,6 +120,8 @@ object Compilation {
   type Verification = Compilation[Unit] // TODO: Or rather Compilation[Nothing]?
 
   object Verification {
+    def succeed: Verification = Compilation.succeed(())
+
     /**
       * Creates a verification result from the given error list. If the list is empty, the verification is assumed to
       * be successful. Otherwise, the verification fails with the given errors.

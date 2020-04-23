@@ -23,6 +23,13 @@ object MultiFunctionConstraints {
       s" satisfy the totality constraint. Please implement functions for the following input types: ${missing.mkString(", ")}."
   }
 
+  /**
+    * Verifies:
+    *   1. All functions have a unique signature.
+    *   2. No function body contains a continuation node.
+    *   3. The input abstractness constraint.
+    *   4. The totality constraint.
+    */
   def verify(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
     (
       verifyUnique(mf),
@@ -46,7 +53,7 @@ object MultiFunctionConstraints {
         // We have found a function with a duplicated signature!
         Compilation.fail(FunctionAlreadyExists(function))
       } else {
-        Compilation.succeed(())
+        Verification.succeed
       }
     }.simultaneous.verification
   }
@@ -65,7 +72,7 @@ object MultiFunctionConstraints {
     mf.functions.map { function =>
       implicit val fragment: Fragment = function.position.fragment
       function.body match {
-        case None => Compilation.succeed(())
+        case None => Verification.succeed
         case Some(expression) =>
           val visitor = new NoContinuationVisitor()
           StmtVisitor.visit(visitor)(expression)

@@ -52,7 +52,7 @@ class DeclarationResolver {
         dependencyGraph.addEdge(declaredNode.supertypeName.getOrElse("Any"), declaredNode.name)
     }
 
-    Compilation.succeed(())
+    Verification.succeed
   }
 
   private def addFunctionDeclaration(declaration: FragmentNode[DeclNode.FunctionNode]): Verification = {
@@ -60,7 +60,7 @@ class DeclarationResolver {
       case None => Some(List(declaration))
       case Some(functions) => Some(declaration :: functions)
     }
-    Compilation.succeed(())
+    Verification.succeed
   }
 
   /**
@@ -201,7 +201,7 @@ class DeclarationResolver {
         // Resolve deferred typings.
         registry.getTypeDefinitions.values.map {
           case definition: ClassDefinition => DeferredTypingResolver.resolveDeferredTypings(definition)
-          case _ => Compilation.succeed(()) // We do not have to verify any deferred typings for labels.
+          case _ => Verification.succeed // We do not have to verify any deferred typings for labels.
         }.toList.simultaneous,
         // Resolve and register functions.
         multiFunctionDeclarations.map { case (name, fragmentNodes) =>
