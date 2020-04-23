@@ -12,7 +12,7 @@ object Lore {
     import scala.jdk.CollectionConverters._
 
     val sourcePath = Path.of("examples", s"$name.lore")
-    val source = Files.lines(sourcePath).iterator().asScala.toList.filter(_.trim.nonEmpty).mkString("\n") + "\n"
+    val source = Files.lines(sourcePath).iterator().asScala.mkString("\n") + "\n"
     val compiler = new LoreCompiler(List(
       LoreCompiler.SourceFragment(name, source)
     ))
