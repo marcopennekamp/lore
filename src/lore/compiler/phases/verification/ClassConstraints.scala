@@ -11,50 +11,6 @@ import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
 
 object ClassConstraints {
-  case class ClassMayNotExtendEntity(definition: ClassDefinition) extends Error(definition) {
-    override def message = s"The class ${definition.name} extends an entity but is not an entity itself."
-  }
-
-  case class OwnedByMustBeSubtype(definition: ClassDefinition, ownedBy: Type, superOwnedBy: Type) extends Error(definition) {
-    override def message = s"The owned-by type $ownedBy of class ${definition.name} must be a subtype of the superclass's owned-by type $superOwnedBy."
-  }
-
-  case class ClassCannotOwnComponent(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {
-    override def message = s"The class ${definition.name} cannot own the component ${component.name} due to the component's owned-by restriction."
-  }
-
-  case class MemberAlreadyExistsInSuperclass(definition: ClassDefinition, member: MemberDefinition[Type]) extends Error(member) {
-    override def message = s"The member ${member.name} is already declared in a superclass of class ${definition.name}."
-  }
-
-  case class MemberDuplicateDeclaration(definition: ClassDefinition, member: MemberDefinition[Type]) extends Error(member) {
-    override def message = s"The member ${member.name} is already declared twice in the class ${definition.name}."
-  }
-
-  case class OverriddenComponentDoesNotExist(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {
-    val overriddenName: String = component.overrides.getOrElse(throw new RuntimeException("Compilation bug: component.overrides should exist."))
-    override def message: String = s"The component ${component.name} is supposed to override the component $overriddenName, " +
-      s"but $overriddenName is not a supertype component or has already been overridden."
-  }
-
-  case class ComponentMustSubtypeOverriddenComponent(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {
-    val overriddenName: String = component.overrides.getOrElse(throw new RuntimeException("Compilation bug: component.overrides should exist."))
-    override def message: String = s"The component ${component.name} is trying to override the component $overriddenName, " +
-      s"but ${component.name} is not a subtype of $overriddenName."
-  }
-
-  case class ConstructorMustEndInContinuation(definition: ClassDefinition, constructor: ConstructorDefinition) extends Error(constructor) {
-    override def message = s"The constructor ${constructor.name} of the class ${definition.name} should end in a continuation."
-  }
-
-  case class ContinuationCallsAreCyclic(definition: ClassDefinition) extends Error(definition) {
-    override def message = s"Constructor calls within the class ${definition.name} are cyclic."
-  }
-
-  case class ContinuationsMustEndInConstruct(definition: ClassDefinition, constructor: ConstructorDefinition) extends Error(constructor) {
-    override def message = s"The ${definition.name} construction chain starting with the constructor ${constructor.name} must end in a construct call, but doesn't."
-  }
-
   /**
     * Verifies:
     *   1. Non-entity classes may not extend entities.
@@ -77,6 +33,10 @@ object ClassConstraints {
     ).simultaneous.verification
   }
 
+  case class ClassMayNotExtendEntity(definition: ClassDefinition) extends Error(definition) {
+    override def message = s"The class ${definition.name} extends an entity but is not an entity itself."
+  }
+
   /**
     * Verifies that the given class does not extend an entity if it is itself not an entity.
     */
@@ -85,6 +45,10 @@ object ClassConstraints {
     if (!definition.isEntity && definition.supertypeDefinition.exists(_.isEntity)) {
       Compilation.fail(ClassMayNotExtendEntity(definition))
     } else Verification.succeed
+  }
+
+  case class OwnedByMustBeSubtype(definition: ClassDefinition, ownedBy: Type, superOwnedBy: Type) extends Error(definition) {
+    override def message = s"The owned-by type $ownedBy of class ${definition.name} must be a subtype of the superclass's owned-by type $superOwnedBy."
   }
 
   /**
@@ -103,6 +67,14 @@ object ClassConstraints {
     if (!Subtyping.isSubtype(ownedBy, superOwnedBy)) {
       Compilation.fail(OwnedByMustBeSubtype(definition, ownedBy, superOwnedBy))
     } else Verification.succeed
+  }
+
+  case class MemberAlreadyExistsInSuperclass(definition: ClassDefinition, member: MemberDefinition[Type]) extends Error(member) {
+    override def message = s"The member ${member.name} is already declared in a superclass of class ${definition.name}."
+  }
+
+  case class MemberDuplicateDeclaration(definition: ClassDefinition, member: MemberDefinition[Type]) extends Error(member) {
+    override def message = s"The member ${member.name} is already declared twice in the class ${definition.name}."
   }
 
   /**
@@ -126,6 +98,10 @@ object ClassConstraints {
     }.simultaneous.verification
   }
 
+  case class ClassCannotOwnComponent(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {
+    override def message = s"The class ${definition.name} cannot own the component ${component.name} due to the component's owned-by restriction."
+  }
+
   /**
     * Verifies that the given class can in fact own the given component. (In principle, with the information
     * available at compile-time.)
@@ -135,6 +111,18 @@ object ClassConstraints {
     if (!Subtyping.isSubtype(definition.tpe, ownershipType)) {
       Compilation.fail(ClassCannotOwnComponent(definition, component))
     } else Verification.succeed
+  }
+
+  case class OverriddenComponentDoesNotExist(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {
+    val overriddenName: String = component.overrides.getOrElse(throw new RuntimeException("Compilation bug: component.overrides should exist."))
+    override def message: String = s"The component ${component.name} is supposed to override the component $overriddenName, " +
+      s"but $overriddenName is not a supertype component or has already been overridden."
+  }
+
+  case class ComponentMustSubtypeOverriddenComponent(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {
+    val overriddenName: String = component.overrides.getOrElse(throw new RuntimeException("Compilation bug: component.overrides should exist."))
+    override def message: String = s"The component ${component.name} is trying to override the component $overriddenName, " +
+      s"but ${component.name} is not a subtype of $overriddenName."
   }
 
   /**
@@ -157,6 +145,18 @@ object ClassConstraints {
 
       (exists, subtypes).simultaneous
     }.toCompiledOption.verification
+  }
+
+  case class ConstructorMustEndInContinuation(definition: ClassDefinition, constructor: ConstructorDefinition) extends Error(constructor) {
+    override def message = s"The constructor ${constructor.name} of the class ${definition.name} should end in a continuation."
+  }
+
+  case class ContinuationCallsAreCyclic(definition: ClassDefinition) extends Error(definition) {
+    override def message = s"Constructor calls within the class ${definition.name} are cyclic."
+  }
+
+  case class ContinuationsMustEndInConstruct(definition: ClassDefinition, constructor: ConstructorDefinition) extends Error(constructor) {
+    override def message = s"The ${definition.name} construction chain starting with the constructor ${constructor.name} must end in a construct call, but doesn't."
   }
 
   /**
