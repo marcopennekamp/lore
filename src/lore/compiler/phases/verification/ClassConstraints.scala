@@ -3,7 +3,7 @@ package lore.compiler.phases.verification
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
 import lore.compiler.{Compilation, Registry}
-import lore.definitions.{ClassDefinition, ComponentDefinition, MemberDefinition}
+import lore.definitions.{ClassDefinition, ComponentDefinition, ConstructorDefinition, MemberDefinition}
 import lore.types.{AnyType, Subtyping, Type}
 
 object ClassConstraints {
@@ -30,7 +30,7 @@ object ClassConstraints {
   case class OverriddenComponentDoesNotExist(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {
     val overriddenName: String = component.overrides.getOrElse(throw new RuntimeException("Compilation bug: component.overrides should exist."))
     override def message: String = s"The component ${component.name} is supposed to override the component $overriddenName, " +
-      s"but it does not exist in any of ${definition.name}'s supertypes."
+      s"but $overriddenName is not a supertype component or has already been overridden."
   }
 
   case class ComponentMustSubtypeOverriddenComponent(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {
@@ -66,7 +66,6 @@ object ClassConstraints {
     * Verifies that the given class does not extend an entity if it is itself not an entity.
     */
   def verifyEntityInheritance(definition: ClassDefinition): Verification = {
-    println(definition.name + " " + definition.isEntity + " " + definition.supertypeDefinition.exists(_.isEntity))
     // If the definition is not an entity, its supertype may not be an entity.
     if (!definition.isEntity && definition.supertypeDefinition.exists(_.isEntity)) {
       Compilation.fail(ClassMayNotExtendEntity(definition))

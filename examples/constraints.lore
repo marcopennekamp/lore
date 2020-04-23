@@ -46,3 +46,16 @@ entity O2 extends O {
   // Illegal: The type I doesn't exist.
   component H2 overrides I
 }
+
+entity P {
+  component G
+}
+
+entity P2 extends P {
+  component H overrides G
+}
+
+entity P3 extends P2 {
+  // Illegal: Component G has already been overridden!
+  component H2 overrides G
+}
