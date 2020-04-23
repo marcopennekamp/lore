@@ -1,7 +1,6 @@
 package lore.compiler.phases.verification
 
-import lore.ast.visitor.{StmtVisitor, VerificationStmtVisitor}
-import lore.ast.{StmtNode, TopLevelExprNode}
+import lore.ast.visitor.StmtVisitor
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
 import lore.compiler.{Compilation, Fragment, Registry}
@@ -58,13 +57,6 @@ object MultiFunctionConstraints {
     }.simultaneous.verification
   }
 
-  class NoContinuationVisitor()(implicit fragment: Fragment) extends VerificationStmtVisitor {
-    override def visitXary: PartialFunction[(StmtNode, List[Compilation[Unit]]), Compilation[Unit]] = {
-      case (node: TopLevelExprNode.ContinuationNode, _) => Compilation.fail(Error.IllegalContinuation(node))
-      case args => super.visitXary(args)
-    }
-  }
-
   /**
     * Verifies that none of the functions contain a continuation node in their bodies.
     */
@@ -73,9 +65,7 @@ object MultiFunctionConstraints {
       implicit val fragment: Fragment = function.position.fragment
       function.body match {
         case None => Verification.succeed
-        case Some(expression) =>
-          val visitor = new NoContinuationVisitor()
-          StmtVisitor.visit(visitor)(expression)
+        case Some(expression) => StmtVisitor.visit(new NoContinuationVisitor())(expression)
       }
     }.simultaneous.verification
   }

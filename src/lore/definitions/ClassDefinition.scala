@@ -11,21 +11,24 @@ import lore.utils.CollectionExtensions._
   * The definition of both a class and an entity.
   *
   * @param localMembers The members declared within this class/entity. Does not include supertype properties.
+  * @param definedConstructors The constructors explicitly declared within this class/entity. Does not include the default constructor.
   */
 class ClassDefinition(
   override val name: String,
   override val tpe: ClassType,
   val isEntity: Boolean,
   val localMembers: List[MemberDefinition[Type]],
-  val constructors: List[ConstructorDefinition],
+  definedConstructors: List[ConstructorDefinition],
   override val position: Position,
 ) extends DeclaredTypeDefinition {
+  // TODO: We might be able to remove some of the lazy qualifiers.
+
   override def supertypeDefinition: Option[ClassDefinition] = tpe.supertype.map(_.definition)
 
   /**
     * A map of overridden names pointing to the names of their overriding components.
     */
-  private lazy val overriddenToOverrider: Map[String, String] = localComponents.flatMap(m => m.overrides.map(_ -> m.name)).toMap
+  private val overriddenToOverrider: Map[String, String] = localComponents.flatMap(m => m.overrides.map(_ -> m.name)).toMap
 
   /**
     * The list of all members belonging to this class, including superclass members. This list EXCLUDES overridden
@@ -58,6 +61,11 @@ class ClassDefinition(
   lazy val components: List[ComponentDefinition] = members.filterType[ComponentDefinition]
 
   /**
+    * The list of all constructors, including the default constructor.
+    */
+  lazy val constructors: List[ConstructorDefinition] = defaultConstructor :: definedConstructors.filterNot(_.name == this.name)
+
+  /**
     * The signature of the local construct function. This does not include any arguments to be passed to the
     * super type.
     */
@@ -71,7 +79,7 @@ class ClassDefinition(
     */
   lazy val defaultConstructor: ConstructorDefinition = {
     // Try to find a defined default constructor at first. If none can be found, we generate our own.
-    constructors.find(_.name == this.name) match {
+    definedConstructors.find(_.name == this.name) match {
       case Some(constructor) => constructor
       case None =>
         // The parameters are all members as known by this class. Overridden components aren't part of the member list

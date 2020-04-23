@@ -28,6 +28,8 @@ entity Y extends E {
   component B
 }
 
+
+
 class G
 class H extends G
 class H2 extends G
@@ -47,6 +49,8 @@ entity O2 extends O {
   component H2 overrides I
 }
 
+
+
 entity P {
   component G
 }
@@ -58,4 +62,23 @@ entity P2 extends P {
 entity P3 extends P2 {
   // Illegal: Component G has already been overridden!
   component H2 overrides G
+}
+
+
+
+entity Cyclic {
+  a: A
+  b: B
+
+  foo(a: A) {
+    this.bar(a)
+  }
+
+  bar(a: A) {
+    this.foo(a)
+  }
+
+  baz(a: A) {
+    this(a, B())
+  }
 }
