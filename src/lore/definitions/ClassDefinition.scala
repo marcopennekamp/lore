@@ -12,6 +12,7 @@ import lore.utils.CollectionExtensions._
 class ClassDefinition(
   override val name: String,
   override val tpe: ClassType,
+  val isEntity: Boolean,
   val localMembers: List[MemberDefinition[Type]],
   val constructors: List[ConstructorDefinition],
   override val position: Position,
@@ -42,9 +43,4 @@ class ClassDefinition(
     * The list of all components belonging to this class, including superclass components.
     */
   lazy val components: List[ComponentDefinition] = members.filterType[ComponentDefinition]
-
-  /**
-    * Whether this class is an entity.
-    */
-  def isEntity: Boolean = components.nonEmpty
 }

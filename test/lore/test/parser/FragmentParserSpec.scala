@@ -110,7 +110,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[DeclNode] {
     |    }
     |  }
     """.stripMargin --> ClassNode(
-      "Position", None, None, isAbstract = false,
+      "Position", None, None, isAbstract = false, isEntity = false,
       List(
         PropertyNode("x", tReal, isMutable = false),
         PropertyNode("y", tReal, isMutable = false),

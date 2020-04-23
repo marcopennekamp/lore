@@ -67,9 +67,9 @@ object FragmentParser {
   private def entity[_: P]: P[TypeDeclNode.ClassNode] = P(dataType("entity", property | component))
 
   private def dataType[_: P](kind: => P[Unit], member: => P[TypeDeclNode.MemberNode]): P[TypeDeclNode.ClassNode] = {
-    P("abstract".?.! ~ kind ~/ identifier ~ `extends` ~ ownedBy ~ classBody(member)).map {
-      case (abstractKeyword, name, supertypeName, ownedBy, (properties, constructors)) =>
-        TypeDeclNode.ClassNode(name, supertypeName, ownedBy, abstractKeyword == "abstract", properties, constructors)
+    P("abstract".?.! ~ kind.! ~/ identifier ~ `extends` ~ ownedBy ~ classBody(member)).map {
+      case (abstractKeyword, kind, name, supertypeName, ownedBy, (properties, constructors)) =>
+        TypeDeclNode.ClassNode(name, supertypeName, ownedBy, abstractKeyword == "abstract", kind == "entity", properties, constructors)
     }
   }
   private def classBody[Member, _: P](member: => P[Member]): P[(List[Member], List[TypeDeclNode.ConstructorNode])] = {

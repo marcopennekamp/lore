@@ -47,8 +47,8 @@ object TypeDeclNode {
     * Either a class or an entity depending on whether members contains a component.
     */
   case class ClassNode(
-    override val name: String, override val supertypeName: Option[String], ownedBy: Option[TypeExprNode], isAbstract: Boolean,
-    members: List[MemberNode], constructors: List[ConstructorNode],
+    override val name: String, override val supertypeName: Option[String], ownedBy: Option[TypeExprNode],
+    isAbstract: Boolean, isEntity: Boolean, members: List[MemberNode], constructors: List[ConstructorNode],
   ) extends DeclaredNode
 
   sealed trait MemberNode extends Node

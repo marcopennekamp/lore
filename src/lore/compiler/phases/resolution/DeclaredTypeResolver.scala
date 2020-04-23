@@ -45,7 +45,7 @@ object DeclaredTypeResolver {
       val constructors = node.constructors.map(FunctionDeclarationResolver.resolveConstructorNode)
       val ownedBy = node.ownedBy.map(ob => new OwnedBy(() => TypeExpressionEvaluator.evaluate(ob)))
       val tpe = new ClassType(supertype.asInstanceOf[Option[ClassType]], ownedBy, node.isAbstract)
-      val definition = new ClassDefinition(node.name, tpe, members, constructors, node.position)
+      val definition = new ClassDefinition(node.name, tpe, node.isEntity, members, constructors, node.position)
       tpe.initialize(definition)
       definition
     }
