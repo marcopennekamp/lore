@@ -3,7 +3,7 @@ package lore.compiler.phases.verification
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
 import lore.compiler.{Compilation, Registry}
-import lore.definitions.ClassDefinition
+import lore.definitions.{ClassDefinition, ComponentDefinition}
 import lore.types.{AnyType, Subtyping, Type}
 
 object ClassConstraints {
@@ -13,6 +13,10 @@ object ClassConstraints {
 
   case class OwnedByMustBeSubtype(definition: ClassDefinition, ownedBy: Type, superOwnedBy: Type) extends Error(definition) {
     override def message = s"The owned-by type $ownedBy of class ${definition.name} must be a subtype of the superclass's owned-by type $superOwnedBy."
+  }
+
+  case class ClassCannotOwnComponent(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {
+    override def message = s"The class ${definition.name} cannot own the component ${component.name} due to the component's owned-by restriction."
   }
 
   /**
@@ -28,6 +32,7 @@ object ClassConstraints {
     (
       verifyEntityInheritance(definition),
       verifyOwnedBy(definition),
+      definition.localComponents.map(verifyCanOwn(definition, _)).simultaneous,
     ).simultaneous.verification
   }
 
@@ -56,6 +61,17 @@ object ClassConstraints {
     // Now we just have to check whether the owned-by type is actually a subtype.
     if (!Subtyping.isSubtype(ownedBy, superOwnedBy)) {
       Compilation.fail(OwnedByMustBeSubtype(definition, ownedBy, superOwnedBy))
+    } else Verification.succeed
+  }
+
+  /**
+    * Verifies that the given class can in fact own the given component. (In principle, with the information
+    * available at compile-time.)
+    */
+  def verifyCanOwn(definition: ClassDefinition, component: ComponentDefinition): Verification = {
+    val ownershipType = component.tpe.ownedBy.map(_.tpe).getOrElse(AnyType)
+    if (!Subtyping.isSubtype(definition.tpe, ownershipType)) {
+      Compilation.fail(ClassCannotOwnComponent(definition, component))
     } else Verification.succeed
   }
 }

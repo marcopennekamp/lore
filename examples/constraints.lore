@@ -1,0 +1,26 @@
+/**
+ * This lore file will result in a lot of errors, as we attempt to violate all the class constraints.
+ */
+
+class A
+class B
+
+class C1 owned by +A
+
+// Illegal: C2 may not extends C1 since B is not a subtype of A.
+class C2 extends C1 owned by +B
+
+entity E {
+  component B
+  // Illegal: E may not own C1 since it doesn't have a component A.
+  component C1
+  component C2
+}
+
+// Illegal: X may not extend E as X is only a class and E is an entity.
+class X extends E
+
+entity Y extends E {
+  // However, since Y has a component A, C1 is now a valid component!
+  component A
+}
