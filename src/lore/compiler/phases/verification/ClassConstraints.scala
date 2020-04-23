@@ -27,6 +27,18 @@ object ClassConstraints {
     override def message = s"The member ${member.name} is already declared twice in the class ${definition.name}."
   }
 
+  case class OverriddenComponentDoesNotExist(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {
+    val overriddenName: String = component.overrides.getOrElse(throw new RuntimeException("Compilation bug: component.overrides should exist."))
+    override def message: String = s"The component ${component.name} is supposed to override the component $overriddenName, " +
+      s"but it does not exist in any of ${definition.name}'s supertypes."
+  }
+
+  case class ComponentMustSubtypeOverriddenComponent(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {
+    val overriddenName: String = component.overrides.getOrElse(throw new RuntimeException("Compilation bug: component.overrides should exist."))
+    override def message: String = s"The component ${component.name} is trying to override the component $overriddenName, " +
+      s"but ${component.name} is not a subtype of $overriddenName."
+  }
+
   /**
     * Verifies:
     *   1. Non-entity classes may not extend entities.
@@ -36,6 +48,7 @@ object ClassConstraints {
     *   4. If a component member has an ownedBy type, we verify that the component can be in fact owned by this entity.
     *   5. Each component overriding another component must be a subtype of the overridden component.
     *   6. Each constructor must end with a continuation node and may not have such a node in any other place.
+    *   7. Continuations must be acyclic and must result in a construct continuation.
     */
   def verify(definition: ClassDefinition)(implicit registry: Registry): Verification = {
     (
@@ -43,6 +56,9 @@ object ClassConstraints {
       verifyOwnedBy(definition),
       verifyMembersUnique(definition),
       definition.localComponents.map(verifyCanOwn(definition, _)).simultaneous,
+      definition.localComponents.map(verifyOverrides(definition, _)).simultaneous,
+      // TODO: Constraint 6.
+      // TODO: Constraint 7.
     ).simultaneous.verification
   }
 
@@ -92,7 +108,7 @@ object ClassConstraints {
         if (definition.localMembers.filterNot(_ == member).map(_.name).contains(member.name)) {
           Compilation.fail(MemberDuplicateDeclaration(definition, member))
         } else Verification.succeed,
-        ).simultaneous
+      ).simultaneous
     }.simultaneous.verification
   }
 
@@ -105,5 +121,27 @@ object ClassConstraints {
     if (!Subtyping.isSubtype(definition.tpe, ownershipType)) {
       Compilation.fail(ClassCannotOwnComponent(definition, component))
     } else Verification.succeed
+  }
+
+  /**
+    * Verifies that a component C2 overriding a component C1 is a subtype of C1. Also ensures that C1 even exists.
+    */
+  def verifyOverrides(definition: ClassDefinition, component: ComponentDefinition)(implicit registry: Registry): Verification = {
+    component.overrides.map { overriddenName =>
+      // Verify that the overridden component even exists.
+      val superComponentNames = definition.supertypeDefinition.map(_.components.map(_.name)).getOrElse(List.empty)
+      val exists = if (!superComponentNames.contains(overriddenName)) {
+        Compilation.fail(OverriddenComponentDoesNotExist(definition, component))
+      } else Verification.succeed
+
+      // Verify that the overriding component is a subtype of the overridden component.
+      val subtypes = registry.resolveType(overriddenName, component.position).flatMap { overriddenType =>
+        if (!Subtyping.isSubtype(component.tpe, overriddenType)) {
+          Compilation.fail(ComponentMustSubtypeOverriddenComponent(definition, component))
+        } else Verification.succeed
+      }
+
+      (exists, subtypes).simultaneous
+    }.toCompiledOption.verification
   }
 }

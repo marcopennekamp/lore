@@ -58,13 +58,22 @@ class Registry {
   /**
     * Gets a named type with the given name. If the type cannot be found, the operation fails with a compilation error.
     *
+    * @param position The position where the type name occurs, to be used for error building.
+    */
+  def resolveType(name: String, position: Position): C[Type] = {
+    getType(name) match {
+      case None => Compilation.fail(Error.TypeNotFound(name, position))
+      case Some(tpe) => Compilation.succeed(tpe)
+    }
+  }
+
+  /**
+    * Gets a named type with the given name. If the type cannot be found, the operation fails with a compilation error.
+    *
     * @param associatedNode The node where the type name occurs, to be used for error building.
     */
   def resolveType(name: String, associatedNode: Node)(implicit fragment: Fragment): C[Type] = {
-    getType(name) match {
-      case None => Compilation.fail(Error.TypeNotFound(name, associatedNode))
-      case Some(tpe) => Compilation.succeed(tpe)
-    }
+    resolveType(name, associatedNode.position)
   }
 
   /**

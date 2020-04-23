@@ -65,7 +65,7 @@ object Error {
     override def message = s"The function $name does not exist in the current scope."
   }
 
-  case class TypeNotFound(name: String, node: Node)(implicit fragment: Fragment) extends Error(node) {
+  case class TypeNotFound(name: String, pos: Position) extends Error(pos) {
     override def message = s"The type $name does not exist in the current scope."
   }
 
