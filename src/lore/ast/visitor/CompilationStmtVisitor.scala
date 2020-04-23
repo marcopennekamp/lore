@@ -1,5 +1,6 @@
-package lore.ast
+package lore.ast.visitor
 
+import lore.ast.{ExprNode, StmtNode}
 import lore.compiler.Compilation
 
 /**

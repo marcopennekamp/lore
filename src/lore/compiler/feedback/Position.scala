@@ -1,6 +1,6 @@
 package lore.compiler.feedback
 
-import lore.ast.Index
+import lore.ast.Node.Index
 import lore.compiler.Fragment
 
 /**

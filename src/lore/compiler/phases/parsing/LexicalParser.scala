@@ -8,6 +8,8 @@ import lore.ast._
   * Lexical objects are sensitive to whitespace, so we define them in this separate object.
   */
 object LexicalParser {
+  import Node.withIndex
+
   // Taken from Li Haoyi's pythonparse. This is nifty. Thanks!
   def negatable[T, _: P](p: => P[T])(implicit ev: Numeric[T]): P[T] = (("+" | "-").?.! ~ p).map {
     case ("-", i) => ev.negate(i)

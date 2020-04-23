@@ -1,4 +1,6 @@
-package lore.ast
+package lore.ast.visitor
+
+import lore.ast.{ExprNode, StmtNode, TopLevelExprNode}
 
 trait StmtVisitor[A] {
   /**

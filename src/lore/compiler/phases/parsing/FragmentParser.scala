@@ -12,6 +12,7 @@ import lore.compiler.LoreCompiler.SourceFragment
   */
 object FragmentParser {
   import LexicalParser.identifier
+  import Node.withIndex
   import StatementParser.{block, expression}
   import TypeParser.typeExpression
 

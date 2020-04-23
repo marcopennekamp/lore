@@ -6,6 +6,7 @@ import lore.ast._
 
 object TypeParser {
   import LexicalParser.identifier
+  import Node.withIndex
 
   def typing[_: P]: P[TypeExprNode] = P(":" ~ typeExpression)
 

@@ -1,22 +1,25 @@
-package lore
+package lore.ast
 
+import lore.ast.Node.Index
 import lore.compiler.Fragment
 import lore.compiler.feedback.Position
 
-package object ast {
+trait Node {
+  /**
+    * The start index of the current node in the original source code.
+    */
+  var index: Index = 0
+
+  /**
+    * Creates a fragment position from the node's index and the given fragment.
+    */
+  def position(implicit fragment: Fragment): Position = Position(fragment, index)
+}
+
+object Node {
   type Index = Int
 
-  trait Node {
-    /**
-      * The start index of the current node in the original source code.
-      */
-    var index: Index = 0
-
-    /**
-      * Creates a fragment position from the node's index and the given fragment.
-      */
-    def position(implicit fragment: Fragment): Position = Position(fragment, index)
-  }
+  // TODO: Reimplement withIndex using shapeless.
 
   private def withIndexImpl[T, R <: Node](construct: T => R, index: Index, t: T): R = {
     val node = construct(t)

@@ -1,4 +1,4 @@
-package lore.ast
+package lore.ast.visitor
 
 /**
   * A compilation statement visitor that implements empty and combine for verifications (which is trivial).

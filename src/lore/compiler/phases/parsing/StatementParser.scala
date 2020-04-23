@@ -6,6 +6,7 @@ import lore.ast._
 
 object StatementParser {
   import LexicalParser.identifier
+  import Node.withIndex
 
   // There is only one "true" statement: return.
   def statement[_: P]: P[StmtNode] = P(returnStatement | topLevelExpression)

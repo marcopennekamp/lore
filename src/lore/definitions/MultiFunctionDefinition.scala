@@ -1,6 +1,7 @@
 package lore.definitions
 
-import lore.ast.{StmtNode, StmtVisitor, TopLevelExprNode, VerificationStmtVisitor}
+import lore.ast.visitor.{StmtVisitor, VerificationStmtVisitor}
+import lore.ast.{StmtNode, TopLevelExprNode}
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
 import lore.compiler.phases.verification.{InputAbstractnessConstraint, TotalityConstraint}
