@@ -2,8 +2,8 @@ package lore.compiler.phases.resolution
 
 import lore.ast.{DeclNode, TypeDeclNode}
 import lore.compiler.Compilation.{C, Verification}
-import lore.compiler.{Compilation, Fragment, Registry, TypeExpressionEvaluator}
 import lore.compiler.feedback.Error
+import lore.compiler.{Compilation, Fragment, Registry, TypeExpressionEvaluator}
 import lore.definitions.MultiFunctionDefinition
 import lore.types.Type
 import scalax.collection.GraphEdge._

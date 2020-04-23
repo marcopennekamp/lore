@@ -2,9 +2,9 @@ package lore.compiler
 
 import lore.compiler.Compilation.C
 import lore.compiler.LoreCompiler.SourceFragment
-import lore.compiler.phases.verification.VerificationPhase
 import lore.compiler.phases.parsing.ParsingPhase
 import lore.compiler.phases.resolution.ResolutionPhase
+import lore.compiler.phases.verification.VerificationPhase
 
 /**
   * The compiler instance orchestrates compilation through all phases.

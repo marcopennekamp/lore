@@ -1,8 +1,8 @@
 package lore.compiler.feedback
 
 import lore.ast._
-import lore.compiler.phases.resolution.FragmentNode
 import lore.compiler.Fragment
+import lore.compiler.phases.resolution.FragmentNode
 import lore.definitions.{FunctionDefinition, PositionedDefinition}
 
 /**
