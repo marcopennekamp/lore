@@ -2,6 +2,7 @@ package lore.definitions
 
 import lore.compiler.feedback.Position
 import lore.types.{ClassType, Type}
+import lore.utils.CollectionExtensions._
 
 /**
   * The definition of both a class and an entity.
@@ -23,14 +24,24 @@ class ClassDefinition(
   lazy val members: List[MemberDefinition[Type]] = supertypeDefinition.map(_.members).getOrElse(List.empty) ++ localMembers
 
   /**
+    * The list of all properties belonging to this class, excluding superclass components.
+    */
+  lazy val localProperties: List[PropertyDefinition] = localMembers.filterType[PropertyDefinition]
+
+  /**
     * The list of all properties belonging to this class, including superclass properties.
     */
-  lazy val properties: List[PropertyDefinition] = members.flatMap { case property: PropertyDefinition => Some(property); case _ => None }
+  lazy val properties: List[PropertyDefinition] = members.filterType[PropertyDefinition]
+
+  /**
+    * The list of all components belonging to this class, excluding superclass components.
+    */
+  lazy val localComponents: List[ComponentDefinition] = localMembers.filterType[ComponentDefinition]
 
   /**
     * The list of all components belonging to this class, including superclass components.
     */
-  lazy val components: List[ComponentDefinition] = members.flatMap { case component: ComponentDefinition => Some(component); case _ => None }
+  lazy val components: List[ComponentDefinition] = members.filterType[ComponentDefinition]
 
   /**
     * Whether this class is an entity.
