@@ -10,6 +10,7 @@ import lore.types.{ClassType, ComponentType, Type, TypingDeferred}
 sealed trait MemberDefinition[+T <: Type] extends PositionedDefinition with TypingDeferred[T] {
   def name: String
   def isMutable: Boolean = false
+  def asParameter: ParameterDefinition = new ParameterDefinition(name, typeResolver, position)
 }
 
 class PropertyDefinition(
