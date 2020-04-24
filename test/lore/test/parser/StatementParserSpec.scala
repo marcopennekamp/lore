@@ -25,11 +25,11 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     ))
     "'$myLongVariable'" --> VariableNode("myLongVariable")
     "'${x}'" --> vx
-    "'\\${quite}$some\\$confusion in ${this} town'" --> ConcatenationNode(List(
+    "'\\${quite}$some\\$confusion in ${that} town'" --> ConcatenationNode(List(
       StringLiteralNode("${quite}"),
       VariableNode("some"),
       StringLiteralNode("$confusion in "),
-      VariableNode("this"),
+      VariableNode("that"),
       StringLiteralNode(" town"),
     ))
     val apples = "'${p.name}, you have $k apples. Please claim your ${if (k < 10) 'free' else '1000\\$'} apple at the reception.'"
