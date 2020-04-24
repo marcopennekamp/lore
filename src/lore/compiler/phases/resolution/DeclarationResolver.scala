@@ -45,9 +45,6 @@ class DeclarationResolver {
       case aliasNode: TypeDeclNode.AliasNode =>
         typeDeclarations.put(aliasNode.name, declaration)
         aliasDeclarations = declaration.asInstanceOf[FragmentNode[TypeDeclNode.AliasNode]] :: aliasDeclarations
-        // TODO: Disallow cycles for alias types. (For now.)
-        //       Actually, if we define an alias type like `type A = B | A`, there will already be an error:
-        //       Type not found "A". So we might not actually need to change anything.
       case declaredNode: TypeDeclNode.DeclaredNode => // Covers labels and classes.
         typeDeclarations.put(declaredNode.name, declaration)
         dependencyGraph.addEdge(declaredNode.supertypeName.getOrElse("Any"), declaredNode.name)
@@ -187,6 +184,9 @@ class DeclarationResolver {
     }.simultaneous
 
     // Now that all declared types have been resolved, we can resolve alias types.
+    // Note that this implicitly disallows cyclically defined alias types (which is the correct behavior). For example,
+    // if we define an alias type like `type A = B | A`, there will already be an error: Type not found "A". Hence,
+    // there is no reason to manually disallow self-references.
     val withResolvedAliasTypes = withRegisteredDefinitions.flatMap { _ =>
       aliasDeclarations.map { case FragmentNode(node, _fragment) =>
         implicit val fragment: Fragment = _fragment

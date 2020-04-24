@@ -191,7 +191,7 @@ Lore supports simple **type aliases** which allow you to assign a name to an arb
 type X = A | B | C
 ```
 
-This is simply a convenient way to assign types to a name.
+This is simply a convenient way to assign types to a name. Type aliases **cannot self-reference**.
 
 
 

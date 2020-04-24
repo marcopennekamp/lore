@@ -21,9 +21,20 @@ class ClassDefinition(
   definedConstructors: List[ConstructorDefinition],
   override val position: Position,
 ) extends DeclaredTypeDefinition {
-  // TODO: We might be able to remove some of the lazy qualifiers.
+  // Many of the members here are declared as vals. This is only possible because definitions are created according
+  // to the inheritance hierarchy.
 
-  override def supertypeDefinition: Option[ClassDefinition] = tpe.supertype.map(_.definition)
+  override val supertypeDefinition: Option[ClassDefinition] = tpe.supertype.map(_.definition)
+
+  /**
+    * The list of all properties belonging to this class, excluding superclass components.
+    */
+  val localProperties: List[PropertyDefinition] = localMembers.filterType[PropertyDefinition]
+
+  /**
+    * The list of all components belonging to this class, excluding superclass components.
+    */
+  val localComponents: List[ComponentDefinition] = localMembers.filterType[ComponentDefinition]
 
   /**
     * A map of overridden names pointing to the names of their overriding components.
@@ -34,36 +45,26 @@ class ClassDefinition(
     * The list of all members belonging to this class, including superclass members. This list EXCLUDES overridden
     * components defined in superclasses.
     */
-  lazy val members: List[MemberDefinition[Type]] = {
+  val members: List[MemberDefinition[Type]] = {
     val all = supertypeDefinition.map(_.members).getOrElse(List.empty) ++ localMembers
     // Exclude overridden components.
     all.filterNot(m => overriddenToOverrider.contains(m.name))
   }
 
   /**
-    * The list of all properties belonging to this class, excluding superclass components.
-    */
-  lazy val localProperties: List[PropertyDefinition] = localMembers.filterType[PropertyDefinition]
-
-  /**
     * The list of all properties belonging to this class, including superclass properties.
     */
-  lazy val properties: List[PropertyDefinition] = members.filterType[PropertyDefinition]
-
-  /**
-    * The list of all components belonging to this class, excluding superclass components.
-    */
-  lazy val localComponents: List[ComponentDefinition] = localMembers.filterType[ComponentDefinition]
+  val properties: List[PropertyDefinition] = members.filterType[PropertyDefinition]
 
   /**
     * The list of all components belonging to this class, including superclass components.
     */
-  lazy val components: List[ComponentDefinition] = members.filterType[ComponentDefinition]
+  val components: List[ComponentDefinition] = members.filterType[ComponentDefinition]
 
   /**
     * The list of all constructors, including the default constructor.
     */
-  lazy val constructors: List[ConstructorDefinition] = defaultConstructor :: definedConstructors.filterNot(_.name == this.name)
+  val constructors: List[ConstructorDefinition] = defaultConstructor :: definedConstructors.filterNot(_.name == this.name)
 
   /**
     * The signature of the local construct function. This does not include any arguments to be passed to the
