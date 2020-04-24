@@ -3,6 +3,7 @@ package lore.compiler.phases.resolution
 import lore.ast.{DeclNode, TypeDeclNode}
 import lore.compiler.Compilation.{C, Verification}
 import lore.compiler.feedback.Error
+import lore.compiler.phases.resolution.DeclarationResolver.{InheritanceCycle, TypeAlreadyExists}
 import lore.compiler.{Compilation, Fragment, Registry, TypeExpressionEvaluator}
 import lore.definitions.{ClassDefinition, MultiFunctionDefinition}
 import lore.types.Type
@@ -37,7 +38,7 @@ class DeclarationResolver {
   private def addTypeDeclaration(declaration: FragmentNode[TypeDeclNode]): Verification = {
     // Immediately stop the processing of this type declaration if the name is already taken.
     if (typeDeclarations.contains(declaration.node.name) || Type.predefinedTypes.contains(declaration.node.name)) {
-      return Compilation.fail(Error.TypeAlreadyExists(declaration.node)(declaration.fragment))
+      return Compilation.fail(TypeAlreadyExists(declaration.node)(declaration.fragment))
     }
 
     declaration.node match {
@@ -146,7 +147,7 @@ class DeclarationResolver {
             cycle.startNode,
             throw new RuntimeException("Type declarations didn't contain a declaration that was part of the dependency graph."),
           )
-          Error.InheritanceCycle(cycle.nodes.map(_.value).toList, occurrence)
+          InheritanceCycle(cycle.nodes.map(_.value).toList, occurrence)
         }: _*
       )
     }
@@ -217,5 +218,22 @@ class DeclarationResolver {
     }
 
     withVerifiedTypingsAndRegisteredFunctions.map(_ => registry)
+  }
+}
+
+object DeclarationResolver {
+  case class TypeAlreadyExists(node: TypeDeclNode)(implicit fragment: Fragment) extends Error(node) {
+    override def message = s"The type ${node.name} is already declared somewhere else."
+  }
+
+  /**
+    * @param occurrence One of the type declarations where the cycles occurs, so that we can report one error location.
+    */
+  case class InheritanceCycle(cycle: List[String], occurrence: FragmentNode[TypeDeclNode]) extends Error(occurrence) {
+    override def message: String = s"""
+                                      |An inheritance cycle between the following types has been detected: ${cycle.mkString(", ")}.
+                                      |A class or label A cannot inherit from a class/label B that also inherits from A directly or indirectly. The
+                                      |subtyping relationships of declared types must result in a directed, acyclic graph.
+    """.stripMargin.replaceAll("\n", " ").trim
   }
 }

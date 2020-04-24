@@ -18,18 +18,26 @@ object DeclaredTypeResolver {
     }
   }
 
+  case class LabelMustExtendLabel(node: TypeDeclNode.LabelNode)(implicit fragment: Fragment) extends Error(node) {
+    override def message = s"The label ${node.name} does not extend a label but some other type."
+  }
+
   private def resolveLabelNode(node: TypeDeclNode.LabelNode)(implicit registry: Registry, fragment: Fragment): C[LabelDefinition] = {
     for {
       supertype <- node.supertypeName.map(name => registry.resolveType(name, node)).toCompiledOption.require { option =>
         // Ensure that, if the label type extends another type, that type is also a label type.
         option.forall(_.isInstanceOf[LabelType])
-      }(Error.LabelMustExtendLabel(node))
+      }(LabelMustExtendLabel(node))
     } yield {
       val tpe = new LabelType(supertype.asInstanceOf[Option[LabelType]])
       val definition = new LabelDefinition(node.name, tpe, node.position)
       tpe.initialize(definition)
       definition
     }
+  }
+
+  case class ClassMustExtendClass(node: TypeDeclNode.ClassNode)(implicit fragment: Fragment) extends Error(node) {
+    override def message = s"The class ${node.name} does not extend a class but some other type."
   }
 
   private def resolveClassNode(node: TypeDeclNode.ClassNode)(implicit registry: Registry, fragment: Fragment): C[ClassDefinition] = {
@@ -39,7 +47,7 @@ object DeclaredTypeResolver {
       node.supertypeName.map(name => registry.resolveType(name, node)).toCompiledOption.require { option =>
         // Ensure that, if the class type extends another type, that type is also a class type.
         option.forall(_.isInstanceOf[ClassType])
-      }(Error.ClassMustExtendClass(node)),
+      }(ClassMustExtendClass(node)),
       node.members.map(resolveMemberNode).simultaneous,
     ).simultaneous.map { case (supertype, members) =>
       val constructors = node.constructors.map(FunctionDeclarationResolver.resolveConstructorNode)
@@ -51,6 +59,10 @@ object DeclaredTypeResolver {
     }
   }
 
+  case class ComponentMustBeClass(node: TypeDeclNode.ComponentNode)(implicit fragment: Fragment) extends Error(node) {
+    override def message = s"The component ${node.name} is not a valid class type."
+  }
+
   private def resolveMemberNode(node: TypeDeclNode.MemberNode)(implicit registry: Registry, fragment: Fragment): C[MemberDefinition[Type]] = {
     node match {
       case TypeDeclNode.PropertyNode(name, tpe, isMutable) =>
@@ -59,7 +71,7 @@ object DeclaredTypeResolver {
       case componentNode@TypeDeclNode.ComponentNode(name, overrides) =>
         val resolveType = () => {
           registry.resolveType(name, node)
-            .require(_.isInstanceOf[ClassType])(Error.ComponentMustBeClass(componentNode))
+            .require(_.isInstanceOf[ClassType])(ComponentMustBeClass(componentNode))
             .map(_.asInstanceOf[ClassType])
         }
         Compilation.succeed(new ComponentDefinition(name, resolveType, overrides, node.position))

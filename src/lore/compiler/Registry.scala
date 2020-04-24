@@ -55,6 +55,10 @@ class Registry {
     */
   def getType(name: String): Option[Type] = types.get(name)
 
+  case class TypeNotFound(name: String, pos: Position) extends Error(pos) {
+    override def message = s"The type $name does not exist in the current scope."
+  }
+
   /**
     * Gets a named type with the given name. If the type cannot be found, the operation fails with a compilation error.
     *
@@ -62,7 +66,7 @@ class Registry {
     */
   def resolveType(name: String, position: Position): C[Type] = {
     getType(name) match {
-      case None => Compilation.fail(Error.TypeNotFound(name, position))
+      case None => Compilation.fail(TypeNotFound(name, position))
       case Some(tpe) => Compilation.succeed(tpe)
     }
   }
@@ -116,12 +120,16 @@ class Registry {
     */
   def getMultiFunction(name: String): Option[MultiFunctionDefinition] = multiFunctions.get(name)
 
+  case class MultiFunctionNotFound(name: String, pos: Position) extends Error(pos) {
+    override def message = s"The multi-function $name does not exist in the current scope."
+  }
+
   /**
     * Gets a multi-function with the given name. If it cannot be found, the operation fails with a compilation error.
     */
   def resolveMultiFunction(name: String, position: Position): C[MultiFunctionDefinition] = {
     getMultiFunction(name) match {
-      case None => Compilation.fail(Error.MultiFunctionNotFound(name, position))
+      case None => Compilation.fail(MultiFunctionNotFound(name, position))
       case Some(mf) => Compilation.succeed(mf)
     }
   }

@@ -6,6 +6,10 @@ import lore.compiler.feedback.Error
 import lore.types._
 
 object TypeExpressionEvaluator {
+  case class ComponentTypeMustContainClass(node: TypeExprNode.ComponentNode)(implicit fragment: Fragment) extends Error(node) {
+    override def message: String = s"The component type +${node.underlyingName} must contain a class type. ${node.underlyingName} is not a class."
+  }
+
   def evaluate(expression: TypeExprNode)(implicit registry: Registry, fragment: Fragment): C[Type] = {
     val eval = evaluate _
     expression match {
@@ -21,7 +25,7 @@ object TypeExpressionEvaluator {
         (eval(key), eval(value)).simultaneous.map(MapType.tupled)
       case componentNode@TypeExprNode.ComponentNode(underlying) => registry.resolveType(underlying, componentNode).flatMap {
         case tpe: ClassType => Compilation.succeed(ComponentType(tpe))
-        case _ => Compilation.fail(Error.ComponentTypeMustContainClass(componentNode))
+        case _ => Compilation.fail(ComponentTypeMustContainClass(componentNode))
       }
     }
   }
