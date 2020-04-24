@@ -117,7 +117,7 @@ object Compilation {
     * An abbreviation for Compilation[Unit]. A verification is an operation that returns nothing of note when
     * it is successful and fails with a set of errors if it isn't.
     */
-  type Verification = Compilation[Unit] // TODO: Or rather Compilation[Nothing]?
+  type Verification = Compilation[Unit]
 
   object Verification {
     def succeed: Verification = Compilation.succeed(())
@@ -181,22 +181,19 @@ object Compilation {
   /**
     * Models simultaneous compilation on shapeless HLists.
     */
-  implicit class CompilationHListExtension[T, EL <: HList, L <: HList, RL <: HList, RT](compilations: T)(
+  implicit class CompilationHListExtension[T, L <: HList, RL <: HList, RT](compilations: T)(
     // Provides a means to convert the tuple T to the entry HList EL.
-    implicit val gen: Generic.Aux[T, EL],
-    // Provides a means to convert the entry HList EL to the HList L.
-    // TODO: Why do we need this?
-    val elToL: EL =:= L,
+    implicit val gen: Generic.Aux[T, L],
     // Provides a means to fold the HList L to the result HList RL via the polyOp.simultaneous operator.
     val folder: RightFolder.Aux[L, Compilation[HNil], polyOp.simultaneous.type, Compilation[RL]],
     // Provides a means to convert the result HList to a result tuple.
     val tupler: Tupler.Aux[RL, RT],
     // Ensures that only Compilations are part of the input HList.
-    val lub: LUBConstraint[EL, Compilation[_]],
+    val lub: LUBConstraint[L, Compilation[_]],
   ) {
     def simultaneous: Compilation[RT] = {
       // I can't believe this actually works. Many thanks to Travis Brown for his answers on StackOverflow.
-      elToL(gen.to(compilations)).foldRight(succeed(HNil: HNil))(polyOp.simultaneous).map(tupler(_))
+      gen.to(compilations).foldRight(succeed(HNil: HNil))(polyOp.simultaneous).map(tupler(_))
     }
   }
 
