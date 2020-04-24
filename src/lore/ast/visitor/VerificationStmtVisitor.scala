@@ -1,9 +1,9 @@
 package lore.ast.visitor
 
 /**
-  * A compilation statement visitor that implements empty and combine for verifications (which is trivial).
+  * A pass-on statement visitor that implements empty and combine for verifications (which is trivial).
   */
-trait VerificationStmtVisitor extends CompilationStmtVisitor[Unit] {
+trait VerificationStmtVisitor extends PassOnStmtVisitor[Unit] {
   override def empty: Unit = ()
   override def combine(list: List[Unit]): Unit = ()
 }

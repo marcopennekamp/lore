@@ -7,9 +7,9 @@ import lore.compiler.phases.verification.NoContinuationVisitor.IllegalContinuati
 import lore.compiler.{Compilation, Fragment}
 
 class NoContinuationVisitor()(implicit fragment: Fragment) extends VerificationStmtVisitor {
-  override def visitXary: PartialFunction[(StmtNode, List[Compilation[Unit]]), Compilation[Unit]] = {
-    case (node: TopLevelExprNode.ContinuationNode, _) => Compilation.fail(IllegalContinuation(node))
-    case args => super.visitXary(args)
+  override def visitXary(node: StmtNode.XaryNode)(arguments: List[Unit]): Compilation[Unit] = node match {
+    case node: TopLevelExprNode.ContinuationNode => Compilation.fail(IllegalContinuation(node))
+    case _ => super.visitXary(node)(arguments)
   }
 }
 

@@ -1,5 +1,6 @@
 package lore.ast
 
+import lore.ast.StmtNode.{BinaryNode, LeafNode, TernaryNode, UnaryNode, XaryNode}
 import lore.types.Type
 
 /**
@@ -7,7 +8,14 @@ import lore.types.Type
   */
 sealed trait StmtNode extends Node
 object StmtNode {
-  case class ReturnNode(expr: ExprNode) extends StmtNode
+  case class ReturnNode(expr: ExprNode) extends StmtNode with UnaryNode
+
+  // Node types that are used by StmtVisitor.
+  sealed trait LeafNode extends StmtNode
+  sealed trait UnaryNode extends StmtNode
+  sealed trait BinaryNode extends StmtNode
+  sealed trait TernaryNode extends StmtNode
+  sealed trait XaryNode extends StmtNode
 }
 
 /**
@@ -25,8 +33,8 @@ sealed trait TopLevelExprNode extends StmtNode {
 }
 
 object TopLevelExprNode {
-  case class VariableDeclarationNode(name: String, isMutable: Boolean, tpe: Option[TypeExprNode], value: ExprNode) extends TopLevelExprNode
-  case class AssignmentNode(address: AddressNode, value: ExprNode) extends TopLevelExprNode
+  case class VariableDeclarationNode(name: String, isMutable: Boolean, tpe: Option[TypeExprNode], value: ExprNode) extends TopLevelExprNode with UnaryNode
+  case class AssignmentNode(address: AddressNode, value: ExprNode) extends TopLevelExprNode with UnaryNode
 
   /**
     * An address of the form `a.b.c` and so on. The first element in the list is the leftmost name.
@@ -50,7 +58,7 @@ object TopLevelExprNode {
     * Yield is a part of top-level expressions, because we don't want a programmer to yield in the middle of
     * an expression.
     */
-  case class YieldNode(expr: ExprNode) extends TopLevelExprNode
+  case class YieldNode(expr: ExprNode) extends TopLevelExprNode with UnaryNode
 
   /**
     * The continuation of the construction is deferred to some other constructor or the internal construction
@@ -58,8 +66,8 @@ object TopLevelExprNode {
     * we parse it as a top-level expression to avoid ambiguities with function calls.
     */
   sealed trait ContinuationNode extends TopLevelExprNode
-  case class ConstructorCallNode(name: Option[String], arguments: List[ExprNode]) extends ContinuationNode
-  case class ConstructNode(arguments: List[ExprNode], withSuper: Option[ConstructorCallNode]) extends ContinuationNode
+  case class ConstructorCallNode(name: Option[String], arguments: List[ExprNode]) extends ContinuationNode with XaryNode
+  case class ConstructNode(arguments: List[ExprNode], withSuper: Option[ConstructorCallNode]) extends ContinuationNode with XaryNode
 }
 
 /**
@@ -70,54 +78,54 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Variable expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class VariableNode(name: String) extends ExprNode
+  case class VariableNode(name: String) extends ExprNode with LeafNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Numeric expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class RealLiteralNode(value: Double) extends ExprNode
-  case class IntLiteralNode(value: Int) extends ExprNode
-  case class AdditionNode(left: ExprNode, right: ExprNode) extends ExprNode
-  case class SubtractionNode(left: ExprNode, right: ExprNode) extends ExprNode
-  case class MultiplicationNode(left: ExprNode, right: ExprNode) extends ExprNode
-  case class DivisionNode(left: ExprNode, right: ExprNode) extends ExprNode
-  case class NegationNode(expr: ExprNode) extends ExprNode
+  case class RealLiteralNode(value: Double) extends ExprNode with LeafNode
+  case class IntLiteralNode(value: Int) extends ExprNode with LeafNode
+  case class AdditionNode(left: ExprNode, right: ExprNode) extends ExprNode with BinaryNode
+  case class SubtractionNode(left: ExprNode, right: ExprNode) extends ExprNode with BinaryNode
+  case class MultiplicationNode(left: ExprNode, right: ExprNode) extends ExprNode with BinaryNode
+  case class DivisionNode(left: ExprNode, right: ExprNode) extends ExprNode with BinaryNode
+  case class NegationNode(expr: ExprNode) extends ExprNode with UnaryNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Boolean expressions and comparison operators.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class BoolLiteralNode(value: Boolean) extends ExprNode
-  case class ConjunctionNode(expressions: List[ExprNode]) extends ExprNode
-  case class DisjunctionNode(expressions: List[ExprNode]) extends ExprNode
-  case class LogicalNotNode(expr: ExprNode) extends ExprNode
-  case class EqualsNode(left: ExprNode, right: ExprNode) extends ExprNode
-  case class NotEqualsNode(left: ExprNode, right: ExprNode) extends ExprNode
-  case class LessThanNode(left: ExprNode, right: ExprNode) extends ExprNode
-  case class LessThanEqualsNode(left: ExprNode, right: ExprNode) extends ExprNode
-  case class GreaterThanNode(left: ExprNode, right: ExprNode) extends ExprNode
-  case class GreaterThanEqualsNode(left: ExprNode, right: ExprNode) extends ExprNode
+  case class BoolLiteralNode(value: Boolean) extends ExprNode with LeafNode
+  case class ConjunctionNode(expressions: List[ExprNode]) extends ExprNode with XaryNode
+  case class DisjunctionNode(expressions: List[ExprNode]) extends ExprNode with XaryNode
+  case class LogicalNotNode(expr: ExprNode) extends ExprNode with UnaryNode
+  case class EqualsNode(left: ExprNode, right: ExprNode) extends ExprNode with BinaryNode
+  case class NotEqualsNode(left: ExprNode, right: ExprNode) extends ExprNode with BinaryNode
+  case class LessThanNode(left: ExprNode, right: ExprNode) extends ExprNode with BinaryNode
+  case class LessThanEqualsNode(left: ExprNode, right: ExprNode) extends ExprNode with BinaryNode
+  case class GreaterThanNode(left: ExprNode, right: ExprNode) extends ExprNode with BinaryNode
+  case class GreaterThanEqualsNode(left: ExprNode, right: ExprNode) extends ExprNode with BinaryNode
 
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // String expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class StringLiteralNode(value: String) extends ExprNode
-  case class ConcatenationNode(expressions: List[ExprNode]) extends ExprNode
+  case class StringLiteralNode(value: String) extends ExprNode with LeafNode
+  case class ConcatenationNode(expressions: List[ExprNode]) extends ExprNode with XaryNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Tuple expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class TupleNode(expressions: List[ExprNode]) extends ExprNode
+  case class TupleNode(expressions: List[ExprNode]) extends ExprNode with XaryNode
 
   /**
     * The unit tuple.
     */
-  case object UnitNode extends ExprNode
+  case object UnitNode extends ExprNode with LeafNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // List expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class ListNode(expressions: List[ExprNode]) extends ExprNode
+  case class ListNode(expressions: List[ExprNode]) extends ExprNode with XaryNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Map expressions.
@@ -128,12 +136,12 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Object expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class PropertyAccessNode(instance: ExprNode, names: List[String]) extends ExprNode
+  case class PropertyAccessNode(instance: ExprNode, names: List[String]) extends ExprNode with UnaryNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Block expressions. Note that blocks can hold statements.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class BlockNode(statements: List[StmtNode]) extends ExprNode
+  case class BlockNode(statements: List[StmtNode]) extends ExprNode with XaryNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Function calls.
@@ -142,12 +150,12 @@ object ExprNode {
     * A call node can both be a multi-function call or a constructor call. The parser can't decide between them based
     * on syntax, so the compiler will have to decide in later stages.
     */
-  case class CallNode(name: String, qualifier: Option[String], arguments: List[ExprNode]) extends ExprNode
+  case class CallNode(name: String, qualifier: Option[String], arguments: List[ExprNode]) extends ExprNode with XaryNode
 
   /**
     * Since fixed function calls also require type arguments, they can be differentiated from call nodes.
     */
-  case class FixedFunctionCallNode(name: String, types: List[TypeExprNode], arguments: List[ExprNode]) extends ExprNode
+  case class FixedFunctionCallNode(name: String, types: List[TypeExprNode], arguments: List[ExprNode]) extends ExprNode with XaryNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and repetition expressions.
@@ -156,12 +164,12 @@ object ExprNode {
     * @param onTrue Equals UnitNode if it doesn't exist.
     * @param onFalse Equals UnitNode if it doesn't exist.
     */
-  case class IfElseNode(condition: ExprNode, onTrue: StmtNode, onFalse: StmtNode) extends ExprNode
+  case class IfElseNode(condition: ExprNode, onTrue: StmtNode, onFalse: StmtNode) extends ExprNode with TernaryNode
 
   /**
     * @param deferCheck Whether the condition should be checked after the loop body.
     */
-  case class RepeatWhileNode(condition: ExprNode, body: StmtNode, deferCheck: Boolean) extends ExprNode
+  case class RepeatWhileNode(condition: ExprNode, body: StmtNode, deferCheck: Boolean) extends ExprNode with BinaryNode
 
   case class IterationNode(extractors: List[ExtractorNode], body: StmtNode) extends ExprNode
   case class ExtractorNode(variableName: String, collection: ExprNode)
