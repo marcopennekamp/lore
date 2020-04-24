@@ -6,7 +6,23 @@ import lore.types.Type
 /**
   * All statements and expressions.
   */
-sealed trait StmtNode extends Node
+sealed trait StmtNode extends Node {
+  private var _inferredType: Option[Type] = None
+
+  def setInferredType(tpe: Type): Unit = {
+    if (_inferredType.isDefined) {
+      throw new RuntimeException(s"The inferred type for the node $this has already been set. This is a compiler bug!")
+    }
+    _inferredType = Some(tpe)
+  }
+
+  def inferredType: Type = {
+    _inferredType.getOrElse(
+      throw new RuntimeException(s"The inferred type for the node $this should have been set by now. This is a compiler bug!")
+    )
+  }
+}
+
 object StmtNode {
   case class ReturnNode(expr: ExprNode) extends StmtNode with UnaryNode
 
