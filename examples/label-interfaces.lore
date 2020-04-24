@@ -11,8 +11,8 @@ function h(x: L): Real
 // Two classes that define ad-hoc functions for the label type. Note that the idea is that A and B are specialized
 // at RUN-TIME to subtype the label type. This means that we can't check at compile-time whether A or B actually
 // implement g or h.
-// TODO: Everywhere a type is specialized with a label type, we check at compile-time that the required functions are
-//       declared.
+// TODO: Everywhere a type is specialized with a label type, we should check at compile-time that the required
+//       functions are declared.
 class A
 function g(a: A & L): Real = ()
 function h(a: A & L): Real = ()

@@ -34,7 +34,6 @@ sealed trait TypeDeclNode extends DeclNode {
 }
 
 object TypeDeclNode {
-  // TODO: We need to add type aliases to the spec... or remove them from the implementation.
   case class AliasNode(override val name: String, tpe: TypeExprNode) extends TypeDeclNode
 
   sealed trait DeclaredNode extends TypeDeclNode {

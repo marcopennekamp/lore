@@ -183,6 +183,18 @@ We will define and implement an algorithm that will perform **type inference**, 
 
 
 
+### Type Aliases
+
+Lore supports simple **type aliases** which allow you to assign a name to an arbitrary type:
+
+```
+type X = A | B | C
+```
+
+This is simply a convenient way to assign types to a name.
+
+
+
 ### Constructor Precedence
 
 Type constructors have the following **precedence** (lowest priority first):
