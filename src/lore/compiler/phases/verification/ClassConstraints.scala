@@ -1,7 +1,7 @@
 package lore.compiler.phases.verification
 
-import lore.ast.{ExprNode, TopLevelExprNode}
 import lore.ast.visitor.StmtVisitor
+import lore.ast.{ExprNode, TopLevelExprNode}
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
 import lore.compiler.{Compilation, Fragment, Registry}

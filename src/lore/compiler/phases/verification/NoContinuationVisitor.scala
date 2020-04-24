@@ -1,10 +1,10 @@
 package lore.compiler.phases.verification
 
-import lore.ast.{StmtNode, TopLevelExprNode}
 import lore.ast.visitor.VerificationStmtVisitor
-import lore.compiler.{Compilation, Fragment}
+import lore.ast.{StmtNode, TopLevelExprNode}
 import lore.compiler.feedback.Error
 import lore.compiler.phases.verification.NoContinuationVisitor.IllegalContinuation
+import lore.compiler.{Compilation, Fragment}
 
 class NoContinuationVisitor()(implicit fragment: Fragment) extends VerificationStmtVisitor {
   override def visitXary: PartialFunction[(StmtNode, List[Compilation[Unit]]), Compilation[Unit]] = {
