@@ -1,6 +1,7 @@
+organization := "com.marcopennekamp"
 name := "lore"
 
-version := "0.1.0"
+version := "0.1.0-SNAPSHOT"
 
 scalaVersion := "2.13.1"
 scalacOptions ++= Seq(

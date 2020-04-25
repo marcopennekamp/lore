@@ -1,5 +1,6 @@
 package lore
 
+import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.file.{Files, Path}
 
 import lore.compiler.Compilation.C
@@ -7,47 +8,74 @@ import lore.compiler.feedback.FeedbackPrinter
 import lore.compiler.{Errors, LoreCompiler, Registry, Result}
 import lore.types.DeclaredType
 
-object Lore {
-  def fromExample(name: String): C[Registry] = {
-    import scala.jdk.CollectionConverters._
+import scala.util.Using
 
-    val sourcePath = Path.of("examples", s"$name.lore")
-    val source = Files.lines(sourcePath).iterator().asScala.mkString("\n") + "\n"
+object Lore {
+  /**
+    * Compiles a Lore program from a single source.
+    */
+  def fromSingleSource(name: String, source: String): C[Registry] = {
     val compiler = new LoreCompiler(List(
-      LoreCompiler.SourceFragment(name, source)
+      LoreCompiler.SourceFragment(
+        name,
+        source + "\n" // Ensure that the file ends in a newline.
+      )
     ))
     compiler.compile()
   }
 
+  /**
+    * Compiles a Lore program from a named example within the Lore examples directory.
+    */
+  def fromExample(name: String): C[Registry] = {
+    import scala.jdk.CollectionConverters._
+    val sourcePath = Path.of("examples", s"$name.lore")
+    val source = Files.lines(sourcePath).iterator().asScala.mkString("\n") + "\n"
+    fromSingleSource(name, source)
+  }
+
+  /**
+    * Stringifies the compilation result in a user-palatable way, discussing errors or the successful result in
+    * text form.
+    */
+  def stringifyResult(result: C[Registry]): String = {
+    val out = new ByteArrayOutputStream()
+    Using(new PrintStream(out, true, "utf-8")) { printer =>
+      // Print either errors or the compilation result to the output stream.
+      result match {
+        case Errors(errors, infos) =>
+          val feedback = errors ++ infos
+          printer.println()
+          printer.println(s"${FeedbackPrinter.tagError} Compilation failed with errors:")
+          if (feedback.nonEmpty) printer.println(FeedbackPrinter.print(feedback))
+        case Result(registry, infos) =>
+          printer.println()
+          printer.println(s"${FeedbackPrinter.tagSuccess} Compilation was successful:")
+          if(infos.nonEmpty) printer.println(FeedbackPrinter.print(infos))
+          printer.println(s"${FeedbackPrinter.tagSuccess} Compilation result: $registry")
+
+          // Print types for debugging.
+          printer.println()
+          printer.println("Types:")
+          registry.getTypes.values.map {
+            case t: DeclaredType => t.verbose
+            case t => t.toString
+          }.foreach(s => printer.println(s"  $s"))
+
+          // Print functions for debugging.
+          registry.getMultiFunctions.values.foreach { mf =>
+            printer.println()
+            printer.println(s"${mf.name}:")
+            mf.functions.foreach(f => printer.println(s"  $f"))
+          }
+      }
+
+      // Finally, return the constructed string.
+      out.toString("utf-8")
+    }.get // There should be no exceptions here, as we are not trying to access any files.
+  }
+
   def main(args: Array[String]): Unit = {
-    val result = fromExample(args(0))
-    result match {
-      case Errors(errors, infos) =>
-        val feedback = errors ++ infos
-        println()
-        println(s"${FeedbackPrinter.tagError} Compilation failed with errors:")
-        if (feedback.nonEmpty) println(FeedbackPrinter.print(feedback))
-        println()
-      case Result(registry, infos) =>
-        println()
-        println(s"${FeedbackPrinter.tagSuccess} Compilation was successful:")
-        if(infos.nonEmpty) println(FeedbackPrinter.print(infos))
-        println(s"${FeedbackPrinter.tagSuccess} Compilation result: $registry")
-        println()
-
-        // Print types for debugging.
-        println("Types:")
-        registry.getTypes.values.map {
-          case t: DeclaredType => t.verbose
-          case t => t.toString
-        }.foreach(s => println(s"  $s"))
-
-        // Print functions for debugging.
-        registry.getMultiFunctions.values.foreach { mf =>
-          println()
-          println(s"${mf.name}:")
-          mf.functions.foreach(f => println(s"  $f"))
-        }
-    }
+    println(stringifyResult(fromExample(args(0))))
   }
 }
