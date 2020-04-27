@@ -50,25 +50,7 @@ sealed trait TopLevelExprNode extends StmtNode {
 
 object TopLevelExprNode {
   case class VariableDeclarationNode(name: String, isMutable: Boolean, tpe: Option[TypeExprNode], value: ExprNode) extends TopLevelExprNode with UnaryNode
-  case class AssignmentNode(address: AddressNode, value: ExprNode) extends TopLevelExprNode with UnaryNode
-
-  /**
-    * An address of the form `a.b.c` and so on. The first element in the list is the leftmost name.
-    */
-  case class AddressNode(names: List[String]) extends Node {
-    assert(names.nonEmpty)
-
-    /**
-      * Converts the address to an expression node, either a variable or a property access node.
-      */
-    def toExpression: ExprNode = {
-      if (names.tail.nonEmpty) {
-        ExprNode.PropertyAccessNode(ExprNode.VariableNode(names.head), names.tail)
-      } else {
-        ExprNode.VariableNode(names.head)
-      }
-    }
-  }
+  case class AssignmentNode(address: ExprNode.AddressNode, value: ExprNode) extends TopLevelExprNode with UnaryNode
 
   /**
     * Yield is a part of top-level expressions, because we don't want a programmer to yield in the middle of
@@ -91,10 +73,15 @@ object TopLevelExprNode {
   */
 sealed trait ExprNode extends TopLevelExprNode
 object ExprNode {
+  /**
+    * A cross-cutting node trait signifying the possible target of an assignment.
+    */
+  sealed trait AddressNode extends ExprNode
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Variable expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class VariableNode(name: String) extends ExprNode with LeafNode
+  case class VariableNode(name: String) extends ExprNode with LeafNode with AddressNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Numeric expressions.
@@ -152,7 +139,7 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Object expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class PropertyAccessNode(instance: ExprNode, names: List[String]) extends ExprNode with UnaryNode
+  case class PropertyAccessNode(instance: ExprNode, name: String) extends ExprNode with UnaryNode with AddressNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Block expressions. Note that blocks can hold statements.

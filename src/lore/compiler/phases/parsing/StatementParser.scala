@@ -24,16 +24,23 @@ object StatementParser {
   private def assignment[_: P]: P[TopLevelExprNode.AssignmentNode] = {
     P(address ~ StringIn("=", "+=", "-=", "*=", "/=").! ~ expression).map {
       case (address, "=", rhs) => TopLevelExprNode.AssignmentNode(address, rhs)
-      case (address, "+=", rhs) => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.AdditionNode)(rhs.index, address.toExpression, rhs))
-      case (address, "-=", rhs) => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.SubtractionNode)(rhs.index, address.toExpression, rhs))
-      case (address, "*=", rhs) => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.MultiplicationNode)(rhs.index, address.toExpression, rhs))
-      case (address, "/=", rhs) => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.DivisionNode)(rhs.index, address.toExpression, rhs))
+      case (address, "+=", rhs) => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.AdditionNode)(rhs.index, address, rhs))
+      case (address, "-=", rhs) => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.SubtractionNode)(rhs.index, address, rhs))
+      case (address, "*=", rhs) => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.MultiplicationNode)(rhs.index, address, rhs))
+      case (address, "/=", rhs) => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.DivisionNode)(rhs.index, address, rhs))
     }
   }
-  private def address[_: P]: P[TopLevelExprNode.AddressNode] = {
-    def identifiers = P(identifier.rep(1, sep = ".")).map(_.toList)
-    P(Index ~ identifiers).map(withIndex(TopLevelExprNode.AddressNode))
+
+  /**
+    * An assignment address is either a plain variable or some property that is accessed on any accessible expression.
+    */
+  private def address[_: P]: P[ExprNode.AddressNode] = {
+    // We can cast to PropertyAccessNode because we set minAccess to 1, which ensures that the parse results in such
+    // a node.
+    def prop = P(propertyAccess(minAccess = 1)).asInstanceOf[P[ExprNode.PropertyAccessNode]]
+    P(Index ~ (variable | prop)).map(withIndex(identity _))
   }
+
   private def `yield`[_: P]: P[TopLevelExprNode.YieldNode] = P("yield" ~ expression).map(TopLevelExprNode.YieldNode)
   private def continuation[_: P] = {
     def constructorCall = P(("." ~ identifier).? ~ arguments).map(TopLevelExprNode.ConstructorCallNode.tupled)
@@ -105,7 +112,37 @@ object StatementParser {
   }
   private def logicalNot[_: P]: P[ExprNode] = P("~" ~ atom).map(ExprNode.LogicalNotNode)
 
-  private def atom[_: P]: P[ExprNode] = P(Index ~ (literal | accessiblePostfix)).map(withIndex(identity _))
+  /**
+    * Atomic operands of unary and binary operators.
+    *
+    * We parse property access here to reduce the amount of backtracking the parser needs to do. Even though all
+    * dots are consumed greedily, we still create a chain of PropertyAccessNodes, because that'll make it easier to
+    * to compile later.
+    */
+  private def atom[_: P]: P[ExprNode] = P(propertyAccess(minAccess = 0))
+
+  /**
+    * Surrounds an accessible expression with the possibility for property access. This is used by atom AND assignment
+    * parsers to apply property access.
+    *
+    * @param minAccess The minimum number of times that the instance needs to be accessed.
+    */
+  private def propertyAccess[_: P](minAccess: Int): P[ExprNode] = {
+    def propertyAccess = P((Index ~ "." ~ identifier).rep(minAccess))
+    P(accessible ~ propertyAccess).map { case (expr, propertyAccesses) =>
+      // Create a PropertyAccessNode for every property access or just return the expression if there is
+      // no property access.
+      propertyAccesses.foldLeft(expr) { case (instance, (index, name)) =>
+        withIndex(ExprNode.PropertyAccessNode)(index, instance, name)
+      }
+    }
+  }
+
+  /**
+    * All expressions immediately accessible via postfix dot notation.
+    */
+  private def accessible[_: P]: P[ExprNode] = P(Index ~ (literal | fixedCall | call | variable | block | list | map | enclosed)).map(withIndex(identity _))
+
   private def literal[_: P]: P[ExprNode] = {
     def real = P(LexicalParser.real).map(ExprNode.RealLiteralNode)
     def int = P(LexicalParser.integer).map(ExprNode.IntLiteralNode)
@@ -113,29 +150,11 @@ object StatementParser {
     // Reals have to be parsed before ints so that ints don't consume the portion of the real before the fraction.
     P(real | int | booleanLiteral | LexicalParser.string)
   }
-  private def accessiblePostfix[_: P]: P[ExprNode] = {
-    def propertyAccess = P(("." ~ identifier).rep)
-    P(accessible ~ propertyAccess).map { case (instance, propertyNames) =>
-      if (propertyNames.nonEmpty) {
-        ExprNode.PropertyAccessNode(instance, propertyNames.toList)
-      } else {
-        instance
-      }
-    }
-  }
-
-  /**
-    * All expressions immediately accessible via postfix dot notation.
-    *
-    * Any possible indices are already applied by withIndex in atom.
-    */
-  private def accessible[_: P]: P[ExprNode] = P(fixedCall | call | variable | block | list | map | enclosed)
-
   private def fixedCall[_: P]: P[ExprNode] = P(identifier ~ ".fixed" ~ typeArguments ~ arguments).map(ExprNode.FixedFunctionCallNode.tupled)
   private def call[_: P]: P[ExprNode] = P(identifier ~ ("." ~ identifier).? ~ arguments).map(ExprNode.CallNode.tupled)
   def arguments[_: P]: P[List[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toList)
   private def typeArguments[_: P]: P[List[TypeExprNode]] = P("[" ~ TypeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toList)
-  private def variable[_: P]: P[ExprNode] = P(identifier).map(ExprNode.VariableNode)
+  private def variable[_: P]: P[ExprNode.VariableNode] = P(identifier).map(ExprNode.VariableNode)
   def block[_: P]: P[ExprNode.BlockNode] = {
     def statements = P(statement.repX(0, Space.terminators).map(_.toList))
     P(Index ~ "{" ~ statements ~ "}").map(withIndex(ExprNode.BlockNode))
