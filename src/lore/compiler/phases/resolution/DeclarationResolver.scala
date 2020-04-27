@@ -32,7 +32,7 @@ class DeclarationResolver {
     * A mutable dependency graph, the nodes being type names. A type Any is the root of all declared types. Edges are
     * directed from supertype to subtype.
     */
-  private val dependencyGraph: Graph[String, DiEdge] = Graph()
+  private val dependencyGraph: Graph[String, DiEdge] = Graph("Any")
   private implicit val edgelordFactory = DiEdge
 
   private def addTypeDeclaration(declaration: FragmentNode[TypeDeclNode]): Verification = {
