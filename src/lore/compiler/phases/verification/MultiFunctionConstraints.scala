@@ -35,6 +35,7 @@ object MultiFunctionConstraints {
       verifyNoContinuation(mf),
       verifyInputAbstractness(mf),
       verifyTotalityConstraint(mf),
+      // TODO: Verify that return types are subtypes of return types of functions higher in the hierarchy.
     ).simultaneous.verification
   }
 
@@ -75,7 +76,7 @@ object MultiFunctionConstraints {
     */
   def verifyInputAbstractness(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
     Verification.fromErrors {
-      mf.functions.filter(_.isAbstract).filterNot(_.inputType.isAbstract).map(FunctionIllegallyAbstract)
+      mf.functions.filter(_.isAbstract).filterNot(_.signature.inputType.isAbstract).map(FunctionIllegallyAbstract)
     }
   }
 
@@ -100,9 +101,9 @@ object MultiFunctionConstraints {
       //    An abstract function f(a: A, b: B) with a non-abstract B must also cover the case f(a: AX, b: B), not just for
       //    B1 and B2, if the given value of type B is neither B1 nor B2, since it could just be B. Hence, we cannot use
       //    directDeclaredSubtypes, because it would substitute B1 and B2 for B, leaving B out of the equation entirely.
-      Subtyping.abstractResolvedDirectSubtypes(f.inputType).toList.flatMap { subtype =>
+      Subtyping.abstractResolvedDirectSubtypes(f.signature.inputType).toList.flatMap { subtype =>
         val isValid = mf.functions.exists { f2 =>
-          Subtyping.isStrictSubtype(f2.inputType, f.inputType) && mf.fit(subtype).contains(f2)
+          Subtyping.isStrictSubtype(f2.signature.inputType, f.signature.inputType) && mf.fit(subtype).contains(f2)
         }
         if (!isValid) Some(subtype) else None
       }

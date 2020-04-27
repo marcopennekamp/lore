@@ -13,7 +13,7 @@ object FunctionDeclarationResolver {
       node.parameters.map(resolveParameterNode).map(p => p.verifyDeferredTyping.map(_ => p)).simultaneous,
       TypeExpressionEvaluator.evaluate(node.outputType),
     ).simultaneous.map { case (parameters, outputType) =>
-      FunctionDefinition(node.name, parameters, outputType, node.body, node.position)
+      new FunctionDefinition(node.name, parameters, outputType, node.body, node.position)
     }
   }
 
