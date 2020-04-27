@@ -67,7 +67,7 @@ object LexicalParser {
     }
     // We have to check content, interpolation, notStringEnd exactly in this order, otherwise notStringEnd would
     // consume parts that are meant to be escapes or interpolations.
-    P("'" ~/ (content | interpolation | notStringEnd).rep ~ "'").map(_.toList).map {
+    P("'" ~ (content | interpolation | notStringEnd).rep ~ "'").map(_.toList).map {
       case List() => ExprNode.StringLiteralNode("")
       // This can either be a single string literal or any expression enclosed as such: '$expr'.
       case List(expression) => expression
@@ -77,8 +77,8 @@ object LexicalParser {
 
   def interpolation[_: P]: P[ExprNode] = {
     def simple = P(Index ~ identifier).map(withIndex(ExprNode.VariableNode))
-    def block = P("{" ~ StatementParser.expression ~ "}")
-    P("$" ~/ (block | simple))
+    def block = P("{" ~ NoCut(StatementParser.expression) ~ "}")
+    P("$" ~ (block | simple))
   }
 
   def escape[_: P]: P[String] = {
@@ -92,6 +92,6 @@ object LexicalParser {
       // ' $ \
       case x => x
     }
-    P("\\" ~/ (basicEscape | unicodeEscape))
+    P("\\" ~ (basicEscape | unicodeEscape))
   }
 }

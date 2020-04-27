@@ -21,13 +21,15 @@ object StatementParser {
       TopLevelExprNode.VariableDeclarationNode(name, qualifier == "let", tpe, value)
     }
   }
-  private def assignment[_: P]: P[TopLevelExprNode.AssignmentNode] = {
-    P(address ~ StringIn("=", "+=", "-=", "*=", "/=").! ~ expression).map {
-      case (address, "=", rhs) => TopLevelExprNode.AssignmentNode(address, rhs)
-      case (address, "+=", rhs) => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.AdditionNode)(rhs.index, address, rhs))
-      case (address, "-=", rhs) => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.SubtractionNode)(rhs.index, address, rhs))
-      case (address, "*=", rhs) => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.MultiplicationNode)(rhs.index, address, rhs))
-      case (address, "/=", rhs) => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.DivisionNode)(rhs.index, address, rhs))
+  private def assignment[_: P]: P[TopLevelExprNode] = {
+    P(address ~ StringIn("=", "+=", "-=", "*=", "/=").! ~ expression).map { case (address, op, rhs) =>
+      op match {
+        case "="  => TopLevelExprNode.AssignmentNode(address, rhs)
+        case "+=" => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.AdditionNode)(rhs.index, address, rhs))
+        case "-=" => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.SubtractionNode)(rhs.index, address, rhs))
+        case "*=" => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.MultiplicationNode)(rhs.index, address, rhs))
+        case "/=" => TopLevelExprNode.AssignmentNode(address, withIndex(ExprNode.DivisionNode)(rhs.index, address, rhs))
+      }
     }
   }
 
@@ -38,7 +40,7 @@ object StatementParser {
     // We can cast to PropertyAccessNode because we set minAccess to 1, which ensures that the parse results in such
     // a node.
     def prop = P(propertyAccess(minAccess = 1)).asInstanceOf[P[ExprNode.PropertyAccessNode]]
-    P(Index ~ (variable | prop)).map(withIndex(identity _))
+    P(Index ~ (prop | variable)).map(withIndex(identity _))
   }
 
   private def `yield`[_: P]: P[TopLevelExprNode.YieldNode] = P("yield" ~ expression).map(TopLevelExprNode.YieldNode)

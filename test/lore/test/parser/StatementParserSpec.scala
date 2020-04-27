@@ -34,7 +34,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     ))
     val apples = "'${p.name}, you have $k apples. Please claim your ${if (k < 10) 'free' else '1000\\$'} apple at the reception.'"
     apples --> ConcatenationNode(List(
-      PropertyAccessNode(VariableNode("p"), List("name")),
+      PropertyAccessNode(VariableNode("p"), "name"),
       StringLiteralNode(", you have "),
       vk,
       StringLiteralNode(" apples. Please claim your "),
@@ -145,7 +145,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
       LessThanNode(vi, IntLiteralNode(25)),
       BlockNode(List(
         AssignmentNode(
-          AddressNode(List("i")),
+          vi,
           AdditionNode(vi, IntLiteralNode(1)),
         ),
       )),
@@ -155,13 +155,13 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
       LessThanEqualsNode(vi, IntLiteralNode(25)),
       BlockNode(List(
         AssignmentNode(
-          AddressNode(List("i")),
+          vi,
           AdditionNode(vi, IntLiteralNode(1)),
         ),
       )),
       BlockNode(List(
         AssignmentNode(
-          AddressNode(List("i")),
+          vi,
           SubtractionNode(vi, IntLiteralNode(1)),
         ),
       )),
@@ -173,7 +173,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     // Repeat-while repetitions.
     "repeat while (a > b) a /= 2" --> RepeatWhileNode(
       GreaterThanNode(va, vb),
-      AssignmentNode(AddressNode(List("a")), DivisionNode(va, IntLiteralNode(2))),
+      AssignmentNode(va, DivisionNode(va, IntLiteralNode(2))),
       deferCheck = false,
     )
     "repeat { println('Morning, World') } while (sunRisesOn(earth))" --> RepeatWhileNode(
@@ -233,6 +233,14 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     "Point[Int](1, 5)".fails
     "Position3D.from2D[Real](5.5, 6.7)".fails
     "concat[String]('stringA', 'stringB', 'stringC')".fails
+  }
+
+  it should "parse variable declarations and assignments correctly" in {
+    // TODO: Add more tests.
+    "a.b.c = x" --> AssignmentNode(
+      PropertyAccessNode(PropertyAccessNode(va, "b"), "c"),
+      vx,
+    )
   }
 
   it should "assign the correct indices" in {
@@ -352,7 +360,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
         AdditionNode(
           AdditionNode(
             AdditionNode(va, BlockNode(List(vb))),
-            PropertyAccessNode(BlockNode(List(vb)), List("x")),
+            PropertyAccessNode(BlockNode(List(vb)), "x"),
           ),
           vb,
         ),

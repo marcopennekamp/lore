@@ -39,8 +39,8 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[DeclNode] {
         RepeatWhileNode(
           GreaterThanNode(VariableNode("e"), IntLiteralNode(0)),
           BlockNode(List(
-            AssignmentNode(AddressNode(List("result")), MultiplicationNode(VariableNode("result"), vx)),
-            AssignmentNode(AddressNode(List("e")), SubtractionNode(VariableNode("e"), IntLiteralNode(1))),
+            AssignmentNode(VariableNode("result"), MultiplicationNode(VariableNode("result"), vx)),
+            AssignmentNode(VariableNode("e"), SubtractionNode(VariableNode("e"), IntLiteralNode(1))),
           )),
           deferCheck = false,
         ),
@@ -65,7 +65,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[DeclNode] {
       Some(BlockNode(List(
         VariableDeclarationNode(
           "power", isMutable = false, None,
-          CallNode("combinedPower", None, List(PropertyAccessNode(VariableNode("source"), List("Arms")))),
+          CallNode("combinedPower", None, List(PropertyAccessNode(VariableNode("source"), "Arms"))),
         ),
         CallNode("damage", None, List(VariableNode("target"), VariableNode("power"))),
       ))),
