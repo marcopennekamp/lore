@@ -1,7 +1,7 @@
 package lore.ast
 
 import lore.ast.StmtNode.{BinaryNode, LeafNode, TernaryNode, UnaryNode, XaryNode}
-import lore.compiler.phases.verification.VirtualMember
+import lore.compiler.phases.verification.{LocalVariable, VirtualMember}
 import lore.types.Type
 
 /**
@@ -82,7 +82,18 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Variable expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class VariableNode(name: String) extends ExprNode with LeafNode with AddressNode
+  case class VariableNode(name: String) extends ExprNode with LeafNode with AddressNode {
+    private var _variable: LocalVariable = _
+
+    /**
+      * The variable that this node refers to, which is resolved during function verification.
+      */
+    def variable: LocalVariable = _variable
+    def variable_=(variable: LocalVariable): Unit = {
+      assert(_variable == null)
+      _variable = variable
+    }
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Numeric expressions.

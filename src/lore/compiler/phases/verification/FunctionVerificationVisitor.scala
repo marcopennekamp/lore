@@ -1,8 +1,10 @@
 package lore.compiler.phases.verification
 
+import lore.ast.ExprNode.AddressNode
 import lore.ast.visitor.VerificationStmtVisitor
 import lore.ast.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.Compilation.Verification
+import lore.compiler.feedback.Error
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
 import lore.compiler.{Compilation, Fragment, Registry, TypeExpressionEvaluator}
 import lore.definitions.FunctionSignature
@@ -66,22 +68,6 @@ private[verification] class FunctionVerificationVisitor(
   }
 
   override def verify(node: StmtNode): Verification = node match {
-    // Variables.
-    case VariableNode(name) =>
-      // TODO: We will also need access to global variables if we introduce those into Lore.
-      // TODO: Once we treat functions as values, we will have to make this even more complicated by also
-      //       considering function names.
-      context.currentScope.variable(name, node.position).flatMap { variable =>
-        node.typed(variable.tpe)
-      }
-    case node@PropertyAccessNode(instance, name) =>
-      // TODO: We should also ascribe the virtual member to the AST so that it can be directly used by the
-      //       transpilation phase later.
-      MemberExplorer.find(name, instance.inferredType, node.position).flatMap { member =>
-        node.member = member
-        node.typed(member.tpe)
-      }
-
     // Literals.
     case RealLiteralNode(_)   => node.typed(BasicType.Real)
     case IntLiteralNode(_)    => node.typed(BasicType.Int)
@@ -100,10 +86,23 @@ private[verification] class FunctionVerificationVisitor(
       //       for all expressions once the context comes back to the list.
       node.typed(ProductType.UnitType)
 
-    // Variable nodes.
+    // Variables.
+    case node@VariableNode(name) =>
+      // TODO: We will also need access to global variables if we introduce those into Lore.
+      // TODO: Once we treat functions as values, we will have to make this even more complicated by also
+      //       considering function names.
+      context.currentScope.variable(name, node.position).flatMap { variable =>
+        node.variable = variable
+        node.typed(variable.tpe)
+      }
+    case node@PropertyAccessNode(instance, name) =>
+      MemberExplorer.find(name, instance.inferredType, node.position).flatMap { member =>
+        node.member = member
+        node.typed(member.tpe)
+      }
     case VariableDeclarationNode(name, isMutable, maybeTypeNode, value) =>
-      // TODO: Add the variable type to the type context. Either infer the type from the value or, if a type has
-      //       been explicitly declared, check that the value adheres to the type bounds.
+      // Add the variable type to the type context. Either infer the type from the value or, if a type has
+      // been explicitly declared, check that the value adheres to the type bounds.
       maybeTypeNode.map { typeNode =>
         // Check that the value's inferred type adheres to the declared type bounds.
         TypeExpressionEvaluator.evaluate(typeNode).flatMap { tpe =>
@@ -116,13 +115,26 @@ private[verification] class FunctionVerificationVisitor(
       }.flatMap { tpe =>
         // Register the local variable with the scope.
         val localVariable = LocalVariable(name, tpe, isMutable)
-
-        // An assignment always results in a unit value.
-        node.typed(ProductType.UnitType)
+        context.currentScope.register(localVariable, node.position).flatMap { _ =>
+          // An assignment always results in a unit value.
+          node.typed(ProductType.UnitType)
+        }
       }
     case AssignmentNode(address, value) =>
-      // TODO: Check that the value assigned to the variable adheres to the variable's type bounds.
-      node.typed(ProductType.UnitType)
+      // We check the assignment based on the kind of address node. Mostly, we want to ensure that the value
+      // assigned to the variable adheres to its type bounds. We also ensure that the variable or property is
+      // even assignable, i.e. mutable.
+      val (tpe, isMutable) = address match {
+        case variableNode: VariableNode => (variableNode.inferredType, variableNode.variable.isMutable)
+        case accessNode: PropertyAccessNode => (accessNode.inferredType, accessNode.member.isMutable)
+        case _ => throw new RuntimeException("This case should not be reached.")
+      }
+      (
+        // Ensure that the value has the right type.
+        havingSubtype(value, tpe),
+        // Ensure that we can even assign a value to the variable or property.
+        Verification.fromErrors(if (!isMutable) ImmutableAssignment(address) :: Nil else Nil)
+      ).simultaneous.flatMap(_ => node.typed(ProductType.UnitType))
 
     // Unary operations.
     case NegationNode(expr) =>
@@ -191,6 +203,10 @@ private[verification] class FunctionVerificationVisitor(
 }
 
 private[verification] object FunctionVerificationVisitor {
+  case class ImmutableAssignment(addressNode: AddressNode)(implicit fragment: Fragment) extends Error(addressNode) {
+    override def message = s"The variable or property you are trying to assign to is immutable."
+  }
+
   implicit class StmtNodeExtension(node: StmtNode) {
     /**
       * Assigns the given type to the node and returns the type.
