@@ -284,6 +284,89 @@ entity Entity2D extends Entity3D {
 
 This is specifically possible because *component properties are immutable*. The parent class cannot reassign its own components, so we are free to require more specific types for sub-entities.
 
+##### Component Type Restrictions
+
+The freedom with which we allow subtyping of component types has a few **implications**. Say we have an entity type `E & C2` with `C1 < C2 < C3`. We could assign a value of either `C1` or `C2` to the entity. This already leads to a problem when we consider the compilation process:
+
+```
+entity E1 {
+  component C1
+}
+
+entity E2 {
+  component C2
+}
+
+action f(e: +C2) {
+  e.C2
+}
+```
+
+In the example above, assume that `C1` of `E1` is named `C1` in the resulting target code. How do we get `C1` through a property access of `C2`? This requires us to **resolve component values dynamically at run-time** if we try to access a subtypeable component `C2` through a generic component type. A similar problem arises with overridden components, by the way: we have to add a bridge from the overridden component to the overriding component.
+
+Consider another problem: since `C2 < C3`, we should be able to **access** `C1` of `E1` via a variable of type `+C3`:
+
+```
+action f2(e: +C3) {
+  e.C3 // If e has type E1, this should be a C1.
+}
+```
+
+This is immediately useful, of course. But `C3` **wasn't even declared** in either `E1` or `E2`. This leads to the following awkwardness:
+
+```
+abstract class C
+class CA extends C
+class CB extends C
+
+entity E {
+  component CA
+  component CB
+}
+
+action f(e: +C) {
+  e.C // WELL THAT'S A PROBLEM.
+}
+```
+
+We don't know whether `e.C` refers to `CA` or `CB`. Well, in fact, it refers to *both*. But we don't know `E` in `f`. We just know that some entity has a component of type `C`. This means we have **two options:**
+
+1. Any component access **returns a list**.
+2. Any two components defined in an entity **must not share a superclass**.
+
+The first option would make components effectively unusable. It is rarely desirable to have to always handle lists when we want to operate on components that should be standalone instances. Hence, we choose the **second option**.
+
+If no components share a superclass (`Any` does not count, since it is not a class), we can **always decide** which component belongs to a given component type `+C`. The downside is that we cannot have two components sharing a superclass, such as:
+
+```
+abstract class Stat
+class Strength extends Stat
+class Dexterity extends Stat
+
+entity Hero {
+  // Does not compile: Strength and Dexterity share a superclass.
+  component Strength
+  component Dexterity
+}
+```
+
+But of course, we can always **rewrite the entity** in a way that allows us to implement the desired design. Consider the following example. We lose a little bit of flexibility, but we gain flexibility by being able to access components by their supertype. 
+
+```
+class StatRepository {
+  strength: Strength
+  dexterity: Dexterity
+}
+
+entity Hero {
+  component StatRepository
+}
+```
+
+Luckily, by the way, **`+Any`** is not a valid type, since `Any` is not a class. So we don't shoot ourselves in the foot by disallowing the full class hierarchy, only the subtree with root `C` being a direct subtype of `Any`.
+
+Since component types (`+C`) are restricted to classes, we do not have the same issue with **label types** (or potential future traits, interfaces, and so on). This means that we *can* have two components that have the same label type. We can *also* support an operation that gives us a list of components that have a specific label type. If an access like `e.C3` was going to return a list, we wouldn't even have to introduce the subtype-supertype restriction. 
+
 ##### Ownership
 
 Some components may **depend** on other components. For example, an AI component may rely on a position component. We want to provide a native way to deal with such dependencies.
