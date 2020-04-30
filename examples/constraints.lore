@@ -2,6 +2,8 @@
  * This lore file will result in a lot of errors, as we attempt to violate all the class constraints.
  */
 
+// TODO: Write a test which checks that all the expected errors occur in the right places.
+
 class A
 class B
 
