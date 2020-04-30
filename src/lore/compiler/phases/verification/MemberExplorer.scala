@@ -14,11 +14,30 @@ object MemberExplorer {
   // TODO: Implement some form of caching! We can cache HARD here.
   // TODO: Unit-test this class.
 
+  // TODO: We need to consider ownership restrictions here! If a component is owned by any type A, we must consider
+  //       members of that type A. (PRIORITY!)
+
+  /**
+    * Finds a virtual member with the given name within the given type.
+    */
+  def find(name: String, tpe: Type, position: Position): C[VirtualMember] = {
+    members(tpe, position).flatMap { members =>
+      members.get(name) match {
+        case None => Compilation.fail(MemberNotFound(name, tpe, position))
+        case Some(member) => Compilation.succeed(member)
+      }
+    }
+  }
+
   /**
     * Return all virtual members associated with this type. Any ambiguity errors are attached the given position,
     * which should be the point in the code where the member is accessed.
     */
-  def explore(tpe: Type, position: Position): C[List[VirtualMember]] = {
+  def members(tpe: Type, position: Position): C[Map[String, VirtualMember]] = {
+    memberList(tpe, position).map { list => list.map(vm => (vm.name, vm)).toMap }
+  }
+
+  private def memberList(tpe: Type, position: Position): C[List[VirtualMember]] = {
     tpe match {
       // Base cases (no recursion).
       case AnyType | _: BasicType | _: LabelType =>
@@ -54,7 +73,7 @@ object MemberExplorer {
         // like Java where functions defined in an interface are part of an implicit global namespace (just imagine
         // two 'destroy' functions being declared in two separate interfaces).
         // TODO: Consider if we can solve the "global namespace" problem in a better way.
-        val allMembers = types.toList.map { tpe => MemberExplorer.explore(tpe, position) }.simultaneous.map(_.flatten)
+        val allMembers = types.toList.map { tpe => MemberExplorer.memberList(tpe, position) }.simultaneous.map(_.flatten)
         allMembers.flatMap { members =>
           // Let's look at the virtual members of the type grouped by their names.
           members.groupBy(_.name).map {
@@ -67,7 +86,7 @@ object MemberExplorer {
               // we have a true ambiguity.
               // TODO: If this ever leads to performance problems, consider a smarter algorithm.
               members.find(m1 => members.forall(m2 => Subtyping.isSubtype(m2.tpe, m1.tpe))) match {
-                case None => Compilation.fail(AmbiguousTypeMember(tpe, name, position))
+                case None => Compilation.fail(AmbiguousTypeMember(name, tpe, position))
                 case Some(member) => Compilation.succeed(member)
               }
             case _ => throw new RuntimeException("This case should never be reached.")
@@ -76,9 +95,13 @@ object MemberExplorer {
     }
   }
 
-  case class AmbiguousTypeMember(tpe: Type, name: String, pos: Position) extends Error(pos) {
+  case class AmbiguousTypeMember(name: String, tpe: Type, pos: Position) extends Error(pos) {
     override def message: String = s"You are trying to access a member of a type $tpe. This type has a member ambiguity" +
       s" in the member $name, as there are at least two individual members of the same name with incompatible types. Please" +
       s" fix the ambiguity before you try to access a member of that type."
+  }
+
+  case class MemberNotFound(name: String, tpe: Type, pos: Position) extends Error(pos) {
+    override def message: String = s"A member $name does not exist within the type $tpe."
   }
 }

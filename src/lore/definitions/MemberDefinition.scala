@@ -11,17 +11,15 @@ import lore.types.{ClassType, ComponentType, Type, TypingDeferred}
 sealed trait MemberDefinition[+T <: Type] extends PositionedDefinition with TypingDeferred[T] {
   def name: String
   def isMutable: Boolean = false
-  def isComponent: Boolean
+  def isComponent: Boolean = false
   def asParameter: ParameterDefinition = new ParameterDefinition(name, typeResolver, position)
-  def asVirtualMember: VirtualMember = VirtualMember(name, tpe, isComponent = isComponent, underlying = Some(this))
+  def asVirtualMember: VirtualMember = VirtualMember(name, tpe, isComponent = isComponent, isMutable = isMutable, underlying = Some(this))
 }
 
 class PropertyDefinition(
   override val name: String, override val typeResolver: () => C[Type], override val isMutable: Boolean,
   override val position: Position,
-) extends MemberDefinition[Type] {
-  override def isComponent: Boolean = false
-}
+) extends MemberDefinition[Type]
 
 /**
   * @param name The name of the component (and at the same time its type name).
