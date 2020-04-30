@@ -68,11 +68,19 @@ private[verification] class FunctionVerificationVisitor(
   override def verify(node: StmtNode): Verification = node match {
     // Variables.
     case VariableNode(name) =>
-      // TODO: We need a sort of type context that saves local variable types etc. to resolve this.
       // TODO: We will also need access to global variables if we introduce those into Lore.
       // TODO: Once we treat functions as values, we will have to make this even more complicated by also
       //       considering function names.
-      ???
+      context.currentScope.variable(name, node.position).flatMap { variable =>
+        node.typed(variable.tpe)
+      }
+    case node@PropertyAccessNode(instance, name) =>
+      // TODO: We should also ascribe the virtual member to the AST so that it can be directly used by the
+      //       transpilation phase later.
+      MemberExplorer.find(name, instance.inferredType, node.position).flatMap { member =>
+        node.member = member
+        node.typed(member.tpe)
+      }
 
     // Literals.
     case RealLiteralNode(_)   => node.typed(BasicType.Real)
@@ -125,11 +133,6 @@ private[verification] class FunctionVerificationVisitor(
       beingBoolean(expr).flatMap { _ =>
         node.typed(BasicType.Boolean)
       }
-    case PropertyAccessNode(instance, names) =>
-      // TODO: The instance must be a class. Then we also need to get the actual property type at the end of
-      //       the chain. So we not only have to infer types here, but also report an error if the property
-      //       doesn't exist.
-      ???
 
     // Repetitions.
     case RepeatWhileNode(condition, body, deferCheck) =>

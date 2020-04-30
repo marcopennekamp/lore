@@ -1,6 +1,7 @@
 package lore.ast
 
 import lore.ast.StmtNode.{BinaryNode, LeafNode, TernaryNode, UnaryNode, XaryNode}
+import lore.compiler.phases.verification.VirtualMember
 import lore.types.Type
 
 /**
@@ -139,7 +140,19 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Object expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class PropertyAccessNode(instance: ExprNode, name: String) extends ExprNode with UnaryNode with AddressNode
+  // TODO: Rename to MemberAccessNode.
+  case class PropertyAccessNode(instance: ExprNode, name: String) extends ExprNode with UnaryNode with AddressNode {
+    private var _member: VirtualMember = _
+
+    /**
+      * The virtual member that this property node accesses, which is resolved during function verification.
+      */
+    def member: VirtualMember = _member
+    def member_=(member: VirtualMember): Unit = {
+      assert(_member == null)
+      _member = member
+    }
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Block expressions. Note that blocks can hold statements.
