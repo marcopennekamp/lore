@@ -78,15 +78,14 @@ The chief representation of the Lore program is now a set of **Definition** and 
 
 At first, this phase verifies specific **constraints** simultaneously:
 
-
-
 - Constraints for **classes and entities:** 
   1. Non-entity classes may not **extend** entities. 
   2. The owned-by type of a class must be a **subtype of the owned-by type** of its superclass. If the class or superclass has no owned-by type, assume Any.
-  3. Each owned-by type of a component's class (the type declared at compile-time) must be **compatible with the entity** the component is declared in. This does not cover all the necessary run-time checks, but gives a basic level of type safety.
   4. Class properties and components must be **unique**. They may not have already been declared in a superclass and they may not be declared twice in the given class.
-  5. Each component **overriding** another component must be a subtype of the overridden component. The overridden component must also exist in the first place.
-  6. Each **constructor** must end with a **continuation** node and may not have such a node in any other place. Continuations must be **acyclic** and must result in a `construct` continuation.
+  4. Each owned-by type of a component's class (the type declared at compile-time) must be **compatible with the entity** the component is declared in. This does not cover all the necessary run-time checks, but gives a basic level of type safety.
+  5. Each **component** in an entity may **not share a superclass** with any other component defined in the same entity.
+  6. Each component **overriding** another component must be a subtype of the overridden component. The overridden component must also exist in the first place.
+  7. Each **constructor** must end with a **continuation** node and may not have such a node in any other place. Continuations must be **acyclic** and must result in a `construct` continuation.
 - Constraints for **multi-functions:**
   1. All function signatures must be **unique**.
   2. At no position in the function body may there be a **continuation** node.

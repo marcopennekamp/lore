@@ -18,6 +18,14 @@ trait DeclaredType extends Type {
   def supertype: Option[DeclaredType]
 
   /**
+    * The supertype of the declared type that directly inherits from Any, possibly this type itself.
+    */
+  def rootSupertype: DeclaredType = supertype match {
+    case None => this
+    case Some(tpe) => tpe.rootSupertype
+  }
+
+  /**
     * Returns the set of explicitly declared immediate subtypes, for example direct subclasses or direct
     * sub-label types.
     */

@@ -6,7 +6,7 @@ import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
 import lore.compiler.{Compilation, Fragment, Registry}
 import lore.definitions.{ClassDefinition, ComponentDefinition, ConstructorDefinition, MemberDefinition}
-import lore.types.{AnyType, Subtyping, Type}
+import lore.types.{AnyType, ClassType, Subtyping, Type}
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
 
@@ -18,17 +18,28 @@ object ClassConstraints {
     *      or superclass has no owned-by type, assume Any.
     *   3. Class properties and components must be unique.
     *   4. If a component member has an ownedBy type, we verify that the component can be in fact owned by this entity.
-    *   5. Each component overriding another component must be a subtype of the overridden component.
-    *   6. Each constructor must end with a continuation node and may not have such a node in any other place.
+    *   5. Each component in an entity may not share a superclass with any other component defined in the same entity. [deferred]
+    *   6. Each component overriding another component must be a subtype of the overridden component. The overridden
+    *      component also has to even exist.
+    *   7. Each constructor must end with a continuation node and may not have such a node in any other place.
     *      Continuations must be acyclic and must result in a construct continuation.
     */
   def verify(definition: ClassDefinition)(implicit registry: Registry): Verification = {
+    val componentVerifications = (
+      verifyMembersUnique(definition),
+      definition.localComponents.map(verifyOverrides(definition, _)).simultaneous,
+      definition.localComponents.map(verifyCanOwn(definition, _)).simultaneous,
+    ).simultaneous.flatMap { _ =>
+      // Shared superclasses are only verified once all other component-specific errors have been reported.
+      // This is simply necessary because otherwise half of all other errors (such as components not being unique)
+      // ALSO lead to this error, which is just confusing for the user.
+      verifyComponentsDontShareSuperclass(definition)
+    }
+
     (
       verifyEntityInheritance(definition),
       verifyOwnedBy(definition),
-      verifyMembersUnique(definition),
-      definition.localComponents.map(verifyCanOwn(definition, _)).simultaneous,
-      definition.localComponents.map(verifyOverrides(definition, _)).simultaneous,
+      componentVerifications,
       verifyContinuations(definition),
     ).simultaneous.verification
   }
@@ -111,6 +122,29 @@ object ClassConstraints {
     if (!Subtyping.isSubtype(definition.tpe, ownershipType)) {
       Compilation.fail(ClassCannotOwnComponent(definition, component))
     } else Verification.succeed
+  }
+
+  case class ComponentsShareSuperclass(definition: ClassDefinition, superclass: ClassType, components: List[ComponentDefinition]) extends Error(definition) {
+    override def message: String = s"The following components illegally share a superclass $superclass: ${components.map(_.name).mkString(", ")}." +
+      s" Components may not share a superclass, because component types such as +C have to stay unambiguous for all possible entities."
+  }
+
+  /**
+    * Verifies that no two components share the same superclass, which is a restriction outlined in detail in the
+    * specification.
+    */
+  def verifyComponentsDontShareSuperclass(definition: ClassDefinition): Verification = {
+    // Algorithm:
+    //   1. Map each component to its highest superclass type.
+    //   2. Group components by their superclass type.
+    //   3. If there is more than one component in a superclass bucket, they share that superclass.
+    definition.components.map(c => (c.tpe.rootSupertype, c))
+      .groupBy(_._1)
+      .map {
+        case (_, List(_)) => Verification.succeed
+        case (superclass, bucket) if bucket.size > 1 => Compilation.fail(ComponentsShareSuperclass(definition, superclass, bucket.map(_._2)))
+      }
+      .toList.simultaneous.verification
   }
 
   case class OverriddenComponentDoesNotExist(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {

@@ -7,13 +7,14 @@ class B
 
 class C1 owned by +A
 
-// Illegal: C2 may not extends C1 since B is not a subtype of A.
+// Illegal: C2 may not extend C1 since B is not a subtype of A.
 class C2 extends C1 owned by +B
 
 entity E {
   component B
   // Illegal: E may not own C1 since it doesn't have a component A.
   component C1
+  // Illegal: E may not own C1 and C2 at the same time, since they both share a superclass (trivially C1).
   component C2
 }
 
@@ -47,6 +48,12 @@ entity O2 extends O {
   component H overrides G
   // Illegal: The type I doesn't exist.
   component H2 overrides I
+}
+
+entity O3 {
+  // Illegal: H and H2 share a superclass!
+  component H
+  component H2
 }
 
 

@@ -329,7 +329,7 @@ action f(e: +C) {
 }
 ```
 
-We don't know whether `e.C` refers to `CA` or `CB`. Well, in fact, it refers to *both*. But we don't know `E` in `f`. We just know that some entity has a component of type `C`. This means we have **two options:**
+We don't know whether `e.C` refers to `CA` or `CB`. Well, in fact, it refers to *both*. But we don't know that `e` is `E` in `f`. We just know that *some* entity has a component of type `C`. This means we have **two options:**
 
 1. Any component access **returns a list**.
 2. Any two components defined in an entity **must not share a superclass**.
