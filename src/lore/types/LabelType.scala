@@ -10,5 +10,5 @@ class LabelType(override val supertype: Option[LabelType]) extends DeclaredType 
     */
   override def isAbstract = true
 
-  override def verbose = s"$toString < $supertype"
+  override def verbose = s"$toString${supertype.map(t => s" < $t").getOrElse("")}"
 }

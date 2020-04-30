@@ -8,6 +8,6 @@ class BI extends B
  * abstract functions which are specialized with one concrete type but never fully aren't magically valid.
  * This example is also mentioned in the spec.
  */
-action f(a: A, b: B) { }
-action f(a: AI, b: B) { }
-action f(a: A, b: BI) { }
+action f(a: A, b: B)
+action f(a: AI, b: B)
+action f(a: A, b: BI)
