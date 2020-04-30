@@ -8,6 +8,14 @@
 
 
 
+#### Problems
+
+- The term **component type** is ambiguous. It usually refers to a proper kind of type `+C`, but may also be used for "the type of a component of an entity." Maybe we can find another name for `+C`, one that better reflects the nature that a value of `+C` is an *entity* value, not a component value.
+- Maybe we should introduce a restriction that an intersection type **can only ever contain one class type**. This is simply for practical reasons, because it is currently impossible to create a value which would be of two different classes, except for a construction such as `A & B` for `A < B`. But `A` is trivially a subtype of `B`, so `A & B` is a nonsensical construction. In summary, it makes no sense to have more than one class in a single intersection types (at least as far as I can see), so we should disallow it so as not to confuse the programmer. We can always ease the restriction if such an intersection suddenly makes sense.
+  - One feature that would make such intersections useful would be **multiple inheritance**, because then we can have a constellation of multiple classes inheriting from two independent classes `A` and `B` each, and defining functions over such intersections `A & B`.
+
+
+
 #### Ideas for later
 
 - Rename multi-functions to **multi-methods** and functions to methods to signal that they implement dispatch in contrast to "simple" function that are treated as values?
