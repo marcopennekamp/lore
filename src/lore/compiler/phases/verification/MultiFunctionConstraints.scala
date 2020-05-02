@@ -102,6 +102,7 @@ object MultiFunctionConstraints {
       //    B1 and B2, if the given value of type B is neither B1 nor B2, since it could just be B. Hence, we cannot use
       //    directDeclaredSubtypes, because it would substitute B1 and B2 for B, leaving B out of the equation entirely.
       Subtyping.abstractResolvedDirectSubtypes(f.signature.inputType).toList.flatMap { subtype =>
+        // TODO: Can we optimize this given the new hierarchy?
         val isValid = mf.functions.exists { f2 =>
           Subtyping.isStrictSubtype(f2.signature.inputType, f.signature.inputType) && mf.fit(subtype).contains(f2)
         }

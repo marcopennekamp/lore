@@ -1,6 +1,6 @@
 package lore.definitions
 
-import lore.types.{Subtyping, Type}
+import lore.types.{ProductType, Type}
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
 
@@ -15,22 +15,91 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
   private implicit val edgeFactory = DiEdge
   buildHierarchy()
 
+  // TODO: Instead of building a hierarchy, it might be cheaper to simply compare all functions IF the function
+  //       list is small or linear. For example, if there are only 10 functions associated with the multi-function,
+  //       building the hierarchy structure and traversal structures for traverseHierarchy might be more expensive
+  //       than going through all elements.
+
   /**
-    * Returns the multi-function fit as defined in the specification.
+    * All root nodes in the hierarchy, i.e. those functions with a super-function.
     */
-  def fit(t: Type): Set[FunctionDefinition] = {
-    //functions.foreach(f => println(s"$t <= ${f.inputType}? ${Subtyping.isSubtype(t, f.inputType)}"))
-    // TODO: Implement fit using the function hierarchy.
-    functions.filter(f => Subtyping.isSubtype(t.toTuple, f.signature.inputType)).toSet
+  private lazy val hierarchyRoots: List[hierarchy.NodeT] = hierarchy.nodes.filter(_.inDegree == 0).toList
+
+  /**
+    * When used as a visit-predicate for [[traverseHierarchy]], all and only nodes that are part of the function
+    * fit for a given input type are visited.
+    */
+  private def visitFit(input: ProductType)(node: hierarchy.NodeT): Boolean = input <= node.signature.inputType
+
+  /**
+    * Calculates the multi-function fit.
+    */
+  def fit(tpe: Type): List[FunctionDefinition] = {
+    traverseHierarchy(
+      // We only have to visit nodes that are a supertype of the input type, because any children of these nodes
+      // won't be a supertype of the input type if their parent isn't already a supertype.
+      visit  = visitFit(tpe.toTuple),
+      select = _ => true,
+    )
   }
 
-  // TODO: Implement multiMin here, using the new function hierarchy?
+  /**
+    * Calculates the multi-function min.
+    */
+  def min(tpe: Type): List[FunctionDefinition] = {
+    // Even though min is defined in terms of the fit, we don't use the fit function and instead compute everything in
+    // one traversal.
+    val visit = visitFit(tpe.toTuple) _
+    traverseHierarchy(
+      visit,
+      // We select all nodes for which no children are visited. This is easy to see: Min is defined in terms of
+      // "there are no other fitting functions which have a smaller input type than this". If none of the children
+      // are visited, all possible sub-functions of this node don't fit the given input type; this means that the
+      // node at hand represents the "end of the chain" in terms of possible functions to call. We have found the
+      // minimum possible function in this part of the graph.
+      select = node => !node.diSuccessors.exists(visit),
+    )
+  }
 
   /**
     * Returns the function with the exact given input type.
     */
-  def exact(inputType: Type): Option[FunctionDefinition] = {
-    functions.find(f => f.signature.inputType == inputType.toTuple)
+  def exact(tpe: Type): Option[FunctionDefinition] = {
+    //functions.find(f => f.signature.inputType == inputType.toTuple)
+    // Using traverseHierarchy ensures that we only visit subtrees that could contain the exact candidate.
+    val input = tpe.toTuple
+    traverseHierarchy(
+      visit  = node => input <= node.signature.inputType,
+      select = node => input == node.signature.inputType,
+    ).headOption
+  }
+
+  /**
+    * Traverses the hierarchy, visiting all nodes for which visit(node) is true, selecting all nodes for which
+    * visit(node) AND select(node) are true. Each node is visited only once, even if it has more than one
+    * incoming edge.
+    */
+  private def traverseHierarchy(
+    visit: hierarchy.NodeT => Boolean,
+    select: hierarchy.NodeT => Boolean,
+  ): List[FunctionDefinition] = {
+    var remaining = hierarchyRoots
+    var results: List[FunctionDefinition] = Nil
+    val visited = mutable.HashSet[FunctionDefinition]()
+    while (remaining.nonEmpty) {
+      val node = remaining.head
+      remaining = remaining.tail
+      if (!visited.contains(node) && visit(node)) {
+        if (select(node)) {
+          results = node :: results
+        }
+
+        // Add the children to the unseen list in any case. Whether they should be visited is checked later.
+        remaining = node.diSuccessors.toList ::: remaining
+      }
+      visited.add(node)
+    }
+    results
   }
 
   /**
