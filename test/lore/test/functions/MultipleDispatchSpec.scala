@@ -8,9 +8,8 @@ import org.scalatest.Assertion
 
 class MultipleDispatchSpec extends BaseSpec with TypeSyntax {
   def testFitAndMin(mf: MultiFunctionDefinition)(t: Type, expectedFit: Set[FunctionDefinition], expectedMin: Set[FunctionDefinition]): Assertion = {
-    val fit = mf.fit(t)
-    fit should be (expectedFit)
-    fit.multiMin should be (expectedMin)
+    mf.fit(t).toSet should be (expectedFit)
+    mf.min(t).toSet should be (expectedMin)
   }
 
   "The multi-function fit and min" should "be correctly defined for concat.lore" in {
