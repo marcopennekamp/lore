@@ -1,5 +1,8 @@
 package lore.types
 
+import scala.runtime.ScalaRunTime
+import scala.util.hashing.MurmurHash3
+
 case class IntersectionType private (types: Set[Type]) extends Type with OperatorType {
   // An intersection type must not be empty!
   assert(types.nonEmpty)
@@ -37,6 +40,8 @@ case class IntersectionType private (types: Set[Type]) extends Type with Operato
   override protected def precedence: TypePrecedence = TypePrecedence.Intersection
   override protected def operands: List[Type] = types.toList
   override protected def operator: String = "&"
+
+  override val hashCode: Int = MurmurHash3.setHash(types)
 }
 
 object IntersectionType {

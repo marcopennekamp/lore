@@ -1,6 +1,14 @@
 package lore.types
 
+/**
+  * Any Lore type.
+  *
+  * Note: hashCode should be defined as a val or lazy val to avoid recomputing hashes during the runtime of the
+  * compiler. At times, we will hash types heavily, and so fast hash access is important.
+  */
 trait Type {
+  // TODO: As a general performance improvement, we might consider interning types like strings are interned.
+
   /**
     * Returns a singleton product type enclosing this type, unless this type is already a product type.
     */

@@ -40,6 +40,13 @@ trait DeclaredType extends Type {
   def verbose: String = toString
 
   override def string(precedence: TypePrecedence): String = definition.name
+
+  // We define equality of declared types as nominal equality.
+  override def equals(obj: Any): Boolean = obj match {
+    case rhs: DeclaredType => this.eq(rhs) || definition.name == rhs.definition.name
+    case _ => false
+  }
+  override lazy val hashCode: Int = definition.name.hashCode
 }
 
 object DeclaredType {

@@ -22,4 +22,5 @@ object FunctionDefinition {
       functions.filter(f => !functions.filter(f2 => f2 != f).exists(f2 => Subtyping.isSubtype(f2.signature.inputType, f.signature.inputType)))
     }
   }
+  override lazy val hashCode: Int = signature.hashCode
 }

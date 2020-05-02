@@ -1,5 +1,7 @@
 package lore.types
 
+import scala.util.hashing.MurmurHash3
+
 case class ProductType(components: List[Type]) extends Type {
   /**
     * Since this is already a tuple, there is no need to enclose it in another tuple.
@@ -14,6 +16,8 @@ case class ProductType(components: List[Type]) extends Type {
   override def string(parentPrecedence: TypePrecedence): String = {
     s"(${components.map(_.string(TypePrecedence.Parenthesized)).mkString(", ")})"
   }
+
+  override val hashCode: Int = MurmurHash3.unorderedHash(components)
 }
 
 object ProductType {
