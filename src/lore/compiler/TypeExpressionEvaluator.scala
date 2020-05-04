@@ -14,8 +14,8 @@ object TypeExpressionEvaluator {
     val eval = evaluate _
     expression match {
       case TypeExprNode.NominalNode(name) => registry.resolveType(name, expression)
-      case TypeExprNode.IntersectionNode(expressions) => expressions.toList.map(eval).simultaneous.map(IntersectionType.construct)
-      case TypeExprNode.SumNode(expressions) => expressions.toList.map(eval).simultaneous.map(SumType.construct)
+      case TypeExprNode.IntersectionNode(expressions) => expressions.map(eval).simultaneous.map(IntersectionType.construct)
+      case TypeExprNode.SumNode(expressions) => expressions.map(eval).simultaneous.map(SumType.construct)
       case TypeExprNode.ProductNode(expressions) => expressions.map(eval).simultaneous.map(ProductType(_))
       case TypeExprNode.UnitNode => Compilation.succeed(ProductType.UnitType)
       case TypeExprNode.ListNode(element) => eval(element).map(ListType)

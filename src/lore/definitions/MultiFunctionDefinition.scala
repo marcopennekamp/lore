@@ -65,7 +65,6 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
     * Returns the function with the exact given input type.
     */
   def exact(tpe: Type): Option[FunctionDefinition] = {
-    //functions.find(f => f.signature.inputType == inputType.toTuple)
     // Using traverseHierarchy ensures that we only visit subtrees that could contain the exact candidate.
     val input = tpe.toTuple
     traverseHierarchy(

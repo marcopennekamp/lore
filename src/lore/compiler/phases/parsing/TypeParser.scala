@@ -16,8 +16,8 @@ object TypeParser {
       operator = StringIn("|", "&", "->"),
       operand = atom,
       operatorMeta = Map(
-        "|" -> XaryOperator(1, (list: List[TypeExprNode]) => TypeExprNode.SumNode(list.toSet)),
-        "&" -> XaryOperator(2, (list: List[TypeExprNode]) => TypeExprNode.IntersectionNode(list.toSet)),
+        "|" -> XaryOperator(1, TypeExprNode.SumNode),
+        "&" -> XaryOperator(2, TypeExprNode.IntersectionNode),
         "->" -> BinaryOperator(3, TypeExprNode.MapNode),
       ),
     )

@@ -27,19 +27,19 @@ class TypeParserSpec extends BaseSpec with ParserSpecExtensions[TypeExprNode] {
   }
 
   it should "correctly parse complex types" in {
-    "A | B | C" --> SumNode(Set(A, B, C))
+    "A | B | C" --> SumNode(List(A, B, C))
     "A -> B" --> MapNode(A, B)
-    "[(A, B, C) & D & +E]" --> ListNode(IntersectionNode(Set(ProductNode(List(A, B, C)), D, ComponentNode(E.name))))
-    "A | (B, C) | +D" --> SumNode(Set(A, ProductNode(List(B, C)), ComponentNode(D.name)))
+    "[(A, B, C) & D & +E]" --> ListNode(IntersectionNode(List(ProductNode(List(A, B, C)), D, ComponentNode(E.name))))
+    "A | (B, C) | +D" --> SumNode(List(A, ProductNode(List(B, C)), ComponentNode(D.name)))
     "(A, (), B)" --> ProductNode(List(A, UnitNode, B))
-    "[A -> B | C -> D]" --> ListNode(SumNode(Set(MapNode(A, B), MapNode(C, D))))
+    "[A -> B | C -> D]" --> ListNode(SumNode(List(MapNode(A, B), MapNode(C, D))))
   }
 
   it should "correctly parse type operator precedence and enclosed types" in {
     // In actual code, recommend setting some parens here, regardless of precedence.
-    "A & B -> C & D | E" --> SumNode(Set(IntersectionNode(Set(A, MapNode(B, C), D)), E))
-    "(A & B) -> (C & (D | E))" --> MapNode(IntersectionNode(Set(A, B)), IntersectionNode(Set(C, SumNode(Set(D, E)))))
-    "A | B & C -> D" --> SumNode(Set(A, IntersectionNode(Set(B, MapNode(C, D)))))
+    "A & B -> C & D | E" --> SumNode(List(IntersectionNode(List(A, MapNode(B, C), D)), E))
+    "(A & B) -> (C & (D | E))" --> MapNode(IntersectionNode(List(A, B)), IntersectionNode(List(C, SumNode(List(D, E)))))
+    "A | B & C -> D" --> SumNode(List(A, IntersectionNode(List(B, MapNode(C, D)))))
   }
 
   it should "fail on incorrect type syntax" in {
