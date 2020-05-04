@@ -77,9 +77,9 @@ object StmtVisitor {
     visitor.before.applyOrElse(node, (_: StmtNode) => ())
 
     // Importing all statement nodes makes the code far easier to digest visually.
+    import ExprNode._
     import StmtNode._
     import TopLevelExprNode._
-    import ExprNode._
 
     node match {
       // Leafs.

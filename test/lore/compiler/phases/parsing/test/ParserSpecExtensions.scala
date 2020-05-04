@@ -1,10 +1,10 @@
-package lore.test.parser
+package lore.compiler.phases.parsing.test
 
+import fastparse.ScalaWhitespace._
 import fastparse._
+import lore.compiler.phases.parsing.Space
 import lore.test.BaseSpec
 import org.scalatest.Assertion
-import ScalaWhitespace._
-import lore.compiler.phases.parsing.Space
 
 trait ParserSpecExtensions[Result] { base: BaseSpec =>
   def parser[_: P]: P[Result]

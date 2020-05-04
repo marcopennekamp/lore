@@ -1,4 +1,4 @@
-package lore.test.types
+package lore.test
 
 import lore.compiler.Registry
 import lore.types.{IntersectionType, ProductType, SumType, Type}

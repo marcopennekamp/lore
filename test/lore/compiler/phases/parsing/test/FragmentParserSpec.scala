@@ -1,4 +1,4 @@
-package lore.test.parser
+package lore.compiler.phases.parsing.test
 
 import fastparse.P
 import lore.ast._
@@ -7,9 +7,9 @@ import lore.test.BaseSpec
 
 class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNode]] {
   import DeclNode._
-  import TypeDeclNode._
-  import TopLevelExprNode._
   import ExprNode._
+  import TopLevelExprNode._
+  import TypeDeclNode._
 
   override def parser[_: P] = FragmentParser.fragment
 

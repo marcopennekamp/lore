@@ -17,9 +17,9 @@ private[verification] class FunctionVerificationVisitor(
   val signature: FunctionSignature,
 )(implicit registry: Registry, fragment: Fragment) extends VerificationStmtVisitor {
   import ExprNode._
+  import FunctionVerificationVisitor._
   import StmtNode._
   import TopLevelExprNode._
-  import FunctionVerificationVisitor._
 
   /**
     * The function verification context used by the visitor to open/close scopes, register yields, and so on.

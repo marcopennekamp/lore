@@ -1,9 +1,9 @@
-package lore.test.parser
+package lore.compiler.phases.parsing.test
 
-import lore.ast.TypeExprNode
-import lore.test.BaseSpec
 import fastparse.P
+import lore.ast.TypeExprNode
 import lore.compiler.phases.parsing.TypeParser
+import lore.test.BaseSpec
 
 class TypeParserSpec extends BaseSpec with ParserSpecExtensions[TypeExprNode] {
   import TypeExprNode._

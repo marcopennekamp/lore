@@ -2,7 +2,7 @@ package lore.definitions
 
 import lore.ast.ExprNode
 import lore.compiler.feedback.Position
-import lore.types.{Subtyping, Type}
+import lore.types.Type
 
 class FunctionDefinition(
   val name: String, val parameters: List[ParameterDefinition], outputType: Type, val body: Option[ExprNode],

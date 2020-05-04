@@ -1,4 +1,4 @@
-package lore.test.parser
+package lore.compiler.phases.parsing.test
 
 import lore.ast.ExprNode.VariableNode
 import lore.ast.TypeExprNode.NominalNode

@@ -1,6 +1,6 @@
 package lore.ast
 
-import lore.ast.StmtNode.{BinaryNode, LeafNode, TernaryNode, UnaryNode, XaryNode}
+import lore.ast.StmtNode._
 import lore.compiler.phases.verification.{LocalVariable, VirtualMember}
 import lore.types.Type
 
