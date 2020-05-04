@@ -6,11 +6,11 @@ import org.scalatest.Assertion
 import ScalaWhitespace._
 import lore.compiler.phases.parsing.Space
 
-trait ParserSpecExtensions[Node <: lore.ast.Node] { base: BaseSpec =>
-  def parser[_: P]: P[Node]
+trait ParserSpecExtensions[Result] { base: BaseSpec =>
+  def parser[_: P]: P[Result]
 
   implicit class CheckParseExtension(source: String) {
-    private def parse[T](onSuccess: Node => T, onFailure: String => T): T = {
+    private def parse[T](onSuccess: Result => T, onFailure: String => T): T = {
       def file[_: P] = P(Space.WL ~ parser ~ Space.WL ~ End)
       fastparse.parse(source, file(_)) match {
         case Parsed.Success(result, _) => onSuccess(result)
@@ -18,7 +18,7 @@ trait ParserSpecExtensions[Node <: lore.ast.Node] { base: BaseSpec =>
       }
     }
 
-    def -->(expected: Node): Assertion = {
+    def -->(expected: Result): Assertion = {
       parse[Assertion](_ shouldEqual expected, message => fail(s"Couldn't parse $source. $message."))
     }
 
@@ -26,8 +26,8 @@ trait ParserSpecExtensions[Node <: lore.ast.Node] { base: BaseSpec =>
       parse[Assertion](result => fail(s"Parsing $source should have failed, but resulted in $result."), _ => succeed)
     }
 
-    def parsed: Node = {
-      parse[Node](identity, message => fail(s"Couldn't parse $source. $message."))
+    def parsed: Result = {
+      parse[Result](identity, message => fail(s"Couldn't parse $source. $message."))
     }
   }
 }
