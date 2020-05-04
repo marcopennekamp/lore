@@ -218,6 +218,70 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
   }
 
   it should "parse entity and component declarations correctly" in {
-
+    """
+      |  class C1 owned by E1
+      |  class D1
+      |  class D2 extends D1
+      |
+      |  abstract entity E1 {
+      |    component C1
+      |    component D1
+      |
+      |    E1(c1: C1, d1: D1) {
+      |      construct(c1, d1)
+      |    }
+      |  }
+      |
+      |  entity E2 extends E1 {
+      |    component D2 overrides D1
+      |
+      |    E2(c1: C1, d2: D2) {
+      |      construct(d2) with super(c1, d2)
+      |    }
+      |  }
+    """.stripMargin --> List(
+      ClassNode("C1", None, ownedBy = Some(TypeExprNode.NominalNode("E1")), isAbstract = false, isEntity = false, Nil, Nil),
+      ClassNode("D1", None, None, isAbstract = false, isEntity = false, Nil, Nil),
+      ClassNode("D2", supertypeName = Some("D1"), None, isAbstract = false, isEntity = false, Nil, Nil),
+      ClassNode(
+        "E1",
+        supertypeName = None,
+        ownedBy = None,
+        isAbstract = true,
+        isEntity = true,
+        members = List(ComponentNode("C1", None), ComponentNode("D1", None)),
+        constructors = List(
+          ConstructorNode(
+            "E1",
+            List(ParameterNode("c1", TypeExprNode.NominalNode("C1")), ParameterNode("d1", TypeExprNode.NominalNode("D1"))),
+            BlockNode(List(
+              ConstructNode(List(VariableNode("c1"), VariableNode("d1")), withSuper = None),
+            )),
+          ),
+        ),
+      ),
+      ClassNode(
+        "E2",
+        supertypeName = Some("E1"),
+        ownedBy = None,
+        isAbstract = false,
+        isEntity = true,
+        members = List(ComponentNode("D2", overrides = Some("D1"))),
+        constructors = List(
+          ConstructorNode(
+            "E2",
+            List(ParameterNode("c1", TypeExprNode.NominalNode("C1")), ParameterNode("d2", TypeExprNode.NominalNode("D2"))),
+            BlockNode(List(
+              ConstructNode(
+                arguments = List(VariableNode("d2")),
+                withSuper = Some(ConstructorCallNode(
+                  None, List(VariableNode("c1"), VariableNode("d2"))
+                )),
+              ),
+            )),
+          ),
+        ),
+      ),
+    )
   }
 }
