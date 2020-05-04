@@ -1,6 +1,7 @@
 package lore.compiler.phases.parsing.test
 
 import fastparse._
+import lore.ast.StmtNode.ReturnNode
 import lore.ast._
 import lore.compiler.phases.parsing.StatementParser
 import lore.test.BaseSpec
@@ -390,8 +391,43 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   }
 
   "Statements and top-level expressions" should "only appear in blocks, conditionals, and repetitions" in {
-    // TODO: Test return statements.
-    // TODO: Test yield statements.
-    // TODO: Test assignments.
+    "const x = a + return 0".fails
+    "if (return x) a else b".fails
+    "(yield 0) | b | c".fails
+    "repeat while (yield x) { yield b }".fails
+    "b + yield 0".fails
+    "if (const a = false) { }".fails
+    "repeat while (const a = false) { }".fails
+    "-(const a = 2)".fails
+
+    "b + { const a = 4 \n a * a }" --> AdditionNode(
+      vb,
+      BlockNode(List(
+        VariableDeclarationNode("a", isMutable = false, None, IntLiteralNode(4)),
+        MultiplicationNode(va, va),
+      )),
+    )
+    "if (false) const a = 0" --> IfElseNode(
+      BoolLiteralNode(false),
+      VariableDeclarationNode("a", isMutable = false, None, IntLiteralNode(0)),
+      UnitNode,
+    )
+    "for (e in list) const a = e" --> IterationNode(
+      List(ExtractorNode("e", VariableNode("list"))),
+      VariableDeclarationNode("a", isMutable = false, None, VariableNode("e")),
+    )
+    "if (false) return 0 else yield 0" --> IfElseNode(
+      BoolLiteralNode(false),
+      ReturnNode(IntLiteralNode(0)),
+      YieldNode(IntLiteralNode(0)),
+    )
+    "for (e in list) return e" --> IterationNode(
+      List(ExtractorNode("e", VariableNode("list"))),
+      ReturnNode(VariableNode("e")),
+    )
+    "for (e in list) yield e" --> IterationNode(
+      List(ExtractorNode("e", VariableNode("list"))),
+      YieldNode(VariableNode("e")),
+    )
   }
 }

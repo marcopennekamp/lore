@@ -11,7 +11,7 @@ import lore.compiler.phases.parsing.StatementParser
   * in conjunction with P(...).log, to pinpoint issues with a parsing run.
   */
 object SingleParse {
-  private val source = "a.b.c"
+  private val source = "if ({ return 0 }) a else b"
 
   def main(args: Array[String]): Unit = {
     def file[_: P] = P(StatementParser.statement ~ End)

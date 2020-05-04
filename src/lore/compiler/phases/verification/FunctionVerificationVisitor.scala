@@ -78,6 +78,10 @@ private[verification] class FunctionVerificationVisitor(
     // Control nodes.
     case ReturnNode(expr) =>
       // TODO: Check that the returned expression adheres to the function's return type bounds.
+      // TODO: Check that the return is the last statement in the block. This effectively disallows dead code after
+      //       a return statement.
+      // TODO: Disallow constructions such as `if ({ return 0 }) a else b`. Returning should not be possible from
+      //       blocks that are in an expression position. We might have to add such a notion to blocks.
       // This doesn't quite adhere to the spec, but we'll go with unit for now.
       node.typed(ProductType.UnitType) // TODO: This should actually be a nothing/bottom type...
     case YieldNode(expr) =>
