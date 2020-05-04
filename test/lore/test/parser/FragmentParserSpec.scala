@@ -5,13 +5,13 @@ import lore.ast._
 import lore.compiler.phases.parsing.FragmentParser
 import lore.test.BaseSpec
 
-class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[DeclNode] {
+class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNode]] {
   import DeclNode._
   import TypeDeclNode._
   import TopLevelExprNode._
   import ExprNode._
 
-  override def parser[_: P] = FragmentParser.topDeclaration
+  override def parser[_: P] = FragmentParser.fragment
 
   import TestNodes._
 
@@ -26,7 +26,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[DeclNode] {
     |    }
     |    result
     |  }
-    |""".stripMargin --> FunctionNode(
+    |""".stripMargin --> List(FunctionNode(
       "pow",
       List(
         ParameterNode("x", tReal),
@@ -46,7 +46,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[DeclNode] {
         ),
         VariableNode("result"),
       ))),
-    )
+    ))
   }
 
   it should "parse action declarations correctly" in {
@@ -55,7 +55,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[DeclNode] {
     |    const power = combinedPower(source.Arms)
     |    damage(target, power)
     |  }
-    """.stripMargin --> FunctionNode(
+    """.stripMargin --> List(FunctionNode(
       "attack",
       List(
         ParameterNode("source", TypeExprNode.ComponentNode("Arms")),
@@ -69,11 +69,11 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[DeclNode] {
         ),
         CallNode("damage", None, List(VariableNode("target"), VariableNode("power"))),
       ))),
-    )
+    ))
   }
 
   it should "assign the correct indices" in {
-    "function add(a: Real, b: Real): Real = a + b".parsed match {
+    "function add(a: Real, b: Real): Real = a + b".parsed.head match {
       case fn: FunctionNode =>
         fn.index shouldEqual 0
         fn.parameters match {
@@ -109,7 +109,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[DeclNode] {
     |      this.from2D(x, y)
     |    }
     |  }
-    """.stripMargin --> ClassNode(
+    """.stripMargin --> List(ClassNode(
       "Position", None, None, isAbstract = false, isEntity = false,
       List(
         PropertyNode("x", tReal, isMutable = false),
@@ -150,12 +150,71 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[DeclNode] {
           )),
         )
       ),
+    ))
+  }
+
+  it should "parse abstractness, inheritance, and ownership correctly" in {
+    """
+      |  label L
+      |
+      |  class P
+      |  class Q
+      |
+      |  abstract class O1
+      |  class O2 extends O1
+      |
+      |  abstract class A owned by O1 & L {
+      |    property: P
+      |  }
+      |
+      |  class B extends A owned by O2 & L {
+      |    mut quoperty: Q
+      |  }
+    """.stripMargin --> List(
+      LabelNode("L", None),
+      ClassNode("P", None, None, isAbstract = false, isEntity = false, Nil, Nil),
+      ClassNode("Q", None, None, isAbstract = false, isEntity = false, Nil, Nil),
+      ClassNode("O1", None, None, isAbstract = true, isEntity = false, Nil, Nil),
+      ClassNode("O2", Some("O1"), None, isAbstract = false, isEntity = false, Nil, Nil),
+      ClassNode(
+        "A",
+        supertypeName = None,
+        ownedBy = Some(
+          TypeExprNode.IntersectionNode(List(TypeExprNode.NominalNode("O1"), TypeExprNode.NominalNode("L")))
+        ),
+        isAbstract = true,
+        isEntity = false,
+        members = List(
+          PropertyNode("property", TypeExprNode.NominalNode("P"), isMutable = false),
+        ),
+        constructors = Nil,
+      ),
+      ClassNode(
+        "B",
+        supertypeName = Some("A"),
+        ownedBy = Some(
+          TypeExprNode.IntersectionNode(List(TypeExprNode.NominalNode("O2"), TypeExprNode.NominalNode("L")))
+        ),
+        isAbstract = false,
+        isEntity = false,
+        members = List(
+          PropertyNode("quoperty", TypeExprNode.NominalNode("Q"), isMutable = true),
+        ),
+        constructors = Nil,
+      ),
     )
-    // TODO: Test abstract class, extends, owned by.
   }
 
   it should "fail on classes declaring component members" in {
-
+    """
+      |  class C
+      |  class D
+      |
+      |  class E {
+      |    component C
+      |    component D
+      |  }
+    """.stripMargin.fails
   }
 
   it should "parse entity and component declarations correctly" in {
