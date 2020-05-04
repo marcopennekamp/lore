@@ -9,6 +9,7 @@ object TypeExprNode {
     * Just a type name suspended in the aether.
     */
   case class NominalNode(name: String) extends TypeExprNode
+  // TODO: Maybe just rename to TypeNameNode...
 
   case class IntersectionNode(types: List[TypeExprNode]) extends TypeExprNode
   case class SumNode(types: List[TypeExprNode]) extends TypeExprNode

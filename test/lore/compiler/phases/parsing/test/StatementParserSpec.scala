@@ -237,10 +237,19 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   }
 
   it should "parse variable declarations and assignments correctly" in {
-    // TODO: Add more tests.
     "a.b.c = x" --> AssignmentNode(
       PropertyAccessNode(PropertyAccessNode(va, "b"), "c"),
       vx,
+    )
+    "const x: Int = a" --> VariableDeclarationNode("x", isMutable = false, Some(TypeExprNode.NominalNode("Int")), va)
+    "let y: Real = b" --> VariableDeclarationNode("y", isMutable = true, Some(TypeExprNode.NominalNode("Real")), vb)
+    "const z: E & +C1 & +C2 & L = c" --> VariableDeclarationNode(
+      "z", isMutable = false,
+      Some(TypeExprNode.IntersectionNode(List(
+        TypeExprNode.NominalNode("E"), TypeExprNode.ComponentNode("C1"),
+        TypeExprNode.ComponentNode("C2"), TypeExprNode.NominalNode("L"),
+      ))),
+      vc,
     )
   }
 
