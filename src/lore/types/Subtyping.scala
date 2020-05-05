@@ -155,9 +155,25 @@ object Subtyping {
     // For class and label types, the LUB is calculated by the type hierarchy.
     case (d1: DeclaredType, d2: DeclaredType) => registry.declaredTypeHierarchy.leastCommonSupertype(d1, d2)
 
-    // TODO: Component types
+    // Component types simply delegate to declared types.
+    case (c1: ComponentType, c2: ComponentType) =>
+      registry.declaredTypeHierarchy.leastCommonSupertype(c1.underlying, c2.underlying) match {
+        case AnyType =>
+          // If we have Any as the LCS, we can't possibly unify these two components.
+          AnyType
+        case IntersectionType(types) =>
+          // If we have an intersection type as the LCS, there are multiple LCSs. However, only one of them can
+          // be a class type. So we filter for that one.
+          val classTypes = types.filter(_.isInstanceOf[ClassType])
+          if (classTypes.size != 1) throw new RuntimeException("There can (and must) only be one! This is a compiler bug.")
+          classTypes.head
+        case classType: ClassType =>
+          // The trivial case. Of course.
+          ComponentType(classType)
+        case _ => throw new RuntimeException("This case shouldn't have been reached. This is a compiler bug.")
+      }
+
     // TODO: List types, map types
-    // TODO: Basic types?
 
     // Handle Int and Real specifically.
     case (BasicType.Int, BasicType.Real) => BasicType.Real
