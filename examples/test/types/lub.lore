@@ -1,0 +1,20 @@
+/**
+ * This file contains definitions for Least Upper Bound tests.
+ */
+
+abstract class Animal
+abstract class Bird extends Animal
+abstract class Mammal extends Animal
+abstract class Fish extends Animal
+class Chicken extends Bird
+class Penguin extends Bird
+class Raven extends Bird
+class Human extends Mammal
+class Cat extends Mammal
+class ScottishFold extends Cat
+class Unicorn extends Mammal
+class Goldfish extends Fish
+
+label Status
+label Healthy extends Status
+label Sick extends Status
