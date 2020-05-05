@@ -136,7 +136,7 @@ private[verification] class FunctionVerificationVisitor(
       (
         // Ensure that the value has the right type.
         havingSubtype(value, tpe),
-        // Ensure that we can even assign a value to the variable or property.
+        // Ensure that the variable or property is even mutable.
         Verification.fromErrors(if (!isMutable) ImmutableAssignment(address) :: Nil else Nil)
       ).simultaneous.flatMap(_ => node.typed(ProductType.UnitType))
 

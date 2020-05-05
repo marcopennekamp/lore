@@ -12,7 +12,7 @@ object Subtyping {
     * The alternative would be using a case expression, which would greedily hone in on the first pattern
     * match, unless we use guards, which would make the code quite messy.
     */
-  val rules: Seq[PartialFunction[(Type, Type), Boolean]] = Seq(
+  val subtypingRules: Seq[PartialFunction[(Type, Type), Boolean]] = Seq(
     // A declared type d1 is a subtype of d2 if d1 and d2 are equal or any of d1's hierarchical supertypes equal to d2.
     { case (d1: DeclaredType, d2: DeclaredType) =>  d1 == d2 || isSubtype(d1.supertype.getOrElse(AnyType), d2) },
 
@@ -46,8 +46,14 @@ object Subtyping {
         }
     },
 
-    // The any type is subtype of none (except itself) and supertype of all types.
+    // Int is a subtype of Real.
+    { case (BasicType.Int, BasicType.Real) => true },
+
+    // The Any type is supertype of all types.
     { case (_, AnyType) => true },
+
+    // The Nothing type is subtype of all types.
+    { case (NothingType, _) => true },
   )
 
   /**
@@ -61,7 +67,7 @@ object Subtyping {
   def isSubtype(t1: Type, t2: Type): Boolean = {
     // TODO: We might need to use a more complex theorem solver with proper typing rules instead of such an ad-hoc/greedy algorithm.
     // t1 is a subtype of t2 if any of the rules are true.
-    for (rule <- rules) {
+    for (rule <- subtypingRules) {
       if (rule.isDefinedAt((t1, t2)) && rule.apply((t1, t2))) return true
     }
     false
@@ -97,9 +103,11 @@ object Subtyping {
       case ProductType(components) => combinations(components.map(abstractResolvedDirectSubtypes)).map(ProductType(_))
       case IntersectionType(types) => combinations(types.map(abstractResolvedDirectSubtypes).toList).map(IntersectionType.construct)
       case SumType(types) => types.flatMap(abstractResolvedDirectSubtypes)
-      // TODO: Really? This should rather be the set of all types which have no supertype, i.e. direct descendants of Any.
-      //       Or maybe, rather, let's not fuck with Any for abstract functions.
-      case _ if t == AnyType => Set.empty
+      case _ if t == AnyType =>
+        // TODO: Really? This should rather be the set of all types which have no supertype, i.e. direct descendants
+        //       of Any. Or maybe, rather, let's not fuck with Any for abstract functions and return an error here.
+        Set.empty
+      case t if t == NothingType => Set.empty
     }
   }
 

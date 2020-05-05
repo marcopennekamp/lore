@@ -16,4 +16,6 @@ class FunctionVerificationContext(signature: FunctionSignature) {
     assert(scopes.length > 1) // The function scope should not be closed, hence > 1.
     scopes = scopes.tail
   }
+
+  // TODO: Add yield contexts.
 }
