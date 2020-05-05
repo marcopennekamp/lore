@@ -1,8 +1,10 @@
 package lore.compiler
 
-import lore.types.{AnyType, DeclaredType, Type}
+import lore.types.{AnyType, DeclaredType, IntersectionType, Type}
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
+
+import scala.collection.mutable
 
 /**
   * A hierarchy of declared types to provide quick access to supertype/subtype relationships between classes
@@ -42,13 +44,21 @@ class DeclaredTypeHierarchy {
   }
 
   /**
+    * Asserts that the given type can be contained within the hierarchy. Only declared types and Any can be
+    * contained in the hierarchy.
+    */
+  private def assertCanContain(tpe: Type): Unit = {
+    assert(tpe == AnyType || tpe.isInstanceOf[DeclaredType])
+  }
+
+  /**
     * Returns all direct subtypes of the given type. `tpe` may either be Any or a declared type. At this point, we
     * have to assume that all declared types that could possibly be requested here have been registered with the
     * Registry and hence also added to this hierarchy. Thus, if the given type cannot be found in the hierarchy,
     * we throw a runtime exception with the assumption that it is a compiler bug, not a user error.
     */
   def getDirectSubtypes(tpe: Type): Set[DeclaredType] = {
-    assert(tpe == AnyType || tpe.isInstanceOf[DeclaredType])
+    assertCanContain(tpe)
     if (!subtypingGraph.contains(tpe)) {
       throw new RuntimeException(s"The declared type hierarchy doesn't contain the type $tpe. This is a compiler bug.")
     }
@@ -60,5 +70,66 @@ class DeclaredTypeHierarchy {
         // Since only the root may be Any, any possible direct subtype should be a declared type.
         throw new RuntimeException(s"The type $subtype should be a declared type, as it's a subtype in a type hierarchy.")
     }
+  }
+
+  /**
+    * Searches the graph breadth-first, but in the opposite direction, going towards predecessors.
+    */
+  private def reverseBfs(start: subtypingGraph.NodeT, visit: subtypingGraph.NodeT => Unit): Unit = {
+    var remaining = start :: Nil
+    while (remaining.nonEmpty) {
+      val node = remaining.head
+      remaining = remaining.tail
+      visit(node)
+      remaining = remaining ::: node.diPredecessors.toList
+    }
+  }
+
+  /**
+    * Returns the least common supertype of the two types, which is used by the algorithm that computes the least
+    * upper bound of two arbitrary types.
+    *
+    * If these two types have multiple classes/labels as their least common ancestor, we return an intersection type
+    * composed of all least common ancestors.
+    */
+  def leastCommonSupertype(t1: Type, t2: Type): Type = {
+    assertCanContain(t1)
+    assertCanContain(t2)
+
+    // TODO: We probably don't need this marking scheme. Instead, we can add items to different sets.
+    sealed trait Status
+    case object Unseen extends Status    // A type not yet seen.
+    case object Marked extends Status    // An ancestor of t1.
+    case object Found extends Status     // One of the least common ancestors.
+    case object Excluded extends Status  // A common ancestor, but not one of the least common ancestors.
+
+    val status = mutable.HashMap[Type, Status]()
+
+    // Set all ancestors of t1 to Marked.
+    reverseBfs(subtypingGraph.get(t1), node => {
+      status.put(node.value, Marked)
+    })
+
+    // Set all Marked ancestors of t2 to Found.
+    reverseBfs(subtypingGraph.get(t2), node => {
+      val tpe = node.value
+      if (status.getOrElse(tpe, Unseen) == Marked) {
+        status.put(tpe, Found)
+      }
+    })
+
+    // Set all Found ancestors of any Found node to Excluded.
+    def getFoundTypes = status.toList.filter { case (_, status) => status == Found }.map(_._1)
+    getFoundTypes.foreach { tpe =>
+      val node = subtypingGraph.get(tpe)
+      node.diPredecessors.foreach { predecessor =>
+        if (status.contains(predecessor.value)) {
+          status.put(predecessor.value, Excluded)
+        }
+      }
+    }
+
+    // The result is an intersection type of all found types.
+    IntersectionType.construct(getFoundTypes)
   }
 }
