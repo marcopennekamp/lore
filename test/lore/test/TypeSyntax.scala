@@ -1,7 +1,7 @@
 package lore.test
 
 import lore.compiler.Registry
-import lore.types.{IntersectionType, ProductType, SumType, Type}
+import lore.types.{ClassType, ComponentType, IntersectionType, ProductType, SumType, Type}
 
 trait TypeSyntax {
   implicit def toType(name: String)(implicit registry: Registry): Type = registry.getType(name).get
@@ -16,5 +16,8 @@ trait TypeSyntax {
   implicit class StringTypeOperators(s1: String) {
     def &(t2: Type)(implicit registry: Registry): Type = toType(s1) & t2
     def |(t2: Type)(implicit registry: Registry): Type = toType(s1) | t2
+  }
+  implicit class ClassTypeOperators(c1: ClassType) {
+    def unary_+(): ComponentType = ComponentType(c1)
   }
 }
