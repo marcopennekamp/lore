@@ -111,4 +111,62 @@ object Subtyping {
     }
   }
 
+  /**
+    * Calculates the least upper bound of two types, which is the most specific (super-)type that values of both
+    * t1 and t2 could be assigned to.
+    *
+    * In general, we can say that if t1 <= t2, then t2 is the solution to this problem. This is easy to see: We
+    * want the most specific common supertype. What could be more specific than one of the types themselves?
+    *
+    * This question can always be answered with the solution `t1 | t2`. We are not looking for such a solution,
+    * UNLESS we are already dealing with sum types. So if we have an IF that is evaluating to A | B in one block
+    * and C in another block, we will return the common supertype A | B | C (unless A | B <= C). This follows the
+    * most likely user intent. If it doesn't, the problem will be caught at most at function-level, since return
+    * types have to be specified anyway. The subtyping rule above is still preferred to this special handling,
+    * however.
+    */
+  def leastUpperBound(t1: Type, t2: Type)(implicit registry: Registry): Type = (t1, t2) match {
+    // First of all, handle subtypes as outlined above. These cases trivially cover Any and Nothing.
+    case (t1, t2) if t1 <= t2 => t2
+    case (t1, t2) if t2 <= t1 => t1
+
+    // We handle sum types specially, as outlined above.
+    case (t1: SumType, _) => SumType.construct(Set(t1, t2))
+    case (_, t2: SumType) => leastUpperBound(t2, t1) // Delegate to the previous case.
+
+    // Intersection types can lead to a number of candidates. That is, if we have types A & B and C & D, we have
+    // the following candidates: LUB(A, C), LUB(A, D), LUB(B, C), LUB(B, D). That's because any component of an
+    // intersection type is its supertype, so the least upper bound of two intersection types would be a combination
+    // of one component from t1 and another component from t2.
+    // From the candidates, we choose the most specific types, that is those who don't have a subtype in the
+    // candidate list. Those types are finally structured into an intersection type.
+    // TODO: Is this algorithm the same when applied via reduction (reducing to the LUB by pairs) and to a list
+    //       of intersection types? That is, does the following hold: LUB(LUB(A, B), C) = LUB(A, B, C)?
+    case (t1: IntersectionType, t2: IntersectionType) =>
+      val candidates = for  { c1 <- t1.types; c2 <- t2.types } yield leastUpperBound(c1, c2)
+      val mostSpecificCandidates = candidates.filter { candidate => !candidates.exists(_ < candidate) }
+      IntersectionType.construct(mostSpecificCandidates)
+    case (t1: IntersectionType, _) => leastUpperBound(t1, IntersectionType(Set(t2))) // Delegate to the previous case.
+    case (_, t2: IntersectionType) => leastUpperBound(t2, t1) // Delegate to the previous case.
+
+    // In case of product types, we can decide the closest common supertype component by component.
+    //case (ProductType())
+
+    // For class and label types, the LUB is calculated by the type hierarchy.
+    case (d1: DeclaredType, d2: DeclaredType) => registry.declaredTypeHierarchy.leastCommonSupertype(d1, d2)
+
+    // TODO: Component types
+    // TODO: List types, map types
+    // TODO: Basic types?
+
+    // Handle Int and Real specifically.
+    case (BasicType.Int, BasicType.Real) => BasicType.Real
+    case (BasicType.Real, BasicType.Int) => BasicType.Real
+
+    // In any other case, we can say that types are inherently incompatible. For example, a product type and
+    // a class type could never be unified in this sense. The result is the "last resort" type, the supertype
+    // of all types: Any.
+    case _ => AnyType // TODO: Or return t1 | t2?
+  }
+
 }
