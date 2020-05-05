@@ -18,3 +18,15 @@ class Goldfish extends Fish
 label Status
 label Healthy extends Status
 label Sick extends Status
+
+abstract class Wheel
+class CoolWheel extends Wheel
+class CheapWheel extends Wheel
+abstract class Engine
+class GasEngine extends Engine
+class ElectricEngine extends Engine
+
+abstract entity Car {
+  component Wheel
+  component Engine
+}

@@ -26,7 +26,14 @@ class LeastUpperBoundSpec extends BaseSpec with TypeSyntax {
   private val Healthy = havingLabel("Healthy")
   private val Sick = havingLabel("Sick")
 
-  // TODO: Test component types.
+  private val Wheel = havingClass("Wheel")
+  private val CoolWheel = havingClass("CoolWheel")
+  private val CheapWheel = havingClass("CheapWheel")
+  private val Engine = havingClass("Engine")
+  private val GasEngine = havingClass("GasEngine")
+  private val ElectricEngine = havingClass("ElectricEngine")
+  private val Car = havingClass("Car")
+
   // TODO: Test list and map types.
   // TODO: Test sum types.
   // TODO: Test product types.
@@ -58,5 +65,21 @@ class LeastUpperBoundSpec extends BaseSpec with TypeSyntax {
     (ScottishFold & Healthy, Cat & Sick) --> (Cat & Status)
     (ScottishFold & Healthy, Goldfish & Healthy) --> (Animal & Healthy)
     (ScottishFold & Healthy, Goldfish & Sick) --> (Animal & Status)
+  }
+
+  it should "return the most specific supertype for entities, intersection types and components" in {
+    (+CoolWheel & +ElectricEngine, +CheapWheel & +GasEngine) --> (+Wheel & +Engine)
+    (Car, +Wheel & +Engine) --> (+Wheel & +Engine)
+    (Car & +Wheel, +Wheel) --> +Wheel
+
+    // These component types aren't related, so they cannot have a common component type as ancestor.
+    (+CheapWheel, +ElectricEngine) --> AnyType
+
+    // Problem: Car & +Wheel is a subtype of Car & +Engine, so it won't reduce to Car but Car & +Engine.
+    // We should PROBABLY add a simplification step to intersection types: If an intersection type has a
+    // component type and an entity type, check if the component is part of the entity; if so, remove the
+    // component type. We might also have to drop AnyType from intersection types.
+    // TODO: Fix this test with the above in consideration.
+    (Car & +Wheel, Car & +Engine) --> Car
   }
 }
