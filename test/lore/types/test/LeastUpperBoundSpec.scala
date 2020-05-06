@@ -1,11 +1,12 @@
 package lore.types.test
 
+import lore.compiler.Registry
 import lore.test.{BaseSpec, TypeSyntax}
 import lore.types.{AnyType, ClassType, LabelType, Subtyping, Type}
 import org.scalatest.Assertion
 
 class LeastUpperBoundSpec extends BaseSpec with TypeSyntax {
-  implicit val registry = prepareRegistry("test/types/lub")
+  implicit val registry: Registry = prepareRegistry("test/types/lub")
   private def havingClass(name: String): ClassType = registry.getType(name).get.asInstanceOf[ClassType]
   private def havingLabel(name: String): LabelType = registry.getType(name).get.asInstanceOf[LabelType]
 
@@ -45,7 +46,7 @@ class LeastUpperBoundSpec extends BaseSpec with TypeSyntax {
     }
   }
 
-  "The least upper bound function" should "return the least common supertype for classes and labels" in {
+  "The least upper bound function" should "return the most specific supertype for classes and labels" in {
     (Bird, Mammal) --> Animal
     (Fish, Bird) --> Animal
     (Fish, Animal) --> Animal

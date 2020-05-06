@@ -16,6 +16,7 @@ object SumType {
     * has only one component, this type is returned instead.
     */
   def construct(types: Set[Type]): Type = {
+    // TODO: Add a sort of simplification similar to the simplification of intersection types?
     val sum = new SumType(types.flatMap {
       // If the directly nested type is a sum type, flatten it.
       case t: SumType => t.types

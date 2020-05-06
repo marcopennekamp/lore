@@ -138,14 +138,14 @@ object Subtyping {
     // the following candidates: LUB(A, C), LUB(A, D), LUB(B, C), LUB(B, D). That's because any component of an
     // intersection type is its supertype, so the least upper bound of two intersection types would be a combination
     // of one component from t1 and another component from t2.
-    // From the candidates, we choose the most specific types, that is those who don't have a subtype in the
-    // candidate list. Those types are finally structured into an intersection type.
+    // From the candidates, we choose the most specific types, meaning those who don't have a strict subtype in the
+    // candidate list. This part of the algorithm is taken care of by IntersectionType.construct, as intersection
+    // types are specifically simplified according to this rule.
     // TODO: Is this algorithm the same when applied via reduction (reducing to the LUB by pairs) and to a list
     //       of intersection types? That is, does the following hold: LUB(LUB(A, B), C) = LUB(A, B, C)?
     case (t1: IntersectionType, t2: IntersectionType) =>
       val candidates = for  { c1 <- t1.types; c2 <- t2.types } yield leastUpperBound(c1, c2)
-      val mostSpecificCandidates = candidates.filter { candidate => !candidates.exists(_ < candidate) }
-      IntersectionType.construct(mostSpecificCandidates)
+      IntersectionType.construct(candidates)
     case (t1: IntersectionType, _) => leastUpperBound(t1, IntersectionType(Set(t2))) // Delegate to the previous case.
     case (_, t2: IntersectionType) => leastUpperBound(t2, t1) // Delegate to the previous case.
 

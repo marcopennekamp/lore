@@ -45,15 +45,23 @@ case class IntersectionType private (types: Set[Type]) extends Type with Operato
 
 object IntersectionType {
   /**
-    * Constructs type from the given types and flattens it if necessary. If the resulting intersection type
-    * has only one component, this type is returned instead.
+    * Constructs an intersection type from the given types and flattens it if necessary. If the resulting
+    * intersection type has only one component, this type is returned instead.
+    *
+    * We also apply the following simplification: In an intersection type A & B & ..., if A < B, then B can
+    * be dropped. This is especially useful to simplify intersection types that contain an entity and a
+    * related component type.
     */
   def construct(types: Set[Type]): Type = {
-    val intersection = new IntersectionType(types.flatMap {
-      // If the directly nested type is an intersection type, flatten it.
+    val flattened = types.flatMap {
       case t: IntersectionType => t.types
       case t => Set(t)
-    })
+    }
+
+    // Remove strict supertypes of other component types.
+    val simplified = flattened.filterNot(t => flattened.exists(_ < t))
+
+    val intersection = new IntersectionType(simplified)
     if (intersection.types.size == 1) intersection.types.head else intersection
   }
 
