@@ -11,7 +11,8 @@ import lore.types._
   */
 object MemberExplorer {
   // TODO: Implement the default naming scheme described in the specification.
-  // TODO: Implement some form of caching! We can cache HARD here.
+  // TODO: Implement some form of caching! We can cache HARD here. Like, it's really not effective to calculate
+  //       the full member list every time just to access a single member.
   // TODO: Unit-test this class.
 
   // TODO: We need to consider ownership restrictions here! If a component is owned by any type A, we must consider

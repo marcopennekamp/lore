@@ -8,6 +8,7 @@ package lore.types
   */
 trait Type {
   // TODO: As a general performance improvement, we might consider interning types like strings are interned.
+  // TODO: Add .product, .sum, and .intersection helper methods to List[Type] for easy construction.
 
   /**
     * Returns a singleton product type enclosing this type, unless this type is already a product type.

@@ -175,9 +175,12 @@ private[verification] class FunctionVerificationVisitor(
 
     // Ternary
     case IfElseNode(condition, onTrue, onFalse) =>
-      // TODO: Check that condition is boolean.
-      // TODO: Calculate the lowest type bound of onTrue and onFalse and make that the type of the if-else node.
-      ???
+      havingSubtype(condition, BasicType.Boolean).flatMap { _ =>
+        // TODO: If only one branch supplies a value, return an OPTION of the evaluated type. Of course, we don't
+        //       HAVE options just yet.
+        val resultType = Subtyping.leastUpperBound(onTrue.inferredType, onFalse.inferredType)
+        node.typed(resultType)
+      }
 
     // Constructors.
     case ConstructorCallNode(name, arguments) => ???
