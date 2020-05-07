@@ -7,7 +7,7 @@ import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.{Error, Position}
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
 import lore.compiler.{Compilation, Fragment, Registry, TypeExpressionEvaluator}
-import lore.definitions.{CallTarget, FunctionSignature}
+import lore.definitions.{CallTarget, FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
 import lore.types._
 
 private[verification] class FunctionVerificationVisitor(
@@ -67,7 +67,7 @@ private[verification] class FunctionVerificationVisitor(
     }
   }
 
-  case class WrongNumberOfArguments(signature: FunctionSignature, pos: Position) extends Error(pos) {
+  case class WrongNumberOfArguments(signature: FunctionSignature, callPos: Position) extends Error(callPos) {
     override def message: String = s"The function/constructor ${signature.name} was called with the wrong number of arguments." +
       s" Expected: ${signature.parameters.size}."
   }
@@ -164,7 +164,29 @@ private[verification] class FunctionVerificationVisitor(
       ).simultaneous.flatMap(_ => node.typed(ProductType.UnitType))
 
     // Function calls.
-    case node@SimpleCallNode(name, qualifier, arguments) => ???
+    case node@SimpleCallNode(name, qualifier, arguments) =>
+      registry.resolveConstructor(name, qualifier, node.position).flatMap {
+        constructor => typeCall(node, constructor, arguments)
+      } recover {
+        // Note that the recover might attempt to catch other errors introduced by typeCall, but we are matching only
+        // on the one specific error that will be raised by resolveConstructor, which gives us the guarantee that we
+        // aren't recovering from an issue within typeCall. Obviously, if we can find a proper constructor and just
+        // typeCall fails, we should NOT fallback to a function.
+        case errors@List(Registry.TypeNotFound(className, _)) if name == className =>
+          // If we couldn't find a CLASS for the constructor, qualifier must be None. In that case, we can
+          // continue and look for a function.
+          if (qualifier.isDefined) Compilation.fail(errors: _*)
+          else {
+            registry.resolveMultiFunction(name, node.position).flatMap { mf =>
+              val inputType = ProductType(arguments.map(_.inferredType))
+              mf.min(inputType) match {
+                case Nil => Compilation.fail(EmptyFit(mf, node.position))
+                case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, min, node.position))
+                case List(target) => typeCall(node, target, arguments)
+              }
+            }
+          }
+      }
     case node@FixedFunctionCallNode(name, typeExpressions, arguments) =>
       typeExpressions.map(TypeExpressionEvaluator.evaluate).simultaneous.flatMap { types =>
         registry.resolveExactFunction(name, types, node.position).flatMap { function =>
@@ -211,7 +233,8 @@ private[verification] class FunctionVerificationVisitor(
     case IfElseNode(condition, onTrue, onFalse) =>
       havingSubtype(condition, BasicType.Boolean).flatMap { _ =>
         // TODO: If only one branch supplies a value, return an OPTION of the evaluated type. Of course, we don't
-        //       HAVE options just yet.
+        //       HAVE options just yet. This also needs to become part of the spec before it's implemented, IF we
+        //       implement this feature.
         val resultType = Subtyping.leastUpperBound(onTrue.inferredType, onFalse.inferredType)
         node.typed(resultType)
       }
@@ -253,6 +276,16 @@ private[verification] class FunctionVerificationVisitor(
 private[verification] object FunctionVerificationVisitor {
   case class ImmutableAssignment(addressNode: AddressNode)(implicit fragment: Fragment) extends Error(addressNode) {
     override def message = s"The variable or property you are trying to assign to is immutable."
+  }
+
+  case class EmptyFit(mf: MultiFunctionDefinition, callPos: Position) extends Error(callPos) {
+    override def message: String = s"The multi-function call ${mf.name} at this site has an empty fit. We cannot " +
+      s" find a function of that name that would accept the given arguments."
+  }
+
+  case class AmbiguousCall(mf: MultiFunctionDefinition, min: List[FunctionDefinition], callPos: Position) extends Error(callPos) {
+    override def message: String = s"The multi-function call ${mf.name} at this site has an ambiguous min-set." +
+      s" That is, we are finding TOO MANY functions that would accept the given arguments: ${min.mkString(", ")}."
   }
 
   implicit class StmtNodeExtension(node: StmtNode) {
