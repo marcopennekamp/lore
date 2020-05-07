@@ -27,14 +27,21 @@ object SumType {
   /**
     * Constructs the sum type from the given types and flattens it if necessary. If the resulting sum type
     * has only one component, this type is returned instead.
+    *
+    * We also apply the following simplification: In a sum type A | B | ..., if B < A, then B can
+    * be dropped. That is, A already "clears the way" for values of type B to be part of the sum
+    * type.
     */
   def construct(types: Set[Type]): Type = {
-    // TODO: Add a sort of simplification similar to the simplification of intersection types?
-    val sum = new SumType(types.flatMap {
-      // If the directly nested type is a sum type, flatten it.
+    val flattened = types.flatMap {
       case t: SumType => t.types
       case t => Set(t)
-    })
+    }
+
+    // Remove strict subtypes of other parts.
+    val simplified = flattened.filterNot(t => flattened.exists(t < _))
+
+    val sum = new SumType(simplified)
     if (sum.types.size == 1) sum.types.head else sum
   }
 
