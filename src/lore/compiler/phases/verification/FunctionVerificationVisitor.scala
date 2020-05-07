@@ -8,7 +8,7 @@ import lore.compiler.feedback.Error
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
 import lore.compiler.{Compilation, Fragment, Registry, TypeExpressionEvaluator}
 import lore.definitions.FunctionSignature
-import lore.types.{BasicType, ProductType, Subtyping, Type}
+import lore.types.{BasicType, MapType, NothingType, ProductType, Subtyping, Type}
 
 private[verification] class FunctionVerificationVisitor(
   /**
@@ -187,12 +187,21 @@ private[verification] class FunctionVerificationVisitor(
     case ConstructNode(arguments, withSuper) => ???
 
     // Blocks.
-    case BlockNode(statements) => ???
+    case BlockNode(statements) =>
+      // This is AFTER the block has been visited. The scope has already been opened and needs to be closed.
+      context.closeScope()
+      node.typed(statements.lastOption.map(_.inferredType).getOrElse(ProductType.UnitType))
 
     // Literal constructions.
-    case TupleNode(expressions) => ???
-    case ListNode(expressions) => ???
-    case MapNode(entries) => ???
+    case TupleNode(expressions) => node.typed(ProductType(expressions.map(_.inferredType)))
+    case ListNode(expressions) =>
+      // If we type empty lists as [Nothing], we can assign this empty list to any kind of list, which makes
+      // coders happy. :) Hence the default value in the fold.
+      node.typed(expressions.map(_.inferredType).foldLeft(NothingType: Type)(Subtyping.leastUpperBound))
+    case MapNode(entries) =>
+      val keyType = entries.map(_.key.inferredType).foldLeft(NothingType: Type)(Subtyping.leastUpperBound)
+      val valueType = entries.map(_.value.inferredType).foldLeft(NothingType: Type)(Subtyping.leastUpperBound)
+      node.typed(MapType(keyType, valueType))
 
     // Xary operations.
     case ConjunctionNode(expressions) => typeXaryBooleans(node, expressions)
@@ -205,7 +214,7 @@ private[verification] class FunctionVerificationVisitor(
   override def before: PartialFunction[StmtNode, Unit] = {
     case ExprNode.RepeatWhileNode(_, _, _) | ExprNode.IterationNode(_, _) =>
       // TODO: Put a new yield context on the stack.
-    // TODO: In case of a block opening: Put a new variable scope on the stack.
+    case ExprNode.BlockNode(_) => context.openScope()
   }
 }
 
