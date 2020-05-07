@@ -50,6 +50,19 @@ sealed trait TopLevelExprNode extends StmtNode {
   var resultType: Option[Type] = None
 }
 
+sealed trait CallNode extends TopLevelExprNode {
+  private var _target: CallTarget = _
+
+  /**
+    * The call target that this call node calls, which is resolved during function verification.
+    */
+  def target: CallTarget = _target
+  def target_=(target: CallTarget): Unit = {
+    assert(_target == null)
+    _target = target
+  }
+}
+
 object TopLevelExprNode {
   case class VariableDeclarationNode(name: String, isMutable: Boolean, tpe: Option[TypeExprNode], value: ExprNode) extends TopLevelExprNode with UnaryNode
   case class AssignmentNode(address: ExprNode.AddressNode, value: ExprNode) extends TopLevelExprNode with UnaryNode
@@ -68,7 +81,7 @@ object TopLevelExprNode {
   sealed trait ContinuationNode extends TopLevelExprNode
   // TODO: Maybe rename to ThisCallNode, as this node doesn't refer to instantiation but rather calling another
   //       constructor from a constructor.
-  case class ConstructorCallNode(name: Option[String], arguments: List[ExprNode]) extends ContinuationNode with XaryNode
+  case class ConstructorCallNode(name: Option[String], arguments: List[ExprNode]) extends ContinuationNode with CallNode with XaryNode
   case class ConstructNode(arguments: List[ExprNode], withSuper: Option[ConstructorCallNode]) extends ContinuationNode with XaryNode
 }
 
@@ -176,29 +189,16 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Function calls.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  sealed trait CallNode extends ExprNode {
-    private var _target: CallTarget = _
-
-    /**
-      * The call target that this call node calls, which is resolved during function verification.
-      */
-    def target: CallTarget = _target
-    def target_=(target: CallTarget): Unit = {
-      assert(_target == null)
-      _target = target
-    }
-  }
-
   /**
     * A call node can both be a multi-function call or an instantiation call. The parser can't decide between them
     * based on syntax, so the compiler will have to decide in later stages.
     */
-  case class SimpleCallNode(name: String, qualifier: Option[String], arguments: List[ExprNode]) extends CallNode with XaryNode
+  case class SimpleCallNode(name: String, qualifier: Option[String], arguments: List[ExprNode]) extends ExprNode with CallNode with XaryNode
 
   /**
     * Since fixed function calls also require type arguments, they can be differentiated from call nodes.
     */
-  case class FixedFunctionCallNode(name: String, types: List[TypeExprNode], arguments: List[ExprNode]) extends CallNode with XaryNode
+  case class FixedFunctionCallNode(name: String, types: List[TypeExprNode], arguments: List[ExprNode]) extends ExprNode with CallNode with XaryNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and repetition expressions.
