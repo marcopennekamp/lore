@@ -65,9 +65,9 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
       Some(BlockNode(List(
         VariableDeclarationNode(
           "power", isMutable = false, None,
-          CallNode("combinedPower", None, List(PropertyAccessNode(VariableNode("source"), "Arms"))),
+          SimpleCallNode("combinedPower", None, List(PropertyAccessNode(VariableNode("source"), "Arms"))),
         ),
-        CallNode("damage", None, List(VariableNode("target"), VariableNode("power"))),
+        SimpleCallNode("damage", None, List(VariableNode("target"), VariableNode("power"))),
       ))),
     ))
   }

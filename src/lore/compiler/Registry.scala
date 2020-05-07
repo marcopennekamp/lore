@@ -3,7 +3,7 @@ package lore.compiler
 import lore.ast.Node
 import lore.compiler.Compilation.C
 import lore.compiler.feedback.{Error, Position}
-import lore.definitions.{DeclaredTypeDefinition, MultiFunctionDefinition}
+import lore.definitions.{DeclaredTypeDefinition, FunctionDefinition, MultiFunctionDefinition}
 import lore.types._
 
 import scala.collection.{MapView, mutable}
@@ -131,6 +131,23 @@ class Registry {
     getMultiFunction(name) match {
       case None => Compilation.fail(MultiFunctionNotFound(name, position))
       case Some(mf) => Compilation.succeed(mf)
+    }
+  }
+
+  case class ExactFunctionNotFound(name: String, types: List[Type], pos: Position) extends Error(pos) {
+    override def message = s"The exact function $name[${types.mkString(", ")}] does not exist in the current scope."
+  }
+
+  /**
+    * Gets an exact function with the given name and parameter types. If it cannot be found, the operation fails
+    * with a compilation error.
+    */
+  def resolveExactFunction(name: String, types: List[Type], position: Position): C[FunctionDefinition] = {
+    resolveMultiFunction(name, position).flatMap { mf =>
+      mf.exact(ProductType(types)) match {
+        case None => Compilation.fail(ExactFunctionNotFound(name, types, position))
+        case Some(f) => Compilation.succeed(f)
+      }
     }
   }
 }

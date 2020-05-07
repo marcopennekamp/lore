@@ -125,7 +125,7 @@ object StmtVisitor {
       case node@TupleNode(expressions)                    => xary(node, expressions)
       case node@ListNode(expressions)                     => xary(node, expressions)
       case node@BlockNode(statements)                     => xary(node, statements)
-      case node@CallNode(_, _, arguments)                 => xary(node, arguments)
+      case node@SimpleCallNode(_, _, arguments)           => xary(node, arguments)
       case node@FixedFunctionCallNode(_, _, arguments)    => xary(node, arguments)
 
       // Map node.

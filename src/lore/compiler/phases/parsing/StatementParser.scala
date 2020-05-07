@@ -153,7 +153,7 @@ object StatementParser {
     P(real | int | booleanLiteral | LexicalParser.string)
   }
   private def fixedCall[_: P]: P[ExprNode] = P(identifier ~ ".fixed" ~ typeArguments ~ arguments).map(ExprNode.FixedFunctionCallNode.tupled)
-  private def call[_: P]: P[ExprNode] = P(identifier ~ ("." ~ identifier).? ~ arguments).map(ExprNode.CallNode.tupled)
+  private def call[_: P]: P[ExprNode] = P(identifier ~ ("." ~ identifier).? ~ arguments).map(ExprNode.SimpleCallNode.tupled)
   def arguments[_: P]: P[List[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toList)
   private def typeArguments[_: P]: P[List[TypeExprNode]] = P("[" ~ TypeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toList)
   private def variable[_: P]: P[ExprNode.VariableNode] = P(identifier).map(ExprNode.VariableNode)

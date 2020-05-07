@@ -178,9 +178,9 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
       deferCheck = false,
     )
     "repeat { println('Morning, World') } while (sunRisesOn(earth))" --> RepeatWhileNode(
-      CallNode("sunRisesOn", None, List(VariableNode("earth"))),
+      SimpleCallNode("sunRisesOn", None, List(VariableNode("earth"))),
       BlockNode(List(
-        CallNode("println", None, List(StringLiteralNode("Morning, World"))),
+        SimpleCallNode("println", None, List(StringLiteralNode("Morning, World"))),
       )),
       deferCheck = true,
     )
@@ -201,7 +201,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
       ),
       IterationNode(
         List(ExtractorNode("name", VariableNode("people"))),
-        CallNode("println", None, List(
+        SimpleCallNode("println", None, List(
           ConcatenationNode(List(StringLiteralNode("Hey, "), VariableNode("name"), StringLiteralNode("!")))
         )),
       ),
@@ -215,13 +215,13 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   it should "parse instantiation, multi-function calls, and fixed function calls correctly" in {
     "const point = Point(1, 5)" --> VariableDeclarationNode(
       "point", isMutable = false, None,
-      CallNode("Point", None, List(IntLiteralNode(1), IntLiteralNode(5))),
+      SimpleCallNode("Point", None, List(IntLiteralNode(1), IntLiteralNode(5))),
     )
     "let position: Position3D = Position3D.from2D(5.5, 6.7)" --> VariableDeclarationNode(
       "position", isMutable = true, Some(TypeExprNode.NominalNode("Position3D")),
-      CallNode("Position3D", Some("from2D"), List(RealLiteralNode(5.5), RealLiteralNode(6.7))),
+      SimpleCallNode("Position3D", Some("from2D"), List(RealLiteralNode(5.5), RealLiteralNode(6.7))),
     )
-    "concat('stringA', 'stringB', 'stringC')" --> CallNode(
+    "concat('stringA', 'stringB', 'stringC')" --> SimpleCallNode(
       "concat", None, List(StringLiteralNode("stringA"), StringLiteralNode("stringB"), StringLiteralNode("stringC")),
     )
     "applyDot.fixed[Dot, +Health](dot, e)" --> FixedFunctionCallNode(
@@ -306,7 +306,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
         decl.index shouldEqual 0
         decl.tpe.value.index shouldEqual 14
         inside(decl.value) {
-          case call: CallNode =>
+          case call: SimpleCallNode =>
             call.index shouldEqual 27
             inside(call.arguments) {
               case Seq(rl1: RealLiteralNode, rl2: RealLiteralNode) =>

@@ -59,7 +59,7 @@ abstract class Error(override val position: Position) extends Feedback {
 }
 
 object Error {
-  case class FunctionNotFound(name: String, node: ExprNode.CallNode)(implicit fragment: Fragment) extends Error(node) {
+  case class FunctionNotFound(name: String, node: ExprNode.SimpleCallNode)(implicit fragment: Fragment) extends Error(node) {
     override def message = s"The function $name does not exist in the current scope."
   }
 }

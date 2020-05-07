@@ -7,6 +7,6 @@ import lore.types.ProductType
 case class ConstructorDefinition(
   name: String, parameters: List[ParameterDefinition], body: ExprNode.BlockNode,
   override val position: Position
-) extends PositionedDefinition {
-  lazy val signature: FunctionSignature = FunctionSignature(name, parameters, ProductType.UnitType)
+) extends PositionedDefinition with CallTarget {
+  override lazy val signature: FunctionSignature = FunctionSignature(name, parameters, ProductType.UnitType)
 }

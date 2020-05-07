@@ -2,6 +2,7 @@ package lore.ast
 
 import lore.ast.StmtNode._
 import lore.compiler.phases.verification.{LocalVariable, VirtualMember}
+import lore.definitions.CallTarget
 import lore.types.Type
 
 /**
@@ -65,6 +66,8 @@ object TopLevelExprNode {
     * we parse it as a top-level expression to avoid ambiguities with function calls.
     */
   sealed trait ContinuationNode extends TopLevelExprNode
+  // TODO: Maybe rename to ThisCallNode, as this node doesn't refer to instantiation but rather calling another
+  //       constructor from a constructor.
   case class ConstructorCallNode(name: Option[String], arguments: List[ExprNode]) extends ContinuationNode with XaryNode
   case class ConstructNode(arguments: List[ExprNode], withSuper: Option[ConstructorCallNode]) extends ContinuationNode with XaryNode
 }
@@ -173,16 +176,29 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Function calls.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  sealed trait CallNode extends ExprNode {
+    private var _target: CallTarget = _
+
+    /**
+      * The call target that this call node calls, which is resolved during function verification.
+      */
+    def target: CallTarget = _target
+    def target_=(target: CallTarget): Unit = {
+      assert(_target == null)
+      _target = target
+    }
+  }
+
   /**
-    * A call node can both be a multi-function call or a constructor call. The parser can't decide between them based
-    * on syntax, so the compiler will have to decide in later stages.
+    * A call node can both be a multi-function call or an instantiation call. The parser can't decide between them
+    * based on syntax, so the compiler will have to decide in later stages.
     */
-  case class CallNode(name: String, qualifier: Option[String], arguments: List[ExprNode]) extends ExprNode with XaryNode
+  case class SimpleCallNode(name: String, qualifier: Option[String], arguments: List[ExprNode]) extends CallNode with XaryNode
 
   /**
     * Since fixed function calls also require type arguments, they can be differentiated from call nodes.
     */
-  case class FixedFunctionCallNode(name: String, types: List[TypeExprNode], arguments: List[ExprNode]) extends ExprNode with XaryNode
+  case class FixedFunctionCallNode(name: String, types: List[TypeExprNode], arguments: List[ExprNode]) extends CallNode with XaryNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and repetition expressions.

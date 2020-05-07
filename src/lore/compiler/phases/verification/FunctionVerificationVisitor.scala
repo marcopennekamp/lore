@@ -4,11 +4,11 @@ import lore.ast.ExprNode.AddressNode
 import lore.ast.visitor.VerificationStmtVisitor
 import lore.ast.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.Compilation.Verification
-import lore.compiler.feedback.Error
+import lore.compiler.feedback.{Error, Position}
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
 import lore.compiler.{Compilation, Fragment, Registry, TypeExpressionEvaluator}
-import lore.definitions.FunctionSignature
-import lore.types.{BasicType, MapType, NothingType, ProductType, Subtyping, Type}
+import lore.definitions.{CallTarget, FunctionSignature}
+import lore.types._
 
 private[verification] class FunctionVerificationVisitor(
   /**
@@ -29,9 +29,9 @@ private[verification] class FunctionVerificationVisitor(
   /**
     * Whether the given statement's inferred type is a subtype of one of the expected types.
     */
-  private def havingSubtype(statement: StmtNode, expectedTypes: Type*): Verification = {
-    if (!expectedTypes.exists(expected => Subtyping.isSubtype(statement.inferredType, expected))) {
-      Compilation.fail(IllegallyTypedExpression(statement, expectedTypes.toList))
+  private def havingSubtype(statement: StmtNode, supertypes: Type*): Verification = {
+    if (!supertypes.exists(expected => Subtyping.isSubtype(statement.inferredType, expected))) {
+      Compilation.fail(IllegallyTypedExpression(statement, supertypes.toList))
     } else Verification.succeed
   }
 
@@ -64,6 +64,29 @@ private[verification] class FunctionVerificationVisitor(
   private def typeXaryBooleans(node: StmtNode, nodes: List[StmtNode]): Verification = {
     beingBooleans(nodes: _*).flatMap { _ =>
       node.typed(BasicType.Boolean)
+    }
+  }
+
+  case class WrongNumberOfArguments(signature: FunctionSignature, pos: Position) extends Error(pos) {
+    override def message: String = s"The function/constructor ${signature.name} was called with the wrong number of arguments." +
+      s" Expected: ${signature.parameters.size}."
+  }
+
+  /**
+    * Checks that the given call target can be called with the given arguments, then assigns the target to the node
+    * and also types it.
+    */
+  private def typeCall(node: CallNode, target: CallTarget, arguments: List[ExprNode]): Verification = {
+    val parameterTypes = target.signature.parameters.map(_.tpe)
+    (if (parameterTypes.size != arguments.size) {
+      Compilation.fail(WrongNumberOfArguments(target.signature, node.position))
+    } else {
+      parameterTypes.zip(arguments).map { case (parameterType, argument) =>
+        havingSubtype(argument, parameterType)
+      }.simultaneous.verification
+    }).flatMap { _ =>
+      node.target = target
+      node.typed(target.signature.outputType)
     }
   }
 
@@ -140,6 +163,17 @@ private[verification] class FunctionVerificationVisitor(
         Verification.fromErrors(if (!isMutable) ImmutableAssignment(address) :: Nil else Nil)
       ).simultaneous.flatMap(_ => node.typed(ProductType.UnitType))
 
+    // Function calls.
+    case node@SimpleCallNode(name, qualifier, arguments) => ???
+    case node@FixedFunctionCallNode(name, typeExpressions, arguments) =>
+      typeExpressions.map(TypeExpressionEvaluator.evaluate).simultaneous.flatMap { types =>
+        registry.resolveExactFunction(name, types, node.position).flatMap { function =>
+          typeCall(node, function, arguments)
+        }
+      }
+    case ConstructorCallNode(name, arguments) => ???
+    case ConstructNode(arguments, withSuper) => ???
+
     // Unary operations.
     case NegationNode(expr) =>
       beingNumber(expr).flatMap { _ =>
@@ -182,10 +216,6 @@ private[verification] class FunctionVerificationVisitor(
         node.typed(resultType)
       }
 
-    // Constructors.
-    case ConstructorCallNode(name, arguments) => ???
-    case ConstructNode(arguments, withSuper) => ???
-
     // Blocks.
     case BlockNode(statements) =>
       // This is AFTER the block has been visited. The scope has already been opened and needs to be closed.
@@ -206,9 +236,11 @@ private[verification] class FunctionVerificationVisitor(
     // Xary operations.
     case ConjunctionNode(expressions) => typeXaryBooleans(node, expressions)
     case DisjunctionNode(expressions) => typeXaryBooleans(node, expressions)
-    case ConcatenationNode(expressions) => ???
-    case CallNode(name, qualifier, arguments) => ???
-    case FixedFunctionCallNode(name, types, arguments) => ???
+    case ConcatenationNode(expressions) =>
+      // TODO: Do we need to make sure that each non-string expression has a sort of toString function implementation?
+      //       Or do we just implement a basic implementation for Any? This could be some of the first Lore code that
+      //       we write...
+      node.typed(BasicType.String)
   }
 
   override def before: PartialFunction[StmtNode, Unit] = {
