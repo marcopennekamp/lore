@@ -34,6 +34,7 @@ trait Type {
 object Type {
   val predefinedTypes: Map[String, Type] = Map(
     "Any" -> AnyType,
+    "Nothing" -> NothingType,
     "Int" -> BasicType.Int,
     "Real" -> BasicType.Real,
     "Boolean" -> BasicType.Boolean,

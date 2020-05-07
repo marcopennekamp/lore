@@ -1,0 +1,4 @@
+function min(a: Real, b: Real): Real = if (a < b) a else b
+function max(a: Real, b: Real): Real = if (a > b) a else b
+function add(a: Real, b: Real): Real = a + b
+// TODO: Implement a multiplication function that uses add.
