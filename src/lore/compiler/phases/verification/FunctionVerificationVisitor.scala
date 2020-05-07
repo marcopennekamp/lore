@@ -111,13 +111,14 @@ private[verification] class FunctionVerificationVisitor(
 
     // Control nodes.
     case ReturnNode(expr) =>
-      // TODO: Check that the returned expression adheres to the function's return type bounds.
-      // TODO: Check that the return is the last statement in the block. This effectively disallows dead code after
+      // TODO: Check that a return is the last statement in the block. This effectively disallows dead code after
       //       a return statement.
       // TODO: Disallow constructions such as `if ({ return 0 }) a else b`. Returning should not be possible from
       //       blocks that are in an expression position. We might have to add such a notion to blocks.
       // TODO: Disallow returns in constructor bodies.
-      node.typed(NothingType)
+      havingSubtype(expr, callTarget.signature.outputType).flatMap { _ =>
+        node.typed(NothingType)
+      }
     case YieldNode(expr) =>
       // TODO: Yield is special in that it determines the result type of the surrounding loop. We must create a
       //       "loop context" that we add all instances of yield to; then we try to find the lowest common type bound
@@ -210,11 +211,14 @@ private[verification] class FunctionVerificationVisitor(
       assert(classDefinition.isDefined)
       val cl = classDefinition.get
       registry.resolveConstructor(cl, name, node.position).flatMap(constructor => typeCall(node, constructor, arguments))
-    case ConstructNode(arguments, withSuper) =>
+    case ConstructNode(arguments, _) =>
+      // We just have to check whether the arguments adhere to the construct signature. The visitor will already
+      // have checked the potential withSuper constructor call.
       assert(classDefinition.isDefined)
       val cl = classDefinition.get
-      cl.constructSignature
-      ???
+      adheringToSignature(arguments, cl.constructSignature, node.position).flatMap { _ =>
+        node.typed(cl.constructSignature.outputType)
+      }
 
     // Unary operations.
     case NegationNode(expr) =>

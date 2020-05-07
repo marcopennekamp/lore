@@ -67,14 +67,12 @@ class ClassDefinition(
   val constructors: List[ConstructorDefinition] = defaultConstructor :: definedConstructors.filterNot(_.name == this.name)
 
   /**
-    * The signature of the local construct function. This does not include any arguments to be passed to the
+    * The signature of the local construct "function". This does not include any arguments to be passed to the
     * super type.
     */
   lazy val constructSignature: FunctionSignature = {
     FunctionSignature("construct", localMembers.map(_.asParameter), ProductType.UnitType)
   }
-
-  // TODO: Add withSuper signature.
 
   /**
     * Returns the already declared default constructor or generates a new one.
