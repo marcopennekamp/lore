@@ -2,7 +2,7 @@ package lore.types.test
 
 import lore.compiler.Registry
 import lore.test.{BaseSpec, TypeSyntax}
-import lore.types.{AnyType, ClassType, LabelType, Subtyping, Type}
+import lore.types._
 import org.scalatest.Assertion
 
 class LeastUpperBoundSpec extends BaseSpec with TypeSyntax {
@@ -35,10 +35,6 @@ class LeastUpperBoundSpec extends BaseSpec with TypeSyntax {
   private val ElectricEngine = havingClass("ElectricEngine")
   private val Car = havingClass("Car")
 
-  // TODO: Test list and map types.
-  // TODO: Test sum types.
-  // TODO: Test product types.
-
   private implicit class LubExtension(testCase: (Type, Type)) {
     val (t1, t2) = testCase
     def -->(expected: Type): Assertion = {
@@ -50,7 +46,7 @@ class LeastUpperBoundSpec extends BaseSpec with TypeSyntax {
     (Bird, Mammal) --> Animal
     (Fish, Bird) --> Animal
     (Fish, Animal) --> Animal
-    (Fish, Healthy) --> AnyType
+    (Fish, Healthy) --> (Fish | Healthy)
     (Healthy, Sick) --> Status
     (Goldfish, Human) --> Animal
     (ScottishFold, Unicorn) --> Mammal
@@ -58,29 +54,38 @@ class LeastUpperBoundSpec extends BaseSpec with TypeSyntax {
     (Goldfish, ScottishFold) --> Animal
   }
 
+  it should "return the most specific supertype for product types" in {
+    fail()
+  }
+
   it should "return the most specific supertype for intersection types" in {
     (Bird & Mammal, Animal) --> Animal
     (Bird & Fish, Mammal & Fish) --> Fish
     (Chicken & Cat, Raven & Goldfish) --> Bird
     (Chicken & Penguin, Human & Cat & Unicorn) --> Animal
+    ((Cat | Penguin) & Healthy, Raven & Sick) --> (Animal & Status)
     (ScottishFold & Healthy, Cat & Sick) --> (Cat & Status)
     (ScottishFold & Healthy, Goldfish & Healthy) --> (Animal & Healthy)
     (ScottishFold & Healthy, Goldfish & Sick) --> (Animal & Status)
+  }
+
+  it should "return the most specific supertype for sum types" in {
+    fail()
   }
 
   it should "return the most specific supertype for entities, intersection types and components" in {
     (+CoolWheel & +ElectricEngine, +CheapWheel & +GasEngine) --> (+Wheel & +Engine)
     (Car, +Wheel & +Engine) --> (+Wheel & +Engine)
     (Car & +Wheel, +Wheel) --> +Wheel
-
     // These component types aren't related, so they cannot have a common component type as ancestor.
-    (+CheapWheel, +ElectricEngine) --> AnyType
-
-    // Problem: Car & +Wheel is a subtype of Car & +Engine, so it won't reduce to Car but Car & +Engine.
-    // We should PROBABLY add a simplification step to intersection types: If an intersection type has a
-    // component type and an entity type, check if the component is part of the entity; if so, remove the
-    // component type. We might also have to drop AnyType from intersection types.
-    // TODO: Fix this test with the above in consideration.
+    (+CheapWheel, +ElectricEngine) --> (+CheapWheel | +ElectricEngine)
     (Car & +Wheel, Car & +Engine) --> Car
+  }
+
+  it should "return the most specific supertype for lists and maps" in {
+    (ListType(Bird), ListType(Mammal)) --> ListType(Animal)
+    (ListType(Bird & Fish), ListType(Mammal & Fish)) --> ListType(Fish)
+    (MapType(BasicType.String, Human), MapType(BasicType.Int, Unicorn)) --> MapType(BasicType.String | BasicType.Int, Mammal)
+    (MapType(BasicType.Real, Cat & Healthy), MapType(BasicType.Int, ScottishFold & Sick)) --> MapType(BasicType.Real, Cat & Status)
   }
 }

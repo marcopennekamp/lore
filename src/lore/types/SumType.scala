@@ -1,13 +1,26 @@
 package lore.types
 
+import lore.compiler.Registry
+
 import scala.util.hashing.MurmurHash3
 
 case class SumType private (types: Set[Type]) extends Type with OperatorType {
+  assert(types.nonEmpty)
+
   override def isAbstract = true
   override protected def precedence: TypePrecedence = TypePrecedence.Sum
   override protected def operands: List[Type] = types.toList
   override protected def operator: String = "|"
   override val hashCode: Int = MurmurHash3.setHash(types)
+
+  /**
+    * Joins the sum type, producing a type that is the closest sensible supertype of all individual types of
+    * the sum type.
+    */
+  def join(implicit registry: Registry): Type = {
+    if (types.size == 1) types.head
+    else types.reduceLeft(Subtyping.configurableLub(defaultToSum = false))
+  }
 }
 
 object SumType {

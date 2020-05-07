@@ -3,7 +3,6 @@ package lore.types
 import scala.util.hashing.MurmurHash3
 
 case class IntersectionType private (types: Set[Type]) extends Type with OperatorType {
-  // An intersection type must not be empty!
   assert(types.nonEmpty)
 
   /**
