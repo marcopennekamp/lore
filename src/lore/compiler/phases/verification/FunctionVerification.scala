@@ -5,7 +5,7 @@ import lore.ast.visitor.StmtVisitor
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
 import lore.compiler.{Fragment, Registry}
-import lore.definitions.FunctionSignature
+import lore.definitions.{CallTarget, ClassDefinition, ConstructorDefinition, FunctionDefinition, FunctionSignature}
 import lore.types.Type
 
 /**
@@ -29,10 +29,16 @@ object FunctionVerification {
   /**
     * Infers and checks types of the given function or constructor body. Ensures that all other expression constraints
     * hold. Also ensures that the return type of the signature is sound compared to the type of the body.
+    *
+    * If a constructor is passed, classDefinition must be some value.
     */
-  def verifyFunction(signature: FunctionSignature, body: StmtNode)(implicit registry: Registry, fragment: Fragment): Verification = {
+  def verifyFunction(
+    target: CallTarget, classDefinition: Option[ClassDefinition], body: StmtNode
+  )(implicit registry: Registry, fragment: Fragment): Verification = {
+    assert(!target.isInstanceOf[ConstructorDefinition] || classDefinition.isDefined)
+
     // TODO: Verify that the signature doesn't have two parameters with the same name.
-    val visitor = new FunctionVerificationVisitor(signature)
+    val visitor = new FunctionVerificationVisitor(target, classDefinition)
     // TODO: Ensure that the return type matches the type of the body.
     StmtVisitor.visit(visitor)(body)
   }

@@ -74,6 +74,8 @@ class ClassDefinition(
     FunctionSignature("construct", localMembers.map(_.asParameter), ProductType.UnitType)
   }
 
+  // TODO: Add withSuper signature.
+
   /**
     * Returns the already declared default constructor or generates a new one.
     */
@@ -106,4 +108,9 @@ class ClassDefinition(
         ConstructorDefinition(this.name, parameters, body, position)
     }
   }
+
+  /**
+    * Attempts to find a constructor with the given name.
+    */
+  def getConstructor(name: String): Option[ConstructorDefinition] = constructors.find(_.name == name)
 }

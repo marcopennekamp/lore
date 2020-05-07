@@ -4,7 +4,7 @@ import lore.ast.Node
 import lore.compiler.Compilation.C
 import lore.compiler.Registry.{ConstructorNotFound, ExactFunctionNotFound, MultiFunctionNotFound, TypeNotFound}
 import lore.compiler.feedback.{Error, Position}
-import lore.definitions.{ConstructorDefinition, DeclaredTypeDefinition, FunctionDefinition, MultiFunctionDefinition}
+import lore.definitions.{ClassDefinition, ConstructorDefinition, DeclaredTypeDefinition, FunctionDefinition, MultiFunctionDefinition}
 import lore.types._
 
 import scala.collection.{MapView, mutable}
@@ -141,17 +141,23 @@ class Registry {
   }
 
   /**
-    * Resolves a constructor of the given class.
+    * Resolves a constructor of a class with the given name.
     */
   def resolveConstructor(className: String, qualifier: Option[String], position: Position): C[ConstructorDefinition] = {
     getType(className).filter(_.isInstanceOf[ClassType]).map(_.asInstanceOf[ClassType]) match {
       case None => Compilation.fail(TypeNotFound(className, position))
-      case Some(tpe) =>
-        val constructorName = qualifier.getOrElse(className)
-        tpe.definition.constructors.find(_.name == constructorName) match {
-          case None => Compilation.fail(ConstructorNotFound(className, qualifier, position))
-          case Some(constructor) => Compilation.succeed(constructor)
-        }
+      case Some(tpe) => resolveConstructor(tpe.definition, qualifier, position)
+    }
+  }
+
+  /**
+    * Resolves a constructor of the given class.
+    */
+  def resolveConstructor(definition: ClassDefinition, qualifier: Option[String], position: Position): C[ConstructorDefinition] = {
+    val constructorName = qualifier.getOrElse(definition.name)
+    definition.getConstructor(constructorName) match {
+      case None => Compilation.fail(ConstructorNotFound(definition.name, qualifier, position))
+      case Some(constructor) => Compilation.succeed(constructor)
     }
   }
 }

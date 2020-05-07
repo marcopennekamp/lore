@@ -2,19 +2,23 @@ package lore.compiler.phases.verification
 
 import lore.ast.ExprNode.AddressNode
 import lore.ast.visitor.VerificationStmtVisitor
-import lore.ast.{ExprNode, StmtNode, TopLevelExprNode}
+import lore.ast.{CallNode, ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.{Error, Position}
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
 import lore.compiler.{Compilation, Fragment, Registry, TypeExpressionEvaluator}
-import lore.definitions.{CallTarget, FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
+import lore.definitions.{CallTarget, ClassDefinition, FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
 import lore.types._
 
 private[verification] class FunctionVerificationVisitor(
   /**
-    * The signature of the function or constructor for which we want to infer types.
+    * The function or constructor for which we want to infer types.
     */
-  val signature: FunctionSignature,
+  val callTarget: CallTarget,
+  /**
+    * The class that owns the constructor IF the signature represents a constructor.
+    */
+  val classDefinition: Option[ClassDefinition],
 )(implicit registry: Registry, fragment: Fragment) extends VerificationStmtVisitor {
   import ExprNode._
   import FunctionVerificationVisitor._
@@ -24,7 +28,7 @@ private[verification] class FunctionVerificationVisitor(
   /**
     * The function verification context used by the visitor to open/close scopes, register yields, and so on.
     */
-  val context = new FunctionVerificationContext(signature)
+  val context = new FunctionVerificationContext(callTarget.signature)
 
   /**
     * Whether the given statement's inferred type is a subtype of one of the expected types.
@@ -73,18 +77,25 @@ private[verification] class FunctionVerificationVisitor(
   }
 
   /**
-    * Checks that the given call target can be called with the given arguments, then assigns the target to the node
-    * and also types it.
+    * Checks that the given arguments adhere to the given signature.
     */
-  private def typeCall(node: CallNode, target: CallTarget, arguments: List[ExprNode]): Verification = {
-    val parameterTypes = target.signature.parameters.map(_.tpe)
-    (if (parameterTypes.size != arguments.size) {
-      Compilation.fail(WrongNumberOfArguments(target.signature, node.position))
+  private def adheringToSignature(arguments: List[ExprNode], signature: FunctionSignature, callSite: Position): Verification = {
+    val parameterTypes = signature.parameters.map(_.tpe)
+    if (parameterTypes.size != arguments.size) {
+      Compilation.fail(WrongNumberOfArguments(signature, callSite))
     } else {
       parameterTypes.zip(arguments).map { case (parameterType, argument) =>
         havingSubtype(argument, parameterType)
       }.simultaneous.verification
-    }).flatMap { _ =>
+    }
+  }
+
+  /**
+    * Checks that the given call target can be called with the given arguments, then assigns the target to the node
+    * and also types it.
+    */
+  private def typeCall(node: CallNode, target: CallTarget, arguments: List[ExprNode]): Verification = {
+    adheringToSignature(arguments, target.signature, node.position).flatMap { _ =>
       node.target = target
       node.typed(target.signature.outputType)
     }
@@ -105,8 +116,8 @@ private[verification] class FunctionVerificationVisitor(
       //       a return statement.
       // TODO: Disallow constructions such as `if ({ return 0 }) a else b`. Returning should not be possible from
       //       blocks that are in an expression position. We might have to add such a notion to blocks.
-      // This doesn't quite adhere to the spec, but we'll go with unit for now.
-      node.typed(ProductType.UnitType) // TODO: This should actually be a nothing/bottom type...
+      // TODO: Disallow returns in constructor bodies.
+      node.typed(NothingType)
     case YieldNode(expr) =>
       // TODO: Yield is special in that it determines the result type of the surrounding loop. We must create a
       //       "loop context" that we add all instances of yield to; then we try to find the lowest common type bound
@@ -193,8 +204,17 @@ private[verification] class FunctionVerificationVisitor(
           typeCall(node, function, arguments)
         }
       }
-    case ConstructorCallNode(name, arguments) => ???
-    case ConstructNode(arguments, withSuper) => ???
+    case node@ConstructorCallNode(name, arguments) =>
+      // Continue with a constructor this.name. We have already verified that only a constructor can contain a
+      // continuation, so we can safely get the class definition here as part of the contract of this visitor.
+      assert(classDefinition.isDefined)
+      val cl = classDefinition.get
+      registry.resolveConstructor(cl, name, node.position).flatMap(constructor => typeCall(node, constructor, arguments))
+    case ConstructNode(arguments, withSuper) =>
+      assert(classDefinition.isDefined)
+      val cl = classDefinition.get
+      cl.constructSignature
+      ???
 
     // Unary operations.
     case NegationNode(expr) =>
