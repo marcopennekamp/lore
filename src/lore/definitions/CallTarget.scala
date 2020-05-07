@@ -1,5 +1,8 @@
 package lore.definitions
 
-trait CallTarget {
+import lore.ast.StmtNode
+
+trait CallTarget extends PositionedDefinition {
   def signature: FunctionSignature
+  def body: Option[StmtNode]
 }

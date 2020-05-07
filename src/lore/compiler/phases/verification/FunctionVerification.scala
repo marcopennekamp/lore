@@ -5,7 +5,7 @@ import lore.ast.visitor.StmtVisitor
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
 import lore.compiler.{Fragment, Registry}
-import lore.definitions.{CallTarget, ClassDefinition, ConstructorDefinition, FunctionDefinition, FunctionSignature}
+import lore.definitions.{CallTarget, ClassDefinition, ConstructorDefinition}
 import lore.types.Type
 
 /**
@@ -33,14 +33,16 @@ object FunctionVerification {
     * If a constructor is passed, classDefinition must be some value.
     */
   def verifyFunction(
-    target: CallTarget, classDefinition: Option[ClassDefinition], body: StmtNode
-  )(implicit registry: Registry, fragment: Fragment): Verification = {
+    target: CallTarget, classDefinition: Option[ClassDefinition]
+  )(implicit registry: Registry): Verification = {
+    implicit val fragment = target.position.fragment
     assert(!target.isInstanceOf[ConstructorDefinition] || classDefinition.isDefined)
-
     // TODO: Verify that the signature doesn't have two parameters with the same name.
-    val visitor = new FunctionVerificationVisitor(target, classDefinition)
-    // TODO: Ensure that the return type matches the type of the body.
-    StmtVisitor.visit(visitor)(body)
-    // TODO: Assert that all nodes have been assigned a type.
+    target.body.map { body =>
+      val visitor = new FunctionVerificationVisitor(target, classDefinition)
+      // TODO: Ensure that the return type matches the type of the body.
+      StmtVisitor.visit(visitor)(body)
+      // TODO: Assert that all nodes have been assigned a type.
+    }.toCompiledOption.verification
   }
 }

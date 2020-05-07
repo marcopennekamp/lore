@@ -204,7 +204,7 @@ object ClassConstraints {
     // This is deliberately followed by a flatMap, because we don't want to check the graph parts of this verification
     // if not all continuations are in the right spot.
     val correctPlacement = definition.constructors.map { constructor =>
-      val statements = constructor.body.statements
+      val statements = constructor.bodyBlock.statements
       val endsInContinuation = if (!statements.lastOption.exists(_.isInstanceOf[TopLevelExprNode.ContinuationNode])) {
         Compilation.fail(ConstructorMustEndInContinuation(definition, constructor))
       } else Verification.succeed
@@ -226,7 +226,7 @@ object ClassConstraints {
       definition.constructors.foreach { constructor =>
         // The cast is now safe because we have previously verified that the last expression in the block is
         // a continuation.
-        val continuation = constructor.body.statements.last.asInstanceOf[TopLevelExprNode.ContinuationNode]
+        val continuation = constructor.bodyBlock.statements.last.asInstanceOf[TopLevelExprNode.ContinuationNode]
         continuation match {
           case TopLevelExprNode.ConstructorCallNode(name, _) =>
             flowGraph.addEdge(constructor.name, name.getOrElse(definition.name))
