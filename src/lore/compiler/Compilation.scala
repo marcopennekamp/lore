@@ -82,6 +82,14 @@ sealed trait Compilation[+A] {
   }
 
   /**
+    * If this compilation has failed, try to recover from a given set of errors to a new compilation.
+    */
+  def recover[B >: A](f: PartialFunction[List[Error], Compilation[B]]): Compilation[B] = this match {
+    case Result(_, _) => this
+    case Errors(errors, infos) => if (f.isDefinedAt(errors)) f(errors).withInfos(infos) else this
+  }
+
+  /**
     * Converts the compilation to an option, discarding all feedback.
     */
   def toOption: Option[A] = this match {

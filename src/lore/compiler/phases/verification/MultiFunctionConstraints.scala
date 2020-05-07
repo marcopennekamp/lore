@@ -12,12 +12,12 @@ object MultiFunctionConstraints {
     override def message = s"The function ${definition.signature} is already declared somewhere else."
   }
 
-  case class FunctionIllegallyAbstract(function: FunctionDefinition) extends Error(function.position) {
+  case class FunctionIllegallyAbstract(function: FunctionDefinition) extends Error(function) {
     override def message: String = s"The function ${function.signature} is declared abstract even though it doesn't have an" +
       s" abstract input type. Either implement the function or ensure the input type is abstract."
   }
 
-  case class AbstractFunctionNotTotal(function: FunctionDefinition, missing: List[Type]) extends Error(function.position) {
+  case class AbstractFunctionNotTotal(function: FunctionDefinition, missing: List[Type]) extends Error(function) {
     override def message: String = s"The abstract function ${function.signature} is not fully implemented and thus doesn't" +
       s" satisfy the totality constraint. Please implement functions for the following input types: ${missing.mkString(", ")}."
   }

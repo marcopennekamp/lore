@@ -42,6 +42,8 @@ abstract class Warning(override val position: Position) extends InfoFeedback {
   * The base class for compilation errors. Proper errors must extend this class.
   */
 abstract class Error(override val position: Position) extends Feedback {
+  // TODO: We should add a "name" concept to an error so that programmers can quickly google/search for Lore errors.
+
   override def isSevere = true
   override val consoleTag: String = FeedbackPrinter.tagError
 

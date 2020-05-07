@@ -2,8 +2,9 @@ package lore.compiler
 
 import lore.ast.Node
 import lore.compiler.Compilation.C
+import lore.compiler.Registry.{ConstructorNotFound, ExactFunctionNotFound, MultiFunctionNotFound, TypeNotFound}
 import lore.compiler.feedback.{Error, Position}
-import lore.definitions.{DeclaredTypeDefinition, FunctionDefinition, MultiFunctionDefinition}
+import lore.definitions.{ConstructorDefinition, DeclaredTypeDefinition, FunctionDefinition, MultiFunctionDefinition}
 import lore.types._
 
 import scala.collection.{MapView, mutable}
@@ -54,10 +55,6 @@ class Registry {
     * Searches for a type with the given name.
     */
   def getType(name: String): Option[Type] = types.get(name)
-
-  case class TypeNotFound(name: String, pos: Position) extends Error(pos) {
-    override def message = s"The type $name does not exist in the current scope."
-  }
 
   /**
     * Gets a named type with the given name. If the type cannot be found, the operation fails with a compilation error.
@@ -120,10 +117,6 @@ class Registry {
     */
   def getMultiFunction(name: String): Option[MultiFunctionDefinition] = multiFunctions.get(name)
 
-  case class MultiFunctionNotFound(name: String, pos: Position) extends Error(pos) {
-    override def message = s"The multi-function $name does not exist in the current scope."
-  }
-
   /**
     * Gets a multi-function with the given name. If it cannot be found, the operation fails with a compilation error.
     */
@@ -132,10 +125,6 @@ class Registry {
       case None => Compilation.fail(MultiFunctionNotFound(name, position))
       case Some(mf) => Compilation.succeed(mf)
     }
-  }
-
-  case class ExactFunctionNotFound(name: String, types: List[Type], pos: Position) extends Error(pos) {
-    override def message = s"The exact function $name[${types.mkString(", ")}] does not exist in the current scope."
   }
 
   /**
@@ -149,5 +138,23 @@ class Registry {
         case Some(f) => Compilation.succeed(f)
       }
     }
+  }
+}
+
+object Registry {
+  case class TypeNotFound(name: String, pos: Position) extends Error(pos) {
+    override def message = s"The type $name does not exist in the current scope."
+  }
+
+  case class MultiFunctionNotFound(name: String, pos: Position) extends Error(pos) {
+    override def message = s"The multi-function $name does not exist in the current scope."
+  }
+
+  case class ExactFunctionNotFound(name: String, types: List[Type], pos: Position) extends Error(pos) {
+    override def message = s"The exact function $name[${types.mkString(", ")}] does not exist in the current scope."
+  }
+
+  case class ConstructorNotFound(typeName: String, qualifier: Option[String], pos: Position) extends Error(pos) {
+    override def message = s"The constructor $typeName${qualifier.mkString(".")} does not exist in the class $typeName."
   }
 }
