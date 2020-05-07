@@ -151,6 +151,9 @@ object Subtyping {
       // TODO: Is this algorithm the same when applied via reduction (reducing to the LUB by pairs) and to a list
       //       of intersection types? That is, does the following hold: LUB(LUB(A, B), C) = LUB(A, B, C)?
       case (t1: IntersectionType, t2: IntersectionType) =>
+        // TODO: When calling lubNoDefaultSum, should we pass the "no default to sum" setting down the call tree,
+        //       actually? Or should this be confined to the immediate concern of having a correct candidate algorithm?
+        //       We need to test this with more complex examples, though they should still make sense, of course.
         val candidates = for  { c1 <- t1.types; c2 <- t2.types } yield lubNoDefaultSum(c1, c2)
         IntersectionType.construct(candidates)
       case (t1: IntersectionType, _) => lubPassOnSettings(t1, IntersectionType(Set(t2)))
@@ -165,8 +168,9 @@ object Subtyping {
       case (_, t2: SumType) => lubPassOnSettings(t2, t1)
 
       // In case of product types, we can decide the closest common supertype component by component.
-      // TODO: Implement.
-      //case (ProductType())
+      case (ProductType(left), ProductType(right)) =>
+        if (left.size != right.size) fallback
+        else ProductType(left.zip(right).map(lubPassOnSettings.tupled))
 
       // For class and label types, the LUB is calculated by the type hierarchy. If the result would be Any, we return
       // the sum type instead.
