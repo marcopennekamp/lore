@@ -3,7 +3,7 @@ package lore.ast
 import lore.ast.StmtNode._
 import lore.compiler.phases.verification.{LocalVariable, VirtualMember}
 import lore.definitions.CallTarget
-import lore.types.Type
+import lore.types.{ProductType, Type}
 
 /**
   * All statements and expressions.
@@ -151,7 +151,15 @@ object ExprNode {
   /**
     * The unit tuple.
     */
-  case object UnitNode extends ExprNode with LeafNode
+  case object UnitNode extends ExprNode with LeafNode {
+    override def inferredType: Type = ProductType.UnitType
+    override def setInferredType(tpe: Type): Unit = {
+      // Do nothing. We don't want setInferredType to throw any errors when the inferred type is inevitably set
+      // multiple times on this singleton object. We use this opportunity to catch any strange errors, however,
+      // by asserting that the given type must be the unit type.
+      assert(tpe == inferredType)
+    }
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // List expressions.
