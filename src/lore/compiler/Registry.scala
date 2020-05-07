@@ -139,6 +139,21 @@ class Registry {
       }
     }
   }
+
+  /**
+    * Resolves a constructor of the given class.
+    */
+  def resolveConstructor(className: String, qualifier: Option[String], position: Position): C[ConstructorDefinition] = {
+    getType(className).filter(_.isInstanceOf[ClassType]).map(_.asInstanceOf[ClassType]) match {
+      case None => Compilation.fail(TypeNotFound(className, position))
+      case Some(tpe) =>
+        val constructorName = qualifier.getOrElse(className)
+        tpe.definition.constructors.find(_.name == constructorName) match {
+          case None => Compilation.fail(ConstructorNotFound(className, qualifier, position))
+          case Some(constructor) => Compilation.succeed(constructor)
+        }
+    }
+  }
 }
 
 object Registry {
