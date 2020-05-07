@@ -55,7 +55,11 @@ class LeastUpperBoundSpec extends BaseSpec with TypeSyntax {
   }
 
   it should "return the most specific supertype for product types" in {
-    fail()
+    ((Bird, Goldfish): Type, (Raven, Chicken): Type) --> (Bird, Animal)
+    ((Penguin, Chicken, Raven): Type, (Chicken, Raven, Penguin): Type) --> (Bird, Bird, Bird)
+    ((Chicken & Penguin, Goldfish & Cat, Unicorn & Healthy): Type, (Raven & Sick, Fish & Sick, Human & Sick): Type) -->
+      ((Bird, Fish, Mammal & Status))
+    ((+Wheel, +Engine): Type, (Car, ElectricEngine): Type) --> (+Wheel, +Engine | ElectricEngine)
   }
 
   it should "return the most specific supertype for intersection types" in {
@@ -70,7 +74,13 @@ class LeastUpperBoundSpec extends BaseSpec with TypeSyntax {
   }
 
   it should "return the most specific supertype for sum types" in {
-    fail()
+    (Chicken | Raven, Penguin | Chicken) --> Bird
+    (Chicken | Cat | Goldfish, Human | Unicorn) --> Animal
+    (Human | (ScottishFold & Healthy), Unicorn | (Cat & Sick)) --> Mammal
+    // This doesn't really test the LUB, but it does ensure that sum types are simplified at some point,
+    // either in the LUB or in the sum type construction itself. Where exactly doesn't matter for the
+    // test.
+    (BasicType.Int | BasicType.Real, NothingType) --> BasicType.Real
   }
 
   it should "return the most specific supertype for entities, intersection types and components" in {

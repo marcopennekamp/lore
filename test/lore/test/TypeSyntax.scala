@@ -9,6 +9,7 @@ trait TypeSyntax {
   implicit def toProductTypeTS(tuple: (Type, String))(implicit registry: Registry): ProductType = toProductTypeTT((tuple._1, toType(tuple._2)))
   implicit def toProductTypeST(tuple: (String, Type))(implicit registry: Registry): ProductType = toProductTypeTT((toType(tuple._1), tuple._2))
   implicit def toProductTypeTT(tuple: (Type, Type))(implicit registry: Registry): ProductType = ProductType(List(tuple._1, tuple._2))
+  implicit def toProductTypeTTT(tuple: (Type, Type, Type))(implicit registry: Registry): ProductType = ProductType(List(tuple._1, tuple._2, tuple._3))
   implicit class TypeOperators(t1: Type) {
     def &(t2: Type)(implicit registry: Registry): Type = IntersectionType.construct(Set(t1, t2))
     def |(t2: Type)(implicit registry: Registry): Type = SumType.construct(Set(t1, t2))
