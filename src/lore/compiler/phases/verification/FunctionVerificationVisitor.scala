@@ -1,6 +1,7 @@
 package lore.compiler.phases.verification
 
 import lore.ast.ExprNode.AddressNode
+import lore.ast.TopLevelExprNode.YieldNode
 import lore.ast.visitor.VerificationStmtVisitor
 import lore.ast.{CallNode, ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.Compilation.Verification
@@ -119,11 +120,11 @@ private[verification] class FunctionVerificationVisitor(
       havingSubtype(expr, callTarget.signature.outputType).flatMap { _ =>
         node.typed(NothingType)
       }
-    case YieldNode(expr) =>
-      // TODO: Yield is special in that it determines the result type of the surrounding loop. We must create a
-      //       "loop context" that we add all instances of yield to; then we try to find the lowest common type bound
-      //       for all expressions once the context comes back to the list.
-      node.typed(ProductType.UnitType)
+    case node@YieldNode(expr) =>
+      context.currentLoopContext match {
+        case None => Compilation.fail(YieldRequiresLoop(node))
+        case Some(loop) => loop.registerYielded(expr); node.typed(ProductType.UnitType)
+      }
 
     // Variables.
     case node@VariableNode(name) =>
@@ -298,6 +299,10 @@ private[verification] class FunctionVerificationVisitor(
 }
 
 private[verification] object FunctionVerificationVisitor {
+  case class YieldRequiresLoop(node: YieldNode)(implicit fragment: Fragment) extends Error(node) {
+    override def message = s"Found a yield, but no surrounding loop. You cannot yield outside a loop."
+  }
+
   case class ImmutableAssignment(addressNode: AddressNode)(implicit fragment: Fragment) extends Error(addressNode) {
     override def message = s"The variable or property you are trying to assign to is immutable."
   }

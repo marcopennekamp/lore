@@ -302,6 +302,8 @@ Note that either `statement` (or even `cond`) may be a block. The else part is, 
 
 ### Repetition
 
+**TODO:** Rename to Loops. Otherwise the general name is too close to repeat while.
+
 **Repetitions** represent repeating control flow. For now, we support loops and iteration.
 
 ##### Loops
@@ -361,7 +363,7 @@ In the actual implementation, we can of course **optimize** two cases:
 - When the value of a repetition isn't assigned or used, we can forgo creating and filling a list.
 - If there are no `yield` expressions within the block of a repetition, we can simply designate the empty list as the result.
 
-A yield is a **top-level expression**.
+A yield is a **top-level expression**. If no yields are present, the loop evaluates to the unit tuple.
 
 
 
