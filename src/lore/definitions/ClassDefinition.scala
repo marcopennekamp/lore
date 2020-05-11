@@ -21,6 +21,8 @@ class ClassDefinition(
   definedConstructors: List[ConstructorDefinition],
   override val position: Position,
 ) extends DeclaredTypeDefinition {
+  definedConstructors.foreach(_.associateWith(this))
+
   // Many of the members here are declared as vals. This is only possible because definitions are created according
   // to the inheritance hierarchy.
 
@@ -103,7 +105,9 @@ class ClassDefinition(
         val body = ExprNode.BlockNode(List(
           TopLevelExprNode.ConstructNode(arguments, withSuper)
         ))
-        ConstructorDefinition(this.name, parameters, body, position)
+        val constructor = ConstructorDefinition(this.name, parameters, body, position)
+        constructor.associateWith(this)
+        constructor
     }
   }
 
