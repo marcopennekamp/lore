@@ -234,10 +234,10 @@ private[verification] class FunctionVerificationVisitor(
     // Repetitions.
     case RepeatWhileNode(condition, body, deferCheck) =>
       // TODO: Pop the latest yield context and build the list type.
-      ???
+      node.typed(ProductType.UnitType)
     case IterationNode(extractors, body) =>
       // TODO: Do roughly the same as in the repeat-while. We also have to push a new scope to the context, though.
-      ???
+      node.typed(ProductType.UnitType)
 
     // Binary operations.
     case AdditionNode(left, right) => typeBinaryNumbers(node, left, right)
