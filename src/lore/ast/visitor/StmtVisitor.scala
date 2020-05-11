@@ -93,13 +93,13 @@ object StmtVisitor {
       // Unary.
       case node@ReturnNode(expr)                          => unary(node, expr)
       case node@VariableDeclarationNode(_, _, _, value)   => unary(node, value)
-      case node@AssignmentNode(_, value)                  => unary(node, value)
       case node@YieldNode(expr)                           => unary(node, expr)
       case node@NegationNode(expr)                        => unary(node, expr)
       case node@LogicalNotNode(expr)                      => unary(node, expr)
       case node@PropertyAccessNode(instance, _)           => unary(node, instance)
 
       // Binary.
+      case node@AssignmentNode(address, value)            => binary(node, address, value)
       case node@AdditionNode(left, right)                 => binary(node, left, right)
       case node@SubtractionNode(left, right)              => binary(node, left, right)
       case node@MultiplicationNode(left, right)           => binary(node, left, right)

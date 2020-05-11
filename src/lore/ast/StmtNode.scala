@@ -65,7 +65,7 @@ sealed trait CallNode extends TopLevelExprNode {
 
 object TopLevelExprNode {
   case class VariableDeclarationNode(name: String, isMutable: Boolean, tpe: Option[TypeExprNode], value: ExprNode) extends TopLevelExprNode with UnaryNode
-  case class AssignmentNode(address: ExprNode.AddressNode, value: ExprNode) extends TopLevelExprNode with UnaryNode
+  case class AssignmentNode(address: ExprNode.AddressNode, value: ExprNode) extends TopLevelExprNode with BinaryNode
 
   /**
     * Yield is a part of top-level expressions, because we don't want a programmer to yield in the middle of
