@@ -43,8 +43,11 @@ trait StmtVisitor[A] {
 
   /**
     * Visits an iteration node with its extractors and the body.
+    *
+    * We don't pass the evaluated body but rather a function that visits the body expression. This allows the
+    * iteration visitor to process the extractors before the body is visited.
     */
-  def visitIteration(node: ExprNode.IterationNode)(extractors: List[(String, A)], body: A): Compilation[A]
+  def visitIteration(node: ExprNode.IterationNode)(extractors: List[(String, A)], visitBody: () => Compilation[A]): Compilation[A]
 
   /**
     * Invoked before a node's subtrees are visited. This can be used to set up contexts and such.
@@ -132,15 +135,15 @@ object StmtVisitor {
       case node@MapNode(kvs) =>
         val entries = kvs.map {
           case ExprNode.KeyValueNode(key, value) => (rec(key), rec(value)).simultaneous
-        }
-        entries.simultaneous.flatMap(visitor.visitMap(node))
+        }.simultaneous
+        entries.flatMap(visitor.visitMap(node))
 
       // Iteration node.
       case node@IterationNode(extractors, body) =>
         val extracts = extractors.map {
           case ExprNode.ExtractorNode(name, collection) => rec(collection).map((name, _))
-        }
-        (extracts.simultaneous, rec(body)).simultaneous.flatMap((visitor.visitIteration(node) _).tupled)
+        }.simultaneous
+        extracts.flatMap(extractors => visitor.visitIteration(node)(extractors, () => rec(body)))
     }
   }
 }

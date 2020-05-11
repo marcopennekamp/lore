@@ -13,3 +13,8 @@ function mul(a: Int, b: Int): Int = {
   }
   result
 }
+function double(list: [Real]): [Real] = {
+  for (e in list) {
+    yield e * 2
+  }
+}

@@ -121,6 +121,9 @@ private[verification] class FunctionVerificationVisitor(
         node.typed(NothingType)
       }
     case node@YieldNode(expr) =>
+      // TODO: Similar to return statements, yields should not be possible in blocks that are in expression
+      //       position, except if the loop was defined inside the same block which is in the expression
+      //       position.
       context.currentLoopContext match {
         case None => Compilation.fail(YieldRequiresLoop(node))
         case Some(loop) => loop.registerYielded(expr); node.typed(ProductType.UnitType)
@@ -232,12 +235,12 @@ private[verification] class FunctionVerificationVisitor(
       }
 
     // Repetitions.
-    case RepeatWhileNode(condition, body, deferCheck) =>
-      // TODO: Pop the latest yield context and build the list type.
-      node.typed(ProductType.UnitType)
-    case IterationNode(extractors, body) =>
-      // TODO: Do roughly the same as in the repeat-while. We also have to push a new scope to the context, though.
-      node.typed(ProductType.UnitType)
+    case RepeatWhileNode(condition, _, _) =>
+      havingSubtype(condition, BasicType.Boolean).flatMap { _ =>
+        // TODO: Warn if the list type is [Any]?
+        val loopContext = context.popLoopContext()
+        node.typed(loopContext.listType)
+      }
 
     // Binary operations.
     case AdditionNode(left, right) => typeBinaryNumbers(node, left, right)
@@ -256,6 +259,7 @@ private[verification] class FunctionVerificationVisitor(
 
     // Ternary
     case IfElseNode(condition, onTrue, onFalse) =>
+      // TODO: Warn if the result type is Any?
       havingSubtype(condition, BasicType.Boolean).flatMap { _ =>
         // TODO: If only one branch supplies a value, return an OPTION of the evaluated type. Of course, we don't
         //       HAVE options just yet. This also needs to become part of the spec before it's implemented, IF we
@@ -291,9 +295,35 @@ private[verification] class FunctionVerificationVisitor(
       node.typed(BasicType.String)
   }
 
+  override def visitIteration(node: IterationNode)(extractors: List[(String, Unit)], visitBody: () => Verification): Verification = {
+    // TODO: Alternative solution: Add a function visitExtractor which visits the extractor nodes first. Then we can
+    //       open the scope and loop context in before, add each extractor to the scope in visitExtractor, and clean
+    //       up the scope and list context in this method, visit iteration. (Or we can go back to pattern-matching
+    //       up in the verify method again.)
+    // Before we visit the body, we have to push a new scope and later, once extractors have been evaluated, also
+    // a new loop context.
+    context.openScope()
+    val scope = context.currentScope
+    node.extractors.map { extractor =>
+      (extractor.collection.inferredType match {
+        case ListType(element) => Compilation.succeed(element)
+        case MapType(key, value) => Compilation.succeed(ProductType(List(key, value)))
+        case _ => Compilation.fail(CollectionExpected(extractor.collection))
+      }).flatMap { elementType =>
+        scope.register(LocalVariable(extractor.variableName, elementType, isMutable = false), extractor.position)
+      }
+    }.simultaneous.flatMap { _ =>
+      context.pushLoopContext()
+      visitBody().flatMap { _ =>
+        val loopContext = context.popLoopContext()
+        context.closeScope() // We have to close the scope that we opened for the extractors.
+        node.typed(loopContext.listType)
+      }
+    }
+  }
+
   override def before: PartialFunction[StmtNode, Unit] = {
-    case ExprNode.RepeatWhileNode(_, _, _) | ExprNode.IterationNode(_, _) =>
-      // TODO: Put a new yield context on the stack.
+    case ExprNode.RepeatWhileNode(_, _, _) => context.pushLoopContext()
     case ExprNode.BlockNode(_) => context.openScope()
   }
 }
@@ -315,6 +345,10 @@ private[verification] object FunctionVerificationVisitor {
   case class AmbiguousCall(mf: MultiFunctionDefinition, min: List[FunctionDefinition], callPos: Position) extends Error(callPos) {
     override def message: String = s"The multi-function call ${mf.name} at this site has an ambiguous min-set." +
       s" That is, we are finding TOO MANY functions that would accept the given arguments: ${min.mkString(", ")}."
+  }
+
+  case class CollectionExpected(node: ExprNode)(implicit fragment: Fragment) extends Error(node) {
+    override def message: String = s"Expected a collection at this position. Got $node instead, which has type ${node.inferredType}."
   }
 
   implicit class StmtNodeExtension(node: StmtNode) {

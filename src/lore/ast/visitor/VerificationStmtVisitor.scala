@@ -18,5 +18,5 @@ trait VerificationStmtVisitor extends StmtVisitor[Unit] {
   override final def visitTernary(node: StmtNode.TernaryNode)(argument1: Unit, argument2: Unit, argument3: Unit): Verification = verify(node)
   override final def visitXary(node: StmtNode.XaryNode)(arguments: List[Unit]): Verification = verify(node)
   override final def visitMap(node: ExprNode.MapNode)(entries: List[(Unit, Unit)]): Verification = verify(node)
-  override final def visitIteration(node: ExprNode.IterationNode)(extractors: List[(String, Unit)], body: Unit): Verification = verify(node)
+  override def visitIteration(node: ExprNode.IterationNode)(extractors: List[(String, Unit)], visitBody: () => Verification): Verification = verify(node)
 }

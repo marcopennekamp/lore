@@ -230,5 +230,5 @@ object ExprNode {
   case class RepeatWhileNode(condition: ExprNode, body: StmtNode, deferCheck: Boolean) extends ExprNode with BinaryNode
 
   case class IterationNode(extractors: List[ExtractorNode], body: StmtNode) extends ExprNode
-  case class ExtractorNode(variableName: String, collection: ExprNode)
+  case class ExtractorNode(variableName: String, collection: ExprNode) extends Node
 }

@@ -40,7 +40,7 @@ trait PassOnStmtVisitor[A] extends StmtVisitor[A] {
     Compilation.succeed(combine(entries.map { case (a, b) => combine(a, b) }))
   }
 
-  override def visitIteration(node: ExprNode.IterationNode)(extractors: List[(String, A)], body: A): Compilation[A] = {
-    Compilation.succeed(combine(combine(extractors.map(_._2)), body))
+  override def visitIteration(node: ExprNode.IterationNode)(extractors: List[(String, A)], visitBody: () => Compilation[A]): Compilation[A] = {
+    visitBody().map(body => combine(combine(extractors.map(_._2)), body))
   }
 }

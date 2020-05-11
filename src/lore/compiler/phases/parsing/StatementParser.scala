@@ -73,7 +73,7 @@ object StatementParser {
   }
 
   private def iteration[_: P]: P[ExprNode.IterationNode] = {
-    def extractor = P(identifier ~ "in" ~ expression).map(ExprNode.ExtractorNode.tupled)
+    def extractor = P(Index ~ identifier ~ "in" ~ expression).map(withIndex(ExprNode.ExtractorNode))
     P("for" ~ "(" ~ extractor.rep(1, sep = ",") ~ ")" ~ statement).map {
       case (extractors, stat) => ExprNode.IterationNode(extractors.toList, stat)
     }
