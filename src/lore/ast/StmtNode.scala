@@ -12,8 +12,8 @@ sealed trait StmtNode extends Node {
   private var _inferredType: Option[Type] = None
 
   def setInferredType(tpe: Type): Unit = {
-    if (_inferredType.isDefined) {
-      throw new RuntimeException(s"The inferred type for the node $this has already been set. This is a compiler bug!")
+    if (_inferredType.exists(_ != tpe)) {
+      throw new RuntimeException(s"An inferred type for the node $this has already been set. Now a DIFFERENT type has been inferred. This is a compiler bug!")
     }
     _inferredType = Some(tpe)
   }
@@ -99,15 +99,22 @@ object ExprNode {
   // Variable expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class VariableNode(name: String) extends ExprNode with LeafNode with AddressNode {
-    private var _variable: LocalVariable = _
+    private var _variable: Option[LocalVariable] = None
+
+    def setVariable(variable: LocalVariable): Unit = {
+      if (_variable.exists(_ != variable)) {
+        throw new RuntimeException(s"Variable node $this was assigned two different variables: ${_variable.get}, $variable. This is a compiler bug!")
+      }
+      _variable = Some(variable)
+    }
 
     /**
       * The variable that this node refers to, which is resolved during function verification.
       */
-    def variable: LocalVariable = _variable
-    def variable_=(variable: LocalVariable): Unit = {
-      assert(_variable == null)
-      _variable = variable
+    def variable: LocalVariable = {
+      _variable.getOrElse(
+        throw new RuntimeException(s"The variable for the node $this should have been set by now. This is a compiler bug!")
+      )
     }
   }
 

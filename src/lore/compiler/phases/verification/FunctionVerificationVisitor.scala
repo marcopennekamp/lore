@@ -131,7 +131,7 @@ private[verification] class FunctionVerificationVisitor(
       // TODO: Once we treat functions as values, we will have to make this even more complicated by also
       //       considering function names.
       context.currentScope.variable(name, node.position).flatMap { variable =>
-        node.variable = variable
+        node.setVariable(variable)
         node.typed(variable.tpe)
       }
     case node@PropertyAccessNode(instance, name) =>
