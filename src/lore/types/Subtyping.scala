@@ -137,6 +137,10 @@ object Subtyping {
       }
     }
 
+    def declaredTypeLcs(d1: DeclaredType, d2: DeclaredType): Type = {
+      registry.declaredTypeHierarchy.leastCommonSupertype(d1, d2)
+    }
+
     (t1, t2) match {
       // First of all, handle subtypes as outlined above. These cases trivially cover Any and Nothing.
       case (t1, t2) if t1 <= t2 => t2
@@ -173,9 +177,23 @@ object Subtyping {
         if (left.size != right.size) fallback
         else ProductType(left.zip(right).map(lubPassOnSettings.tupled))
 
+      // We have the special case that component types can also be supertypes of entity types.
+      // We add these to the LUB resolved by the type hierarchy.
+      case (e1: ClassType, e2: ClassType) if e1.isEntity && e2.isEntity =>
+        val componentTypes = e1.definition.commonComponentTypes(e2.definition)
+        val superclassList = declaredTypeLcs(e1, e2) match {
+          // We choose Any as the supertype only if there are no common component types. Otherwise we prefer to
+          // calculate a LUB that contains only component types.
+          case AnyType if componentTypes.nonEmpty => Nil
+          case t => t :: Nil
+        }
+        IntersectionType.construct(
+          superclassList ::: componentTypes
+        ).fallbackIfAny
+
       // For class and label types, the LUB is calculated by the type hierarchy. If the result would be Any, we return
       // the sum type instead.
-      case (d1: DeclaredType, d2: DeclaredType) => registry.declaredTypeHierarchy.leastCommonSupertype(d1, d2).fallbackIfAny
+      case (d1: DeclaredType, d2: DeclaredType) => declaredTypeLcs(d1, d2).fallbackIfAny
 
       // Component types simply delegate to declared types.
       case (c1: ComponentType, c2: ComponentType) =>
