@@ -30,3 +30,13 @@ abstract entity Car {
   component Wheel
   component Engine
 }
+
+abstract entity Cycle {
+  component Wheel
+}
+
+abstract entity Motorcycle extends Cycle {
+  component Engine
+}
+
+abstract entity Bicycle extends Cycle

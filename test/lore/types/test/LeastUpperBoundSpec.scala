@@ -34,6 +34,9 @@ class LeastUpperBoundSpec extends BaseSpec with TypeSyntax {
   private val GasEngine = havingClass("GasEngine")
   private val ElectricEngine = havingClass("ElectricEngine")
   private val Car = havingClass("Car")
+  private val Cycle = havingClass("Cycle")
+  private val Motorcycle = havingClass("Motorcycle")
+  private val Bicycle = havingClass("Bicycle")
 
   private implicit class LubExtension(testCase: (Type, Type)) {
     val (t1, t2) = testCase
@@ -90,6 +93,9 @@ class LeastUpperBoundSpec extends BaseSpec with TypeSyntax {
     // These component types aren't related, so they cannot have a common component type as ancestor.
     (+CheapWheel, +ElectricEngine) --> (+CheapWheel | +ElectricEngine)
     (Car & +Wheel, Car & +Engine) --> Car
+    (Car, Bicycle) --> +Wheel
+    (Car, Motorcycle) --> (+Wheel & +Engine)
+    (Motorcycle, Bicycle) --> Cycle
   }
 
   it should "return the most specific supertype for lists and maps" in {
