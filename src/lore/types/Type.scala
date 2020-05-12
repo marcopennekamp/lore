@@ -29,6 +29,8 @@ trait Type {
   // TODO: Replace uses of Subtyping.isSubtype with these operators.
   def <=(rhs: Type): Boolean = Subtyping.isSubtype(this, rhs)
   def <(rhs: Type): Boolean = Subtyping.isStrictSubtype(this, rhs)
+  def >=(rhs: Type): Boolean = rhs <= this
+  def >(rhs: Type): Boolean = rhs < this
 }
 
 object Type {

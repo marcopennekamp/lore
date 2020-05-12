@@ -4,7 +4,7 @@ import lore.ast.ExprNode.VariableNode
 import lore.ast.TopLevelExprNode.ConstructorCallNode
 import lore.ast.{ExprNode, TopLevelExprNode}
 import lore.compiler.feedback.Position
-import lore.types.{ClassType, ProductType, Type}
+import lore.types.{ClassType, ComponentType, ProductType, Type}
 import lore.utils.CollectionExtensions._
 
 /**
@@ -115,4 +115,25 @@ class ClassDefinition(
     * Attempts to find a constructor with the given name.
     */
   def getConstructor(name: String): Option[ConstructorDefinition] = constructors.find(_.name == name)
+
+  /**
+    * Returns all component types that this class has in common with the other given class.
+    *
+    * If two components match, but one is a supertype of the other, the supertype will be chosen.
+    */
+  def commonComponentTypes(other: ClassDefinition): List[ComponentType] = {
+    components.map(_.tpe).flatMap { left =>
+      val commonTypes = other.components.map(_.tpe).flatMap { right =>
+        if (left <= right) Some(right)
+        else if (left >= right) Some(left)
+        else None
+      }
+
+      // There should only be exactly one type that the other entity has in common with this entity. If not, one of
+      // the entities is violating the component subtyping hierarchy constraint.
+      assert(commonTypes.size <= 1)
+
+      commonTypes.map(ComponentType)
+    }
+  }
 }
