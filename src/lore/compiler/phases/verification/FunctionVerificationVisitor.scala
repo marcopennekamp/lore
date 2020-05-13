@@ -112,10 +112,6 @@ private[verification] class FunctionVerificationVisitor(
 
     // Control nodes.
     case ReturnNode(expr) =>
-      // TODO: Check that a return is the last statement in the block. This effectively disallows dead code after
-      //       a return statement.
-      // TODO: Disallow constructions such as `if ({ return 0 }) a else b`. Returning should not be possible from
-      //       blocks that are in an expression position. We might have to add such a notion to blocks.
       havingSubtype(expr, callTarget.signature.outputType).flatMap { _ =>
         node.typed(NothingType)
       }

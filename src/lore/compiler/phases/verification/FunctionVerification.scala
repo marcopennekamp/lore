@@ -41,7 +41,10 @@ object FunctionVerification {
     target.body.map { body =>
       val visitor = new FunctionVerificationVisitor(target, classDefinition)
       // TODO: Ensure that the return type matches the type of the body.
-      StmtVisitor.visit(visitor)(body)
+      (
+        StmtVisitor.visit(visitor)(body),
+        ReturnConstraints.verify(body),
+      ).simultaneous
       // TODO: Assert that all nodes have been assigned a type.
     }.toCompiledOption.verification
   }
