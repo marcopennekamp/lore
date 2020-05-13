@@ -350,6 +350,8 @@ Internally, we can of course replace the range construction with a standard inde
 
 ##### Yield
 
+**TODO:** It's quite strange that Lore wants to tend towards functional/monadic handling of collections, but then provides such an imperative way of building the result of a loop. Wouldn't it rather be better if we just put the result of the loop in a list? And then couldn't we just flatten the list afterward?
+
 All repetitions return a list of values. When a loop is entered, conceptually, we create an empty list to which elements are supposed to be appended. The **yield expression** is the way to append a value to that list. The yield expression itself evaluates to `()`. It does *not* interrupt program flow, that is, you can yield twice or more in the same iteration.
 
 ```
