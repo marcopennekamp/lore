@@ -116,7 +116,6 @@ private[verification] class FunctionVerificationVisitor(
       //       a return statement.
       // TODO: Disallow constructions such as `if ({ return 0 }) a else b`. Returning should not be possible from
       //       blocks that are in an expression position. We might have to add such a notion to blocks.
-      // TODO: Disallow returns in constructor bodies.
       havingSubtype(expr, callTarget.signature.outputType).flatMap { _ =>
         node.typed(NothingType)
       }
