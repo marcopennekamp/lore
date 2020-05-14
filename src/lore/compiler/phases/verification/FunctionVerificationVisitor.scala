@@ -295,6 +295,7 @@ private[verification] class FunctionVerificationVisitor(
     //       open the scope and loop context in before, add each extractor to the scope in visitExtractor, and clean
     //       up the scope and list context in this method, visit iteration. (Or we can go back to pattern-matching
     //       up in the verify method again.)
+    // TODO: Also consider using a custom Applicator instead.
     // Before we visit the body, we have to push a new scope and later, once extractors have been evaluated, also
     // a new loop context.
     context.openScope()

@@ -1,7 +1,6 @@
 package lore.ast.visitor
 
-import lore.ast.StmtNode.{BinaryNode, UnaryNode, XaryNode}
-import lore.ast.{ExprNode, StmtNode, TopLevelExprNode}
+import lore.ast.{ExprNode, StmtNode}
 import lore.compiler.Compilation
 
 /**
@@ -56,94 +55,44 @@ trait StmtVisitor[A] {
 }
 
 object StmtVisitor {
-  /**
-    * Visits the whole tree invoking begin* and visit* functions for every node.
-    */
-  def visit[A](visitor: StmtVisitor[A])(node: StmtNode): Compilation[A] = {
-    // A shorthand for visiting subtrees.
-    val rec = visit(visitor) _
-
-    // Some helper methods to make the following definitions easier.
-    def unary(node: UnaryNode, expr: StmtNode): Compilation[A] = {
-      rec(expr).flatMap(visitor.visitUnary(node))
+  class Applicator[A, Props](visitor: StmtVisitor[A]) {
+    /**
+      * Visits the whole tree invoking begin* and visit* functions for every node.
+      */
+    final def visit(node: StmtNode, props: Props): Compilation[A] = {
+      // Apply the before* callback before we visit the node's subtrees.
+      visitor.before.applyOrElse(node, (_: StmtNode) => ())
+      handleMatch(node, props)
     }
 
-    def binary(node: BinaryNode, left: StmtNode, right: StmtNode): Compilation[A] = {
-      (rec(left), rec(right)).simultaneous.flatMap((visitor.visitBinary(node) _).tupled)
-    }
+    protected def handleMatch(node: StmtNode, props: Props): Compilation[A] = {
+      // Importing all statement nodes makes the code far easier to digest visually.
+      import ExprNode._
+      import StmtNode._
 
-    def xary(node: XaryNode, exprs: List[StmtNode]): Compilation[A] = {
-      exprs.map(rec).simultaneous.flatMap(visitor.visitXary(node))
-    }
+      node match {
+        case node: LeafNode => visitor.visitLeaf(node)
+        case node: UnaryNode => visit(node.child, props).flatMap(visitor.visitUnary(node))
+        case node: BinaryNode => (visit(node.child1, props), visit(node.child2, props)).simultaneous.flatMap((visitor.visitBinary(node) _).tupled)
+        case node: TernaryNode => (visit(node.child1, props), visit(node.child2, props), visit(node.child3, props)).simultaneous.flatMap((visitor.visitTernary(node) _).tupled)
+        case node: XaryNode => node.children.map(c => visit(c, props)).simultaneous.flatMap(visitor.visitXary(node))
 
-    // Apply the before* callback before we visit the node's subtrees.
-    visitor.before.applyOrElse(node, (_: StmtNode) => ())
+        // Map node.
+        case node@MapNode(kvs) =>
+          val entries = kvs.map {
+            case KeyValueNode(key, value) => (visit(key, props), visit(value, props)).simultaneous
+          }.simultaneous
+          entries.flatMap(visitor.visitMap(node))
 
-    // Importing all statement nodes makes the code far easier to digest visually.
-    import ExprNode._
-    import StmtNode._
-    import TopLevelExprNode._
-
-    node match {
-      // Leafs.
-      case node@VariableNode(_)                           => visitor.visitLeaf(node)
-      case node@RealLiteralNode(_)                        => visitor.visitLeaf(node)
-      case node@IntLiteralNode(_)                         => visitor.visitLeaf(node)
-      case node@BoolLiteralNode(_)                        => visitor.visitLeaf(node)
-      case node@StringLiteralNode(_)                      => visitor.visitLeaf(node)
-      case UnitNode                                       => visitor.visitLeaf(UnitNode)
-
-      // Unary.
-      case node@ReturnNode(expr)                          => unary(node, expr)
-      case node@VariableDeclarationNode(_, _, _, value)   => unary(node, value)
-      case node@YieldNode(expr)                           => unary(node, expr)
-      case node@NegationNode(expr)                        => unary(node, expr)
-      case node@LogicalNotNode(expr)                      => unary(node, expr)
-      case node@PropertyAccessNode(instance, _)           => unary(node, instance)
-
-      // Binary.
-      case node@AssignmentNode(address, value)            => binary(node, address, value)
-      case node@AdditionNode(left, right)                 => binary(node, left, right)
-      case node@SubtractionNode(left, right)              => binary(node, left, right)
-      case node@MultiplicationNode(left, right)           => binary(node, left, right)
-      case node@DivisionNode(left, right)                 => binary(node, left, right)
-      case node@EqualsNode(left, right)                   => binary(node, left, right)
-      case node@NotEqualsNode(left, right)                => binary(node, left, right)
-      case node@LessThanNode(left, right)                 => binary(node, left, right)
-      case node@LessThanEqualsNode(left, right)           => binary(node, left, right)
-      case node@GreaterThanNode(left, right)              => binary(node, left, right)
-      case node@GreaterThanEqualsNode(left, right)        => binary(node, left, right)
-      case node@RepeatWhileNode(condition, body, _)       => binary(node, condition, body)
-
-      // Ternary.
-      case node@IfElseNode(condition, onTrue, onFalse) =>
-        (rec(condition), rec(onTrue), rec(onFalse)).simultaneous.flatMap((visitor.visitTernary(node) _).tupled)
-
-      // Xary.
-      case node@ConstructNode(arguments, _)               => xary(node, arguments)
-      case node@ConstructorCallNode(_, arguments)         => xary(node, arguments)
-      case node@ConjunctionNode(expressions)              => xary(node, expressions)
-      case node@DisjunctionNode(expressions)              => xary(node, expressions)
-      case node@ConcatenationNode(expressions)            => xary(node, expressions)
-      case node@TupleNode(expressions)                    => xary(node, expressions)
-      case node@ListNode(expressions)                     => xary(node, expressions)
-      case node@BlockNode(statements)                     => xary(node, statements)
-      case node@SimpleCallNode(_, _, arguments)           => xary(node, arguments)
-      case node@FixedFunctionCallNode(_, _, arguments)    => xary(node, arguments)
-
-      // Map node.
-      case node@MapNode(kvs) =>
-        val entries = kvs.map {
-          case ExprNode.KeyValueNode(key, value) => (rec(key), rec(value)).simultaneous
-        }.simultaneous
-        entries.flatMap(visitor.visitMap(node))
-
-      // Iteration node.
-      case node@IterationNode(extractors, body) =>
-        val extracts = extractors.map {
-          case ExprNode.ExtractorNode(name, collection) => rec(collection).map((name, _))
-        }.simultaneous
-        extracts.flatMap(extractors => visitor.visitIteration(node)(extractors, () => rec(body)))
+        // Iteration node.
+        case node@IterationNode(extractors, body) =>
+          val extracts = extractors.map {
+            case ExtractorNode(name, collection) => visit(collection, props).map((name, _))
+          }.simultaneous
+          extracts.flatMap(extractors => visitor.visitIteration(node)(extractors, () => visit(body, props)))
+      }
     }
   }
+
+  def visit[A](visitor: StmtVisitor[A])(node: StmtNode): Compilation[A] = new Applicator[A, Unit](visitor).visit(node, ())
 }
