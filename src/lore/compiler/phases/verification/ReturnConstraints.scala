@@ -4,30 +4,29 @@ import lore.ast.visitor.{CombiningStmtVisitor, StmtVisitor, VerificationStmtVisi
 import lore.ast.{ExprNode, StmtNode}
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
-import lore.compiler.phases.verification.ReturnConstraints.{DefinitelyReturns, IsReturnAllowed}
+import lore.compiler.phases.verification.ReturnConstraints.{DeadCode, DefinitelyReturns, ImpossibleReturn, IsReturnAllowed}
 import lore.compiler.{Compilation, Fragment}
-
-private case class DeadCode(node: ExprNode.BlockNode)(implicit fragment: Fragment) extends Error(node) {
-  override def message = s"There is dead code after a return statement in this block."
-}
 
 private class ReturnDeadCodeVisitor()(implicit fragment: Fragment) extends CombiningStmtVisitor[DefinitelyReturns] {
   override def combine(list: List[DefinitelyReturns]): DefinitelyReturns = list.forall(identity)
 
   override def visit(node: StmtNode, returns: List[DefinitelyReturns]): Compilation[DefinitelyReturns] = node match {
     case StmtNode.ReturnNode(_) => Compilation.succeed(true)
-    case node@ExprNode.BlockNode(_) =>
+    case ExprNode.BlockNode(statements) =>
+      assert(statements.length == returns.length)
+
       // Check that a return statement isn't followed by any other code. If we have a "definitely returns" at any
       // point before the last element, this is such a point.
       if (returns.isEmpty) Compilation.succeed(false)
-      else if (returns.init.exists(identity)) Compilation.fail(DeadCode(node))
-      else Compilation.succeed(returns.last)
+      else {
+        val returnIndex = returns.init.indexOf(true)
+        if (returnIndex >= 0) {
+          val firstDeadNode = statements(returnIndex + 1)
+          Compilation.fail(DeadCode(firstDeadNode))
+        } else Compilation.succeed(returns.last)
+      }
     case _ => super.visit(node, returns)
   }
-}
-
-case class ImpossibleReturn(node: StmtNode.ReturnNode)(implicit fragment: Fragment) extends Error(node) {
-  override def message = s"You cannot return inside this expression."
 }
 
 /**
@@ -64,6 +63,14 @@ private class ReturnAllowedApplicator()(implicit fragment: Fragment)
 object ReturnConstraints {
   type DefinitelyReturns = Boolean
   type IsReturnAllowed = Boolean
+
+  case class DeadCode(node: StmtNode)(implicit fragment: Fragment) extends Error(node) {
+    override def message = s"This node represents dead code after a previous return."
+  }
+
+  case class ImpossibleReturn(node: StmtNode.ReturnNode)(implicit fragment: Fragment) extends Error(node) {
+    override def message = s"You cannot return inside this expression."
+  }
 
   /**
     * Verifies the following two constraints:
