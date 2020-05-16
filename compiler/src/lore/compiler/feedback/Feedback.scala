@@ -1,9 +1,9 @@
 package lore.compiler.feedback
 
-import lore.ast._
+import lore.compiler.ast._
 import lore.compiler.Fragment
 import lore.compiler.phases.resolution.FragmentNode
-import lore.definitions.PositionedDefinition
+import lore.compiler.definitions.PositionedDefinition
 
 /**
   * A Feedback instance is a compiler report. The most notable Feedback types are warnings and errors.

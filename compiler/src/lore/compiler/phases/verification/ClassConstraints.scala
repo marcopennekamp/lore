@@ -2,9 +2,10 @@ package lore.compiler.phases.verification
 
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
+import lore.compiler.types.{ClassType, CompilerSubtyping}
 import lore.compiler.{Compilation, Registry}
-import lore.definitions.{ClassDefinition, ComponentDefinition, MemberDefinition}
-import lore.types.{AnyType, ClassType, Subtyping, Type}
+import lore.compiler.definitions.{ClassDefinition, ComponentDefinition, MemberDefinition}
+import lore.types.{AnyType, Type}
 
 object ClassConstraints {
   /**
@@ -63,14 +64,14 @@ object ClassConstraints {
   def verifyOwnedBy(definition: ClassDefinition): Verification = {
     // We have to assume Any, because this handles a special case where the owned-by declaration of a class has
     // been forgotten, despite the superclass having its own owned-by type.
-    val ownedBy = definition.tpe.ownedBy.map(_.tpe).getOrElse(AnyType)
+    val ownedBy = definition.tpe.ownedBy.getOrElse(AnyType)
 
     // Here, we assume Any in case the supertype is None or its owned-by type is None. In both cases, the omission
     // of such a declaration means that the supertype's owned-by type is effectively Any.
-    val superOwnedBy = definition.tpe.supertype.flatMap(_.ownedBy).map(_.tpe).getOrElse(AnyType)
+    val superOwnedBy = definition.tpe.supertype.flatMap(_.ownedBy).getOrElse(AnyType)
 
     // Now we just have to check whether the owned-by type is actually a subtype.
-    if (!Subtyping.isSubtype(ownedBy, superOwnedBy)) {
+    if (!CompilerSubtyping.isSubtype(ownedBy, superOwnedBy)) {
       Compilation.fail(OwnedByMustBeSubtype(definition, ownedBy, superOwnedBy))
     } else Verification.succeed
   }
@@ -113,13 +114,13 @@ object ClassConstraints {
     * available at compile-time.)
     */
   def verifyCanOwn(definition: ClassDefinition, component: ComponentDefinition): Verification = {
-    val ownershipType = component.tpe.ownedBy.map(_.tpe).getOrElse(AnyType)
-    if (!Subtyping.isSubtype(definition.tpe, ownershipType)) {
+    val ownershipType = component.tpe.ownedBy.getOrElse(AnyType)
+    if (!CompilerSubtyping.isSubtype(definition.tpe, ownershipType)) {
       Compilation.fail(ClassCannotOwnComponent(definition, component))
     } else Verification.succeed
   }
 
-  case class ComponentsShareSuperclass(definition: ClassDefinition, superclass: ClassType, components: List[ComponentDefinition]) extends Error(definition) {
+  case class ComponentsShareSuperclass(definition: ClassDefinition, superclass: lore.types.ClassType, components: List[ComponentDefinition]) extends Error(definition) {
     override def message: String = s"The following components illegally share a superclass $superclass: ${components.map(_.name).mkString(", ")}." +
       s" Components may not share a superclass, because component types such as +C have to stay unambiguous for all possible entities."
   }
@@ -167,7 +168,7 @@ object ClassConstraints {
 
       // Verify that the overriding component is a subtype of the overridden component.
       val subtypes = registry.resolveType(overriddenName, component.position).flatMap { overriddenType =>
-        if (!Subtyping.isSubtype(component.tpe, overriddenType)) {
+        if (!CompilerSubtyping.isSubtype(component.tpe, overriddenType)) {
           Compilation.fail(ComponentMustSubtypeOverriddenComponent(definition, component))
         } else Verification.succeed
       }

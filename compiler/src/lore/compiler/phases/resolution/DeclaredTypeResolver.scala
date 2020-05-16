@@ -1,11 +1,12 @@
 package lore.compiler.phases.resolution
 
-import lore.ast.TypeDeclNode
+import lore.compiler.ast.TypeDeclNode
 import lore.compiler.Compilation.C
 import lore.compiler.feedback.Error
+import lore.compiler.types.{ClassType, LabelType, OwnedByDeferred}
 import lore.compiler.{Compilation, Fragment, Registry, TypeExpressionEvaluator}
-import lore.definitions._
-import lore.types.{ClassType, LabelType, OwnedBy, Type}
+import lore.compiler.definitions._
+import lore.types.Type
 
 object DeclaredTypeResolver {
   /**
@@ -51,7 +52,7 @@ object DeclaredTypeResolver {
       node.members.map(resolveMemberNode).simultaneous,
     ).simultaneous.map { case (supertype, members) =>
       val constructors = node.constructors.map(FunctionDeclarationResolver.resolveConstructorNode)
-      val ownedBy = node.ownedBy.map(ob => new OwnedBy(() => TypeExpressionEvaluator.evaluate(ob)))
+      val ownedBy = node.ownedBy.map(ob => new OwnedByDeferred(() => TypeExpressionEvaluator.evaluate(ob)))
       val tpe = new ClassType(supertype.asInstanceOf[Option[ClassType]], ownedBy, node.isAbstract)
       val definition = new ClassDefinition(node.name, tpe, node.isEntity, members, constructors, node.position)
       tpe.initialize(definition)

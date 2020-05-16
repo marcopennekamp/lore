@@ -1,15 +1,16 @@
 package lore.compiler.phases.verification
 
-import lore.ast.ExprNode.AddressNode
-import lore.ast.TopLevelExprNode.YieldNode
-import lore.ast.visitor.VerificationStmtVisitor
-import lore.ast.{CallNode, ExprNode, StmtNode, TopLevelExprNode}
+import lore.compiler.ast.ExprNode.AddressNode
+import lore.compiler.ast.TopLevelExprNode.YieldNode
+import lore.compiler.ast.visitor.VerificationStmtVisitor
+import lore.compiler.ast.{CallNode, ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.{Error, Position}
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
+import lore.compiler.types.CompilerSubtyping
 import lore.compiler.{Compilation, Fragment, Registry, TypeExpressionEvaluator}
-import lore.definitions.{CallTarget, ClassDefinition, FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
-import lore.types._
+import lore.compiler.definitions.{CallTarget, ClassDefinition, FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
+import lore.types.{BasicType, ListType, MapType, NothingType, ProductType, Type}
 
 private[verification] class FunctionVerificationVisitor(
   /**
@@ -35,7 +36,7 @@ private[verification] class FunctionVerificationVisitor(
     * Whether the given statement's inferred type is a subtype of one of the expected types.
     */
   private def havingSubtype(statement: StmtNode, supertypes: Type*): Verification = {
-    if (!supertypes.exists(expected => Subtyping.isSubtype(statement.inferredType, expected))) {
+    if (!supertypes.exists(expected => CompilerSubtyping.isSubtype(statement.inferredType, expected))) {
       Compilation.fail(IllegallyTypedExpression(statement, supertypes.toList))
     } else Verification.succeed
   }
@@ -259,7 +260,7 @@ private[verification] class FunctionVerificationVisitor(
         // TODO: If only one branch supplies a value, return an OPTION of the evaluated type. Of course, we don't
         //       HAVE options just yet. This also needs to become part of the spec before it's implemented, IF we
         //       implement this feature.
-        val resultType = Subtyping.leastUpperBound(onTrue.inferredType, onFalse.inferredType)
+        val resultType = CompilerSubtyping.leastUpperBound(onTrue.inferredType, onFalse.inferredType)
         node.typed(resultType)
       }
 
@@ -274,10 +275,10 @@ private[verification] class FunctionVerificationVisitor(
     case ListNode(expressions) =>
       // If we type empty lists as [Nothing], we can assign this empty list to any kind of list, which makes
       // coders happy. :) Hence the default value in the fold.
-      node.typed(expressions.map(_.inferredType).foldLeft(NothingType: Type)(Subtyping.leastUpperBound))
+      node.typed(expressions.map(_.inferredType).foldLeft(NothingType: Type)(CompilerSubtyping.leastUpperBound))
     case MapNode(entries) =>
-      val keyType = entries.map(_.key.inferredType).foldLeft(NothingType: Type)(Subtyping.leastUpperBound)
-      val valueType = entries.map(_.value.inferredType).foldLeft(NothingType: Type)(Subtyping.leastUpperBound)
+      val keyType = entries.map(_.key.inferredType).foldLeft(NothingType: Type)(CompilerSubtyping.leastUpperBound)
+      val valueType = entries.map(_.value.inferredType).foldLeft(NothingType: Type)(CompilerSubtyping.leastUpperBound)
       node.typed(MapType(keyType, valueType))
 
     // Xary operations.

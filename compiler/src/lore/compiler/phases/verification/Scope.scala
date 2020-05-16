@@ -4,7 +4,7 @@ import lore.compiler.Compilation
 import lore.compiler.Compilation.{C, Verification}
 import lore.compiler.feedback.{Error, Position}
 import lore.compiler.phases.verification.Scope.{UnknownVariable, VariableAlreadyDeclared}
-import lore.definitions.FunctionSignature
+import lore.compiler.definitions.FunctionSignature
 import lore.types.Type
 
 import scala.collection.mutable

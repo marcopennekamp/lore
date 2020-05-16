@@ -1,6 +1,6 @@
 package lore.compiler.phases.verification
 
-import lore.definitions.MemberDefinition
+import lore.compiler.definitions.MemberDefinition
 import lore.types.Type
 
 import scala.util.hashing.MurmurHash3

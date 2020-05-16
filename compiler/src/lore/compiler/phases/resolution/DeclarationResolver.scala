@@ -1,11 +1,11 @@
 package lore.compiler.phases.resolution
 
-import lore.ast.{DeclNode, TypeDeclNode}
+import lore.compiler.ast.{DeclNode, TypeDeclNode}
 import lore.compiler.Compilation.{C, Verification}
 import lore.compiler.feedback.Error
 import lore.compiler.phases.resolution.DeclarationResolver.{InheritanceCycle, TypeAlreadyExists}
 import lore.compiler.{Compilation, Fragment, Registry, TypeExpressionEvaluator}
-import lore.definitions.{ClassDefinition, MultiFunctionDefinition}
+import lore.compiler.definitions.{ClassDefinition, MultiFunctionDefinition}
 import lore.types.Type
 import scalax.collection.GraphEdge._
 import scalax.collection.mutable.Graph

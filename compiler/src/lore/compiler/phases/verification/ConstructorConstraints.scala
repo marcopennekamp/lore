@@ -1,12 +1,12 @@
 package lore.compiler.phases.verification
 
-import lore.ast.StmtNode.ReturnNode
-import lore.ast.{ExprNode, StmtNode, TopLevelExprNode}
-import lore.ast.visitor.{StmtVisitor, VerificationStmtVisitor}
+import lore.compiler.ast.StmtNode.ReturnNode
+import lore.compiler.ast.{ExprNode, StmtNode, TopLevelExprNode}
+import lore.compiler.ast.visitor.{StmtVisitor, VerificationStmtVisitor}
 import lore.compiler.{Compilation, Fragment}
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
-import lore.definitions.{ClassDefinition, ConstructorDefinition}
+import lore.compiler.definitions.{ClassDefinition, ConstructorDefinition}
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
 

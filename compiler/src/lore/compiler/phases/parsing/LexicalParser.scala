@@ -2,7 +2,7 @@ package lore.compiler.phases.parsing
 
 import fastparse.NoWhitespace._
 import fastparse._
-import lore.ast._
+import lore.compiler.ast._
 
 /**
   * Lexical objects are sensitive to whitespace, so we define them in this separate object.

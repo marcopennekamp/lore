@@ -1,7 +1,7 @@
 package lore.compiler.phases.resolution
 
 import lore.compiler.Compilation.Verification
-import lore.definitions.ClassDefinition
+import lore.compiler.definitions.ClassDefinition
 
 object DeferredTypingResolver {
   /**
@@ -10,7 +10,7 @@ object DeferredTypingResolver {
     */
   def resolveDeferredTypings(definition: ClassDefinition): Verification = {
     (
-      definition.tpe.ownedBy.map(_.verifyDeferredTyping).toCompiledOption,
+      definition.tpe.ownedByDeferred.map(_.verifyDeferredTyping).toCompiledOption,
       definition.localMembers.map(_.verifyDeferredTyping).simultaneous,
       definition.constructors.flatMap(_.parameters).map(_.verifyDeferredTyping).simultaneous,
     ).simultaneous.map(_ => ())

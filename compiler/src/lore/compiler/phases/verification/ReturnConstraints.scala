@@ -1,7 +1,7 @@
 package lore.compiler.phases.verification
 
-import lore.ast.visitor.{CombiningStmtVisitor, StmtVisitor, VerificationStmtVisitor}
-import lore.ast.{ExprNode, StmtNode}
+import lore.compiler.ast.visitor.{CombiningStmtVisitor, StmtVisitor, VerificationStmtVisitor}
+import lore.compiler.ast.{ExprNode, StmtNode}
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
 import lore.compiler.phases.verification.ReturnConstraints.{DeadCode, DefinitelyReturns, ImpossibleReturn, IsReturnAllowed}

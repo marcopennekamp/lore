@@ -1,9 +1,9 @@
 package lore.compiler.phases.parsing.test
 
 import fastparse.P
-import lore.ast._
+import lore.compiler.ast._
 import lore.compiler.phases.parsing.FragmentParser
-import lore.test.BaseSpec
+import lore.compiler.test.BaseSpec
 
 class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNode]] {
   import DeclNode._

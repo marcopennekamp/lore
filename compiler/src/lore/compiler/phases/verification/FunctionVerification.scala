@@ -1,11 +1,11 @@
 package lore.compiler.phases.verification
 
-import lore.ast.StmtNode
-import lore.ast.visitor.StmtVisitor
+import lore.compiler.ast.StmtNode
+import lore.compiler.ast.visitor.StmtVisitor
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
 import lore.compiler.{Fragment, Registry}
-import lore.definitions.{CallTarget, ClassDefinition, ConstructorDefinition}
+import lore.compiler.definitions.{CallTarget, ClassDefinition, ConstructorDefinition}
 import lore.types.Type
 
 /**

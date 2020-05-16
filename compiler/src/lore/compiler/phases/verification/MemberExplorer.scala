@@ -1,9 +1,10 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.Compilation
+import lore.compiler.{Compilation, types}
 import lore.compiler.Compilation.C
 import lore.compiler.feedback._
-import lore.types._
+import lore.compiler.types.{CompilerSubtyping, ComponentType, LabelType}
+import lore.types.{AnyType, BasicType, IntersectionType, ListType, MapType, ProductType, SumType, Type}
 
 /**
   * For any given type, returns a list of members that can be accessed through the type. This is trivial for
@@ -54,7 +55,7 @@ object MemberExplorer {
         Compilation.succeed {
           components.zipWithIndex.map { case (tpe, index) => VirtualMember(s"_$index", tpe, underlying = None) }
         }
-      case classType: ClassType =>
+      case classType: types.ClassType =>
         // A class type obviously has its own members.
         Compilation.succeed(classType.definition.members.map(_.asVirtualMember))
 
@@ -86,7 +87,7 @@ object MemberExplorer {
               // we must look for a member whose type is a supertype of all other member types. If no such type exists,
               // we have a true ambiguity.
               // TODO: If this ever leads to performance problems, consider a smarter algorithm.
-              members.find(m1 => members.forall(m2 => Subtyping.isSubtype(m2.tpe, m1.tpe))) match {
+              members.find(m1 => members.forall(m2 => CompilerSubtyping.isSubtype(m2.tpe, m1.tpe))) match {
                 case None => Compilation.fail(AmbiguousTypeMember(name, tpe, position))
                 case Some(member) => Compilation.succeed(member)
               }

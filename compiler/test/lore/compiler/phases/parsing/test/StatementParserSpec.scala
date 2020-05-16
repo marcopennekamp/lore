@@ -1,10 +1,10 @@
 package lore.compiler.phases.parsing.test
 
 import fastparse._
-import lore.ast.StmtNode.ReturnNode
-import lore.ast._
+import lore.compiler.ast.StmtNode.ReturnNode
+import lore.compiler.ast._
 import lore.compiler.phases.parsing.StatementParser
-import lore.test.BaseSpec
+import lore.compiler.test.BaseSpec
 
 class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   import ExprNode._

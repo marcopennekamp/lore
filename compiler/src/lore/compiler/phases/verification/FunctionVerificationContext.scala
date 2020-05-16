@@ -1,10 +1,11 @@
 package lore.compiler.phases.verification
 
-import lore.ast.ExprNode
 import lore.compiler.Registry
+import lore.compiler.ast.ExprNode
+import lore.compiler.definitions.FunctionSignature
 import lore.compiler.phases.verification.FunctionVerificationContext.LoopContext
-import lore.definitions.FunctionSignature
 import lore.types.{ListType, ProductType, SumType, Type}
+import lore.compiler.types.TypeExtensions._
 
 /**
   * A context for function verification passes, for example to hold local variable scopes.

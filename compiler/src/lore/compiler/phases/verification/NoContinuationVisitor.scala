@@ -1,7 +1,7 @@
 package lore.compiler.phases.verification
 
-import lore.ast.visitor.VerificationStmtVisitor
-import lore.ast.{StmtNode, TopLevelExprNode}
+import lore.compiler.ast.visitor.VerificationStmtVisitor
+import lore.compiler.ast.{StmtNode, TopLevelExprNode}
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
 import lore.compiler.phases.verification.NoContinuationVisitor.IllegalContinuation

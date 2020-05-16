@@ -1,11 +1,12 @@
 package lore.compiler.phases.verification
 
-import lore.ast.visitor.StmtVisitor
+import lore.compiler.ast.visitor.StmtVisitor
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
+import lore.compiler.types.CompilerSubtyping
 import lore.compiler.{Compilation, Fragment, Registry}
-import lore.definitions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.types.{Subtyping, Type}
+import lore.compiler.definitions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.types.Type
 
 object MultiFunctionConstraints {
   case class FunctionAlreadyExists(definition: FunctionDefinition) extends Error(definition) {
@@ -101,10 +102,10 @@ object MultiFunctionConstraints {
       //    An abstract function f(a: A, b: B) with a non-abstract B must also cover the case f(a: AX, b: B), not just for
       //    B1 and B2, if the given value of type B is neither B1 nor B2, since it could just be B. Hence, we cannot use
       //    directDeclaredSubtypes, because it would substitute B1 and B2 for B, leaving B out of the equation entirely.
-      Subtyping.abstractResolvedDirectSubtypes(f.signature.inputType).toList.flatMap { subtype =>
+      CompilerSubtyping.abstractResolvedDirectSubtypes(f.signature.inputType).toList.flatMap { subtype =>
         // TODO: Can we optimize this given the new hierarchy?
         val isValid = mf.functions.exists { f2 =>
-          Subtyping.isStrictSubtype(f2.signature.inputType, f.signature.inputType) && mf.fit(subtype).contains(f2)
+          CompilerSubtyping.isStrictSubtype(f2.signature.inputType, f.signature.inputType) && mf.fit(subtype).contains(f2)
         }
         if (!isValid) Some(subtype) else None
       }

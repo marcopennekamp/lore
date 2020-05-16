@@ -1,8 +1,9 @@
 package lore.compiler
 
-import lore.ast.TypeExprNode
 import lore.compiler.Compilation.C
+import lore.compiler.ast.TypeExprNode
 import lore.compiler.feedback.Error
+import lore.compiler.types.ComponentType
 import lore.types._
 
 object TypeExpressionEvaluator {
@@ -24,7 +25,7 @@ object TypeExpressionEvaluator {
         // we couldn't report errors about both key and value at the same time (during the same compiler run).
         (eval(key), eval(value)).simultaneous.map(MapType.tupled)
       case componentNode@TypeExprNode.ComponentNode(underlying) => registry.resolveType(underlying, componentNode).flatMap {
-        case tpe: ClassType => Compilation.succeed(ComponentType(tpe))
+        case tpe: types.ClassType => Compilation.succeed(ComponentType(tpe))
         case _ => Compilation.fail(ComponentTypeMustContainClass(componentNode))
       }
     }
