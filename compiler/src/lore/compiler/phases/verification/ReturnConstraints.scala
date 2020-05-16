@@ -8,7 +8,10 @@ import lore.compiler.phases.verification.ReturnConstraints.{DeadCode, Definitely
 import lore.compiler.{Compilation, Fragment}
 
 private class ReturnDeadCodeVisitor()(implicit fragment: Fragment) extends CombiningStmtVisitor[DefinitelyReturns] {
-  override def combine(list: List[DefinitelyReturns]): DefinitelyReturns = list.forall(identity)
+  override def combine(list: List[DefinitelyReturns]): DefinitelyReturns = {
+    if (list.isEmpty) false
+    else list.forall(identity)
+  }
 
   override def visit(node: StmtNode, returns: List[DefinitelyReturns]): Compilation[DefinitelyReturns] = node match {
     case StmtNode.ReturnNode(_) => Compilation.succeed(true)
