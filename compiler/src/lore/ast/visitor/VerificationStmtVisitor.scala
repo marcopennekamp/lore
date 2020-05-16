@@ -1,4 +1,5 @@
 package lore.ast.visitor
+
 import lore.ast.{ExprNode, StmtNode}
 import lore.compiler.Compilation.Verification
 

@@ -1,4 +1,5 @@
 package lore.definitions
+
 import lore.compiler.feedback.Position
 import lore.types.LabelType
 

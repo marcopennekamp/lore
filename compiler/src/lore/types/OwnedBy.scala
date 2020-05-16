@@ -9,6 +9,8 @@ import lore.compiler.Compilation.C
   * can easily be deferred.
   */
 class OwnedBy(override val typeResolver: () => C[Type]) extends TypingDeferred[Type] {
+  // TODO: It would be cleaner if we could keep TypingDeferred out of the types package, as the JS runtime
+  //       shouldn't have to deal with deferred typings.
   override def equals(obj: Any): Boolean = obj match {
     case rhs: OwnedBy => this.eq(rhs) || this.tpe == rhs.tpe
     case _ => false
