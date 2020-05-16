@@ -46,6 +46,7 @@ lazy val lore =
     .jvmSettings(
       scalaSource in Compile := { (baseDirectory in Compile)(_ / "src") }.value,
       scalaSource in Test := { (baseDirectory in Test)(_ / "test") }.value,
+
       // Set lore.Lore as the main object. All other main functions are meant to be run via the IDE.
       mainClass in (Compile, run) := Some("lore.Lore"),
     )
@@ -53,6 +54,8 @@ lazy val lore =
     .jsSettings(
       scalaSource in Compile := { (baseDirectory in Compile)(_ / "src") }.value,
       scalaSource in Test := { (baseDirectory in Test)(_ / "test") }.value,
+
+      scalaJSUseMainModuleInitializer := true,
     )
     .jsConfigure(_.withId("runtime"))
 

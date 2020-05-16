@@ -16,7 +16,6 @@ object LoreCrossType extends CrossType {
   def projectDir(crossBase: File, platform: Platform): File = projectDir(crossBase, platform.identifier)
 
   def sharedSrcDir(projectBase: File, conf: String): Option[File] = {
-    System.out.println(projectBase.getParentFile)
     Some(projectBase.getParentFile / "common" / "src")
   }
 }
