@@ -14,7 +14,7 @@ object Lore {
   /**
     * Compiles a Lore program from a single source.
     */
-  def fromSingleSource(name: String, source: String): C[Registry] = {
+  def fromSingleSource(name: String, source: String): C[(Registry, String)] = {
     val compiler = new LoreCompiler(List(
       LoreCompiler.SourceFragment(
         name,
@@ -27,7 +27,7 @@ object Lore {
   /**
     * Compiles a Lore program from a named example within the Lore examples directory.
     */
-  def fromExample(name: String): C[Registry] = {
+  def fromExample(name: String): C[(Registry, String)] = {
     import scala.jdk.CollectionConverters._
     val sourcePath = Path.of("examples", s"$name.lore")
     val source = Files.lines(sourcePath).iterator().asScala.mkString("\n") + "\n"
@@ -38,7 +38,7 @@ object Lore {
     * Stringifies the compilation result in a user-palatable way, discussing errors or the successful result in
     * text form.
     */
-  def stringifyResult(result: C[Registry]): String = {
+  def stringifyCompilationInfo(result: C[Registry]): String = {
     val out = new ByteArrayOutputStream()
     Using(new PrintStream(out, true, "utf-8")) { printer =>
       // Print either errors or the compilation result to the output stream.
@@ -75,7 +75,16 @@ object Lore {
     }.get // There should be no exceptions here, as we are not trying to access any files.
   }
 
+  /**
+    * Writes the result of the compilation to the file system.
+    */
+  def writeResult(output: String): Unit = {
+    Files.writeString(Path.of(s"lore-program.js"), output)
+  }
+
   def main(args: Array[String]): Unit = {
-    println(stringifyResult(fromExample(args(0))))
+    val result = fromExample(args(0))
+    println(stringifyCompilationInfo(result.map(_._1)))
+    result.map(_._2).foreach(writeResult)
   }
 }

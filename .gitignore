@@ -17,3 +17,6 @@ project/plugins/project/
 
 # Old Specification
 main.pdf
+
+# Lore
+lore-program.js
