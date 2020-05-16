@@ -28,6 +28,15 @@ private class ReturnDeadCodeVisitor()(implicit fragment: Fragment) extends Combi
           Compilation.fail(DeadCode(firstDeadNode))
         } else Compilation.succeed(returns.last)
       }
+    case ExprNode.IfElseNode(_, _, _) =>
+      // Ignore the condition.
+      Compilation.succeed(returns.tail.forall(identity))
+    case ExprNode.RepeatWhileNode(_, _, _) =>
+      // Ignore the condition.
+      Compilation.succeed(returns.last)
+    case ExprNode.IterationNode(_, _) =>
+      // Ignore the extractors.
+      Compilation.succeed(returns.last)
     case _ => super.visit(node, returns)
   }
 }
