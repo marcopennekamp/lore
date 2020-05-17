@@ -1,6 +1,6 @@
 package lore.runtime.types
 
-import lore.types.{AnyType, BasicType, IntersectionType, ListType, MapType, NothingType, ProductType, SumType, Type}
+import lore.types.{AnyType, BasicType, IntersectionType, ListType, MapType, NothingType, ProductType, Subtyping, SumType, Type}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSExportAll, JSExportTopLevel}
@@ -11,21 +11,30 @@ import scala.scalajs.js.annotation.{JSExportAll, JSExportTopLevel}
 @JSExportTopLevel("Types")
 @JSExportAll
 object Types {
+  /**
+    * Calculates the Lore type of a Javascript value.
+    */
   def typeof(value: Any): Type = {
+    // TODO: Implement. We need to save type information for all non-trivial base types as fields on an object.
+    // TODO: In the case of a Javascript object being given that does not have a type field, we should return some
+    //       kind of "dynamic" type. Of course, this first requires us to define a similar notion within Lore
+    //       itself.
     js.typeOf(value) match {
       case _ => println(value); any
     }
   }
 
+  def isSubtype(left: Type, right: Type): Boolean = left <= right
+
   // TODO: We definitely need a simple type registry with (name -> declared type).
-  def registerClassType(
+  def registerClass(
     name: String, supertype: Option[ClassType], ownedBy: Option[Type],
     isAbstract: Boolean, isEntity: Boolean, componentTypes: List[ComponentType],
   ): Unit = {
     ClassType(name, supertype, ownedBy, isAbstract, isEntity, componentTypes)
   }
 
-  def registerLabelType(name: String, supertype: Option[LabelType]): Unit = {
+  def registerLabel(name: String, supertype: Option[LabelType]): Unit = {
     LabelType(name, supertype)
   }
 
@@ -36,7 +45,7 @@ object Types {
   def int: BasicType = BasicType.Int
   def boolean: BasicType = BasicType.Boolean
   def string: BasicType = BasicType.String
-  def declaredType(name: String): DeclaredType = ??? // TODO: Fetch the registered declared type.
+  def declared(name: String): DeclaredType = ??? // TODO: Fetch the registered declared type.
 
   // Type constructors.
   def intersection(types: List[Type]): Type = IntersectionType.construct(types)
