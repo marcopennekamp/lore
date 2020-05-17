@@ -37,10 +37,11 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition) {
 
       val mfName = s"${mf.name}"
       printer.println(s"function $mfName(...args) {")
+      printer.println(s"console.log('Called multi-function $mfName.');")
       printer.println(s"const $varInputType = Types.product(args.map(arg => Types.typeof(arg)));")
       printer.println(s"let $varChosenFunction;")
       transpileDispatchHierarchy(printer)
-      printer.println(s"console.log('Called multi-function $mfName');")
+      printer.println(s"$varChosenFunction(...args);")
       printer.println("}")
     }
 
@@ -92,8 +93,8 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition) {
     def transpileDispatchNode(node: mf.hierarchy.NodeT, varFitsX: String): Unit = {
       val successors = node.diSuccessors.toList.zipWithIndex
       printer.println(s"if ($varFitsX) {")
-      val push = if (!node.isAbstract) {
-        s"$varFunctions.push(${functionJsNames(node.value)});"
+      val addFunction = if (!node.isAbstract) {
+        s"$varFunctions.add(${functionJsNames(node.value)});"
       } else {
         s"throw new Error(`The abstract function ${mf.name}${node.signature.inputType} is missing an" +
           s" implementation for $${$varInputType}.`);"
@@ -101,12 +102,12 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition) {
       if (successors.nonEmpty) {
         transpileFitsConsts(successors)
         val anyFits = successors.map { case (_, index) => varFits(index) }.mkString(" || ")
-        printer.println(s"if (!($anyFits)) { $push }")
+        printer.println(s"if (!($anyFits)) { $addFunction }")
         // We don't need to test for successors when we've already determined that none of the successors
         // fit. Hence the else.
         printer.println("else {")
       } else {
-        printer.println(push)
+        printer.println(addFunction)
       }
       successors.foreach { case (successor, index) =>
         transpileDispatchNode(successor, varFits(index))
@@ -117,11 +118,22 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition) {
       printer.println("}")
     }
 
-    printer.println(s"const $varFunctions = [];")
+    printer.println()
+    printer.println(s"const $varFunctions = new Set();")
     val indexedRoots = mf.hierarchyRoots.zipWithIndex
     transpileFitsConsts(indexedRoots)
     indexedRoots.foreach { case (root, index) => transpileDispatchNode(root, varFits(index)) }
 
-    // TODO: Unique the function array and see if there is one function or multiple.
+    printer.println()
+    printer.println(
+      s"""if ($varFunctions.size < 1) {
+         |  throw new Error(`Could not find an implementation of ${mf.name} for the input type $${$varInputType}.`);
+         |} else if ($varFunctions.size > 1) {
+         |  throw new Error(`The multi-function ${mf.name} is ambiguous for the input type $${$varInputType}.`);
+         |} else {
+         |  $varChosenFunction = $varFunctions.values().next().value;
+         |}
+         |""".stripMargin
+    )
   }
 }
