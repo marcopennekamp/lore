@@ -2,8 +2,9 @@ package lore.compiler.phases.resolution
 
 import lore.compiler.ast.{DeclNode, TypeDeclNode}
 import lore.compiler.Compilation._
-import lore.compiler.{Fragment, Registry, TypeExpressionEvaluator}
+import lore.compiler.{Fragment, Registry}
 import lore.compiler.definitions.{ConstructorDefinition, FunctionDefinition, ParameterDefinition}
+import lore.compiler.types.TypeExpressionEvaluator
 
 object FunctionDeclarationResolver {
   def resolveFunctionNode(node: DeclNode.FunctionNode)(implicit registry: Registry, fragment: Fragment): C[FunctionDefinition] = {

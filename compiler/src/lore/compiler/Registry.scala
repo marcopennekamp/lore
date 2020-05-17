@@ -5,7 +5,7 @@ import lore.compiler
 import lore.compiler.Compilation.C
 import lore.compiler.Registry.{ConstructorNotFound, ExactFunctionNotFound, MultiFunctionNotFound, TypeNotFound}
 import lore.compiler.feedback.{Error, Position}
-import lore.compiler.types.DeclaredType
+import lore.compiler.types.{DeclaredType, DeclaredTypeHierarchy}
 import lore.compiler.definitions.{ClassDefinition, ConstructorDefinition, DeclaredTypeDefinition, FunctionDefinition, MultiFunctionDefinition}
 import lore.types.{ProductType, Type}
 

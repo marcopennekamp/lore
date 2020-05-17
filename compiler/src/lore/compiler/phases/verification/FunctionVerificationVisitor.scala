@@ -7,8 +7,8 @@ import lore.compiler.ast.{CallNode, ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.{Error, Position}
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
-import lore.compiler.types.CompilerSubtyping
-import lore.compiler.{Compilation, Fragment, Registry, TypeExpressionEvaluator}
+import lore.compiler.types.{CompilerSubtyping, TypeExpressionEvaluator}
+import lore.compiler.{Compilation, Fragment, Registry}
 import lore.compiler.definitions.{CallTarget, ClassDefinition, FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
 import lore.types.{BasicType, ListType, MapType, NothingType, ProductType, Type}
 
