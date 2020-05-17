@@ -79,6 +79,7 @@ object Lore {
     */
   def writeResult(output: String): Unit = {
     Files.writeString(Path.of(s"lore-program.js"), output)
+    Runtime.getRuntime.exec("prettier --write lore-program.js")
   }
 
   def main(args: Array[String]): Unit = {
