@@ -6,6 +6,8 @@ import lore.compiler.phases.Phase
 
 class TranspilationPhase()(implicit registry: Registry) extends Phase[String] {
   override def result: C[String] = {
-    registry.getMultiFunctions.values.map(MultiFunctionTranspiler.transpile).toList.simultaneous.map(_.mkString("\n\n\n"))
+    registry
+      .getMultiFunctions.values.map(new MultiFunctionTranspiler(_).transpile).toList.simultaneous
+      .map(_.mkString(s"\n/* ${"=".repeat(74)} */\n\n"))
   }
 }

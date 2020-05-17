@@ -11,7 +11,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
     * A hierarchy of functions ordered according to their input types. Not necessarily connected, but
     * definitely acyclic.
     */
-  private val hierarchy: Graph[FunctionDefinition, DiEdge] = Graph()
+  val hierarchy: Graph[FunctionDefinition, DiEdge] = Graph()
   private implicit val edgeFactory = DiEdge
   buildHierarchy()
 
@@ -23,7 +23,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
   /**
     * All root nodes in the hierarchy, i.e. those functions with a super-function.
     */
-  private lazy val hierarchyRoots: List[hierarchy.NodeT] = hierarchy.nodes.filter(_.inDegree == 0).toList
+  lazy val hierarchyRoots: List[hierarchy.NodeT] = hierarchy.nodes.filter(_.inDegree == 0).toList
 
   /**
     * When used as a visit-predicate for [[traverseHierarchy]], all and only nodes that are part of the function
