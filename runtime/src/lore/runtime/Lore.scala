@@ -5,8 +5,7 @@ import scala.scalajs.js
 object Lore {
   val testCode: String =
     """function test() {
-      |  console.log('Hello test!');
-      |  Types.test();
+      |  console.log(Types.typeof('Hello'));
       |}""".stripMargin
 
   def main(args: Array[String]): Unit = {
