@@ -15,12 +15,22 @@ object Types {
     * Calculates the Lore type of a Javascript value.
     */
   def typeof(value: Any): Type = {
-    // TODO: Implement. We need to save type information for all non-trivial base types as fields on an object.
     // TODO: In the case of a Javascript object being given that does not have a type field, we should return some
     //       kind of "dynamic" type. Of course, this first requires us to define a similar notion within Lore
     //       itself.
     js.typeOf(value) match {
-      case _ => println(value); any
+      case "number" => value match {
+        case _: Int => BasicType.Int
+        case _: Double => BasicType.Real
+      }
+      case "boolean" => BasicType.Boolean
+      case "string" => BasicType.String
+      case "object" =>
+        // TODO: Get the type from the object, for example in an value.$type property.
+        //       This is ALSO the case for arrays! We can't deduce an array's type if it has no elements,
+        //       and so we have to wrap it in an object that also contains type information.
+        any
+      case _ => println(value); any // TODO: Throw a "corresponding Lore type not found" error.
     }
   }
 
@@ -48,9 +58,9 @@ object Types {
   def declared(name: String): DeclaredType = ??? // TODO: Fetch the registered declared type.
 
   // Type constructors.
-  def intersection(types: List[Type]): Type = IntersectionType.construct(types)
-  def sum(types: List[Type]): Type = SumType.construct(types)
-  def product(types: List[Type]): ProductType = ProductType(types)
+  def intersection(types: js.Array[Type]): Type = IntersectionType.construct(types.toList)
+  def sum(types: js.Array[Type]): Type = SumType.construct(types.toList)
+  def product(types: js.Array[Type]): ProductType = ProductType(types.toList)
   def component(underlying: ClassType): ComponentType = ComponentType(underlying)
   def list(element: Type): ListType = ListType(element)
   def map(key: Type, value: Type): MapType = MapType(key, value)
