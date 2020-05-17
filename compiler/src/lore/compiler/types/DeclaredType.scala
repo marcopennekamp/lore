@@ -14,6 +14,8 @@ trait DeclaredType extends lore.types.DeclaredType {
   def definition: DeclaredTypeDefinition
   override def name: String = definition.name
 
+  // We need to override these because we have to assert to Scala that in the context of the compiler,
+  // we are always expecting lore.compiler types.
   override def supertype: Option[DeclaredType]
   override def rootSupertype: DeclaredType = super.rootSupertype.asInstanceOf[DeclaredType]
 
