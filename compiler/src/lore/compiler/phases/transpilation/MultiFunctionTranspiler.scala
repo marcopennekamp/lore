@@ -2,50 +2,39 @@ package lore.compiler.phases.transpilation
 
 import java.io.{ByteArrayOutputStream, PrintStream}
 
-import lore.compiler.Compilation
+import lore.compiler.{Compilation, Registry}
 import lore.compiler.Compilation.C
 import lore.compiler.definitions.{FunctionDefinition, MultiFunctionDefinition}
 
 import scala.collection.mutable
 import scala.util.Using
 
-class MultiFunctionTranspiler(mf: MultiFunctionDefinition) {
+class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit val registry: Registry) {
   private val varInputType = "inputType"
   private val varChosenFunction = "chosenFunction"
-
-  private case class GroupedFunction(function: FunctionDefinition, jsName: String, index: Int)
 
   private val functionJsNames = mutable.HashMap[FunctionDefinition, String]()
 
   def transpile: C[String] = {
     val out = new ByteArrayOutputStream()
-    Using(new PrintStream(out, true, "utf-8")) { printer =>
-      mf.functions.filterNot(_.isAbstract).zipWithIndex.foreach { case (function, index) =>
-        val name = s"${function.name}$$$index"
+    val tryCompilation = Using(new PrintStream(out, true, "utf-8")) { printer =>
+      mf.functions.filterNot(_.isAbstract).zipWithIndex.map { case (function, index) =>
+        val name = s"${function.name}$$$index" // TODO: We should probably rely on some reconstructable unique name, rather.
         functionJsNames.put(function, name)
-
-        // TODO: Move this into a FunctionTranspiler.
-        val parameters = function.parameters.map(_.name).mkString(", ")
-        printer.print(
-          s"""function $name($parameters) {
-             |  console.log('Called function $name');
-             |}
-             |
-             |""".stripMargin
-        )
+        new FunctionTranspiler(function, name).transpile.map(printer.print)
+      }.simultaneous.map { _=>
+        val mfName = s"${mf.name}"
+        printer.println(s"function $mfName(...args) {")
+        printer.println(s"console.log('Called multi-function $mfName.');")
+        printer.println(s"const $varInputType = Types.product(args.map(arg => Types.typeof(arg)));")
+        printer.println(s"let $varChosenFunction;")
+        transpileDispatchHierarchy(printer)
+        printer.println(s"return $varChosenFunction(...args);")
+        printer.println("}")
       }
-
-      val mfName = s"${mf.name}"
-      printer.println(s"function $mfName(...args) {")
-      printer.println(s"console.log('Called multi-function $mfName.');")
-      printer.println(s"const $varInputType = Types.product(args.map(arg => Types.typeof(arg)));")
-      printer.println(s"let $varChosenFunction;")
-      transpileDispatchHierarchy(printer)
-      printer.println(s"$varChosenFunction(...args);")
-      printer.println("}")
     }
 
-    Compilation.succeed(out.toString("utf-8"))
+    tryCompilation.map(c => c.map(_ => out.toString("utf-8"))).get
   }
 
   /**
@@ -133,6 +122,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition) {
          |} else {
          |  $varChosenFunction = $varFunctions.values().next().value;
          |}
+         |
          |""".stripMargin
     )
   }

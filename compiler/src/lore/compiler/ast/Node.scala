@@ -5,6 +5,11 @@ import lore.compiler.Fragment
 import lore.compiler.feedback.Position
 
 trait Node {
+  // TODO: We could turn nodes into an algebraic data type where we substitute node children with arbitrary
+  //       types. This would allow us to define a statement visitor without the mass of ugly visit methods.
+  //       We could simply have one visit method on which we match the original tree input IfELseNode[StmtNode]
+  //       and the output IfElseNode[String] (in case of transpilation, for example).
+
   /**
     * The start index of the current node in the original source code.
     */
