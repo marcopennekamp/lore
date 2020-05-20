@@ -26,3 +26,13 @@ function testDouble(): [Real] = {
   const list = [1, 2, 3, 4]
   double(list)
 }
+
+function combinations(list: [Real]): [Real] = {
+  for (a in list, b in list) {
+    yield (a, b)
+  }
+}
+function testCombinations(): [Real] = {
+  const list = [1, 2, 3, 4]
+  combinations(list)
+}

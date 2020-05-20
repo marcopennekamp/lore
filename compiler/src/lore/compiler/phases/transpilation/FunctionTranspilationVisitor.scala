@@ -162,8 +162,15 @@ private[transpilation] class FunctionTranspilationVisitor(
       Compilation.succeed(TranspiledNode.combine(expressions.map(_.auxiliaryJs): _*)(
         s"${node.target.signature.name}($arguments)"
       ))
-    case TupleNode(_) =>
-      ???
+    case node@TupleNode(_) =>
+      // TODO: Can we combine this code with ListNode?
+      val values = expressions.map(_.expressionJs).mkString(", ")
+      val expr =
+        s"""${LoreApi.varValues}.tuple(
+           |  [$values],
+           |  ${RuntimeTypeTranspiler.transpile(node.inferredType)},
+           |)""".stripMargin
+      Compilation.succeed(TranspiledNode.combine(expressions.map(_.auxiliaryJs): _*)(expr))
     case node@ListNode(_) =>
       val array = expressions.map(_.expressionJs).mkString(", ")
       val expr =
