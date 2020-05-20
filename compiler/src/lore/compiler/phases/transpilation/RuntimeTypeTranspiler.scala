@@ -8,20 +8,20 @@ object RuntimeTypeTranspiler {
     * Transpiles the given type into its runtime representation.
     */
   def transpile(tpe: Type): String = {
-    tpe match {
-      case AnyType => "Types.any"
-      case NothingType => "Types.nothing"
-      case BasicType.Real => "Types.real"
-      case BasicType.Int => "Types.int"
-      case BasicType.Boolean => "Types.boolean"
-      case BasicType.String => "Types.string"
-      case d: DeclaredType => s"Types.declared('${d.name}')"
-      case IntersectionType(types) => s"Types.intersection([${types.map(transpile).mkString(", ")}])"
-      case SumType(types) => s"Types.sum([${types.map(transpile).mkString(", ")}])"
-      case ProductType(types) => s"Types.product([${types.map(transpile).mkString(", ")}])"
-      case ComponentType(underlying) => s"Types.component(${transpile(underlying)})"
-      case ListType(element) => s"Types.list(${transpile(element)})"
-      case MapType(key, value) => s"Types.map(${transpile(key)}, ${transpile(value)})"
-    }
+    s"${LoreApi.varTypes}." + (tpe match {
+      case AnyType => "any"
+      case NothingType => "nothing"
+      case BasicType.Real => "real"
+      case BasicType.Int => "int"
+      case BasicType.Boolean => "boolean"
+      case BasicType.String => "string"
+      case d: DeclaredType => s"declared('${d.name}')"
+      case IntersectionType(types) => s"intersection([${types.map(transpile).mkString(", ")}])"
+      case SumType(types) => s"sum([${types.map(transpile).mkString(", ")}])"
+      case ProductType(types) => s"product([${types.map(transpile).mkString(", ")}])"
+      case ComponentType(underlying) => s"component(${transpile(underlying)})"
+      case ListType(element) => s"list(${transpile(element)})"
+      case MapType(key, value) => s"map(${transpile(key)}, ${transpile(value)})"
+    })
   }
 }

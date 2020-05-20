@@ -5,9 +5,7 @@ import lore.compiler.ast.visitor.StmtVisitor
 import lore.compiler.ast.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.definitions.{CallTarget, FunctionDefinition}
 import lore.compiler.feedback.Error
-import lore.compiler.types.CompilerSubtyping
 import lore.compiler.{Compilation, Fragment, Registry}
-import lore.types.{ListType, NothingType, ProductType, Type}
 
 case class TranspilationNotYetSupported(node: StmtNode)(implicit fragment: Fragment) extends Error(node) {
   override def message = s"The Lore compiler doesn't yet support the transpilation of ${node.getClass.getSimpleName}."
@@ -130,7 +128,7 @@ private[transpilation] class FunctionTranspilationVisitor(
   override def visitTernary(node: StmtNode.TernaryNode)(
     argument1: TranspiledNode, argument2: TranspiledNode, argument3: TranspiledNode
   ): Compilation[TranspiledNode] = node match {
-    case IfElseNode(_, onTrue, onFalse) =>
+    case IfElseNode(_, _, _) =>
       val result = argument1.flatMap { (conditionAux, condition) =>
         argument2.flatMap { (trueAux, trueExpr) =>
           argument3.flatMap { (falseAux, falseExpr) =>
@@ -169,9 +167,9 @@ private[transpilation] class FunctionTranspilationVisitor(
     case node@ListNode(_) =>
       val array = expressions.map(_.expressionJs).mkString(", ")
       val expr =
-        s"""Values.list(
+        s"""${LoreApi.varValues}.list(
            |  [$array],
-           |  ${RuntimeTypeTranspiler.transpile(node.inferredType.asInstanceOf[ListType].element)},
+           |  ${RuntimeTypeTranspiler.transpile(node.inferredType)},
            |)""".stripMargin
       Compilation.succeed(TranspiledNode.combine(expressions.map(_.auxiliaryJs): _*)(expr))
     case _ => default(node)
@@ -184,7 +182,7 @@ private[transpilation] class FunctionTranspilationVisitor(
   ): Compilation[TranspiledNode] = {
     val varResult = uniqueName()
     loopContextVarNames = varResult +: loopContextVarNames
-    visitBody().flatMap { body =>
+    visitBody().map { body =>
       loopContextVarNames = loopContextVarNames.tail
       val loop = extractors.map { case (name, node) =>
         // forEach as defined in lore.runtime.api.Values.
@@ -195,13 +193,13 @@ private[transpilation] class FunctionTranspilationVisitor(
              |});""".stripMargin
       }.foldRight(body.allAux.auxiliaryJs) { case (enclose, result) => enclose(result) }
       val code =
-        s"""const $varResult = Values.list(
+        s"""const $varResult = ${LoreApi.varValues}.list(
            |  [],
-           |  ${RuntimeTypeTranspiler.transpile(node.inferredType.asInstanceOf[ListType].element)},
+           |  ${RuntimeTypeTranspiler.transpile(node.inferredType)},
            |);
            |$loop
            |""".stripMargin
-      Compilation.succeed(TranspiledNode(code, varResult))
+      TranspiledNode(code, varResult)
     }
   }
 }

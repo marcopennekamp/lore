@@ -1,17 +1,17 @@
-package lore.runtime.types
+package lore.runtime.api
 
-import lore.runtime.api.LoreList
-import lore.types.{AnyType, BasicType, IntersectionType, ListType, MapType, NothingType, ProductType, SumType, Type}
+import lore.runtime.types.{ClassType, ComponentType, DeclaredType, LabelType}
+import lore.runtime.values.ListValue
+import lore.types._
 
 import scala.scalajs.js
-import scala.scalajs.js.annotation.{JSExportAll, JSExportTopLevel}
+import scala.scalajs.js.annotation.JSExportAll
 
 /**
   * Exposes type construction, verification, and decision functions to the generated JS code.
   */
-@JSExportTopLevel("Types")
 @JSExportAll
-object Types {
+class Types {
   /**
     * Calculates the Lore type of a Javascript value.
     */
@@ -29,7 +29,7 @@ object Types {
       case "object" =>
         println(value)
         value match {
-          case LoreList(_, tpe) => tpe
+          case ListValue(_, tpe) => tpe
           case _ => any // TODO: Get the type from the object, for example in an value.$type property.
         }
       case _ => println(value); any // TODO: Throw a "corresponding Lore type not found" error.

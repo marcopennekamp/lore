@@ -2,8 +2,8 @@ package lore.compiler.phases.transpilation
 
 import java.io.{ByteArrayOutputStream, PrintStream}
 
-import lore.compiler.{Compilation, Registry}
 import lore.compiler.Compilation.C
+import lore.compiler.Registry
 import lore.compiler.definitions.{FunctionDefinition, MultiFunctionDefinition}
 
 import scala.collection.mutable
@@ -26,7 +26,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit val registry
         val mfName = s"${mf.name}"
         printer.println(s"function $mfName(...args) {")
         printer.println(s"console.log('Called multi-function $mfName.');")
-        printer.println(s"const $varInputType = Types.product(args.map(arg => Types.typeof(arg)));")
+        printer.println(s"const $varInputType = ${LoreApi.varTypes}.product(args.map(arg => ${LoreApi.varTypes}.typeof(arg)));")
         printer.println(s"let $varChosenFunction;")
         transpileDispatchHierarchy(printer)
         printer.println(s"return $varChosenFunction(...args);")
@@ -74,7 +74,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit val registry
           // TODO: Optimize: Pull the object creation of the function's input type into some kind of cached variable.
           //       Right now, every time the multi-function is called, all these instances get created again and
           //       again.
-          s"const ${varFits(index)} = Types.isSubtype($varInputType, ${transpileInputType(node)});"
+          s"const ${varFits(index)} = ${LoreApi.varTypes}.isSubtype($varInputType, ${transpileInputType(node)});"
         )
       }
     }
