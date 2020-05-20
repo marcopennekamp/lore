@@ -40,6 +40,9 @@ trait Subtyping {
         }
     },
 
+    // Lists are covariant.
+    { case (l1: ListType, l2: ListType) => isSubtype(l1.element, l2.element) },
+
     // Handle basic types. Int is a subtype of Real.
     { case (a: BasicType, b: BasicType) => a eq b },
     { case (BasicType.Int, BasicType.Real) => true },

@@ -1,5 +1,6 @@
 package lore.runtime.types
 
+import lore.runtime.api.LoreList
 import lore.types.{AnyType, BasicType, IntersectionType, ListType, MapType, NothingType, ProductType, SumType, Type}
 
 import scala.scalajs.js
@@ -26,10 +27,11 @@ object Types {
       case "boolean" => BasicType.Boolean
       case "string" => BasicType.String
       case "object" =>
-        // TODO: Get the type from the object, for example in an value.$type property.
-        //       This is ALSO the case for arrays! We can't deduce an array's type if it has no elements,
-        //       and so we have to wrap it in an object that also contains type information.
-        any
+        println(value)
+        value match {
+          case LoreList(_, tpe) => tpe
+          case _ => any // TODO: Get the type from the object, for example in an value.$type property.
+        }
       case _ => println(value); any // TODO: Throw a "corresponding Lore type not found" error.
     }
   }

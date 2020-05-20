@@ -275,7 +275,8 @@ private[verification] class FunctionVerificationVisitor(
     case ListNode(expressions) =>
       // If we type empty lists as [Nothing], we can assign this empty list to any kind of list, which makes
       // coders happy. :) Hence the default value in the fold.
-      node.typed(expressions.map(_.inferredType).foldLeft(NothingType: Type)(CompilerSubtyping.leastUpperBound))
+      val elementType = expressions.map(_.inferredType).foldLeft(NothingType: Type)(CompilerSubtyping.leastUpperBound)
+      node.typed(ListType(elementType))
     case MapNode(entries) =>
       val keyType = entries.map(_.key.inferredType).foldLeft(NothingType: Type)(CompilerSubtyping.leastUpperBound)
       val valueType = entries.map(_.value.inferredType).foldLeft(NothingType: Type)(CompilerSubtyping.leastUpperBound)
