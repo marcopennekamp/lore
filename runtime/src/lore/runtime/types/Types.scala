@@ -1,6 +1,6 @@
 package lore.runtime.types
 
-import lore.types.{AnyType, BasicType, IntersectionType, ListType, MapType, NothingType, ProductType, Subtyping, SumType, Type}
+import lore.types.{AnyType, BasicType, IntersectionType, ListType, MapType, NothingType, ProductType, SumType, Type}
 
 import scala.scalajs.js
 import scala.scalajs.js.annotation.{JSExportAll, JSExportTopLevel}
