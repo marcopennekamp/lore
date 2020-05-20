@@ -1,7 +1,7 @@
 package lore.runtime.api
 
 import lore.runtime.types.{ClassType, ComponentType, DeclaredType, LabelType}
-import lore.runtime.values.ListValue
+import lore.runtime.values.{ListValue, ObjectValue}
 import lore.types._
 
 import scala.scalajs.js
@@ -27,12 +27,12 @@ class Types {
       case "boolean" => BasicType.Boolean
       case "string" => BasicType.String
       case "object" =>
-        println(value)
         value match {
           case ListValue(_, tpe) => tpe
-          case _ => any // TODO: Get the type from the object, for example in an value.$type property.
+          case ObjectValue(_, tpe) => tpe
+          case _ => any // TODO: Throw a "corresponding Lore type not found" error.
         }
-      case _ => println(value); any // TODO: Throw a "corresponding Lore type not found" error.
+      case _ => any // TODO: Throw a "corresponding Lore type not found" error.
     }
   }
 
