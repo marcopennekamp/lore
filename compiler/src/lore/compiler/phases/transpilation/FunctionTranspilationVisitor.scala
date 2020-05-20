@@ -3,11 +3,11 @@ package lore.compiler.phases.transpilation
 import lore.compiler.Compilation.C
 import lore.compiler.ast.visitor.StmtVisitor
 import lore.compiler.ast.{ExprNode, StmtNode, TopLevelExprNode}
-import lore.compiler.definitions.CallTarget
+import lore.compiler.definitions.{CallTarget, FunctionDefinition}
 import lore.compiler.feedback.Error
 import lore.compiler.types.CompilerSubtyping
 import lore.compiler.{Compilation, Fragment, Registry}
-import lore.types.{NothingType, ProductType, Type}
+import lore.types.{ListType, NothingType, ProductType, Type}
 
 case class TranspilationNotYetSupported(node: StmtNode)(implicit fragment: Fragment) extends Error(node) {
   override def message = s"The Lore compiler doesn't yet support the transpilation of ${node.getClass.getSimpleName}."
@@ -33,6 +33,11 @@ case class TranspiledNode(auxiliaryJs: String, expressionJs: String) {
   def mapExpression(f: String => String): TranspiledNode = {
     TranspiledNode(auxiliaryJs, f(expressionJs))
   }
+
+  /**
+    * Pulls the node's expression into the auxiliaryJs code.
+    */
+  def allAux: TranspiledNode = TranspiledNode.combine(auxiliaryJs, expressionJs)("")
 }
 
 object TranspiledNode {
@@ -62,6 +67,9 @@ private[transpilation] class FunctionTranspilationVisitor(
     name
   }
 
+  // TODO: We should just remove yield. For now, this is a temporary solution.
+  private var loopContextVarNames: List[String] = Nil
+
   private def default(node: StmtNode): C[TranspiledNode] = Compilation.fail(TranspilationNotYetSupported(node))
   private def binary(left: TranspiledNode, right: TranspiledNode)(transform: (String, String) => String): Compilation[TranspiledNode] = {
     Compilation.succeed(TranspiledNode.binary(left, right)(transform))
@@ -72,6 +80,7 @@ private[transpilation] class FunctionTranspilationVisitor(
     case IntLiteralNode(value) => Compilation.succeed(TranspiledNode.expression(value.toString))
     case _ => default(node)
   }
+
   override def visitUnary(node: StmtNode.UnaryNode)(argument: TranspiledNode): Compilation[TranspiledNode] = node match {
     case TopLevelExprNode.VariableDeclarationNode(name, isMutable, _, _) =>
       val result = argument.flatMap { (aux, expr) =>
@@ -80,8 +89,15 @@ private[transpilation] class FunctionTranspilationVisitor(
         TranspiledNode.combine(aux, code)("")
       }
       Compilation.succeed(result)
+    case TopLevelExprNode.YieldNode(_) =>
+      val loopVar = loopContextVarNames.head
+      Compilation.succeed(TranspiledNode.combine(
+        argument.auxiliaryJs,
+        s"$loopVar.push(${argument.expressionJs});"
+      )(""))
     case _ => default(node)
   }
+
   override def visitBinary(node: StmtNode.BinaryNode)(left: TranspiledNode, right: TranspiledNode): Compilation[TranspiledNode] = node match {
     case AdditionNode(_, _) => binary(left, right)(_ + " + " + _)
     case SubtractionNode(_, _) => binary(left, right)(_ + " - " + _)
@@ -110,7 +126,10 @@ private[transpilation] class FunctionTranspilationVisitor(
       ???
     case _ => default(node)
   }
-  override def visitTernary(node: StmtNode.TernaryNode)(argument1: TranspiledNode, argument2: TranspiledNode, argument3: TranspiledNode): Compilation[TranspiledNode] = node match {
+
+  override def visitTernary(node: StmtNode.TernaryNode)(
+    argument1: TranspiledNode, argument2: TranspiledNode, argument3: TranspiledNode
+  ): Compilation[TranspiledNode] = node match {
     case IfElseNode(_, onTrue, onFalse) =>
       val result = argument1.flatMap { (conditionAux, condition) =>
         argument2.flatMap { (trueAux, trueExpr) =>
@@ -139,6 +158,12 @@ private[transpilation] class FunctionTranspilationVisitor(
     case BlockNode(_) =>
       val expr = expressions.lastOption.map(_.expressionJs).getOrElse("")
       Compilation.succeed(TranspiledNode.combine(expressions.map(_.auxiliaryJs): _*)(expr))
+    case node@SimpleCallNode(_, _, _) =>
+      assert(node.target.isInstanceOf[FunctionDefinition]) // Constructor calls are not yet supported.
+      val arguments = expressions.map(_.expressionJs).mkString(", ")
+      Compilation.succeed(TranspiledNode.combine(expressions.map(_.auxiliaryJs): _*)(
+        s"${node.target.signature.name}($arguments)"
+      ))
     case TupleNode(_) =>
       ???
     case node@ListNode(_) =>
@@ -146,12 +171,37 @@ private[transpilation] class FunctionTranspilationVisitor(
       val expr =
         s"""Values.list(
            |  [$array],
-           |  ${RuntimeTypeTranspiler.transpile(node.inferredType)},
+           |  ${RuntimeTypeTranspiler.transpile(node.inferredType.asInstanceOf[ListType].element)},
            |)""".stripMargin
       Compilation.succeed(TranspiledNode.combine(expressions.map(_.auxiliaryJs): _*)(expr))
     case _ => default(node)
   }
 
   override def visitMap(node: ExprNode.MapNode)(entries: List[(TranspiledNode, TranspiledNode)]): Compilation[TranspiledNode] = default(node)
-  override def visitIteration(node: ExprNode.IterationNode)(extractors: List[(String, TranspiledNode)], visitBody: () => Compilation[TranspiledNode]): Compilation[TranspiledNode] = default(node)
+
+  override def visitIteration(node: ExprNode.IterationNode)(
+    extractors: List[(String, TranspiledNode)], visitBody: () => Compilation[TranspiledNode]
+  ): Compilation[TranspiledNode] = {
+    val varResult = uniqueName()
+    loopContextVarNames = varResult +: loopContextVarNames
+    visitBody().flatMap { body =>
+      loopContextVarNames = loopContextVarNames.tail
+      val loop = extractors.map { case (name, node) =>
+        // forEach as defined in lore.runtime.api.Values.
+        (inner: String) =>
+          s"""${node.auxiliaryJs}
+             |${node.expressionJs}.forEach($name => {
+             |  $inner
+             |});""".stripMargin
+      }.foldRight(body.allAux.auxiliaryJs) { case (enclose, result) => enclose(result) }
+      val code =
+        s"""const $varResult = Values.list(
+           |  [],
+           |  ${RuntimeTypeTranspiler.transpile(node.inferredType.asInstanceOf[ListType].element)},
+           |);
+           |$loop
+           |""".stripMargin
+      Compilation.succeed(TranspiledNode(code, varResult))
+    }
+  }
 }

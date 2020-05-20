@@ -16,13 +16,13 @@ function add(a: Real, b: Real): Real = a + b
   }
   result
 } */
-/* function double(list: [Real]): [Real] = {
+
+function double(list: [Real]): [Real] = {
   for (e in list) {
     yield e * 2
   }
-} */
+}
 function testDouble(): [Real] = {
   const list = [1, 2, 3, 4]
-  //double(list)
-  list
+  double(list)
 }
