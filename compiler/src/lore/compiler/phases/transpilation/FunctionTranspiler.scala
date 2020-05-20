@@ -14,8 +14,7 @@ class FunctionTranspiler(function: FunctionDefinition, uniqueName: String)(impli
     StmtVisitor.visit(new FunctionTranspilationVisitor(function))(function.body.get).map {
       case TranspiledNode(auxiliary, expr) =>
         s"""function $uniqueName($parameters) {
-           |  console.log('Called function $uniqueName');
-           |  ${function.parameters.map(p => s"console.log(${p.name});").mkString("\n")}
+           |  console.log(`Called function $uniqueName with input: (${function.parameters.map(p => "${" + p.name + "}").mkString(", ")})`);
            |  $auxiliary
            |  ${if (!expr.isBlank) s"return $expr;" }
            |}
