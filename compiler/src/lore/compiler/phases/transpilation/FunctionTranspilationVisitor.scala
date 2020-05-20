@@ -68,10 +68,18 @@ private[transpilation] class FunctionTranspilationVisitor(
   }
 
   override def visitLeaf(node: StmtNode.LeafNode): Compilation[TranspiledNode] = node match {
-    case ExprNode.VariableNode(name) => Compilation.succeed(TranspiledNode("", name))
+    case ExprNode.VariableNode(name) => Compilation.succeed(TranspiledNode.expression(name))
+    case IntLiteralNode(value) => Compilation.succeed(TranspiledNode.expression(value.toString))
     case _ => default(node)
   }
   override def visitUnary(node: StmtNode.UnaryNode)(argument: TranspiledNode): Compilation[TranspiledNode] = node match {
+    case TopLevelExprNode.VariableDeclarationNode(name, isMutable, _, _) =>
+      val result = argument.flatMap { (aux, expr) =>
+        val modifier = if (isMutable) "let" else "const"
+        val code = s"$modifier $name = $expr;"
+        TranspiledNode.combine(aux, code)("")
+      }
+      Compilation.succeed(result)
     case _ => default(node)
   }
   override def visitBinary(node: StmtNode.BinaryNode)(left: TranspiledNode, right: TranspiledNode): Compilation[TranspiledNode] = node match {
@@ -126,7 +134,24 @@ private[transpilation] class FunctionTranspilationVisitor(
       Compilation.succeed(result)
     case _ => default(node)
   }
-  override def visitXary(node: StmtNode.XaryNode)(arguments: List[TranspiledNode]): Compilation[TranspiledNode] = default(node)
+
+  override def visitXary(node: StmtNode.XaryNode)(expressions: List[TranspiledNode]): Compilation[TranspiledNode] = node match {
+    case BlockNode(_) =>
+      val expr = expressions.lastOption.map(_.expressionJs).getOrElse("")
+      Compilation.succeed(TranspiledNode.combine(expressions.map(_.auxiliaryJs): _*)(expr))
+    case TupleNode(_) =>
+      ???
+    case node@ListNode(_) =>
+      val array = expressions.map(_.expressionJs).mkString(", ")
+      val expr =
+        s"""Values.list(
+           |  [$array],
+           |  ${RuntimeTypeTranspiler.transpile(node.inferredType)},
+           |)""".stripMargin
+      Compilation.succeed(TranspiledNode.combine(expressions.map(_.auxiliaryJs): _*)(expr))
+    case _ => default(node)
+  }
+
   override def visitMap(node: ExprNode.MapNode)(entries: List[(TranspiledNode, TranspiledNode)]): Compilation[TranspiledNode] = default(node)
   override def visitIteration(node: ExprNode.IterationNode)(extractors: List[(String, TranspiledNode)], visitBody: () => Compilation[TranspiledNode]): Compilation[TranspiledNode] = default(node)
 }
