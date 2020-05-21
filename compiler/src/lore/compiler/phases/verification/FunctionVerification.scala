@@ -5,7 +5,7 @@ import lore.compiler.ast.visitor.StmtVisitor
 import lore.compiler.Compilation.Verification
 import lore.compiler.feedback.Error
 import lore.compiler.{Fragment, Registry}
-import lore.compiler.definitions.{CallTarget, ClassDefinition, ConstructorDefinition}
+import lore.compiler.definitions.{InternalCallTarget, ClassDefinition, ConstructorDefinition}
 import lore.types.Type
 
 /**
@@ -33,7 +33,7 @@ object FunctionVerification {
     * If a constructor is passed, classDefinition must be some value.
     */
   def verifyFunction(
-    target: CallTarget, classDefinition: Option[ClassDefinition]
+    target: InternalCallTarget, classDefinition: Option[ClassDefinition]
   )(implicit registry: Registry): Verification = {
     implicit val fragment = target.position.fragment
     assert(!target.isInstanceOf[ConstructorDefinition] || classDefinition.isDefined)

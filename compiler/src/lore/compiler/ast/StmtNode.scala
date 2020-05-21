@@ -2,7 +2,7 @@ package lore.compiler.ast
 
 import lore.compiler.ast.StmtNode._
 import lore.compiler.phases.verification.{LocalVariable, VirtualMember}
-import lore.compiler.definitions.CallTarget
+import lore.compiler.definitions.{CallTarget, DynamicCallTarget, InternalCallTarget}
 import lore.types.{ProductType, Type}
 
 /**
@@ -51,14 +51,14 @@ object StmtNode {
   */
 sealed trait TopLevelExprNode extends StmtNode
 
-sealed trait CallNode extends TopLevelExprNode {
-  private var _target: CallTarget = _
+sealed trait CallNode[T <: CallTarget] extends TopLevelExprNode {
+  private var _target: T = _
 
   /**
     * The call target that this call node calls, which is resolved during function verification.
     */
-  def target: CallTarget = _target
-  def target_=(target: CallTarget): Unit = {
+  def target: T = _target
+  def target_=(target: T): Unit = {
     assert(_target == null)
     _target = target
   }
@@ -84,7 +84,9 @@ object TopLevelExprNode {
   sealed trait ContinuationNode extends TopLevelExprNode
   // TODO: Maybe rename to ThisCallNode, as this node doesn't refer to instantiation but rather calling another
   //       constructor from a constructor.
-  case class ConstructorCallNode(name: Option[String], arguments: List[ExprNode]) extends XaryNode(arguments) with ContinuationNode with CallNode
+  case class ConstructorCallNode(
+    name: Option[String], arguments: List[ExprNode]
+  ) extends XaryNode(arguments) with ContinuationNode with CallNode[InternalCallTarget]
   case class ConstructNode(arguments: List[ExprNode], withSuper: Option[ConstructorCallNode]) extends XaryNode(arguments) with ContinuationNode
 }
 
@@ -211,19 +213,25 @@ object ExprNode {
     * A call node can both be a multi-function call or an instantiation call. The parser can't decide between them
     * based on syntax, so the compiler will have to decide in later stages.
     */
-  case class SimpleCallNode(name: String, qualifier: Option[String], arguments: List[ExprNode]) extends XaryNode(arguments) with ExprNode with CallNode
+  case class SimpleCallNode(
+    name: String, qualifier: Option[String], arguments: List[ExprNode]
+  ) extends XaryNode(arguments) with ExprNode with CallNode[InternalCallTarget]
 
   /**
     * Since fixed function calls also require type arguments, they can be differentiated from call nodes.
     */
-  case class FixedFunctionCallNode(name: String, types: List[TypeExprNode], arguments: List[ExprNode]) extends XaryNode(arguments) with ExprNode with CallNode
+  case class FixedFunctionCallNode(
+    name: String, types: List[TypeExprNode], arguments: List[ExprNode]
+  ) extends XaryNode(arguments) with ExprNode with CallNode[InternalCallTarget]
 
   /**
     * Just like fixed function calls, dynamic calls have a different set of attributes than simple calls.
     *
     * The name of the dynamic function must be the first argument, as a string.
     */
-  case class DynamicCallNode(resultType: TypeExprNode, arguments: List[ExprNode]) extends XaryNode(arguments) with ExprNode with CallNode
+  case class DynamicCallNode(
+    resultType: TypeExprNode, arguments: List[ExprNode]
+  ) extends XaryNode(arguments) with ExprNode with CallNode[DynamicCallTarget]
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and repetition expressions.

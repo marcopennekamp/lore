@@ -9,14 +9,14 @@ import lore.compiler.feedback.{Error, Position}
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
 import lore.compiler.types.{CompilerSubtyping, TypeExpressionEvaluator}
 import lore.compiler.{Compilation, Fragment, Registry}
-import lore.compiler.definitions.{CallTarget, ClassDefinition, FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
+import lore.compiler.definitions.{ClassDefinition, DynamicCallTarget, FunctionDefinition, FunctionSignature, InternalCallTarget, MultiFunctionDefinition}
 import lore.types.{BasicType, ListType, MapType, NothingType, ProductType, Type}
 
 private[verification] class FunctionVerificationVisitor(
   /**
     * The function or constructor for which we want to infer types.
     */
-  val callTarget: CallTarget,
+  val callTarget: InternalCallTarget,
   /**
     * The class that owns the constructor IF the signature represents a constructor.
     */
@@ -96,7 +96,7 @@ private[verification] class FunctionVerificationVisitor(
     * Checks that the given call target can be called with the given arguments, then assigns the target to the node
     * and also types it.
     */
-  private def typeCall(node: CallNode, target: CallTarget, arguments: List[ExprNode]): Verification = {
+  private def typeCall(node: CallNode[InternalCallTarget], target: InternalCallTarget, arguments: List[ExprNode]): Verification = {
     adheringToSignature(arguments, target.signature, node.position).flatMap { _ =>
       node.target = target
       node.typed(target.signature.outputType)
@@ -204,6 +204,18 @@ private[verification] class FunctionVerificationVisitor(
         registry.resolveExactFunction(name, types, node.position).flatMap { function =>
           typeCall(node, function, arguments)
         }
+      }
+    case node@DynamicCallNode(resultType, arguments) =>
+      (
+        // The first argument to the dynamic call must be a constant function name.
+        arguments.headOption match {
+          case Some(StringLiteralNode(name)) => Compilation.succeed(name)
+          case _ => Compilation.fail(DynamicFunctionNameExpected(node))
+        },
+        TypeExpressionEvaluator.evaluate(resultType),
+      ).simultaneous.flatMap { case (name, resultType) =>
+        node.target = DynamicCallTarget(name, resultType)
+        node.typed(resultType)
       }
     case node@ConstructorCallNode(name, arguments) =>
       // Continue with a constructor this.name. We have already verified that only a constructor can contain a
@@ -343,6 +355,11 @@ private[verification] object FunctionVerificationVisitor {
   case class AmbiguousCall(mf: MultiFunctionDefinition, min: List[FunctionDefinition], callPos: Position) extends Error(callPos) {
     override def message: String = s"The multi-function call ${mf.name} at this site has an ambiguous min-set." +
       s" That is, we are finding TOO MANY functions that would accept the given arguments: ${min.mkString(", ")}."
+  }
+
+  case class DynamicFunctionNameExpected(node: ExprNode.DynamicCallNode)(implicit fragment: Fragment) extends Error(node) {
+    override def message: String = "Dynamic calls require a string literal as their first argument, which represents the" +
+      " name of the function. Since the name must be available at compile-time, it must be a constant."
   }
 
   case class CollectionExpected(node: ExprNode)(implicit fragment: Fragment) extends Error(node) {

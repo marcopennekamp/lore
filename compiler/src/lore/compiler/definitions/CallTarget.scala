@@ -1,8 +1,8 @@
 package lore.compiler.definitions
 
-import lore.compiler.ast.StmtNode
+import lore.types.Type
 
-trait CallTarget extends PositionedDefinition {
-  def signature: FunctionSignature
-  def body: Option[StmtNode]
+trait CallTarget {
+  def name: String
+  def outputType: Type
 }

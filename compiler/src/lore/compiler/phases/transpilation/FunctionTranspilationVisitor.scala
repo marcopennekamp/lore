@@ -2,8 +2,8 @@ package lore.compiler.phases.transpilation
 
 import lore.compiler.Compilation.C
 import lore.compiler.ast.visitor.StmtVisitor
-import lore.compiler.ast.{ExprNode, StmtNode, TopLevelExprNode}
-import lore.compiler.definitions.{CallTarget, FunctionDefinition}
+import lore.compiler.ast.{CallNode, ExprNode, StmtNode, TopLevelExprNode}
+import lore.compiler.definitions.{CallTarget, FunctionDefinition, InternalCallTarget}
 import lore.compiler.feedback.Error
 import lore.compiler.{Compilation, Fragment, Registry}
 
@@ -54,7 +54,7 @@ private[transpilation] class FunctionTranspilationVisitor(
   /**
     * The function or constructor which should be transpiled.
     */
-  val callTarget: CallTarget,
+  val callTarget: InternalCallTarget,
 )(implicit registry: Registry, fragment: Fragment) extends StmtVisitor[TranspiledNode] {
   import ExprNode._
 
@@ -76,6 +76,7 @@ private[transpilation] class FunctionTranspilationVisitor(
   override def visitLeaf(node: StmtNode.LeafNode): Compilation[TranspiledNode] = node match {
     case ExprNode.VariableNode(name) => Compilation.succeed(TranspiledNode.expression(name))
     case IntLiteralNode(value) => Compilation.succeed(TranspiledNode.expression(value.toString))
+    case StringLiteralNode(value) => Compilation.succeed(TranspiledNode.expression(s"'$value'"))
     case _ => default(node)
   }
 
@@ -152,16 +153,25 @@ private[transpilation] class FunctionTranspilationVisitor(
     case _ => default(node)
   }
 
+  def transpileCall(targetName: String, arguments: List[TranspiledNode]): Compilation[TranspiledNode] = {
+    Compilation.succeed(TranspiledNode.combine(arguments.map(_.auxiliaryJs): _*)(
+      s"$targetName(${arguments.map(_.expressionJs).mkString(", ")})"
+    ))
+  }
+
   override def visitXary(node: StmtNode.XaryNode)(expressions: List[TranspiledNode]): Compilation[TranspiledNode] = node match {
     case BlockNode(_) =>
+      // We have to combine the aux and expression parts of all nodes that aren't contributing to the block's
+      // result, adding to that the aux of the last node, of course.
+      val aux = expressions.dropRight(1).map(_.allAux).map(_.auxiliaryJs) ++ expressions.lastOption.map(_.auxiliaryJs).toList
       val expr = expressions.lastOption.map(_.expressionJs).getOrElse("")
-      Compilation.succeed(TranspiledNode.combine(expressions.map(_.auxiliaryJs): _*)(expr))
+      Compilation.succeed(TranspiledNode.combine(aux: _*)(expr))
     case node@SimpleCallNode(_, _, _) =>
       assert(node.target.isInstanceOf[FunctionDefinition]) // Constructor calls are not yet supported.
-      val arguments = expressions.map(_.expressionJs).mkString(", ")
-      Compilation.succeed(TranspiledNode.combine(expressions.map(_.auxiliaryJs): _*)(
-        s"${node.target.signature.name}($arguments)"
-      ))
+      transpileCall(node.target.name, expressions)
+    case node@DynamicCallNode(_, _) =>
+      val actualArguments = expressions.tail
+      transpileCall(node.target.name, actualArguments)
     case node@TupleNode(_) =>
       // TODO: Can we combine this code with ListNode?
       val values = expressions.map(_.expressionJs).mkString(", ")
