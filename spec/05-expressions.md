@@ -288,19 +288,21 @@ In the long term, `f.fixed[T1, T2, ...]` is supposed to return a function value.
 
 
 
-### Native Function Calls
+### Dynamic Function Calls
 
-Many functions in the Lore standard library, especially the most fundamental ones, defer their implementation via **native function calls**. Since the underlying runtime environment is a Javascript environment, when defining a function implementation, we can also call functions from Javascript.
+Many functions in the Lore standard library, especially the most fundamental ones, defer their implementation to **dynamic function calls**. Since the underlying runtime environment is a Javascript environment, when defining a function implementation, we can also call functions defined in Javascript.
 
-The **syntax** of a native function call is as follows:
+The **syntax** of a dynamic function call is as follows:
 
 ```
-name.native(a1, a2, ...)
+dynamic[ResultType]('f', a1, a2, ...)
 ```
 
-For now, the Lore compiler will trust the programmer that, when named, such a function is actually available, takes the given arguments, and returns a value that conforms to the required type bounds. In that sense, this is a **dynamic call**.
+For now, the Lore compiler will **trust** the programmer that, when named, such a function is actually available, takes the given arguments, and returns a value that conforms to the required type bounds. The name of the function doesn't have to be a simple name, but may be valid Javascript, such as accessing a namespace: `'Lore.list.push'`.
 
-In the long term, we want to be able to use, for example, TypeScript declaration files to provide more **type safety** when interfacing with Javascript or TypeScript code. Also note that, as of now, special Lore objects are passed to a native function, which are Javascript values additionally wrapped in an object to provide type information at run-time. Only primitives such as numbers and strings are unwrapped. A native function will have to deal with these idiosyncrasies until we have come up with a native unwrapping solution. 
+In the long term, we want to be able to use, for example, TypeScript declaration files to provide more **type safety** when interfacing with Javascript or TypeScript code. Also note that, as of now, special Lore objects are passed to a native function, which are Javascript values additionally wrapped in an object to provide type information at run-time. Only primitives such as numbers and strings are unwrapped. A dynamic function will have to deal with these idiosyncrasies until we have come up with a native unwrapping solution.
+
+**TODO:** Once we have type assertions / type casting and/or a Dynamic type, we can change the clumsy result type syntax to something else.
 
 
 

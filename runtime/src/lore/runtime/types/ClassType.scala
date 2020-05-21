@@ -2,8 +2,6 @@ package lore.runtime.types
 
 import lore.types.Type
 
-import scala.scalajs.js.annotation.JSExportTopLevel
-
 case class ClassType(
   override val name: String,
   override val supertype: Option[ClassType],

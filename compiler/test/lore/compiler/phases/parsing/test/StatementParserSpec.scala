@@ -212,7 +212,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     )
   }
 
-  it should "parse instantiation, multi-function calls, and fixed function calls correctly" in {
+  it should "parse instantiation, multi-function calls, fixed function calls, and dynamic calls correctly" in {
     "const point = Point(1, 5)" --> VariableDeclarationNode(
       "point", isMutable = false, None,
       SimpleCallNode("Point", None, List(IntLiteralNode(1), IntLiteralNode(5))),
@@ -227,6 +227,13 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     "applyDot.fixed[Dot, +Health](dot, e)" --> FixedFunctionCallNode(
       "applyDot", List(TypeExprNode.NominalNode("Dot"), TypeExprNode.ComponentNode("Health")),
       List(VariableNode("dot"), VariableNode("e")),
+    )
+    "dynamic[String]('readFile', 'file.ext')" --> DynamicCallNode(
+      TypeExprNode.NominalNode("String"),
+      List(
+        StringLiteralNode("readFile"),
+        StringLiteralNode("file.ext"),
+      ),
     )
 
     // Calls that aren't fix can't accept type arguments.

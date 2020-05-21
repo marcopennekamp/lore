@@ -44,7 +44,7 @@ object LexicalParser {
     * calling said function is impossible since "construct" gets parsed as a construct call.
     */
   def criticalKeyword[_: P]: P[Unit] = P(StringIn(
-    "const", "construct", "else", "false", "for", "if", "let", "repeat", "return", "super", "this", "true",
+    "const", "construct", "dynamic", "else", "false", "for", "if", "let", "repeat", "return", "super", "this", "true",
     "while", "yield",
   ))
 

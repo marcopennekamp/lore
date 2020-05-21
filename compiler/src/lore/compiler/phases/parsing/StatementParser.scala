@@ -143,7 +143,9 @@ object StatementParser {
   /**
     * All expressions immediately accessible via postfix dot notation.
     */
-  private def accessible[_: P]: P[ExprNode] = P(Index ~ (literal | fixedCall | call | variable | block | list | map | enclosed)).map(withIndex(identity _))
+  private def accessible[_: P]: P[ExprNode] = {
+    P(Index ~ (literal | fixedCall | dynamicCall | call | variable | block | list | map | enclosed)).map(withIndex(identity _))
+  }
 
   private def literal[_: P]: P[ExprNode] = {
     def real = P(LexicalParser.real).map(ExprNode.RealLiteralNode)
@@ -153,9 +155,11 @@ object StatementParser {
     P(real | int | booleanLiteral | LexicalParser.string)
   }
   private def fixedCall[_: P]: P[ExprNode] = P(identifier ~ ".fixed" ~ typeArguments ~ arguments).map(ExprNode.FixedFunctionCallNode.tupled)
+  private def dynamicCall[_: P]: P[ExprNode] = P("dynamic" ~ singleTypeArgument ~ arguments).map(ExprNode.DynamicCallNode.tupled)
   private def call[_: P]: P[ExprNode] = P(identifier ~ ("." ~ identifier).? ~ arguments).map(ExprNode.SimpleCallNode.tupled)
   def arguments[_: P]: P[List[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toList)
   private def typeArguments[_: P]: P[List[TypeExprNode]] = P("[" ~ TypeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toList)
+  private def singleTypeArgument[_: P]: P[TypeExprNode] = P("[" ~ TypeParser.typeExpression ~ "]")
   private def variable[_: P]: P[ExprNode.VariableNode] = P(identifier).map(ExprNode.VariableNode)
   def block[_: P]: P[ExprNode.BlockNode] = {
     def statements = P(statement.repX(0, Space.terminators).map(_.toList))

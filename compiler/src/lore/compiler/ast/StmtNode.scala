@@ -9,6 +9,10 @@ import lore.types.{ProductType, Type}
   * All statements and expressions.
   */
 sealed trait StmtNode extends Node {
+  /**
+    * The result type of the statement. If None, the type has not been inferred yet. This property is meant to
+    * cache the result of type inference and is set by the type inference mechanism.
+    */
   private var _inferredType: Option[Type] = None
 
   def setInferredType(tpe: Type): Unit = {
@@ -45,13 +49,7 @@ object StmtNode {
   *
   * This concept is used to implement the restriction that assignments can only stand in specific places.
   */
-sealed trait TopLevelExprNode extends StmtNode {
-  /**
-    * The result type of the expression. If None, the type has not been inferred yet. This property is meant to
-    * cache the result of type inference and is set by the type inference mechanism.
-    */
-  var resultType: Option[Type] = None
-}
+sealed trait TopLevelExprNode extends StmtNode
 
 sealed trait CallNode extends TopLevelExprNode {
   private var _target: CallTarget = _
@@ -219,6 +217,13 @@ object ExprNode {
     * Since fixed function calls also require type arguments, they can be differentiated from call nodes.
     */
   case class FixedFunctionCallNode(name: String, types: List[TypeExprNode], arguments: List[ExprNode]) extends XaryNode(arguments) with ExprNode with CallNode
+
+  /**
+    * Just like fixed function calls, dynamic calls have a different set of attributes than simple calls.
+    *
+    * The name of the dynamic function must be the first argument, as a string.
+    */
+  case class DynamicCallNode(resultType: TypeExprNode, arguments: List[ExprNode]) extends XaryNode(arguments) with ExprNode with CallNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and repetition expressions.
