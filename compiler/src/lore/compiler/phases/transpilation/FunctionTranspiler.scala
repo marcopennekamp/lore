@@ -16,7 +16,7 @@ class FunctionTranspiler(function: FunctionDefinition, uniqueName: String)(impli
         s"""function $uniqueName($parameters) {
            |  console.log(`Called function $uniqueName with input: (${function.parameters.map(p => "${" + p.name + "}").mkString(", ")})`);
            |  $auxiliary
-           |  ${if (!expr.isBlank) s"return $expr;" }
+           |  ${if (!expr.isBlank) s"return $expr;" else "" }
            |}
            |
            |""".stripMargin

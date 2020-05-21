@@ -1,0 +1,20 @@
+action hello(value: Any)
+
+action hello(name: String) {
+  println('Hello, $name.')
+}
+
+action hello(id: Int) {
+  println('Hello, anonymous #$id.')
+}
+
+action test() {
+  // TODO: It doesn't make much sense that we need to widen the type to Any here, BUT append doesn't work with
+  //       parametric types yet and so we need to operate on Any...
+  let names: [Any] = ['world', 5, 'marco']
+  names = append(names, 'console')
+  names = append(names, 100)
+  for (name in names) {
+    hello(name)
+  }
+}

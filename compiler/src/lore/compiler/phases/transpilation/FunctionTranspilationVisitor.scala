@@ -1,11 +1,13 @@
 package lore.compiler.phases.transpilation
 
 import lore.compiler.Compilation.C
+import lore.compiler.ast.TopLevelExprNode.AssignmentNode
 import lore.compiler.ast.visitor.StmtVisitor
 import lore.compiler.ast.{CallNode, ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.definitions.{CallTarget, FunctionDefinition, InternalCallTarget}
 import lore.compiler.feedback.Error
 import lore.compiler.{Compilation, Fragment, Registry}
+import lore.types.{ListType, ProductType}
 
 case class TranspilationNotYetSupported(node: StmtNode)(implicit fragment: Fragment) extends Error(node) {
   override def message = s"The Lore compiler doesn't yet support the transpilation of ${node.getClass.getSimpleName}."
@@ -98,6 +100,7 @@ private[transpilation] class FunctionTranspilationVisitor(
   }
 
   override def visitBinary(node: StmtNode.BinaryNode)(left: TranspiledNode, right: TranspiledNode): Compilation[TranspiledNode] = node match {
+    case AssignmentNode(_, _) => binary(left, right)(_ + " = " + _)
     case AdditionNode(_, _) => binary(left, right)(_ + " + " + _)
     case SubtractionNode(_, _) => binary(left, right)(_ + " - " + _)
     case MultiplicationNode(_, _) => binary(left, right)(_ + " * " + _)
@@ -189,6 +192,12 @@ private[transpilation] class FunctionTranspilationVisitor(
            |  ${RuntimeTypeTranspiler.transpile(node.inferredType)},
            |)""".stripMargin
       Compilation.succeed(TranspiledNode.combine(expressions.map(_.auxiliaryJs): _*)(expr))
+    case ConcatenationNode(_) =>
+      Compilation.succeed(
+        TranspiledNode.combine(expressions.map(_.auxiliaryJs): _*)(
+          expressions.map(_.expressionJs).reduce(_ + " + " + _)
+        )
+      )
     case _ => default(node)
   }
 
@@ -197,6 +206,7 @@ private[transpilation] class FunctionTranspilationVisitor(
   override def visitIteration(node: ExprNode.IterationNode)(
     extractors: List[(String, TranspiledNode)], visitBody: () => Compilation[TranspiledNode]
   ): Compilation[TranspiledNode] = {
+    val hasYields = node.inferredType.isInstanceOf[ListType] // If we didn't infer a list type, there weren't any yields.
     val varResult = uniqueName()
     loopContextVarNames = varResult +: loopContextVarNames
     visitBody().map { body =>
@@ -209,14 +219,17 @@ private[transpilation] class FunctionTranspilationVisitor(
              |  $inner
              |});""".stripMargin
       }.foldRight(body.allAux.auxiliaryJs) { case (enclose, result) => enclose(result) }
-      val code =
+      val resultVarDeclaration = if (hasYields) {
         s"""const $varResult = ${LoreApi.varValues}.list(
-           |  [],
-           |  ${RuntimeTypeTranspiler.transpile(node.inferredType)},
-           |);
+            |  [],
+            |  ${RuntimeTypeTranspiler.transpile(node.inferredType)},
+            |);""".stripMargin
+      } else ""
+      val code =
+        s"""$resultVarDeclaration
            |$loop
            |""".stripMargin
-      TranspiledNode(code, varResult)
+      TranspiledNode(code, if (hasYields) varResult else "")
     }
   }
 }

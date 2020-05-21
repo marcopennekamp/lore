@@ -11,7 +11,8 @@ import scala.util.Using
 
 object Lore {
   val pyramid = List(
-    fragment("pyramid.io", Path.of("pyramid", "io.lore"))
+    fragment("pyramid.collections", Path.of("pyramid", "collections.lore")),
+    fragment("pyramid.io", Path.of("pyramid", "io.lore")),
   )
 
   def fragment(name: String, path: Path): LoreCompiler.SourceFragment = {
