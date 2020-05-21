@@ -1,0 +1,11 @@
+
+
+
+// TODO: We need parametric types here...
+//function append[A](list: [A], element: A): [A] = dynamic[[A]]('Lore.list.append', list, element)
+function append(list: [String], element: String): [String] = dynamic[[String]]('Lore.list.append', list, element)
+
+// TODO: If we change lists to our own custom implementation, it would still be useful to expose some kind of
+//       interface for Javascript arrays, just in case they are needed by the developer. This would be the place
+//       to do so. However, we would first need some way to define a class whose implementation is deferred to
+//       Javascript, much like dynamic calls do for functions.

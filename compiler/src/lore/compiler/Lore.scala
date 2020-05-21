@@ -10,16 +10,21 @@ import lore.compiler.types.DeclaredType
 import scala.util.Using
 
 object Lore {
+  val pyramid = List(
+    fragment("pyramid.io", Path.of("pyramid", "io.lore"))
+  )
+
+  def fragment(name: String, path: Path): LoreCompiler.SourceFragment = {
+    import scala.jdk.CollectionConverters._
+    val source = Files.lines(path).iterator().asScala.mkString("\n") + "\n" // Ensure that the file ends in a newline.
+    LoreCompiler.SourceFragment(name, source)
+  }
+
   /**
     * Compiles a Lore program from a single source.
     */
-  def fromSingleSource(name: String, source: String): C[(Registry, String)] = {
-    val compiler = new LoreCompiler(List(
-      LoreCompiler.SourceFragment(
-        name,
-        source + "\n" // Ensure that the file ends in a newline.
-      )
-    ))
+  def fromSingleSource(fragment: LoreCompiler.SourceFragment): C[(Registry, String)] = {
+    val compiler = new LoreCompiler(pyramid ++ List(fragment))
     compiler.compile()
   }
 
@@ -27,10 +32,8 @@ object Lore {
     * Compiles a Lore program from a named example within the Lore examples directory.
     */
   def fromExample(name: String): C[(Registry, String)] = {
-    import scala.jdk.CollectionConverters._
-    val sourcePath = Path.of("examples", s"$name.lore")
-    val source = Files.lines(sourcePath).iterator().asScala.mkString("\n") + "\n"
-    fromSingleSource(name, source)
+    val path = Path.of("examples", s"$name.lore")
+    fromSingleSource(fragment(name, path))
   }
 
   /**
