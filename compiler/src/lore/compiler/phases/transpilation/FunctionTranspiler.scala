@@ -11,15 +11,14 @@ class FunctionTranspiler(function: FunctionDefinition, uniqueName: String)(impli
   def transpile: C[String] = {
     assert(!function.isAbstract)
     val parameters = function.parameters.map(_.name).mkString(", ")
-    StmtVisitor.visit(new FunctionTranspilationVisitor(function))(function.body.get).map {
-      case TranspiledNode(auxiliary, expr) =>
-        s"""function $uniqueName($parameters) {
-           |  console.log(`Called function $uniqueName with input: (${function.parameters.map(p => "${" + p.name + "}").mkString(", ")})`);
-           |  $auxiliary
-           |  ${if (!expr.isBlank) s"return $expr;" else "" }
-           |}
-           |
-           |""".stripMargin
+    StmtVisitor.visit(new FunctionTranspilationVisitor(function))(function.body.get).map { chunk =>
+      s"""function $uniqueName($parameters) {
+         |  console.log(`Called function $uniqueName with input: (${function.parameters.map(p => "${" + p.name + "}").mkString(", ")})`);
+         |  ${chunk.statements}
+         |  ${chunk.expression.map(e => s"return $e;").getOrElse("")}
+         |}
+         |
+         |""".stripMargin
     }
   }
 }
