@@ -30,7 +30,7 @@ object LexicalParser {
     * keywords are automatically disallowed as identifiers: only critical keywords have that restriction.
     */
   def keyword[_: P]: P[Unit] = P(criticalKeyword | StringIn(
-    "abstract", "action", "class", "component", "entity", "extends", "function", "in", "label", "mut", "owned by",
+    "abstract", "action", "class", "component", "entity", "extends", "function", "label", "mut", "owned by",
     "overrides", "type", "with",
   ))
 
@@ -44,8 +44,8 @@ object LexicalParser {
     * calling said function is impossible since "construct" gets parsed as a construct call.
     */
   def criticalKeyword[_: P]: P[Unit] = P(StringIn(
-    "const", "construct", "dynamic", "else", "false", "for", "if", "let", "repeat", "return", "super", "this", "true",
-    "while", "yield",
+    "const", "construct", "dynamic", "else", "false", "for", "if", "let", "return", "super", "this", "true",
+    "while",
   ))
 
   def identifier[_: P]: P[String] = P(!criticalKeyword ~ (letter | "_") ~ (letter | digit | "_").rep).!

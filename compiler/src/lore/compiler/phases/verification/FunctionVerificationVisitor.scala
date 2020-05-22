@@ -1,7 +1,6 @@
 package lore.compiler.phases.verification
 
 import lore.compiler.ast.ExprNode.AddressNode
-import lore.compiler.ast.TopLevelExprNode.YieldNode
 import lore.compiler.ast.visitor.VerificationStmtVisitor
 import lore.compiler.ast.{CallNode, ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.Compilation.Verification
@@ -115,14 +114,6 @@ private[verification] class FunctionVerificationVisitor(
     case ReturnNode(expr) =>
       havingSubtype(expr, callTarget.signature.outputType).flatMap { _ =>
         node.typed(NothingType)
-      }
-    case node@YieldNode(expr) =>
-      // TODO: Similar to return statements, yields should not be possible in blocks that are in expression
-      //       position, except if the loop was defined inside the same block which is in the expression
-      //       position.
-      context.currentLoopContext match {
-        case None => Compilation.fail(YieldRequiresLoop(node))
-        case Some(loop) => loop.registerYielded(expr); node.typed(ProductType.UnitType)
       }
 
     // Variables.
@@ -243,11 +234,9 @@ private[verification] class FunctionVerificationVisitor(
       }
 
     // Repetitions.
-    case RepeatWhileNode(condition, _, _) =>
+    case RepetitionNode(condition, body) =>
       havingSubtype(condition, BasicType.Boolean).flatMap { _ =>
-        // TODO: Warn if the list type is [Any]?
-        val loopContext = context.popLoopContext()
-        node.typed(loopContext.listType)
+        node.typed(ListType(body.inferredType))
       }
 
     // Binary operations.
@@ -323,26 +312,19 @@ private[verification] class FunctionVerificationVisitor(
         scope.register(LocalVariable(extractor.variableName, elementType, isMutable = false), extractor.position)
       }
     }.simultaneous.flatMap { _ =>
-      context.pushLoopContext()
       visitBody().flatMap { _ =>
-        val loopContext = context.popLoopContext()
         context.closeScope() // We have to close the scope that we opened for the extractors.
-        node.typed(loopContext.listType)
+        node.typed(ListType(node.body.inferredType))
       }
     }
   }
 
   override def before: PartialFunction[StmtNode, Unit] = {
-    case ExprNode.RepeatWhileNode(_, _, _) => context.pushLoopContext()
     case ExprNode.BlockNode(_) => context.openScope()
   }
 }
 
 private[verification] object FunctionVerificationVisitor {
-  case class YieldRequiresLoop(node: YieldNode)(implicit fragment: Fragment) extends Error(node) {
-    override def message = s"Found a yield, but no surrounding loop. You cannot yield outside a loop."
-  }
-
   case class ImmutableAssignment(addressNode: AddressNode)(implicit fragment: Fragment) extends Error(addressNode) {
     override def message = s"The variable or property you are trying to assign to is immutable."
   }

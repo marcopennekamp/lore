@@ -4,37 +4,39 @@ function max(a: Real, b: Real): Real = if (a > b) a else b
 function max(a: Int, b: Int): Int = if (a > b) a else b
 function add(a: Real, b: Real): Real = a + b
 
-/* function mul(a: Int, b: Int): Int = {
+function mul(a: Int, b: Int): Int = {
   let remaining = a
   const isNegative = remaining < 0
   if (isNegative) remaining = -remaining
   let result = 0
-  repeat while (remaining > 0) {
+  while (remaining > 0) {
     result += b
     remaining -= 1
-    yield b
   }
+  if (isNegative) result = -result
   result
-} */
+}
 
 function double(list: [Real]): [Real] = {
   println(list)
-  for (e in list) {
-    yield e * 2
+  for (e <- list) {
+    e * 2
   }
 }
 function testDouble(): [Real] = {
   println('Test Double')
   const list = [1, 2, 3, 4]
-  double(list)
+  const result = double(list)
+  println('Doubled list: $result')
 }
 
 function combinations(list: [Real]): [Real] = {
-  for (a in list, b in list) {
-    yield (a, b)
+  for (a <- list, b <- list) {
+    (a, b)
   }
 }
 function testCombinations(): [Real] = {
   const list = [1, 2, 3, 4]
-  combinations(list)
+  const result = combinations(list)
+  println('Combinations: $result')
 }

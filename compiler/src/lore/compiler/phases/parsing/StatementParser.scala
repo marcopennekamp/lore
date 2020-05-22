@@ -14,7 +14,7 @@ object StatementParser {
 
   // Parse a handful of top-level expressions before jumping into the deep end.
   def topLevelExpression[_: P]: P[TopLevelExprNode] = {
-    P(Index ~ (variableDeclaration | assignment | `yield` | continuation | expression)).map(withIndex(identity _))
+    P(Index ~ (variableDeclaration | assignment | continuation | expression)).map(withIndex(identity _))
   }
   private def variableDeclaration[_: P]: P[TopLevelExprNode.VariableDeclarationNode] = {
     P(("const" | "let").! ~ identifier ~ TypeParser.typing.? ~ "=" ~ expression).map { case (qualifier, name, tpe, value) =>
@@ -43,7 +43,6 @@ object StatementParser {
     P(Index ~ (prop | variable)).map(withIndex(identity _))
   }
 
-  private def `yield`[_: P]: P[TopLevelExprNode.YieldNode] = P("yield" ~ expression).map(TopLevelExprNode.YieldNode)
   private def continuation[_: P] = {
     def constructorCall = P(("." ~ identifier).? ~ arguments).map(TopLevelExprNode.ConstructorCallNode.tupled)
     def thisCall = P("this" ~ constructorCall)
@@ -53,7 +52,7 @@ object StatementParser {
   }
 
   // Parse expressions. Finally!
-  def expression[_: P]: P[ExprNode] = P(Index ~ (ifElse | repeatWhile | iteration | operatorExpression)).map(withIndex(identity _))
+  def expression[_: P]: P[ExprNode] = P(Index ~ (ifElse | repetition | iteration | operatorExpression)).map(withIndex(identity _))
 
   private def ifElse[_: P]: P[ExprNode] = {
     P("if" ~ "(" ~ expression ~ ")" ~ statement ~ ("else" ~ statement).?).map {
@@ -61,19 +60,12 @@ object StatementParser {
     }
   }
 
-  private def repeatWhile[_: P]: P[ExprNode.RepeatWhileNode] = {
-    def whileCond = P("while" ~ "(" ~ expression ~ ")")
-    def checkBefore = P(whileCond ~ statement).map {
-      case (cond, body) => ExprNode.RepeatWhileNode(cond, body, deferCheck = false)
-    }
-    def checkAfter = P(statement ~ whileCond).map {
-      case (body, cond) => ExprNode.RepeatWhileNode(cond, body, deferCheck = true)
-    }
-    P("repeat" ~ (checkBefore | checkAfter))
+  private def repetition[_: P]: P[ExprNode.RepetitionNode] = {
+    P("while" ~ "(" ~ expression ~ ")" ~ statement).map(ExprNode.RepetitionNode.tupled)
   }
 
   private def iteration[_: P]: P[ExprNode.IterationNode] = {
-    def extractor = P(Index ~ identifier ~ "in" ~ expression).map(withIndex(ExprNode.ExtractorNode))
+    def extractor = P(Index ~ identifier ~ "<-" ~ expression).map(withIndex(ExprNode.ExtractorNode))
     P("for" ~ "(" ~ extractor.rep(1, sep = ",") ~ ")" ~ statement).map {
       case (extractors, stat) => ExprNode.IterationNode(extractors.toList, stat)
     }

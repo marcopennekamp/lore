@@ -71,12 +71,6 @@ object TopLevelExprNode {
   case class AssignmentNode(address: ExprNode.AddressNode, value: ExprNode) extends BinaryNode(address, value) with TopLevelExprNode
 
   /**
-    * Yield is a part of top-level expressions, because we don't want a programmer to yield in the middle of
-    * an expression.
-    */
-  case class YieldNode(expr: ExprNode) extends UnaryNode(expr) with TopLevelExprNode
-
-  /**
     * The continuation of the construction is deferred to some other constructor or the internal construction
     * mechanism. Even though a continuation is only legal as the very last statement of a constructor block,
     * we parse it as a top-level expression to avoid ambiguities with function calls.
@@ -234,7 +228,7 @@ object ExprNode {
   ) extends XaryNode(arguments) with ExprNode with CallNode[DynamicCallTarget]
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Conditional and repetition expressions.
+  // Conditional and loop expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /**
     * @param onTrue Equals UnitNode if it doesn't exist.
@@ -243,10 +237,11 @@ object ExprNode {
   case class IfElseNode(condition: ExprNode, onTrue: StmtNode, onFalse: StmtNode) extends TernaryNode(condition, onTrue, onFalse) with ExprNode
 
   /**
-    * @param deferCheck Whether the condition should be checked after the loop body.
+    * A cross-cutting node for loops.
     */
-  case class RepeatWhileNode(condition: ExprNode, body: StmtNode, deferCheck: Boolean) extends BinaryNode(condition, body) with ExprNode
+  sealed trait LoopNode extends ExprNode
 
-  case class IterationNode(extractors: List[ExtractorNode], body: StmtNode) extends ExprNode
+  case class RepetitionNode(condition: ExprNode, body: StmtNode) extends BinaryNode(condition, body) with LoopNode
+  case class IterationNode(extractors: List[ExtractorNode], body: StmtNode) extends LoopNode
   case class ExtractorNode(variableName: String, collection: ExprNode) extends Node
 }

@@ -9,6 +9,11 @@ import lore.compiler.phases.transpilation.TranspiledChunk.{JsExpr, JsCode}
   */
 case class TranspiledChunk(statements: JsCode, expression: Option[JsExpr]) {
   /**
+    * Maps the chunk's expression to some other expression, keeping statements intact.
+    */
+  def mapExpression(f: JsExpr => JsExpr): TranspiledChunk = TranspiledChunk(statements, expression.map(f))
+
+  /**
     * Returns the chunk's code in one value, including the expression.
     */
   val code: JsCode = statements + expression.getOrElse("")

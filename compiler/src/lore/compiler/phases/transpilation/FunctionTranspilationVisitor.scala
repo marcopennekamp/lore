@@ -6,8 +6,8 @@ import lore.compiler.ast.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.definitions.{FunctionDefinition, InternalCallTarget}
 import lore.compiler.feedback.Error
 import lore.compiler.phases.transpilation.Transpilation.Transpilation
+import lore.compiler.phases.transpilation.TranspiledChunk.JsCode
 import lore.compiler.{Compilation, Fragment, Registry}
-import lore.types.ListType
 
 case class UnsupportedTranspilation(node: StmtNode)(implicit fragment: Fragment) extends Error(node) {
   override def message = s"The Lore compiler doesn't yet support the transpilation of ${node.getClass.getSimpleName}."
@@ -22,15 +22,12 @@ private[transpilation] class FunctionTranspilationVisitor(
   import ExprNode._
   import Transpilation.binary
 
-  private var counter = 0
+  private var uniqueNameCounter = 0
   private def uniqueName(): String = {
-    val name = s"tmp$counter"
-    counter += 1
+    val name = s"tmp$uniqueNameCounter"
+    uniqueNameCounter += 1
     name
   }
-
-  // TODO: We should just remove yield. For now, this is a temporary solution.
-  private var loopContextVarNames: List[String] = Nil
 
   private def default(node: StmtNode): Transpilation = Compilation.fail(UnsupportedTranspilation(node))
 
@@ -38,6 +35,7 @@ private[transpilation] class FunctionTranspilationVisitor(
     case ExprNode.VariableNode(name) => Transpilation.expression(name)
     case IntLiteralNode(value) => Transpilation.expression(value.toString)
     case StringLiteralNode(value) => Transpilation.expression(s"'$value'")
+    case UnitNode => Transpilation.expression(s"${LoreApi.varValues}.unit")
     case _ => default(node)
   }
 
@@ -46,12 +44,7 @@ private[transpilation] class FunctionTranspilationVisitor(
       val modifier = if (isMutable) "let" else "const"
       val code = s"$modifier $name = ${argument.expression.get};"
       Transpilation.statements(argument.statements, code)
-    case TopLevelExprNode.YieldNode(_) =>
-      val loopVar = loopContextVarNames.head
-      Transpilation.statements(
-        argument.statements,
-        s"$loopVar.push(${argument.expression.get});",
-      )
+    case NegationNode(_) => Compilation.succeed(argument.mapExpression(e => s"-$e"))
     case _ => default(node)
   }
 
@@ -70,18 +63,17 @@ private[transpilation] class FunctionTranspilationVisitor(
     case LessThanEqualsNode(_, _) => binary(left, right, "<=")
     case GreaterThanNode(_, _) => binary(left, right, ">")
     case GreaterThanEqualsNode(_, _) => binary(left, right, ">=")
-    case RepeatWhileNode(condition, body, deferCheck) =>
-      /* val result = left.flatMap { (conditionAux, condition) =>
-        right.flatMap { (bodyAux, body) =>
-          // TODO: The result variable should rather be a Lore list, not an array.
-          val varResult = uniqueName()
-          val code =
-            s"""const $varResult = [];
-               |""".stripMargin
-          TranspiledChunk(code, varResult)
-        }
-      } */
-      default(node)
+    case node@RepetitionNode(_, _) =>
+      val condition = left
+      val body = right
+      val loopShell = (bodyCode: String) => {
+        s"""${condition.statements}
+           |while (${condition.expression.get}) {
+           |  $bodyCode
+           |}
+           |""".stripMargin
+      }
+      transpileLoop(node, loopShell, body)
     case _ => default(node)
   }
 
@@ -114,7 +106,7 @@ private[transpilation] class FunctionTranspilationVisitor(
     }
   }
 
-  def transpileArrayBased(node: StmtNode.XaryNode, valuesApiFunction: String, expressions: List[TranspiledChunk]): Transpilation = {
+  def transpileArrayBasedValue(node: StmtNode.XaryNode, valuesApiFunction: String, expressions: List[TranspiledChunk]): Transpilation = {
     Transpilation.combined(expressions) { exprs =>
       val values = exprs.mkString(",")
       s"""${LoreApi.varValues}.$valuesApiFunction(
@@ -134,41 +126,49 @@ private[transpilation] class FunctionTranspilationVisitor(
     case node@DynamicCallNode(_, _) =>
       val actualArguments = expressions.tail
       transpileCall(node.target.name, actualArguments)
-    case node@TupleNode(_) => transpileArrayBased(node, "tuple", expressions)
-    case node@ListNode(_) => transpileArrayBased(node, "list", expressions)
+    case node@TupleNode(_) => transpileArrayBasedValue(node, "tuple", expressions)
+    case node@ListNode(_) => transpileArrayBasedValue(node, "list", expressions)
     case ConcatenationNode(_) => Transpilation.operatorChain(expressions, "+")
     case _ => default(node)
   }
 
   override def visitMap(node: ExprNode.MapNode)(entries: List[(TranspiledChunk, TranspiledChunk)]): Transpilation = default(node)
 
+  /**
+    * Transpiles a loop, combining the scaffolding of loopShell with a correctly transpiled body.
+    */
+  def transpileLoop(node: LoopNode, loopShell: JsCode => JsCode, body: TranspiledChunk): Transpilation = {
+    val varResult = uniqueName()
+    val bodyCode =
+      s"""${body.statements}
+         |${body.expression.map(e => s"$varResult.push($e);").getOrElse("")}
+         |""".stripMargin
+    val loopCode = loopShell(bodyCode)
+    // TODO: This needs to be optimized away if the resulting list isn't used as an expression.
+    val resultVarDeclaration =
+      s"""const $varResult = ${LoreApi.varValues}.list(
+         |  [],
+         |  ${RuntimeTypeTranspiler.transpile(node.inferredType)},
+         |);""".stripMargin
+    val code =
+      s"""$resultVarDeclaration
+         |$loopCode
+         |""".stripMargin
+    Transpilation.chunk(code, Some(varResult))
+  }
+
   override def visitIteration(node: ExprNode.IterationNode)(
     extractors: List[(String, TranspiledChunk)], visitBody: () => Transpilation
   ): Transpilation = {
-    val hasYields = node.inferredType.isInstanceOf[ListType] // If we didn't infer a list type, there weren't any yields.
-    val varResult = uniqueName()
-    loopContextVarNames = varResult +: loopContextVarNames
-    visitBody().map { body =>
-      loopContextVarNames = loopContextVarNames.tail
-      val loop = extractors.map { case (name, node) =>
-        // forEach as defined in lore.runtime.api.Values.
+    visitBody().flatMap { body =>
+      val loopShell = extractors.map { case (name, node) =>
         (inner: String) =>
           s"""${node.statements}
              |${node.expression.get}.forEach($name => {
              |  $inner
              |});""".stripMargin
-      }.foldRight(body.code) { case (enclose, result) => enclose(result) }
-      val resultVarDeclaration = if (hasYields) {
-        s"""const $varResult = ${LoreApi.varValues}.list(
-            |  [],
-            |  ${RuntimeTypeTranspiler.transpile(node.inferredType)},
-            |);""".stripMargin
-      } else ""
-      val code =
-        s"""$resultVarDeclaration
-           |$loop
-           |""".stripMargin
-      TranspiledChunk(code, if (hasYields) Some(varResult) else None)
+      }.foldRight(identity: String => String) { case (enclose, function) => function.andThen(enclose) }
+      transpileLoop(node, loopShell, body)
     }
   }
 }

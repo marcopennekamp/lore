@@ -31,7 +31,7 @@ private class ReturnDeadCodeVisitor()(implicit fragment: Fragment) extends Combi
     case ExprNode.IfElseNode(_, _, _) =>
       // Ignore the condition.
       Compilation.succeed(returns.tail.forall(identity))
-    case ExprNode.RepeatWhileNode(_, _, _) =>
+    case ExprNode.RepetitionNode(_, _) =>
       // Ignore the condition.
       Compilation.succeed(returns.last)
     case ExprNode.IterationNode(_, _) =>
@@ -54,7 +54,7 @@ private class ReturnAllowedApplicator()(implicit fragment: Fragment)
     case ExprNode.BlockNode(statements) => statements.map(statement => visit(statement, isReturnAllowed)).simultaneous.verification
     case ExprNode.IfElseNode(condition, onTrue, onFalse) =>
       (visit(condition, false), visit(onTrue, isReturnAllowed), visit(onFalse, isReturnAllowed)).simultaneous.verification
-    case ExprNode.RepeatWhileNode(condition, body, _) =>
+    case ExprNode.RepetitionNode(condition, body) =>
       (visit(condition, false), visit(body, isReturnAllowed)).simultaneous.verification
     case ExprNode.IterationNode(extractors, body) =>
       (
