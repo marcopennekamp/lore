@@ -50,7 +50,7 @@ function test(maybeX, maybeY, maybeZ, maybeW) {  // Types omitted purposefully.
     y <- maybeY
     // y is available only in this block.
   }
-  with (z <- maybeZ) {
+  for (z <- maybeZ) {
     // z is available only in this block.
   }
   (w <- maybeW) {

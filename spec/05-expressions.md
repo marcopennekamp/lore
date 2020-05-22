@@ -264,7 +264,7 @@ Blocks also give you the luxury of **lexical scoping**, so make sure you declare
 
 ### Multi-Function Calls
 
-**TODO:** In a later version of Lore, we can support a feature such as Swift's trailing closures, maybe add some way to pass two or more closures.
+**TODO:** In a later version of Lore, we can support a feature such as Swift's trailing closures, maybe add some way to pass two or more closures. (Or just multiple parameter lists.)
 
 **Multi-Function calls** are the heart of Lore. Their syntax is simple:
 
@@ -318,72 +318,64 @@ Note that either `statement` (or even `cond`) may be a block. The else part is, 
 
 
 
-### Repetition
+### Loops
 
-**TODO:** Rename to Loops. Otherwise the general name is too close to repeat while.
+**Loops** represent repeating control flow. For now, we support repetition and iteration.
 
-**Repetitions** represent repeating control flow. For now, we support loops and iteration.
+##### Repetition
 
-##### Loops
-
-In Lore, a **loop** repeats some piece of code until a given boolean expression is false. This is expressed by the archetypal Repeat-While:
+In Lore, a **repetition** repeats some piece of code as long as a given boolean expression is true. This is expressed by the archetypal While-Loop:
 
 ```
-repeat while (cond) statement
-repeat statement while (cond)
+while (cond) statement
 ```
 
-The first version checks the condition first, then executes the statement (if the condition is true). The second version executes the expression first, then checks the condition (and terminates the loop if the condition is false).
+We have decided to provide **no support for do-while loops**, because we feel that these kinds of loops are very rarely used, but add noise to the language in the form of an additional keyword being reserved (such as `do` or `repeat`). You should instead work with a function and a while or recursion.
 
 ##### Iteration
 
-An **iteration** iterates over some kind of collection. We define the archetypal For as such:
+An **iteration** iterates over some kind of collection. We define the archetypal For-Loop as such:
 
 ```
-for (e1 in col1, e2 in col2, ...) statement
+for (e1 <- col1, e2 <- col2, ...) statement
 ```
 
-In the syntax above, `col2` is fully iterated for each `e1` and so on, so supplying multiple `in` declarations effectively turns the For into **nested iteration**.
+In the syntax above, `col2` is fully iterated for each `e1` and so on, so supplying multiple extractors effectively turns the For into **nested iteration**.
 
-For now, we only define iteration for **elements in lists and maps**. Ultimately, we want any type defining a monadic `flatMap` to be iterable with a For expression.
+For now, we only define iteration for **elements in lists and maps**. Ultimately, we want any type defining a monadic `flatMap` to be iterable using a For expression.
 
 As we don't support pattern matching yet, **map iteration** looks like this:
 
 ```
-for (kv in m) {
-  const key = get(kv, 0)
-  const value = get(kv, 1)
+for (kv <- m) {
+  const key = kv.key
+  const value = kv.value
 }
 ```
 
 To iterate over a list of indices, you can use a **range** function. Conceptually, it creates a *lazily* evaluated list of indices. We might ultimately support ranges with prettier operators.
 
 ```
-for (i in range(0, 10)) { // 0 inclusive, 10 exclusive
+for (i <- range(0, 10)) { // 0 inclusive, 10 exclusive
   println(i)
 }
 ```
 
 Internally, we can of course replace the range construction with a standard index-increment for-loop. Using a range is certainly more concise and clearer than writing `for (const i = 0; i < 10; i += 1)`. Not that that's Lore code, but it *could* be. *Shudder.*
 
-##### Yield
+##### Loop Expressions
 
-**TODO:** It's quite strange that Lore wants to tend towards functional/monadic handling of collections, but then provides such an imperative way of building the result of a loop. Wouldn't it rather be better if we just put the result of the loop in a list? And then couldn't we just flatten the list afterward?
+Lore loops are expressions. Similar to if-expressions and blocks, the loop body expression determines the result of the loop. However, these evaluations are **aggregated into a list**.
 
-All repetitions return a list of values. When a loop is entered, conceptually, we create an empty list to which elements are supposed to be appended. The **yield expression** is the way to append a value to that list. The yield expression itself evaluates to `()`. It does *not* interrupt program flow, that is, you can yield twice or more in the same iteration.
+Take the following **example:**
 
 ```
-const names = for (animal in animals) yield animal.name
+const names = for (animal <- animals) animal.name
 ```
 
-If `yield` is used, the Lore compiler requires that the value returned by the repetition expression is used, i.e. either assigned to a variable or enclosed in a larger expression.
+The for-loop **aggregates the names** of all animals in a list of type `[String]`. 
 
-In the actual implementation, we can of course **optimize** two cases:
-
-- When the value of a repetition isn't assigned or used, we can forgo creating and filling a list.
-- If there are no `yield` expressions within the block of a repetition, we can simply designate the empty list as the result.
-
-A yield is a **top-level expression**. If no yields are present, the loop evaluates to the unit tuple.
+In the implementation, we can of course **optimize** the following case: When the result of a loop isn't assigned or used, we can forgo creating and filling the list.
 
 
 
