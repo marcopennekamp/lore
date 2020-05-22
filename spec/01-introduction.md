@@ -28,7 +28,7 @@ Hence, here is a **list of features** that will make up the minimum viable langu
 
 On the **language** side:
 
-- **Types:** Intersection types, sum types, product types, list types, map types, class types, component types, label types, abstractness, type inference.
+- **Types:** Intersection types, sum types, product types, list types, map types, class types, component types, label types, simple parametric types, abstractness, type inference.
   - We are excluding function types for now, but will add them very soon after a minimum version has been achieved.
   - Notably, we are excluding less important types such as singleton and envelope types.
 - **Functions:** Multi-functions, function declarations, multiple dispatch, compile-time constraints, callee fixing.
@@ -50,7 +50,7 @@ On the **implementation** side:
 - **Abstract Syntax Tree**
 - **Correctness checks** for multi-function constraints, types, and anything else that needs checking.
 - **Transpiler** from the AST to Javascript.
-- A **Javascript run-time** that handles multiple-dispatch.
+- A **Javascript run-time** that handles multiple-dispatch, and type and value construction.
 
 
 
@@ -58,7 +58,7 @@ On the **implementation** side:
 
 Once we have formulated the MVL, we can deliver **themed updates** that focus on a specific cross-cutting feature. For example, we could update with the following themes:
 
-- The **Namespace** Update (namespaces, companion namespaces, imports)
+- The **Module** Update (modules, imports)
 - The **Closure** Update (anonymous functions, function types, variable capture, function call expressions)
 - The **Option** Update (Option types, option handling)
 - The **Refined Dispatch** Update (Differentiating between dispatchable and static parameters, multiple parameter lists?, dot notation for multi-function calls, multi-functions as operators)

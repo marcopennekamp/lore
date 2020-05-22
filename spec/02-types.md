@@ -120,13 +120,35 @@ Obviously this is a completely fabricated example, but you can see how the algor
 
 ### Parametric Types
 
-Eventually, the goal will be to implement **parametric types** across the board, and provide this feature for classes, functions, and anywhere else it makes sense. For now, we want to keep the MVL simple and forgo parametric types altogether.
+In the MVL, we aim to support a very basic form of **parametric types**. That means we support **type variables** for functions and classes. A type variable's upper bound is always `Any`, for simplicity reasons, and classes can only be invariant; only lists have the ability to be covariant. In multiple-dispatch, a function declared with type variables is treated as if its parameter had the upper bound as its type, which currently is always `Any`. Let's say we define the following function:
+
+ ```
+function append[A](list: [A], element: A): [A] = ...
+ ```
+
+In the context of multiple-dispatch resolution, this function would be registered as `append(list: [Any], element: Any): [Any]`. (This is WRONG. We need to express the relationship that the list type, the element type and the return type have all the same element type.) We can specialize this function:
+
+```
+function append(list: [String], element: String): [String] = ...
+```
+
+This is obviously a specialization and can be used to implement `append` specifically for String elements. However, the following function is not a specialization:
+
+```
+function append(list: [String], element: Int): [Int] = ...
+```
+
+It is a different kind of function altogether, because the element types are different.
+
+**TODO:** It doesn't seem to be quite as straight-forward to implement multiple-dispatch for parametric type as I initially thought. I will have to dig into this more and especially revise all the multi-function definitions with parametric types in mind before I start to implement this.
 
 
 
 ### Typing Rules
 
 For now, we are only defining subtyping rules here.
+
+**TODO:** Add recently added typing rules from the code (such as list subtyping).
 
 ##### Declared Types
 

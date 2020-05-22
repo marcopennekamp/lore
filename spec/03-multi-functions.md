@@ -49,6 +49,8 @@ action name(p1: Input1, p2: Input2, ...) { }
 
 Even though **actions** are defined with a special syntax, they are treated just like functions both in this specification and in the compiler. An action `action f(a: A, b: B, ...) { }` can be declared equivalently as `function f(a: A, b: B, ...): () = { }`. While regular functions can have any expression as their body, an action body has to be a block.
 
+**TODO:** Update to include parametric types.
+
 ---
 
 *Example.* Consider the following definition for a function `add`:
