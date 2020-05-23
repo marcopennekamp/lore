@@ -52,18 +52,17 @@ trait Subtyping {
 
     // The Nothing type is subtype of all types.
     { case (NothingType, _) => true },
-  )
 
-  /**
-    * Whether t1 is a supertype of t2.
-    */
-  def isSupertype(t1: Type, t2: Type): Boolean = isSubtype(t2, t1)
+    // Subtyping with parametric types only happens with multi-functions. If we have a parametric type here,
+    // it is clear that the type variable hasn't been set yet, and so we can only assume its type bounds.
+  )
 
   /**
     * Whether t1 is a subtype of t2.
     */
   def isSubtype(t1: Type, t2: Type): Boolean = {
     // TODO: We might need to use a more complex theorem solver with proper typing rules instead of such an ad-hoc/greedy algorithm.
+    //       This is actually working so far, though, and we need it to be fast because that the runtime reality.
     // t1 is a subtype of t2 if any of the rules are true.
     for (rule <- subtypingRules) {
       if (rule.isDefinedAt((t1, t2)) && rule.apply((t1, t2))) return true
@@ -72,14 +71,19 @@ trait Subtyping {
   }
 
   /**
-    * Whether t1 is a strict supertype of t2.
+    * Whether t1 is a supertype of t2.
     */
-  def isStrictSupertype(t1: Type, t2: Type): Boolean = t1 != t2 && isSupertype(t1, t2)
+  def isSupertype(t1: Type, t2: Type): Boolean = isSubtype(t2, t1)
 
   /**
     * Whether t1 is a strict subtype of t2.
     */
   def isStrictSubtype(t1: Type, t2: Type): Boolean = t1 != t2 && isSubtype(t1, t2)
+
+  /**
+    * Whether t1 is a strict supertype of t2.
+    */
+  def isStrictSupertype(t1: Type, t2: Type): Boolean = t1 != t2 && isSupertype(t1, t2)
 }
 
 object Subtyping extends Subtyping

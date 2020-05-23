@@ -120,27 +120,33 @@ Obviously this is a completely fabricated example, but you can see how the algor
 
 ### Parametric Types
 
-In the MVL, we aim to support a very basic form of **parametric types**. That means we support **type variables** for functions and classes. A type variable's upper bound is always `Any`, for simplicity reasons, and classes can only be invariant; only lists have the ability to be covariant. In multiple-dispatch, a function declared with type variables is treated as if its parameter had the upper bound as its type, which currently is always `Any`. Let's say we define the following function:
+In the MVL, we aim to support a very basic form of **parametric types**. That means we support **type variables** for functions and classes. A type variable's upper bound is always `Any`, for simplicity reasons, and classes can only be invariant; only lists have the ability to be covariant. 
+
+##### Multiple Dispatch
+
+In **multiple-dispatch**, a function with parametric types can be in the fit if the given input type satisfies the constraints of the type variables. We only have one such notion of constraints: Upper type bounds. Hence, any type variables in a function's input type are substituted with their upper type bound, which currently is always `Any`. Let's say we define the following function:
 
  ```
 function append[A](list: [A], element: A): [A] = ...
  ```
 
-In the context of multiple-dispatch resolution, this function would be registered as `append(list: [Any], element: Any): [Any]`. (This is WRONG. We need to express the relationship that the list type, the element type and the return type have all the same element type.) We can specialize this function:
+In the context of multiple-dispatch resolution, this function would be registered as `append(list: [Any], element: Any): [Any]`. We can specialize this function:
 
 ```
 function append(list: [String], element: String): [String] = ...
 ```
 
-This is obviously a specialization and can be used to implement `append` specifically for String elements. However, the following function is not a specialization:
+This is obviously a **specialization** and can be used to implement `append` specifically for String elements. The following function is also a specialization, though not an intuitive one:
 
 ```
 function append(list: [String], element: Int): [Int] = ...
 ```
 
-It is a different kind of function altogether, because the element types are different.
+That function will be chosen if we have a String list and an Int element. 
 
-**TODO:** It doesn't seem to be quite as straight-forward to implement multiple-dispatch for parametric type as I initially thought. I will have to dig into this more and especially revise all the multi-function definitions with parametric types in mind before I start to implement this.
+##### Type Inference
+
+Parametric types in **type inference** are a bit trickier. Inference in a type system with type variables, intersection types, and function types is generally undecidable, so an ad-hoc algorithm would definitely only cover a subset of possible inferences. Since type inference is a compile-time-only process, we don't have as stringent performance requirements as with the subtyping algorithm. Thus, I am considering to use a constraint solver for type inference, even if it's only for local inference.
 
 
 

@@ -49,8 +49,6 @@ action name(p1: Input1, p2: Input2, ...) { }
 
 Even though **actions** are defined with a special syntax, they are treated just like functions both in this specification and in the compiler. An action `action f(a: A, b: B, ...) { }` can be declared equivalently as `function f(a: A, b: B, ...): () = { }`. While regular functions can have any expression as their body, an action body has to be a block.
 
-**TODO:** Update to include parametric types.
-
 ---
 
 *Example.* Consider the following definition for a function `add`:
@@ -107,6 +105,8 @@ $$
 That is, we look at all functions $f \in \mathcal{F}$ and choose only those whose **input types are a supertype** of the given argument type $t$. Hence, we choose functions which could be called with the given argument type. We cannot choose functions that have a more specific input type than the given argument type, because we need to invoke the function with valid arguments. 
 
 We take functions with a **more general input type** into account, because such functions *can* be invoked with a subtype of the input type, i.e. with more specific arguments than needed. This is important for the case in which we cannot find a function that specifically meets the argument type $t$.
+
+Lastly, some functions of the multi-function can contain **parametric types**. As we are looking for fitting functions, we only have to check that a given input type could feasibly satisfy the parametric type constraints. For now, parametric types only have one notion of constraint: upper type bounds. We thus substitute type variables with their type bounds and find the fit as usual.
 
 ---
 
