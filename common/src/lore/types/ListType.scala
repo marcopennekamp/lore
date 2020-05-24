@@ -8,6 +8,8 @@ case class ListType(element: Type) extends Type {
     */
   override def isAbstract = false
 
+  override val isParametric: Boolean = element.isParametric
+
   override def string(parentPrecedence: TypePrecedence): String = s"[${element.string(TypePrecedence.Parenthesized)}]"
   override val hashCode: Int = {
     // We use a product hash here to differentiate the hash code from type hashes.

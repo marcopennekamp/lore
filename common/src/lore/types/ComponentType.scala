@@ -10,6 +10,8 @@ trait ComponentType extends Type {
     */
   override def isAbstract: Boolean = underlying.isAbstract
 
+  override val isParametric = false
+
   override def string(precedence: TypePrecedence): String = s"+$underlying"
   override val hashCode: Int = {
     // We use a product hash here to differentiate the hash code from class type hashes.

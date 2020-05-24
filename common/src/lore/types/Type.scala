@@ -22,6 +22,11 @@ trait Type {
   def isAbstract: Boolean
 
   /**
+    * Whether this type contains type variables.
+    */
+  def isParametric: Boolean
+
+  /**
     * A pretty string representation of the type.
     */
   def string(parentPrecedence: TypePrecedence): String

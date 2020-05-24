@@ -5,7 +5,8 @@ import scala.util.hashing.MurmurHash3
 case class SumType private (types: Set[Type]) extends Type with OperatorType {
   assert(types.nonEmpty)
 
-  override def isAbstract = true
+  override val isAbstract = true
+  override val isParametric: Boolean = types.exists(_.isParametric)
   override protected def precedence: TypePrecedence = TypePrecedence.Sum
   override protected def operands: List[Type] = types.toList
   override protected def operator: String = "|"

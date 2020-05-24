@@ -5,6 +5,7 @@ package lore.types
   */
 object NothingType extends Type {
   // TODO: How does Nothing interact with abstract subtypes, totality constraint, etc.?
-  override def isAbstract = true // TODO: Is this correct?
+  override val isAbstract = true // TODO: Is this correct?
+  override val isParametric = false
   override def string(precedence: TypePrecedence) = "Nothing"
 }

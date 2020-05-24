@@ -120,6 +120,8 @@ Obviously this is a completely fabricated example, but you can see how the algor
 
 ### Parametric Types
 
+**TODO:** How do parametric functions and abstract functions play together?
+
 In the MVL, we aim to support a very basic form of **parametric types**. That means we support **type variables** for functions and classes. A type variable's upper bound is always `Any`, for simplicity reasons, and classes can only be invariant; only lists have the ability to be covariant.
 
 ##### Multiple Dispatch

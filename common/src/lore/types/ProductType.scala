@@ -11,7 +11,9 @@ case class ProductType(components: List[Type]) extends Type {
   /**
     * Whether the product type is abstract. A product type is abstract if one of its component types is abstract.
     */
-  override def isAbstract: Boolean = components.exists(_.isAbstract)
+  override val isAbstract: Boolean = components.exists(_.isAbstract)
+
+  override val isParametric: Boolean = components.exists(_.isParametric)
 
   override def string(parentPrecedence: TypePrecedence): String = {
     s"(${components.map(_.string(TypePrecedence.Parenthesized)).mkString(", ")})"

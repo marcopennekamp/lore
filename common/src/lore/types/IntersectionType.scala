@@ -26,18 +26,20 @@ case class IntersectionType private (types: Set[Type]) extends Type with Operato
     * Note that we consider the idea of augmenting label types here. If the intersection type contains at least one
     * non-label type, we ignore label types in the consideration.
     */
-  override def isAbstract: Boolean = {
+  override val isAbstract: Boolean = {
     val exceptLabels = types.filter(!_.isInstanceOf[LabelType])
 
     // If the intersection type consists only of labels, it is NOT an augmented type and thus abstract since
     // non-augmenting label types are abstract.
     if (exceptLabels.isEmpty) {
-      return true
+      true
+    } else {
+      // In all other cases, we decide abstractness WITHOUT taking augmenting labels into account.
+      exceptLabels.exists(_.isAbstract)
     }
-
-    // In all other cases, we decide abstractness WITHOUT taking augmenting labels into account.
-    exceptLabels.exists(_.isAbstract)
   }
+
+  override val isParametric: Boolean = types.exists(_.isParametric)
 
   override protected def precedence: TypePrecedence = TypePrecedence.Intersection
   override protected def operands: List[Type] = types.toList
