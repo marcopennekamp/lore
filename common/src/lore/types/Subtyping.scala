@@ -24,6 +24,9 @@ trait Subtyping {
     //       we have to move away from the notion of subtyping and to a concept of "instance equality", which
     //       calculates equality on the basis of whether one type can be equal to the other type if all type
     //       variables are instanced correctly.
+    { case (v1: TypeVariable, v2: TypeVariable) => isSubtype(v1.bound, v2.bound) },
+    { case (v1: TypeVariable, t2) => isSubtype(v1.bound, t2) },
+    { case (t1, v2: TypeVariable) => isSubtype(t1, v2.bound) },
 
     // An intersection type i1 is the subtype of an intersection type i2, if all types in i2 are subsumed by i1.
     { case (i1: IntersectionType, i2: IntersectionType) => i2.types.forall(ic2 => i1.isAnyComponentSubtypeOf(ic2)) },
@@ -74,6 +77,22 @@ trait Subtyping {
       val types = values.getOrElse(tv, Nil)
       values.put(tv, tpe +: types)
     }
+    def isConsistent: Boolean = {
+      // TODO: This is a simplified version of what we actually need to implement.
+      values.forall { case (variable, assignments) =>
+        // TODO: Ensure that the type bounds are consistent, especially for type bounds such as B <: A for
+        //       type variables A and B.
+        assignments.sliding(2).forall {
+          case List(left, right) =>
+            // Since equality is transitive, we don't have to compare all types to each other.
+            left == right
+          case List(_) =>
+            // List(_).sliding(2) will return List(_), so we have to manually evaluate to true for the special
+            // case of one element lists.
+            true
+        }
+      }
+    }
   }
 
   def possibleSubstitutions(t1: Type, t2: Type)(implicit substitutions: Substitutions): Unit = {
@@ -112,18 +131,24 @@ trait Subtyping {
   }
 
   /**
+    * Whether t1 is a subtype of t2.
+    *
     * To check subtyping with parametric types, we have to ensure two properties:
     *   1. t1 is a subtype of t2 when parametric types are viewed as their type bounds.
-    *   2.
-    */
-  def parametricIsSubtype(t1: Type, t2: Type): Boolean = {
-    ???
-  }
-
-  /**
-    * Whether t1 is a subtype of t2.
+    *   2. Assignments from t1 to type variables of t2 are consistent.
     */
   def isSubtype(t1: Type, t2: Type): Boolean = {
+    // If t2 is parametric, we have to check that assignments to its type variables are consistent. This effectively
+    // ensures that all instances of the type variable are assigned .
+    if (t2.isParametric) {
+      implicit val substitutions: Substitutions = new Substitutions
+      possibleSubstitutions(t1, t2)
+      if (!substitutions.isConsistent) {
+        println("Inconsistent substitutions.")
+        return false
+      }
+    }
+
     // TODO: We might need to use a more complex theorem solver with proper typing rules instead of such an ad-hoc/greedy algorithm.
     //       This is actually working so far, though, and we need it to be fast because of the runtime reality.
     // t1 is a subtype of t2 if any of the rules are true.
