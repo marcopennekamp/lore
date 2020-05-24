@@ -1,43 +1,11 @@
 package lore.compiler.types.test
 
-import lore.compiler.types.{CompilerSubtyping, LabelType}
-import lore.compiler.{Registry, types}
-import lore.compiler.test.{BaseSpec, TypeSyntax}
-import lore.types.{BasicType, ListType, MapType, NothingType, Type}
+import lore.compiler.types.CompilerSubtyping
+import lore.types._
 import org.scalatest.Assertion
 
-class LeastUpperBoundSpec extends BaseSpec with TypeSyntax {
-  implicit val registry: Registry = prepareRegistry("test/types/lub")
-  private def havingClass(name: String): types.ClassType = registry.getType(name).get.asInstanceOf[types.ClassType]
-  private def havingLabel(name: String): LabelType = registry.getType(name).get.asInstanceOf[LabelType]
-
-  private val Animal = havingClass("Animal")
-  private val Bird = havingClass("Bird")
-  private val Mammal = havingClass("Mammal")
-  private val Fish = havingClass("Fish")
-  private val Chicken = havingClass("Chicken")
-  private val Penguin = havingClass("Penguin")
-  private val Raven = havingClass("Raven")
-  private val Human = havingClass("Human")
-  private val Cat = havingClass("Cat")
-  private val ScottishFold = havingClass("ScottishFold")
-  private val Unicorn = havingClass("Unicorn")
-  private val Goldfish = havingClass("Goldfish")
-
-  private val Status = havingLabel("Status")
-  private val Healthy = havingLabel("Healthy")
-  private val Sick = havingLabel("Sick")
-
-  private val Wheel = havingClass("Wheel")
-  private val CoolWheel = havingClass("CoolWheel")
-  private val CheapWheel = havingClass("CheapWheel")
-  private val Engine = havingClass("Engine")
-  private val GasEngine = havingClass("GasEngine")
-  private val ElectricEngine = havingClass("ElectricEngine")
-  private val Car = havingClass("Car")
-  private val Cycle = havingClass("Cycle")
-  private val Motorcycle = havingClass("Motorcycle")
-  private val Bicycle = havingClass("Bicycle")
+class LeastUpperBoundSpec extends TypeSpec {
+  import LubExample._
 
   private implicit class LubExtension(testCase: (Type, Type)) {
     val (t1, t2) = testCase

@@ -9,7 +9,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.{MatchResult, Matcher}
 
-abstract class BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside with Inspectors {
+trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside with Inspectors {
   lazy val abstractRegistry: Registry = prepareRegistry("abstract")
   lazy val areaRegistry: Registry = prepareRegistry("area")
   lazy val concatRegistry: Registry = prepareRegistry("concat")
