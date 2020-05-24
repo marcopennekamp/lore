@@ -140,7 +140,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     ))
   }
 
-  it should "parse conditionals and repetitions correctly" in {
+  it should "parse conditionals and loops correctly" in {
     "if (true) false" --> IfElseNode(BoolLiteralNode(true), BoolLiteralNode(false), UnitNode)
     "if (i < 25) { i += 1 }" --> IfElseNode(
       LessThanNode(vi, IntLiteralNode(25)),
@@ -171,25 +171,23 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     // Dangling else! What will the parser choose?
     "if (x) if (b) a else c" --> IfElseNode(vx, IfElseNode(vb, va, vc), UnitNode)
 
-    // Repeat-while repetitions.
-    "repeat while (a > b) a /= 2" --> RepeatWhileNode(
+    // While loops.
+    "while (a > b) a /= 2" --> RepetitionNode(
       GreaterThanNode(va, vb),
       AssignmentNode(va, DivisionNode(va, IntLiteralNode(2))),
-      deferCheck = false,
     )
-    "repeat { println('Morning, World') } while (sunRisesOn(earth))" --> RepeatWhileNode(
+    "while (sunRisesOn(earth)) { println('Morning, World') }" --> RepetitionNode(
       SimpleCallNode("sunRisesOn", None, List(VariableNode("earth"))),
       BlockNode(List(
         SimpleCallNode("println", None, List(StringLiteralNode("Morning, World"))),
       )),
-      deferCheck = true,
     )
 
     // Iterations.
     """
     |{
     |  const people: [String] = ['abra', 'betty', 'carl']
-    |  for (name in people) println('Hey, $name!')
+    |  for (name <- people) println('Hey, $name!')
     |}
     |""".stripMargin --> BlockNode(List(
       VariableDeclarationNode(
@@ -206,9 +204,9 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
         )),
       ),
     ))
-    "for (a in as, b in bs) yield a + b" --> IterationNode(
+    "for (a <- as, b <- bs) a + b" --> IterationNode(
       List(ExtractorNode("a", VariableNode("as")), ExtractorNode("b", VariableNode("bs"))),
-      YieldNode(AdditionNode(va, vb)),
+      AdditionNode(va, vb),
     )
   }
 
@@ -428,22 +426,22 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
       VariableDeclarationNode("a", isMutable = false, None, IntLiteralNode(0)),
       UnitNode,
     )
-    "for (e in list) const a = e" --> IterationNode(
+    "for (e <- list) const a = e" --> IterationNode(
       List(ExtractorNode("e", VariableNode("list"))),
       VariableDeclarationNode("a", isMutable = false, None, VariableNode("e")),
     )
-    "if (false) return 0 else yield 0" --> IfElseNode(
+    "if (false) return 0 else 0" --> IfElseNode(
       BoolLiteralNode(false),
       ReturnNode(IntLiteralNode(0)),
-      YieldNode(IntLiteralNode(0)),
+      IntLiteralNode(0),
     )
-    "for (e in list) return e" --> IterationNode(
+    "for (e <- list) return e" --> IterationNode(
       List(ExtractorNode("e", VariableNode("list"))),
       ReturnNode(VariableNode("e")),
     )
-    "for (e in list) yield e" --> IterationNode(
+    "for (e <- list) e" --> IterationNode(
       List(ExtractorNode("e", VariableNode("list"))),
-      YieldNode(VariableNode("e")),
+      VariableNode("e"),
     )
   }
 }

@@ -20,7 +20,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
     |  function pow(x: Real, exp: Int): Real = {
     |    let e = exp
     |    let result = 1.0
-    |    repeat while (e > 0) {
+    |    while (e > 0) {
     |      result *= x
     |      e -= 1
     |    }
@@ -36,13 +36,12 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
       Some(BlockNode(List(
         VariableDeclarationNode("e", isMutable = true, None, VariableNode("exp")),
         VariableDeclarationNode("result", isMutable = true, None, RealLiteralNode(1.0)),
-        RepeatWhileNode(
+        RepetitionNode(
           GreaterThanNode(VariableNode("e"), IntLiteralNode(0)),
           BlockNode(List(
             AssignmentNode(VariableNode("result"), MultiplicationNode(VariableNode("result"), vx)),
             AssignmentNode(VariableNode("e"), SubtractionNode(VariableNode("e"), IntLiteralNode(1))),
           )),
-          deferCheck = false,
         ),
         VariableNode("result"),
       ))),
