@@ -148,6 +148,24 @@ class Player extends Character {
 
 We can add a `with super(...)` to the construct statement which allows us to **call any superclass constructor**.
 
+##### Parametric Types
+
+Just like functions, classes can be **parameterized over types:**
+
+```
+class Either  {
+  
+}
+
+Tree(A, B)
+
+class Tree A {
+  
+}
+```
+
+**TODO:** Can we support components declared via a type parameter? This would be super useful, but could mess with existing constraints.
+
 ##### Post-MVL Extensions
 
 - **Visibility declarations** like public, private, protected, etc. Whatever we need.

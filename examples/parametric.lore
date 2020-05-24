@@ -1,0 +1,148 @@
+
+
+
+function identity[A](a: A): A = a
+function identity[A <: String](a: A): A = a
+
+
+
+function combine[A <: C](v1: A, v2: A): A = ...
+
+
+
+
+function foo[A, B](x: A | B, y: B): () = ...
+
+foo(5, 'a')
+(Int, String) <: (A | B, B)
+   A = Int AND B = Int
+OR A = Int AND B = String
+
+foo('test', 'b')
+(String, String) <: (A | B, B)
+   A = String AND B = String
+
+// Insight: Sum type substitutions lead to a sort of branching.
+
+
+function bar[A, B](x: A & B, y: B): [B] = [x, y]
+
+// Assume entities E1 & +C1 and E2 & +C1.
+bar(E1(), E2())
+(E1, E2) <: (A & B, B)
+      A = E1 & +C1
+   OR B = E1 & +C1
+   ???
+=>    A = E1 AND B = +C1
+   OR A = +C1 AND B = E1
+   ???
+
+// Insight: Complexity quickly explodes. Maybe don't support sum and intersection types with type variables
+//          from the start?
+
+
+function append[A](as: [A], a: A): [A] = ...
+
+// Assume cs: [+C1], e: E1 & +C1
+append(cs, e)
+([+C1], E1 & +C1) <: ([A], A)
+   A = +C1 AND A = E1 & +C1
+=> A = +C1
+
+// Insight: We must require type variables to be instanced over equality modulo intersection type equivalences.
+//          Meaning: If we substitute multiple types A & B, A, A & C into a type variable, if we can take an
+//          unambiguous type T for which T & S for any S holds for all substitutions (A in the given example),
+//          that T is valid. That's easy to see: If we have a value of type A & B, it MUST be able to be treated
+//          EXACTLY like a value of type A or B, down to parametric polymorphism.
+
+
+append(['A'], 'B')
+([String], String) <: ([A], A) ?
+
+Substitutions:
+- A => String
+- A => String
+Consistent!
+
+Subtyping:
+- [String] <: [Any]
+- String <: Any
+Fits!
+
+
+foo[X](x: X, y: Any): Real = 1
+foo[Y <: Real](x: Real, y: Y): Real = 2
+
+(Real, Y <: Real) <: (X, Any) ?
+
+Substitutions:
+- X => Real
+Consistent!
+
+Subtyping:
+- Real <: Any
+- Real <: Any
+Fits!
+
+
+1. tail[X](x: [X]) : [X] = ...
+2. tail[X <: Real](x: [X]): [X] = ...
+3. tail(x: [Int]): [Int] = ...
+
+(1) and (2)
+([X1 <: Real]) <: ([X2]) ?
+- Substitutions: Consistent!
+  - X2 => X1
+- Subtyping: Fits!
+  - Real <: Any
+
+(2) and (3)
+([Int]) <: ([X <: Real]) ?
+- Substitutions: Consistent!
+  - X => Int
+- Subtyping: Fits!
+  - Int <: Real
+
+(1) and (3)
+([Int]) <: ([X]) ?
+- Substitutions: Consistent!
+  - X => Int
+- Subtyping: Fits!
+  - Int <: Any
+
+
+minimumJX <: R, Y <: ZK p: PairJX, Y K : R
+`
+ ́
+minimumJX <: Z, Y <: RK p: PairJX, Y K : R
+minimumJX <: Z, Y <: ZK p: PairJX, Y K : Z
+
+
+foo[A](collection: C[A], element: A): C[A]
+foo(C([5]), 'Haha')
+
+(C[Int], String) <: (C[A], A)
+- Substitutions: Inconsistent! Not a subtype.
+  - A => Int
+  - A => String
+- Subtyping:
+  - C[Int] <: C[Any]   FALSE (C is not covariant), but SHOULD be true. So we need to take that into account...
+                       Idea: Check instance equality instead of subtyping.
+  - String <: Any
+
+
+foo[A, B <: A](collection: C[A], element: B): C[A] = ...
+foo(C([Real]), 5)
+
+(C[Real], Int) <: (C[A], B <: A)
+- Substitutions: Consistent!
+  - A => Real
+  - B => Int
+  - Check variable relationships:
+    - B <: A means Int <: Real
+- Subtyping: Fits!
+  - C[Real] <: C[A]
+    - Real =%= A ==> Real <: Any
+  - Int <: A ==> Int <: Any  <--- This might actually become a problem. My intuition tells me that we need to compare
+                                  against the instanced value of A, Real, here. Can we find an example where this
+                                  naive check actually fails?

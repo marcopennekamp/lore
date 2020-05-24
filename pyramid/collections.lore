@@ -10,3 +10,4 @@ function append(list: [String], element: String): [String] = dynamic[[String]]('
 //       interface for Javascript arrays, just in case they are needed by the developer. This would be the place
 //       to do so. However, we would first need some way to define a class whose implementation is deferred to
 //       Javascript, much like dynamic calls do for functions.
+//       Arrays could be typed #[T] with a constructor #[t1, t2, t3].

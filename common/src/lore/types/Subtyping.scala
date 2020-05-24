@@ -1,5 +1,7 @@
 package lore.types
 
+import scala.collection.mutable
+
 trait Subtyping {
   /**
     * We define subtyping like this so that we can test all rules when the pattern matches multiple rules.
@@ -14,6 +16,14 @@ trait Subtyping {
     { case (p1: ComponentType, p2: ComponentType) => isSubtype(p1.underlying, p2.underlying) },
     // An entity type e1 is a subtype of a component type p2 if e1 has a component type p1 that is a subtype of p2.
     { case (e1: ClassType, p2: ComponentType) if e1.isEntity => e1.componentTypes.exists(p1 => isSubtype(p1, p2)) },
+
+    // Whether t1 is a subtype of a type variable t2 essentially comes down to type bounds. This isn't sufficient
+    // to check all properties that pertain to parameterized multi-functions, but covers the "subtyping" component.
+    // TODO: We have a slight problem: When a class type is invariant, we don't want C[String] to be a subtype of
+    //       C[Any], UNLESS we really have a C[String] <: C[X <: Any]. Maybe to check types against type variables,
+    //       we have to move away from the notion of subtyping and to a concept of "instance equality", which
+    //       calculates equality on the basis of whether one type can be equal to the other type if all type
+    //       variables are instanced correctly.
 
     // An intersection type i1 is the subtype of an intersection type i2, if all types in i2 are subsumed by i1.
     { case (i1: IntersectionType, i2: IntersectionType) => i2.types.forall(ic2 => i1.isAnyComponentSubtypeOf(ic2)) },
@@ -34,9 +44,9 @@ trait Subtyping {
     // A product type tt1 is the subtype of a product type tt2, if both types have the same number of component types
     // and each component type of tt1 is a subtype of the component type in tt2 that is at the same position.
     {
-      case (tt1: ProductType, tt2: ProductType) =>
-        tt1.components.size == tt2.components.size && tt1.components.zip(tt2.components).forall {
-          case (ttc1, ttc2) => isSubtype(ttc1, ttc2)
+      case (p1: ProductType, p2: ProductType) =>
+        p1.components.size == p2.components.size && p1.components.zip(p2.components).forall {
+          case (c1, c2) => isSubtype(c1, c2)
         }
     },
 
@@ -52,17 +62,70 @@ trait Subtyping {
 
     // The Nothing type is subtype of all types.
     { case (NothingType, _) => true },
-
-    // Subtyping with parametric types only happens with multi-functions. If we have a parametric type here,
-    // it is clear that the type variable hasn't been set yet, and so we can only assume its type bounds.
   )
+
+  // TODO: For later: If we want to support sum types and intersection types, they (kind of) require us to
+  //       branch with the substitution, as outlined below.
+  class SubstitutionFamily
+
+  class Substitutions {
+    private val values = mutable.HashMap[TypeVariable, List[Type]]()
+    def substitute(tv: TypeVariable, tpe: Type): Unit = {
+      val types = values.getOrElse(tv, Nil)
+      values.put(tv, tpe +: types)
+    }
+  }
+
+  def possibleSubstitutions(t1: Type, t2: Type)(implicit substitutions: Substitutions): Unit = {
+    def unsupportedSubstitution: Nothing = {
+      throw new RuntimeException("Intersection and sum type type variable substitutions are not yet supported.")
+    }
+    (t1, t2) match {
+      case (_, tv2: TypeVariable) => substitutions.substitute(tv2, t1)
+      // TODO: Substitute type variables in class types.
+      case (l1: ListType, l2: ListType) => possibleSubstitutions(l1.element, l2.element)
+      case (m1: MapType, m2: MapType) =>
+        // TODO: Is this correct?
+        possibleSubstitutions(m1.key, m2.key)
+        possibleSubstitutions(m1.value, m2.value)
+      case (p1: ProductType, p2: ProductType) =>
+        if (p1.components.size == p2.components.size) {
+          p1.components.zip(p2.components).foreach { case (c1, c2) => possibleSubstitutions(c1, c2) }
+        }
+
+      // Substituting types into intersection types and sum types is quite complex, since the substitution mechanism
+      // suddenly has more than one option where to substitute into. Take, for example, a sum type A | B, in which we
+      // try to substitute a type C. Should A or B become C? Surely not both A and B can be C. And even if we have a
+      // structurally similar type C | D, should A = C and B = D or A = D and B = C? There are multiple possibilities.
+      // We don't have to assign variables perfectly to check for subtyping, but there are some possibilities which
+      // will lead to the answer "not a subtype", while others will lead to the answer "is a subtype". Hence, we have
+      // to consider all these possibilities, which makes the algorithm vastly more complex.
+      case (_: IntersectionType, _) => unsupportedSubstitution
+      case (_, _: IntersectionType) => unsupportedSubstitution
+      case (_: SumType, _) => unsupportedSubstitution
+      case (_, _: SumType) => unsupportedSubstitution
+
+      // In all other cases, there is no need to substitute anything. Note that component types can't contain
+      // type variables, currently, as they expect a class type.
+      case _ =>
+    }
+  }
+
+  /**
+    * To check subtyping with parametric types, we have to ensure two properties:
+    *   1. t1 is a subtype of t2 when parametric types are viewed as their type bounds.
+    *   2.
+    */
+  def parametricIsSubtype(t1: Type, t2: Type): Boolean = {
+    ???
+  }
 
   /**
     * Whether t1 is a subtype of t2.
     */
   def isSubtype(t1: Type, t2: Type): Boolean = {
     // TODO: We might need to use a more complex theorem solver with proper typing rules instead of such an ad-hoc/greedy algorithm.
-    //       This is actually working so far, though, and we need it to be fast because that the runtime reality.
+    //       This is actually working so far, though, and we need it to be fast because of the runtime reality.
     // t1 is a subtype of t2 if any of the rules are true.
     for (rule <- subtypingRules) {
       if (rule.isDefinedAt((t1, t2)) && rule.apply((t1, t2))) return true

@@ -120,14 +120,26 @@ Obviously this is a completely fabricated example, but you can see how the algor
 
 ### Parametric Types
 
-In the MVL, we aim to support a very basic form of **parametric types**. That means we support **type variables** for functions and classes. A type variable's upper bound is always `Any`, for simplicity reasons, and classes can only be invariant; only lists have the ability to be covariant. 
+In the MVL, we aim to support a very basic form of **parametric types**. That means we support **type variables** for functions and classes. A type variable's upper bound is always `Any`, for simplicity reasons, and classes can only be invariant; only lists have the ability to be covariant.
 
 ##### Multiple Dispatch
 
 In **multiple-dispatch**, a function with parametric types can be in the fit if the given input type satisfies the constraints of the type variables. We only have one such notion of constraints: Upper type bounds. Hence, any type variables in a function's input type are substituted with their upper type bound, which currently is always `Any`. Let's say we define the following function:
 
  ```
-function append[A](list: [A], element: A): [A] = ...
+@type(A)
+function append(list: [A], element: A): [A] = ...
+// This "complicated" syntax makes it harder to specify type variable
+// for functions, yes, but we want the type inference algorithm to do
+// this work, so specifying a type like this should only be needed in
+// exceptional circumstances. Hence, the more complex syntax may help
+// users to AVOID this pattern unless absolutely necessary. It solves
+// the issue, in addition, of not needing the stupid pointy brackets.
+@type(Int) append([1, 2, 3], 4)
+append([1, 2, 3], 4)@type(Int)
+
+function append<A>(list: [A], element: A): [A] = ...
+append<Int>([1, 2, 3], 4)
  ```
 
 In the context of multiple-dispatch resolution, this function would be registered as `append(list: [Any], element: Any): [Any]`. We can specialize this function:
@@ -142,7 +154,51 @@ This is obviously a **specialization** and can be used to implement `append` spe
 function append(list: [String], element: Int): [Int] = ...
 ```
 
-That function will be chosen if we have a String list and an Int element. 
+That function will be chosen if we have a String list and an Int element.
+
+WRONG: We have to ensure that type variables stay the same so that invariant collections and such don't get busted at run-time. For example:
+
+```
+function foo[A](collection: C[A], element: A): C[A] = {
+  // Add the element to the collection. The collection is invariant.
+}
+
+// Then if we call the function like this:
+// collection: C[Int]
+foo(collection, 'Haha')
+// If we just checked whether the actual types fit the type bounds,
+// we would permit adding a String value to the Int collection. This
+// is obviously VERY wrong. Hence, we have to ensure that all instances
+// of A are compatible with each other.
+```
+
+Note that in the above example, at compile-time AND at run-time, the collection type and the element type MUST be equal. We could say "but Mr. Typechecker we can add a value of A1 <: A to C[A], so why can't we have a foo(C[A], A1)?" The problem is that the compiler can't decide in general what the actual collection type is supposed to be. Is it C[A] or C[A1]? This is tricky to solve in the general case, even if the example is straight-forward. Luckily, there is a very easy way to fix this:
+
+```
+function foo[A, B <: A](collection: C[A], element: B): C[A] = ...
+```
+
+And boom, the compiler can deduce that the collection is C[A] and even values of a subtype of A can be food (whatever that is) to C. This doesn't require C to be covariant, of course.
+
+INSIGHT: I am quite certain that this should not be possible with multiple dispatch (for example):
+
+```
+foo[Real](numbers, 5)
+```
+
+Of course, this is quite idiomatic in languages like Scala. We should be able to specify the type parameter if it isn't being inferred correctly, right? But with multiple dispatch, we are MOVING TYPE PARAMETER ASSIGNMENT TO THE RUNTIME, because the type parameter is essentially part of the dispatch decision. SO: At compile time, we should only check whether such a call is valid, without giving the user the ability to specify the type parameters. This also means that Julia's where syntax suddenly makes a lot of fucking sense!
+
+It also means that we should place a bit more focus on fixed functions. Fixed function calls are useful, but maybe we should introduce a second class of functions outside the multi-function universe that can still take type parameters. This would allow a programmer to use compile-time magic similar to what Scala does with its polymorphic functions. The best of both worlds, so to speak.
+
+*If* we need a constraint solver for this, employ the following heuristic for subtyping `A <: B`:
+
+1. If both A and B are monomorphic, use the existing greedy subtyping algorithm.
+2. Possibly, if A is monomorphic and B is polymorphic, extend the greedy subtyping algorithm to handle parameterized types.
+3. If both A and B are polymorphic, use a constraint solver.
+
+Before we employ such a heuristic, we should check the performance of the constraint solver against the performance of the greedy algorithm. If the constraint solver performs almost equally well, we should consider using only the constraint solver.
+
+Performance is not a problem at compile-time, of course. But at run-time, we need to ensure that subtyping relations are computed as quickly as possible, as subtyping is a vital component of multiple dispatch. Although, if we employ caching, we might optimize away a huge part of this performance overhead. Additionally, we can further optimize by introducing compile-time dispatch heuristics for, e.g., leaf functions being called directly, dispatching to subsets of the dispatch graph, and so on. We can rely on the fact that we always have the whole program available to the compiler, since Lore currently requires the whole source of all dependencies to be available as well. We may want to introduce more modularity in the future, but then we can change heuristics as needed.
 
 ##### Type Inference
 
