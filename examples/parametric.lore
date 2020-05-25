@@ -146,3 +146,15 @@ foo(C([Real]), 5)
   - Int <: A ==> Int <: Any  <--- This might actually become a problem. My intuition tells me that we need to compare
                                   against the instanced value of A, Real, here. Can we find an example where this
                                   naive check actually fails?
+
+class T1
+class T2
+
+foo(C([T1()]), T2())
+
+(C[T1], T2) <: (C[A], B <: A) ?
+- Substitutions: Inconsistent!
+  - A => T1
+  - B => T2
+  - Check variable relationships:
+    - B <: A means T2 <: T1 <--- false!
