@@ -72,26 +72,66 @@ trait Subtyping {
   class SubstitutionFamily
 
   class Substitutions {
-    private val values = mutable.HashMap[TypeVariable, List[Type]]()
-    def substitute(tv: TypeVariable, tpe: Type): Unit = {
-      val types = values.getOrElse(tv, Nil)
-      values.put(tv, tpe +: types)
+    private val assignments = mutable.HashMap[TypeVariable, List[Type]]()
+    private var areAssignmentsCompatible = false
+
+    /**
+      * Assigns the given type to the type variable.
+      */
+    def assign(tv: TypeVariable, tpe: Type): Unit = {
+      val types = assignments.getOrElse(tv, Nil)
+      assignments.put(tv, tpe +: types)
     }
-    def isConsistent: Boolean = {
-      // TODO: This is a simplified version of what we actually need to implement.
-      values.forall { case (variable, assignments) =>
-        // TODO: Ensure that the type bounds are consistent, especially for type bounds such as B <: A for
-        //       type variables A and B.
+
+    /**
+      * In the given type, replaces all instances of type variables registered here with their assigned representative.
+      * You must have checked for assignment compatibility first (by reading isConsistent for the first time).
+      */
+    def substituteInto(in: Type): Type = {
+      if (!areAssignmentsCompatible) {
+        throw new RuntimeException("Assignments are incompatible or haven't been checked yet!")
+      }
+
+      in match {
+        case tv: TypeVariable => assignments.get(tv) match {
+          case None => tv
+          case Some(types) => types.head
+        }
+        case ProductType(components) => ProductType(components.map(substituteInto))
+        case SumType(types) => SumType(types.map(substituteInto))
+        case IntersectionType(types) => IntersectionType(types.map(substituteInto))
+        case ListType(element) => ListType(substituteInto(element))
+        case MapType(key, value) => MapType(substituteInto(key), substituteInto(value))
+        case t => t
+      }
+    }
+
+    /**
+      * Whether these substitutions are consistent. We essentially check two properties:
+      *   1. All types assigned to the same variable are compatible (equal) to each other.
+      *   2. Type assignments are consistent with type bounds.
+      */
+    lazy val isConsistent: Boolean = {
+      // Check the "compatible assignments" property.
+      areAssignmentsCompatible = assignments.forall { case (_, assignments) =>
         assignments.sliding(2).forall {
           case List(left, right) =>
             // Since equality is transitive, we don't have to compare all types to each other.
             left == right
           case List(_) =>
             // List(_).sliding(2) will return List(_), so we have to manually evaluate to true for the special
-            // case of one element lists.
+            // case of one-element lists.
             true
         }
       }
+
+      if (areAssignmentsCompatible) {
+        // Check the "type bounds" property.
+        assignments.forall { case (variable, representative :: _) =>
+          val actualBound = substituteInto(variable.bound)
+          isSubtype(representative, actualBound)
+        }
+      } else false
     }
   }
 
@@ -100,7 +140,7 @@ trait Subtyping {
       throw new RuntimeException("Intersection and sum type type variable substitutions are not yet supported.")
     }
     (t1, t2) match {
-      case (_, tv2: TypeVariable) => substitutions.substitute(tv2, t1)
+      case (_, tv2: TypeVariable) => substitutions.assign(tv2, t1)
       // TODO: Substitute type variables in class types.
       case (l1: ListType, l2: ListType) => possibleSubstitutions(l1.element, l2.element)
       case (m1: MapType, m2: MapType) =>
