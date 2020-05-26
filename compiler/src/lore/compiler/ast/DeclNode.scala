@@ -12,18 +12,22 @@ object DeclNode {
     *             represent TopLevelExprNode.
     */
   case class FunctionNode(
-    name: String, parameters: List[ParameterNode], outputType: TypeExprNode, body: Option[ExprNode],
+    name: String, parameters: List[ParameterNode], outputType: TypeExprNode, typeVariables: List[TypeVariableNode],
+    body: Option[ExprNode],
   ) extends DeclNode {
     def isAbstract: Boolean = body.isEmpty
   }
 
   object FunctionNode {
-    def fromAction(name: String, parameters: List[ParameterNode], body: Option[ExprNode]): FunctionNode = {
-      DeclNode.FunctionNode(name, parameters, TypeExprNode.UnitNode, body)
+    def fromAction(
+      name: String, parameters: List[ParameterNode], typeVariables: List[TypeVariableNode], body: Option[ExprNode]
+    ): FunctionNode = {
+      DeclNode.FunctionNode(name, parameters, TypeExprNode.UnitNode, typeVariables, body)
     }
   }
 
   case class ParameterNode(name: String, tpe: TypeExprNode) extends Node
+  case class TypeVariableNode(name: String, bound: Option[TypeExprNode]) extends Node
 }
 
 /**

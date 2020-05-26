@@ -40,16 +40,28 @@ object FragmentParser {
   // Function declarations.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def function[_: P]: P[DeclNode.FunctionNode] = {
-    P("function" ~/ identifier ~ parameters ~ TypeParser.typing ~ ("=" ~ expression).?).map((DeclNode.FunctionNode.apply _).tupled)
+    P(
+      "function" ~/ identifier ~ parameters ~ TypeParser.typing ~ functionTypeVariables ~ ("=" ~ expression).?
+    ).map((DeclNode.FunctionNode.apply _).tupled)
   }
 
   private def action[_: P]: P[DeclNode.FunctionNode] = {
-    P("action" ~/ identifier ~ parameters ~ block.?).map((DeclNode.FunctionNode.fromAction _).tupled)
+    P("action" ~/ identifier ~ parameters ~ functionTypeVariables ~ block.?).map((DeclNode.FunctionNode.fromAction _).tupled)
   }
 
   private def parameters[_: P]: P[List[DeclNode.ParameterNode]] = {
     def parameter = P(Index ~ identifier ~ TypeParser.typing).map(withIndex(DeclNode.ParameterNode))
     P("(" ~ parameter.rep(sep = ",") ~ ")").map(_.toList)
+  }
+
+  private def functionTypeVariables[_: P]: P[List[DeclNode.TypeVariableNode]] = {
+    def typeVariable = {
+      P(Index ~ identifier ~ ("<:" ~ TypeParser.typeExpression).?).map(withIndex(DeclNode.TypeVariableNode))
+    }
+    P(("where" ~ typeVariable.rep(1)).?).map {
+      case None => Nil
+      case Some(seq) => seq.toList
+    }
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
