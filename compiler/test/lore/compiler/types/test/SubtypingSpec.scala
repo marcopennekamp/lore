@@ -18,6 +18,8 @@ class SubtypingSpec extends TypeSpec {
       ((ListType(BasicType.String), BasicType.String): ProductType) <:< (ListType(A), A)
       // ([Real], String) </: ([A], A) where A <: Any
       ((ListType(BasicType.Real), BasicType.String): ProductType) </< (ListType(A), A)
+      // ([Real], Int) </: ([A], A) where A <: Any
+      ((ListType(BasicType.Real), BasicType.Int): ProductType) </< (ListType(A), A)
     }
     { val X = new TypeVariable("X", AnyType)
       val Y = new TypeVariable("Y", BasicType.Real)
