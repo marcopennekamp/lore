@@ -5,7 +5,7 @@ import lore.types.{AnyType, BasicType, ListType, ProductType, Type, TypeVariable
 import org.scalatest.Assertion
 
 class SubtypingSpec extends TypeSpec {
-  import LubExample._
+  import TypesExample._
 
   private implicit class TypeExtension(t1: Type) {
     def <:<(t2: Type): Assertion = assert(CompilerSubtyping.isSubtype(t1, t2))

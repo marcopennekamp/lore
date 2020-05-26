@@ -8,8 +8,8 @@ trait TypeSpec extends BaseSpec with TypeSyntax {
   def havingClass(name: String)(implicit registry: Registry): types.ClassType = registry.getType(name).get.asInstanceOf[types.ClassType]
   def havingLabel(name: String)(implicit registry: Registry): LabelType = registry.getType(name).get.asInstanceOf[LabelType]
 
-  object LubExample {
-    implicit val registry: Registry = prepareRegistry("test/types/lub")
+  object TypesExample {
+    implicit val registry: Registry = prepareRegistry("test/types")
 
     val Animal = havingClass("Animal")
     val Bird = havingClass("Bird")

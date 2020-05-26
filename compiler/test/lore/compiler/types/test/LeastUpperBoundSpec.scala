@@ -5,7 +5,7 @@ import lore.types._
 import org.scalatest.Assertion
 
 class LeastUpperBoundSpec extends TypeSpec {
-  import LubExample._
+  import TypesExample._
 
   private implicit class LubExtension(testCase: (Type, Type)) {
     val (t1, t2) = testCase
