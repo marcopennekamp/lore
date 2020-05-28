@@ -5,6 +5,7 @@
 - **Lore does not have a null.** You *have* to use `Option[A]` instead (or maybe `A?`), *especially* when you're interfacing with foreign language code. That means you have to declare any value you receive from a foreign language as an `Option` if you have any reasonable expectation that the value will be null (in which case the null value will be converted to None). Receiving a null value from foreign code *without* declaring the value as an Option results in an immediate *runtime exception*.
   - **Possible Exception:** Local variables or maybe even record properties may be uninitialised, but they won't be usable (meaning runtime error) before they are initialised.
   - **TODO:** `Option` support should be as native as possible.
+- **Equality should be explicit.** I don't like providing DEFAULT equality, like JVM languages do. A type should be explicitly comparable before it can be compared; that will help with issues like forgetting to implement equals/hashcode for a type that is used as a map key.
 
 
 
