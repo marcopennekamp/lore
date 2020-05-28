@@ -1,7 +1,8 @@
 package lore.compiler.test
 
+import lore.compiler.core.{Errors, Registry, Result}
 import lore.compiler.feedback.Error
-import lore.compiler.{Errors, Lore, Registry, Result}
+import lore.compiler.Lore
 import lore.compiler.definitions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.types.Type
 import org.scalatest._

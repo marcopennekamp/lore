@@ -2,10 +2,10 @@ package lore.compiler.phases.verification
 
 import lore.compiler.ast.visitor.{CombiningStmtVisitor, StmtVisitor, VerificationStmtVisitor}
 import lore.compiler.ast.{ExprNode, StmtNode}
-import lore.compiler.Compilation.Verification
+import lore.compiler.core.Compilation.Verification
 import lore.compiler.feedback.Error
 import lore.compiler.phases.verification.ReturnConstraints.{DeadCode, DefinitelyReturns, ImpossibleReturn, IsReturnAllowed}
-import lore.compiler.{Compilation, Fragment}
+import lore.compiler.core.{Compilation, Fragment}
 
 private class ReturnDeadCodeVisitor()(implicit fragment: Fragment) extends CombiningStmtVisitor[DefinitelyReturns] {
   override def combine(list: List[DefinitelyReturns]): DefinitelyReturns = {

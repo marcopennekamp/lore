@@ -1,13 +1,15 @@
 package lore.compiler.phases.resolution
 
 import lore.compiler.ast.{DeclNode, TypeDeclNode}
-import lore.compiler.Compilation._
-import lore.compiler.{Fragment, Registry}
+import lore.compiler.core.Compilation._
+import lore.compiler.core.{Fragment, Registry}
 import lore.compiler.definitions.{ConstructorDefinition, FunctionDefinition, ParameterDefinition}
 import lore.compiler.types.TypeExpressionEvaluator
 
 object FunctionDeclarationResolver {
   def resolveFunctionNode(node: DeclNode.FunctionNode)(implicit registry: Registry, fragment: Fragment): C[FunctionDefinition] = {
+
+
     (
       // We verify parameter types right away, because all types should have been declared at this point. Functions are
       // resolved after all type declarations.
@@ -22,6 +24,7 @@ object FunctionDeclarationResolver {
   }
 
   def resolveConstructorNode(node: TypeDeclNode.ConstructorNode)(implicit registry: Registry, fragment: Fragment): ConstructorDefinition = {
+    // TODO: Type variables from the class definition need to be available in the constructor context.
     ConstructorDefinition(
       node.name,
       node.parameters.map(resolveParameterNode),

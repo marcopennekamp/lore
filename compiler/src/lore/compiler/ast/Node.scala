@@ -1,7 +1,7 @@
 package lore.compiler.ast
 
 import lore.compiler.ast.Node.Index
-import lore.compiler.Fragment
+import lore.compiler.core.Fragment
 import lore.compiler.feedback.Position
 
 trait Node {

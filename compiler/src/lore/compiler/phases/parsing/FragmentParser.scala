@@ -3,8 +3,8 @@ package lore.compiler.phases.parsing
 import fastparse.ScalaWhitespace._
 import fastparse._
 import lore.compiler.ast._
-import lore.compiler.Fragment
 import lore.compiler.LoreCompiler.SourceFragment
+import lore.compiler.core.Fragment
 
 /**
   * The parsers contained in this parser collection all parse top-level declarations that can occur in a

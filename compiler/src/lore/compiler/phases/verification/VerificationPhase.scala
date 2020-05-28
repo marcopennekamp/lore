@@ -1,7 +1,7 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.Compilation._
-import lore.compiler.Registry
+import lore.compiler.core.Compilation._
+import lore.compiler.core.Registry
 import lore.compiler.phases.Phase
 import lore.compiler.definitions.ClassDefinition
 import lore.utils.CollectionExtensions._

@@ -2,8 +2,8 @@ package lore.compiler.phases.transpilation
 
 import java.io.{ByteArrayOutputStream, PrintStream}
 
-import lore.compiler.Compilation.C
-import lore.compiler.Registry
+import lore.compiler.core.Compilation.C
+import lore.compiler.core.Registry
 import lore.compiler.definitions.{FunctionDefinition, MultiFunctionDefinition}
 
 import scala.collection.mutable

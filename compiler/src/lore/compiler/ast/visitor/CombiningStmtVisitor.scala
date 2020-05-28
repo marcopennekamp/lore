@@ -1,7 +1,7 @@
 package lore.compiler.ast.visitor
 
 import lore.compiler.ast.{ExprNode, StmtNode}
-import lore.compiler.Compilation
+import lore.compiler.core.Compilation
 
 /**
   * Represents a statement visitor that, by default, combines the results of the subtrees with some notion of a

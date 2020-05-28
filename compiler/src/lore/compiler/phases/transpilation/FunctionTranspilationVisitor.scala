@@ -3,11 +3,11 @@ package lore.compiler.phases.transpilation
 import lore.compiler.ast.TopLevelExprNode.AssignmentNode
 import lore.compiler.ast.visitor.StmtVisitor
 import lore.compiler.ast.{ExprNode, StmtNode, TopLevelExprNode}
+import lore.compiler.core.{Compilation, Fragment, Registry}
 import lore.compiler.definitions.{FunctionDefinition, InternalCallTarget}
 import lore.compiler.feedback.Error
 import lore.compiler.phases.transpilation.Transpilation.Transpilation
 import lore.compiler.phases.transpilation.TranspiledChunk.JsCode
-import lore.compiler.{Compilation, Fragment, Registry}
 
 case class UnsupportedTranspilation(node: StmtNode)(implicit fragment: Fragment) extends Error(node) {
   override def message = s"The Lore compiler doesn't yet support the transpilation of ${node.getClass.getSimpleName}."

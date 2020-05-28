@@ -1,4 +1,4 @@
-package lore.compiler
+package lore.compiler.core
 
 import fastparse.ParserInput
 import lore.compiler.ast.DeclNode

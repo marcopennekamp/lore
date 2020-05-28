@@ -1,7 +1,8 @@
 package lore.compiler
 
-import lore.compiler.Compilation.C
+import lore.compiler.core.Compilation.C
 import lore.compiler.LoreCompiler.SourceFragment
+import lore.compiler.core.Registry
 import lore.compiler.phases.parsing.ParsingPhase
 import lore.compiler.phases.resolution.ResolutionPhase
 import lore.compiler.phases.transpilation.TranspilationPhase

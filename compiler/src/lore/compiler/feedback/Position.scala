@@ -1,7 +1,7 @@
 package lore.compiler.feedback
 
 import lore.compiler.ast.Node.Index
-import lore.compiler.Fragment
+import lore.compiler.core.Fragment
 
 // TODO: Since we have to report errors at runtime with their positions in Lore code, we should implement some
 //       kind of position source mapping for the runtime.

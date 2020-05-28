@@ -1,7 +1,7 @@
 package lore.compiler.phases.transpilation
 
-import lore.compiler.Compilation
-import lore.compiler.phases.transpilation.TranspiledChunk.{JsExpr, JsCode}
+import lore.compiler.core.Compilation
+import lore.compiler.phases.transpilation.TranspiledChunk.{JsCode, JsExpr}
 
 /**
   * @param statements The statements that need to be executed before the given expression is evaluated.

@@ -1,7 +1,7 @@
 package lore.compiler.phases.transpilation
 
-import lore.compiler.Compilation.C
-import lore.compiler.Registry
+import lore.compiler.core.Compilation.C
+import lore.compiler.core.Registry
 import lore.compiler.phases.Phase
 
 class TranspilationPhase()(implicit registry: Registry) extends Phase[String] {

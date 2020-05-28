@@ -1,7 +1,7 @@
 package lore.compiler.ast.visitor
 
 import lore.compiler.ast.{ExprNode, StmtNode}
-import lore.compiler.Compilation
+import lore.compiler.core.Compilation
 
 /**
   * Visits any statement node, returning a value of type Compilation[A]. Subtrees are visited automatically.

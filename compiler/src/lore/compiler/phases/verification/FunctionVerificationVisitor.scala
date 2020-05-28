@@ -3,11 +3,11 @@ package lore.compiler.phases.verification
 import lore.compiler.ast.ExprNode.AddressNode
 import lore.compiler.ast.visitor.VerificationStmtVisitor
 import lore.compiler.ast.{CallNode, ExprNode, StmtNode, TopLevelExprNode}
-import lore.compiler.Compilation.Verification
+import lore.compiler.core.{Compilation, Fragment, Registry}
+import lore.compiler.core.Compilation.Verification
 import lore.compiler.feedback.{Error, Position}
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
 import lore.compiler.types.{CompilerSubtyping, TypeExpressionEvaluator}
-import lore.compiler.{Compilation, Fragment, Registry}
 import lore.compiler.definitions.{ClassDefinition, DynamicCallTarget, FunctionDefinition, FunctionSignature, InternalCallTarget, MultiFunctionDefinition}
 import lore.types.{BasicType, ListType, MapType, NothingType, ProductType, Type}
 
@@ -121,7 +121,7 @@ private[verification] class FunctionVerificationVisitor(
       // TODO: We will also need access to global variables if we introduce those into Lore.
       // TODO: Once we treat functions as values, we will have to make this even more complicated by also
       //       considering function names.
-      context.currentScope.variable(name, node.position).flatMap { variable =>
+      context.currentScope.entry(name, node.position).flatMap { variable =>
         node.setVariable(variable)
         node.typed(variable.tpe)
       }

@@ -1,6 +1,6 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.Compilation.Verification
+import lore.compiler.core.Compilation.Verification
 import lore.compiler.definitions.ClassDefinition
 
 object DeferredTypingResolver {

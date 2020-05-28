@@ -1,7 +1,7 @@
 package lore.compiler.phases.resolution
 
 import lore.compiler.ast.Node
-import lore.compiler.Fragment
+import lore.compiler.core.Fragment
 import lore.compiler.feedback.Position
 
 /**

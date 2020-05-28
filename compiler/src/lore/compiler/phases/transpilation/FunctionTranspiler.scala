@@ -1,8 +1,8 @@
 package lore.compiler.phases.transpilation
 
-import lore.compiler.Compilation.C
-import lore.compiler.{Fragment, Registry}
+import lore.compiler.core.Compilation.C
 import lore.compiler.ast.visitor.StmtVisitor
+import lore.compiler.core.{Fragment, Registry}
 import lore.compiler.definitions.FunctionDefinition
 
 class FunctionTranspiler(function: FunctionDefinition, uniqueName: String)(implicit registry: Registry) {

@@ -1,12 +1,12 @@
-package lore.compiler
+package lore.compiler.core
 
-import lore.compiler.ast.Node
 import lore.compiler
-import lore.compiler.Compilation.C
-import lore.compiler.Registry.{ConstructorNotFound, ExactFunctionNotFound, MultiFunctionNotFound, TypeNotFound}
+import lore.compiler.ast.Node
+import lore.compiler.core.Compilation.C
+import lore.compiler.core.Registry.{ConstructorNotFound, ExactFunctionNotFound, MultiFunctionNotFound, TypeNotFound}
+import lore.compiler.definitions._
 import lore.compiler.feedback.{Error, Position}
 import lore.compiler.types.{DeclaredType, DeclaredTypeHierarchy}
-import lore.compiler.definitions.{ClassDefinition, ConstructorDefinition, DeclaredTypeDefinition, FunctionDefinition, MultiFunctionDefinition}
 import lore.types.{ProductType, Type}
 
 import scala.collection.{MapView, mutable}
@@ -18,7 +18,7 @@ class Registry {
   /**
     * The list of types declared in the whole project, including predefined types such as Int and Real.
     */
-  private val types = mutable.HashMap[String, Type](Type.predefinedTypes.toList:_*)
+  private val types = mutable.HashMap[String, Type](Type.predefinedTypes.toList: _*)
   private val typeDefinitions = mutable.HashMap[String, DeclaredTypeDefinition]()
   private val multiFunctions = mutable.HashMap[String, MultiFunctionDefinition]()
   val declaredTypeHierarchy = new DeclaredTypeHierarchy()

@@ -1,6 +1,6 @@
 package lore.compiler.types
 
-import lore.compiler.Registry
+import lore.compiler.core.Registry
 import lore.types.BasicType.{Int, Real}
 import scalaz.Monad
 import scalaz.std.list._

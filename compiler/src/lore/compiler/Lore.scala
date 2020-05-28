@@ -3,7 +3,8 @@ package lore.compiler
 import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.file.{Files, Path}
 
-import lore.compiler.Compilation.C
+import lore.compiler.core.Compilation.C
+import lore.compiler.core.{Errors, Registry, Result}
 import lore.compiler.feedback.FeedbackPrinter
 import lore.compiler.types.DeclaredType
 

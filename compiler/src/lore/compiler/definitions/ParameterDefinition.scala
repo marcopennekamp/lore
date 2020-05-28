@@ -1,6 +1,6 @@
 package lore.compiler.definitions
 
-import lore.compiler.Compilation.C
+import lore.compiler.core.Compilation.C
 import lore.compiler.feedback.Position
 import lore.compiler.phases.verification.LocalVariable
 import lore.compiler.types.TypingDeferred

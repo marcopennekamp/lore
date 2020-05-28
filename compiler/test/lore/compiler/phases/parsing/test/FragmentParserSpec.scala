@@ -33,6 +33,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
         ParameterNode("exp", tInt),
       ),
       tReal,
+      Nil,
       Some(BlockNode(List(
         VariableDeclarationNode("e", isMutable = true, None, VariableNode("exp")),
         VariableDeclarationNode("result", isMutable = true, None, RealLiteralNode(1.0)),
@@ -61,6 +62,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
         ParameterNode("target", TypeExprNode.ComponentNode("Health")),
       ),
       TypeExprNode.UnitNode,
+      Nil,
       Some(BlockNode(List(
         VariableDeclarationNode(
           "power", isMutable = false, None,

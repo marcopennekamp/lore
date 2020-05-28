@@ -1,7 +1,8 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.{Compilation, types}
-import lore.compiler.Compilation.C
+import lore.compiler.core.Compilation
+import lore.compiler.types
+import lore.compiler.core.Compilation.C
 import lore.compiler.feedback._
 import lore.compiler.types.{CompilerSubtyping, ComponentType, LabelType}
 import lore.types.{AnyType, BasicType, IntersectionType, ListType, MapType, ProductType, SumType, Type}

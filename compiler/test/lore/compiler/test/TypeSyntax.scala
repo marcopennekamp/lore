@@ -1,6 +1,6 @@
 package lore.compiler.test
 
-import lore.compiler.Registry
+import lore.compiler.core.Registry
 import lore.compiler.types.{ClassType, ComponentType}
 import lore.types.{IntersectionType, ProductType, SumType, Type}
 

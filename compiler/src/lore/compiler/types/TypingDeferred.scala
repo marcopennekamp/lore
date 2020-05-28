@@ -1,6 +1,6 @@
 package lore.compiler.types
 
-import lore.compiler.Compilation.{C, Verification}
+import lore.compiler.core.Compilation.{C, Verification}
 import lore.types.Type
 
 /**

@@ -2,10 +2,10 @@ package lore.compiler.phases.verification
 
 import lore.compiler.ast.visitor.VerificationStmtVisitor
 import lore.compiler.ast.{StmtNode, TopLevelExprNode}
-import lore.compiler.Compilation.Verification
+import lore.compiler.core.Compilation.Verification
 import lore.compiler.feedback.Error
 import lore.compiler.phases.verification.NoContinuationVisitor.IllegalContinuation
-import lore.compiler.{Compilation, Fragment}
+import lore.compiler.core.{Compilation, Fragment}
 
 class NoContinuationVisitor()(implicit fragment: Fragment) extends VerificationStmtVisitor {
   override def verify(node: StmtNode): Verification = node match {

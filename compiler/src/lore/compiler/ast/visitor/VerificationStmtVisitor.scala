@@ -1,7 +1,7 @@
 package lore.compiler.ast.visitor
 
 import lore.compiler.ast.{ExprNode, StmtNode}
-import lore.compiler.Compilation.Verification
+import lore.compiler.core.Compilation.Verification
 
 /**
   * A verification visitor which allows easier definition of visitor functions due to its automatic

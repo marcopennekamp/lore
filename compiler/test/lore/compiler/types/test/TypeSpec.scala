@@ -1,7 +1,8 @@
 package lore.compiler.types.test
 
+import lore.compiler.core.Registry
 import lore.compiler.test.{BaseSpec, TypeSyntax}
-import lore.compiler.{Registry, types}
+import lore.compiler.types
 import lore.compiler.types.LabelType
 
 trait TypeSpec extends BaseSpec with TypeSyntax {

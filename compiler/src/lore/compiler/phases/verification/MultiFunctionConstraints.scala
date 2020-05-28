@@ -1,10 +1,10 @@
 package lore.compiler.phases.verification
 
 import lore.compiler.ast.visitor.StmtVisitor
-import lore.compiler.Compilation.Verification
+import lore.compiler.core.{Compilation, Fragment, Registry}
+import lore.compiler.core.Compilation.Verification
 import lore.compiler.feedback.Error
 import lore.compiler.types.CompilerSubtyping
-import lore.compiler.{Compilation, Fragment, Registry}
 import lore.compiler.definitions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.types.Type
 
