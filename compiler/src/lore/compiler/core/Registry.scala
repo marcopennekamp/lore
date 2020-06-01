@@ -6,7 +6,7 @@ import lore.compiler.core.Compilation.C
 import lore.compiler.core.Registry.{ConstructorNotFound, ExactFunctionNotFound, MultiFunctionNotFound, TypeNotFound}
 import lore.compiler.definitions._
 import lore.compiler.feedback.{Error, Position}
-import lore.compiler.types.{DeclaredType, DeclaredTypeHierarchy}
+import lore.compiler.types.{DeclaredTypeSchema, DeclaredTypeHierarchy}
 import lore.types.{ProductType, Type}
 
 import scala.collection.{MapView, mutable}
@@ -38,7 +38,7 @@ class Registry {
 
     // If this is a declared type, also register it in the declared type hierarchy.
     tpe match {
-      case declaredType: DeclaredType => declaredTypeHierarchy.addType(declaredType)
+      case declaredType: DeclaredTypeSchema => declaredTypeHierarchy.addType(declaredType)
       case _ =>
     }
   }
@@ -146,7 +146,7 @@ class Registry {
     * Resolves a constructor of a class with the given name.
     */
   def resolveConstructor(className: String, qualifier: Option[String], position: Position): C[ConstructorDefinition] = {
-    getType(className).filter(_.isInstanceOf[compiler.types.ClassType]).map(_.asInstanceOf[compiler.types.ClassType]) match {
+    getType(className).filter(_.isInstanceOf[compiler.types.ClassTypeSchema]).map(_.asInstanceOf[compiler.types.ClassTypeSchema]) match {
       case None => Compilation.fail(TypeNotFound(className, position))
       case Some(tpe) => resolveConstructor(tpe.definition, qualifier, position)
     }

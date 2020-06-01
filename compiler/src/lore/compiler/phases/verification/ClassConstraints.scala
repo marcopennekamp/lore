@@ -2,7 +2,7 @@ package lore.compiler.phases.verification
 
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.feedback.Error
-import lore.compiler.types.{ClassType, CompilerSubtyping}
+import lore.compiler.types.{ClassTypeSchema, CompilerSubtyping}
 import lore.compiler.core.{Compilation, Registry}
 import lore.compiler.definitions.{ClassDefinition, ComponentDefinition, MemberDefinition}
 import lore.types.{AnyType, Type}
@@ -68,7 +68,7 @@ object ClassConstraints {
 
     // Here, we assume Any in case the supertype is None or its owned-by type is None. In both cases, the omission
     // of such a declaration means that the supertype's owned-by type is effectively Any.
-    val superOwnedBy = definition.tpe.supertype.flatMap(_.ownedBy).getOrElse(AnyType)
+    val superOwnedBy = definition.tpe.superschema.flatMap(_.ownedBy).getOrElse(AnyType)
 
     // Now we just have to check whether the owned-by type is actually a subtype.
     if (!CompilerSubtyping.isSubtype(ownedBy, superOwnedBy)) {
@@ -120,7 +120,7 @@ object ClassConstraints {
     } else Verification.succeed
   }
 
-  case class ComponentsShareSuperclass(definition: ClassDefinition, superclass: lore.types.ClassType, components: List[ComponentDefinition]) extends Error(definition) {
+  case class ComponentsShareSuperclass(definition: ClassDefinition, superclass: lore.types.ClassTypeSchema, components: List[ComponentDefinition]) extends Error(definition) {
     override def message: String = s"The following components illegally share a superclass $superclass: ${components.map(_.name).mkString(", ")}." +
       s" Components may not share a superclass, because component types such as +C have to stay unambiguous for all possible entities."
   }
@@ -134,7 +134,7 @@ object ClassConstraints {
     //   1. Map each component to its highest superclass type.
     //   2. Group components by their superclass type.
     //   3. If there is more than one component in a superclass bucket, they share that superclass.
-    definition.components.map(c => (c.tpe.rootSupertype, c))
+    definition.components.map(c => (c.tpe.rootSuperschema, c))
       .groupBy(_._1)
       .map {
         case (_, List(_)) => Verification.succeed

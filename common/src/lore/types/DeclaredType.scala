@@ -1,13 +1,20 @@
 package lore.types
 
+import scala.util.hashing.MurmurHash3
+
 /**
-  * A declared type as defined by the spec.
+  * A declared type, which can either be a class/entity or a label.
   */
 trait DeclaredType extends Type {
   /**
-    * The name of the declared type.
+    * The schema that this declared type was instantiated from.
     */
-  def name: String
+  def schema: DeclaredTypeSchema
+
+  /**
+    * All type arguments that this declared type has been instantiated with.
+    */
+  def typeArguments: List[Type]
 
   /**
     * The supertype of the declared type.
@@ -22,20 +29,21 @@ trait DeclaredType extends Type {
     case Some(tpe) => tpe.rootSupertype
   }
 
+  override def isAbstract: Boolean = schema.isAbstract
+
+  // TODO: For now. This needs to be set to true for classes with type parameters, of course.
+  override def isParametric = false
+
   /**
     * A verbose string representation of the type.
     */
   def verbose: String = toString
 
-  override def string(precedence: TypePrecedence): String = name
+  override def string(precedence: TypePrecedence): String = schema.name
 
-  // TODO: For now. This needs to be set to true for classes with type parameters, of course.
-  override def isParametric = false
-
-  // We define equality of declared types as nominal equality.
   override def equals(obj: Any): Boolean = obj match {
-    case rhs: DeclaredType => this.eq(rhs) || name == rhs.name
+    case rhs: DeclaredType => this.eq(rhs) || (schema.eq(rhs.schema) && typeArguments == rhs.typeArguments)
     case _ => false
   }
-  override lazy val hashCode: Int = name.hashCode
+  override lazy val hashCode: Int = MurmurHash3.productHash((schema, typeArguments))
 }

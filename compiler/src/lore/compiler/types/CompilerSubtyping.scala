@@ -26,7 +26,7 @@ object CompilerSubtyping extends Subtyping {
 
     t match {
       case _ if !t.isAbstract => Set(t)
-      case dt: DeclaredType => dt.directDeclaredSubtypes
+      case dt: DeclaredTypeSchema => dt.directDeclaredSubtypes
       case ProductType(components) => combinations(components.map(abstractResolvedDirectSubtypes)).map(ProductType(_))
       case IntersectionType(types) => combinations(types.map(abstractResolvedDirectSubtypes).toList).map(IntersectionType.construct)
       case SumType(types) => types.flatMap(abstractResolvedDirectSubtypes)
@@ -63,7 +63,7 @@ object CompilerSubtyping extends Subtyping {
       }
     }
 
-    def declaredTypeLcs(d1: DeclaredType, d2: DeclaredType): Type = {
+    def declaredTypeLcs(d1: DeclaredTypeSchema, d2: DeclaredTypeSchema): Type = {
       registry.declaredTypeHierarchy.leastCommonSupertype(d1, d2)
     }
 
@@ -105,7 +105,7 @@ object CompilerSubtyping extends Subtyping {
 
       // We have the special case that component types can also be supertypes of entity types.
       // We add these to the LUB resolved by the type hierarchy.
-      case (e1: ClassType, e2: ClassType) if e1.isEntity && e2.isEntity =>
+      case (e1: ClassTypeSchema, e2: ClassTypeSchema) if e1.isEntity && e2.isEntity =>
         val componentTypes = e1.definition.commonComponentTypes(e2.definition)
         val superclassList = declaredTypeLcs(e1, e2) match {
           // We choose Any as the supertype only if there are no common component types. Otherwise we prefer to
@@ -142,10 +142,10 @@ object CompilerSubtyping extends Subtyping {
           case IntersectionType(types) =>
             // If we have an intersection type as the LCS, there are multiple LCSs. However, only one of them can
             // be a class type. So we filter for that one.
-            val classTypes = types.filter(_.isInstanceOf[ClassType])
+            val classTypes = types.filter(_.isInstanceOf[ClassTypeSchema])
             if (classTypes.size != 1) throw new RuntimeException("There can (and must) only be one! This is a compiler bug.")
             classTypes.head
-          case classType: ClassType => ComponentType(classType)
+          case classType: ClassTypeSchema => ComponentType(classType)
           case t => t.fallbackIfAny
         }
 

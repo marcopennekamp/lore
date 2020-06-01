@@ -3,7 +3,7 @@ package lore.compiler.definitions
 import lore.compiler.core.Compilation.C
 import lore.compiler.feedback.Position
 import lore.compiler.phases.verification.VirtualMember
-import lore.compiler.types.{ClassType, ComponentType, TypingDeferred}
+import lore.compiler.types.{ClassTypeSchema, ComponentType, TypingDeferred}
 import lore.types.Type
 
 /**
@@ -27,9 +27,9 @@ class PropertyDefinition(
   * @param overrides The component name of the superclass that this component overrides.
   */
 class ComponentDefinition(
-  override val name: String, override val typeResolver: () => C[ClassType], val overrides: Option[String],
+  override val name: String, override val typeResolver: () => C[ClassTypeSchema], val overrides: Option[String],
   override val position: Position,
-) extends MemberDefinition[ClassType] {
+) extends MemberDefinition[ClassTypeSchema] {
   override def isComponent: Boolean = true
   lazy val componentType: ComponentType = ComponentType(tpe)
 }

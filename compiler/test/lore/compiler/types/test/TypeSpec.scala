@@ -3,11 +3,11 @@ package lore.compiler.types.test
 import lore.compiler.core.Registry
 import lore.compiler.test.{BaseSpec, TypeSyntax}
 import lore.compiler.types
-import lore.compiler.types.LabelType
+import lore.compiler.types.LabelTypeSchema
 
 trait TypeSpec extends BaseSpec with TypeSyntax {
-  def havingClass(name: String)(implicit registry: Registry): types.ClassType = registry.getType(name).get.asInstanceOf[types.ClassType]
-  def havingLabel(name: String)(implicit registry: Registry): LabelType = registry.getType(name).get.asInstanceOf[LabelType]
+  def havingClass(name: String)(implicit registry: Registry): types.ClassTypeSchema = registry.getType(name).get.asInstanceOf[types.ClassTypeSchema]
+  def havingLabel(name: String)(implicit registry: Registry): LabelTypeSchema = registry.getType(name).get.asInstanceOf[LabelTypeSchema]
 
   object TypesExample {
     implicit val registry: Registry = prepareRegistry("test/types")

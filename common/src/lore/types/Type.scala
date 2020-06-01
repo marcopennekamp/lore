@@ -8,7 +8,9 @@ package lore.types
   */
 trait Type {
   // TODO: As a general performance improvement, we might consider interning types like strings are interned,
-  //       especially in the runtime.
+  //       especially in the runtime. (This might especially be helpful for declared types, since we will
+  //       inevitably have to create many instances of the same type with the same type arguments.) On the other
+  //       hand, caching might become a bottleneck in multi-threaded contexts.
   // TODO: Add .product, .sum, and .intersection helper methods to List[Type] for easy construction.
 
   /**
@@ -37,6 +39,8 @@ trait Type {
   def <(rhs: Type): Boolean = Subtyping.isStrictSubtype(this, rhs)
   def >=(rhs: Type): Boolean = rhs <= this
   def >(rhs: Type): Boolean = rhs < this
+
+  // TODO: Define type equality BY DEFAULT in terms of subtyping?
 }
 
 object Type {

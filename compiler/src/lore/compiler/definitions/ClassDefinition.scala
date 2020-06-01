@@ -4,7 +4,7 @@ import lore.compiler.ast.ExprNode.VariableNode
 import lore.compiler.ast.TopLevelExprNode.ConstructorCallNode
 import lore.compiler.ast.{ExprNode, TopLevelExprNode}
 import lore.compiler.feedback.Position
-import lore.compiler.types.{ClassType, ComponentType}
+import lore.compiler.types.{ClassTypeSchema, ComponentType}
 import lore.types.{ProductType, Type}
 import lore.utils.CollectionExtensions._
 
@@ -16,7 +16,7 @@ import lore.utils.CollectionExtensions._
   */
 class ClassDefinition(
   override val name: String,
-  override val tpe: ClassType,
+  override val tpe: ClassTypeSchema,
   val isEntity: Boolean,
   val localMembers: List[MemberDefinition[Type]],
   definedConstructors: List[ConstructorDefinition],
@@ -24,10 +24,12 @@ class ClassDefinition(
 ) extends DeclaredTypeDefinition {
   definedConstructors.foreach(_.associateWith(this))
 
+  // TODO: Add a TypeVariable scope here.
+
   // Many of the members here are declared as vals. This is only possible because definitions are created according
   // to the inheritance hierarchy.
 
-  override val supertypeDefinition: Option[ClassDefinition] = tpe.supertype.map(_.definition)
+  override val supertypeDefinition: Option[ClassDefinition] = tpe.superschema.map(_.definition)
 
   /**
     * The list of all properties belonging to this class, excluding superclass components.

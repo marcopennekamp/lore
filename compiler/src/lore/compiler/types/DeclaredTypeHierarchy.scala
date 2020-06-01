@@ -93,6 +93,9 @@ class DeclaredTypeHierarchy {
     * composed of all least common ancestors.
     */
   def leastCommonSupertype(t1: Type, t2: Type): Type = {
+    // TODO: Once we flip this over to a schema hierarchy, we need to instantiate a new graph every time we decide
+    //       the LUB, so we should cache the result.
+
     assertCanContain(t1)
     assertCanContain(t2)
 

@@ -1,11 +1,12 @@
 package lore.types
 
 trait LabelType extends DeclaredType {
-  /**
-    * A label type is abstract unless it is an augmentation. That case is handled in the implementation of
-    * intersection type's isAbstract.
-    */
-  override def isAbstract = true
+  override def schema: LabelTypeSchema
+  override def supertype: Option[LabelType]
+  override def rootSupertype: LabelType = {
+    // The compiler might not see this, but of course the root supertype of a label can itself only be a label type.
+    super.rootSupertype.asInstanceOf[LabelType]
+  }
 
   override def verbose = s"$toString${supertype.map(t => s" < $t").getOrElse("")}"
 }

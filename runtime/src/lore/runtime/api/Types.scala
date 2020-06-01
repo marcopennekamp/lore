@@ -1,6 +1,6 @@
 package lore.runtime.api
 
-import lore.runtime.types.{ClassType, ComponentType, DeclaredType, LabelType}
+import lore.runtime.types.{ClassTypeSchema, ComponentType, DeclaredTypeSchema, LabelTypeSchema}
 import lore.runtime.values.{ListValue, ObjectValue}
 import lore.types._
 
@@ -40,14 +40,14 @@ class Types {
 
   // TODO: We definitely need a simple type registry with (name -> declared type).
   def registerClass(
-    name: String, supertype: Option[ClassType], ownedBy: Option[Type],
+    name: String, supertype: Option[ClassTypeSchema], ownedBy: Option[Type],
     isAbstract: Boolean, isEntity: Boolean, componentTypes: List[ComponentType],
   ): Unit = {
-    ClassType(name, supertype, ownedBy, isAbstract, isEntity, componentTypes)
+    ClassTypeSchema(name, supertype, ownedBy, isAbstract, isEntity, componentTypes)
   }
 
-  def registerLabel(name: String, supertype: Option[LabelType]): Unit = {
-    LabelType(name, supertype)
+  def registerLabel(name: String, supertype: Option[LabelTypeSchema]): Unit = {
+    LabelTypeSchema(name, supertype)
   }
 
   // Leaf types.
@@ -57,13 +57,13 @@ class Types {
   def int: BasicType = BasicType.Int
   def boolean: BasicType = BasicType.Boolean
   def string: BasicType = BasicType.String
-  def declared(name: String): DeclaredType = ??? // TODO: Fetch the registered declared type.
+  def declared(name: String): DeclaredTypeSchema = ??? // TODO: Fetch the registered declared type.
 
   // Type constructors.
   def intersection(types: js.Array[Type]): Type = IntersectionType.construct(types.toList)
   def sum(types: js.Array[Type]): Type = SumType.construct(types.toList)
   def product(types: js.Array[Type]): ProductType = ProductType(types.toList)
-  def component(underlying: ClassType): ComponentType = ComponentType(underlying)
+  def component(underlying: ClassTypeSchema): ComponentType = ComponentType(underlying)
   def list(element: Type): ListType = ListType(element)
   def map(key: Type, value: Type): MapType = MapType(key, value)
 }

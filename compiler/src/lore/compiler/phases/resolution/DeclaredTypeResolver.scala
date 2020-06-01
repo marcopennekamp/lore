@@ -4,7 +4,7 @@ import lore.compiler.ast.TypeDeclNode
 import lore.compiler.core.{Compilation, Fragment, Registry}
 import lore.compiler.core.Compilation.C
 import lore.compiler.feedback.Error
-import lore.compiler.types.{ClassType, LabelType, OwnedByDeferred, TypeExpressionEvaluator}
+import lore.compiler.types.{ClassTypeSchema, LabelTypeSchema, OwnedByDeferred, TypeExpressionEvaluator}
 import lore.compiler.definitions._
 import lore.types.Type
 
@@ -27,10 +27,10 @@ object DeclaredTypeResolver {
     for {
       supertype <- node.supertypeName.map(name => registry.resolveType(name, node)).toCompiledOption.require { option =>
         // Ensure that, if the label type extends another type, that type is also a label type.
-        option.forall(_.isInstanceOf[LabelType])
+        option.forall(_.isInstanceOf[LabelTypeSchema])
       }(LabelMustExtendLabel(node))
     } yield {
-      val tpe = new LabelType(supertype.asInstanceOf[Option[LabelType]])
+      val tpe = new LabelTypeSchema(supertype.asInstanceOf[Option[LabelTypeSchema]])
       val definition = new LabelDefinition(node.name, tpe, node.position)
       tpe.initialize(definition)
       definition
@@ -47,13 +47,13 @@ object DeclaredTypeResolver {
     (
       node.supertypeName.map(name => registry.resolveType(name, node)).toCompiledOption.require { option =>
         // Ensure that, if the class type extends another type, that type is also a class type.
-        option.forall(_.isInstanceOf[ClassType])
+        option.forall(_.isInstanceOf[ClassTypeSchema])
       }(ClassMustExtendClass(node)),
       node.members.map(resolveMemberNode).simultaneous,
     ).simultaneous.map { case (supertype, members) =>
       val constructors = node.constructors.map(FunctionDeclarationResolver.resolveConstructorNode)
       val ownedBy = node.ownedBy.map(ob => new OwnedByDeferred(() => TypeExpressionEvaluator.evaluate(ob)))
-      val tpe = new ClassType(supertype.asInstanceOf[Option[ClassType]], ownedBy, node.isAbstract)
+      val tpe = new ClassTypeSchema(supertype.asInstanceOf[Option[ClassTypeSchema]], ownedBy, node.isAbstract)
       val definition = new ClassDefinition(node.name, tpe, node.isEntity, members, constructors, node.position)
       tpe.initialize(definition)
       definition
@@ -72,8 +72,8 @@ object DeclaredTypeResolver {
       case componentNode@TypeDeclNode.ComponentNode(name, overrides) =>
         val resolveType = () => {
           registry.resolveType(name, node)
-            .require(_.isInstanceOf[ClassType])(ComponentMustBeClass(componentNode))
-            .map(_.asInstanceOf[ClassType])
+            .require(_.isInstanceOf[ClassTypeSchema])(ComponentMustBeClass(componentNode))
+            .map(_.asInstanceOf[ClassTypeSchema])
         }
         Compilation.succeed(new ComponentDefinition(name, resolveType, overrides, node.position))
     }

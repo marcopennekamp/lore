@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation
 import lore.compiler.types
 import lore.compiler.core.Compilation.C
 import lore.compiler.feedback._
-import lore.compiler.types.{CompilerSubtyping, ComponentType, LabelType}
+import lore.compiler.types.{CompilerSubtyping, ComponentType, LabelTypeSchema}
 import lore.types.{AnyType, BasicType, IntersectionType, ListType, MapType, ProductType, SumType, Type}
 
 /**
@@ -43,7 +43,7 @@ object MemberExplorer {
   private def memberList(tpe: Type, position: Position): C[List[VirtualMember]] = {
     tpe match {
       // Base cases (no recursion).
-      case AnyType | _: BasicType | _: LabelType =>
+      case AnyType | _: BasicType | _: LabelTypeSchema =>
         Compilation.succeed(Nil)
       case ComponentType(underlying) =>
         // A component type defines a single member that has the name and type of the given underlying class.
@@ -56,7 +56,7 @@ object MemberExplorer {
         Compilation.succeed {
           components.zipWithIndex.map { case (tpe, index) => VirtualMember(s"_$index", tpe, underlying = None) }
         }
-      case classType: types.ClassType =>
+      case classType: types.ClassTypeSchema =>
         // A class type obviously has its own members.
         Compilation.succeed(classType.definition.members.map(_.asVirtualMember))
 

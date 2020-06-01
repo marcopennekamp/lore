@@ -26,7 +26,7 @@ object TypeExpressionEvaluator {
         // we couldn't report errors about both key and value at the same time (during the same compiler run).
         (eval(key), eval(value)).simultaneous.map(MapType.tupled)
       case componentNode@TypeExprNode.ComponentNode(underlying) => registry.resolveType(underlying, componentNode).flatMap {
-        case tpe: types.ClassType => Compilation.succeed(ComponentType(tpe))
+        case tpe: ClassTypeSchema => Compilation.succeed(ComponentType(tpe))
         case _ => Compilation.fail(ComponentTypeMustContainClass(componentNode))
       }
     }
