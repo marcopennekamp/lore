@@ -10,5 +10,11 @@ object CollectionExtensions {
         case _ => None
       }
     }
+    def filterNotType[T <: A](implicit tag: ClassTag[T]): List[A] = {
+      list.flatMap {
+        case _: T => None
+        case value => Some(value)
+      }
+    }
   }
 }

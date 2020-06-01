@@ -8,6 +8,8 @@ trait Subtyping {
     */
   val subtypingRules: Seq[PartialFunction[(Type, Type), Boolean]] = Seq(
     // A declared type d1 is a subtype of d2 if d1 and d2 are equal or any of d1's hierarchical supertypes equal to d2.
+    // TODO: Once we have introduced covariant (and possibly contravariant) classes, we will additionally have to
+    //       check whether d1's typeArguments are a subtype of d2's type arguments.
     { case (d1: DeclaredType, d2: DeclaredType) =>  d1 == d2 || isSubtype(d1.supertype.getOrElse(AnyType), d2) },
 
     // A component type p1 is a subtype of p2 if p1's underlying type is a subtype of p2's underlying type.
@@ -22,6 +24,22 @@ trait Subtyping {
     //       we have to move away from the notion of subtyping and to a concept of "instance equality", which
     //       calculates equality on the basis of whether one type can be equal to the other type if all type
     //       variables are instanced correctly.
+    // TODO: Another problem: What we do here is not strictly subtyping but rather bounds checking. Subtyping would
+    //       actually mean that we have to check whether a type t1 is ALWAYS a subtype of v2. This means ensuring
+    //       that the lower bound v2.lowerBound is a supertype of t1, so as to ensure that t1 can always be assigned
+    //       to v2. This means that subtyping for multiple dispatch is different from the general notion of
+    //       subtyping: We want to check whether the concrete input type COULD BE a subtype of the parameter tuple,
+    //       not whether it actually IS.
+    //       So, to check subtyping against a type variable, we have to do "assignability" bounds checking, and to
+    //       check whether a given input type is more specific than another input type (for multiple dispatch), we
+    //       have to "mock" assignability with Assignments and then check whether the assigned type fits into the
+    //       bounds. There is a special case when we have type variables of both sides. Take (A) and (B) for example.
+    //       If we substitute A into B, we have to check that A's upper bound is a subtype of B's lower bound and
+    //       A's lower bound is a supertype of B's lower bound. That is, the types that A describes fit into the
+    //       range of types described by B.
+    // TODO: This also means that we need to replace the multiple dispatch notion of subtyping with a notion
+    //       of specificity, which is equal to subtyping for monomorphic types, but defined with more refinement
+    //       for polymorphic types.
     { case (v1: TypeVariable, v2: TypeVariable) => isSubtype(v1.bound, v2.bound) },
     { case (v1: TypeVariable, t2) => isSubtype(v1.bound, t2) },
     { case (t1, v2: TypeVariable) => isSubtype(t1, v2.bound) },

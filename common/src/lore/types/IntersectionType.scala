@@ -2,6 +2,8 @@ package lore.types
 
 import scala.util.hashing.MurmurHash3
 
+import lore.utils.CollectionExtensions._
+
 // TODO: The construct function ensures that an intersection type contains only unique components. Hence, it is
 //       questionable whether types needs to be a set. We would have to be careful with implementing equality
 //       and hash codes, but I can see Sets bring about performance problems down the line.
@@ -27,7 +29,7 @@ case class IntersectionType private (types: Set[Type]) extends Type with Operato
     * non-label type, we ignore label types in the consideration.
     */
   override val isAbstract: Boolean = {
-    val exceptLabels = types.filter(!_.isInstanceOf[LabelType])
+    val exceptLabels = types.toList.filterNotType[LabelType]
 
     // If the intersection type consists only of labels, it is NOT an augmented type and thus abstract since
     // non-augmenting label types are abstract.

@@ -11,6 +11,54 @@ function combine[A <: C](v1: A, v2: A): A = ...
 
 
 
+// The way we are currently checking subtypes seems to only be sufficient for multiple dispatch,
+// but not for checking types in function bodies. Consider:
+function foo(a: A): [A] where A = {
+  const x: A = 'x'
+  const y: A = 1.5
+  [x, y]
+}
+
+// Right now, we just check that the bounds of A (in this case Any) conform to the actual type.
+// So we'd check String <: Any and Real <: Any. Obviously that's wrong. Actually, we don't even
+// need two assignments. Just assigning String to an A variable is wrong already. What if
+// A is Real?
+// Observation: Assigning String to A would be legal if A was GUARANTEED to be a SUPERTYPE of String.
+// Maybe we have to flip the subtyping relationship here to consider a sort of lower bound?
+
+// Let's see another example:
+function callme(a: A): A where A <: String = ...
+
+function callit(a: A): A where A = {
+  callme('xy')
+}
+
+// Again, we have the problem that callme will return a String (as A = String), but callit simply checks whether
+// the return type fits the upper bounds of A, in this case Any. So callme('xy') is a valid returning expression,
+// even though callit's A might be instanced as something else, such as Real.
+
+// This means we have to introduce a concept of a type's lower bound, which is checked during type-checking of
+// "outputting" constructs such as assignments and returns. The lower bound of a type variable would, for now,
+// be Nothing, while any other type would calculate its lower bound based on its components or simply have none.
+// In this sense, the lower bound can be viewed as saying "this type variable is at most this specific".
+
+// This leaves us with a weird "if this type term has a type variable, do one thing, otherwise do the other"
+// when it comes to checking return expressions and assignments. This feels weird, to be honest. Thinking more
+// on this, it's not about "outputting" positions at all. Consider the following object instantiation:
+
+function bar(a: A): C[A] where A = {
+  C[A]('test')
+}
+
+// Since String <: Any, using the current subtyping rules, this would be a valid expression. But we have the same
+// issue here: A must be guaranteed to be at most String (i.e. a supertype of String) to make String assignable
+// here, but surely an argument is not an "outputting" position.
+
+// Maybe we have to consider a notion "assignability" when we deal with type variables. A value of any type X
+// can be assigned to a variable of type A if A's lower bound B ensures X <: B. Because then X can be safely
+// assigned to A, as A is at most as specific as B and must be a supertype of B.
+
+
 function foo[A, B](x: A | B, y: B): () = ...
 
 foo(5, 'a')

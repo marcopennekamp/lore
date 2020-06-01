@@ -6,6 +6,7 @@ import scala.collection.mutable
 //       branch with the substitution.
 //class AssignmentFamily
 
+// TODO: Rename to something less generic.
 class Assignments private () {
   private val assignments = mutable.HashMap[TypeVariable, List[Type]]()
   private var areAssignmentsCompatible = false
