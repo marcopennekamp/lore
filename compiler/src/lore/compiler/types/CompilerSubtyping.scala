@@ -134,7 +134,7 @@ object CompilerSubtyping extends Subtyping {
       //       The LUB of C[Int] and D[String] should be A, but the algorithm as envisioned would return Any, because
       //       the declared type hierarchy returns only B as the most specific common schema. The way to fix this is
       //       to instantiate a subgraph of the declared type hierarchy with the given type arguments.
-      case (d1: DeclaredTypeSchema, d2: DeclaredTypeSchema) => declaredTypeLcs(d1, d2).fallbackIfAny
+      case (d1: DeclaredType, d2: DeclaredType) => declaredTypeLcs(d1, d2).fallbackIfAny
 
       // Component types simply delegate to declared types.
       case (c1: ComponentType, c2: ComponentType) =>
