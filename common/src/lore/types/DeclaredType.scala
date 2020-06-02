@@ -3,7 +3,7 @@ package lore.types
 /**
   * A declared type as defined by the spec.
   */
-trait DeclaredType extends Type {
+trait DeclaredType extends NamedType {
   /**
     * The name of the declared type.
     */

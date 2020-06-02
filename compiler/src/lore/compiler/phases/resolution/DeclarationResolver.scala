@@ -5,7 +5,7 @@ import lore.compiler.core.{Compilation, Fragment, Registry}
 import lore.compiler.core.Compilation.{C, Verification}
 import lore.compiler.feedback.Error
 import lore.compiler.phases.resolution.DeclarationResolver.{InheritanceCycle, TypeAlreadyExists}
-import lore.compiler.definitions.{ClassDefinition, MultiFunctionDefinition}
+import lore.compiler.definitions.{ClassDefinition, MultiFunctionDefinition, TypeScope}
 import lore.compiler.types.TypeExpressionEvaluator
 import lore.types.Type
 import scalax.collection.GraphEdge._
@@ -169,6 +169,7 @@ class DeclarationResolver {
 
     // Now that we have a proper order, we can start building the Registry.
     implicit val registry: Registry = new Registry()
+    implicit val typeScope: TypeScope = registry.typeScope
 
     // First, we resolve all declared types in their proper resolution order.
     // With .tail, we exclude Any, since we don't need to add that to the registry, as it is already a part
@@ -191,7 +192,11 @@ class DeclarationResolver {
     val withResolvedAliasTypes = withRegisteredDefinitions.flatMap { _ =>
       aliasDeclarations.map { case FragmentNode(node, _fragment) =>
         implicit val fragment: Fragment = _fragment
-        TypeExpressionEvaluator.evaluate(node.tpe).map(tpe => registry.registerType(node.name, tpe))
+        //TypeExpressionEvaluator.evaluate(node.tpe).map(tpe => registry.registerType(node.name, tpe))
+        // TODO: Implement alias types as named types.
+        Compilation.fail(new Error(node) {
+          override def message: String = "Alias types are currently not supported."
+        })
       }.simultaneous
     }
 

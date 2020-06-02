@@ -42,6 +42,7 @@ object DeclaredTypeResolver {
   }
 
   private def resolveClassNode(node: TypeDeclNode.ClassNode)(implicit registry: Registry, fragment: Fragment): C[ClassDefinition] = {
+    implicit val typeScope: TypeScope = registry.typeScope
     // Resolve supertype and members simultaneously for same-run error reporting. Owned-by and constructor types
     // are resolved in the deferred typing verification phase.
     (
@@ -64,14 +65,14 @@ object DeclaredTypeResolver {
     override def message = s"The component ${node.name} is not a valid class type."
   }
 
-  private def resolveMemberNode(node: TypeDeclNode.MemberNode)(implicit registry: Registry, fragment: Fragment): C[MemberDefinition[Type]] = {
+  private def resolveMemberNode(node: TypeDeclNode.MemberNode)(implicit typeScope: TypeScope, fragment: Fragment): C[MemberDefinition[Type]] = {
     node match {
       case TypeDeclNode.PropertyNode(name, tpe, isMutable) =>
         val resolveType = () => TypeExpressionEvaluator.evaluate(tpe)
         Compilation.succeed(new PropertyDefinition(name, resolveType, isMutable, node.position))
       case componentNode@TypeDeclNode.ComponentNode(name, overrides) =>
         val resolveType = () => {
-          registry.resolveType(name, node)
+          typeScope.resolve(name, node)
             .require(_.isInstanceOf[ClassType])(ComponentMustBeClass(componentNode))
             .map(_.asInstanceOf[ClassType])
         }

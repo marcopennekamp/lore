@@ -106,7 +106,8 @@ class ClassDefinition(
         val body = ExprNode.BlockNode(List(
           TopLevelExprNode.ConstructNode(arguments, withSuper)
         ))
-        val constructor = ConstructorDefinition(this.name, parameters, body, position)
+        // TODO: The constructor should rather contain the registry type scope.
+        val constructor = ConstructorDefinition(this.name, new TypeVariableScope(null), parameters, body, position)
         constructor.associateWith(this)
         constructor
     }

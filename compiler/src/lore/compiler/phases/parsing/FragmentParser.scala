@@ -56,9 +56,9 @@ object FragmentParser {
 
   private def functionTypeVariables[_: P]: P[List[DeclNode.TypeVariableNode]] = {
     def typeVariable = {
-      P(Index ~ identifier ~ ("<:" ~ TypeParser.typeExpression).?).map(withIndex(DeclNode.TypeVariableNode))
+      P(Index ~ identifier ~ (">:" ~ TypeParser.typeExpression).? ~ ("<:" ~ TypeParser.typeExpression).?).map(withIndex(DeclNode.TypeVariableNode))
     }
-    P(("where" ~ typeVariable.rep(1)).?).map {
+    P(("where" ~ typeVariable.rep(1, CharIn(","))).?).map {
       case None => Nil
       case Some(seq) => seq.toList
     }

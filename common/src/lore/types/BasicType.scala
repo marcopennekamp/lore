@@ -1,6 +1,6 @@
 package lore.types
 
-sealed abstract class BasicType(name: String) extends Type {
+sealed abstract class BasicType(override val name: String) extends NamedType {
   override val isAbstract: Boolean = false
   override val isParametric = false
   override def string(precedence: TypePrecedence): String = name

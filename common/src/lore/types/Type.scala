@@ -40,14 +40,14 @@ trait Type {
 }
 
 object Type {
-  val predefinedTypes: Map[String, Type] = Map(
-    "Any" -> AnyType,
-    "Nothing" -> NothingType,
-    "Int" -> BasicType.Int,
-    "Real" -> BasicType.Real,
-    "Boolean" -> BasicType.Boolean,
-    "String" -> BasicType.String,
-  )
+  val predefinedTypes: Map[String, NamedType] = List(
+    AnyType,
+    NothingType,
+    BasicType.Int,
+    BasicType.Real,
+    BasicType.Boolean,
+    BasicType.String,
+  ).map(t => (t.name, t)).toMap
 }
 
 sealed abstract class TypePrecedence(protected val value: Int) {

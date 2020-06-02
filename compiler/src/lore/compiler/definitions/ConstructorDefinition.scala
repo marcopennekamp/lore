@@ -4,8 +4,8 @@ import lore.compiler.ast.ExprNode
 import lore.compiler.feedback.Position
 
 case class ConstructorDefinition(
-  override val name: String, parameters: List[ParameterDefinition], bodyBlock: ExprNode.BlockNode,
-  override val position: Position
+  override val name: String, override val typeScope: TypeScope, parameters: List[ParameterDefinition],
+  bodyBlock: ExprNode.BlockNode, override val position: Position
 ) extends InternalCallTarget {
   private var classDefinition: ClassDefinition = _
   def associateWith(classDefinition: ClassDefinition): Unit = {

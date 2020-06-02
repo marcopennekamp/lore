@@ -7,7 +7,7 @@ import lore.compiler.core.Registry.{ConstructorNotFound, ExactFunctionNotFound, 
 import lore.compiler.definitions._
 import lore.compiler.feedback.{Error, Position}
 import lore.compiler.types.{DeclaredType, DeclaredTypeHierarchy}
-import lore.types.{ProductType, Type}
+import lore.types.{NamedType, ProductType, Type}
 
 import scala.collection.{MapView, mutable}
 
@@ -18,7 +18,7 @@ class Registry {
   /**
     * The list of types declared in the whole project, including predefined types such as Int and Real.
     */
-  private val types = mutable.HashMap[String, Type](Type.predefinedTypes.toList: _*)
+  private val types = mutable.HashMap[String, NamedType](Type.predefinedTypes.toList: _*)
   private val typeDefinitions = mutable.HashMap[String, DeclaredTypeDefinition]()
   private val multiFunctions = mutable.HashMap[String, MultiFunctionDefinition]()
   val declaredTypeHierarchy = new DeclaredTypeHierarchy()
@@ -26,7 +26,7 @@ class Registry {
   /**
     * Registers a type with the specific name.
     */
-  def registerType(name: String, tpe: Type): Unit = {
+  def registerType(name: String, tpe: NamedType): Unit = {
     if (types.contains(name)) {
       // We throw a runtime exception instead of returning a compilation error, because at this point, if we register
       // a type that is already registered, it is a COMPILER BUG and not a user error!
@@ -46,7 +46,7 @@ class Registry {
   /**
     * Returns all registered types, accessible via an immutable map view.
     */
-  def getTypes: MapView[String, Type] = types.view
+  def getTypes: MapView[String, NamedType] = types.view
 
   /**
     * Whether a type with the name `name` has been registered.
@@ -56,18 +56,15 @@ class Registry {
   /**
     * Searches for a type with the given name.
     */
-  def getType(name: String): Option[Type] = types.get(name)
+  def getType(name: String): Option[NamedType] = types.get(name)
 
   /**
     * Gets a named type with the given name. If the type cannot be found, the operation fails with a compilation error.
     *
     * @param position The position where the type name occurs, to be used for error building.
     */
-  def resolveType(name: String, position: Position): C[Type] = {
-    getType(name) match {
-      case None => Compilation.fail(TypeNotFound(name, position))
-      case Some(tpe) => Compilation.succeed(tpe)
-    }
+  def resolveType(name: String, position: Position): C[NamedType] = {
+    typeScope.resolve(name, position)
   }
 
   /**
@@ -75,8 +72,19 @@ class Registry {
     *
     * @param associatedNode The node where the type name occurs, to be used for error building.
     */
-  def resolveType(name: String, associatedNode: Node)(implicit fragment: Fragment): C[Type] = {
+  def resolveType(name: String, associatedNode: Node)(implicit fragment: Fragment): C[NamedType] = {
     resolveType(name, associatedNode.position)
+  }
+
+  /**
+    * The TypeScope view of the registry. This is strictly an immutable view.
+    */
+  val typeScope: TypeScope = new TypeScope {
+    override def get(name: String): Option[NamedType] = getType(name)
+    override protected def add(entry: NamedType): Unit = {
+      throw new UnsupportedOperationException("You may not add types to the Registry via its TypeScope interface.")
+    }
+    override protected def unknownEntry(name: String, position: Position): Error = TypeNotFound(name, position)
   }
 
   /**

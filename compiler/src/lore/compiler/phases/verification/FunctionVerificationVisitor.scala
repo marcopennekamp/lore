@@ -8,7 +8,7 @@ import lore.compiler.core.Compilation.Verification
 import lore.compiler.feedback.{Error, Position}
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
 import lore.compiler.types.{CompilerSubtyping, TypeExpressionEvaluator}
-import lore.compiler.definitions.{ClassDefinition, DynamicCallTarget, FunctionDefinition, FunctionSignature, InternalCallTarget, MultiFunctionDefinition}
+import lore.compiler.definitions.{ClassDefinition, DynamicCallTarget, FunctionDefinition, FunctionSignature, InternalCallTarget, MultiFunctionDefinition, TypeScope}
 import lore.types.{BasicType, ListType, MapType, NothingType, ProductType, Type}
 
 private[verification] class FunctionVerificationVisitor(
@@ -25,6 +25,8 @@ private[verification] class FunctionVerificationVisitor(
   import FunctionVerificationVisitor._
   import StmtNode._
   import TopLevelExprNode._
+
+  implicit val typeScope: TypeScope = callTarget.typeScope
 
   /**
     * The function verification context used by the visitor to open/close scopes, register yields, and so on.
@@ -121,7 +123,7 @@ private[verification] class FunctionVerificationVisitor(
       // TODO: We will also need access to global variables if we introduce those into Lore.
       // TODO: Once we treat functions as values, we will have to make this even more complicated by also
       //       considering function names.
-      context.currentScope.entry(name, node.position).flatMap { variable =>
+      context.currentScope.resolve(name, node.position).flatMap { variable =>
         node.setVariable(variable)
         node.typed(variable.tpe)
       }

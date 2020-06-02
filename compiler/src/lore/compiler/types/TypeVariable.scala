@@ -1,6 +1,5 @@
 package lore.compiler.types
 
-import lore.compiler.core.Scope
 import lore.types.Type
 
-class TypeVariable(name: String, bound: Type) extends lore.types.TypeVariable(name, bound) with Scope.Entry
+class TypeVariable(name: String, lowerBound: Type, upperBound: Type) extends lore.types.TypeVariable(name, lowerBound, upperBound) with lore.core.Scope.Entry

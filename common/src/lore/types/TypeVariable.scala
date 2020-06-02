@@ -1,6 +1,6 @@
 package lore.types
 
-class TypeVariable(val name: String, val bound: Type) extends Type {
+class TypeVariable(val name: String, val lowerBound: Type, val upperBound: Type) extends NamedType {
   override val isAbstract: Boolean = false // TODO: Is this correct?
   override val isParametric = true
   override def string(parentPrecedence: TypePrecedence): String = name
