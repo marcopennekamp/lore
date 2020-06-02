@@ -206,3 +206,13 @@ foo(C([T1()]), T2())
   - B => T2
   - Check variable relationships:
     - B <: A means T2 <: T1 <--- false!
+
+
+// Specificity edge case: ?
+
+foo(a: X, b: Y) where X, Y     // 1
+foo(a: A, b: A) where A        // 2
+foo(a: String, b: A) where A   // 3
+
+// This SHOULD thus have the following specificity:
+//    foo2 <* foo1, foo3 <* foo1, foo3 </* foo2, foo1 </* foo2, foo1 </* foo3

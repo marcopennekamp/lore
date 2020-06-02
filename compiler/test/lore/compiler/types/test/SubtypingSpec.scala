@@ -12,6 +12,8 @@ class SubtypingSpec extends TypeSpec {
     def </<(t2: Type): Assertion = assert(!CompilerSubtyping.isSubtype(t1, t2))
   }
 
+  // TODO: These tests are partially concerned with ASSIGNABILITY, not polymorphic subtyping. We should
+  //       handle these accordingly.
   "Subtyping.isSubtype" should "handle type variables correctly" in {
     { val A = new TypeVariable("A", NothingType, AnyType)
       // ([String], String) <: ([A], A) where A <: Any

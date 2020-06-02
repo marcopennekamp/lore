@@ -12,13 +12,6 @@ case class IntersectionType private (types: Set[Type]) extends Type with Operato
   assert(types.nonEmpty)
 
   /**
-    * Whether any one of the intersection type's types is a subtype of the given candidate type.
-    */
-  def isAnyComponentSubtypeOf(candidateSupertype: Type): Boolean = {
-    types.exists(t => Subtyping.isSubtype(t, candidateSupertype))
-  }
-
-  /**
     * An intersection type is abstract if any of its component types are abstract.
     *
     * The reasoning is that the value inhabiting the intersection type will need to have each component type as its

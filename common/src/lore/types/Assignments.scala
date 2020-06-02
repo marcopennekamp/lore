@@ -64,7 +64,7 @@ class Assignments private () {
     if (areAssignmentsCompatible) {
       // Check the "type bounds" property.
       assignments.forall { case (variable, representative :: _) =>
-        val actualBound = substituteInto(variable.bound)
+        val actualBound = substituteInto(variable.upperBound)
         Subtyping.isSubtype(representative, actualBound)
       }
     } else false

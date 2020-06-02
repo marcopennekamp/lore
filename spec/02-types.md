@@ -208,9 +208,13 @@ Parametric types in **type inference** are a bit trickier. Inference in a type s
 
 
 
-### Typing Rules
+### Subtyping
 
-For now, we are only defining subtyping rules here.
+The **subtyping** relation asks the question whether a given type is a specialization of another type. This is in contrast to **assignability**, which asks whether a given type could "fit" into another type, i.e. whether it would be assignable to the other type.
+
+**TODO:** Or call assignability "fit"? Then rename MF-Fit to FitSet or something. Then we can derive specificity from assignability: t1 is more specific than t2 if t1 is assignable to t2 but t2 isn't assignable to t1.
+
+In other words, subtyping and assignability precisely differ in the way we handle type variables. Let's say we have a relationship A and B, both being type variables. In the case of subtyping, we want to ensure that ALL possible instances of A are a subtype of ALL possible instances of B. In the case of assignability, we want to ensure that ALL possible instances of A are a subtype of ANY instance of B.
 
 **TODO:** Add recently added typing rules from the code (such as list subtyping).
 
