@@ -18,7 +18,6 @@ object FunctionDeclarationResolver {
         }
       }
     }.flatMap { implicit typeScope =>
-      println(typeScope)
       (
         // We verify parameter types right away, because all types should have been declared at this point.
         // Functions are resolved after all type declarations.

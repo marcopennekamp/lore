@@ -86,29 +86,25 @@ trait Subtyping {
 
   /**
     * Whether t1 is a subtype of t2.
-    *
-    * To check subtyping with parametric types, we have to ensure two properties:
-    *   1. t1 is a subtype of t2 when parametric types are viewed as their type bounds.
-    *   2. Assignments from t1 to type variables of t2 are consistent.
     */
   def isSubtype(t1: Type, t2: Type): Boolean = {
-    // If t2 is parametric, we have to check that assignments to its type variables are consistent. This effectively
-    // ensures that all instances of the type variable are assigned the SAME type.
-    if (t2.isParametric) {
-      val assignments: Assignments = Assignments.of(t1, t2)
-      if (!assignments.isConsistent) {
-        println("Inconsistent type variable assignments.")
-        return false
-      }
-    }
+    // TODO: Do we need type variable consistency checking for proper subtyping?
+    //       We need it for assignability, of course. Specificity was the motivation to add it in the first place.
+    //       But subtyping is a different kind of beast. We will have to first implement assignability, replace all
+    //       relevant usages of subtyping with assignability, and then list where we are actually using subtyping.
+    //       Then we can come up with usage examples and decide whether we need consistency checking.
+    //       Example:
+    //        Consider a class C[A](x: A, y: A)
+    //        What is the type of C(5, 'x')?
+    //        Since we can LUB any two types, this would trivially be C[Any].
+    //        In this example, we don't need to check type variable consistency, because we can INFER the value
+    //        of A at compile-time. There is no need to guarantee that all arguments agree in their type, because
+    //        we aren't deciding anything at run-time.
 
     // TODO: We might need to use a more complex theorem solver with proper typing rules instead of such an ad-hoc/greedy algorithm.
     //       This is actually working so far, though, and we need it to be fast because of the runtime reality.
     // t1 is a subtype of t2 if any of the rules are true.
-    for (rule <- polymorphicRules) {
-      if (rule.isDefinedAt((t1, t2)) && rule.apply((t1, t2))) return true
-    }
-    false
+    polymorphicRules.exists(rule => rule.isDefinedAt((t1, t2)) && rule.apply((t1, t2)))
   }
 
   /**

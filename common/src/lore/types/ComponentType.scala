@@ -2,6 +2,8 @@ package lore.types
 
 import scala.util.hashing.MurmurHash3
 
+// TODO: How do we handle the naming of components which have type parameters? Still use the simple name
+//       and check uniqueness irrespective of type arguments?
 trait ComponentType extends Type {
   def underlying: ClassType
 

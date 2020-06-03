@@ -42,11 +42,24 @@ object Assignability {
   }
 
   /**
-    * Whether t1 fits into t2 as an input. This essentially checks whether a value of t1 could be assignable to
-    * a variable with the type t2.
+    * Whether t1 fits into t2 as an input. This essentially checks whether ANY instance of t1 could be assignable to
+    * ONE instance of t2.
+    *
+    * To check assignability with parametric types, we have to ensure type variable consistency.
     */
   def isAssignable(t1: Type, t2: Type): Boolean = {
-    ???
+    // If t2 is parametric, we have to check that assignments to its type variables are consistent. This effectively
+    // ensures that all instances of the type variable are assigned the SAME type. Only if t2's type variables can
+    // be assigned to consistently can we provably assign t1 to t2.
+    if (t2.isParametric) {
+      val allocation: TypeVariableAllocation = TypeVariableAllocation.of(t1, t2)
+      if (!allocation.isConsistent) {
+        return false
+      }
+    }
+
+    // t1 is assignable to t2 if any of the rules are true.
+    rules.exists(rule => rule.isDefinedAt((t1, t2)) && rule.apply((t1, t2)))
   }
 
 }
