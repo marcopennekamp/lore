@@ -216,6 +216,8 @@ The **subtyping** relation asks the question whether a given type is a specializ
 
 In other words, subtyping and assignability precisely differ in the way we handle type variables. Let's say we have a relationship A and B, both being type variables. In the case of subtyping, we want to ensure that ALL possible instances of A are a subtype of ALL possible instances of B. In the case of assignability, we want to ensure that ALL possible instances of A are a subtype of ANY instance of B.
 
+There is a special case when we have type variables on both sides. Take (A) and (B) for example. If we substitute A into B, we have to check that A's upper bound is a subtype of B's upper bound and A's lower bound is a supertype of B's lower bound. That is, the types that A describes fit into the range of types described by B.
+
 **TODO:** Add recently added typing rules from the code (such as list subtyping).
 
 ##### Declared Types

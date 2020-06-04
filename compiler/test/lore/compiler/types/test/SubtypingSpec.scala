@@ -1,7 +1,7 @@
 package lore.compiler.types.test
 
 import lore.compiler.types.CompilerSubtyping
-import lore.types.{AnyType, BasicType, ListType, NothingType, ProductType, Type, TypeVariable}
+import lore.types.{AnyType, Assignability, BasicType, ListType, NothingType, ProductType, Type, TypeVariable}
 import org.scalatest.Assertion
 
 class SubtypingSpec extends TypeSpec {
@@ -10,30 +10,39 @@ class SubtypingSpec extends TypeSpec {
   private implicit class TypeExtension(t1: Type) {
     def <:<(t2: Type): Assertion = assert(CompilerSubtyping.isSubtype(t1, t2))
     def </<(t2: Type): Assertion = assert(!CompilerSubtyping.isSubtype(t1, t2))
+    def assignableTo(t2: Type): Assertion = {
+      println(s"$t1 assignableTo $t2?")
+      assert(Assignability.isAssignable(t1, t2))
+    }
+    def notAssignableTo(t2: Type): Assertion = assert(!Assignability.isAssignable(t1, t2))
   }
 
   // TODO: These tests are partially concerned with ASSIGNABILITY, not polymorphic subtyping. We should
   //       handle these accordingly.
-  "Subtyping.isSubtype" should "handle type variables correctly" in {
+  "Assignability.isAssignable" should "handle type variables correctly" in {
     { val A = new TypeVariable("A", NothingType, AnyType)
-      // ([String], String) <: ([A], A) where A <: Any
-      ((ListType(BasicType.String), BasicType.String): ProductType) <:< (ListType(A), A)
-      // ([Real], String) </: ([A], A) where A <: Any
-      ((ListType(BasicType.Real), BasicType.String): ProductType) </< (ListType(A), A)
-      // ([Real], Int) </: ([A], A) where A <: Any
-      ((ListType(BasicType.Real), BasicType.Int): ProductType) </< (ListType(A), A)
+      // ([String], String) is assignable to ([A], A) where A <: Any
+      ((ListType(BasicType.String), BasicType.String): ProductType) assignableTo (ListType(A), A)
+      // ([Real], String) is NOT assignable to ([A], A) where A <: Any
+      ((ListType(BasicType.Real), BasicType.String): ProductType) notAssignableTo (ListType(A), A)
+      // ([Real], Int) is NOT assignable to ([A], A) where A <: Any
+      ((ListType(BasicType.Real), BasicType.Int): ProductType) notAssignableTo (ListType(A), A)
     }
     { val X = new TypeVariable("X", NothingType, AnyType)
       val Y = new TypeVariable("Y", NothingType, BasicType.Real)
-      // (Real, Y) <: (X, Any) where X <: Any, Y <: Real
-      ((BasicType.Real, Y): ProductType) <:< (X, AnyType)
+      // (Real, Y) is assignable to (X, Any) where X <: Any, Y <: Real
+      ((BasicType.Real, Y): ProductType) assignableTo (X, AnyType)
     }
     { val A = new TypeVariable("A", NothingType, AnyType)
       val B = new TypeVariable("B", NothingType, A)
-      // ([Real], Int) <: ([A], B) where A <: Any, B <: A
-      ((ListType(BasicType.Real), BasicType.Int): ProductType) <:< (ListType(A), B)
-      // ([T1], T2) <: ([A], B <: A) where A <: Any, B <: A
-      ((ListType(Bird), Mammal): ProductType) </< (ListType(A), B)
+      // ([Real], Int) is assignable to ([A], B) where A <: Any, B <: A
+      ((ListType(BasicType.Real), BasicType.Int): ProductType) assignableTo (ListType(A), B)
+      // ([T1], T2) is NOT assignable to ([A], B <: A) where A <: Any, B <: A
+      ((ListType(Bird), Mammal): ProductType) notAssignableTo (ListType(A), B)
     }
+  }
+
+  "Subtyping.isSubtype" should "handle type variables correctly" in {
+
   }
 }
