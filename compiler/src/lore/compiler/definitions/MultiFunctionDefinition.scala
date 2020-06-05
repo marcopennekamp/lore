@@ -126,6 +126,9 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
         unused.filter(f2 => f2 != f).exists(f2 => f.signature.inputType <= f2.signature.inputType)
       }
 
+      // TODO: Fix the potential endless loop.
+      assert(supers.nonEmpty)
+
       // Add these functions, then potentially connect them with any 0-out nodes.
       supers.foreach { f =>
         hierarchy.add(f)
