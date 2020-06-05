@@ -1,18 +1,14 @@
 package lore.compiler.phases.verification
 
 import lore.compiler.ast.visitor.StmtVisitor
-import lore.compiler.core.{Compilation, Fragment, Registry}
 import lore.compiler.core.Compilation.Verification
+import lore.compiler.core.{Fragment, Registry}
+import lore.compiler.definitions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.feedback.Error
 import lore.compiler.types.CompilerSubtyping
-import lore.compiler.definitions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.types.Type
 
 object MultiFunctionConstraints {
-  case class FunctionAlreadyExists(definition: FunctionDefinition) extends Error(definition) {
-    override def message = s"The function ${definition.signature} is already declared somewhere else."
-  }
-
   case class FunctionIllegallyAbstract(function: FunctionDefinition) extends Error(function) {
     override def message: String = s"The function ${function.signature} is declared abstract even though it doesn't have an" +
       s" abstract input type. Either implement the function or ensure the input type is abstract."
@@ -25,38 +21,18 @@ object MultiFunctionConstraints {
 
   /**
     * Verifies:
-    *   1. All functions have a unique signature.
-    *   2. No function body contains a continuation node.
-    *   3. The input abstractness constraint.
-    *   4. The totality constraint.
+    *   1. No function body contains a continuation node.
+    *   2. The input abstractness constraint.
+    *   3. The totality constraint.
     */
   def verify(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
     (
-      verifyUnique(mf),
+      // Note that uniqueness is already checked in the DeclarationResolver.
       verifyNoContinuation(mf),
       verifyInputAbstractness(mf),
       verifyTotalityConstraint(mf),
       // TODO: Verify that return types are subtypes of return types of functions higher in the hierarchy.
     ).simultaneous.verification
-  }
-
-  /**
-    * Verifies that all functions declared in the multi-function have a unique signature.
-    */
-  def verifyUnique(mf: MultiFunctionDefinition): Verification = {
-    // Of course, all functions added to the multi-function must have the same name. If that is not the case,
-    // there is something very wrong with the compiler.
-    mf.functions.foreach(function => assert(function.name == mf.name))
-
-    // Then verify that all functions have different signatures.
-    mf.functions.map { function =>
-      if (mf.functions.filterNot(_ == function).map(_.signature).contains(function.signature)) {
-        // We have found a function with a duplicated signature!
-        Compilation.fail(FunctionAlreadyExists(function))
-      } else {
-        Verification.succeed
-      }
-    }.simultaneous.verification
   }
 
   /**

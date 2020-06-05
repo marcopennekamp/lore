@@ -1,6 +1,6 @@
 package lore.compiler.definitions
 
-import lore.types.{ProductType, Type}
+import lore.types.{Assignability, ProductType, Type}
 
 import scala.util.hashing.MurmurHash3
 
@@ -8,4 +8,12 @@ case class FunctionSignature(name: String, parameters: List[ParameterDefinition]
   val inputType: ProductType = ProductType(parameters.map(_.tpe))
   override def toString: String = s"$name$inputType: $outputType"
   override val hashCode: Int = MurmurHash3.productHash((name, inputType, outputType))
+
+  /**
+    * Whether this function signature is equal in specificity to the given one.
+    */
+  def isEquallySpecific(other: FunctionSignature): Boolean = {
+    // TODO: What about the output type?
+    Assignability.isEquallySpecific(inputType, other.inputType)
+  }
 }

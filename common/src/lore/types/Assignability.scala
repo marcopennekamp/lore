@@ -13,13 +13,10 @@ object Assignability {
   //      using isSubtype:    T2 < B <= T2 < B.lowerBound <= T2 < Nothing
   //                          OOPS!
   private val rules: Seq[Subtyping.Rule] = Seq[Subtyping.Rule](
-    { case (v1: TypeVariable, v2: TypeVariable) =>
-      recur(v2.lowerBound, v1.lowerBound) && recur(v1.upperBound, v2.upperBound) },
-    { case (v1: TypeVariable, t2) =>
-      recur(v1.upperBound, t2) },
-    { case (t1, v2: TypeVariable) =>
-      recur(v2.lowerBound, t1) && recur(t1, v2.upperBound) },
-  ) ++ Subtyping.monomorphicRules(recur)
+    { case (v1: TypeVariable, v2: TypeVariable) => innerIsAssignable(v2.lowerBound, v1.lowerBound) && innerIsAssignable(v1.upperBound, v2.upperBound) },
+    { case (v1: TypeVariable, t2) => innerIsAssignable(v1.upperBound, t2) },
+    { case (t1, v2: TypeVariable) => innerIsAssignable(v2.lowerBound, t1) && innerIsAssignable(t1, v2.upperBound) },
+  ) ++ Subtyping.monomorphicRules(innerIsAssignable)
 
   /**
     * Whether t1 is more specific than t2.
@@ -32,7 +29,7 @@ object Assignability {
     * Whether t1 is as specific as t2.
     */
   def isEquallySpecific(t1: Type, t2: Type): Boolean = {
-    isAssignable(t1, t2) && isAssignable(t2, t1)
+    t1 == t2 || isAssignable(t1, t2) && isAssignable(t2, t1)
   }
 
   /**
@@ -42,6 +39,9 @@ object Assignability {
     * To check assignability with parametric types, we also have to ensure type variable consistency.
     */
   def isAssignable(t1: Type, t2: Type): Boolean = {
+    // Two types are trivially assignable to each other if they are equal.
+    if (t1 == t2) return true
+
     // If t2 is parametric, we have to check that assignments to its type variables are consistent. This effectively
     // ensures that all instances of the type variable are assigned the SAME type. Only if t2's type variables can
     // be assigned to consistently can we provably assign t1 to t2.
@@ -53,10 +53,10 @@ object Assignability {
       }
     }
 
-    recur(t1, t2)
+    innerIsAssignable(t1, t2)
   }
 
-  private def recur(t1: Type, t2: Type): Boolean = {
+  private def innerIsAssignable(t1: Type, t2: Type): Boolean = {
     // t1 is assignable to t2 if any of the rules are true.
     rules.exists(rule => rule.isDefinedAt((t1, t2)) && rule.apply((t1, t2)))
   }
