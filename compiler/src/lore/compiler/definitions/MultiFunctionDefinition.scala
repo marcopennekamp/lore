@@ -1,6 +1,6 @@
 package lore.compiler.definitions
 
-import lore.types.{ProductType, Type}
+import lore.types.{Assignability, ProductType, Type}
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
 
@@ -29,7 +29,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
     * When used as a visit-predicate for [[traverseHierarchy]], all and only nodes that are part of the function
     * fit for a given input type are visited.
     */
-  private def visitFit(input: ProductType)(node: hierarchy.NodeT): Boolean = input <= node.signature.inputType
+  private def visitFit(input: ProductType)(node: hierarchy.NodeT): Boolean = Assignability.isAssignable(input, node.signature.inputType)
 
   /**
     * Calculates the multi-function fit.
@@ -68,8 +68,8 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
     // Using traverseHierarchy ensures that we only visit subtrees that could contain the exact candidate.
     val input = tpe.toTuple
     traverseHierarchy(
-      visit  = node => input <= node.signature.inputType,
-      select = node => input == node.signature.inputType,
+      visit  = visitFit(tpe.toTuple),
+      select = node => Assignability.isEquallySpecific(input, node.signature.inputType),
     ).headOption
   }
 
@@ -103,12 +103,15 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
 
   /**
     * Builds the function hierarchy that is used to define the fit.
+    *
+    * Note that this algorithm assumes that there is no pair of functions which are equally specific. Such a
+    * user error flaw should be handled elsewhere (speaking of uniqueness).
     */
   private def buildHierarchy(): Unit = {
     // Algorithm: Sequentially pick all functions which don't have a super-function from the unused set and
     // add them to the graph. For all new functions f, add edges from any 0-out node f2 to f if in(f) < in(f2).
     // A 0-out node is a function which hasn't been associated with any sub-functions yet.
-    // The algorithm connects functions whose input types are in direct subtyping relationships in the context of
+    // The algorithm connects functions whose input types are in direct specificity relationships in the context of
     // all defined functions within this multi-function. It ensures this property by adding all functions which don't
     // have a super-function to the graph simultaneously. Such functions f must find their super-function g in at
     // least one of the graph's current 0-out nodes, because in the previous iteration, that f specifically wasn't
@@ -122,18 +125,22 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
       val zeros = hierarchy.nodes.filter(_.outDegree == 0)
 
       // All unused functions that don't have a super-function in the unused set.
-      val supers = unused.toList.filterNot { f =>
-        unused.filter(f2 => f2 != f).exists(f2 => f.signature.inputType <= f2.signature.inputType)
+      val supers = unused.toList.filter { f =>
+        val allExceptSelf = unused.filter(f2 => f2 != f)
+        !allExceptSelf.exists(f2 => Assignability.isAssignable(f.signature.inputType, f2.signature.inputType))
       }
 
-      // TODO: Fix the potential endless loop.
+      // TODO: Fix the potential endless loop. (Test if the DeclarationResolver fix, i.e. requiring unique function
+      //       signatures there, has already fixed the issue.)
+      // If supers is empty, this algorithm will result in an endless loop. Hence, we abort the compilation
+      // before that can happen.
       assert(supers.nonEmpty)
 
       // Add these functions, then potentially connect them with any 0-out nodes.
       supers.foreach { f =>
         hierarchy.add(f)
         zeros.foreach { g =>
-          if (f.signature.inputType <= g.signature.inputType) {
+          if (Assignability.isAssignable(f.signature.inputType, g.signature.inputType)) {
             hierarchy.addEdge(g, f)
           }
         }

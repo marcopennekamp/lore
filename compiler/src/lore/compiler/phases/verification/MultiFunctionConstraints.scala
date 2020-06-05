@@ -6,7 +6,7 @@ import lore.compiler.core.{Fragment, Registry}
 import lore.compiler.definitions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.feedback.Error
 import lore.compiler.types.CompilerSubtyping
-import lore.types.Type
+import lore.types.{Assignability, Type}
 
 object MultiFunctionConstraints {
   case class FunctionIllegallyAbstract(function: FunctionDefinition) extends Error(function) {
@@ -61,6 +61,8 @@ object MultiFunctionConstraints {
     * Verifies the multi-function for the totality constraint.
     */
   def verifyTotalityConstraint(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
+    // TODO: Refactor this with the new assignability changes. (It will be a fucking shit-show, no doubt.)
+
     //  We have the following interesting case:
     //  Say we have types abstract X, A < X, B < X, C < X and a component +T. We have an abstract function with
     //  input X & +T that is implemented by a function with input (A | B) & +T, and a function with input C & +T.
@@ -81,7 +83,7 @@ object MultiFunctionConstraints {
       CompilerSubtyping.abstractResolvedDirectSubtypes(f.signature.inputType).toList.flatMap { subtype =>
         // TODO: Can we optimize this given the new hierarchy?
         val isValid = mf.functions.exists { f2 =>
-          CompilerSubtyping.isStrictSubtype(f2.signature.inputType, f.signature.inputType) && mf.fit(subtype).contains(f2)
+          Assignability.isMoreSpecific(f2.signature.inputType, f.signature.inputType) && mf.fit(subtype).contains(f2)
         }
         if (!isValid) Some(subtype) else None
       }

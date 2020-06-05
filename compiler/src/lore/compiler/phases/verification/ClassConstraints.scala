@@ -63,7 +63,7 @@ object ClassConstraints {
     */
   def verifyOwnedBy(definition: ClassDefinition): Verification = {
     // We have to assume Any, because this handles a special case where the owned-by declaration of a class has
-    // been forgotten, despite the superclass having its own owned-by type.
+    // been forgotten by the programmer, despite the superclass having its own owned-by type.
     val ownedBy = definition.tpe.ownedBy.getOrElse(AnyType)
 
     // Here, we assume Any in case the supertype is None or its owned-by type is None. In both cases, the omission
@@ -71,7 +71,7 @@ object ClassConstraints {
     val superOwnedBy = definition.tpe.supertype.flatMap(_.ownedBy).getOrElse(AnyType)
 
     // Now we just have to check whether the owned-by type is actually a subtype.
-    if (!CompilerSubtyping.isSubtype(ownedBy, superOwnedBy)) {
+    if (!(ownedBy <= superOwnedBy)) {
       Compilation.fail(OwnedByMustBeSubtype(definition, ownedBy, superOwnedBy))
     } else Verification.succeed
   }

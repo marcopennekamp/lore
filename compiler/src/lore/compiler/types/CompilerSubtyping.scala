@@ -16,6 +16,8 @@ object CompilerSubtyping extends Subtyping {
     * This is an implementation of the 'ards' function as defined in the spec. See the spec for more information.
     */
   def abstractResolvedDirectSubtypes(t: Type)(implicit registry: Registry): Set[Type] = {
+    // TODO: How does assignability affect this?
+
     // TODO: Using Set like this (which is much slower than List) could be a major performance hog down the line.
     //       We should watch out for any performance problems stemming from ards evaluation.
     implicit val setMonad: Monad[Set] = new Monad[Set] {
@@ -50,6 +52,8 @@ object CompilerSubtyping extends Subtyping {
     * want the most specific common supertype. What could be more specific than one of the types themselves?
     */
   private[types] def configurableLub(defaultToSum: Boolean)(t1: Type, t2: Type)(implicit registry: Registry): Type = {
+    // TODO: How does assignability affect this?
+
     /**
       * The fallback LUB, which is either Any or t1 | t2 depending on the settings.
       */

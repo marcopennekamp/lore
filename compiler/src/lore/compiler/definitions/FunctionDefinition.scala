@@ -14,5 +14,14 @@ class FunctionDefinition(
   val isAbstract: Boolean = body.isEmpty
   override lazy val signature: FunctionSignature = FunctionSignature(name, parameters, outputType)
   override def toString = s"${if (isAbstract) "abstract " else ""}$name(${parameters.mkString(", ")})"
+
+  /**
+    * Function definition equality is always reference equality, as we create exactly one function definition
+    * for every defined function.
+    */
+  override def equals(obj: Any): Boolean = obj match {
+    case other: FunctionDefinition => this.eq(other)
+    case _ => false
+  }
   override lazy val hashCode: Int = signature.hashCode
 }
