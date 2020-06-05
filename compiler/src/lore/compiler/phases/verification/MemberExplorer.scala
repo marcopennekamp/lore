@@ -88,7 +88,7 @@ object MemberExplorer {
               // we must look for a member whose type is a supertype of all other member types. If no such type exists,
               // we have a true ambiguity.
               // TODO: If this ever leads to performance problems, consider a smarter algorithm.
-              members.find(m1 => members.forall(m2 => CompilerSubtyping.isSubtype(m2.tpe, m1.tpe))) match {
+              members.find(m1 => members.forall(m2 => m2.tpe <= m1.tpe)) match {
                 case None => Compilation.fail(AmbiguousTypeMember(name, tpe, position))
                 case Some(member) => Compilation.succeed(member)
               }

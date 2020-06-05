@@ -115,7 +115,7 @@ object ClassConstraints {
     */
   def verifyCanOwn(definition: ClassDefinition, component: ComponentDefinition): Verification = {
     val ownershipType = component.tpe.ownedBy.getOrElse(AnyType)
-    if (!CompilerSubtyping.isSubtype(definition.tpe, ownershipType)) {
+    if (!(definition.tpe <= ownershipType)) {
       Compilation.fail(ClassCannotOwnComponent(definition, component))
     } else Verification.succeed
   }
@@ -168,7 +168,7 @@ object ClassConstraints {
 
       // Verify that the overriding component is a subtype of the overridden component.
       val subtypes = registry.resolveType(overriddenName, component.position).flatMap { overriddenType =>
-        if (!CompilerSubtyping.isSubtype(component.tpe, overriddenType)) {
+        if (!(component.tpe <= overriddenType)) {
           Compilation.fail(ComponentMustSubtypeOverriddenComponent(definition, component))
         } else Verification.succeed
       }

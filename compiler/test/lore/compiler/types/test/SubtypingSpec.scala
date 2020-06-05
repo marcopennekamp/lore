@@ -8,8 +8,8 @@ class SubtypingSpec extends TypeSpec {
   import TypesExample._
 
   private implicit class TypeExtension(t1: Type) {
-    def <:<(t2: Type): Assertion = assert(CompilerSubtyping.isSubtype(t1, t2))
-    def </<(t2: Type): Assertion = assert(!CompilerSubtyping.isSubtype(t1, t2))
+    def <:<(t2: Type): Assertion = assert(t1 <= t2)
+    def </<(t2: Type): Assertion = assert(!(t1 <= t2))
     def assignableTo(t2: Type): Assertion = {
       println(s"$t1 assignableTo $t2?")
       assert(Assignability.isAssignable(t1, t2))
