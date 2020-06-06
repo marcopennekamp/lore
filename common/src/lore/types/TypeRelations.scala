@@ -18,8 +18,6 @@ object TypeRelations {
   def inRelation(rules: List[Rule])(t1: Type, t2: Type): Boolean = {
     // TODO: Hide this behind a feature switch so that it doesn't get run or even compiled when we need performance.
     //       This is only for reporting compiler bugs, really.
-    // TODO: This warning reports lots of attempts to subtype Any <= T for many T != Any. This seems to be connected
-    //       to calculating the LUB. Find out why the compiler even attempts to do this!
     if (!rules.exists(_.isDefinedAt((t1, t2)))) {
       println(s"A decision about a relation between types $t1 and $t2 was attempted, but none of the rules match.")
     }
@@ -50,7 +48,7 @@ object TypeRelations {
       // TODO: Once we have introduced covariant (and possibly contravariant) classes, we will additionally have to
       //       check whether d1's typeArguments are a subtype of d2's type arguments.
       // TODO: Once we introduce parametric declared types, we might have to move this rule out of here.
-      { case (d1: DeclaredType, d2: DeclaredType) =>  d1 == d2 || isSubtype(d1.supertype.getOrElse(AnyType), d2) },
+      { case (d1: DeclaredType, d2: DeclaredType) => d1 == d2 || d1.supertype.exists(isSubtype(_, d2)) },
 
       // A component type p1 is a subtype of p2 if p1's underlying type is a subtype of p2's underlying type.
       { case (p1: ComponentType, p2: ComponentType) => isSubtype(p1.underlying, p2.underlying) },
