@@ -23,6 +23,8 @@ object Assignability {
     // A type variable v1 is assignable to a type t2 if all the types described by v1 are assignable to t2. No matter
     // which type we assign to v1, t2 will always be able to accommodate such a type.
     { case (v1: TypeVariable, t2) if t2.isMonomorphic => innerIsAssignable(v1.upperBound, t2) },
+    // A type t1 is assignable to a type variable v2 if the types described by v2 contain t1. This means that t1
+    // has to adhere to the lower and upper bounds of v2.
     { case (t1, v2: TypeVariable) if t1.isMonomorphic => innerIsAssignable(v2.lowerBound, t1) && innerIsAssignable(t1, v2.upperBound) },
   ) ++ TypeRelations.monomorphicSubtypingRules(innerIsAssignable, innerIsEquallySpecific)
 
