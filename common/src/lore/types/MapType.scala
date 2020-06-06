@@ -11,7 +11,7 @@ case class MapType(key: Type, value: Type) extends Type with OperatorType {
     */
   override def isAbstract = false
 
-  override val isParametric: Boolean = key.isParametric || value.isParametric
+  override val isPolymorphic: Boolean = key.isPolymorphic || value.isPolymorphic
 
   override protected def precedence: TypePrecedence = TypePrecedence.Map
   override protected def operands: List[Type] = List(key, value)

@@ -12,7 +12,7 @@ trait ComponentType extends Type {
     */
   override def isAbstract: Boolean = underlying.isAbstract
 
-  override val isParametric = false
+  override val isPolymorphic = false
 
   override def string(precedence: TypePrecedence): String = s"+$underlying"
   override val hashCode: Int = {

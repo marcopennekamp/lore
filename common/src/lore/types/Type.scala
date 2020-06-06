@@ -22,9 +22,14 @@ trait Type {
   def isAbstract: Boolean
 
   /**
-    * Whether this type contains type variables.
+    * Whether this type is exactly one single type instance.
     */
-  def isParametric: Boolean
+  def isMonomorphic: Boolean = !isPolymorphic
+
+  /**
+    * Whether this type describes a set of types.
+    */
+  def isPolymorphic: Boolean
 
   /**
     * A pretty string representation of the type.

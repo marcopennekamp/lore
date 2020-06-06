@@ -13,7 +13,7 @@ case class ProductType(components: List[Type]) extends Type {
     */
   override val isAbstract: Boolean = components.exists(_.isAbstract)
 
-  override val isParametric: Boolean = components.exists(_.isParametric)
+  override val isPolymorphic: Boolean = components.exists(_.isPolymorphic)
 
   override def string(parentPrecedence: TypePrecedence): String = {
     s"(${components.map(_.string(TypePrecedence.Parenthesized)).mkString(", ")})"

@@ -10,6 +10,6 @@ object AnyType extends NamedType {
     * The Any type is abstract because, while all values have the type Any, the type doesn't define any value itself.
     */
   override val isAbstract = true
-  override val isParametric = false
+  override val isPolymorphic = false
   override def string(precedence: TypePrecedence) = "Any"
 }

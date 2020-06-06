@@ -34,7 +34,7 @@ case class IntersectionType private (types: Set[Type]) extends Type with Operato
     }
   }
 
-  override val isParametric: Boolean = types.exists(_.isParametric)
+  override val isPolymorphic: Boolean = types.exists(_.isPolymorphic)
 
   override protected def precedence: TypePrecedence = TypePrecedence.Intersection
   override protected def operands: List[Type] = types.toList

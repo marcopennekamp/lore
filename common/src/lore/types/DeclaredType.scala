@@ -30,7 +30,7 @@ trait DeclaredType extends NamedType {
   override def string(precedence: TypePrecedence): String = name
 
   // TODO: For now. This needs to be set to true for classes with type parameters, of course.
-  override def isParametric = false
+  override def isPolymorphic = false
 
   // We define equality of declared types as nominal equality.
   override def equals(obj: Any): Boolean = obj match {
