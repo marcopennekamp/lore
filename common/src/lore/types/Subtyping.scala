@@ -4,6 +4,10 @@ import lore.types.TypeRelations.Rule
 
 trait Subtyping {
 
+  // TODO: Do we rather need to define type equality in terms of subtyping (t1 <= t2 && t2 <= t1)? I suspect
+  //       new edge cases especially with the introduction of polymorphic types. Of course, this might severely
+  //       affect performance and thus needs to be looked at first.
+
   // TODO: We have a slight problem: When a class type is invariant, we don't want C[String] to be a subtype of
   //       C[Any], UNLESS we really have a C[String] <: C[X <: Any]. Maybe to check types against type variables,
   //       we have to move away from the notion of subtyping and to a concept of "instance equality", which
@@ -20,7 +24,7 @@ trait Subtyping {
     // t1 is definitely a subtype of all instances of v2 if v2's lower bound ensures that instances of v2 are always
     // a supertype of t1.
     { case (t1, v2: TypeVariable) if t1.isMonomorphic => isSubtype(t1, v2.lowerBound) },
-  ) ++ TypeRelations.monomorphicSubtypingRules(isSubtype)
+  ) ++ TypeRelations.monomorphicSubtypingRules(isSubtype, _ == _)
 
   /**
     * Whether t1 is a subtype of t2.
@@ -38,7 +42,7 @@ trait Subtyping {
     //        In this example, we don't need to check type variable consistency, because we can INFER the value
     //        of A at compile-time. There is no need to guarantee that all arguments agree in their type, because
     //        we aren't deciding anything at run-time.
-    TypeRelations.inRelation(polymorphicRules)(t1, t2)
+    t1 == t2 || TypeRelations.inRelation(polymorphicRules)(t1, t2)
   }
 
   /**

@@ -24,7 +24,7 @@ object Assignability {
     // which type we assign to v1, t2 will always be able to accommodate such a type.
     { case (v1: TypeVariable, t2) if t2.isMonomorphic => innerIsAssignable(v1.upperBound, t2) },
     { case (t1, v2: TypeVariable) if t1.isMonomorphic => innerIsAssignable(v2.lowerBound, t1) && innerIsAssignable(t1, v2.upperBound) },
-  ) ++ TypeRelations.monomorphicSubtypingRules(innerIsAssignable)
+  ) ++ TypeRelations.monomorphicSubtypingRules(innerIsAssignable, innerIsEquallySpecific)
 
   /**
     * Whether t1 fits into t2 as an input. This essentially checks whether ANY instance of t1 could be assignable to
@@ -50,7 +50,21 @@ object Assignability {
     innerIsAssignable(t1, t2)
   }
 
-  private def innerIsAssignable(t1: Type, t2: Type): Boolean = TypeRelations.inRelation(rules)(t1, t2)
+  /**
+    * The isAssignable function without type variable consistency checks, which can only be supported at the
+    * top level of assignability checking.
+    */
+  private def innerIsAssignable(t1: Type, t2: Type): Boolean = {
+    t1 == t2 || TypeRelations.inRelation(rules)(t1, t2)
+  }
+
+  /**
+    * The isEquallySpecific function without type variable consistency checks, which can only be supported at the
+    * top level of assignability checking.
+    */
+  private def innerIsEquallySpecific(t1: Type, t2: Type): Boolean = {
+    t1 == t2 || innerIsAssignable(t1, t2) && innerIsAssignable(t2, t1)
+  }
 
   /**
     * Whether t1 is more specific than t2.
