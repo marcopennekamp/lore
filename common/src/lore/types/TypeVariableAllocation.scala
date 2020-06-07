@@ -127,6 +127,11 @@ class TypeVariableAllocation() {
         //                The easiest fix is probably disabling lower bounds in parameter positions. A harder fix would
         //                be to actually enforce that input types of multi-functions eventually "meet" at tuples of
         //                Nothing.
+        //                We can also get rid of the compile-time requirement that we cannot have empty-fit errors in
+        //                any circumstance at run-time. That is, we would ignore lower bounds and deal with it at
+        //                run-time. Maybe we can throw a warning at compile-time. If checking the totality constraint
+        //                for polymorphic types becomes impossible or tedious, we can also choose to do our best at
+        //                compile-time and then still allow the occasional empty-fit error to happen at run-time.
         //        - Lemma 2: To check the upper bound, we have to prove that all instances of u2 are supertypes of all
         //        instances of t1.
         //          - Proof: Assume the statement in the lemma is not the case. That means that we can find instances
