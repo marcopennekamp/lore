@@ -53,6 +53,7 @@ object CompilerSubtyping extends Subtyping {
     */
   private[types] def configurableLub(defaultToSum: Boolean)(t1: Type, t2: Type)(implicit registry: Registry): Type = {
     // TODO: How does assignability affect this?
+    // TODO: How do type variables affect this?
 
     /**
       * The fallback LUB, which is either Any or t1 | t2 depending on the settings.

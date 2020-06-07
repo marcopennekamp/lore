@@ -140,6 +140,7 @@ class TypeVariableAllocation() {
         //          choose an instance of u2 such as b for which t1 doesn't adhere to the upper bound of v2.
         //        - Combining lemma 1 and 2, we arrive at the definite conclusion that this style of bounds checking
         //        requires using polymorphic subtyping in the way it is specified in the line of code below.
+        // TODO: Move this to the spec.
         Subtyping.isSubtype(actualLowerBound, tpe) && Subtyping.isSubtype(tpe, actualUpperBound)
       }
     }

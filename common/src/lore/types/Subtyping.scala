@@ -8,11 +8,6 @@ trait Subtyping {
   //       new edge cases especially with the introduction of polymorphic types. Of course, this might severely
   //       affect performance and thus needs to be looked at first.
 
-  // TODO: We have a slight problem: When a class type is invariant, we don't want C[String] to be a subtype of
-  //       C[Any], UNLESS we really have a C[String] <: C[X <: Any]. Maybe to check types against type variables,
-  //       we have to move away from the notion of subtyping and to a concept of "instance equality", which
-  //       calculates equality on the basis of whether one type can be equal to the other type if all type
-  //       variables are instanced correctly.
   def polymorphicRules: List[Rule] = List[Rule](
     // Two variables are subtypes of each other if v1's upper bound agrees with v2's lower bound. This is easy to
     // see: We want all instances of v1 to be subtypes of all instances of v2. The least specific instance of v1

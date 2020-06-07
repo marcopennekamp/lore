@@ -14,6 +14,7 @@ object Assignability {
   //                          Nothing < T2 and T2 < T1 are trivial
   //      using isSubtype:    T2 < B <= T2 < B.lowerBound <= T2 < Nothing
   //                          OOPS!
+  // TODO: Move this to the spec.
   private val rules: List[Rule] = List[Rule](
     // A type variable v1 is assignable to a type variable v2 if all the types described by v1 are also described by v2,
     // because that means that no matter what type we assign to v1, v2 will also be able to accommodate this type.
@@ -25,6 +26,11 @@ object Assignability {
     { case (v1: TypeVariable, t2) if t2.isMonomorphic => innerIsAssignable(v1.upperBound, t2) },
     // A type t1 is assignable to a type variable v2 if the types described by v2 contain t1. This means that t1
     // has to adhere to the lower and upper bounds of v2.
+    // TODO: We have a slight problem: When a class type is invariant, we don't want C[String] to be assignable to
+    //       C[Any], UNLESS we really have a C[X <: Any]. Maybe to check types against type variables,
+    //       we have to move away from the notion of subtyping and to a concept of "instance equality", which
+    //       calculates equality on the basis of whether one type can be equal to the other type if all type
+    //       variables are instanced correctly.
     { case (t1, v2: TypeVariable) if t1.isMonomorphic => innerIsAssignable(v2.lowerBound, t1) && innerIsAssignable(t1, v2.upperBound) },
   ) ++ TypeRelations.monomorphicSubtypingRules(innerIsAssignable, innerIsEquallySpecific)
 
