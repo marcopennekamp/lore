@@ -34,6 +34,7 @@ object TypeRelations {
     * assignability.
     *
     * @param isSubtype Decides the subtyping/assignability relationship for a different pair of types.
+    * @param isEqual Decides whether two types are equal in the context of the given subtyping relationship.
     */
   def monomorphicSubtypingRules(
     isSubtype: (Type, Type) => Boolean,

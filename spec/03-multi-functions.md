@@ -236,6 +236,8 @@ First, let's look at the compile-time-only property of the `empty-fit` error. We
 
 Assume that $C' = \empty$ but $|C| = 1$. That is, calling $\mathcal{F}$ at compile-time was valid, but we can't find any fitting function to call at run-time with the argument type $t'$.  Since $C \neq \empty$, we know that $B \neq \empty$, so there exists an $f \in B$ such that $\mathrm{in}(f) \geq t$ (by definition of $\mathrm{Fit}$). Now, we observe that $t'$ specializes the argument type $t$, so that $t  \geq t'$ holds. This is the only way in which the run-time type of the argument can change. In particular, $t$ can not be generalized, because it is the upper-bound for any actual argument types. Trivially, we have $\mathrm{in}(f) \geq t \geq t'$, hence $f \in B'$ (by definition of $\mathrm{Fit}$). Finally, we can derive that $f \in C'$ *or* that there must exist another function $g \in C'$ with $\mathrm{in}(g) < \mathrm{in}(f)$. In both cases, there is some function in $C'$, which contradicts $C' = \empty$. This proves that the `empty-fit` error can only occur at compile-time.
 
+**TODO:** Now that we have introduced type variables with lower bounds, the empty-fit error can also occur at run-time. We can still check whether a function is callable at compile-time, so as to produce empty-fit errors for the programmer to fix. However, we cannot guarantee that a function to call will be found, as lower bounds analysis would be out of the scope of the compiler (and very likely not decidable in every situation).
+
 ---
 
 ##### Proof: Ambiguous-Call can occur at run-time
