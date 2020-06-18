@@ -4,17 +4,6 @@ import lore.types.TypeRelations.Rule
 
 object Assignability {
 
-  // Why we need to use isAssignable here:
-  //    class T1
-  //    class T2 extends T1
-  //    B <: T1
-  //    A <: B
-  //    T2 is assignable to A if A.lowerBound (Nothing) < T2 < A.upperBound (B)
-  //      using isAssignable: T2 < B <== T2 < B.upperBound and T2 > B.lowerBound <== T2 < T1 and T2 > Nothing
-  //                          Nothing < T2 and T2 < T1 are trivial
-  //      using isSubtype:    T2 < B <= T2 < B.lowerBound <= T2 < Nothing
-  //                          OOPS!
-  // TODO: Move this to the spec.
   private val rules: List[Rule] = List[Rule](
     // A type variable v1 is assignable to a type variable v2 if all the types described by v1 are also described by v2,
     // because that means that no matter what type we assign to v1, v2 will also be able to accommodate this type.
