@@ -44,6 +44,11 @@ object Assignability {
       }
     }
 
+    // TODO: Consider giving type variables an explicit binding in Type objects, such as AllQuantifierType which
+    //       signals that type variables have been bound inside its child type. Then we could use this type to
+    //       perform bounds checking. The need for "innerIsAssignable" would vanish and we'd have a more unified
+    //       algorithm, as we could simply model bounds checking as a rule.
+
     innerIsAssignable(t1, t2)
   }
 

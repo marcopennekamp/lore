@@ -2,6 +2,8 @@ package lore.types
 
 import lore.types.TypeRelations.Rule
 
+// TODO: Rename to PolymorphicSubtyping.
+
 trait Subtyping {
 
   // TODO: Do we rather need to define type equality in terms of subtyping (t1 <= t2 && t2 <= t1)? I suspect
