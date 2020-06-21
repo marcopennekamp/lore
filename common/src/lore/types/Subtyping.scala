@@ -2,7 +2,7 @@ package lore.types
 
 import lore.types.TypeRelations.Rule
 
-// TODO: Rename to PolymorphicSubtyping.
+// TODO: Rename to PolymorphicSubtyping, the operations to isPolymorphicSubtype, and so on.
 
 trait Subtyping {
 
@@ -11,16 +11,12 @@ trait Subtyping {
   //       affect performance and thus needs to be looked at first.
 
   def polymorphicRules: List[Rule] = List[Rule](
-    // Two variables are subtypes of each other if v1's upper bound agrees with v2's lower bound. This is easy to
-    // see: We want all instances of v1 to be subtypes of all instances of v2. The least specific instance of v1
-    // is its upper bound. The most specific instance of v2 is its lower bound. Hence we require these to meet.
-    { case (v1: TypeVariable, v2: TypeVariable) => isSubtype(v1.upperBound, v2.lowerBound) },
     // All instances of v1 are definitely subtypes of t2 if v1's upper bound is a subtype of t2, hence ensuring
     // that any instance of v1 has t2 as a supertype.
-    { case (v1: TypeVariable, t2) if t2.isMonomorphic => isSubtype(v1.upperBound, t2) },
+    { case (v1: TypeVariable, t2) => isSubtype(v1.upperBound, t2) },
     // t1 is definitely a subtype of all instances of v2 if v2's lower bound ensures that instances of v2 are always
     // a supertype of t1.
-    { case (t1, v2: TypeVariable) if t1.isMonomorphic => isSubtype(t1, v2.lowerBound) },
+    { case (t1, v2: TypeVariable) => isSubtype(t1, v2.lowerBound) },
   ) ++ TypeRelations.monomorphicSubtypingRules(isSubtype, _ == _)
 
   /**
