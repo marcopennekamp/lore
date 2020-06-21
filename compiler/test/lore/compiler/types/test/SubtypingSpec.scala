@@ -17,8 +17,6 @@ class SubtypingSpec extends TypeSpec {
     def notAssignableTo(t2: Type): Assertion = assert(!Assignability.isAssignable(t1, t2))
   }
 
-  // TODO: These tests are partially concerned with ASSIGNABILITY, not polymorphic subtyping. We should
-  //       handle these accordingly.
   "Assignability.isAssignable" should "handle type variables correctly" in {
     { val A = new TypeVariable("A", NothingType, AnyType)
       // ([String], String) is assignable to ([A], A) where A <: Any
@@ -40,9 +38,23 @@ class SubtypingSpec extends TypeSpec {
       // ([T1], T2) is NOT assignable to ([A], B <: A) where A <: Any, B <: A
       ((ListType(Bird), Mammal): ProductType) notAssignableTo (ListType(A), B)
     }
+    { // Example 3 from the spec's type allocation examples.
+      val A = new TypeVariable("A", Cat, Animal)
+      val B = new TypeVariable("B", NothingType, A)
+      val C = new TypeVariable("C", Cat, Mammal)
+      val D = new TypeVariable("D", ScottishFold, C)
+      ((C, D): ProductType) assignableTo (A, B)
+    }
   }
 
   "Subtyping.isSubtype" should "handle type variables correctly" in {
-
+    { // An excerpt of Example 3 from the spec's type allocation examples.
+      val C = new TypeVariable("C", Goldfish, Fish)
+      val D = new TypeVariable("D", Goldfish, C)
+      Goldfish <:< C
+      C <:< Animal
+      NothingType <:< D
+      D <:< C
+    }
   }
 }
