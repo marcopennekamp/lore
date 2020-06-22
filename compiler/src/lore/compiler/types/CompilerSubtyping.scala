@@ -74,8 +74,8 @@ object CompilerSubtyping extends Subtyping {
 
     (t1, t2) match {
       // First of all, handle subtypes as outlined above. These cases trivially cover Any and Nothing.
-      case (t1, t2) if t1 <= t2 => t2
-      case (t1, t2) if t2 <= t1 => t1
+      case (t1, t2) if t1 <=* t2 => t2
+      case (t1, t2) if t2 <=* t1 => t1
 
       // Intersection types can lead to a number of candidates. That is, if we have types A & B and C & D, we have
       // the following candidates: LUB(A, C), LUB(A, D), LUB(B, C), LUB(B, D). That's because any component of an

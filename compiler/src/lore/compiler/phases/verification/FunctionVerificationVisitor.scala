@@ -37,7 +37,7 @@ private[verification] class FunctionVerificationVisitor(
     * Whether the given statement's inferred type is a subtype of one of the expected types.
     */
   private def havingSubtype(statement: StmtNode, supertypes: Type*): Verification = {
-    if (!supertypes.exists(expected => statement.inferredType <= expected)) {
+    if (!supertypes.exists(expected => statement.inferredType <=* expected)) {
       Compilation.fail(IllegallyTypedExpression(statement, supertypes.toList))
     } else Verification.succeed
   }

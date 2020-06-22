@@ -126,8 +126,8 @@ class ClassDefinition(
   def commonComponentTypes(other: ClassDefinition): List[ComponentType] = {
     components.map(_.tpe).flatMap { left =>
       val commonTypes = other.components.map(_.tpe).flatMap { right =>
-        if (left <= right) Some(right)
-        else if (left >= right) Some(left)
+        if (left <=* right) Some(right)
+        else if (left >=* right) Some(left)
         else None
       }
 
