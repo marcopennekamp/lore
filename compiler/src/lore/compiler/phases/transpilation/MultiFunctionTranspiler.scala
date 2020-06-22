@@ -66,6 +66,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit val registry
     val varFunctions = "functions"
     def varFits(index: Int): String = s"fits$index"
 
+    // TODO: Assert (at run-time) that the input type isn't polymorphic!
     def transpileInputType(node: mf.hierarchy.NodeT): String = RuntimeTypeTranspiler.transpile(node.signature.inputType)
 
     def transpileFitsConsts(nodes: List[(mf.hierarchy.NodeT, Int)]): Unit = {

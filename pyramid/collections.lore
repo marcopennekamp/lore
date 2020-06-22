@@ -2,8 +2,7 @@
 
 
 // TODO: We need parametric types here...
-//function append(list: [A], element: A): [A] where A <: Any = dynamic[[A]]('Lore.list.append', list, element)
-function append(list: [Any], element: Any): [Any] = dynamic[[Any]]('Lore.list.append', list, element)
+function append(list: [A], element: A): [A] where A <: Any = dynamic[[A]]('Lore.list.append', list, element)
 function append(list: [String], element: String): [String] = dynamic[[String]]('Lore.list.append', list, element)
 
 // TODO: If we change lists to our own custom implementation, it would still be useful to expose some kind of

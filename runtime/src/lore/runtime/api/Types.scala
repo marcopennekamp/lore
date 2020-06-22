@@ -66,4 +66,7 @@ class Types {
   def component(underlying: ClassType): ComponentType = ComponentType(underlying)
   def list(element: Type): ListType = ListType(element)
   def map(key: Type, value: Type): MapType = MapType(key, value)
+
+  // Type variables.
+  def variable(name: String, lowerBound: Type, upperBound: Type): TypeVariable = new TypeVariable(name, lowerBound, upperBound)
 }
