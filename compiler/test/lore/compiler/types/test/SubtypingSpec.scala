@@ -37,6 +37,18 @@ class SubtypingSpec extends TypeSpec {
       // ([T1], T2) is NOT assignable to ([A], B <: A) where A <: Any, B <: A
       ((ListType(Bird), Mammal): ProductType) notAssignableTo (ListType(A), B)
     }
+    { // Example 1 from the spec's type allocation examples.
+      val A = new TypeVariable("A", NothingType, AnyType)
+      val B = new TypeVariable("B", NothingType, A)
+      val C = new TypeVariable("C", NothingType, AnyType)
+      ((C, BasicType.Int): ProductType) notAssignableTo (A, B)
+    }
+    { // Example 2 from the spec's type allocation examples.
+      val A = new TypeVariable("A", Cat, Animal)
+      val B = new TypeVariable("B", NothingType, A)
+      val C = new TypeVariable("C", NothingType, AnyType)
+      ((C, Cat): ProductType) notAssignableTo (A, B)
+    }
     { // Example 3 from the spec's type allocation examples.
       val A = new TypeVariable("A", Cat, Animal)
       val B = new TypeVariable("B", NothingType, A)
@@ -47,6 +59,15 @@ class SubtypingSpec extends TypeSpec {
   }
 
   "Subtyping.isSubtype" should "handle type variables correctly" in {
+    { // An excerpt of Example 1 from the spec's type allocation examples.
+      val C = new TypeVariable("C", NothingType, AnyType)
+      BasicType.Int </< C
+    }
+    { // An excerpt of Example 2 from the spec's type allocation examples.
+      val C = new TypeVariable("C", NothingType, AnyType)
+      Cat </< C
+      C </< Animal
+    }
     { // An excerpt of Example 3 from the spec's type allocation examples.
       val C = new TypeVariable("C", Goldfish, Fish)
       val D = new TypeVariable("D", Goldfish, C)
