@@ -3,9 +3,8 @@ class A1 extends A
 class A2 extends A
 class B
 class C
-type T = A | B | C
 
-action f(t: T)
+action f(t: A | B | C)
 action f(a: A)
 action f(a: A1) { }
 action f(a: A2) { }

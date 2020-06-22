@@ -47,7 +47,7 @@ class MultipleDispatchSpec extends BaseSpec with TypeSyntax {
     implicit val registry = abstractRegistry
     val mf = registry.getMultiFunction("f").value
     val test = testFitAndMin(mf) _
-    val setT = Set(mf.exactGet("T"))
+    val setT = Set(mf.exactGet("A" | "B" | "C"))
     val setA = Set(mf.exactGet("A"))
     val setA1 = Set(mf.exactGet("A1"))
     val setA2 = Set(mf.exactGet("A2"))
