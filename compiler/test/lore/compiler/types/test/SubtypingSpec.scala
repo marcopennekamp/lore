@@ -16,7 +16,27 @@ class SubtypingSpec extends TypeSpec {
     def notAssignableTo(t2: Type): Assertion = assert(!Assignability.isAssignable(t1, t2))
   }
 
-  "Assignability.isAssignable" should "handle type variables correctly" in {
+  "Polymorphic subtyping" should "handle type variables correctly" in {
+    { // An excerpt of Example 1 from the spec's type allocation examples.
+      val C = new TypeVariable("C", NothingType, AnyType)
+      BasicType.Int </< C
+    }
+    { // An excerpt of Example 2 from the spec's type allocation examples.
+      val C = new TypeVariable("C", NothingType, AnyType)
+      Cat </< C
+      C </< Animal
+    }
+    { // An excerpt of Example 3 from the spec's type allocation examples.
+      val C = new TypeVariable("C", Goldfish, Fish)
+      val D = new TypeVariable("D", Goldfish, C)
+      Goldfish <:< C
+      C <:< Animal
+      NothingType <:< D
+      D <:< C
+    }
+  }
+
+  "Assignability" should "handle type variables correctly" in {
     { val A = new TypeVariable("A", NothingType, AnyType)
       // ([String], String) is assignable to ([A], A) where A <: Any
       ((ListType(BasicType.String), BasicType.String): ProductType) assignableTo (ListType(A), A)
@@ -55,26 +75,6 @@ class SubtypingSpec extends TypeSpec {
       val C = new TypeVariable("C", Cat, Mammal)
       val D = new TypeVariable("D", ScottishFold, C)
       ((C, D): ProductType) assignableTo (A, B)
-    }
-  }
-
-  "Subtyping.isSubtype" should "handle type variables correctly" in {
-    { // An excerpt of Example 1 from the spec's type allocation examples.
-      val C = new TypeVariable("C", NothingType, AnyType)
-      BasicType.Int </< C
-    }
-    { // An excerpt of Example 2 from the spec's type allocation examples.
-      val C = new TypeVariable("C", NothingType, AnyType)
-      Cat </< C
-      C </< Animal
-    }
-    { // An excerpt of Example 3 from the spec's type allocation examples.
-      val C = new TypeVariable("C", Goldfish, Fish)
-      val D = new TypeVariable("D", Goldfish, C)
-      Goldfish <:< C
-      C <:< Animal
-      NothingType <:< D
-      D <:< C
     }
   }
 }
