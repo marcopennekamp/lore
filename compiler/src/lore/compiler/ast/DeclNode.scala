@@ -27,7 +27,7 @@ object DeclNode {
   }
 
   case class ParameterNode(name: String, tpe: TypeExprNode) extends Node
-  case class TypeVariableNode(name: String, upperBound: Option[TypeExprNode], lowerBound: Option[TypeExprNode]) extends Node
+  case class TypeVariableNode(name: String, lowerBound: Option[TypeExprNode], upperBound: Option[TypeExprNode]) extends Node
 }
 
 /**
