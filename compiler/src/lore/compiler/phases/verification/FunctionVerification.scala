@@ -18,13 +18,12 @@ import lore.types.Type
   */
 object FunctionVerification {
   case class IllegallyTypedExpression(
-    expr: StmtNode, expectedTypes: List[Type], usingAssignability: Boolean = false
+    expr: StmtNode, expectedTypes: List[Type]
   )(implicit fragment: Fragment) extends Error(expr) {
     override def message = s"The expression $expr has the illegal type ${expr.inferredType}.$expected"
     private def expected: String = {
-      val subtypeQualifier = if (usingAssignability) "or a type assignable to it" else "or a subtype thereof"
       if (expectedTypes.nonEmpty) {
-        s" We expected one of the following types ($subtypeQualifier): ${expectedTypes.mkString(",")}."
+        s" We expected one of the following types (or a subtype thereof): ${expectedTypes.mkString(",")}."
       } else ""
     }
   }

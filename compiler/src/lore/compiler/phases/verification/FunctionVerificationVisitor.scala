@@ -58,15 +58,6 @@ private[verification] class FunctionVerificationVisitor(
     statements.toList.map(beingBoolean).simultaneous.verification
   }
 
-  /**
-    * Whether the given statement's inferred type is assignable to one of the expected types.
-    */
-  private def beingAssignable(statement: StmtNode, supertypes: Type*): Verification = {
-    if (!supertypes.exists(expected => Fit.fits(statement.inferredType, expected))) {
-      Compilation.fail(IllegallyTypedExpression(statement, supertypes.toList, usingAssignability = true))
-    } else Verification.succeed
-  }
-
   private def typeBinaryNumbers(node: StmtNode, left: StmtNode, right: StmtNode): Verification = {
     beingNumbers(left, right).flatMap { _ =>
       if (left.inferredType == BasicType.Real || right.inferredType == BasicType.Real) {
@@ -90,29 +81,36 @@ private[verification] class FunctionVerificationVisitor(
 
   /**
     * Checks that the given arguments adhere to the given signature.
+    *
+    * We are assuming that the signature is fixed, so don't use this for dispatched functions.
     */
   private def adheringToSignature(arguments: List[ExprNode], signature: FunctionSignature, callSite: Position): Verification = {
     val parameterTypes = signature.parameters.map(_.tpe)
     if (parameterTypes.size != arguments.size) {
       Compilation.fail(WrongNumberOfArguments(signature, callSite))
     } else {
-      //beingAssignable(ProductType(arguments), ProductType(parameterTypes))
       parameterTypes.zip(arguments).map { case (parameterType, argument) =>
-        //havingSubtype(argument, parameterType)
-        beingAssignable(argument, parameterType)
+        havingSubtype(argument, parameterType)
       }.simultaneous.verification
     }
   }
 
   /**
     * Checks that the given call target can be called with the given arguments, then assigns the target to the node
-    * and also types it.
+    * and also types it. Do NOT use this for dispatched functions!
     */
   private def typeCall(node: CallNode[InternalCallTarget], target: InternalCallTarget, arguments: List[ExprNode]): Verification = {
     adheringToSignature(arguments, target.signature, node.position).flatMap { _ =>
-      node.target = target
-      node.typed(target.signature.outputType)
+      assignTarget(node, target)
     }
+  }
+
+  /**
+    * Assigns the target to the node and types it with the target's output type.
+    */
+  private def assignTarget(node: CallNode[InternalCallTarget], target: InternalCallTarget): Verification = {
+    node.target = target
+    node.typed(target.signature.outputType)
   }
 
   override def verify(node: StmtNode): Verification = node match {
@@ -182,8 +180,6 @@ private[verification] class FunctionVerificationVisitor(
     // Function calls.
     case node@SimpleCallNode(name, qualifier, arguments) =>
       registry.resolveConstructor(name, qualifier, node.position).flatMap {
-        // TODO: Similar to the TODO comment where construct calls are verified, check whether constructor calls
-        //       should be checked using assignability or rather polymorphic subtyping.
         constructor => typeCall(node, constructor, arguments)
       } recover {
         // Note that the recover might attempt to catch other errors introduced by typeCall, but we are matching only
@@ -200,10 +196,7 @@ private[verification] class FunctionVerificationVisitor(
               mf.min(inputType) match {
                 case Nil => Compilation.fail(EmptyFit(mf, node.position))
                 case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, min, node.position))
-                case List(target) =>
-                  // TODO: Why use "typeCall" here? Isn't it already clear that the given arguments should fit
-                  //       into the given function, since it was found with the argument types in the first place?
-                  typeCall(node, target, arguments)
+                case List(target) => assignTarget(node, target)
               }
             }
           }
@@ -211,6 +204,8 @@ private[verification] class FunctionVerificationVisitor(
     case node@FixedFunctionCallNode(name, typeExpressions, arguments) =>
       typeExpressions.map(TypeExpressionEvaluator.evaluate).simultaneous.flatMap { types =>
         registry.resolveExactFunction(name, types, node.position).flatMap { function =>
+          // We need to check the arguments against the signature here because we didn't get the function
+          // via the argument types.
           typeCall(node, function, arguments)
         }
       }
@@ -237,10 +232,6 @@ private[verification] class FunctionVerificationVisitor(
       // have checked the potential withSuper constructor call.
       assert(classDefinition.isDefined)
       val cl = classDefinition.get
-      // TODO: Check if this should use assignability or rather polymorphic subtyping, as type variables of classes
-      //       aren't assigned within construct calls but rather when the type is specified (Class[A, B]). This is in
-      //       contrast to function calls, where a call foo(a, b) literally determines which types are ASSIGNED to
-      //       (tentatively) type variables A and B.
       adheringToSignature(arguments, cl.constructSignature, node.position).flatMap { _ =>
         node.typed(cl.constructSignature.outputType)
       }

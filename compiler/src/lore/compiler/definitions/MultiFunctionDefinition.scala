@@ -47,6 +47,10 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
     * Calculates the multi-function min.
     */
   def min(tpe: Type): List[FunctionDefinition] = {
+    // TODO: We will also need to return an INSTANCE of the function with type variables already assigned, so that the
+    //       function verification visitor can subsequently check that the argument types fit the input type of the
+    //       function.
+
     // Even though min is defined in terms of the fit, we don't use the fit function and instead compute everything in
     // one traversal.
     val visit = visitFit(tpe.toTuple) _
@@ -65,6 +69,15 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
     * Returns the function with the exact given input type.
     */
   def exact(tpe: Type): Option[FunctionDefinition] = {
+    // TODO: We cannot get fixed functions with type arguments, because an actual type and a type variable could never
+    //       be equally specific... How can we deal with this? Obviously, we need to allow getting a fixed
+    //       function with type variables if we want a complete programming language. If we do so, we will also have
+    //       to ensure that we don't select more than one node, as this is suddenly possible if we do the fit shtick
+    //       first.
+    // TODO: We will also need to return an INSTANCE of the function with type variables already assigned, so that the
+    //       function verification visitor can subsequently check that the argument types fit the input type of the
+    //       function.
+
     // Using traverseHierarchy ensures that we only visit subtrees that could contain the exact candidate.
     val input = tpe.toTuple
     traverseHierarchy(
