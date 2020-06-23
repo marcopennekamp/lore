@@ -53,6 +53,20 @@ object Type {
     BasicType.Boolean,
     BasicType.String,
   ).map(t => (t.name, t)).toMap
+
+  /**
+    * Returns all type variables that occur in the given type.
+    */
+  def variables(t: Type): Set[TypeVariable] = t match {
+    case SumType(types) => types.flatMap(variables)
+    case IntersectionType(types) => types.flatMap(variables)
+    case ProductType(components) => components.flatMap(variables).toSet
+    case ListType(element) => variables(element)
+    case MapType(key, value) => variables(key) ++ variables(value)
+    case _: ComponentType => Set.empty // TODO: Update when component types can have type parameters?
+    case tv: TypeVariable => Set(tv)
+    case _: NamedType => Set.empty // TODO: Update when class types can have type parameters.
+  }
 }
 
 sealed abstract class TypePrecedence(protected val value: Int) {
