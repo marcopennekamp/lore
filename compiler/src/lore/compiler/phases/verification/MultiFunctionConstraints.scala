@@ -61,7 +61,7 @@ object MultiFunctionConstraints {
     * Verifies the multi-function for the totality constraint.
     */
   def verifyTotalityConstraint(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
-    // TODO: Refactor this with the new assignability changes. (It will be a fucking shit-show, no doubt.)
+    // TODO: Refactor this with the new fit changes. (It will be a fucking shit-show, no doubt.)
 
     //  We have the following interesting case:
     //  Say we have types abstract X, A < X, B < X, C < X and a component +T. We have an abstract function with

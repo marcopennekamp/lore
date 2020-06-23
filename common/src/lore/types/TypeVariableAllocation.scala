@@ -45,7 +45,7 @@ class TypeVariableAllocation() {
       possibleAssignments.sliding(2).forall {
         case List(left, right) =>
           // Since equality is transitive, we don't have to compare all types to each other.
-          left == right // TODO: Test equality using assignability or polymorphic subtyping?
+          left == right
         case List(_) =>
           // List(_).sliding(2) will return List(_), so we have to manually evaluate to true for the special
           // case of one-element lists.
