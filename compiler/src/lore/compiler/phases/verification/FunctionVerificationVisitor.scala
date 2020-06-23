@@ -9,7 +9,7 @@ import lore.compiler.feedback.{Error, Position}
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
 import lore.compiler.types.{CompilerSubtyping, TypeExpressionEvaluator}
 import lore.compiler.definitions.{ClassDefinition, DynamicCallTarget, FunctionDefinition, FunctionSignature, InternalCallTarget, MultiFunctionDefinition, TypeScope}
-import lore.types.{BasicType, ListType, MapType, NothingType, ProductType, Type}
+import lore.types.{Assignability, BasicType, ListType, MapType, NothingType, ProductType, Type}
 
 private[verification] class FunctionVerificationVisitor(
   /**
@@ -58,6 +58,15 @@ private[verification] class FunctionVerificationVisitor(
     statements.toList.map(beingBoolean).simultaneous.verification
   }
 
+  /**
+    * Whether the given statement's inferred type is assignable to one of the expected types.
+    */
+  private def beingAssignable(statement: StmtNode, supertypes: Type*): Verification = {
+    if (!supertypes.exists(expected => Assignability.fits(statement.inferredType, expected))) {
+      Compilation.fail(IllegallyTypedExpression(statement, supertypes.toList, usingAssignability = true))
+    } else Verification.succeed
+  }
+
   private def typeBinaryNumbers(node: StmtNode, left: StmtNode, right: StmtNode): Verification = {
     beingNumbers(left, right).flatMap { _ =>
       if (left.inferredType == BasicType.Real || right.inferredType == BasicType.Real) {
@@ -87,8 +96,10 @@ private[verification] class FunctionVerificationVisitor(
     if (parameterTypes.size != arguments.size) {
       Compilation.fail(WrongNumberOfArguments(signature, callSite))
     } else {
+      //beingAssignable(ProductType(arguments), ProductType(parameterTypes))
       parameterTypes.zip(arguments).map { case (parameterType, argument) =>
-        havingSubtype(argument, parameterType)
+        //havingSubtype(argument, parameterType)
+        beingAssignable(argument, parameterType)
       }.simultaneous.verification
     }
   }
@@ -171,6 +182,8 @@ private[verification] class FunctionVerificationVisitor(
     // Function calls.
     case node@SimpleCallNode(name, qualifier, arguments) =>
       registry.resolveConstructor(name, qualifier, node.position).flatMap {
+        // TODO: Similar to the TODO comment where construct calls are verified, check whether constructor calls
+        //       should be checked using assignability or rather polymorphic subtyping.
         constructor => typeCall(node, constructor, arguments)
       } recover {
         // Note that the recover might attempt to catch other errors introduced by typeCall, but we are matching only
@@ -187,7 +200,10 @@ private[verification] class FunctionVerificationVisitor(
               mf.min(inputType) match {
                 case Nil => Compilation.fail(EmptyFit(mf, node.position))
                 case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, min, node.position))
-                case List(target) => typeCall(node, target, arguments)
+                case List(target) =>
+                  // TODO: Why use "typeCall" here? Isn't it already clear that the given arguments should fit
+                  //       into the given function, since it was found with the argument types in the first place?
+                  typeCall(node, target, arguments)
               }
             }
           }
@@ -221,6 +237,10 @@ private[verification] class FunctionVerificationVisitor(
       // have checked the potential withSuper constructor call.
       assert(classDefinition.isDefined)
       val cl = classDefinition.get
+      // TODO: Check if this should use assignability or rather polymorphic subtyping, as type variables of classes
+      //       aren't assigned within construct calls but rather when the type is specified (Class[A, B]). This is in
+      //       contrast to function calls, where a call foo(a, b) literally determines which types are ASSIGNED to
+      //       (tentatively) type variables A and B.
       adheringToSignature(arguments, cl.constructSignature, node.position).flatMap { _ =>
         node.typed(cl.constructSignature.outputType)
       }
@@ -332,7 +352,7 @@ private[verification] object FunctionVerificationVisitor {
   }
 
   case class EmptyFit(mf: MultiFunctionDefinition, callPos: Position) extends Error(callPos) {
-    override def message: String = s"The multi-function call ${mf.name} at this site has an empty fit. We cannot " +
+    override def message: String = s"The multi-function call ${mf.name} at this site has an empty fit. We cannot" +
       s" find a function of that name that would accept the given arguments."
   }
 

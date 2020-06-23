@@ -17,6 +17,7 @@ object CompilerSubtyping extends Subtyping {
     */
   def abstractResolvedDirectSubtypes(t: Type)(implicit registry: Registry): Set[Type] = {
     // TODO: How does assignability affect this?
+    // TODO: How can we handle type variables?
 
     // TODO: Using Set like this (which is much slower than List) could be a major performance hog down the line.
     //       We should watch out for any performance problems stemming from ards evaluation.
@@ -74,6 +75,7 @@ object CompilerSubtyping extends Subtyping {
 
     (t1, t2) match {
       // First of all, handle subtypes as outlined above. These cases trivially cover Any and Nothing.
+      // TODO: Polymorphic subtyping or assignability?
       case (t1, t2) if t1 <=* t2 => t2
       case (t1, t2) if t2 <=* t1 => t1
 
