@@ -14,7 +14,9 @@ object FeedbackPrinter {
 
     // Now print each error with the proper index.
     sorted.map { feedback =>
-      s"${feedback.consoleTag} ${feedback.position.fragment.name} (${feedback.position.prettyIndex}): ${feedback.message}"
+      s"""${feedback.consoleTag} ${feedback.position.fragment.name} (${feedback.position.prettyIndex}): ${feedback.message}
+         |${/* feedback.stackTrace.mkString("\n") */}""".stripMargin
+      // TODO:  Add a feature toggle to switch stack traces in reporting on and off.
     }.mkString("\n")
   }
 }

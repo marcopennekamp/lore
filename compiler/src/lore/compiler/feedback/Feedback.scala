@@ -22,6 +22,11 @@ sealed trait Feedback {
     * Whether the feedback necessitates the termination of compilation.
     */
   def isSevere: Boolean
+
+  /**
+    * A stack trace of the instance where the feedback was intitialized.
+    */
+  val stackTrace: List[StackTraceElement] = new Throwable().getStackTrace.toList
 }
 
 /**
