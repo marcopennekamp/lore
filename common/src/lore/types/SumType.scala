@@ -2,6 +2,8 @@ package lore.types
 
 import scala.util.hashing.MurmurHash3
 
+// TODO: Rename all instances of "component" to "part".
+
 case class SumType private (types: Set[Type]) extends Type with OperatorType {
   assert(types.nonEmpty)
 
@@ -29,7 +31,7 @@ object SumType {
     }
 
     // Remove strict subtypes of other parts.
-    val simplified = flattened.filterNot(t => flattened.exists(t <* _))
+    val simplified = flattened.filterNot(t => flattened.exists(t < _))
 
     val sum = new SumType(simplified)
     if (sum.types.size == 1) sum.types.head else sum

@@ -62,7 +62,7 @@ class TypeVariableAllocation() {
         //         we will have type variables from the type we are assigning type from.
         val actualLowerBound = Substitution.substitute(assignments, variable.lowerBound)
         val actualUpperBound = Substitution.substitute(assignments, variable.upperBound)
-        Subtyping.isSubtype(actualLowerBound, tpe) && Subtyping.isSubtype(tpe, actualUpperBound)
+        actualLowerBound <= tpe && tpe <= actualUpperBound
       }
     }
   }

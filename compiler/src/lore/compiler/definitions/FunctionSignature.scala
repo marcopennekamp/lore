@@ -1,6 +1,6 @@
 package lore.compiler.definitions
 
-import lore.types.{Assignability, ProductType, Type}
+import lore.types.{Fit, ProductType, Type}
 
 import scala.util.hashing.MurmurHash3
 
@@ -14,6 +14,6 @@ case class FunctionSignature(name: String, parameters: List[ParameterDefinition]
     */
   def isEquallySpecific(other: FunctionSignature): Boolean = {
     // TODO: What about the output type?
-    Assignability.isEquallySpecific(inputType, other.inputType)
+    Fit.isEquallySpecific(inputType, other.inputType)
   }
 }

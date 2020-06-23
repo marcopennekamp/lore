@@ -8,6 +8,8 @@ import lore.utils.CollectionExtensions._
 //       questionable whether types needs to be a set. We would have to be careful with implementing equality
 //       and hash codes, but I can see Sets bring about performance problems down the line.
 
+// TODO: Rename all instances of "component" to "part".
+
 case class IntersectionType private (types: Set[Type]) extends Type with OperatorType {
   assert(types.nonEmpty)
 
@@ -59,7 +61,7 @@ object IntersectionType {
     }
 
     // Remove strict supertypes of other component types.
-    val simplified = flattened.filterNot(t => flattened.exists(_ <* t))
+    val simplified = flattened.filterNot(t => flattened.exists(_ < t))
 
     val intersection = new IntersectionType(simplified)
     if (intersection.types.size == 1) intersection.types.head else intersection

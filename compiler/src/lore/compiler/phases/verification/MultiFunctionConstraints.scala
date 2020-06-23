@@ -6,7 +6,7 @@ import lore.compiler.core.{Fragment, Registry}
 import lore.compiler.definitions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.feedback.Error
 import lore.compiler.types.CompilerSubtyping
-import lore.types.{Assignability, Type}
+import lore.types.{Fit, Type}
 
 object MultiFunctionConstraints {
   case class FunctionIllegallyAbstract(function: FunctionDefinition) extends Error(function) {
@@ -83,7 +83,7 @@ object MultiFunctionConstraints {
       CompilerSubtyping.abstractResolvedDirectSubtypes(f.signature.inputType).toList.flatMap { subtype =>
         // TODO: Can we optimize this given the new hierarchy?
         val isValid = mf.functions.exists { f2 =>
-          Assignability.isMoreSpecific(f2.signature.inputType, f.signature.inputType) && mf.fit(subtype).contains(f2)
+          Fit.isMoreSpecific(f2.signature.inputType, f.signature.inputType) && mf.fit(subtype).contains(f2)
         }
         if (!isValid) Some(subtype) else None
       }

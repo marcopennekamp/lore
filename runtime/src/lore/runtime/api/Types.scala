@@ -36,7 +36,7 @@ class Types {
     }
   }
 
-  def isSubtype(left: Type, right: Type): Boolean = left <=* right
+  def isSubtype(left: Type, right: Type): Boolean = left <= right
 
   // TODO: We definitely need a simple type registry with (name -> declared type).
   def registerClass(

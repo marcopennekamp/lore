@@ -1,14 +1,14 @@
 package lore.compiler.types.test
 
-import lore.types.{AnyType, Assignability, BasicType, ListType, NothingType, ProductType, Type, TypeVariable}
+import lore.types.{AnyType, Fit, BasicType, ListType, NothingType, ProductType, Type, TypeVariable}
 import org.scalatest.Assertion
 
 class FitSpec extends TypeSpec {
   import TypesExample._
 
   private implicit class TypeExtension(t1: Type) {
-    def fitsInto(t2: Type): Assertion = assert(Assignability.fits(t1, t2))
-    def fitsNotInto(t2: Type): Assertion = assert(!Assignability.fits(t1, t2))
+    def fitsInto(t2: Type): Assertion = assert(Fit.fits(t1, t2))
+    def fitsNotInto(t2: Type): Assertion = assert(!Fit.fits(t1, t2))
   }
 
   "Fit" should "handle type variables correctly" in {

@@ -1,6 +1,6 @@
 package lore.types
 
-object Assignability {
+object Fit {
 
   /**
     * Whether t1 could be an argument type for a function with input type t2.
@@ -25,8 +25,6 @@ object Assignability {
     // Two types trivially fit into each other if they are equal.
     if (t1 == t2) return true
 
-    //println(s"$t1 fits into $t2?")
-
     // The type allocation handles (2) partially and all of (3).
     val assignments: Map[TypeVariable, Type] = if (t2.isPolymorphic) {
       val allocation = TypeVariableAllocation.of(t1, t2)
@@ -39,12 +37,13 @@ object Assignability {
     // This handles (1).
     val variables = Type.variables(t2)
     if (!variables.subsetOf(assignments.keySet)) {
+      // TODO: Use debug or trace logging here.
       println(s"Not all variables from $t2 are assigned types from $t1.")
       return false
     }
 
     // This handles (4).
-    Subtyping.isSubtype(t1, Substitution.substitute(assignments, t2))
+    t1 <= Substitution.substitute(assignments, t2)
   }
 
   /**

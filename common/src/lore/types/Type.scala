@@ -36,12 +36,13 @@ trait Type {
     */
   def string(parentPrecedence: TypePrecedence): String
   override def toString: String = string(TypePrecedence.Parenthesized)
+  // TODO: Maybe we should move this definition to a TypePrinter object, as it's not a core part of a type and
+  //       rather distracts from the important stuff. It's also annoying to define.
 
-  // TODO: Replace uses of Subtyping.isSubtype with these operators.
-  def <=*(rhs: Type): Boolean = Subtyping.isSubtype(this, rhs)
-  def <*(rhs: Type): Boolean = Subtyping.isStrictSubtype(this, rhs)
-  def >=*(rhs: Type): Boolean = rhs <=* this
-  def >*(rhs: Type): Boolean = rhs <* this
+  def <=(rhs: Type): Boolean = Subtyping.isSubtype(this, rhs)
+  def <(rhs: Type): Boolean = Subtyping.isStrictSubtype(this, rhs)
+  def >=(rhs: Type): Boolean = rhs <= this
+  def >(rhs: Type): Boolean = rhs < this
 }
 
 object Type {

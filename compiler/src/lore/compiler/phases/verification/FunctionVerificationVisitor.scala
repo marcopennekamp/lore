@@ -9,7 +9,7 @@ import lore.compiler.feedback.{Error, Position}
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
 import lore.compiler.types.{CompilerSubtyping, TypeExpressionEvaluator}
 import lore.compiler.definitions.{ClassDefinition, DynamicCallTarget, FunctionDefinition, FunctionSignature, InternalCallTarget, MultiFunctionDefinition, TypeScope}
-import lore.types.{Assignability, BasicType, ListType, MapType, NothingType, ProductType, Type}
+import lore.types.{Fit, BasicType, ListType, MapType, NothingType, ProductType, Type}
 
 private[verification] class FunctionVerificationVisitor(
   /**
@@ -37,7 +37,7 @@ private[verification] class FunctionVerificationVisitor(
     * Whether the given statement's inferred type is a subtype of one of the expected types.
     */
   private def havingSubtype(statement: StmtNode, supertypes: Type*): Verification = {
-    if (!supertypes.exists(expected => statement.inferredType <=* expected)) {
+    if (!supertypes.exists(expected => statement.inferredType <= expected)) {
       Compilation.fail(IllegallyTypedExpression(statement, supertypes.toList))
     } else Verification.succeed
   }
@@ -62,7 +62,7 @@ private[verification] class FunctionVerificationVisitor(
     * Whether the given statement's inferred type is assignable to one of the expected types.
     */
   private def beingAssignable(statement: StmtNode, supertypes: Type*): Verification = {
-    if (!supertypes.exists(expected => Assignability.fits(statement.inferredType, expected))) {
+    if (!supertypes.exists(expected => Fit.fits(statement.inferredType, expected))) {
       Compilation.fail(IllegallyTypedExpression(statement, supertypes.toList, usingAssignability = true))
     } else Verification.succeed
   }

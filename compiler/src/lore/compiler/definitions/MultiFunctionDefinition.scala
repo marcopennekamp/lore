@@ -1,6 +1,6 @@
 package lore.compiler.definitions
 
-import lore.types.{Assignability, ProductType, Type}
+import lore.types.{Fit, ProductType, Type}
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
 
@@ -29,7 +29,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
     * When used as a visit-predicate for [[traverseHierarchy]], all and only nodes that are part of the function
     * fit for a given input type are visited.
     */
-  private def visitFit(input: ProductType)(node: hierarchy.NodeT): Boolean = Assignability.fits(input, node.signature.inputType)
+  private def visitFit(input: ProductType)(node: hierarchy.NodeT): Boolean = Fit.fits(input, node.signature.inputType)
 
   /**
     * Calculates the multi-function fit.
@@ -69,7 +69,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
     val input = tpe.toTuple
     traverseHierarchy(
       visit  = visitFit(tpe.toTuple),
-      select = node => Assignability.isEquallySpecific(input, node.signature.inputType),
+      select = node => Fit.isEquallySpecific(input, node.signature.inputType),
     ).headOption
   }
 
@@ -127,7 +127,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
       // All unused functions that don't have a super-function in the unused set.
       val supers = unused.toList.filter { f =>
         val allExceptSelf = unused.filter(f2 => f2 != f)
-        !allExceptSelf.exists(f2 => Assignability.fits(f.signature.inputType, f2.signature.inputType))
+        !allExceptSelf.exists(f2 => Fit.fits(f.signature.inputType, f2.signature.inputType))
       }
 
       // TODO: Fix the potential endless loop. (Test if the DeclarationResolver fix, i.e. requiring unique function
@@ -140,7 +140,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
       supers.foreach { f =>
         hierarchy.add(f)
         zeros.foreach { g =>
-          if (Assignability.fits(f.signature.inputType, g.signature.inputType)) {
+          if (Fit.fits(f.signature.inputType, g.signature.inputType)) {
             hierarchy.addEdge(g, f)
           }
         }
