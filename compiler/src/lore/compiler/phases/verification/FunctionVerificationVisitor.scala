@@ -3,35 +3,47 @@ package lore.compiler.phases.verification
 import lore.compiler.ast.ExprNode.AddressNode
 import lore.compiler.ast.visitor.VerificationStmtVisitor
 import lore.compiler.ast.{CallNode, ExprNode, StmtNode, TopLevelExprNode}
-import lore.compiler.core.{Compilation, Fragment, Registry}
+import lore.compiler.core.{Compilation, Fragment, Registry, TypeScope}
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.feedback.{Error, Position}
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
 import lore.compiler.types.{CompilerSubtyping, TypeExpressionEvaluator}
-import lore.compiler.definitions.{ClassDefinition, DynamicCallTarget, FunctionDefinition, FunctionSignature, InternalCallTarget, MultiFunctionDefinition, TypeScope}
-import lore.types.{Fit, BasicType, ListType, MapType, NothingType, ProductType, Type}
+import lore.compiler.structures.ClassDefinition
+import lore.compiler.functions.{DynamicCallTarget, FunctionDefinition, FunctionSignature, InternalCallTarget, MultiFunctionDefinition}
+import lore.types.{BasicType, ListType, MapType, NothingType, ProductType, Type}
 
 private[verification] class FunctionVerificationVisitor(
   /**
-    * The function or constructor for which we want to infer types.
+    * The signature of the function or constructor for which we want to infer types.
     */
-  val callTarget: InternalCallTarget,
+  topSignature: FunctionSignature,
+
+  /**
+    * The type scope of the function or constructor for which we want to infer types.
+    */
+  functionTypeScope: TypeScope,
+
   /**
     * The class that owns the constructor IF the signature represents a constructor.
     */
-  val classDefinition: Option[ClassDefinition],
+  classDefinition: Option[ClassDefinition],
 )(implicit registry: Registry, fragment: Fragment) extends VerificationStmtVisitor {
   import ExprNode._
   import FunctionVerificationVisitor._
   import StmtNode._
   import TopLevelExprNode._
 
-  implicit val typeScope: TypeScope = callTarget.typeScope
+  /**
+    * The type scope is made implicit so that it can be used throughout the verification process. This allows
+    * us to easily handle type variables defined with a function or even those defined with the class of a
+    * constructor.
+    */
+  implicit val typeScope: TypeScope = functionTypeScope
 
   /**
-    * The function verification context used by the visitor to open/close scopes, register yields, and so on.
+    * The function verification context used by the visitor to open and close scopes.
     */
-  val context = new FunctionVerificationContext(callTarget.signature)
+  val context = new FunctionVerificationContext(topSignature)
 
   /**
     * Whether the given statement's inferred type is a subtype of one of the expected types.
@@ -123,7 +135,7 @@ private[verification] class FunctionVerificationVisitor(
 
     // Control nodes.
     case ReturnNode(expr) =>
-      havingSubtype(expr, callTarget.signature.outputType).flatMap { _ =>
+      havingSubtype(expr, topSignature.outputType).flatMap { _ =>
         node.typed(NothingType)
       }
 
@@ -196,19 +208,22 @@ private[verification] class FunctionVerificationVisitor(
               mf.min(inputType) match {
                 case Nil => Compilation.fail(EmptyFit(mf, node.position))
                 case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, min, node.position))
-                case List(target) => assignTarget(node, target)
+                case List(functionDefinition) =>
+                  functionDefinition.instantiate(inputType).flatMap { instance =>
+                    assignTarget(node, instance)
+                  }
               }
             }
           }
       }
     case node@FixedFunctionCallNode(name, typeExpressions, arguments) =>
-      typeExpressions.map(TypeExpressionEvaluator.evaluate).simultaneous.flatMap { types =>
-        registry.resolveExactFunction(name, types, node.position).flatMap { function =>
-          // We need to check the arguments against the signature here because we didn't get the function
-          // via the argument types.
-          typeCall(node, function, arguments)
-        }
-      }
+      for {
+        types <- typeExpressions.map(TypeExpressionEvaluator.evaluate).simultaneous
+        function <- registry.resolveExactFunction(name, types, node.position)
+        // We need to check the arguments against the signature here because we didn't get the function
+        // via the argument types.
+        instance <- function.instantiate(ProductType(types))
+      } yield typeCall(node, instance, arguments)
     case node@DynamicCallNode(resultType, arguments) =>
       (
         // The first argument to the dynamic call must be a constant function name.

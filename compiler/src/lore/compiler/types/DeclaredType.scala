@@ -1,7 +1,7 @@
 package lore.compiler.types
 
 import lore.compiler.core.Registry
-import lore.compiler.definitions.DeclaredTypeDefinition
+import lore.compiler.structures.DeclaredTypeDefinition
 import lore.types.Type
 
 /**

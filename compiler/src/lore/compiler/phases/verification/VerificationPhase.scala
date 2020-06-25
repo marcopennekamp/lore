@@ -3,7 +3,7 @@ package lore.compiler.phases.verification
 import lore.compiler.core.Compilation._
 import lore.compiler.core.Registry
 import lore.compiler.phases.Phase
-import lore.compiler.definitions.ClassDefinition
+import lore.compiler.structures.ClassDefinition
 import lore.utils.CollectionExtensions._
 
 class VerificationPhase()(implicit registry: Registry) extends Phase[Unit] {
@@ -23,12 +23,12 @@ class VerificationPhase()(implicit registry: Registry) extends Phase[Unit] {
       (
         registry.getMultiFunctions.values.toList.map { mf =>
           mf.functions.map { function =>
-            FunctionVerification.verifyFunction(function, None)
+            FunctionVerification.verifyFunction(function)
           }.simultaneous
         }.simultaneous,
         registry.getTypeDefinitions.values.toList.filterType[ClassDefinition].map { definition =>
           definition.constructors.map { constructor =>
-            FunctionVerification.verifyFunction(constructor, Some(definition))
+            FunctionVerification.verifyConstructor(constructor, definition)
           }.simultaneous
         }.simultaneous,
       ).simultaneous

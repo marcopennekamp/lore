@@ -1,4 +1,4 @@
-package lore.compiler.definitions
+package lore.compiler.functions
 
 import lore.types.Type
 

@@ -1,11 +1,11 @@
 package lore.compiler.phases.resolution
 
 import lore.compiler.ast.TypeDeclNode
-import lore.compiler.core.{Compilation, Fragment, Registry}
+import lore.compiler.core.{Compilation, Fragment, Registry, TypeScope}
 import lore.compiler.core.Compilation.C
 import lore.compiler.feedback.Error
 import lore.compiler.types.{ClassType, LabelType, OwnedByDeferred, TypeExpressionEvaluator}
-import lore.compiler.definitions._
+import lore.compiler.structures._
 import lore.types.Type
 
 object DeclaredTypeResolver {

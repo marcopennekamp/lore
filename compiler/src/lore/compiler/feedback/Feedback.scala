@@ -3,7 +3,6 @@ package lore.compiler.feedback
 import lore.compiler.ast._
 import lore.compiler.core.Fragment
 import lore.compiler.phases.resolution.FragmentNode
-import lore.compiler.definitions.PositionedDefinition
 
 /**
   * A Feedback instance is a compiler report. The most notable Feedback types are warnings and errors.
@@ -60,13 +59,7 @@ abstract class Error(override val position: Position) extends Feedback {
     this(fragmentNode.position)
   }
 
-  def this(definition: PositionedDefinition) {
+  def this(definition: Positioned) {
     this(definition.position)
-  }
-}
-
-object Error {
-  case class FunctionNotFound(name: String, node: ExprNode.SimpleCallNode)(implicit fragment: Fragment) extends Error(node) {
-    override def message = s"The function $name does not exist in the current scope."
   }
 }

@@ -1,4 +1,4 @@
-package lore.compiler.definitions
+package lore.compiler.structures
 
 import lore.compiler.feedback.Position
 import lore.compiler.types.LabelType

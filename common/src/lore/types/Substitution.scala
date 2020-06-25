@@ -5,11 +5,11 @@ object Substitution {
   /**
     * In the given type, substitute all occurrences of any given variable with its respective type value.
     */
-  def substitute(variableAssignments: Map[TypeVariable, Type], tpe: Type): Type = {
-    def rec(t: Type) = substitute(variableAssignments, t)
+  def substitute(assignments: TypeVariable.Assignments, tpe: Type): Type = {
+    def rec(t: Type) = substitute(assignments, t)
 
     tpe match {
-      case tv: TypeVariable => variableAssignments.get(tv) match {
+      case tv: TypeVariable => assignments.get(tv) match {
         case None => tv
         case Some(t) => t
       }

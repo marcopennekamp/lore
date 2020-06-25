@@ -1,6 +1,5 @@
-package lore.compiler.definitions
+package lore.compiler.core
 
-import lore.compiler.core.{BasicScope, Scope}
 import lore.types.NamedType
 
 trait TypeScope extends Scope[NamedType]

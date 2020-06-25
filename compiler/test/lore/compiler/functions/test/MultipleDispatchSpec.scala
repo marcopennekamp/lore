@@ -1,6 +1,6 @@
-package lore.compiler.definitions.test
+package lore.compiler.functions.test
 
-import lore.compiler.definitions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.test.{BaseSpec, TypeSyntax}
 import lore.types.Type
 import org.scalatest.Assertion

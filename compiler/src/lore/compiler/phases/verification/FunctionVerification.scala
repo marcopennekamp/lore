@@ -4,8 +4,9 @@ import lore.compiler.ast.StmtNode
 import lore.compiler.ast.visitor.StmtVisitor
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.feedback.Error
-import lore.compiler.core.{Fragment, Registry}
-import lore.compiler.definitions.{ClassDefinition, ConstructorDefinition, InternalCallTarget}
+import lore.compiler.core.{Fragment, Registry, TypeScope}
+import lore.compiler.structures.ClassDefinition
+import lore.compiler.functions.{ConstructorDefinition, FunctionDefinition, FunctionSignature, InternalCallTarget}
 import lore.types.Type
 
 /**
@@ -29,25 +30,40 @@ object FunctionVerification {
   }
 
   /**
-    * Infers and checks types of the given function or constructor body. Ensures that all other expression constraints
-    * hold. Also ensures that the return type of the signature is sound compared to the type of the body.
-    *
-    * If a constructor is passed, classDefinition must be some value.
+    * Infers and checks types of the given function body. Ensures that all other expression constraints hold.
+    * Also ensures that the return type of the signature is sound compared to the type of the body.
     */
-  def verifyFunction(
-    target: InternalCallTarget, classDefinition: Option[ClassDefinition]
-  )(implicit registry: Registry): Verification = {
-    implicit val fragment = target.position.fragment
-    assert(!target.isInstanceOf[ConstructorDefinition] || classDefinition.isDefined)
-    // TODO: Verify that the signature doesn't have two parameters with the same name.
-    target.body.map { body =>
-      val visitor = new FunctionVerificationVisitor(target, classDefinition)
-      // TODO: Ensure that the return type matches the type of the body.
-      (
-        StmtVisitor.visit(visitor)(body),
-        ReturnConstraints.verify(body),
-      ).simultaneous
-      // TODO: Assert that all nodes have been assigned a type.
+  def verifyFunction(function: FunctionDefinition)(implicit registry: Registry): Verification = {
+    function.body.map { body =>
+      implicit val fragment: Fragment = function.position.fragment
+      verify(function.signature, function.typeScope, body, None)
     }.toCompiledOption.verification
   }
+
+  /**
+    * Infers and checks types of the given constructor body. Ensures that all other expression constraints
+    * hold. Also ensures that constructor and construct calls are soundly typed.
+    */
+  def verifyConstructor(
+    constructor: ConstructorDefinition,
+    classDefinition: ClassDefinition,
+  )(implicit registry: Registry): Verification = {
+    implicit val fragment = constructor.position.fragment
+    verify(constructor.signature, constructor.typeScope, constructor.body, Some(classDefinition))
+  }
+
+  private def verify(
+    signature: FunctionSignature, typeScope: TypeScope, body: StmtNode,
+    classDefinition: Option[ClassDefinition],
+  )(implicit registry: Registry, fragment: Fragment): Verification = {
+    // TODO: Verify that the signature doesn't have two parameters with the same name.
+    val visitor = new FunctionVerificationVisitor(signature, typeScope, classDefinition)
+    // TODO: Ensure that the return type matches the type of the body.
+    (
+      StmtVisitor.visit(visitor)(body),
+      ReturnConstraints.verify(body),
+    ).simultaneous.verification
+    // TODO: Assert that all nodes have been assigned a type.
+  }
+
 }

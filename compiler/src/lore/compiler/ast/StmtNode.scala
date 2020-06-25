@@ -2,7 +2,7 @@ package lore.compiler.ast
 
 import lore.compiler.ast.StmtNode._
 import lore.compiler.phases.verification.{LocalVariable, VirtualMember}
-import lore.compiler.definitions.{CallTarget, DynamicCallTarget, InternalCallTarget}
+import lore.compiler.functions.{CallTarget, DynamicCallTarget, InternalCallTarget}
 import lore.types.{ProductType, Type}
 
 /**

@@ -2,8 +2,7 @@ package lore.compiler.types
 
 import lore.compiler.ast.TypeExprNode
 import lore.compiler.core.Compilation.C
-import lore.compiler.core.{Compilation, Fragment}
-import lore.compiler.definitions.TypeScope
+import lore.compiler.core.{Compilation, Fragment, TypeScope}
 import lore.compiler.feedback.Error
 import lore.compiler.types
 import lore.types._

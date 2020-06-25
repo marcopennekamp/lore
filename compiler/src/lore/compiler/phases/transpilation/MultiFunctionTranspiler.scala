@@ -4,7 +4,8 @@ import java.io.{ByteArrayOutputStream, PrintStream}
 
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.Registry
-import lore.compiler.definitions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.phases.transpilation.Transpilation.Transpilation
 
 import scala.collection.mutable
 import scala.util.Using
@@ -14,6 +15,8 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit val registry
   private val varChosenFunction = "chosenFunction"
 
   private val functionJsNames = mutable.HashMap[FunctionDefinition, String]()
+
+  private implicit val nameProvider: TemporaryNameProvider = new TemporaryNameProvider
 
   def transpile: C[String] = {
     val out = new ByteArrayOutputStream()
@@ -67,15 +70,17 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit val registry
     def varFits(index: Int): String = s"fits$index"
 
     // TODO: Assert (at run-time) that the input type isn't polymorphic!
-    def transpileInputType(node: mf.hierarchy.NodeT): String = RuntimeTypeTranspiler.transpile(node.signature.inputType)
+    def transpileInputType(node: mf.hierarchy.NodeT): TranspiledChunk = RuntimeTypeTranspiler.transpile(node.signature.inputType)
 
     def transpileFitsConsts(nodes: List[(mf.hierarchy.NodeT, Int)]): Unit = {
       nodes.foreach { case (node, index) =>
+        val transpiledInputType = transpileInputType(node)
+        printer.println(transpiledInputType.statements)
         printer.println(
           // TODO: Optimize: Pull the object creation of the function's input type into some kind of cached variable.
           //       Right now, every time the multi-function is called, all these instances get created again and
           //       again.
-          s"const ${varFits(index)} = ${LoreApi.varTypes}.isSubtype($varInputType, ${transpileInputType(node)});"
+          s"const ${varFits(index)} = ${LoreApi.varTypes}.isSubtype($varInputType, ${transpiledInputType.expression.get});"
         )
       }
     }

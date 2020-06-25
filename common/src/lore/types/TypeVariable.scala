@@ -12,3 +12,7 @@ class TypeVariable(val name: String, val lowerBound: Type, val upperBound: Type)
   }
   override def hashCode(): Int = name.hashCode
 }
+
+object TypeVariable {
+  type Assignments = Map[TypeVariable, Type]
+}

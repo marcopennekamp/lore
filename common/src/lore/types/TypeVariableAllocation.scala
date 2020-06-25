@@ -22,12 +22,12 @@ class TypeVariableAllocation() {
     * All assignments in the current allocation. The allocation must be consistent, because otherwise we
     * can't return a single assigned type for each type variable.
     */
-  lazy val assignments: Map[TypeVariable, Type] = {
+  lazy val assignments: TypeVariable.Assignments = {
     if (!isConsistent) throw new RuntimeException("The allocation must be consistent for assignments to be defined.")
-    uniqueAssignments
+    currentAssignments()
   }
 
-  private def uniqueAssignments: Map[TypeVariable, Type] = {
+  private def currentAssignments(): TypeVariable.Assignments = {
     allocation.view.mapValues {
       case representative :: _ => representative
       case _ => throw new RuntimeException("The allocation is invalid and thus doesn't define any consistent assignments.")
@@ -53,7 +53,7 @@ class TypeVariableAllocation() {
       }
     } && {
       // Check the "type bounds" property.
-      val assignments = uniqueAssignments
+      val assignments = currentAssignments()
       assignments.forall { case (variable, tpe) =>
         // TODO: We might have to substitute multiple times until no substitutions occur. We should verify this
         //       using a fitting example.

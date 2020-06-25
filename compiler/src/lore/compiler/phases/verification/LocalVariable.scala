@@ -1,7 +1,7 @@
 package lore.compiler.phases.verification
 
 import lore.compiler.core.{BasicScope, Scope}
-import lore.compiler.definitions.FunctionSignature
+import lore.compiler.functions.FunctionSignature
 import lore.types.Type
 
 case class LocalVariable(name: String, tpe: Type, isMutable: Boolean) extends lore.core.Scope.Entry

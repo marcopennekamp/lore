@@ -1,6 +1,6 @@
 package lore.compiler.types
 
-import lore.compiler.definitions.ClassDefinition
+import lore.compiler.structures.ClassDefinition
 import lore.types.Type
 
 class ClassType(

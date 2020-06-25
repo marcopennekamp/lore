@@ -4,8 +4,9 @@ import lore.compiler
 import lore.compiler.ast.Node
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.Registry.{ConstructorNotFound, ExactFunctionNotFound, MultiFunctionNotFound, TypeNotFound}
-import lore.compiler.definitions._
+import lore.compiler.structures._
 import lore.compiler.feedback.{Error, Position}
+import lore.compiler.functions.{ConstructorDefinition, FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.types.{DeclaredType, DeclaredTypeHierarchy}
 import lore.types.{NamedType, ProductType, Type}
 

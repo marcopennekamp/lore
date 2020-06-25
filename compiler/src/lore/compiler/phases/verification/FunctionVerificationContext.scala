@@ -1,7 +1,7 @@
 package lore.compiler.phases.verification
 
 import lore.compiler.core.Scope
-import lore.compiler.definitions.FunctionSignature
+import lore.compiler.functions.FunctionSignature
 
 /**
   * A context for function verification passes, for example to hold local variable scopes.

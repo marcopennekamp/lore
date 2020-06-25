@@ -6,7 +6,8 @@ import lore.compiler.ast.visitor.{StmtVisitor, VerificationStmtVisitor}
 import lore.compiler.core.{Compilation, Fragment}
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.feedback.Error
-import lore.compiler.definitions.{ClassDefinition, ConstructorDefinition}
+import lore.compiler.structures.ClassDefinition
+import lore.compiler.functions.ConstructorDefinition
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
 
@@ -45,7 +46,7 @@ object ConstructorConstraints {
     // This is deliberately followed by a flatMap, because we don't want to check the graph parts of this verification
     // if not all continuations are in the right spot.
     val correctPlacement = definition.constructors.map { constructor =>
-      val statements = constructor.bodyBlock.statements
+      val statements = constructor.body.statements
       val endsInContinuation = if (!statements.lastOption.exists(_.isInstanceOf[TopLevelExprNode.ContinuationNode])) {
         Compilation.fail(ConstructorMustEndInContinuation(definition, constructor))
       } else Verification.succeed
@@ -67,7 +68,7 @@ object ConstructorConstraints {
       definition.constructors.foreach { constructor =>
         // The cast is now safe because we have previously verified that the last expression in the block is
         // a continuation.
-        val continuation = constructor.bodyBlock.statements.last.asInstanceOf[TopLevelExprNode.ContinuationNode]
+        val continuation = constructor.body.statements.last.asInstanceOf[TopLevelExprNode.ContinuationNode]
         continuation match {
           case TopLevelExprNode.ConstructorCallNode(name, _) =>
             flowGraph.addEdge(constructor.name, name.getOrElse(definition.name))
@@ -113,7 +114,7 @@ object ConstructorConstraints {
         case _ => Verification.succeed
       }
     }
-    StmtVisitor.visit(visitor)(constructor.bodyBlock)
+    StmtVisitor.visit(visitor)(constructor.body)
   }
 
 }

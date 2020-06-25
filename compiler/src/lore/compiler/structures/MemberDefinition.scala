@@ -1,7 +1,8 @@
-package lore.compiler.definitions
+package lore.compiler.structures
 
 import lore.compiler.core.Compilation.C
-import lore.compiler.feedback.Position
+import lore.compiler.feedback.{Position, Positioned}
+import lore.compiler.functions.ParameterDefinition
 import lore.compiler.phases.verification.VirtualMember
 import lore.compiler.types.{ClassType, ComponentType, TypingDeferred}
 import lore.types.Type
@@ -9,7 +10,7 @@ import lore.types.Type
 /**
   * A data type member, that is, either a property or a component.
   */
-sealed trait MemberDefinition[+T <: Type] extends PositionedDefinition with TypingDeferred[T] {
+sealed trait MemberDefinition[+T <: Type] extends Positioned with TypingDeferred[T] {
   def name: String
   def isMutable: Boolean = false
   def isComponent: Boolean = false

@@ -4,8 +4,8 @@ import lore.compiler.ast.TopLevelExprNode.AssignmentNode
 import lore.compiler.ast.visitor.StmtVisitor
 import lore.compiler.ast.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.core.{Compilation, Fragment, Registry}
-import lore.compiler.definitions.{FunctionDefinition, InternalCallTarget}
 import lore.compiler.feedback.Error
+import lore.compiler.functions.{FunctionDefinition, FunctionInstance, InternalCallTarget}
 import lore.compiler.phases.transpilation.Transpilation.Transpilation
 import lore.compiler.phases.transpilation.TranspiledChunk.JsCode
 
@@ -13,21 +13,11 @@ case class UnsupportedTranspilation(node: StmtNode)(implicit fragment: Fragment)
   override def message = s"The Lore compiler doesn't yet support the transpilation of ${node.getClass.getSimpleName}."
 }
 
-private[transpilation] class FunctionTranspilationVisitor(
-  /**
-    * The function or constructor which should be transpiled.
-    */
-  val callTarget: InternalCallTarget,
-)(implicit registry: Registry, fragment: Fragment) extends StmtVisitor[TranspiledChunk] {
+private[transpilation] class FunctionTranspilationVisitor()(implicit registry: Registry, fragment: Fragment) extends StmtVisitor[TranspiledChunk] {
   import ExprNode._
   import Transpilation.binary
 
-  private var uniqueNameCounter = 0
-  private def uniqueName(): String = {
-    val name = s"tmp$uniqueNameCounter"
-    uniqueNameCounter += 1
-    name
-  }
+  private implicit val nameProvider: TemporaryNameProvider = new TemporaryNameProvider
 
   private def default(node: StmtNode): Transpilation = Compilation.fail(UnsupportedTranspilation(node))
 
@@ -84,7 +74,7 @@ private[transpilation] class FunctionTranspilationVisitor(
       val condition = argument1
       val onTrue = argument2
       val onFalse = argument3
-      val varResult = uniqueName()
+      val varResult = nameProvider.createName()
       val code =
         s"""${condition.statements}
            |let $varResult;
@@ -96,7 +86,7 @@ private[transpilation] class FunctionTranspilationVisitor(
            |  ${onFalse.expression.map(e => s"$varResult = $e;").getOrElse("")}
            |}
            |""".stripMargin
-      Transpilation.chunk(code, Some(varResult))
+      Transpilation.chunk(code, varResult)
     case _ => default(node)
   }
 
@@ -107,20 +97,25 @@ private[transpilation] class FunctionTranspilationVisitor(
   }
 
   def transpileArrayBasedValue(node: StmtNode.XaryNode, valuesApiFunction: String, expressions: List[TranspiledChunk]): Transpilation = {
-    Transpilation.combined(expressions) { exprs =>
-      val values = exprs.mkString(",")
-      s"""${LoreApi.varValues}.$valuesApiFunction(
-         |  [$values],
-         |  ${RuntimeTypeTranspiler.transpile(node.inferredType)},
-         |)""".stripMargin
+    val chunk = RuntimeTypeTranspiler.transpile(node.inferredType).flatMap { typeExpression =>
+      TranspiledChunk.combined(expressions) { exprs =>
+        val values = exprs.mkString(",")
+        s"""${LoreApi.varValues}.$valuesApiFunction(
+           |  [$values],
+           |  $typeExpression,
+           |)""".stripMargin
+        // TODO: For the runtime type, don't we need to take types based on the actual values at run-time, not based on
+        //       the inferred type???
+      }
     }
+    Compilation.succeed(chunk)
   }
 
   override def visitXary(node: StmtNode.XaryNode)(expressions: List[TranspiledChunk]): Transpilation = node match {
     case BlockNode(_) => Transpilation.sequencedIdentity(expressions)
     case node@SimpleCallNode(_, _, _) =>
       node.target match {
-        case _: FunctionDefinition => transpileCall(node.target.name, expressions)
+        case _: FunctionInstance => transpileCall(node.target.name, expressions)
         case _ => default(node) // Constructor calls are not yet supported.
       }
     case node@DynamicCallNode(_, _) =>
@@ -138,23 +133,25 @@ private[transpilation] class FunctionTranspilationVisitor(
     * Transpiles a loop, combining the scaffolding of loopShell with a correctly transpiled body.
     */
   def transpileLoop(node: LoopNode, loopShell: JsCode => JsCode, body: TranspiledChunk): Transpilation = {
-    val varResult = uniqueName()
+    val varResult = nameProvider.createName()
+    // TODO: This needs to be optimized away if the resulting list isn't used as an expression.
+    val typeChunk = RuntimeTypeTranspiler.transpile(node.inferredType)
+    val resultVarDeclaration =
+      s"""const $varResult = ${LoreApi.varValues}.list(
+         |  [],
+         |  ${typeChunk.expression},
+         |);""".stripMargin
+      // TODO: Should we take the run-time type of the elements here or the inferred type? Isn't a list [1] rather
+      //       [Int] than [Real], even if it is declared as [Real]?
+      //       Oh crap. That would mean we need to LUB types at runtime. Ouch. That's almost impossible with large
+      //       lists. We need to put a lot of thought into this... And we can define it either way, so both ways are
+      //       possible. Also, what about list concatenation? Fucking hell.
     val bodyCode =
       s"""${body.statements}
          |${body.expression.map(e => s"$varResult.push($e);").getOrElse("")}
          |""".stripMargin
     val loopCode = loopShell(bodyCode)
-    // TODO: This needs to be optimized away if the resulting list isn't used as an expression.
-    val resultVarDeclaration =
-      s"""const $varResult = ${LoreApi.varValues}.list(
-         |  [],
-         |  ${RuntimeTypeTranspiler.transpile(node.inferredType)},
-         |);""".stripMargin
-    val code =
-      s"""$resultVarDeclaration
-         |$loopCode
-         |""".stripMargin
-    Transpilation.chunk(code, Some(varResult))
+    Transpilation.chunk(List(typeChunk.statements, resultVarDeclaration, loopCode), varResult)
   }
 
   override def visitIteration(node: ExprNode.IterationNode)(

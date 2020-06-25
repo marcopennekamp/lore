@@ -2,8 +2,7 @@ package lore.compiler.phases.resolution
 
 import lore.compiler.ast.DeclNode
 import lore.compiler.core.Compilation.C
-import lore.compiler.core.Fragment
-import lore.compiler.definitions.TypeScope
+import lore.compiler.core.{Fragment, TypeScope}
 import lore.compiler.types.{TypeExpressionEvaluator, TypeVariable}
 import lore.types.{AnyType, NothingType}
 

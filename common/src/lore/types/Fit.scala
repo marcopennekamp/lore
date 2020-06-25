@@ -1,5 +1,7 @@
 package lore.types
 
+import lore.types.Fit.assignments
+
 object Fit {
 
   /**
@@ -25,25 +27,29 @@ object Fit {
     // Two types trivially fit into each other if they are equal.
     if (t1 == t2) return true
 
-    // The type allocation handles (2) partially and all of (3).
-    val assignments: Map[TypeVariable, Type] = if (t2.isPolymorphic) {
-      val allocation = TypeVariableAllocation.of(t1, t2)
-      if (!allocation.isConsistent) {
-        return false
+    // The type allocation in this.assignments handles (2) partially and all of (3).
+    assignments(t1, t2).exists { assignments =>
+      // This handles (1).
+      val missingVariables = Type.variables(t2) -- assignments.keySet
+      if (missingVariables.nonEmpty) {
+        // TODO: Use debug or trace logging here.
+        println(s"Not all variables from $t2 are assigned types from $t1: ${missingVariables.mkString(", ")}.")
       }
-      allocation.assignments
-    } else Map.empty
 
-    // This handles (1).
-    val variables = Type.variables(t2)
-    if (!variables.subsetOf(assignments.keySet)) {
-      // TODO: Use debug or trace logging here.
-      println(s"Not all variables from $t2 are assigned types from $t1.")
-      return false
+      // The subtyping handles (4).
+      missingVariables.isEmpty && t1 <= Substitution.substitute(assignments, t2)
     }
+  }
 
-    // This handles (4).
-    t1 <= Substitution.substitute(assignments, t2)
+  /**
+    * Returns the consistent assignments supposing types from t1 were assigned to variables in t2. The result is
+    * None if the allocation isn't consistent or if otherwise consistent assignments cannot be produced.
+    */
+  def assignments(t1: Type, t2: Type): Option[TypeVariable.Assignments] = {
+    if (t2.isPolymorphic) {
+      val allocation = TypeVariableAllocation.of(t1, t2)
+      if (allocation.isConsistent) Some(allocation.assignments) else None
+    } else Some(Map.empty)
   }
 
   /**

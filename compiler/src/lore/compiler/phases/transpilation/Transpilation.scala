@@ -14,6 +14,19 @@ case class TranspiledChunk(statements: JsCode, expression: Option[JsExpr]) {
   def mapExpression(f: JsExpr => JsExpr): TranspiledChunk = TranspiledChunk(statements, expression.map(f))
 
   /**
+    * Flat maps the transpiled chunk with the given mapping function. If expression is None, `this` transpiled chunk
+    * is returned without further modification.
+    */
+  def flatMap(f: JsExpr => TranspiledChunk): TranspiledChunk = {
+    expression.map(f).map { chunk =>
+      TranspiledChunk(
+        TranspiledChunk.concatStatements(statements, chunk.statements),
+        chunk.expression
+      )
+    } getOrElse this
+  }
+
+  /**
     * Returns the chunk's code in one value, including the expression.
     */
   val code: JsCode = statements + expression.getOrElse("")
@@ -24,14 +37,24 @@ object TranspiledChunk {
   type JsExpr = String
 
   /**
+    * Concatenates the given statement lists.
+    */
+  def concatStatements(statements: JsCode*): JsCode = statements.mkString("\n")
+
+  /**
     * Creates a transpiled chunk only with an expression and an empty statement list.
     */
   def expression(expr: JsExpr): TranspiledChunk = TranspiledChunk("", Some(expr))
 
   /**
+    * Creates a transpiled chunk with the given statements and an expression.
+    */
+  def chunk(statements: List[JsCode], expr: JsExpr): TranspiledChunk = TranspiledChunk(concatStatements(statements: _*), Some(expr))
+
+  /**
     * Creates a transpiled chunk that consists only of a statement list.
     */
-  def statements(statements: JsCode*): TranspiledChunk = TranspiledChunk(statements.mkString("\n"), None)
+  def statements(statements: JsCode*): TranspiledChunk = TranspiledChunk(concatStatements(statements: _*), None)
 
   /**
     * Combines the transpiled chunks. Statements are simply concatenated, while expressions are combined according
@@ -80,8 +103,11 @@ object TranspiledChunk {
 object Transpilation {
   type Transpilation = Compilation[TranspiledChunk]
 
-  def chunk(statements: JsCode, expression: Option[JsExpr]): Transpilation = {
-    Compilation.succeed(TranspiledChunk(statements, expression))
+  def chunk(statements: JsCode, expression: JsExpr): Transpilation = {
+    Compilation.succeed(TranspiledChunk(statements, Some(expression)))
+  }
+  def chunk(statements: List[JsCode], expression: JsExpr): Transpilation = {
+    Compilation.succeed(TranspiledChunk.chunk(statements, expression))
   }
   def statements(statements: JsCode*): Transpilation = {
     Compilation.succeed(TranspiledChunk.statements(statements: _*))

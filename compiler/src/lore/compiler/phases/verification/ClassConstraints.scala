@@ -1,10 +1,9 @@
 package lore.compiler.phases.verification
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.feedback.Error
-import lore.compiler.types.{ClassType, CompilerSubtyping}
 import lore.compiler.core.{Compilation, Registry}
-import lore.compiler.definitions.{ClassDefinition, ComponentDefinition, MemberDefinition}
+import lore.compiler.feedback.Error
+import lore.compiler.structures.{ClassDefinition, ComponentDefinition, MemberDefinition}
 import lore.types.{AnyType, Type}
 
 object ClassConstraints {

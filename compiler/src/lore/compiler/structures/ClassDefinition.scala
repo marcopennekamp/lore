@@ -1,9 +1,12 @@
-package lore.compiler.definitions
+package lore.compiler.structures
 
 import lore.compiler.ast.ExprNode.VariableNode
 import lore.compiler.ast.TopLevelExprNode.ConstructorCallNode
 import lore.compiler.ast.{ExprNode, TopLevelExprNode}
+import lore.compiler.core.TypeVariableScope
 import lore.compiler.feedback.Position
+import lore.compiler.functions
+import lore.compiler.functions.{ConstructorDefinition, FunctionSignature}
 import lore.compiler.types.{ClassType, ComponentType}
 import lore.types.{ProductType, Type}
 import lore.utils.CollectionExtensions._
@@ -74,7 +77,7 @@ class ClassDefinition(
     * super type.
     */
   lazy val constructSignature: FunctionSignature = {
-    FunctionSignature("construct", localMembers.map(_.asParameter), ProductType.UnitType)
+    functions.FunctionSignature("construct", localMembers.map(_.asParameter), ProductType.UnitType)
   }
 
   /**
@@ -107,7 +110,7 @@ class ClassDefinition(
           TopLevelExprNode.ConstructNode(arguments, withSuper)
         ))
         // TODO: The constructor should rather contain the registry type scope.
-        val constructor = ConstructorDefinition(this.name, new TypeVariableScope(null), parameters, body, position)
+        val constructor = functions.ConstructorDefinition(this.name, new TypeVariableScope(null), parameters, body, position)
         constructor.associateWith(this)
         constructor
     }

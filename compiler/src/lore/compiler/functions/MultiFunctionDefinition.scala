@@ -1,4 +1,4 @@
-package lore.compiler.definitions
+package lore.compiler.functions
 
 import lore.types.{Fit, ProductType, Type}
 import scalax.collection.GraphEdge.DiEdge
@@ -29,7 +29,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
     * When used as a visit-predicate for [[traverseHierarchy]], all and only nodes that are part of the function
     * fit for a given input type are visited.
     */
-  private def visitFit(input: ProductType)(node: hierarchy.NodeT): Boolean = Fit.fits(input, node.signature.inputType)
+  private def predicateVisitFit(input: ProductType)(node: hierarchy.NodeT): Boolean = Fit.fits(input, node.signature.inputType)
 
   /**
     * Calculates the multi-function fit.
@@ -38,7 +38,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
     traverseHierarchy(
       // We only have to visit nodes that are a supertype of the input type, because any children of these nodes
       // won't be a supertype of the input type if their parent isn't already a supertype.
-      visit  = visitFit(tpe.toTuple),
+      visit  = predicateVisitFit(tpe.toTuple),
       select = _ => true,
     )
   }
@@ -53,7 +53,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
 
     // Even though min is defined in terms of the fit, we don't use the fit function and instead compute everything in
     // one traversal.
-    val visit = visitFit(tpe.toTuple) _
+    val visit = predicateVisitFit(tpe.toTuple) _
     traverseHierarchy(
       visit,
       // We select all nodes for which no children are visited. This is easy to see: Min is defined in terms of
@@ -81,7 +81,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
     // Using traverseHierarchy ensures that we only visit subtrees that could contain the exact candidate.
     val input = tpe.toTuple
     traverseHierarchy(
-      visit  = visitFit(tpe.toTuple),
+      visit  = predicateVisitFit(tpe.toTuple),
       select = node => Fit.isEquallySpecific(input, node.signature.inputType),
     ).headOption
   }
