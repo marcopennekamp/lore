@@ -54,8 +54,6 @@ lazy val lore =
     .jsSettings(
       scalaSource in Compile := { (baseDirectory in Compile)(_ / "src") }.value,
       scalaSource in Test := { (baseDirectory in Test)(_ / "test") }.value,
-
-      scalaJSUseMainModuleInitializer := true,
     )
     .jsConfigure(_.withId("runtime"))
 
