@@ -2,6 +2,7 @@ package lore.compiler.phases.transpilation
 
 import lore.compiler.types.{ComponentType, DeclaredType, TypeVariable}
 import lore.types._
+import lore.compiler.types.TypeExtensions._
 
 object RuntimeTypeTranspiler {
   /**
@@ -9,7 +10,7 @@ object RuntimeTypeTranspiler {
     */
   def transpile(rootType: Type)(implicit nameProvider: TemporaryNameProvider): TranspiledChunk = {
     val apiPrefix = s"${LoreApi.varTypes}."
-    val variables = Type.variables(rootType).toList
+    val variables = Type.variables(rootType).declarationOrder
     val variableNames = variables.map(tv => (tv, nameProvider.createName())).toMap
 
     def rec(tpe: Type): String = {

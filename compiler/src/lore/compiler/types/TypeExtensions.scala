@@ -14,4 +14,14 @@ object TypeExtensions {
       else sumType.types.reduceLeft(CompilerSubtyping.configurableLub(defaultToSum = false))
     }
   }
+
+  implicit class TypeVariableListExtension(variables: Iterable[lore.types.TypeVariable]) {
+    /**
+      * Orders the type variables in their order of declaration so that depending variables follow their
+      * dependencies.
+      */
+    def declarationOrder: List[TypeVariable] = {
+      variables.toList.map(_.asInstanceOf[TypeVariable]).sortBy(_.declarationOrder)
+    }
+  }
 }
