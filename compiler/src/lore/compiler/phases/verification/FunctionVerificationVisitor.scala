@@ -33,6 +33,9 @@ private[verification] class FunctionVerificationVisitor(
   import StmtNode._
   import TopLevelExprNode._
 
+  // TODO: Ensure that loops with a Unit expression body cannot be used as an expression, since Unit loops
+  //       are optimized by the transpiler.
+
   /**
     * The type scope is made implicit so that it can be used throughout the verification process. This allows
     * us to easily handle type variables defined with a function or even those defined with the class of a
@@ -123,6 +126,16 @@ private[verification] class FunctionVerificationVisitor(
   private def assignTarget(node: CallNode[InternalCallTarget], target: InternalCallTarget): Verification = {
     node.target = target
     node.typed(target.signature.outputType)
+  }
+
+  private def typeLoop(node: LoopNode): Verification = {
+    val bodyType = node.body.inferredType
+    val loopType = if (bodyType == ProductType.UnitType) {
+      ProductType.UnitType
+    } else {
+      ListType(bodyType)
+    }
+    node.typed(loopType)
   }
 
   override def verify(node: StmtNode): Verification = node match {
@@ -263,9 +276,9 @@ private[verification] class FunctionVerificationVisitor(
       }
 
     // Repetitions.
-    case RepetitionNode(condition, body) =>
+    case node@RepetitionNode(condition, _) =>
       havingSubtype(condition, BasicType.Boolean).flatMap { _ =>
-        node.typed(ListType(body.inferredType))
+        typeLoop(node)
       }
 
     // Binary operations.
@@ -344,7 +357,7 @@ private[verification] class FunctionVerificationVisitor(
     }.simultaneous.flatMap { _ =>
       visitBody().flatMap { _ =>
         context.closeScope() // We have to close the scope that we opened for the extractors.
-        node.typed(ListType(node.body.inferredType))
+        typeLoop(node)
       }
     }
   }

@@ -5,9 +5,10 @@ import lore.compiler.ast.visitor.StmtVisitor
 import lore.compiler.ast.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.core.{Compilation, Fragment, Registry}
 import lore.compiler.feedback.Error
-import lore.compiler.functions.{FunctionDefinition, FunctionInstance, InternalCallTarget}
+import lore.compiler.functions.FunctionInstance
 import lore.compiler.phases.transpilation.Transpilation.Transpilation
 import lore.compiler.phases.transpilation.TranspiledChunk.JsCode
+import lore.types.{BasicType, ProductType}
 
 case class UnsupportedTranspilation(node: StmtNode)(implicit fragment: Fragment) extends Error(node) {
   override def message = s"The Lore compiler doesn't yet support the transpilation of ${node.getClass.getSimpleName}."
@@ -133,25 +134,42 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     * Transpiles a loop, combining the scaffolding of loopShell with a correctly transpiled body.
     */
   def transpileLoop(node: LoopNode, loopShell: JsCode => JsCode, body: TranspiledChunk): Transpilation = {
-    val varResult = nameProvider.createName()
-    // TODO: This needs to be optimized away if the resulting list isn't used as an expression.
-    val typeChunk = RuntimeTypeTranspiler.transpile(node.inferredType)
-    val resultVarDeclaration =
-      s"""const $varResult = ${LoreApi.varValues}.list(
-         |  [],
-         |  ${typeChunk.expression.get},
-         |);""".stripMargin
+    // TODO: We also need to ignore the resulting list if it isn't used as an expression.
+    // The loop's inferred type is Unit if its body type is Unit, so this checks out.
+    val ignoreResult = node.inferredType == ProductType.UnitType
+
+    def loopCode(varResult: Option[String]): String = {
+      val statements = s"${body.statements};"
+      val bodyCode = body.expression.map { e =>
+        varResult.map { v =>
+          s"""$statements
+             |$v.push($e);
+             |""".stripMargin
+        } getOrElse {
+          s"""$statements
+             |$e;""".stripMargin
+        }
+      } getOrElse statements
+      loopShell(bodyCode)
+    }
+
+    if (ignoreResult) {
+      Transpilation.statements(loopCode(None))
+    } else {
+      val varResult = nameProvider.createName()
+      val typeChunk = RuntimeTypeTranspiler.transpile(node.inferredType)
+      val resultVarDeclaration =
+        s"""const $varResult = ${LoreApi.varValues}.list(
+           |  [],
+           |  ${typeChunk.expression.get},
+           |);""".stripMargin
       // TODO: Should we take the run-time type of the elements here or the inferred type? Isn't a list [1] rather
       //       [Int] than [Real], even if it is declared as [Real]?
       //       Oh crap. That would mean we need to LUB types at runtime. Ouch. That's almost impossible with large
       //       lists. We need to put a lot of thought into this... And we can define it either way, so both ways are
       //       possible. Also, what about list concatenation? Fucking hell.
-    val bodyCode =
-      s"""${body.statements}
-         |${body.expression.map(e => s"$varResult.push($e);").getOrElse("")}
-         |""".stripMargin
-    val loopCode = loopShell(bodyCode)
-    Transpilation.chunk(List(typeChunk.statements, resultVarDeclaration, loopCode), varResult)
+      Transpilation.chunk(List(typeChunk.statements, resultVarDeclaration, loopCode(Some(varResult))), varResult)
+    }
   }
 
   override def visitIteration(node: ExprNode.IterationNode)(
