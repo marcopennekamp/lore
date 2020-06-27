@@ -139,7 +139,7 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     val resultVarDeclaration =
       s"""const $varResult = ${LoreApi.varValues}.list(
          |  [],
-         |  ${typeChunk.expression},
+         |  ${typeChunk.expression.get},
          |);""".stripMargin
       // TODO: Should we take the run-time type of the elements here or the inferred type? Isn't a list [1] rather
       //       [Int] than [Real], even if it is declared as [Real]?
