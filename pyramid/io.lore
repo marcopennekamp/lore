@@ -2,3 +2,5 @@
 action println(value: Any) {
   dynamic[()]('Lore.io.println', value)
 }
+
+function now(): Int = dynamic[Int]('performance.now')

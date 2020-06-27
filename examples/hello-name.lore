@@ -16,3 +16,14 @@ action test() {
     hello(name)
   }
 }
+
+action testPerformance(times: Int) {
+  const now = now() // TODO: This should lead to a "variable not found/initialized" error once we introduce first-class functions.
+  let i = 0
+  while (i < times) {
+    test()
+    i += 1
+  }
+  const now2 = now()
+  println('Running test() $times times took ${now2 - now}ms.')
+}
