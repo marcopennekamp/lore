@@ -37,6 +37,7 @@ class Types {
   }
 
   def isSubtype(left: Type, right: Type): Boolean = left <= right
+  def fits(left: Type, right: Type): Boolean = Fit.fits(left, right)
 
   // TODO: We definitely need a simple type registry with (name -> declared type).
   def registerClass(

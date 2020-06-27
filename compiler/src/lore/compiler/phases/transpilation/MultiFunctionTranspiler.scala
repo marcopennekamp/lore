@@ -80,7 +80,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit val registry
           // TODO: Optimize: Pull the object creation of the function's input type into some kind of cached variable.
           //       Right now, every time the multi-function is called, all these instances get created again and
           //       again.
-          s"const ${varFits(index)} = ${LoreApi.varTypes}.isSubtype($varInputType, ${transpiledInputType.expression.get});"
+          s"const ${varFits(index)} = ${LoreApi.varTypes}.fits($varInputType, ${transpiledInputType.expression.get});"
         )
       }
     }
