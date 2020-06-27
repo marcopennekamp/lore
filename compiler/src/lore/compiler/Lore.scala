@@ -91,8 +91,11 @@ object Lore {
   }
 
   def main(args: Array[String]): Unit = {
+    val beforeCompile = System.nanoTime()
     val result = fromExample(args(0))
+    val afterCompile = System.nanoTime()
     println(stringifyCompilationInfo(result.map(_._1)))
     result.map(_._2).foreach(writeResult)
+    println(s"Compile time: ${((afterCompile - beforeCompile) / 1000) / 1000.0}ms.")
   }
 }
