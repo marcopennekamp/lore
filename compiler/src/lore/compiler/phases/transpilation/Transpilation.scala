@@ -68,13 +68,24 @@ object TranspiledChunk {
 
   /**
     * A special variant of [[combined]] that uses operators.
+    *
+    * @param wrap Whether to wrap the resulting expression in parentheses.
     */
-  def operatorChain(chunks: List[TranspiledChunk], operator: String): TranspiledChunk = combined(chunks)(_.mkString(operator))
+  def operatorChain(chunks: List[TranspiledChunk], operator: String, wrap: Boolean = false): TranspiledChunk = {
+    combined(chunks) { expressions =>
+      val result = expressions.mkString(operator)
+      if (wrap) s"($result)" else result
+    }
+  }
 
   /**
     * A binary variant of [[operatorChain]].
+    *
+    * @param wrap Whether to wrap the resulting expression in parentheses.
     */
-  def binary(left: TranspiledChunk, right: TranspiledChunk, operator: String): TranspiledChunk = operatorChain(List(left, right), operator)
+  def binary(left: TranspiledChunk, right: TranspiledChunk, operator: String, wrap: Boolean = false): TranspiledChunk = {
+    operatorChain(List(left, right), operator, wrap)
+  }
 
   /**
     * Sequences the list of transpiled chunks, concatenating each chunk's statement list AND expression,
@@ -94,7 +105,7 @@ object TranspiledChunk {
 
   implicit class ListExtension(chunks: List[TranspiledChunk]) {
     def combined(transform: List[JsExpr] => JsExpr): TranspiledChunk = TranspiledChunk.combined(chunks)(transform)
-    def operatorChain(operator: String): TranspiledChunk = TranspiledChunk.operatorChain(chunks, operator)
+    def operatorChain(operator: String, wrap: Boolean = false): TranspiledChunk = TranspiledChunk.operatorChain(chunks, operator, wrap)
     def sequencedIdentity: TranspiledChunk = TranspiledChunk.sequencedIdentity(chunks)
     def sequenced(transform: (JsCode, Option[JsExpr]) => TranspiledChunk): TranspiledChunk = TranspiledChunk.sequenced(chunks)(transform)
   }
@@ -118,11 +129,11 @@ object Transpilation {
   def combined(chunks: List[TranspiledChunk])(transform: List[JsExpr] => JsExpr): Transpilation = {
     Compilation.succeed(chunks.combined(transform))
   }
-  def operatorChain(chunks: List[TranspiledChunk], operator: String): Transpilation = {
-    Compilation.succeed(chunks.operatorChain(operator))
+  def operatorChain(chunks: List[TranspiledChunk], operator: String, wrap: Boolean = false): Transpilation = {
+    Compilation.succeed(chunks.operatorChain(operator, wrap))
   }
-  def binary(left: TranspiledChunk, right: TranspiledChunk, operator: String): Transpilation = {
-    Compilation.succeed(TranspiledChunk.binary(left, right, operator))
+  def binary(left: TranspiledChunk, right: TranspiledChunk, operator: String, wrap: Boolean = false): Transpilation = {
+    Compilation.succeed(TranspiledChunk.binary(left, right, operator, wrap))
   }
   def sequencedIdentity(chunks: List[TranspiledChunk]): Transpilation = {
     Compilation.succeed(chunks.sequencedIdentity)

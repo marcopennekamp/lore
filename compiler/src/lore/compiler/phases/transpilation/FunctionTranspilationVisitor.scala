@@ -40,19 +40,19 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
 
   override def visitBinary(node: StmtNode.BinaryNode)(left: TranspiledChunk, right: TranspiledChunk): Transpilation = node match {
     case AssignmentNode(_, _) => binary(left, right, "=")
-    case AdditionNode(_, _) => binary(left, right, "+")
-    case SubtractionNode(_, _) => binary(left, right, "-")
-    case MultiplicationNode(_, _) => binary(left, right, "*")
-    case DivisionNode(_, _) => binary(left, right, "/")
+    case AdditionNode(_, _) => binary(left, right, "+", wrap = true)
+    case SubtractionNode(_, _) => binary(left, right, "-", wrap = true)
+    case MultiplicationNode(_, _) => binary(left, right, "*", wrap = true)
+    case DivisionNode(_, _) => binary(left, right, "/", wrap = true)
     case EqualsNode(_, _) =>
       // TODO: This can't be a simple equals, of course, unless this is a basic type. We have to implement some kind
       //       of equals function.
       default(node)
     case NotEqualsNode(_, _) => default(node)
-    case LessThanNode(_, _) => binary(left, right, "<")
-    case LessThanEqualsNode(_, _) => binary(left, right, "<=")
-    case GreaterThanNode(_, _) => binary(left, right, ">")
-    case GreaterThanEqualsNode(_, _) => binary(left, right, ">=")
+    case LessThanNode(_, _) => binary(left, right, "<", wrap = true)
+    case LessThanEqualsNode(_, _) => binary(left, right, "<=", wrap = true)
+    case GreaterThanNode(_, _) => binary(left, right, ">", wrap = true)
+    case GreaterThanEqualsNode(_, _) => binary(left, right, ">=", wrap = true)
     case node@RepetitionNode(_, _) =>
       val condition = left
       val body = right
@@ -123,7 +123,7 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
       transpileCall(node.target.name, actualArguments)
     case node@TupleNode(_) => transpileArrayBasedValue(node, "tuple", expressions)
     case node@ListNode(_) => transpileArrayBasedValue(node, "list", expressions)
-    case ConcatenationNode(_) => Transpilation.operatorChain(expressions, "+")
+    case ConcatenationNode(_) => Transpilation.operatorChain(expressions, "+", wrap = true)
     case _ => default(node)
   }
 
