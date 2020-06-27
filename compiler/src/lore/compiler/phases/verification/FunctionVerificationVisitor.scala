@@ -153,7 +153,7 @@ private[verification] class FunctionVerificationVisitor(
         node.member = member
         node.typed(member.tpe)
       }
-    case VariableDeclarationNode(name, isMutable, maybeTypeNode, value) =>
+    case node@VariableDeclarationNode(name, isMutable, maybeTypeNode, value) =>
       // Add the variable type to the type context. Either infer the type from the value or, if a type has
       // been explicitly declared, check that the value adheres to the type bounds.
       maybeTypeNode.map { typeNode =>
@@ -169,6 +169,7 @@ private[verification] class FunctionVerificationVisitor(
         // Register the local variable with the scope.
         val localVariable = LocalVariable(name, tpe, isMutable)
         context.currentScope.register(localVariable, node.position).flatMap { _ =>
+          node.setVariable(localVariable)
           // An assignment always results in a unit value.
           node.typed(ProductType.UnitType)
         }
@@ -337,7 +338,8 @@ private[verification] class FunctionVerificationVisitor(
         case MapType(key, value) => Compilation.succeed(ProductType(List(key, value)))
         case _ => Compilation.fail(CollectionExpected(extractor.collection))
       }).flatMap { elementType =>
-        scope.register(LocalVariable(extractor.variableName, elementType, isMutable = false), extractor.position)
+        val localVariable = LocalVariable(extractor.variableName, elementType, isMutable = false)
+        scope.register(localVariable, extractor.position).map(_ => extractor.setVariable(localVariable))
       }
     }.simultaneous.flatMap { _ =>
       visitBody().flatMap { _ =>

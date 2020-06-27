@@ -7,7 +7,7 @@ class TemporaryNameProvider {
     * Creates the next temporary name.
     */
   def createName(): String = {
-    val name = s"tmp$counter"
+    val name = TranspiledNames.temporaryVariable(counter.toString)
     counter += 1
     name
   }

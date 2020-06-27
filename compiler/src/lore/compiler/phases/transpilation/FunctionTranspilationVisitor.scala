@@ -22,7 +22,7 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
   private def default(node: StmtNode): Transpilation = Compilation.fail(UnsupportedTranspilation(node))
 
   override def visitLeaf(node: StmtNode.LeafNode): Transpilation = node match {
-    case ExprNode.VariableNode(name) => Transpilation.expression(name)
+    case node@ExprNode.VariableNode(_) => Transpilation.expression(node.variable.transpiledName)
     case IntLiteralNode(value) => Transpilation.expression(value.toString)
     case StringLiteralNode(value) => Transpilation.expression(s"'$value'")
     case UnitNode => Transpilation.expression(s"${LoreApi.varValues}.unit")
@@ -30,9 +30,9 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
   }
 
   override def visitUnary(node: StmtNode.UnaryNode)(argument: TranspiledChunk): Transpilation = node match {
-    case TopLevelExprNode.VariableDeclarationNode(name, isMutable, _, _) =>
+    case node@TopLevelExprNode.VariableDeclarationNode(_, isMutable, _, _) =>
       val modifier = if (isMutable) "let" else "const"
-      val code = s"$modifier $name = ${argument.expression.get};"
+      val code = s"$modifier ${node.variable.transpiledName} = ${argument.expression.get};"
       Transpilation.statements(argument.statements, code)
     case NegationNode(_) => Compilation.succeed(argument.mapExpression(e => s"-$e"))
     case _ => default(node)
@@ -158,10 +158,12 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     extractors: List[(String, TranspiledChunk)], visitBody: () => Transpilation
   ): Transpilation = {
     visitBody().flatMap { body =>
-      val loopShell = extractors.map { case (name, node) =>
+      val extractorVariables = node.extractors.map(_.variable).map(v => (v.name, v)).toMap
+      val loopShell = extractors.map { case (name, chunk) =>
+        val variable = extractorVariables(name)
         (inner: String) =>
-          s"""${node.statements}
-             |${node.expression.get}.forEach($name => {
+          s"""${chunk.statements}
+             |${chunk.expression.get}.forEach(${variable.transpiledName} => {
              |  $inner
              |});""".stripMargin
       }.foldRight(identity: String => String) { case (enclose, function) => function.andThen(enclose) }

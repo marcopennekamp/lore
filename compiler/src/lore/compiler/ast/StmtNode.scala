@@ -64,10 +64,30 @@ sealed trait CallNode[T <: CallTarget] extends TopLevelExprNode {
   }
 }
 
+sealed trait HavingLocalVariable {
+  private var _variable: Option[LocalVariable] = None
+
+  def setVariable(variable: LocalVariable): Unit = {
+    if (_variable.exists(_ != variable)) {
+      throw new RuntimeException(s"Variable node $this was assigned two different variables: ${_variable.get}, $variable. This is a compiler bug!")
+    }
+    _variable = Some(variable)
+  }
+
+  /**
+    * The variable that this node refers to, which is resolved during function verification.
+    */
+  def variable: LocalVariable = {
+    _variable.getOrElse(
+      throw new RuntimeException(s"The variable for the node $this should have been set by now. This is a compiler bug!")
+    )
+  }
+}
+
 object TopLevelExprNode {
   case class VariableDeclarationNode(
     name: String, isMutable: Boolean, tpe: Option[TypeExprNode], value: ExprNode
-  ) extends UnaryNode(value) with TopLevelExprNode
+  ) extends UnaryNode(value) with TopLevelExprNode with HavingLocalVariable
   case class AssignmentNode(address: ExprNode.AddressNode, value: ExprNode) extends BinaryNode(address, value) with TopLevelExprNode
 
   /**
@@ -97,25 +117,10 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Variable expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class VariableNode(name: String) extends LeafNode with ExprNode with AddressNode {
-    private var _variable: Option[LocalVariable] = None
-
-    def setVariable(variable: LocalVariable): Unit = {
-      if (_variable.exists(_ != variable)) {
-        throw new RuntimeException(s"Variable node $this was assigned two different variables: ${_variable.get}, $variable. This is a compiler bug!")
-      }
-      _variable = Some(variable)
-    }
-
-    /**
-      * The variable that this node refers to, which is resolved during function verification.
-      */
-    def variable: LocalVariable = {
-      _variable.getOrElse(
-        throw new RuntimeException(s"The variable for the node $this should have been set by now. This is a compiler bug!")
-      )
-    }
-  }
+  case class VariableNode(name: String) extends LeafNode with ExprNode with AddressNode with HavingLocalVariable
+  // TODO: If we introduce more complex referencing structures, such as global variables or global singleton objects,
+  //       we cannot simply assume that a "variable node" is actually a local variable. In that case we will have to
+  //       widen the notion of "having a local variable". For now, this seems to suffice, though. :)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Numeric expressions.
@@ -239,9 +244,11 @@ object ExprNode {
   /**
     * A cross-cutting node for loops.
     */
-  sealed trait LoopNode extends ExprNode
+  sealed trait LoopNode extends ExprNode {
+    def body: StmtNode
+  }
 
   case class RepetitionNode(condition: ExprNode, body: StmtNode) extends BinaryNode(condition, body) with LoopNode
   case class IterationNode(extractors: List[ExtractorNode], body: StmtNode) extends LoopNode
-  case class ExtractorNode(variableName: String, collection: ExprNode) extends Node
+  case class ExtractorNode(variableName: String, collection: ExprNode) extends Node with HavingLocalVariable
 }
