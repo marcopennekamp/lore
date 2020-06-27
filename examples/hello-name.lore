@@ -9,8 +9,6 @@ action hello(id: Int) {
 }
 
 action test() {
-  // TODO: It doesn't make much sense that we need to widen the type to Any here, BUT append doesn't work with
-  //       parametric types yet and so we need to operate on Any...
   let names: [String | Int] = ['world', 5, 'marco']
   names = append(names, 'console')
   names = append(names, 100)

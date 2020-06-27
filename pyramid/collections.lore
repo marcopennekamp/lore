@@ -1,8 +1,4 @@
-
-
-
-// TODO: We need parametric types here...
-function append(list: [B], element: A): [B] where B, A <: B = dynamic[[B]]('Lore.list.append', list, element)
+function append(list: [A], element: B): [A] where A, B <: A = dynamic[[A]]('Lore.list.append', list, element)
 
 // TODO: If we change lists to our own custom implementation, it would still be useful to expose some kind of
 //       interface for Javascript arrays, just in case they are needed by the developer. This would be the place
