@@ -27,7 +27,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
         new FunctionTranspiler(function, name).transpile.map(printer.print)
       }.simultaneous.map { _=>
         val mfName = s"${mf.name}"
-        printer.println(s"function $mfName(...args) {")
+        printer.println(s"export function $mfName(...args) {")
         if (compilerOptions.runtimeLogging) {
           printer.println(s"console.info('Called multi-function $mfName.');")
         }

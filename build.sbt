@@ -54,8 +54,8 @@ lazy val lore =
     .jsSettings(
       scalaSource in Compile := { (baseDirectory in Compile)(_ / "src") }.value,
       scalaSource in Test := { (baseDirectory in Test)(_ / "test") }.value,
+      scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.ESModule) },
     )
     .jsConfigure(_.withId("runtime"))
-
 
 lazy val root = project.in(file(".")).aggregate(lore.js, lore.jvm)
