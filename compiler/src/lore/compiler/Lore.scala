@@ -26,7 +26,10 @@ object Lore {
     * Compiles a Lore program from a single source.
     */
   def fromSingleSource(fragment: LoreCompiler.SourceFragment): C[(Registry, String)] = {
-    val compiler = new LoreCompiler(pyramid ++ List(fragment))
+    val options = CompilerOptions(
+      runtimeLogging = false,
+    )
+    val compiler = new LoreCompiler(pyramid ++ List(fragment), options)
     compiler.compile()
   }
 

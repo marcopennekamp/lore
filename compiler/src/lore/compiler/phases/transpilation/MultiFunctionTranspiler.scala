@@ -2,15 +2,15 @@ package lore.compiler.phases.transpilation
 
 import java.io.{ByteArrayOutputStream, PrintStream}
 
+import lore.compiler.CompilerOptions
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.Registry
 import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.compiler.phases.transpilation.Transpilation.Transpilation
 
 import scala.collection.mutable
 import scala.util.Using
 
-class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit val registry: Registry) {
+class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry) {
   private val varInputType = "inputType"
   private val varChosenFunction = "chosenFunction"
 
@@ -28,7 +28,9 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit val registry
       }.simultaneous.map { _=>
         val mfName = s"${mf.name}"
         printer.println(s"function $mfName(...args) {")
-        printer.println(s"console.info('Called multi-function $mfName.');")
+        if (compilerOptions.runtimeLogging) {
+          printer.println(s"console.info('Called multi-function $mfName.');")
+        }
         printer.println(s"const $varInputType = ${LoreApi.varTypes}.product(args.map(arg => ${LoreApi.varTypes}.typeof(arg)));")
         printer.println(s"let $varChosenFunction;")
         transpileDispatchHierarchy(printer)
