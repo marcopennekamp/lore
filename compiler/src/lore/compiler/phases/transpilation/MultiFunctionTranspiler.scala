@@ -28,7 +28,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit val registry
       }.simultaneous.map { _=>
         val mfName = s"${mf.name}"
         printer.println(s"function $mfName(...args) {")
-        printer.println(s"console.log('Called multi-function $mfName.');")
+        printer.println(s"console.info('Called multi-function $mfName.');")
         printer.println(s"const $varInputType = ${LoreApi.varTypes}.product(args.map(arg => ${LoreApi.varTypes}.typeof(arg)));")
         printer.println(s"let $varChosenFunction;")
         transpileDispatchHierarchy(printer)

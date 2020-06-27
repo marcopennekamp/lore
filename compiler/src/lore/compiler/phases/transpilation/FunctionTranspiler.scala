@@ -13,7 +13,7 @@ class FunctionTranspiler(function: FunctionDefinition, uniqueName: String)(impli
     val parameters = function.parameters.map(_.name).mkString(", ")
     StmtVisitor.visit(new FunctionTranspilationVisitor())(function.body.get).map { chunk =>
       s"""function $uniqueName($parameters) {
-         |  console.log(`Called function $uniqueName with input: (${function.parameters.map(p => "${" + p.name + "}").mkString(", ")})`);
+         |  console.info(`Called function $uniqueName with input: (${function.parameters.map(p => "${" + p.name + "}").mkString(", ")})`);
          |  ${chunk.statements}
          |  ${chunk.expression.map(e => s"return $e;").getOrElse("")}
          |}
