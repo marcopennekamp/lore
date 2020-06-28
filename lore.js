@@ -1,3 +1,3 @@
 import { testPerformance } from './lore-program.js';
 
-testPerformance(1000);
+testPerformance(100000);

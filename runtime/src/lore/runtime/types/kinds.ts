@@ -1,0 +1,17 @@
+export enum Kind {
+  TypeVariable = 0,
+  Any,
+  Nothing,
+  Real,
+  Int,
+  Boolean,
+  String,
+  Class,
+  Label,
+  Intersection,
+  Sum,
+  Product,
+  Component,
+  List,
+  Map,
+}

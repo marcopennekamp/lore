@@ -1,7 +1,5 @@
 package lore.types
 
-import lore.types.Fit.assignments
-
 object Fit {
 
   /**

@@ -1,11 +1,13 @@
 action hello(value: Any)
 
 action hello(name: String) {
-  println('Hello, $name.')
+  //println('Hello, $name.')
+  const last = 'Hello, $name'
 }
 
 action hello(id: Int) {
-  println('Hello, anonymous #$id.')
+  //println('Hello, anonymous #$id.')
+  const last = 'Hello, anonymous #$id.'
 }
 
 action test() {
@@ -17,7 +19,7 @@ action test() {
   }
 }
 
-action testPerformance(times: Int) {
+function testPerformanceInner(times: Int): Real = {
   const now = now() // TODO: This should lead to a "variable not found/initialized" error once we introduce first-class functions.
   let i = 0
   while (i < times) {
@@ -25,5 +27,19 @@ action testPerformance(times: Int) {
     i += 1
   }
   const now2 = now()
-  println('Running test() $times times took ${now2 - now}ms.')
+  now2 - now
+}
+
+action testPerformance(times: Int) {
+  // Pre-run for the JIT.
+  const time1 = testPerformanceInner(times)
+  println('Pre-Running test() $times times took ${time1}ms.')
+
+  // Then run ten times and see how performance evolves.
+  let i = 0
+  while (i < 10) {
+    const time = testPerformanceInner(times)
+    println('Running test() $times times took ${time}ms.')
+    i += 1
+  }
 }

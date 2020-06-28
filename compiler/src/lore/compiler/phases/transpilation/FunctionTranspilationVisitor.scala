@@ -26,7 +26,7 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     case node@ExprNode.VariableNode(_) => Transpilation.expression(node.variable.transpiledName)
     case IntLiteralNode(value) => Transpilation.expression(value.toString)
     case StringLiteralNode(value) => Transpilation.expression(s"'$value'")
-    case UnitNode => Transpilation.expression(s"${LoreApi.varValues}.unit")
+    case UnitNode => Transpilation.expression(s"${LoreApi.varTuple}.unit")
     case _ => default(node)
   }
 
@@ -97,11 +97,11 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     }
   }
 
-  def transpileArrayBasedValue(node: StmtNode.XaryNode, valuesApiFunction: String, expressions: List[TranspiledChunk]): Transpilation = {
+  def transpileArrayBasedValue(node: StmtNode.XaryNode, createApiFunction: String, expressions: List[TranspiledChunk]): Transpilation = {
     val chunk = RuntimeTypeTranspiler.transpile(node.inferredType).flatMap { typeExpression =>
       TranspiledChunk.combined(expressions) { exprs =>
         val values = exprs.mkString(",")
-        s"""${LoreApi.varValues}.$valuesApiFunction(
+        s"""$createApiFunction(
            |  [$values],
            |  $typeExpression,
            |)""".stripMargin
@@ -122,8 +122,8 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     case node@DynamicCallNode(_, _) =>
       val actualArguments = expressions.tail
       transpileCall(node.target.name, actualArguments)
-    case node@TupleNode(_) => transpileArrayBasedValue(node, "tuple", expressions)
-    case node@ListNode(_) => transpileArrayBasedValue(node, "list", expressions)
+    case node@TupleNode(_) => transpileArrayBasedValue(node, s"${LoreApi.varTuple}.create", expressions)
+    case node@ListNode(_) => transpileArrayBasedValue(node, s"${LoreApi.varList}.create", expressions)
     case ConcatenationNode(_) => Transpilation.operatorChain(expressions, "+", wrap = true)
     case _ => default(node)
   }
@@ -159,7 +159,7 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
       val varResult = nameProvider.createName()
       val typeChunk = RuntimeTypeTranspiler.transpile(node.inferredType)
       val resultVarDeclaration =
-        s"""const $varResult = ${LoreApi.varValues}.list(
+        s"""const $varResult = ${LoreApi.varList}.create(
            |  [],
            |  ${typeChunk.expression.get},
            |);""".stripMargin
@@ -181,7 +181,7 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
         val variable = extractorVariables(name)
         (inner: String) =>
           s"""${chunk.statements}
-             |${chunk.expression.get}.forEach(${variable.transpiledName} => {
+             |${LoreApi.varList}.forEach(${chunk.expression.get}, ${variable.transpiledName} => {
              |  $inner
              |});""".stripMargin
       }.foldRight(identity: String => String) { case (enclose, function) => function.andThen(enclose) }

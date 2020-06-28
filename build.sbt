@@ -39,7 +39,7 @@ val sharedSettings = Seq(
 )
 
 lazy val lore =
-  crossProject(JVMPlatform, JSPlatform)
+  crossProject(JVMPlatform)
     .crossType(LoreCrossType)
     .in(file("."))
     .settings(sharedSettings)
@@ -51,11 +51,11 @@ lazy val lore =
       mainClass in (Compile, run) := Some("lore.compiler.Lore"),
     )
     .jvmConfigure(_.withId("compiler"))
-    .jsSettings(
+    /* .jsSettings(
       scalaSource in Compile := { (baseDirectory in Compile)(_ / "src") }.value,
       scalaSource in Test := { (baseDirectory in Test)(_ / "test") }.value,
       scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.ESModule) },
     )
-    .jsConfigure(_.withId("runtime"))
+    .jsConfigure(_.withId("runtime")) */
 
-lazy val root = project.in(file(".")).aggregate(lore.js, lore.jvm)
+lazy val root = project.in(file(".")).aggregate(lore.jvm)

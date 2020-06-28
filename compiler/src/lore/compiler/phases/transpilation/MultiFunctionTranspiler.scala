@@ -31,7 +31,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
         if (compilerOptions.runtimeLogging) {
           printer.println(s"console.info('Called multi-function $mfName.');")
         }
-        printer.println(s"const $varInputType = ${LoreApi.varTypes}.product(args.map(arg => ${LoreApi.varTypes}.typeof(arg)));")
+        printer.println(s"const $varInputType = ${LoreApi.varTypes}.product(args.map(arg => ${LoreApi.varTypes}.typeOf(arg)));")
         printer.println(s"let $varChosenFunction;")
         transpileDispatchHierarchy(printer)
         printer.println(s"return $varChosenFunction(...args);")

@@ -11,7 +11,7 @@ class TranspilationPhase()(implicit compilerOptions: CompilerOptions, registry: 
       .getMultiFunctions.values.map(new MultiFunctionTranspiler(_).transpile).toList.simultaneous
       .map(_.mkString(s"\n/* ${"=".repeat(74)} */\n\n"))
     compilation.map { code =>
-      val preamble = "import { Lore } from './runtime/target/scala-2.13/lore-opt.js';"
+      val preamble = "import Lore from './runtime/src/lore/runtime/Lore.ts';"
       List(preamble, code).mkString("\n\n")
     }
   }
