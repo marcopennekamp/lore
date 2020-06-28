@@ -1,6 +1,10 @@
 import { ListType, MapType, ProductType, Type} from './types.ts'
 import { Kind } from './kinds.ts'
 
+// TODO: Add a property 'polymorphic' to each type that gets set when this function is first called and acts as a sort
+//       of cache for the property. This should be especially useful when we keep pre-defined input types (the right
+//       hand side of multiple dispatch) outside of functions so that they aren't reconstructed for every call.
+
 export function isPolymorphic(type: Type): boolean {
   switch (type.kind) {
     case Kind.TypeVariable:

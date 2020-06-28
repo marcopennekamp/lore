@@ -14,20 +14,17 @@ export type Assignments = Map<TypeVariable, Type>
 export function fits(t1: Type, t2: Type): boolean {
   if (t1 === t2) return true
 
-  let assignments
+  let st2 = t2
   if (isPolymorphic(t2)) {
     const allocation = TypeVariableAllocation.of(t1, t2)
     if (!allocation.isConsistent()) {
       return false
     }
-    assignments = allocation.assignments()
-  } else {
-    assignments = new Map()
+    const assignments = allocation.assignments()
+    // TODO: Check missing variables? (See the compiler's corresponding fit definition.)
+    st2 = substitute(assignments, t2)
   }
 
-  // TODO: Check missing variables? (See the compiler's corresponding fit definition.)
-
-  const st2 = substitute(assignments, t2)
   return isSubtype(t1, st2)
 }
 

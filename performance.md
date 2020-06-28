@@ -40,6 +40,18 @@ CHANGES 2:
 
 
 
+SITUATION 3:
+
+We're measuring the performance to see where we can still optimize.
+
+CHANGES 3:
+
+- A simple optimization: Only substitute in fits if the type is actually polymorphic. This was an oversight which led
+  to a lot of useless iteration and such.
+  - Improvement: 400ms -> 300ms at 100,000 iterations
+
+
+
 FUTURE:
 
 - Measure the performance of the new Typescript runtime with the Firefox profiler.
@@ -51,3 +63,7 @@ FUTURE:
 - Turn functions calls which don't rely on multiple dispatch into direct calls. This is  especially useful for generic 
   functions, because (1) a function with type parameters is less likely to have multiple implementations and (2) checking 
   fit for generic functions is costly.
+- In the transpiled multi-function, replace the function Set() with a simple array and implement the uniqueness check
+  manually. The array should usually only be a few elements big at most, so that way might be quicker than some Set
+  magic.  
+- Don't use Maps in fit.ts. Rather use arrays and manually compare 
