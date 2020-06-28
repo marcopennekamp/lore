@@ -5,6 +5,7 @@ import { Assignments } from './fit.ts'
 import { IntersectionType, ProductType, SumType, Type } from './types.ts'
 import { Kind } from './kinds.ts'
 import { intersection, list, ListType, map, MapType, product, sum, TypeVariable} from './types.ts'
+import { TinyMap } from '../utils/TinyMap.ts'
 
 /**
  * Substitutes the given assignments into the type, leaving the type as is and returning a new type.
@@ -12,7 +13,7 @@ import { intersection, list, ListType, map, MapType, product, sum, TypeVariable}
 export function substitute(assignments: Assignments, type: Type): Type {
   switch (type.kind) {
     case Kind.TypeVariable:
-      return assignments.get(<TypeVariable> type) ?? type
+      return TinyMap.get(assignments, <TypeVariable> type) ?? type
     case Kind.Class:
     case Kind.Label:
       return type // TODO: Change this once we allow type parameters for classes and labels.

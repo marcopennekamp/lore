@@ -5,8 +5,9 @@ import { isSubtype } from './subtyping.ts'
 import { Kind } from './kinds.ts'
 import { ListType, MapType} from './types.ts'
 import { substitute } from './substitution.ts'
+import { TinyMap } from '../utils/TinyMap.ts'
 
-export type Assignments = Map<TypeVariable, Type>
+export type Assignments = TinyMap<TypeVariable, Type>
 
 /**
  * Whether t1 fits into t2.
@@ -33,28 +34,37 @@ class TypeVariableAllocation {
    * Note: We have to be careful here. JS maps use object references as the hash key. This is fine in the case of
    * type variables, but wouldn't be fine in other cases. Watch out if this ever changes.
    */
-  private allocation: Map<TypeVariable, Array<Type>> = new Map()
+  private allocation: TinyMap<TypeVariable, Array<Type>> = []
 
   addAssignment(tv: TypeVariable, tpe: Type): void {
-    let assignments = this.allocation.get(tv)
+    const allocation = this.allocation
+    let assignments = TinyMap.get(allocation, tv)
     if (!assignments) {
       assignments = []
-      this.allocation.set(tv, assignments)
+      TinyMap.set(allocation, tv, assignments)
     }
     assignments.push(tpe)
   }
 
+  private assignments_: Assignments | undefined
+
   assignments(): Assignments {
-    const assignments = new Map()
-    for (let entry of this.allocation.entries()) {
-      assignments.set(entry[0], entry[1][0])
+    if (this.assignments_) return this.assignments_
+    const allocation = this.allocation
+    this.assignments_ = []
+    const assignments = this.assignments_
+    for (let i = 0; i < allocation.length; i += 1) {
+      const entry = allocation[i]
+      TinyMap.set(assignments, entry.key, entry.value[0])
     }
     return assignments
   }
 
   isConsistent(): boolean {
-    for (let entry of this.allocation.entries()) {
-      const possibleAssignments = entry[1]
+    const allocation = this.allocation
+    for (let i = 0; i < allocation.length; i += 1) {
+      const entry = allocation[i]
+      const possibleAssignments = entry.value
       for (let i = 0; i < possibleAssignments.length - 1; i += 1) {
         const left = possibleAssignments[i]
         const right = possibleAssignments[i + 1]
@@ -63,16 +73,16 @@ class TypeVariableAllocation {
     }
 
     const assignments = this.assignments()
-    for (let entry of assignments.entries()) {
-      const variable = entry[0]
-      const type = entry[1]
+    for (let i = 0; i < assignments.length; i += 1) {
+      const entry = assignments[i]
+      const variable = entry.key
+      const type = entry.value
       const actualLowerBound = substitute(assignments, variable.lowerBound)
       const actualUpperBound = substitute(assignments, variable.upperBound)
       if (!isSubtype(actualLowerBound, type) || !isSubtype(type, actualUpperBound)) {
         return false
       }
     }
-
     return true
   }
 

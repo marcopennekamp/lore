@@ -49,6 +49,10 @@ CHANGES 3:
 - A simple optimization: Only substitute in fits if the type is actually polymorphic. This was an oversight which led
   to a lot of useless iteration and such.
   - Improvement: 400ms -> 300ms at 100,000 iterations
+- Use an array-based map instead of Map for type allocations and assignments. Since hashed Maps come with substantial
+  overheads, the array is faster for small sizes. (We can also consider doing this on the compiler side if performance
+  ever becomes an issue there.) 
+  - Improvement: 300ms -> 250ms at 100,000 iterations 
 
 
 
@@ -57,13 +61,13 @@ FUTURE:
 - Measure the performance of the new Typescript runtime with the Firefox profiler.
 - We can move the input types out of the multi-function definition above into the global scope so that the 
   value is cached instead of recreated every function call.
-  - I suspect this is a major contributor to slowdown currently, because the subtyping algorithm should be quite
-    fast 
+  - This is not a big contributor to slowdown anymore since the rewrite of the runtime.
 - For each multi-function, keep a cache that remembers for which input type which function was called.
 - Turn functions calls which don't rely on multiple dispatch into direct calls. This is  especially useful for generic 
   functions, because (1) a function with type parameters is less likely to have multiple implementations and (2) checking 
   fit for generic functions is costly.
 - In the transpiled multi-function, replace the function Set() with a simple array and implement the uniqueness check
   manually. The array should usually only be a few elements big at most, so that way might be quicker than some Set
-  magic.  
-- Don't use Maps in fit.ts. Rather use arrays and manually compare 
+  magic. 
+- Get rid of the args.map in each multi-function header (where the input type is constructed). A plain loop would seem
+  to be much faster and more direct anyway.
