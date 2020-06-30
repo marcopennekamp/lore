@@ -53,6 +53,8 @@ CHANGES 3:
   overheads, the array is faster for small sizes. (We can also consider doing this on the compiler side if performance
   ever becomes an issue there.) 
   - Improvement: 300ms -> 250ms at 100,000 iterations 
+- Get rid of the args.map in each multi-function header (where the input type is constructed). A plain loop would seem
+  to be much faster and more direct anyway.
 
 
 
@@ -69,5 +71,21 @@ FUTURE:
 - In the transpiled multi-function, replace the function Set() with a simple array and implement the uniqueness check
   manually. The array should usually only be a few elements big at most, so that way might be quicker than some Set
   magic. 
-- Get rid of the args.map in each multi-function header (where the input type is constructed). A plain loop would seem
-  to be much faster and more direct anyway.
+- BIG GAINS: Dispatch calls to subtrees of the multi-function, because with static types we can easily rule
+  out which functions we need to check against in the first place. If we have a type C at runtime, we don't need to
+  check its superclasses A or B. This will save a huge amount of "fits" calls, especially with large multi-functions.
+  - Considering this, it is paramount that we have as few fits calls as possible. I could easily see deep and, 
+    especially, BROAD class hierarchies lead to performance problems. If we implement functions for 100 direct 
+    subclasses (this scenario sounds weird but isn't quite so daunting if we consider splitting the function over
+    many, many files) and the runtime has to check the fit 100 times, the program will die a very slow death. However, 
+    there are again optimizations to be found here, though they won't be trivial (and might not be worth it with 
+    caching).
+    - The thing with caching is that I assume IF a function needs to be called many times, it will already have been
+      called with the same types before, so calling it will be fast. 
+      - We can also someday implement multi-level caching. Basically, if type 1 is a subtype of this, go to A, if type 
+        1 is a subtype of that, go to B. A little bit like database indices.
+        - The index approach is a pretty cool idea. Maybe an index structure would be optimal for a subclass of types,
+          most likely simple dispatch structures that don't have complex types. For example, if we only decide dispatch
+          based on simple classes (without even intersection types), we can easily build such an index. 
+        - We could build such an index at compile-time and use it if the run-time input types are simple enough to 
+          agree.

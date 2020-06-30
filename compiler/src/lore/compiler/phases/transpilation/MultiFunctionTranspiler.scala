@@ -91,7 +91,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
       val successors = node.diSuccessors.toList.zipWithIndex
       printer.println(s"if ($varFitsX) {")
       val addFunction = if (!node.isAbstract) {
-        s"$varFunctions.add(${functionJsNames(node.value)});"
+        s"${LoreApi.varTinySet}.add($varFunctions, ${functionJsNames(node.value)});"
       } else {
         s"throw new Error(`The abstract function ${mf.name}${node.signature.inputType} is missing an" +
           s" implementation for $${$varInputType}.`);"
@@ -116,19 +116,19 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     }
 
     printer.println()
-    printer.println(s"const $varFunctions = new Set();")
+    printer.println(s"const $varFunctions = [];")
     val indexedRoots = mf.hierarchyRoots.zipWithIndex
     transpileFitsConsts(indexedRoots)
     indexedRoots.foreach { case (root, index) => transpileDispatchNode(root, varFits(index)) }
 
     printer.println()
     printer.println(
-      s"""if ($varFunctions.size < 1) {
+      s"""if ($varFunctions.length < 1) {
          |  throw new Error(`Could not find an implementation of ${mf.name} for the input type $${$varInputType}.`);
-         |} else if ($varFunctions.size > 1) {
+         |} else if ($varFunctions.length > 1) {
          |  throw new Error(`The multi-function ${mf.name} is ambiguous for the input type $${$varInputType}.`);
          |} else {
-         |  $varChosenFunction = $varFunctions.values().next().value;
+         |  $varChosenFunction = $varFunctions[0];
          |}
          |
          |""".stripMargin
