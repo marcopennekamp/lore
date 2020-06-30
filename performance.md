@@ -53,24 +53,28 @@ CHANGES 3:
   overheads, the array is faster for small sizes. (We can also consider doing this on the compiler side if performance
   ever becomes an issue there.) 
   - Improvement: 300ms -> 250ms at 100,000 iterations 
+- In the transpiled multi-function, replace the function Set() with a simple array and implement the uniqueness check
+  manually. The array should usually only be a few elements big at most, so that way might be quicker than some Set
+  magic.
+  - Improvement: Almost no gains in Deno/V8. Firefox shows a bit more improvement. Since this was discovered with the 
+    Firefox profiler, perhaps V8 had already applied some form of optimization. In any case, this isn't a bad change,
+    since only very few functions will ever be part of the tiny set / array.
 - Get rid of the args.map in each multi-function header (where the input type is constructed). A plain loop would seem
-  to be much faster and more direct anyway.
+  to be faster and more direct anyway.
+  - Not faster, but more direct (fewer JS API calls), so it will stay in.
 
 
 
 FUTURE:
-
-- Measure the performance of the new Typescript runtime with the Firefox profiler.
 - We can move the input types out of the multi-function definition above into the global scope so that the 
   value is cached instead of recreated every function call.
-  - This is not a big contributor to slowdown anymore since the rewrite of the runtime.
+  - This is not a big contributor to slowdown anymore since the rewrite of the runtime. Probably. Unless all that 
+    self-time reported in the profiler (for example, hello has 50% self-time) comes down to the possibly inlined 
+    object construction here.
 - For each multi-function, keep a cache that remembers for which input type which function was called.
-- Turn functions calls which don't rely on multiple dispatch into direct calls. This is  especially useful for generic 
+- Turn functions calls which don't rely on multiple dispatch into direct calls. This is especially useful for generic 
   functions, because (1) a function with type parameters is less likely to have multiple implementations and (2) checking 
   fit for generic functions is costly.
-- In the transpiled multi-function, replace the function Set() with a simple array and implement the uniqueness check
-  manually. The array should usually only be a few elements big at most, so that way might be quicker than some Set
-  magic. 
 - BIG GAINS: Dispatch calls to subtrees of the multi-function, because with static types we can easily rule
   out which functions we need to check against in the first place. If we have a type C at runtime, we don't need to
   check its superclasses A or B. This will save a huge amount of "fits" calls, especially with large multi-functions.
@@ -89,3 +93,5 @@ FUTURE:
           based on simple classes (without even intersection types), we can easily build such an index. 
         - We could build such an index at compile-time and use it if the run-time input types are simple enough to 
           agree.
+- Entirely split multi-functions based on arity. This would also allow us to unroll the loop when constructing the
+  input type tuple.

@@ -12,7 +12,6 @@ import scala.util.Using
 
 class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry) {
   private val varInputType = "inputType"
-  private val varChosenFunction = "chosenFunction"
 
   private val functionJsNames = mutable.HashMap[FunctionDefinition, String]()
 
@@ -31,15 +30,28 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
         if (compilerOptions.runtimeLogging) {
           printer.println(s"console.info('Called multi-function $mfName.');")
         }
-        printer.println(s"const $varInputType = ${LoreApi.varTypes}.product(args.map(arg => ${LoreApi.varTypes}.typeOf(arg)));")
-        printer.println(s"let $varChosenFunction;")
-        transpileDispatchHierarchy(printer)
-        printer.println(s"return $varChosenFunction(...args);")
+
+        transpileTypeofArguments(printer)
+        transpileDispatchCall(printer)
         printer.println("}")
       }
     }
 
     tryCompilation.map(c => c.map(_ => out.toString("utf-8"))).get
+  }
+
+  /**
+    * Transpiles the code that gathers the argument types into a product type.
+    */
+  private def transpileTypeofArguments(printer: PrintStream): Unit = {
+    val varArgumentTypes = "argumentTypes"
+    printer.println(
+      s"""const $varArgumentTypes = []
+         |for (let i = 0; i < args.length; i += 1) {
+         |  $varArgumentTypes.push(${LoreApi.varTypes}.typeOf(args[i]));
+         |}
+         |const $varInputType = ${LoreApi.varTypes}.product($varArgumentTypes);
+         |""".stripMargin)
   }
 
   /**
@@ -67,7 +79,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     * Hence, we can cache the result of this dispatch algorithm at runtime for real values. (Maybe we should
     * limit the cache to the 100 most accessed types, or a number depending on the total size of the multi-function).
     */
-  private def transpileDispatchHierarchy(printer: PrintStream): Unit = {
+  private def transpileDispatchCall(printer: PrintStream): Unit = {
     val varFunctions = "functions"
     def varFits(index: Int): String = s"fits$index"
 
@@ -128,9 +140,8 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
          |} else if ($varFunctions.length > 1) {
          |  throw new Error(`The multi-function ${mf.name} is ambiguous for the input type $${$varInputType}.`);
          |} else {
-         |  $varChosenFunction = $varFunctions[0];
+         |  return $varFunctions[0](...args);
          |}
-         |
          |""".stripMargin
     )
   }
