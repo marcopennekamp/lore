@@ -6,6 +6,7 @@ import lore.compiler.CompilerOptions
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.Registry
 import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.types.Type
 
 import scala.collection.mutable
 import scala.util.Using
@@ -14,8 +15,9 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   private val varInputType = "inputType"
 
   private val functionJsNames = mutable.HashMap[FunctionDefinition, String]()
+  private val inputTypeJsNames = mutable.HashMap[Type, String]()
 
-  private implicit val nameProvider: TemporaryNameProvider = new TemporaryNameProvider
+  private implicit val nameProvider: TemporaryNameProvider = new TemporaryNameProvider(s"${mf.name}__")
 
   def transpile: C[String] = {
     val out = new ByteArrayOutputStream()
@@ -25,6 +27,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
         functionJsNames.put(function, name)
         new FunctionTranspiler(function, name).transpile.map(printer.print)
       }.simultaneous.map { _=>
+        prepareInputTypes(printer)
         val mfName = s"${mf.name}"
         printer.println(s"export function $mfName(...args) {")
         if (compilerOptions.runtimeLogging) {
@@ -38,6 +41,21 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     }
 
     tryCompilation.map(c => c.map(_ => out.toString("utf-8"))).get
+  }
+
+  /**
+    * Maps all possible input types to temporary variable names. The temporary variables are written as global
+    * constants so that JS doesn't have to recreate these objects every time the multi-function is called.
+    */
+  private def prepareInputTypes(printer: PrintStream): Unit = {
+    val inputTypes = mf.functions.map(_.signature.inputType).toSet
+    inputTypes.foreach { inputType =>
+      val varType = s"${nameProvider.createName()}"
+      val chunk = RuntimeTypeTranspiler.transpile(inputType)
+      printer.println(chunk.statements)
+      printer.println(s"const $varType = ${chunk.expression.get}")
+      inputTypeJsNames.put(inputType, varType)
+    }
   }
 
   /**
@@ -78,23 +96,24 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     * can rely on the invariant that the target function will always stay the same for the same input type.
     * Hence, we can cache the result of this dispatch algorithm at runtime for real values. (Maybe we should
     * limit the cache to the 100 most accessed types, or a number depending on the total size of the multi-function).
+    *
+    *
     */
   private def transpileDispatchCall(printer: PrintStream): Unit = {
     val varFunctions = "functions"
     def varFits(index: Int): String = s"fits$index"
 
-    // TODO: Assert (at run-time) that the input type isn't polymorphic!
-    def transpileInputType(node: mf.hierarchy.NodeT): TranspiledChunk = RuntimeTypeTranspiler.transpile(node.signature.inputType)
+
 
     def transpileFitsConsts(nodes: List[(mf.hierarchy.NodeT, Int)]): Unit = {
       nodes.foreach { case (node, index) =>
-        val transpiledInputType = transpileInputType(node)
-        printer.println(transpiledInputType.statements)
+        // TODO: Assert (at run-time) that the input type isn't polymorphic?
+        val varRightType = inputTypeJsNames(node.signature.inputType)
         printer.println(
           // TODO: Optimize: Pull the object creation of the function's input type into some kind of cached variable.
           //       Right now, every time the multi-function is called, all these instances get created again and
           //       again.
-          s"const ${varFits(index)} = ${LoreApi.varTypes}.fits($varInputType, ${transpiledInputType.expression.get});"
+          s"const ${varFits(index)} = ${LoreApi.varTypes}.fits($varInputType, $varRightType);"
         )
       }
     }

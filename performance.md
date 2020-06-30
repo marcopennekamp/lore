@@ -95,3 +95,4 @@ FUTURE:
           agree.
 - Entirely split multi-functions based on arity. This would also allow us to unroll the loop when constructing the
   input type tuple.
+- Ensure that all unit types are the same?

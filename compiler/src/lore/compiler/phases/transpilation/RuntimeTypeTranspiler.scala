@@ -23,6 +23,7 @@ object RuntimeTypeTranspiler {
           case BasicType.Int => "int"
           case BasicType.Boolean => "boolean"
           case BasicType.String => "string"
+          case ProductType.UnitType => s"unit"
           case d: DeclaredType => s"declared('${d.name}')"
           case IntersectionType(types) => s"intersection([${types.map(rec).mkString(", ")}])"
           case SumType(types) => s"sum([${types.map(rec).mkString(", ")}])"

@@ -1,13 +1,13 @@
 package lore.compiler.phases.transpilation
 
-class TemporaryNameProvider {
+class TemporaryNameProvider(prefix: String = "") {
   private var counter = 0
 
   /**
     * Creates the next temporary name.
     */
   def createName(): String = {
-    val name = TranspiledNames.temporaryVariable(counter.toString)
+    val name = s"$prefix${TranspiledNames.temporaryVariable(counter.toString)}"
     counter += 1
     name
   }

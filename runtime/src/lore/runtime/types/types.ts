@@ -2,6 +2,7 @@ import { Kind } from './kinds.ts'
 
 export interface Type {
   kind: Kind
+  // TODO: Add a hash code which is calculated when the type is constructed. No shenanigans.
 }
 
 export const any: Type = { kind: Kind.Any }
