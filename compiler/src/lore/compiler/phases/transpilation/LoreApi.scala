@@ -6,6 +6,7 @@ object LoreApi {
   val varUtils = "Lore.utils"
   val varTinyMap = s"$varUtils.tinyMap"
   val varTinySet = s"$varUtils.tinySet"
+  val varTypeMap = s"$varUtils.typeMap"
   val varList = s"$varValues.list"
   val varTuple = s"$varValues.tuple"
   val varObject = s"$varValues.object"

@@ -13,6 +13,7 @@ import scala.util.Using
 
 class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry) {
   private val varInputType = "inputType"
+  private val varDispatchCache = s"${mf.name}__dispatchCache"
 
   private val functionJsNames = mutable.HashMap[FunctionDefinition, String]()
   private val inputTypeJsNames = mutable.HashMap[Type, String]()
@@ -28,6 +29,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
         new FunctionTranspiler(function, name).transpile.map(printer.print)
       }.simultaneous.map { _=>
         prepareInputTypes(printer)
+        prepareDispatchCache(printer)
         val mfName = s"${mf.name}"
         printer.println(s"export function $mfName(...args) {")
         if (compilerOptions.runtimeLogging) {
@@ -56,6 +58,10 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
       printer.println(s"const $varType = ${chunk.expression.get}")
       inputTypeJsNames.put(inputType, varType)
     }
+  }
+
+  private def prepareDispatchCache(printer: PrintStream): Unit = {
+    printer.println(s"const $varDispatchCache = ${LoreApi.varTypeMap}.create();")
   }
 
   /**
@@ -101,9 +107,8 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     */
   private def transpileDispatchCall(printer: PrintStream): Unit = {
     val varFunctions = "functions"
+    val varCachedFunction = "cachedFunction"
     def varFits(index: Int): String = s"fits$index"
-
-
 
     def transpileFitsConsts(nodes: List[(mf.hierarchy.NodeT, Int)]): Unit = {
       nodes.foreach { case (node, index) =>
@@ -147,6 +152,10 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     }
 
     printer.println()
+    printer.println(s"const $varCachedFunction = $varDispatchCache.get(inputType);")
+    printer.println(s"if ($varCachedFunction) return $varCachedFunction(...args);")
+
+    printer.println()
     printer.println(s"const $varFunctions = [];")
     val indexedRoots = mf.hierarchyRoots.zipWithIndex
     transpileFitsConsts(indexedRoots)
@@ -159,7 +168,9 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
          |} else if ($varFunctions.length > 1) {
          |  throw new Error(`The multi-function ${mf.name} is ambiguous for the input type $${$varInputType}.`);
          |} else {
-         |  return $varFunctions[0](...args);
+         |  const target = $varFunctions[0];
+         |  $varDispatchCache.set($varInputType, target);
+         |  return target(...args);
          |}
          |""".stripMargin
     )
