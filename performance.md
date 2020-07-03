@@ -58,20 +58,38 @@ CHANGES 3:
   magic.
   - Improvement: Almost no gains in Deno/V8. Firefox shows a bit more improvement. Since this was discovered with the 
     Firefox profiler, perhaps V8 had already applied some form of optimization. In any case, this isn't a bad change,
-    since only very few functions will ever be part of the tiny set / array.
+    since only very few chosen functions will ever be part of the tiny set / array. (In fact, )
 - Get rid of the args.map in each multi-function header (where the input type is constructed). A plain loop would seem
   to be faster and more direct anyway.
   - Not faster, but more direct (fewer JS API calls), so it will stay in.
+- We can move the input types out of the multi-function definition above into the global scope so that the 
+  value is cached instead of recreated every function call.
+  - No significant impact.
+- For each multi-function, keep a cache that remembers for which input type which function was called.
+  - Improvement: 250ms -> 110ms
+  - After implementing a custom hash map and custom hashing functions (murmurhash3), we could implement dispatch 
+    caching quite easily. I suspect most performance gains come from the caching in append, since computing type 
+    allocations is still quite costly, and possibly caching of hello, since its dispatch structure is not quite 
+    trivial. It is possible that there is a performance loss for simpler dispatch structures, especially those 
+    without any parameters at all, as computing the input type's hash is not cheap either.
 
 
 
 FUTURE:
-- We can move the input types out of the multi-function definition above into the global scope so that the 
-  value is cached instead of recreated every function call.
-  - This is not a big contributor to slowdown anymore since the rewrite of the runtime. Probably. Unless all that 
-    self-time reported in the profiler (for example, hello has 50% self-time) comes down to the possibly inlined 
-    object construction here.
-- For each multi-function, keep a cache that remembers for which input type which function was called.
+- We don't need to keep a list of chosen functions in the multiple dispatch implementation. We can keep a single running
+  variable. If it is already filled and we want to choose a second function, we throw the ambiguity error. If it is 
+  unassigned to at the end, we throw the empty-fit error. In other cases we can cache and call the function.
+- If all function arities are the same, get rid of the loop for the input type and "hard-code" the construction.
+- Cache isPolymorphic in type objects.
+  - Alternatively, during compile-time, generate isSubtype or fits calls based on whether the right-hand type is 
+    polymorphic. This is possible because the right-hand type is constant. Alternatively, call a fitsMono function
+    which just delegates to isSubtype.
+  - Benchmarking isSubtype/fits(product(int), product(real)):
+    fits took 3704000000ns, so 38ns per iteration
+    isSubtype took 2004000000ns, so 21ns per iteration
+    This is an important difference!
+- isSubtype and fits both test for equality of t1 and t2. We could call an internal isSubtype from fits that doesn't do
+  this comparison (again) and thus save a single comparison.
 - Turn functions calls which don't rely on multiple dispatch into direct calls. This is especially useful for generic 
   functions, because (1) a function with type parameters is less likely to have multiple implementations and (2) checking 
   fit for generic functions is costly.
@@ -95,4 +113,4 @@ FUTURE:
           agree.
 - Entirely split multi-functions based on arity. This would also allow us to unroll the loop when constructing the
   input type tuple.
-- Ensure that all unit types are the same?
+- Ensure that all unit types are the same? 
