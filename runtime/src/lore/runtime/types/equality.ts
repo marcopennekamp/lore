@@ -44,9 +44,9 @@ export function areEqual(t1: Type, t2: Type): boolean {
       for (let i = 0; i < types1.length; i += 1) {
         const e1 = types1[i]
         const e2 = types2[i]
-        if (areEqual(e1, e2)) return true
+        if (!areEqual(e1, e2)) return false
       }
-      return false
+      return true
     }
     case Kind.Component:
       return areEqual((<ComponentType> t1).underlying, (<ComponentType> t2).underlying)
