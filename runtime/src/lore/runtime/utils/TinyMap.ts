@@ -1,16 +1,10 @@
+import { MapEntry } from './MapEntry.ts'
+
 /**
  * A "tiny map" is a Map-like structure that is implemented using an array, because it is faster with
  * very few elements.
  */
-export type TinyMap<A, B> = Array<TinyMapEntry<A, B>>
-
-/**
- * A tiny map entry is simply a cheap object. This is its interface.
- */
-export interface TinyMapEntry<A, B> {
-  key: A
-  value: B
-}
+export type TinyMap<A, B> = Array<MapEntry<A, B>>
 
 export const TinyMap = {
   get<A, B>(array: TinyMap<A, B>, key: A): B | undefined {
