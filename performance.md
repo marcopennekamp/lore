@@ -81,8 +81,7 @@ CHANGES 3:
 - We don't need to keep a list of chosen functions in the multiple dispatch implementation. We can keep a single running
   variable. If it is already filled and we want to choose a second function, we throw the ambiguity error. If it is 
   unassigned to at the end, we throw the empty-fit error. In other cases we can cache and call the function.
-  - It seems to be much cheaper to compare whether a variable is already set than adding it to a tiny set (even if it
-    is just an array) and retrieving it later.
+  - Improvement: Minuscule. At most 2-3ms.
 
 
 

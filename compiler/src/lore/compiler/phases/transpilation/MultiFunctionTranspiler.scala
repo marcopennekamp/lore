@@ -126,8 +126,8 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     *
     */
   private def transpileDispatchCall(printer: PrintStream): Unit = {
-    val varFunctions = "functions"
-    val varCachedFunction = "cachedFunction"
+    val varTarget = "target"
+    val varCachedTarget = "cachedTarget"
     def varFits(index: Int): String = s"fits$index"
 
     def transpileFitsConsts(nodes: List[(mf.hierarchy.NodeT, Int)]): Unit = {
@@ -147,7 +147,9 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
       val successors = node.diSuccessors.toList.zipWithIndex
       printer.println(s"if ($varFitsX) {")
       val addFunction = if (!node.isAbstract) {
-        s"${LoreApi.varTinySet}.add($varFunctions, ${functionJsNames(node.value)});"
+        s"""if ($varTarget) ${LoreApi.varError}.ambiguousCall('${mf.name}', $varInputType);
+           |$varTarget = ${functionJsNames(node.value)};
+           |""".stripMargin
       } else {
         s"${LoreApi.varUtils}.error.missingImplementation('${mf.name}', '${node.signature.inputType}', $varInputType);"
       }
@@ -172,26 +174,21 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
 
     if (shouldUseDispatchCache) {
       printer.println()
-      printer.println(s"const $varCachedFunction = $varDispatchCache.get(inputType);")
-      printer.println(s"if ($varCachedFunction) return $varCachedFunction(...args);")
+      printer.println(s"const $varCachedTarget = $varDispatchCache.get(inputType);")
+      printer.println(s"if ($varCachedTarget) return $varCachedTarget(...args);")
     }
 
     printer.println()
-    printer.println(s"const $varFunctions = [];")
+    printer.println(s"let $varTarget;")
     val indexedRoots = mf.hierarchyRoots.zipWithIndex
     transpileFitsConsts(indexedRoots)
     indexedRoots.foreach { case (root, index) => transpileDispatchNode(root, varFits(index)) }
 
     printer.println()
-    printer.println(s"switch ($varFunctions.length) {")
-    printer.println(s"case 0: ${LoreApi.varError}.emptyFit('${mf.name}', $varInputType);")
-    printer.println(s"case 1: ")
-    printer.println(s"const target = $varFunctions[0];")
+    printer.println(s"if (!$varTarget) ${LoreApi.varError}.emptyFit('${mf.name}', $varInputType);")
     if (shouldUseDispatchCache) {
-      printer.println(s"$varDispatchCache.set($varInputType, target);")
+      printer.println(s"$varDispatchCache.set($varInputType, $varTarget);")
     }
-    printer.println("return target(...args);")
-    printer.println(s"default: ${LoreApi.varError}.ambiguousCall('${mf.name}', $varInputType);")
-    printer.println("}")
+    printer.println(s"return $varTarget(...args);")
   }
 }
