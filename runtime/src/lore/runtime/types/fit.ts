@@ -11,20 +11,37 @@ export type Assignments = TinyMap<TypeVariable, Type>
 
 /**
  * Whether t1 fits into t2.
+ *
+ * This function is used by API calls which don't know whether t2 is polymorphic or not. The compiler does not
+ * call this function directly.
  */
 export function fits(t1: Type, t2: Type): boolean {
+  if (isPolymorphic(t2)) {
+    return fitsPolymorphic(t1, t2)
+  }
+  return fitsMonomorphic(t1, t2)
+}
+
+/**
+ * Whether t1 fits into (monomorphic) t2.
+ */
+export function fitsMonomorphic(t1: Type, t2: Type): boolean {
+  return isSubtype(t1, t2)
+}
+
+/**
+ * Whether t1 fits into (polymorphic) t2.
+ */
+export function fitsPolymorphic(t1: Type, t2: Type): boolean {
   if (t1 === t2) return true
 
-  let st2 = t2
-  if (isPolymorphic(t2)) {
-    const allocation = TypeVariableAllocation.of(t1, t2)
-    if (!allocation.isConsistent()) {
-      return false
-    }
-    const assignments = allocation.assignments()
-    // TODO: Check missing variables? (See the compiler's corresponding fit definition.)
-    st2 = substitute(assignments, t2)
+  const allocation = TypeVariableAllocation.of(t1, t2)
+  if (!allocation.isConsistent()) {
+    return false
   }
+  const assignments = allocation.assignments()
+  // TODO: Check missing variables? (See the compiler's corresponding fit definition.)
+  const st2 = substitute(assignments, t2)
 
   return isSubtype(t1, st2)
 }

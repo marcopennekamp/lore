@@ -60,6 +60,9 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     }
   }
 
+  /**
+    * Prepares the dispatch cache for later use.
+    */
   private def prepareDispatchCache(printer: PrintStream): Unit = {
     printer.println(s"const $varDispatchCache = ${LoreApi.varTypeMap}.create();")
   }
@@ -114,11 +117,13 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
       nodes.foreach { case (node, index) =>
         // TODO: Assert (at run-time) that the input type isn't polymorphic?
         val varRightType = inputTypeJsNames(node.signature.inputType)
+        // We can decide at compile-time which version of the fit should be used, because the type on the right side
+        // is constant. If the parameter type isn't polymorphic now, it won't ever be, so we can skip all that testing
+        // for polymorphy at run-time. Conversely, if the type is polymorphic now, we can also skip the test and jump
+        // into type allocations.
+        val fitsName = if (node.signature.inputType.isPolymorphic) "fitsPolymorphic" else "fitsMonomorphic"
         printer.println(
-          // TODO: Optimize: Pull the object creation of the function's input type into some kind of cached variable.
-          //       Right now, every time the multi-function is called, all these instances get created again and
-          //       again.
-          s"const ${varFits(index)} = ${LoreApi.varTypes}.fits($varInputType, $varRightType);"
+          s"const ${varFits(index)} = ${LoreApi.varTypes}.$fitsName($varInputType, $varRightType);"
         )
       }
     }

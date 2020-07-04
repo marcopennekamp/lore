@@ -1,6 +1,6 @@
 import { areEqual } from './equality.ts'
 import { isSubtype } from './subtyping.ts'
-import { fits } from './fit.ts'
+import { fits, fitsMonomorphic, fitsPolymorphic } from './fit.ts'
 import {
   any,
   boolean,
@@ -41,5 +41,7 @@ export default {
   isSubtype,
   areEqual,
   fits,
+  fitsMonomorphic,
+  fitsPolymorphic,
   typeOf,
 }

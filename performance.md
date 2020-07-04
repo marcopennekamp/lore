@@ -72,6 +72,9 @@ CHANGES 3:
     allocations is still quite costly, and possibly caching of hello, since its dispatch structure is not quite 
     trivial. It is possible that there is a performance loss for simpler dispatch structures, especially those 
     without any parameters at all, as computing the input type's hash is not cheap either.
+- Generate fitsMonomorphic or fitsPolymorphic calls based on whether the right-hand type is polymorphic at compile-time. 
+  This is possible because the right-hand type is known by the compiler already.
+  - No performance impact when dispatch caching is enabled.
 
 
 
@@ -79,15 +82,8 @@ FUTURE:
 - We don't need to keep a list of chosen functions in the multiple dispatch implementation. We can keep a single running
   variable. If it is already filled and we want to choose a second function, we throw the ambiguity error. If it is 
   unassigned to at the end, we throw the empty-fit error. In other cases we can cache and call the function.
-- If all function arities are the same, get rid of the loop for the input type and "hard-code" the construction.
-- Cache isPolymorphic in type objects.
-  - Alternatively, during compile-time, generate isSubtype or fits calls based on whether the right-hand type is 
-    polymorphic. This is possible because the right-hand type is constant. Alternatively, call a fitsMono function
-    which just delegates to isSubtype.
-  - Benchmarking isSubtype/fits(product(int), product(real)):
-    fits took 3704000000ns, so 38ns per iteration
-    isSubtype took 2004000000ns, so 21ns per iteration
-    This is an important difference!
+- If all function arities are the same, get rid of the loop for the input type and "hard-code" the construction of the
+  input type array.
 - isSubtype and fits both test for equality of t1 and t2. We could call an internal isSubtype from fits that doesn't do
   this comparison (again) and thus save a single comparison.
 - Turn functions calls which don't rely on multiple dispatch into direct calls. This is especially useful for generic 
