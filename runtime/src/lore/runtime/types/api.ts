@@ -13,6 +13,7 @@ import {
   real,
   string,
   sum,
+  unhashedProduct,
   unit,
   variable
 } from './types.ts'
@@ -36,6 +37,11 @@ export default {
   component,
   list,
   map,
+
+  // Unsafe constructors.
+  unsafe: {
+    unhashedProduct,
+  },
 
   // Type relationships.
   isSubtype,

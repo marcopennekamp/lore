@@ -61,10 +61,25 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   }
 
   /**
+    * This heuristic decides whether the dispatch cache should be used for this multi-function or not.
+    *
+    * The algorithm for this decision is, as of yet, very simple:
+    *   1. If ANY parameter type is polymorphic, using the cache will absolutely bring gains. Creating a type
+    *      allocation takes so much time that creating a hash from a type is almost 4-5 times faster than checking
+    *      one fit.
+    *   2. If there are at least three functions in the multi-function, we can assume that many invocations of the
+    *      function will require three fit tests. At that point a hash&cache operation is faster than testing multiple
+    *      fits.
+    */
+  lazy val shouldUseDispatchCache = mf.functions.size >= 3 || mf.functions.exists(_.signature.inputType.isPolymorphic)
+
+  /**
     * Prepares the dispatch cache for later use.
     */
   private def prepareDispatchCache(printer: PrintStream): Unit = {
-    printer.println(s"const $varDispatchCache = ${LoreApi.varTypeMap}.create();")
+    if (shouldUseDispatchCache) {
+      printer.println(s"const $varDispatchCache = ${LoreApi.varTypeMap}.create();")
+    }
   }
 
   /**
@@ -72,12 +87,14 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     */
   private def transpileTypeofArguments(printer: PrintStream): Unit = {
     val varArgumentTypes = "argumentTypes"
+    // If we don't use the cache, there is no reason to hash this transient product type.
+    val productConstructor = if (shouldUseDispatchCache) "product" else "unsafe.unhashedProduct"
     printer.println(
       s"""const $varArgumentTypes = []
          |for (let i = 0; i < args.length; i += 1) {
          |  $varArgumentTypes.push(${LoreApi.varTypes}.typeOf(args[i]));
          |}
-         |const $varInputType = ${LoreApi.varTypes}.product($varArgumentTypes);
+         |const $varInputType = ${LoreApi.varTypes}.$productConstructor($varArgumentTypes);
          |""".stripMargin)
   }
 
@@ -122,9 +139,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
         // for polymorphy at run-time. Conversely, if the type is polymorphic now, we can also skip the test and jump
         // into type allocations.
         val fitsName = if (node.signature.inputType.isPolymorphic) "fitsPolymorphic" else "fitsMonomorphic"
-        printer.println(
-          s"const ${varFits(index)} = ${LoreApi.varTypes}.$fitsName($varInputType, $varRightType);"
-        )
+        printer.println(s"const ${varFits(index)} = ${LoreApi.varTypes}.$fitsName($varInputType, $varRightType);")
       }
     }
 
@@ -134,8 +149,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
       val addFunction = if (!node.isAbstract) {
         s"${LoreApi.varTinySet}.add($varFunctions, ${functionJsNames(node.value)});"
       } else {
-        s"throw new Error(`The abstract function ${mf.name}${node.signature.inputType} is missing an" +
-          s" implementation for $${$varInputType}.`);"
+        s"${LoreApi.varUtils}.error.missingImplementation('${mf.name}', '${node.signature.inputType}', $varInputType);"
       }
       if (successors.nonEmpty) {
         transpileFitsConsts(successors)
@@ -156,9 +170,11 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
       printer.println("}")
     }
 
-    printer.println()
-    printer.println(s"const $varCachedFunction = $varDispatchCache.get(inputType);")
-    printer.println(s"if ($varCachedFunction) return $varCachedFunction(...args);")
+    if (shouldUseDispatchCache) {
+      printer.println()
+      printer.println(s"const $varCachedFunction = $varDispatchCache.get(inputType);")
+      printer.println(s"if ($varCachedFunction) return $varCachedFunction(...args);")
+    }
 
     printer.println()
     printer.println(s"const $varFunctions = [];")
@@ -167,17 +183,15 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     indexedRoots.foreach { case (root, index) => transpileDispatchNode(root, varFits(index)) }
 
     printer.println()
-    printer.println(
-      s"""if ($varFunctions.length < 1) {
-         |  throw new Error(`Could not find an implementation of ${mf.name} for the input type $${$varInputType}.`);
-         |} else if ($varFunctions.length > 1) {
-         |  throw new Error(`The multi-function ${mf.name} is ambiguous for the input type $${$varInputType}.`);
-         |} else {
-         |  const target = $varFunctions[0];
-         |  $varDispatchCache.set($varInputType, target);
-         |  return target(...args);
-         |}
-         |""".stripMargin
-    )
+    printer.println(s"switch ($varFunctions.length) {")
+    printer.println(s"case 0: ${LoreApi.varError}.emptyFit('${mf.name}', $varInputType);")
+    printer.println(s"case 1: ")
+    printer.println(s"const target = $varFunctions[0];")
+    if (shouldUseDispatchCache) {
+      printer.println(s"$varDispatchCache.set($varInputType, target);")
+    }
+    printer.println("return target(...args);")
+    printer.println(s"default: ${LoreApi.varError}.ambiguousCall('${mf.name}', $varInputType);")
+    printer.println("}")
   }
 }

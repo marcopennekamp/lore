@@ -75,13 +75,25 @@ CHANGES 3:
 - Generate fitsMonomorphic or fitsPolymorphic calls based on whether the right-hand type is polymorphic at compile-time. 
   This is possible because the right-hand type is known by the compiler already.
   - No performance impact when dispatch caching is enabled.
+- Disable the dispatch cache for trivial dispatch contexts.
+  - Improvement: At most 5ms (110ms -> 105ms). This is quite hard to measure so we should assume no big impact at all.
+  - I'm expecting this improvement to become larger as we implement the next optimization in the list. 
+- We don't need to keep a list of chosen functions in the multiple dispatch implementation. We can keep a single running
+  variable. If it is already filled and we want to choose a second function, we throw the ambiguity error. If it is 
+  unassigned to at the end, we throw the empty-fit error. In other cases we can cache and call the function.
+  - It seems to be much cheaper to compare whether a variable is already set than adding it to a tiny set (even if it
+    is just an array) and retrieving it later.
 
 
 
 FUTURE:
-- We don't need to keep a list of chosen functions in the multiple dispatch implementation. We can keep a single running
-  variable. If it is already filled and we want to choose a second function, we throw the ambiguity error. If it is 
-  unassigned to at the end, we throw the empty-fit error. In other cases we can cache and call the function.
+- Pull the list type that is created in test$0 into the constant scope. In general, try to factor all type constants
+  that are created anywhere inside a function out of that function, because V8 doesn't do that.
+  - In a manual test, moving the list type creation in test$0 to the global scope improved performance from about 110ms 
+    to about 90ms.
+- If there is only a single function, we can vastly simplify the dispatch function, as we only need a single fits test.
+- If the input type is a tuple with a single element, we can technically bypass creating the product type, but would
+  need to mirror that on the right-hand side.
 - If all function arities are the same, get rid of the loop for the input type and "hard-code" the construction of the
   input type array.
 - isSubtype and fits both test for equality of t1 and t2. We could call an internal isSubtype from fits that doesn't do
@@ -92,6 +104,9 @@ FUTURE:
 - BIG GAINS: Dispatch calls to subtrees of the multi-function, because with static types we can easily rule
   out which functions we need to check against in the first place. If we have a type C at runtime, we don't need to
   check its superclasses A or B. This will save a huge amount of "fits" calls, especially with large multi-functions.
+  - Implementation idea: Since we can't access goto in Javascript (unless we are in a while-loop context), we could 
+    perhaps introduce "bypass_fitsX" variables, which could be used to skip fits calls and then walk into the part
+    of the tree where we actually need to decide dispatch. 
   - Considering this, it is paramount that we have as few fits calls as possible. I could easily see deep and, 
     especially, BROAD class hierarchies lead to performance problems. If we implement functions for 100 direct 
     subclasses (this scenario sounds weird but isn't quite so daunting if we consider splitting the function over

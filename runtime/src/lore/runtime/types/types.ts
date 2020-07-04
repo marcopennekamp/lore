@@ -59,6 +59,14 @@ export function product(types: Array<Type>): ProductType {
   return { kind: Kind.Product, types, hash: orderedHashWithSeed(types, 0x4baf1ec8) }
 }
 
+/**
+ * Creates a product type WITHOUT a sensible hash. This should ONLY be used by the compiler to optimize
+ * operations that don't require a hash, such as multiple dispatch resolution with a disabled cache.
+ */
+export function unhashedProduct(types: Array<Type>): ProductType {
+  return { kind: Kind.Product, types, hash: 0 }
+}
+
 
 export interface ComponentType extends Type {
   underlying: Type // TODO: Change to ClassType.
