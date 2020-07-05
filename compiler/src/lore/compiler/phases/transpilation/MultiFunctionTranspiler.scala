@@ -67,6 +67,13 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   private lazy val usingRestParameters = uniqueArity.isEmpty
 
   /**
+    * Whether we can bypass creating product types around argument types on both the left and right side of
+    * fits. If there is only a single argument across the board, product types are useless overhead. We can
+    * easily optimize this overhead away.
+    */
+  private lazy val canUnpackInputProduct = uniqueArity.contains(1)
+
+  /**
     * The list of multi-function parameters.
     *
     * TODO: We could technically even use the proper names if they don't differ across functions.
@@ -90,8 +97,12 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   private def prepareFunctionInputTypes(printer: PrintStream): Unit = {
     val inputTypes = mf.functions.map(_.signature.inputType).toSet
     inputTypes.foreach { inputType =>
+      val simplifiedInputType = if (canUnpackInputProduct) {
+        assert(inputType.components.size == 1)
+        inputType.components.head
+      } else inputType
       val varType = s"${nameProvider.createName()}"
-      val chunk = RuntimeTypeTranspiler.transpile(inputType)
+      val chunk = RuntimeTypeTranspiler.transpile(simplifiedInputType)
       printer.println(chunk.statements)
       printer.println(s"const $varType = ${chunk.expression.get}")
       inputTypeJsNames.put(inputType, varType)
@@ -133,8 +144,16 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     * Transpiles the code that gathers the argument types into a product type.
     */
   private def transpileArgumentTypeGathering(printer: PrintStream): Unit = {
+    // Single unit functions are the best.
     if (isSingleUnitFunction) {
-      printer.println(s"""const $varArgumentType = ${LoreApi.varTypes}.unit;""")
+      printer.println(s"const $varArgumentType = ${LoreApi.varTypes}.unit;")
+      return
+    }
+
+    // If we can unpack the product types, the generated code is very simple.
+    if (canUnpackInputProduct) {
+      assert(jsParameterNames.size == 1)
+      printer.println(s"const $varArgumentType = ${LoreApi.varTypes}.typeOf(${jsParameterNames.head});")
       return
     }
 

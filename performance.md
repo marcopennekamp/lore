@@ -58,7 +58,7 @@ CHANGES 3:
   magic.
   - Improvement: Almost no gains in Deno/V8. Firefox shows a bit more improvement. Since this was discovered with the 
     Firefox profiler, perhaps V8 had already applied some form of optimization. In any case, this isn't a bad change,
-    since only very few chosen functions will ever be part of the tiny set / array. (In fact, )
+    since only very few chosen functions will ever be part of the tiny set / array.
 - Get rid of the args.map in each multi-function header (where the input type is constructed). A plain loop would seem
   to be faster and more direct anyway.
   - Not faster, but more direct (fewer JS API calls), so it will stay in.
@@ -81,7 +81,7 @@ CHANGES 3:
 - We don't need to keep a list of chosen functions in the multiple dispatch implementation. We can keep a single running
   variable. If it is already filled and we want to choose a second function, we throw the ambiguity error. If it is 
   unassigned to at the end, we throw the empty-fit error. In other cases we can cache and call the function.
-  - Improvement: Minuscule. At most 2-3ms.
+  - Improvement: Minuscule. At most 2-3ms. The generated code is cleaner, though, so it's an improvement in that sense.
 - Declare the size of the argument types array right away and assign argument types via indexing instead of push.
   - Improvement: About 5-10ms. Not bad!
 - Bypass the argument type construction for "single unit multi-functions" entirely and simply assign unit
@@ -89,7 +89,16 @@ CHANGES 3:
   - Improvement: Another 5-10ms. Now running in about 90-95ms on my laptop.
 - If all function arities are the same, get rid of the loop for the input type and "hard-code" the construction of the
   input type array. Also pass the arguments to the target function directly instead of calling it with target(...args).
-  - Improvement: Surprising gains of about 10ms.
+  - Improvement: Surprising gains of about 5-10ms. Now running in about 85-90ms. 
+- If the input type is a tuple with a single element, we can bypass creating the product type, but would need to 
+  mirror that on the right-hand side.
+  - Improvement: Big gains! Surprisingly. This has shaved off another 10-20ms, so that the test now runs in 60-65ms.
+- At this point, I feel the low-hanging fruit has been sufficiently picked. Subsequent optimizations could bring 
+  more big gains, but this particular example is now only 4 times slower than JS, which I am very satisfied with.
+  It also needs to be mentioned that as we test the performance of different Lore programs, new opportunities for
+  optimizations will show themselves and we will also stumble upon significant road blockers. It is now, I think, more
+  prudent to continue the language implementation rather than chase more optimization potential and revisit this in
+  a few weeks or months when new cases have come to the light of day.
 
 
 
@@ -102,13 +111,13 @@ FUTURE:
   - Best leave this for later when we are sure that we can even disable this one fits test. I don't want to do that now
     because it could make finding compiler bugs harder. But later, when Lore is more established, we could achieve big 
     gains here that would essentially make single multi-functions perform like normal JS functions. 
-- If the input type is a tuple with a single element, we can technically bypass creating the product type, but would
-  need to mirror that on the right-hand side.
 - isSubtype and fits both test for equality of t1 and t2. We could call an internal isSubtype from fits that doesn't do
   this comparison (again) and thus save a single comparison.
-- Turn functions calls which don't rely on multiple dispatch into direct calls. This is especially useful for generic 
-  functions, because (1) a function with type parameters is less likely to have multiple implementations and (2) checking 
-  fit for generic functions is costly.
+- Turn function calls which don't rely on multiple dispatch into direct calls. This is especially useful for generic 
+  functions, because (1) a function with type parameters is less likely to have multiple implementations and (2)
+  checking the fit for generic functions is costly. Also, for core functions such as append, the cache is likely going 
+  to grow huge as the generic function is being used for all sorts of type combinations, which would be another big
+  opportunity for this sort of optimization. Such problems will only appear in larger programs, however. 
 - BIG GAINS: Dispatch calls to subtrees of the multi-function, because with static types we can easily rule
   out which functions we need to check against in the first place. If we have a type C at runtime, we don't need to
   check its superclasses A or B. This will save a huge amount of "fits" calls, especially with large multi-functions.
@@ -130,11 +139,13 @@ FUTURE:
           based on simple classes (without even intersection types), we can easily build such an index. 
         - We could build such an index at compile-time and use it if the run-time input types are simple enough to 
           agree.
-- Entirely split multi-functions based on arity. This would also allow us to unroll the loop when constructing the
-  input type tuple.
-- Ensure that all unit types are the same? 
+- Ensure that we don't create product types that are equal to unit types without using the special unit type already
+  defined as a constant.
 - If a multi-function has multiple arities, use a "distribution" function with a switch on the args length that calls
   individual dispatching functions. The compiler could also call into the individual functions directly. There is really
   no reason to let arity slow us down, since it's easily dealt with (as long as we don't support varargs). This also
   goes hand in hand with the idea of splitting dispatch across functions so that the compiler can directly call into
   a subtree.
+- With the dispatch cache enabled, we can hash the argument types without creating the product type. Only when the
+  cache try is a miss do we need to create the product type, at which point we can assign the previously computed
+  hash to the type (which is needed so it gets added to the cache properly later).    
