@@ -28,10 +28,10 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
         functionJsNames.put(function, name)
         new FunctionTranspiler(function, name).transpile.map(printer.print)
       }.simultaneous.map { _=>
-        prepareInputTypes(printer)
+        prepareFunctionInputTypes(printer)
         prepareDispatchCache(printer)
         val mfName = s"${mf.name}"
-        printer.println(s"export function $mfName(...args) {")
+        printer.println(s"export function $mfName($jsParameters) {")
         if (compilerOptions.runtimeLogging) {
           printer.println(s"console.info('Called multi-function $mfName.');")
         }
@@ -46,10 +46,48 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   }
 
   /**
+    * Whether this multi-function consists of a single function.
+    */
+  private lazy val isSingleFunction = mf.functions.length == 1
+
+  /**
+    * All possible arities of the functions.
+    */
+  private lazy val arities: Set[Int] = mf.functions.map(_.signature.arity).toSet
+
+  /**
+    * If the multi-function only has functions of the same arity, this option contains that arity.
+    */
+  private lazy val uniqueArity: Option[Int] = if (arities.size != 1) None else arities.headOption
+
+  /**
+    * Whether the transpiled multi-function uses JS rest parameters. This is needed if the arity of functions
+    * differs.
+    */
+  private lazy val usingRestParameters = uniqueArity.isEmpty
+
+  /**
+    * The list of multi-function parameters.
+    *
+    * TODO: We could technically even use the proper names if they don't differ across functions.
+    */
+  private lazy val jsParameterNames: List[String] = uniqueArity match {
+    case None => "args" :: Nil
+    case Some(arity) => (0 until arity).map(index => s"arg$index").toList
+  }
+
+  /**
+    * The comma-separated string of multi-function parameters.
+    */
+  private lazy val jsParameters: String = {
+    if (usingRestParameters) s"...${jsParameterNames.head}" else jsParameterNames.mkString(", ")
+  }
+
+  /**
     * Maps all possible input types to temporary variable names. The temporary variables are written as global
     * constants so that JS doesn't have to recreate these objects every time the multi-function is called.
     */
-  private def prepareInputTypes(printer: PrintStream): Unit = {
+  private def prepareFunctionInputTypes(printer: PrintStream): Unit = {
     val inputTypes = mf.functions.map(_.signature.inputType).toSet
     inputTypes.foreach { inputType =>
       val varType = s"${nameProvider.createName()}"
@@ -71,7 +109,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     *      function will require three fit tests. At that point a hash&cache operation is faster than testing multiple
     *      fits.
     */
-  private lazy val shouldUseDispatchCache: Boolean = mf.functions.size >= 3 || mf.functions.exists(_.signature.inputType.isPolymorphic)
+  private lazy val shouldUseDispatchCache = mf.functions.size >= 3 || mf.functions.exists(_.signature.inputType.isPolymorphic)
 
   /**
     * Prepares the dispatch cache for later use.
@@ -89,7 +127,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     * TODO: Use this to get rid of fits calls entirely and just check the number of arguments coming in.
     *       That is, if args.length === 0, call the function, otherwise throw an emptyFit error.
     */
-  private lazy val isSingleUnitFunction: Boolean = mf.functions.length == 1 && mf.functions.head.signature.inputType == ProductType.UnitType
+  private lazy val isSingleUnitFunction = isSingleFunction && mf.functions.head.signature.inputType == ProductType.UnitType
 
   /**
     * Transpiles the code that gathers the argument types into a product type.
@@ -100,18 +138,27 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
       return
     }
 
-    val varArgumentTypes = "argumentTypes"
     // If we don't use the cache, there is no reason to hash this transient product type.
     val productConstructor = if (shouldUseDispatchCache) "product" else "unsafe.unhashedProduct"
-    printer.println(
-      s"""const $varArgumentTypes = new Array(args.length);
-         |for (let i = 0; i < args.length; i += 1) {
-         |  $varArgumentTypes[i] = ${LoreApi.varTypes}.typeOf(args[i]);
-         |  //$varArgumentTypes.push(${LoreApi.varTypes}.typeOf(args[i]));
-         |}
-         |const $varArgumentType = ${LoreApi.varTypes}.$productConstructor($varArgumentTypes);
-         |""".stripMargin
-    )
+
+    // If we are using rest parameters, we will have to gather the argument type with a loop.
+    if (usingRestParameters) {
+      val varArgumentTypes = "argumentTypes"
+      val varArgs = jsParameterNames.head
+      printer.println(
+        s"""const $varArgumentTypes = new Array($varArgs.length);
+           |for (let i = 0; i < $varArgs.length; i += 1) {
+           |  $varArgumentTypes[i] = ${LoreApi.varTypes}.typeOf($varArgs[i]);
+           |}
+           |const $varArgumentType = ${LoreApi.varTypes}.$productConstructor($varArgumentTypes);
+           |""".stripMargin
+      )
+      return
+    }
+
+    // Otherwise, we know the number of arguments exactly.
+    val typeofCalls = jsParameterNames.map(parameter => s"${LoreApi.varTypes}.typeOf($parameter)").mkString(", ")
+    printer.println(s"const $varArgumentType = ${LoreApi.varTypes}.$productConstructor([$typeofCalls])")
   }
 
   /**
@@ -188,10 +235,16 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
       printer.println("}")
     }
 
+    def transpileTargetCall(target: String): Unit = {
+      printer.println(s"return $target($jsParameters);")
+    }
+
     if (shouldUseDispatchCache) {
       printer.println()
       printer.println(s"const $varCachedTarget = $varDispatchCache.get($varArgumentType);")
-      printer.println(s"if ($varCachedTarget) return $varCachedTarget(...args);")
+      printer.print(s"if ($varCachedTarget) {")
+      transpileTargetCall(varCachedTarget)
+      printer.print("}")
     }
 
     printer.println()
@@ -205,6 +258,6 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     if (shouldUseDispatchCache) {
       printer.println(s"$varDispatchCache.set($varArgumentType, $varTarget);")
     }
-    printer.println(s"return $varTarget(...args);")
+    transpileTargetCall(varTarget)
   }
 }

@@ -87,6 +87,9 @@ CHANGES 3:
 - Bypass the argument type construction for "single unit multi-functions" entirely and simply assign unit
   to the argument type.  
   - Improvement: Another 5-10ms. Now running in about 90-95ms on my laptop.
+- If all function arities are the same, get rid of the loop for the input type and "hard-code" the construction of the
+  input type array. Also pass the arguments to the target function directly instead of calling it with target(...args).
+  - Improvement: Surprising gains of about 10ms.
 
 
 
@@ -96,10 +99,11 @@ FUTURE:
   - In a manual test, moving the list type creation in test$0 to the global scope improved performance from about 110ms 
     to about 90ms.
 - If there is only a single function, we can vastly simplify the dispatch function, as we only need a single fits test.
+  - Best leave this for later when we are sure that we can even disable this one fits test. I don't want to do that now
+    because it could make finding compiler bugs harder. But later, when Lore is more established, we could achieve big 
+    gains here that would essentially make single multi-functions perform like normal JS functions. 
 - If the input type is a tuple with a single element, we can technically bypass creating the product type, but would
   need to mirror that on the right-hand side.
-- If all function arities are the same, get rid of the loop for the input type and "hard-code" the construction of the
-  input type array.
 - isSubtype and fits both test for equality of t1 and t2. We could call an internal isSubtype from fits that doesn't do
   this comparison (again) and thus save a single comparison.
 - Turn functions calls which don't rely on multiple dispatch into direct calls. This is especially useful for generic 
@@ -129,3 +133,8 @@ FUTURE:
 - Entirely split multi-functions based on arity. This would also allow us to unroll the loop when constructing the
   input type tuple.
 - Ensure that all unit types are the same? 
+- If a multi-function has multiple arities, use a "distribution" function with a switch on the args length that calls
+  individual dispatching functions. The compiler could also call into the individual functions directly. There is really
+  no reason to let arity slow us down, since it's easily dealt with (as long as we don't support varargs). This also
+  goes hand in hand with the idea of splitting dispatch across functions so that the compiler can directly call into
+  a subtree.
