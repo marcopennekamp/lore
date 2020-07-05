@@ -152,9 +152,6 @@ export class HashMap<K, V> implements Iterable<MapEntry<K, V>> {
 
     this.bins[i] = { key, value }
     this.size += 1
-
-    console.log('set ' + key + ' with hash ' + this.hash(key) + ' to ' + (<any> value).name)
-    console.log('size: ' + this.size)
   }
 
   /**
@@ -194,7 +191,6 @@ export class HashMap<K, V> implements Iterable<MapEntry<K, V>> {
     const equals = this.equals
     let binsToCheck = m // Technically this is binsToCheck - 1 to save an addition.
     let h = this.hash(key) & m
-    //console.log('hash: ' + this.hash(key))
     let bin = bins[h]
     while (bin && !equals(bin.key, key)) {
       binsToCheck -= 1
@@ -211,7 +207,6 @@ export class HashMap<K, V> implements Iterable<MapEntry<K, V>> {
   protected resize(): void {
     const src = this.bins
     const cap = (this.mask + 1) * 2
-    console.log('new cap: ' + cap)
     this.init(cap)
     for (let i = 0; i < src.length; i += 1) {
       const entry = src[i]

@@ -1,13 +1,11 @@
 action hello(value: Any)
 
 action hello(name: String) {
-  //println('Hello, $name.')
-  const last = 'Hello, $name'
+  println('Hello, $name.')
 }
 
 action hello(id: Int) {
-  //println('Hello, anonymous #$id.')
-  const last = 'Hello, anonymous #$id.'
+  println('Hello, anonymous #$id.')
 }
 
 action test() {
