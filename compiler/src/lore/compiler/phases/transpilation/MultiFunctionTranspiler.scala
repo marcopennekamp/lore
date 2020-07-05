@@ -6,13 +6,13 @@ import lore.compiler.CompilerOptions
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.Registry
 import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.types.Type
+import lore.types.{ProductType, Type}
 
 import scala.collection.mutable
 import scala.util.Using
 
 class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry) {
-  private val varInputType = "inputType"
+  private val varArgumentType = "argumentType"
   private val varDispatchCache = s"${mf.name}__dispatchCache"
 
   private val functionJsNames = mutable.HashMap[FunctionDefinition, String]()
@@ -36,7 +36,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
           printer.println(s"console.info('Called multi-function $mfName.');")
         }
 
-        transpileTypeofArguments(printer)
+        transpileArgumentTypeGathering(printer)
         transpileDispatchCall(printer)
         printer.println("}")
       }
@@ -71,7 +71,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     *      function will require three fit tests. At that point a hash&cache operation is faster than testing multiple
     *      fits.
     */
-  lazy val shouldUseDispatchCache = mf.functions.size >= 3 || mf.functions.exists(_.signature.inputType.isPolymorphic)
+  private lazy val shouldUseDispatchCache: Boolean = mf.functions.size >= 3 || mf.functions.exists(_.signature.inputType.isPolymorphic)
 
   /**
     * Prepares the dispatch cache for later use.
@@ -83,19 +83,35 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   }
 
   /**
+    * Whether this multi-function consists of a single function that also happens to have as its input type
+    * the unit type. This vastly simplifies our handling of
+    *
+    * TODO: Use this to get rid of fits calls entirely and just check the number of arguments coming in.
+    *       That is, if args.length === 0, call the function, otherwise throw an emptyFit error.
+    */
+  private lazy val isSingleUnitFunction: Boolean = mf.functions.length == 1 && mf.functions.head.signature.inputType == ProductType.UnitType
+
+  /**
     * Transpiles the code that gathers the argument types into a product type.
     */
-  private def transpileTypeofArguments(printer: PrintStream): Unit = {
+  private def transpileArgumentTypeGathering(printer: PrintStream): Unit = {
+    if (isSingleUnitFunction) {
+      printer.println(s"""const $varArgumentType = ${LoreApi.varTypes}.unit;""")
+      return
+    }
+
     val varArgumentTypes = "argumentTypes"
     // If we don't use the cache, there is no reason to hash this transient product type.
     val productConstructor = if (shouldUseDispatchCache) "product" else "unsafe.unhashedProduct"
     printer.println(
-      s"""const $varArgumentTypes = []
+      s"""const $varArgumentTypes = new Array(args.length);
          |for (let i = 0; i < args.length; i += 1) {
-         |  $varArgumentTypes.push(${LoreApi.varTypes}.typeOf(args[i]));
+         |  $varArgumentTypes[i] = ${LoreApi.varTypes}.typeOf(args[i]);
+         |  //$varArgumentTypes.push(${LoreApi.varTypes}.typeOf(args[i]));
          |}
-         |const $varInputType = ${LoreApi.varTypes}.$productConstructor($varArgumentTypes);
-         |""".stripMargin)
+         |const $varArgumentType = ${LoreApi.varTypes}.$productConstructor($varArgumentTypes);
+         |""".stripMargin
+    )
   }
 
   /**
@@ -139,7 +155,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
         // for polymorphy at run-time. Conversely, if the type is polymorphic now, we can also skip the test and jump
         // into type allocations.
         val fitsName = if (node.signature.inputType.isPolymorphic) "fitsPolymorphic" else "fitsMonomorphic"
-        printer.println(s"const ${varFits(index)} = ${LoreApi.varTypes}.$fitsName($varInputType, $varRightType);")
+        printer.println(s"const ${varFits(index)} = ${LoreApi.varTypes}.$fitsName($varArgumentType, $varRightType);")
       }
     }
 
@@ -147,11 +163,11 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
       val successors = node.diSuccessors.toList.zipWithIndex
       printer.println(s"if ($varFitsX) {")
       val addFunction = if (!node.isAbstract) {
-        s"""if ($varTarget) ${LoreApi.varError}.ambiguousCall('${mf.name}', $varInputType);
+        s"""if ($varTarget) ${LoreApi.varError}.ambiguousCall('${mf.name}', $varArgumentType);
            |$varTarget = ${functionJsNames(node.value)};
            |""".stripMargin
       } else {
-        s"${LoreApi.varUtils}.error.missingImplementation('${mf.name}', '${node.signature.inputType}', $varInputType);"
+        s"${LoreApi.varUtils}.error.missingImplementation('${mf.name}', '${node.signature.inputType}', $varArgumentType);"
       }
       if (successors.nonEmpty) {
         transpileFitsConsts(successors)
@@ -174,7 +190,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
 
     if (shouldUseDispatchCache) {
       printer.println()
-      printer.println(s"const $varCachedTarget = $varDispatchCache.get(inputType);")
+      printer.println(s"const $varCachedTarget = $varDispatchCache.get($varArgumentType);")
       printer.println(s"if ($varCachedTarget) return $varCachedTarget(...args);")
     }
 
@@ -185,9 +201,9 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     indexedRoots.foreach { case (root, index) => transpileDispatchNode(root, varFits(index)) }
 
     printer.println()
-    printer.println(s"if (!$varTarget) ${LoreApi.varError}.emptyFit('${mf.name}', $varInputType);")
+    printer.println(s"if (!$varTarget) ${LoreApi.varError}.emptyFit('${mf.name}', $varArgumentType);")
     if (shouldUseDispatchCache) {
-      printer.println(s"$varDispatchCache.set($varInputType, $varTarget);")
+      printer.println(s"$varDispatchCache.set($varArgumentType, $varTarget);")
     }
     printer.println(s"return $varTarget(...args);")
   }

@@ -82,6 +82,11 @@ CHANGES 3:
   variable. If it is already filled and we want to choose a second function, we throw the ambiguity error. If it is 
   unassigned to at the end, we throw the empty-fit error. In other cases we can cache and call the function.
   - Improvement: Minuscule. At most 2-3ms.
+- Declare the size of the argument types array right away and assign argument types via indexing instead of push.
+  - Improvement: About 5-10ms. Not bad!
+- Bypass the argument type construction for "single unit multi-functions" entirely and simply assign unit
+  to the argument type.  
+  - Improvement: Another 5-10ms. Now running in about 90-95ms on my laptop.
 
 
 
