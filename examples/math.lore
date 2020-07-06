@@ -16,15 +16,17 @@ function mul(a: Int, b: Int): Int = {
   if (isNegative) result = -result
   result
 }
+action testMul() {
+  const result = mul(12, 5)
+  println('Multiplication result: $result')
+}
 
 function double(list: [Real]): [Real] = {
-  println(list)
   for (e <- list) {
     e * 2
   }
 }
-function testDouble(): [Real] = {
-  println('Test Double')
+action testDouble() {
   const list = [1, 2, 3, 4]
   const result = double(list)
   println('Doubled list: $result')
@@ -35,8 +37,14 @@ function combinations(list: [Real]): [Real] = {
     (a, b)
   }
 }
-function testCombinations(): [Real] = {
+action testCombinations() {
   const list = [1, 2, 3, 4]
   const result = combinations(list)
   println('Combinations: $result')
+}
+
+action test() {
+  testMul()
+  testDouble()
+  testCombinations()
 }

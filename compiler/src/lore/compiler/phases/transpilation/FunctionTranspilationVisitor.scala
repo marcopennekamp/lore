@@ -143,7 +143,7 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
       val bodyCode = body.expression.map { e =>
         varResult.map { v =>
           s"""$statements
-             |$v.push($e);
+             |${LoreApi.varList}.append($v, $e);
              |""".stripMargin
         } getOrElse {
           s"""$statements
