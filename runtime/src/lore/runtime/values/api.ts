@@ -6,4 +6,5 @@ export default {
   list,
   object,
   tuple,
+  toString: (value: any) => value.toString(),
 }

@@ -1,0 +1,30 @@
+/**
+ * Converts any Lore value to a string using Javascripts's native stringifier. You can specialize this function to
+ * stringify your own custom types. This function is used by library functions such as io.println.
+ */
+function toString(value: Any): String = dynamic[String]('Lore.values.toString', value)
+
+/**
+ * The string value of a string is simply its identity.
+ */
+function toString(value: String): String = value
+
+/**
+ * Converts a Lore list to a string.
+ */
+function toString(list: [A]): String where A = {
+  const strings = for (a <- list) {
+    toString(a)
+  }
+  stringJoin(list, ', ')
+}
+
+// TODO: Stringify maps.
+
+// TODO: We need a way to work on tuples generically. (Like the Product trait in Scala.)
+
+function toString(tuple: (A, B)): String where A, B = '(${first(tuple)}, ${second(tuple)})'
+
+// TODO: Find a way to stringify classes.
+
+// TODO: Define functions to concat strings so that we don't have to use '$a$b$c' and such for simple concatenations.
