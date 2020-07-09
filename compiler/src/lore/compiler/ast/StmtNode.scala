@@ -34,11 +34,11 @@ object StmtNode {
   //       dependencies are fastparse and the graph library, so that may be possible quite soon.
 
   // Node types that are used by StmtVisitor.
-  abstract class LeafNode extends StmtNode
-  abstract class UnaryNode(val child: StmtNode) extends StmtNode
-  abstract class BinaryNode(val child1: StmtNode, val child2: StmtNode) extends StmtNode
-  abstract class TernaryNode(val child1: StmtNode, val child2: StmtNode, val child3: StmtNode) extends StmtNode
-  abstract class XaryNode(val children: List[StmtNode]) extends StmtNode
+  sealed abstract class LeafNode extends ExprNode
+  sealed abstract class UnaryNode(val child: StmtNode) extends StmtNode
+  sealed abstract class BinaryNode(val child1: StmtNode, val child2: StmtNode) extends TopLevelExprNode
+  sealed abstract class TernaryNode(val child1: StmtNode, val child2: StmtNode, val child3: StmtNode) extends ExprNode
+  sealed abstract class XaryNode(val children: List[StmtNode]) extends TopLevelExprNode
 
   case class ReturnNode(expr: ExprNode) extends UnaryNode(expr)
 }

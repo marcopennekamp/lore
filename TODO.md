@@ -1,6 +1,7 @@
 ### TODO
 
 NEXT:
+- Get rid of the shared code once more and roll everything into the compiler.
 - Finish transpilation and verification for the current MVL constructs.
 - Then handle further parametric types stuff.
 
