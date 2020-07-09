@@ -1,7 +1,38 @@
 function append(list: [A], element: B): [A] where A, B <: A = dynamic[[A]]('Lore.values.list.append', list, element)
+function length(list: [A]): Int where A = dynamic[Int]('Lore.values.list.length', list)
+function get(list: [A], index: Int): A where A = dynamic[A]('Lore.values.list.get', list, index)
+
+//function head(list: [A]): A
+//function tail()
+//function init()
+//function last()
+
+function stringJoin(list: [A], separator: String): String where A = {
+  // TODO: Implement using init and last.
+  let result = ''
+  let i = 0
+  let n = length(list)
+  while (i < n - 1) {
+    const s = toString(get(list, i))
+    result = '$result$s$separator'
+    i += 1
+  }
+
+  const s = if (n > 0) {
+    toString(get(list, i))
+  } else ''
+
+  '[$result$s]'
+}
 
 // TODO: If we change lists to our own custom implementation, it would still be useful to expose some kind of
 //       interface for Javascript arrays, just in case they are needed by the developer. This would be the place
 //       to do so. However, we would first need some way to define a class whose implementation is deferred to
 //       Javascript, much like dynamic calls do for functions.
 //       Arrays could be typed #[T] with a constructor #[t1, t2, t3].
+
+
+// TODO: Tuples need a more generic solution.
+function first(tuple: (A, B)): A where A, B = dynamic[A]('Lore.values.tuple.get', tuple, 0)
+function second(tuple: (A, B)): B where A, B = dynamic[B]('Lore.values.tuple.get', tuple, 1)
+

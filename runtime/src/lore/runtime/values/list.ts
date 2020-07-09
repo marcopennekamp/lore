@@ -20,10 +20,19 @@ export const api = {
     return list
   },
 
+  get<A>(list: ListValue<A>, index: number): A {
+    // TODO: Bounds checking?
+    return list.array[index];
+  },
+
   forEach<A, R>(list: ListValue<A>, f: (e: A) => R): void {
     const array = list.array
     for (let i = 0; i < array.length; i += 1) {
       f(array[i])
     }
-  }
+  },
+
+  length<A>(list: ListValue<A>): number {
+    return list.array.length;
+  },
 }

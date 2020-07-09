@@ -13,5 +13,10 @@ export const api = {
 
   unit(): TupleValue {
     return { array: [], lore$type: unit }
-  }
+  },
+
+  get(tuple: TupleValue, index: number): any {
+    // TODO: Surely proper bounds checking, no?
+    return tuple.array[index];
+  },
 }
