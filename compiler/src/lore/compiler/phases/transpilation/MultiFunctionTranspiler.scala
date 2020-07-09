@@ -263,7 +263,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
       printer.println(s"const $varCachedTarget = $varDispatchCache.get($varArgumentType);")
       printer.print(s"if ($varCachedTarget) {")
       transpileTargetCall(varCachedTarget)
-      printer.print("}")
+      printer.println("}")
     }
 
     printer.println()

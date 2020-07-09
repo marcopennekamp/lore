@@ -15,8 +15,10 @@ object FunctionDeclarationResolver {
         // Functions are resolved after all type declarations.
         node.parameters.map(resolveParameterNode).map(p => p.verifyDeferredTyping.map(_ => p)).simultaneous,
         TypeExpressionEvaluator.evaluate(node.outputType),
-      ).simultaneous.map { case (parameters, outputType) =>
-        new FunctionDefinition(node.name, typeScope, parameters, outputType, node.body, node.position)
+      ).simultaneous.flatMap { case (parameters, outputType) =>
+        node.body.map(FunctionTransformations.transformBody).toCompiledOption.map { body =>
+          new FunctionDefinition(node.name, typeScope, parameters, outputType, body, node.position)
+        }
       }
     }
   }
