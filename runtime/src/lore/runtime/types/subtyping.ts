@@ -47,7 +47,7 @@ export function isSubtype(t1: Type, t2: Type): boolean {
       }
       break
     case Kind.Product:
-      if (productSubtypeProduct(<ProductType> t1, <ProductType> t2)) return true
+      if (t2.kind === Kind.Product && productSubtypeProduct(<ProductType> t1, <ProductType> t2)) return true
       break
     case Kind.Component:
       if (
