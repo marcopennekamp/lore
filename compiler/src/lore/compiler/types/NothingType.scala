@@ -1,4 +1,4 @@
-package lore.types
+package lore.compiler.types
 
 /**
   * The "bottom" type which is the subtype of all types.

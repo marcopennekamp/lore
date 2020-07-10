@@ -1,6 +1,6 @@
 package lore.compiler.functions
 
-import lore.types.{Fit, ProductType, Type}
+import lore.compiler.types.{Fit, ProductType, Type}
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
 

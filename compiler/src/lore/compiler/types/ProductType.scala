@@ -1,4 +1,4 @@
-package lore.types
+package lore.compiler.types
 
 import scala.util.hashing.MurmurHash3
 

@@ -1,7 +1,7 @@
 package lore.compiler.phases.verification
 
 import lore.compiler.structures.MemberDefinition
-import lore.types.Type
+import lore.compiler.types.Type
 
 import scala.util.hashing.MurmurHash3
 

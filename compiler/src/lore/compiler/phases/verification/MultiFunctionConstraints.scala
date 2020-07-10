@@ -5,8 +5,7 @@ import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Fragment, Registry}
 import lore.compiler.feedback.Error
 import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.compiler.types.CompilerSubtyping
-import lore.types.{Fit, Type}
+import lore.compiler.types.{Ards, Fit, Type}
 
 object MultiFunctionConstraints {
   case class FunctionIllegallyAbstract(function: FunctionDefinition) extends Error(function) {
@@ -80,7 +79,7 @@ object MultiFunctionConstraints {
       //    An abstract function f(a: A, b: B) with a non-abstract B must also cover the case f(a: AX, b: B), not just for
       //    B1 and B2, if the given value of type B is neither B1 nor B2, since it could just be B. Hence, we cannot use
       //    directDeclaredSubtypes, because it would substitute B1 and B2 for B, leaving B out of the equation entirely.
-      CompilerSubtyping.abstractResolvedDirectSubtypes(f.signature.inputType).toList.flatMap { subtype =>
+      Ards.abstractResolvedDirectSubtypes(f.signature.inputType).toList.flatMap { subtype =>
         // TODO: Can we optimize this given the new hierarchy?
         val isValid = mf.functions.exists { f2 =>
           Fit.isMoreSpecific(f2.signature.inputType, f.signature.inputType) && mf.fit(subtype).contains(f2)

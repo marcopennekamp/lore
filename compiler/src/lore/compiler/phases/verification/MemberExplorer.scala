@@ -1,11 +1,9 @@
 package lore.compiler.phases.verification
 
 import lore.compiler.core.Compilation
-import lore.compiler.types
 import lore.compiler.core.Compilation.C
 import lore.compiler.feedback._
-import lore.compiler.types.{CompilerSubtyping, ComponentType, LabelType}
-import lore.types.{AnyType, BasicType, IntersectionType, ListType, MapType, ProductType, SumType, Type}
+import lore.compiler.types.{AnyType, BasicType, ClassType, ComponentType, IntersectionType, LabelType, ListType, MapType, ProductType, SumType, Type}
 
 /**
   * For any given type, returns a list of members that can be accessed through the type. This is trivial for
@@ -56,7 +54,7 @@ object MemberExplorer {
         Compilation.succeed {
           components.zipWithIndex.map { case (tpe, index) => VirtualMember(s"_$index", tpe, underlying = None) }
         }
-      case classType: types.ClassType =>
+      case classType: ClassType =>
         // A class type obviously has its own members.
         Compilation.succeed(classType.definition.members.map(_.asVirtualMember))
 

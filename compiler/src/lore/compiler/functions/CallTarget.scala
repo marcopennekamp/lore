@@ -1,6 +1,6 @@
 package lore.compiler.functions
 
-import lore.types.Type
+import lore.compiler.types.Type
 
 trait CallTarget {
   def name: String

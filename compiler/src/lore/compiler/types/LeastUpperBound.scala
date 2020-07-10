@@ -1,44 +1,10 @@
 package lore.compiler.types
 
 import lore.compiler.core.Registry
-import lore.types.BasicType.{Int, Real}
-import scalaz.Monad
-import scalaz.std.list._
-import scalaz.syntax.traverse._
+
 import lore.compiler.types.TypeExtensions._
-import lore.types.{AnyType, BasicType, IntersectionType, ListType, MapType, NothingType, ProductType, Subtyping, SumType, Type}
 
-object CompilerSubtyping extends Subtyping {
-
-  /**
-    * A set of direct subtypes that are resolved IF the given type is abstract.
-    *
-    * This is an implementation of the 'ards' function as defined in the spec. See the spec for more information.
-    */
-  def abstractResolvedDirectSubtypes(t: Type)(implicit registry: Registry): Set[Type] = {
-    // TODO: How can we handle type variables?
-
-    // TODO: Using Set like this (which is much slower than List) could be a major performance hog down the line.
-    //       We should watch out for any performance problems stemming from ards evaluation.
-    implicit val setMonad: Monad[Set] = new Monad[Set] {
-      override def point[A](a: => A): Set[A] = Set(a)
-      override def bind[A, B](fa: Set[A])(f: A => Set[B]): Set[B] = fa.flatMap(f)
-    }
-    def combinations(components: List[Set[Type]]) = components.sequence
-
-    t match {
-      case _ if !t.isAbstract => Set(t)
-      case dt: DeclaredType => dt.directDeclaredSubtypes
-      case ProductType(components) => combinations(components.map(abstractResolvedDirectSubtypes)).map(ProductType(_))
-      case IntersectionType(types) => combinations(types.map(abstractResolvedDirectSubtypes).toList).map(IntersectionType.construct)
-      case SumType(types) => types.flatMap(abstractResolvedDirectSubtypes)
-      case _ if t == AnyType =>
-        // TODO: Really? This should rather be the set of all types which have no supertype, i.e. direct descendants
-        //       of Any. Or maybe, rather, let's not fuck with Any for abstract functions and return an error here.
-        Set.empty
-      case t if t == NothingType => Set.empty
-    }
-  }
+object LeastUpperBound {
 
   def leastUpperBound(t1: Type, t2: Type)(implicit registry: Registry): Type = configurableLub(defaultToSum = true)(t1, t2)
   private def lubNoDefaultSum(t1: Type, t2: Type)(implicit registry: Registry): Type = configurableLub(defaultToSum = false)(t1, t2)
@@ -160,7 +126,7 @@ object CompilerSubtyping extends Subtyping {
       case (MapType(k1, v1), MapType(k2, v2)) => MapType(lubPassOnSettings(k1, k2), lubPassOnSettings(v1, v2))
 
       // Handle Int and Real specifically.
-      case (Int, Real) => BasicType.Real
+      case (BasicType.Int, BasicType.Real) => BasicType.Real
       case (BasicType.Real, BasicType.Int) => BasicType.Real
 
       // In any other case, we can say that t1 and t2 are inherently incompatible. For example, a product type and

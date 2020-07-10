@@ -4,8 +4,7 @@ import lore.compiler.core.Compilation.C
 import lore.compiler.feedback.{Position, Positioned}
 import lore.compiler.functions.ParameterDefinition
 import lore.compiler.phases.verification.VirtualMember
-import lore.compiler.types.{ClassType, ComponentType, TypingDeferred}
-import lore.types.Type
+import lore.compiler.types.{ClassType, ComponentType, Type, TypingDeferred}
 
 /**
   * A data type member, that is, either a property or a component.

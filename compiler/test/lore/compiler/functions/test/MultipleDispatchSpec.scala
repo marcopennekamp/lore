@@ -2,7 +2,7 @@ package lore.compiler.functions.test
 
 import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.test.{BaseSpec, TypeSyntax}
-import lore.types.Type
+import lore.compiler.types.Type
 import org.scalatest.Assertion
 
 class MultipleDispatchSpec extends BaseSpec with TypeSyntax {

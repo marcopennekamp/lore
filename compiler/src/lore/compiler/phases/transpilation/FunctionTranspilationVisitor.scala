@@ -8,7 +8,7 @@ import lore.compiler.feedback.Error
 import lore.compiler.functions.FunctionInstance
 import lore.compiler.phases.transpilation.Transpilation.Transpilation
 import lore.compiler.phases.transpilation.TranspiledChunk.JsCode
-import lore.types.{BasicType, ProductType}
+import lore.compiler.types.ProductType
 
 case class UnsupportedTranspilation(node: StmtNode)(implicit fragment: Fragment) extends Error(node) {
   override def message = s"The Lore compiler doesn't yet support the transpilation of ${node.getClass.getSimpleName}."

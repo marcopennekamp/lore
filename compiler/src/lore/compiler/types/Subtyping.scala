@@ -1,8 +1,8 @@
-package lore.types
+package lore.compiler.types
 
-import lore.types.TypeRelations.Rule
+import TypeRelations.Rule
 
-trait Subtyping {
+object Subtyping {
 
   // TODO: Do we rather need to define type equality in terms of subtyping (t1 <= t2 && t2 <= t1)? I suspect
   //       new edge cases especially with the introduction of polymorphic types. Of course, this might severely
@@ -97,5 +97,3 @@ trait Subtyping {
     */
   def isStrictSupertype(t1: Type, t2: Type): Boolean = t1 != t2 && isSupertype(t1, t2)
 }
-
-object Subtyping extends Subtyping

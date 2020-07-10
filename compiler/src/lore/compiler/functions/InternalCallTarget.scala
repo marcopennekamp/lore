@@ -1,7 +1,7 @@
 package lore.compiler.functions
 
 import lore.compiler.feedback.Positioned
-import lore.types.Type
+import lore.compiler.types.Type
 
 trait InternalCallTarget extends CallTarget with Positioned {
   def signature: FunctionSignature

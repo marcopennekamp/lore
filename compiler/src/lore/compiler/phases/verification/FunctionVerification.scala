@@ -7,7 +7,7 @@ import lore.compiler.feedback.Error
 import lore.compiler.core.{Fragment, Registry, TypeScope}
 import lore.compiler.structures.ClassDefinition
 import lore.compiler.functions.{ConstructorDefinition, FunctionDefinition, FunctionSignature, InternalCallTarget}
-import lore.types.Type
+import lore.compiler.types.Type
 
 /**
   * For a given function or constructor, infers and checks expression types and checks all other constraints on

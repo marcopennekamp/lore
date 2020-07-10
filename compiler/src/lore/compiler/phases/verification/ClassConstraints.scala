@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Registry}
 import lore.compiler.feedback.Error
 import lore.compiler.structures.{ClassDefinition, ComponentDefinition, MemberDefinition}
-import lore.types.{AnyType, Type}
+import lore.compiler.types.{AnyType, ClassType, Type}
 
 object ClassConstraints {
   /**
@@ -119,7 +119,7 @@ object ClassConstraints {
     } else Verification.succeed
   }
 
-  case class ComponentsShareSuperclass(definition: ClassDefinition, superclass: lore.types.ClassType, components: List[ComponentDefinition]) extends Error(definition) {
+  case class ComponentsShareSuperclass(definition: ClassDefinition, superclass: ClassType, components: List[ComponentDefinition]) extends Error(definition) {
     override def message: String = s"The following components illegally share a superclass $superclass: ${components.map(_.name).mkString(", ")}." +
       s" Components may not share a superclass, because component types such as +C have to stay unambiguous for all possible entities."
   }

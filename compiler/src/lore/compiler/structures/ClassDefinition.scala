@@ -7,9 +7,8 @@ import lore.compiler.core.TypeVariableScope
 import lore.compiler.feedback.Position
 import lore.compiler.functions
 import lore.compiler.functions.{ConstructorDefinition, FunctionSignature}
-import lore.compiler.types.{ClassType, ComponentType}
-import lore.types.{ProductType, Type}
-import lore.utils.CollectionExtensions._
+import lore.compiler.types.{ClassType, ComponentType, ProductType, Type}
+import lore.compiler.utils.CollectionExtensions._
 
 /**
   * The definition of both a class and an entity.

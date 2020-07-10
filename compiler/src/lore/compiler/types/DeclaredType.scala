@@ -2,22 +2,33 @@ package lore.compiler.types
 
 import lore.compiler.core.Registry
 import lore.compiler.structures.DeclaredTypeDefinition
-import lore.types.Type
 
 /**
   * A declared type as defined by the spec.
   */
-trait DeclaredType extends lore.types.DeclaredType {
+trait DeclaredType extends NamedType {
   /**
     * The definition associated with this type.
     */
   def definition: DeclaredTypeDefinition
-  override def name: String = definition.name
 
-  // We need to override these because we have to assert to Scala that in the context of the compiler,
-  // we are always expecting lore.compiler types.
-  override def supertype: Option[DeclaredType]
-  override def rootSupertype: DeclaredType = super.rootSupertype.asInstanceOf[DeclaredType]
+  /**
+    * The name of the declared type.
+    */
+  def name: String = definition.name
+
+  /**
+    * The supertype of the declared type.
+    */
+  def supertype: Option[DeclaredType]
+
+  /**
+    * The supertype of the declared type that directly inherits from Any, possibly this type itself.
+    */
+  def rootSupertype: DeclaredType = supertype match {
+    case None => this
+    case Some(tpe) => tpe.rootSupertype
+  }
 
   /**
     * Returns the set of explicitly declared immediate subtypes, for example direct subclasses or direct
@@ -27,6 +38,23 @@ trait DeclaredType extends lore.types.DeclaredType {
     // We need the .toSet at the end to cast DeclaredType to Type, since sets are invariant.
     registry.declaredTypeHierarchy.getDirectSubtypes(this).toSet
   }
+
+  /**
+    * A verbose string representation of the type.
+    */
+  def verbose: String = toString
+
+  override def string(precedence: TypePrecedence): String = name
+
+  // TODO: For now. This needs to be set to true for classes with type parameters, of course.
+  override def isPolymorphic = false
+
+  // We define equality of declared types as nominal equality.
+  override def equals(obj: Any): Boolean = obj match {
+    case rhs: DeclaredType => this.eq(rhs) || name == rhs.name
+    case _ => false
+  }
+  override lazy val hashCode: Int = name.hashCode
 }
 
 object DeclaredType {

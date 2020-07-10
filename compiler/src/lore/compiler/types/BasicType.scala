@@ -1,4 +1,4 @@
-package lore.types
+package lore.compiler.types
 
 sealed abstract class BasicType(override val name: String) extends NamedType {
   override val isAbstract: Boolean = false

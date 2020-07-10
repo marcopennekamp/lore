@@ -10,7 +10,7 @@ import scala.collection.mutable
 /**
   * A hierarchical scope resolving entries of some type A by name.
   */
-trait Scope[A <: lore.core.Scope.Entry] {
+trait Scope[A <: Scope.Entry] {
   /**
     * Fetches the entry with the given name from the closest scope.
     */
@@ -64,7 +64,7 @@ trait Scope[A <: lore.core.Scope.Entry] {
   protected def alreadyDeclared(name: String, position: Position): Error = AlreadyDeclared(name, position)
 }
 
-abstract class BasicScope[A <: lore.core.Scope.Entry](val parent: Option[Scope[A]]) extends Scope[A] {
+abstract class BasicScope[A <: Scope.Entry](val parent: Option[Scope[A]]) extends Scope[A] {
   protected val entries: mutable.Map[String, A] = new mutable.HashMap()
   override def get(name: String): Option[A] = parent.flatMap(_.get(name)).orElse(entries.get(name))
   override protected def add(entry: A): Unit = {
@@ -74,6 +74,10 @@ abstract class BasicScope[A <: lore.core.Scope.Entry](val parent: Option[Scope[A
 }
 
 object Scope {
+  trait Entry {
+    def name: String
+  }
+
   case class AlreadyDeclared(name: String, pos: Position) extends Error(pos) {
     override def message = s"An entry '$name' has already been declared in the current scope."
   }

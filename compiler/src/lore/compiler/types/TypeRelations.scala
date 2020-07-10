@@ -1,4 +1,4 @@
-package lore.types
+package lore.compiler.types
 
 /**
   * This object supports calculating arbitrary binary relations between types.

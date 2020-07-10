@@ -6,7 +6,7 @@ import lore.compiler.CompilerOptions
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.Registry
 import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.types.{ProductType, Type}
+import lore.compiler.types.{ProductType, Type}
 
 import scala.collection.mutable
 import scala.util.Using

@@ -1,6 +1,5 @@
 package lore.compiler.types
 
-import lore.types.{AnyType, IntersectionType, Type}
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
 

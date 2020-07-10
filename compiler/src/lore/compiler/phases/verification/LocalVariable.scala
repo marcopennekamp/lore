@@ -3,9 +3,9 @@ package lore.compiler.phases.verification
 import lore.compiler.core.{BasicScope, Scope}
 import lore.compiler.functions.FunctionSignature
 import lore.compiler.phases.transpilation.TranspiledNames
-import lore.types.Type
+import lore.compiler.types.Type
 
-case class LocalVariable(name: String, tpe: Type, isMutable: Boolean) extends lore.core.Scope.Entry {
+case class LocalVariable(name: String, tpe: Type, isMutable: Boolean) extends Scope.Entry {
   lazy val transpiledName: String = TranspiledNames.localVariable(name)
 }
 

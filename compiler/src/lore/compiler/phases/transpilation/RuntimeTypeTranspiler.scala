@@ -1,7 +1,6 @@
 package lore.compiler.phases.transpilation
 
-import lore.compiler.types.{ComponentType, DeclaredType, TypeVariable}
-import lore.types._
+import lore.compiler.types.{AnyType, BasicType, ComponentType, DeclaredType, IntersectionType, ListType, MapType, NothingType, ProductType, SumType, Type, TypeVariable}
 import lore.compiler.types.TypeExtensions._
 
 object RuntimeTypeTranspiler {

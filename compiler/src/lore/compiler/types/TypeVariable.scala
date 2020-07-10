@@ -1,10 +1,25 @@
 package lore.compiler.types
 
-import lore.types.Type
+import lore.compiler.core.Scope
 
 class TypeVariable(
-  name: String,
-  lowerBound: Type,
-  upperBound: Type,
-  val declarationOrder: Int
-) extends lore.types.TypeVariable(name, lowerBound, upperBound) with lore.core.Scope.Entry
+  val name: String,
+  val lowerBound: Type,
+  val upperBound: Type,
+  val declarationOrder: Int,
+) extends NamedType with Scope.Entry {
+  override val isAbstract: Boolean = false // TODO: Is this correct?
+  override val isPolymorphic = true
+  override def string(parentPrecedence: TypePrecedence): String = name
+
+  // Type variables are strictly reference-equal.
+  override def equals(obj: Any): Boolean = obj match {
+    case var2: TypeVariable => this eq var2
+    case _ => false
+  }
+  override def hashCode(): Int = name.hashCode
+}
+
+object TypeVariable {
+  type Assignments = Map[TypeVariable, Type]
+}

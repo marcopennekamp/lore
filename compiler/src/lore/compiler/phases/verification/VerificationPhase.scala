@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation._
 import lore.compiler.core.Registry
 import lore.compiler.phases.Phase
 import lore.compiler.structures.ClassDefinition
-import lore.utils.CollectionExtensions._
+import lore.compiler.utils.CollectionExtensions._
 
 class VerificationPhase()(implicit registry: Registry) extends Phase[Unit] {
   override def result: Verification = {

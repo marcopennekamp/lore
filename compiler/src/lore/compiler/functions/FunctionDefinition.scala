@@ -6,7 +6,7 @@ import lore.compiler.core.{Compilation, TypeScope}
 import lore.compiler.feedback.{Error, Position, Positioned}
 import lore.compiler.functions
 import lore.compiler.functions.FunctionDefinition.CannotInstantiateFunction
-import lore.types.{Fit, Type}
+import lore.compiler.types.{Fit, Type}
 
 /**
   * @param typeScope The scope that saves type variables declared with the function.

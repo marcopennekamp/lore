@@ -7,7 +7,7 @@ import lore.compiler.structures.ClassDefinition
 import lore.compiler.feedback.Error
 import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.phases.resolution.DeclarationResolver.{FunctionAlreadyExists, TypeAlreadyExists}
-import lore.types.Type
+import lore.compiler.types.Type
 
 /**
   * Declarations can occur unordered. This is not only true within a file, but especially across multiple files. We

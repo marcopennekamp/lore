@@ -1,7 +1,7 @@
 package lore.compiler.functions
 
 import lore.compiler.core.Compilation
-import lore.types.{Fit, ProductType, Substitution, Type, TypeVariable}
+import lore.compiler.types.{Fit, ProductType, Substitution, Type, TypeVariable}
 
 import scala.util.hashing.MurmurHash3
 

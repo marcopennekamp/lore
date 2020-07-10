@@ -1,4 +1,4 @@
-package lore.types
+package lore.compiler.types
 
 /**
   * The "top" type which is the supertype of all possible types.

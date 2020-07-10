@@ -1,6 +1,6 @@
 package lore.compiler.types.test
 
-import lore.types._
+import lore.compiler.types.{AnyType, BasicType, NothingType, Type, TypeVariable}
 import org.scalatest.Assertion
 
 class SubtypingSpec extends TypeSpec {
@@ -13,17 +13,17 @@ class SubtypingSpec extends TypeSpec {
 
   "Subtyping" should "handle type variables correctly" in {
     { // An excerpt of Example 1 from the spec's type allocation examples.
-      val C = new TypeVariable("C", NothingType, AnyType)
+      val C = new TypeVariable("C", NothingType, AnyType, 0)
       BasicType.Int </< C
     }
     { // An excerpt of Example 2 from the spec's type allocation examples.
-      val C = new TypeVariable("C", NothingType, AnyType)
+      val C = new TypeVariable("C", NothingType, AnyType, 0)
       Cat </< C
       C </< Animal
     }
     { // An excerpt of Example 3 from the spec's type allocation examples.
-      val C = new TypeVariable("C", Goldfish, Fish)
-      val D = new TypeVariable("D", Goldfish, C)
+      val C = new TypeVariable("C", Goldfish, Fish, 0)
+      val D = new TypeVariable("D", Goldfish, C, 1)
       Goldfish <:< C
       C <:< Animal
       NothingType <:< D

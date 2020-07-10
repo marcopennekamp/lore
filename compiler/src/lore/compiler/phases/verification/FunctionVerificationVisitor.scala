@@ -7,10 +7,9 @@ import lore.compiler.core.{Compilation, Fragment, Registry, TypeScope}
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.feedback.{Error, Position}
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
-import lore.compiler.types.{CompilerSubtyping, TypeExpressionEvaluator}
+import lore.compiler.types.{BasicType, LeastUpperBound, ListType, MapType, NothingType, ProductType, Type, TypeExpressionEvaluator}
 import lore.compiler.structures.ClassDefinition
 import lore.compiler.functions.{DynamicCallTarget, FunctionDefinition, FunctionSignature, InternalCallTarget, MultiFunctionDefinition}
-import lore.types.{BasicType, ListType, MapType, NothingType, ProductType, Type}
 
 private[verification] class FunctionVerificationVisitor(
   /**
@@ -303,7 +302,7 @@ private[verification] class FunctionVerificationVisitor(
         // TODO: If only one branch supplies a value, return an OPTION of the evaluated type. Of course, we don't
         //       HAVE options just yet. This also needs to become part of the spec before it's implemented, IF we
         //       implement this feature.
-        val resultType = CompilerSubtyping.leastUpperBound(onTrue.inferredType, onFalse.inferredType)
+        val resultType = LeastUpperBound.leastUpperBound(onTrue.inferredType, onFalse.inferredType)
         node.typed(resultType)
       }
 
@@ -318,11 +317,11 @@ private[verification] class FunctionVerificationVisitor(
     case ListNode(expressions) =>
       // If we type empty lists as [Nothing], we can assign this empty list to any kind of list, which makes
       // coders happy. :) Hence the default value in the fold.
-      val elementType = expressions.map(_.inferredType).foldLeft(NothingType: Type)(CompilerSubtyping.leastUpperBound)
+      val elementType = expressions.map(_.inferredType).foldLeft(NothingType: Type)(LeastUpperBound.leastUpperBound)
       node.typed(ListType(elementType))
     case MapNode(entries) =>
-      val keyType = entries.map(_.key.inferredType).foldLeft(NothingType: Type)(CompilerSubtyping.leastUpperBound)
-      val valueType = entries.map(_.value.inferredType).foldLeft(NothingType: Type)(CompilerSubtyping.leastUpperBound)
+      val keyType = entries.map(_.key.inferredType).foldLeft(NothingType: Type)(LeastUpperBound.leastUpperBound)
+      val valueType = entries.map(_.value.inferredType).foldLeft(NothingType: Type)(LeastUpperBound.leastUpperBound)
       node.typed(MapType(keyType, valueType))
 
     // Xary operations.

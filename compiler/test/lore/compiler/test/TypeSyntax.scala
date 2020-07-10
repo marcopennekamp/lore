@@ -1,8 +1,7 @@
 package lore.compiler.test
 
 import lore.compiler.core.Registry
-import lore.compiler.types.{ClassType, ComponentType}
-import lore.types.{IntersectionType, ProductType, SumType, Type}
+import lore.compiler.types.{ClassType, ComponentType, IntersectionType, ProductType, SumType, Type}
 
 trait TypeSyntax {
   implicit def toType(name: String)(implicit registry: Registry): Type = registry.getType(name).get

@@ -1,4 +1,4 @@
-package lore.utils
+package lore.compiler.utils
 
 import scala.reflect.ClassTag
 

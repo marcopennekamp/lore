@@ -4,7 +4,7 @@ import lore.compiler.core.{Errors, Registry, Result}
 import lore.compiler.feedback.Error
 import lore.compiler.Lore
 import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.types.Type
+import lore.compiler.types.Type
 import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

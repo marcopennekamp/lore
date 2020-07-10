@@ -3,8 +3,7 @@ package lore.compiler.functions
 import lore.compiler.core.Compilation.C
 import lore.compiler.feedback.{Position, Positioned}
 import lore.compiler.phases.verification.LocalVariable
-import lore.compiler.types.TypingDeferred
-import lore.types.Type
+import lore.compiler.types.{Type, TypingDeferred}
 
 // TODO: Refactor: Create a trait ParameterDefinition and two classes: DeferredParameterDefinition and
 //       ResolvedParameterDefinition. Then during type resolution, manually convert Deferred to Resolved

@@ -1,7 +1,6 @@
 package lore.compiler.types
 
 import lore.compiler.core.Compilation.C
-import lore.types.Type
 
 /**
   * OwnedBy has its typing deferred since, similar to class constructors and members, OwnedBy can be a complex

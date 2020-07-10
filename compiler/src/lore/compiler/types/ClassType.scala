@@ -1,13 +1,30 @@
 package lore.compiler.types
 
 import lore.compiler.structures.ClassDefinition
-import lore.types.Type
 
 class ClassType(
   override val supertype: Option[ClassType], val ownedByDeferred: Option[OwnedByDeferred], val isAbstract: Boolean
-) extends lore.types.ClassType with DeclaredType with DeclaredType.DefinitionProperty[ClassDefinition] {
-  override def ownedBy: Option[Type] = ownedByDeferred.map(_.tpe)
-  override def isEntity: Boolean = this.definition.isEntity
-  override lazy val componentTypes: List[ComponentType] = this.definition.components.map(_.componentType)
-  override def rootSupertype: ClassType = super.rootSupertype.asInstanceOf[ClassType]
+) extends DeclaredType with DeclaredType.DefinitionProperty[ClassDefinition] {
+  /**
+    * The type a value of this class type must be owned by.
+    */
+  def ownedBy: Option[Type] = ownedByDeferred.map(_.tpe)
+
+  /**
+    * Whether this class type represents an entity.
+    */
+  def isEntity: Boolean = this.definition.isEntity
+
+  /**
+    * The list of component types belonging to the entity type. The list is empty if this type is not an entity.
+    */
+  lazy val componentTypes: List[ComponentType] = this.definition.components.map(_.componentType)
+
+  override def rootSupertype: ClassType = {
+    // The compiler might not see this, but of course the root supertype of a class can itself only be a class type.
+    super.rootSupertype.asInstanceOf[ClassType]
+  }
+
+  // TODO: Move this to a separate stringifier class.
+  override def verbose = s"${if (isAbstract) s"abstract class" else "class"} $toString extends ${supertype.getOrElse(AnyType)}"
 }

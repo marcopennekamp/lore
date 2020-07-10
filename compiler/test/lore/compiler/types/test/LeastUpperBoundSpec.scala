@@ -1,7 +1,6 @@
 package lore.compiler.types.test
 
-import lore.compiler.types.CompilerSubtyping
-import lore.types._
+import lore.compiler.types.{BasicType, LeastUpperBound, ListType, MapType, NothingType, Type}
 import org.scalatest.Assertion
 
 class LeastUpperBoundSpec extends TypeSpec {
@@ -10,7 +9,7 @@ class LeastUpperBoundSpec extends TypeSpec {
   private implicit class LubExtension(testCase: (Type, Type)) {
     val (t1, t2) = testCase
     def -->(expected: Type): Assertion = {
-      CompilerSubtyping.leastUpperBound(t1, t2) shouldEqual expected
+      LeastUpperBound.leastUpperBound(t1, t2) shouldEqual expected
     }
   }
 
