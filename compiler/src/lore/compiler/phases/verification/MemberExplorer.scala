@@ -3,7 +3,7 @@ package lore.compiler.phases.verification
 import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.C
 import lore.compiler.feedback._
-import lore.compiler.types.{AnyType, BasicType, ClassType, ComponentType, IntersectionType, LabelType, ListType, MapType, ProductType, SumType, Type}
+import lore.compiler.types._
 
 /**
   * For any given type, returns a list of members that can be accessed through the type. This is trivial for

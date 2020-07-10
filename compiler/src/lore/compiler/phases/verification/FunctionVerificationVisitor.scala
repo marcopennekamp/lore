@@ -3,13 +3,13 @@ package lore.compiler.phases.verification
 import lore.compiler.ast.ExprNode.AddressNode
 import lore.compiler.ast.visitor.VerificationStmtVisitor
 import lore.compiler.ast.{CallNode, ExprNode, StmtNode, TopLevelExprNode}
-import lore.compiler.core.{Compilation, Fragment, Registry, TypeScope}
 import lore.compiler.core.Compilation.Verification
+import lore.compiler.core.{Compilation, Fragment, Registry, TypeScope}
 import lore.compiler.feedback.{Error, Position}
+import lore.compiler.functions._
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
-import lore.compiler.types.{BasicType, LeastUpperBound, ListType, MapType, NothingType, ProductType, Type, TypeExpressionEvaluator}
 import lore.compiler.structures.ClassDefinition
-import lore.compiler.functions.{DynamicCallTarget, FunctionDefinition, FunctionSignature, InternalCallTarget, MultiFunctionDefinition}
+import lore.compiler.types._
 
 private[verification] class FunctionVerificationVisitor(
   /**

@@ -1,12 +1,12 @@
 import { Kind } from './kinds.ts'
 import {
   Hashed,
-  singleHash,
   orderedHashWithSeed,
+  pairHash,
+  singleHash,
   stringHash,
   stringHashWithSeed,
   unorderedHashWithSeed,
-  pairHash,
 } from '../utils/hash.ts'
 
 export interface Type extends Hashed {

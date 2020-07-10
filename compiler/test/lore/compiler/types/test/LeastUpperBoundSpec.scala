@@ -1,6 +1,6 @@
 package lore.compiler.types.test
 
-import lore.compiler.types.{BasicType, LeastUpperBound, ListType, MapType, NothingType, Type}
+import lore.compiler.types._
 import org.scalatest.Assertion
 
 class LeastUpperBoundSpec extends TypeSpec {

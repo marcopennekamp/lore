@@ -1,6 +1,6 @@
 package lore.compiler.types
 
-import TypeRelations.Rule
+import lore.compiler.types.TypeRelations.Rule
 
 object Subtyping {
 

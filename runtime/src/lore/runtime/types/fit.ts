@@ -1,9 +1,8 @@
-import { ProductType, Type, TypeVariable } from './types.ts'
+import { ListType, MapType, ProductType, Type, TypeVariable } from './types.ts'
 import { isPolymorphic } from './polymorphy.ts'
 import { areEqual } from './equality.ts'
 import { isSubtype } from './subtyping.ts'
 import { Kind } from './kinds.ts'
-import { ListType, MapType} from './types.ts'
 import { substitute } from './substitution.ts'
 import { TinyMap } from '../utils/TinyMap.ts'
 

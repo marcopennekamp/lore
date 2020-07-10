@@ -1,5 +1,4 @@
-import { Type } from './types.ts'
-import { any, boolean, int, real, string } from './types.ts'
+import { any, boolean, int, real, string, Type } from './types.ts'
 import { LoreValue } from '../values/values.ts'
 
 /**

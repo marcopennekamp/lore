@@ -2,8 +2,8 @@ package lore.compiler.phases.parsing
 
 import fastparse.ScalaWhitespace._
 import fastparse._
-import lore.compiler.ast._
 import lore.compiler.LoreCompiler.SourceFragment
+import lore.compiler.ast._
 import lore.compiler.core.Fragment
 
 /**

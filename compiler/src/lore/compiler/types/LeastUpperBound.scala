@@ -1,7 +1,6 @@
 package lore.compiler.types
 
 import lore.compiler.core.Registry
-
 import lore.compiler.types.TypeExtensions._
 
 object LeastUpperBound {

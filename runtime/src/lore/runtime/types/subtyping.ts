@@ -1,6 +1,14 @@
-import { IntersectionType, ProductType, SumType, Type } from './types.ts'
+import {
+  ComponentType,
+  IntersectionType,
+  ListType,
+  MapType,
+  ProductType,
+  SumType,
+  Type,
+  TypeVariable
+} from './types.ts'
 import { Kind } from './kinds.ts'
-import { ComponentType, ListType, MapType, TypeVariable } from './types.ts'
 import { areEqual } from './equality.ts'
 
 /**

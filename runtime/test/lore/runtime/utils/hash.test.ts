@@ -1,5 +1,5 @@
 import { assertEquals, assertNotEquals } from 'https://deno.land/std/testing/asserts.ts'
-import { stringHash, orderedHash, unorderedHash } from '../../../../src/lore/runtime/utils/hash.ts'
+import { orderedHash, stringHash, unorderedHash } from '../../../../src/lore/runtime/utils/hash.ts'
 
 const obj1 = { hash: stringHash("daiwbf34832im") }
 const obj2 = { hash: stringHash("lawji23rwhigs") }

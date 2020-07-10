@@ -3,10 +3,10 @@ package lore.compiler.phases.verification
 import lore.compiler.ast.StmtNode
 import lore.compiler.ast.visitor.StmtVisitor
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.feedback.Error
 import lore.compiler.core.{Fragment, Registry, TypeScope}
+import lore.compiler.feedback.Error
+import lore.compiler.functions.{ConstructorDefinition, FunctionDefinition, FunctionSignature}
 import lore.compiler.structures.ClassDefinition
-import lore.compiler.functions.{ConstructorDefinition, FunctionDefinition, FunctionSignature, InternalCallTarget}
 import lore.compiler.types.Type
 
 /**

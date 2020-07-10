@@ -1,13 +1,12 @@
 package lore.compiler.core
 
-import lore.compiler
 import lore.compiler.ast.Node
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.Registry.{ConstructorNotFound, ExactFunctionNotFound, MultiFunctionNotFound, TypeNotFound}
-import lore.compiler.structures._
 import lore.compiler.feedback.{Error, Position}
 import lore.compiler.functions.{ConstructorDefinition, FunctionDefinition, MultiFunctionDefinition}
-import lore.compiler.types.{ClassType, DeclaredType, DeclaredTypeHierarchy, NamedType, ProductType, Type}
+import lore.compiler.structures._
+import lore.compiler.types._
 
 import scala.collection.{MapView, mutable}
 

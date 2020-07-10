@@ -1,7 +1,6 @@
 import java.io.File
 
 import sbt._
-
 import sbtcrossproject.{CrossType, Platform}
 
 object LoreCrossType extends CrossType {

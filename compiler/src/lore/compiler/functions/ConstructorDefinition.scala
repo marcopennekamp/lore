@@ -2,9 +2,9 @@ package lore.compiler.functions
 
 import lore.compiler.ast.ExprNode
 import lore.compiler.core.TypeScope
-import lore.compiler.structures._
 import lore.compiler.feedback.Position
 import lore.compiler.functions
+import lore.compiler.structures._
 
 case class ConstructorDefinition(
   override val name: String, typeScope: TypeScope, parameters: List[ParameterDefinition],

@@ -1,4 +1,4 @@
-import { ListType, MapType, ProductType, Type} from './types.ts'
+import { ListType, MapType, ProductType, Type } from './types.ts'
 import { Kind } from './kinds.ts'
 
 // TODO: Add a property 'polymorphic' to each type that gets set when this function is first called and acts as a sort

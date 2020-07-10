@@ -1,10 +1,9 @@
 package lore.compiler.types
 
+import lore.compiler.core.Registry
 import scalaz.Monad
 import scalaz.std.list._
 import scalaz.syntax.traverse._
-
-import lore.compiler.core.Registry
 
 object Ards {
   /**

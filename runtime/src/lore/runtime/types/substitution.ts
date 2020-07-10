@@ -2,9 +2,21 @@
  * In the given type, substitute all occurrences of any given variable with its respective type value.
  */
 import { Assignments } from './fit.ts'
-import { IntersectionType, ProductType, SumType, Type } from './types.ts'
+import {
+  intersection,
+  IntersectionType,
+  list,
+  ListType,
+  map,
+  MapType,
+  product,
+  ProductType,
+  sum,
+  SumType,
+  Type,
+  TypeVariable
+} from './types.ts'
 import { Kind } from './kinds.ts'
-import { intersection, list, ListType, map, MapType, product, sum, TypeVariable} from './types.ts'
 import { TinyMap } from '../utils/TinyMap.ts'
 
 /**

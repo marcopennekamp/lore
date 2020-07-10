@@ -3,10 +3,10 @@ package lore.compiler.phases.resolution
 import lore.compiler.ast.{DeclNode, TypeDeclNode}
 import lore.compiler.core.Compilation.{C, Verification}
 import lore.compiler.core.{Compilation, Fragment, Registry, TypeScope}
-import lore.compiler.structures.ClassDefinition
 import lore.compiler.feedback.Error
 import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.phases.resolution.DeclarationResolver.{FunctionAlreadyExists, TypeAlreadyExists}
+import lore.compiler.structures.ClassDefinition
 import lore.compiler.types.Type
 
 /**

@@ -1,6 +1,6 @@
 package lore.compiler.types.test
 
-import lore.compiler.types.{AnyType, BasicType, NothingType, Type, TypeVariable}
+import lore.compiler.types._
 import org.scalatest.Assertion
 
 class SubtypingSpec extends TypeSpec {

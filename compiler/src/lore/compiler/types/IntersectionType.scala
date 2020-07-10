@@ -1,8 +1,8 @@
 package lore.compiler.types
 
-import scala.util.hashing.MurmurHash3
-
 import lore.compiler.utils.CollectionExtensions._
+
+import scala.util.hashing.MurmurHash3
 
 // TODO: The construct function ensures that an intersection type contains only unique components. Hence, it is
 //       questionable whether types needs to be a set. We would have to be careful with implementing equality
