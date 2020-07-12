@@ -4,7 +4,7 @@
  */
 
 label L
-function f(x: L): Int = () // Some implementation that accesses g and h.
+function f(x: L): Real = g(x) * h(x)
 function g(x: L): Real
 function h(x: L): Real
 
@@ -14,11 +14,11 @@ function h(x: L): Real
 // TODO: Everywhere a type is specialized with a label type, we should check at compile-time that the required
 //       functions are declared.
 class A
-function g(a: A & L): Real = ()
-function h(a: A & L): Real = ()
+function g(a: A & L): Real = 5.0
+function h(a: A & L): Real = 1.2
 
 class B
-function g(b: B & L): Real = ()
-function h(a: B & L): Real = ()
+function g(b: B & L): Real = 4.20
+function h(a: B & L): Real = 81423.17
 
 // We can then call f with A or B if they also subtype L: f(a) and f(b).

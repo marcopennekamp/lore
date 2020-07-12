@@ -6,4 +6,4 @@ class B {
 }
 
 function transform(a: A): B = B(a.value)
-function transformList(as: [A]): [B] = for (a in as) { yield transform(a) }
+function transformList(as: [A]): [B] = for (a <- as) { transform(a) }

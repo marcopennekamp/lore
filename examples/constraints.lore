@@ -75,6 +75,7 @@ entity P3 extends P2 {
 
 
 
+// Illegal: Constructor calls are cyclic.
 entity Cyclic {
   a: A
   b: B

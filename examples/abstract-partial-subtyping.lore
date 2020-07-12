@@ -4,8 +4,7 @@ label A2 extends A
 label B
 label B1 extends B
 label B2 extends B
-class E
 
-function f(a: A, b: B): E
-function f(a: A1, b: B): E = ()
-function f(a: A2, b: B): E = ()
+action f(a: A, b: B)
+action f(a: A1, b: B) { }
+action f(a: A2, b: B) { }
