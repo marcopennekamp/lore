@@ -87,7 +87,7 @@ object Lore {
     * Writes the result of the compilation to the file system.
     */
   def writeResult(output: String): Unit = {
-    Files.writeString(Path.of(s"lore-program.js"), output)
+    Files.writeString(Path.of("lore-program.js"), output)
     Runtime.getRuntime.exec("prettier --write lore-program.js")
   }
 

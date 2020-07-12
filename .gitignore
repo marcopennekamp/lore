@@ -12,6 +12,10 @@ src_managed/
 project/boot/
 project/plugins/project/
 
+# Don't include this project folder as it only saves the SBT version for the dummy root build.sbt, which is
+# only needed so that IntelliJ plays nice with the compiler subproject.
+/project
+
 # IntelliJ Idea
 .idea
 

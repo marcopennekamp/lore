@@ -17,6 +17,10 @@ class ConcatToStringTransformer extends StmtTransformer {
   //       am I overthinking this. The idea was, from the start, to make pyramid an "optional" drop-in. So this
   //       feels like one step of coupling the the compiler and pyramid together. We'll have to see.
   // TODO: Remember to adjust the name once we have introduced modules et cetera.
+  // TODO: We could forego calling toString on any expressions that result in a String, but of course we don't
+  //       have the type information yet and StmtTransformer can't yet deal with "hidden" data, so this will
+  //       have to be fixed in a larger refactoring context. Luckily, this is only a matter of performance,
+  //       not correctness.
 
   override def transform(node: ConcatenationNode)(expressions: List[ExprNode]): Compilation[ExprNode] = {
     val transformedExpressions = expressions.map {
