@@ -76,7 +76,7 @@ class ClassDefinition(
     * super type.
     */
   lazy val constructSignature: FunctionSignature = {
-    functions.FunctionSignature("construct", localMembers.map(_.asParameter), ProductType.UnitType, position)
+    functions.FunctionSignature("construct", localMembers.map(_.asParameter), tpe, position)
   }
 
   /**

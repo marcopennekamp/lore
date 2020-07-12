@@ -1,8 +1,7 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.feedback.{Error, Position}
+import lore.compiler.feedback.Error
 import lore.compiler.functions.FunctionSignature
 
 object SignatureConstraints {
@@ -17,12 +16,12 @@ object SignatureConstraints {
   private def verifyUnique(signature: FunctionSignature): Verification = {
     val errors = signature.parameters.map(_.name).groupBy(identity).flatMap {
       case (_, List(_)) => None
-      case (name, _) => Some(NonUniqueParameterName(name, signature.position))
+      case (name, _) => Some(NonUniqueParameterName(signature, name))
     }.toList
-    if (errors.isEmpty) Verification.succeed else Compilation.fail(errors: _*)
+    Verification.fromErrors(errors)
   }
 
-  case class NonUniqueParameterName(name: String, pos: Position) extends Error(pos) {
-    override def message: String = s"This function has two or more parameters named $name. Parameter names must be unique."
+  case class NonUniqueParameterName(signature: FunctionSignature, name: String) extends Error(signature.position) {
+    override def message: String = s"This function ${signature.name} has two or more parameters named $name. Parameter names must be unique."
   }
 }

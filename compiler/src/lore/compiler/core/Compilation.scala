@@ -138,7 +138,7 @@ object Compilation {
       * be successful. Otherwise, the verification fails with the given errors.
       */
     def fromErrors(errors: List[Error]): Verification = {
-      if (errors.nonEmpty) Errors(errors, List.empty) else Result((), List.empty)
+      if (errors.nonEmpty) Errors(errors, List.empty) else succeed
     }
   }
 

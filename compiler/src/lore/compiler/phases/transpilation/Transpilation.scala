@@ -3,6 +3,9 @@ package lore.compiler.phases.transpilation
 import lore.compiler.core.Compilation
 import lore.compiler.phases.transpilation.TranspiledChunk.{JsCode, JsExpr}
 
+// TODO: This API is messy and absolutely needs another refactoring pass. Maybe we could merge the notions of
+//       TranspiledChunk and Transpilation (at least in the public-facing interface).
+
 /**
   * @param statements The statements that need to be executed before the given expression is evaluated.
   * @param expression The expression that represents the result value of this transpiled chunk.

@@ -29,6 +29,11 @@ object FunctionVerification {
     }
   }
 
+  case class IllegallyTypedBody(signature: FunctionSignature, body: StmtNode) extends Error(signature.position) {
+    override def message: String = s"The function ${signature.name} should return a value of type ${signature.outputType}, but actually returns" +
+      s" a value of type ${body.inferredType}."
+  }
+
   /**
     * Infers and checks types of the given function body. Ensures that all other expression constraints hold.
     * Also ensures that the return type of the signature is sound compared to the type of the body.
@@ -56,14 +61,28 @@ object FunctionVerification {
     signature: FunctionSignature, typeScope: TypeScope, body: StmtNode,
     classDefinition: Option[ClassDefinition],
   )(implicit registry: Registry, fragment: Fragment): Verification = {
-    SignatureConstraints.verify(signature).flatMap { _ =>
-      val visitor = new FunctionVerificationVisitor(signature, typeScope, classDefinition)
-      // TODO: Ensure that the return type matches the type of the body.
-      (
-        StmtVisitor.visit(visitor)(body),
-        ReturnConstraints.verify(body),
-      ).simultaneous.verification
+    for {
+      _ <- SignatureConstraints.verify(signature)
+      _ <- {
+        val visitor = new FunctionVerificationVisitor(signature, typeScope, classDefinition)
+        (
+          StmtVisitor.visit(visitor)(body),
+          ReturnConstraints.verify(body),
+        ).simultaneous.verification
+      }
+      _ <- verifyOutputType(signature, body)
       // TODO: Assert that all nodes have been assigned a type.
+    } yield ()
+  }
+
+  /**
+   * Verifies that the function's output type is compatible with the type of the body.
+   */
+  private def verifyOutputType(signature: FunctionSignature, body: StmtNode): Verification = {
+    if (body.inferredType <= signature.outputType) {
+      Verification.succeed
+    } else {
+      Verification.fromErrors(List(IllegallyTypedBody(signature, body)))
     }
   }
 
