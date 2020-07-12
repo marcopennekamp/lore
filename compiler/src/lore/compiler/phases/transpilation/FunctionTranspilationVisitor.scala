@@ -25,7 +25,9 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
   override def visitLeaf(node: StmtNode.LeafNode): Transpilation = node match {
     case node@ExprNode.VariableNode(_) => Transpilation.expression(node.variable.transpiledName)
     case IntLiteralNode(value) => Transpilation.expression(value.toString)
+    case RealLiteralNode(value) => Transpilation.expression(value.toString)
     case StringLiteralNode(value) => Transpilation.expression(s"'$value'")
+    case BoolLiteralNode(value) => Transpilation.expression(value.toString)
     case UnitNode => Transpilation.expression(s"${LoreApi.varTuple}.unit")
     case _ => default(node)
   }
@@ -35,6 +37,10 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
       val modifier = if (isMutable) "let" else "const"
       val code = s"$modifier ${node.variable.transpiledName} = ${argument.expression.get};"
       Transpilation.statements(argument.statements, code)
+    case PropertyAccessNode(_, name) =>
+      // TODO: This is only a naive implementation which may be temporary. We will ultimately have to ensure that
+      //       this works in all cases and perhaps complicate this.
+      Compilation.succeed(argument.mapExpression(instance => s"$instance.$name"))
     case NegationNode(_) => Compilation.succeed(argument.mapExpression(e => s"-$e"))
     case _ => default(node)
   }

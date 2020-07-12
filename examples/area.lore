@@ -1,6 +1,18 @@
-label BoundingBox
-label Circle
-label Rectangle
+class BoundingBox {
+  x: Real
+  xEnd: Real
+  y: Real
+  yEnd: Real
+}
 
-function area(x: Circle): Real = ()
-function area(x: BoundingBox): Real = ()
+class Circle {
+  radius: Real
+}
+
+class Rectangle
+
+function area(box: BoundingBox): Real = (box.xEnd - box.x) * (box.yEnd - box.y)
+function area(circle: Circle): Real = circle.radius * circle.radius * pi()
+
+// Yeah, I know. We don't have global constants yet.
+function pi(): Real = 3.14159265359

@@ -103,7 +103,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
       } else inputType
       val varType = s"${nameProvider.createName()}"
       val chunk = RuntimeTypeTranspiler.transpile(simplifiedInputType)
-      printer.println(chunk.statements)
+      if (chunk.statements.nonEmpty) printer.println(chunk.statements)
       printer.println(s"const $varType = ${chunk.expression.get}")
       inputTypeJsNames.put(inputType, varType)
     }

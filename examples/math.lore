@@ -32,7 +32,7 @@ action testDouble() {
   println('Doubled list: $result')
 }
 
-function combinations(list: [Real]): [Real] = {
+function combinations(list: [Real]): [(Real, Real)] = {
   for (a <- list, b <- list) {
     (a, b)
   }
