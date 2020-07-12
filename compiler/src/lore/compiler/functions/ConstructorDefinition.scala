@@ -14,5 +14,5 @@ case class ConstructorDefinition(
   def associateWith(classDefinition: ClassDefinition): Unit = {
     this.classDefinition = classDefinition
   }
-  override lazy val signature: FunctionSignature = functions.FunctionSignature(name, parameters, classDefinition.tpe)
+  override lazy val signature: FunctionSignature = functions.FunctionSignature(name, parameters, classDefinition.tpe, position)
 }

@@ -16,7 +16,7 @@ class FunctionDefinition(
   val body: Option[ExprNode], override val position: Position,
 ) extends Positioned {
   val isAbstract: Boolean = body.isEmpty
-  lazy val signature: FunctionSignature = functions.FunctionSignature(name, parameters, outputType)
+  lazy val signature: FunctionSignature = functions.FunctionSignature(name, parameters, outputType, position)
   override def toString = s"${if (isAbstract) "abstract " else ""}$name(${parameters.mkString(", ")})"
 
   /**

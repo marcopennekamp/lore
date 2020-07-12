@@ -56,14 +56,15 @@ object FunctionVerification {
     signature: FunctionSignature, typeScope: TypeScope, body: StmtNode,
     classDefinition: Option[ClassDefinition],
   )(implicit registry: Registry, fragment: Fragment): Verification = {
-    // TODO: Verify that the signature doesn't have two parameters with the same name.
-    val visitor = new FunctionVerificationVisitor(signature, typeScope, classDefinition)
-    // TODO: Ensure that the return type matches the type of the body.
-    (
-      StmtVisitor.visit(visitor)(body),
-      ReturnConstraints.verify(body),
-    ).simultaneous.verification
-    // TODO: Assert that all nodes have been assigned a type.
+    SignatureConstraints.verify(signature).flatMap { _ =>
+      val visitor = new FunctionVerificationVisitor(signature, typeScope, classDefinition)
+      // TODO: Ensure that the return type matches the type of the body.
+      (
+        StmtVisitor.visit(visitor)(body),
+        ReturnConstraints.verify(body),
+      ).simultaneous.verification
+      // TODO: Assert that all nodes have been assigned a type.
+    }
   }
 
 }

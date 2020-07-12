@@ -1,11 +1,12 @@
 package lore.compiler.functions
 
 import lore.compiler.core.Compilation
+import lore.compiler.feedback.{Position, Positioned}
 import lore.compiler.types._
 
 import scala.util.hashing.MurmurHash3
 
-case class FunctionSignature(name: String, parameters: List[ParameterDefinition], outputType: Type) {
+case class FunctionSignature(name: String, parameters: List[ParameterDefinition], outputType: Type, override val position: Position) extends Positioned {
   val inputType: ProductType = ProductType(parameters.map(_.tpe))
   val arity: Int = parameters.size
   override def toString: String = s"$name$inputType: $outputType"
@@ -23,7 +24,7 @@ case class FunctionSignature(name: String, parameters: List[ParameterDefinition]
       new ParameterDefinition(parameter.name, () => Compilation.succeed(substitutedType), parameter.position)
     }
     val substitutedOutputType = Substitution.substitute(assignments, outputType)
-    FunctionSignature(name, substitutedParameters, substitutedOutputType)
+    FunctionSignature(name, substitutedParameters, substitutedOutputType, position)
   }
 
   /**
