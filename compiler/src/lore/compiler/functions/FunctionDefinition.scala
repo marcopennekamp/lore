@@ -3,7 +3,7 @@ package lore.compiler.functions
 import lore.compiler.ast.ExprNode
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.{Compilation, TypeScope}
-import lore.compiler.feedback.{Error, Position, Positioned}
+import lore.compiler.feedback.{Error, FragmentPosition, Positioned}
 import lore.compiler.functions
 import lore.compiler.functions.FunctionDefinition.CannotInstantiateFunction
 import lore.compiler.types.{Fit, Type}
@@ -13,7 +13,7 @@ import lore.compiler.types.{Fit, Type}
   */
 class FunctionDefinition(
   val name: String, val typeScope: TypeScope, val parameters: List[ParameterDefinition], outputType: Type,
-  val body: Option[ExprNode], override val position: Position,
+  val body: Option[ExprNode], override val position: FragmentPosition,
 ) extends Positioned {
   val isAbstract: Boolean = body.isEmpty
   lazy val signature: FunctionSignature = functions.FunctionSignature(name, parameters, outputType, position)

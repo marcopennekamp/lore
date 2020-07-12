@@ -4,7 +4,7 @@ import lore.compiler.ast.ExprNode.VariableNode
 import lore.compiler.ast.TopLevelExprNode.ConstructorCallNode
 import lore.compiler.ast.{ExprNode, TopLevelExprNode}
 import lore.compiler.core.TypeVariableScope
-import lore.compiler.feedback.Position
+import lore.compiler.feedback.{FragmentPosition, Position}
 import lore.compiler.functions
 import lore.compiler.functions.{ConstructorDefinition, FunctionSignature}
 import lore.compiler.types.{ClassType, ComponentType, ProductType, Type}
@@ -22,7 +22,7 @@ class ClassDefinition(
   val isEntity: Boolean,
   val localMembers: List[MemberDefinition[Type]],
   definedConstructors: List[ConstructorDefinition],
-  override val position: Position,
+  override val position: FragmentPosition,
 ) extends DeclaredTypeDefinition {
   definedConstructors.foreach(_.associateWith(this))
 

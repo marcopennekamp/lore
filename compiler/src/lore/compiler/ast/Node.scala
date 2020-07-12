@@ -2,7 +2,7 @@ package lore.compiler.ast
 
 import lore.compiler.ast.Node.Index
 import lore.compiler.core.Fragment
-import lore.compiler.feedback.Position
+import lore.compiler.feedback.{FragmentPosition, Position}
 
 trait Node {
   // TODO: We could turn nodes into an algebraic data type where we substitute node children with arbitrary
@@ -18,7 +18,7 @@ trait Node {
   /**
     * Creates a fragment position from the node's index and the given fragment.
     */
-  def position(implicit fragment: Fragment): Position = Position(fragment, index)
+  def position(implicit fragment: Fragment): FragmentPosition = new FragmentPosition(fragment, index)
 }
 
 object Node {

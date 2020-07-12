@@ -156,19 +156,23 @@ object Compilation {
       // and errors independently, then decide whether the combined compilation is a list of errors or results.
       // The decision is very simple: If the list of errors is not empty, there is at least one compilation that has
       // failed, and thus the whole compilation has failed with the given errors.
-      var results = List.empty[A]
-      var errors = List.empty[Error]
-      var infos = List.empty[InfoFeedback]
+      var results: List[A] = Nil
+      var errors: List[Error] = Nil
+      var infos: List[InfoFeedback] = Nil
+      var hasFailed = false
       // We have to reverse the list first since prepending to results will effectively swap the direction of the list.
       compilations.reverse.foreach {
         case Result(value, infos2) =>
           results = value :: results
           infos = infos2 ::: infos
         case Errors(errors2, infos2) =>
+          hasFailed = true
           errors = errors2 ::: errors
           infos = infos2 ::: infos
       }
-      if (errors.nonEmpty) Errors(errors, infos) else Result(results, infos)
+      // There is a special case where we don't have any errors but the compilation still failed. Hence, we can't rely
+      // on whether the error list is empty or not and have to check whether there is any failure.
+      if (hasFailed) Errors(errors, infos) else Result(results, infos)
     }
   }
 
