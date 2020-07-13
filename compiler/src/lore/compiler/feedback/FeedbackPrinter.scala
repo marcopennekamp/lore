@@ -16,7 +16,7 @@ object FeedbackPrinter {
     sorted.map { feedback =>
       // TODO: Add a feature toggle to switch stack traces in reporting on and off.
       val showStackTraces = false
-      val message = s"${feedback.consoleTag} ${feedback.position.fragmentName} (${feedback.position.prettyIndex}): ${feedback.message}"
+      val message = s"${feedback.consoleTag} ${feedback.position}: ${feedback.message}"
       if (showStackTraces) {
         s"""$message
            |${feedback.stackTrace.mkString("\n")}""".stripMargin

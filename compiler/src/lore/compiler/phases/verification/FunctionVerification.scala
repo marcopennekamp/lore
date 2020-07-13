@@ -1,7 +1,7 @@
 package lore.compiler.phases.verification
 
 import lore.compiler.ast.StmtNode
-import lore.compiler.ast.visitor.StmtVisitor
+import lore.compiler.ast.visitor.{StmtVisitor, VerificationStmtVisitor}
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Fragment, Registry, TypeScope}
 import lore.compiler.feedback.Error
@@ -71,7 +71,7 @@ object FunctionVerification {
         ).simultaneous.verification
       }
       _ <- verifyOutputType(signature, body)
-      // TODO: Assert that all nodes have been assigned a type.
+      _ <- assertTypesAssigned(body)
     } yield ()
   }
 
@@ -86,4 +86,22 @@ object FunctionVerification {
     }
   }
 
+  /**
+   * Asserts that every node in the body has been assigned a type. If this is not the case, we have a compiler bug.
+   */
+  private def assertTypesAssigned(body: StmtNode)(implicit fragment: Fragment): Verification = {
+    StmtVisitor.visit(new VerificationStmtVisitor {
+      override def verify(node: StmtNode): Verification = {
+        try {
+          node.inferredType
+          Verification.succeed
+        } catch {
+          // TODO: Change to CompilationException.
+          case _: RuntimeException => throw new RuntimeException(
+            s"The node $node at ${node.position} does not have an inferred type assigned to itself. This is a compiler bug!"
+          )
+        }
+      }
+    })(body)
+  }
 }

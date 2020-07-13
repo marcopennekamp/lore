@@ -22,6 +22,11 @@ class Position(val fragmentName: String, val index: Index, val prettyIndex: Stri
     // This is the most convenient way to access line numbers, as far as I can see.
     Integer.parseInt(prettyIndex.split(":").head)
   }
+
+  /**
+   * A complete string representation of this position.
+   */
+  override def toString: String = s"$fragmentName ($prettyIndex)"
 }
 
 class FragmentPosition(val fragment: Fragment, index: Index) extends Position(fragment.name, index, fragment.input.prettyIndex(index))
