@@ -1,6 +1,6 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.core.Compilation
+import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.core.Compilation.C
 import lore.compiler.feedback._
 import lore.compiler.types._
@@ -90,7 +90,7 @@ object MemberExplorer {
                 case None => Compilation.fail(AmbiguousTypeMember(name, tpe, position))
                 case Some(member) => Compilation.succeed(member)
               }
-            case _ => throw new RuntimeException("This case should never be reached.")
+            case _ => throw CompilationException("This case should never be reached.")
           }.toList.simultaneous
         }
     }

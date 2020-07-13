@@ -1,6 +1,6 @@
 package lore.compiler.types
 
-import lore.compiler.core.Registry
+import lore.compiler.core.{CompilationException, Registry}
 import lore.compiler.types.TypeExtensions._
 
 object LeastUpperBound {
@@ -112,7 +112,7 @@ object LeastUpperBound {
             // If we have an intersection type as the LCS, there are multiple LCSs. However, only one of them can
             // be a class type. So we filter for that one.
             val classTypes = types.filter(_.isInstanceOf[ClassType])
-            if (classTypes.size != 1) throw new RuntimeException("There can (and must) only be one! This is a compiler bug.")
+            if (classTypes.size != 1) throw CompilationException("There can (and must) only be one!")
             classTypes.head
           case classType: ClassType => ComponentType(classType)
           case t => t.fallbackIfAny

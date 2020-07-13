@@ -1,6 +1,6 @@
 package lore.compiler.phases.transpilation
 
-import lore.compiler.core.Compilation
+import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.phases.transpilation.TranspiledChunk.{JsCode, JsExpr}
 
 // TODO: This API is messy and absolutely needs another refactoring pass. Maybe we could merge the notions of
@@ -65,7 +65,7 @@ object TranspiledChunk {
     */
   def combined(chunks: List[TranspiledChunk])(transform: List[JsExpr] => JsExpr): TranspiledChunk = {
     val statements = chunks.map(_.statements).mkString("\n")
-    val expressions = chunks.map(_.expression.getOrElse(throw new RuntimeException("Compiler bug! This must be an expression.")))
+    val expressions = chunks.map(_.expression.getOrElse(throw CompilationException("This must be an expression.")))
     TranspiledChunk(statements, Some(transform(expressions)))
   }
 

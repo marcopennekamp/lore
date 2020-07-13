@@ -1,5 +1,6 @@
 package lore.compiler.types
 
+import lore.compiler.core.CompilationException
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
 
@@ -59,7 +60,7 @@ class DeclaredTypeHierarchy {
   def getDirectSubtypes(tpe: Type): Set[DeclaredType] = {
     assertCanContain(tpe)
     if (!subtypingGraph.contains(tpe)) {
-      throw new RuntimeException(s"The declared type hierarchy doesn't contain the type $tpe. This is a compiler bug.")
+      throw CompilationException(s"The declared type hierarchy doesn't contain the type $tpe.")
     }
 
     // Otherwise, we follow all the outbound edges and aggregate the declared types into a set.
@@ -67,7 +68,7 @@ class DeclaredTypeHierarchy {
       case subtype: DeclaredType => subtype
       case subtype =>
         // Since only the root may be Any, any possible direct subtype should be a declared type.
-        throw new RuntimeException(s"The type $subtype should be a declared type, as it's a subtype in a type hierarchy.")
+        throw CompilationException(s"The type $subtype should be a declared type, as it's a subtype in a type hierarchy.")
     }
   }
 

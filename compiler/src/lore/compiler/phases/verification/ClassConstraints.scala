@@ -1,7 +1,7 @@
 package lore.compiler.phases.verification
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, Registry}
+import lore.compiler.core.{Compilation, CompilationException, Registry}
 import lore.compiler.feedback.Error
 import lore.compiler.structures.{ClassDefinition, ComponentDefinition, MemberDefinition}
 import lore.compiler.types.{AnyType, ClassType, Type}
@@ -143,13 +143,13 @@ object ClassConstraints {
   }
 
   case class OverriddenComponentDoesNotExist(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {
-    val overriddenName: String = component.overrides.getOrElse(throw new RuntimeException("Compilation bug: component.overrides should exist."))
+    val overriddenName: String = component.overrides.getOrElse(throw CompilationException("component.overrides should exist."))
     override def message: String = s"The component ${component.name} is supposed to override the component $overriddenName, " +
       s"but $overriddenName is not a supertype component or has already been overridden."
   }
 
   case class ComponentMustSubtypeOverriddenComponent(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {
-    val overriddenName: String = component.overrides.getOrElse(throw new RuntimeException("Compilation bug: component.overrides should exist."))
+    val overriddenName: String = component.overrides.getOrElse(throw CompilationException("component.overrides should exist."))
     override def message: String = s"The component ${component.name} is trying to override the component $overriddenName, " +
       s"but ${component.name} is not a subtype of $overriddenName."
   }

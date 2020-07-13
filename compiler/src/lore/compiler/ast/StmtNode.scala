@@ -1,6 +1,7 @@
 package lore.compiler.ast
 
 import lore.compiler.ast.StmtNode._
+import lore.compiler.core.CompilationException
 import lore.compiler.functions.{CallTarget, DynamicCallTarget, InternalCallTarget}
 import lore.compiler.phases.verification.{LocalVariable, VirtualMember}
 import lore.compiler.types.{ProductType, Type}
@@ -17,14 +18,14 @@ sealed trait StmtNode extends Node {
 
   def setInferredType(tpe: Type): Unit = {
     if (_inferredType.exists(_ != tpe)) {
-      throw new RuntimeException(s"An inferred type for the node $this has already been set. Now a DIFFERENT type has been inferred. This is a compiler bug!")
+      throw CompilationException(s"An inferred type for the node $this has already been set. Now a DIFFERENT type has been inferred.")
     }
     _inferredType = Some(tpe)
   }
 
   def inferredType: Type = {
     _inferredType.getOrElse(
-      throw new RuntimeException(s"The inferred type for the node $this should have been set by now. This is a compiler bug!")
+      throw CompilationException(s"The inferred type for the node $this should have been set by now.")
     )
   }
 }
@@ -69,7 +70,7 @@ sealed trait HavingLocalVariable {
 
   def setVariable(variable: LocalVariable): Unit = {
     if (_variable.exists(_ != variable)) {
-      throw new RuntimeException(s"Variable node $this was assigned two different variables: ${_variable.get}, $variable. This is a compiler bug!")
+      throw CompilationException(s"Variable node $this was assigned two different variables: ${_variable.get}, $variable.")
     }
     _variable = Some(variable)
   }
@@ -79,7 +80,7 @@ sealed trait HavingLocalVariable {
     */
   def variable: LocalVariable = {
     _variable.getOrElse(
-      throw new RuntimeException(s"The variable for the node $this should have been set by now. This is a compiler bug!")
+      throw CompilationException(s"The variable for the node $this should have been set by now.")
     )
   }
 }
@@ -96,8 +97,6 @@ object TopLevelExprNode {
     * we parse it as a top-level expression to avoid ambiguities with function calls.
     */
   sealed trait ContinuationNode extends TopLevelExprNode
-  // TODO: Maybe rename to ThisCallNode, as this node doesn't refer to instantiation but rather calling another
-  //       constructor from a constructor.
   case class ConstructorCallNode(
     name: Option[String], arguments: List[ExprNode]
   ) extends XaryNode(arguments) with ContinuationNode with CallNode[InternalCallTarget]

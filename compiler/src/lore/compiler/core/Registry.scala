@@ -27,11 +27,7 @@ class Registry {
     */
   def registerType(name: String, tpe: NamedType): Unit = {
     if (types.contains(name)) {
-      // We throw a runtime exception instead of returning a compilation error, because at this point, if we register
-      // a type that is already registered, it is a COMPILER BUG and not a user error!
-      throw new RuntimeException(
-        s"The type $name has already been registered. This is likely a compiler bug."
-      )
+      throw CompilationException(s"The type $name has already been registered.")
     }
     types.put(name, tpe)
 
@@ -107,10 +103,8 @@ class Registry {
     */
   def registerMultiFunction(multiFunction: MultiFunctionDefinition): Unit = {
     if (multiFunctions.contains(multiFunction.name)) {
-      // We throw a runtime exception instead of returning a compilation error, because it is always a compiler bug
-      // if a multi-function with the same name is registered twice.
-      throw new RuntimeException(
-        s"The multi-function ${multiFunction.name} has already been registered. This is likely a compiler bug."
+      throw new CompilationException(
+        s"The multi-function ${multiFunction.name} has already been registered."
       )
     }
     multiFunctions.put(multiFunction.name, multiFunction)

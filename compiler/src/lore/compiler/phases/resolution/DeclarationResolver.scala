@@ -2,7 +2,7 @@ package lore.compiler.phases.resolution
 
 import lore.compiler.ast.{DeclNode, TypeDeclNode}
 import lore.compiler.core.Compilation.{C, Verification}
-import lore.compiler.core.{Compilation, Fragment, Registry, TypeScope}
+import lore.compiler.core.{Compilation, CompilationException, Fragment, Registry, TypeScope}
 import lore.compiler.feedback.Error
 import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.phases.resolution.DeclarationResolver.{FunctionAlreadyExists, TypeAlreadyExists}
@@ -110,7 +110,7 @@ class DeclarationResolver {
       implicit val FragmentNode(node, fragment) = typeDeclarations(typeName)
       node match {
         case _: TypeDeclNode.AliasNode =>
-          throw new RuntimeException("At this point in the compilation step, an alias type should not be resolved.")
+          throw CompilationException("At this point in the compilation step, an alias type should not be resolved.")
         case node: TypeDeclNode.DeclaredNode =>
           DeclaredTypeResolver.resolveDeclaredNode(node).map(registry.registerTypeDefinition)
       }

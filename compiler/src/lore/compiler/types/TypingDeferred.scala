@@ -1,6 +1,7 @@
 package lore.compiler.types
 
 import lore.compiler.core.Compilation.{C, Verification}
+import lore.compiler.core.CompilationException
 
 /**
   * As noted in the compiler specification, certain types cannot be resolved immediately, as they might reference
@@ -30,6 +31,6 @@ trait TypingDeferred[+T <: Type] {
     * The resolved and verified type.
     */
   lazy val tpe: T = resolvedType.getOrElse(
-    throw new RuntimeException("A deferred type could not be resolved. This should have been verified in DeclarationResolver.")
+    throw CompilationException("A deferred type could not be resolved. This should have been verified in DeclarationResolver.")
   )
 }

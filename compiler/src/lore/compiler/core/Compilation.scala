@@ -6,8 +6,6 @@ import shapeless.ops.hlist.{RightFolder, Tupler}
 import shapeless.syntax.std.tuple._
 import shapeless.{Generic, HList, HNil, LUBConstraint, Poly2}
 
-// TODO: Performance-wise, it might be worth to use doubly-linked lists here, if performance ever becomes a problem.
-
 /**
   * Represents a compilation to a value of type A. Either results in a Result[A] or an Errors object.
   *

@@ -1,6 +1,6 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.core.Compilation
+import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.phases.resolution.DeclarationResolver.InheritanceCycle
 import scalax.collection.GraphEdge.DiEdge
@@ -39,7 +39,7 @@ class DependencyGraph(owner: DeclarationResolver) {
 
       // At this point, we know our dependency graph is a directed, acyclic graph. We can start a topological sort.
       order = graph.topologicalSort.fold(
-        _ => throw new RuntimeException(
+        _ => throw CompilationException(
           "Topological sort on the dependency graph found a cycle, even though we verified earlier that there was no such cycle."
         ),
         order => order.toList.map(_.value)
@@ -64,7 +64,7 @@ class DependencyGraph(owner: DeclarationResolver) {
         // from Any.
         for (edge <- node.edges) {
           if (!(edge.from == node)) {
-            throw new RuntimeException("An undeclared (and merely named) type should not depend on any types in the dependency graph.")
+            throw CompilationException("An undeclared type should not depend on any types in the dependency graph.")
           }
           val dependant = edge.to
           add(dependant, "Any")
@@ -88,7 +88,7 @@ class DependencyGraph(owner: DeclarationResolver) {
       return Compilation.fail(
         cycles.map { cycle =>
           val occurrence = owner.getTypeDeclaration(cycle.startNode).getOrElse(
-            throw new RuntimeException("Type declarations didn't contain a declaration that was part of the dependency graph."),
+            throw CompilationException("Type declarations didn't contain a declaration that was part of the dependency graph."),
           )
           InheritanceCycle(cycle.nodes.map(_.value).toList, occurrence)
         }: _*

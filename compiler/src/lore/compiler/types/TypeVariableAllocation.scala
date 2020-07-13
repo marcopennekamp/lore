@@ -1,5 +1,7 @@
 package lore.compiler.types
 
+import lore.compiler.core.CompilationException
+
 import scala.collection.mutable
 
 /**
@@ -23,14 +25,14 @@ class TypeVariableAllocation() {
     * can't return a single assigned type for each type variable.
     */
   lazy val assignments: TypeVariable.Assignments = {
-    if (!isConsistent) throw new RuntimeException("The allocation must be consistent for assignments to be defined.")
+    if (!isConsistent) throw CompilationException("The allocation must be consistent for assignments to be defined.")
     currentAssignments()
   }
 
   private def currentAssignments(): TypeVariable.Assignments = {
     allocation.view.mapValues {
       case representative :: _ => representative
-      case _ => throw new RuntimeException("The allocation is invalid and thus doesn't define any consistent assignments.")
+      case _ => throw CompilationException("The allocation is invalid and thus doesn't define any consistent assignments.")
     }.toMap
   }
 
@@ -81,7 +83,7 @@ object TypeVariableAllocation {
 
   private def assign(t1: Type, t2: Type)(implicit allocation: TypeVariableAllocation): Unit = {
     def unsupportedSubstitution: Nothing = {
-      throw new RuntimeException("Intersection and sum type type variable allocations are not yet supported.")
+      throw CompilationException("Intersection and sum type type variable allocations are not yet supported.")
     }
 
     (t1, t2) match {

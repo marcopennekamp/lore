@@ -3,7 +3,7 @@ package lore.compiler.phases.verification
 import lore.compiler.ast.StmtNode
 import lore.compiler.ast.visitor.{StmtVisitor, VerificationStmtVisitor}
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Fragment, Registry, TypeScope}
+import lore.compiler.core.{CompilationException, Fragment, Registry, TypeScope}
 import lore.compiler.feedback.Error
 import lore.compiler.functions.{ConstructorDefinition, FunctionDefinition, FunctionSignature}
 import lore.compiler.structures.ClassDefinition
@@ -97,8 +97,8 @@ object FunctionVerification {
           Verification.succeed
         } catch {
           // TODO: Change to CompilationException.
-          case _: RuntimeException => throw new RuntimeException(
-            s"The node $node at ${node.position} does not have an inferred type assigned to itself. This is a compiler bug!"
+          case _: CompilationException => throw CompilationException(
+            s"The node $node at ${node.position} does not have an inferred type assigned to itself."
           )
         }
       }

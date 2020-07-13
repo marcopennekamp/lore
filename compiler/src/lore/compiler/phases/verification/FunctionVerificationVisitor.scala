@@ -4,7 +4,7 @@ import lore.compiler.ast.ExprNode.AddressNode
 import lore.compiler.ast.visitor.VerificationStmtVisitor
 import lore.compiler.ast.{CallNode, ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, Fragment, Registry, TypeScope}
+import lore.compiler.core.{Compilation, CompilationException, Fragment, Registry, TypeScope}
 import lore.compiler.feedback.{Error, Position}
 import lore.compiler.functions._
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
@@ -193,7 +193,7 @@ private[verification] class FunctionVerificationVisitor(
       val (tpe, isMutable) = address match {
         case variableNode: VariableNode => (variableNode.inferredType, variableNode.variable.isMutable)
         case accessNode: PropertyAccessNode => (accessNode.inferredType, accessNode.member.isMutable)
-        case _ => throw new RuntimeException("This case should not be reached.")
+        case _ => throw CompilationException("This case should not be reached.")
       }
       (
         // Ensure that the value has the right type.
