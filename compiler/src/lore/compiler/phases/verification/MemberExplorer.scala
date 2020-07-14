@@ -5,24 +5,26 @@ import lore.compiler.core.Compilation.C
 import lore.compiler.feedback._
 import lore.compiler.types._
 
+import scala.collection.immutable.HashMap
+
 /**
   * For any given type, returns a list of members that can be accessed through the type. This is trivial for
   * class types, but quickly becomes interesting when intersection types are considered.
   */
 object MemberExplorer {
-  // TODO: Implement the default naming scheme described in the specification.
-  // TODO: Implement some form of caching! We can cache HARD here. Like, it's really not effective to calculate
-  //       the full member list every time just to access a single member.
   // TODO: Unit-test this class.
 
   // TODO: We need to consider ownership restrictions here! If a component is owned by any type A, we must consider
   //       members of that type A. (PRIORITY!)
 
+  type MemberMap = Map[String, VirtualMember]
+  private var cache = HashMap.empty[Type, MemberMap]
+
   /**
     * Finds a virtual member with the given name within the given type.
     */
-  def find(name: String, tpe: Type, position: Position): C[VirtualMember] = {
-    members(tpe, position).flatMap { members =>
+  def find(name: String, tpe: Type)(implicit position: Position): C[VirtualMember] = {
+    members(tpe).flatMap { members =>
       members.get(name) match {
         case None => Compilation.fail(MemberNotFound(name, tpe, position))
         case Some(member) => Compilation.succeed(member)
@@ -32,13 +34,21 @@ object MemberExplorer {
 
   /**
     * Return all virtual members associated with this type. Any ambiguity errors are attached the given position,
-    * which should be the point in the code where the member is accessed.
+    * which should be the point in the code where the member is accessed. The result of this function is cached so
+    * that we don't have to recompute the member map the next time it is accessed.
     */
-  def members(tpe: Type, position: Position): C[Map[String, VirtualMember]] = {
-    memberList(tpe, position).map { list => list.map(vm => (vm.name, vm)).toMap }
+  def members(tpe: Type)(implicit position: Position): C[MemberMap] = {
+    cache.get(tpe) match {
+      case None =>
+        membersOf(tpe).map(list => list.map(vm => (vm.name, vm)).toMap).map { map =>
+          cache = cache + (tpe -> map)
+          map
+        }
+      case Some(map) => Compilation.succeed(map)
+    }
   }
 
-  private def memberList(tpe: Type, position: Position): C[List[VirtualMember]] = {
+  private def membersOf(tpe: Type)(implicit position: Position): C[List[VirtualMember]] = {
     tpe match {
       // Base cases (no recursion).
       case AnyType | _: BasicType | _: LabelType =>
@@ -73,8 +83,8 @@ object MemberExplorer {
         // up another problem: Members become part of a global namespace. This is similar to an issue in languages
         // like Java where functions defined in an interface are part of an implicit global namespace (just imagine
         // two 'destroy' functions being declared in two separate interfaces).
-        // TODO: Consider if we can solve the "global namespace" problem in a better way.
-        val allMembers = types.toList.map { tpe => MemberExplorer.memberList(tpe, position) }.simultaneous.map(_.flatten)
+        // TODO: Can we solve the "global namespace" problem in a better way?
+        val allMembers = types.toList.map { tpe => MemberExplorer.membersOf(tpe) }.simultaneous.map(_.flatten)
         allMembers.flatMap { members =>
           // Let's look at the virtual members of the type grouped by their names.
           members.groupBy(_.name).map {
@@ -85,7 +95,6 @@ object MemberExplorer {
               // If we have multiple members with different types, their types must be compatible in some way. That is
               // we must look for a member whose type is a supertype of all other member types. If no such type exists,
               // we have a true ambiguity.
-              // TODO: If this ever leads to performance problems, consider a smarter algorithm.
               members.find(m1 => members.forall(m2 => m2.tpe <= m1.tpe)) match {
                 case None => Compilation.fail(AmbiguousTypeMember(name, tpe, position))
                 case Some(member) => Compilation.succeed(member)

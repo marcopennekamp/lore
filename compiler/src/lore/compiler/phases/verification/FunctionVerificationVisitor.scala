@@ -161,7 +161,8 @@ private[verification] class FunctionVerificationVisitor(
         node.typed(variable.tpe)
       }
     case node@PropertyAccessNode(instance, name) =>
-      MemberExplorer.find(name, instance.inferredType, node.position).flatMap { member =>
+      implicit val position: Position = node.position
+      MemberExplorer.find(name, instance.inferredType).flatMap { member =>
         node.member = member
         node.typed(member.tpe)
       }
