@@ -1,5 +1,5 @@
 /**
- * This file contains definitions for Least Upper Bound tests.
+ * This file contains definitions for Least Upper Bound and Subtyping/Fit tests.
  */
 
 abstract class Animal

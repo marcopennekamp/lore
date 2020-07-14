@@ -1,6 +1,4 @@
-// Tests that return constraints are kept by the compiler.
-// TODO: Figure out how we can automate these tests...
-
+// Illegal: Impossible return.
 function impossibleReturn(): Int = {
   if ({ return 0 }) return 5
 }
@@ -9,6 +7,7 @@ function validReturn(): Int = {
   if (1 == 2) return 5 else return 10
 }
 
+// Illegal: Dead code.
 function deadCode(): Int = {
   if (1 == 2) return 5 else return 10
   const x = 5 + 5

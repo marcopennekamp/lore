@@ -23,11 +23,11 @@ object ConstructorConstraints {
     ).simultaneous.verification
   }
 
-  case class ConstructorMustEndInContinuation(definition: ClassDefinition, constructor: ConstructorDefinition) extends Error(constructor) {
+  case class ContinuationRequired(definition: ClassDefinition, constructor: ConstructorDefinition) extends Error(constructor) {
     override def message = s"The constructor ${constructor.name} of the class ${definition.name} should end in a continuation."
   }
 
-  case class ContinuationCallsAreCyclic(definition: ClassDefinition) extends Error(definition) {
+  case class CyclicContinuations(definition: ClassDefinition) extends Error(definition) {
     override def message = s"Constructor calls within the class ${definition.name} are cyclic."
   }
 
@@ -48,7 +48,7 @@ object ConstructorConstraints {
     val correctPlacement = definition.constructors.map { constructor =>
       val statements = constructor.body.statements
       val endsInContinuation = if (!statements.lastOption.exists(_.isInstanceOf[TopLevelExprNode.ContinuationNode])) {
-        Compilation.fail(ConstructorMustEndInContinuation(definition, constructor))
+        Compilation.fail(ContinuationRequired(definition, constructor))
       } else Verification.succeed
       // Visit all the other nodes except the last one (which should be a continuation) and check that they ARE NOT
       // a continuation.
@@ -79,7 +79,7 @@ object ConstructorConstraints {
 
       // Now we first verify that the flow graph is acyclic.
       val isCyclic = if (flowGraph.isCyclic) {
-        Compilation.fail(ContinuationCallsAreCyclic(definition))
+        Compilation.fail(CyclicContinuations(definition))
       } else Verification.succeed
 
       // And then we can verify that every call ends in a construct continuation. This may be covered by ensuring

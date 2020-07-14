@@ -1,9 +1,3 @@
-/**
- * This lore file will result in a lot of errors, as we attempt to violate all the class constraints.
- */
-
-// TODO: Write a test which checks that all the expected errors occur in the right places.
-
 class A
 class B
 
@@ -16,8 +10,6 @@ entity E {
   component B
   // Illegal: E may not own C1 since it doesn't have a component A.
   component C1
-  // Illegal: E may not own C1 and C2 at the same time, since they both share a superclass (trivially C1).
-  component C2
 }
 
 // Illegal: X may not extend E as X is only a class and E is an entity.
@@ -52,8 +44,8 @@ entity O2 extends O {
   component H2 overrides I
 }
 
+// Illegal: H and H2 share a superclass!
 entity O3 {
-  // Illegal: H and H2 share a superclass!
   component H
   component H2
 }
@@ -71,24 +63,4 @@ entity P2 extends P {
 entity P3 extends P2 {
   // Illegal: Component G has already been overridden!
   component H2 overrides G
-}
-
-
-
-// Illegal: Constructor calls are cyclic.
-entity Cyclic {
-  a: A
-  b: B
-
-  foo(a: A) {
-    this.bar(a)
-  }
-
-  bar(a: A) {
-    this.foo(a)
-  }
-
-  baz(a: A) {
-    this(a, B())
-  }
 }

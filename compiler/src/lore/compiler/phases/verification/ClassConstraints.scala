@@ -92,11 +92,9 @@ object ClassConstraints {
     val superMemberNames = superMembers.map(_.name)
     definition.localMembers.map { member =>
       (
-
         if (superMemberNames.contains(member.name)) {
           Compilation.fail(MemberAlreadyExistsInSuperclass(definition, member))
         } else Verification.succeed,
-
         if (definition.localMembers.filterNot(_ == member).map(_.name).contains(member.name)) {
           Compilation.fail(MemberDuplicateDeclaration(definition, member))
         } else Verification.succeed,
