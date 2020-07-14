@@ -6,6 +6,11 @@ import lore.compiler.functions.ParameterDefinition
 import lore.compiler.phases.verification.VirtualMember
 import lore.compiler.types.{ClassType, ComponentType, Type, TypingDeferred}
 
+// TODO: "mutable" should actually be "writeable", since immutability implies that the whole data structure within
+//       that member is unchangeable, while we are actually just gating the top-level write access to the member.
+//       This is a subtle difference, but it should be honored. Perhaps we can later introduce a "deep" kind of
+//       immutability which doesn't just make a member readonly, but actually applies to the whole data structure.
+
 /**
   * A data type member, that is, either a property or a component.
   */
