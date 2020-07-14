@@ -96,7 +96,6 @@ object FunctionVerification {
           node.inferredType
           Verification.succeed
         } catch {
-          // TODO: Change to CompilationException.
           case _: CompilationException => throw CompilationException(
             s"The node $node at ${node.position} does not have an inferred type assigned to itself."
           )

@@ -1,5 +1,6 @@
 package lore.compiler.functions
 
+import lore.compiler.core.CompilationException
 import lore.compiler.types.{Fit, ProductType, Type}
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
@@ -47,10 +48,6 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
     * Calculates the multi-function min.
     */
   def min(tpe: Type): List[FunctionDefinition] = {
-    // TODO: We will also need to return an INSTANCE of the function with type variables already assigned, so that the
-    //       function verification visitor can subsequently check that the argument types fit the input type of the
-    //       function.
-
     // Even though min is defined in terms of the fit, we don't use the fit function and instead compute everything in
     // one traversal.
     val visit = predicateVisitFit(tpe.toTuple) _
@@ -74,9 +71,6 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
     //       function with type variables if we want a complete programming language. If we do so, we will also have
     //       to ensure that we don't select more than one node, as this is suddenly possible if we do the fit shtick
     //       first.
-    // TODO: We will also need to return an INSTANCE of the function with type variables already assigned, so that the
-    //       function verification visitor can subsequently check that the argument types fit the input type of the
-    //       function.
 
     // Using traverseHierarchy ensures that we only visit subtrees that could contain the exact candidate.
     val input = tpe.toTuple
@@ -143,10 +137,11 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
         !allExceptSelf.exists(f2 => Fit.fits(f.signature.inputType, f2.signature.inputType))
       }
 
-      // TODO: Fix the potential endless loop. (Test if the DeclarationResolver fix, i.e. requiring unique function
-      //       signatures there, has already fixed the issue.)
       // If supers is empty, this algorithm will result in an endless loop. Hence, we abort the compilation
       // before that can happen.
+      if (supers.isEmpty) {
+        throw CompilationException("The supers list is empty, meaning the multi-function hierarchy construction would be stuck in an endless loop.")
+      }
       assert(supers.nonEmpty)
 
       // Add these functions, then potentially connect them with any 0-out nodes.

@@ -82,10 +82,10 @@ object ConstructorConstraints {
         Compilation.fail(ContinuationCallsAreCyclic(definition))
       } else Verification.succeed
 
+      // And then we can verify that every call ends in a construct continuation. This may be covered by ensuring
+      // that all constructors have to end in a continuation and that no cycles may exist, which we do, so this
+      // check might never even throw an error, but a little redundancy never hurt anyone.
       isCyclic.flatMap { _ =>
-        // TODO: Do we even need to verify this? Or do the properties that all constructors have to end in a
-        //       continuation and that no cycles may exist suffice to also prove this property?
-        // And then we can verify that every call ends in a construct continuation.
         definition.constructors.map { constructor =>
           // We look for the constructor's node in the flow graph and then try to find a construct successor.
           flowGraph.get(constructor.name).findSuccessor(_.value == constructName) match {

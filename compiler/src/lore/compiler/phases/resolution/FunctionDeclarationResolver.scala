@@ -3,7 +3,6 @@ package lore.compiler.phases.resolution
 import lore.compiler.ast.{DeclNode, TypeDeclNode}
 import lore.compiler.core.Compilation._
 import lore.compiler.core.{Fragment, Registry, TypeScope}
-import lore.compiler.functions
 import lore.compiler.functions.{ConstructorDefinition, FunctionDefinition, ParameterDefinition}
 import lore.compiler.types.TypeExpressionEvaluator
 
@@ -27,7 +26,7 @@ object FunctionDeclarationResolver {
     implicit val typeScope: TypeScope = registry.typeScope
     // TODO: Type variables from the class definition need to be available in the constructor context. We will also
     //       have to defer their loading, sadly, OR rethink WHAT we need to defer.
-    functions.ConstructorDefinition(
+    ConstructorDefinition(
       node.name,
       registry.typeScope,
       node.parameters.map(resolveParameterNode),
