@@ -59,6 +59,8 @@ object MemberExplorer {
         val name = underlying.definition.name
         Compilation.succeed(HashMap(name -> VirtualMember(name, underlying, isComponent = true)))
       case ProductType(components) =>
+        // TODO: Maybe we should rather have people use get(tuple, i) functions or functions like first and second.
+        //       In any case, we will have to translate this property name during transpilation.
         // A tuple does not inherit any of its components' members. Rather, it has a named member for each component.
         Compilation.succeed {
           HashMap(components.zipWithIndex.map { case (tpe, index) =>
@@ -72,6 +74,11 @@ object MemberExplorer {
         Compilation.succeed(HashMap(classType.definition.members.map(m => m.name -> m.asVirtualMember): _*))
 
       // Complex cases (recursion).
+      case tv: TypeVariable =>
+        // A type variable's members are defined by its upper bound. If a member is a member of the upper bound type,
+        // it must also be present in all possible instances of the type variable. If it wasn't, we would be violating
+        // a basic contract of polymorphism.
+        MemberExplorer.members(tv.upperBound)
       case SumType(_) =>
         // TODO: We can technically access a virtual member if its name and type are found in all of the sum type's
         //       types. This would be a kind of very powerful structural typing. Since it's questionable whether such
