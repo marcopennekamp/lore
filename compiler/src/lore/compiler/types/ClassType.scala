@@ -6,7 +6,7 @@ class ClassType(
   override val supertype: Option[ClassType], val ownedByDeferred: Option[OwnedByDeferred], val isAbstract: Boolean
 ) extends DeclaredType with DeclaredType.DefinitionProperty[ClassDefinition] {
   /**
-    * The type a value of this class type must be owned by.
+    * The type an instance of this class type must be owned by.
     */
   def ownedBy: Option[Type] = ownedByDeferred.map(_.tpe)
 

@@ -32,21 +32,21 @@ entity Entity2D {
 // all instances where the Health envelope was used. The programmer should weigh these concerns and choose the
 // appropriate type to represent the component.
 class HealthState {
-  mut health: Int
+  mut health: Real
 }
 
-action heal(entity: +HealthState, amount: Int) { entity.HealthState.health += amount }
-action damage(entity: +HealthState, amount: Int) { entity.HealthState.health -= amount }
+action heal(entity: +HealthState, amount: Real) { entity.HealthState.health += amount }
+action damage(entity: +HealthState, amount: Real) { entity.HealthState.health -= amount }
 
 // Idea for later: Even mutable fields are immutable by default, unless a variable is declared as mutable. So declaring
 // the first parameter as mut will allow mutable fields to be mutated. For now, this feature is too complex to implement
 // for the first iteration of the language. But when Lore becomes more advanced, this will be a good feature to
 // segregate functions that mutate a value (maybe we can rather declare the FUNCTION as mutating) and functions that
 // only calculate something.
-// action heal(mut entity: +HealthState, amount: Int) { entity.HealthState.health += amount }
+// action heal(mut entity: +HealthState, amount: Real) { entity.HealthState.health += amount }
 
 // Idea for later: Object destructuring right in the parameter declaration.
-// action heal({ HealthState }: +HealthState, amount: Int) { HealthState.health += amount }
+// action heal({ HealthState }: +HealthState, amount: Real) { HealthState.health += amount }
 
 class Regeneration owned by +HealthState {
   amount: Real
@@ -65,7 +65,7 @@ class Regeneration owned by +HealthState {
 action updateHealth(entity: +Regeneration) {
   const r = entity.Regeneration
   if (remainder(r.counter, r.interval) == 0) {
-    heal(entity, amount)
+    heal(entity, r.amount)
   }
   r.counter += 1
 }
@@ -78,7 +78,7 @@ entity Skeleton extends Entity2D {
   component HealthState
   component Regeneration
   // Idea for later: Declare default component values:
-  // component Regeneration = Regeneration(amount = 5, interval = 30)
+  // component Regeneration = Regeneration(amount = 5.0, interval = 30)
 }
 
 action tick(s: Skeleton) {

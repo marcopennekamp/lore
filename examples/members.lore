@@ -1,0 +1,21 @@
+class HealthState {
+  mut health: Real
+}
+
+action heal(entity: +HealthState, amount: Real) { entity.HealthState.health += amount }
+action damage(entity: +HealthState, amount: Real) { entity.HealthState.health -= amount }
+
+
+class Regeneration owned by +HealthState {
+  amount: Real
+  interval: Int
+  mut counter: Int
+}
+
+action updateHealth(entity: +Regeneration) {
+  const r = entity.Regeneration
+  if (remainder(r.counter, r.interval) == 0) {
+    heal(entity, r.amount)
+  }
+  r.counter += 1
+}

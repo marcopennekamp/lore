@@ -55,9 +55,12 @@ object MemberExplorer {
       case AnyType | _: BasicType | _: LabelType | _: ListType | _: MapType =>
         Compilation.succeed(HashMap.empty)
       case ComponentType(underlying) =>
-        // A component type defines a single member that has the name and type of the given underlying class.
-        val name = underlying.definition.name
-        Compilation.succeed(HashMap(name -> VirtualMember(name, underlying, isComponent = true)))
+        // A component type directly defines a single member that has the name and type of the given underlying class.
+        // It also additionally defines members based on its "owned by" type.
+        underlying.ownedBy.map(MemberExplorer.members).toCompiledOption.map { ownedByMembers =>
+          val name = underlying.definition.name
+          ownedByMembers.getOrElse(HashMap.empty: MemberMap) + (name -> VirtualMember(name, underlying, isComponent = true))
+        }
       case ProductType(components) =>
         // TODO: Maybe we should rather have people use get(tuple, i) functions or functions like first and second.
         //       In any case, we will have to translate this property name during transpilation.
@@ -69,7 +72,6 @@ object MemberExplorer {
           }: _*)
         }
       case classType: ClassType =>
-        // TODO: If the class is owned by something, also add that owner type's members.
         // A class type obviously has its own members.
         Compilation.succeed(HashMap(classType.definition.members.map(m => m.name -> m.asVirtualMember): _*))
 
