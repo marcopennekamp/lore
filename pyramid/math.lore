@@ -1,0 +1,1 @@
+function remainder(a: Int, b: Int): Int = dynamic[Int]('Lore.math.remainder', a, b)

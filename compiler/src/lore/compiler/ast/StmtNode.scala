@@ -194,7 +194,9 @@ object ExprNode {
       */
     def member: VirtualMember = _member
     def member_=(member: VirtualMember): Unit = {
-      assert(_member == null)
+      if (_member != null && _member != member) {
+        throw CompilationException(s"Member already assigned. Old: ${_member}. New: $member.")
+      }
       _member = member
     }
   }

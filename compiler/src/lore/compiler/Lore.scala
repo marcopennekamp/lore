@@ -14,6 +14,7 @@ object Lore {
   val pyramid = List(
     fragment("pyramid.collections", Path.of("pyramid", "collections.lore")),
     fragment("pyramid.io", Path.of("pyramid", "io.lore")),
+    fragment("pyramid.math", Path.of("pyramid", "math.lore")),
     fragment("pyramid.string", Path.of("pyramid", "string.lore")),
   )
 
