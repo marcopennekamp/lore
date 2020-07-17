@@ -12,12 +12,6 @@ import scala.collection.immutable.HashMap
   * class types, but quickly becomes interesting when intersection types are considered.
   */
 object MemberExplorer {
-  // TODO: Test this class with real code.
-  // TODO: Introduce a built-in virtual member for the size of lists and maps?
-
-  // TODO: We need to consider ownership restrictions here! If a component is owned by any type A, we must consider
-  //       members of that type A. (PRIORITY!)
-
   type MemberMap = Map[String, VirtualMember]
   private var cache = HashMap.empty[Type, MemberMap]
 
@@ -52,24 +46,12 @@ object MemberExplorer {
   private def membersOf(tpe: Type)(implicit position: Position): C[MemberMap] = {
     tpe match {
       // Base cases (no recursion).
-      case AnyType | _: BasicType | _: LabelType | _: ListType | _: MapType =>
-        Compilation.succeed(HashMap.empty)
       case ComponentType(underlying) =>
         // A component type directly defines a single member that has the name and type of the given underlying class.
         // It also additionally defines members based on its "owned by" type.
         underlying.ownedBy.map(MemberExplorer.members).toCompiledOption.map { ownedByMembers =>
           val name = underlying.definition.name
           ownedByMembers.getOrElse(HashMap.empty: MemberMap) + (name -> VirtualMember(name, underlying, isComponent = true))
-        }
-      case ProductType(components) =>
-        // TODO: Maybe we should rather have people use get(tuple, i) functions or functions like first and second.
-        //       In any case, we will have to translate this property name during transpilation.
-        // A tuple does not inherit any of its components' members. Rather, it has a named member for each component.
-        Compilation.succeed {
-          HashMap(components.zipWithIndex.map { case (tpe, index) =>
-            val name = s"_$index"
-            name -> VirtualMember(name, tpe, underlying = None)
-          }: _*)
         }
       case classType: ClassType =>
         // A class type obviously has its own members.
@@ -81,12 +63,6 @@ object MemberExplorer {
         // it must also be present in all possible instances of the type variable. If it wasn't, we would be violating
         // a basic contract of polymorphism.
         MemberExplorer.members(tv.upperBound)
-      case SumType(_) =>
-        // TODO: We can technically access a virtual member if its name and type are found in all of the sum type's
-        //       types. This would be a kind of very powerful structural typing. Since it's questionable whether such
-        //       a feature could be useful, we will pretend that the sum type has no members for now.
-        // Note that we can't have a notion of "left" and "right" or "_1" and "_2" since sum types are commutative.
-        Compilation.succeed(HashMap.empty)
       case IntersectionType(types) =>
         // In the case of an intersection type, if a virtual member is part of one of the types, it is also part
         // of the intersection type. This leads to a possible problem with ambiguities: if two or more types define
@@ -95,7 +71,6 @@ object MemberExplorer {
         // up another problem: Members become part of a global namespace. This is similar to an issue in languages
         // like Java where functions defined in an interface are part of an implicit global namespace (just imagine
         // two 'destroy' functions being declared in two separate interfaces).
-        // TODO: Can we solve the "global namespace" problem in a better way?
 
         // Use the members function so that we can use caching when building member maps from complex types.
         val allMembers = types.toList.map(MemberExplorer.members).simultaneous.map(_.flatMap(_.values))
@@ -111,7 +86,7 @@ object MemberExplorer {
               //       this would complicate caching, and might not be consistent enough: If we can access a member
               //       to read it, why would a write be prohibited?
               if (members.exists(_.isMutable)) {
-                // If we have multiple members and at least one member is mutable, we just conservatively shut down this
+                // If we have multiple members and at least one member is mutable, we just conservatively shut down the
                 // attempt altogether.
                 Compilation.fail(MutableAmbiguousTypeMember(name, tpe, position))
               } else {
@@ -126,6 +101,9 @@ object MemberExplorer {
             case _ => throw CompilationException("This case should never be reached.")
           }.toList.simultaneous.map(HashMap(_: _*))
         }
+
+      // Default case.
+      case _ => Compilation.succeed(HashMap.empty)
     }
   }
 

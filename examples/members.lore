@@ -14,7 +14,7 @@ class Regeneration owned by +HealthState {
 
 action updateHealth(entity: +Regeneration) {
   const r = entity.Regeneration
-  if (remainder(r.counter, r.interval) == 0) {
+  if (entity.HealthState.health > 0 & remainder(r.counter, r.interval) == 0) {
     heal(entity, r.amount)
   }
   r.counter += 1

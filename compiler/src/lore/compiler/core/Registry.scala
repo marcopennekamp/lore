@@ -58,17 +58,8 @@ class Registry {
     *
     * @param position The position where the type name occurs, to be used for error building.
     */
-  def resolveType(name: String, position: Position): C[NamedType] = {
-    typeScope.resolve(name, position)
-  }
-
-  /**
-    * Gets a named type with the given name. If the type cannot be found, the operation fails with a compilation error.
-    *
-    * @param associatedNode The node where the type name occurs, to be used for error building.
-    */
-  def resolveType(name: String, associatedNode: Node)(implicit fragment: Fragment): C[NamedType] = {
-    resolveType(name, associatedNode.position)
+  def resolveType(name: String)(implicit position: Position): C[NamedType] = {
+    typeScope.resolve(name)
   }
 
   /**
@@ -79,7 +70,7 @@ class Registry {
     override protected def add(entry: NamedType): Unit = {
       throw new UnsupportedOperationException("You may not add types to the Registry via its TypeScope interface.")
     }
-    override protected def unknownEntry(name: String, position: Position): Error = TypeNotFound(name, position)
+    override protected def unknownEntry(name: String)(implicit position: Position): Error = TypeNotFound(name, position)
   }
 
   /**
@@ -103,7 +94,7 @@ class Registry {
     */
   def registerMultiFunction(multiFunction: MultiFunctionDefinition): Unit = {
     if (multiFunctions.contains(multiFunction.name)) {
-      throw new CompilationException(
+      throw CompilationException(
         s"The multi-function ${multiFunction.name} has already been registered."
       )
     }

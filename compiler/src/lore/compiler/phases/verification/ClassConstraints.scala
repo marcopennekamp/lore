@@ -2,7 +2,7 @@ package lore.compiler.phases.verification
 
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, CompilationException, Registry}
-import lore.compiler.feedback.Error
+import lore.compiler.feedback.{Error, Position}
 import lore.compiler.structures.{ClassDefinition, ComponentDefinition, MemberDefinition}
 import lore.compiler.types.{AnyType, ClassType, Type}
 
@@ -112,6 +112,7 @@ object ClassConstraints {
     */
   def verifyCanOwn(definition: ClassDefinition, component: ComponentDefinition): Verification = {
     val ownershipType = component.tpe.ownedBy.getOrElse(AnyType)
+    println(definition.tpe + " " + ownershipType + " " + (definition.tpe <= ownershipType))
     if (!(definition.tpe <= ownershipType)) {
       Compilation.fail(ClassCannotOwnComponent(definition, component))
     } else Verification.succeed
@@ -164,7 +165,8 @@ object ClassConstraints {
       } else Verification.succeed
 
       // Verify that the overriding component is a subtype of the overridden component.
-      val subtypes = registry.resolveType(overriddenName, component.position).flatMap { overriddenType =>
+      implicit val position: Position = component.position
+      val subtypes = registry.resolveType(overriddenName).flatMap { overriddenType =>
         if (!(component.tpe <= overriddenType)) {
           Compilation.fail(ComponentMustSubtypeOverriddenComponent(definition, component))
         } else Verification.succeed

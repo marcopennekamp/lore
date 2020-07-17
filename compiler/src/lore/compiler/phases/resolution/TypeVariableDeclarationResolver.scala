@@ -3,6 +3,7 @@ package lore.compiler.phases.resolution
 import lore.compiler.ast.DeclNode
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.{Compilation, Fragment, TypeScope, TypeVariableScope}
+import lore.compiler.feedback.Position
 import lore.compiler.types.{AnyType, NothingType, TypeExpressionEvaluator, TypeVariable}
 
 object TypeVariableDeclarationResolver {
@@ -15,9 +16,10 @@ object TypeVariableDeclarationResolver {
     // one can be used as a bound of the second one, and so on.
     val initial = (Compilation.succeed(new TypeVariableScope(typeScope)), 0)
     val (compilation, _) = nodes.foldLeft(initial) { case ((compilation, order), node) =>
+      implicit val position: Position = node.position
       val nextCompilation = compilation.flatMap { implicit typeScope =>
         TypeVariableDeclarationResolver.resolve(node, order).map { variable =>
-          typeScope.register(variable, node.position)
+          typeScope.register(variable)
           typeScope
         }
       }

@@ -156,7 +156,8 @@ private[verification] class FunctionVerificationVisitor(
       // TODO: We will also need access to global variables if we introduce those into Lore.
       // TODO: Once we treat functions as values, we will have to make this even more complicated by also
       //       considering function names.
-      context.currentScope.resolve(name, node.position).flatMap { variable =>
+      implicit val position: Position = node.position
+      context.currentScope.resolve(name).flatMap { variable =>
         node.setVariable(variable)
         node.typed(variable.tpe)
       }
@@ -167,6 +168,7 @@ private[verification] class FunctionVerificationVisitor(
         node.typed(member.tpe)
       }
     case node@VariableDeclarationNode(name, isMutable, maybeTypeNode, value) =>
+      implicit val position: Position = node.position
       // Add the variable type to the type context. Either infer the type from the value or, if a type has
       // been explicitly declared, check that the value adheres to the type bounds.
       maybeTypeNode.map { typeNode =>
@@ -181,7 +183,7 @@ private[verification] class FunctionVerificationVisitor(
       }.flatMap { tpe =>
         // Register the local variable with the scope.
         val localVariable = LocalVariable(name, tpe, isMutable)
-        context.currentScope.register(localVariable, node.position).flatMap { _ =>
+        context.currentScope.register(localVariable).flatMap { _ =>
           node.setVariable(localVariable)
           // An assignment always results in a unit value.
           node.typed(ProductType.UnitType)
@@ -346,13 +348,14 @@ private[verification] class FunctionVerificationVisitor(
     context.openScope()
     val scope = context.currentScope
     node.extractors.map { extractor =>
+      implicit val position: Position = extractor.position
       (extractor.collection.inferredType match {
         case ListType(element) => Compilation.succeed(element)
         case MapType(key, value) => Compilation.succeed(ProductType(List(key, value)))
         case _ => Compilation.fail(CollectionExpected(extractor.collection))
       }).flatMap { elementType =>
         val localVariable = LocalVariable(extractor.variableName, elementType, isMutable = false)
-        scope.register(localVariable, extractor.position).map(_ => extractor.setVariable(localVariable))
+        scope.register(localVariable).map(_ => extractor.setVariable(localVariable))
       }
     }.simultaneous.flatMap { _ =>
       visitBody().flatMap { _ =>

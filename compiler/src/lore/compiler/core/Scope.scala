@@ -28,28 +28,20 @@ trait Scope[A <: Scope.Entry] {
     * Resolves the entry with the given name from the closest scope. If it cannot be found, we return a
     * compilation error.
     */
-  def resolve(name: String, position: Position): C[A] = {
+  def resolve(name: String)(implicit position: Position): C[A] = {
     get(name) match {
       case Some(entry) => Compilation.succeed(entry)
-      case None => Compilation.fail(unknownEntry(name, position))
+      case None => Compilation.fail(unknownEntry(name))
     }
-  }
-
-  /**
-    * Resolves the entry with the given name from the closest scope. If it cannot be found, we return a
-    * compilation error.
-    */
-  def resolve(name: String, associatedNode: Node)(implicit fragment: Fragment): C[A] = {
-    resolve(name, associatedNode.position)
   }
 
   /**
     * Registers the given entry with the scope. If it is already registered in the CURRENT scope, an
     * "already declared" error is returned instead.
     */
-  def register(entry: A, position: Position): Verification = {
+  def register(entry: A)(implicit position: Position): Verification = {
     if (get(entry.name).isDefined) {
-      Compilation.fail(alreadyDeclared(entry.name, position))
+      Compilation.fail(alreadyDeclared(entry.name))
     } else {
       add(entry)
       Verification.succeed
@@ -59,12 +51,12 @@ trait Scope[A <: Scope.Entry] {
   /**
     * Creates an "unknown entry" error. You may override this to provide better error messages.
     */
-  protected def unknownEntry(name: String, position: Position): Error = UnknownEntry(name, position)
+  protected def unknownEntry(name: String)(implicit position: Position): Error = UnknownEntry(name, position)
 
   /**
     * Creates an "already declared" error. You may override this to provide better error messages.
     */
-  protected def alreadyDeclared(name: String, position: Position): Error = AlreadyDeclared(name, position)
+  protected def alreadyDeclared(name: String)(implicit position: Position): Error = AlreadyDeclared(name, position)
 }
 
 abstract class BasicScope[A <: Scope.Entry](val parent: Option[Scope[A]]) extends Scope[A] {

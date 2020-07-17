@@ -25,13 +25,21 @@ object Subtyping {
 
       // A component type p1 is a subtype of p2 if p1's underlying type is a subtype of p2's underlying type.
       { case (p1: ComponentType, p2: ComponentType) => isSubtype(p1.underlying, p2.underlying) },
-      // An entity type e1 is a subtype of a component type p2 if e1 has a component type p1 that is a subtype of p2.
-      { case (e1: ClassType, p2: ComponentType) if e1.isEntity => e1.componentTypes.exists(p1 => isSubtype(p1, p2)) },
+      // An entity type e1 is a subtype of a component type p2 if e1 has a component of type p1.underlying that is a
+      // subtype of p2.underlying. We shouldn't compare p1/p2 directly (as component types) because the rule following
+      // this rule will lead to weird interactions with owned-by types. For example, say we have a component C1 owned
+      // by +A. We have entity E with components B and C1. C1 cannot be a component of E, because A is not a component
+      // of E. But we'd have:
+      //            (2)           (3)                  (substitute)
+      //    E <: +A <== +C1 <: +A <== C1.ownedBy <= +A <== +A <= +A
+      // This can only occur if we compare component types instead of underlying types directly. Since this rule is
+      // supposed to ONLY look at the component's types and not their owned-by types, we defer to "underlying".
+      { case (e1: ClassType, p2: ComponentType) if e1.isEntity => e1.componentTypes.exists(p1 => isSubtype(p1.underlying, p2.underlying)) },
       // Let's say p1 = +u. A component type +u is a subtype of t2 if u's owned-by type is a subtype of t2. We know
       // that +u is an entity with the type +u & u.ownedBy, as any entity having the component u must also satisfy
       // its ownership constraint, so if u.ownedBy <= t2, we know that +u <= t2.
       { case (p1: ComponentType, t2) => p1.underlying.ownedBy.exists(ownedBy => isSubtype(ownedBy, t2)) },
-
+      
       // An intersection type i1 is the subtype of an intersection type i2, if all types in i2 are subsumed by i1.
       { case (i1: IntersectionType, i2: IntersectionType) => i2.types.forall(ic2 => isAnyPartSubtypeOf(i1, ic2)) },
       // An intersection type i1 is the subtype of another type t2 if one component of i1 is a subtype of t2.

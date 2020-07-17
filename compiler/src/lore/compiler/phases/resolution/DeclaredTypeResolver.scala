@@ -3,7 +3,7 @@ package lore.compiler.phases.resolution
 import lore.compiler.ast.TypeDeclNode
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.{Compilation, Fragment, Registry, TypeScope}
-import lore.compiler.feedback.Error
+import lore.compiler.feedback.{Error, Position}
 import lore.compiler.structures._
 import lore.compiler.types._
 
@@ -23,8 +23,9 @@ object DeclaredTypeResolver {
   }
 
   private def resolveLabelNode(node: TypeDeclNode.LabelNode)(implicit registry: Registry, fragment: Fragment): C[LabelDefinition] = {
+    implicit val position = node.position
     for {
-      supertype <- node.supertypeName.map(name => registry.resolveType(name, node)).toCompiledOption.require { option =>
+      supertype <- node.supertypeName.map(name => registry.resolveType(name)).toCompiledOption.require { option =>
         // Ensure that, if the label type extends another type, that type is also a label type.
         option.forall(_.isInstanceOf[LabelType])
       }(LabelMustExtendLabel(node))
@@ -41,11 +42,12 @@ object DeclaredTypeResolver {
   }
 
   private def resolveClassNode(node: TypeDeclNode.ClassNode)(implicit registry: Registry, fragment: Fragment): C[ClassDefinition] = {
+    implicit val position: Position = node.position
     implicit val typeScope: TypeScope = registry.typeScope
     // Resolve supertype and members simultaneously for same-run error reporting. Owned-by and constructor types
     // are resolved in the deferred typing verification phase.
     (
-      node.supertypeName.map(name => registry.resolveType(name, node)).toCompiledOption.require { option =>
+      node.supertypeName.map(name => registry.resolveType(name)).toCompiledOption.require { option =>
         // Ensure that, if the class type extends another type, that type is also a class type.
         option.forall(_.isInstanceOf[ClassType])
       }(ClassMustExtendClass(node)),
@@ -71,7 +73,8 @@ object DeclaredTypeResolver {
         Compilation.succeed(new PropertyDefinition(name, resolveType, isMutable, node.position))
       case componentNode@TypeDeclNode.ComponentNode(name, overrides) =>
         val resolveType = () => {
-          typeScope.resolve(name, node)
+          implicit val position: Position = node.position
+          typeScope.resolve(name)
             .require(_.isInstanceOf[ClassType])(ComponentMustBeClass(componentNode))
             .map(_.asInstanceOf[ClassType])
         }
