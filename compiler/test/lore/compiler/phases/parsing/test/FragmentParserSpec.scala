@@ -2,6 +2,7 @@ package lore.compiler.phases.parsing.test
 
 import fastparse.P
 import lore.compiler.ast._
+import lore.compiler.core.Fragment
 import lore.compiler.phases.parsing.FragmentParser
 import lore.compiler.test.BaseSpec
 
@@ -11,7 +12,8 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
   import TopLevelExprNode._
   import TypeDeclNode._
 
-  override def parser[_: P] = FragmentParser.fragment
+  implicit private val fragment: Fragment = Fragment("Test", "")
+  override def parser[_: P]: P[List[DeclNode]] = new FragmentParser().fullFragment
 
   import TestNodes._
 
@@ -61,7 +63,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
         ParameterNode("source", TypeExprNode.ComponentNode("Arms")),
         ParameterNode("target", TypeExprNode.ComponentNode("Health")),
       ),
-      TypeExprNode.UnitNode,
+      TypeExprNode.UnitNode(),
       Nil,
       Some(BlockNode(List(
         VariableDeclarationNode(
@@ -76,14 +78,14 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
   it should "assign the correct indices" in {
     "function add(a: Real, b: Real): Real = a + b".parsed.head match {
       case fn: FunctionNode =>
-        fn.index shouldEqual 0
+        fn.position.index shouldEqual 0
         fn.parameters match {
           case Seq(a, b) =>
-            a.index shouldEqual 13
-            b.index shouldEqual 22
+            a.position.index shouldEqual 13
+            b.position.index shouldEqual 22
         }
-        fn.outputType.index shouldEqual 32
-        fn.body.value.index shouldEqual 39
+        fn.outputType.position.index shouldEqual 32
+        fn.body.value.position.index shouldEqual 39
     }
   }
 

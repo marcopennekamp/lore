@@ -3,6 +3,9 @@ package lore.compiler.functions
 import lore.compiler.feedback.Positioned
 import lore.compiler.types.Type
 
+/**
+  * An internal call target is a Lore function or constructor. Hence, we can also expect a function signature.
+  */
 trait InternalCallTarget extends CallTarget with Positioned {
   def signature: FunctionSignature
 

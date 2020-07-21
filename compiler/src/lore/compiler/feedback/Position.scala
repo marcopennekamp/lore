@@ -7,16 +7,21 @@ import lore.compiler.core.Fragment
 //       kind of position source mapping for the runtime.
 
 /**
- * A position identifies a code location across a whole Lore project.
- */
-class Position(val fragmentName: String, val index: Index, val prettyIndex: String) {
+  * A position identifies a code location across a whole Lore project.
+  */
+case class Position(fragment: Fragment, index: Index) {
   def <(position: Position): Boolean = {
-    this.fragmentName < position.fragmentName || this.index < position.index
+    this.fragment.name < position.fragment.name || this.index < position.index
   }
 
   /**
-   * The line number of the position as a 1-based index.
-   */
+    * The pretty index which is used for printing the position.
+    */
+  val prettyIndex: String = fragment.input.prettyIndex(index)
+
+  /**
+    * The line number of the position as a 1-based index.
+    */
   lazy val line: Int = {
     // Not the prettiest way to implement this, but fastparse doesn't seem to expose a line number interface.
     // This is the most convenient way to access line numbers, as far as I can see.
@@ -24,9 +29,7 @@ class Position(val fragmentName: String, val index: Index, val prettyIndex: Stri
   }
 
   /**
-   * A complete string representation of this position.
-   */
-  override def toString: String = s"$fragmentName ($prettyIndex)"
+    * A complete string representation of this position.
+    */
+  override def toString: String = s"${fragment.name} ($prettyIndex)"
 }
-
-class FragmentPosition(val fragment: Fragment, index: Index) extends Position(fragment.name, index, fragment.input.prettyIndex(index))

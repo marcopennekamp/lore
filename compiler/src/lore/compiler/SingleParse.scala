@@ -2,7 +2,8 @@ package lore.compiler
 
 import fastparse.ScalaWhitespace._
 import fastparse._
-import lore.compiler.phases.parsing.StatementParser
+import lore.compiler.core.Fragment
+import lore.compiler.phases.parsing.{StatementParser, TypeParser}
 
 /**
   * This object can be run (for example from within the IDE) to parse a single statement (or other code if the parser
@@ -12,9 +13,10 @@ import lore.compiler.phases.parsing.StatementParser
   */
 object SingleParse {
   private val source = "if ({ return 0 }) a else b"
+  private implicit val fragment: Fragment = Fragment("single-parse", source)
 
   def main(args: Array[String]): Unit = {
-    def file[_: P] = P(StatementParser.statement ~ End)
+    def file[_: P] = P(new StatementParser(new TypeParser()).statement ~ End)
     fastparse.parse(source, file(_)) match {
       case Parsed.Success(result, _) => println(result)
       case Parsed.Failure(_, _, extra) => println(extra.trace().aggregateMsg)

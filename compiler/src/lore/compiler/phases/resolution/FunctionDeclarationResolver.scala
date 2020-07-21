@@ -7,8 +7,8 @@ import lore.compiler.functions.{ConstructorDefinition, FunctionDefinition, Param
 import lore.compiler.types.TypeExpressionEvaluator
 
 object FunctionDeclarationResolver {
-  def resolveFunctionNode(node: DeclNode.FunctionNode)(implicit registry: Registry, fragment: Fragment): C[FunctionDefinition] = {
-    TypeVariableDeclarationResolver.resolve(node.typeVariables)(registry.typeScope, fragment).flatMap { implicit typeScope =>
+  def resolveFunctionNode(node: DeclNode.FunctionNode)(implicit registry: Registry): C[FunctionDefinition] = {
+    TypeVariableDeclarationResolver.resolve(node.typeVariables)(registry.typeScope).flatMap { implicit typeScope =>
       (
         // We verify parameter types right away, because all types should have been declared at this point.
         // Functions are resolved after all type declarations.
@@ -22,7 +22,7 @@ object FunctionDeclarationResolver {
     }
   }
 
-  def resolveConstructorNode(node: TypeDeclNode.ConstructorNode)(implicit registry: Registry, fragment: Fragment): ConstructorDefinition = {
+  def resolveConstructorNode(node: TypeDeclNode.ConstructorNode)(implicit registry: Registry): ConstructorDefinition = {
     implicit val typeScope: TypeScope = registry.typeScope
     // TODO: Type variables from the class definition need to be available in the constructor context. We will also
     //       have to defer their loading, sadly, OR rethink WHAT we need to defer.
@@ -35,7 +35,7 @@ object FunctionDeclarationResolver {
     )
   }
 
-  private def resolveParameterNode(node: DeclNode.ParameterNode)(implicit typeScope: TypeScope, fragment: Fragment): ParameterDefinition = {
+  private def resolveParameterNode(node: DeclNode.ParameterNode)(implicit typeScope: TypeScope): ParameterDefinition = {
     new ParameterDefinition(node.name, () => TypeExpressionEvaluator.evaluate(node.tpe), node.position)
   }
 }

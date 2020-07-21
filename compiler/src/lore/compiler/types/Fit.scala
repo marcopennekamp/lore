@@ -31,7 +31,7 @@ object Fit {
       val missingVariables = Type.variables(t2) -- assignments.keySet
       if (missingVariables.nonEmpty) {
         // TODO: Use debug or trace logging here.
-        println(s"Not all variables from $t2 are assigned types from $t1: ${missingVariables.mkString(", ")}.")
+        //println(s"Not all variables from $t2 are assigned types from $t1: ${missingVariables.mkString(", ")}.")
       }
 
       // The subtyping handles (4).

@@ -1,6 +1,8 @@
 package lore.compiler.core
 
 import fastparse.ParserInput
-import lore.compiler.ast.DeclNode
 
-class Fragment(val name: String, val input: ParserInput, val declarations: List[DeclNode])
+/**
+  * A fragment with the given name and input.
+  */
+case class Fragment(name: String, input: ParserInput)

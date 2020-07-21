@@ -11,18 +11,18 @@ object DeclaredTypeResolver {
   /**
     * Resolves a declared type declaration.
     */
-  def resolveDeclaredNode(node: TypeDeclNode.DeclaredNode)(implicit registry: Registry, fragment: Fragment): C[DeclaredTypeDefinition] = {
+  def resolveDeclaredNode(node: TypeDeclNode.DeclaredNode)(implicit registry: Registry): C[DeclaredTypeDefinition] = {
     node match {
       case labelNode: TypeDeclNode.LabelNode => resolveLabelNode(labelNode)
       case classNode: TypeDeclNode.ClassNode => resolveClassNode(classNode)
     }
   }
 
-  case class LabelMustExtendLabel(node: TypeDeclNode.LabelNode)(implicit fragment: Fragment) extends Error(node) {
+  case class LabelMustExtendLabel(node: TypeDeclNode.LabelNode) extends Error(node) {
     override def message = s"The label ${node.name} does not extend a label but some other type."
   }
 
-  private def resolveLabelNode(node: TypeDeclNode.LabelNode)(implicit registry: Registry, fragment: Fragment): C[LabelDefinition] = {
+  private def resolveLabelNode(node: TypeDeclNode.LabelNode)(implicit registry: Registry): C[LabelDefinition] = {
     implicit val position = node.position
     for {
       supertype <- node.supertypeName.map(name => registry.resolveType(name)).toCompiledOption.require { option =>
@@ -37,11 +37,11 @@ object DeclaredTypeResolver {
     }
   }
 
-  case class ClassMustExtendClass(node: TypeDeclNode.ClassNode)(implicit fragment: Fragment) extends Error(node) {
+  case class ClassMustExtendClass(node: TypeDeclNode.ClassNode) extends Error(node) {
     override def message = s"The class ${node.name} does not extend a class but some other type."
   }
 
-  private def resolveClassNode(node: TypeDeclNode.ClassNode)(implicit registry: Registry, fragment: Fragment): C[ClassDefinition] = {
+  private def resolveClassNode(node: TypeDeclNode.ClassNode)(implicit registry: Registry): C[ClassDefinition] = {
     implicit val position: Position = node.position
     implicit val typeScope: TypeScope = registry.typeScope
     // Resolve supertype and members simultaneously for same-run error reporting. Owned-by and constructor types
@@ -62,16 +62,16 @@ object DeclaredTypeResolver {
     }
   }
 
-  case class ComponentMustBeClass(node: TypeDeclNode.ComponentNode)(implicit fragment: Fragment) extends Error(node) {
+  case class ComponentMustBeClass(node: TypeDeclNode.ComponentNode) extends Error(node) {
     override def message = s"The component ${node.name} is not a valid class type."
   }
 
-  private def resolveMemberNode(node: TypeDeclNode.MemberNode)(implicit typeScope: TypeScope, fragment: Fragment): C[MemberDefinition[Type]] = {
+  private def resolveMemberNode(node: TypeDeclNode.MemberNode)(implicit typeScope: TypeScope): C[MemberDefinition[Type]] = {
     node match {
-      case TypeDeclNode.PropertyNode(name, tpe, isMutable) =>
+      case TypeDeclNode.PropertyNode(name, tpe, isMutable, _) =>
         val resolveType = () => TypeExpressionEvaluator.evaluate(tpe)
         Compilation.succeed(new PropertyDefinition(name, resolveType, isMutable, node.position))
-      case componentNode@TypeDeclNode.ComponentNode(name, overrides) =>
+      case componentNode@TypeDeclNode.ComponentNode(name, overrides, _) =>
         val resolveType = () => {
           implicit val position: Position = node.position
           typeScope.resolve(name)

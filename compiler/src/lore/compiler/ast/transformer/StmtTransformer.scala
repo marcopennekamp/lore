@@ -3,12 +3,11 @@ package lore.compiler.ast.transformer
 import lore.compiler.ast.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.core.Compilation
 
+// TODO: Test that StmtTransformer now correctly copies over a node's state.
+
 /**
   * Visits any statement node, possibly transforming it to another kind of node. Subtrees are visited automatically.
   * The default implementations re-create parent nodes for only those nodes where at least a child node changed.
-  *
-  * CAUTION: Don't apply the transformer if state variables such as inferredType have already been set on any node!
-  * TODO: We might have to support that, too.
   *
   * TODO: Having to specify a method for each and every node sucks. Any better way?
   */
@@ -179,63 +178,63 @@ object StmtTransformer {
         case node: LeafNode => transformer.transform(node)
 
         // Unary nodes.
-        case node@ReturnNode(expr) => rec[ExprNode](expr, props).flatMap(transformer.transform(node))
-        case node@TopLevelExprNode.VariableDeclarationNode(_, _, _, value) => rec[ExprNode](value, props).flatMap(transformer.transform(node))
-        case node@NegationNode(expr) => rec[ExprNode](expr, props).flatMap(transformer.transform(node))
-        case node@LogicalNotNode(expr) => rec[ExprNode](expr, props).flatMap(transformer.transform(node))
-        case node@PropertyAccessNode(instance, _) => rec[ExprNode](instance, props).flatMap(transformer.transform(node))
+        case node@ReturnNode(expr, _) => rec[ExprNode](expr, props).flatMap(transformer.transform(node))
+        case node@TopLevelExprNode.VariableDeclarationNode(_, _, _, value, _) => rec[ExprNode](value, props).flatMap(transformer.transform(node))
+        case node@NegationNode(expr, _) => rec[ExprNode](expr, props).flatMap(transformer.transform(node))
+        case node@LogicalNotNode(expr, _) => rec[ExprNode](expr, props).flatMap(transformer.transform(node))
+        case node@PropertyAccessNode(instance, _, _) => rec[ExprNode](instance, props).flatMap(transformer.transform(node))
 
         // Binary nodes.
-        case node@TopLevelExprNode.AssignmentNode(address, value) =>
+        case node@TopLevelExprNode.AssignmentNode(address, value, _) =>
           recBinary[AddressNode, ExprNode](address, value, props).flatMap((transformer.transform(node) _).tupled)
-        case node@AdditionNode(left, right) =>
+        case node@AdditionNode(left, right, _) =>
           recBinary[ExprNode, ExprNode](left, right, props).flatMap((transformer.transform(node) _).tupled)
-        case node@SubtractionNode(left, right) =>
+        case node@SubtractionNode(left, right, _) =>
           recBinary[ExprNode, ExprNode](left, right, props).flatMap((transformer.transform(node) _).tupled)
-        case node@MultiplicationNode(left, right) =>
+        case node@MultiplicationNode(left, right, _) =>
           recBinary[ExprNode, ExprNode](left, right, props).flatMap((transformer.transform(node) _).tupled)
-        case node@DivisionNode(left, right) =>
+        case node@DivisionNode(left, right, _) =>
           recBinary[ExprNode, ExprNode](left, right, props).flatMap((transformer.transform(node) _).tupled)
-        case node@EqualsNode(left, right) =>
+        case node@EqualsNode(left, right, _) =>
           recBinary[ExprNode, ExprNode](left, right, props).flatMap((transformer.transform(node) _).tupled)
-        case node@NotEqualsNode(left, right) =>
+        case node@NotEqualsNode(left, right, _) =>
           recBinary[ExprNode, ExprNode](left, right, props).flatMap((transformer.transform(node) _).tupled)
-        case node@LessThanNode(left, right) =>
+        case node@LessThanNode(left, right, _) =>
           recBinary[ExprNode, ExprNode](left, right, props).flatMap((transformer.transform(node) _).tupled)
-        case node@LessThanEqualsNode(left, right) =>
+        case node@LessThanEqualsNode(left, right, _) =>
           recBinary[ExprNode, ExprNode](left, right, props).flatMap((transformer.transform(node) _).tupled)
-        case node@GreaterThanNode(left, right) =>
+        case node@GreaterThanNode(left, right, _) =>
           recBinary[ExprNode, ExprNode](left, right, props).flatMap((transformer.transform(node) _).tupled)
-        case node@GreaterThanEqualsNode(left, right) =>
+        case node@GreaterThanEqualsNode(left, right, _) =>
           recBinary[ExprNode, ExprNode](left, right, props).flatMap((transformer.transform(node) _).tupled)
-        case node@RepetitionNode(condition, body) =>
+        case node@RepetitionNode(condition, body, _) =>
           recBinary[ExprNode, StmtNode](condition, body, props).flatMap((transformer.transform(node) _).tupled)
 
         // Ternary nodes.
-        case node@IfElseNode(condition, onTrue, onFalse) =>
+        case node@IfElseNode(condition, onTrue, onFalse, _) =>
           (rec[ExprNode](condition, props), rec[StmtNode](onTrue, props), rec[StmtNode](onFalse, props)).simultaneous
             .flatMap((transformer.transform(node) _).tupled)
 
         // Xary nodes.
-        case node@TopLevelExprNode.ConstructorCallNode(_, arguments) => recXary(arguments, props).flatMap(transformer.transform(node))
-        case node@TopLevelExprNode.ConstructNode(arguments, _) => recXary(arguments, props).flatMap(transformer.transform(node))
-        case node@ConjunctionNode(expressions) => recXary(expressions, props).flatMap(transformer.transform(node))
-        case node@DisjunctionNode(expressions) => recXary(expressions, props).flatMap(transformer.transform(node))
-        case node@ConcatenationNode(expressions) => recXary(expressions, props).flatMap(transformer.transform(node))
-        case node@TupleNode(expressions) => recXary(expressions, props).flatMap(transformer.transform(node))
-        case node@ListNode(expressions) => recXary(expressions, props).flatMap(transformer.transform(node))
-        case node@BlockNode(statements) => recXary(statements, props).flatMap(transformer.transform(node))
-        case node@SimpleCallNode(_, _, arguments) => recXary(arguments, props).flatMap(transformer.transform(node))
-        case node@FixedFunctionCallNode(_, _, arguments) => recXary(arguments, props).flatMap(transformer.transform(node))
-        case node@DynamicCallNode(_, arguments) => recXary(arguments, props).flatMap(transformer.transform(node))
+        case node@TopLevelExprNode.ConstructorCallNode(_, arguments, _) => recXary(arguments, props).flatMap(transformer.transform(node))
+        case node@TopLevelExprNode.ConstructNode(arguments, _, _) => recXary(arguments, props).flatMap(transformer.transform(node))
+        case node@ConjunctionNode(expressions, _) => recXary(expressions, props).flatMap(transformer.transform(node))
+        case node@DisjunctionNode(expressions, _) => recXary(expressions, props).flatMap(transformer.transform(node))
+        case node@ConcatenationNode(expressions, _) => recXary(expressions, props).flatMap(transformer.transform(node))
+        case node@TupleNode(expressions, _) => recXary(expressions, props).flatMap(transformer.transform(node))
+        case node@ListNode(expressions, _) => recXary(expressions, props).flatMap(transformer.transform(node))
+        case node@BlockNode(statements, _) => recXary(statements, props).flatMap(transformer.transform(node))
+        case node@SimpleCallNode(_, _, arguments, _) => recXary(arguments, props).flatMap(transformer.transform(node))
+        case node@FixedFunctionCallNode(_, _, arguments, _) => recXary(arguments, props).flatMap(transformer.transform(node))
+        case node@DynamicCallNode(_, arguments, _) => recXary(arguments, props).flatMap(transformer.transform(node))
 
         // Map nodes.
-        case node@MapNode(kvs) => kvs.map { kv =>
+        case node@MapNode(kvs, _) => kvs.map { kv =>
           (rec[ExprNode](kv.key, props), rec[ExprNode](kv.value, props)).simultaneous.flatMap((transformer.transform(kv) _).tupled)
         }.simultaneous.flatMap(transformer.transform(node))
 
         // Iteration nodes.
-        case node@IterationNode(extractors, body) =>
+        case node@IterationNode(extractors, body, _) =>
           (
             extractors.map(extractor => rec[ExprNode](extractor.collection, props).flatMap(transformer.transform(extractor))).simultaneous,
             rec[StmtNode](body, props)

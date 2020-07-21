@@ -30,10 +30,9 @@ object MultiFunctionConstraints {
     */
   def verifyNoContinuation(mf: MultiFunctionDefinition): Verification = {
     mf.functions.map { function =>
-      implicit val fragment: Fragment = function.position.fragment
       function.body match {
         case None => Verification.succeed
-        case Some(expression) => StmtVisitor.visit(new NoContinuationVisitor())(expression)
+        case Some(expression) => StmtVisitor.visit(new NoContinuationVisitor)(expression)
       }
     }.simultaneous.verification
   }
@@ -113,7 +112,6 @@ object MultiFunctionConstraints {
       val successors = node.diSuccessors.toList
       successors.map { successor =>
         val child = successor.value
-        println(s"$child <: $parent?")
         val errors = if (!(child.signature.outputType <= parent.signature.outputType)) {
           List(IncompatibleOutputTypes(child, parent))
         } else Nil

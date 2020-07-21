@@ -3,17 +3,19 @@ package lore.compiler.functions
 import lore.compiler.ast.ExprNode
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.{Compilation, TypeScope}
-import lore.compiler.feedback.{Error, FragmentPosition, Positioned}
+import lore.compiler.feedback.{Error, Position, Positioned}
 import lore.compiler.functions
 import lore.compiler.functions.FunctionDefinition.CannotInstantiateFunction
 import lore.compiler.types.{Fit, Type}
 
 /**
+  * A definition of a single function as part of a larger multi-function.
+  *
   * @param typeScope The scope that saves type variables declared with the function.
   */
 class FunctionDefinition(
   val name: String, val typeScope: TypeScope, val parameters: List[ParameterDefinition], outputType: Type,
-  val body: Option[ExprNode], override val position: FragmentPosition,
+  val body: Option[ExprNode], override val position: Position,
 ) extends Positioned {
   val isAbstract: Boolean = body.isEmpty
   lazy val signature: FunctionSignature = functions.FunctionSignature(name, parameters, outputType, position)

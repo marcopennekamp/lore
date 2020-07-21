@@ -1,27 +1,20 @@
 package lore.compiler.phases.parsing
 
-import lore.compiler.LoreCompiler.SourceFragment
+import lore.compiler.ast.DeclNode
 import lore.compiler.core.Compilation.C
-import lore.compiler.core.{Compilation, Fragment}
-import lore.compiler.feedback.{Error, Position}
+import lore.compiler.core.Fragment
 import lore.compiler.phases.Phase
 
-class ParsingPhase(sources: List[SourceFragment]) extends Phase[List[Fragment]] {
-  override lazy val result: C[List[Fragment]] = parseAll()
-
-  case class ParsingError(fastparseError: String, pos: Position) extends Error(pos) {
-    override def message: String = s"The file had parsing errors: $fastparseError"
-  }
+class ParsingPhase(sources: List[Fragment]) extends Phase[List[DeclNode]] {
+  override lazy val result: C[List[DeclNode]] = parseAll()
 
   /**
-    * Parses all fragments or fails with parse errors.
+    * Parses all fragments or fails with parsing errors.
     */
-  def parseAll(): C[List[Fragment]] = {
+  def parseAll(): C[List[DeclNode]] = {
     sources.map { source =>
-      FragmentParser.parse(source) match {
-        case Left(errorMessage) => Compilation.fail(ParsingError(errorMessage, new Position(source.name, 0, "1:0")))
-        case Right(fragment) => Compilation.succeed(fragment)
-      }
-    }.simultaneous
+      val parser = new FragmentParser()(source)
+      parser.parsed
+    }.simultaneous.map(_.flatten)
   }
 }

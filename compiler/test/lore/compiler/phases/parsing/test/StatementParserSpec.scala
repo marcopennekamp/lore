@@ -3,14 +3,17 @@ package lore.compiler.phases.parsing.test
 import fastparse._
 import lore.compiler.ast.StmtNode.ReturnNode
 import lore.compiler.ast._
-import lore.compiler.phases.parsing.StatementParser
+import lore.compiler.core.Fragment
+import lore.compiler.phases.parsing.{StatementParser, TypeParser}
 import lore.compiler.test.BaseSpec
+import org.scalactic.Equality
 
 class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   import ExprNode._
   import TopLevelExprNode._
 
-  override def parser[_: P] = StatementParser.statement
+  implicit private val fragment: Fragment = Fragment("Test", "")
+  override def parser[_: P]: P[StmtNode] = new StatementParser(new TypeParser()).statement
 
   import TestNodes._
 
@@ -100,7 +103,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
 
   it should "parse tuple, list, and map constructors correctly" in {
     // Tuple constructors.
-    "()" --> UnitNode
+    "()" --> UnitNode()
     "(a, b)" --> TupleNode(List(va, vb))
     "(a + b, a * c, x < 5.3)" --> TupleNode(List(
       AdditionNode(va, vb), MultiplicationNode(va, vc), LessThanNode(vx, RealLiteralNode(5.3)),
@@ -141,7 +144,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   }
 
   it should "parse conditionals and loops correctly" in {
-    "if (true) false" --> IfElseNode(BoolLiteralNode(true), BoolLiteralNode(false), UnitNode)
+    "if (true) false" --> IfElseNode(BoolLiteralNode(true), BoolLiteralNode(false), UnitNode())
     "if (i < 25) { i += 1 }" --> IfElseNode(
       LessThanNode(vi, IntLiteralNode(25)),
       BlockNode(List(
@@ -150,7 +153,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
           AdditionNode(vi, IntLiteralNode(1)),
         ),
       )),
-      UnitNode
+      UnitNode()
     )
     "if (i <= 25) { i += 1 } else { i -= 1 }" --> IfElseNode(
       LessThanEqualsNode(vi, IntLiteralNode(25)),
@@ -169,7 +172,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     )
     "if (b) return a else return c" --> IfElseNode(vb, StmtNode.ReturnNode(va), StmtNode.ReturnNode(vc))
     // Dangling else! What will the parser choose?
-    "if (x) if (b) a else c" --> IfElseNode(vx, IfElseNode(vb, va, vc), UnitNode)
+    "if (x) if (b) a else c" --> IfElseNode(vx, IfElseNode(vb, va, vc), UnitNode())
 
     // While loops.
     "while (a > b) a /= 2" --> RepetitionNode(
@@ -261,108 +264,108 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   it should "assign the correct indices" in {
     inside("(a + b, a * c, x < 5.3)".parsed) {
       case tuple: TupleNode =>
-        tuple.index shouldEqual 0
+        tuple.position.index shouldEqual 0
         inside(tuple.expressions) {
           case Seq(add: AdditionNode, mult: MultiplicationNode, comp: LessThanNode) =>
-            add.index shouldEqual 1
-            add.left.index shouldEqual 1
-            add.right.index shouldEqual 5
-            mult.index shouldEqual 8
-            mult.left.index shouldEqual 8
-            mult.right.index shouldEqual 12
-            comp.index shouldEqual 15
-            comp.left.index shouldEqual 15
-            comp.right.index shouldEqual 19
+            add.position.index shouldEqual 1
+            add.left.position.index shouldEqual 1
+            add.right.position.index shouldEqual 5
+            mult.position.index shouldEqual 8
+            mult.left.position.index shouldEqual 8
+            mult.right.position.index shouldEqual 12
+            comp.position.index shouldEqual 15
+            comp.left.position.index shouldEqual 15
+            comp.right.position.index shouldEqual 19
         }
     }
     inside("if (i <= 25) { i += 1 } else { i -= 1 }".parsed) {
       case ifElse: IfElseNode =>
-        ifElse.index shouldEqual 0
+        ifElse.position.index shouldEqual 0
         inside(ifElse.condition) {
           case lt: LessThanEqualsNode =>
-            lt.index shouldEqual 4
-            lt.left.index shouldEqual 4
-            lt.right.index shouldEqual 9
+            lt.position.index shouldEqual 4
+            lt.left.position.index shouldEqual 4
+            lt.right.position.index shouldEqual 9
         }
         inside(ifElse.onTrue) {
           case block: BlockNode =>
-            block.index shouldEqual 13
+            block.position.index shouldEqual 13
             inside(block.statements) {
               case Seq(assign: AssignmentNode) =>
-                assign.index shouldEqual 15
-                assign.address.index shouldEqual 15
-                assign.value.index shouldEqual 20
+                assign.position.index shouldEqual 15
+                assign.address.position.index shouldEqual 15
+                assign.value.position.index shouldEqual 20
             }
         }
         inside(ifElse.onFalse) {
           case block: BlockNode =>
-            block.index shouldEqual 29
+            block.position.index shouldEqual 29
             inside(block.statements) {
               case Seq(assign: AssignmentNode) =>
-                assign.index shouldEqual 31
-                assign.address.index shouldEqual 31
-                assign.value.index shouldEqual 36
+                assign.position.index shouldEqual 31
+                assign.address.position.index shouldEqual 31
+                assign.value.position.index shouldEqual 36
             }
         }
     }
 
     inside("let position: Position3D = Position3D.from2D(5.5, 6.7)".parsed) {
       case decl: VariableDeclarationNode =>
-        decl.index shouldEqual 0
-        decl.tpe.value.index shouldEqual 14
+        decl.position.index shouldEqual 0
+        decl.tpe.value.position.index shouldEqual 14
         inside(decl.value) {
           case call: SimpleCallNode =>
-            call.index shouldEqual 27
+            call.position.index shouldEqual 27
             inside(call.arguments) {
               case Seq(rl1: RealLiteralNode, rl2: RealLiteralNode) =>
-                rl1.index shouldEqual 45
-                rl2.index shouldEqual 50
+                rl1.position.index shouldEqual 45
+                rl2.position.index shouldEqual 50
             }
         }
     }
 
     inside("applyDot.fixed[Dot, +Health](dot, e)".parsed) {
       case call: FixedFunctionCallNode =>
-        call.index shouldEqual 0
+        call.position.index shouldEqual 0
         inside(call.types) {
           case Seq(t1: TypeExprNode.NominalNode, t2: TypeExprNode.ComponentNode) =>
-            t1.index shouldEqual 15
-            t2.index shouldEqual 20
+            t1.position.index shouldEqual 15
+            t2.position.index shouldEqual 20
         }
         inside(call.arguments) {
           case Seq(dot: VariableNode, e: VariableNode) =>
-            dot.index shouldEqual 29
-            e.index shouldEqual 34
+            dot.position.index shouldEqual 29
+            e.position.index shouldEqual 34
         }
     }
 
     inside("%{ a -> %{ 'test' -> 'me' }, b -> %{ 'test' -> 'well $c' } }".parsed) {
       case map: MapNode =>
-        map.index shouldEqual 0
+        map.position.index shouldEqual 0
         inside(map.kvs) {
           case Seq(a: KeyValueNode, b: KeyValueNode) =>
-            a.index shouldEqual 3
-            a.key.index shouldEqual 3
+            a.position.index shouldEqual 3
+            a.key.position.index shouldEqual 3
             inside(a.value) {
               case innerMap: MapNode =>
-                innerMap.index shouldEqual 8
+                innerMap.position.index shouldEqual 8
                 inside(innerMap.kvs) {
                   case Seq(test: KeyValueNode) =>
-                    test.index shouldEqual 11
-                    test.key.index shouldEqual 11
-                    test.value.index shouldEqual 21
+                    test.position.index shouldEqual 11
+                    test.key.position.index shouldEqual 11
+                    test.value.position.index shouldEqual 21
                 }
             }
-            b.index shouldEqual 29
-            b.key.index shouldEqual 29
+            b.position.index shouldEqual 29
+            b.key.position.index shouldEqual 29
             inside(b.value) {
               case innerMap: MapNode =>
-                innerMap.index shouldEqual 34
+                innerMap.position.index shouldEqual 34
                 inside(innerMap.kvs) {
                   case Seq(test: KeyValueNode) =>
-                    test.index shouldEqual 37
-                    test.key.index shouldEqual 37
-                    test.value.index shouldEqual 47
+                    test.position.index shouldEqual 37
+                    test.key.position.index shouldEqual 37
+                    test.value.position.index shouldEqual 47
                 }
             }
         }
@@ -424,7 +427,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     "if (false) const a = 0" --> IfElseNode(
       BoolLiteralNode(false),
       VariableDeclarationNode("a", isMutable = false, None, IntLiteralNode(0)),
-      UnitNode,
+      UnitNode(),
     )
     "for (e <- list) const a = e" --> IterationNode(
       List(ExtractorNode("e", VariableNode("list"))),

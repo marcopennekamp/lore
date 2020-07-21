@@ -1,8 +1,10 @@
 package lore.compiler.phases.resolution
 
+import lore.compiler.ast.TypeDeclNode
 import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.phases.resolution.DeclarationResolver.InheritanceCycle
+import lore.compiler.feedback.Error
+import lore.compiler.phases.resolution.DependencyGraph.InheritanceCycle
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
 
@@ -10,7 +12,8 @@ import scalax.collection.mutable.Graph
   * A dependency graph for declared types that is used by [[DeclarationResolver]] to compute the correct order
   * in which classes should be created.
   */
-class DependencyGraph(owner: DeclarationResolver) {
+class DependencyGraph(owner: DependencyGraph.Owner) {
+
   /**
     * A mutable dependency graph, the nodes being type names. A type Any is the root of all declared types. Edges are
     * directed from supertype to subtype.
@@ -124,4 +127,24 @@ class DependencyGraph(owner: DeclarationResolver) {
     cycles
   }
 
+}
+
+object DependencyGraph {
+  /**
+    * The owner of a dependency graph, providing a view on the body of type declarations known to the compiler.
+    */
+  trait Owner {
+    def hasTypeDeclaration(name: String): Boolean
+    def getTypeDeclaration(name: String): Option[TypeDeclNode]
+  }
+
+  /**
+    * @param occurrence One of the type declarations where the cycles occurs, so that we can report one error location.
+    */
+  case class InheritanceCycle(cycle: List[String], occurrence: TypeDeclNode) extends Error(occurrence) {
+    override def message: String =
+      s"""An inheritance cycle between the following types has been detected: ${cycle.mkString(", ")}.
+         |A class or label A cannot inherit from a class/label B that also inherits from A directly or indirectly. The
+         |subtyping relationships of declared types must result in a directed, acyclic graph.""".stripMargin.replaceAll("\n", " ").trim
+  }
 }

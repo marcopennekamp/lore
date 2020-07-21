@@ -112,7 +112,6 @@ object ClassConstraints {
     */
   def verifyCanOwn(definition: ClassDefinition, component: ComponentDefinition): Verification = {
     val ownershipType = component.tpe.ownedBy.getOrElse(AnyType)
-    println(definition.tpe + " " + ownershipType + " " + (definition.tpe <= ownershipType))
     if (!(definition.tpe <= ownershipType)) {
       Compilation.fail(ClassCannotOwnComponent(definition, component))
     } else Verification.succeed

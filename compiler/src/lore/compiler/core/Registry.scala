@@ -1,6 +1,5 @@
 package lore.compiler.core
 
-import lore.compiler.ast.Node
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.Registry.{ConstructorNotFound, ExactFunctionNotFound, MultiFunctionNotFound, TypeNotFound}
 import lore.compiler.feedback.{Error, Position}
@@ -15,7 +14,7 @@ import scala.collection.{MapView, mutable}
   */
 class Registry {
   /**
-    * The list of types declared in the whole project, including predefined types such as Int and Real.
+    * The list of named types declared in the whole project, including predefined types such as Int and Real.
     */
   private val types = mutable.HashMap[String, NamedType](Type.predefinedTypes.toList: _*)
   private val typeDefinitions = mutable.HashMap[String, DeclaredTypeDefinition]()
@@ -26,6 +25,8 @@ class Registry {
     * Registers a type with the specific name.
     */
   def registerType(name: String, tpe: NamedType): Unit = {
+    // At this point, a legitimate error should have been raised if a type name is not unique, so this is
+    // a compiler error.
     if (types.contains(name)) {
       throw CompilationException(s"The type $name has already been registered.")
     }
@@ -44,7 +45,7 @@ class Registry {
   def getTypes: MapView[String, NamedType] = types.view
 
   /**
-    * Whether a type with the name `name` has been registered.
+    * Whether a type with the given name has been registered.
     */
   def hasType(name: String): Boolean = types.contains(name)
 
@@ -55,6 +56,7 @@ class Registry {
 
   /**
     * Gets a named type with the given name. If the type cannot be found, the operation fails with a compilation error.
+    * The difference from getType is that this results in a compilation with a clear failure state.
     *
     * @param position The position where the type name occurs, to be used for error building.
     */

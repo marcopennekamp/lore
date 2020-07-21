@@ -2,6 +2,9 @@ package lore.compiler.phases.parsing
 
 import fastparse.ScalaWhitespace._
 import fastparse._
+import lore.compiler.ast.Node
+import lore.compiler.ast.Node.Index
+import lore.compiler.core.Fragment
 
 /**
   * Implements the shunting-yard algorithm for arbitrary operators with arbitrary precedence. Supports both binary
@@ -12,10 +15,15 @@ object PrecedenceParser {
     def precedence: Int
     def isXary: Boolean = false
   }
-  case class XaryOperator[Operand](precedence: Int, constructor: List[Operand] => Operand) extends Operator {
+
+  case class XaryOperator[Operand <: Node](precedence: Int, constructor: List[Operand] => Operand)(implicit fragment: Fragment) extends Operator {
     override def isXary: Boolean = true
+    val constructorWithIndex: (Index, List[Operand]) => Operand = Node.withIndexUntupled(constructor)
   }
-  case class BinaryOperator[Operand](precedence: Int, constructor: (Operand, Operand) => Operand) extends Operator
+
+  case class BinaryOperator[Operand <: Node](precedence: Int, constructor: (Operand, Operand) => Operand)(implicit fragment: Fragment) extends Operator {
+    val constructorWithIndex: (Index, Operand, Operand) => Operand = Node.withIndexUntupled(constructor)
+  }
 
   /**
     * Parses a complete sequence of operands and operations into a single "operand", for example an expression node.
@@ -25,7 +33,7 @@ object PrecedenceParser {
     *                 fastparse, since it can't take the keys from the run-time map. This should use StringIn or similar
     *                 parsers for performance reasons.
     */
-  def parser[Operand, _: P](
+  def parser[Operand <: Node, _: P](
     operator: => P[Unit],
     operand: => P[Operand],
     operatorMeta: Map[String, Operator],
@@ -45,10 +53,11 @@ object PrecedenceParser {
         assert(operandStack.length > operators.length)
         // Now construct the node and add it to the output.
         val operands = operandStack.splitAt(operators.length + 1) match {
-          case (operands, stack) => operandStack = stack; operands
+          // We reverse the list, since the first stack element must be the last of the operand list.
+          case (operands, stack) => operandStack = stack; operands.reverse
         }
-        // We reverse the list, since the first stack element must be the last of the operand list.
-        operandStack = topOp.constructor(operands.reverse) +: operandStack
+        val index = operands.head.position.index
+        operandStack = topOp.constructorWithIndex(index, operands) +: operandStack
       case topOp: BinaryOperator[Operand] =>
         // We process one operator with two operands.
         operatorStack = operatorStack.drop(1) // Actually drop the topOp from the stack.
@@ -57,7 +66,7 @@ object PrecedenceParser {
         // Again, the order of operands needs to be reversed for the AST node.
         val (b, a) = (operandStack.head, operandStack.tail.head)
         operandStack = operandStack.drop(2)
-        operandStack = topOp.constructor(a, b) +: operandStack
+        operandStack = topOp.constructorWithIndex(a.position.index, a, b) +: operandStack
     }
 
     // Process the expression piece by piece. We handle two iterations of the standard shunting-yard algorithm in one.

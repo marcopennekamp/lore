@@ -39,7 +39,7 @@ object Subtyping {
       // that +u is an entity with the type +u & u.ownedBy, as any entity having the component u must also satisfy
       // its ownership constraint, so if u.ownedBy <= t2, we know that +u <= t2.
       { case (p1: ComponentType, t2) => p1.underlying.ownedBy.exists(ownedBy => isSubtype(ownedBy, t2)) },
-      
+
       // An intersection type i1 is the subtype of an intersection type i2, if all types in i2 are subsumed by i1.
       { case (i1: IntersectionType, i2: IntersectionType) => i2.types.forall(ic2 => isAnyPartSubtypeOf(i1, ic2)) },
       // An intersection type i1 is the subtype of another type t2 if one component of i1 is a subtype of t2.

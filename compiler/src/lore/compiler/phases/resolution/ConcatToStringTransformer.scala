@@ -25,8 +25,8 @@ class ConcatToStringTransformer extends StmtTransformer {
   override def transform(node: ConcatenationNode)(expressions: List[ExprNode]): Compilation[ExprNode] = {
     val transformedExpressions = expressions.map {
       case literal: StringLiteralNode => literal
-      case expr => SimpleCallNode("toString", None, List(expr))
+      case expr => val node = SimpleCallNode("toString", None, List(expr)); node.state.position = expr.state.position; node
     }
-    Compilation.succeed(ConcatenationNode(transformedExpressions))
+    Compilation.succeed(node.copy(expressions = transformedExpressions))
   }
 }

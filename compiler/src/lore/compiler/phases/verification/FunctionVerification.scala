@@ -18,10 +18,8 @@ import lore.compiler.types.Type
   * Ascribing inferred types is a side-effect of this verifier.
   */
 object FunctionVerification {
-  case class IllegallyTypedExpression(
-    expr: StmtNode, expectedTypes: List[Type]
-  )(implicit fragment: Fragment) extends Error(expr) {
-    override def message = s"The expression $expr has the illegal type ${expr.inferredType}.$expected"
+  case class IllegallyTypedExpression(expr: StmtNode, expectedTypes: List[Type]) extends Error(expr) {
+    override def message = s"The expression $expr has the illegal type ${expr.state.inferredType}.$expected"
     private def expected: String = {
       if (expectedTypes.nonEmpty) {
         s" We expected one of the following types (or a subtype thereof): ${expectedTypes.mkString(",")}."
@@ -31,7 +29,7 @@ object FunctionVerification {
 
   case class IllegallyTypedBody(signature: FunctionSignature, body: StmtNode) extends Error(signature.position) {
     override def message: String = s"The function ${signature.name} should return a value of type ${signature.outputType}, but actually returns" +
-      s" a value of type ${body.inferredType}."
+      s" a value of type ${body.state.inferredType}."
   }
 
   /**
@@ -39,10 +37,7 @@ object FunctionVerification {
     * Also ensures that the return type of the signature is sound compared to the type of the body.
     */
   def verifyFunction(function: FunctionDefinition)(implicit registry: Registry): Verification = {
-    function.body.map { body =>
-      implicit val fragment: Fragment = function.position.fragment
-      verify(function.signature, function.typeScope, body, None)
-    }.toCompiledOption.verification
+    function.body.map(body => verify(function.signature, function.typeScope, body, None)).toCompiledOption.verification
   }
 
   /**
@@ -53,14 +48,13 @@ object FunctionVerification {
     constructor: ConstructorDefinition,
     classDefinition: ClassDefinition,
   )(implicit registry: Registry): Verification = {
-    implicit val fragment = constructor.position.fragment
     verify(constructor.signature, constructor.typeScope, constructor.body, Some(classDefinition))
   }
 
   private def verify(
     signature: FunctionSignature, typeScope: TypeScope, body: StmtNode,
     classDefinition: Option[ClassDefinition],
-  )(implicit registry: Registry, fragment: Fragment): Verification = {
+  )(implicit registry: Registry): Verification = {
     for {
       _ <- SignatureConstraints.verify(signature)
       _ <- {
@@ -79,7 +73,7 @@ object FunctionVerification {
    * Verifies that the function's output type is compatible with the type of the body.
    */
   private def verifyOutputType(signature: FunctionSignature, body: StmtNode): Verification = {
-    if (body.inferredType <= signature.outputType) {
+    if (body.state.inferredType <= signature.outputType) {
       Verification.succeed
     } else {
       Verification.fromErrors(List(IllegallyTypedBody(signature, body)))
@@ -89,11 +83,11 @@ object FunctionVerification {
   /**
    * Asserts that every node in the body has been assigned a type. If this is not the case, we have a compiler bug.
    */
-  private def assertTypesAssigned(body: StmtNode)(implicit fragment: Fragment): Verification = {
+  private def assertTypesAssigned(body: StmtNode): Verification = {
     StmtVisitor.visit(new VerificationStmtVisitor {
       override def verify(node: StmtNode): Verification = {
         try {
-          node.inferredType
+          node.state.inferredType
           Verification.succeed
         } catch {
           case _: CompilationException => throw CompilationException(

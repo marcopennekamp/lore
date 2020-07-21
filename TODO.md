@@ -1,5 +1,7 @@
 ### TODO
 
+- Turn all pos: Position parameters (on errors and such) into implicit parameters!
+
 NEXT:
 - Finish transpilation and verification for the current MVL constructs.
 - Then handle further parametric types stuff.

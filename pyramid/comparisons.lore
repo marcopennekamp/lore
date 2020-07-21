@@ -1,0 +1,8 @@
+/**
+  * The default equals function used by the compiler for comparing complex types. This function is invoked
+  * when using the == and =/= operators.
+  */
+function areEqual(a: Any, b: Any): Boolean = dynamic[Boolean]('Lore.values.areEqual', a, b)
+
+
+

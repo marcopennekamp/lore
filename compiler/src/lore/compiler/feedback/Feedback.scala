@@ -1,8 +1,6 @@
 package lore.compiler.feedback
 
 import lore.compiler.ast._
-import lore.compiler.core.Fragment
-import lore.compiler.phases.resolution.FragmentNode
 
 /**
   * A Feedback instance is a compiler report. The most notable Feedback types are warnings and errors.
@@ -23,7 +21,7 @@ sealed trait Feedback {
   def isSevere: Boolean
 
   /**
-    * A stack trace of the instance where the feedback was intitialized.
+    * A stack trace of the instance where the feedback was initialized.
     */
   val stackTrace: List[StackTraceElement] = new Throwable().getStackTrace.toList
 }
@@ -51,12 +49,8 @@ abstract class Error(override val position: Position) extends Feedback {
   override def isSevere = true
   override val consoleTag: String = FeedbackPrinter.tagError
 
-  def this(node: Node)(implicit fragment: Fragment) {
+  def this(node: Node) {
     this(node.position)
-  }
-
-  def this(fragmentNode: FragmentNode[Node]) {
-    this(fragmentNode.position)
   }
 
   def this(definition: Positioned) {

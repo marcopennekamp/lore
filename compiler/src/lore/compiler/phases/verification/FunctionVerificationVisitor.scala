@@ -26,7 +26,7 @@ private[verification] class FunctionVerificationVisitor(
     * The class that owns the constructor IF the signature represents a constructor.
     */
   classDefinition: Option[ClassDefinition],
-)(implicit registry: Registry, fragment: Fragment) extends VerificationStmtVisitor {
+)(implicit registry: Registry) extends VerificationStmtVisitor {
   import ExprNode._
   import FunctionVerificationVisitor._
   import StmtNode._
@@ -51,7 +51,7 @@ private[verification] class FunctionVerificationVisitor(
     * Whether the given statement's inferred type is a subtype of one of the expected types.
     */
   private def havingSubtype(statement: StmtNode, supertypes: Type*): Verification = {
-    if (!supertypes.exists(expected => statement.inferredType <= expected)) {
+    if (!supertypes.exists(expected => statement.state.inferredType <= expected)) {
       Compilation.fail(IllegallyTypedExpression(statement, supertypes.toList))
     } else Verification.succeed
   }
@@ -74,7 +74,7 @@ private[verification] class FunctionVerificationVisitor(
 
   private def typeBinaryNumbers(node: StmtNode, left: StmtNode, right: StmtNode): Verification = {
     beingNumbers(left, right).flatMap { _ =>
-      if (left.inferredType == BasicType.Real || right.inferredType == BasicType.Real) {
+      if (left.state.inferredType == BasicType.Real || right.state.inferredType == BasicType.Real) {
         node.typed(BasicType.Real)
       } else { // Both operands are integers.
         node.typed(BasicType.Int)
@@ -123,12 +123,12 @@ private[verification] class FunctionVerificationVisitor(
     * Assigns the target to the node and types it with the target's output type.
     */
   private def assignTarget(node: CallNode[InternalCallTarget], target: InternalCallTarget): Verification = {
-    node.target = target
+    node.state.target = target
     node.typed(target.signature.outputType)
   }
 
   private def typeLoop(node: LoopNode): Verification = {
-    val bodyType = node.body.inferredType
+    val bodyType = node.body.state.inferredType
     val loopType = if (bodyType == ProductType.UnitType) {
       ProductType.UnitType
     } else {
@@ -139,35 +139,35 @@ private[verification] class FunctionVerificationVisitor(
 
   override def verify(node: StmtNode): Verification = node match {
     // Literals.
-    case RealLiteralNode(_)   => node.typed(BasicType.Real)
-    case IntLiteralNode(_)    => node.typed(BasicType.Int)
-    case BoolLiteralNode(_)   => node.typed(BasicType.Boolean)
-    case StringLiteralNode(_) => node.typed(BasicType.String)
-    case UnitNode             => node.typed(ProductType.UnitType)
+    case RealLiteralNode(_, _)   => node.typed(BasicType.Real)
+    case IntLiteralNode(_, _)    => node.typed(BasicType.Int)
+    case BoolLiteralNode(_, _)   => node.typed(BasicType.Boolean)
+    case StringLiteralNode(_, _) => node.typed(BasicType.String)
+    case UnitNode(_)             => node.typed(ProductType.UnitType)
 
     // Control nodes.
-    case ReturnNode(expr) =>
+    case ReturnNode(expr, _) =>
       havingSubtype(expr, topSignature.outputType).flatMap { _ =>
         node.typed(NothingType)
       }
 
     // Variables.
-    case node@VariableNode(name) =>
+    case node@VariableNode(name, _) =>
       // TODO: We will also need access to global variables if we introduce those into Lore.
       // TODO: Once we treat functions as values, we will have to make this even more complicated by also
       //       considering function names.
       implicit val position: Position = node.position
       context.currentScope.resolve(name).flatMap { variable =>
-        node.setVariable(variable)
+        node.state.setVariable(variable, node)
         node.typed(variable.tpe)
       }
-    case node@PropertyAccessNode(instance, name) =>
+    case node@PropertyAccessNode(instance, name, _) =>
       implicit val position: Position = node.position
-      MemberExplorer.find(name, instance.inferredType).flatMap { member =>
-        node.member = member
+      MemberExplorer.find(name, instance.state.inferredType).flatMap { member =>
+        node.state.member = member
         node.typed(member.tpe)
       }
-    case node@VariableDeclarationNode(name, isMutable, maybeTypeNode, value) =>
+    case node@VariableDeclarationNode(name, isMutable, maybeTypeNode, value, _) =>
       implicit val position: Position = node.position
       // Add the variable type to the type context. Either infer the type from the value or, if a type has
       // been explicitly declared, check that the value adheres to the type bounds.
@@ -178,24 +178,24 @@ private[verification] class FunctionVerificationVisitor(
         }
       }.toCompiledOption.map {
         // Now decide which type the variable should have.
-        case None => value.inferredType
+        case None => value.state.inferredType
         case Some(tpe) => tpe
       }.flatMap { tpe =>
         // Register the local variable with the scope.
         val localVariable = LocalVariable(name, tpe, isMutable)
         context.currentScope.register(localVariable).flatMap { _ =>
-          node.setVariable(localVariable)
+          node.state.setVariable(localVariable, node)
           // An assignment always results in a unit value.
           node.typed(ProductType.UnitType)
         }
       }
-    case AssignmentNode(address, value) =>
+    case AssignmentNode(address, value, _) =>
       // We check the assignment based on the kind of address node. Mostly, we want to ensure that the value
       // assigned to the variable adheres to its type bounds. We also ensure that the variable or property is
       // even assignable, i.e. mutable.
       val (tpe, isMutable) = address match {
-        case variableNode: VariableNode => (variableNode.inferredType, variableNode.variable.isMutable)
-        case accessNode: PropertyAccessNode => (accessNode.inferredType, accessNode.member.isMutable)
+        case variableNode: VariableNode => (variableNode.state.inferredType, variableNode.state.variable.isMutable)
+        case accessNode: PropertyAccessNode => (accessNode.state.inferredType, accessNode.state.member.isMutable)
         case _ => throw CompilationException("This case should not be reached.")
       }
       (
@@ -206,7 +206,7 @@ private[verification] class FunctionVerificationVisitor(
       ).simultaneous.flatMap(_ => node.typed(ProductType.UnitType))
 
     // Function calls.
-    case node@SimpleCallNode(name, qualifier, arguments) =>
+    case node@SimpleCallNode(name, qualifier, arguments, _) =>
       registry.resolveConstructor(name, qualifier, node.position).flatMap {
         constructor => typeCall(node, constructor, arguments)
       } recover {
@@ -220,10 +220,11 @@ private[verification] class FunctionVerificationVisitor(
           if (qualifier.isDefined) Compilation.fail(errors: _*)
           else {
             registry.resolveMultiFunction(name, node.position).flatMap { mf =>
-              val inputType = ProductType(arguments.map(_.inferredType))
+              val inputType = ProductType(arguments.map(_.state.inferredType))
+              implicit val callPosition: Position = node.position
               mf.min(inputType) match {
-                case Nil => Compilation.fail(EmptyFit(mf, node.position))
-                case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, min, node.position))
+                case Nil => Compilation.fail(EmptyFit(mf))
+                case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, min))
                 case List(functionDefinition) =>
                   functionDefinition.instantiate(inputType).flatMap { instance =>
                     assignTarget(node, instance)
@@ -232,7 +233,7 @@ private[verification] class FunctionVerificationVisitor(
             }
           }
       }
-    case node@FixedFunctionCallNode(name, typeExpressions, arguments) =>
+    case node@FixedFunctionCallNode(name, typeExpressions, arguments, _) =>
       for {
         types <- typeExpressions.map(TypeExpressionEvaluator.evaluate).simultaneous
         function <- registry.resolveExactFunction(name, types, node.position)
@@ -240,25 +241,25 @@ private[verification] class FunctionVerificationVisitor(
         // via the argument types.
         instance <- function.instantiate(ProductType(types))
       } yield typeCall(node, instance, arguments)
-    case node@DynamicCallNode(resultType, arguments) =>
+    case node@DynamicCallNode(resultType, arguments, state) =>
       (
         // The first argument to the dynamic call must be a constant function name.
         arguments.headOption match {
-          case Some(StringLiteralNode(name)) => Compilation.succeed(name)
+          case Some(StringLiteralNode(name, _)) => Compilation.succeed(name)
           case _ => Compilation.fail(DynamicFunctionNameExpected(node))
         },
         TypeExpressionEvaluator.evaluate(resultType),
       ).simultaneous.flatMap { case (name, resultType) =>
-        node.target = DynamicCallTarget(name, resultType)
+        state.target = DynamicCallTarget(name, resultType)
         node.typed(resultType)
       }
-    case node@ConstructorCallNode(name, arguments) =>
+    case node@ConstructorCallNode(name, arguments, _) =>
       // Continue with a constructor this.name. We have already verified that only a constructor can contain a
       // continuation, so we can safely get the class definition here as part of the contract of this visitor.
       assert(classDefinition.isDefined)
       val cl = classDefinition.get
       registry.resolveConstructor(cl, name, node.position).flatMap(constructor => typeCall(node, constructor, arguments))
-    case ConstructNode(arguments, _) =>
+    case ConstructNode(arguments, _, _) =>
       // We just have to check whether the arguments adhere to the construct signature. The visitor will already
       // have checked the potential withSuper constructor call.
       assert(classDefinition.isDefined)
@@ -268,72 +269,70 @@ private[verification] class FunctionVerificationVisitor(
       }
 
     // Unary operations.
-    case NegationNode(expr) =>
+    case NegationNode(expr, state) =>
       beingNumber(expr).flatMap { _ =>
-        node.typed(expr.inferredType)
+        node.typed(state.inferredType)
       }
-    case LogicalNotNode(expr) =>
+    case LogicalNotNode(expr, _) =>
       beingBoolean(expr).flatMap { _ =>
         node.typed(BasicType.Boolean)
       }
 
     // Repetitions.
-    case node@RepetitionNode(condition, _) =>
+    case node@RepetitionNode(condition, _, _) =>
       havingSubtype(condition, BasicType.Boolean).flatMap { _ =>
         typeLoop(node)
       }
 
     // Binary operations.
-    case AdditionNode(left, right) => typeBinaryNumbers(node, left, right)
-    case SubtractionNode(left, right) => typeBinaryNumbers(node, left, right)
-    case MultiplicationNode(left, right) => typeBinaryNumbers(node, left, right)
-    case DivisionNode(left, right) => typeBinaryNumbers(node, left, right)
-    case EqualsNode(left, right) =>
+    case AdditionNode(left, right, _) => typeBinaryNumbers(node, left, right)
+    case SubtractionNode(left, right, _) => typeBinaryNumbers(node, left, right)
+    case MultiplicationNode(left, right, _) => typeBinaryNumbers(node, left, right)
+    case DivisionNode(left, right, _) => typeBinaryNumbers(node, left, right)
+    case EqualsNode(left, right, _) =>
       // TODO: Should we check the input types here at all? For example that types must be equal? Or at least in a
       //       subtyping relationship with each other?
       node.typed(BasicType.Boolean)
-    case NotEqualsNode(left, right) => node.typed(BasicType.Boolean)
-    case LessThanNode(left, right) => node.typed(BasicType.Boolean)
-    case LessThanEqualsNode(left, right) => node.typed(BasicType.Boolean)
-    case GreaterThanNode(left, right) => node.typed(BasicType.Boolean)
-    case GreaterThanEqualsNode(left, right) => node.typed(BasicType.Boolean)
+    case NotEqualsNode(left, right, _) => node.typed(BasicType.Boolean)
+    case LessThanNode(left, right, _) => node.typed(BasicType.Boolean)
+    case LessThanEqualsNode(left, right, _) => node.typed(BasicType.Boolean)
+    case GreaterThanNode(left, right, _) => node.typed(BasicType.Boolean)
+    case GreaterThanEqualsNode(left, right, _) => node.typed(BasicType.Boolean)
 
     // Ternary
-    case IfElseNode(condition, onTrue, onFalse) =>
+    case IfElseNode(condition, onTrue, onFalse, _) =>
       // TODO: Warn if the result type is Any?
       havingSubtype(condition, BasicType.Boolean).flatMap { _ =>
         // TODO: If only one branch supplies a value, return an OPTION of the evaluated type. Of course, we don't
         //       HAVE options just yet. This also needs to become part of the spec before it's implemented, IF we
         //       implement this feature.
-        val resultType = LeastUpperBound.leastUpperBound(onTrue.inferredType, onFalse.inferredType)
+        val resultType = LeastUpperBound.leastUpperBound(onTrue.state.inferredType, onFalse.state.inferredType)
         node.typed(resultType)
       }
 
     // Blocks.
-    case BlockNode(statements) =>
+    case BlockNode(statements, _) =>
       // This is AFTER the block has been visited. The scope has already been opened and needs to be closed.
       context.closeScope()
-      node.typed(statements.lastOption.map(_.inferredType).getOrElse(ProductType.UnitType))
+      node.typed(statements.lastOption.map(_.state.inferredType).getOrElse(ProductType.UnitType))
 
     // Literal constructions.
-    case TupleNode(expressions) => node.typed(ProductType(expressions.map(_.inferredType)))
-    case ListNode(expressions) =>
+    case TupleNode(expressions, _) => node.typed(ProductType(expressions.map(_.state.inferredType)))
+    case ListNode(expressions, _) =>
       // If we type empty lists as [Nothing], we can assign this empty list to any kind of list, which makes
       // coders happy. :) Hence the default value in the fold.
-      val elementType = expressions.map(_.inferredType).foldLeft(NothingType: Type)(LeastUpperBound.leastUpperBound)
+      val elementType = expressions.map(_.state.inferredType).foldLeft(NothingType: Type)(LeastUpperBound.leastUpperBound)
       node.typed(ListType(elementType))
-    case MapNode(entries) =>
-      val keyType = entries.map(_.key.inferredType).foldLeft(NothingType: Type)(LeastUpperBound.leastUpperBound)
-      val valueType = entries.map(_.value.inferredType).foldLeft(NothingType: Type)(LeastUpperBound.leastUpperBound)
+    case MapNode(entries, _) =>
+      val keyType = entries.map(_.key.state.inferredType).foldLeft(NothingType: Type)(LeastUpperBound.leastUpperBound)
+      val valueType = entries.map(_.value.state.inferredType).foldLeft(NothingType: Type)(LeastUpperBound.leastUpperBound)
       node.typed(MapType(keyType, valueType))
 
     // Xary operations.
-    case ConjunctionNode(expressions) => typeXaryBooleans(node, expressions)
-    case DisjunctionNode(expressions) => typeXaryBooleans(node, expressions)
-    case ConcatenationNode(expressions) =>
-      // TODO: Do we need to make sure that each non-string expression has a sort of toString function implementation?
-      //       Or do we just implement a basic implementation for Any? This could be some of the first Lore code that
-      //       we write...
+    case ConjunctionNode(expressions, _) => typeXaryBooleans(node, expressions)
+    case DisjunctionNode(expressions, _) => typeXaryBooleans(node, expressions)
+    case ConcatenationNode(_, _) =>
+      // We can concatenate any sort of type, so checking the given expressions is not needed.
       node.typed(BasicType.String)
   }
 
@@ -349,13 +348,13 @@ private[verification] class FunctionVerificationVisitor(
     val scope = context.currentScope
     node.extractors.map { extractor =>
       implicit val position: Position = extractor.position
-      (extractor.collection.inferredType match {
+      (extractor.collection.state.inferredType match {
         case ListType(element) => Compilation.succeed(element)
         case MapType(key, value) => Compilation.succeed(ProductType(List(key, value)))
         case _ => Compilation.fail(CollectionExpected(extractor.collection))
       }).flatMap { elementType =>
         val localVariable = LocalVariable(extractor.variableName, elementType, isMutable = false)
-        scope.register(localVariable).map(_ => extractor.setVariable(localVariable))
+        scope.register(localVariable).map(_ => extractor.state.setVariable(localVariable, extractor.collection))
       }
     }.simultaneous.flatMap { _ =>
       visitBody().flatMap { _ =>
@@ -366,32 +365,32 @@ private[verification] class FunctionVerificationVisitor(
   }
 
   override def before: PartialFunction[StmtNode, Unit] = {
-    case ExprNode.BlockNode(_) => context.openScope()
+    case ExprNode.BlockNode(_, _) => context.openScope()
   }
 }
 
 private[verification] object FunctionVerificationVisitor {
-  case class ImmutableAssignment(addressNode: AddressNode)(implicit fragment: Fragment) extends Error(addressNode) {
+  case class ImmutableAssignment(addressNode: AddressNode) extends Error(addressNode) {
     override def message = s"The variable or property you are trying to assign to is immutable."
   }
 
-  case class EmptyFit(mf: MultiFunctionDefinition, callPos: Position) extends Error(callPos) {
+  case class EmptyFit(mf: MultiFunctionDefinition)(implicit callPosition: Position) extends Error(callPosition) {
     override def message: String = s"The multi-function call ${mf.name} at this site has an empty fit. We cannot" +
       s" find a function of that name that would accept the given arguments."
   }
 
-  case class AmbiguousCall(mf: MultiFunctionDefinition, min: List[FunctionDefinition], callPos: Position) extends Error(callPos) {
+  case class AmbiguousCall(mf: MultiFunctionDefinition, min: List[FunctionDefinition])(implicit callPosition: Position) extends Error(callPosition) {
     override def message: String = s"The multi-function call ${mf.name} at this site has an ambiguous min-set." +
       s" That is, we are finding TOO MANY functions that would accept the given arguments: ${min.mkString(", ")}."
   }
 
-  case class DynamicFunctionNameExpected(node: ExprNode.DynamicCallNode)(implicit fragment: Fragment) extends Error(node) {
+  case class DynamicFunctionNameExpected(node: ExprNode.DynamicCallNode) extends Error(node) {
     override def message: String = "Dynamic calls require a string literal as their first argument, which represents the" +
       " name of the function. Since the name must be available at compile-time, it must be a constant."
   }
 
-  case class CollectionExpected(node: ExprNode)(implicit fragment: Fragment) extends Error(node) {
-    override def message: String = s"Expected a collection at this position. Got $node instead, which has type ${node.inferredType}."
+  case class CollectionExpected(node: ExprNode) extends Error(node) {
+    override def message: String = s"Expected a collection at this position. Got $node instead, which has type ${node.state.inferredType}."
   }
 
   implicit class StmtNodeExtension(node: StmtNode) {
@@ -399,7 +398,7 @@ private[verification] object FunctionVerificationVisitor {
       * Assigns the given type to the node and returns the type.
       */
     def typed(tpe: Type): Verification = {
-      node.setInferredType(tpe)
+      node.state.setInferredType(tpe)
       Verification.succeed
     }
   }

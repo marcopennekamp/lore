@@ -3,12 +3,10 @@ package lore.compiler.phases.transpilation
 import lore.compiler.CompilerOptions
 import lore.compiler.ast.visitor.StmtVisitor
 import lore.compiler.core.Compilation.C
-import lore.compiler.core.{Fragment, Registry}
+import lore.compiler.core.Registry
 import lore.compiler.functions.FunctionDefinition
 
 class FunctionTranspiler(function: FunctionDefinition, uniqueName: String)(implicit compilerOptions: CompilerOptions, registry: Registry) {
-  implicit val fragment: Fragment = function.position.fragment
-
   def transpile: C[String] = {
     assert(!function.isAbstract)
     val parameterNames = function.parameters.map(_.asLocalVariable.transpiledName)

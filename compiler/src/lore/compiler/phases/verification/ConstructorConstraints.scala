@@ -40,8 +40,6 @@ object ConstructorConstraints {
     * that continuations are acyclic and end in a construct continuation.
     */
   def verifyContinuations(definition: ClassDefinition): Verification = {
-    implicit val fragment: Fragment = definition.position.fragment
-
     // We check first that all constructors end in a continuation and that no continuation appears in any other places.
     // This is deliberately followed by a flatMap, because we don't want to check the graph parts of this verification
     // if not all continuations are in the right spot.
@@ -70,9 +68,9 @@ object ConstructorConstraints {
         // a continuation.
         val continuation = constructor.body.statements.last.asInstanceOf[TopLevelExprNode.ContinuationNode]
         continuation match {
-          case TopLevelExprNode.ConstructorCallNode(name, _) =>
+          case TopLevelExprNode.ConstructorCallNode(name, _, _) =>
             flowGraph.addEdge(constructor.name, name.getOrElse(definition.name))
-          case TopLevelExprNode.ConstructNode(_, _) =>
+          case TopLevelExprNode.ConstructNode(_, _, _) =>
             flowGraph.addEdge(constructor.name, constructName)
         }
       }
@@ -99,7 +97,7 @@ object ConstructorConstraints {
     correctFlow.verification
   }
 
-  case class NoReturnInConstructor(node: ReturnNode)(implicit fragment: Fragment) extends Error(node) {
+  case class NoReturnInConstructor(node: ReturnNode) extends Error(node) {
     override def message = s"A constructor may not contain a return statement."
   }
 
@@ -107,10 +105,9 @@ object ConstructorConstraints {
     * Verifies that the constructor contains no return statement.
     */
   def verifyNoReturn(constructor: ConstructorDefinition): Verification = {
-    implicit val fragment: Fragment = constructor.position.fragment
     val visitor = new VerificationStmtVisitor {
       override def verify(node: StmtNode): Verification = node match {
-        case node@StmtNode.ReturnNode(_) => Compilation.fail(NoReturnInConstructor(node))
+        case node@StmtNode.ReturnNode(_, _) => Compilation.fail(NoReturnInConstructor(node))
         case _ => Verification.succeed
       }
     }

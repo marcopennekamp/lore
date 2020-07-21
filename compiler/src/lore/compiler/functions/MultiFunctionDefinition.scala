@@ -8,6 +8,7 @@ import scalax.collection.mutable.Graph
 import scala.collection.mutable
 
 case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinition]) {
+
   /**
     * A hierarchy of functions ordered according to their input types. Not necessarily connected, but
     * definitely acyclic.
@@ -159,4 +160,5 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
     }
     assert(hierarchy.isAcyclic)
   }
+
 }

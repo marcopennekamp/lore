@@ -11,7 +11,7 @@ object TypeVariableDeclarationResolver {
     * Resolves a type variable declaration list in order, ensuring that the order property of the type variables is
     * set correctly.
     */
-  def resolve(nodes: List[DeclNode.TypeVariableNode])(implicit typeScope: TypeScope, fragment: Fragment): C[TypeVariableScope] = {
+  def resolve(nodes: List[DeclNode.TypeVariableNode])(implicit typeScope: TypeScope): C[TypeVariableScope] = {
     // The fold ensures that the first type variable is registered before the second one is resolved, so that the first
     // one can be used as a bound of the second one, and so on.
     val initial = (Compilation.succeed(new TypeVariableScope(typeScope)), 0)
@@ -31,7 +31,7 @@ object TypeVariableDeclarationResolver {
   /**
     * Resolves a single type variable declaration.
     */
-  def resolve(node: DeclNode.TypeVariableNode, order: Int)(implicit typeScope: TypeScope, fragment: Fragment): C[TypeVariable] = {
+  def resolve(node: DeclNode.TypeVariableNode, order: Int)(implicit typeScope: TypeScope): C[TypeVariable] = {
     for {
       lowerBound <- node.lowerBound.map(TypeExpressionEvaluator.evaluate).toCompiledOption
       upperBound <- node.upperBound.map(TypeExpressionEvaluator.evaluate).toCompiledOption

@@ -4,7 +4,7 @@ import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.file.{Files, Path}
 
 import lore.compiler.core.Compilation.C
-import lore.compiler.core.{Errors, Registry, Result}
+import lore.compiler.core.{Errors, Fragment, Registry, Result}
 import lore.compiler.feedback.FeedbackPrinter
 import lore.compiler.types.DeclaredType
 
@@ -13,21 +13,22 @@ import scala.util.Using
 object Lore {
   val pyramid = List(
     fragment("pyramid.collections", Path.of("pyramid", "collections.lore")),
+    fragment("pyramid.comparisons", Path.of("pyramid", "comparisons.lore")),
     fragment("pyramid.io", Path.of("pyramid", "io.lore")),
     fragment("pyramid.math", Path.of("pyramid", "math.lore")),
     fragment("pyramid.string", Path.of("pyramid", "string.lore")),
   )
 
-  def fragment(name: String, path: Path): LoreCompiler.SourceFragment = {
+  def fragment(name: String, path: Path): Fragment = {
     import scala.jdk.CollectionConverters._
     val source = Files.lines(path).iterator().asScala.mkString("\n") + "\n" // Ensure that the file ends in a newline.
-    LoreCompiler.SourceFragment(name, source)
+    Fragment(name, source)
   }
 
   /**
     * Compiles a Lore program from a single source.
     */
-  def fromSingleSource(fragment: LoreCompiler.SourceFragment): C[(Registry, String)] = {
+  def fromSingleSource(fragment: Fragment): C[(Registry, String)] = {
     val options = CompilerOptions(
       runtimeLogging = false,
     )

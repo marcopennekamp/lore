@@ -1,6 +1,5 @@
 package lore.compiler.core
 
-import lore.compiler.ast.Node
 import lore.compiler.core.Compilation.{C, Verification}
 import lore.compiler.core.Scope.{AlreadyDeclared, UnknownEntry}
 import lore.compiler.feedback.{Error, Position}
@@ -51,12 +50,12 @@ trait Scope[A <: Scope.Entry] {
   /**
     * Creates an "unknown entry" error. You may override this to provide better error messages.
     */
-  protected def unknownEntry(name: String)(implicit position: Position): Error = UnknownEntry(name, position)
+  protected def unknownEntry(name: String)(implicit position: Position): Error = UnknownEntry(name)
 
   /**
     * Creates an "already declared" error. You may override this to provide better error messages.
     */
-  protected def alreadyDeclared(name: String)(implicit position: Position): Error = AlreadyDeclared(name, position)
+  protected def alreadyDeclared(name: String)(implicit position: Position): Error = AlreadyDeclared(name)
 }
 
 abstract class BasicScope[A <: Scope.Entry](val parent: Option[Scope[A]]) extends Scope[A] {
@@ -73,11 +72,11 @@ object Scope {
     def name: String
   }
 
-  case class AlreadyDeclared(name: String, pos: Position) extends Error(pos) {
+  case class AlreadyDeclared(name: String)(implicit position: Position) extends Error(position) {
     override def message = s"An entry '$name' has already been declared in the current scope."
   }
 
-  case class UnknownEntry(name: String, pos: Position) extends Error(pos) {
+  case class UnknownEntry(name: String)(implicit position: Position) extends Error(position) {
     override def message = s"The current scope does not know an entry '$name'."
   }
 }

@@ -7,4 +7,5 @@ export default {
   object,
   tuple,
   toString: (value: any) => value.toString(),
+  areEqual: (a: any, b: any) => a == b,
 }

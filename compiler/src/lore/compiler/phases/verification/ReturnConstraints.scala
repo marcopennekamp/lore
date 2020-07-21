@@ -2,20 +2,20 @@ package lore.compiler.phases.verification
 
 import lore.compiler.ast.visitor.{CombiningStmtVisitor, StmtVisitor, VerificationStmtVisitor}
 import lore.compiler.ast.{ExprNode, StmtNode}
+import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, Fragment}
 import lore.compiler.feedback.Error
 import lore.compiler.phases.verification.ReturnConstraints.{DeadCode, DefinitelyReturns, ImpossibleReturn, IsReturnAllowed}
 
-private class ReturnDeadCodeVisitor()(implicit fragment: Fragment) extends CombiningStmtVisitor[DefinitelyReturns] {
+private class ReturnDeadCodeVisitor() extends CombiningStmtVisitor[DefinitelyReturns] {
   override def combine(list: List[DefinitelyReturns]): DefinitelyReturns = {
     if (list.isEmpty) false
     else list.forall(identity)
   }
 
   override def visit(node: StmtNode, returns: List[DefinitelyReturns]): Compilation[DefinitelyReturns] = node match {
-    case StmtNode.ReturnNode(_) => Compilation.succeed(true)
-    case ExprNode.BlockNode(statements) =>
+    case StmtNode.ReturnNode(_, _) => Compilation.succeed(true)
+    case ExprNode.BlockNode(statements, _) =>
       assert(statements.length == returns.length)
 
       // Check that a return statement isn't followed by any other code. If we have a "definitely returns" at any
@@ -28,13 +28,13 @@ private class ReturnDeadCodeVisitor()(implicit fragment: Fragment) extends Combi
           Compilation.fail(DeadCode(firstDeadNode))
         } else Compilation.succeed(returns.last)
       }
-    case ExprNode.IfElseNode(_, _, _) =>
+    case ExprNode.IfElseNode(_, _, _, _) =>
       // Ignore the condition.
       Compilation.succeed(returns.tail.forall(identity))
-    case ExprNode.RepetitionNode(_, _) =>
+    case ExprNode.RepetitionNode(_, _, _) =>
       // Ignore the condition.
       Compilation.succeed(returns.last)
-    case ExprNode.IterationNode(_, _) =>
+    case ExprNode.IterationNode(_, _, _) =>
       // Ignore the extractors.
       Compilation.succeed(returns.last)
     case _ => super.visit(node, returns)
@@ -44,22 +44,22 @@ private class ReturnDeadCodeVisitor()(implicit fragment: Fragment) extends Combi
 /**
   * Checks whether non-top-level expressions have a return. If that is the case, an error is returned.
   */
-private class ReturnAllowedApplicator()(implicit fragment: Fragment)
+private class ReturnAllowedApplicator()
   extends StmtVisitor.Applicator[Unit, IsReturnAllowed](new VerificationStmtVisitor { })
 {
   override def handleMatch(node: StmtNode, isReturnAllowed: IsReturnAllowed): Compilation[Unit] = node match {
-    case node@StmtNode.ReturnNode(expr) => visit(expr, false).flatMap { _ =>
+    case node@StmtNode.ReturnNode(expr, _) => visit(expr, false).flatMap { _ =>
       if (!isReturnAllowed) Compilation.fail(ImpossibleReturn(node)) else Verification.succeed
     }
-    case ExprNode.BlockNode(statements) => statements.map(statement => visit(statement, isReturnAllowed)).simultaneous.verification
-    case ExprNode.IfElseNode(condition, onTrue, onFalse) =>
+    case ExprNode.BlockNode(statements, _) => statements.map(statement => visit(statement, isReturnAllowed)).simultaneous.verification
+    case ExprNode.IfElseNode(condition, onTrue, onFalse, _) =>
       (visit(condition, false), visit(onTrue, isReturnAllowed), visit(onFalse, isReturnAllowed)).simultaneous.verification
-    case ExprNode.RepetitionNode(condition, body) =>
+    case ExprNode.RepetitionNode(condition, body, _) =>
       (visit(condition, false), visit(body, isReturnAllowed)).simultaneous.verification
-    case ExprNode.IterationNode(extractors, body) =>
+    case ExprNode.IterationNode(extractors, body, _) =>
       (
         extractors.map {
-          case ExprNode.ExtractorNode(_, collection) => visit(collection, false)
+          case ExprNode.ExtractorNode(_, collection, _) => visit(collection, false)
         }.simultaneous,
         visit(body, isReturnAllowed),
         ).simultaneous.verification
@@ -76,11 +76,11 @@ object ReturnConstraints {
   type DefinitelyReturns = Boolean
   type IsReturnAllowed = Boolean
 
-  case class DeadCode(node: StmtNode)(implicit fragment: Fragment) extends Error(node) {
+  case class DeadCode(node: StmtNode) extends Error(node) {
     override def message = s"This node represents dead code after a previous return."
   }
 
-  case class ImpossibleReturn(node: StmtNode.ReturnNode)(implicit fragment: Fragment) extends Error(node) {
+  case class ImpossibleReturn(node: StmtNode.ReturnNode) extends Error(node) {
     override def message = s"You cannot return inside this expression."
   }
 
@@ -91,7 +91,7 @@ object ReturnConstraints {
     * - Constructions such as `if ({ return 0 }) a else b` are not allowed. Returning should not be
     *   possible from non-top-level expressions.
     */
-  def verify(body: StmtNode)(implicit fragment: Fragment): Verification = {
+  def verify(body: StmtNode): Verification = {
     (
       StmtVisitor.visit(new ReturnDeadCodeVisitor())(body),
       new ReturnAllowedApplicator().visit(body, true)

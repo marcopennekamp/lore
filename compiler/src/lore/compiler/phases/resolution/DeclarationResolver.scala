@@ -2,12 +2,14 @@ package lore.compiler.phases.resolution
 
 import lore.compiler.ast.{DeclNode, TypeDeclNode}
 import lore.compiler.core.Compilation.{C, Verification}
-import lore.compiler.core.{Compilation, CompilationException, Fragment, Registry, TypeScope}
+import lore.compiler.core.{Compilation, CompilationException, Registry, TypeScope}
 import lore.compiler.feedback.Error
 import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.phases.resolution.DeclarationResolver.{FunctionAlreadyExists, TypeAlreadyExists}
 import lore.compiler.structures.ClassDefinition
 import lore.compiler.types.Type
+
+import scala.collection.mutable
 
 /**
   * Declarations can occur unordered. This is not only true within a file, but especially across multiple files. We
@@ -20,27 +22,28 @@ import lore.compiler.types.Type
   * in which we should, for example, build ClassDefinition and ClassType objects. Once all type declarations have been
   * turned into definitions, the DeclarationResolver builds a Registry object.
   */
-import scala.collection.mutable
-
 class DeclarationResolver {
-  private val typeDeclarations: mutable.HashMap[String, FragmentNode[TypeDeclNode]] = mutable.HashMap()
-  private var aliasDeclarations: List[FragmentNode[TypeDeclNode.AliasNode]] = List.empty
-  private val multiFunctionDeclarations: mutable.HashMap[String, List[FragmentNode[DeclNode.FunctionNode]]] = mutable.HashMap()
-  private val dependencyGraph: DependencyGraph = new DependencyGraph(this)
+  private val typeDeclarations: mutable.HashMap[String, TypeDeclNode] = mutable.HashMap()
+  private var aliasDeclarations: List[TypeDeclNode.AliasNode] = List.empty
+  private val multiFunctionDeclarations: mutable.HashMap[String, List[DeclNode.FunctionNode]] = mutable.HashMap()
+  private val dependencyGraph: DependencyGraph = new DependencyGraph(new DependencyGraph.Owner {
+    override def hasTypeDeclaration(name: String): Boolean = typeDeclarations.contains(name)
+    override def getTypeDeclaration(name: String): Option[TypeDeclNode] = typeDeclarations.get(name)
+  })
 
   /**
     * Register a type declaration and add its type to the dependency graph.
     */
-  private def addTypeDeclaration(declaration: FragmentNode[TypeDeclNode]): Verification = {
+  private def addTypeDeclaration(declaration: TypeDeclNode): Verification = {
     // Immediately stop the processing of this type declaration if the name is already taken.
-    if (typeDeclarations.contains(declaration.node.name) || Type.predefinedTypes.contains(declaration.node.name)) {
-      return Compilation.fail(TypeAlreadyExists(declaration.node)(declaration.fragment))
+    if (typeDeclarations.contains(declaration.name) || Type.predefinedTypes.contains(declaration.name)) {
+      return Compilation.fail(TypeAlreadyExists(declaration))
     }
 
-    declaration.node match {
+    declaration match {
       case aliasNode: TypeDeclNode.AliasNode =>
         typeDeclarations.put(aliasNode.name, declaration)
-        aliasDeclarations = declaration.asInstanceOf[FragmentNode[TypeDeclNode.AliasNode]] :: aliasDeclarations
+        aliasDeclarations = aliasNode :: aliasDeclarations
       case declaredNode: TypeDeclNode.DeclaredNode => // Covers labels and classes.
         typeDeclarations.put(declaredNode.name, declaration)
         dependencyGraph.add(declaredNode.name, declaredNode.supertypeName.getOrElse("Any"))
@@ -49,14 +52,11 @@ class DeclarationResolver {
     Verification.succeed
   }
 
-  def hasTypeDeclaration(name: String): Boolean = typeDeclarations.contains(name)
-  def getTypeDeclaration(name: String): Option[FragmentNode[TypeDeclNode]] = typeDeclarations.get(name)
-
   /**
     * Register a function declaration with the multi-function collection of the same name.
     */
-  private def addFunctionDeclaration(declaration: FragmentNode[DeclNode.FunctionNode]): Verification = {
-    multiFunctionDeclarations.updateWith(declaration.node.name) {
+  private def addFunctionDeclaration(declaration: DeclNode.FunctionNode): Verification = {
+    multiFunctionDeclarations.updateWith(declaration.name) {
       case None => Some(List(declaration))
       case Some(functions) => Some(declaration :: functions)
     }
@@ -64,26 +64,16 @@ class DeclarationResolver {
   }
 
   /**
-    * Adds a fragment of types and functions to be resolved.
-    */
-  private def addFragment(fragment: Fragment): Verification = {
-    fragment.declarations.map {
-      case function: DeclNode.FunctionNode => addFunctionDeclaration(FragmentNode(function, fragment))
-      case tpe: TypeDeclNode => addTypeDeclaration(FragmentNode(tpe, fragment))
-    }.simultaneous.map(_ => ())
-  }
-
-  /**
     * Builds the registry from all the declarations.
     */
-  def buildRegistry(fragments: List[Fragment]): C[Registry] = {
+  def buildRegistry(declarations: List[DeclNode]): C[Registry] = {
     // Declare the registry as implicit now so that we don't have to break up the for-comprehension,
     // which sadly doesn't support implicit variable declarations.
     implicit lazy val registry: Registry = new Registry()
     implicit lazy val typeScope: TypeScope = registry.typeScope
 
     for {
-      _ <- fragments.map(addFragment).simultaneous
+      _ <- addDeclarations(declarations)
 
       // TODO: If we want to support external libraries, we should add these here, especially to the dependency graph.
       //       Supporting external libraries will need a redesign of some of the early aspects. I am assuming that the
@@ -99,6 +89,13 @@ class DeclarationResolver {
     } yield registry
   }
 
+  private def addDeclarations(declarations: List[DeclNode]): Verification = {
+    declarations.map {
+      case function: DeclNode.FunctionNode => addFunctionDeclaration(function)
+      case tpe: TypeDeclNode => addTypeDeclaration(tpe)
+    }.simultaneous.verification
+  }
+
   /**
     * Resolve all declared types in the proper resolution order and register them with the Registry.
     */
@@ -107,8 +104,7 @@ class DeclarationResolver {
     // of the predefined types.
     typeResolutionOrder.tail.map { typeName =>
       assert(typeDeclarations.contains(typeName))
-      implicit val FragmentNode(node, fragment) = typeDeclarations(typeName)
-      node match {
+      typeDeclarations(typeName) match {
         case _: TypeDeclNode.AliasNode =>
           throw CompilationException("At this point in the compilation step, an alias type should not be resolved.")
         case node: TypeDeclNode.DeclaredNode =>
@@ -125,8 +121,7 @@ class DeclarationResolver {
     * there is no reason to manually disallow self-references.
     */
   private def resolveAliasTypes()(implicit registry: Registry): Verification = {
-    aliasDeclarations.map { case FragmentNode(node, _fragment) =>
-      implicit val fragment: Fragment = _fragment
+    aliasDeclarations.map { node =>
       //TypeExpressionEvaluator.evaluate(node.tpe).map(tpe => registry.registerType(node.name, tpe))
       // TODO: Implement alias types as named types.
       Compilation.fail(new Error(node) {
@@ -150,10 +145,9 @@ class DeclarationResolver {
     * unique.
     */
   private def resolveFunctions()(implicit registry: Registry): Verification = {
-    multiFunctionDeclarations.map { case (name, fragmentNodes) =>
+    multiFunctionDeclarations.map { case (name, nodes) =>
       for {
-        functions <- fragmentNodes.map { case FragmentNode(node, _fragment) =>
-          implicit val fragment: Fragment = _fragment
+        functions <- nodes.map { node =>
           FunctionDeclarationResolver.resolveFunctionNode(node)
         }.simultaneous
         _ <- verifyFunctionsUnique(functions)
@@ -192,22 +186,11 @@ class DeclarationResolver {
 }
 
 object DeclarationResolver {
-  case class TypeAlreadyExists(node: TypeDeclNode)(implicit fragment: Fragment) extends Error(node) {
+  case class TypeAlreadyExists(node: TypeDeclNode) extends Error(node) {
     override def message = s"The type ${node.name} is already declared somewhere else."
   }
 
   case class FunctionAlreadyExists(definition: FunctionDefinition) extends Error(definition) {
     override def message = s"The function ${definition.signature} is already declared somewhere else or has a type-theoretic duplicate."
-  }
-
-  /**
-    * @param occurrence One of the type declarations where the cycles occurs, so that we can report one error location.
-    */
-  case class InheritanceCycle(cycle: List[String], occurrence: FragmentNode[TypeDeclNode]) extends Error(occurrence) {
-    override def message: String = s"""
-                                      |An inheritance cycle between the following types has been detected: ${cycle.mkString(", ")}.
-                                      |A class or label A cannot inherit from a class/label B that also inherits from A directly or indirectly. The
-                                      |subtyping relationships of declared types must result in a directed, acyclic graph.
-    """.stripMargin.replaceAll("\n", " ").trim
   }
 }

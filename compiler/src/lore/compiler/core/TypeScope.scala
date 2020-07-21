@@ -2,6 +2,9 @@ package lore.compiler.core
 
 import lore.compiler.types.NamedType
 
+/**
+  * A scope that provides access to named types.
+  */
 trait TypeScope extends Scope[NamedType]
 
 /**

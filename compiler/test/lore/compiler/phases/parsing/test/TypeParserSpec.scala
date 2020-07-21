@@ -2,13 +2,15 @@ package lore.compiler.phases.parsing.test
 
 import fastparse.P
 import lore.compiler.ast.TypeExprNode
+import lore.compiler.core.Fragment
 import lore.compiler.phases.parsing.TypeParser
 import lore.compiler.test.BaseSpec
 
 class TypeParserSpec extends BaseSpec with ParserSpecExtensions[TypeExprNode] {
   import TypeExprNode._
 
-  override def parser[_: P] = TypeParser.typeExpression
+  implicit private val fragment: Fragment = Fragment("Test", "")
+  override def parser[_: P]: P[TypeExprNode] = new TypeParser().typeExpression
 
   private val A = NominalNode("A")
   private val B = NominalNode("B")
@@ -17,7 +19,7 @@ class TypeParserSpec extends BaseSpec with ParserSpecExtensions[TypeExprNode] {
   private val E = NominalNode("E")
 
   "The type expression parser" should "correctly parse atomic types" in {
-    "()" --> UnitNode
+    "()" --> UnitNode()
     "Aardvark" --> NominalNode("Aardvark")
     "(A, B)" --> ProductNode(List(A, B))
     // A single type in parentheses is unambiguously parsed as an enclosed type, not a product type.
@@ -31,7 +33,7 @@ class TypeParserSpec extends BaseSpec with ParserSpecExtensions[TypeExprNode] {
     "A -> B" --> MapNode(A, B)
     "[(A, B, C) & D & +E]" --> ListNode(IntersectionNode(List(ProductNode(List(A, B, C)), D, ComponentNode(E.name))))
     "A | (B, C) | +D" --> SumNode(List(A, ProductNode(List(B, C)), ComponentNode(D.name)))
-    "(A, (), B)" --> ProductNode(List(A, UnitNode, B))
+    "(A, (), B)" --> ProductNode(List(A, UnitNode(), B))
     "[A -> B | C -> D]" --> ListNode(SumNode(List(MapNode(A, B), MapNode(C, D))))
   }
 

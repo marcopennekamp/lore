@@ -78,16 +78,16 @@ object StmtVisitor {
         case node: XaryNode => node.children.map(c => visit(c, props)).simultaneous.flatMap(visitor.visitXary(node))
 
         // Map node.
-        case node@MapNode(kvs) =>
+        case node@MapNode(kvs, _) =>
           val entries = kvs.map {
-            case KeyValueNode(key, value) => (visit(key, props), visit(value, props)).simultaneous
+            case KeyValueNode(key, value, _) => (visit(key, props), visit(value, props)).simultaneous
           }.simultaneous
           entries.flatMap(visitor.visitMap(node))
 
         // Iteration node.
-        case node@IterationNode(extractors, body) =>
+        case node@IterationNode(extractors, body, _) =>
           val extracts = extractors.map {
-            case ExtractorNode(name, collection) => visit(collection, props).map((name, _))
+            case ExtractorNode(name, collection, _) => visit(collection, props).map((name, _))
           }.simultaneous
           extracts.flatMap(extractors => visitor.visitIteration(node)(extractors, () => visit(body, props)))
       }
