@@ -124,8 +124,8 @@ object StatementVerification {
       val inputType = ProductType(node.arguments.map(_.state.inferredType))
       implicit val callPosition: Position = node.position
       mf.min(inputType) match {
-        case Nil => Compilation.fail(EmptyFit(mf))
-        case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, min))
+        case Nil => Compilation.fail(EmptyFit(mf, inputType))
+        case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, inputType, min))
         case List(functionDefinition) =>
           functionDefinition.instantiate(inputType).flatMap { instance =>
             assignTarget(node, instance)

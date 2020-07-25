@@ -2,8 +2,8 @@ package lore.compiler.phases.resolution
 
 import lore.compiler.ast.DeclNode
 import lore.compiler.core.Compilation.C
-import lore.compiler.core.{Compilation, Fragment, TypeScope, TypeVariableScope}
 import lore.compiler.core.feedback.Position
+import lore.compiler.core.{Compilation, TypeScope, TypeVariableScope}
 import lore.compiler.types.{AnyType, NothingType, TypeExpressionEvaluator, TypeVariable}
 
 object TypeVariableDeclarationResolver {
@@ -11,16 +11,15 @@ object TypeVariableDeclarationResolver {
     * Resolves a type variable declaration list in order, ensuring that the order property of the type variables is
     * set correctly.
     */
-  def resolve(nodes: List[DeclNode.TypeVariableNode])(implicit typeScope: TypeScope): C[TypeVariableScope] = {
+  def resolve(nodes: List[DeclNode.TypeVariableNode], parentScope: TypeScope): C[TypeVariableScope] = {
     // The fold ensures that the first type variable is registered before the second one is resolved, so that the first
     // one can be used as a bound of the second one, and so on.
-    val initial = (Compilation.succeed(new TypeVariableScope(typeScope)), 0)
+    val initial = (Compilation.succeed(new TypeVariableScope(parentScope)), 0)
     val (compilation, _) = nodes.foldLeft(initial) { case ((compilation, order), node) =>
       implicit val position: Position = node.position
       val nextCompilation = compilation.flatMap { implicit typeScope =>
-        TypeVariableDeclarationResolver.resolve(node, order).map { variable =>
-          typeScope.register(variable)
-          typeScope
+        TypeVariableDeclarationResolver.resolve(node, order).flatMap { variable =>
+          typeScope.register(variable).map(_ => typeScope)
         }
       }
       (nextCompilation, order + 1)
@@ -29,7 +28,7 @@ object TypeVariableDeclarationResolver {
   }
 
   /**
-    * Resolves a single type variable declaration.
+    * Resolves a single type variable declaration in the context of the given type scope.
     */
   def resolve(node: DeclNode.TypeVariableNode, order: Int)(implicit typeScope: TypeScope): C[TypeVariable] = {
     for {

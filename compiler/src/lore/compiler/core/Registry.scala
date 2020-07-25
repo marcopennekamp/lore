@@ -68,7 +68,7 @@ class Registry {
     * The TypeScope view of the registry. This is strictly an immutable view.
     */
   val typeScope: TypeScope = new TypeScope {
-    override def get(name: String): Option[NamedType] = getType(name)
+    override protected def local(name: String): Option[NamedType] = getType(name)
     override protected def add(entry: NamedType): Unit = {
       throw new UnsupportedOperationException("You may not add types to the Registry via its TypeScope interface.")
     }

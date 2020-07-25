@@ -275,14 +275,17 @@ private[verification] object FunctionVerificationVisitor {
     override def message = s"The variable or property you are trying to assign to is immutable."
   }
 
-  case class EmptyFit(mf: MultiFunctionDefinition)(implicit callPosition: Position) extends Error(callPosition) {
+  case class EmptyFit(mf: MultiFunctionDefinition, inputType: Type)(implicit callPosition: Position) extends Error(callPosition) {
     override def message: String = s"The multi-function call ${mf.name} at this site has an empty fit. We cannot" +
-      s" find a function of that name that would accept the given arguments."
+      s" find a function of that name that would accept the given arguments with the type $inputType."
   }
 
-  case class AmbiguousCall(mf: MultiFunctionDefinition, min: List[FunctionDefinition])(implicit callPosition: Position) extends Error(callPosition) {
+  case class AmbiguousCall(
+    mf: MultiFunctionDefinition, inputType: Type, min: List[FunctionDefinition],
+  )(implicit callPosition: Position) extends Error(callPosition) {
     override def message: String = s"The multi-function call ${mf.name} at this site has an ambiguous min-set." +
-      s" That is, we are finding TOO MANY functions that would accept the given arguments: ${min.mkString(", ")}."
+      s" That is, we are finding TOO MANY functions that would accept the given arguments with the type $inputType." +
+      s" These are: ${min.mkString(", ")}."
   }
 
   case class DynamicFunctionNameExpected(node: ExprNode.DynamicCallNode) extends Error(node) {

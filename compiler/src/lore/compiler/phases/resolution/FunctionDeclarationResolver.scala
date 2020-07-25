@@ -8,7 +8,7 @@ import lore.compiler.types.TypeExpressionEvaluator
 
 object FunctionDeclarationResolver {
   def resolveFunctionNode(node: DeclNode.FunctionNode)(implicit registry: Registry): C[FunctionDefinition] = {
-    TypeVariableDeclarationResolver.resolve(node.typeVariables)(registry.typeScope).flatMap { implicit typeScope =>
+    TypeVariableDeclarationResolver.resolve(node.typeVariables, registry.typeScope).flatMap { implicit typeScope =>
       (
         // We verify parameter types right away, because all types should have been declared at this point.
         // Functions are resolved after all type declarations.

@@ -14,9 +14,9 @@ trait Scope[A <: Scope.Entry] {
   //       the position as an implicit as well.
 
   /**
-    * Fetches the entry with the given name from the closest scope.
+    * Fetches the entry with the given name from the CURRENT scope.
     */
-  def get(name: String): Option[A]
+  protected def local(name: String): Option[A]
 
   /**
     * Adds the given entry to the scope.
@@ -24,7 +24,15 @@ trait Scope[A <: Scope.Entry] {
   protected def add(entry: A): Unit
 
   /**
-    * Resolves the entry with the given name from the closest scope. If it cannot be found, we return a
+    * Fetches an entry with the given name from the closest scope.
+    *
+    * The implementation defaults to getting the entry from the local scope only, because the Scope trait
+    * doesn't know about parent scopes.
+    */
+  def get(name: String): Option[A] = local(name)
+
+  /**
+    * Resolves an entry with the given name from the closest scope. If it cannot be found, we return a
     * compilation error.
     */
   def resolve(name: String)(implicit position: Position): C[A] = {
@@ -39,7 +47,7 @@ trait Scope[A <: Scope.Entry] {
     * "already declared" error is returned instead.
     */
   def register(entry: A)(implicit position: Position): Verification = {
-    if (get(entry.name).isDefined) {
+    if (local(entry.name).isDefined) {
       Compilation.fail(alreadyDeclared(entry.name))
     } else {
       add(entry)
@@ -60,11 +68,12 @@ trait Scope[A <: Scope.Entry] {
 
 abstract class BasicScope[A <: Scope.Entry](val parent: Option[Scope[A]]) extends Scope[A] {
   protected val entries: mutable.Map[String, A] = new mutable.HashMap()
-  override def get(name: String): Option[A] = parent.flatMap(_.get(name)).orElse(entries.get(name))
+  override protected def local(name: String): Option[A] = entries.get(name)
   override protected def add(entry: A): Unit = {
     assert(!entries.contains(entry.name))
     entries.put(entry.name, entry)
   }
+  override def get(name: String): Option[A] = local(name).orElse(parent.flatMap(_.get(name)))
 }
 
 object Scope {
