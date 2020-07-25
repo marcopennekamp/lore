@@ -1,0 +1,105 @@
+// Just two examples to test custom comparisons.
+
+class Bird {
+  species: String
+  weight: Real
+  wingspan: Real
+}
+
+class Plane {
+  model: String
+  capacity: Int
+  wingspan: Real
+}
+
+function areEqual(b1: Bird, b2: Bird): Boolean = b1.species == b2.species & b1.weight == b2.weight & b1.wingspan == b2.wingspan
+function areEqual(p1: Plane, p2: Plane): Boolean = p1.model == p2.model & p1.capacity == p2.capacity & p1.wingspan == p2.wingspan
+
+// TODO: This actually presents an interesting dilemma: The equals operation is symmetric, but multiple dispatch needs
+//       two function definitions to model this binary symmetry. The problem here is that the average programmer would
+//       assume that defining areEqual(Bird, Plane) covers all cases, while he/she leaves out the (Plane, Bird) case
+//       without encountering any warning. This problem might not even be discovered at first, if only bird == plane
+//       comparisons are used, and only later plane == bird comparisons are added.
+function areEqual(bird: Bird, plane: Plane): Boolean = bird.wingspan == plane.wingspan
+function areEqual(plane: Plane, bird: Bird): Boolean = bird == plane
+
+
+
+// TODO: Would be better suited as a label once we allow classes to extend labels.
+abstract class Shape
+
+// "Computed"/"Virtual" properties.
+function width(shape: Shape): Real
+function height(shape: Shape): Real
+
+// Methods.
+function area(shape: Shape): Real = width(shape) * height(shape)
+function isLessThan(s1: Shape, s2: Shape): Boolean = area(s1) < area(s2)
+function isLessThanOrEqual(s1: Shape, s2: Shape): Boolean = area(s1) <= area(s2)
+
+
+class Rectangle extends Shape {
+  width: Real
+  height: Real
+}
+
+// TODO: This way of extracting an argument from an object via a function to make it accessible in a trait-ish
+//       context could be something that we can support with syntactic sugar, if it becomes very popular.
+//       This would actually be a way to partially simulate traits without introducing them. (I say partially
+//       because traits can also add (mutable) fields to a class, which isn't possible with a label, for example.)
+function width(rect: Rectangle): Real = rect.width
+function height(rect: Rectangle): Real = rect.height
+
+
+class BoundingBox extends Shape {
+  x: Real
+  xEnd: Real
+  y: Real
+  yEnd: Real
+}
+
+function width(box: BoundingBox): Real = box.xEnd - box.x
+function height(box: BoundingBox): Real = box.yEnd - box.y
+
+
+
+// TODO: Actually instantiate the objects here, which isn't possible currently due to the transpiler not supporting it.
+action test(bird: Bird, plane: Plane, rect: Rectangle, box: BoundingBox) {
+  if (bird == bird) {
+    println('Equal birds!')
+  }
+  if (plane == plane) {
+    println('Equal planes!')
+  }
+  if (bird == plane) {
+    println('It`s a bird AND a plane!')
+  }
+  if (plane == bird) {
+    println('It`s a plane AND a bird!')
+  }
+
+  if (rect < box) {
+    println('The rectangle is smaller than the box.')
+  }
+  if (rect > box) {
+      println('The rectangle is bigger than the box.')
+  }
+  if (box < rect) {
+    println('The box is smaller than the rectangle.')
+  }
+  if (box > rect) {
+    println('The box is bigger than the rectangle.')
+  }
+  if (rect <= box) {
+    println('The rectangle is probably smaller than the box.')
+  }
+  if (rect >= box) {
+      println('The rectangle is probably bigger than the box.')
+  }
+  if (box <= rect) {
+    println('The box is probably smaller than the rectangle.')
+  }
+  if (box >= rect) {
+    println('The box is probably bigger than the rectangle.')
+  }
+}
