@@ -1,5 +1,7 @@
 package lore.compiler.types
 
+import lore.compiler.utils.CollectionExtensions._
+
 /**
   * Any Lore type.
   *
@@ -15,21 +17,6 @@ trait Type {
     * Returns a singleton product type enclosing this type, unless this type is already a product type.
     */
   def toTuple: ProductType = ProductType(List(this))
-
-  /**
-    * Whether this type is abstract.
-    */
-  def isAbstract: Boolean
-
-  /**
-    * Whether this type is exactly one single type instance.
-    */
-  def isMonomorphic: Boolean = !isPolymorphic
-
-  /**
-    * Whether this type describes a set of types.
-    */
-  def isPolymorphic: Boolean
 
   /**
     * A pretty string representation of the type.
@@ -54,6 +41,64 @@ object Type {
     BasicType.Boolean,
     BasicType.String,
   ).map(t => (t.name, t)).toMap
+
+  /**
+    * Whether the given type is abstract.
+    *
+    * For an elaboration on the choices made here consult the specification.
+    */
+  def isAbstract(t: Type): Boolean = t match {
+    case _: TypeVariable => false // TODO: Is this correct?
+    case SumType(_) => true
+    case IntersectionType(types) =>
+      // Note that we consider the idea of augmenting label types here. If the intersection type contains at least one
+      // non-label type, we ignore label types in the consideration.
+      val exceptLabels = types.toList.filterNotType[LabelType]
+
+      // If the intersection type consists only of labels, it is NOT an augmented type and thus abstract since
+      // non-augmenting label types are abstract.
+      if (exceptLabels.isEmpty) {
+        true
+      } else {
+        // In all other cases, we decide abstractness WITHOUT taking augmenting labels into account.
+        exceptLabels.exists(isAbstract)
+      }
+    case ProductType(elements) => elements.exists(isAbstract)
+    case ListType(_) => false
+    case MapType(_, _) => false
+    case ComponentType(underlying) => isAbstract(underlying)
+    case c: ClassType => c.isAbstract
+    case _: LabelType =>
+      // A label type is abstract unless it is an augmentation. That case is handled in the implementation of
+      // intersection type's isAbstract.
+      true
+    case AnyType => false // Any isn't abstract because checking ARDS for it would be inadvisable.
+    case NothingType =>
+      // Effectively, Nothing cannot be the supertype of anything, so declaring an abstract function for it
+      // will only result in a useless deadlock.
+      false
+    case _: BasicType => false
+  }
+
+  /**
+    * Whether the given type contains a type variable.
+    */
+  def isPolymorphic(t: Type): Boolean = t match {
+    case _: TypeVariable => true
+    case SumType(types) => types.exists(isPolymorphic)
+    case IntersectionType(types) => types.exists(isPolymorphic)
+    case ProductType(elements) => elements.exists(isPolymorphic)
+    case ListType(element) => isPolymorphic(element)
+    case MapType(key, value) => isPolymorphic(key) || isPolymorphic(value)
+    case ComponentType(_) => false // TODO: This might change once component types can be parameterized. (If they ever can.)
+    case _: DeclaredType => false // TODO: For now. This needs to be set to true for classes with type parameters, of course.
+    case _ => false
+  }
+
+  /**
+    * Whether the given type contains no type variables and thus represents a single type instance.
+    */
+  def isMonomorphic(t: Type): Boolean = !isPolymorphic(t)
 
   /**
     * Returns all type variables that occur in the given type.

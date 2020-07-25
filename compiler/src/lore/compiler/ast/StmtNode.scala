@@ -111,7 +111,6 @@ object CallNode {
       */
     def target: T = _target
     def target_=(target: T): Unit = {
-      println(_target)
       assert(_target == null)
       _target = target
     }

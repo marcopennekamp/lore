@@ -7,7 +7,7 @@ import scalaz.syntax.traverse._
 
 object Ards {
   /**
-    * A set of direct subtypes that are resolved IF the given type is abstract.
+    * Abstract-resolved direct subtypes: A set of direct subtypes that are resolved IF the given type is abstract.
     *
     * This is an implementation of the 'ards' function as defined in the spec. See the spec for more information.
     */
@@ -23,7 +23,7 @@ object Ards {
     def combinations(components: List[Set[Type]]) = components.sequence
 
     t match {
-      case _ if !t.isAbstract => Set(t)
+      case _ if !Type.isAbstract(t) => Set(t)
       case dt: DeclaredType => dt.directDeclaredSubtypes
       case ProductType(components) => combinations(components.map(abstractResolvedDirectSubtypes)).map(ProductType(_))
       case IntersectionType(types) => combinations(types.map(abstractResolvedDirectSubtypes).toList).map(IntersectionType.construct)

@@ -2,7 +2,7 @@ package lore.compiler.phases.verification
 
 import lore.compiler.ast.visitor.StmtVisitor
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Fragment, Registry}
+import lore.compiler.core.Registry
 import lore.compiler.core.feedback.Error
 import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.types.{Ards, Fit, Type}
@@ -47,7 +47,7 @@ object MultiFunctionConstraints {
     */
   def verifyInputAbstractness(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
     Verification.fromErrors {
-      mf.functions.filter(_.isAbstract).filterNot(_.signature.inputType.isAbstract).map(FunctionIllegallyAbstract)
+      mf.functions.filter(_.isAbstract).filterNot(f => Type.isAbstract(f.signature.inputType)).map(FunctionIllegallyAbstract)
     }
   }
 

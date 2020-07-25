@@ -8,8 +8,6 @@ class TypeVariable(
   val upperBound: Type,
   val declarationOrder: Int,
 ) extends NamedType with Scope.Entry {
-  override val isAbstract: Boolean = false // TODO: Is this correct?
-  override val isPolymorphic = true
   override def string(parentPrecedence: TypePrecedence): String = name
 
   // Type variables are strictly reference-equal.

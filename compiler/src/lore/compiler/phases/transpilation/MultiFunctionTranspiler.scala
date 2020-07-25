@@ -120,7 +120,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     *      function will require three fit tests. At that point a hash&cache operation is faster than testing multiple
     *      fits.
     */
-  private lazy val shouldUseDispatchCache = mf.functions.size >= 3 || mf.functions.exists(_.signature.inputType.isPolymorphic)
+  private lazy val shouldUseDispatchCache = mf.functions.size >= 3 || mf.functions.exists(f => Type.isPolymorphic(f.signature.inputType))
 
   /**
     * Prepares the dispatch cache for later use.
@@ -220,7 +220,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
         // is constant. If the parameter type isn't polymorphic now, it won't ever be, so we can skip all that testing
         // for polymorphy at run-time. Conversely, if the type is polymorphic now, we can also skip the test and jump
         // into type allocations.
-        val fitsName = if (node.signature.inputType.isPolymorphic) "fitsPolymorphic" else "fitsMonomorphic"
+        val fitsName = if (Type.isPolymorphic(node.signature.inputType)) "fitsPolymorphic" else "fitsMonomorphic"
         printer.println(s"const ${varFits(index)} = ${LoreApi.varTypes}.$fitsName($varArgumentType, $varRightType);")
       }
     }

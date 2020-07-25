@@ -1,7 +1,5 @@
 package lore.compiler.types
 
-import lore.compiler.utils.CollectionExtensions._
-
 import scala.util.hashing.MurmurHash3
 
 // TODO: The construct function ensures that an intersection type contains only unique components. Hence, it is
@@ -12,31 +10,6 @@ import scala.util.hashing.MurmurHash3
 
 case class IntersectionType private (types: Set[Type]) extends Type with OperatorType {
   assert(types.nonEmpty)
-
-  /**
-    * An intersection type is abstract if any of its component types are abstract.
-    *
-    * The reasoning is that the value inhabiting the intersection type will need to have each component type as its
-    * type. So there can't be a value that has a type as its exact type (not a subtype) that is abstract. Hence, any
-    * one abstract component can turn an intersection type abstract.
-    *
-    * Note that we consider the idea of augmenting label types here. If the intersection type contains at least one
-    * non-label type, we ignore label types in the consideration.
-    */
-  override val isAbstract: Boolean = {
-    val exceptLabels = types.toList.filterNotType[LabelType]
-
-    // If the intersection type consists only of labels, it is NOT an augmented type and thus abstract since
-    // non-augmenting label types are abstract.
-    if (exceptLabels.isEmpty) {
-      true
-    } else {
-      // In all other cases, we decide abstractness WITHOUT taking augmenting labels into account.
-      exceptLabels.exists(_.isAbstract)
-    }
-  }
-
-  override val isPolymorphic: Boolean = types.exists(_.isPolymorphic)
 
   override protected def precedence: TypePrecedence = TypePrecedence.Intersection
   override protected def operands: List[Type] = types.toList

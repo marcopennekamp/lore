@@ -1,8 +1,6 @@
 package lore.compiler.types
 
 sealed abstract class BasicType(override val name: String) extends NamedType {
-  override val isAbstract: Boolean = false
-  override val isPolymorphic = false
   override def string(precedence: TypePrecedence): String = name
 
   override val hashCode: Int = name.hashCode

@@ -1,4 +1,4 @@
-action hello(value: Any)
+action hello(value: String | Int)
 
 action hello(name: String) {
   println('Hello, $name.')

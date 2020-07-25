@@ -45,7 +45,7 @@ object Fit {
     * None if the allocation isn't consistent or if otherwise consistent assignments cannot be produced.
     */
   def assignments(t1: Type, t2: Type): Option[TypeVariable.Assignments] = {
-    if (t2.isPolymorphic) {
+    if (Type.isPolymorphic(t2)) {
       val allocation = TypeVariableAllocation.of(t1, t2)
       if (allocation.isConsistent) Some(allocation.assignments) else None
     } else Some(Map.empty)
