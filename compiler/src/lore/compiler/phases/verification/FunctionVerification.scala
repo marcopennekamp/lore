@@ -1,21 +1,36 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.ast.StmtNode
+import lore.compiler.ast.{ExprNode, StmtNode}
 import lore.compiler.ast.visitor.{StmtVisitor, VerificationStmtVisitor}
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{CompilationException, Fragment, Registry, TypeScope}
+import lore.compiler.core.{Compilation, CompilationException, Registry, TypeScope}
 import lore.compiler.feedback.Error
 import lore.compiler.functions.{ConstructorDefinition, FunctionDefinition, FunctionSignature}
 import lore.compiler.structures.ClassDefinition
 import lore.compiler.types.Type
 
+// TODO: Maybe we should introduce two separate ASTs: The first one would be created by the parser and only
+//       carry the position as immutable "state", while the second one would carry the other kinds of state
+//       filled during the verification phase. THe FunctionVerificationVisitor wouldn't simply mutate state
+//       of the AST but actually transform nodes of the first AST into the second AST. This can then also be
+//       used to apply transformations in one swoop, allowing us to be extra sure that the transformation result
+//       can actually be used by the parent. As it stands now, the burden lies with transformations to ensure
+//       that they are not affecting the inferred type of the parent, for example.
+//       Even more, we might be able to throw away some information only needed during verification, typing,
+//       and transformation, omitting it from the second AST. This kind of intermediate representation would
+//       remove the transpilation further from the actual syntax of the language. For example, constructor calls
+//       and function calls (both syntactically SimpleCallNodes) could be differentiated, which would result in
+//       a cleaner implementation of the transpiler. We could also remove some nodes outright, such as transforming
+//       "greater than" expressions into "less than" expressions by flipping the arguments.
+
 /**
   * For a given function or constructor, infers and checks expression types and checks all other constraints on
-  * expressions of that function's body. After the function checker has been run without producing any compilation
-  * errors, we can be sure that all expressions are soundly typed and adhere to all constraints (barring compiler bugs,
-  * of course).
+  * expressions of that function's body. Also applies function transformations. After the function checker has been
+  * run without producing any compilation errors, we can be sure that all expressions are soundly typed and adhere
+  * to all constraints (barring compiler bugs, of course).
   *
-  * Ascribing inferred types is a side-effect of this verifier.
+  * Ascribing inferred types is a side-effect of this verifier, as is reassigning the body node of a function
+  * or constructor after transformation.
   */
 object FunctionVerification {
   case class IllegallyTypedExpression(expr: StmtNode, expectedTypes: List[Type]) extends Error(expr) {
@@ -33,28 +48,30 @@ object FunctionVerification {
   }
 
   /**
-    * Infers and checks types of the given function body. Ensures that all other expression constraints hold.
-    * Also ensures that the return type of the signature is sound compared to the type of the body.
+    * Infers and checks types of the given function body and applies function transformations. Ensures that
+    * all other expression constraints hold. Also ensures that the return type of the signature is sound compared
+    * to the type of the body.
     */
-  def verifyFunction(function: FunctionDefinition)(implicit registry: Registry): Verification = {
-    function.body.map(body => verify(function.signature, function.typeScope, body, None)).toCompiledOption.verification
+  def verifyTypeTransform(function: FunctionDefinition)(implicit registry: Registry): Verification = {
+    function.body.map(body => verifyTypeTransform(function.signature, function.typeScope, body, None)).toCompiledOption.map {
+      body => function.body = body
+    }
   }
 
   /**
-    * Infers and checks types of the given constructor body. Ensures that all other expression constraints
-    * hold. Also ensures that constructor and construct calls are soundly typed.
+    * Infers and checks types of the given constructor body and applies function transformations. Ensures that
+    * all other expression constraints hold. Also ensures that constructor and construct calls are soundly typed.
     */
-  def verifyConstructor(
-    constructor: ConstructorDefinition,
-    classDefinition: ClassDefinition,
-  )(implicit registry: Registry): Verification = {
-    verify(constructor.signature, constructor.typeScope, constructor.body, Some(classDefinition))
+  def verifyTypeTransform(constructor: ConstructorDefinition, classDefinition: ClassDefinition)(implicit registry: Registry): Verification = {
+    verifyTypeTransform(constructor.signature, constructor.typeScope, constructor.body, Some(classDefinition)).map {
+      body => constructor.body = body.asInstanceOf[ExprNode.BlockNode] // TODO: There has to be a better solution...
+    }
   }
 
-  private def verify(
-    signature: FunctionSignature, typeScope: TypeScope, body: StmtNode,
+  private def verifyTypeTransform(
+    signature: FunctionSignature, typeScope: TypeScope, body: ExprNode,
     classDefinition: Option[ClassDefinition],
-  )(implicit registry: Registry): Verification = {
+  )(implicit registry: Registry): Compilation[ExprNode] = {
     for {
       _ <- SignatureConstraints.verify(signature)
       _ <- {
@@ -64,9 +81,10 @@ object FunctionVerification {
           ReturnConstraints.verify(body),
         ).simultaneous.verification
       }
+      body <- FunctionTransformations.transformBody(body)
       _ <- verifyOutputType(signature, body)
       _ <- assertTypesAssigned(body)
-    } yield ()
+    } yield body
   }
 
   /**

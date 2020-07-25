@@ -1,5 +1,7 @@
 package lore.compiler.core
 
+// TODO: Report source positions!!!
+
 /**
  * Signifies an unexpected compilation failure that is most likely a compiler bug. This type of error is clearly
  * differentiated from [[lore.compiler.feedback.Feedback]] in that Feedback signifies a user error, while this

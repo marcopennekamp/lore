@@ -23,12 +23,12 @@ class VerificationPhase()(implicit registry: Registry) extends Phase[Unit] {
       (
         registry.getMultiFunctions.values.toList.map { mf =>
           mf.functions.map { function =>
-            FunctionVerification.verifyFunction(function)
+            FunctionVerification.verifyTypeTransform(function)
           }.simultaneous
         }.simultaneous,
         registry.getTypeDefinitions.values.toList.filterType[ClassDefinition].map { definition =>
           definition.constructors.map { constructor =>
-            FunctionVerification.verifyConstructor(constructor, definition)
+            FunctionVerification.verifyTypeTransform(constructor, definition)
           }.simultaneous
         }.simultaneous,
       ).simultaneous

@@ -52,13 +52,14 @@ object DeclaredTypeResolver {
         option.forall(_.isInstanceOf[ClassType])
       }(ClassMustExtendClass(node)),
       node.members.map(resolveMemberNode).simultaneous,
-    ).simultaneous.map { case (supertype, members) =>
-      val constructors = node.constructors.map(FunctionDeclarationResolver.resolveConstructorNode)
-      val ownedBy = node.ownedBy.map(ob => new OwnedByDeferred(() => TypeExpressionEvaluator.evaluate(ob)))
-      val tpe = new ClassType(supertype.asInstanceOf[Option[ClassType]], ownedBy, node.isAbstract)
-      val definition = new ClassDefinition(node.name, tpe, node.isEntity, members, constructors, node.position)
-      tpe.initialize(definition)
-      definition
+    ).simultaneous.flatMap { case (supertype, members) =>
+      node.constructors.map(FunctionDeclarationResolver.resolveConstructorNode).simultaneous.map { constructors =>
+        val ownedBy = node.ownedBy.map(ob => new OwnedByDeferred(() => TypeExpressionEvaluator.evaluate(ob)))
+        val tpe = new ClassType(supertype.asInstanceOf[Option[ClassType]], ownedBy, node.isAbstract)
+        val definition = new ClassDefinition(node.name, tpe, node.isEntity, members, constructors, node.position)
+        tpe.initialize(definition)
+        definition
+      }
     }
   }
 

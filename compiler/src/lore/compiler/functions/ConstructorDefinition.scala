@@ -8,10 +8,12 @@ import lore.compiler.structures._
 
 /**
   * The definition of a class constructor.
+  *
+  * @param body The body is a variable because it may be transformed during the course of the compilation.
   */
 case class ConstructorDefinition(
   override val name: String, typeScope: TypeScope, parameters: List[ParameterDefinition],
-  body: ExprNode.BlockNode, override val position: Position
+  var body: ExprNode.BlockNode, override val position: Position
 ) extends InternalCallTarget {
   private var classDefinition: ClassDefinition = _
   def associateWith(classDefinition: ClassDefinition): Unit = {

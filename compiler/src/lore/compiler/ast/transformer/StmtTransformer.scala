@@ -243,5 +243,6 @@ object StmtTransformer {
     }
   }
 
+  // TODO: Can we make this more type safe??
   def transform(transformer: StmtTransformer)(node: StmtNode): Compilation[StmtNode] = new Applicator[Unit](transformer).transform(node, ())
 }

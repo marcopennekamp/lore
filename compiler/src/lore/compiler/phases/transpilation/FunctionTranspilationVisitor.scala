@@ -26,7 +26,9 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     case ExprNode.VariableNode(_, state) => Transpilation.expression(state.variable.transpiledName)
     case IntLiteralNode(value, _) => Transpilation.expression(value.toString)
     case RealLiteralNode(value, _) => Transpilation.expression(value.toString)
-    case StringLiteralNode(value, _) => Transpilation.expression(s"'$value'")
+    case StringLiteralNode(value, _) =>
+      // TODO: Escaped characters need to be handled correctly, which they currently are not. For example \'.
+      Transpilation.expression(s"'$value'")
     case BoolLiteralNode(value, _) => Transpilation.expression(value.toString)
     case UnitNode(_) => Transpilation.expression(s"${LoreApi.varTuple}.unit")
     case _ => default(node)
@@ -52,10 +54,9 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     case MultiplicationNode(_, _, _) => binary(left, right, "*", wrap = true)
     case DivisionNode(_, _, _) => binary(left, right, "/", wrap = true)
     case EqualsNode(_, _, _) =>
-      // TODO: This can't be a simple equals, of course, unless this is a basic type. We have to implement some kind
-      //       of equals function.
-      default(node)
-    case NotEqualsNode(_, _, _) => default(node)
+      // All the complex cases have been filtered already and we can simply apply Javascript comparison.
+      binary(left, right, "===", wrap = true)
+    case NotEqualsNode(_, _, _) => binary(left, right, "!==", wrap = true)
     case LessThanNode(_, _, _) => binary(left, right, "<", wrap = true)
     case LessThanEqualsNode(_, _, _) => binary(left, right, "<=", wrap = true)
     case GreaterThanNode(_, _, _) => binary(left, right, ">", wrap = true)
@@ -131,6 +132,8 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     case node@TupleNode(_, _) => transpileArrayBasedValue(node, s"${LoreApi.varTuple}.create", expressions)
     case node@ListNode(_, _) => transpileArrayBasedValue(node, s"${LoreApi.varList}.create", expressions)
     case ConcatenationNode(_, _) => Transpilation.operatorChain(expressions, "+", wrap = true)
+    case ConjunctionNode(_, _) => Transpilation.operatorChain(expressions, "&&", wrap = true)
+    case DisjunctionNode(_, _) => Transpilation.operatorChain(expressions, "||", wrap = true)
     case _ => default(node)
   }
 

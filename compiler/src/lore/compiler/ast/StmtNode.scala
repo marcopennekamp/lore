@@ -152,6 +152,9 @@ object TopLevelExprNode {
   */
 sealed trait ExprNode extends TopLevelExprNode
 object ExprNode {
+  // TODO: We could save a lot of nodes by turning Binary and Xary operations into their own node type (BinaryOperation,
+  //       XaryOperation) and giving them an Operator type instead of creating a bajillion case classes.
+
   /**
     * A cross-cutting node trait signifying the possible target of an assignment.
     */

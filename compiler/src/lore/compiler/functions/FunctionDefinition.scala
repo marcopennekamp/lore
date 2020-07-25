@@ -12,10 +12,11 @@ import lore.compiler.types.{Fit, Type}
   * A definition of a single function as part of a larger multi-function.
   *
   * @param typeScope The scope that saves type variables declared with the function.
+  * @param body The body is a variable because it may be transformed during the course of the compilation.
   */
 class FunctionDefinition(
   val name: String, val typeScope: TypeScope, val parameters: List[ParameterDefinition], outputType: Type,
-  val body: Option[ExprNode], override val position: Position,
+  var body: Option[ExprNode], override val position: Position,
 ) extends Positioned {
   val isAbstract: Boolean = body.isEmpty
   lazy val signature: FunctionSignature = functions.FunctionSignature(name, parameters, outputType, position)

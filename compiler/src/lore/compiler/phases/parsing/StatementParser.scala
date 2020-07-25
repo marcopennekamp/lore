@@ -85,6 +85,9 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
       .map(withIndex(ExprNode.IterationNode(_, _)))
   }
 
+  // TODO: The single & and | style feels quite weird when actually using it. Maybe we should just introduce
+  //       operators && and || or "and" and "or". Similarly with the not operator. And I don't quite like =/=
+  //       either, in hindsight.
   def operatorExpression[_: P]: P[ExprNode] = {
     import PrecedenceParser._
     PrecedenceParser.parser(

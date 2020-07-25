@@ -1,8 +1,8 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.ast.{DeclNode, TypeDeclNode}
+import lore.compiler.ast.{DeclNode, ExprNode, TypeDeclNode}
 import lore.compiler.core.Compilation._
-import lore.compiler.core.{Fragment, Registry, TypeScope}
+import lore.compiler.core.{CompilationException, Registry, TypeScope}
 import lore.compiler.functions.{ConstructorDefinition, FunctionDefinition, ParameterDefinition}
 import lore.compiler.types.TypeExpressionEvaluator
 
@@ -22,17 +22,21 @@ object FunctionDeclarationResolver {
     }
   }
 
-  def resolveConstructorNode(node: TypeDeclNode.ConstructorNode)(implicit registry: Registry): ConstructorDefinition = {
+  def resolveConstructorNode(node: TypeDeclNode.ConstructorNode)(implicit registry: Registry): C[ConstructorDefinition] = {
     implicit val typeScope: TypeScope = registry.typeScope
     // TODO: Type variables from the class definition need to be available in the constructor context. We will also
     //       have to defer their loading, sadly, OR rethink WHAT we need to defer.
-    ConstructorDefinition(
-      node.name,
-      registry.typeScope,
-      node.parameters.map(resolveParameterNode),
-      node.body,
-      node.position,
-    )
+    FunctionTransformations.transformBody(node.body).map {
+      case body: ExprNode.BlockNode =>
+        ConstructorDefinition(
+          node.name,
+          registry.typeScope,
+          node.parameters.map(resolveParameterNode),
+          body,
+          node.position,
+        )
+      case _ => throw CompilationException("A constructor body must be transformed to a block node.")
+    }
   }
 
   private def resolveParameterNode(node: DeclNode.ParameterNode)(implicit typeScope: TypeScope): ParameterDefinition = {
