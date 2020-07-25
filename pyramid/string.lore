@@ -16,7 +16,7 @@ function toString(list: [A]): String where A = {
   const strings = for (a <- list) {
     toString(a)
   }
-  stringJoin(list, ', ')
+  stringJoin(strings, ', ')
 }
 
 // TODO: Stringify maps.
