@@ -1,7 +1,7 @@
 package lore.compiler.structures
 
 import lore.compiler.core.Compilation.C
-import lore.compiler.feedback.{Position, Positioned}
+import lore.compiler.core.feedback.{Position, Positioned}
 import lore.compiler.functions.ParameterDefinition
 import lore.compiler.phases.verification.VirtualMember
 import lore.compiler.types.{ClassType, ComponentType, Type, TypingDeferred}

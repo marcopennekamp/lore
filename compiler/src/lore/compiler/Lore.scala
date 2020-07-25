@@ -5,7 +5,7 @@ import java.nio.file.{Files, Path}
 
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.{Errors, Fragment, Registry, Result}
-import lore.compiler.feedback.FeedbackPrinter
+import lore.compiler.core.feedback.FeedbackPrinter
 import lore.compiler.types.DeclaredType
 
 import scala.util.Using

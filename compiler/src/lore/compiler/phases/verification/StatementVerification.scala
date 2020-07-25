@@ -4,7 +4,7 @@ import lore.compiler.ast.ExprNode.LoopNode
 import lore.compiler.ast.{CallNode, ExprNode, StmtNode}
 import lore.compiler.core.{Compilation, Registry}
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.feedback.{Error, Position}
+import lore.compiler.core.feedback.{Error, Position}
 import lore.compiler.functions.{FunctionSignature, InternalCallTarget}
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
 import lore.compiler.phases.verification.FunctionVerificationVisitor.{AmbiguousCall, EmptyFit}

@@ -1,7 +1,7 @@
 package lore.compiler.ast
 
 import lore.compiler.core.Fragment
-import lore.compiler.feedback.Position
+import lore.compiler.core.feedback.Position
 
 // TODO: As "state handling" and such becomes more messy, meaning we perform more and more transformations that bring
 //       us further and further from the AST status quo after parsing, it might be useful to define a new intermediate

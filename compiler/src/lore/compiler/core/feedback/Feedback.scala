@@ -1,4 +1,4 @@
-package lore.compiler.feedback
+package lore.compiler.core.feedback
 
 import lore.compiler.ast._
 

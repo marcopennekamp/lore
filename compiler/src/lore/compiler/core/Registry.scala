@@ -2,7 +2,7 @@ package lore.compiler.core
 
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.Registry.{ConstructorNotFound, ExactFunctionNotFound, MultiFunctionNotFound, TypeNotFound}
-import lore.compiler.feedback.{Error, Position}
+import lore.compiler.core.feedback.{Error, Position}
 import lore.compiler.functions.{ConstructorDefinition, FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.structures._
 import lore.compiler.types._

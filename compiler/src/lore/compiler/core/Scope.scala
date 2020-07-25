@@ -2,7 +2,7 @@ package lore.compiler.core
 
 import lore.compiler.core.Compilation.{C, Verification}
 import lore.compiler.core.Scope.{AlreadyDeclared, UnknownEntry}
-import lore.compiler.feedback.{Error, Position}
+import lore.compiler.core.feedback.{Error, Position}
 
 import scala.collection.mutable
 

@@ -4,7 +4,7 @@ import lore.compiler.ast.visitor.{CombiningStmtVisitor, StmtVisitor, Verificatio
 import lore.compiler.ast.{ExprNode, StmtNode}
 import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.feedback.Error
+import lore.compiler.core.feedback.Error
 import lore.compiler.phases.verification.ReturnConstraints.{DeadCode, DefinitelyReturns, ImpossibleReturn, IsReturnAllowed}
 
 private class ReturnDeadCodeVisitor() extends CombiningStmtVisitor[DefinitelyReturns] {

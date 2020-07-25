@@ -1,6 +1,6 @@
 package lore.compiler.functions
 
-import lore.compiler.feedback.Positioned
+import lore.compiler.core.feedback.Positioned
 import lore.compiler.types.Type
 
 /**

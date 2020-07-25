@@ -2,7 +2,7 @@ package lore.compiler.phases.verification
 
 import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.core.Compilation.C
-import lore.compiler.feedback._
+import lore.compiler.core.feedback._
 import lore.compiler.types._
 
 import scala.collection.immutable.HashMap

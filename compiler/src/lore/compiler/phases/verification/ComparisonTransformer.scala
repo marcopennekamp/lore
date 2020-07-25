@@ -54,9 +54,6 @@ class ComparisonTransformer(implicit registry: Registry) extends StmtTransformer
       throw CompilationException("The comparison's inferred type must be Boolean!")
     }
 
-    println(functionName)
-    println(left.state.inferredType + " " + right.state.inferredType + " at " + comparisonNode.position)
-
     (left.state.inferredType, right.state.inferredType) match {
       case (_: BasicType, _: BasicType) => Compilation.succeed(comparisonNode)
       case _ =>

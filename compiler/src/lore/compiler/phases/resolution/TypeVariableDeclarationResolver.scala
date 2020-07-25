@@ -3,7 +3,7 @@ package lore.compiler.phases.resolution
 import lore.compiler.ast.DeclNode
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.{Compilation, Fragment, TypeScope, TypeVariableScope}
-import lore.compiler.feedback.Position
+import lore.compiler.core.feedback.Position
 import lore.compiler.types.{AnyType, NothingType, TypeExpressionEvaluator, TypeVariable}
 
 object TypeVariableDeclarationResolver {

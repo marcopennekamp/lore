@@ -4,7 +4,7 @@ import lore.compiler.ast.{ExprNode, StmtNode}
 import lore.compiler.ast.visitor.{StmtVisitor, VerificationStmtVisitor}
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, CompilationException, Registry, TypeScope}
-import lore.compiler.feedback.Error
+import lore.compiler.core.feedback.Error
 import lore.compiler.functions.{ConstructorDefinition, FunctionDefinition, FunctionSignature}
 import lore.compiler.structures.ClassDefinition
 import lore.compiler.types.Type

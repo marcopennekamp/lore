@@ -1,6 +1,6 @@
 package lore.compiler.structures
 
-import lore.compiler.feedback.Position
+import lore.compiler.core.feedback.Position
 import lore.compiler.types.LabelType
 
 class LabelDefinition(

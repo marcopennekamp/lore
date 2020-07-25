@@ -5,7 +5,7 @@ import lore.compiler.ast.visitor.{StmtVisitor, VerificationStmtVisitor}
 import lore.compiler.ast.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Fragment}
-import lore.compiler.feedback.Error
+import lore.compiler.core.feedback.Error
 import lore.compiler.functions.ConstructorDefinition
 import lore.compiler.structures.ClassDefinition
 import scalax.collection.GraphEdge.DiEdge

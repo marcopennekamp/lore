@@ -3,7 +3,7 @@ package lore.compiler.functions
 import lore.compiler.ast.ExprNode
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.{Compilation, TypeScope}
-import lore.compiler.feedback.{Error, Position, Positioned}
+import lore.compiler.core.feedback.{Error, Position, Positioned}
 import lore.compiler.functions
 import lore.compiler.functions.FunctionDefinition.CannotInstantiateFunction
 import lore.compiler.types.{Fit, Type}

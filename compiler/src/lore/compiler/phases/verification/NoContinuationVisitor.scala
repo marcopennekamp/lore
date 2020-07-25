@@ -4,7 +4,7 @@ import lore.compiler.ast.visitor.VerificationStmtVisitor
 import lore.compiler.ast.{StmtNode, TopLevelExprNode}
 import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.feedback.Error
+import lore.compiler.core.feedback.Error
 import lore.compiler.phases.verification.NoContinuationVisitor.IllegalContinuation
 
 class NoContinuationVisitor extends VerificationStmtVisitor {

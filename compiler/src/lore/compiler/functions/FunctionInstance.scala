@@ -1,5 +1,5 @@
 package lore.compiler.functions
-import lore.compiler.feedback.Position
+import lore.compiler.core.feedback.Position
 
 /**
   * A [[FunctionDefinition]] with a signature that has all of its type variables replaced with their instances.

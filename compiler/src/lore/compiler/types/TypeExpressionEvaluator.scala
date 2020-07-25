@@ -3,7 +3,7 @@ package lore.compiler.types
 import lore.compiler.ast.TypeExprNode
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.{Compilation, TypeScope}
-import lore.compiler.feedback.{Error, Position}
+import lore.compiler.core.feedback.{Error, Position}
 
 object TypeExpressionEvaluator {
   case class ComponentTypeMustContainClass(node: TypeExprNode.ComponentNode) extends Error(node) {

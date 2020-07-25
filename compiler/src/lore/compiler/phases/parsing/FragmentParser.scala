@@ -5,7 +5,7 @@ import fastparse._
 import lore.compiler.ast._
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.{Compilation, Fragment}
-import lore.compiler.feedback.{Error, Position}
+import lore.compiler.core.feedback.{Error, Position}
 
 /**
   * The parsers contained in this parser collection all parse top-level declarations that can occur in a

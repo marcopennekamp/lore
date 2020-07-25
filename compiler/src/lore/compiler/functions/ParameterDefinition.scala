@@ -1,7 +1,7 @@
 package lore.compiler.functions
 
 import lore.compiler.core.Compilation.C
-import lore.compiler.feedback.{Position, Positioned}
+import lore.compiler.core.feedback.{Position, Positioned}
 import lore.compiler.phases.verification.LocalVariable
 import lore.compiler.types.{Type, TypingDeferred}
 

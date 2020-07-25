@@ -3,7 +3,7 @@ package lore.compiler.phases.verification
 import lore.compiler.ast.visitor.StmtVisitor
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Fragment, Registry}
-import lore.compiler.feedback.Error
+import lore.compiler.core.feedback.Error
 import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.types.{Ards, Fit, Type}
 

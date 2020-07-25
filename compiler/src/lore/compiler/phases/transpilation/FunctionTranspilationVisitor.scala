@@ -4,7 +4,7 @@ import lore.compiler.ast.TopLevelExprNode.AssignmentNode
 import lore.compiler.ast.visitor.StmtVisitor
 import lore.compiler.ast.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.core.{Compilation, Fragment, Registry}
-import lore.compiler.feedback.Error
+import lore.compiler.core.feedback.Error
 import lore.compiler.functions.FunctionInstance
 import lore.compiler.phases.transpilation.Transpilation.Transpilation
 import lore.compiler.phases.transpilation.TranspiledChunk.JsCode

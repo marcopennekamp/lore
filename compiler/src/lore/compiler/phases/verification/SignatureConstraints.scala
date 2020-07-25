@@ -1,7 +1,7 @@
 package lore.compiler.phases.verification
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.feedback.Error
+import lore.compiler.core.feedback.Error
 import lore.compiler.functions.FunctionSignature
 
 object SignatureConstraints {

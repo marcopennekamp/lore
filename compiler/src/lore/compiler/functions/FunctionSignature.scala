@@ -1,7 +1,7 @@
 package lore.compiler.functions
 
 import lore.compiler.core.Compilation
-import lore.compiler.feedback.{Position, Positioned}
+import lore.compiler.core.feedback.{Position, Positioned}
 import lore.compiler.types._
 
 import scala.util.hashing.MurmurHash3

@@ -2,7 +2,7 @@ package lore.compiler.phases.verification
 
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, CompilationException, Registry}
-import lore.compiler.feedback.{Error, Position}
+import lore.compiler.core.feedback.{Error, Position}
 import lore.compiler.structures.{ClassDefinition, ComponentDefinition, MemberDefinition}
 import lore.compiler.types.{AnyType, ClassType, Type}
 
