@@ -4,9 +4,9 @@ import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.file.{Files, Path}
 
 import lore.compiler.core.Compilation.C
-import lore.compiler.core.{Errors, Fragment, Registry, Result}
-import lore.compiler.core.feedback.FeedbackPrinter
-import lore.compiler.types.{DeclaredType, Type}
+import lore.compiler.core.{Errors, FeedbackPrinter, Fragment, Result}
+import lore.compiler.semantics.Registry
+import lore.compiler.types.Type
 
 import scala.util.Using
 

@@ -1,9 +1,10 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.ast.ExprNode
-import lore.compiler.ast.transformer.StmtTransformer
-import lore.compiler.core.{Compilation, CompilationException, Registry}
+import lore.compiler.syntax.ExprNode
+import lore.compiler.syntax.transformer.StmtTransformer
+import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.core.Compilation.C
+import lore.compiler.semantics.Registry
 import lore.compiler.types.BasicType
 
 // TODO: Write tests for this...

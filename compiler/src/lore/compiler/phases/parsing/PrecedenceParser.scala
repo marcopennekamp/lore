@@ -2,8 +2,8 @@ package lore.compiler.phases.parsing
 
 import fastparse.ScalaWhitespace._
 import fastparse._
-import lore.compiler.ast.Node
-import lore.compiler.ast.Node.Index
+import lore.compiler.syntax.Node
+import lore.compiler.syntax.Node.Index
 import lore.compiler.core.Fragment
 
 /**

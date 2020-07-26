@@ -1,7 +1,7 @@
 package lore.compiler.phases.verification.test
 
-import lore.compiler.core.Registry
 import lore.compiler.phases.verification.{ClassConstraints, ConstructorConstraints, MultiFunctionConstraints, ReturnConstraints}
+import lore.compiler.semantics.Registry
 import lore.compiler.test.BaseSpec
 
 class ConstraintsSpec extends BaseSpec {

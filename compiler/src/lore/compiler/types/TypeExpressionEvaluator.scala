@@ -1,9 +1,9 @@
 package lore.compiler.types
 
-import lore.compiler.ast.TypeExprNode
+import lore.compiler.syntax.TypeExprNode
 import lore.compiler.core.Compilation.C
-import lore.compiler.core.{Compilation, TypeScope}
-import lore.compiler.core.feedback.{Error, Position}
+import lore.compiler.core.{Compilation, Error, Position}
+import lore.compiler.semantics.TypeScope
 
 object TypeExpressionEvaluator {
   case class ComponentTypeMustContainClass(node: TypeExprNode.ComponentNode) extends Error(node) {

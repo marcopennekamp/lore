@@ -4,8 +4,8 @@ import java.io.{ByteArrayOutputStream, PrintStream}
 
 import lore.compiler.CompilerOptions
 import lore.compiler.core.Compilation.C
-import lore.compiler.core.Registry
-import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.semantics.Registry
+import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.types.{ProductType, Type}
 
 import scala.collection.mutable

@@ -2,10 +2,10 @@ package lore.compiler.phases.parsing
 
 import fastparse.ScalaWhitespace._
 import fastparse._
-import lore.compiler.ast._
+import lore.compiler.core
 import lore.compiler.core.Compilation.C
-import lore.compiler.core.{Compilation, Fragment}
-import lore.compiler.core.feedback.{Error, Position}
+import lore.compiler.core.{Compilation, Error, Fragment, Position}
+import lore.compiler.syntax._
 
 /**
   * The parsers contained in this parser collection all parse top-level declarations that can occur in a
@@ -33,7 +33,7 @@ class FragmentParser(implicit fragment: Fragment) {
       case Parsed.Failure(_, _, extra) =>
         val message = s"Parsing failure: ${extra.trace().aggregateMsg}"
         // TODO: Give the correct index to the parsing error.
-        Compilation.fail(ParsingError(message, Position(fragment, 0)))
+        Compilation.fail(ParsingError(message, core.Position(fragment, 0)))
       case Parsed.Success(result, _) => Compilation.succeed(result)
     }
   }

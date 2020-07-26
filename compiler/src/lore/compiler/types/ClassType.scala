@@ -1,6 +1,6 @@
 package lore.compiler.types
 
-import lore.compiler.structures.ClassDefinition
+import lore.compiler.semantics.structures.ClassDefinition
 
 class ClassType(
   override val supertype: Option[ClassType], val ownedByDeferred: Option[OwnedByDeferred], val isAbstract: Boolean

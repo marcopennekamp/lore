@@ -1,7 +1,7 @@
 package lore.compiler.phases.parsing.test
 
 import fastparse.P
-import lore.compiler.ast.TypeExprNode
+import lore.compiler.syntax.TypeExprNode
 import lore.compiler.core.Fragment
 import lore.compiler.phases.parsing.TypeParser
 import lore.compiler.test.BaseSpec

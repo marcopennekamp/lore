@@ -1,13 +1,13 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.ast.ExprNode.LoopNode
-import lore.compiler.ast.{CallNode, ExprNode, StmtNode}
-import lore.compiler.core.{Compilation, Registry}
+import lore.compiler.syntax.ExprNode.LoopNode
+import lore.compiler.syntax.{CallNode, ExprNode, StmtNode}
+import lore.compiler.core.{Compilation, Error, Position}
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.feedback.{Error, Position}
-import lore.compiler.functions.{FunctionSignature, InternalCallTarget}
+import lore.compiler.semantics.functions.{FunctionSignature, InternalCallTarget}
 import lore.compiler.phases.verification.FunctionVerification.IllegallyTypedExpression
 import lore.compiler.phases.verification.FunctionVerificationVisitor.{AmbiguousCall, EmptyFit}
+import lore.compiler.semantics.Registry
 import lore.compiler.types.{BasicType, ListType, ProductType, Type}
 
 /**

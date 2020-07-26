@@ -1,8 +1,8 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.ast.ExprNode
-import lore.compiler.ast.ExprNode.{ConcatenationNode, SimpleCallNode, StringLiteralNode}
-import lore.compiler.ast.transformer.StmtTransformer
+import lore.compiler.syntax.ExprNode
+import lore.compiler.syntax.ExprNode.{ConcatenationNode, SimpleCallNode, StringLiteralNode}
+import lore.compiler.syntax.transformer.StmtTransformer
 import lore.compiler.core.Compilation
 
 /**

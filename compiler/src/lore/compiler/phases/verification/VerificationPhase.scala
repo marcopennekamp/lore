@@ -1,9 +1,9 @@
 package lore.compiler.phases.verification
 
 import lore.compiler.core.Compilation._
-import lore.compiler.core.Registry
-import lore.compiler.phases.Phase
-import lore.compiler.structures.ClassDefinition
+import lore.compiler.core.Phase
+import lore.compiler.semantics.Registry
+import lore.compiler.semantics.structures.ClassDefinition
 import lore.compiler.utils.CollectionExtensions._
 
 class VerificationPhase()(implicit registry: Registry) extends Phase[Unit] {

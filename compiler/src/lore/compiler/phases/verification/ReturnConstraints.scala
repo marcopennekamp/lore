@@ -1,10 +1,9 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.ast.visitor.{CombiningStmtVisitor, StmtVisitor, VerificationStmtVisitor}
-import lore.compiler.ast.{ExprNode, StmtNode}
-import lore.compiler.core.Compilation
+import lore.compiler.syntax.visitor.{CombiningStmtVisitor, StmtVisitor, VerificationStmtVisitor}
+import lore.compiler.syntax.{ExprNode, StmtNode}
+import lore.compiler.core.{Compilation, Error}
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.feedback.Error
 import lore.compiler.phases.verification.ReturnConstraints.{DeadCode, DefinitelyReturns, ImpossibleReturn, IsReturnAllowed}
 
 private class ReturnDeadCodeVisitor() extends CombiningStmtVisitor[DefinitelyReturns] {

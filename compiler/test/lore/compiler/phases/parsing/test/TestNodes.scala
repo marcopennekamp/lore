@@ -1,7 +1,7 @@
 package lore.compiler.phases.parsing.test
 
-import lore.compiler.ast.ExprNode.VariableNode
-import lore.compiler.ast.TypeExprNode.NominalNode
+import lore.compiler.syntax.ExprNode.VariableNode
+import lore.compiler.syntax.TypeExprNode.NominalNode
 
 object TestNodes {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

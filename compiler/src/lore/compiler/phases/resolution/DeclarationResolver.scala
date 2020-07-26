@@ -1,12 +1,12 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.ast.{DeclNode, TypeDeclNode}
+import lore.compiler.syntax.{DeclNode, TypeDeclNode}
 import lore.compiler.core.Compilation.{C, Verification}
-import lore.compiler.core.{Compilation, CompilationException, Registry, TypeScope}
-import lore.compiler.core.feedback.Error
-import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.core.{Compilation, CompilationException, Error}
+import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.phases.resolution.DeclarationResolver.{FunctionAlreadyExists, TypeAlreadyExists}
-import lore.compiler.structures.ClassDefinition
+import lore.compiler.semantics.{Registry, TypeScope}
+import lore.compiler.semantics.structures.ClassDefinition
 import lore.compiler.types.Type
 
 import scala.collection.mutable

@@ -1,13 +1,13 @@
 package lore.compiler.phases.transpilation
 
-import lore.compiler.ast.TopLevelExprNode.AssignmentNode
-import lore.compiler.ast.visitor.StmtVisitor
-import lore.compiler.ast.{ExprNode, StmtNode, TopLevelExprNode}
-import lore.compiler.core.{Compilation, Fragment, Registry}
-import lore.compiler.core.feedback.Error
-import lore.compiler.functions.FunctionInstance
+import lore.compiler.syntax.TopLevelExprNode.AssignmentNode
+import lore.compiler.syntax.visitor.StmtVisitor
+import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode}
+import lore.compiler.core.{Compilation, Error}
+import lore.compiler.semantics.functions.FunctionInstance
 import lore.compiler.phases.transpilation.Transpilation.Transpilation
 import lore.compiler.phases.transpilation.TranspiledChunk.JsCode
+import lore.compiler.semantics.Registry
 import lore.compiler.types.ProductType
 
 case class UnsupportedTranspilation(node: StmtNode) extends Error(node) {

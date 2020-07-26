@@ -1,9 +1,9 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.ast.DeclNode
+import lore.compiler.syntax.DeclNode
 import lore.compiler.core.Compilation.C
-import lore.compiler.core.feedback.Position
-import lore.compiler.core.{Compilation, TypeScope, TypeVariableScope}
+import lore.compiler.core.{Compilation, Position}
+import lore.compiler.semantics.{TypeScope, TypeVariableScope}
 import lore.compiler.types.{AnyType, NothingType, TypeExpressionEvaluator, TypeVariable}
 
 object TypeVariableDeclarationResolver {

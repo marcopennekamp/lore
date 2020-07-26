@@ -1,6 +1,6 @@
 package lore.compiler.types
 
-import lore.compiler.core.Scope
+import lore.compiler.semantics.Scope
 
 class TypeVariable(
   val name: String,

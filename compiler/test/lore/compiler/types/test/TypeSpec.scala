@@ -1,6 +1,6 @@
 package lore.compiler.types.test
 
-import lore.compiler.core.Registry
+import lore.compiler.semantics.Registry
 import lore.compiler.test.{BaseSpec, TypeSyntax}
 import lore.compiler.types.{ClassType, LabelType}
 

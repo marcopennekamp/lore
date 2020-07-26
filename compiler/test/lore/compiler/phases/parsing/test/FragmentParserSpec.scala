@@ -1,7 +1,7 @@
 package lore.compiler.phases.parsing.test
 
 import fastparse.P
-import lore.compiler.ast._
+import lore.compiler.syntax._
 import lore.compiler.core.Fragment
 import lore.compiler.phases.parsing.FragmentParser
 import lore.compiler.test.BaseSpec

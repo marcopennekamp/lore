@@ -1,9 +1,9 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.ast.DeclNode
+import lore.compiler.syntax.DeclNode
 import lore.compiler.core.Compilation.C
-import lore.compiler.core.Registry
-import lore.compiler.phases.Phase
+import lore.compiler.core.Phase
+import lore.compiler.semantics.Registry
 
 class ResolutionPhase(declarations: List[DeclNode]) extends Phase[Registry] {
   override lazy val result: C[Registry] = (new DeclarationResolver).buildRegistry(declarations)

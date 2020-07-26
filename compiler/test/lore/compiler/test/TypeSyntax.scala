@@ -1,6 +1,6 @@
 package lore.compiler.test
 
-import lore.compiler.core.Registry
+import lore.compiler.semantics.Registry
 import lore.compiler.types._
 
 trait TypeSyntax {

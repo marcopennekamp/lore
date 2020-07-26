@@ -1,7 +1,7 @@
 package lore.compiler.types
 
-import lore.compiler.core.Registry
-import lore.compiler.structures.DeclaredTypeDefinition
+import lore.compiler.semantics.Registry
+import lore.compiler.semantics.structures.DeclaredTypeDefinition
 
 /**
   * A declared type as defined by the spec.

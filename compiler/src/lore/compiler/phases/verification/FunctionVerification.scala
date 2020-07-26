@@ -1,12 +1,12 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.ast.{ExprNode, StmtNode}
-import lore.compiler.ast.visitor.{StmtVisitor, VerificationStmtVisitor}
+import lore.compiler.syntax.{ExprNode, StmtNode}
+import lore.compiler.syntax.visitor.{StmtVisitor, VerificationStmtVisitor}
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, CompilationException, Registry, TypeScope}
-import lore.compiler.core.feedback.Error
-import lore.compiler.functions.{ConstructorDefinition, FunctionDefinition, FunctionSignature}
-import lore.compiler.structures.ClassDefinition
+import lore.compiler.core.{Compilation, CompilationException, Error}
+import lore.compiler.semantics.{Registry, TypeScope}
+import lore.compiler.semantics.functions.{ConstructorDefinition, FunctionDefinition, FunctionSignature}
+import lore.compiler.semantics.structures.ClassDefinition
 import lore.compiler.types.Type
 
 // TODO: Maybe we should introduce two separate ASTs: The first one would be created by the parser and only

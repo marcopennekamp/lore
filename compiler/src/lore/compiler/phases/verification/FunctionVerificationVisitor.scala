@@ -1,13 +1,13 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.ast.ExprNode.AddressNode
-import lore.compiler.ast.visitor.VerificationStmtVisitor
-import lore.compiler.ast.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, CompilationException, Registry, TypeScope}
-import lore.compiler.core.feedback.{Error, Position}
-import lore.compiler.functions._
-import lore.compiler.structures.ClassDefinition
+import lore.compiler.core.{Compilation, CompilationException, Position, Error}
+import lore.compiler.semantics.functions._
+import lore.compiler.semantics.structures.ClassDefinition
+import lore.compiler.semantics.{Registry, TypeScope}
+import lore.compiler.syntax.ExprNode.AddressNode
+import lore.compiler.syntax.visitor.VerificationStmtVisitor
+import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.types._
 
 private[verification] class FunctionVerificationVisitor(
@@ -26,9 +26,9 @@ private[verification] class FunctionVerificationVisitor(
     */
   classDefinition: Option[ClassDefinition],
 )(implicit registry: Registry) extends VerificationStmtVisitor {
+  import ExprNode._
   import FunctionVerificationVisitor._
   import StatementVerification._
-  import ExprNode._
   import StmtNode._
   import TopLevelExprNode._
 

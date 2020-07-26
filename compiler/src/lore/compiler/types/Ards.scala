@@ -1,6 +1,6 @@
 package lore.compiler.types
 
-import lore.compiler.core.Registry
+import lore.compiler.semantics.Registry
 import scalaz.Monad
 import scalaz.std.list._
 import scalaz.syntax.traverse._

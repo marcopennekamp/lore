@@ -1,8 +1,8 @@
 package lore.compiler.phases.parsing.test
 
 import fastparse._
-import lore.compiler.ast.StmtNode.ReturnNode
-import lore.compiler.ast._
+import lore.compiler.syntax.StmtNode.ReturnNode
+import lore.compiler.syntax._
 import lore.compiler.core.Fragment
 import lore.compiler.phases.parsing.{StatementParser, TypeParser}
 import lore.compiler.test.BaseSpec

@@ -1,9 +1,10 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.ast.{DeclNode, ExprNode, TypeDeclNode}
+import lore.compiler.syntax.{DeclNode, ExprNode, TypeDeclNode}
 import lore.compiler.core.Compilation._
-import lore.compiler.core.{CompilationException, Registry, TypeScope}
-import lore.compiler.functions.{ConstructorDefinition, FunctionDefinition, ParameterDefinition}
+import lore.compiler.core.CompilationException
+import lore.compiler.semantics.{Registry, TypeScope}
+import lore.compiler.semantics.functions.{ConstructorDefinition, FunctionDefinition, ParameterDefinition}
 import lore.compiler.types.TypeExpressionEvaluator
 
 object FunctionDeclarationResolver {

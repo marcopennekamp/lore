@@ -1,6 +1,7 @@
 package lore.compiler.types
 
-import lore.compiler.core.{CompilationException, Registry}
+import lore.compiler.core.CompilationException
+import lore.compiler.semantics.Registry
 import lore.compiler.types.TypeExtensions._
 
 object LeastUpperBound {

@@ -1,10 +1,10 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.ast.visitor.StmtVisitor
+import lore.compiler.syntax.visitor.StmtVisitor
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.Registry
-import lore.compiler.core.feedback.Error
-import lore.compiler.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.core.Error
+import lore.compiler.semantics.Registry
+import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.types.{Ards, Fit, Type}
 
 object MultiFunctionConstraints {

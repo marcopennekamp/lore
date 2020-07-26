@@ -1,10 +1,10 @@
 package lore.compiler.phases.transpilation
 
 import lore.compiler.CompilerOptions
-import lore.compiler.ast.visitor.StmtVisitor
+import lore.compiler.syntax.visitor.StmtVisitor
 import lore.compiler.core.Compilation.C
-import lore.compiler.core.Registry
-import lore.compiler.functions.FunctionDefinition
+import lore.compiler.semantics.Registry
+import lore.compiler.semantics.functions.FunctionDefinition
 
 class FunctionTranspiler(function: FunctionDefinition, uniqueName: String)(implicit compilerOptions: CompilerOptions, registry: Registry) {
   def transpile: C[String] = {

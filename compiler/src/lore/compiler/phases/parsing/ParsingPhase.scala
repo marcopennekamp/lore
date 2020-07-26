@@ -1,9 +1,8 @@
 package lore.compiler.phases.parsing
 
-import lore.compiler.ast.DeclNode
+import lore.compiler.syntax.DeclNode
 import lore.compiler.core.Compilation.C
-import lore.compiler.core.Fragment
-import lore.compiler.phases.Phase
+import lore.compiler.core.{Fragment, Phase}
 
 class ParsingPhase(sources: List[Fragment]) extends Phase[List[DeclNode]] {
   override lazy val result: C[List[DeclNode]] = parseAll()

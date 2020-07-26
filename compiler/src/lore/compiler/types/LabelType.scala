@@ -1,6 +1,6 @@
 package lore.compiler.types
 
-import lore.compiler.structures.LabelDefinition
+import lore.compiler.semantics.structures.LabelDefinition
 
 // TODO: Do we even WANT label types to be in a hierarchical relationship to each other?
 class LabelType(

@@ -1,7 +1,6 @@
 package lore.compiler.core
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.feedback.{Error, Feedback, InfoFeedback}
 import shapeless.ops.hlist.{RightFolder, Tupler}
 import shapeless.syntax.std.tuple._
 import shapeless.{Generic, HList, HNil, LUBConstraint, Poly2}

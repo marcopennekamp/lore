@@ -2,8 +2,8 @@ package lore.compiler.phases.transpilation
 
 import lore.compiler.CompilerOptions
 import lore.compiler.core.Compilation.C
-import lore.compiler.core.Registry
-import lore.compiler.phases.Phase
+import lore.compiler.core.Phase
+import lore.compiler.semantics.Registry
 
 class TranspilationPhase()(implicit compilerOptions: CompilerOptions, registry: Registry) extends Phase[String] {
   override def result: C[String] = {
