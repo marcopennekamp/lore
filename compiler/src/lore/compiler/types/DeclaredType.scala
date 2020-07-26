@@ -39,13 +39,6 @@ trait DeclaredType extends NamedType {
     registry.declaredTypeHierarchy.getDirectSubtypes(this).toSet
   }
 
-  /**
-    * A verbose string representation of the type.
-    */
-  def verbose: String = toString
-
-  override def string(precedence: TypePrecedence): String = name
-
   // We define equality of declared types as nominal equality.
   override def equals(obj: Any): Boolean = obj match {
     case rhs: DeclaredType => this.eq(rhs) || name == rhs.name

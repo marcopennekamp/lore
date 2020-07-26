@@ -6,7 +6,7 @@ import java.nio.file.{Files, Path}
 import lore.compiler.core.Compilation.C
 import lore.compiler.core.{Errors, Fragment, Registry, Result}
 import lore.compiler.core.feedback.FeedbackPrinter
-import lore.compiler.types.DeclaredType
+import lore.compiler.types.{DeclaredType, Type}
 
 import scala.util.Using
 
@@ -67,10 +67,7 @@ object Lore {
           // Print types for debugging.
           printer.println()
           printer.println("Types:")
-          registry.getTypes.values.map {
-            case t: DeclaredType => t.verbose
-            case t => t.toString
-          }.foreach(s => printer.println(s"  $s"))
+          registry.getTypes.values.map(Type.toString(_, verbose = true)).foreach(s => printer.println(s"  $s"))
 
           // Print functions for debugging.
           registry.getMultiFunctions.values.foreach { mf =>

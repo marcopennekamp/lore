@@ -10,10 +10,6 @@ case class ProductType(components: List[Type]) extends Type {
     */
   override def toTuple: ProductType = this
 
-  override def string(parentPrecedence: TypePrecedence): String = {
-    s"(${components.map(_.string(TypePrecedence.Parenthesized)).mkString(", ")})"
-  }
-
   override val hashCode: Int = MurmurHash3.unorderedHash(components)
 }
 

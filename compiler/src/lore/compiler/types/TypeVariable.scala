@@ -8,8 +8,6 @@ class TypeVariable(
   val upperBound: Type,
   val declarationOrder: Int,
 ) extends NamedType with Scope.Entry {
-  override def string(parentPrecedence: TypePrecedence): String = name
-
   // Type variables are strictly reference-equal.
   override def equals(obj: Any): Boolean = obj match {
     case var2: TypeVariable => this eq var2

@@ -24,7 +24,4 @@ class ClassType(
     // The compiler might not see this, but of course the root supertype of a class can itself only be a class type.
     super.rootSupertype.asInstanceOf[ClassType]
   }
-
-  // TODO: Move this to a separate stringifier class.
-  override def verbose = s"${if (isAbstract) s"abstract class" else "class"} $toString extends ${supertype.getOrElse(AnyType)}"
 }

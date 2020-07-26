@@ -9,8 +9,6 @@ import lore.compiler.utils.CollectionExtensions._
   * compiler. At times, we will hash types heavily, and so fast hash access is important.
   */
 trait Type {
-  // TODO: As a general performance improvement, we might consider interning types like strings are interned,
-  //       especially in the runtime.
   // TODO: Add .product, .sum, and .intersection helper methods to List[Type] for easy construction.
 
   /**
@@ -18,18 +16,12 @@ trait Type {
     */
   def toTuple: ProductType = ProductType(List(this))
 
-  /**
-    * A pretty string representation of the type.
-    */
-  def string(parentPrecedence: TypePrecedence): String
-  override def toString: String = string(TypePrecedence.Parenthesized)
-  // TODO: Maybe we should move this definition to a TypePrinter object, as it's not a core part of a type and
-  //       rather distracts from the important stuff. It's also annoying to define.
-
   def <=(rhs: Type): Boolean = Subtyping.isSubtype(this, rhs)
   def <(rhs: Type): Boolean = Subtyping.isStrictSubtype(this, rhs)
   def >=(rhs: Type): Boolean = rhs <= this
   def >(rhs: Type): Boolean = rhs < this
+
+  override def toString: String = Type.toStringWithPrecedence(this)
 }
 
 object Type {
@@ -110,29 +102,52 @@ object Type {
     case ProductType(components) => components.flatMap(variables).toSet
     case ListType(element) => variables(element)
     case MapType(key, value) => variables(key) ++ variables(value)
-    case _: ComponentType => Set.empty // TODO: Update when component types can have type parameters?
+    case ComponentType(_) => Set.empty // TODO: Update when component types can have type parameters?
     case _: NamedType => Set.empty // TODO: Update when class types can have type parameters.
   }
-}
 
-sealed abstract class TypePrecedence(protected val value: Int) {
-  def <(precedence: TypePrecedence): Boolean = this.value <= precedence.value
-}
-object TypePrecedence {
-  case object Parenthesized extends TypePrecedence(0)
-  case object Sum extends TypePrecedence(1)
-  case object Intersection extends TypePrecedence(2)
-  case object Map extends TypePrecedence(3)
-  case object Atom extends TypePrecedence(4)
-}
-
-trait OperatorType { self: Type =>
-  override def string(parentPrecedence: TypePrecedence): String = {
-    val repr = operands.map(_.string(precedence)).mkString(s" $operator ")
-    if (precedence < parentPrecedence) s"($repr)" else repr
+  private sealed abstract class TypePrecedence(protected val value: Int) {
+    def <(precedence: TypePrecedence): Boolean = this.value <= precedence.value
+  }
+  private object TypePrecedence {
+    case object Parenthesized extends TypePrecedence(0)
+    case object Sum extends TypePrecedence(1)
+    case object Intersection extends TypePrecedence(2)
+    case object Map extends TypePrecedence(3)
   }
 
-  protected def precedence: TypePrecedence
-  protected def operands: List[Type]
-  protected def operator: String
+  /**
+    * Creates a pretty string representation of the type.
+    */
+  def toString(t: Type, verbose: Boolean = false): String = toStringWithPrecedence(t, verbose)
+
+  /**
+    * Creates a pretty string representation of the type.
+    */
+  private def toStringWithPrecedence(t: Type, verbose: Boolean = false, parentPrecedence: TypePrecedence = TypePrecedence.Parenthesized): String = {
+    def stringifyOperator(operator: String, precedence: TypePrecedence, operands: List[Type]): String = {
+      val repr = operands.map(toStringWithPrecedence(_, verbose, precedence)).mkString(s" $operator ")
+      if (precedence < parentPrecedence) s"($repr)" else repr
+    }
+
+    t match {
+      case SumType(types) => stringifyOperator("|", TypePrecedence.Sum, types.toList)
+      case IntersectionType(types) => stringifyOperator("&", TypePrecedence.Intersection, types.toList)
+      case ProductType(elements) => s"(${elements.map(toString(_, verbose)).mkString(", ")})"
+      case ListType(element) => s"[${toString(element, verbose)}]"
+      case MapType(key, value) => stringifyOperator("->", TypePrecedence.Map, List(key, value))
+      case ComponentType(underlying) => s"+${toString(underlying, verbose)}"
+      case c: ClassType =>
+        if (verbose) {
+          val inherits = c.supertype.map(s => s" extends ${toString(s, verbose)}").getOrElse("")
+          s"${if (c.isAbstract) s"abstract class" else "class"} ${c.name}$inherits"
+        } else c.name
+      case l: LabelType =>
+        if (verbose) {
+          val inherits = l.supertype.map(s => s" < ${toString(s, verbose)}").getOrElse("")
+          s"label ${l.name}$inherits"
+        } else l.name
+      case t: NamedType => t.name
+    }
+  }
 }

@@ -7,5 +7,4 @@ class LabelType(
   override val supertype: Option[LabelType],
 ) extends DeclaredType with DeclaredType.DefinitionProperty[LabelDefinition] {
   override def rootSupertype: LabelType = super.rootSupertype.asInstanceOf[LabelType]
-  override def verbose = s"$toString${supertype.map(t => s" < $t").getOrElse("")}"
 }

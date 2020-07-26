@@ -8,13 +8,8 @@ import scala.util.hashing.MurmurHash3
 
 // TODO: Rename all instances of "component" to "part".
 
-case class IntersectionType private (types: Set[Type]) extends Type with OperatorType {
+case class IntersectionType private (types: Set[Type]) extends Type {
   assert(types.nonEmpty)
-
-  override protected def precedence: TypePrecedence = TypePrecedence.Intersection
-  override protected def operands: List[Type] = types.toList
-  override protected def operator: String = "&"
-
   override val hashCode: Int = MurmurHash3.setHash(types)
 }
 
