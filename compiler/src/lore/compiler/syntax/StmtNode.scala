@@ -195,7 +195,6 @@ object ExprNode {
   case class GreaterThanNode(left: ExprNode, right: ExprNode, state: StmtNode.State = new StmtNode.DefaultState) extends BinaryNode(left, right) with ExprNode
   case class GreaterThanEqualsNode(left: ExprNode, right: ExprNode, state: StmtNode.State = new StmtNode.DefaultState) extends BinaryNode(left, right) with ExprNode
 
-
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // String expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
