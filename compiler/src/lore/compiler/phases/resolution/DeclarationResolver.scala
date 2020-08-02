@@ -129,13 +129,12 @@ class DeclarationResolver {
     * Resolve all declared types in the proper resolution order and register them with the Registry.
     */
   private def resolveDeclaredTypesInOrder(typeResolutionOrder: List[TypeDeclNode.DeclaredNode])(implicit registry: Registry): Verification = {
-    for {
-      types <- typeResolutionOrder.map {
+    typeResolutionOrder.map { node =>
+      (node match {
         case labelNode: TypeDeclNode.LabelNode => TypeResolver.resolve(labelNode)
         case classNode: TypeDeclNode.ClassNode => TypeResolver.resolve(classNode)
-      }.simultaneous
-      _ = types.map(t => registry.registerType(t.name, t))
-    } yield ()
+      }).map(tpe => registry.registerType(tpe.name, tpe))
+    }.simultaneous.verification
   }
 
   /**
@@ -160,13 +159,12 @@ class DeclarationResolver {
     * guarantees that definitions are returned in the type resolution order.
     */
   private def resolveTypeDefinitionsInOrder(typeResolutionOrder: List[TypeDeclNode.DeclaredNode])(implicit registry: Registry): Verification = {
-    for {
-      results <- typeResolutionOrder.map {
+    typeResolutionOrder.map { node =>
+      (node match {
         case labelNode: TypeDeclNode.LabelNode => LabelDefinitionResolver.resolve(labelNode)
         case classNode: TypeDeclNode.ClassNode => ClassDefinitionResolver.resolve(classNode)
-      }.simultaneous
-      _ = results.map(registry.registerTypeDefinition)
-    } yield ()
+      }).map(registry.registerTypeDefinition)
+    }.simultaneous.verification
   }
 
   /**

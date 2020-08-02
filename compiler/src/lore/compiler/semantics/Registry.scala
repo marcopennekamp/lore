@@ -86,13 +86,17 @@ class Registry {
   def getLabelType(name: String): Option[LabelType] = getType(name).filter(_.isInstanceOf[LabelType]).map(_.asInstanceOf[LabelType])
 
   /**
-    * Registers the given type definition. Also registers its type automatically.
+    * Registers the given type definition.
     */
   def registerTypeDefinition(definition: DeclaredTypeDefinition): Unit = {
-    // We don't have to check whether the type is already defined because registerType already throws a runtime
-    // exception if it is.
-    registerType(definition.name, definition.tpe)
-    assert(!typeDefinitions.contains(definition.name))
+    // Because types are resolved before definitions, at this point a type for this definition should have been registered.
+    if (getType(definition.name).isEmpty) {
+      throw CompilationException(s"A type for the declared type ${definition.name} should have been registered by now!")
+    }
+
+    if (typeDefinitions.contains(definition.name)) {
+      throw CompilationException(s"A type definition with the name ${definition.name} has been registered already!")
+    }
     typeDefinitions.put(definition.name, definition)
   }
 
