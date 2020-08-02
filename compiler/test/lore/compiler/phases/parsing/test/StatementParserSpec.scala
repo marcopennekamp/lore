@@ -1,7 +1,6 @@
 package lore.compiler.phases.parsing.test
 
 import fastparse._
-import lore.compiler.syntax.StmtNode.ReturnNode
 import lore.compiler.syntax._
 import lore.compiler.core.Fragment
 import lore.compiler.phases.parsing.{StatementParser, TypeParser}
@@ -9,93 +8,90 @@ import lore.compiler.test.BaseSpec
 import org.scalactic.Equality
 
 class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
-  import ExprNode._
-  import TopLevelExprNode._
-
   implicit private val fragment: Fragment = Fragment("Test", "")
   override def parser[_: P]: P[StmtNode] = new StatementParser(new TypeParser()).statement
 
   import TestNodes._
 
   "The statement parser" should "parse strings, escapes, and interpolations correctly" in {
-    "''" --> StringLiteralNode("")
-    "'   '" --> StringLiteralNode("   ")
-    "'\\n'" --> StringLiteralNode("\n")
-    "'\\n\\t\\r\\'\\$\\\\'" --> StringLiteralNode("\n\t\r'$\\")
-    "'test $x\\n\\t\\u0394'" --> ConcatenationNode(List(
-      StringLiteralNode("test "),
+    "''" --> Stmt.StringLiteral("")
+    "'   '" --> Stmt.StringLiteral("   ")
+    "'\\n'" --> Stmt.StringLiteral("\n")
+    "'\\n\\t\\r\\'\\$\\\\'" --> Stmt.StringLiteral("\n\t\r'$\\")
+    "'test $x\\n\\t\\u0394'" --> Stmt.Concatenation(List(
+      Stmt.StringLiteral("test "),
       vx,
-      StringLiteralNode("\n\t\u0394"),
+      Stmt.StringLiteral("\n\t\u0394"),
     ))
-    "'$myLongVariable'" --> VariableNode("myLongVariable")
+    "'$myLongVariable'" --> Stmt.Variable("myLongVariable")
     "'${x}'" --> vx
-    "'\\${quite}$some\\$confusion in ${that} town'" --> ConcatenationNode(List(
-      StringLiteralNode("${quite}"),
-      VariableNode("some"),
-      StringLiteralNode("$confusion in "),
-      VariableNode("that"),
-      StringLiteralNode(" town"),
+    "'\\${quite}$some\\$confusion in ${that} town'" --> Stmt.Concatenation(List(
+      Stmt.StringLiteral("${quite}"),
+      Stmt.Variable("some"),
+      Stmt.StringLiteral("$confusion in "),
+      Stmt.Variable("that"),
+      Stmt.StringLiteral(" town"),
     ))
     val apples = "'${p.name}, you have $k apples. Please claim your ${if (k < 10) 'free' else '1000\\$'} apple at the reception.'"
-    apples --> ConcatenationNode(List(
-      PropertyAccessNode(VariableNode("p"), "name"),
-      StringLiteralNode(", you have "),
+    apples --> Stmt.Concatenation(List(
+      Stmt.PropertyAccess(Stmt.Variable("p"), "name"),
+      Stmt.StringLiteral(", you have "),
       vk,
-      StringLiteralNode(" apples. Please claim your "),
-      IfElseNode(
-        LessThanNode(vk, IntLiteralNode(10)),
-        StringLiteralNode("free"),
-        StringLiteralNode("1000$"),
+      Stmt.StringLiteral(" apples. Please claim your "),
+      Stmt.IfElse(
+        Stmt.LessThan(vk, Stmt.IntLiteral(10)),
+        Stmt.StringLiteral("free"),
+        Stmt.StringLiteral("1000$"),
       ),
-      StringLiteralNode(" apple at the reception."),
+      Stmt.StringLiteral(" apple at the reception."),
     ))
   }
 
   it should "parse literals correctly" in {
-    "0" --> IntLiteralNode(0)
-    "-15" --> IntLiteralNode(-15)
-    "0.0" --> RealLiteralNode(0)
-    "1.5" --> RealLiteralNode(1.5)
-    "-1.5" --> RealLiteralNode(-1.5)
+    "0" --> Stmt.IntLiteral(0)
+    "-15" --> Stmt.IntLiteral(-15)
+    "0.0" --> Stmt.RealLiteral(0)
+    "1.5" --> Stmt.RealLiteral(1.5)
+    "-1.5" --> Stmt.RealLiteral(-1.5)
     ".5".fails
     "1.".fails
-    "true" --> BoolLiteralNode(true)
-    "false" --> BoolLiteralNode(false)
+    "true" --> Stmt.BoolLiteral(true)
+    "false" --> Stmt.BoolLiteral(false)
   }
 
   it should "parse operators correctly" in {
-    "a + b" --> AdditionNode(va, vb)
-    "a - b" --> SubtractionNode(va, vb)
-    "a * b + b * a" --> AdditionNode(MultiplicationNode(va, vb), MultiplicationNode(vb, va))
-    "a / b" --> DivisionNode(va, vb)
-    "a < b" --> LessThanNode(va, vb)
-    "a <= b" --> LessThanEqualsNode(va, vb)
-    "a > b" --> GreaterThanNode(va, vb)
-    "a >= b" --> GreaterThanEqualsNode(va, vb)
-    "a == b" --> EqualsNode(va, vb)
-    "a =/= b" --> NotEqualsNode(va, vb)
-    "a | b | c" --> DisjunctionNode(List(va, vb, vc))
-    "a & b & c" --> ConjunctionNode(List(va, vb, vc))
+    "a + b" --> Stmt.Addition(va, vb)
+    "a - b" --> Stmt.Subtraction(va, vb)
+    "a * b + b * a" --> Stmt.Addition(Stmt.Multiplication(va, vb), Stmt.Multiplication(vb, va))
+    "a / b" --> Stmt.Division(va, vb)
+    "a < b" --> Stmt.LessThan(va, vb)
+    "a <= b" --> Stmt.LessThanEquals(va, vb)
+    "a > b" --> Stmt.GreaterThan(va, vb)
+    "a >= b" --> Stmt.GreaterThanEquals(va, vb)
+    "a == b" --> Stmt.Equals(va, vb)
+    "a =/= b" --> Stmt.NotEquals(va, vb)
+    "a | b | c" --> Stmt.Disjunction(List(va, vb, vc))
+    "a & b & c" --> Stmt.Conjunction(List(va, vb, vc))
   }
 
   it should "parse complex operator expressions correctly" in {
-    "a + { b }" --> AdditionNode(va, BlockNode(List(vb)))
-    "a + -b" --> AdditionNode(va, NegationNode(vb))
-    "~(a == b) | (a < ~b) & (~a < c)" --> DisjunctionNode(List(
-      LogicalNotNode(EqualsNode(va, vb)),
-      ConjunctionNode(List(
-        LessThanNode(va, LogicalNotNode(vb)),
-        LessThanNode(LogicalNotNode(va), vc),
+    "a + { b }" --> Stmt.Addition(va, Stmt.Block(List(vb)))
+    "a + -b" --> Stmt.Addition(va, Stmt.Negation(vb))
+    "~(a == b) | (a < ~b) & (~a < c)" --> Stmt.Disjunction(List(
+      Stmt.LogicalNot(Stmt.Equals(va, vb)),
+      Stmt.Conjunction(List(
+        Stmt.LessThan(va, Stmt.LogicalNot(vb)),
+        Stmt.LessThan(Stmt.LogicalNot(va), vc),
       )),
     ))
-    "~a & ~b & c + -a * -b" --> ConjunctionNode(List(
-      LogicalNotNode(va),
-      LogicalNotNode(vb),
-      AdditionNode(
+    "~a & ~b & c + -a * -b" --> Stmt.Conjunction(List(
+      Stmt.LogicalNot(va),
+      Stmt.LogicalNot(vb),
+      Stmt.Addition(
         vc,
-        MultiplicationNode(
-          NegationNode(va),
-          NegationNode(vb),
+        Stmt.Multiplication(
+          Stmt.Negation(va),
+          Stmt.Negation(vb),
         ),
       ),
     ))
@@ -103,86 +99,86 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
 
   it should "parse tuple, list, and map constructors correctly" in {
     // Tuple constructors.
-    "()" --> UnitNode()
-    "(a, b)" --> TupleNode(List(va, vb))
-    "(a + b, a * c, x < 5.3)" --> TupleNode(List(
-      AdditionNode(va, vb), MultiplicationNode(va, vc), LessThanNode(vx, RealLiteralNode(5.3)),
+    "()" --> Stmt.Unit()
+    "(a, b)" --> Stmt.Tuple(List(va, vb))
+    "(a + b, a * c, x < 5.3)" --> Stmt.Tuple(List(
+      Stmt.Addition(va, vb), Stmt.Multiplication(va, vc), Stmt.LessThan(vx, Stmt.RealLiteral(5.3)),
     ))
-    "('Hello', 'World')" --> TupleNode(List(StringLiteralNode("Hello"), StringLiteralNode("World")))
+    "('Hello', 'World')" --> Stmt.Tuple(List(Stmt.StringLiteral("Hello"), Stmt.StringLiteral("World")))
 
     // List constructors.
-    "[]" --> ListNode(List.empty)
-    "[a, b]" --> ListNode(List(va, vb))
-    "[(a, b), (c, c)]" --> ListNode(List(TupleNode(List(va, vb)), TupleNode(List(vc, vc))))
-    "[[a, b], ['test', 'me', 'well $c'], ['container']]" --> ListNode(List(
-      ListNode(List(va, vb)),
-      ListNode(List(
-        StringLiteralNode("test"), StringLiteralNode("me"), ConcatenationNode(List(StringLiteralNode("well "), vc)),
+    "[]" --> Stmt.List(List.empty)
+    "[a, b]" --> Stmt.List(List(va, vb))
+    "[(a, b), (c, c)]" --> Stmt.List(List(Stmt.Tuple(List(va, vb)), Stmt.Tuple(List(vc, vc))))
+    "[[a, b], ['test', 'me', 'well $c'], ['container']]" --> Stmt.List(List(
+      Stmt.List(List(va, vb)),
+      Stmt.List(List(
+        Stmt.StringLiteral("test"), Stmt.StringLiteral("me"), Stmt.Concatenation(List(Stmt.StringLiteral("well "), vc)),
       )),
-      ListNode(List(StringLiteralNode("container"))),
+      Stmt.List(List(Stmt.StringLiteral("container"))),
     ))
-    "[a + b, a * c, x < 5.3]" --> ListNode(List(
-      AdditionNode(va, vb), MultiplicationNode(va, vc), LessThanNode(vx, RealLiteralNode(5.3)),
+    "[a + b, a * c, x < 5.3]" --> Stmt.List(List(
+      Stmt.Addition(va, vb), Stmt.Multiplication(va, vc), Stmt.LessThan(vx, Stmt.RealLiteral(5.3)),
     ))
 
     // Map constructors.
-    "%{ }" --> MapNode(List.empty)
-    "%{ a -> 5, b -> 10 }" --> MapNode(List(KeyValueNode(va, IntLiteralNode(5)), KeyValueNode(vb, IntLiteralNode(10))))
-    "%{ 'foo' -> (a, b), 'bar' -> (c, c) }" --> MapNode(List(
-      KeyValueNode(StringLiteralNode("foo"), TupleNode(List(va, vb))),
-      KeyValueNode(StringLiteralNode("bar"), TupleNode(List(vc, vc))),
+    "%{ }" --> Stmt.Map(List.empty)
+    "%{ a -> 5, b -> 10 }" --> Stmt.Map(List(Stmt.KeyValue(va, Stmt.IntLiteral(5)), Stmt.KeyValue(vb, Stmt.IntLiteral(10))))
+    "%{ 'foo' -> (a, b), 'bar' -> (c, c) }" --> Stmt.Map(List(
+      Stmt.KeyValue(Stmt.StringLiteral("foo"), Stmt.Tuple(List(va, vb))),
+      Stmt.KeyValue(Stmt.StringLiteral("bar"), Stmt.Tuple(List(vc, vc))),
     ))
-    "%{ a -> %{ 'test' -> 'me' }, b -> %{ 'test' -> 'well $c' } }" --> MapNode(List(
-      KeyValueNode(va, MapNode(List(KeyValueNode(StringLiteralNode("test"), StringLiteralNode("me"))))),
-      KeyValueNode(vb, MapNode(List(KeyValueNode(StringLiteralNode("test"), ConcatenationNode(List(StringLiteralNode("well "), vc)))))),
+    "%{ a -> %{ 'test' -> 'me' }, b -> %{ 'test' -> 'well $c' } }" --> Stmt.Map(List(
+      Stmt.KeyValue(va, Stmt.Map(List(Stmt.KeyValue(Stmt.StringLiteral("test"), Stmt.StringLiteral("me"))))),
+      Stmt.KeyValue(vb, Stmt.Map(List(Stmt.KeyValue(Stmt.StringLiteral("test"), Stmt.Concatenation(List(Stmt.StringLiteral("well "), vc)))))),
     ))
-    "%{ 1 -> a + b, 5 -> a * c, 10 -> x < 5.3 }" --> MapNode(List(
-      KeyValueNode(IntLiteralNode(1), AdditionNode(va, vb)),
-      KeyValueNode(IntLiteralNode(5), MultiplicationNode(va, vc)),
-      KeyValueNode(IntLiteralNode(10), LessThanNode(vx, RealLiteralNode(5.3))),
+    "%{ 1 -> a + b, 5 -> a * c, 10 -> x < 5.3 }" --> Stmt.Map(List(
+      Stmt.KeyValue(Stmt.IntLiteral(1), Stmt.Addition(va, vb)),
+      Stmt.KeyValue(Stmt.IntLiteral(5), Stmt.Multiplication(va, vc)),
+      Stmt.KeyValue(Stmt.IntLiteral(10), Stmt.LessThan(vx, Stmt.RealLiteral(5.3))),
     ))
   }
 
   it should "parse conditionals and loops correctly" in {
-    "if (true) false" --> IfElseNode(BoolLiteralNode(true), BoolLiteralNode(false), UnitNode())
-    "if (i < 25) { i += 1 }" --> IfElseNode(
-      LessThanNode(vi, IntLiteralNode(25)),
-      BlockNode(List(
-        AssignmentNode(
+    "if (true) false" --> Stmt.IfElse(Stmt.BoolLiteral(true), Stmt.BoolLiteral(false), Stmt.Unit())
+    "if (i < 25) { i += 1 }" --> Stmt.IfElse(
+      Stmt.LessThan(vi, Stmt.IntLiteral(25)),
+      Stmt.Block(List(
+        Stmt.Assignment(
           vi,
-          AdditionNode(vi, IntLiteralNode(1)),
+          Stmt.Addition(vi, Stmt.IntLiteral(1)),
         ),
       )),
-      UnitNode()
+      Stmt.Unit()
     )
-    "if (i <= 25) { i += 1 } else { i -= 1 }" --> IfElseNode(
-      LessThanEqualsNode(vi, IntLiteralNode(25)),
-      BlockNode(List(
-        AssignmentNode(
+    "if (i <= 25) { i += 1 } else { i -= 1 }" --> Stmt.IfElse(
+      Stmt.LessThanEquals(vi, Stmt.IntLiteral(25)),
+      Stmt.Block(List(
+        Stmt.Assignment(
           vi,
-          AdditionNode(vi, IntLiteralNode(1)),
+          Stmt.Addition(vi, Stmt.IntLiteral(1)),
         ),
       )),
-      BlockNode(List(
-        AssignmentNode(
+      Stmt.Block(List(
+        Stmt.Assignment(
           vi,
-          SubtractionNode(vi, IntLiteralNode(1)),
+          Stmt.Subtraction(vi, Stmt.IntLiteral(1)),
         ),
       )),
     )
-    "if (b) return a else return c" --> IfElseNode(vb, StmtNode.ReturnNode(va), StmtNode.ReturnNode(vc))
+    "if (b) return a else return c" --> Stmt.IfElse(vb, Stmt.Return(va), Stmt.Return(vc))
     // Dangling else! What will the parser choose?
-    "if (x) if (b) a else c" --> IfElseNode(vx, IfElseNode(vb, va, vc), UnitNode())
+    "if (x) if (b) a else c" --> Stmt.IfElse(vx, Stmt.IfElse(vb, va, vc), Stmt.Unit())
 
     // While loops.
-    "while (a > b) a /= 2" --> RepetitionNode(
-      GreaterThanNode(va, vb),
-      AssignmentNode(va, DivisionNode(va, IntLiteralNode(2))),
+    "while (a > b) a /= 2" --> Stmt.Repetition(
+      Stmt.GreaterThan(va, vb),
+      Stmt.Assignment(va, Stmt.Division(va, Stmt.IntLiteral(2))),
     )
-    "while (sunRisesOn(earth)) { println('Morning, World') }" --> RepetitionNode(
-      SimpleCallNode("sunRisesOn", None, List(VariableNode("earth"))),
-      BlockNode(List(
-        SimpleCallNode("println", None, List(StringLiteralNode("Morning, World"))),
+    "while (sunRisesOn(earth)) { println('Morning, World') }" --> Stmt.Repetition(
+      Stmt.SimpleCall("sunRisesOn", None, List(Stmt.Variable("earth"))),
+      Stmt.Block(List(
+        Stmt.SimpleCall("println", None, List(Stmt.StringLiteral("Morning, World"))),
       )),
     )
 
@@ -192,48 +188,48 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     |  const people: [String] = ['abra', 'betty', 'carl']
     |  for (name <- people) println('Hey, $name!')
     |}
-    |""".stripMargin --> BlockNode(List(
-      VariableDeclarationNode(
-        "people", isMutable = false,
-        Some(TypeExprNode.ListNode(tString)),
-        ListNode(List(
-          StringLiteralNode("abra"), StringLiteralNode("betty"), StringLiteralNode("carl"),
+    |""".stripMargin --> Stmt.Block(List(
+      Stmt.VariableDeclaration(
+        "people", false,
+        Some(Type.List(tString)),
+        Stmt.List(List(
+          Stmt.StringLiteral("abra"), Stmt.StringLiteral("betty"), Stmt.StringLiteral("carl"),
         )),
       ),
-      IterationNode(
-        List(ExtractorNode("name", VariableNode("people"))),
-        SimpleCallNode("println", None, List(
-          ConcatenationNode(List(StringLiteralNode("Hey, "), VariableNode("name"), StringLiteralNode("!")))
+      Stmt.Iteration(
+        List(Stmt.Extractor("name", Stmt.Variable("people"))),
+        Stmt.SimpleCall("println", None, List(
+          Stmt.Concatenation(List(Stmt.StringLiteral("Hey, "), Stmt.Variable("name"), Stmt.StringLiteral("!")))
         )),
       ),
     ))
-    "for (a <- as, b <- bs) a + b" --> IterationNode(
-      List(ExtractorNode("a", VariableNode("as")), ExtractorNode("b", VariableNode("bs"))),
-      AdditionNode(va, vb),
+    "for (a <- as, b <- bs) a + b" --> Stmt.Iteration(
+      List(Stmt.Extractor("a", Stmt.Variable("as")), Stmt.Extractor("b", Stmt.Variable("bs"))),
+      Stmt.Addition(va, vb),
     )
   }
 
   it should "parse instantiation, multi-function calls, fixed function calls, and dynamic calls correctly" in {
-    "const point = Point(1, 5)" --> VariableDeclarationNode(
-      "point", isMutable = false, None,
-      SimpleCallNode("Point", None, List(IntLiteralNode(1), IntLiteralNode(5))),
+    "const point = Point(1, 5)" --> Stmt.VariableDeclaration(
+      "point", false, None,
+      Stmt.SimpleCall("Point", None, List(Stmt.IntLiteral(1), Stmt.IntLiteral(5))),
     )
-    "let position: Position3D = Position3D.from2D(5.5, 6.7)" --> VariableDeclarationNode(
-      "position", isMutable = true, Some(TypeExprNode.NominalNode("Position3D")),
-      SimpleCallNode("Position3D", Some("from2D"), List(RealLiteralNode(5.5), RealLiteralNode(6.7))),
+    "let position: Position3D = Position3D.from2D(5.5, 6.7)" --> Stmt.VariableDeclaration(
+      "position", true, Some(Type.Nominal("Position3D")),
+      Stmt.SimpleCall("Position3D", Some("from2D"), List(Stmt.RealLiteral(5.5), Stmt.RealLiteral(6.7))),
     )
-    "concat('stringA', 'stringB', 'stringC')" --> SimpleCallNode(
-      "concat", None, List(StringLiteralNode("stringA"), StringLiteralNode("stringB"), StringLiteralNode("stringC")),
+    "concat('stringA', 'stringB', 'stringC')" --> Stmt.SimpleCall(
+      "concat", None, List(Stmt.StringLiteral("stringA"), Stmt.StringLiteral("stringB"), Stmt.StringLiteral("stringC")),
     )
-    "applyDot.fixed[Dot, +Health](dot, e)" --> FixedFunctionCallNode(
-      "applyDot", List(TypeExprNode.NominalNode("Dot"), TypeExprNode.ComponentNode("Health")),
-      List(VariableNode("dot"), VariableNode("e")),
+    "applyDot.fixed[Dot, +Health](dot, e)" --> Stmt.FixedFunctionCall(
+      "applyDot", List(Type.Nominal("Dot"), Type.Component("Health")),
+      List(Stmt.Variable("dot"), Stmt.Variable("e")),
     )
-    "dynamic[String]('readFile', 'file.ext')" --> DynamicCallNode(
-      TypeExprNode.NominalNode("String"),
+    "dynamic[String]('readFile', 'file.ext')" --> Stmt.DynamicCall(
+      Type.Nominal("String"),
       List(
-        StringLiteralNode("readFile"),
-        StringLiteralNode("file.ext"),
+        Stmt.StringLiteral("readFile"),
+        Stmt.StringLiteral("file.ext"),
       ),
     )
 
@@ -245,17 +241,17 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   }
 
   it should "parse variable declarations and assignments correctly" in {
-    "a.b.c = x" --> AssignmentNode(
-      PropertyAccessNode(PropertyAccessNode(va, "b"), "c"),
+    "a.b.c = x" --> Stmt.Assignment(
+      Stmt.PropertyAccess(Stmt.PropertyAccess(va, "b"), "c"),
       vx,
     )
-    "const x: Int = a" --> VariableDeclarationNode("x", isMutable = false, Some(TypeExprNode.NominalNode("Int")), va)
-    "let y: Real = b" --> VariableDeclarationNode("y", isMutable = true, Some(TypeExprNode.NominalNode("Real")), vb)
-    "const z: E & +C1 & +C2 & L = c" --> VariableDeclarationNode(
-      "z", isMutable = false,
-      Some(TypeExprNode.IntersectionNode(List(
-        TypeExprNode.NominalNode("E"), TypeExprNode.ComponentNode("C1"),
-        TypeExprNode.ComponentNode("C2"), TypeExprNode.NominalNode("L"),
+    "const x: Int = a" --> Stmt.VariableDeclaration("x", false, Some(Type.Nominal("Int")), va)
+    "let y: Real = b" --> Stmt.VariableDeclaration("y", true, Some(Type.Nominal("Real")), vb)
+    "const z: E & +C1 & +C2 & L = c" --> Stmt.VariableDeclaration(
+      "z", false,
+      Some(Type.Intersection(List(
+        Type.Nominal("E"), Type.Component("C1"),
+        Type.Component("C2"), Type.Nominal("L"),
       ))),
       vc,
     )
@@ -263,10 +259,10 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
 
   it should "assign the correct indices" in {
     inside("(a + b, a * c, x < 5.3)".parsed) {
-      case tuple: TupleNode =>
+      case tuple: ExprNode.TupleNode =>
         tuple.position.index shouldEqual 0
         inside(tuple.expressions) {
-          case Seq(add: AdditionNode, mult: MultiplicationNode, comp: LessThanNode) =>
+          case Seq(add: ExprNode.AdditionNode, mult: ExprNode.MultiplicationNode, comp: ExprNode.LessThanNode) =>
             add.position.index shouldEqual 1
             add.left.position.index shouldEqual 1
             add.right.position.index shouldEqual 5
@@ -279,29 +275,29 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
         }
     }
     inside("if (i <= 25) { i += 1 } else { i -= 1 }".parsed) {
-      case ifElse: IfElseNode =>
+      case ifElse: ExprNode.IfElseNode =>
         ifElse.position.index shouldEqual 0
         inside(ifElse.condition) {
-          case lt: LessThanEqualsNode =>
+          case lt: ExprNode.LessThanEqualsNode =>
             lt.position.index shouldEqual 4
             lt.left.position.index shouldEqual 4
             lt.right.position.index shouldEqual 9
         }
         inside(ifElse.onTrue) {
-          case block: BlockNode =>
+          case block: ExprNode.BlockNode =>
             block.position.index shouldEqual 13
             inside(block.statements) {
-              case Seq(assign: AssignmentNode) =>
+              case Seq(assign: TopLevelExprNode.AssignmentNode) =>
                 assign.position.index shouldEqual 15
                 assign.address.position.index shouldEqual 15
                 assign.value.position.index shouldEqual 20
             }
         }
         inside(ifElse.onFalse) {
-          case block: BlockNode =>
+          case block: ExprNode.BlockNode =>
             block.position.index shouldEqual 29
             inside(block.statements) {
-              case Seq(assign: AssignmentNode) =>
+              case Seq(assign: TopLevelExprNode.AssignmentNode) =>
                 assign.position.index shouldEqual 31
                 assign.address.position.index shouldEqual 31
                 assign.value.position.index shouldEqual 36
@@ -310,14 +306,14 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     }
 
     inside("let position: Position3D = Position3D.from2D(5.5, 6.7)".parsed) {
-      case decl: VariableDeclarationNode =>
+      case decl: TopLevelExprNode.VariableDeclarationNode =>
         decl.position.index shouldEqual 0
         decl.tpe.value.position.index shouldEqual 14
         inside(decl.value) {
-          case call: SimpleCallNode =>
+          case call: ExprNode.SimpleCallNode =>
             call.position.index shouldEqual 27
             inside(call.arguments) {
-              case Seq(rl1: RealLiteralNode, rl2: RealLiteralNode) =>
+              case Seq(rl1: ExprNode.RealLiteralNode, rl2: ExprNode.RealLiteralNode) =>
                 rl1.position.index shouldEqual 45
                 rl2.position.index shouldEqual 50
             }
@@ -325,7 +321,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     }
 
     inside("applyDot.fixed[Dot, +Health](dot, e)".parsed) {
-      case call: FixedFunctionCallNode =>
+      case call: ExprNode.FixedFunctionCallNode =>
         call.position.index shouldEqual 0
         inside(call.types) {
           case Seq(t1: TypeExprNode.NominalNode, t2: TypeExprNode.ComponentNode) =>
@@ -333,24 +329,24 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
             t2.position.index shouldEqual 20
         }
         inside(call.arguments) {
-          case Seq(dot: VariableNode, e: VariableNode) =>
+          case Seq(dot: ExprNode.VariableNode, e: ExprNode.VariableNode) =>
             dot.position.index shouldEqual 29
             e.position.index shouldEqual 34
         }
     }
 
     inside("%{ a -> %{ 'test' -> 'me' }, b -> %{ 'test' -> 'well $c' } }".parsed) {
-      case map: MapNode =>
+      case map: ExprNode.MapNode =>
         map.position.index shouldEqual 0
         inside(map.kvs) {
-          case Seq(a: KeyValueNode, b: KeyValueNode) =>
+          case Seq(a: ExprNode.KeyValueNode, b: ExprNode.KeyValueNode) =>
             a.position.index shouldEqual 3
             a.key.position.index shouldEqual 3
             inside(a.value) {
-              case innerMap: MapNode =>
+              case innerMap: ExprNode.MapNode =>
                 innerMap.position.index shouldEqual 8
                 inside(innerMap.kvs) {
-                  case Seq(test: KeyValueNode) =>
+                  case Seq(test: ExprNode.KeyValueNode) =>
                     test.position.index shouldEqual 11
                     test.key.position.index shouldEqual 11
                     test.value.position.index shouldEqual 21
@@ -359,10 +355,10 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
             b.position.index shouldEqual 29
             b.key.position.index shouldEqual 29
             inside(b.value) {
-              case innerMap: MapNode =>
+              case innerMap: ExprNode.MapNode =>
                 innerMap.position.index shouldEqual 34
                 inside(innerMap.kvs) {
-                  case Seq(test: KeyValueNode) =>
+                  case Seq(test: ExprNode.KeyValueNode) =>
                     test.position.index shouldEqual 37
                     test.key.position.index shouldEqual 37
                     test.value.position.index shouldEqual 47
@@ -374,11 +370,11 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
 
   it should "parse a block-rich expression within 50 milliseconds" in {
     timed(50) { () =>
-      "{ a + { b } + { b }.x + b }" --> BlockNode(List(
-        AdditionNode(
-          AdditionNode(
-            AdditionNode(va, BlockNode(List(vb))),
-            PropertyAccessNode(BlockNode(List(vb)), "x"),
+      "{ a + { b } + { b }.x + b }" --> Stmt.Block(List(
+        Stmt.Addition(
+          Stmt.Addition(
+            Stmt.Addition(va, Stmt.Block(List(vb))),
+            Stmt.PropertyAccess(Stmt.Block(List(vb)), "x"),
           ),
           vb,
         ),
@@ -389,15 +385,15 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   it should "parse a block-rich expression repeated 10,000 times within 5 seconds" in {
     timed(5000) { () =>
       val repetitions = 10000
-      "{" + "a + { if (a < 10) a + 10 else b + 10 } + b\n".repeat(repetitions) + "}" --> BlockNode(
+      "{" + "a + { if (a < 10) a + 10 else b + 10 } + b\n".repeat(repetitions) + "}" --> Stmt.Block(
         List.fill(repetitions)(
-          AdditionNode(
-            AdditionNode(
+          Stmt.Addition(
+            Stmt.Addition(
               va,
-              BlockNode(List(IfElseNode(
-                LessThanNode(va, IntLiteralNode(10)),
-                AdditionNode(va, IntLiteralNode(10)),
-                AdditionNode(vb, IntLiteralNode(10)),
+              Stmt.Block(List(Stmt.IfElse(
+                Stmt.LessThan(va, Stmt.IntLiteral(10)),
+                Stmt.Addition(va, Stmt.IntLiteral(10)),
+                Stmt.Addition(vb, Stmt.IntLiteral(10)),
               )))
             ),
             vb,
@@ -417,34 +413,34 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     "repeat while (const a = false) { }".fails
     "-(const a = 2)".fails
 
-    "b + { const a = 4 \n a * a }" --> AdditionNode(
+    "b + { const a = 4 \n a * a }" --> Stmt.Addition(
       vb,
-      BlockNode(List(
-        VariableDeclarationNode("a", isMutable = false, None, IntLiteralNode(4)),
-        MultiplicationNode(va, va),
+      Stmt.Block(List(
+        Stmt.VariableDeclaration("a", false, None, Stmt.IntLiteral(4)),
+        Stmt.Multiplication(va, va),
       )),
     )
-    "if (false) const a = 0" --> IfElseNode(
-      BoolLiteralNode(false),
-      VariableDeclarationNode("a", isMutable = false, None, IntLiteralNode(0)),
-      UnitNode(),
+    "if (false) const a = 0" --> Stmt.IfElse(
+      Stmt.BoolLiteral(false),
+      Stmt.VariableDeclaration("a", false, None, Stmt.IntLiteral(0)),
+      Stmt.Unit(),
     )
-    "for (e <- list) const a = e" --> IterationNode(
-      List(ExtractorNode("e", VariableNode("list"))),
-      VariableDeclarationNode("a", isMutable = false, None, VariableNode("e")),
+    "for (e <- list) const a = e" --> Stmt.Iteration(
+      List(Stmt.Extractor("e", Stmt.Variable("list"))),
+      Stmt.VariableDeclaration("a", false, None, Stmt.Variable("e")),
     )
-    "if (false) return 0 else 0" --> IfElseNode(
-      BoolLiteralNode(false),
-      ReturnNode(IntLiteralNode(0)),
-      IntLiteralNode(0),
+    "if (false) return 0 else 0" --> Stmt.IfElse(
+      Stmt.BoolLiteral(false),
+      Stmt.Return(Stmt.IntLiteral(0)),
+      Stmt.IntLiteral(0),
     )
-    "for (e <- list) return e" --> IterationNode(
-      List(ExtractorNode("e", VariableNode("list"))),
-      ReturnNode(VariableNode("e")),
+    "for (e <- list) return e" --> Stmt.Iteration(
+      List(Stmt.Extractor("e", Stmt.Variable("list"))),
+      Stmt.Return(Stmt.Variable("e")),
     )
-    "for (e <- list) e" --> IterationNode(
-      List(ExtractorNode("e", VariableNode("list"))),
-      VariableNode("e"),
+    "for (e <- list) e" --> Stmt.Iteration(
+      List(Stmt.Extractor("e", Stmt.Variable("list"))),
+      Stmt.Variable("e"),
     )
   }
 }

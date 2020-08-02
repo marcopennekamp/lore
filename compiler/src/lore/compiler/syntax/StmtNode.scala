@@ -103,6 +103,7 @@ object ExprNode {
   case class LessThanEqualsNode(left: ExprNode, right: ExprNode, position: Position) extends BinaryNode(left, right) with ExprNode
   case class GreaterThanNode(left: ExprNode, right: ExprNode, position: Position) extends BinaryNode(left, right) with ExprNode
   case class GreaterThanEqualsNode(left: ExprNode, right: ExprNode, position: Position) extends BinaryNode(left, right) with ExprNode
+  // TODO: We could save ourselves the greater than nodes.
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // String expressions.
@@ -189,10 +190,12 @@ object ExprNode {
     def body: StmtNode
   }
 
+  // TODO: Rename to WhileNode.
   case class RepetitionNode(
     condition: ExprNode, body: StmtNode, position: Position,
   ) extends BinaryNode(condition, body) with LoopNode
 
+  // TODO: Rename to ForNode.
   case class IterationNode(
     extractors: List[ExtractorNode], body: StmtNode, position: Position,
   ) extends LoopNode

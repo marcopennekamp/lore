@@ -7,41 +7,41 @@ import lore.compiler.phases.parsing.TypeParser
 import lore.compiler.test.BaseSpec
 
 class TypeParserSpec extends BaseSpec with ParserSpecExtensions[TypeExprNode] {
-  import TypeExprNode._
+  import TestNodes._
 
   implicit private val fragment: Fragment = Fragment("Test", "")
   override def parser[_: P]: P[TypeExprNode] = new TypeParser().typeExpression
 
-  private val A = NominalNode("A")
-  private val B = NominalNode("B")
-  private val C = NominalNode("C")
-  private val D = NominalNode("D")
-  private val E = NominalNode("E")
+  private val A = Type.Nominal("A")
+  private val B = Type.Nominal("B")
+  private val C = Type.Nominal("C")
+  private val D = Type.Nominal("D")
+  private val E = Type.Nominal("E")
 
   "The type expression parser" should "correctly parse atomic types" in {
-    "()" --> UnitNode()
-    "Aardvark" --> NominalNode("Aardvark")
-    "(A, B)" --> ProductNode(List(A, B))
+    "()" --> Type.Unit()
+    "Aardvark" --> Type.Nominal("Aardvark")
+    "(A, B)" --> Type.Product(List(A, B))
     // A single type in parentheses is unambiguously parsed as an enclosed type, not a product type.
     "(A)" --> A
-    "[A]" --> ListNode(A)
-    "+A" --> ComponentNode(A.name)
+    "[A]" --> Type.List(A)
+    "+A" --> Type.Component(A.name)
   }
 
   it should "correctly parse complex types" in {
-    "A | B | C" --> SumNode(List(A, B, C))
-    "A -> B" --> MapNode(A, B)
-    "[(A, B, C) & D & +E]" --> ListNode(IntersectionNode(List(ProductNode(List(A, B, C)), D, ComponentNode(E.name))))
-    "A | (B, C) | +D" --> SumNode(List(A, ProductNode(List(B, C)), ComponentNode(D.name)))
-    "(A, (), B)" --> ProductNode(List(A, UnitNode(), B))
-    "[A -> B | C -> D]" --> ListNode(SumNode(List(MapNode(A, B), MapNode(C, D))))
+    "A | B | C" --> Type.Sum(List(A, B, C))
+    "A -> B" --> Type.Map(A, B)
+    "[(A, B, C) & D & +E]" --> Type.List(Type.Intersection(List(Type.Product(List(A, B, C)), D, Type.Component(E.name))))
+    "A | (B, C) | +D" --> Type.Sum(List(A, Type.Product(List(B, C)), Type.Component(D.name)))
+    "(A, (), B)" --> Type.Product(List(A, Type.Unit(), B))
+    "[A -> B | C -> D]" --> Type.List(Type.Sum(List(Type.Map(A, B), Type.Map(C, D))))
   }
 
   it should "correctly parse type operator precedence and enclosed types" in {
     // In actual code, recommend setting some parens here, regardless of precedence.
-    "A & B -> C & D | E" --> SumNode(List(IntersectionNode(List(A, MapNode(B, C), D)), E))
-    "(A & B) -> (C & (D | E))" --> MapNode(IntersectionNode(List(A, B)), IntersectionNode(List(C, SumNode(List(D, E)))))
-    "A | B & C -> D" --> SumNode(List(A, IntersectionNode(List(B, MapNode(C, D)))))
+    "A & B -> C & D | E" --> Type.Sum(List(Type.Intersection(List(A, Type.Map(B, C), D)), E))
+    "(A & B) -> (C & (D | E))" --> Type.Map(Type.Intersection(List(A, B)), Type.Intersection(List(C, Type.Sum(List(D, E)))))
+    "A | B & C -> D" --> Type.Sum(List(A, Type.Intersection(List(B, Type.Map(C, D)))))
   }
 
   it should "fail on incorrect type syntax" in {

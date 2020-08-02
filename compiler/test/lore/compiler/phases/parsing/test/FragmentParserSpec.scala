@@ -2,16 +2,11 @@ package lore.compiler.phases.parsing.test
 
 import fastparse.P
 import lore.compiler.syntax._
-import lore.compiler.core.Fragment
+import lore.compiler.core.{Fragment, Position}
 import lore.compiler.phases.parsing.FragmentParser
 import lore.compiler.test.BaseSpec
 
 class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNode]] {
-  import DeclNode._
-  import ExprNode._
-  import TopLevelExprNode._
-  import TypeDeclNode._
-
   implicit private val fragment: Fragment = Fragment("Test", "")
   override def parser[_: P]: P[List[DeclNode]] = new FragmentParser().fullFragment
 
@@ -28,25 +23,25 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
     |    }
     |    result
     |  }
-    |""".stripMargin --> List(FunctionNode(
+    |""".stripMargin --> List(Decl.Function(
       "pow",
       List(
-        ParameterNode("x", tReal),
-        ParameterNode("exp", tInt),
+        Decl.Parameter("x", tReal),
+        Decl.Parameter("exp", tInt),
       ),
       tReal,
       Nil,
-      Some(BlockNode(List(
-        VariableDeclarationNode("e", isMutable = true, None, VariableNode("exp")),
-        VariableDeclarationNode("result", isMutable = true, None, RealLiteralNode(1.0)),
-        RepetitionNode(
-          GreaterThanNode(VariableNode("e"), IntLiteralNode(0)),
-          BlockNode(List(
-            AssignmentNode(VariableNode("result"), MultiplicationNode(VariableNode("result"), vx)),
-            AssignmentNode(VariableNode("e"), SubtractionNode(VariableNode("e"), IntLiteralNode(1))),
+      Some(Stmt.Block(List(
+        Stmt.VariableDeclaration("e", true, None, Stmt.Variable("exp")),
+        Stmt.VariableDeclaration("result", true, None, Stmt.RealLiteral(1.0)),
+        Stmt.Repetition(
+          Stmt.GreaterThan(Stmt.Variable("e"), Stmt.IntLiteral(0)),
+          Stmt.Block(List(
+            Stmt.Assignment(Stmt.Variable("result"), Stmt.Multiplication(Stmt.Variable("result"), vx)),
+            Stmt.Assignment(Stmt.Variable("e"), Stmt.Subtraction(Stmt.Variable("e"), Stmt.IntLiteral(1))),
           )),
         ),
-        VariableNode("result"),
+        Stmt.Variable("result"),
       ))),
     ))
   }
@@ -57,27 +52,26 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
     |    const power = combinedPower(source.Arms)
     |    damage(target, power)
     |  }
-    """.stripMargin --> List(FunctionNode(
+    """.stripMargin --> List(Decl.Function(
       "attack",
       List(
-        ParameterNode("source", TypeExprNode.ComponentNode("Arms")),
-        ParameterNode("target", TypeExprNode.ComponentNode("Health")),
+        Decl.Parameter("source", Type.Component("Arms")),
+        Decl.Parameter("target", Type.Component("Health")),
       ),
-      TypeExprNode.UnitNode(),
+      Type.Unit(),
       Nil,
-      Some(BlockNode(List(
-        VariableDeclarationNode(
-          "power", isMutable = false, None,
-          SimpleCallNode("combinedPower", None, List(PropertyAccessNode(VariableNode("source"), "Arms"))),
+      Some(Stmt.Block(List(
+        Stmt.VariableDeclaration(
+          "power", false, None, Stmt.SimpleCall("combinedPower", None, List(Stmt.PropertyAccess(Stmt.Variable("source"), "Arms"))),
         ),
-        SimpleCallNode("damage", None, List(VariableNode("target"), VariableNode("power"))),
+        Stmt.SimpleCall("damage", None, List(Stmt.Variable("target"), Stmt.Variable("power"))),
       ))),
     ))
   }
 
   it should "assign the correct indices" in {
     "function add(a: Real, b: Real): Real = a + b".parsed.head match {
-      case fn: FunctionNode =>
+      case fn: DeclNode.FunctionNode =>
         fn.position.index shouldEqual 0
         fn.parameters match {
           case Seq(a, b) =>
@@ -112,44 +106,44 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
     |      this.from2D(x, y)
     |    }
     |  }
-    """.stripMargin --> List(ClassNode(
-      "Position", None, None, isAbstract = false, isEntity = false,
+    """.stripMargin --> List(Decl.Class(
+      "Position", None, None, false, false,
       List(
-        PropertyNode("x", tReal, isMutable = false),
-        PropertyNode("y", tReal, isMutable = false),
-        PropertyNode("z", tReal, isMutable = false),
+        Decl.Property("x", tReal, false),
+        Decl.Property("y", tReal, false),
+        Decl.Property("z", tReal, false),
       ),
       List(
-        ConstructorNode(
+        Decl.Constructor(
           "Position",
           List(
-            ParameterNode("x", tReal),
-            ParameterNode("y", tReal),
-            ParameterNode("z", tReal),
+            Decl.Parameter("x", tReal),
+            Decl.Parameter("y", tReal),
+            Decl.Parameter("z", tReal),
           ),
-          BlockNode(List(
-            ConstructNode(List(vx, vy, vz), None),
+          Stmt.Block(List(
+            Stmt.Construct(List(vx, vy, vz), None),
           )),
         ),
-        ConstructorNode(
+        Decl.Constructor(
           "from2D",
           List(
-            ParameterNode("x", tReal),
-            ParameterNode("y", tReal),
+            Decl.Parameter("x", tReal),
+            Decl.Parameter("y", tReal),
           ),
-          BlockNode(List(
-            VariableDeclarationNode("z", isMutable = false, None, RealLiteralNode(0.0)),
-            ConstructorCallNode(None, List(vx, vy, vz)),
+          Stmt.Block(List(
+            Stmt.VariableDeclaration("z", false, None, Stmt.RealLiteral(0.0)),
+            Stmt.ConstructorCall(None, List(vx, vy, vz)),
           )),
         ),
-        ConstructorNode(
+        Decl.Constructor(
           "from1D",
           List(
-            ParameterNode("x", tReal),
+            Decl.Parameter("x", tReal),
           ),
-          BlockNode(List(
-            VariableDeclarationNode("y", isMutable = false, None, RealLiteralNode(0.0)),
-            ConstructorCallNode(Some("from2D"), List(vx, vy)),
+          Stmt.Block(List(
+            Stmt.VariableDeclaration("y", false, None, Stmt.RealLiteral(0.0)),
+            Stmt.ConstructorCall(Some("from2D"), List(vx, vy)),
           )),
         )
       ),
@@ -174,36 +168,38 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
       |    mut quoperty: Q
       |  }
     """.stripMargin --> List(
-      LabelNode("L", None),
-      ClassNode("P", None, None, isAbstract = false, isEntity = false, Nil, Nil),
-      ClassNode("Q", None, None, isAbstract = false, isEntity = false, Nil, Nil),
-      ClassNode("O1", None, None, isAbstract = true, isEntity = false, Nil, Nil),
-      ClassNode("O2", Some("O1"), None, isAbstract = false, isEntity = false, Nil, Nil),
-      ClassNode(
+      Decl.Label("L", None),
+      Decl.Class("P", None, None, false, false, Nil, Nil),
+      Decl.Class("Q", None, None, false, false, Nil, Nil),
+      Decl.Class("O1", None, None, true, false, Nil, Nil),
+      Decl.Class("O2", Some("O1"), None, false, false, Nil, Nil),
+      TypeDeclNode.ClassNode(
         "A",
         supertypeName = None,
         ownedBy = Some(
-          TypeExprNode.IntersectionNode(List(TypeExprNode.NominalNode("O1"), TypeExprNode.NominalNode("L")))
+          Type.Intersection(List(Type.Nominal("O1"), Type.Nominal("L")))
         ),
         isAbstract = true,
         isEntity = false,
         members = List(
-          PropertyNode("property", TypeExprNode.NominalNode("P"), isMutable = false),
+          Decl.Property("property", Type.Nominal("P"), false),
         ),
         constructors = Nil,
+        Position.Wildcard,
       ),
-      ClassNode(
+      TypeDeclNode.ClassNode(
         "B",
         supertypeName = Some("A"),
         ownedBy = Some(
-          TypeExprNode.IntersectionNode(List(TypeExprNode.NominalNode("O2"), TypeExprNode.NominalNode("L")))
+          Type.Intersection(List(Type.Nominal("O2"), Type.Nominal("L")))
         ),
         isAbstract = false,
         isEntity = false,
         members = List(
-          PropertyNode("quoperty", TypeExprNode.NominalNode("Q"), isMutable = true),
+          Decl.Property("quoperty", Type.Nominal("Q"), true),
         ),
         constructors = Nil,
+        Position.Wildcard,
       ),
     )
   }
@@ -243,47 +239,47 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
       |    }
       |  }
     """.stripMargin --> List(
-      ClassNode("C1", None, ownedBy = Some(TypeExprNode.NominalNode("E1")), isAbstract = false, isEntity = false, Nil, Nil),
-      ClassNode("D1", None, None, isAbstract = false, isEntity = false, Nil, Nil),
-      ClassNode("D2", supertypeName = Some("D1"), None, isAbstract = false, isEntity = false, Nil, Nil),
-      ClassNode(
+      Decl.Class("C1", None, Some(Type.Nominal("E1")), false, false, Nil, Nil),
+      Decl.Class("D1", None, None, false, false, Nil, Nil),
+      Decl.Class("D2", Some("D1"), None, false, false, Nil, Nil),
+      TypeDeclNode.ClassNode(
         "E1",
         supertypeName = None,
         ownedBy = None,
         isAbstract = true,
         isEntity = true,
-        members = List(ComponentNode("C1", None), ComponentNode("D1", None)),
+        members = List(Decl.Component("C1", None), Decl.Component("D1", None)),
         constructors = List(
-          ConstructorNode(
+          Decl.Constructor(
             "E1",
-            List(ParameterNode("c1", TypeExprNode.NominalNode("C1")), ParameterNode("d1", TypeExprNode.NominalNode("D1"))),
-            BlockNode(List(
-              ConstructNode(List(VariableNode("c1"), VariableNode("d1")), withSuper = None),
+            List(Decl.Parameter("c1", Type.Nominal("C1")), Decl.Parameter("d1", Type.Nominal("D1"))),
+            Stmt.Block(List(
+              Stmt.Construct(List(Stmt.Variable("c1"), Stmt.Variable("d1")), None),
             )),
           ),
         ),
+        Position.Wildcard,
       ),
-      ClassNode(
+      TypeDeclNode.ClassNode(
         "E2",
         supertypeName = Some("E1"),
         ownedBy = None,
         isAbstract = false,
         isEntity = true,
-        members = List(ComponentNode("D2", overrides = Some("D1"))),
+        members = List(Decl.Component("D2", Some("D1"))),
         constructors = List(
-          ConstructorNode(
+          Decl.Constructor(
             "E2",
-            List(ParameterNode("c1", TypeExprNode.NominalNode("C1")), ParameterNode("d2", TypeExprNode.NominalNode("D2"))),
-            BlockNode(List(
-              ConstructNode(
-                arguments = List(VariableNode("d2")),
-                withSuper = Some(ConstructorCallNode(
-                  None, List(VariableNode("c1"), VariableNode("d2"))
-                )),
+            List(Decl.Parameter("c1", Type.Nominal("C1")), Decl.Parameter("d2", Type.Nominal("D2"))),
+            Stmt.Block(List(
+              Stmt.Construct(
+                List(Stmt.Variable("d2")),
+                Some(Stmt.ConstructorCall(None, List(Stmt.Variable("c1"), Stmt.Variable("d2")))),
               ),
             )),
           ),
         ),
+        Position.Wildcard,
       ),
     )
   }

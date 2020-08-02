@@ -50,15 +50,15 @@ abstract class Error(override val position: Position) extends Feedback {
   override def isSevere = true
   override val consoleTag: String = FeedbackPrinter.tagError
 
-  def this(node: Node) {
+  def this(node: Node) = {
     this(node.position)
   }
 
-  def this(definition: Positioned) {
+  def this(definition: Positioned) = {
     this(definition.position)
   }
 
-  def this(expression: Expression) {
+  def this(expression: Expression) = {
     this(expression.position)
   }
 }
