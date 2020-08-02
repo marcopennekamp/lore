@@ -29,7 +29,9 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     Transpilation.statements(value.statements, code)
   }
 
-  override def visit(expression: Assignment)(value: TranspiledChunk): Transpilation = default(expression)
+  override def visit(expression: Assignment)(target: TranspiledChunk, value: TranspiledChunk): Transpilation = {
+    Transpilation.binary(target, value, "=", wrap = false)
+  }
 
   override def visit(expression: Construct)(arguments: List[TranspiledChunk], superCall: Option[TranspiledChunk]): Transpilation = default(expression)
 
@@ -92,7 +94,7 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
       case XaryOperator.Disjunction => "||"
       case XaryOperator.Concatenation => "+"
     }
-    Transpilation.operatorChain(operands, operatorString, wrap = true)
+    Transpilation.operatorChain(operands, operatorString)
   }
 
   override def visit(expression: Call)(arguments: List[TranspiledChunk]): Transpilation = {

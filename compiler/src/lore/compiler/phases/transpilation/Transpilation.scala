@@ -133,10 +133,10 @@ object Transpilation {
   def combined(chunks: List[TranspiledChunk])(transform: List[JsExpr] => JsExpr): Transpilation = {
     chunks.combined(transform).compiled
   }
-  def operatorChain(chunks: List[TranspiledChunk], operator: String, wrap: Boolean = false): Transpilation = {
+  def operatorChain(chunks: List[TranspiledChunk], operator: String, wrap: Boolean = true): Transpilation = {
     chunks.operatorChain(operator, wrap).compiled
   }
-  def binary(left: TranspiledChunk, right: TranspiledChunk, operator: String, wrap: Boolean = false): Transpilation = {
+  def binary(left: TranspiledChunk, right: TranspiledChunk, operator: String, wrap: Boolean = true): Transpilation = {
     TranspiledChunk.binary(left, right, operator, wrap).compiled
   }
   def sequencedIdentity(chunks: List[TranspiledChunk]): Transpilation = {

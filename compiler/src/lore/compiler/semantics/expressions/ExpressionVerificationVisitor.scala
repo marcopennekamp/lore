@@ -10,7 +10,7 @@ trait ExpressionVerificationVisitor extends ExpressionVisitor[Unit] {
   
   override def visit(expression: Expression.Return)(value: Unit): Result = verify(expression)
   override def visit(expression: Expression.VariableDeclaration)(value: Unit): Result = verify(expression)
-  override def visit(expression: Expression.Assignment)(value: Unit): Result = verify(expression)
+  override def visit(expression: Expression.Assignment)(target: Unit, value: Unit): Result = verify(expression)
   override def visit(expression: Expression.Construct)(arguments: List[Unit], superCall: Option[Unit]): Result = verify(expression)
   override def visit(expression: Expression.Block)(expressions: List[Unit]): Result = verify(expression)
   override def visit(expression: Expression.VariableAccess): Result = verify(expression)
