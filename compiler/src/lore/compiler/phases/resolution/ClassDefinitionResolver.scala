@@ -25,6 +25,7 @@ object ClassDefinitionResolver {
       node.constructors.map(resolveConstructor).simultaneous.map { constructors =>
         constructors.foreach(definition.registerConstructor)
         ensureDefaultConstructor(definition)
+        definition.finalizeDefinition()
         definition
       }
     }
