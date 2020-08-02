@@ -53,11 +53,13 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
   }
 
   private def continuation[_: P] = {
-    def constructorCall = {
-      P(Index ~ ("." ~ identifier).? ~ arguments).map(withIndex(TopLevelExprNode.ConstructorCallNode))
+    def constructorCall(isSuper: Boolean) = {
+      P(Index ~ ("." ~ identifier).? ~ arguments)
+        .map { case (index, qualifier, arguments) => (index, qualifier, isSuper, arguments) }
+        .map(withIndex(TopLevelExprNode.ConstructorCallNode))
     }
-    def thisCall = P("this" ~ constructorCall)
-    def superCall = P("super" ~ constructorCall)
+    def thisCall = P("this" ~ constructorCall(isSuper = false))
+    def superCall = P("super" ~ constructorCall(isSuper = true))
     def constructCall = {
       P(Index ~ "construct" ~ arguments ~ ("with" ~ superCall).?).map(withIndex(TopLevelExprNode.ConstructNode))
     }

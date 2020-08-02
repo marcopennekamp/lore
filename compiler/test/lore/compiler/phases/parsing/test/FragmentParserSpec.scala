@@ -133,7 +133,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
           ),
           Stmt.Block(List(
             Stmt.VariableDeclaration("z", false, None, Stmt.RealLiteral(0.0)),
-            Stmt.ConstructorCall(None, List(vx, vy, vz)),
+            Stmt.ConstructorCall(None, false, List(vx, vy, vz)),
           )),
         ),
         Decl.Constructor(
@@ -143,7 +143,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
           ),
           Stmt.Block(List(
             Stmt.VariableDeclaration("y", false, None, Stmt.RealLiteral(0.0)),
-            Stmt.ConstructorCall(Some("from2D"), List(vx, vy)),
+            Stmt.ConstructorCall(Some("from2D"), false, List(vx, vy)),
           )),
         )
       ),
@@ -274,7 +274,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
             Stmt.Block(List(
               Stmt.Construct(
                 List(Stmt.Variable("d2")),
-                Some(Stmt.ConstructorCall(None, List(Stmt.Variable("c1"), Stmt.Variable("d2")))),
+                Some(Stmt.ConstructorCall(None, true, List(Stmt.Variable("c1"), Stmt.Variable("d2")))),
               ),
             )),
           ),

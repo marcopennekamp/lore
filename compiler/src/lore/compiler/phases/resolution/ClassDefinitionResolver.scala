@@ -88,7 +88,7 @@ object ClassDefinitionResolver {
         // be equal for non-overridden members.
         ExprNode.VariableNode(classDefinition.overriddenToOverrider.getOrElse(superParameter.name, superParameter.name), position)
       }
-      TopLevelExprNode.ConstructorCallNode(None, arguments, position)
+      TopLevelExprNode.ConstructorCallNode(None, isSuper = true, arguments, position)
     }
     val body = ExprNode.BlockNode(List(TopLevelExprNode.ConstructNode(arguments, withSuper, position)), position)
     classDefinition.registerConstructor(

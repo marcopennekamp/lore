@@ -67,7 +67,7 @@ object ConstructorConstraints {
         // a continuation.
         val continuation = constructor.bodyNode.statements.last.asInstanceOf[TopLevelExprNode.ContinuationNode]
         continuation match {
-          case TopLevelExprNode.ConstructorCallNode(name, _, _) =>
+          case TopLevelExprNode.ConstructorCallNode(name, _, _, _) =>
             flowGraph.addEdge(constructor.name, name.getOrElse(definition.name))
           case TopLevelExprNode.ConstructNode(_, _, _) =>
             flowGraph.addEdge(constructor.name, constructName)

@@ -224,13 +224,22 @@ private[verification] class FunctionTransformationVisitor(
       ).simultaneous.map { case (name, resultType) =>
         Expression.Call(DynamicCallTarget(name, resultType), expressions.tail, position)
       }
-    case ConstructorCallNode(qualifier, _, position) =>
+    case node@ConstructorCallNode(qualifier, isSuper, _, position) =>
       implicit val pos: Position = position
       // Continue with a constructor this.name. We have already verified that only a constructor can contain a
       // continuation, so we can safely get the class definition here as part of the contract of this visitor.
       classDefinition match {
         case None => throw CompilationException("Only constructors can contain continuations.")
-        case Some(definition) => StatementTransformation.transformConstructorCall(definition, qualifier, expressions)
+        case Some(definition) =>
+          for {
+            targetDefinition <- if (isSuper) {
+              definition.supertypeDefinition match {
+                case None => Compilation.fail(MissingSuperConstructor(node))
+                case Some(sd) => sd.compiled
+              }
+            } else definition.compiled
+            call <- StatementTransformation.transformConstructorCall(targetDefinition, qualifier, expressions)
+          } yield call
       }
   }
 
@@ -317,6 +326,10 @@ private[verification] object FunctionTransformationVisitor {
   case class DynamicFunctionNameExpected()(implicit position: Position) extends Error(position) {
     override def message: String = "Dynamic calls require a string literal as their first argument, which represents the" +
       " name of the function. Since the name must be available at compile-time, it must be a constant."
+  }
+
+  case class MissingSuperConstructor(node: TopLevelExprNode.ConstructorCallNode) extends Error(node) {
+    override def message: String = "The super constructor cannot be called because the current class doesn't have a superclass."
   }
 
   case class CollectionExpected(expression: Expression) extends Error(expression) {

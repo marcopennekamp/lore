@@ -48,12 +48,12 @@ object TopLevelExprNode {
   sealed trait ContinuationNode extends TopLevelExprNode
 
   case class ConstructorCallNode(
-    name: Option[String], arguments: List[ExprNode], position: Position,
+    name: Option[String], isSuper: Boolean, arguments: List[ExprNode], position: Position,
   ) extends XaryNode(arguments) with ContinuationNode with CallNode[InternalCallTarget]
 
   case class ConstructNode(
     arguments: List[ExprNode], withSuper: Option[ConstructorCallNode], position: Position,
-  ) extends XaryNode(arguments) with ContinuationNode
+  ) extends TopLevelExprNode with ContinuationNode
 }
 
 /**
