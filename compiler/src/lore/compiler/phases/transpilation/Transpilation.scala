@@ -1,5 +1,6 @@
 package lore.compiler.phases.transpilation
 
+import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.phases.transpilation.TranspiledChunk.{JsCode, JsExpr}
 
@@ -118,30 +119,30 @@ object Transpilation {
   type Transpilation = Compilation[TranspiledChunk]
 
   def chunk(statements: JsCode, expression: JsExpr): Transpilation = {
-    Compilation.succeed(TranspiledChunk(statements, Some(expression)))
+    TranspiledChunk(statements, Some(expression)).compiled
   }
   def chunk(statements: List[JsCode], expression: JsExpr): Transpilation = {
-    Compilation.succeed(TranspiledChunk.chunk(statements, expression))
+    TranspiledChunk.chunk(statements, expression).compiled
   }
   def statements(statements: JsCode*): Transpilation = {
-    Compilation.succeed(TranspiledChunk.statements(statements: _*))
+    TranspiledChunk.statements(statements: _*).compiled
   }
   def expression(expression: JsExpr): Transpilation = {
-    Compilation.succeed(TranspiledChunk.expression(expression))
+    TranspiledChunk.expression(expression).compiled
   }
   def combined(chunks: List[TranspiledChunk])(transform: List[JsExpr] => JsExpr): Transpilation = {
-    Compilation.succeed(chunks.combined(transform))
+    chunks.combined(transform).compiled
   }
   def operatorChain(chunks: List[TranspiledChunk], operator: String, wrap: Boolean = false): Transpilation = {
-    Compilation.succeed(chunks.operatorChain(operator, wrap))
+    chunks.operatorChain(operator, wrap).compiled
   }
   def binary(left: TranspiledChunk, right: TranspiledChunk, operator: String, wrap: Boolean = false): Transpilation = {
-    Compilation.succeed(TranspiledChunk.binary(left, right, operator, wrap))
+    TranspiledChunk.binary(left, right, operator, wrap).compiled
   }
   def sequencedIdentity(chunks: List[TranspiledChunk]): Transpilation = {
-    Compilation.succeed(chunks.sequencedIdentity)
+    chunks.sequencedIdentity.compiled
   }
   def sequenced(chunks: List[TranspiledChunk])(transform: (JsCode, Option[JsExpr]) => TranspiledChunk): Transpilation = {
-    Compilation.succeed(chunks.sequenced(transform))
+    chunks.sequenced(transform).compiled
   }
 }

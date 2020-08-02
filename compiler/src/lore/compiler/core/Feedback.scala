@@ -1,5 +1,6 @@
 package lore.compiler.core
 
+import lore.compiler.semantics.expressions.Expression
 import lore.compiler.syntax._
 
 /**
@@ -55,5 +56,9 @@ abstract class Error(override val position: Position) extends Feedback {
 
   def this(definition: Positioned) {
     this(definition.position)
+  }
+
+  def this(expression: Expression) {
+    this(expression.position)
   }
 }

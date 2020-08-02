@@ -30,7 +30,7 @@ object MultiFunctionConstraints {
     */
   def verifyNoContinuation(mf: MultiFunctionDefinition): Verification = {
     mf.functions.map { function =>
-      function.body match {
+      function.bodyNode match {
         case None => Verification.succeed
         case Some(expression) => StmtVisitor.visit(new NoContinuationVisitor)(expression)
       }

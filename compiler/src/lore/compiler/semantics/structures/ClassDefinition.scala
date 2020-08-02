@@ -1,30 +1,27 @@
 package lore.compiler.semantics.structures
 
-import lore.compiler.core.Position
-import lore.compiler.syntax.ExprNode.VariableNode
-import lore.compiler.syntax.TopLevelExprNode.ConstructorCallNode
-import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
-import lore.compiler.semantics.{TypeVariableScope, functions}
+import lore.compiler.core.Compilation.ToCompilationExtension
+import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.semantics.functions.{ConstructorDefinition, FunctionSignature}
+import lore.compiler.semantics.structures.ClassDefinition.ConstructorNotFound
 import lore.compiler.types.{ClassType, ComponentType, Type}
 import lore.compiler.utils.CollectionExtensions._
+
+import scala.collection.mutable
 
 /**
   * The definition of both a class and an entity.
   *
   * @param localMembers The members declared within this class/entity. Does not include supertype properties.
-  * @param definedConstructors The constructors explicitly declared within this class/entity. Does not include the default constructor.
   */
 class ClassDefinition(
   override val name: String,
   override val tpe: ClassType,
+  val ownedBy: Option[Type],
   val isEntity: Boolean,
-  val localMembers: List[MemberDefinition[Type]],
-  definedConstructors: List[ConstructorDefinition],
+  val localMembers: List[MemberDefinition],
   override val position: Position,
 ) extends DeclaredTypeDefinition {
-  definedConstructors.foreach(_.associateWith(this))
-
   // Many of the members here are declared as vals. This is only possible because definitions are created according
   // to the inheritance hierarchy.
 
@@ -43,13 +40,13 @@ class ClassDefinition(
   /**
     * A map of overridden names pointing to the names of their overriding components.
     */
-  private val overriddenToOverrider: Map[String, String] = localComponents.flatMap(m => m.overrides.map(_ -> m.name)).toMap
+  val overriddenToOverrider: Map[String, String] = localComponents.flatMap(m => m.overrides.map(_ -> m.name)).toMap
 
   /**
     * The list of all members belonging to this class, including superclass members. This list EXCLUDES overridden
     * components defined in superclasses.
     */
-  val members: List[MemberDefinition[Type]] = {
+  val members: List[MemberDefinition] = {
     val all = supertypeDefinition.map(_.members).getOrElse(List.empty) ++ localMembers
     // Exclude overridden components.
     all.filterNot(m => overriddenToOverrider.contains(m.name))
@@ -66,58 +63,76 @@ class ClassDefinition(
   val components: List[ComponentDefinition] = members.filterType[ComponentDefinition]
 
   /**
-    * The list of all constructors, including the default constructor.
-    */
-  val constructors: List[ConstructorDefinition] = defaultConstructor :: definedConstructors.filterNot(_.name == this.name)
-
-  /**
     * The signature of the local construct "function". This does not include any arguments to be passed to the
     * super type.
     */
-  lazy val constructSignature: FunctionSignature = {
-    functions.FunctionSignature("construct", localMembers.map(_.asParameter), tpe, position)
+  lazy val constructSignature: FunctionSignature = FunctionSignature("construct", localMembers.map(_.asParameter), tpe, position)
+
+  /**
+    * Whether the class definition can still be altered by mutations such as registering constructors.
+    */
+  private var _isFinalized = false
+
+  /**
+    * Finalize the definition, disallowing any mutations from here on.
+    */
+  def finalizeDefinition(): Unit = {
+    if (_isFinalized) throw CompilationException(s"Cannot finalize class definition $name twice.")
+    _isFinalized = true
   }
 
   /**
-    * Returns the already declared default constructor or generates a new one.
+    * A map of registered constructors.
     */
-  lazy val defaultConstructor: ConstructorDefinition = {
-    // Try to find a defined default constructor at first. If none can be found, we generate our own.
-    definedConstructors.find(_.name == this.name) match {
-      case Some(constructor) => constructor
-      case None =>
-        // The parameters are all members as known by this class. Overridden components aren't part of the member list
-        // and so, as expected, also not a parameter of the constructor. Rather, their overriding components become
-        // parameters of the constructor.
-        val parameters = members.map(_.asParameter)
-        // Now, we want a single construct continuation with the right arguments and superclass arguments. The only
-        // tricky part is passing the overridden arguments twice. We do that by analyzing the superclass's default
-        // constructor parameters, passing the correct overriding component if we encounter an overridden name.
-        val arguments = localMembers.map(m => ExprNode.VariableNode(m.name))
-        val withSuper = supertypeDefinition.map { superclass =>
-          val superParameters = superclass.defaultConstructor.parameters
-          val arguments = superParameters.map { superParameter =>
-            // Either this component has been overridden and so must be fed from an argument which has also been
-            // passed to the construct call, or we simply use the parameter name as the variable name, as they must
-            // be equal for non-overridden members.
-            VariableNode(overriddenToOverrider.getOrElse(superParameter.name, superParameter.name))
-          }
-          ConstructorCallNode(None, arguments)
-        }
-        val body = ExprNode.BlockNode(List(
-          TopLevelExprNode.ConstructNode(arguments, withSuper)
-        ))
-        // TODO: The constructor should rather contain the registry type scope.
-        val constructor = functions.ConstructorDefinition(this.name, new TypeVariableScope(null), parameters, body, position)
-        constructor.associateWith(this)
-        constructor
+  private val _constructors: mutable.HashMap[String, ConstructorDefinition] = mutable.HashMap()
+
+  /**
+    * All constructors registered in this class.
+    */
+  lazy val constructors: List[ConstructorDefinition] = {
+    if (!_isFinalized) {
+      throw CompilationException("ClassDefinition.constructors can't be used until the definition has been finalized.")
+    }
+    _constructors.values.toList
+  }
+
+  /**
+    * Registers a constructor.
+    */
+  def registerConstructor(constructor: ConstructorDefinition): Unit = {
+    if (_isFinalized) {
+      throw CompilationException(s"Constructors can't be registered with a finalized class definition $name.")
+    }
+    if (_constructors.contains(constructor.name)) {
+      throw CompilationException(s"The constructor ${constructor.name} has already been registered in class $name.")
+    }
+
+    constructor.associateWith(this)
+    _constructors.put(constructor.name, constructor)
+  }
+
+  /**
+    * Searches for a constructor with the given name.
+    */
+  def getConstructor(constructorName: String): Option[ConstructorDefinition] = _constructors.get(constructorName)
+
+  /**
+    * Resolves a constructor of the given class.
+    */
+  def resolveConstructor(constructorName: String)(implicit position: Position): Compilation[ConstructorDefinition] = {
+    getConstructor(constructorName) match {
+      case None => Compilation.fail(ConstructorNotFound(name, constructorName))
+      case Some(constructor) => constructor.compiled
     }
   }
 
   /**
-    * Attempts to find a constructor with the given name.
+    * The class's default constructor. If this constructor is not registered, we throw a compilation exception.
     */
-  def getConstructor(name: String): Option[ConstructorDefinition] = constructors.find(_.name == name)
+  lazy val defaultConstructor: ConstructorDefinition = getConstructor(name) match {
+    case None => throw CompilationException(s"The class $name has no default constructor, but one should have been generated by the compiler!")
+    case Some(definition) => definition
+  }
 
   /**
     * Returns all component types that this class has in common with the other given class.
@@ -138,5 +153,11 @@ class ClassDefinition(
 
       commonTypes.map(ComponentType)
     }
+  }
+}
+
+object ClassDefinition {
+  case class ConstructorNotFound(className: String, name: String)(implicit position: Position) extends Error(position) {
+    override def message = s"The constructor $className.$name does not exist."
   }
 }

@@ -4,7 +4,7 @@ import fastparse.ScalaWhitespace._
 import fastparse._
 import lore.compiler.syntax.Node
 import lore.compiler.syntax.Node.Index
-import lore.compiler.core.Fragment
+import lore.compiler.core.{Fragment, Position}
 
 /**
   * Implements the shunting-yard algorithm for arbitrary operators with arbitrary precedence. Supports both binary
@@ -16,12 +16,16 @@ object PrecedenceParser {
     def isXary: Boolean = false
   }
 
-  case class XaryOperator[Operand <: Node](precedence: Int, constructor: List[Operand] => Operand)(implicit fragment: Fragment) extends Operator {
+  case class XaryOperator[Operand <: Node](
+    precedence: Int, constructor: (List[Operand], Position) => Operand
+  )(implicit fragment: Fragment) extends Operator {
     override def isXary: Boolean = true
     val constructorWithIndex: (Index, List[Operand]) => Operand = Node.withIndexUntupled(constructor)
   }
 
-  case class BinaryOperator[Operand <: Node](precedence: Int, constructor: (Operand, Operand) => Operand)(implicit fragment: Fragment) extends Operator {
+  case class BinaryOperator[Operand <: Node](
+    precedence: Int, constructor: (Operand, Operand, Position) => Operand
+  )(implicit fragment: Fragment) extends Operator {
     val constructorWithIndex: (Index, Operand, Operand) => Operand = Node.withIndexUntupled(constructor)
   }
 

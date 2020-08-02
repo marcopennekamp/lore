@@ -1,6 +1,7 @@
 package lore.compiler.syntax.visitor
 
-import lore.compiler.syntax.{ExprNode, StmtNode}
+import lore.compiler.core.Compilation
+import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.core.Compilation.Verification
 
 /**
@@ -18,6 +19,7 @@ trait VerificationStmtVisitor extends StmtVisitor[Unit] {
   override final def visitBinary(node: StmtNode.BinaryNode)(left: Unit, right: Unit): Verification = verify(node)
   override final def visitTernary(node: StmtNode.TernaryNode)(argument1: Unit, argument2: Unit, argument3: Unit): Verification = verify(node)
   override final def visitXary(node: StmtNode.XaryNode)(arguments: List[Unit]): Verification = verify(node)
+  override def visitConstruct(node: TopLevelExprNode.ConstructNode)(arguments: List[Unit], withSuper: Option[Unit]): Compilation[Unit] = verify(node)
   override final def visitMap(node: ExprNode.MapNode)(entries: List[(Unit, Unit)]): Verification = verify(node)
   override def visitIteration(node: ExprNode.IterationNode)(extractors: List[(String, Unit)], visitBody: () => Verification): Verification = verify(node)
 }

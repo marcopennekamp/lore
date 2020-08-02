@@ -1,7 +1,7 @@
 package lore.compiler.semantics
 
 import lore.compiler.core.{Compilation, Position, Error}
-import lore.compiler.core.Compilation.{C, Verification}
+import lore.compiler.core.Compilation.{C, ToCompilationExtension, Verification}
 import lore.compiler.semantics.Scope.{AlreadyDeclared, UnknownEntry}
 
 import scala.collection.mutable
@@ -37,8 +37,8 @@ trait Scope[A <: Scope.Entry] {
     */
   def resolve(name: String)(implicit position: Position): C[A] = {
     get(name) match {
-      case Some(entry) => Compilation.succeed(entry)
       case None => Compilation.fail(unknownEntry(name))
+      case Some(entry) => entry.compiled
     }
   }
 

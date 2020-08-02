@@ -1,151 +1,153 @@
 package lore.compiler.phases.transpilation
 
-import lore.compiler.syntax.TopLevelExprNode.AssignmentNode
-import lore.compiler.syntax.visitor.StmtVisitor
-import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode}
+import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, Error}
-import lore.compiler.semantics.functions.FunctionInstance
 import lore.compiler.phases.transpilation.Transpilation.Transpilation
 import lore.compiler.phases.transpilation.TranspiledChunk.JsCode
 import lore.compiler.semantics.Registry
-import lore.compiler.types.ProductType
+import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
+import lore.compiler.semantics.functions.{DynamicCallTarget, FunctionInstance}
+import lore.compiler.types.{BasicType, ProductType}
 
-case class UnsupportedTranspilation(node: StmtNode) extends Error(node) {
-  override def message = s"The Lore compiler doesn't yet support the transpilation of ${node.getClass.getSimpleName}."
+case class UnsupportedTranspilation(expression: Expression) extends Error(expression) {
+  override def message = s"The Lore compiler doesn't yet support the transpilation of ${expression.getClass.getSimpleName}."
 }
 
-private[transpilation] class FunctionTranspilationVisitor()(implicit registry: Registry) extends StmtVisitor[TranspiledChunk] {
-  import ExprNode._
-  import Transpilation.binary
+private[transpilation] class FunctionTranspilationVisitor()(implicit registry: Registry) extends ExpressionVisitor[TranspiledChunk] {
+  import Expression._
 
   private implicit val nameProvider: TemporaryNameProvider = new TemporaryNameProvider
 
-  private def default(node: StmtNode): Transpilation = Compilation.fail(UnsupportedTranspilation(node))
+  private def default(expression: Expression): Transpilation = Compilation.fail(UnsupportedTranspilation(expression))
 
-  override def visitLeaf(node: StmtNode.LeafNode): Transpilation = node match {
-    case ExprNode.VariableNode(_, state) => Transpilation.expression(state.variable.transpiledName)
-    case IntLiteralNode(value, _) => Transpilation.expression(value.toString)
-    case RealLiteralNode(value, _) => Transpilation.expression(value.toString)
-    case StringLiteralNode(value, _) =>
+  override def visit(expression: Return)(value: TranspiledChunk): Transpilation = default(expression)
+
+  override def visit(expression: VariableDeclaration)(value: TranspiledChunk): Transpilation = {
+    val variable = expression.variable
+    val modifier = if (variable.isMutable) "let" else "const"
+    val code = s"$modifier ${variable.transpiledName} = ${value.expression.get};"
+    Transpilation.statements(value.statements, code)
+  }
+
+  override def visit(expression: Assignment)(value: TranspiledChunk): Transpilation = default(expression)
+
+  override def visit(expression: Construct)(arguments: List[TranspiledChunk], superCall: Option[TranspiledChunk]): Transpilation = default(expression)
+
+  override def visit(expression: Block)(expressions: List[TranspiledChunk]): Transpilation = Transpilation.sequencedIdentity(expressions)
+
+  override def visit(expression: VariableAccess): Transpilation = Transpilation.expression(expression.variable.transpiledName)
+
+  override def visit(expression: MemberAccess)(instance: TranspiledChunk): Transpilation = {
+    // TODO: This is only a naive implementation which may be temporary. We will ultimately have to ensure that
+    //       this works in all cases and perhaps complicate this.
+    instance.mapExpression(instance => s"$instance.${expression.member.name}").compiled
+  }
+
+  override def visit(literal: Literal): Transpilation = literal.tpe match {
+    case BasicType.Real | BasicType.Int | BasicType.Boolean => Transpilation.expression(literal.value.toString)
+    case BasicType.String =>
       // TODO: Escaped characters need to be handled correctly, which they currently are not. For example \'.
-      Transpilation.expression(s"'$value'")
-    case BoolLiteralNode(value, _) => Transpilation.expression(value.toString)
-    case UnitNode(_) => Transpilation.expression(s"${LoreApi.varTuple}.unit")
-    case _ => default(node)
+      Transpilation.expression(s"'${literal.value}'")
   }
 
-  override def visitUnary(node: StmtNode.UnaryNode)(argument: TranspiledChunk): Transpilation = node match {
-    case TopLevelExprNode.VariableDeclarationNode(_, isMutable, _, _, state) =>
-      val modifier = if (isMutable) "let" else "const"
-      val code = s"$modifier ${state.variable.transpiledName} = ${argument.expression.get};"
-      Transpilation.statements(argument.statements, code)
-    case PropertyAccessNode(_, name, _) =>
-      // TODO: This is only a naive implementation which may be temporary. We will ultimately have to ensure that
-      //       this works in all cases and perhaps complicate this.
-      Compilation.succeed(argument.mapExpression(instance => s"$instance.$name"))
-    case NegationNode(_, _) => Compilation.succeed(argument.mapExpression(e => s"-$e"))
-    case _ => default(node)
+  override def visit(expression: Tuple)(values: List[TranspiledChunk]): Transpilation = {
+    if (expression.tpe == ProductType.UnitType) {
+      Transpilation.expression(s"${LoreApi.varTuple}.unit")
+    } else {
+      transpileArrayBasedValue(expression, s"${LoreApi.varTuple}.create", values)
+    }
   }
 
-  override def visitBinary(node: StmtNode.BinaryNode)(left: TranspiledChunk, right: TranspiledChunk): Transpilation = node match {
-    case AssignmentNode(_, _, _) => binary(left, right, "=")
-    case AdditionNode(_, _, _) => binary(left, right, "+", wrap = true)
-    case SubtractionNode(_, _, _) => binary(left, right, "-", wrap = true)
-    case MultiplicationNode(_, _, _) => binary(left, right, "*", wrap = true)
-    case DivisionNode(_, _, _) => binary(left, right, "/", wrap = true)
-    case EqualsNode(_, _, _) =>
+  override def visit(expression: ListConstruction)(values: List[TranspiledChunk]): Transpilation = {
+    transpileArrayBasedValue(expression, s"${LoreApi.varList}.create", values)
+  }
+
+  override def visit(expression: MapConstruction)(entries: List[(TranspiledChunk, TranspiledChunk)]): Transpilation = default(expression)
+
+  override def visit(expression: UnaryOperation)(value: TranspiledChunk): Transpilation = {
+    val operatorString = expression.operator match {
+      case UnaryOperator.Negation => "-"
+      case UnaryOperator.LogicalNot => "!"
+    }
+    value.mapExpression(e => s"$operatorString$e").compiled
+  }
+
+  override def visit(expression: BinaryOperation)(left: TranspiledChunk, right: TranspiledChunk): Transpilation = {
+    val operatorString = expression.operator match {
+      case BinaryOperator.Addition => "+"
+      case BinaryOperator.Subtraction => "-"
+      case BinaryOperator.Multiplication => "*"
+      case BinaryOperator.Division => "/"
       // All the complex cases have been filtered already and we can simply apply Javascript comparison.
-      binary(left, right, "===", wrap = true)
-    case NotEqualsNode(_, _, _) => binary(left, right, "!==", wrap = true)
-    case LessThanNode(_, _, _) => binary(left, right, "<", wrap = true)
-    case LessThanEqualsNode(_, _, _) => binary(left, right, "<=", wrap = true)
-    case GreaterThanNode(_, _, _) => binary(left, right, ">", wrap = true)
-    case GreaterThanEqualsNode(_, _, _) => binary(left, right, ">=", wrap = true)
-    case node@RepetitionNode(_, _, _) =>
-      val condition = left
-      val body = right
-      val loopShell = (bodyCode: String) => {
-        s"""${condition.statements}
-           |while (${condition.expression.get}) {
-           |  $bodyCode
-           |}
-           |""".stripMargin
-      }
-      transpileLoop(node, loopShell, body)
-    case _ => default(node)
+      case BinaryOperator.Equals => "==="
+      case BinaryOperator.LessThan => "<"
+      case BinaryOperator.LessThanEquals => "<="
+    }
+    Transpilation.binary(left, right, operatorString)
   }
 
-  override def visitTernary(node: StmtNode.TernaryNode)(
-    argument1: TranspiledChunk, argument2: TranspiledChunk, argument3: TranspiledChunk
-  ): Transpilation = node match {
-    case IfElseNode(_, _, _, _) =>
-      val condition = argument1
-      val onTrue = argument2
-      val onFalse = argument3
-      val varResult = nameProvider.createName()
-      val code =
-        s"""${condition.statements}
-           |let $varResult;
-           |if (${condition.expression.get}) {
-           |  ${onTrue.statements}
-           |  ${onTrue.expression.map(e => s"$varResult = $e;").getOrElse("")}
-           |} else {
-           |  ${onFalse.statements}
-           |  ${onFalse.expression.map(e => s"$varResult = $e;").getOrElse("")}
-           |}
-           |""".stripMargin
-      Transpilation.chunk(code, varResult)
-    case _ => default(node)
+  override def visit(expression: XaryOperation)(operands: List[TranspiledChunk]): Transpilation = {
+    val operatorString = expression.operator match {
+      case XaryOperator.Conjunction => "&&"
+      case XaryOperator.Disjunction => "||"
+      case XaryOperator.Concatenation => "+"
+    }
+    Transpilation.operatorChain(operands, operatorString, wrap = true)
   }
 
-  def transpileCall(targetName: String, arguments: List[TranspiledChunk]): Transpilation = {
-    Transpilation.combined(arguments) { expressions =>
-      s"$targetName(${expressions.mkString(", ")})"
+  override def visit(expression: Call)(arguments: List[TranspiledChunk]): Transpilation = {
+    expression.target match {
+      case _: FunctionInstance | _: DynamicCallTarget => transpileCall(expression.target.name, arguments)
+      case _ => default(expression) // Constructor calls are not yet supported.
     }
   }
 
-  def transpileArrayBasedValue(node: StmtNode.XaryNode, createApiFunction: String, expressions: List[TranspiledChunk]): Transpilation = {
-    val chunk = RuntimeTypeTranspiler.transpile(node.state.inferredType).flatMap { typeExpression =>
-      TranspiledChunk.combined(expressions) { exprs =>
-        val values = exprs.mkString(",")
-        s"""$createApiFunction(
-           |  [$values],
-           |  $typeExpression,
-           |)""".stripMargin
-        // TODO: For the runtime type, don't we need to take types based on the actual values at run-time, not based on
-        //       the inferred type???
-      }
+  override def visit(expression: IfElse)(condition: TranspiledChunk, onTrue: TranspiledChunk, onFalse: TranspiledChunk): Transpilation = {
+    // TODO: If the result is Unit there should be no varResult and no expression result.
+    val varResult = nameProvider.createName()
+    val code =
+      s"""${condition.statements}
+         |let $varResult;
+         |if (${condition.expression.get}) {
+         |  ${onTrue.statements}
+         |  ${onTrue.expression.map(e => s"$varResult = $e;").getOrElse("")}
+         |} else {
+         |  ${onFalse.statements}
+         |  ${onFalse.expression.map(e => s"$varResult = $e;").getOrElse("")}
+         |}
+         |""".stripMargin
+    Transpilation.chunk(code, varResult)
+  }
+
+  override def visit(loop: WhileLoop)(condition: TranspiledChunk, body: TranspiledChunk): Transpilation = {
+    val loopShell = (bodyCode: String) => {
+      s"""${condition.statements}
+         |while (${condition.expression.get}) {
+         |  $bodyCode
+         |}
+         |""".stripMargin
     }
-    Compilation.succeed(chunk)
+    transpileLoop(loop, loopShell, body)
   }
 
-  override def visitXary(node: StmtNode.XaryNode)(expressions: List[TranspiledChunk]): Transpilation = node match {
-    case BlockNode(_, _) => Transpilation.sequencedIdentity(expressions)
-    case SimpleCallNode(_, _, _, state) =>
-      state.target match {
-        case _: FunctionInstance => transpileCall(state.target.name, expressions)
-        case _ => default(node) // Constructor calls are not yet supported.
-      }
-    case DynamicCallNode(_, _, state) =>
-      val actualArguments = expressions.tail
-      transpileCall(state.target.name, actualArguments)
-    case node@TupleNode(_, _) => transpileArrayBasedValue(node, s"${LoreApi.varTuple}.create", expressions)
-    case node@ListNode(_, _) => transpileArrayBasedValue(node, s"${LoreApi.varList}.create", expressions)
-    case ConcatenationNode(_, _) => Transpilation.operatorChain(expressions, "+", wrap = true)
-    case ConjunctionNode(_, _) => Transpilation.operatorChain(expressions, "&&", wrap = true)
-    case DisjunctionNode(_, _) => Transpilation.operatorChain(expressions, "||", wrap = true)
-    case _ => default(node)
+  override def visit(loop: ForLoop)(extractors: List[TranspiledChunk], body: TranspiledChunk): Transpilation = {
+    val loopShell = loop.extractors.zip(extractors).map { case (extractor, chunk) =>
+      (inner: String) =>
+        s"""${chunk.statements}
+           |${LoreApi.varList}.forEach(${chunk.expression.get}, ${extractor.variable.transpiledName} => {
+           |  $inner
+           |});""".stripMargin
+    }.foldRight(identity: String => String) { case (enclose, function) => function.andThen(enclose) }
+    transpileLoop(loop, loopShell, body)
   }
-
-  override def visitMap(node: ExprNode.MapNode)(entries: List[(TranspiledChunk, TranspiledChunk)]): Transpilation = default(node)
 
   /**
     * Transpiles a loop, combining the scaffolding of loopShell with a correctly transpiled body.
     */
-  def transpileLoop(node: LoopNode, loopShell: JsCode => JsCode, body: TranspiledChunk): Transpilation = {
+  private def transpileLoop(loop: Loop, loopShell: JsCode => JsCode, body: TranspiledChunk): Transpilation = {
     // TODO: We also need to ignore the resulting list if it isn't used as an expression.
     // The loop's inferred type is Unit if its body type is Unit, so this checks out.
-    val ignoreResult = node.state.inferredType == ProductType.UnitType
+    val ignoreResult = loop.tpe == ProductType.UnitType
 
     def loopCode(varResult: Option[String]): String = {
       val statements = s"${body.statements};"
@@ -166,7 +168,7 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
       Transpilation.statements(loopCode(None))
     } else {
       val varResult = nameProvider.createName()
-      val typeChunk = RuntimeTypeTranspiler.transpile(node.state.inferredType)
+      val typeChunk = RuntimeTypeTranspiler.transpile(loop.tpe)
       val resultVarDeclaration =
         s"""const $varResult = ${LoreApi.varList}.create(
            |  [],
@@ -181,20 +183,30 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     }
   }
 
-  override def visitIteration(node: ExprNode.IterationNode)(
-    extractors: List[(String, TranspiledChunk)], visitBody: () => Transpilation
-  ): Transpilation = {
-    visitBody().flatMap { body =>
-      val extractorVariables = node.extractors.map(_.state.variable).map(v => (v.name, v)).toMap
-      val loopShell = extractors.map { case (name, chunk) =>
-        val variable = extractorVariables(name)
-        (inner: String) =>
-          s"""${chunk.statements}
-             |${LoreApi.varList}.forEach(${chunk.expression.get}, ${variable.transpiledName} => {
-             |  $inner
-             |});""".stripMargin
-      }.foldRight(identity: String => String) { case (enclose, function) => function.andThen(enclose) }
-      transpileLoop(node, loopShell, body)
+  /**
+    * Transpiles a call with the given target name and arguments.
+    */
+  private def transpileCall(targetName: String, arguments: List[TranspiledChunk]): Transpilation = {
+    // TODO: Rather take the target as an argument?
+    Transpilation.combined(arguments) { expressions =>
+      s"$targetName(${expressions.mkString(", ")})"
     }
+  }
+
+  /**
+    * Transpiles a xary-constructed value that is created using an API function wrapped around an array of parts.
+    */
+  private def transpileArrayBasedValue(expression: Expression, createApiFunction: String, values: List[TranspiledChunk]): Transpilation = {
+    val chunk = RuntimeTypeTranspiler.transpile(expression.tpe).flatMap { typeExpression =>
+      TranspiledChunk.combined(values) { values =>
+        s"""$createApiFunction(
+           |  [${values.mkString(",")}],
+           |  $typeExpression,
+           |)""".stripMargin
+        // TODO: For the runtime type, don't we need to take types based on the actual values at run-time, not based on
+        //       the inferred type??? This is a big problem for lists and such.
+      }
+    }
+    chunk.compiled
   }
 }

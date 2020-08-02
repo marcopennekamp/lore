@@ -1,6 +1,7 @@
 package lore.compiler.semantics.functions
 
-import lore.compiler.core.{Compilation, Position, Positioned}
+import lore.compiler.core.Compilation.ToCompilationExtension
+import lore.compiler.core.{Position, Positioned}
 import lore.compiler.types._
 
 import scala.util.hashing.MurmurHash3
@@ -20,7 +21,7 @@ case class FunctionSignature(name: String, parameters: List[ParameterDefinition]
 
     val substitutedParameters = parameters.map { parameter =>
       val substitutedType = Substitution.substitute(assignments, parameter.tpe)
-      new ParameterDefinition(parameter.name, () => Compilation.succeed(substitutedType), parameter.position)
+      new ParameterDefinition(parameter.name, substitutedType, parameter.position)
     }
     val substitutedOutputType = Substitution.substitute(assignments, outputType)
     FunctionSignature(name, substitutedParameters, substitutedOutputType, position)

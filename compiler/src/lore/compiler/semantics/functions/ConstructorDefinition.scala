@@ -1,6 +1,7 @@
 package lore.compiler.semantics.functions
 
 import lore.compiler.core.Position
+import lore.compiler.semantics.expressions.Expression
 import lore.compiler.syntax.ExprNode
 import lore.compiler.semantics.{TypeScope, functions}
 import lore.compiler.semantics.structures._
@@ -8,15 +9,22 @@ import lore.compiler.semantics.structures._
 /**
   * The definition of a class constructor.
   *
-  * @param body The body is a variable because it may be transformed during the course of the compilation.
+  * Constructor definition equality is always reference equality, as we create exactly one constructor definition
+  * for every defined constructor.
   */
-case class ConstructorDefinition(
-  override val name: String, typeScope: TypeScope, parameters: List[ParameterDefinition],
-  var body: ExprNode.BlockNode, override val position: Position
+class ConstructorDefinition(
+  override val name: String, val typeScope: TypeScope, val parameters: List[ParameterDefinition],
+  val bodyNode: ExprNode.BlockNode, override val position: Position
 ) extends InternalCallTarget {
   private var classDefinition: ClassDefinition = _
   def associateWith(classDefinition: ClassDefinition): Unit = {
     this.classDefinition = classDefinition
   }
   override lazy val signature: FunctionSignature = functions.FunctionSignature(name, parameters, classDefinition.tpe, position)
+  override def toString = s"${classDefinition.name}.$name(${parameters.mkString(", ")})"
+
+  /**
+    * This is a variable because it may be transformed during the course of the compilation.
+    */
+  var body: Expression.Block = _
 }

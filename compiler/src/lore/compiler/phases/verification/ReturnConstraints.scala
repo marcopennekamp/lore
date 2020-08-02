@@ -3,7 +3,7 @@ package lore.compiler.phases.verification
 import lore.compiler.syntax.visitor.{CombiningStmtVisitor, StmtVisitor, VerificationStmtVisitor}
 import lore.compiler.syntax.{ExprNode, StmtNode}
 import lore.compiler.core.{Compilation, Error}
-import lore.compiler.core.Compilation.Verification
+import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.phases.verification.ReturnConstraints.{DeadCode, DefinitelyReturns, ImpossibleReturn, IsReturnAllowed}
 
 private class ReturnDeadCodeVisitor() extends CombiningStmtVisitor[DefinitelyReturns] {
@@ -13,29 +13,29 @@ private class ReturnDeadCodeVisitor() extends CombiningStmtVisitor[DefinitelyRet
   }
 
   override def visit(node: StmtNode, returns: List[DefinitelyReturns]): Compilation[DefinitelyReturns] = node match {
-    case StmtNode.ReturnNode(_, _) => Compilation.succeed(true)
+    case StmtNode.ReturnNode(_, _) => true.compiled
     case ExprNode.BlockNode(statements, _) =>
       assert(statements.length == returns.length)
 
       // Check that a return statement isn't followed by any other code. If we have a "definitely returns" at any
       // point before the last element, this is such a point.
-      if (returns.isEmpty) Compilation.succeed(false)
+      if (returns.isEmpty) false.compiled
       else {
         val returnIndex = returns.init.indexOf(true)
         if (returnIndex >= 0) {
           val firstDeadNode = statements(returnIndex + 1)
           Compilation.fail(DeadCode(firstDeadNode))
-        } else Compilation.succeed(returns.last)
+        } else returns.last.compiled
       }
     case ExprNode.IfElseNode(_, _, _, _) =>
       // Ignore the condition.
-      Compilation.succeed(returns.tail.forall(identity))
+      returns.tail.forall(identity).compiled
     case ExprNode.RepetitionNode(_, _, _) =>
       // Ignore the condition.
-      Compilation.succeed(returns.last)
+      returns.last.compiled
     case ExprNode.IterationNode(_, _, _) =>
       // Ignore the extractors.
-      Compilation.succeed(returns.last)
+      returns.last.compiled
     case _ => super.visit(node, returns)
   }
 }
@@ -89,6 +89,9 @@ object ReturnConstraints {
     *   a return statement.
     * - Constructions such as `if ({ return 0 }) a else b` are not allowed. Returning should not be
     *   possible from non-top-level expressions.
+    *
+    * These constraints should be verified before function transformation so that we can operate the transformation
+    * under tighter constraints.
     */
   def verify(body: StmtNode): Verification = {
     (

@@ -6,10 +6,10 @@ trait ExpressionVisitor[A] {
   type Result = Compilation[A]
 
   // Top-Level Expressions
-  def visit(expression: TopLevelExpression.Return)(value: A): Result
-  def visit(expression: TopLevelExpression.VariableDeclaration)(value: Option[A]): Result
-  def visit(expression: TopLevelExpression.Assignment)(value: A): Result
-  def visit(expression: TopLevelExpression.Construct)(arguments: List[A], superCall: Option[A]): Result
+  def visit(expression: Expression.Return)(value: A): Result
+  def visit(expression: Expression.VariableDeclaration)(value: A): Result
+  def visit(expression: Expression.Assignment)(value: A): Result
+  def visit(expression: Expression.Construct)(arguments: List[A], superCall: Option[A]): Result
 
   // Expressions
   def visit(expression: Expression.Block)(expressions: List[A]): Result
@@ -21,7 +21,7 @@ trait ExpressionVisitor[A] {
   def visit(expression: Expression.MapConstruction)(entries: List[(A, A)]): Result
   def visit(expression: Expression.UnaryOperation)(value: A): Result
   def visit(expression: Expression.BinaryOperation)(left: A, right: A): Result
-  def visit(expression: Expression.XaryOperation)(expressions: List[A]): Result
+  def visit(expression: Expression.XaryOperation)(operands: List[A]): Result
   def visit(expression: Expression.Call)(arguments: List[A]): Result
   def visit(expression: Expression.IfElse)(condition: A, onTrue: A, onFalse: A): Result
   def visit(expression: Expression.WhileLoop)(condition: A, body: A): Result
@@ -30,22 +30,22 @@ trait ExpressionVisitor[A] {
   /**
     * Invoked before an expressions's subtrees are visited. This can be used to set up contexts.
     */
-  def before: PartialFunction[TopLevelExpression, Unit] = PartialFunction.empty
+  def before: PartialFunction[Expression, Unit] = PartialFunction.empty
 }
 
 object ExpressionVisitor {
   /**
     * Visits the whole tree invoking begin* and visit* functions for every expression.
     */
-  final def visit[A](visitor: ExpressionVisitor[A])(expression: TopLevelExpression): Compilation[A] = {
+  final def visit[A](visitor: ExpressionVisitor[A])(expression: Expression): Compilation[A] = {
     val rec = visit(visitor) _
-    visitor.before.applyOrElse(expression, (_: TopLevelExpression) => ())
+    visitor.before.applyOrElse(expression, (_: Expression) => ())
     expression match {
       // Top-Level Expressions
-      case node@TopLevelExpression.Return(value, _) => rec(value).flatMap(visitor.visit(node))
-      case node@TopLevelExpression.VariableDeclaration(_, value, _) => value.map(rec).toCompiledOption.flatMap(visitor.visit(node))
-      case node@TopLevelExpression.Assignment(_, value, _) => rec(value).flatMap(visitor.visit(node))
-      case node@TopLevelExpression.Construct(_, arguments, withSuper, _) =>
+      case node@Expression.Return(value, _) => rec(value).flatMap(visitor.visit(node))
+      case node@Expression.VariableDeclaration(_, value, _) => rec(value).flatMap(visitor.visit(node))
+      case node@Expression.Assignment(_, value, _) => rec(value).flatMap(visitor.visit(node))
+      case node@Expression.Construct(_, arguments, withSuper, _) =>
         (arguments.map(rec).simultaneous, withSuper.map(rec).toCompiledOption).simultaneous.flatMap {
           case (arguments, superCall) => visitor.visit(node)(arguments, superCall)
         }

@@ -1,19 +1,41 @@
 package lore.compiler.semantics.expressions
 
 import lore.compiler.core.Position
-import lore.compiler.phases.verification.{LocalVariable, VirtualMember}
+import lore.compiler.semantics.{LocalVariable, VirtualMember}
 import lore.compiler.semantics.functions.CallTarget
-import lore.compiler.types.{ProductType, Type}
+import lore.compiler.semantics.structures.ClassDefinition
+import lore.compiler.types.{BasicType, ProductType, Type}
 
-trait Expression extends TopLevelExpression
+trait Expression {
+  def position: Position
+  def tpe: Type
+}
 
 object Expression {
   abstract class Apply(override val tpe: Type) extends Expression
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Top-level expressions.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  case class Return(value: Expression, position: Position) extends Expression.Apply(ProductType.UnitType)
+
+  case class VariableDeclaration(
+    variable: LocalVariable, value: Expression, position: Position,
+  ) extends Expression.Apply(ProductType.UnitType)
+
+  case class Assignment(
+    target: Expression.Access, value: Expression, position: Position,
+  ) extends Expression.Apply(ProductType.UnitType)
+
+  case class Construct(
+    definition: ClassDefinition, arguments: List[Expression], withSuper: Option[Expression],
+    position: Position,
+  ) extends Expression.Apply(definition.tpe)
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Block expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class Block(expressions: List[TopLevelExpression], position: Position) extends Expression {
+  case class Block(expressions: List[Expression], position: Position) extends Expression {
     override val tpe: Type = expressions.lastOption.map(_.tpe).getOrElse(ProductType.UnitType)
   }
 
@@ -24,16 +46,22 @@ object Expression {
     * A cross-cutting node trait signifying the possible access of a variable/property and thus the target
     * of an assignment.
     */
-  trait Access
+  sealed trait Access extends Expression {
+    def name: String
+  }
 
-  case class VariableAccess(variable: LocalVariable, position: Position) extends Expression.Apply(variable.tpe) with Access
-  case class MemberAccess(instance: Expression, member: VirtualMember, position: Position) extends Expression.Apply(member.tpe) with Access
+  case class VariableAccess(variable: LocalVariable, position: Position) extends Expression.Apply(variable.tpe) with Access {
+    override val name: String = variable.name
+  }
+  case class MemberAccess(instance: Expression, member: VirtualMember, position: Position) extends Expression.Apply(member.tpe) with Access {
+    override val name: String = member.name
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Literals and Value Constructors.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // TODO: In Scala 3, just use a sum type instead of Any. :)
-  case class Literal(value: Any, tpe: Type, position: Position) extends Expression
+  case class Literal(value: Any, tpe: BasicType, position: Position) extends Expression
   case class Tuple(values: List[Expression], position: Position) extends Expression {
     override val tpe: Type = if (values.isEmpty) ProductType.UnitType else ProductType(values.map(_.tpe))
   }
@@ -80,12 +108,12 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and loop expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class IfElse(condition: Expression, onTrue: TopLevelExpression, onFalse: TopLevelExpression, tpe: Type, position: Position) extends Expression
+  case class IfElse(condition: Expression, onTrue: Expression, onFalse: Expression, tpe: Type, position: Position) extends Expression
 
   trait Loop extends Expression {
-    def body: TopLevelExpression
+    def body: Expression
   }
-  case class WhileLoop(condition: Expression, body: TopLevelExpression, tpe: Type, position: Position) extends Loop
-  case class ForLoop(extractors: List[Extractor], body: TopLevelExpression, tpe: Type, position: Position) extends Loop
+  case class WhileLoop(condition: Expression, body: Expression, tpe: Type, position: Position) extends Loop
+  case class ForLoop(extractors: List[Extractor], body: Expression, tpe: Type, position: Position) extends Loop
   case class Extractor(variable: LocalVariable, collection: Expression)
 }

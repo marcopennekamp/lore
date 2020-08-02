@@ -1,9 +1,9 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.syntax.DeclNode
-import lore.compiler.core.Compilation.C
-import lore.compiler.core.{Compilation, Position}
+import lore.compiler.core.Compilation.{C, ToCompilationExtension}
+import lore.compiler.core.Position
 import lore.compiler.semantics.{TypeScope, TypeVariableScope}
+import lore.compiler.syntax.DeclNode
 import lore.compiler.types.{AnyType, NothingType, TypeExpressionEvaluator, TypeVariable}
 
 object TypeVariableDeclarationResolver {
@@ -14,7 +14,7 @@ object TypeVariableDeclarationResolver {
   def resolve(nodes: List[DeclNode.TypeVariableNode], parentScope: TypeScope): C[TypeVariableScope] = {
     // The fold ensures that the first type variable is registered before the second one is resolved, so that the first
     // one can be used as a bound of the second one, and so on.
-    val initial = (Compilation.succeed(new TypeVariableScope(parentScope)), 0)
+    val initial = (new TypeVariableScope(parentScope).compiled, 0)
     val (compilation, _) = nodes.foldLeft(initial) { case ((compilation, order), node) =>
       implicit val position: Position = node.position
       val nextCompilation = compilation.flatMap { implicit typeScope =>

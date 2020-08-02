@@ -1,16 +1,16 @@
 package lore.compiler.phases.transpilation
 
 import lore.compiler.CompilerOptions
-import lore.compiler.syntax.visitor.StmtVisitor
-import lore.compiler.core.Compilation.C
+import lore.compiler.core.Compilation
 import lore.compiler.semantics.Registry
+import lore.compiler.semantics.expressions.ExpressionVisitor
 import lore.compiler.semantics.functions.FunctionDefinition
 
 class FunctionTranspiler(function: FunctionDefinition, uniqueName: String)(implicit compilerOptions: CompilerOptions, registry: Registry) {
-  def transpile: C[String] = {
+  def transpile: Compilation[String] = {
     assert(!function.isAbstract)
     val parameterNames = function.parameters.map(_.asLocalVariable.transpiledName)
-    StmtVisitor.visit(new FunctionTranspilationVisitor())(function.body.get).map { chunk =>
+    ExpressionVisitor.visit(new FunctionTranspilationVisitor())(function.body.get).map { chunk =>
       val preamble = if (compilerOptions.runtimeLogging) {
         s"console.info(`Called function $uniqueName with input: (${parameterNames.map(name => "${" + name + "}").mkString(", ")})`);"
       } else ""

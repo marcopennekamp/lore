@@ -18,22 +18,22 @@ class VerificationPhase()(implicit registry: Registry) extends Phase[Unit] {
       registry.getMultiFunctions.values.map(MultiFunctionConstraints.verify).toList.simultaneous,
     ).simultaneous
 
-    // Type all function/constructor bodies.
-    val withTypedFunctions = withVerifiedConstraints.flatMap { _ =>
+    // Verify, type and transform all function/constructor bodies.
+    val withTransformedFunctions = withVerifiedConstraints.flatMap { _ =>
       (
         registry.getMultiFunctions.values.toList.map { mf =>
           mf.functions.map { function =>
-            FunctionVerification.verifyTypeTransform(function)
+            FunctionTransformation.transform(function)
           }.simultaneous
         }.simultaneous,
         registry.getTypeDefinitions.values.toList.filterType[ClassDefinition].map { definition =>
           definition.constructors.map { constructor =>
-            FunctionVerification.verifyTypeTransform(constructor, definition)
+            FunctionTransformation.transform(constructor, definition)
           }.simultaneous
         }.simultaneous,
       ).simultaneous
     }
 
-    withTypedFunctions.verification
+    withTransformedFunctions.verification
   }
 }

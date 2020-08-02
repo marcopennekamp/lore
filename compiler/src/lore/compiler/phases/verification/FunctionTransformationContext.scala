@@ -1,12 +1,12 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.semantics.Scope
+import lore.compiler.semantics.{BlockScope, FunctionScope, LocalVariable, Scope}
 import lore.compiler.semantics.functions.FunctionSignature
 
 /**
-  * A context for function verification passes, for example to hold local variable scopes.
+  * A context for function transformation passes, for example to hold local variable scopes.
   */
-class FunctionVerificationContext(signature: FunctionSignature) {
+class FunctionTransformationContext(signature: FunctionSignature) {
   private var scopes: List[Scope[LocalVariable]] = List(new FunctionScope(signature))
   def currentScope: Scope[LocalVariable] = scopes.head
   def openScope(): Unit = {

@@ -116,7 +116,7 @@ object Compilation {
   /**
     * An abbreviation for Compilation[A].
     */
-  type C[+A] = Compilation[A]
+  type C[+A] = Compilation[A] // TODO: Inline this and get rid of it. It only adds inconsistency.
 
   /**
     * An abbreviation for Compilation[Unit]. A verification is an operation that returns nothing of note when
@@ -229,5 +229,12 @@ object Compilation {
       case None => Compilation.succeed(None)
       case Some(compilation) => compilation.map(Some(_))
     }
+  }
+
+  implicit class ToCompilationExtension[A](value: A) {
+    /**
+      * Creates a succeeding compilation with the given value.
+      */
+    def compiled: Compilation[A] = Compilation.succeed(value)
   }
 }

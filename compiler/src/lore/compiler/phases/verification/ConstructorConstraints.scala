@@ -43,14 +43,14 @@ object ConstructorConstraints {
     // This is deliberately followed by a flatMap, because we don't want to check the graph parts of this verification
     // if not all continuations are in the right spot.
     val correctPlacement = definition.constructors.map { constructor =>
-      val statements = constructor.body.statements
+      val statements = constructor.bodyNode.statements
       val endsInContinuation = if (!statements.lastOption.exists(_.isInstanceOf[TopLevelExprNode.ContinuationNode])) {
         Compilation.fail(ContinuationRequired(definition, constructor))
       } else Verification.succeed
       // Visit all the other nodes except the last one (which should be a continuation) and check that they ARE NOT
       // a continuation.
       val noContinuationOtherwise = StmtVisitor.visit(new NoContinuationVisitor()) {
-        ExprNode.BlockNode(statements.dropRight(1))
+        ExprNode.BlockNode(statements.dropRight(1), constructor.bodyNode.position)
       }
       (endsInContinuation, noContinuationOtherwise).simultaneous
     }.simultaneous
@@ -65,7 +65,7 @@ object ConstructorConstraints {
       definition.constructors.foreach { constructor =>
         // The cast is now safe because we have previously verified that the last expression in the block is
         // a continuation.
-        val continuation = constructor.body.statements.last.asInstanceOf[TopLevelExprNode.ContinuationNode]
+        val continuation = constructor.bodyNode.statements.last.asInstanceOf[TopLevelExprNode.ContinuationNode]
         continuation match {
           case TopLevelExprNode.ConstructorCallNode(name, _, _) =>
             flowGraph.addEdge(constructor.name, name.getOrElse(definition.name))
@@ -110,7 +110,7 @@ object ConstructorConstraints {
         case _ => Verification.succeed
       }
     }
-    StmtVisitor.visit(visitor)(constructor.body)
+    StmtVisitor.visit(visitor)(constructor.bodyNode)
   }
 
 }

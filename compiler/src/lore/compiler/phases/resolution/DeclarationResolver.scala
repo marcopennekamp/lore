@@ -1,12 +1,11 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.syntax.{DeclNode, TypeDeclNode}
 import lore.compiler.core.Compilation.{C, Verification}
 import lore.compiler.core.{Compilation, CompilationException, Error}
-import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.compiler.phases.resolution.DeclarationResolver.{FunctionAlreadyExists, TypeAlreadyExists}
+import lore.compiler.phases.resolution.DeclarationResolver.TypeAlreadyExists
+import lore.compiler.semantics.functions.FunctionDefinition
 import lore.compiler.semantics.{Registry, TypeScope}
-import lore.compiler.semantics.structures.ClassDefinition
+import lore.compiler.syntax.{DeclNode, TypeDeclNode}
 import lore.compiler.types.Type
 
 import scala.collection.mutable
@@ -23,6 +22,8 @@ import scala.collection.mutable
   * turned into definitions, the DeclarationResolver builds a Registry object.
   */
 class DeclarationResolver {
+  // TODO: We could move all this state into the resolve function and make it implicit.
+
   private val typeDeclarations: mutable.HashMap[String, TypeDeclNode] = mutable.HashMap()
   private var aliasDeclarations: List[TypeDeclNode.AliasNode] = List.empty
   private val multiFunctionDeclarations: mutable.HashMap[String, List[DeclNode.FunctionNode]] = mutable.HashMap()
@@ -64,9 +65,9 @@ class DeclarationResolver {
   }
 
   /**
-    * Builds the registry from all the declarations.
+    * Builds the registry and body pool from all declarations.
     */
-  def buildRegistry(declarations: List[DeclNode]): C[Registry] = {
+  def resolve(declarations: List[DeclNode]): C[Registry] = {
     // Declare the registry as implicit now so that we don't have to break up the for-comprehension,
     // which sadly doesn't support implicit variable declarations.
     implicit lazy val registry: Registry = new Registry()
@@ -82,10 +83,19 @@ class DeclarationResolver {
       //       we will have to redesign Definition structures so that constructor and function bodies are optional when
       //       a definition has been declared as "external".
 
-      typeResolutionOrder <- dependencyGraph.computeTypeResolutionOrder()
+      // We do three separate passes over type declarations:
+      //  1. Resolve types.
+      //  2. Resolve class/label definitions.
+      //  3. Resolve constructors.
+      // This has the distinct advantage that we don't need to defer typings of parameters and members, as all types
+      // have been added to the registry by then, and we are not limited by the class definition not being available
+      // when we generate additional constructors.
+
+      typeResolutionOrder <- computeTypeResolutionOrder()
       _ <- resolveDeclaredTypesInOrder(typeResolutionOrder)
       _ <- resolveAliasTypes()
-      _ <- (resolveDeferredTypings(), resolveFunctions()).simultaneous
+      _ <- resolveTypeDefinitionsInOrder(typeResolutionOrder)
+      _ <- resolveMultiFunctions()
     } yield registry
   }
 
@@ -97,20 +107,35 @@ class DeclarationResolver {
   }
 
   /**
+    * Computes the correct order in which to resolve type declarations.
+    */
+  private def computeTypeResolutionOrder(): Compilation[List[TypeDeclNode.DeclaredNode]] = {
+    dependencyGraph.computeTypeResolutionOrder().map { names =>
+      if (names.head != "Any") {
+        throw CompilationException("Any should be the first type in the type resolution order.")
+      }
+
+      // With .tail we exclude Any.
+      names.tail.map { name =>
+        typeDeclarations(name) match {
+          case _: TypeDeclNode.AliasNode => throw CompilationException("Alias types should not be included in the type resolution order.")
+          case node: TypeDeclNode.DeclaredNode => node
+        }
+      }
+    }
+  }
+
+  /**
     * Resolve all declared types in the proper resolution order and register them with the Registry.
     */
-  private def resolveDeclaredTypesInOrder(typeResolutionOrder: List[String])(implicit registry: Registry): Verification = {
-    // With .tail, we exclude Any, since we don't need to add that to the registry, as it is already a part
-    // of the predefined types.
-    typeResolutionOrder.tail.map { typeName =>
-      assert(typeDeclarations.contains(typeName))
-      typeDeclarations(typeName) match {
-        case _: TypeDeclNode.AliasNode =>
-          throw CompilationException("At this point in the compilation step, an alias type should not be resolved.")
-        case node: TypeDeclNode.DeclaredNode =>
-          DeclaredTypeResolver.resolveDeclaredNode(node).map(registry.registerTypeDefinition)
-      }
-    }.simultaneous.verification
+  private def resolveDeclaredTypesInOrder(typeResolutionOrder: List[TypeDeclNode.DeclaredNode])(implicit registry: Registry): Verification = {
+    for {
+      types <- typeResolutionOrder.map {
+        case labelNode: TypeDeclNode.LabelNode => TypeResolver.resolve(labelNode)
+        case classNode: TypeDeclNode.ClassNode => TypeResolver.resolve(classNode)
+      }.simultaneous
+      _ = types.map(t => registry.registerType(t.name, t))
+    } yield ()
   }
 
   /**
@@ -131,57 +156,26 @@ class DeclarationResolver {
   }
 
   /**
-    * Resolves all typings that have been deferred until after all types are declared.
+    * Resolve all type definitions in the proper resolution order and register them with the Registry. This function
+    * guarantees that definitions are returned in the type resolution order.
     */
-  private def resolveDeferredTypings()(implicit registry: Registry): Verification = {
-    registry.getTypeDefinitions.values.map {
-      case definition: ClassDefinition => DeferredTypingResolver.resolveDeferredTypings(definition)
-      case _ => Verification.succeed // We do not have to verify any deferred typings for labels.
-    }.toList.simultaneous.verification
+  private def resolveTypeDefinitionsInOrder(typeResolutionOrder: List[TypeDeclNode.DeclaredNode])(implicit registry: Registry): Verification = {
+    for {
+      results <- typeResolutionOrder.map {
+        case labelNode: TypeDeclNode.LabelNode => LabelDefinitionResolver.resolve(labelNode)
+        case classNode: TypeDeclNode.ClassNode => ClassDefinitionResolver.resolve(classNode)
+      }.simultaneous
+      _ = results.map(registry.registerTypeDefinition)
+    } yield ()
   }
 
   /**
-    * Resolves and registers all functions. Also returns a compilation error if a function signature is not
-    * unique.
+    * Resolves and registers all multi-functions.
     */
-  private def resolveFunctions()(implicit registry: Registry): Verification = {
-    multiFunctionDeclarations.map { case (name, nodes) =>
-      for {
-        functions <- nodes.map { node =>
-          FunctionDeclarationResolver.resolveFunctionNode(node)
-        }.simultaneous
-        _ <- verifyFunctionsUnique(functions)
-      } yield {
-        val multiFunction = MultiFunctionDefinition(name, functions)
-        registry.registerMultiFunction(multiFunction)
-      }
+  private def resolveMultiFunctions()(implicit registry: Registry): Verification = {
+    multiFunctionDeclarations.map { case (_, nodes) =>
+      MultiFunctionDefinitionResolver.resolve(nodes).map(registry.registerMultiFunction)
     }.toList.simultaneous.verification
-  }
-
-  /**
-    * Verifies that all functions declared in the multi-function have a unique signature, which means that their
-    * input types aren't equally specific. If they are, multiple dispatch won't be able to differentiate between
-    * such two functions, and hence they can't be valid.
-    */
-  private def verifyFunctionsUnique(functions: List[FunctionDefinition]): Verification = {
-    // Of course, all functions added to the multi-function must have the same name. If that is not the case,
-    // there is something very wrong with the compiler.
-    if (functions.size > 1) {
-      functions.sliding(2).forall { case List(a, b) => a.name == b.name }
-    }
-
-    // Then verify that all functions have different signatures.
-    functions.map { function =>
-      // We decide "duplicity" based on the specificity two functions would have in a multi-function fit context.
-      // That is, if two functions are equally specific, they are effectively the same in the eyes of multiple
-      // dispatch. This is what we want to avoid by verifying that all functions are "unique".
-      val containsDuplicate = functions.filterNot(_ == function).exists(_.signature.isEquallySpecific(function.signature))
-      if (containsDuplicate) {
-        Compilation.fail(FunctionAlreadyExists(function))
-      } else {
-        Verification.succeed
-      }
-    }.simultaneous.verification
   }
 }
 

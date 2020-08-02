@@ -75,11 +75,11 @@ object ClassConstraints {
     } else Verification.succeed
   }
 
-  case class MemberAlreadyExistsInSuperclass(definition: ClassDefinition, member: MemberDefinition[Type]) extends Error(member) {
+  case class MemberAlreadyExistsInSuperclass(definition: ClassDefinition, member: MemberDefinition) extends Error(member) {
     override def message = s"The member ${member.name} is already declared in a superclass of class ${definition.name}."
   }
 
-  case class MemberDuplicateDeclaration(definition: ClassDefinition, member: MemberDefinition[Type]) extends Error(member) {
+  case class MemberDuplicateDeclaration(definition: ClassDefinition, member: MemberDefinition) extends Error(member) {
     override def message = s"The member ${member.name} is already declared twice in the class ${definition.name}."
   }
 

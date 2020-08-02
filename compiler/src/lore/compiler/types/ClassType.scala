@@ -3,12 +3,12 @@ package lore.compiler.types
 import lore.compiler.semantics.structures.ClassDefinition
 
 class ClassType(
-  override val supertype: Option[ClassType], val ownedByDeferred: Option[OwnedByDeferred], val isAbstract: Boolean
+  override val name: String, override val supertype: Option[ClassType], val isAbstract: Boolean,
 ) extends DeclaredType with DeclaredType.DefinitionProperty[ClassDefinition] {
   /**
-    * The type an instance of this class type must be owned by.
+    * Only entities of the ownedBy type may own a component of this class type.
     */
-  def ownedBy: Option[Type] = ownedByDeferred.map(_.tpe)
+  def ownedBy: Option[Type] = definition.ownedBy
 
   /**
     * Whether this class type represents an entity.

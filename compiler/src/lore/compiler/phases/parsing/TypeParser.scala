@@ -3,7 +3,7 @@ package lore.compiler.phases.parsing
 import fastparse.ScalaWhitespace._
 import fastparse._
 import lore.compiler.syntax._
-import lore.compiler.core.Fragment
+import lore.compiler.core.{Fragment, Position}
 
 class TypeParser(implicit fragment: Fragment) {
   import Node._
@@ -13,39 +13,41 @@ class TypeParser(implicit fragment: Fragment) {
 
   def typeExpression[_: P]: P[TypeExprNode] = {
     import PrecedenceParser._
-    P(Index ~ PrecedenceParser.parser(
+    PrecedenceParser.parser(
       operator = StringIn("|", "&", "->"),
       operand = atom,
       operatorMeta = Map(
-        "|" -> XaryOperator[TypeExprNode](1, TypeExprNode.SumNode(_)),
-        "&" -> XaryOperator[TypeExprNode](2, TypeExprNode.IntersectionNode(_)),
-        "->" -> BinaryOperator[TypeExprNode](3, TypeExprNode.MapNode(_, _)),
+        "|" -> XaryOperator[TypeExprNode](1, TypeExprNode.SumNode),
+        "&" -> XaryOperator[TypeExprNode](2, TypeExprNode.IntersectionNode),
+        "->" -> BinaryOperator[TypeExprNode](3, TypeExprNode.MapNode),
       ),
-    )).map(withIndex(identity _))
+    )
   }
 
   private def atom[_: P]: P[TypeExprNode] = {
-    P(Index ~ (unitType | productType | listType | componentType | nominalType | enclosedType)).map(withIndex(identity _))
+    P(unitType | productType | listType | componentType | nominalType | enclosedType)
   }
 
-  private def unitType[_: P]: P[TypeExprNode] = P("(" ~ ")").map(_ => TypeExprNode.UnitNode())
+  private def unitType[_: P]: P[TypeExprNode] = P(Index ~ "(" ~ ")").map(index => TypeExprNode.UnitNode(Position(fragment, index)))
 
   /**
     * The parser for product types doesn't support tuples of length 1 because of the ambiguity with the enclosedType
     * parser. Since length-1 tuple types are generally useless, we think this is fine as is.
     */
   private def productType[_: P]: P[TypeExprNode.ProductNode] = {
-    P("(" ~ typeExpression ~ ("," ~ typeExpression).rep(1) ~ ")").map { case (e, es) => TypeExprNode.ProductNode(e +: es.toList) }
+    P(Index ~ "(" ~ typeExpression ~ ("," ~ typeExpression).rep(1) ~ ")").map {
+      case (index, e, es) => TypeExprNode.ProductNode(e +: es.toList, Position(fragment, index))
+    }
   }
 
-  private def listType[_: P]: P[TypeExprNode.ListNode] = P("[" ~ typeExpression ~ "]").map(TypeExprNode.ListNode(_))
+  private def listType[_: P]: P[TypeExprNode.ListNode] = P(Index ~ "[" ~ typeExpression ~ "]").map(withIndex(TypeExprNode.ListNode))
 
-  private def componentType[_: P]: P[TypeExprNode.ComponentNode] = P("+" ~ identifier).map(TypeExprNode.ComponentNode(_))
+  private def componentType[_: P]: P[TypeExprNode.ComponentNode] = P(Index ~ "+" ~ identifier).map(withIndex(TypeExprNode.ComponentNode))
 
   /**
     * Parses a nominal type. Assigns the index itself because it's used by componentType.
     */
-  private def nominalType[_: P]: P[TypeExprNode.NominalNode] = P(Index ~ identifier).map(withIndex(TypeExprNode.NominalNode(_)))
+  private def nominalType[_: P]: P[TypeExprNode.NominalNode] = P(Index ~ identifier).map(withIndex(TypeExprNode.NominalNode))
 
   private def enclosedType[_: P]: P[TypeExprNode] = P("(" ~ typeExpression ~ ")")
 }

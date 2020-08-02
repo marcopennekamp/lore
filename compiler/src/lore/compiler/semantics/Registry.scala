@@ -1,9 +1,9 @@
 package lore.compiler.semantics
 
-import lore.compiler.core.Compilation.C
+import lore.compiler.core.Compilation.{C, ToCompilationExtension}
 import lore.compiler.core.{Compilation, CompilationException, Error, Position}
-import lore.compiler.semantics.Registry.{ConstructorNotFound, ExactFunctionNotFound, MultiFunctionNotFound, TypeNotFound}
-import lore.compiler.semantics.functions.{ConstructorDefinition, FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.semantics.Registry.{ExactFunctionNotFound, MultiFunctionNotFound, TypeNotFound}
+import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.semantics.structures._
 import lore.compiler.types._
 
@@ -72,8 +72,18 @@ class Registry {
     override protected def add(entry: NamedType): Unit = {
       throw new UnsupportedOperationException("You may not add types to the Registry via its TypeScope interface.")
     }
-    override protected def unknownEntry(name: String)(implicit position: Position): Error = TypeNotFound(name, position)
+    override protected def unknownEntry(name: String)(implicit position: Position): Error = TypeNotFound(name)
   }
+
+  /**
+    * Searches for a class type with the given name.
+    */
+  def getClassType(name: String): Option[ClassType] = getType(name).filter(_.isInstanceOf[ClassType]).map(_.asInstanceOf[ClassType])
+
+  /**
+    * Searches for a label type with the given name.
+    */
+  def getLabelType(name: String): Option[LabelType] = getType(name).filter(_.isInstanceOf[LabelType]).map(_.asInstanceOf[LabelType])
 
   /**
     * Registers the given type definition. Also registers its type automatically.
@@ -116,10 +126,10 @@ class Registry {
   /**
     * Gets a multi-function with the given name. If it cannot be found, the operation fails with a compilation error.
     */
-  def resolveMultiFunction(name: String, position: Position): C[MultiFunctionDefinition] = {
+  def resolveMultiFunction(name: String)(implicit position: Position): C[MultiFunctionDefinition] = {
     getMultiFunction(name) match {
-      case None => Compilation.fail(MultiFunctionNotFound(name, position))
-      case Some(mf) => Compilation.succeed(mf)
+      case None => Compilation.fail(MultiFunctionNotFound(name))
+      case Some(mf) => mf.compiled
     }
   }
 
@@ -127,51 +137,26 @@ class Registry {
     * Gets an exact function with the given name and parameter types. If it cannot be found, the operation fails
     * with a compilation error.
     */
-  def resolveExactFunction(name: String, types: List[Type], position: Position): C[FunctionDefinition] = {
-    resolveMultiFunction(name, position).flatMap { mf =>
+  def resolveExactFunction(name: String, types: List[Type])(implicit position: Position): C[FunctionDefinition] = {
+    resolveMultiFunction(name).flatMap { mf =>
       mf.exact(ProductType(types)) match {
-        case None => Compilation.fail(ExactFunctionNotFound(name, types, position))
-        case Some(f) => Compilation.succeed(f)
+        case None => Compilation.fail(ExactFunctionNotFound(name, types))
+        case Some(f) => f.compiled
       }
-    }
-  }
-
-  /**
-    * Resolves a constructor of a class with the given name.
-    */
-  def resolveConstructor(className: String, qualifier: Option[String], position: Position): C[ConstructorDefinition] = {
-    getType(className).filter(_.isInstanceOf[ClassType]).map(_.asInstanceOf[ClassType]) match {
-      case None => Compilation.fail(TypeNotFound(className, position))
-      case Some(tpe) => resolveConstructor(tpe.definition, qualifier, position)
-    }
-  }
-
-  /**
-    * Resolves a constructor of the given class.
-    */
-  def resolveConstructor(definition: ClassDefinition, qualifier: Option[String], position: Position): C[ConstructorDefinition] = {
-    val constructorName = qualifier.getOrElse(definition.name)
-    definition.getConstructor(constructorName) match {
-      case None => Compilation.fail(ConstructorNotFound(definition.name, qualifier, position))
-      case Some(constructor) => Compilation.succeed(constructor)
     }
   }
 }
 
 object Registry {
-  case class TypeNotFound(name: String, pos: Position) extends Error(pos) {
+  case class TypeNotFound(name: String)(implicit position: Position) extends Error(position) {
     override def message = s"The type $name does not exist in the current scope."
   }
 
-  case class MultiFunctionNotFound(name: String, pos: Position) extends Error(pos) {
+  case class MultiFunctionNotFound(name: String)(implicit position: Position) extends Error(position) {
     override def message = s"The multi-function $name does not exist in the current scope."
   }
 
-  case class ExactFunctionNotFound(name: String, types: List[Type], pos: Position) extends Error(pos) {
+  case class ExactFunctionNotFound(name: String, types: List[Type])(implicit position: Position) extends Error(position) {
     override def message = s"The exact function $name[${types.mkString(", ")}] does not exist in the current scope."
-  }
-
-  case class ConstructorNotFound(typeName: String, qualifier: Option[String], pos: Position) extends Error(pos) {
-    override def message = s"The constructor $typeName${qualifier.mkString(".")} does not exist in the class $typeName."
   }
 }

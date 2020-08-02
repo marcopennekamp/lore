@@ -6,12 +6,12 @@ trait ExpressionVerificationVisitor extends ExpressionVisitor[Unit] {
   /**
     * Verifies any given expression. The default implementation succeeds.
     */
-  def verify(expression: TopLevelExpression): Verification = Verification.succeed
+  def verify(expression: Expression): Verification = Verification.succeed
   
-  override def visit(expression: TopLevelExpression.Return)(value: Unit): Result = verify(expression)
-  override def visit(expression: TopLevelExpression.VariableDeclaration)(value: Option[Unit]): Result = verify(expression)
-  override def visit(expression: TopLevelExpression.Assignment)(value: Unit): Result = verify(expression)
-  override def visit(expression: TopLevelExpression.Construct)(arguments: List[Unit], superCall: Option[Unit]): Result = verify(expression)
+  override def visit(expression: Expression.Return)(value: Unit): Result = verify(expression)
+  override def visit(expression: Expression.VariableDeclaration)(value: Unit): Result = verify(expression)
+  override def visit(expression: Expression.Assignment)(value: Unit): Result = verify(expression)
+  override def visit(expression: Expression.Construct)(arguments: List[Unit], superCall: Option[Unit]): Result = verify(expression)
   override def visit(expression: Expression.Block)(expressions: List[Unit]): Result = verify(expression)
   override def visit(expression: Expression.VariableAccess): Result = verify(expression)
   override def visit(expression: Expression.MemberAccess)(instance: Unit): Result = verify(expression)

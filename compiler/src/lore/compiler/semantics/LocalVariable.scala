@@ -1,8 +1,7 @@
-package lore.compiler.phases.verification
+package lore.compiler.semantics
 
-import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.phases.transpilation.TranspiledNames
-import lore.compiler.semantics.{BasicScope, Scope}
+import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.types.Type
 
 case class LocalVariable(name: String, tpe: Type, isMutable: Boolean) extends Scope.Entry {

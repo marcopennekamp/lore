@@ -1,8 +1,9 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.core
-import lore.compiler.core.{Compilation, CompilationException, Position, Error}
-import lore.compiler.core.Compilation.C
+import lore.compiler.core.Compilation.{C, ToCompilationExtension}
+import lore.compiler.core.{Compilation, CompilationException, Error, Position}
+import lore.compiler.semantics
+import lore.compiler.semantics.VirtualMember
 import lore.compiler.types._
 
 import scala.collection.immutable.HashMap
@@ -22,7 +23,7 @@ object MemberExplorer {
     members(tpe).flatMap { members =>
       members.get(name) match {
         case None => Compilation.fail(MemberNotFound(name, tpe, position))
-        case Some(member) => Compilation.succeed(member)
+        case Some(member) => member.compiled
       }
     }
   }
@@ -39,7 +40,7 @@ object MemberExplorer {
           cache = cache + (tpe -> map)
           map
         }
-      case Some(map) => Compilation.succeed(map)
+      case Some(map) => map.compiled
     }
   }
 
@@ -51,11 +52,11 @@ object MemberExplorer {
         // It also additionally defines members based on its "owned by" type.
         underlying.ownedBy.map(MemberExplorer.members).toCompiledOption.map { ownedByMembers =>
           val name = underlying.definition.name
-          ownedByMembers.getOrElse(HashMap.empty: MemberMap) + (name -> VirtualMember(name, underlying, isComponent = true))
+          ownedByMembers.getOrElse(HashMap.empty: MemberMap) + (name -> semantics.VirtualMember(name, underlying, isComponent = true))
         }
       case classType: ClassType =>
         // A class type obviously has its own members.
-        Compilation.succeed(HashMap(classType.definition.members.map(m => m.name -> m.asVirtualMember): _*))
+        HashMap(classType.definition.members.map(m => m.name -> m.asVirtualMember): _*).compiled
 
       // Complex cases (recursion).
       case tv: TypeVariable =>
@@ -79,7 +80,7 @@ object MemberExplorer {
           members.groupBy(_.name).map {
             case (_, List(member)) =>
               // A single member is always valid!
-              Compilation.succeed(member.name -> member)
+              (member.name -> member).compiled
             case (name, members) if members.length >= 2 =>
               // TODO: Instead of differentiating between mutable and immutable members here, we could pick our
               //       algorithm based on whether a member is accessed for a read or a write. On the other hand,
@@ -95,7 +96,7 @@ object MemberExplorer {
                 // such type exists, we have a true ambiguity.
                 members.find(m1 => members.forall(m2 => m2.tpe <= m1.tpe)) match {
                   case None => Compilation.fail(ImmutableAmbiguousTypeMember(name, tpe, position))
-                  case Some(member) => Compilation.succeed(name -> member)
+                  case Some(member) => (name -> member).compiled
                 }
               }
             case _ => throw CompilationException("This case should never be reached.")
@@ -103,7 +104,7 @@ object MemberExplorer {
         }
 
       // Default case.
-      case _ => Compilation.succeed(HashMap.empty)
+      case _ => (HashMap.empty: MemberMap).compiled
     }
   }
 

@@ -1,11 +1,9 @@
-package lore.compiler.phases.verification
+package lore.compiler.semantics
 
 import lore.compiler.semantics.structures.MemberDefinition
 import lore.compiler.types.Type
 
 import scala.util.hashing.MurmurHash3
-
-// TODO: How do we later compile virtual members? Is the name and type information enough?
 
 /**
   * A member of a given type. This can either be a declared member or an implicitly accessible member.
@@ -17,7 +15,7 @@ import scala.util.hashing.MurmurHash3
   */
 case class VirtualMember(
   name: String, tpe: Type, isComponent: Boolean = false, isMutable: Boolean = false,
-  underlying: Option[MemberDefinition[Type]] = None,
+  underlying: Option[MemberDefinition] = None,
 ) {
   override def equals(obj: Any): Boolean = obj match {
     case VirtualMember(name2, tpe2, _, _, _) => name == name2 && tpe == tpe2

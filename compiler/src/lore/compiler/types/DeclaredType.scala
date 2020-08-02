@@ -8,14 +8,9 @@ import lore.compiler.semantics.structures.DeclaredTypeDefinition
   */
 trait DeclaredType extends NamedType {
   /**
-    * The definition associated with this type.
-    */
-  def definition: DeclaredTypeDefinition
-
-  /**
     * The name of the declared type.
     */
-  def name: String = definition.name
+  def name: String
 
   /**
     * The supertype of the declared type.
@@ -29,6 +24,11 @@ trait DeclaredType extends NamedType {
     case None => this
     case Some(tpe) => tpe.rootSupertype
   }
+
+  /**
+    * The definition associated with this type.
+    */
+  def definition: DeclaredTypeDefinition
 
   /**
     * Returns the set of explicitly declared immediate subtypes, for example direct subclasses or direct
