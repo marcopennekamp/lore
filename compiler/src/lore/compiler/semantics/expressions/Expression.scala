@@ -6,7 +6,7 @@ import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.semantics.structures.ClassDefinition
 import lore.compiler.types.{BasicType, ProductType, Type}
 
-trait Expression {
+sealed trait Expression {
   def position: Position
   def tpe: Type
 }

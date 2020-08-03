@@ -9,20 +9,6 @@ import lore.compiler.semantics.{Registry, TypeScope}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.StmtVisitor
 
-// TODO: Maybe we should introduce two separate ASTs: The first one would be created by the parser and only
-//       carry the position as immutable "state", while the second one would carry the other kinds of state
-//       filled during the verification phase. THe FunctionVerificationVisitor wouldn't simply mutate state
-//       of the AST but actually transform nodes of the first AST into the second AST. This can then also be
-//       used to apply transformations in one swoop, allowing us to be extra sure that the transformation result
-//       can actually be used by the parent. As it stands now, the burden lies with transformations to ensure
-//       that they are not affecting the inferred type of the parent, for example.
-//       Even more, we might be able to throw away some information only needed during verification, typing,
-//       and transformation, omitting it from the second AST. This kind of intermediate representation would
-//       remove the transpilation further from the actual syntax of the language. For example, constructor calls
-//       and function calls (both syntactically SimpleCallNodes) could be differentiated, which would result in
-//       a cleaner implementation of the transpiler. We could also remove some nodes outright, such as transforming
-//       "greater than" expressions into "less than" expressions by flipping the arguments.
-
 /**
   * For a given function or constructor, builds a semantic expression tree from the body's abstract syntax tree.
   * It infers and checks expression types and checks all other constraints on expressions of that function's body.
@@ -69,13 +55,41 @@ object FunctionTransformation {
   }
 
   /**
-   * Verifies that the function's output type is compatible with the type of the body.
-   */
+    * Verifies that the function's output type is compatible with the type of the body. If the body type is not
+    * compatible, it might be the case that all paths of the body's last expression return a valid value. In such
+    * a case, the function is valid as well, because we can guarantee at compile-time that the right kind of value
+    * is returned before the end of the body is reached. This special case is also handled by this verification.
+    */
   private def verifyOutputType(signature: FunctionSignature, body: Expression): Verification = {
-    if (body.tpe <= signature.outputType) {
+    if (body.tpe <= signature.outputType || allPathsReturn(body)) {
       Verification.succeed
     } else {
       Verification.fromErrors(List(IllegallyTypedBody(signature, body)))
+    }
+  }
+
+  /**
+    * Whether all paths that could be taken during the evaluation of the expression definitely end in a return.
+    * If that is the case, and such an expression is the last expression in a function, we can be sure that the
+    * function returns the correct value regardless of the type of the actual expression.
+    *
+    * We only look at the last expression of a function block to decide whether the returns suffice. That is only
+    * valid because we combine it with dead code analysis and dead code resulting in an error. A function like the
+    * following thus could never be valid:
+    *   function foo(): Int = {
+    *     return 5
+    *     'You fool!'
+    *   }
+    */
+  private def allPathsReturn(expression: Expression): Boolean = {
+    expression match {
+      case Expression.Return(_, _) => true
+      case Expression.Block(expressions, _) => expressions.lastOption.exists(allPathsReturn)
+      case Expression.IfElse(_, onTrue, onFalse, _, _) => allPathsReturn(onTrue) && allPathsReturn(onFalse)
+
+      // Loops aren't guaranteed to run even once and so cannot guarantee that all paths end in a return.
+      // Hence Expression.WhileLoop and Expression.ForLoop will also result in false.
+      case _ => false
     }
   }
 }

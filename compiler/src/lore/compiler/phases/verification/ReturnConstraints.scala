@@ -61,14 +61,15 @@ private class ReturnAllowedApplicator()
           case ExprNode.ExtractorNode(_, collection, _) => visit(collection, false)
         }.simultaneous,
         visit(body, isReturnAllowed),
-        ).simultaneous.verification
+      ).simultaneous.verification
     case _ => super.handleMatch(node, false)
   }
 
-  def verify(body: StmtNode): Verification =
+  def verify(body: StmtNode): Verification = {
     // At the top level of the function, we allow a return, of course. This is propagated to any children that can
     // be statements, but quickly gets stomped when an expression is expected.
     visit(body, true)
+  }
 }
 
 object ReturnConstraints {
