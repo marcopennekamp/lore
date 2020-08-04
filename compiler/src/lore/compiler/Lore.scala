@@ -13,7 +13,7 @@ import scala.util.Using
 object Lore {
   val pyramid = List(
     fragment("pyramid.collections", Path.of("pyramid", "collections.lore")),
-    fragment("pyramid.comparisons", Path.of("pyramid", "comparisons.lore")),
+    fragment("pyramid.core", Path.of("pyramid", "core.lore")),
     fragment("pyramid.io", Path.of("pyramid", "io.lore")),
     fragment("pyramid.math", Path.of("pyramid", "math.lore")),
     fragment("pyramid.string", Path.of("pyramid", "string.lore")),

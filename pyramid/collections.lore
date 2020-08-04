@@ -1,4 +1,5 @@
 function append(list: [A], element: B): [A] where A, B <: A = dynamic[[A]]('Lore.values.list.append', list, element)
+// TODO: Rename to size to have a consistent approach to collection size? Map size should also be called size.
 function length(list: [A]): Int where A = dynamic[Int]('Lore.values.list.length', list)
 function get(list: [A], index: Int): A where A = dynamic[A]('Lore.values.list.get', list, index)
 

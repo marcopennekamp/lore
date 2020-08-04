@@ -1,10 +1,4 @@
 /**
- * Converts any Lore value to a string using Javascripts's native stringifier. You can specialize this function to
- * stringify your own custom types. This function is used by library functions such as io.println.
- */
-function toString(value: Any): String = dynamic[String]('Lore.values.toString', value)
-
-/**
  * The string value of a string is simply its identity.
  */
 function toString(value: String): String = value
