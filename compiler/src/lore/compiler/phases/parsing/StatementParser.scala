@@ -4,6 +4,7 @@ import fastparse.ScalaWhitespace._
 import fastparse._
 import lore.compiler.syntax._
 import lore.compiler.core.{Fragment, Position}
+import lore.compiler.syntax.ExprNode.StringLiteralNode
 
 class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
   import Node._
@@ -221,7 +222,16 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
       .map {
         case (index, List()) => ExprNode.StringLiteralNode("", Position(fragment, index))
         // This can either be a single string literal or any expression enclosed as such: '$expr'.
-        case (_, List(expression)) => expression
+        case (index, List(expression)) => expression match {
+          case literal: StringLiteralNode =>
+            // One unfortunate side effect of immutable positions is that we can't easily change the position of
+            // an expression. The 'content' parser parses a string without the enclosing '' being factored in for
+            // the index. So a string 'abc' at the beginning of a file would start at index 1 instead of 0. We
+            // reconstruct this for string literals. Expressions aren't as easily changed with a new position, and
+            // as such we accept that an expression such as '$value' starts at index 2, after the $.
+            StringLiteralNode(literal.value, Position(fragment, index))
+          case _ => expression
+        }
         case (index, strings) => ExprNode.ConcatenationNode(strings, Position(fragment, index))
       }
   }
