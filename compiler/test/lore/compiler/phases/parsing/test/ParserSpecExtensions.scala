@@ -2,14 +2,17 @@ package lore.compiler.phases.parsing.test
 
 import fastparse.ScalaWhitespace._
 import fastparse._
+import lore.compiler.core.Fragment
 import lore.compiler.phases.parsing.Space
 import lore.compiler.test.BaseSpec
 import org.scalatest.Assertion
 
 trait ParserSpecExtensions[Result] { base: BaseSpec =>
-  def parser[_: P]: P[Result]
+  def parser[_: P](implicit fragment: Fragment): P[Result]
 
   implicit class CheckParseExtension(source: String) {
+    private implicit val fragment: Fragment = Fragment("test", source)
+
     private def parse[T](onSuccess: Result => T, onFailure: String => T): T = {
       def file[_: P] = P(Space.WL ~ parser ~ Space.WL ~ End)
       fastparse.parse(source, file(_)) match {

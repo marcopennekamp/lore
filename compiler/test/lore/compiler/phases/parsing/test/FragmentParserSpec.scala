@@ -7,8 +7,7 @@ import lore.compiler.phases.parsing.FragmentParser
 import lore.compiler.test.BaseSpec
 
 class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNode]] {
-  implicit private val fragment: Fragment = Fragment("Test", "")
-  override def parser[_: P]: P[List[DeclNode]] = new FragmentParser().fullFragment
+  override def parser[_: P](implicit fragment: Fragment): P[List[DeclNode]] = new FragmentParser().fullFragment
 
   import TestNodes._
 

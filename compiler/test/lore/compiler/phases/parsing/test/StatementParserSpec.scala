@@ -5,11 +5,9 @@ import lore.compiler.syntax._
 import lore.compiler.core.Fragment
 import lore.compiler.phases.parsing.{StatementParser, TypeParser}
 import lore.compiler.test.BaseSpec
-import org.scalactic.Equality
 
 class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
-  implicit private val fragment: Fragment = Fragment("Test", "")
-  override def parser[_: P]: P[StmtNode] = new StatementParser(new TypeParser()).statement
+  override def parser[_: P](implicit fragment: Fragment): P[StmtNode] = new StatementParser(new TypeParser()).statement
 
   import TestNodes._
 
@@ -257,7 +255,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     )
   }
 
-  it should "assign the correct indices" in {
+  it should "assign the correct indices (tuple)" in {
     inside("(a + b, a * c, x < 5.3)".parsed) {
       case tuple: ExprNode.TupleNode =>
         tuple.position.index shouldEqual 0
@@ -274,6 +272,9 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
             comp.right.position.index shouldEqual 19
         }
     }
+  }
+
+  it should "assign the correct indices (if-else)" in {
     inside("if (i <= 25) { i += 1 } else { i -= 1 }".parsed) {
       case ifElse: ExprNode.IfElseNode =>
         ifElse.position.index shouldEqual 0
@@ -304,7 +305,9 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
             }
         }
     }
+  }
 
+  it should "assign the correct indices (variable declaration)" in {
     inside("let position: Position3D = Position3D.from2D(5.5, 6.7)".parsed) {
       case decl: TopLevelExprNode.VariableDeclarationNode =>
         decl.position.index shouldEqual 0
@@ -319,7 +322,9 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
             }
         }
     }
+  }
 
+  it should "assign the correct indices (fixed function call)" in {
     inside("applyDot.fixed[Dot, +Health](dot, e)".parsed) {
       case call: ExprNode.FixedFunctionCallNode =>
         call.position.index shouldEqual 0
@@ -334,7 +339,9 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
             e.position.index shouldEqual 34
         }
     }
+  }
 
+  it should "assign the correct indices (map construction)" in {
     inside("%{ a -> %{ 'test' -> 'me' }, b -> %{ 'test' -> 'well $c' } }".parsed) {
       case map: ExprNode.MapNode =>
         map.position.index shouldEqual 0

@@ -7,10 +7,9 @@ import lore.compiler.phases.parsing.TypeParser
 import lore.compiler.test.BaseSpec
 
 class TypeParserSpec extends BaseSpec with ParserSpecExtensions[TypeExprNode] {
-  import TestNodes._
+  override def parser[_: P](implicit fragment: Fragment): P[TypeExprNode] = new TypeParser().typeExpression
 
-  implicit private val fragment: Fragment = Fragment("Test", "")
-  override def parser[_: P]: P[TypeExprNode] = new TypeParser().typeExpression
+  import TestNodes._
 
   private val A = Type.Nominal("A")
   private val B = Type.Nominal("B")
