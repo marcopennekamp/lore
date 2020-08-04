@@ -6,6 +6,7 @@ export interface TupleValue extends LoreValue {
   lore$type: ProductType
 }
 
+// TODO: Consider exporting the API with some more descriptive name. As it stands it's hard to import the API in, say, maps.ts.
 export const api = {
   create(array: Array<any>, type: ProductType): TupleValue {
     return { array, lore$type: type }

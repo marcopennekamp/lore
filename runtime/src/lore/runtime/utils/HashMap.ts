@@ -32,22 +32,22 @@ export class HashMap<K, V> implements Iterable<MapEntry<K, V>> {
   /**
    * A bitmask used to cudgel hashes down to the right size.
    */
-  private mask!: number
+  private _mask!: number
 
   /**
    * The current size of the hash map.
    */
-  private size!: number
+  private _size!: number
 
   /**
    * The maximum size of the hash map when considering load factor.
    */
-  private maxSize!: number
+  private _maxSize!: number
 
   /**
    * The individual entries of the hash map.
    */
-  private bins!: Array<MapEntry<K, V>>
+  private _bins!: Array<MapEntry<K, V>>
 
   constructor(hash: HashFunction<K>, equals: EqualsFunction<K>) {
     this.hash = hash
@@ -56,10 +56,10 @@ export class HashMap<K, V> implements Iterable<MapEntry<K, V>> {
   }
 
   private init(cap: number): void {
-    this.mask = cap - 1
-    this.size = 0
-    this.maxSize = cap * HashMap.LOAD_FACTOR
-    this.bins = new Array(cap)
+    this._mask = cap - 1
+    this._size = 0
+    this._maxSize = cap * HashMap.LOAD_FACTOR
+    this._bins = new Array(cap)
   }
 
   [Symbol.iterator]() {
@@ -70,7 +70,7 @@ export class HashMap<K, V> implements Iterable<MapEntry<K, V>> {
    * Creates an iterator that goes through all entries of the map.
    */
   *entries(): IterableIterator<MapEntry<K, V>> {
-    const bins = this.bins
+    const bins = this._bins
     for (let i = 0; i < bins.length; i += 1) {
       const entry = bins[i]
       if (entry) {
@@ -87,7 +87,7 @@ export class HashMap<K, V> implements Iterable<MapEntry<K, V>> {
    * @param f
    */
   forEach(f: (v: V, k: K) => void): void {
-    const bins = this.bins
+    const bins = this._bins
     for (let i = 0; i < bins.length; i += 1) {
       const entry = bins[i]
       if (entry) {
@@ -108,7 +108,7 @@ export class HashMap<K, V> implements Iterable<MapEntry<K, V>> {
    */
   has(key: K): boolean {
     const i = this.find(key)
-    return i >= 0 && this.bins[i] !== undefined
+    return i >= 0 && this._bins[i] !== undefined
   }
 
   /**
@@ -128,8 +128,15 @@ export class HashMap<K, V> implements Iterable<MapEntry<K, V>> {
   private getOrElseInternal(key: K, fallback?: V): V | undefined {
     const i = this.find(key)
     if (i < 0) return fallback
-    const bin = this.bins[i]
+    const bin = this._bins[i]
     return bin ? bin.value : fallback
+  }
+
+  /**
+   * The current number of entries stored in the hash map.
+   */
+  size(): number {
+    return this._size
   }
 
   /**
@@ -138,20 +145,20 @@ export class HashMap<K, V> implements Iterable<MapEntry<K, V>> {
   set(key: K, value: V): void {
     let i = this.find(key)
     if (i >= 0) {
-      const bin = this.bins[i]
+      const bin = this._bins[i]
       if (bin) {
         bin.value = value
         return
       }
     }
 
-    if (this.size > this.maxSize) {
+    if (this._size > this._maxSize) {
       this.resize()
       i = this.find(key)
     }
 
-    this.bins[i] = { key, value }
-    this.size += 1
+    this._bins[i] = { key, value }
+    this._size += 1
   }
 
   /**
@@ -159,15 +166,15 @@ export class HashMap<K, V> implements Iterable<MapEntry<K, V>> {
    */
   delete(key: K): boolean {
     let i = this.find(key)
-    const bins = this.bins
+    const bins = this._bins
     if (i >= 0 && !bins[i]) {
       return false
     }
 
     // Delete the entry at the given index and shift all other entries back.
     // TODO: Can we achieve this without a while(true) loop?
-    this.size -= 1
-    const m = this.mask
+    this._size -= 1
+    const m = this._mask
     let j = i
     let k: number
     while (true) {
@@ -186,8 +193,8 @@ export class HashMap<K, V> implements Iterable<MapEntry<K, V>> {
    * Finds the entry with the given key or returns -1.
    */
   protected find(key: K): number {
-    const m = this.mask
-    const bins = this.bins
+    const m = this._mask
+    const bins = this._bins
     const equals = this.equals
     let binsToCheck = m // Technically this is binsToCheck - 1 to save an addition.
     let h = this.hash(key) & m
@@ -205,8 +212,8 @@ export class HashMap<K, V> implements Iterable<MapEntry<K, V>> {
    * Doubles the size of this map to accommodate more entries.
    */
   protected resize(): void {
-    const src = this.bins
-    const cap = (this.mask + 1) * 2
+    const src = this._bins
+    const cap = (this._mask + 1) * 2
     this.init(cap)
     for (let i = 0; i < src.length; i += 1) {
       const entry = src[i]

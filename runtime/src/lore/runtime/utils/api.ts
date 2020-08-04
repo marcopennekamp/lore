@@ -22,7 +22,7 @@ export default {
   typeMap: {
     create<V>(): HashMap<Type, V> {
       return new HashMap<Type, V>(
-        (type) => type.hash, // TODO: We could inline this and change the signature of the map implementation.
+        (type) => type.hash,
         areEqual,
       )
     },
@@ -37,7 +37,6 @@ export default {
     },
     missingImplementation(functionName: string, parameterType: Type | string, argumentType: Type | string) {
       throw new Error(`The abstract function ${functionName}${parameterType} is missing an implementation for ${argumentType}.`);
-
     },
   },
 }

@@ -105,15 +105,19 @@ export function unorderedHashWithSeed<A extends Hashed>(array: Array<A>, seed: n
   return finalize(h, i)
 }
 
+export function numberHash(value: number, seed: number): number {
+  let h = seed
+  h = mixLast(h, value)
+  return finalize(h, 1)
+}
+
 /**
  * Hashes a single hashed value. If your values can belong to several different "kinds" all distributed in the same
  * space, such as different classes with the same underlying attribute e1, you can use the seed to differentiate
  * these kinds of values.
  */
 export function singleHash<A extends Hashed>(e1: A, seed: number): number {
-  let h = seed
-  h = mixLast(h, e1.hash)
-  return finalize(h, 1)
+  return numberHash(e1.hash, seed)
 }
 
 /**
