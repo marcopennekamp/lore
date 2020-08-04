@@ -64,7 +64,16 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     transpileArrayBasedValue(expression, RuntimeApi.values.list.create, values)
   }
 
-  override def visit(expression: MapConstruction)(entries: List[(TranspiledChunk, TranspiledChunk)]): Transpilation = default(expression)
+  override def visit(expression: MapConstruction)(entries: List[(TranspiledChunk, TranspiledChunk)]): Transpilation = {
+    val entryChunks = entries.map { case (keyChunk, valueChunk) =>
+      TranspiledChunk.combined(List(keyChunk, valueChunk)) {
+        case List(keyExpr, valueExpr) => s"[$keyExpr, $valueExpr]"
+      }
+    }
+    // The extra arguments are passed to the create function of the map and represent the hash and equals methods used
+    // by the hash map. We cannot reference these from the runtime because we can't import them there!
+    transpileArrayBasedValue(expression, RuntimeApi.values.map.create, entryChunks, extra = "hash, areEqual,")
+  }
 
   override def visit(expression: UnaryOperation)(value: TranspiledChunk): Transpilation = {
     val operatorString = expression.operator match {
@@ -204,12 +213,15 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
   /**
     * Transpiles a xary-constructed value that is created using an API function wrapped around an array of parts.
     */
-  private def transpileArrayBasedValue(expression: Expression, createApiFunction: String, values: List[TranspiledChunk]): Transpilation = {
+  private def transpileArrayBasedValue(
+    expression: Expression, createApiFunction: String, values: List[TranspiledChunk], extra: String = "",
+  ): Transpilation = {
     val chunk = RuntimeTypeTranspiler.transpile(expression.tpe).flatMap { typeExpression =>
       TranspiledChunk.combined(values) { values =>
         s"""$createApiFunction(
            |  [${values.mkString(",")}],
            |  $typeExpression,
+           |  $extra
            |)""".stripMargin
         // TODO: For the runtime type, don't we need to take types based on the actual values at run-time, not based on
         //       the inferred type??? This is a big problem for lists and such.
