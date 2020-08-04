@@ -1,9 +1,8 @@
 ### TODO
 
-- Turn all pos: Position parameters (on errors and such) into implicit parameters!
-
 NEXT:
 - Finish transpilation and verification for the current MVL constructs.
+- THINK: We need to make a fundamental decision: Are list and map types decided at compile-time or at run-time? So, for example, if we have a list of type `[Animal]` but it only has elements of type `Cat`, is the actual type of the list `[Animal]` or `[Cat]`? It seems like it should be the former, but the latter would be more useful, wouldn't it?  
 - Then handle further parametric types stuff.
 
 Parametric types:

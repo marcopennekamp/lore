@@ -2,7 +2,7 @@ import { api as list } from './list.ts'
 import { api as object } from './object.ts'
 import { api as tuple } from './tuple.ts'
 import { api as map } from './map.ts'
-import { numberHash, pairHash, stringHash } from '../utils/hash.ts'
+import { numberHash, stringHash } from '../utils/hash.ts'
 
 export default {
   // Value APIs.
