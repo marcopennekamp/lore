@@ -12,8 +12,10 @@ case class Position(fragment: Fragment, index: Index) {
 
   /**
     * The pretty index which is used for printing the position.
+    *
+    * This is a lazy value because it has heavy implications on parsing performance.
     */
-  val prettyIndex: String = fragment.input.prettyIndex(index)
+  lazy val prettyIndex: String = fragment.input.prettyIndex(index)
 
   /**
     * The line number of the position as a 1-based index.
