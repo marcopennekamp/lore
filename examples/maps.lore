@@ -1,0 +1,6 @@
+action test() {
+  const map = %{ 'a' -> 0, 'b' -> 1, 'c' -> 2 }
+  for (entry <- map) {
+    println('${first(entry)} is ${second(entry)}')
+  }
+}
