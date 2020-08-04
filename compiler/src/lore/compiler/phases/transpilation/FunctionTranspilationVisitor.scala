@@ -1,13 +1,13 @@
 package lore.compiler.phases.transpilation
 
 import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, Error}
+import lore.compiler.core.{Compilation, CompilationException, Error}
 import lore.compiler.phases.transpilation.Transpilation.Transpilation
 import lore.compiler.phases.transpilation.TranspiledChunk.JsCode
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.functions.{DynamicCallTarget, FunctionInstance}
-import lore.compiler.types.{BasicType, ProductType}
+import lore.compiler.types.{BasicType, ListType, MapType, ProductType}
 
 case class UnsupportedTranspilation(expression: Expression) extends Error(expression) {
   override def message = s"The Lore compiler doesn't yet support the transpilation of ${expression.getClass.getSimpleName}."
@@ -54,14 +54,14 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
 
   override def visit(expression: Tuple)(values: List[TranspiledChunk]): Transpilation = {
     if (expression.tpe == ProductType.UnitType) {
-      Transpilation.expression(s"${LoreApi.varTuple}.unit")
+      Transpilation.expression(RuntimeApi.values.tuple.unit)
     } else {
-      transpileArrayBasedValue(expression, s"${LoreApi.varTuple}.create", values)
+      transpileArrayBasedValue(expression, RuntimeApi.values.tuple.create, values)
     }
   }
 
   override def visit(expression: ListConstruction)(values: List[TranspiledChunk]): Transpilation = {
-    transpileArrayBasedValue(expression, s"${LoreApi.varList}.create", values)
+    transpileArrayBasedValue(expression, RuntimeApi.values.list.create, values)
   }
 
   override def visit(expression: MapConstruction)(entries: List[(TranspiledChunk, TranspiledChunk)]): Transpilation = default(expression)
@@ -133,12 +133,18 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
   }
 
   override def visit(loop: ForLoop)(extractors: List[TranspiledChunk], body: TranspiledChunk): Transpilation = {
-    val loopShell = loop.extractors.zip(extractors).map { case (extractor, chunk) =>
-      (inner: String) =>
-        s"""${chunk.statements}
-           |${LoreApi.varList}.forEach(${chunk.expression.get}, ${extractor.variable.transpiledName} => {
-           |  $inner
-           |});""".stripMargin
+    val loopShell = loop.extractors.zip(extractors).map {
+      case (extractor, chunk) =>
+        val forEach = extractor.collection.tpe match {
+          case ListType(_) => RuntimeApi.values.list.forEach
+          case MapType(_, _) => RuntimeApi.values.map.forEach
+          case _ => throw CompilationException("Only lists and maps can be used as collections in a for loop.")
+        }
+        (inner: String) =>
+          s"""${chunk.statements}
+             |$forEach(${chunk.expression.get}, ${extractor.variable.transpiledName} => {
+             |  $inner
+             |});""".stripMargin
     }.foldRight(identity: String => String) { case (enclose, function) => function.andThen(enclose) }
     transpileLoop(loop, loopShell, body)
   }
@@ -156,7 +162,7 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
       val bodyCode = body.expression.map { e =>
         varResult.map { v =>
           s"""$statements
-             |${LoreApi.varList}.append($v, $e);
+             |${RuntimeApi.values.list.append}($v, $e);
              |""".stripMargin
         } getOrElse {
           s"""$statements
@@ -172,7 +178,7 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
       val varResult = nameProvider.createName()
       val typeChunk = RuntimeTypeTranspiler.transpile(loop.tpe)
       val resultVarDeclaration =
-        s"""const $varResult = ${LoreApi.varList}.create(
+        s"""const $varResult = ${RuntimeApi.values.list.create}(
            |  [],
            |  ${typeChunk.expression.get},
            |);""".stripMargin

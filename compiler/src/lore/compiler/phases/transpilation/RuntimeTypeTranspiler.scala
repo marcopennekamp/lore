@@ -8,35 +8,35 @@ object RuntimeTypeTranspiler {
     * Transpiles the given type to its runtime representation.
     */
   def transpile(rootType: Type)(implicit nameProvider: TemporaryNameProvider): TranspiledChunk = {
-    val apiPrefix = s"${LoreApi.varTypes}."
+    val typesApi = RuntimeApi.types
     val variables = Type.variables(rootType).declarationOrder
     val variableNames = variables.map(tv => (tv, nameProvider.createName())).toMap
 
     def rec(tpe: Type): String = {
       tpe match {
         case tv: TypeVariable => variableNames(tv)
-        case _ => apiPrefix + (tpe match {
-          case AnyType => "any"
-          case NothingType => "nothing"
-          case BasicType.Real => "real"
-          case BasicType.Int => "int"
-          case BasicType.Boolean => "boolean"
-          case BasicType.String => "string"
-          case ProductType.UnitType => s"unit"
-          case d: DeclaredType => s"declared('${d.name}')"
-          case IntersectionType(types) => s"intersection([${types.map(rec).mkString(", ")}])"
-          case SumType(types) => s"sum([${types.map(rec).mkString(", ")}])"
-          case ProductType(types) => s"product([${types.map(rec).mkString(", ")}])"
-          case ComponentType(underlying) => s"component(${rec(underlying)})"
-          case ListType(element) => s"list(${rec(element)})"
-          case MapType(key, value) => s"map(${rec(key)}, ${rec(value)})"
-        })
+        case _ => tpe match {
+          case AnyType => typesApi.any
+          case NothingType => typesApi.nothing
+          case BasicType.Real => typesApi.real
+          case BasicType.Int => typesApi.int
+          case BasicType.Boolean => typesApi.boolean
+          case BasicType.String => typesApi.string
+          case ProductType.UnitType => typesApi.unit
+          case d: DeclaredType => ??? // s"declared('${d.name}')"
+          case IntersectionType(types) => s"${typesApi.intersection}([${types.map(rec).mkString(", ")}])"
+          case SumType(types) => s"${typesApi.sum}([${types.map(rec).mkString(", ")}])"
+          case ProductType(types) => s"${typesApi.product}([${types.map(rec).mkString(", ")}])"
+          case ComponentType(underlying) => s"${typesApi.component}(${rec(underlying)})"
+          case ListType(element) => s"${typesApi.list}(${rec(element)})"
+          case MapType(key, value) => s"${typesApi.map}(${rec(key)}, ${rec(value)})"
+        }
       }
     }
 
     val variableConstructions = variables.map { tv =>
       val varTypeVariable = variableNames(tv)
-      s"const $varTypeVariable = ${apiPrefix}variable('${tv.name}', ${rec(tv.lowerBound)}, ${rec(tv.upperBound)});"
+      s"const $varTypeVariable = ${typesApi.variable}('${tv.name}', ${rec(tv.lowerBound)}, ${rec(tv.upperBound)});"
     }
     TranspiledChunk.chunk(variableConstructions, rec(rootType))
   }

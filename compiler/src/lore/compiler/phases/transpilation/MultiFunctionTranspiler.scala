@@ -127,7 +127,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     */
   private def prepareDispatchCache(printer: PrintStream): Unit = {
     if (shouldUseDispatchCache) {
-      printer.println(s"const $varDispatchCache = ${LoreApi.varTypeMap}.create();")
+      printer.println(s"const $varDispatchCache = ${RuntimeApi.utils.typeMap.create}();")
     }
   }
 
@@ -146,19 +146,19 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   private def transpileArgumentTypeGathering(printer: PrintStream): Unit = {
     // Single unit functions are the best.
     if (isSingleUnitFunction) {
-      printer.println(s"const $varArgumentType = ${LoreApi.varTypes}.unit;")
+      printer.println(s"const $varArgumentType = ${RuntimeApi.types.unit};")
       return
     }
 
     // If we can unpack the product types, the generated code is very simple.
     if (canUnpackInputProduct) {
       assert(jsParameterNames.size == 1)
-      printer.println(s"const $varArgumentType = ${LoreApi.varTypes}.typeOf(${jsParameterNames.head});")
+      printer.println(s"const $varArgumentType = ${RuntimeApi.types.typeOf}(${jsParameterNames.head});")
       return
     }
 
     // If we don't use the cache, there is no reason to hash this transient product type.
-    val productConstructor = if (shouldUseDispatchCache) "product" else "unsafe.unhashedProduct"
+    val productConstructor = if (shouldUseDispatchCache) RuntimeApi.types.product else RuntimeApi.types.unsafe.unhashedProduct
 
     // If we are using rest parameters, we will have to gather the argument type with a loop.
     if (usingRestParameters) {
@@ -167,17 +167,17 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
       printer.println(
         s"""const $varArgumentTypes = new Array($varArgs.length);
            |for (let i = 0; i < $varArgs.length; i += 1) {
-           |  $varArgumentTypes[i] = ${LoreApi.varTypes}.typeOf($varArgs[i]);
+           |  $varArgumentTypes[i] = ${RuntimeApi.types.typeOf}($varArgs[i]);
            |}
-           |const $varArgumentType = ${LoreApi.varTypes}.$productConstructor($varArgumentTypes);
+           |const $varArgumentType = $productConstructor($varArgumentTypes);
            |""".stripMargin
       )
       return
     }
 
     // Otherwise, we know the number of arguments exactly.
-    val typeofCalls = jsParameterNames.map(parameter => s"${LoreApi.varTypes}.typeOf($parameter)").mkString(", ")
-    printer.println(s"const $varArgumentType = ${LoreApi.varTypes}.$productConstructor([$typeofCalls])")
+    val typeofCalls = jsParameterNames.map(parameter => s"${RuntimeApi.types.typeOf}($parameter)").mkString(", ")
+    printer.println(s"const $varArgumentType = $productConstructor([$typeofCalls])")
   }
 
   /**
@@ -220,8 +220,8 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
         // is constant. If the parameter type isn't polymorphic now, it won't ever be, so we can skip all that testing
         // for polymorphy at run-time. Conversely, if the type is polymorphic now, we can also skip the test and jump
         // into type allocations.
-        val fitsName = if (Type.isPolymorphic(node.signature.inputType)) "fitsPolymorphic" else "fitsMonomorphic"
-        printer.println(s"const ${varFits(index)} = ${LoreApi.varTypes}.$fitsName($varArgumentType, $varRightType);")
+        val fitsFunction = if (Type.isPolymorphic(node.signature.inputType)) RuntimeApi.types.fitsPolymorphic else RuntimeApi.types.fitsMonomorphic
+        printer.println(s"const ${varFits(index)} = $fitsFunction($varArgumentType, $varRightType);")
       }
     }
 
@@ -229,11 +229,11 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
       val successors = node.diSuccessors.toList.zipWithIndex
       printer.println(s"if ($varFitsX) {")
       val addFunction = if (!node.isAbstract) {
-        s"""if ($varTarget) ${LoreApi.varError}.ambiguousCall('${mf.name}', $varArgumentType);
+        s"""if ($varTarget) ${RuntimeApi.utils.error.ambiguousCall}('${mf.name}', $varArgumentType);
            |$varTarget = ${functionJsNames(node.value)};
            |""".stripMargin
       } else {
-        s"${LoreApi.varUtils}.error.missingImplementation('${mf.name}', '${node.signature.inputType}', $varArgumentType);"
+        s"${RuntimeApi.utils.error.missingImplementation}('${mf.name}', '${node.signature.inputType}', $varArgumentType);"
       }
       if (successors.nonEmpty) {
         transpileFitsConsts(successors)
@@ -273,7 +273,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     indexedRoots.foreach { case (root, index) => transpileDispatchNode(root, varFits(index)) }
 
     printer.println()
-    printer.println(s"if (!$varTarget) ${LoreApi.varError}.emptyFit('${mf.name}', $varArgumentType);")
+    printer.println(s"if (!$varTarget) ${RuntimeApi.utils.error.emptyFit}('${mf.name}', $varArgumentType);")
     if (shouldUseDispatchCache) {
       printer.println(s"$varDispatchCache.set($varArgumentType, $varTarget);")
     }
