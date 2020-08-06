@@ -1,6 +1,6 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.core.Compilation.{C, ToCompilationExtension, Verification}
+import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.core.{Compilation, Error, Position}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionSignature
@@ -78,7 +78,7 @@ object ExpressionVerification {
     * Verifies that the types of the given expressions are numeric and then infers the result type of an arithmetic
     * operation.
     */
-  def inferArithmeticOperationType(left: Expression, right: Expression): C[Type] = {
+  def inferArithmeticOperationType(left: Expression, right: Expression): Compilation[Type] = {
     areNumeric(left, right).map { _ =>
       if (left.tpe == BasicType.Real || right.tpe == BasicType.Real) BasicType.Real else BasicType.Int
     }
@@ -87,7 +87,7 @@ object ExpressionVerification {
   /**
     * Infers the result type of a loop based on the given body expression.
     */
-  def inferLoopType(body: Expression): C[Type] = {
+  def inferLoopType(body: Expression): Compilation[Type] = {
     if (body.tpe == ProductType.UnitType) {
       ProductType.UnitType.compiled
     } else {

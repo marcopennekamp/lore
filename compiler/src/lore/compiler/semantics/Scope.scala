@@ -1,7 +1,7 @@
 package lore.compiler.semantics
 
-import lore.compiler.core.{Compilation, Position, Error}
-import lore.compiler.core.Compilation.{C, ToCompilationExtension, Verification}
+import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
+import lore.compiler.core.{Compilation, Error, Position}
 import lore.compiler.semantics.Scope.{AlreadyDeclared, UnknownEntry}
 
 import scala.collection.mutable
@@ -35,7 +35,7 @@ trait Scope[A <: Scope.Entry] {
     * Resolves an entry with the given name from the closest scope. If it cannot be found, we return a
     * compilation error.
     */
-  def resolve(name: String)(implicit position: Position): C[A] = {
+  def resolve(name: String)(implicit position: Position): Compilation[A] = {
     get(name) match {
       case None => Compilation.fail(unknownEntry(name))
       case Some(entry) => entry.compiled

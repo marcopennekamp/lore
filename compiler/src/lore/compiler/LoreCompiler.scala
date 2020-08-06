@@ -1,7 +1,6 @@
 package lore.compiler
 
-import lore.compiler.core.Compilation.C
-import lore.compiler.core.Fragment
+import lore.compiler.core.{Compilation, Fragment}
 import lore.compiler.phases.parsing.ParsingPhase
 import lore.compiler.phases.resolution.ResolutionPhase
 import lore.compiler.phases.transpilation.TranspilationPhase
@@ -15,7 +14,7 @@ class LoreCompiler(val sources: List[Fragment], val options: CompilerOptions) {
   /**
     * Compiles the given sources, either resulting in a list of errors and warnings or a completed compilation.
     */
-  def compile(): C[(Registry, String)] = {
+  def compile(): Compilation[(Registry, String)] = {
     implicit val options: CompilerOptions = this.options
     for {
       // Phase 1: Parse source files into a list of fragments.

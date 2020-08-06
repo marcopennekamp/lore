@@ -1,6 +1,6 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.core.Compilation.{C, ToCompilationExtension}
+import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException, Position}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
@@ -33,7 +33,7 @@ object StatementTransformation {
     */
   def transformComparison(
     functionName: String, basicOperator: BinaryOperator, left: Expression, right: Expression, position: Position,
-  )(implicit registry: Registry): C[Expression] = {
+  )(implicit registry: Registry): Compilation[Expression] = {
     (left.tpe, right.tpe) match {
       case (_: BasicType, _: BasicType) => Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position).compiled
       case _ => ExpressionBuilder.multiFunctionCall(functionName, List(left, right), position).map { call =>

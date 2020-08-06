@@ -1,6 +1,6 @@
 package lore.compiler.semantics
 
-import lore.compiler.core.Compilation.{C, ToCompilationExtension}
+import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.semantics.Registry.{ExactFunctionNotFound, MultiFunctionNotFound, TypeNotFound}
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
@@ -60,7 +60,7 @@ class Registry {
     *
     * @param position The position where the type name occurs, to be used for error building.
     */
-  def resolveType(name: String)(implicit position: Position): C[NamedType] = {
+  def resolveType(name: String)(implicit position: Position): Compilation[NamedType] = {
     typeScope.resolve(name)
   }
 
@@ -130,7 +130,7 @@ class Registry {
   /**
     * Gets a multi-function with the given name. If it cannot be found, the operation fails with a compilation error.
     */
-  def resolveMultiFunction(name: String)(implicit position: Position): C[MultiFunctionDefinition] = {
+  def resolveMultiFunction(name: String)(implicit position: Position): Compilation[MultiFunctionDefinition] = {
     getMultiFunction(name) match {
       case None => Compilation.fail(MultiFunctionNotFound(name))
       case Some(mf) => mf.compiled
@@ -141,7 +141,7 @@ class Registry {
     * Gets an exact function with the given name and parameter types. If it cannot be found, the operation fails
     * with a compilation error.
     */
-  def resolveExactFunction(name: String, types: List[Type])(implicit position: Position): C[FunctionDefinition] = {
+  def resolveExactFunction(name: String, types: List[Type])(implicit position: Position): Compilation[FunctionDefinition] = {
     resolveMultiFunction(name).flatMap { mf =>
       mf.exact(ProductType(types)) match {
         case None => Compilation.fail(ExactFunctionNotFound(name, types))

@@ -114,11 +114,6 @@ object Compilation {
   def succeedInfo[A](a: A)(infos: InfoFeedback*): Compilation[A] = Result(a, infos.toList)
 
   /**
-    * An abbreviation for Compilation[A].
-    */
-  type C[+A] = Compilation[A] // TODO: Inline this and get rid of it. It only adds inconsistency.
-
-  /**
     * An abbreviation for Compilation[Unit]. A verification is an operation that returns nothing of note when
     * it is successful and fails with a set of errors if it isn't.
     */

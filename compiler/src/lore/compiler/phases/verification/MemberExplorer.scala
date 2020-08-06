@@ -1,6 +1,6 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.core.Compilation.{C, ToCompilationExtension}
+import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.semantics
 import lore.compiler.semantics.VirtualMember
@@ -19,7 +19,7 @@ object MemberExplorer {
   /**
     * Finds a virtual member with the given name within the given type.
     */
-  def find(name: String, tpe: Type)(implicit position: Position): C[VirtualMember] = {
+  def find(name: String, tpe: Type)(implicit position: Position): Compilation[VirtualMember] = {
     members(tpe).flatMap { members =>
       members.get(name) match {
         case None => Compilation.fail(MemberNotFound(name, tpe, position))
@@ -33,7 +33,7 @@ object MemberExplorer {
     * which should be the point in the code where the member is accessed. The result of this function is cached so
     * that we don't have to recompute the member map the next time it is accessed.
     */
-  def members(tpe: Type)(implicit position: Position): C[MemberMap] = {
+  def members(tpe: Type)(implicit position: Position): Compilation[MemberMap] = {
     cache.get(tpe) match {
       case None =>
         membersOf(tpe).map { map =>
@@ -44,7 +44,7 @@ object MemberExplorer {
     }
   }
 
-  private def membersOf(tpe: Type)(implicit position: Position): C[MemberMap] = {
+  private def membersOf(tpe: Type)(implicit position: Position): Compilation[MemberMap] = {
     tpe match {
       // Base cases (no recursion).
       case ComponentType(underlying) =>

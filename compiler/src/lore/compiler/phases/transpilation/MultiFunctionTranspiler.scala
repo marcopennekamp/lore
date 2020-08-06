@@ -3,7 +3,7 @@ package lore.compiler.phases.transpilation
 import java.io.{ByteArrayOutputStream, PrintStream}
 
 import lore.compiler.CompilerOptions
-import lore.compiler.core.Compilation.C
+import lore.compiler.core.Compilation
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.types.{ProductType, Type}
@@ -20,7 +20,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
 
   private implicit val nameProvider: TemporaryNameProvider = new TemporaryNameProvider(s"${mf.name}__")
 
-  def transpile: C[String] = {
+  def transpile: Compilation[String] = {
     val out = new ByteArrayOutputStream()
     val tryCompilation = Using(new PrintStream(out, true, "utf-8")) { printer =>
       mf.functions.filterNot(_.isAbstract).zipWithIndex.map { case (function, index) =>

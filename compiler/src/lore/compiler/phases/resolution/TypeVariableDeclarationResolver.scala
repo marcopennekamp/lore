@@ -1,7 +1,7 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.core.Compilation.{C, ToCompilationExtension}
-import lore.compiler.core.Position
+import lore.compiler.core.Compilation.ToCompilationExtension
+import lore.compiler.core.{Compilation, Position}
 import lore.compiler.semantics.{TypeScope, TypeVariableScope}
 import lore.compiler.syntax.DeclNode
 import lore.compiler.types.{AnyType, NothingType, TypeExpressionEvaluator, TypeVariable}
@@ -11,7 +11,7 @@ object TypeVariableDeclarationResolver {
     * Resolves a type variable declaration list in order, ensuring that the order property of the type variables is
     * set correctly.
     */
-  def resolve(nodes: List[DeclNode.TypeVariableNode], parentScope: TypeScope): C[TypeVariableScope] = {
+  def resolve(nodes: List[DeclNode.TypeVariableNode], parentScope: TypeScope): Compilation[TypeVariableScope] = {
     // The fold ensures that the first type variable is registered before the second one is resolved, so that the first
     // one can be used as a bound of the second one, and so on.
     val initial = (new TypeVariableScope(parentScope).compiled, 0)
@@ -30,7 +30,7 @@ object TypeVariableDeclarationResolver {
   /**
     * Resolves a single type variable declaration in the context of the given type scope.
     */
-  def resolve(node: DeclNode.TypeVariableNode, order: Int)(implicit typeScope: TypeScope): C[TypeVariable] = {
+  def resolve(node: DeclNode.TypeVariableNode, order: Int)(implicit typeScope: TypeScope): Compilation[TypeVariable] = {
     for {
       lowerBound <- node.lowerBound.map(TypeExpressionEvaluator.evaluate).toCompiledOption
       upperBound <- node.upperBound.map(TypeExpressionEvaluator.evaluate).toCompiledOption

@@ -3,8 +3,7 @@ package lore.compiler
 import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.file.{Files, Path}
 
-import lore.compiler.core.Compilation.C
-import lore.compiler.core.{Errors, FeedbackPrinter, Fragment, Result}
+import lore.compiler.core.{Compilation, Errors, FeedbackPrinter, Fragment, Result}
 import lore.compiler.semantics.Registry
 import lore.compiler.types.Type
 
@@ -28,7 +27,7 @@ object Lore {
   /**
     * Compiles a Lore program from a single source.
     */
-  def fromSingleSource(fragment: Fragment): C[(Registry, String)] = {
+  def fromSingleSource(fragment: Fragment): Compilation[(Registry, String)] = {
     val options = CompilerOptions(
       runtimeLogging = false,
     )
@@ -39,7 +38,7 @@ object Lore {
   /**
     * Compiles a Lore program from a named example within the Lore examples directory.
     */
-  def fromExample(name: String): C[(Registry, String)] = {
+  def fromExample(name: String): Compilation[(Registry, String)] = {
     val path = Path.of("examples", s"$name.lore")
     fromSingleSource(fragment(name, path))
   }
@@ -48,7 +47,7 @@ object Lore {
     * Stringifies the compilation result in a user-palatable way, discussing errors or the successful result in
     * text form.
     */
-  def stringifyCompilationInfo(result: C[Registry]): String = {
+  def stringifyCompilationInfo(result: Compilation[Registry]): String = {
     val out = new ByteArrayOutputStream()
     Using(new PrintStream(out, true, "utf-8")) { printer =>
       // Print either errors or the compilation result to the output stream.

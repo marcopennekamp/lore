@@ -1,6 +1,6 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.core.Compilation.{C, Verification}
+import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, CompilationException, Error}
 import lore.compiler.phases.resolution.DeclarationResolver.TypeAlreadyExists
 import lore.compiler.semantics.functions.FunctionDefinition
@@ -67,7 +67,7 @@ class DeclarationResolver {
   /**
     * Builds the registry and body pool from all declarations.
     */
-  def resolve(declarations: List[DeclNode]): C[Registry] = {
+  def resolve(declarations: List[DeclNode]): Compilation[Registry] = {
     // Declare the registry as implicit now so that we don't have to break up the for-comprehension,
     // which sadly doesn't support implicit variable declarations.
     implicit lazy val registry: Registry = new Registry()

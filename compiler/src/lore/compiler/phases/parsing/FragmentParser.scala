@@ -2,7 +2,7 @@ package lore.compiler.phases.parsing
 
 import fastparse.ScalaWhitespace._
 import fastparse._
-import lore.compiler.core.Compilation.{C, ToCompilationExtension}
+import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, Error, Fragment, Position}
 import lore.compiler.syntax._
 
@@ -27,7 +27,7 @@ class FragmentParser(implicit fragment: Fragment) {
   /**
     * Attempts to parse the fragment and returns the parsing result.
     */
-  lazy val parsed: C[List[DeclNode]] = {
+  lazy val parsed: Compilation[List[DeclNode]] = {
     fastparse.parse(fragment.input, fullFragment(_)) match {
       case Parsed.Failure(_, _, extra) =>
         val message = s"Parsing failure: ${extra.trace().aggregateMsg}"
