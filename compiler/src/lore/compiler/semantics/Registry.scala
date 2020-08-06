@@ -17,6 +17,7 @@ class Registry {
     * The list of named types declared in the whole project, including predefined types such as Int and Real.
     */
   private val types = mutable.HashMap[String, NamedType](Type.predefinedTypes.toList: _*)
+  private var typeRegistrationOrder = Vector[String]()
   private val typeDefinitions = mutable.HashMap[String, DeclaredTypeDefinition]()
   private val multiFunctions = mutable.HashMap[String, MultiFunctionDefinition]()
   val declaredTypeHierarchy = new DeclaredTypeHierarchy()
@@ -31,6 +32,7 @@ class Registry {
       throw CompilationException(s"The type $name has already been registered.")
     }
     types.put(name, tpe)
+    typeRegistrationOrder = typeRegistrationOrder :+ name
 
     // If this is a declared type, also register it in the declared type hierarchy.
     tpe match {
@@ -43,6 +45,11 @@ class Registry {
     * Returns all registered types, accessible via an immutable map view.
     */
   def getTypes: MapView[String, NamedType] = types.view
+
+  /**
+    * Returns all registered types in their order of registration.
+    */
+  def getTypesInOrder: Vector[NamedType] = typeRegistrationOrder.map(types(_))
 
   /**
     * Whether a type with the given name has been registered.
