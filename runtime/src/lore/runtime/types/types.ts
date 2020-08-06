@@ -42,14 +42,12 @@ export interface XaryType extends Type {
 export interface IntersectionType extends XaryType { }
 
 export function intersection(types: Array<Type>): IntersectionType {
-  // TODO: Actually hash this...
   return { kind: Kind.Intersection, types, hash: unorderedHashWithSeed(types, 0x74a2317d) }
 }
 
 export interface SumType extends XaryType { }
 
 export function sum(types: Array<Type>): SumType {
-  // TODO: Actually hash this...
   return { kind: Kind.Sum, types, hash: unorderedHashWithSeed(types, 0x85f5fe35) }
 }
 
@@ -69,10 +67,10 @@ export function unhashedProduct(types: Array<Type>): ProductType {
 
 
 export interface ComponentType extends Type {
-  underlying: Type // TODO: Change to ClassType.
+  underlying: ClassType
 }
 
-export function component(underlying: Type): ComponentType {
+export function component(underlying: ClassType): ComponentType {
   if (underlying.kind !== Kind.Class) {
     throw Error("A component type must have an underlying class type.")
   }
@@ -96,4 +94,19 @@ export interface MapType extends Type {
 
 export function map(key: Type, value: Type): MapType {
   return { kind: Kind.Map, key, value, hash: pairHash(key, value, 0xbeda0294) }
+}
+
+
+export interface ClassType extends Type {
+  name: string
+  supertype?: ClassType
+  ownedBy?: Type
+  componentTypes: Array<ComponentType>
+  isEntity: Boolean
+}
+
+export function classType(
+  name: string, supertype: ClassType | undefined, ownedBy: Type | undefined, componentTypes: Array<ComponentType>, isEntity: boolean,
+): ClassType {
+  return { kind: Kind.Class, name, supertype, ownedBy, componentTypes, isEntity, hash: stringHashWithSeed(name, 0x38ba128e) }
 }

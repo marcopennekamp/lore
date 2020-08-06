@@ -4,6 +4,7 @@ import { fits, fitsMonomorphic, fitsPolymorphic } from './fit.ts'
 import {
   any,
   boolean,
+  classType,
   component,
   int,
   intersection,
@@ -16,7 +17,7 @@ import {
   sum,
   unhashedProduct,
   unit,
-  variable
+  variable,
 } from './types.ts'
 import { typeOf } from './typeof.ts'
 
@@ -38,6 +39,7 @@ export default {
   component,
   list,
   map,
+  classType,
 
   // Unsafe constructors.
   unsafe: {

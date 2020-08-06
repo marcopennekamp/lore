@@ -23,6 +23,7 @@ object RuntimeApi {
     val component = s"$base.component"
     val list = s"$base.list"
     val map = s"$base.map"
+    val classType = s"$base.classType"
 
     // Unsafe constructors.
     object unsafe {

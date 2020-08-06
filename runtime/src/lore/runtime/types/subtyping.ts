@@ -38,7 +38,7 @@ export function isSubtype(t1: Type, t2: Type): boolean {
     case Kind.Label:
       // TODO: Implement these two cases
       // d1.supertype.exists(isSubtype(_, d2))
-      // { case (e1: ClassType, p2: ComponentType) if e1.isEntity => e1.componentTypes.exists(p1 => isSubtype(p1, p2)) },
+      // { case (e1: ClassType, p2: ComponentType) if e1.isEntity => e1.componentTypes.exists(p1 => isSubtype(p1.underlying, p2.underlying)) },
       break
     case Kind.Intersection:
       if (t2.kind === Kind.Intersection) {
@@ -58,6 +58,7 @@ export function isSubtype(t1: Type, t2: Type): boolean {
       if (t2.kind === Kind.Product && productSubtypeProduct(<ProductType> t1, <ProductType> t2)) return true
       break
     case Kind.Component:
+      // TODO: New rule: { case (p1: ComponentType, t2) => p1.underlying.ownedBy.exists(ownedBy => isSubtype(ownedBy, t2)) },
       if (
         t2.kind === Kind.Component &&
         isSubtype((<ComponentType> t1).underlying, (<ComponentType> t2).underlying)
