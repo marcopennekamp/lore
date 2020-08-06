@@ -20,7 +20,10 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
 
   private def default(expression: Expression): Transpilation = Compilation.fail(UnsupportedTranspilation(expression))
 
-  override def visit(expression: Return)(value: TranspiledChunk): Transpilation = default(expression)
+  override def visit(expression: Return)(value: TranspiledChunk): Transpilation = {
+    val ret = s"return ${value.expression.get};"
+    Transpilation.chunk(value.statements :: ret :: Nil, RuntimeApi.values.tuple.unit)
+  }
 
   override def visit(expression: VariableDeclaration)(value: TranspiledChunk): Transpilation = {
     val variable = expression.variable

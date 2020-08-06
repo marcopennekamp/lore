@@ -1,0 +1,25 @@
+function f1(): Int = {
+  if ('x' == 'y') return 5 else return 10
+}
+
+function f2(): Int = {
+  return if (true) 1 else 2
+}
+
+// TODO: This is bugged. It should return 5 but returns 0, because in JS the return is scoped into the anonymous
+//       function passed to forEach.
+function f3(): Int = {
+  const list = [1, 2, 3]
+  for (x <- list) {
+    if (x == 2) {
+      return 5
+    }
+  }
+  0
+}
+
+action test() {
+  println(f1())
+  println(f2())
+  println(f3())
+}
