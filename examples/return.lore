@@ -6,8 +6,6 @@ function f2(): Int = {
   return if (true) 1 else 2
 }
 
-// TODO: This is bugged. It should return 5 but returns 0, because in JS the return is scoped into the anonymous
-//       function passed to forEach.
 function f3(): Int = {
   const list = [1, 2, 3]
   for (x <- list) {
