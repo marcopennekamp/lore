@@ -23,7 +23,7 @@ object RuntimeTypeTranspiler {
           case BasicType.Boolean => typesApi.boolean
           case BasicType.String => typesApi.string
           case ProductType.UnitType => typesApi.unit
-          case d: DeclaredType => ??? // s"declared('${d.name}')"
+          case declaredType: DeclaredType => TranspiledNames.namedType(declaredType)
           case IntersectionType(types) => s"${typesApi.intersection}([${types.map(rec).mkString(", ")}])"
           case SumType(types) => s"${typesApi.sum}([${types.map(rec).mkString(", ")}])"
           case ProductType(types) => s"${typesApi.product}([${types.map(rec).mkString(", ")}])"

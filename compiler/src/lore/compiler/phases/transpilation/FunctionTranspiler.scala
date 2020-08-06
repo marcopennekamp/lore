@@ -6,8 +6,10 @@ import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.ExpressionVisitor
 import lore.compiler.semantics.functions.FunctionDefinition
 
-class FunctionTranspiler(function: FunctionDefinition, uniqueName: String)(implicit compilerOptions: CompilerOptions, registry: Registry) {
-  def transpile: Compilation[String] = {
+object FunctionTranspiler {
+  def transpile(
+    function: FunctionDefinition, uniqueName: String
+  )(implicit compilerOptions: CompilerOptions, registry: Registry): Compilation[String] = {
     assert(!function.isAbstract)
     val parameterNames = function.parameters.map(_.asLocalVariable.transpiledName)
     ExpressionVisitor.visit(new FunctionTranspilationVisitor())(function.body.get).map { chunk =>

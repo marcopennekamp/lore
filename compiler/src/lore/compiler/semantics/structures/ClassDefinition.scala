@@ -28,11 +28,6 @@ class ClassDefinition(
   override val supertypeDefinition: Option[ClassDefinition] = tpe.supertype.map(_.definition)
 
   /**
-    * The name of the class DEFINITION as it appears in the code.
-    */
-  val transpiledName: String = name
-
-  /**
     * The list of all properties belonging to this class, excluding superclass components.
     */
   val localProperties: List[PropertyDefinition] = localMembers.filterType[PropertyDefinition]

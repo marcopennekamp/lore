@@ -20,13 +20,13 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
 
   private implicit val nameProvider: TemporaryNameProvider = new TemporaryNameProvider(s"${mf.name}__")
 
-  def transpile: Compilation[String] = {
+  def transpile(): Compilation[String] = {
     val out = new ByteArrayOutputStream()
     val tryCompilation = Using(new PrintStream(out, true, "utf-8")) { printer =>
       mf.functions.filterNot(_.isAbstract).zipWithIndex.map { case (function, index) =>
         val name = s"${function.name}$$$index" // TODO: We should probably rely on some reconstructable unique name, rather.
         functionJsNames.put(function, name)
-        new FunctionTranspiler(function, name).transpile.map(printer.print)
+        FunctionTranspiler.transpile(function, name).map(printer.print)
       }.simultaneous.map { _=>
         prepareFunctionInputTypes(printer)
         prepareDispatchCache(printer)
