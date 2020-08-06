@@ -40,14 +40,15 @@ export const api = {
     return map.store.has(key)
   },
 
-  forEach<K, V, R>(map: MapValue<K, V>, f: (e: TupleValue) => R): void {
+  *entries<K, V, R>(map: MapValue<K, V>): IterableIterator<TupleValue> {
     const iterator = map.store.entries()
     let result = iterator.next()
     while (!result.done) {
       const entry = result.value
+      // TODO: Here, the type is decided at run-time. Is this consistent with other complex types like lists? Should it be?
       const type = product([typeOf(entry.key), typeOf(entry.value)])
       const entryTuple = tupleApi.create([entry.key, entry.value], type);
-      f(entryTuple)
+      yield entryTuple
       result = iterator.next()
     }
   },

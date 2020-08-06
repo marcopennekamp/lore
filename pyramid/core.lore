@@ -31,3 +31,15 @@ function hash(value: Any): Int = dynamic[Int]('Lore.values.hash', value)
  * stringify your own custom types. This function is used by library functions such as io.println.
  */
 function toString(value: Any): String = dynamic[String]('Lore.values.toString', value)
+
+// TODO: We cannot define iterator in general because we don't have a Collection (Iterable) label type and neither
+//       do we have a means to pass type parameters to label (or class) types.
+// TODO: We will first have to add compiler support for this.
+/**
+ * Returns an iterator that can be used to iterate through a collection of values. This is used by the Lore
+ * compiler to implement for-loops for custom collections.
+ *
+ * For-loops iterating through Lore-native lists and maps are not compiled using this function because
+ * it is faster to go directly to Javascript iteration of the underlying data structures.
+ */
+//function iterator(collection: Collection): Iterator

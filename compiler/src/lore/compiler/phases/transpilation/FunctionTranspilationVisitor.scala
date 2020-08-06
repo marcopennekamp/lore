@@ -144,19 +144,35 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     transpileLoop(loop, loopShell, body)
   }
 
+  /**
+    * Transpile a for-loop. We use direct iteration for this instead of a more succinct forEach because we need to
+    * be able to return from within the loop.
+    */
   override def visit(loop: ForLoop)(extractors: List[TranspiledChunk], body: TranspiledChunk): Transpilation = {
     val loopShell = loop.extractors.zip(extractors).map {
       case (extractor, chunk) =>
-        val forEach = extractor.collection.tpe match {
-          case ListType(_) => RuntimeApi.values.list.forEach
-          case MapType(_, _) => RuntimeApi.values.map.forEach
-          case _ => throw CompilationException("Only lists and maps can be used as collections in a for loop.")
+        (inner: String) => extractor.collection.tpe match {
+          case ListType(_) =>
+            val varList = nameProvider.createName()
+            s"""${chunk.statements}
+               |const $varList = ${chunk.expression.get};
+               |for (let i = 0; i < $varList.array.length; i += 1) {
+               |  const ${extractor.variable.transpiledName} = $varList.array[i];
+               |  $inner
+               |}""".stripMargin
+          case MapType(_, _) =>
+            val varIterator = nameProvider.createName()
+            val varResult = nameProvider.createName()
+            s"""${chunk.statements}
+               |const $varIterator = ${RuntimeApi.values.map.entries}(${chunk.expression.get});
+               |let $varResult = $varIterator.next();
+               |while(!$varResult.done) {
+               |  const ${extractor.variable.transpiledName} = $varResult.value;
+               |  $inner
+               |  $varResult = $varIterator.next();
+               |}""".stripMargin
+          case _ => throw CompilationException("Currently, only lists and maps can be used as collections in a for loop.")
         }
-        (inner: String) =>
-          s"""${chunk.statements}
-             |$forEach(${chunk.expression.get}, ${extractor.variable.transpiledName} => {
-             |  $inner
-             |});""".stripMargin
     }.foldRight(identity: String => String) { case (enclose, function) => function.andThen(enclose) }
     transpileLoop(loop, loopShell, body)
   }

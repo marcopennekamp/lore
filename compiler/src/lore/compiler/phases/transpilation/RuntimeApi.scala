@@ -63,7 +63,7 @@ object RuntimeApi {
       val base = s"${RuntimeApi.values.base}.map"
 
       val create = s"$base.create"
-      val forEach = s"$base.forEach"
+      val entries = s"$base.entries"
     }
 
     // Core functions operating on values of any type.
