@@ -23,12 +23,12 @@ object LeastUpperBound {
     /**
       * The fallback LUB, which is either Any or t1 | t2 depending on the settings.
       */
-    def fallback = if (defaultToSum) SumType.construct(Set(t1, t2)) else AnyType
+    def fallback = if (defaultToSum) SumType.construct(Set(t1, t2)) else BasicType.Any
     def lubPassOnSettings = configurableLub(defaultToSum) _
 
     implicit class FallbackIfAny(tpe: Type) {
       def fallbackIfAny: Type = tpe match {
-        case AnyType => fallback
+        case BasicType.Any => fallback
         case t => t
       }
     }
@@ -80,7 +80,7 @@ object LeastUpperBound {
         val superclassList = declaredTypeLcs(e1, e2) match {
           // We choose Any as the supertype only if there are no common component types. Otherwise we prefer to
           // calculate a LUB that contains only component types.
-          case AnyType if componentTypes.nonEmpty => Nil
+          case BasicType.Any if componentTypes.nonEmpty => Nil
           case t => t :: Nil
         }
         IntersectionType.construct(

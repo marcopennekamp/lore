@@ -76,10 +76,10 @@ object Subtyping {
       { case (BasicType.Int, BasicType.Real) => true },
 
       // The Any type is supertype of all types.
-      { case (_, AnyType) => true },
+      { case (_, BasicType.Any) => true },
 
       // The Nothing type is subtype of all types.
-      { case (NothingType, _) => true },
+      { case (BasicType.Nothing, _) => true },
     )
   }
 

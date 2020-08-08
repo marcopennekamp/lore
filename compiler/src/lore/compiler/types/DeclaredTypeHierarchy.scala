@@ -14,7 +14,7 @@ class DeclaredTypeHierarchy {
   /**
     * The graph that holds the subtyping relationship. We start with Any type as the first node.
     */
-  private val subtypingGraph: Graph[Type, DiEdge] = Graph(AnyType)
+  private val subtypingGraph: Graph[Type, DiEdge] = Graph(BasicType.Any)
   private implicit val edgeFactory = DiEdge
 
   // TODO: Once class types can extend label types, we need to add these kinds of relationships to the hierarchy
@@ -36,7 +36,7 @@ class DeclaredTypeHierarchy {
     declaredType.supertype.foreach(addType)
 
     // Then we can add the given type.
-    subtypingGraph.addEdge(declaredType.supertype.getOrElse(AnyType), declaredType)
+    subtypingGraph.addEdge(declaredType.supertype.getOrElse(BasicType.Any), declaredType)
 
     // We should make sure that the graph is acyclic and connected.
     assert(subtypingGraph.isAcyclic)
@@ -48,7 +48,7 @@ class DeclaredTypeHierarchy {
     * contained in the hierarchy.
     */
   private def assertCanContain(tpe: Type): Unit = {
-    assert(tpe == AnyType || tpe.isInstanceOf[DeclaredType])
+    assert(tpe == BasicType.Any || tpe.isInstanceOf[DeclaredType])
   }
 
   /**

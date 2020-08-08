@@ -16,8 +16,8 @@ object RuntimeTypeTranspiler {
       tpe match {
         case tv: TypeVariable => variableNames(tv)
         case _ => tpe match {
-          case AnyType => typesApi.any
-          case NothingType => typesApi.nothing
+          case BasicType.Any => typesApi.any
+          case BasicType.Nothing => typesApi.nothing
           case BasicType.Real => typesApi.real
           case BasicType.Int => typesApi.int
           case BasicType.Boolean => typesApi.boolean

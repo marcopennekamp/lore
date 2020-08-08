@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, Position}
 import lore.compiler.semantics.{TypeScope, TypeVariableScope}
 import lore.compiler.syntax.DeclNode
-import lore.compiler.types.{AnyType, NothingType, TypeExpressionEvaluator, TypeVariable}
+import lore.compiler.types.{BasicType, TypeExpressionEvaluator, TypeVariable}
 
 object TypeVariableDeclarationResolver {
   /**
@@ -34,6 +34,6 @@ object TypeVariableDeclarationResolver {
     for {
       lowerBound <- node.lowerBound.map(TypeExpressionEvaluator.evaluate).toCompiledOption
       upperBound <- node.upperBound.map(TypeExpressionEvaluator.evaluate).toCompiledOption
-    } yield new TypeVariable(node.name, lowerBound.getOrElse(NothingType), upperBound.getOrElse(AnyType), order)
+    } yield new TypeVariable(node.name, lowerBound.getOrElse(BasicType.Nothing), upperBound.getOrElse(BasicType.Any), order)
   }
 }

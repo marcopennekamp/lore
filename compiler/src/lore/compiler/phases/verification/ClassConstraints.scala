@@ -1,10 +1,10 @@
 package lore.compiler.phases.verification
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, CompilationException, Position, Error}
+import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.{ClassDefinition, ComponentDefinition, MemberDefinition}
-import lore.compiler.types.{AnyType, ClassType, Type}
+import lore.compiler.types.{BasicType, ClassType, Type}
 
 object ClassConstraints {
   /**
@@ -63,11 +63,11 @@ object ClassConstraints {
   def verifyOwnedBy(definition: ClassDefinition): Verification = {
     // We have to assume Any, because this handles a special case where the owned-by declaration of a class has
     // been forgotten by the programmer, despite the superclass having its own owned-by type.
-    val ownedBy = definition.tpe.ownedBy.getOrElse(AnyType)
+    val ownedBy = definition.tpe.ownedBy.getOrElse(BasicType.Any)
 
     // Here, we assume Any in case the supertype is None or its owned-by type is None. In both cases, the omission
     // of such a declaration means that the supertype's owned-by type is effectively Any.
-    val superOwnedBy = definition.tpe.supertype.flatMap(_.ownedBy).getOrElse(AnyType)
+    val superOwnedBy = definition.tpe.supertype.flatMap(_.ownedBy).getOrElse(BasicType.Any)
 
     // Now we just have to check whether the owned-by type is actually a subtype.
     if (!(ownedBy <= superOwnedBy)) {
@@ -111,7 +111,7 @@ object ClassConstraints {
     * available at compile-time.)
     */
   def verifyCanOwn(definition: ClassDefinition, component: ComponentDefinition): Verification = {
-    val ownershipType = component.tpe.ownedBy.getOrElse(AnyType)
+    val ownershipType = component.tpe.ownedBy.getOrElse(BasicType.Any)
     if (!(definition.tpe <= ownershipType)) {
       Compilation.fail(ClassCannotOwnComponent(definition, component))
     } else Verification.succeed

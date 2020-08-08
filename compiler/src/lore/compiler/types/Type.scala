@@ -26,8 +26,8 @@ trait Type {
 
 object Type {
   val predefinedTypes: Map[String, NamedType] = List(
-    AnyType,
-    NothingType,
+    BasicType.Any,
+    BasicType.Nothing,
     BasicType.Int,
     BasicType.Real,
     BasicType.Boolean,
@@ -64,11 +64,10 @@ object Type {
       // A label type is abstract unless it is an augmentation. That case is handled in the implementation of
       // intersection type's isAbstract.
       true
-    case AnyType => false // Any isn't abstract because checking ARDS for it would be inadvisable.
-    case NothingType =>
-      // Effectively, Nothing cannot be the supertype of anything, so declaring an abstract function for it
-      // will only result in a useless deadlock.
-      false
+    // Any isn't abstract because checking ARDS for it would be inadvisable.
+    // Effectively, Nothing cannot be the supertype of anything, so declaring an abstract function for it
+    // will only result in a useless deadlock.
+    // All other basic types clearly aren't abstract either.
     case _: BasicType => false
   }
 

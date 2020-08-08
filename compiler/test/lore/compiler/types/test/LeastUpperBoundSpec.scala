@@ -51,7 +51,7 @@ class LeastUpperBoundSpec extends TypeSpec {
     // This doesn't really test the LUB, but it does ensure that sum types are simplified at some point,
     // either in the LUB or in the sum type construction itself. Where exactly doesn't matter for the
     // test.
-    (BasicType.Int | BasicType.Real, NothingType) --> BasicType.Real
+    (BasicType.Int | BasicType.Real, BasicType.Nothing) --> BasicType.Real
   }
 
   it should "return the most specific supertype for entities, intersection types and components" in {

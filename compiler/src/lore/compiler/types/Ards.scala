@@ -28,11 +28,11 @@ object Ards {
       case ProductType(components) => combinations(components.map(abstractResolvedDirectSubtypes)).map(ProductType(_))
       case IntersectionType(types) => combinations(types.map(abstractResolvedDirectSubtypes).toList).map(IntersectionType.construct)
       case SumType(types) => types.flatMap(abstractResolvedDirectSubtypes)
-      case _ if t == AnyType =>
+      case BasicType.Any =>
         // TODO: Really? This should rather be the set of all types which have no supertype, i.e. direct descendants
         //       of Any. Or maybe, rather, let's not fuck with Any for abstract functions and return an error here.
         Set.empty
-      case t if t == NothingType => Set.empty
+      case BasicType.Nothing => Set.empty
     }
   }
 }
