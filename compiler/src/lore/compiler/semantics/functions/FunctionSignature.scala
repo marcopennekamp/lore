@@ -1,6 +1,5 @@
 package lore.compiler.semantics.functions
 
-import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.types._
 
@@ -31,6 +30,7 @@ case class FunctionSignature(name: String, parameters: List[ParameterDefinition]
     * Whether this function signature is equal in specificity to the given one.
     */
   def isEquallySpecific(other: FunctionSignature): Boolean = {
+    // TODO: What about the function's name?
     Fit.isEquallySpecific(inputType, other.inputType)
   }
 }

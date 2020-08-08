@@ -12,7 +12,7 @@ object NamedTypeTranspiler {
   def transpile(tpe: NamedType): Compilation[String] = {
     tpe match {
       case classType: ClassType => transpileClassType(classType)
-      case labelType: LabelType => ???
+      case labelType: LabelType => transpileLabelType(labelType)
       case _ => throw CompilationException(s"Unknown declared type $tpe.")
     }
   }
@@ -29,5 +29,9 @@ object NamedTypeTranspiler {
        |  [],
        |  false,
        |)""".stripMargin.compiled
+  }
+
+  private def transpileLabelType(labelType: LabelType): Compilation[String] = {
+    "".compiled // TODO: Implement.
   }
 }

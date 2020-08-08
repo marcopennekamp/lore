@@ -1,5 +1,9 @@
 package lore.compiler.types
 
+import java.io.ByteArrayOutputStream
+import java.nio.charset.Charset
+import java.util.Base64
+
 import lore.compiler.utils.CollectionExtensions._
 
 /**
@@ -21,7 +25,7 @@ trait Type {
   def >=(rhs: Type): Boolean = rhs <= this
   def >(rhs: Type): Boolean = rhs < this
 
-  override def toString: String = Type.toStringWithPrecedence(this)
+  override def toString: String = Type.toString(this, verbose = false)
 }
 
 object Type {
@@ -118,23 +122,20 @@ object Type {
   /**
     * Creates a pretty string representation of the type.
     */
-  def toString(t: Type, verbose: Boolean = false): String = toStringWithPrecedence(t, verbose)
+  def toString(t: Type, verbose: Boolean = false): String = toStringWithPrecedence(t, verbose, TypePrecedence.Parenthesized)
 
   /**
     * Creates a pretty string representation of the type.
     */
-  private def toStringWithPrecedence(t: Type, verbose: Boolean = false, parentPrecedence: TypePrecedence = TypePrecedence.Parenthesized): String = {
-    def stringifyOperator(operator: String, precedence: TypePrecedence, operands: List[Type]): String = {
-      val repr = operands.map(toStringWithPrecedence(_, verbose, precedence)).mkString(s" $operator ")
-      if (precedence < parentPrecedence) s"($repr)" else repr
-    }
+  private def toStringWithPrecedence(t: Type, verbose: Boolean = false, parentPrecedence: TypePrecedence): String = {
+    val infix = stringifyInfixOperator(parentPrecedence, toStringWithPrecedence(_, verbose, _)) _
 
     t match {
-      case SumType(types) => stringifyOperator("|", TypePrecedence.Sum, types.toList)
-      case IntersectionType(types) => stringifyOperator("&", TypePrecedence.Intersection, types.toList)
+      case SumType(types) => infix(" | ", TypePrecedence.Sum, types.toList)
+      case IntersectionType(types) => infix(" & ", TypePrecedence.Intersection, types.toList)
       case ProductType(elements) => s"(${elements.map(toString(_, verbose)).mkString(", ")})"
       case ListType(element) => s"[${toString(element, verbose)}]"
-      case MapType(key, value) => stringifyOperator("->", TypePrecedence.Map, List(key, value))
+      case MapType(key, value) => infix(" -> ", TypePrecedence.Map, List(key, value))
       case ComponentType(underlying) => s"+${toString(underlying, verbose)}"
       case c: ClassType =>
         if (verbose) {
@@ -148,5 +149,31 @@ object Type {
         } else l.name
       case t: NamedType => t.name
     }
+  }
+
+  private def stringifyInfixOperator(
+    parentPrecedence: TypePrecedence,
+    stringify: (Type, TypePrecedence) => String,
+  )(operator: String, operatorPrecedence: TypePrecedence, operands: List[Type]): String = {
+    val repr = operands.map(stringify(_, operatorPrecedence)).mkString(operator)
+    if (operatorPrecedence < parentPrecedence) s"($repr)" else repr
+  }
+
+  /**
+    * Creates a unique, Javascript-friendly identifier of the given type.
+    */
+  def uniqueIdentifier(tpe: Type): String = uniqueIdentifier(List(tpe))
+
+  /**
+    * Creates a unique, Javascript-friendly identifier of the given list of types.
+    *
+    * The identifier is first generated as a compact binary representation of the given types individually,
+    * concatenated to a single byte array, and then encoded using Base64 with '$' for the '+' character and
+    * '_' for the '/' character. Padding characters are discarded as they are not needed for the identifier.
+    */
+  def uniqueIdentifier(types: List[Type]): String = {
+    val stream = new ByteArrayOutputStream()
+    types.foreach(t => stream.write(TypeEncoder.encode(t)))
+    Base64.getEncoder.encodeToString(stream.toByteArray).replace('+', '$').replace('/', '_').replace("=", "")
   }
 }
