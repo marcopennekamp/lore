@@ -39,6 +39,10 @@ export function isSubtype(t1: Type, t2: Type): boolean {
       // TODO: Implement these two cases
       // d1.supertype.exists(isSubtype(_, d2))
       // { case (e1: ClassType, p2: ComponentType) if e1.isEntity => e1.componentTypes.exists(p1 => isSubtype(p1.underlying, p2.underlying)) },
+      // TODO: Per the spec, entities must match in multiple dispatch based on ACTUAL types of component objects, not their
+      //       declared types in the source code. Confer: "Entities are dispatched based on their actual type and the types
+      //       of their components at run-time." Ensure that this is the case here! (We will have to get the actual types
+      //       of the components instead of their declared entity.componentTypes...)
       break
     case Kind.Intersection:
       if (t2.kind === Kind.Intersection) {

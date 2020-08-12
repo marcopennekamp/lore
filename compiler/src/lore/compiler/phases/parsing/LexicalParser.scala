@@ -34,8 +34,8 @@ object LexicalParser {
   /**
     * A critical keyword is a keyword that, when used as an identifier in any place within the language, leads to
     * ambiguity or confusion. For example, some keywords may not be consistently able to stand as variable names,
-    * such as yield being possible in a declaration but not as a simple expression, as the parser will prefer to read
-    * "yield" as a yield TLE, for example.
+    * such as return being possible in a declaration but not as a simple expression, as the parser will prefer to read
+    * "return" as a return top-level expression, for example.
     *
     * Another example concerns the "construct" keyword: Declaring a function named "construct" is possible, while
     * calling said function is impossible since "construct" gets parsed as a construct call.

@@ -269,7 +269,7 @@ At run-time, `E` might actually be a type `E & +C3` given `C3 < C1`, if a value 
 
 Once assigned to an entity, a component cannot be replaced or removed: **components are immutable**. Note that, while the *reference* is immutable, the component *itself* does not have to be immutable. You can, of course, still model changing state in Lore, but that change needs to be applied inside the component, not by replacing a component.
 
-(**TODO:** Consider mutable components for cases where an immutable class needs to be a component? In general, it would be possible to replace components. The only time we need immutability is when we want to override a component in a subclass.)
+Components must also be immutable because they are part of the run-time type of the entity, as the actual component value is significant in multiple-dispatch. If a component's type could change during execution, so would the entity type, and this is not permitted due to our policy of requiring the types of run-time values to be immutable after the value's construction. 
 
 ##### Instantiation
 

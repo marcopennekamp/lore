@@ -9,7 +9,14 @@ action hello(id: Int) {
 }
 
 action test() {
-  let names: [String | Int] = ['world', 5, 'marco']
+  // TODO: Big problem. Empty lists are typed as [Nothing], so they don't get typed correctly, because run-time types
+  //       stay constant after construction...
+  // TODO: Second problem: Because the current implementation of lists is mutable, we cannot actually have the subtyping
+  //       rules for lists that we have. Mutable lists must be invariant! So either make lists immutable or remove the
+  //       subtyping rule. (I'd prefer the first option right now.)
+  // TODO: This doesn't work either: `let names: [String | Int] = [10]`. That's because the list is missing the sum
+  //       type during construction...
+  let names: [String | Int] = []
   names = append(names, 'console')
   names = append(names, 100)
   for (name <- names) {
