@@ -1,0 +1,17 @@
+class Animal {
+  name: String
+}
+class Fish extends Animal
+class Bass extends Fish
+
+// A Monster made of several different parts, but currently only a fish... Maybe its leg!
+entity Monster {
+  component Fish
+}
+
+action react(entity: Monster) {
+  println('A monster with a fish named ${entity.Fish.name} sticking out of it!!')
+}
+action react(entity: Monster & +Bass) {
+  println('Slap that bass called ${entity.Bass.name}!!!')
+}
