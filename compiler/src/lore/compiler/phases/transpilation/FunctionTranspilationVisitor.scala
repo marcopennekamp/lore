@@ -59,7 +59,9 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     if (expression.tpe == ProductType.UnitType) {
       Transpilation.expression(RuntimeApi.values.tuple.unit)
     } else {
-      transpileArrayBasedValue(expression, RuntimeApi.values.tuple.create, values)
+      Transpilation.combined(values) { values =>
+        s"${RuntimeApi.values.tuple.create}([${values.mkString(",")}])"
+      }
     }
   }
 
