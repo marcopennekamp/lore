@@ -3,4 +3,7 @@ action test() {
   for (entry <- map) {
     println('${first(entry)} is ${second(entry)}')
   }
+
+  // TODO: This is, understandably, not valid and needs a different kind of runtime type handling as outlined in runtime-types.
+  const empty: String -> Int = %{ }
 }
