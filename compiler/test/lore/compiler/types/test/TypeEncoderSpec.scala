@@ -8,7 +8,6 @@ class TypeEncoderSpec extends BaseSpec {
 
   implicit class EncodingExtension(tpe: Type) {
     def -->(expected: Array[Int]): Assertion = {
-      println(TypeEncoder.encode(tpe).map(_.toHexString.takeRight(2)).mkString(" "))
       TypeEncoder.encode(tpe) shouldEqual expected.map(_.toByte)
     }
   }
@@ -37,23 +36,23 @@ class TypeEncoderSpec extends BaseSpec {
   }
 
   it should "correctly encode sum, intersection, and product types with basic type children" in {
-
+    // TODO: Write this test.
   }
 
   it should "correctly encode named types" in {
-
+    // TODO: Write this test.
   }
 
   it should "correctly encode component types" in {
-
+    // TODO: Write this test.
   }
 
   it should "correctly encode nested type constructors with basic type leaves" in {
-
+    // TODO: Write this test.
   }
 
   it should "correctly encode complex types with named type leaves" in {
-
+    // TODO: Write this test.
   }
 
 }

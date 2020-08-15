@@ -3,11 +3,11 @@ package lore.compiler.phases.transpilation
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException, Error}
 import lore.compiler.phases.transpilation.Transpilation.Transpilation
-import lore.compiler.phases.transpilation.TranspiledChunk.JsCode
+import lore.compiler.phases.transpilation.TranspiledChunk.{JsCode, JsExpr}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.functions.{DynamicCallTarget, FunctionInstance}
-import lore.compiler.types.{BasicType, ListType, MapType, ProductType}
+import lore.compiler.types.{BasicType, ListType, MapType, ProductType, Type}
 
 case class UnsupportedTranspilation(expression: Expression) extends Error(expression) {
   override def message = s"The Lore compiler doesn't yet support the transpilation of ${expression.getClass.getSimpleName}."
@@ -91,19 +91,7 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
   override def visit(expression: BinaryOperation)(left: TranspiledChunk, right: TranspiledChunk): Transpilation = {
     // Filter those cases first that can't simply be translated to a binary Javascript operator.
     expression.operator match {
-      case BinaryOperator.Append =>
-        // TODO: We could also translate the append operation to a dynamic function call in the FunctionTransformationVisitor.
-        //       However, we will have to support passing types as expressions, at least for the compiler, because the
-        //       last argument to 'append' has to be the new list type.
-        // TODO: This type transpilation is not quite correct for type variables. Assuming the appends happens in a
-        //       function context, we will have to take the actual type assigned to the type variable during this
-        //       specific function call (at run-time) from a sort of type context that gets populated in polymorphic
-        //       functions. Because if we have a function over a list [T] and an element T and we call the function
-        //       with, say, T = Int, we don't want the resulting list type to be [T] but rather [Int].
-        val typeChunk = RuntimeTypeTranspiler.transpile(expression.tpe)
-        Transpilation.combined(List(left, right, typeChunk)) { case List(leftExpr, rightExpr, typeExpr) =>
-          s"${RuntimeApi.values.list.append}($leftExpr, $rightExpr, $typeExpr)"
-        }
+      case BinaryOperator.Append => transpileListAppends(left, right, expression.tpe)
       case _ =>
         val operatorString = expression.operator match {
           case BinaryOperator.Addition => "+"
@@ -204,12 +192,12 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     // The loop's inferred type is Unit if its body type is Unit, so this checks out.
     val ignoreResult = loop.tpe == ProductType.UnitType
 
-    def loopCode(varResult: Option[String]): String = {
+    def loopCode(varResult: Option[String], resultType: JsExpr = ""): String = {
       val statements = s"${body.statements};"
       val bodyCode = body.expression.map { e =>
         varResult.map { v =>
           s"""$statements
-             |${RuntimeApi.values.list.append}($v, $e);
+             |$v = ${RuntimeApi.values.list.append}($v, $e, $resultType);
              |""".stripMargin
         } getOrElse {
           s"""$statements
@@ -224,17 +212,18 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     } else {
       val varResult = nameProvider.createName()
       val typeChunk = RuntimeTypeTranspiler.transpile(loop.tpe)
+      val resultType = typeChunk.expression.get
       val resultVarDeclaration =
-        s"""const $varResult = ${RuntimeApi.values.list.create}(
+        s"""let $varResult = ${RuntimeApi.values.list.create}(
            |  [],
-           |  ${typeChunk.expression.get},
+           |  $resultType,
            |);""".stripMargin
       // TODO: Should we take the run-time type of the elements here or the inferred type? Isn't a list [1] rather
       //       [Int] than [Real], even if it is declared as [Real]?
       //       Oh crap. That would mean we need to LUB types at runtime. Ouch. That's almost impossible with large
       //       lists. We need to put a lot of thought into this... And we can define it either way, so both ways are
       //       possible. Also, what about list concatenation? Fucking hell.
-      Transpilation.chunk(List(typeChunk.statements, resultVarDeclaration, loopCode(Some(varResult))), varResult)
+      Transpilation.chunk(List(typeChunk.statements, resultVarDeclaration, loopCode(Some(varResult), resultType)), varResult)
     }
   }
 
@@ -261,10 +250,23 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
            |  $typeExpression,
            |  $extra
            |)""".stripMargin
-        // TODO: For the runtime type, don't we need to take types based on the actual values at run-time, not based on
-        //       the inferred type??? This is a big problem for lists and such.
       }
     }
     chunk.compiled
+  }
+
+  private def transpileListAppends(list: TranspiledChunk, element: TranspiledChunk, resultType: Type): Transpilation = {
+    // TODO: We could also translate the append operation to a dynamic function call in the FunctionTransformationVisitor.
+    //       However, we will have to support passing types as expressions, at least for the compiler, because the
+    //       last argument to 'append' has to be the new list type.
+    // TODO: This type transpilation is not quite correct for type variables. Assuming the appends happens in a
+    //       function context, we will have to take the actual type assigned to the type variable during this
+    //       specific function call (at run-time) from a sort of type context that gets populated in polymorphic
+    //       functions. Because if we have a function over a list [T] and an element T and we call the function
+    //       with, say, T = Int, we don't want the resulting list type to be [T] but rather [Int].
+    val typeChunk = RuntimeTypeTranspiler.transpile(resultType)
+    Transpilation.combined(List(list, element, typeChunk)) { case List(listExpr, elementExpr, typeExpr) =>
+      s"${RuntimeApi.values.list.append}($listExpr, $elementExpr, $typeExpr)"
+    }
   }
 }

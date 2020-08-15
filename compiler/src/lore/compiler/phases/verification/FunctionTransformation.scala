@@ -40,6 +40,9 @@ object FunctionTransformation {
     signature: FunctionSignature, typeScope: TypeScope, bodyNode: ExprNode,
     classDefinition: Option[ClassDefinition],
   )(implicit registry: Registry): Compilation[Expression] = {
+    // TODO: A Unit function should manually add a return value of () if the last expression's value isn't already that.
+    //       Otherwise the function won't compile, because the last expression doesn't fit the expected return type.
+    //          action foo() { concat([12], [15]) }  <-- doesn't compile (concat returns a list)
     for {
       _ <- SignatureConstraints.verify(signature)
       _ <- ReturnConstraints.verify(bodyNode)
