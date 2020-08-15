@@ -1,9 +1,11 @@
-function append(list: [A], element: B): [A] where A, B <: A = dynamic[[A]]('Lore.values.list.append', list, element)
+//function append(list: [A], element: B): [A] where A, B <: A = dynamic[[A]]('Lore.values.list.append', list, element)
 //function prepend(list: [A], element: B): [B] where A, B >: A = dynamic[[B]]('Lore.values.list.prependWiden', list, element)
 
 // TODO: We'd have to somehow return a list of type LUB(A, B) and also propagate that type to the runtime function.
 //       It'd probably be easier to just define a construction operator for lists, such as +:.
-function prepend(list: [A], element: B): [A | B] where A, B = dynamic[[A | B]]('Lore.values.list.prepend', list, element)
+//function prepend(list: [A], element: B): [A | B] where A, B = dynamic[[A | B]]('Lore.values.list.prepend', list, element)
+
+// Note that the append operator is defined by the compiler and thus doesn't need to be defined here.
 
 // TODO: Rename to size to have a consistent approach to collection size? Map size should also be called size.
 function length(list: [A]): Int where A = dynamic[Int]('Lore.values.list.length', list)

@@ -89,17 +89,34 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
   }
 
   override def visit(expression: BinaryOperation)(left: TranspiledChunk, right: TranspiledChunk): Transpilation = {
-    val operatorString = expression.operator match {
-      case BinaryOperator.Addition => "+"
-      case BinaryOperator.Subtraction => "-"
-      case BinaryOperator.Multiplication => "*"
-      case BinaryOperator.Division => "/"
-      // All the complex cases have been filtered already and we can simply apply Javascript comparison.
-      case BinaryOperator.Equals => "==="
-      case BinaryOperator.LessThan => "<"
-      case BinaryOperator.LessThanEquals => "<="
+    // Filter those cases first that can't simply be translated to a binary Javascript operator.
+    expression.operator match {
+      case BinaryOperator.Append =>
+        // TODO: We could also translate the append operation to a dynamic function call in the FunctionTransformationVisitor.
+        //       However, we will have to support passing types as expressions, at least for the compiler, because the
+        //       last argument to 'append' has to be the new list type.
+        // TODO: This type transpilation is not quite correct for type variables. Assuming the appends happens in a
+        //       function context, we will have to take the actual type assigned to the type variable during this
+        //       specific function call (at run-time) from a sort of type context that gets populated in polymorphic
+        //       functions. Because if we have a function over a list [T] and an element T and we call the function
+        //       with, say, T = Int, we don't want the resulting list type to be [T] but rather [Int].
+        val typeChunk = RuntimeTypeTranspiler.transpile(expression.tpe)
+        Transpilation.combined(List(left, right, typeChunk)) { case List(leftExpr, rightExpr, typeExpr) =>
+          s"${RuntimeApi.values.list.append}($leftExpr, $rightExpr, $typeExpr)"
+        }
+      case _ =>
+        val operatorString = expression.operator match {
+          case BinaryOperator.Addition => "+"
+          case BinaryOperator.Subtraction => "-"
+          case BinaryOperator.Multiplication => "*"
+          case BinaryOperator.Division => "/"
+          // All the complex cases have been filtered already and we can simply apply Javascript comparison.
+          case BinaryOperator.Equals => "==="
+          case BinaryOperator.LessThan => "<"
+          case BinaryOperator.LessThanEquals => "<="
+        }
+        Transpilation.binary(left, right, operatorString)
     }
-    Transpilation.binary(left, right, operatorString)
   }
 
   override def visit(expression: XaryOperation)(operands: List[TranspiledChunk]): Transpilation = {

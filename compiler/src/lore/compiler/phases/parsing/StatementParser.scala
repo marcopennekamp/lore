@@ -93,7 +93,7 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
   def operatorExpression[_: P]: P[ExprNode] = {
     import PrecedenceParser._
     PrecedenceParser.parser(
-      operator = StringIn("|", "&", "==", "=/=", "<", "<=", ">", ">=", "+", "-", "*", "/"),
+      operator = StringIn("|", "&", "==", "=/=", "<", "<=", ">", ">=", ":+", "+", "-", "*", "/"),
       operand = unary,
       operatorMeta = Map(
         "|" -> XaryOperator[ExprNode](1, ExprNode.DisjunctionNode),
@@ -104,10 +104,11 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
         "<=" -> BinaryOperator[ExprNode](4, ExprNode.LessThanEqualsNode),
         ">" -> BinaryOperator[ExprNode](4, ExprNode.GreaterThanNode),
         ">=" -> BinaryOperator[ExprNode](4, ExprNode.GreaterThanEqualsNode),
-        "+" -> BinaryOperator[ExprNode](5, ExprNode.AdditionNode),
-        "-" -> BinaryOperator[ExprNode](5, ExprNode.SubtractionNode),
-        "*" -> BinaryOperator[ExprNode](6, ExprNode.MultiplicationNode),
-        "/" -> BinaryOperator[ExprNode](6, ExprNode.DivisionNode),
+        ":+" -> BinaryOperator[ExprNode](5, ExprNode.AppendNode),
+        "+" -> BinaryOperator[ExprNode](6, ExprNode.AdditionNode),
+        "-" -> BinaryOperator[ExprNode](6, ExprNode.SubtractionNode),
+        "*" -> BinaryOperator[ExprNode](7, ExprNode.MultiplicationNode),
+        "/" -> BinaryOperator[ExprNode](7, ExprNode.DivisionNode),
       ),
     )
   }

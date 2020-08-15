@@ -87,6 +87,7 @@ object Expression {
     case object Equals extends BinaryOperator
     case object LessThan extends BinaryOperator
     case object LessThanEquals extends BinaryOperator
+    case object Append extends BinaryOperator
   }
 
   sealed trait XaryOperator

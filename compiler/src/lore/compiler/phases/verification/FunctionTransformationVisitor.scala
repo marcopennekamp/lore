@@ -136,6 +136,19 @@ private[verification] class FunctionTransformationVisitor(
     case GreaterThanEqualsNode(_, _, position) =>
       StatementTransformation.transformComparison("isLessThanOrEqual", BinaryOperator.LessThan, right, left, position)
 
+    // Collection operations.
+    case AppendNode(_, _, position) =>
+      left.tpe match {
+        case ListType(elementType) =>
+          // The immutable list is constructed from the existing list and another element. The resulting type of the
+          // list will be the least upper bound of the two types. If the two types aren't related, we default to sum
+          // types, which provides a sensible default for complex list constructions.
+          val combinedType = LeastUpperBound.leastUpperBound(elementType, right.tpe)
+          Expression.BinaryOperation(BinaryOperator.Append, left, right, ListType(combinedType), position).compiled
+        // TODO: Implement append for maps?
+        case _ => Compilation.fail(ExpressionVerification.IllegallyTypedExpression(left, ListType(BasicType.Any) :: Nil))
+      }
+
     // Loops.
     case RepetitionNode(_, _, position) =>
       // Close the previously opened scope.

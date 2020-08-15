@@ -8,20 +8,27 @@ action hello(id: Int) {
   println('Hello, anonymous #$id.')
 }
 
+// TODO: Don't encourage doing this, probably. We'd have to handle narrowing list types to [Nothing] after elements
+//       are removed if we want to support this particular feature. This is feasible, but not consistent with the
+//       rest of the widen-only policy. Narrowing lists of arbitrary size is simply not fast enough and provides
+//       little value. I feel like allowing then dispatch for this one special case [Nothing] would be a noob trap
+//       as they'd extrapolate this limited feature to mean that this works for all element types in general.
+function isEmpty(list: [A]): Boolean where A = false
+function isEmpty(list: [Nothing]): Boolean = true
+
 action test() {
-  // TODO: Big problem. Empty lists are typed as [Nothing], so they don't get typed correctly, because run-time types
-  //       stay constant after construction...
-  // TODO: Second problem: Because the current implementation of lists is mutable, we cannot actually have the subtyping
-  //       rules for lists that we have. Mutable lists must be invariant! So either make lists immutable or remove the
-  //       subtyping rule. (I'd prefer the first option right now.)
-  // TODO: This doesn't work either: `let names: [String | Int] = [10]`. That's because the list is missing the sum
-  //       type during construction...
   let names: [String | Int] = []
-  names = append(names, 'console')
-  names = append(names, 100)
+  names = names :+ 'world'
+  names = names :+ 5
+  names = names :+ 'marco'
+  names = names :+ 'console'
+  names = names :+ 100
   for (name <- names) {
     hello(name)
   }
+
+  println(isEmpty(names))
+  println(isEmpty([]))
 }
 
 function testPerformanceInner(times: Int): Real = {
