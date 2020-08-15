@@ -1,0 +1,13 @@
+// TODO: The compiled type as applied to the appends operator is still wrong here, as type variables are not
+//       properly resolved at run-time. We have to introduce the concept of a run-time type context to fix this.
+function concat(as: [A], bs: [B]): [A | B] where A, B = {
+  let result: [A | B] = as
+  for (b <- bs) {
+    result = result :+ b
+  }
+  result
+}
+
+action test() {
+  println(concat([10], ['test']))
+}
