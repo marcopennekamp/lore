@@ -1,5 +1,3 @@
-// TODO: The compiled type as applied to the appends operator is still wrong here, as type variables are not
-//       properly resolved at run-time. We have to introduce the concept of a run-time type context to fix this.
 function concat(as: [A], bs: [B]): [A | B] where A, B = {
   let result: [A | B] = as
   for (b <- bs) {
@@ -8,6 +6,21 @@ function concat(as: [A], bs: [B]): [A | B] where A, B = {
   result
 }
 
+action printList(list: [A]) where A {
+  println(list)
+}
+
+action printList(list: [String | Int]) {
+  println('Printing String/Int list: $list')
+}
+
+action printList(list: [String | Int | Boolean]) {
+  println('Printing String/Int/Boolean list: $list')
+}
+
 action test() {
-  println(concat([10], ['test']))
+  const merged = concat([10], ['test'])
+  printList(merged)
+  printList(merged :+ true)
+  printList((merged :+ true) :+ 15)
 }
