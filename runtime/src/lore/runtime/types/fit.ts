@@ -16,7 +16,7 @@ export type Assignments = TinyMap<TypeVariable, Type>
  */
 export function fits(t1: Type, t2: Type): boolean {
   if (isPolymorphic(t2)) {
-    return fitsPolymorphic(t1, t2)
+    return !!fitsPolymorphic(t1, t2)
   }
   return fitsMonomorphic(t1, t2)
 }
@@ -29,20 +29,25 @@ export function fitsMonomorphic(t1: Type, t2: Type): boolean {
 }
 
 /**
- * Whether t1 fits into (polymorphic) t2.
+ * Returns a set of type variable assignments if t1 fits into (polymorphic) t2. Otherwise returns false to
+ * signal that t1 does not fit into t2. The assignments map is used during multiple dispatch to pass type context
+ * to the called polymorphic function, which can then be used to construct new types such as lists, maps, and later
+ * type-polymorphic classes.
  */
-export function fitsPolymorphic(t1: Type, t2: Type): boolean {
-  if (t1 === t2) return true
-
+export function fitsPolymorphic(t1: Type, t2: Type): Assignments | boolean {
   const allocation = TypeVariableAllocation.of(t1, t2)
   if (!allocation.isConsistent()) {
     return false
   }
+
   const assignments = allocation.assignments()
   // TODO: Check missing variables? (See the compiler's corresponding fit definition.)
   const st2 = substitute(assignments, t2)
+  if (!isSubtype(t1, st2)) {
+    return false
+  }
 
-  return isSubtype(t1, st2)
+  return assignments
 }
 
 class TypeVariableAllocation {

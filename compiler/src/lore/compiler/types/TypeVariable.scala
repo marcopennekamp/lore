@@ -13,7 +13,6 @@ class TypeVariable(
     case var2: TypeVariable => this eq var2
     case _ => false
   }
-  override def hashCode(): Int = name.hashCode
 }
 
 object TypeVariable {

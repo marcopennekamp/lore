@@ -22,6 +22,7 @@ class FunctionDefinition(
 ) extends Positioned {
   val isAbstract: Boolean = bodyNode.isEmpty
   lazy val signature: FunctionSignature = functions.FunctionSignature(name, parameters, outputType, position)
+  lazy val isPolymorphic: Boolean = signature.isPolymorphic
   override def toString = s"${if (isAbstract) "abstract " else ""}$name(${parameters.mkString(", ")})"
 
   /**

@@ -2,6 +2,7 @@ package lore.compiler.phases.transpilation
 
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException, Error}
+import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.RuntimeTypeVariables
 import lore.compiler.phases.transpilation.Transpilation.Transpilation
 import lore.compiler.phases.transpilation.TranspiledChunk.{JsCode, JsExpr}
 import lore.compiler.semantics.Registry
@@ -13,7 +14,9 @@ case class UnsupportedTranspilation(expression: Expression) extends Error(expres
   override def message = s"The Lore compiler doesn't yet support the transpilation of ${expression.getClass.getSimpleName}."
 }
 
-private[transpilation] class FunctionTranspilationVisitor()(implicit registry: Registry) extends ExpressionVisitor[TranspiledChunk] {
+private[transpilation] class FunctionTranspilationVisitor()(
+  implicit registry: Registry, runtimeTypeVariables: RuntimeTypeVariables
+) extends ExpressionVisitor[TranspiledChunk] {
   import Expression._
 
   private implicit val nameProvider: TemporaryNameProvider = new TemporaryNameProvider
@@ -211,19 +214,13 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
       Transpilation.statements(loopCode(None))
     } else {
       val varResult = nameProvider.createName()
-      val typeChunk = RuntimeTypeTranspiler.transpile(loop.tpe)
-      val resultType = typeChunk.expression.get
+      val resultType = RuntimeTypeTranspiler.transpileSubstitute(loop.tpe)
       val resultVarDeclaration =
         s"""let $varResult = ${RuntimeApi.values.list.create}(
            |  [],
            |  $resultType,
            |);""".stripMargin
-      // TODO: Should we take the run-time type of the elements here or the inferred type? Isn't a list [1] rather
-      //       [Int] than [Real], even if it is declared as [Real]?
-      //       Oh crap. That would mean we need to LUB types at runtime. Ouch. That's almost impossible with large
-      //       lists. We need to put a lot of thought into this... And we can define it either way, so both ways are
-      //       possible. Also, what about list concatenation? Fucking hell.
-      Transpilation.chunk(List(typeChunk.statements, resultVarDeclaration, loopCode(Some(varResult), resultType)), varResult)
+      Transpilation.chunk(List(resultVarDeclaration, loopCode(Some(varResult), resultType)), varResult)
     }
   }
 
@@ -243,16 +240,14 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
   private def transpileArrayBasedValue(
     expression: Expression, createApiFunction: String, values: List[TranspiledChunk], extra: String = "",
   ): Transpilation = {
-    val chunk = RuntimeTypeTranspiler.transpile(expression.tpe).flatMap { typeExpression =>
-      TranspiledChunk.combined(values) { values =>
-        s"""$createApiFunction(
-           |  [${values.mkString(",")}],
-           |  $typeExpression,
-           |  $extra
-           |)""".stripMargin
-      }
+    val typeExpr = RuntimeTypeTranspiler.transpileSubstitute(expression.tpe)
+    Transpilation.combined(values) { valueExprs =>
+      s"""$createApiFunction(
+         |  [${valueExprs.mkString(",")}],
+         |  $typeExpr,
+         |  $extra
+         |)""".stripMargin
     }
-    chunk.compiled
   }
 
   private def transpileListAppends(list: TranspiledChunk, element: TranspiledChunk, resultType: Type): Transpilation = {
@@ -264,8 +259,8 @@ private[transpilation] class FunctionTranspilationVisitor()(implicit registry: R
     //       specific function call (at run-time) from a sort of type context that gets populated in polymorphic
     //       functions. Because if we have a function over a list [T] and an element T and we call the function
     //       with, say, T = Int, we don't want the resulting list type to be [T] but rather [Int].
-    val typeChunk = RuntimeTypeTranspiler.transpile(resultType)
-    Transpilation.combined(List(list, element, typeChunk)) { case List(listExpr, elementExpr, typeExpr) =>
+    val typeExpr = RuntimeTypeTranspiler.transpileSubstitute(resultType)
+    Transpilation.combined(List(list, element)) { case List(listExpr, elementExpr) =>
       s"${RuntimeApi.values.list.append}($listExpr, $elementExpr, $typeExpr)"
     }
   }

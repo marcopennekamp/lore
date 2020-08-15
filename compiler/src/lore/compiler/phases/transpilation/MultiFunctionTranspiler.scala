@@ -4,8 +4,10 @@ import java.io.{ByteArrayOutputStream, PrintStream}
 
 import lore.compiler.CompilerOptions
 import lore.compiler.core.Compilation
+import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.RuntimeTypeVariables
+import lore.compiler.phases.transpilation.TranspiledChunk.JsCode
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.types.{ProductType, Type}
 
 import scala.collection.mutable
@@ -15,7 +17,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   private val varArgumentType = "argumentType"
   private val varDispatchCache = s"${mf.name}__dispatchCache"
 
-  private val functionJsNames = mutable.HashMap[FunctionDefinition, String]()
+  // TODO: This could be passed around as an immutable map instead of being "global" state.
   private val inputTypeJsNames = mutable.HashMap[Type, String]()
 
   private implicit val nameProvider: TemporaryNameProvider = new TemporaryNameProvider(s"${mf.name}__")
@@ -23,12 +25,17 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   def transpile(): Compilation[String] = {
     val out = new ByteArrayOutputStream()
     val tryCompilation = Using(new PrintStream(out, true, "utf-8")) { printer =>
-      mf.functions.filterNot(_.isAbstract).zipWithIndex.map { case (function, index) =>
-        val name = TranspiledNames.function(function)
-        functionJsNames.put(function, name)
-        FunctionTranspiler.transpile(function, name).map(printer.print)
-      }.simultaneous.map { _=>
-        prepareFunctionInputTypes(printer)
+      mf.functions.filterNot(_.isAbstract).map { function =>
+        FunctionTranspiler.transpile(function, nameProvider)
+      }.simultaneous.map { results =>
+        results.reduce[(JsCode, RuntimeTypeVariables)] { case ((code1, variables1), (code2, variables2)) =>
+          // We can just concatenate the variable maps even if multiple functions have a variable of the same name
+          // because type variables are uniquely identified by their object reference and not by their name.
+          (code1 + "\n" + code2, variables1 ++ variables2)
+        }
+      }.map { case (functionCode, runtimeTypeVariables) =>
+        printer.print(functionCode)
+        prepareFunctionInputTypes(printer)(runtimeTypeVariables)
         prepareDispatchCache(printer)
         val mfName = s"${mf.name}"
         printer.println(s"export function $mfName($jsParameters) {")
@@ -94,17 +101,16 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     * Maps all possible input types to temporary variable names. The temporary variables are written as global
     * constants so that JS doesn't have to recreate these objects every time the multi-function is called.
     */
-  private def prepareFunctionInputTypes(printer: PrintStream): Unit = {
+  private def prepareFunctionInputTypes(printer: PrintStream)(implicit runtimeTypeVariables: RuntimeTypeVariables): Unit = {
     val inputTypes = mf.functions.map(_.signature.inputType).toSet
     inputTypes.foreach { inputType =>
       val simplifiedInputType = if (canUnpackInputProduct) {
         assert(inputType.components.size == 1)
         inputType.components.head
       } else inputType
-      val varType = s"${nameProvider.createName()}"
-      val chunk = RuntimeTypeTranspiler.transpile(simplifiedInputType)
-      if (chunk.statements.nonEmpty) printer.println(chunk.statements)
-      printer.println(s"const $varType = ${chunk.expression.get}")
+      val varType = nameProvider.createName()
+      val typeExpr = RuntimeTypeTranspiler.transpile(simplifiedInputType)
+      printer.println(s"const $varType = $typeExpr;")
       inputTypeJsNames.put(inputType, varType)
     }
   }
@@ -120,7 +126,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     *      function will require three fit tests. At that point a hash&cache operation is faster than testing multiple
     *      fits.
     */
-  private lazy val shouldUseDispatchCache = mf.functions.size >= 3 || mf.functions.exists(f => Type.isPolymorphic(f.signature.inputType))
+  private lazy val shouldUseDispatchCache = mf.functions.size >= 3 || mf.functions.exists(f => f.isPolymorphic)
 
   /**
     * Prepares the dispatch cache for later use.
@@ -184,9 +190,9 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     * This function turns the dispatch hierarchy of the multi-function into Javascript code adhering to the
     * following algorithm:
     *
-    *   1. First, using a "hierarchy" of nested if statements derived from the dispatch graph, build a list
-    *      of functions that would be called with the given input type. In addition, throw an error for any
-    *      ABSTRACT functions that are selected.
+    *   1. First, using a "hierarchy" of nested if statements derived from the dispatch graph, find a candidate
+    *      function that could be called with the given input type. In addition, throw an error for any ABSTRACT
+    *      functions that are selected.
     *   2. Ensure that all functions in this list are unique. This is important because the dispatch hierarchy
     *      is not a tree and so two different paths in the graph may lead to the same node, which effectively
     *      means that such a function would be duplicated in the result list.
@@ -202,10 +208,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     *
     * Performing such a calculation every time a multi-function is called is a costly endeavour. Luckily, we
     * can rely on the invariant that the target function will always stay the same for the same input type.
-    * Hence, we can cache the result of this dispatch algorithm at runtime for real values. (Maybe we should
-    * limit the cache to the 100 most accessed types, or a number depending on the total size of the multi-function).
-    *
-    *
+    * Hence, we can cache the result of this dispatch algorithm at runtime for real values.
     */
   private def transpileDispatchCall(printer: PrintStream): Unit = {
     val varTarget = "target"
@@ -218,22 +221,32 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
         val varRightType = inputTypeJsNames(node.signature.inputType)
         // We can decide at compile-time which version of the fit should be used, because the type on the right side
         // is constant. If the parameter type isn't polymorphic now, it won't ever be, so we can skip all that testing
-        // for polymorphy at run-time. Conversely, if the type is polymorphic now, we can also skip the test and jump
-        // into type allocations.
-        val fitsFunction = if (Type.isPolymorphic(node.signature.inputType)) RuntimeApi.types.fitsPolymorphic else RuntimeApi.types.fitsMonomorphic
+        // for polymorphy at run-time.
+        val fitsFunction = if (node.isPolymorphic) RuntimeApi.types.fitsPolymorphic else RuntimeApi.types.fitsMonomorphic
+        // If we invoke the fitsPolymorphic function and the type fits, an Assignments map is returned rather than a boolean.
         printer.println(s"const ${varFits(index)} = $fitsFunction($varArgumentType, $varRightType);")
       }
     }
 
     def transpileDispatchNode(node: mf.hierarchy.NodeT, varFitsX: String): Unit = {
       val successors = node.diSuccessors.toList.zipWithIndex
+      val function = node.value
       printer.println(s"if ($varFitsX) {")
-      val addFunction = if (!node.isAbstract) {
-        s"""if ($varTarget) ${RuntimeApi.utils.error.ambiguousCall}('${mf.name}', $varArgumentType);
-           |$varTarget = ${functionJsNames(node.value)};
+      val addFunction = if (!function.isAbstract) {
+        val candidateName = TranspiledNames.function(function)
+        val candidate = if (function.isPolymorphic) {
+          // The first parameter of a polymorphic function is the map of type variable assignments passed to it at
+          // run-time. Hence, we have to bind that map (saved in the fitsX variable after being returned by
+          // fitsPolymorphic) to the candidate function. This turns the n-ary function into an (n-1)-ary function
+          // and also plays nice with the dispatch cache. WIN-WIN!
+          s"$candidateName.bind(null, $varFitsX)" // null refers to the value of 'this'.
+        } else candidateName
+        s"""const candidate = $candidate;
+           |if ($varTarget && $varTarget !== candidate) ${RuntimeApi.utils.error.ambiguousCall}('${mf.name}', $varArgumentType);
+           |$varTarget = candidate;
            |""".stripMargin
       } else {
-        s"${RuntimeApi.utils.error.missingImplementation}('${mf.name}', '${node.signature.inputType}', $varArgumentType);"
+        s"${RuntimeApi.utils.error.missingImplementation}('${mf.name}', '${function.signature.inputType}', $varArgumentType);"
       }
       if (successors.nonEmpty) {
         transpileFitsConsts(successors)
