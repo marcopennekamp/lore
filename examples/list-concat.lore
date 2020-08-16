@@ -21,6 +21,8 @@ action printList(list: [String | Int | Boolean]) {
 action test() {
   const merged = concat([10], ['test'])
   printList(merged)
-  printList(merged :+ true)
-  printList((merged :+ true) :+ 15)
+  const merged2 = concat(merged, [true])
+  printList(merged2)
+  const merged3 = concat(merged, [15])
+  printList(merged3)
 }
