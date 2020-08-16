@@ -1,15 +1,7 @@
-import { test } from '../lore-program.js';
-
-function toMs(before, after) {
-  return Math.round((after - before) * 1000) / 1000;
-}
-
-function withSilentLogging(f) {
-  const log = console.log;
-  console.log = function() { }
-  f();
-  console.log = log;
-}
+import { test } from '../lore-program.js'
+import { boolean, int, intersection, list, map, string, sum } from './src/lore/runtime/types/types.ts'
+import { areEqual } from './src/lore/runtime/types/equality.ts'
+import { toMs, withSilentLogging } from './benchmarks/benchmark.ts'
 
 // Note that the time taken by test() most likely represents the time it takes the Javascript interpreter to execute
 // the program. The function is also run once before performance is measured so that it can be prepared, parsed, and
@@ -18,10 +10,10 @@ function withSilentLogging(f) {
 
 // If we don't use console.log before the performance timings, the results are actually slightly slower than expected.
 // Hence, we also remove this variable from the test environment.
-withSilentLogging(test);
-console.log('Running test...');
+withSilentLogging(test)
+console.log('Running test...')
 
-const before = performance.now();
-test();
-const after = performance.now();
-console.log('Running test (most likely interpreted) took about ' + toMs(before, after) + 'ms.');
+const before = performance.now()
+test()
+const after = performance.now()
+console.log('Running test (most likely interpreted) took about ' + toMs(before, after) + 'ms.')
