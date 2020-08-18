@@ -1,5 +1,9 @@
-import { Kind } from './kinds.ts'
-import { ComponentType, ListType, MapType, ProductType, Type, XaryType } from './types.ts'
+import {
+  AnyType, BooleanType, ClassType, ComponentType,
+  IntersectionType, IntType, LabelType, ListType,
+  MapType, NothingType, ProductType, RealType,
+  StringType, SumType, Type, TypeVariable,
+} from './types.ts'
 
 /**
  * Checks whether the two types are equal.
@@ -9,69 +13,60 @@ import { ComponentType, ListType, MapType, ProductType, Type, XaryType } from '.
  * construction can run as fast as possible.
  */
 export function areEqual(t1: Type, t2: Type): boolean {
-  // We are expecting the function to produce positive results more often, by virtue of being used in dispatch caching,
+  // We are expecting the function to produce positive results more often, by virtue of being used by dispatch caching,
   // so this strict reference check comes before we check for trivial inequality.
   if (t1 === t2) return true
 
   // If the types have different hashes or different kinds, they cannot possibly be equal.
   if (t1.hash !== t2.hash || t1.kind !== t2.kind) return false
 
-  switch (t1.kind) {
-    case Kind.TypeVariable:
-      // It has already been established that t1 and t2 are not referentially equal. Type variable equality is
-      // referential equality, so at this point we can trivially return false.
-      return false
-    case Kind.Any:
-    case Kind.Nothing:
-    case Kind.Real:
-    case Kind.Int:
-    case Kind.Boolean:
-    case Kind.String:
-      // These types are equal if their kinds are equal. As this has already been established, we can trivially
-      // return true.
-      return true
-    case Kind.Class:
-    case Kind.Label:
-      // TODO: Implement
-      return false
-    case Kind.Intersection:
-    case Kind.Sum: {
-      // To prove that two sum or intersection types are equal, we find for each part in t1 an equal part in t2
-      // and vice versa.
-      // TODO: Can we optimize this? We should take into account that intersection and sum types must exist in their
-      //       normal forms, so they will be flattened and each part will be unique. If we sort such types by some
-      //       type order, too, we can also use that to walk both arrays once instead of doing nested loops twice.
-      //       The normal form could even lead to the result that, if the two types don't have an equal amount of parts,
-      //       those parts cannot possibly be equal. Maybe we should try to prove that generally, so that we can be sure
-      //       of this property.
-      // TODO: Since xary types are currently not interned, the reference equality check at the top will almost always
-      //       fail. This leads to the slow check being performed. Would it make sense to intern xary types or does
-      //       that create too much overhead by itself?
-      const types1 = (<XaryType> t1).types
-      const types2 = (<XaryType> t2).types
-      return hasEqualIn(types1, types2) && hasEqualIn(types2, types1)
-    }
-    case Kind.Product: {
-      const types1 = (<ProductType> t1).types
-      const types2 = (<ProductType> t2).types
-      if (!(types1.length === types2.length)) return false
-      for (let i = 0; i < types1.length; i += 1) {
-        const e1 = types1[i]
-        const e2 = types2[i]
-        if (!areEqual(e1, e2)) return false
-      }
-      return true
-    }
-    case Kind.Component:
-      return areEqual((<ComponentType> t1).underlying, (<ComponentType> t2).underlying)
-    case Kind.List:
-      return areEqual((<ListType> t1).element, (<ListType> t2).element)
-    case Kind.Map:
-      return areEqual((<MapType> t1).key, (<MapType> t2).key) && areEqual((<MapType> t1).value, (<MapType> t2).value)
-  }
-
-  return false
+  return rules[t1.kind](t1, t2)
 }
+
+const rules: Array<(t1: any, t2: any) => boolean> = [
+  // It has already been established that t1 and t2 are not referentially equal. Type variable equality is
+  // referential equality, so at this point we can trivially return false.
+  (t1: TypeVariable, t2: TypeVariable) => false,
+
+  // These types are equal if their kinds are equal. As this has already been established, we can trivially
+  // return true.
+  (t1: AnyType, t2: AnyType) => true,
+  (t1: NothingType, t2: NothingType) => true,
+  (t1: RealType, t2: RealType) => true,
+  (t1: IntType, t2: IntType) => true,
+  (t1: BooleanType, t2: BooleanType) => true,
+  (t1: StringType, t2: StringType) => true,
+
+  (t1: ClassType, t2: ClassType) => false, // TODO: Implement
+  (t1: LabelType, t2: LabelType) => false, // TODO: Implement
+
+  // To prove that two sum or intersection types are equal, we find for each part in t1 an equal part in t2
+  // and vice versa.
+  // TODO: Can we optimize this? We should take into account that intersection and sum types must exist in their
+  //       normal forms, so they will be flattened and each part will be unique. If we sort such types by some
+  //       type order, too, we can also use that to walk both arrays once instead of doing nested loops twice.
+  //       The normal form could even lead to the result that, if the two types don't have an equal amount of parts,
+  //       those parts cannot possibly be equal. Maybe we should try to prove that generally, so that we can be sure
+  //       of this property.
+  (t1: SumType, t2: SumType) => hasEqualIn(t1.types, t2.types) && hasEqualIn(t2.types, t1.types),
+  (t1: IntersectionType, t2: IntersectionType) => hasEqualIn(t1.types, t2.types) && hasEqualIn(t2.types, t1.types),
+
+  (t1: ProductType, t2: ProductType) => {
+    const types1 = t1.types
+    const types2 = t2.types
+    if (!(types1.length === types2.length)) return false
+    for (let i = 0; i < types1.length; i += 1) {
+      const e1 = types1[i]
+      const e2 = types2[i]
+      if (!areEqual(e1, e2)) return false
+    }
+    return true
+  },
+
+  (t1: ComponentType, t2: ComponentType) => areEqual(t1.underlying, t2.underlying),
+  (t1: ListType, t2: ListType) => areEqual(t1.element, t2.element),
+  (t1: MapType, t2: MapType) => areEqual(t1.key, t2.key) && areEqual(t1.value, t2.value),
+]
 
 /**
  * Checks whether all types t1 in types1 have one type t2 in types2 with areEqual(t1, t2).
@@ -89,6 +84,18 @@ function hasEqualIn(types1: Array<Type>, types2: Array<Type>): boolean {
     }
 
     if (!found) return false
+  }
+  return true
+}
+
+// This represents our future, possible hasEqualIn IF we sort the types and find out that sum/intersection types in
+// their normal form can by compared piece by piece instead of with these very costly pairwise comparisons.
+function hasEqualInOptimized(types1: Array<Type>, types2: Array<Type>): boolean {
+  if (types1.length !== types2.length) return false
+  for (let i = 0; i < types1.length; i += 1) {
+    const t1 = types1[i]
+    const t2 = types2[i]
+    if (!areEqual(t1, t2)) return false
   }
   return true
 }

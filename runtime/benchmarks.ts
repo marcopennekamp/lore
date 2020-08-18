@@ -1,5 +1,4 @@
-import { benchmarkAreEqual, benchmarkAreEqualIterative, benchmarkIsSubtype } from './benchmarks/types.ts'
+import { benchmarkAreEqual, benchmarkIsSubtype } from './benchmarks/types.ts'
 
 benchmarkAreEqual()
-benchmarkAreEqualIterative()
 benchmarkIsSubtype()

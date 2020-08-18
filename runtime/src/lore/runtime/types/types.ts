@@ -14,13 +14,23 @@ export interface Type extends Hashed {
 }
 
 
-export const any: Type = { kind: Kind.Any, hash: stringHash("any") }
-export const nothing: Type = { kind: Kind.Nothing, hash: stringHash("nothing") }
-export const real: Type = { kind: Kind.Real, hash: stringHash("real") }
-export const int: Type = { kind: Kind.Int, hash: stringHash("int") }
-export const boolean: Type = { kind: Kind.Boolean, hash: stringHash("boolean") }
-export const string: Type = { kind: Kind.String, hash: stringHash("string") }
-export const unit: ProductType = product([])
+export interface AnyType extends Type { }
+export const any: AnyType = { kind: Kind.Any, hash: stringHash("any") }
+
+export interface NothingType extends Type { }
+export const nothing: NothingType = { kind: Kind.Nothing, hash: stringHash("nothing") }
+
+export interface RealType extends Type { }
+export const real: RealType = { kind: Kind.Real, hash: stringHash("real") }
+
+export interface IntType extends Type { }
+export const int: IntType = { kind: Kind.Int, hash: stringHash("int") }
+
+export interface BooleanType extends Type { }
+export const boolean: BooleanType = { kind: Kind.Boolean, hash: stringHash("boolean") }
+
+export interface StringType extends Type { }
+export const string: StringType = { kind: Kind.String, hash: stringHash("string") }
 
 
 export interface TypeVariable extends Type {
@@ -38,6 +48,7 @@ export function variable(name: string, lowerBound: Type, upperBound: Type): Type
 export interface XaryType extends Type {
   types: Array<Type>
 }
+
 
 export interface IntersectionType extends XaryType { }
 
@@ -64,6 +75,8 @@ export function product(types: Array<Type>): ProductType {
 export function unhashedProduct(types: Array<Type>): ProductType {
   return { kind: Kind.Product, types, hash: 0 }
 }
+
+export const unit: ProductType = product([])
 
 
 export interface ComponentType extends Type {
@@ -109,4 +122,9 @@ export function classType(
   name: string, supertype: ClassType | undefined, ownedBy: Type | undefined, componentTypes: Array<ComponentType>, isEntity: boolean,
 ): ClassType {
   return { kind: Kind.Class, name, supertype, ownedBy, componentTypes, isEntity, hash: stringHashWithSeed(name, 0x38ba128e) }
+}
+
+
+export interface LabelType extends Type {
+  name: string
 }

@@ -1,5 +1,5 @@
 import { boolean, int, intersection, list, map, product, string, sum } from '../src/lore/runtime/types/types.ts'
-import { areEqual, areEqualIterative } from '../src/lore/runtime/types/equality.ts'
+import { areEqual } from '../src/lore/runtime/types/equality.ts'
 import { benchmark } from './benchmark.ts'
 import { isSubtype } from '../src/lore/runtime/types/subtyping.ts'
 
@@ -36,28 +36,6 @@ export function benchmarkAreEqual(): void {
   // to verify equality, since a map can have duplicate entries for a given hash key.
   benchmark('equal product (structural, shallow)', () => areEqual(product1, product2), times)
   benchmark('equal product (structural, deep)', () => areEqual(product3, product4), times)
-  benchmark('empty run', () => { }, times) // This can be used to gauge the benchmark's own overhead.
-  console.log()
-}
-
-export function benchmarkAreEqualIterative(): void {
-  console.log('Benchmarking areEqualIterative:')
-
-  const times = 10000000
-  benchmark('nested sum', () => areEqualIterative(sum1, sum2), times)
-  benchmark('equal sum (reference)', () => areEqualIterative(sum2, sum2), times)
-  benchmark('equal sum (structural)', () => areEqualIterative(sum2, sum3), times)
-  benchmark('basic types', () => areEqualIterative(int, string), times)
-  benchmark('equal intersection (structural)', () => areEqualIterative(int1, int2), times)
-  benchmark('equal intersection (structural, favorable order)', () => areEqualIterative(int1, int3), times)
-  benchmark('equal basic type list (structural)', () => areEqualIterative(list1, list2), times)
-  benchmark('equal map list (structural)', () => areEqualIterative(list3, list4), times)
-  benchmark('not equal list', () => areEqualIterative(list1, list3), times)
-  // The product tests represent a real-world scenario of calling a function with a complex input type.
-  // The crux of the matter is that at least one call of areEqualIterative will be necessary even with the dispatch cache
-  // to verify equality, since a map can have duplicate entries for a given hash key.
-  benchmark('equal product (structural, shallow)', () => areEqualIterative(product1, product2), times)
-  benchmark('equal product (structural, deep)', () => areEqualIterative(product3, product4), times)
   benchmark('empty run', () => { }, times) // This can be used to gauge the benchmark's own overhead.
   console.log()
 }
