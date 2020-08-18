@@ -47,7 +47,10 @@ object Subtyping {
       // A non-intersection type t1 is the subtype of an intersection type i2, if t1 is the subtype of all types in i2.
       { case (t1, i2: IntersectionType) => i2.types.forall(ic2 => isSubtype(t1, ic2)) },
 
-      // TODO: This should be defined over subsets of s2: For example, A | B <= A | B | C, but this does not hold with the current code.
+      // TODO: The rule fails for nested sum types: (A | B) | C </= A | B | C. In general, it seems we have to look at
+      //       all possible subsets of s2 to generally decide this rule. This would be detrimental to run-time performance,
+      //       however, so we should see how this interacts with our sum type "normal form". I think if we keep sum types
+      //       in a flattened normal form, this sort of piece-by-piece comparison should yield the correct results.
       // A sum type s1 is the subtype of a sum type s2, if all types in s1 are also (possibly supertyped) in s2.
       { case (s1: SumType, s2: SumType) => s1.types.forall(sc1 => s2.types.exists(sc2 => isSubtype(sc1, sc2))) },
       // A type t1 is the subtype of a sum type s2, if t1 is a subtype of any of the types in s2.

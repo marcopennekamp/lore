@@ -14,9 +14,10 @@ object SumType {
     * Constructs the sum type from the given types and flattens it if necessary. If the resulting sum type
     * has only one component, this type is returned instead.
     *
-    * We also apply the following simplification: In a sum type A | B | ..., if B < A, then B can
-    * be dropped. That is, A already "clears the way" for values of type B to be part of the sum
-    * type.
+    * We also apply the following simplification: In a sum type A | B | ..., if B < A, then B can be dropped.
+    * That is, A already "clears the way" for values of type B to be part of the sum type.
+    *
+    * The resulting flattened "normal form" is a requirement for subtyping to work correctly.
     */
   def construct(types: Set[Type]): Type = {
     val flattened = types.flatMap {

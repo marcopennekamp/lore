@@ -21,6 +21,8 @@ object IntersectionType {
     * We also apply the following simplification: In an intersection type A & B & ..., if A < B, then B can
     * be dropped. This is especially useful to simplify intersection types that contain an entity and a
     * related component type.
+    *
+    * The resulting flattened "normal form" is a requirement for subtyping to work correctly.
     */
   def construct(types: Set[Type]): Type = {
     val flattened = types.flatMap {
