@@ -27,3 +27,7 @@ lore-program.js
 
 # Deno
 bundle.js
+
+# Rust (VM)
+vm/target
+vm/Cargo.lock
