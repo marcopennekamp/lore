@@ -9,7 +9,7 @@ import { ComponentType, ListType, MapType, ProductType, Type, XaryType } from '.
  * construction can run as fast as possible.
  */
 export function areEqual(t1: Type, t2: Type): boolean {
-  // We are expecting the function to produce positive results more often, by virtue of being used by dispatch caching,
+  // We are expecting the function to produce positive results more often, by virtue of being used in dispatch caching,
   // so this strict reference check comes before we check for trivial inequality.
   if (t1 === t2) return true
 
@@ -69,6 +69,8 @@ export function areEqual(t1: Type, t2: Type): boolean {
     case Kind.Map:
       return areEqual((<MapType> t1).key, (<MapType> t2).key) && areEqual((<MapType> t1).value, (<MapType> t2).value)
   }
+
+  return false
 }
 
 /**

@@ -17,12 +17,12 @@ export function withSilentLogging(f: () => any): void {
   console.log = log
 }
 
-let bucket = undefined
+let bucket: any = undefined
 export function benchmark(name: string, f: () => any, times: number): void {
   const before = performance.now()
   for (let i = 0; i < times; i += 1) {
     bucket = f()
   }
   const after = performance.now()
-  console.log(`Benchmark '${name}' took about ${toNs(before, after, times)}ns per operation.`)
+  console.log(`Benchmark '${name}' took about ${toNs(before, after, times)}ns per operation. It had the result ${bucket}.`)
 }
