@@ -49,7 +49,7 @@ A class can be **abstract:**
 
 ```
 abstract class Score { }
-function points(score: Score) = ...
+function points(score: Score)
 ```
 
 ###### Example
