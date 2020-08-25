@@ -17,8 +17,10 @@ object RuntimeApi {
 
     // Type constructors.
     val variable = s"$base.variable"
-    val intersection = s"$base.intersection"
     val sum = s"$base.sum"
+    val sumSimplified = s"$base.sumSimplified"
+    val intersection = s"$base.intersection"
+    val intersectionSimplified = s"$base.intersectionSimplified"
     val product = s"$base.product"
     val component = s"$base.component"
     val list = s"$base.list"

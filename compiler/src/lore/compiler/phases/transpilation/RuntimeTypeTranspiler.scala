@@ -25,18 +25,29 @@ object RuntimeTypeTranspiler {
     * Transpiles the given type to its runtime representation. Any type variables need to be transpiled first using
     * [[transpileTypeVariables]], references to them being included in the implicit runtimeTypeVariables map.
     */
-  def transpile(tpe: Type)(implicit runtimeTypeVariables: RuntimeTypeVariables): JsExpr = transpile(tpe, tv => runtimeTypeVariables(tv))
+  def transpile(tpe: Type)(implicit runtimeTypeVariables: RuntimeTypeVariables): JsExpr = {
+    transpile(tpe, simplifyAtRuntime = false, tv => runtimeTypeVariables(tv))
+  }
 
   /**
     * Transpiles the type to a runtime version where type variables are replaced with their actual assignments. Must
     * have access to a type variable assignment context such as [[TranspiledNames.localTypeVariableAssignments]].
+    *
+    * Since type variables are resolved at runtime, we also have to simplify sum and intersection types to their
+    * normal forms.
     */
-  def transpileSubstitute(tpe: Type)(implicit runtimeTypeVariables: RuntimeTypeVariables): JsExpr = transpile(tpe, tv => {
-    s"${RuntimeApi.utils.tinyMap.get}(${TranspiledNames.localTypeVariableAssignments}, ${runtimeTypeVariables(tv)})"
-  })
+  def transpileSubstitute(tpe: Type)(implicit runtimeTypeVariables: RuntimeTypeVariables): JsExpr = {
+    transpile(tpe, simplifyAtRuntime = true, tv => {
+      s"${RuntimeApi.utils.tinyMap.get}(${TranspiledNames.localTypeVariableAssignments}, ${runtimeTypeVariables(tv)})"
+    })
+  }
 
-  private def transpile(tpe: Type, transpileTypeVariable: TypeVariable => JsExpr): JsExpr = {
-    val rec: Type => JsExpr = t => transpile(t, transpileTypeVariable)
+  /**
+    * Runtime simplification should only be done when absolutely necessary. Otherwise it will be a big draw on
+    * performance.
+    */
+  private def transpile(tpe: Type, simplifyAtRuntime: Boolean, transpileTypeVariable: TypeVariable => JsExpr): JsExpr = {
+    val rec: Type => JsExpr = t => transpile(t, simplifyAtRuntime, transpileTypeVariable)
     val api = RuntimeApi.types
     tpe match {
       case tv: TypeVariable => transpileTypeVariable(tv)
@@ -51,8 +62,12 @@ object RuntimeTypeTranspiler {
       // TODO: Now that sum and intersection types can be constructed at run-time using type variable assignments, we
       //       have to also introduce sum and intersection type simplifications in the run-time. However, we only have
       //       to apply these simplifications when the type contains a type variable and they are substituted.
-      case SumType(types) => s"${api.sum}([${types.map(rec).mkString(", ")}])"
-      case IntersectionType(types) => s"${api.intersection}([${types.map(rec).mkString(", ")}])"
+      case SumType(types) =>
+        val sum = if (simplifyAtRuntime) api.sumSimplified else api.sum
+        s"$sum([${types.map(rec).mkString(", ")}])"
+      case IntersectionType(types) =>
+        val intersection = if (simplifyAtRuntime) api.intersectionSimplified else api.intersection
+        s"$intersection([${types.map(rec).mkString(", ")}])"
       case ProductType(types) => s"${api.product}([${types.map(rec).mkString(", ")}])"
       case ListType(element) => s"${api.list}(${rec(element)})"
       case MapType(key, value) => s"${api.map}(${rec(key)}, ${rec(value)})"

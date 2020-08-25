@@ -8,6 +8,8 @@ import {
   stringHashWithSeed,
   unorderedHashWithSeed,
 } from '../utils/hash.ts'
+import { allExcluding, flattenedUnique } from './util.ts'
+import { isSubtype } from './subtyping.ts'
 
 export interface Type extends Hashed {
   kind: Kind
@@ -50,17 +52,57 @@ export interface XaryType extends Type {
 }
 
 
+export interface SumType extends XaryType { }
+
+export function sum(types: Array<Type>): SumType {
+  return { kind: Kind.Sum, types, hash: unorderedHashWithSeed(types, 0x85f5fe35) }
+}
+
+/**
+ * Simplifies the given sum type parts according to our sum type normal form. If the resulting sum type would only
+ * contain a single part, we instead return the type itself.
+ */
+export function sumSimplified(types: Array<Type>): Type {
+  // TODO: If we ordered types by some type ordering, we could probably achieve a speedup for subtyping, equality
+  //       checking, and also simplification that involves intersection and/or sum types.
+  const flattened = flattenedUnique(Kind.Sum, types)
+
+  // Remove strict subtypes of other parts. Conceptually, we have to check for strict subtypes here, but we have
+  // already established that no two types in the list are equal. Since the definition of strict subtyping t1 < t2
+  // is t1 =/= t2 && t1 <= t2, we can forego the strict check here and just use normal subtyping.
+  const simplified = allExcluding(flattened, (self, other) => isSubtype(self, other))
+
+  if (simplified.length === 1) {
+    return simplified[0]
+  } else {
+    return sum(simplified)
+  }
+}
+
+
 export interface IntersectionType extends XaryType { }
 
 export function intersection(types: Array<Type>): IntersectionType {
   return { kind: Kind.Intersection, types, hash: unorderedHashWithSeed(types, 0x74a2317d) }
 }
 
-export interface SumType extends XaryType { }
+export function intersectionSimplified(types: Array<Type>): Type {
+  // TODO: If we ordered types by some type ordering, we could probably achieve a speedup for subtyping, equality
+  //       checking, and also simplification that involves intersection and/or sum types.
+  const flattened = flattenedUnique(Kind.Intersection, types)
 
-export function sum(types: Array<Type>): SumType {
-  return { kind: Kind.Sum, types, hash: unorderedHashWithSeed(types, 0x85f5fe35) }
+  // Remove strict supertypes of other parts. Conceptually, we have to check for strict supertypes here, but we have
+  // already established that no two types in the list are equal. Since the definition of strict supertyping t1 > t2
+  // is t1 =/= t2 && t1 >= t2, we can forego the strict check here and just use normal subtyping.
+  const simplified = allExcluding(flattened, (self, other) => isSubtype(other, self))
+
+  if (simplified.length === 1) {
+    return simplified[0]
+  } else {
+    return intersection(simplified)
+  }
 }
+
 
 export interface ProductType extends XaryType { }
 

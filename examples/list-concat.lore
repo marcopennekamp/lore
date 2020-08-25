@@ -7,7 +7,11 @@ function concat(as: [A], bs: [B]): [A | B] where A, B = {
 }
 
 action printList(list: [A]) where A {
-  println(list)
+  println('Printing generic list: $list')
+}
+
+action printList(list: [Int]) {
+  println('Printing Int list: $list')
 }
 
 action printList(list: [String | Int]) {
@@ -19,10 +23,12 @@ action printList(list: [String | Int | Boolean]) {
 }
 
 action test() {
-  const merged = concat([10], ['test'])
+  const list = [10]
+  printList(list)
+  const merged = concat(list, ['test'])
   printList(merged)
   const merged2 = concat(merged, [true])
   printList(merged2)
-  const merged3 = concat(merged, [15])
+  const merged3 = concat(merged2, [15])
   printList(merged3)
 }

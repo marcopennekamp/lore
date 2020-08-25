@@ -8,6 +8,7 @@ import {
   component,
   int,
   intersection,
+  intersectionSimplified,
   list,
   map,
   nothing,
@@ -15,6 +16,7 @@ import {
   real,
   string,
   sum,
+  sumSimplified,
   unhashedProduct,
   unit,
   variable,
@@ -33,8 +35,10 @@ export default {
 
   // Type constructors.
   variable,
-  intersection,
   sum,
+  sumSimplified,
+  intersection,
+  intersectionSimplified,
   product,
   component,
   list,
