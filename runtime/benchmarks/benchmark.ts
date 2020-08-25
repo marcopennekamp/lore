@@ -19,6 +19,7 @@ export function withSilentLogging(f: () => any): void {
 
 let bucket: any = undefined
 export function benchmark(name: string, f: () => any, times: number): void {
+  withSilentLogging(f)
   const before = performance.now()
   for (let i = 0; i < times; i += 1) {
     bucket = f()
