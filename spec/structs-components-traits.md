@@ -8,7 +8,75 @@
 
 
 
-### Structs and Components
+### Structs
+
+A **struct** describes the type and representation of user-defined data. In concrete terms, a struct is a set of **properties** (mutable and immutable) and possibly **components**, both allowing optional default values. A struct can **implement** any number of traits, which together determine the functions that the struct must implement and the components that the struct must contain. An instance of a struct, also called an object, can be **constructed** using one of two provided syntaxes. As structs describe actual instances, a struct type is **always concrete and never abstract**.
+
+Structs do not support **inheritance** in and of themselves. Traits are the mechanism to facilitate inheritance, which has the huge advantage of cleanly separating the concerns of data representation (structs) and abstract structure/behavior (traits).
+
+Properties (including components) can be **delimited** using commas and newlines. Both styles are permitted interchangeably, giving the ability to use both in the same struct definition, and should be chosen based on readability. Properties are **accessed** using the dot notation.
+
+###### Syntax Example
+
+```
+struct Point { x: Real = 0, y: Real = 0, z: Real = 0 }
+struct Position { mut point: Point }
+struct Person {
+  name: String
+  age: Int = 20
+  calling: String = 'Arts and Science'
+  component Position
+}
+```
+
+##### Construction
+
+Creating new struct instances is possible with two independent **constructor** syntaxes. The **call syntax** is a convenient way to create instances, but with the requirement that all properties need to be specified, including those that could have a default value. In contrast, the **map syntax** is most convenient when default values should be applied to properties or when more self-evident code is desired. It is also useful when properties should be specified out of order for some pragmatic reason. 
+
+When using the map syntax, one may **omit some verbosity** in a definition like `property: value` if the value is a variable and named exactly like the property. An example of this is included below.
+
+Apart from these two constructor styles, all **derivative constructors** will have to be defined as ordinary (multi-)functions. 
+
+###### Syntax Example
+
+```
+action test() {
+  // Call syntax.
+  let point = Point(0.5, 1.5, 2.5)
+  let position = Position(point)
+  // Map syntax.
+  let person = Person { name: 'Mellow', Position: position }
+}
+
+action test2() { 
+  // If the variable name matches the property name, it's possible to
+  // omit the colon entirely.
+  let name = 'Shallow'
+  let person = Person { name, Position: Position(Point { }) }
+}
+```
+
+##### Implementing Traits
+
+A struct can **implement** any number of traits. This will make the struct a **subtype** of each of its traits. Since a struct is always a concrete type, it will also have to **implement all abstract functions** declared over the trait. This is implicitly handled by the properties governing abstract functions and doesn't need to be handled specially for structs.
+
+###### Syntax Example
+
+```
+trait Hashable
+function hash(object: Hashable): Int
+
+struct Person implements Hashable { name: String }
+function hash(person: Person): Int = /* Compute the hash... */
+```
+
+##### Components
+
+TODO?
+
+
+
+### Components
 
 
 
@@ -18,7 +86,7 @@
 
 A **trait** is a type that describes structure and behavior. In concrete terms, a trait is an abstract type that can be associated with functions defining both its **structure** and **behavior** (either abstract, concrete, or both). Since traits must be backed by an object (created from a struct), meaning the trait itself cannot be instantiated, a trait is **abstract**.
 
-Traits can also **inherit** from (multiple) other traits and even **extend component types**. A trait `A` inheriting from a trait `B` will make `A` a subtype of `B` and give the programmer the opportunity to specialize any functions declared over `B` for the type `A`. When extending a component type `+C`, the trait effectively declares that any struct implementing the trait must have a component of type `C`. Such traits are also called **entities**.
+Traits can also **inherit** from (multiple) other traits and even **extend component types**. A trait `A` inheriting from a trait `B` will make `A` a strict and direct subtype of `B` and give the programmer the opportunity to specialize any functions declared over `B` for the type `A`. When extending a component type `+C`, the trait effectively declares that any struct implementing the trait must have a component of type `C`. Such traits are also called **entities**.
 
 ###### Syntax Example
 
@@ -115,8 +183,6 @@ In the future, we might introduce **syntactic sugar** for the simpler forms of d
 
 ### Post-MVL Extensions (Ideas)
 
-- **Default values** for struct properties.
-
 - Easy **getters and setters** for struct properties?
 
 - **Visibility declarations** like private/public/protected for struct properties?
@@ -146,10 +212,12 @@ In the future, we might introduce **syntactic sugar** for the simpler forms of d
   And then implement it like this:
 
   ```
+  // Direct mapping
   struct Point implements Position {
     x: Real implements Position.x
   }
   
+  // Indirect mapping
   property x: Real of box: Box = box.xStart + width(box) / 2
   ```
 
@@ -169,6 +237,8 @@ In the future, we might introduce **syntactic sugar** for the simpler forms of d
   Note: Since this proposal does not add any additional expressiveness to the language (only convenience), it is not a candidate for the MVL itself. Also, another question is how this system interacts with namespacing, and thus it would be prudent to define the module system first and THEN turn our attention to this proposal.
 
 - One step further: Automatic, optional **memoization of properties**.
+
+- The lack of struct inheritance currently has the big disadvantage that one cannot **"mix in" property definitions**. If you have a trait `Entity` that requires all its implementors to specify a `name: String` property and a `Sprite` component, this has to be re-declared inside every struct that implements `Entity`. I can see two main ways to solve this problem: (1) add mixins as a language feature or (2) allow users to solve this problem with a macro system. **Mixins** would firmly concern themselves with the realm of data representation; they would not even define their own types. Hence, adding mixins would preserve our stated goal of separating data representation and abstract data structure and behavior. You could declare a mixin alongside a trait if close data coupling is desired, but each struct would at least have to declare that it's using the mixin. There would be no language-level coupling between mixins and traits.
 
 - **Companion namespaces** for any declared type. (See also the next proposal in this list.)
 
@@ -207,3 +277,28 @@ In the future, we might introduce **syntactic sugar** for the simpler forms of d
   ```
 
   The constructor takes the underlying values as arguments and doesn't require any envelope boilerplate.
+  
+- Every entity defines a **list of components** which can be filtered and iterated over.
+
+- **Component life cycle functions:** We can add an action `onAttached(c: C, e: +C)` (in the Lore namespace) that is called when a component `C` has been attached to an entity `+C`. Its default implementation would be for the type `Any, +Any` and simply do nothing, so it would then be possible to specialize the function for any kind of component type, without the *need* to do so.
+
+  ```
+  action onAttached(component: Any, entity: +Any) {
+    // Do nothing.
+  }
+  
+  action onAttached(a: A, entity: +A) {
+    // A has been attached to an arbitrary entity.
+  }
+  
+  action onAttached(a: A, entity: +A & +B) {
+    // One special case for any entity that also has a B component.
+  }
+  
+  action onAttached(a: A, entity: SomeEntity) {
+    // Another implementation that requires the entity to be of some
+    // concrete entity type.
+  }
+  ```
+
+  We need the **first parameter** since we want to associate `onAttached` with one specific component. If we didn't have this first parameter, we'd essentially define `onAttached` for multiple components, such as `entity: +A & +B`. Without the first parameter, there is no way to differentiate whether this `onAttached` should belong to A or B.
