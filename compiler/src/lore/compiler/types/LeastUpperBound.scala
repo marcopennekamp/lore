@@ -18,8 +18,6 @@ object LeastUpperBound {
     * want the most specific common supertype. What could be more specific than one of the types themselves?
     */
   private[types] def configurableLub(defaultToSum: Boolean)(t1: Type, t2: Type)(implicit registry: Registry): Type = {
-    // TODO: How do type variables affect this?
-
     /**
       * The fallback LUB, which is either Any or t1 | t2 depending on the settings.
       */
@@ -41,6 +39,16 @@ object LeastUpperBound {
       // First of all, handle subtypes as outlined above. These cases trivially cover Any and Nothing.
       case (t1, t2) if t1 <= t2 => t2
       case (t1, t2) if t2 <= t1 => t1
+
+      // The least upper bound of two type variables is simply the LUB of their upper bounds (at compile-time, of
+      // course). All values assignable to either v1 or v2 for ANY actual types that the variables can represent at
+      // run-time must be described by the result of the LUB. This can only be either the sum of the two variables,
+      // V1 | V2, or preferably some kind of common upper bound.
+      case (v1: TypeVariable, v2: TypeVariable) => lubNoDefaultSum(v1.upperBound, v2.upperBound).fallbackIfAny
+      // The least upper bound of a type variable and a type (which is not itself a type variable) is similar to the
+      // treatment above, only with the idea that we treat the type t2 as its own "upper bound".
+      case (v1: TypeVariable, t2) => lubNoDefaultSum(v1.upperBound, t2).fallbackIfAny
+      case (t1, v2: TypeVariable) => lubPassOnSettings(v2, t1)
 
       // Intersection types can lead to a number of candidates. That is, if we have types A & B and C & D, we have
       // the following candidates: LUB(A, C), LUB(A, D), LUB(B, C), LUB(B, D). That's because any component of an

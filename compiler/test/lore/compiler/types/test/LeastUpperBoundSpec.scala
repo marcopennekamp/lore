@@ -2,6 +2,7 @@ package lore.compiler.types.test
 
 import lore.compiler.types._
 import org.scalatest.Assertion
+import org.scalatest.events.ScopeOpened
 
 class LeastUpperBoundSpec extends TypeSpec {
   import TypesExample._
@@ -71,5 +72,31 @@ class LeastUpperBoundSpec extends TypeSpec {
     (ListType(Bird & Fish), ListType(Mammal & Fish)) --> ListType(Fish)
     (MapType(BasicType.String, Human), MapType(BasicType.Int, Unicorn)) --> MapType(BasicType.String | BasicType.Int, Mammal)
     (MapType(BasicType.Real, Cat & Healthy), MapType(BasicType.Int, ScottishFold & Sick)) --> MapType(BasicType.Real, Cat & Status)
+  }
+
+  it should "return the correct least upper bounds for type variables" in {
+    val A = new TypeVariable("A", BasicType.Nothing, Bird, 0)
+    val B = new TypeVariable("B", BasicType.Nothing, Mammal, 1)
+    val C = new TypeVariable("C", BasicType.Nothing, Wheel, 2)
+    (A, Chicken) --> Bird
+    (Chicken, A) --> Bird
+    (B, Human) --> Mammal
+    (Human, B) --> Mammal
+    (A, ScottishFold) --> Animal
+    (ScottishFold, A) --> Animal
+    (B, ScottishFold | Unicorn) --> Mammal
+    (B, A) --> Animal
+    (A, B) --> Animal
+    (A | B, Bird) --> Animal
+    (A, B | Bird) --> (B | Bird)
+    (A, BasicType.String) --> (A | BasicType.String)
+    (BasicType.String, A) --> (A | BasicType.String)
+    (A, C) --> (A | C)
+    (C, A) --> (A | C)
+    (B, C) --> (B | C)
+    (C, B) --> (B | C)
+    (A | B, C) --> (A | B | C)
+    (A | B, A | C) --> (A | B | C)
+    (A & B, C) --> ((A & B) | C)
   }
 }

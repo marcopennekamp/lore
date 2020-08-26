@@ -142,7 +142,14 @@ private[verification] class FunctionTransformationVisitor(
         case ListType(elementType) =>
           // The immutable list is constructed from the existing list and another element. The resulting type of the
           // list will be the least upper bound of the two types. If the two types aren't related, we default to sum
-          // types, which provides a sensible default for complex list constructions.
+          // types, which provide a sensible default for complex list construction.
+          // TODO: If we have an append between, say, a type variable A <: Mammal as the list's element type and a
+          //       new element type of Human, should we decide the type at run-time (LUB of A and Human) or at
+          //       compile-time? I think currently, the type is decided at compile-time, which means that with a
+          //       correct implementation of LUBs for type variables, the type will just be Mammal. It could be
+          //       narrower at run-time, but that would mean rethinking list types once again. Maybe we should let
+          //       it be as is, focus on other aspects of the language, and later come back here once we have more
+          //       feedback from actually using Lore (both my own feedback and maybe user feedback).
           val combinedType = LeastUpperBound.leastUpperBound(elementType, right.tpe)
           Expression.BinaryOperation(BinaryOperator.Append, left, right, ListType(combinedType), position).compiled
         // TODO: Implement append for maps?
