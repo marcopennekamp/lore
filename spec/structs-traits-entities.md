@@ -1,10 +1,10 @@
-# Structs, Components and Traits
+# Structs, Traits, and Entities
 
 **Structs, components and traits** are the mechanisms with which complex data types can be built in Lore. These three concepts can be roughly differentiated as such:
 
-- **Structs** are data type definitions that can stand on their own or back a trait. A struct is always a subtype of all the traits that it implements and also carries this information at run-time. However, unless a trait is attached at run-time (which will be possible under certain circumstances), the traits that are attached to the instance of a struct are mostly determined at compile-time.
-- **Components** are special, immutable struct properties. They are seen as an integral part of the data structure they are owned by. The type of an **entity** (a trait or struct that owns at least one component) is partly determined by the actual value of the component, which is also replicated at run-time. As such, as opposed to traits which are (mostly) determined at compile-time, the component portion of an entity's type is determined at compile-time. This has profound implications in the context of multiple dispatch.
+- **Structs** are data type definitions that can stand on their own, possibly implementing some number of traits. A struct is always a subtype of all the traits that it implements and also carries this information at run-time. However, unless a trait is attached at run-time (which will be possible under certain circumstances), the traits that are attached to the instance of a struct are determined at compile-time.
 - **Traits** are abstractions of structure and behavior. They are Lore's solution to the questions of data type abstraction, inheritance, and interfaces. Traits cannot be instantiated directly: they have to be backed by a struct.
+- **Entities** are traits or structs that contain at least one component. **Components** are immutable properties that represent a *part* of an entity. Any entity can be viewed in part as one or multiple of its components. An entity with two components `A` and `B` can be viewed as the type `+A`, `+B`, or `+A & +B`. We could then write a function over `+A & +B`, take advantage of the fact that both components are part of the entity, and implement some sort of behavior concerning this exact structure. The type of an entity is ultimately determined at run-time from the actual types of its components. This has profound implications in the context of multiple dispatch.
 
 
 
@@ -72,13 +72,22 @@ function hash(person: Person): Int = /* Compute the hash... */
 
 ##### Components
 
-TODO?
+A struct can contain any number of **components**, which are properties that must be traits or a structs (and not more complex types, or even lists) and don't allow declaring a name. Instead, the name of a component is the same as the name of its type. Only one component of the same type may be part of the struct. A component can be **accessed** like any other property. A struct implementing at least one component is also called an **entity**.
 
+If a struct implements a **trait** extending component types, the struct will have to satisfy these by declaring the correct components. If a trait extends a component type `+C1`, the struct will have to contain a component of type `C2` given `C2 <: C1`.
 
+###### Syntax Example
 
-### Components
+```
+struct Skeleton {
+  component Position
+  component Health
+}
+```
 
+##### Owned-By 
 
+**TODO:** What about owned-by in structs?
 
 
 
@@ -86,7 +95,7 @@ TODO?
 
 A **trait** is a type that describes structure and behavior. In concrete terms, a trait is an abstract type that can be associated with functions defining both its **structure** and **behavior** (either abstract, concrete, or both). Since traits must be backed by an object (created from a struct), meaning the trait itself cannot be instantiated, a trait is **abstract**.
 
-Traits can also **inherit** from (multiple) other traits and even **extend component types**. A trait `A` inheriting from a trait `B` will make `A` a strict and direct subtype of `B` and give the programmer the opportunity to specialize any functions declared over `B` for the type `A`. When extending a component type `+C`, the trait effectively declares that any struct implementing the trait must have a component of type `C`. Such traits are also called **entities**.
+Traits can also **inherit** from (multiple) other traits and even **extend component types**. A trait `A` inheriting from a trait `B` will make `A` a strict and direct subtype of `B` and give the programmer the opportunity to specialize any functions declared over `B` for the type `A`. When extending a component type `+C`, the trait effectively declares that any struct implementing the trait must have a component of type `C`. Such traits are also called **entities**. A trait extending an entity is itself an entity, because it also implicitly extends the component type that its parent trait extends.
 
 ###### Syntax Example
 
@@ -178,6 +187,110 @@ In the future, we might introduce **syntactic sugar** for the simpler forms of d
 ##### Owned-By 
 
 **TODO:** What about owned-by in traits?
+
+
+
+### Entities
+
+We have already seen how components can be declared and instantiated. In this section, we will take the time to further look at **entities**, and especially some constraints that are necessary to make the system work. Because both structs and traits can be entities, we have chosen to create this third section to define common features.
+
+##### Typings
+
+Let's say we have an entity `E` with a component `C1`. We say that the type `E` satisfies the typing `E & +C1`. The `+C1` is read as **"has C1"** and is a type *describing the entity*, not the component. For example, when we have a variable `e: +C1`, `e` is *not* C1 itself but rather the entity with a component of type `C1`. It can be accessed with `e.C1`.
+
+At run-time, `E` might actually be a type `E & +C3` given `C3 < C1`, if a value of `C3` was assigned as a component as opposed to a value of `C1`. This has profound implications for **multiple dispatch:** Entities are dispatched based on their *actual* type and the *types of their components at run-time*.
+
+##### Immutability
+
+Once assigned to an entity, a component cannot be replaced or removed: **components are immutable**. Note that, while the *reference* is immutable, the component *itself* does not have to be immutable. You can, of course, still model changing state in Lore, but that change needs to be applied inside the component, not by replacing a component.
+
+We would love to get rid of this **constraint**, but components must be immutable because they are part of the run-time type of the entity, as the actual component value is significant in multiple-dispatch. If a component's type could change during execution, so would the entity type, and this is not permitted due to our policy of requiring the types of run-time values to be immutable after the value's construction.
+
+##### Component Type Restrictions
+
+The freedom with which we allow subtyping of component types has a few **implications**. Say we have an entity type `E & C2` with `C1 < C2 < C3`. We could assign a value of either `C1` or `C2` to the entity. This already leads to a problem when we consider the compilation process:
+
+```
+struct E1 { component C1 }
+struct E2 { component C2 }
+
+action f(e: +C2) {
+  e.C2
+}
+```
+
+In the example above, assume that `C1` of `E1` is named `C1` in the resulting target code. How do we get `C1` through a property access of `C2`? This requires us to **resolve component values dynamically at run-time** if we try to access a subtypeable component `C2` through a generic component type.
+
+Consider another problem: since `C2 < C3`, we should be able to **access** `C1` of `E1` via a variable of type `+C3`:
+
+```
+action f2(e: +C3) {
+  e.C3 // If e has type E1, this should be a C1.
+}
+```
+
+This is immediately useful, of course. But `C3` **wasn't even declared** in either `E1` or `E2`. This leads to the following awkwardness:
+
+```
+trait C
+struct CA extends C
+struct CB extends C
+
+struct E {
+  component CA
+  component CB
+}
+
+action f(e: +C) {
+  e.C // Well, that's a problem!
+}
+```
+
+We don't know whether `e.C` refers to `CA` or `CB`. Well, in fact, it refers to *both*. But we don't know that `e` is `E` in `f`. We just know that *some* entity has a component of type `C`. This means we have **two options:**
+
+1. Any component access **returns a list**.
+2. Any two components defined in an entity **must not share a supertrait**.
+
+The first option would make components effectively unusable. It is rarely desirable to have to always handle lists when we want to operate on components that should be standalone instances. Hence, we choose the **second option**.
+
+If no components share a supertrait (`Any` does not count, since it is not a trait), we can **always decide** which component belongs to a given component type `+C`. The downside is that we cannot have two components sharing a supertrait, such as:
+
+```
+trait Stat
+struct Strength extends Stat
+struct Dexterity extends Stat
+
+struct Hero {
+  // Does not compile: Strength and Dexterity share a supertrait.
+  component Strength
+  component Dexterity
+}
+```
+
+**TODO:** Maybe we could introduce traits which cannot be components, which would remove them from this whole restriction. I anticipate that there are a handful traits that this restriction will be very prohibitive for, e.g. Hashable, which might be applied to two structs that would otherwise be components coexisting in perfect harmony. (Perhaps even just with the syntax `owned by Nothing`. Might be super elegant. Although we have to be careful about how owned by translates to a subtrait or struct implementing a trait…)
+
+But of course, we can always **rewrite the entity** in a way that allows us to implement the desired design. Consider the following example. We lose a little bit of flexibility, but we gain flexibility by being able to access components by their supertype. 
+
+```
+struct StatRepository {
+  strength: Strength
+  dexterity: Dexterity
+}
+
+struct Hero {
+  component StatRepository
+}
+```
+
+Luckily, by the way, **`+Any`** is not a valid type, since `Any` is not a trait or struct. So we don't shoot ourselves in the foot by disallowing the full trait hierarchy.
+
+##### Ownership
+
+**TODO**
+
+
+
+
 
 
 
