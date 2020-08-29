@@ -180,11 +180,50 @@ In the future, we might introduce **syntactic sugar** for the simpler forms of d
 
 ##### Traits and Behavior
 
-**TODO**
+Traits are natural abstractions for **behavior**. Just as with data abstraction, multiple dispatch provides the ability to work with abstract and concrete functions. To Lore, a trait itself is just an "empty" type. All the magic happens within the functions.
+
+As a simple **example** of behavior abstractions, consider a trait `Hashable` that requires its implementors to provide a `hash` function:
+
+```
+trait Hashable
+function hash(value: Hashable): Int
+```
+
+Consider we have a trait `Statistic` that should be hashable, so that we can use stats as keys in a map:
+
+```
+trait Statistic extends Hashable
+function uniqueName(stat: Statistic): String
+```
+
+Instead of implementing the hash function for every stat individually, we can implement it just for the trait, relying on the unique name supplied by other stats:
+
+```
+// Assuming that hash is implemented for Strings...
+function hash(stat: Statistic): Int = hash(uniqueName(stat))
+```
+
+Note that `Statistic` wouldn't need to extend the `Hashable` trait just to provide an implementation for the `hash` function. 
 
 ##### Traits as Label Types
 
-**TODO**
+Conceptually, a **label type** is a type attached to another type that describes the given values in some way. For example, a sorted list could be represented as `[Any] & Sorted` and a dead monster could be represented as `Monster & Dead`. We would declare these label types as follows:
+
+```
+trait Sorted
+trait Dead
+```
+
+The core usefulness of a label type comes from the idea that we can **specialize functions** when the label is present:
+
+```
+action hit(monster: Monster) { ... }
+action hit(monster: Monster & Dead) {
+  // Do something else if the monster is dead.
+}
+```
+
+Right now, it is not possible to attach a label type to a value at run-time, so label types can only be "attached" when a struct is instantiated. But once we introduce **dynamic specialization and generalization**, label types will be attachable to and removable from existing values, provided their compile-time types still agree. Then it becomes a matter of moving labels traditionally handled as object properties to the type space and harnessing the power of multiple dispatch. For example, one could attach their own label type to values that are declared in a library, then specialize some library functions for types that also have the label. This might lead to unprecedented levels of flexibility.
 
 ##### Ownership
 
