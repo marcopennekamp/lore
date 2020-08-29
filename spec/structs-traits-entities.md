@@ -72,9 +72,9 @@ function hash(person: Person): Int = /* Compute the hash... */
 
 ##### Components
 
-A struct can contain any number of **components**, which are properties that must be traits or a structs (and not more complex types, or even lists) and don't allow declaring a name. Instead, the name of a component is the same as the name of its type. Only one component of the same type may be part of the struct. A component can be **accessed** like any other property. A struct implementing at least one component is also called an **entity**.
+A struct can contain any number of **components**, which are properties that must be traits or structs (and not more complex types, even lists) and are not declared with a name. Instead, the name of a component is the same as the name of its type. Only one component of the same type may be part of the struct. A component can be **accessed** like any other property. A struct implementing at least one component is also called an **entity**.
 
-If a struct implements a **trait** extending component types, the struct will have to satisfy these by declaring the correct components. If a trait extends a component type `+C1`, the struct will have to contain a component of type `C2` given `C2 <: C1`.
+If a struct implements a **trait** extending component types, the struct will have to satisfy these by declaring the correct components. If a trait extends a component type `+C1`, the struct will have to contain a component of type `C2` given `C2 <: C1` or just `C1` itself.
 
 ###### Syntax Example
 
@@ -85,9 +85,15 @@ struct Skeleton {
 }
 ```
 
-##### Owned-By 
+##### Ownership
 
-**TODO:** What about owned-by in structs?
+Struct **ownership** follows the rules of entity ownership.
+
+###### Syntax Example
+
+```
+struct MoverAI implements AI owned by +Position
+```
 
 
 
@@ -174,19 +180,21 @@ In the future, we might introduce **syntactic sugar** for the simpler forms of d
 
 ##### Traits and Behavior
 
-
-
-
+**TODO**
 
 ##### Traits as Label Types
 
+**TODO**
 
+##### Ownership
 
+Trait **ownership** follows the rules of entity ownership.
 
+###### Syntax Example
 
-##### Owned-By 
-
-**TODO:** What about owned-by in traits?
+```
+trait Movable owned by +Position
+```
 
 
 
@@ -205,6 +213,8 @@ At run-time, `E` might actually be a type `E & +C3` given `C3 < C1`, if a value 
 Once assigned to an entity, a component cannot be replaced or removed: **components are immutable**. Note that, while the *reference* is immutable, the component *itself* does not have to be immutable. You can, of course, still model changing state in Lore, but that change needs to be applied inside the component, not by replacing a component.
 
 We would love to get rid of this **constraint**, but components must be immutable because they are part of the run-time type of the entity, as the actual component value is significant in multiple-dispatch. If a component's type could change during execution, so would the entity type, and this is not permitted due to our policy of requiring the types of run-time values to be immutable after the value's construction.
+
+Note that one object can be a component of **multiple entities**. For example, you could share a health state between two bosses in a boss fight. We don't want to remove this freedom and so Lore asks extra diligence of the programmer when it comes to component instantiation.
 
 ##### Component Type Restrictions
 
@@ -269,7 +279,12 @@ struct Hero {
 
 **TODO:** Maybe we could introduce traits which cannot be components, which would remove them from this whole restriction. I anticipate that there are a handful traits that this restriction will be very prohibitive for, e.g. Hashable, which might be applied to two structs that would otherwise be components coexisting in perfect harmony. (Perhaps even just with the syntax `owned by Nothing`. Might be super elegant. Although we have to be careful about how owned by translates to a subtrait or struct implementing a trait…)
 
-But of course, we can always **rewrite the entity** in a way that allows us to implement the desired design. Consider the following example. We lose a little bit of flexibility, but we gain flexibility by being able to access components by their supertype. 
+- `owned by Nothing` doesn't work, because subtypes of the entity should be able to be owned (such as `Position <: Hashable` being able to be owned as a component). Hence, we will have to introduce some sort of keyword for this.
+- Maybe just the keyword `ownerless`.
+- Alternative 1: To be able to be used as a component, a type has to declare `owned by Any`.
+- Alternative 2: To be able to be used as a component, we have to declare entities as `component struct`/`component trait`.
+
+But of course, we can always **rewrite the entity** in a way that allows us to implement the desired design. Consider the following example. We lose a little bit of flexibility, but we gain flexibility by being able to access components by their supertype.
 
 ```
 struct StatRepository {
@@ -286,11 +301,40 @@ Luckily, by the way, **`+Any`** is not a valid type, since `Any` is not a trait 
 
 ##### Ownership
 
-**TODO**
+Some components may **depend** on the entity that owns them. For example, an AI component may rely on a Position component, and so their owner `E` must contain such a component, signified by the typing `E <: +Position`. We want to provide a native way to deal with such dependencies.
 
+When declaring a struct or trait, you can declare that a component of such a type must be **owned** by an entity of a specific type, putting a constraint on the owner's type:
 
+```
+struct Sprite owned by +Position { ... }
+```
 
+This constraint is *only relevant for component declarations*. It does not in any way affect the ability to create instances of the declared class. We **guarantee at compile-time** that an entity declaring a component can in fact own it; if not, we throw a compilation error. The check simply tests whether the type bounds given by the component are compatible with the entity.
 
+An ownership restriction may be **any kind of type**. We don't guarantee that any entity can satisfy this type, but we don't place any systematic restraints on the type. In general, you will want to restrict ownership in two cases:
+
+- You need to **access another component of the entity**. You wouldn't be able to implement this component without access to the other component.
+- You want to restrict a component to a **specific entity type**. For example, you could restrict a component `Loot` to the `Monster` entity type.
+
+Having declared an ownership constraint, a value of a type `+C` will also give you **access to the owner's types** if `C` declared ownership restrictions. For example:
+
+```
+function draw(e: +Sprite) = {
+  draw(e.Sprite.image, e.Position)
+}
+```
+
+Even though we have only declared the entity to have the Sprite component, as the ownership of a Sprite is restricted to entities that also have a Position component, we can be sure that `e` **also has a Position component**. Lore recognizes this and allows you to access that other component.
+
+Ownership restrictions are passed down via **inheritance**. A subtype may keep the current restrictions or specialize them. For the sake of being explicit, an entity must re-declare the owner type of its supertypes (or specialize them). In the case of multiple-inheritance, the inheritors owner type must be a subtype of the intersection of the owner types of *all* types it's inheriting from. For example:
+
+```
+trait A owned by +C1
+trait B owned by +C2
+struct E implements A, B owned by +C1 & +C2
+```
+
+Ownership is **not fully type-safe at compile-time**, because the ability to specialize ownership *and* the ability to use components that are subtypes of the actually declared components essentially clash. Hence, **at compile-time**, we only check ownership for the declared component types. Additionally, **at run-time**, we check ownership each time an entity is instantiated. This makes the language more flexible and still restricts any point of failure to entity instantiation.
 
 
 
@@ -391,6 +435,8 @@ Luckily, by the way, **`+Any`** is not a valid type, since `Any` is not a trait 
 
   The constructor takes the underlying values as arguments and doesn't require any envelope boilerplate.
   
+- **Attaching components at run-time:** Adding components to arbitrary entities, as long as ownership and component type restrictions hold, could be very powerful combined with multiple dispatch.
+
 - Every entity defines a **list of components** which can be filtered and iterated over.
 
 - **Component life cycle functions:** We can add an action `onAttached(c: C, e: +C)` (in the Lore namespace) that is called when a component `C` has been attached to an entity `+C`. Its default implementation would be for the type `Any, +Any` and simply do nothing, so it would then be possible to specialize the function for any kind of component type, without the *need* to do so.
