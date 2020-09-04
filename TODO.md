@@ -24,6 +24,16 @@ Cleanup:
     - Affected files: TypeVariableAllocation, Assignability, parametric.lore
 - Move more of the spec to the wiki.
 
+Testing:
+- Figure out which portions of the compiler and runtime to unit test.
+  - We should ideally invest in a system that can test the parts that are replicated in both the compiler and the runtime with the same values. This system should read type relationships from text files and then execute tests. This is crucial because as we discover type system bugs, we should add test cases that cover those bugs. 
+- Functional testing: Create a system which automatically runs Lore programs with given arguments and expected outputs. We should amass a large library of Lore programs that together can almost guarantee that the compiler is doing a good job. As we discover bugs, it would be most cost-effective to add additional programs that verify that the compiler or runtime bug has been fixed. 
+- Ultimately, we will have a two-layer testing approach:
+    1. Unit tests for the most critical components of the runtime and the compiler, especially the type system.
+    2. Functional tests for complete Lore programs that test the compiler as a whole, the runtime as a whole, and Pyramid as a whole.
+- We probably should also remove the parser tests once we have automated Lore program testing. It neatly covers aspects of the parser. We might design some Lore test programs based on the current parser tests, to catch syntactical strangeness.
+- Possibly unit tests for Pyramid?
+
 Next up:
 - Tighten and refactor the code. Clear some TODOs. Don't just transpile but also work on the unfinished verification phase.
 - Rethink the syntax to be quieter. Noiseless. Less braces and parentheses. Achieve maximum simplicity and clarity.
