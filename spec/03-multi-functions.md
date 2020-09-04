@@ -106,7 +106,7 @@ That is, we look at all functions $f \in \mathcal{F}$ and choose only those whos
 
 We take functions with a **more general input type** into account, because such functions *can* be invoked with a subtype of the input type, i.e. with more specific arguments than needed. This is important for the case in which we cannot find a function that specifically meets the argument type $t$.
 
-Lastly, some functions of the multi-function can contain **parametric types**. As we are looking for fitting functions, we only have to check that a given input type could feasibly satisfy the parametric type constraints. For now, parametric types only have one notion of constraint: upper type bounds. We thus substitute type variables with their type bounds and find the fit as usual.
+Lastly, some functions of the multi-function can contain **parametric types**. As we are looking for fitting functions, we only have to check that a given input type could feasibly satisfy the parametric type constraints. For now, parametric types only have one notion of constraint: upper type bounds. We thus substitute type variables with their type bounds and find the fit as usual. <— **TODO:** This is wrong and has been superseded by a proper notion of fit between two types.
 
 ---
 
