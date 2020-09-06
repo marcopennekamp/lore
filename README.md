@@ -2,7 +2,7 @@
 
 **Lore** is a general-purpose programming language featuring multi-functions, a type-safe entity-component system, and intersection and semantic types.
 
-To learn more about the language, read the [**introduction**](spec/01-introduction.md) to our spec.
+To learn more about the language, read the [**overview**](spec/overview.md) of our specification.
 
 
 
@@ -10,12 +10,11 @@ To learn more about the language, read the [**introduction**](spec/01-introducti
 
 This repository is divided into the following **parts:**
 
-- **Spec:** The Lore specification. Parts of the specification heavily rely on inline TeX, which is not supported by Github. If you want to read the spec nicely formatted, please shoot me an email.
+- **Spec:** The Lore specification. We have taken care not to make the specification overly technical. It is, mostly, a user-facing description of the language and can be read as a guide to the language. The `technical` subfolder goes into more detail that might not be useful to average language users.
 - **Examples:** Examples of Lore code, some of which can be compiled (or even run) today. Others are in a conceptual state. This directory also contains Lore test sources.
-- **Common:** This is the common code that is shared by the compiler and the runtime. Currently, this mostly concerns the type 
 - **Compiler:** The compiler, written in Scala, translates a Lore program to a Javascript file.
-- **Runtime:** The runtime, also written in Scala, is compiled using Scala.js, which allows us to write most of the runtime in Scala and, crucially, share code with the compiler. This is super useful since we need type information at runtime. It would've been a shame if we had to write that twice (especially the subtyping algorithm). So thanks to Scala.js for making this possible!
-- **Pyramid:** This is the Lore standard library, which defines functions to work with Lore values, such as lists, maps and strings. You don't HAVE to use it, frankly, but currently it's baked into the compiler and you will want to use it if you have any sanity left in you. I'm just saying that the compiler doesn't rely on the existence of these functions and it's possible to plug your own standard library into the language. The name refers to the Pyramid Texts, which are one of the oldest extant bodies of lore in the world, in this case religious lore.
+- **Runtime:** The runtime, written in Typescript, contains utilities that are required to run compiled Lore code. These utilities include run-time value representation and manipulation, data structures, and crucially our type system, which is needed at run-time for multiple dispatch.
+- **Pyramid:** This is the Lore standard library, which defines functions to work with Lore values, such as lists, maps and strings. Some core functions declared by Pyramid are used by the compiler, but you can omit using Pyramid and roll your own standard library. The name refers to the Pyramid Texts, which are one of the oldest extant bodies of (religious) lore in the world.
 
 
 
