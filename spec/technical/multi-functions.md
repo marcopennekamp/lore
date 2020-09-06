@@ -1,10 +1,10 @@
 # Multi-Functions
 
-[Previous File](02-types.md) [Next File](04-classes-entities-components.md)
+**Note:** This is the old document on multi-functions, which has since been superseded by a document that omits all mathematical definitions and proofs. We still want to keep this old document to have access to the (old) proofs. However, since the introduction of parametric types, keeping proofs and mathematical definitions up-to-date doesn't seem to be cost-effective anymore.
 
 **Multi-functions** are an exceedingly important feature of Lore. They allow specializing a function via any of the parameters, thereby allowing dynamic dispatch over more than one argument. This feature is also called **multiple dispatch**.
 
-*Definition.* A **multi-function** is a set of all functions that share the same name. Such an individual function is also called an **instance** of its multi-function. 
+*Definition.* A **multi-function** is a set of all functions that share the same name. Such an individual function is also called an **instance** of its multi-function.
 
 Multi-functions can be **invoked** like ordinary functions. The actual function being invoked is chosen at runtime as the function that is most specific in the set of functions that can be invoked with the actual (dynamic) argument types. That is, we consider functions of which the argument types are subtypes of the parameter types and then choose the most specific function. We call this kind of invocation **multiple dispatch**.
 

@@ -277,11 +277,14 @@ Of course, the question is always whether one should introduce a **label type** 
 
 **TODO:** I'm not sure if the constellation above works. It might be that `SmartCar` and `Car & Crashed` are equally specific for a value of type `SmartCar & Crashed`, so we *might* have to actually introduce priority functions after all… (Giving functions a higher or lower priority to disambiguate during multiple dispatch, to support modeling exactly these sorts of situations. However, such a solution might become extremely brittle.)
 
+##### Behavioral and structural abstraction with traits
 
+**TODO:** Write.
 
-- Behavioral and structural abstraction with traits
-- General use with intersection types
-  - Use with component types / entities
-  - Use with label types
+##### General use with intersection types
 
-- Extension methods
+**TODO:** Use with component types / entities. Use with label types.
+
+##### Extension Methods
+
+**TODO:** Write.

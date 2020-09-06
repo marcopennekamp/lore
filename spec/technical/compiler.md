@@ -1,6 +1,6 @@
 # Compiler
 
-[Previous File](05-expressions.md)
+**Note:** This document is not fully up-to-date anymore. Keeping it so does not seem to be very cost-effective.
 
 In this document, we outline the **design of the compiler**. It is prudent to consider the high-level design of the compiler on a conceptual level first, for three reasons: one, it will be easier for other developers to understand the structure of the compiler; two, while developing the compiler, we can always go back to these documents and periodically audit whether the implementation is still following a good direction; and three, I hope to make fewer mistakes coding the compiler when I have considered the high-level design first.
 
