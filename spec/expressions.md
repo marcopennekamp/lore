@@ -1,10 +1,8 @@
 # Expressions
 
-[Previous File](04-classes-entities-components.md) [Next File](06-compiler.md)
+Lore is an expression-based language, which means that there are no statements, only expressions. This document presents the kinds of **values and expressions** available in Lore.
 
-This document outlines all valid **expressions** found in Lore.
-
-**TODO:** How do we implement type casts / conversions?
+**TODO:** How do we implement type casts / conversions? (Typings / Type Assertions: `expr :: Type`.)
 
 **TODO:** Consider introducing Swift-style `guard` statements with a twist: They operate within blocks. If the condition is false, continue the code, otherwise *return the value of the else part from the block*. I think this could be super useful in game development.
 
@@ -12,29 +10,115 @@ This document outlines all valid **expressions** found in Lore.
 
 ### Top-Level Expressions
 
-**Top-level expressions** are a special type of expression which may only appear in the following places:
+**Top-level expressions** are a special type of expression which may only appear at the top level of blocks and in the bodies of conditional and loop expressions.
+
+###### Syntax Example
 
 ```
 // They are legal at the top level of blocks.
 { const x = 0 }
 
-// They are legal as the body of conditionals and repetitions.
+// They are legal as the body of conditionals and loops.
 if (y == 0) x = 0 else x = 5
 repeat while (i < 10) i = i + 1
 for (entity in entities) count = count + 1
 ```
 
-Top-level expressions are currently **variable declarations**, **assignments**, and **yields**.
+Top-level expressions are currently **variable declarations**, **assignments**, and **returns**.
+
+
+
+### Variable Declarations, Assignments, and Expressions
+
+A **variable declaration** lets you define a new variable, while an **assignment** lets you assign a value to a variable or property. Both are **top-level expressions**. A **variable expression** is simply an expression that evaluates to the value of its mentioned variable.
+
+Here is the **syntax** of declarations, assignments, and variable expressions:
+
+```
+let x: T = v1      // immutable variable declaration
+let mut x: T = v1  // mutable variable declaration
+x = v2             // variable assignment (only valid if x is mutable)
+x				   // evaluates to v2
+```
+
+A **declaration** creates a new variable. The type of the variable will be inferred from the assignment, but you can specify the type manually. Values need to be manually assigned to declared variables, even if they are desired to be `0`, `''`, `[]`, etc. We believe in being explicit, especially since most variables should be constants anyway.
+
+Variables can be **mutable or immutable**. Only mutable variables can be assigned to after setting their value with the initial declaration. We recommend to declare all variables as immutable unless mutability is specifically needed. This is also the reason why the mutability syntax is relatively verbose.
+
+An **assignment** overwrites the value of a variable or property with some new value. The value on the right side must be compatible with the type of the variable or property. The name on the left side may be a variable or a property:
+
+```
+let mut x = 0.0
+x = 5                        // Variable assignment
+character.name = 'Weislaus'  // Property assignment
+character.Position.x = x     // Deep property assignment
+```
+
+Both declarations and assignments are technically expressions and they return the **unit type**. This result is of course mostly useless.
+
+Lore offers the following **assignment shorthands:**
+
+```
+a += b  // a = a + b
+a -= b  // a = a - b
+a *= b  // a = a * b
+a /= b  // a = a / b
+```
+
+
+
+### Return
+
+The **return** top-level expression returns a value from a function. The syntax is `return expr`, with `expr` evaluating to the value to return. Use return only if you 'desperately' need to return early from a function. Prefer *using blocks and control structures as expressions*.
+
+###### Syntax Example
+
+**Early returns** are a useful way to achieve cleaner code:
+
+```
+function foo(x: Int): String = {
+  if (bar(x)) return 'cool'
+  if (baz(x + 2)) return 'cruel'
+  'ouch!'
+}
+```
+
+##### Nesting Returns
+
+Returns **cannot be nested** in top-level expressions that are not at the top-level of a function. For example, the following code is illegal:
+
+```
+function foo(): String = {
+  if ({ return false }) 'hello' else 'world'
+}
+```
+
+Lore's semantics would not be well defined if we allowed such constellations.
+
+
+
+### Blocks
+
+A **block** is a sequence of expressions, the last of which becomes the value of the block. *Blocks are expressions*. You can write code like this:
+
+```
+let result = {
+  let a = 5
+  let b = 10.0
+  let c = getReason()
+  if (c == 'business') a * b else a / b
+}
+```
+
+Blocks also give you the luxury of **lexical scoping**, so make sure you declare variables exactly where you need them. In the example above, neither a, b, nor c are visible outside the block.
 
 
 
 ### Numbers
 
-**TODO:** Can `Real` and `Int` be extended?
-
 Lore supports **real** and **integer** numbers. Their types are `Real` and `Int`. `Int` is a subtype of `Real`. They will both be implemented using the standard Javascript number type, and so precise integers can only be guaranteed up to [MAX_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER). We believe this is sufficient for all common use cases. If larger numbers than $2^{53}-1$ are desired, we recommend using a big integer implementation.
 
-We are not introducing integers for performance reasons. Rather, we think that it is useful to **state intent with the type:** if a function expects a `Real` number, it can be any number, while a function expecting an `Int` is explicitly requiring the number to be an integer. This leads to self-documenting code and guarantees that are useful when comparing for equality and such.
+We are not introducing integers for performance reasons. Rather, we think that it is useful to **state intent with the type:** if a function expects a `Real` number, it can be any number, while a function expecting an `Int` is explicitly requiring the number to be an integer.
 
 Internally, integers are represented as reals, but with additional **guarantees and checks:**
 
@@ -45,6 +129,7 @@ Internally, integers are represented as reals, but with additional **guarantees 
   - Since there are no precision issues, there is no need to require manual casting of integers to reals.
 - Integer **function arguments** and **return values** are asserted, at runtime, to be an integer using the Javascript function `isInteger`. This assertion is meant to catch holes in these checks and guarantees.
 - If we dynamically **dispatch** on the `Real` type, the actual type at runtime is determined using `isInteger`. If true, we dispatch with the value having `Int` as its type, and otherwise having `Real` as its type.
+- **TODO:** Actually implement this in the compiler or rethink our approach here…
 
 For now, we want to keep literal grammar to a minimum. Hence, we do not support scientific notation and only support base 10. Here are the **valid number formats:**
 
@@ -67,6 +152,7 @@ Arithmetic operations have the following **conversion rules:**
 
 - If both arguments are real or integer, the result is also of the same type.
 - If one of the arguments is real, the result will also be real.
+- **TODO:** This is wrong. Calculations like `2.5 * 2` don't necessarily yield a `Real`, since `Int` is decided at run-time.
 
 ##### Equality and Order
 
@@ -78,9 +164,7 @@ Numbers are equal and ordered in accordance with the rules of sanity. Integers a
 
 **TODO:** Long-term, we could define booleans within Lore as singleton types.
 
-**TODO:** We could make `Boolean` abstract, introduce two subtypes `True` and `False`, and allow dispatching on boolean "types". This is definitely ~~a whacky~~ an idea, and either very cool or very stupid. One problem I see is that when a boolean could be dispatched on as a flag, what we really want is a label type: `function contains(list: [a], value: a, isSorted: Boolean)` and `function contains(list: [a], value: a, isSorted: True)` etc. compared to `function contains(list: [a], value: a)` and `function contains(list: [a] & Sorted, value: a)`.
-
-Lore supports **booleans**. Their type is `Boolean`. We will implement them using the standard Javascript boolean type. There are two boolean **values:** `true` and `false`. 
+Lore supports **booleans**. Their type is `Boolean`. They are implemented using the standard Javascript boolean type. There are two boolean **values:** `true` and `false`. 
 
 ##### Logical Operators
 
@@ -96,9 +180,11 @@ We define *logical not* using a **tilde** so we can reserve the `?!` combo of ch
 
 **TODO:** We could consider, once we have introduced nullable/optional values (`Int?`), to turn the logical operators into operators that accept any argument types and return "truthy" values. Compare to Clojure, Elixir, or Javascript.
 
+**TODO:** Rethink the syntax of these symbols. Maybe rather `&&` or even `and`?
+
 ##### Equality and Order
 
-True is equal to true, false is equal to false. Booleans are not ordered.
+True is equal to true, false is equal to false. Booleans are unordered.
 
 
 
@@ -106,11 +192,11 @@ True is equal to true, false is equal to false. Booleans are not ordered.
 
 Lore supports UTF-8 **strings**. Their type is `String`. We will implement strings using the standard Javascript string type. Javascript's string functions will *not* be available by default; instead, Lore will define its own functions.
 
-Conceptually, a string is *not* a list of characters. **A string is just a string.** If you access a single character at a specific index either with iteration or the `character` function, you will get another string. We believe this is a more unified framework than adding a type just for characters. (Not to mention that, if we called a type `Character`, we'd clash with game developers who might want to have a type `Character`. We'll implement namespaces, of course, but even then, it'll be useful not to have this type name reserved.)
+Conceptually, a string is *not* a list of characters. **A string is just a string.** If you access a single character at a specific index either with iteration or the `character` function, you will get another string. We believe this is a more unified framework than adding a type just for characters.
 
 A string is always written within **single quotes**: `'text'`. We reserve the ability to use the double quotes symbol for string-related features later on or something else entirely.
 
-Strings are **interpolated** by default. You will be able to use `${expr}` for complex expressions, but for now `$s`, the shorthand for single variables, is the only way to interpolate strings.
+Strings are **interpolated** by default. You can use `$e` for simple expressions and `${expr}` for complex ones.
 
 The following **escaped characters** are available: `\n`, `\r`, `\t`, `\'`, `\$`, `\\`, as well as Unicode escapes such as `\u0008`.
 
@@ -119,9 +205,9 @@ We will add **multi-line strings** in another version of Lore.
 ###### Example
 
 ```
-const k = 10
-const p: Person = ...
-const announcement = '${p.name}, you have $k apples. Please claim your ${if (k < 10) 'free' else '1000\$'} apple at the reception.'
+let k = 10
+let p = Person('Smith Johnson', 48)
+let announcement = '${p.name}, you have $k apples. Please claim your ${if (k < 10) 'free' else '1000\$'} apple at the reception.'
 ```
 
 ##### String Operators
@@ -152,42 +238,44 @@ get(t, 2) // c
 
 ##### Unit
 
-Lore supports a **unit** value, which is simply the empty tuple. It is written `()` and has the type `()`. The unit value is special in Lore, as it is the *default return type* of functions. If you do not declare a return type, Lore assumes you don't want to return anything, and so the empty tuple is returned. Additionally, unit is the return type and value of variable assignments.
+Lore supports a **unit** value, which is simply the empty tuple. It is written `()` and has the type `Unit` or `()`. The unit value is special in Lore, as it is the de-facto throwaway value, and also the implicit return type of actions.
 
 ##### Equality and Order
 
 Two tuples are equal if they have the same size and their elements are equal.
 
+**TODO:** Tuple order should be possible and quite easy to implement.
+
 
 
 ### Lists
 
-Lore supports **lists** as first-class constructs. A list is a homogenous, linear collection of an arbitrary number of elements. List types are denoted `[A]`. For now, lists are implemented using Javascript arrays, so they are vector-like structures. We will eventually differentiate between indexed lists and linked lists.
+Lore supports **lists** as first-class constructs. A list is a homogenous, linear collection of an arbitrary number of elements. Lists are *immutable*. List types are denoted `[A]`. We will eventually differentiate between immutable lists and (mutable) arrays.
 
-You can **construct** a list by putting comma-separated elements inside square brackets: `[a, b, c]`. The empty list is denoted simply `[]`.
-
-Later, we can add **list comprehensions**.
+You can **construct** a list by putting comma-separated elements inside square brackets: `[a, b, c]`. The empty list is denoted simply `[]`. You can **append** to a list with the `:+` operator, which is the native way to expand a list.
 
 ##### Equality and Order
 
 Two lists are equal if they have the same lengths and each of their elements, considered in order, are equal. Lists are not ordered by default.
 
+**TODO:** We could also define a default order for lists, which would probably make programmer life easier.
+
 
 
 ### Maps
 
-Lore supports **maps** as first-class constructs. A map is a homogenous, indexed collection of key/value pairs. Map types are denoted `A -> B`. For now, maps are implemented using initially empty Javascript objects.
+Lore supports **maps** as first-class constructs. A map is a homogenous, indexed collection of key/value pairs. Maps are *immutable*. Map types are denoted `A -> B`. We will eventually differentiate between immutable and mutable maps.
 
 You can **construct** a map with the following syntax: `%{ k1 -> v1, k2 -> v2, k3 -> v3 }`. The empty map is denoted `%{ }`.
 
-**Note:** Native **Javascript objects** will likely be represented as maps with a string key and a dynamic value type. Of course, we have not yet introduced the dynamic type, and so this will not be possible just yet.
+**TODO:** Appending to a map?
 
 ###### Example
 
 We can define a map from strings to integers:
 
 ```
-const points = %{ 'Ameela' -> 120, 'Bart' -> 14, 'Morrigan' -> 50 }
+let points = %{ 'Ameela' -> 120, 'Bart' -> 14, 'Morrigan' -> 50 }
 // points: String -> Int
 ```
 
@@ -199,12 +287,13 @@ Two maps are equal if for each key/value pair in the first map, there is a key/v
 
 ### Objects
 
-Lore supports **object instantiation**, i.e. the construction of an object value given a class constructor. The syntax is:
+Lore supports **object construction**, i.e. the instantiation of an object given a struct constructor and the required arguments. There are two possible syntax flavors:
 
 ```
 // Assuming another value b: B
-const a = A(b)        // Default constructor
-const a = A.fromB(b)  // Named constructor 'fromB'
+let a = A(b)        // Call syntax
+let a = A { b: b }  // Map syntax
+let a = A { b }     // Map syntax with shorthand
 ```
 
 ##### Equality and Order
@@ -213,9 +302,9 @@ Object equality is defined as **referential equality** by default.
 
 
 
-### Property Access
+### Member Access
 
-You can access the **property** of an object with the `.` notation. The type of the expression is the type of the property. The syntax is simply: `object.property`.
+You can access the **member** of an object with the `.` notation. The type of the expression is the type of the member. The syntax is simply: `object.member`.
 
 Although the dot notation will eventually be overloaded for multi-function invocation, **property access takes precedence**. In such a case, you can always invoke the multi-function without using the dot-notation.
 
@@ -243,22 +332,7 @@ function isEqual(c1: SportsCar, c2: CheapCar): Boolean = false
 
 To **define order** for a given type, specialize the function `isLessThan(a, b)`. The *greater than* operator is strictly defined as `~(a < b) & a =/= b`.
 
-
-
-### Blocks
-
-A **block** is a sequence of expressions, the last of which becomes the value of the block. Yes, *blocks are expressions*. You can write code like this:
-
-```
-const results = {
-  const a = 5
-  const b = 10.0
-  const c = getReason()
-  if (c == 'business') a * b else a / b
-}
-```
-
-Blocks also give you the luxury of **lexical scoping**, so make sure you declare variables exactly where you need them. In the example above, neither a, b, nor c are visible outside the block, so you don't need to pollute the outer scope with some truly temporary variables.
+**TODO:** Rethink that "not equals" operator…
 
 
 
@@ -272,13 +346,13 @@ Blocks also give you the luxury of **lexical scoping**, so make sure you declare
 name(a1, a2, ...)
 ```
 
-That's it! Types will be checked, values will be dispatched, and some function will be called. The **semantics** of multi-function calls are defined in [multi-functions](03-multi-functions.md).
+That's it! Types will be checked, values will be dispatched, and some function will be called. The **semantics** of multi-function calls are defined in [multi-functions](multi-functions.md).
 
 We say *multi-function call*, because it only becomes a function call at run-time, when a function has been chosen according to the dispatch semantics. At compile-time, we are calling a whole multi-function with a bounded but unknown input type.
 
 ##### Fixed Invocation
 
-Instead of dispatching at run-time, you can **fix a function to call at compile-time**, as defined in *Fixing the Callee at Compile-Time*. The syntax for this is as such:
+Instead of dispatching at run-time, you can **fix a function to call at compile-time:**
 
 ```
 f.fixed[T1, T2, ...](a1, a2, ...)
@@ -298,17 +372,15 @@ The **syntax** of a dynamic function call is as follows:
 dynamic[ResultType]('f', a1, a2, ...)
 ```
 
-For now, the Lore compiler will **trust** the programmer that, when named, such a function is actually available, takes the given arguments, and returns a value that conforms to the required type bounds. The name of the function doesn't have to be a simple name, but may be valid Javascript, such as accessing a namespace: `'Lore.list.push'`.
+For now, the Lore compiler will **trust** the programmer that, when named, such a function is actually available, takes the given arguments, and returns a value that conforms to the required type bounds. The name of the function doesn't have to be a simple name, but may be valid Javascript, such as accessing a namespace: `'Lore.list.push'`. However, the name is required to be a string literal (that doesn't include interpolation).
 
 In the long term, we want to be able to use, for example, TypeScript declaration files to provide more **type safety** when interfacing with Javascript or TypeScript code. Also note that, as of now, special Lore objects are passed to a native function, which are Javascript values additionally wrapped in an object to provide type information at run-time. Only primitives such as numbers and strings are unwrapped. A dynamic function will have to deal with these idiosyncrasies until we have come up with a native unwrapping solution.
-
-**TODO:** Once we have type assertions / type casting and/or a Dynamic type, we can change the clumsy result type syntax to something else.
 
 
 
 ### Conditional Expressions
 
-Lore will support a variety of **conditional expressions** (especially switch expressions). For now, we will have to make do with If:
+Lore will support a variety of **conditional expressions** (especially pattern matching, guards, and so on). For now, we will have to make do with If:
 
 ```
 if (cond) statement2 else statement2
@@ -316,40 +388,51 @@ if (cond) statement2 else statement2
 
 Note that either `statement` (or even `cond`) may be a block. The else part is, of course, optional. The so-called **dangling else** is always parsed as belonging to the `if` closest to it.
 
+**TODO:** Add a match-like expression that executes the first case where a boolean expression is true:
+
+```
+??? {
+  foo(x, y) => 'hello'
+  bar(x, y) => 'world'
+  baz(x, y) & baz(y, x) & baz(z, z) => 'hello darkness'
+  _ => 'default'
+}
+```
+
 
 
 ### Loops
 
-**Loops** represent repeating control flow. For now, we support repetition and iteration.
+**Loops** represent repeating control flow. For now, we support while loops and for comprehensions.
 
-##### Repetition
+##### While Loop
 
-In Lore, a **repetition** repeats some piece of code as long as a given boolean expression is true. This is expressed by the archetypal While-Loop:
+In Lore, a **while loop** repeats some piece of code as long as a given boolean expression is true:
 
 ```
 while (cond) statement
 ```
 
-We have decided to provide **no support for do-while loops**, because we feel that these kinds of loops are very rarely used, but add noise to the language in the form of an additional keyword being reserved (such as `do` or `repeat`). You should instead work with a function and a while or recursion.
+We have decided to provide **no support for do-while loops**, because we feel that these kinds of loops are very rarely used, but add noise to the language in the form of an additional keyword being reserved (such as `do` or `repeat`). You should instead work with a function and a while or recursion. This will only become easier once we introduce anonymous functions.
 
-##### Iteration
+##### For Comprehension
 
-An **iteration** iterates over some kind of collection. We define the archetypal For-Loop as such:
+A **for comprehension** iterates over some kind of collection:
 
 ```
 for (e1 <- col1, e2 <- col2, ...) statement
 ```
 
-In the syntax above, `col2` is fully iterated for each `e1` and so on, so supplying multiple extractors effectively turns the For into **nested iteration**.
+In the syntax above, `col2` is fully iterated for each `e1` and so on, so supplying multiple extractors effectively turns the comprehension into **nested iteration**.
 
-For now, we only define iteration for **elements in lists and maps**. Ultimately, we want any type defining a monadic `flatMap` to be iterable using a For expression.
+For now, we only define iteration for **elements in lists and maps**. Ultimately, we want any type defining a monadic `flatMap` to be iterable using a for comprehension.
 
 As we don't support pattern matching yet, **map iteration** looks like this:
 
 ```
 for (kv <- m) {
-  const key = kv.key
-  const value = kv.value
+  let key = first(kv)
+  let value = second(kv)
 }
 ```
 
@@ -361,11 +444,13 @@ for (i <- range(0, 10)) { // 0 inclusive, 10 exclusive
 }
 ```
 
-Internally, we can of course replace the range construction with a standard index-increment for-loop. Using a range is certainly more concise and clearer than writing `for (const i = 0; i < 10; i += 1)`. Not that that's Lore code, but it *could* be. *Shudder.*
+Internally, we can of course replace the range construction with a standard index-increment for-loop. Using a range is certainly more concise and clearer than writing `for (const i = 0; i < 10; i += 1)`.
+
+**TODO:** Don't forget to add compiler support for ranges…
 
 ##### Loop Expressions
 
-Lore loops are expressions. Similar to if-expressions and blocks, the loop body expression determines the result of the loop. However, these evaluations are **aggregated into a list**.
+Loops are expressions, too. Similar to if-expressions and blocks, the loop body expression determines the result of the loop. However, these evaluations are **aggregated into a list**.
 
 Take the following **example:**
 
@@ -373,54 +458,9 @@ Take the following **example:**
 const names = for (animal <- animals) animal.name
 ```
 
-The for-loop **aggregates the names** of all animals in a list of type `[String]`. 
+The for comprehension **aggregates the names** of all animals in a list of type `[String]`. 
 
 In the implementation, we can of course **optimize** the following case: When the result of a loop isn't assigned or used, we can forgo creating and filling the list.
-
-
-
-### Variable Declarations, Assignments, and Expressions
-
-A **variable declaration** lets you define a new variable, while an **assignment** lets you assign a value to a variable or property. Both are **top-level expressions**. A **variable expression** is simply an expression that evaluates to the value of its mentioned variable.
-
-Here is the **syntax** of declarations, assignments, and variable expressions:
-
-```
-const x: T = v1  // immutable variable declaration
-let x: T = v1    // mutable variable declaration
-x = v2           // variable assignment (only valid if x is mutable)
-x				 // evaluates to v2
-```
-
-A **declaration** creates a new variable. The type of the variable will be inferred from the assignment, but you can specify the type manually. For now, values need to be manually assigned to declared variables, even if they are desired to be `0`, `''`, `[]`, etc. That is, there are no default assignments. In the future, we can introduce a multi-function `lore.default` (dispatching on some kind of type object, maybe `Type[T]`) that returns a default value for a type (`lore` would be the namespace of this function, which would be the namespace for special language definitions).
-
-Variables can be **mutable or immutable**. Only mutable variables can be assigned to after setting their value with the initial declaration. We recommend to declare all variables as immutable unless mutability is specifically needed.
-
-An **assignment** overwrites the value of a variable with some new value. The value on the right side must be compatible with the type of the variable. The name on the left side may be a variable or a property:
-
-```
-const x = 0.0
-x = 5                        // Variable assignment
-character.name = 'Weislaus'  // Property assignment
-character.Position.x = x     // Deep property assignment
-```
-
-Both declarations and assignments are technically expressions and they return the **unit type**. However, there is an additional restriction for declarations and assignments: They can only stand in specific places in the program, and never embedded within most expressions. This ensures that the order of execution for assignments is well defined. An assignment will never be able to mingle with an expression that uses the newly assigned value on the same line.
-
-Lore offers the following **assignment shorthands:**
-
-```
-a += b  // a = a + b
-a -= b  // a = a - b
-a *= b  // a = a * b
-a /= b  // a = a / b
-```
-
-
-
-### Return
-
-The **return** *statement* returns a value from a function. The syntax is `return expr`, with `expr` evaluating to the value to return. Use return only if you 'desperately' need to return early from a function. Prefer *using blocks and control structures as expressions*.
 
 
 
@@ -445,3 +485,4 @@ Note that we don't view assignments as operators. **Complex expressions** such a
 5 + ({ 10 }) + (if (a == b) 5 else 15)
 ```
 
+**TODO:** Is this still true?
