@@ -36,6 +36,17 @@ Type constructors have the following **precedence** (lowest priority first):
 
 
 
+### Type Variables
+
+A **type variable** is a type that stands in for a range of possible types. An unbounded type variable can be assigned any type, including `Any` and `Nothing`. It is possible to give bounds to a variable, thereby reducing the set of types it may take on, increasing its expressiveness. Possible bounds are:
+
+- A **lower bound** (`V >: Lower`) is the least possible type that a type variable may contain. Any type assigned to the variable must be a supertype of the lower bound.
+- An **upper bound** (`V <: Upper`) is the greatest possible type that a type variable may contain. Any type assigned to the variable must be a subtype of the upper bound.
+
+A **type variable declaration** can occur in the signature of a function, and will be applicable to traits and structs in a future version of Lore as well. Bounds are defined in the type variable declaration. Any **usage** of a type variable implicitly assumes that the type assigned to the variable is the same.
+
+
+
 ### Basic Types
 
 A **basic type** is one of the following, built-in *named types:* 
@@ -48,8 +59,6 @@ A **basic type** is one of the following, built-in *named types:*
 - `String` represents string values.
 
 
-
-### Type Variables
 
 
 

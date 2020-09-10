@@ -31,6 +31,16 @@ This Lore code contains the functions `foo(Int)`, `foo(String)`, and `bar(Real)`
 
 Take two functions *f1* and *f2* from a multi-function with *f2* specializing *f1*. Then *f2*'s **return type must be a subtype** of *f1*'s return type. This is easy to see. If at compile-time multiple dispatch would choose *f1*, the compiler uses the return type of *f1* to infer and check types. Hence, *f2* as a specialization must adhere to the substitution principle and only return values that adhere to *f1*'s return type. This effectively leads to the constraint being formulated in the language of subtyping.
 
+##### Type Variables
+
+A function can additionally declare **type variables:**
+
+```
+function foo(a: A, b: B, c: C): Boolean where A, B, C >: A <: B = true
+```
+
+This is not a property of multi-functions but **individual functions**. As subtyping and fit have been extended for type variables, Lore can decide the specificity of two functions even if one of them is parametric and also do so at run-time during multiple dispatch. More on that later.
+
 
 
 ### Multiple Dispatch
@@ -97,6 +107,34 @@ function kind(hybrid: ManBearGuppy): String = 'unidentified hybrid'
 ```
 
 The cool thing about Lore is that we can place that function (and struct definition) anywhere. `Animal`, `Mammal`, `Fish`, and `kind` might be defined in a library, while we might want to add `ManBearGuppy` as an additional hybrid. Instead of having to extend the library, we can simply define the struct and function anywhere and the power of multiple dispatch glues everything together neatly.
+
+##### Parametric Types
+
+As seen above, Lore functions can declare type variables. **Parametric multiple dispatch** works by assigning parts of the actual argument type to type variables of the supposed input type. If the assignment is successful and type variables are consistent (multiple occurrences of the same type variable must have been assigned an equal type), the argument type fits the given function and the function can be called with the given argument.
+
+Take the following function **example:**
+
+```
+function append(list: [A], element: A): [A] where A
+```
+
+When `append` is called via multiple dispatch, the unbounded type variable `A` is assigned some type based on the actual argument types. The arguments must agree *at run-time* such that `A` is consistently assigned the same type. If, given traits `X` and `Y extends X`, we called the function with an input type `([X], Y)`, this (naively defined) append function **would not be dispatched to**, because `X` and `Y` are not the same type, even though they agree in principle (and the function would be callable like that outside a multiple-dispatch universe). Rather, we have to define the following function:
+
+```
+function append(list: [A], element: B): [A] where A, B <: A
+```
+
+This function does not assume the list and element to agree. Rather, it expects the **element to be some subtype of the list's element type**, which still allows us to append the element to the list as lists are covariant and immutable. If the data structure was invariant, however, we would have to write a function like the first one, where the list and element have to agree. In this example you have also seen usage of an upper bound. Type variables that are declared before the current type variable (such as `A` being declared before `B`) can be used in the current type variable's bound.
+
+Since type variables are assigned by multiple dispatch, **assigning type variables manually during a function call is impossible**. A call such as this, with imaginary syntax, is simply impossible:
+
+```
+append[Real]([1, 2, 3], 4.5)  // Impossible code!
+```
+
+Of course, this is quite idiomatic in languages like Scala. We should be able to force the type variable if it isn't being inferred correctly, right? But with multiple dispatch, we are **moving type variable assignment to the runtime**, because it is essentially part of the dispatch decision.
+
+On top of that, the execution engine makes **type variable assignments available at run-time**. This is, for example, used with the list appends operator to construct a proper type for the resulting list. It will also be important to have access to type variable assignments once structs become parametric. A struct, carrying its actual type information at run-time, will need to be instantiated with the actual type carried in a variable (say, `Real`) instead of the variable itself (`A`). This cannot be decided at compile-time and thus needed to be moved to the execution engine.
 
 
 
