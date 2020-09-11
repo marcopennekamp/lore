@@ -1,6 +1,6 @@
 # Types
 
-The **type system** is central not only to safety and correctness of programs, but also their execution at run-time through multiple dispatch. Hence, this is the first topic we will cover in this specification.
+The **type system** is central not only to safety and correctness of programs, but also their execution at run-time through multiple dispatch. Hence, this is the first topic we will cover in this specification. The content in this document certainly doesn't contain everything we could cover about the type system, but it's enough as a user-centric view.
 
 Lore has various **type constructors** with which complex types can be built, as well as **named types** and **declared types**. Named types refer to any type that can be referenced via a name, such as a type variable or trait, while declared types refer to those types that are specifically declared by the programmer—traits and structs.
 
@@ -60,13 +60,104 @@ A **basic type** is one of the following, built-in *named types:*
 
 
 
+### Sum Types
 
+A **sum type** describes values whose types are subtypes of one or more of the sum type's parts. The operator is associative and commutative.
+
+###### Syntax Example
+
+```
+Fish | Mammal
+```
+
+Any value that has the type `Fish` or `Mammal` (or both) is also typed by `Fish | Mammal`.
+
+
+
+### Intersection Types
+
+An **intersection type** describes values whose types are subtypes of *all* of the intersection type's parts. The operator is associative and commutative.
+
+###### Syntax Example
+
+```
+Fish & Mammal
+```
+
+Any value that is *both* a `Fish` *and* a `Mammal` is typed by `Fish & Mammal`.
+
+
+
+### Product Types
+
+A **product type** describes tuples. A type at any position is called an element of the product type.
+
+###### Syntax Example
+
+```
+('hello', 15): (String, Int)
+(a, b, c): (A, B, C)          // with a: A, b: B, c: C
+```
+
+
+
+### List Types
+
+A **list type** describes immutable lists and is covariant.
+
+###### Syntax Example
+
+```
+[String]
+[(A, B, C)]
+[Fish & Mammal]
+```
+
+
+
+### Map Types
+
+A **map type** describes immutable maps.
+
+**TODO:** Covariance since maps are immutable now?
+
+###### Syntax Example
+
+```
+String -> Int
+A -> (B, C)
+String -> (Fish & Mammal)
+```
+
+
+
+### Component Types
+
+A **component type** describes an arbitrary entity that has a specific component, denoted `+C` where `C` is the name of a struct or trait. The component type reasons only about having that one specific component; all other components and types belonging to the actual entity are unknown to the component type. Component types are covariant.
+
+An entity `+C` may actually have a component `S` that is a **subtype** of `C`. Such a component can still be referred to as `C` in the context of an entity `+C`, but the actual value of the property will have the type `S`. Multiple dispatch chooses functions based on the actual type of an entity's component, not the type declared in the entity's definition.
+
+###### Syntax Example
+
+```
++Limb
++Position
++HealthState
+```
+
+**TODO:** It feels like "component type" should rather be  named something like "having component type". Obviously that's too clumsy, but saying "component type" refers to the type of a component, not to the type of an entity having such a component. It's a subtle difference, but still an important one, seemingly overlooked until now.
+
+
+
+### Declared Types
+
+A **declared type** is any type defined by a struct or trait and hence a type that describes user-defined data structures. Declared types are simply referred to via their name.
 
 
 
 ### Abstractness
 
-Each type is either **abstract** or concrete. Functions may only be declared abstract if their input type has at least one abstract parameter. Since this has important implications for the general use of abstraction patterns in Lore, it is important to understand when types are abstract. Here is a list:
+Each type is either **abstract** or concrete. Functions may only be declared as abstract if their input type has at least one abstract parameter. Since this has important implications for the general use of abstraction patterns in Lore, it is important to understand when types are abstract. Here is a list:
 
 - A **sum type** is always abstract. (In their normal form.)
 - An **intersection type** is abstract if at least one of its parts is abstract.
