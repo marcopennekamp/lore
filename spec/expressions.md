@@ -16,7 +16,7 @@ Lore is an expression-based language, which means that there are no statements, 
 
 ```
 // They are legal at the top level of blocks.
-{ const x = 0 }
+{ let x = 0 }
 
 // They are legal as the body of conditionals and loops.
 if (y == 0) x = 0 else x = 5
@@ -231,7 +231,7 @@ Lore supports **tuples**. As described by product types, tuples are fixed-size, 
 **TODO:** How can we define `get` such that it supports tuples of arbitrary length? Give every product type a supertype called `Product` and implement `get` via multiple dispatch?
 
 ```
-const t = (a, b, c)
+let t = (a, b, c)
 get(t, 0) // a
 get(t, 2) // c
 ```
@@ -444,7 +444,7 @@ for (i <- range(0, 10)) { // 0 inclusive, 10 exclusive
 }
 ```
 
-Internally, we can of course replace the range construction with a standard index-increment for-loop. Using a range is certainly more concise and clearer than writing `for (const i = 0; i < 10; i += 1)`.
+Internally, we can of course replace the range construction with a standard index-increment for-loop. Using a range is certainly more concise and clearer than writing `for (let i = 0; i < 10; i += 1)`.
 
 **TODO:** Don't forget to add compiler support for ranges…
 
@@ -455,7 +455,7 @@ Loops are expressions, too. Similar to if-expressions and blocks, the loop body 
 Take the following **example:**
 
 ```
-const names = for (animal <- animals) animal.name
+let names = for (animal <- animals) animal.name
 ```
 
 The for comprehension **aggregates the names** of all animals in a list of type `[String]`. 
