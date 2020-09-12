@@ -69,7 +69,7 @@ a /= b  // a = a / b
 
 ### Return
 
-The **return** top-level expression returns a value from a function. The syntax is `return expr`, with `expr` evaluating to the value to return. Use return only if you 'desperately' need to return early from a function. Prefer *using blocks and control structures as expressions*.
+The **return** top-level expression returns a value from a function. The syntax is `return expr`, with `expr` evaluating to the value to return. Use return only if you 'desperately' need to return early from a function. Prefer *using blocks and control structures as expressions*. Return evaluates to the `Nothing` type, since it interrupts code execution.
 
 ###### Syntax Example
 

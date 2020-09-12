@@ -21,5 +21,5 @@ trait VerificationStmtVisitor extends StmtVisitor[Unit] {
   override final def visitXary(node: StmtNode.XaryNode)(arguments: List[Unit]): Verification = verify(node)
   override def visitConstruct(node: TopLevelExprNode.ConstructNode)(arguments: List[Unit], withSuper: Option[Unit]): Compilation[Unit] = verify(node)
   override final def visitMap(node: ExprNode.MapNode)(entries: List[(Unit, Unit)]): Verification = verify(node)
-  override def visitIteration(node: ExprNode.IterationNode)(extractors: List[(String, Unit)], visitBody: () => Verification): Verification = verify(node)
+  override def visitIteration(node: ExprNode.ForNode)(extractors: List[(String, Unit)], visitBody: () => Verification): Verification = verify(node)
 }

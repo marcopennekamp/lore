@@ -39,21 +39,6 @@ object TopLevelExprNode {
   case class AssignmentNode(
     address: ExprNode.AddressNode, value: ExprNode, position: Position,
   ) extends BinaryNode(address, value) with TopLevelExprNode
-
-  /**
-    * The continuation of the construction is deferred to some other constructor or the internal construction
-    * mechanism. Even though a continuation is only legal as the very last statement of a constructor block,
-    * we parse it as a top-level expression to avoid ambiguities with function calls.
-    */
-  sealed trait ContinuationNode extends TopLevelExprNode
-
-  case class ConstructorCallNode(
-    name: Option[String], isSuper: Boolean, arguments: List[ExprNode], position: Position,
-  ) extends XaryNode(arguments) with ContinuationNode with CallNode[InternalCallTarget]
-
-  case class ConstructNode(
-    arguments: List[ExprNode], withSuper: Option[ConstructorCallNode], position: Position,
-  ) extends TopLevelExprNode with ContinuationNode
 }
 
 /**
@@ -132,8 +117,7 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Object expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // TODO: Rename to MemberAccessNode.
-  case class PropertyAccessNode(
+  case class MemberAccessNode(
     instance: ExprNode, name: String, position: Position,
   ) extends UnaryNode(instance) with ExprNode with AddressNode
 
@@ -187,13 +171,11 @@ object ExprNode {
     def body: StmtNode
   }
 
-  // TODO: Rename to WhileNode.
-  case class RepetitionNode(
+  case class WhileNode(
     condition: ExprNode, body: StmtNode, position: Position,
   ) extends BinaryNode(condition, body) with LoopNode
 
-  // TODO: Rename to ForNode.
-  case class IterationNode(
+  case class ForNode(
     extractors: List[ExtractorNode], body: StmtNode, position: Position,
   ) extends LoopNode
 

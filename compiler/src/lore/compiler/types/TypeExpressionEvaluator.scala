@@ -14,7 +14,7 @@ object TypeExpressionEvaluator {
     implicit val position: Position = expression.position
     val eval = evaluate _
     expression match {
-      case TypeExprNode.NominalNode(name, _) => typeScope.resolve(name)
+      case TypeExprNode.IdentifierNode(name, _) => typeScope.resolve(name)
       case TypeExprNode.IntersectionNode(expressions, _) => expressions.map(eval).simultaneous.map(IntersectionType.construct)
       case TypeExprNode.SumNode(expressions, _) => expressions.map(eval).simultaneous.map(SumType.construct)
       case TypeExprNode.ProductNode(expressions, _) => expressions.map(eval).simultaneous.map(ProductType(_))

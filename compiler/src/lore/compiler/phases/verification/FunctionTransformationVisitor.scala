@@ -88,7 +88,7 @@ private[verification] class FunctionTransformationVisitor(
     case LogicalNotNode(_, position) =>
       ExpressionVerification.isBoolean(expression).map(_ => Expression.UnaryOperation(UnaryOperator.LogicalNot, expression, BasicType.Boolean, position))
 
-    case PropertyAccessNode(_, name, _) =>
+    case MemberAccessNode(_, name, _) =>
       implicit val position: Position = node.position
       MemberExplorer.find(name, expression.tpe).map(member => Expression.MemberAccess(expression, member, position))
   }
@@ -157,7 +157,7 @@ private[verification] class FunctionTransformationVisitor(
       }
 
     // Loops.
-    case RepetitionNode(_, _, position) =>
+    case WhileNode(_, _, position) =>
       // Close the previously opened scope.
       context.closeScope()
       val condition = left
@@ -280,7 +280,7 @@ private[verification] class FunctionTransformationVisitor(
     Expression.MapConstruction(entries, MapType(keyType, valueType), node.position).compiled
   }
 
-  override def visitIteration(node: IterationNode)(
+  override def visitIteration(node: ForNode)(
     extractorTuples: List[(String, Expression)], visitBody: () => Compilation[Expression],
   ): Compilation[Expression] = {
     // TODO: Alternative solution: Add a function visitExtractor which visits the extractor nodes first. Then we can
@@ -318,7 +318,7 @@ private[verification] class FunctionTransformationVisitor(
 
   override def before: PartialFunction[StmtNode, Unit] = {
     case ExprNode.BlockNode(_, _) => context.openScope()
-    case ExprNode.RepetitionNode(_, _, _) =>
+    case ExprNode.WhileNode(_, _, _) =>
       // A while loop needs to open its own scope in case there is exactly one variable declaration as the loop body,
       // which wouldn't get scoped by the block.
       context.openScope()

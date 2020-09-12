@@ -329,7 +329,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
       case call: ExprNode.FixedFunctionCallNode =>
         call.position.index shouldEqual 0
         inside(call.types) {
-          case Seq(t1: TypeExprNode.NominalNode, t2: TypeExprNode.ComponentNode) =>
+          case Seq(t1: TypeExprNode.IdentifierNode, t2: TypeExprNode.ComponentNode) =>
             t1.position.index shouldEqual 15
             t2.position.index shouldEqual 20
         }

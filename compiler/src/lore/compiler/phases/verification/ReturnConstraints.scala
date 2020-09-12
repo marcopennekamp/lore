@@ -30,10 +30,10 @@ private class ReturnDeadCodeVisitor() extends CombiningStmtVisitor[DefinitelyRet
     case ExprNode.IfElseNode(_, _, _, _) =>
       // Ignore the condition.
       returns.tail.forall(identity).compiled
-    case ExprNode.RepetitionNode(_, _, _) =>
+    case ExprNode.WhileNode(_, _, _) =>
       // Ignore the condition.
       returns.last.compiled
-    case ExprNode.IterationNode(_, _, _) =>
+    case ExprNode.ForNode(_, _, _) =>
       // Ignore the extractors.
       returns.last.compiled
     case _ => super.visit(node, returns)
@@ -53,9 +53,9 @@ private class ReturnAllowedApplicator()
     case ExprNode.BlockNode(statements, _) => statements.map(statement => visit(statement, isReturnAllowed)).simultaneous.verification
     case ExprNode.IfElseNode(condition, onTrue, onFalse, _) =>
       (visit(condition, false), visit(onTrue, isReturnAllowed), visit(onFalse, isReturnAllowed)).simultaneous.verification
-    case ExprNode.RepetitionNode(condition, body, _) =>
+    case ExprNode.WhileNode(condition, body, _) =>
       (visit(condition, false), visit(body, isReturnAllowed)).simultaneous.verification
-    case ExprNode.IterationNode(extractors, body, _) =>
+    case ExprNode.ForNode(extractors, body, _) =>
       (
         extractors.map {
           case ExprNode.ExtractorNode(_, collection, _) => visit(collection, false)

@@ -29,7 +29,7 @@ trait CombiningStmtVisitor[A] extends StmtVisitor[A] {
   override def visitMap(node: ExprNode.MapNode)(entries: List[(A, A)]): Compilation[A] = {
     visit(node, entries.map { case (a, b) => combine(a :: b :: Nil) })
   }
-  override def visitIteration(node: ExprNode.IterationNode)(extractors: List[(String, A)], visitBody: () => Compilation[A]): Compilation[A] = {
+  override def visitIteration(node: ExprNode.ForNode)(extractors: List[(String, A)], visitBody: () => Compilation[A]): Compilation[A] = {
     visitBody().flatMap(body => visit(node, extractors.map(_._2) ::: (body :: Nil)))
   }
 }

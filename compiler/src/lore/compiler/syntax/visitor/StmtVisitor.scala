@@ -52,7 +52,7 @@ trait StmtVisitor[A] {
     * We don't pass the evaluated body but rather a function that visits the body expression. This allows the
     * iteration visitor to process the extractors before the body is visited.
     */
-  def visitIteration(node: ExprNode.IterationNode)(extractors: List[(String, A)], visitBody: () => Compilation[A]): Compilation[A]
+  def visitIteration(node: ExprNode.ForNode)(extractors: List[(String, A)], visitBody: () => Compilation[A]): Compilation[A]
 
   /**
     * Invoked before a node's subtrees are visited. This can be used to set up contexts and such.
@@ -98,7 +98,7 @@ object StmtVisitor {
           entries.flatMap(visitor.visitMap(node))
 
         // Iteration node.
-        case node@IterationNode(extractors, body, _) =>
+        case node@ForNode(extractors, body, _) =>
           val extracts = extractors.map {
             case ExtractorNode(name, collection, _) => visit(collection, props).map((name, _))
           }.simultaneous

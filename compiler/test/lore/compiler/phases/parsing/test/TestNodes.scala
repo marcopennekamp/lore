@@ -73,21 +73,21 @@ object TestNodes {
     val List = withWildcard(ListNode)
     val Map = withWildcard(MapNode)
     val KeyValue = withWildcard(KeyValueNode)
-    val PropertyAccess = withWildcard(PropertyAccessNode)
+    val PropertyAccess = withWildcard(MemberAccessNode)
     val Block = withWildcard(BlockNode)
     val SimpleCall = withWildcard(SimpleCallNode)
     val FixedFunctionCall = withWildcard(FixedFunctionCallNode)
     val DynamicCall = withWildcard(DynamicCallNode)
     val IfElse = withWildcard(IfElseNode)
-    val Repetition = withWildcard(RepetitionNode)
-    val Iteration = withWildcard(IterationNode)
+    val Repetition = withWildcard(WhileNode)
+    val Iteration = withWildcard(ForNode)
     val Extractor = withWildcard(ExtractorNode)
   }
 
   object Type {
     import TypeExprNode._
 
-    val Nominal = withWildcard(NominalNode)
+    val Nominal = withWildcard(IdentifierNode)
     val Intersection = withWildcard(IntersectionNode)
     val Sum = withWildcard(SumNode)
     val Product = withWildcard(ProductNode)
