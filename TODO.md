@@ -1,5 +1,35 @@
 ### TODO
 
+Structs:
+- Struct declaration:
+  - Implementing any number of traits
+  - Properties:
+    - mutable and immutable
+    - delimited by newlines or commas
+  - Components
+- Construction:
+  - call syntax
+  - map syntax
+    - shorthand (omitting name)
+- Ownership
+
+Traits:
+- Trait declaration:
+  - Inheritance:
+    - From traits
+    - From component types
+    - Inheritance is implicitly passed down the hierarchy
+- Ownership
+
+Entities:
+- Constraints:
+  - Immutability
+  - Component Type Restrictions
+- Ownership:
+  - Declaration (structs and entities)
+  - Passed down via inheritance, explicitly (re-)declared
+  - Access to the owner's type through component types
+
 NEXT:
 - Finish transpilation and verification for the current MVL constructs.
 - THINK: We need to make a fundamental decision: Are list and map types decided at compile-time or at run-time? So, for example, if we have a list of type `[Animal]` but it only has elements of type `Cat`, is the actual type of the list `[Animal]` or `[Cat]`? It seems like it should be the former, but the latter would be more useful, wouldn't it?  
