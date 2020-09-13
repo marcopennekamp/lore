@@ -219,7 +219,7 @@ private[verification] class FunctionTransformationVisitor(
       implicit val pos: Position = position
       // A simple call may either be a function or a constructor call. We immediately try to differentiate this based
       // on whether a class type can be found for the function name.
-      registry.getClassType(name) match {
+      registry.getStructType(name) match {
         case Some(classType) => StatementTransformation.transformConstructorCall(classType.definition, qualifier, expressions)
         case None =>
           // If we couldn't find a class type for the function, but qualifier is not None, this is not a valid function

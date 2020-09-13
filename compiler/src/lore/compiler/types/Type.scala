@@ -134,7 +134,7 @@ object Type {
       case t: TraitType =>
         if (verbose) {
           val extended = if (t.supertypes.nonEmpty) s" extends ${t.supertypes.map(toString(_, verbose)).mkString(", ")}" else ""
-          s"label ${t.name}$extended"
+          s"trait ${t.name}$extended"
         } else t.name
       case t: NamedType => t.name
     }

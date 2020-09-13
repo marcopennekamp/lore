@@ -1,7 +1,6 @@
 package lore.compiler.phases.resolution
 
 import lore.compiler.core.{Compilation, CompilationException, Error, Position}
-import lore.compiler.semantics.functions.ConstructorDefinition
 import lore.compiler.semantics.structures.{StructDefinition, ComponentDefinition, MemberDefinition, PropertyDefinition}
 import lore.compiler.semantics.{Registry, TypeScope}
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode, TypeDeclNode}
@@ -11,7 +10,7 @@ object ClassDefinitionResolver {
   def resolve(node: TypeDeclNode.ClassNode)(implicit registry: Registry): Compilation[StructDefinition] = {
     implicit val position: Position = node.position
     implicit val typeScope: TypeScope = registry.typeScope
-    val classType = registry.getClassType(node.name).getOrElse(
+    val classType = registry.getStructType(node.name).getOrElse(
       throw CompilationException(s"The class type for class ${node.name} should be registered by now!")
     )
 

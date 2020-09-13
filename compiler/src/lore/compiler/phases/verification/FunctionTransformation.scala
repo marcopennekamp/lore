@@ -3,7 +3,7 @@ package lore.compiler.phases.verification
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Error}
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.functions.{ConstructorDefinition, FunctionDefinition, FunctionSignature}
+import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature}
 import lore.compiler.semantics.structures.StructDefinition
 import lore.compiler.semantics.{Registry, TypeScope}
 import lore.compiler.syntax.ExprNode

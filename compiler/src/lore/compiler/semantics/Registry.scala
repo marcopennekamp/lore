@@ -6,6 +6,7 @@ import lore.compiler.semantics.Registry.{ExactFunctionNotFound, MultiFunctionNot
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.semantics.structures._
 import lore.compiler.types._
+import lore.compiler.utils.CollectionExtensions._
 
 import scala.collection.{MapView, mutable}
 
@@ -83,14 +84,14 @@ class Registry {
   }
 
   /**
-    * Searches for a class type with the given name.
+    * Searches for a struct type with the given name.
     */
-  def getClassType(name: String): Option[StructType] = getType(name).filter(_.isInstanceOf[StructType]).map(_.asInstanceOf[StructType])
+  def getStructType(name: String): Option[StructType] = getType(name).filterType[StructType]
 
   /**
-    * Searches for a label type with the given name.
+    * Searches for a trait type with the given name.
     */
-  def getLabelType(name: String): Option[TraitType] = getType(name).filter(_.isInstanceOf[TraitType]).map(_.asInstanceOf[TraitType])
+  def getTraitType(name: String): Option[TraitType] = getType(name).filterType[TraitType]
 
   /**
     * Registers the given type definition.
@@ -98,11 +99,12 @@ class Registry {
   def registerTypeDefinition(definition: DeclaredTypeDefinition): Unit = {
     // Because types are resolved before definitions, at this point a type for this definition should have been registered.
     if (getType(definition.name).isEmpty) {
-      throw CompilationException(s"A type for the declared type ${definition.name} should have been registered by now!")
+      throw CompilationException(s"A type for the declared type ${definition.name} should have been registered by now.")
     }
 
     if (typeDefinitions.contains(definition.name)) {
-      throw CompilationException(s"A type definition with the name ${definition.name} has been registered already!")
+      // TODO: Do we actually check for duplicate definitions beforehand?
+      throw CompilationException(s"A type definition with the name ${definition.name} has been registered already.")
     }
     typeDefinitions.put(definition.name, definition)
   }

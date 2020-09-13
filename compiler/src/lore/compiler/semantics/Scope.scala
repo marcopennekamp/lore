@@ -10,9 +10,6 @@ import scala.collection.mutable
   * A hierarchical scope resolving entries of some type A by name.
   */
 trait Scope[A <: Scope.Entry] {
-  // TODO: Turn the position parameters into implicit ones. If we can pass the fragment as an implicit, we should pass
-  //       the position as an implicit as well.
-
   /**
     * Fetches the entry with the given name from the CURRENT scope.
     */

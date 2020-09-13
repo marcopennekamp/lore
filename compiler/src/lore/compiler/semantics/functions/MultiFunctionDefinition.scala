@@ -34,7 +34,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
   private def predicateVisitFit(input: ProductType)(node: hierarchy.NodeT): Boolean = Fit.fits(input, node.signature.inputType)
 
   /**
-    * Calculates the multi-function fit.
+    * Calculates the multi-function's fit set.
     */
   def fit(tpe: Type): List[FunctionDefinition] = {
     traverseHierarchy(
@@ -46,7 +46,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
   }
 
   /**
-    * Calculates the multi-function min.
+    * Calculates the multi-function's min set.
     */
   def min(tpe: Type): List[FunctionDefinition] = {
     // Even though min is defined in terms of the fit, we don't use the fit function and instead compute everything in

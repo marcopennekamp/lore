@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, Error, Position, Positioned}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionDefinition.CannotInstantiateFunction
-import lore.compiler.semantics.{TypeScope, functions}
+import lore.compiler.semantics.TypeScope
 import lore.compiler.syntax.ExprNode
 import lore.compiler.types.{Fit, Type}
 
@@ -17,13 +17,15 @@ import lore.compiler.types.{Fit, Type}
   * @param typeScope The scope that saves type variables declared with the function.
   */
 class FunctionDefinition(
-  val name: String, val typeScope: TypeScope, val parameters: List[ParameterDefinition], outputType: Type,
-  val bodyNode: Option[ExprNode], override val position: Position,
+  val name: String,
+  val typeScope: TypeScope,
+  val signature: FunctionSignature,
+  val bodyNode: Option[ExprNode],
+  override val position: Position,
 ) extends Positioned {
   val isAbstract: Boolean = bodyNode.isEmpty
-  lazy val signature: FunctionSignature = functions.FunctionSignature(name, parameters, outputType, position)
   lazy val isPolymorphic: Boolean = signature.isPolymorphic
-  override def toString = s"${if (isAbstract) "abstract " else ""}$name(${parameters.mkString(", ")})"
+  override def toString = s"${if (isAbstract) "abstract " else ""}$name(${signature.parameters.mkString(", ")})"
 
   /**
     * This is a variable because it may be transformed during the course of the compilation.

@@ -2,7 +2,6 @@ package lore.compiler.phases.verification
 
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Error}
-import lore.compiler.semantics.functions.ConstructorDefinition
 import lore.compiler.semantics.structures.StructDefinition
 import lore.compiler.syntax.StmtNode.ReturnNode
 import lore.compiler.syntax.visitor.{StmtVisitor, VerificationStmtVisitor}

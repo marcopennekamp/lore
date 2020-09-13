@@ -7,7 +7,7 @@ import scala.util.hashing.MurmurHash3
 //       and check uniqueness irrespective of type arguments?
 case class ComponentType(underlying: DeclaredType) extends Type {
   override val hashCode: Int = {
-    // We use a product hash here to differentiate the hash code from class type hashes.
+    // We use a product hash here to differentiate the hash code from declared type hashes.
     MurmurHash3.productHash(("component", underlying))
   }
 }

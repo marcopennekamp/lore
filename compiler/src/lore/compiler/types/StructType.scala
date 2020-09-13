@@ -13,7 +13,8 @@ class StructType(
   override val supertypes: Vector[Type],
 ) extends DeclaredType with DeclaredType.DefinitionProperty[StructDefinition] {
   /**
-    * Only entities of the ownedBy type may own a component of this class type.
+    * Only entities of the ownedBy type may own a component of this struct type.
     */
-  def ownedBy: Option[Type] = definition.ownedBy
+  // TODO: Reimplement ownedBy.
+  //def ownedBy: Option[Type] = definition.ownedBy
 }

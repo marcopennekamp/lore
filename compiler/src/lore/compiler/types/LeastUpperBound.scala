@@ -81,10 +81,11 @@ object LeastUpperBound {
         if (left.size != right.size) fallback
         else ProductType(left.zip(right).map(lubPassOnSettings.tupled))
 
+      // TODO: This MIGHT not be needed anymore since component types are now part of the supertype list of a struct.
+      //       Consequently, the DeclaredTypeHierarchy should actually return the correct common component types.
       // We have the special case that component types can also be supertypes of entity types.
       // We add these to the LUB resolved by the type hierarchy.
-      case (e1: StructType, e2: StructType) if e1.isEntity && e2.isEntity =>
-        // TODO: This MIGHT not be needed anymore since component types are now part of the supertype list of a struct.
+      /* case (e1: StructType, e2: StructType) if e1.isEntity && e2.isEntity =>
         val componentTypes = e1.definition.commonComponentTypes(e2.definition)
         val superclassList = declaredTypeLcs(e1, e2) match {
           // We choose Any as the supertype only if there are no common component types. Otherwise we prefer to
@@ -93,10 +94,10 @@ object LeastUpperBound {
           case t => t :: Nil
         }
         IntersectionType.construct(
-          superclassList ::: componentTypes
-        ).fallbackIfAny
+          superclassList ++ componentTypes
+        ).fallbackIfAny */
 
-      // For class and label types, the LUB is calculated by the type hierarchy. If the result would be Any, we return
+      // For declared types, the LUB is calculated by the type hierarchy. If the result would be Any, we return
       // the sum type instead.
       // TODO: Now that we have schemas, we have to check whether types e1 and e2 assign the same type variables
       //       for their most specific common supertype. Since type variables of a child type do not have to
@@ -117,6 +118,13 @@ object LeastUpperBound {
 
       // Component types simply delegate to declared types.
       case (c1: ComponentType, c2: ComponentType) =>
+        // TODO: This needs a rework... A band-aid fix would probably be to return the component type of the LCS
+        //       if EXACTLY one struct or trait is the result of the LCS. Otherwise, clearly the two types cannot
+        //       be lubbed, and we default to our fallback. Once we introduce "non-component" traits (see the
+        //       proposal in the spec), we will also have to filter these traits out of our consideration, since
+        //       they cannot be the underlying type of a component type. Basically, we will have to find exactly
+        //       one trait which is the common supertype of the two underlying types AND which is itself a type
+        //       that can be a component.
         registry.declaredTypeHierarchy.leastCommonSupertype(c1.underlying, c2.underlying) match {
           case IntersectionType(types) =>
             // If we have an intersection type as the LCS, there are multiple LCSs. However, only one of them can
@@ -139,7 +147,7 @@ object LeastUpperBound {
       case (BasicType.Real, BasicType.Int) => BasicType.Real
 
       // In any other case, we can say that t1 and t2 are inherently incompatible. For example, a product type and
-      // a class type could never be unified in this sense. Hence we return the default.
+      // a struct type could never be unified in this sense. Hence we return the default.
       case _ => fallback
     }
   }
