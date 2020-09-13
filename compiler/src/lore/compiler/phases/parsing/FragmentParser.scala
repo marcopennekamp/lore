@@ -66,7 +66,7 @@ class FragmentParser(implicit fragment: Fragment) {
 
   private def functionTypeVariables[_: P]: P[List[DeclNode.TypeVariableNode]] = {
     def typeVariable = {
-      P(Index ~ identifier ~ (">:" ~ typeParser.typeExpression).? ~ ("<:" ~ typeParser.typeExpression).?).map(withIndex(DeclNode.TypeVariableNode))
+      P(Index ~ identifier ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).?).map(withIndex(DeclNode.TypeVariableNode))
     }
     P(("where" ~ typeVariable.rep(1, CharIn(","))).?).map {
       case None => Nil

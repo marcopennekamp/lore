@@ -27,11 +27,6 @@ object Expression {
     target: Expression.Access, value: Expression, position: Position,
   ) extends Expression.Apply(ProductType.UnitType)
 
-  case class Construct(
-    definition: ClassDefinition, arguments: List[Expression], withSuper: Option[Expression],
-    position: Position,
-  ) extends Expression.Apply(definition.tpe)
-
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Block expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -102,7 +97,7 @@ object Expression {
   case class XaryOperation(operator: XaryOperator, expressions: List[Expression], tpe: Type, position: Position) extends Expression
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Function/constructor/dynamic calls.
+  // Multi-function, fixed function and dynamic calls.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class Call(target: CallTarget, arguments: List[Expression], position: Position) extends Expression.Apply(target.outputType)
 

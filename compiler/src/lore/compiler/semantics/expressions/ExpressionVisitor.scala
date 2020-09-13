@@ -9,7 +9,6 @@ trait ExpressionVisitor[A] {
   def visit(expression: Expression.Return)(value: A): Result
   def visit(expression: Expression.VariableDeclaration)(value: A): Result
   def visit(expression: Expression.Assignment)(target: A, value: A): Result
-  def visit(expression: Expression.Construct)(arguments: List[A], superCall: Option[A]): Result
 
   // Expressions
   def visit(expression: Expression.Block)(expressions: List[A]): Result
@@ -45,10 +44,6 @@ object ExpressionVisitor {
       case node@Expression.Return(value, _) => rec(value).flatMap(visitor.visit(node))
       case node@Expression.VariableDeclaration(_, value, _) => rec(value).flatMap(visitor.visit(node))
       case node@Expression.Assignment(target, value, _) => (rec(target), rec(value)).simultaneous.flatMap((visitor.visit(node) _).tupled)
-      case node@Expression.Construct(_, arguments, withSuper, _) =>
-        (arguments.map(rec).simultaneous, withSuper.map(rec).toCompiledOption).simultaneous.flatMap {
-          case (arguments, superCall) => visitor.visit(node)(arguments, superCall)
-        }
 
       // Expressions
       case node@Expression.Block(expressions, _) => expressions.map(rec).simultaneous.flatMap(visitor.visit(node))
