@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.{ClassDefinition, ComponentDefinition, MemberDefinition}
-import lore.compiler.types.{BasicType, ClassType, Type}
+import lore.compiler.types.{BasicType, StructType, Type}
 
 object ClassConstraints {
   /**
@@ -67,7 +67,7 @@ object ClassConstraints {
 
     // Here, we assume Any in case the supertype is None or its owned-by type is None. In both cases, the omission
     // of such a declaration means that the supertype's owned-by type is effectively Any.
-    val superOwnedBy = definition.tpe.supertype.flatMap(_.ownedBy).getOrElse(BasicType.Any)
+    val superOwnedBy = definition.tpe.supertypes.flatMap(_.ownedBy).getOrElse(BasicType.Any)
 
     // Now we just have to check whether the owned-by type is actually a subtype.
     if (!(ownedBy <= superOwnedBy)) {
@@ -117,7 +117,7 @@ object ClassConstraints {
     } else Verification.succeed
   }
 
-  case class ComponentsShareSuperclass(definition: ClassDefinition, superclass: ClassType, components: List[ComponentDefinition]) extends Error(definition) {
+  case class ComponentsShareSuperclass(definition: ClassDefinition, superclass: StructType, components: List[ComponentDefinition]) extends Error(definition) {
     override def message: String = s"The following components illegally share a superclass $superclass: ${components.map(_.name).mkString(", ")}." +
       s" Components may not share a superclass, because component types such as +C have to stay unambiguous for all possible entities."
   }

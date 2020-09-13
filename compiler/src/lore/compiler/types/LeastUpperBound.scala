@@ -83,7 +83,7 @@ object LeastUpperBound {
 
       // We have the special case that component types can also be supertypes of entity types.
       // We add these to the LUB resolved by the type hierarchy.
-      case (e1: ClassType, e2: ClassType) if e1.isEntity && e2.isEntity =>
+      case (e1: StructType, e2: StructType) if e1.isEntity && e2.isEntity =>
         val componentTypes = e1.definition.commonComponentTypes(e2.definition)
         val superclassList = declaredTypeLcs(e1, e2) match {
           // We choose Any as the supertype only if there are no common component types. Otherwise we prefer to
@@ -120,10 +120,10 @@ object LeastUpperBound {
           case IntersectionType(types) =>
             // If we have an intersection type as the LCS, there are multiple LCSs. However, only one of them can
             // be a class type. So we filter for that one.
-            val classTypes = types.filter(_.isInstanceOf[ClassType])
+            val classTypes = types.filter(_.isInstanceOf[StructType])
             if (classTypes.size != 1) throw CompilationException("There can (and must) only be one!")
             classTypes.head
-          case classType: ClassType => ComponentType(classType)
+          case classType: StructType => ComponentType(classType)
           case t => t.fallbackIfAny
         }
 

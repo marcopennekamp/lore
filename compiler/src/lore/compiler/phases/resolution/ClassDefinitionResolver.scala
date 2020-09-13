@@ -5,7 +5,7 @@ import lore.compiler.semantics.functions.ConstructorDefinition
 import lore.compiler.semantics.structures.{ClassDefinition, ComponentDefinition, MemberDefinition, PropertyDefinition}
 import lore.compiler.semantics.{Registry, TypeScope}
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode, TypeDeclNode}
-import lore.compiler.types.{ClassType, TypeExpressionEvaluator}
+import lore.compiler.types.{StructType, TypeExpressionEvaluator}
 
 object ClassDefinitionResolver {
   def resolve(node: TypeDeclNode.ClassNode)(implicit registry: Registry): Compilation[ClassDefinition] = {
@@ -44,8 +44,8 @@ object ClassDefinitionResolver {
       case componentNode@TypeDeclNode.ComponentNode(name, overrides, _) =>
         for {
           tpe <- typeScope.resolve(name)(node.position)
-            .require(_.isInstanceOf[ClassType])(ComponentMustBeClass(componentNode))
-            .map(_.asInstanceOf[ClassType])
+            .require(_.isInstanceOf[StructType])(ComponentMustBeClass(componentNode))
+            .map(_.asInstanceOf[StructType])
         } yield new ComponentDefinition(name, tpe, overrides, node.position)
     }
   }

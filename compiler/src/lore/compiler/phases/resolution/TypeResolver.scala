@@ -14,12 +14,12 @@ object TypeResolver {
     override def message = s"The label ${node.name} does not extend a label but some other type."
   }
 
-  def resolve(node: TypeDeclNode.LabelNode)(implicit registry: Registry): Compilation[LabelType] = {
+  def resolve(node: TypeDeclNode.LabelNode)(implicit registry: Registry): Compilation[TraitType] = {
     node.supertypeName match {
-      case None => new LabelType(node.name, None).compiled
+      case None => new TraitType(node.name, None).compiled
       case Some(supertypeName) =>
         registry.resolveType(supertypeName)(node.position).flatMap {
-          case supertype: LabelType => new LabelType(node.name, Some(supertype)).compiled
+          case supertype: TraitType => new TraitType(node.name, Some(supertype)).compiled
           case _ => Compilation.fail(LabelMustExtendLabel(node))
         }
     }
@@ -29,12 +29,12 @@ object TypeResolver {
     override def message = s"The class ${node.name} does not extend a class but some other type."
   }
 
-  def resolve(node: TypeDeclNode.ClassNode)(implicit registry: Registry): Compilation[ClassType] = {
+  def resolve(node: TypeDeclNode.ClassNode)(implicit registry: Registry): Compilation[StructType] = {
     node.supertypeName match {
-      case None => new ClassType(node.name, None, node.isAbstract).compiled
+      case None => new StructType(node.name, None, node.isAbstract).compiled
       case Some(supertypeName) =>
         registry.resolveType(supertypeName)(node.position).flatMap {
-          case supertype: ClassType => new ClassType(node.name, Some(supertype), node.isAbstract).compiled
+          case supertype: StructType => new StructType(node.name, Some(supertype), node.isAbstract).compiled
           case _ => Compilation.fail(ClassMustExtendClass(node))
         }
     }

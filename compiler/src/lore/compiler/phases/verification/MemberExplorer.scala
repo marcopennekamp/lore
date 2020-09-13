@@ -54,7 +54,7 @@ object MemberExplorer {
           val name = underlying.definition.name
           ownedByMembers.getOrElse(HashMap.empty: MemberMap) + (name -> semantics.VirtualMember(name, underlying, isComponent = true))
         }
-      case classType: ClassType =>
+      case classType: StructType =>
         // A class type obviously has its own members.
         HashMap(classType.definition.members.map(m => m.name -> m.asVirtualMember): _*).compiled
 

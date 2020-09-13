@@ -1,12 +1,17 @@
 package lore.compiler.types
 
-import lore.compiler.types.TypeRelations.Rule
-
 object Subtyping {
 
   // TODO: Do we rather need to define type equality in terms of subtyping (t1 <= t2 && t2 <= t1)? I suspect
   //       new edge cases especially with the introduction of polymorphic types. Of course, this might severely
   //       affect performance and thus needs to be looked at first.
+
+  /**
+    * We define the calculation of the subtyping relation in terms of rules that possibly match a pair of types
+    * and then decides whether these types are in the relation or not. We define rules as partial functions
+    * so that we can support preconditions.
+    */
+  type Rule = PartialFunction[(Type, Type), Boolean]
 
   def rules: List[Rule] = {
     List(
@@ -18,13 +23,21 @@ object Subtyping {
       { case (t1, v2: TypeVariable) => isSubtype(t1, v2.lowerBound) },
 
       // A declared type d1 is a subtype of d2 if d1 and d2 are equal or any of d1's hierarchical supertypes equal d2.
-      // TODO: Once we have introduced covariant (and possibly contravariant) classes, we will additionally have to
-      //       check whether d1's typeArguments are a subtype of d2's type arguments.
+      // TODO: Once we have introduced covariant (and possibly contravariant) traits/structs, we will additionally have
+      //       to check whether d1's typeArguments are a subtype of d2's type arguments.
       // TODO: Once we introduce parametric declared types, we might have to move this rule out of here.
-      { case (d1: DeclaredType, d2: DeclaredType) => d1 == d2 || d1.supertype.exists(isSubtype(_, d2)) },
+      // TODO: Now that we have "multiple inheritance", checking for a supertype has gone from being linear to possibly
+      //       a broad search up the hierarchy graph. There is a pretty simple way to make this more performant: Cache
+      //       all possible supertypes in each declared type, then use a hashed map to allow a quick lookup. Because
+      //       what we essentially have here is the question: Is d2 in the supertype map of d1? This optimization is
+      //       especially potent for the runtime, where we will have to figure out how to solve the subtyping question
+      //       for declared types in a performant manner!
+      { case (d1: DeclaredType, d2: DeclaredType) => d1 == d2 || d1.supertypes.exists(isSubtype(_, d2)) },
 
-      // A component type p1 is a subtype of p2 if p1's underlying type is a subtype of p2's underlying type.
+      // A component type p1 is a subtype of component type p2 if p1's underlying type is a subtype of p2's underlying
+      // type.
       { case (p1: ComponentType, p2: ComponentType) => isSubtype(p1.underlying, p2.underlying) },
+      // TODO: Reconsider this:
       // An entity type e1 is a subtype of a component type p2 if e1 has a component of type p1.underlying that is a
       // subtype of p2.underlying. We shouldn't compare p1/p2 directly (as component types) because the rule following
       // this rule will lead to weird interactions with owned-by types. For example, say we have a component C1 owned
@@ -34,11 +47,22 @@ object Subtyping {
       //    E <: +A <== +C1 <: +A <== C1.ownedBy <= +A <== +A <= +A
       // This can only occur if we compare component types instead of underlying types directly. Since this rule is
       // supposed to ONLY look at the component's types and not their owned-by types, we defer to "underlying".
-      { case (e1: ClassType, p2: ComponentType) if e1.isEntity => e1.componentTypes.exists(p1 => isSubtype(p1.underlying, p2.underlying)) },
+      // TODO: I think the above just means that we can't take the ownedBy type of an entity's components into account
+      //       when checking that the components can be owned by the entity. This is obviously cyclic reasoning.
+      //       Once ownership has been established, the ownedBy type of ANY component should be perfectly in accordance
+      //       with the overall type of the entity, and then we can happily compare component types:
+      //       We have (assuming C.ownedBy <: T):
+      //        1. E <: T <== +C <: T <== C.ownedBy <: T  (following the rules as they should be)
+      //        2. E <: C.ownedBy  (because C is a component of E)
+      //        ==> The conclusion E <: T is legal as it should be, because E <: C.ownedBy and C.ownedBy <: T
+      //       The solution is, obviously, to disable the next rule if we are checking the legality of ownership.
+      //{ case (e1: DeclaredType, p2: ComponentType) if e1.isEntity => e1.supertypes.exists(p1 => isSubtype(p1.underlying, p2.underlying)) },
+      { case (e1: DeclaredType, p2: ComponentType) if e1.isEntity => e1.supertypes.exists(t => isSubtype(t, p2)) },
       // Let's say p1 = +u. A component type +u is a subtype of t2 if u's owned-by type is a subtype of t2. We know
       // that +u is an entity with the type +u & u.ownedBy, as any entity having the component u must also satisfy
       // its ownership constraint, so if u.ownedBy <= t2, we know that +u <= t2.
-      { case (p1: ComponentType, t2) => p1.underlying.ownedBy.exists(ownedBy => isSubtype(ownedBy, t2)) },
+      // TODO: Re-implement once declared types have ownedBy:
+      //{ case (p1: ComponentType, t2) => p1.underlying.ownedBy.exists(ownedBy => isSubtype(ownedBy, t2)) },
 
       // An intersection type i1 is the subtype of an intersection type i2, if all types in i2 are subsumed by i1.
       { case (i1: IntersectionType, i2: IntersectionType) => i2.types.forall(ic2 => isAnyPartSubtypeOf(i1, ic2)) },
@@ -94,7 +118,7 @@ object Subtyping {
     * Whether t1 is a subtype of t2.
     */
   def isSubtype(t1: Type, t2: Type): Boolean = {
-    t1 == t2 || TypeRelations.inRelation(rules)(t1, t2)
+    t1 == t2 || rules.exists(rule => rule.isDefinedAt((t1, t2)) && rule.apply((t1, t2)))
   }
 
   /**

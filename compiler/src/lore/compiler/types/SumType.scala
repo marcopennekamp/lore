@@ -17,7 +17,7 @@ object SumType {
     * We also apply the following simplification: In a sum type A | B | ..., if B < A, then B can be dropped.
     * That is, A already "clears the way" for values of type B to be part of the sum type.
     *
-    * The resulting flattened "normal form" is a requirement for subtyping to work correctly.
+    * The resulting flattened normal form is a requirement for subtyping to work correctly.
     */
   def construct(types: Set[Type]): Type = {
     val flattened = types.flatMap {

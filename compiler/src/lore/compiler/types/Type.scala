@@ -1,7 +1,6 @@
 package lore.compiler.types
 
 import java.io.ByteArrayOutputStream
-import java.nio.charset.Charset
 import java.util.Base64
 
 import lore.compiler.utils.CollectionExtensions._
@@ -25,7 +24,7 @@ trait Type {
   def >=(rhs: Type): Boolean = rhs <= this
   def >(rhs: Type): Boolean = rhs < this
 
-  override def toString: String = Type.toString(this, verbose = false)
+  override def toString: String = Type.toString(this)
 }
 
 object Type {
@@ -47,27 +46,17 @@ object Type {
     case _: TypeVariable => false // TODO: Is this correct?
     case SumType(_) => true
     case IntersectionType(types) =>
-      // Note that we consider the idea of augmenting label types here. If the intersection type contains at least one
-      // non-label type, we ignore label types in the consideration.
-      val exceptLabels = types.toList.filterNotType[LabelType]
-
-      // If the intersection type consists only of labels, it is NOT an augmented type and thus abstract since
-      // non-augmenting label types are abstract.
-      if (exceptLabels.isEmpty) {
-        true
-      } else {
-        // In all other cases, we decide abstractness WITHOUT taking augmenting labels into account.
-        exceptLabels.exists(isAbstract)
-      }
+      // Note that we consider the idea of augmenting trait types here. If the intersection type contains at least one
+      // non-trait type, we ignore trait types in the consideration. If the intersection type consists only of traits,
+      // it is NOT an augmented type and thus abstract.
+      val exceptTraits = types.toList.filterNotType[TraitType]
+      exceptTraits.isEmpty || exceptTraits.exists(isAbstract)
     case ProductType(elements) => elements.exists(isAbstract)
     case ListType(_) => false
     case MapType(_, _) => false
     case ComponentType(underlying) => isAbstract(underlying)
-    case c: ClassType => c.isAbstract
-    case _: LabelType =>
-      // A label type is abstract unless it is an augmentation. That case is handled in the implementation of
-      // intersection type's isAbstract.
-      true
+    case _: StructType => false
+    case _: TraitType => true
     // Any isn't abstract because checking ARDS for it would be inadvisable.
     // Effectively, Nothing cannot be the supertype of anything, so declaring an abstract function for it
     // will only result in a useless deadlock.
@@ -86,7 +75,7 @@ object Type {
     case ListType(element) => isPolymorphic(element)
     case MapType(key, value) => isPolymorphic(key) || isPolymorphic(value)
     case ComponentType(_) => false // TODO: This might change once component types can be parameterized. (If they ever can.)
-    case _: DeclaredType => false // TODO: For now. This needs to be set to true for classes with type parameters, of course.
+    case _: DeclaredType => false // TODO: For now. This needs to be set to true for structs/traits with type parameters, of course.
     case _ => false
   }
 
@@ -106,7 +95,7 @@ object Type {
     case ListType(element) => variables(element)
     case MapType(key, value) => variables(key) ++ variables(value)
     case ComponentType(_) => Set.empty // TODO: Update when component types can have type parameters?
-    case _: NamedType => Set.empty // TODO: Update when class types can have type parameters.
+    case _: NamedType => Set.empty // TODO: Update when struct/trait types can have type parameters.
   }
 
   private sealed abstract class TypePrecedence(protected val value: Int) {
@@ -137,16 +126,16 @@ object Type {
       case ListType(element) => s"[${toString(element, verbose)}]"
       case MapType(key, value) => infix(" -> ", TypePrecedence.Map, List(key, value))
       case ComponentType(underlying) => s"+${toString(underlying, verbose)}"
-      case c: ClassType =>
+      case s: StructType =>
         if (verbose) {
-          val inherits = c.supertype.map(s => s" extends ${toString(s, verbose)}").getOrElse("")
-          s"${if (c.isAbstract) s"abstract class" else "class"} ${c.name}$inherits"
-        } else c.name
-      case l: LabelType =>
+          val implements = if (s.supertypes.nonEmpty) s" implements ${s.supertypes.map(toString(_, verbose)).mkString(", ")}" else ""
+          s"struct ${s.name}$implements"
+        } else s.name
+      case t: TraitType =>
         if (verbose) {
-          val inherits = l.supertype.map(s => s" < ${toString(s, verbose)}").getOrElse("")
-          s"label ${l.name}$inherits"
-        } else l.name
+          val extended = if (t.supertypes.nonEmpty) s" extends ${t.supertypes.map(toString(_, verbose)).mkString(", ")}" else ""
+          s"label ${t.name}$extended"
+        } else t.name
       case t: NamedType => t.name
     }
   }

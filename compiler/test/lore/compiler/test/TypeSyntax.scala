@@ -18,7 +18,7 @@ trait TypeSyntax {
     def &(t2: Type)(implicit registry: Registry): Type = toType(s1) & t2
     def |(t2: Type)(implicit registry: Registry): Type = toType(s1) | t2
   }
-  implicit class ClassTypeOperators(c1: ClassType) {
+  implicit class ClassTypeOperators(c1: StructType) {
     def unary_+(): ComponentType = ComponentType(c1)
   }
 }

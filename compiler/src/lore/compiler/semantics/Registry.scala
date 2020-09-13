@@ -85,12 +85,12 @@ class Registry {
   /**
     * Searches for a class type with the given name.
     */
-  def getClassType(name: String): Option[ClassType] = getType(name).filter(_.isInstanceOf[ClassType]).map(_.asInstanceOf[ClassType])
+  def getClassType(name: String): Option[StructType] = getType(name).filter(_.isInstanceOf[StructType]).map(_.asInstanceOf[StructType])
 
   /**
     * Searches for a label type with the given name.
     */
-  def getLabelType(name: String): Option[LabelType] = getType(name).filter(_.isInstanceOf[LabelType]).map(_.asInstanceOf[LabelType])
+  def getLabelType(name: String): Option[TraitType] = getType(name).filter(_.isInstanceOf[TraitType]).map(_.asInstanceOf[TraitType])
 
   /**
     * Registers the given type definition.

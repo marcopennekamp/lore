@@ -2,7 +2,7 @@ package lore.compiler.phases.transpilation
 
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException}
-import lore.compiler.types.{ClassType, LabelType, NamedType}
+import lore.compiler.types.{StructType, TraitType, NamedType}
 
 object NamedTypeTranspiler {
   /**
@@ -11,15 +11,15 @@ object NamedTypeTranspiler {
     */
   def transpile(tpe: NamedType): Compilation[String] = {
     tpe match {
-      case classType: ClassType => transpileClassType(classType)
-      case labelType: LabelType => transpileLabelType(labelType)
+      case classType: StructType => transpileClassType(classType)
+      case labelType: TraitType => transpileLabelType(labelType)
       case _ => throw CompilationException(s"Unknown declared type $tpe.")
     }
   }
 
-  private def transpileClassType(classType: ClassType): Compilation[String] = {
+  private def transpileClassType(classType: StructType): Compilation[String] = {
     val varClassType = TranspiledNames.namedType(classType)
-    val varSupertype = classType.supertype.map(TranspiledNames.namedType).getOrElse("undefined")
+    val varSupertype = classType.supertypes.map(TranspiledNames.namedType).getOrElse("undefined")
     // TODO: Support ownedBy types.
     // TODO: Support componentTypes and isEntity.
     s"""const $varClassType = ${RuntimeApi.types.classType}(
@@ -31,7 +31,7 @@ object NamedTypeTranspiler {
        |)""".stripMargin.compiled
   }
 
-  private def transpileLabelType(labelType: LabelType): Compilation[String] = {
+  private def transpileLabelType(labelType: TraitType): Compilation[String] = {
     "".compiled // TODO: Implement.
   }
 }

@@ -13,7 +13,7 @@ import lore.compiler.core.CompilationException
   *   - The first byte of a type's representation, the tag, determines the kind of the type and, possibly,
   *     its number of operands. Types are divided into variable-size types, fixed-size types and basic types:
   *       - Variable size: Sum, Intersection, Product, Named
-  *         - Named has, for now, always zero operands, as we have not introduced parametric classes yet.
+  *         - Named has, for now, always zero operands, as we have not introduced parametric structs/traits yet.
   *         - Also note that Named excludes type variables!
   *       - Basic type: Any, Nothing, Real, Int, Boolean, String
   *       - Fixed size: List, Map, Component, Variable

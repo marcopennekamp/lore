@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.semantics.functions.{ConstructorDefinition, FunctionSignature}
 import lore.compiler.semantics.structures.ClassDefinition.ConstructorNotFound
-import lore.compiler.types.{ClassType, ComponentType, Type}
+import lore.compiler.types.{StructType, ComponentType, Type}
 import lore.compiler.utils.CollectionExtensions._
 
 import scala.collection.mutable
@@ -16,7 +16,7 @@ import scala.collection.mutable
   */
 class ClassDefinition(
   override val name: String,
-  override val tpe: ClassType,
+  override val tpe: StructType,
   val ownedBy: Option[Type],
   val isEntity: Boolean,
   val localMembers: List[MemberDefinition],
@@ -25,7 +25,7 @@ class ClassDefinition(
   // Many of the members here are declared as vals. This is only possible because definitions are created according
   // to the inheritance hierarchy.
 
-  override val supertypeDefinition: Option[ClassDefinition] = tpe.supertype.map(_.definition)
+  override val supertypeDefinition: Option[ClassDefinition] = tpe.supertypes.map(_.definition)
 
   /**
     * The list of all properties belonging to this class, excluding superclass components.
