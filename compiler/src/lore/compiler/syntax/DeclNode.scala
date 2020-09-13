@@ -50,7 +50,7 @@ object TypeDeclNode {
   case class StructNode(
     override val name: String,
     implemented: Vector[String],
-    // TODO: Owned by.
+    ownedBy: Option[TypeExprNode],
     members: Vector[MemberNode],
     position: Position
   ) extends TypeDeclNode

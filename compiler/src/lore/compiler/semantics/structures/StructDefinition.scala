@@ -2,14 +2,13 @@ package lore.compiler.semantics.structures
 
 import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.semantics.functions.FunctionSignature
-import lore.compiler.types.{ComponentType, StructType}
+import lore.compiler.types.{ComponentType, StructType, Type}
 import lore.compiler.utils.CollectionExtensions._
 
 class StructDefinition(
   override val name: String,
   override val tpe: StructType,
-  // TODO: Reimplement ownedBy.
-  //val ownedBy: Option[Type],
+  val ownedBy: Option[Type],
   val members: Vector[MemberDefinition],
   override val position: Position,
 ) extends DeclaredTypeDefinition {

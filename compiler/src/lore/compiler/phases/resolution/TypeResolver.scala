@@ -1,42 +1,68 @@
 package lore.compiler.phases.resolution
 
 import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, Error}
-import lore.compiler.semantics.Registry
+import lore.compiler.core.{Compilation, Error, Position}
+import lore.compiler.semantics.{Registry, TypeScope}
 import lore.compiler.syntax.TypeDeclNode
 import lore.compiler.types._
+import lore.compiler.utils.CollectionExtensions.FilterTypeVectorExtension
+
+import scala.reflect.ClassTag
 
 /**
   * Resolves types from their respective type declaration nodes.
   */
 object TypeResolver {
-  case class LabelMustExtendLabel(node: TypeDeclNode.LabelNode) extends Error(node) {
-    override def message = s"The label ${node.name} does not extend a label but some other type."
+  case class IllegalImplements(node: TypeDeclNode.StructNode) extends Error(node) {
+    override def message = s"The struct ${node.name} does not implement a trait but some other type."
   }
 
-  def resolve(node: TypeDeclNode.LabelNode)(implicit registry: Registry): Compilation[TraitType] = {
-    node.supertypeName match {
-      case None => new TraitType(node.name, None).compiled
-      case Some(supertypeName) =>
-        registry.resolveType(supertypeName)(node.position).flatMap {
-          case supertype: TraitType => new TraitType(node.name, Some(supertype)).compiled
-          case _ => Compilation.fail(LabelMustExtendLabel(node))
-        }
+  /**
+    * Resolves a struct type. This not only resolves the traits that the struct implements, but also the component
+    * types that are implicitly part of the struct's supertypes.
+    */
+  def resolve(node: TypeDeclNode.StructNode)(implicit registry: Registry): Compilation[StructType] = {
+    implicit val typeScope: TypeScope = registry.typeScope
+    implicit val position: Position = node.position
+    node.implemented.map(resolveType[TraitType](IllegalImplements(node))).simultaneous.flatMap { implementedTraits =>
+      node.members.filterType[TypeDeclNode.ComponentNode].map(resolveComponentType).simultaneous.map { componentTypes =>
+        val supertypes = implementedTraits ++ componentTypes.map(ComponentType)
+        new StructType(node.name, supertypes)
+      }
     }
   }
 
-  case class ClassMustExtendClass(node: TypeDeclNode.ClassNode) extends Error(node) {
-    override def message = s"The class ${node.name} does not extend a class but some other type."
+  case class IllegalExtends(node: TypeDeclNode.TraitNode) extends Error(node) {
+    override def message = s"The trait ${node.name} does not extend a trait or component but some other type."
   }
 
-  def resolve(node: TypeDeclNode.ClassNode)(implicit registry: Registry): Compilation[StructType] = {
-    node.supertypeName match {
-      case None => new StructType(node.name, None, node.isAbstract).compiled
-      case Some(supertypeName) =>
-        registry.resolveType(supertypeName)(node.position).flatMap {
-          case supertype: StructType => new StructType(node.name, Some(supertype), node.isAbstract).compiled
-          case _ => Compilation.fail(ClassMustExtendClass(node))
-        }
+  def resolve(node: TypeDeclNode.TraitNode)(implicit registry: Registry): Compilation[TraitType] = {
+    implicit val position: Position = node.position
+    (
+      node.extended.map(resolveType[TraitType](IllegalExtends(node))).simultaneous,
+      node.components.map(resolveType[DeclaredType](IllegalExtends(node))).simultaneous,
+    ).simultaneous.map { case (extendedTraits, componentTypes) =>
+      val supertypes = extendedTraits ++ componentTypes.map(ComponentType)
+      new TraitType(node.name, supertypes)
     }
+  }
+
+  private def resolveType[T <: Type](error: => Error)(name: String)(
+    implicit tag: ClassTag[T], registry: Registry, position: Position
+  ): Compilation[T] = {
+    registry.resolveType(name).flatMap {
+      case supertype: T => supertype.compiled
+      case _ => Compilation.fail(error)
+    }
+  }
+
+  case class ComponentMustBeDeclaredType(node: TypeDeclNode.ComponentNode) extends Error(node) {
+    override def message = s"The component ${node.name} is not a valid struct or trait."
+  }
+
+  def resolveComponentType(node: TypeDeclNode.ComponentNode)(implicit typeScope: TypeScope): Compilation[DeclaredType] = {
+    typeScope.resolve(node.name)(node.position)
+      .require(_.isInstanceOf[DeclaredType])(ComponentMustBeDeclaredType(node))
+      .map(_.asInstanceOf[DeclaredType])
   }
 }

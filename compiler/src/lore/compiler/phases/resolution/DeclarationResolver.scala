@@ -7,6 +7,7 @@ import lore.compiler.semantics.functions.FunctionDefinition
 import lore.compiler.semantics.{Registry, TypeScope}
 import lore.compiler.syntax.{DeclNode, TypeDeclNode}
 import lore.compiler.types.Type
+import lore.compiler.utils.CollectionExtensions.FilterTypeVectorExtension
 
 import scala.collection.mutable
 
@@ -25,7 +26,6 @@ class DeclarationResolver {
   // TODO: We could move all this state into the resolve function and make it implicit.
 
   private val typeDeclarations: mutable.HashMap[String, TypeDeclNode] = mutable.HashMap()
-  private var aliasDeclarations: List[TypeDeclNode.AliasNode] = List.empty
   private val multiFunctionDeclarations: mutable.HashMap[String, List[DeclNode.FunctionNode]] = mutable.HashMap()
   private val dependencyGraph: DependencyGraph = new DependencyGraph(new DependencyGraph.Owner {
     override def hasTypeDeclaration(name: String): Boolean = typeDeclarations.contains(name)
@@ -41,14 +41,14 @@ class DeclarationResolver {
       return Compilation.fail(TypeAlreadyExists(declaration))
     }
 
-    declaration match {
-      case aliasNode: TypeDeclNode.AliasNode =>
-        typeDeclarations.put(aliasNode.name, declaration)
-        aliasDeclarations = aliasNode :: aliasDeclarations
-      case declaredNode: TypeDeclNode.DeclaredNode => // Covers labels and classes.
-        typeDeclarations.put(declaredNode.name, declaration)
-        dependencyGraph.add(declaredNode.name, declaredNode.supertypeName.getOrElse("Any"))
+    val dependencyNames = declaration match {
+      case TypeDeclNode.StructNode(_, implemented, _, members, _) =>
+        implemented ++ members.filterType[TypeDeclNode.ComponentNode].map(_.name)
+      case TypeDeclNode.TraitNode(_, extended, components, _) =>
+        extended ++ components
     }
+    dependencyNames.foreach(dependency => dependencyGraph.add(declaration.name, dependency))
+    typeDeclarations.put(declaration.name, declaration)
 
     Verification.succeed
   }
@@ -109,48 +109,26 @@ class DeclarationResolver {
   /**
     * Computes the correct order in which to resolve type declarations.
     */
-  private def computeTypeResolutionOrder(): Compilation[List[TypeDeclNode.DeclaredNode]] = {
+  private def computeTypeResolutionOrder(): Compilation[List[TypeDeclNode]] = {
     dependencyGraph.computeTypeResolutionOrder().map { names =>
       if (names.head != "Any") {
         throw CompilationException("Any should be the first type in the type resolution order.")
       }
 
       // With .tail we exclude Any.
-      names.tail.map { name =>
-        typeDeclarations(name) match {
-          case _: TypeDeclNode.AliasNode => throw CompilationException("Alias types should not be included in the type resolution order.")
-          case node: TypeDeclNode.DeclaredNode => node
-        }
-      }
+      names.tail.map(typeDeclarations(_))
     }
   }
 
   /**
     * Resolve all declared types in the proper resolution order and register them with the Registry.
     */
-  private def resolveDeclaredTypesInOrder(typeResolutionOrder: List[TypeDeclNode.DeclaredNode])(implicit registry: Registry): Verification = {
+  private def resolveDeclaredTypesInOrder(typeResolutionOrder: List[TypeDeclNode])(implicit registry: Registry): Verification = {
     typeResolutionOrder.map { node =>
       (node match {
-        case labelNode: TypeDeclNode.LabelNode => TypeResolver.resolve(labelNode)
-        case classNode: TypeDeclNode.ClassNode => TypeResolver.resolve(classNode)
+        case structNode: TypeDeclNode.StructNode => TypeResolver.resolve(structNode)
+        case traitNode: TypeDeclNode.TraitNode => TypeResolver.resolve(traitNode)
       }).map(tpe => registry.registerType(tpe.name, tpe))
-    }.simultaneous.verification
-  }
-
-  /**
-    * Resolve all alias types and register them in the Registry.
-    *
-    * Note that this implicitly disallows cyclically defined alias types (which is the correct behavior). For example,
-    * if we define an alias type like `type A = B | A`, there will already be an error: Type not found "A". Hence,
-    * there is no reason to manually disallow self-references.
-    */
-  private def resolveAliasTypes()(implicit registry: Registry): Verification = {
-    aliasDeclarations.map { node =>
-      //TypeExpressionEvaluator.evaluate(node.tpe).map(tpe => registry.registerType(node.name, tpe))
-      // TODO: Implement alias types as named types.
-      Compilation.fail(new Error(node) {
-        override def message: String = "Alias types are currently not supported."
-      })
     }.simultaneous.verification
   }
 
@@ -158,11 +136,11 @@ class DeclarationResolver {
     * Resolve all type definitions in the proper resolution order and register them with the Registry. This function
     * guarantees that definitions are returned in the type resolution order.
     */
-  private def resolveTypeDefinitionsInOrder(typeResolutionOrder: List[TypeDeclNode.DeclaredNode])(implicit registry: Registry): Verification = {
+  private def resolveTypeDefinitionsInOrder(typeResolutionOrder: List[TypeDeclNode])(implicit registry: Registry): Verification = {
     typeResolutionOrder.map { node =>
       (node match {
-        case labelNode: TypeDeclNode.LabelNode => LabelDefinitionResolver.resolve(labelNode)
-        case classNode: TypeDeclNode.ClassNode => ClassDefinitionResolver.resolve(classNode)
+        case structNode: TypeDeclNode.StructNode => TraitDefinitionResolver.resolve(structNode)
+        case traitNode: TypeDeclNode.TraitNode => StructDefinitionResolver.resolve(traitNode)
       }).map(registry.registerTypeDefinition)
     }.simultaneous.verification
   }

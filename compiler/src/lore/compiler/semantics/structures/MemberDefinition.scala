@@ -3,7 +3,7 @@ package lore.compiler.semantics.structures
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.VirtualMember
 import lore.compiler.semantics.functions.ParameterDefinition
-import lore.compiler.types.{StructType, ComponentType, Type}
+import lore.compiler.types.{ComponentType, DeclaredType, StructType, Type}
 
 // TODO: "mutable" should actually be "writeable", since immutability implies that the whole data structure within
 //       that member is unchangeable, while we are actually just gating the top-level write access to the member.
@@ -23,14 +23,19 @@ sealed trait MemberDefinition extends Positioned {
 }
 
 class PropertyDefinition(
-  override val name: String, override val tpe: Type, override val isMutable: Boolean, override val position: Position,
+  override val name: String,
+  override val tpe: Type,
+  override val isMutable: Boolean,
+  override val position: Position,
 ) extends MemberDefinition
 
 /**
   * @param name The name of the component (and at the same time its type name).
   */
 class ComponentDefinition(
-  override val name: String, override val tpe: StructType, override val position: Position,
+  override val name: String,
+  override val tpe: DeclaredType,
+  override val position: Position,
 ) extends MemberDefinition {
   override def isComponent: Boolean = true
   lazy val componentType: ComponentType = ComponentType(tpe)

@@ -1,7 +1,7 @@
 package lore.compiler.types
 
 import lore.compiler.semantics.structures.DeclaredTypeDefinition
-import lore.compiler.utils.CollectionExtensions.FilterTypeExtension
+import lore.compiler.utils.CollectionExtensions._
 
 trait DeclaredType extends NamedType {
   /**
@@ -18,12 +18,12 @@ trait DeclaredType extends NamedType {
   /**
     * The component types that this entity inherits from.
     */
-  def componentTypes: Vector[ComponentType] = supertypes.filte
+  def componentTypes: Vector[ComponentType] = supertypes.filterType[ComponentType]
 
   /**
     * Whether the declared type is an entity, i.e. it contains one or more components.
     */
-  def isEntity: Boolean = supertypes.filterType[ComponentType].nonEmpty || supertypes.filterType[DeclaredType].exists(_.isEntity)
+  def isEntity: Boolean = componentTypes.nonEmpty || supertypes.filterType[DeclaredType].exists(_.isEntity)
 
   /**
     * The supertypes of the declared type that directly inherit from Any, possibly this type itself.

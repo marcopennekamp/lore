@@ -99,7 +99,7 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def struct[_: P]: P[TypeDeclNode.StructNode] = {
-    P(Index ~ "struct" ~/ identifier ~ implements /* ~ ownedBy */ ~ structBody).map(withIndex(TypeDeclNode.StructNode))
+    P(Index ~ "struct" ~/ identifier ~ implements ~ ownedBy.? ~ structBody).map(withIndex(TypeDeclNode.StructNode))
   }
 
   private def implements[_: P]: P[Vector[String]] = {
@@ -124,5 +124,5 @@ class FragmentParser(implicit fragment: Fragment) {
     P(Index ~ "component" ~ identifier).map(withIndex(TypeDeclNode.ComponentNode))
   }
 
-  /* private def ownedBy[_: P]: P[Option[TypeExprNode]] = P(("owned by" ~ typeExpression).?) */
+  private def ownedBy[_: P]: P[TypeExprNode] = P("owned by" ~ typeExpression)
 }

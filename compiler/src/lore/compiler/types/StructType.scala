@@ -11,10 +11,4 @@ import lore.compiler.semantics.structures.StructDefinition
 class StructType(
   override val name: String,
   override val supertypes: Vector[Type],
-) extends DeclaredType with DeclaredType.DefinitionProperty[StructDefinition] {
-  /**
-    * Only entities of the ownedBy type may own a component of this struct type.
-    */
-  // TODO: Reimplement ownedBy.
-  //def ownedBy: Option[Type] = definition.ownedBy
-}
+) extends DeclaredType with DeclaredType.DefinitionProperty[StructDefinition]
