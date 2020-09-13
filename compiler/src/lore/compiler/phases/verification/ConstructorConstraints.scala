@@ -3,7 +3,7 @@ package lore.compiler.phases.verification
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Error}
 import lore.compiler.semantics.functions.ConstructorDefinition
-import lore.compiler.semantics.structures.ClassDefinition
+import lore.compiler.semantics.structures.StructDefinition
 import lore.compiler.syntax.StmtNode.ReturnNode
 import lore.compiler.syntax.visitor.{StmtVisitor, VerificationStmtVisitor}
 import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode}
@@ -15,22 +15,22 @@ object ConstructorConstraints {
   /**
     * Verifies all constructor constraints for the given class.
     */
-  def verify(definition: ClassDefinition): Verification = {
+  def verify(definition: StructDefinition): Verification = {
     (
       verifyContinuations(definition),
       definition.constructors.map(verifyNoReturn).simultaneous,
     ).simultaneous.verification
   }
 
-  case class ContinuationRequired(definition: ClassDefinition, constructor: ConstructorDefinition) extends Error(constructor) {
+  case class ContinuationRequired(definition: StructDefinition, constructor: ConstructorDefinition) extends Error(constructor) {
     override def message = s"The constructor ${constructor.name} of the class ${definition.name} should end in a continuation."
   }
 
-  case class CyclicContinuations(definition: ClassDefinition) extends Error(definition) {
+  case class CyclicContinuations(definition: StructDefinition) extends Error(definition) {
     override def message = s"Constructor calls within the class ${definition.name} are cyclic."
   }
 
-  case class ContinuationsMustEndInConstruct(definition: ClassDefinition, constructor: ConstructorDefinition) extends Error(constructor) {
+  case class ContinuationsMustEndInConstruct(definition: StructDefinition, constructor: ConstructorDefinition) extends Error(constructor) {
     override def message = s"The ${definition.name} construction chain starting with the constructor ${constructor.name} must end in a construct call, but doesn't."
   }
 
@@ -38,7 +38,7 @@ object ConstructorConstraints {
     * Verifies that the constructors end in a continuation, that no continuation appears in any other places, and
     * that continuations are acyclic and end in a construct continuation.
     */
-  def verifyContinuations(definition: ClassDefinition): Verification = {
+  def verifyContinuations(definition: StructDefinition): Verification = {
     // We check first that all constructors end in a continuation and that no continuation appears in any other places.
     // This is deliberately followed by a flatMap, because we don't want to check the graph parts of this verification
     // if not all continuations are in the right spot.

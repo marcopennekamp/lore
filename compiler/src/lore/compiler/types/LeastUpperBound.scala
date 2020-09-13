@@ -84,6 +84,7 @@ object LeastUpperBound {
       // We have the special case that component types can also be supertypes of entity types.
       // We add these to the LUB resolved by the type hierarchy.
       case (e1: StructType, e2: StructType) if e1.isEntity && e2.isEntity =>
+        // TODO: This MIGHT not be needed anymore since component types are now part of the supertype list of a struct.
         val componentTypes = e1.definition.commonComponentTypes(e2.definition)
         val superclassList = declaredTypeLcs(e1, e2) match {
           // We choose Any as the supertype only if there are no common component types. Otherwise we prefer to

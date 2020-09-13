@@ -3,7 +3,7 @@ package lore.compiler.phases.verification
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.structures.{ClassDefinition, ComponentDefinition, MemberDefinition}
+import lore.compiler.semantics.structures.{StructDefinition, ComponentDefinition, MemberDefinition}
 import lore.compiler.types.{BasicType, StructType, Type}
 
 object ClassConstraints {
@@ -19,7 +19,7 @@ object ClassConstraints {
     *      component also has to even exist.
     *   7. All constructor constraints.
     */
-  def verify(definition: ClassDefinition)(implicit registry: Registry): Verification = {
+  def verify(definition: StructDefinition)(implicit registry: Registry): Verification = {
     val componentVerifications = (
       verifyMembersUnique(definition),
       definition.localComponents.map(verifyOverrides(definition, _)).simultaneous,
@@ -39,28 +39,28 @@ object ClassConstraints {
     ).simultaneous.verification
   }
 
-  case class ClassMayNotExtendEntity(definition: ClassDefinition) extends Error(definition) {
+  case class ClassMayNotExtendEntity(definition: StructDefinition) extends Error(definition) {
     override def message = s"The class ${definition.name} extends an entity but is not an entity itself."
   }
 
   /**
     * Verifies that the given class does not extend an entity if it is itself not an entity.
     */
-  def verifyEntityInheritance(definition: ClassDefinition): Verification = {
+  def verifyEntityInheritance(definition: StructDefinition): Verification = {
     // If the definition is not an entity, its supertype may not be an entity.
     if (!definition.isEntity && definition.supertypeDefinition.exists(_.isEntity)) {
       Compilation.fail(ClassMayNotExtendEntity(definition))
     } else Verification.succeed
   }
 
-  case class OwnedByMustBeSubtype(definition: ClassDefinition, ownedBy: Type, superOwnedBy: Type) extends Error(definition) {
+  case class OwnedByMustBeSubtype(definition: StructDefinition, ownedBy: Type, superOwnedBy: Type) extends Error(definition) {
     override def message = s"The owned-by type $ownedBy of class ${definition.name} must be a subtype of the superclass's owned-by type $superOwnedBy."
   }
 
   /**
     * Verifies that the owned-by type of the given class is a subtype of the owned-by type of the superclass.
     */
-  def verifyOwnedBy(definition: ClassDefinition): Verification = {
+  def verifyOwnedBy(definition: StructDefinition): Verification = {
     // We have to assume Any, because this handles a special case where the owned-by declaration of a class has
     // been forgotten by the programmer, despite the superclass having its own owned-by type.
     val ownedBy = definition.tpe.ownedBy.getOrElse(BasicType.Any)
@@ -75,11 +75,11 @@ object ClassConstraints {
     } else Verification.succeed
   }
 
-  case class MemberAlreadyExistsInSuperclass(definition: ClassDefinition, member: MemberDefinition) extends Error(member) {
+  case class MemberAlreadyExistsInSuperclass(definition: StructDefinition, member: MemberDefinition) extends Error(member) {
     override def message = s"The member ${member.name} is already declared in a superclass of class ${definition.name}."
   }
 
-  case class MemberDuplicateDeclaration(definition: ClassDefinition, member: MemberDefinition) extends Error(member) {
+  case class MemberDuplicateDeclaration(definition: StructDefinition, member: MemberDefinition) extends Error(member) {
     override def message = s"The member ${member.name} is already declared twice in the class ${definition.name}."
   }
 
@@ -87,7 +87,7 @@ object ClassConstraints {
     * Verifies that this class's local members are unique and haven't already been declared in a superclass
     * or twice in the given class.
     */
-  def verifyMembersUnique(definition: ClassDefinition): Verification = {
+  def verifyMembersUnique(definition: StructDefinition): Verification = {
     val superMembers = definition.supertypeDefinition.map(_.members).getOrElse(List.empty)
     val superMemberNames = superMembers.map(_.name)
     definition.localMembers.map { member =>
@@ -102,7 +102,7 @@ object ClassConstraints {
     }.simultaneous.verification
   }
 
-  case class ClassCannotOwnComponent(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {
+  case class ClassCannotOwnComponent(definition: StructDefinition, component: ComponentDefinition) extends Error(component) {
     override def message = s"The class ${definition.name} cannot own the component ${component.name} due to the component's owned-by restriction."
   }
 
@@ -110,14 +110,14 @@ object ClassConstraints {
     * Verifies that the given class can in fact own the given component. (In principle, with the information
     * available at compile-time.)
     */
-  def verifyCanOwn(definition: ClassDefinition, component: ComponentDefinition): Verification = {
+  def verifyCanOwn(definition: StructDefinition, component: ComponentDefinition): Verification = {
     val ownershipType = component.tpe.ownedBy.getOrElse(BasicType.Any)
     if (!(definition.tpe <= ownershipType)) {
       Compilation.fail(ClassCannotOwnComponent(definition, component))
     } else Verification.succeed
   }
 
-  case class ComponentsShareSuperclass(definition: ClassDefinition, superclass: StructType, components: List[ComponentDefinition]) extends Error(definition) {
+  case class ComponentsShareSuperclass(definition: StructDefinition, superclass: StructType, components: List[ComponentDefinition]) extends Error(definition) {
     override def message: String = s"The following components illegally share a superclass $superclass: ${components.map(_.name).mkString(", ")}." +
       s" Components may not share a superclass, because component types such as +C have to stay unambiguous for all possible entities."
   }
@@ -126,7 +126,7 @@ object ClassConstraints {
     * Verifies that no two components share the same superclass, which is a restriction outlined in detail in the
     * specification.
     */
-  def verifyComponentsDontShareSuperclass(definition: ClassDefinition): Verification = {
+  def verifyComponentsDontShareSuperclass(definition: StructDefinition): Verification = {
     // Algorithm:
     //   1. Map each component to its highest superclass type.
     //   2. Group components by their superclass type.
@@ -140,13 +140,13 @@ object ClassConstraints {
       .toList.simultaneous.verification
   }
 
-  case class OverriddenComponentDoesNotExist(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {
+  case class OverriddenComponentDoesNotExist(definition: StructDefinition, component: ComponentDefinition) extends Error(component) {
     val overriddenName: String = component.overrides.getOrElse(throw CompilationException("component.overrides should exist."))
     override def message: String = s"The component ${component.name} is supposed to override the component $overriddenName, " +
       s"but $overriddenName is not a supertype component or has already been overridden."
   }
 
-  case class ComponentMustSubtypeOverriddenComponent(definition: ClassDefinition, component: ComponentDefinition) extends Error(component) {
+  case class ComponentMustSubtypeOverriddenComponent(definition: StructDefinition, component: ComponentDefinition) extends Error(component) {
     val overriddenName: String = component.overrides.getOrElse(throw CompilationException("component.overrides should exist."))
     override def message: String = s"The component ${component.name} is trying to override the component $overriddenName, " +
       s"but ${component.name} is not a subtype of $overriddenName."
@@ -155,7 +155,7 @@ object ClassConstraints {
   /**
     * Verifies that a component C2 overriding a component C1 is a subtype of C1. Also ensures that C1 even exists.
     */
-  def verifyOverrides(definition: ClassDefinition, component: ComponentDefinition)(implicit registry: Registry): Verification = {
+  def verifyOverrides(definition: StructDefinition, component: ComponentDefinition)(implicit registry: Registry): Verification = {
     component.overrides.map { overriddenName =>
       // Verify that the overridden component even exists.
       val superComponentNames = definition.supertypeDefinition.map(_.components.map(_.name)).getOrElse(List.empty)

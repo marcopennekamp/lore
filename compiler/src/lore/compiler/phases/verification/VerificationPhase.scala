@@ -3,7 +3,7 @@ package lore.compiler.phases.verification
 import lore.compiler.core.Compilation._
 import lore.compiler.core.Phase
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.structures.ClassDefinition
+import lore.compiler.semantics.structures.StructDefinition
 import lore.compiler.utils.CollectionExtensions._
 
 class VerificationPhase()(implicit registry: Registry) extends Phase[Unit] {
@@ -11,7 +11,7 @@ class VerificationPhase()(implicit registry: Registry) extends Phase[Unit] {
     val withVerifiedConstraints = (
       // Verify declared type constraints.
       registry.getTypeDefinitions.values.map {
-        case definition: ClassDefinition => ClassConstraints.verify(definition)
+        case definition: StructDefinition => ClassConstraints.verify(definition)
         case _ => Verification.succeed
       }.toList.simultaneous,
       // Verify multi-function constraints.
@@ -26,7 +26,7 @@ class VerificationPhase()(implicit registry: Registry) extends Phase[Unit] {
             FunctionTransformation.transform(function)
           }.simultaneous
         }.simultaneous,
-        registry.getTypeDefinitions.values.toList.filterType[ClassDefinition].map { definition =>
+        registry.getTypeDefinitions.values.toList.filterType[StructDefinition].map { definition =>
           definition.constructors.map { constructor =>
             FunctionTransformation.transform(constructor, definition)
           }.simultaneous

@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Error}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.{ConstructorDefinition, FunctionDefinition, FunctionSignature}
-import lore.compiler.semantics.structures.ClassDefinition
+import lore.compiler.semantics.structures.StructDefinition
 import lore.compiler.semantics.{Registry, TypeScope}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.StmtVisitor
@@ -30,7 +30,7 @@ object FunctionTransformation {
     * the given constructor body and applies function transformations. Ensures that all other expression constraints
     * hold. Also ensures that constructor and construct calls are soundly typed.
     */
-  def transform(constructor: ConstructorDefinition, classDefinition: ClassDefinition)(implicit registry: Registry): Verification = {
+  def transform(constructor: ConstructorDefinition, classDefinition: StructDefinition)(implicit registry: Registry): Verification = {
     transform(constructor.signature, constructor.typeScope, constructor.bodyNode, Some(classDefinition)).map {
       body => constructor.body = body.asInstanceOf[Expression.Block] // TODO: There has to be a better solution...
     }
@@ -38,7 +38,7 @@ object FunctionTransformation {
 
   private def transform(
     signature: FunctionSignature, typeScope: TypeScope, bodyNode: ExprNode,
-    classDefinition: Option[ClassDefinition],
+    classDefinition: Option[StructDefinition],
   )(implicit registry: Registry): Compilation[Expression] = {
     // TODO: A Unit function should manually add a return value of () if the last expression's value isn't already that.
     //       Otherwise the function won't compile, because the last expression doesn't fit the expected return type.

@@ -16,8 +16,8 @@ class ConstructorDefinition(
   override val name: String, val typeScope: TypeScope, val parameters: List[ParameterDefinition],
   val bodyNode: ExprNode.BlockNode, override val position: Position
 ) extends InternalCallTarget {
-  private var classDefinition: ClassDefinition = _
-  def associateWith(classDefinition: ClassDefinition): Unit = {
+  private var classDefinition: StructDefinition = _
+  def associateWith(classDefinition: StructDefinition): Unit = {
     this.classDefinition = classDefinition
   }
   override lazy val signature: FunctionSignature = functions.FunctionSignature(name, parameters, classDefinition.tpe, position)

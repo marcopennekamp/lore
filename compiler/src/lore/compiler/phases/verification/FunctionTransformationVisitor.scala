@@ -5,7 +5,7 @@ import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
-import lore.compiler.semantics.structures.ClassDefinition
+import lore.compiler.semantics.structures.StructDefinition
 import lore.compiler.semantics.{LocalVariable, Registry, TypeScope}
 import lore.compiler.syntax.visitor.StmtVisitor
 import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode}
@@ -25,7 +25,7 @@ private[verification] class FunctionTransformationVisitor(
   /**
     * The class that owns the constructor IF the signature represents a constructor.
     */
-  classDefinition: Option[ClassDefinition],
+  classDefinition: Option[StructDefinition],
 )(implicit registry: Registry) extends StmtVisitor[Expression] {
   import ExprNode._
   import FunctionTransformationVisitor._

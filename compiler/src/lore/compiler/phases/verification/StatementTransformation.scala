@@ -5,7 +5,7 @@ import lore.compiler.core.{Compilation, CompilationException, Position}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, XaryOperator}
-import lore.compiler.semantics.structures.ClassDefinition
+import lore.compiler.semantics.structures.StructDefinition
 import lore.compiler.types.BasicType
 
 /**
@@ -47,7 +47,7 @@ object StatementTransformation {
   }
 
   def transformConstructorCall(
-    definition: ClassDefinition, qualifier: Option[String], arguments: List[Expression],
+    definition: StructDefinition, qualifier: Option[String], arguments: List[Expression],
   )(implicit position: Position, registry: Registry): Compilation[Expression] = {
     for {
       constructor <- definition.resolveConstructor(qualifier.getOrElse(definition.name))(position)

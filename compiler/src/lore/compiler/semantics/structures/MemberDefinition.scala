@@ -1,7 +1,6 @@
 package lore.compiler.semantics.structures
 
 import lore.compiler.core.{Position, Positioned}
-import lore.compiler.semantics
 import lore.compiler.semantics.VirtualMember
 import lore.compiler.semantics.functions.ParameterDefinition
 import lore.compiler.types.{StructType, ComponentType, Type}

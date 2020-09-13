@@ -2,13 +2,13 @@ package lore.compiler.phases.resolution
 
 import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.semantics.functions.ConstructorDefinition
-import lore.compiler.semantics.structures.{ClassDefinition, ComponentDefinition, MemberDefinition, PropertyDefinition}
+import lore.compiler.semantics.structures.{StructDefinition, ComponentDefinition, MemberDefinition, PropertyDefinition}
 import lore.compiler.semantics.{Registry, TypeScope}
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode, TypeDeclNode}
 import lore.compiler.types.{StructType, TypeExpressionEvaluator}
 
 object ClassDefinitionResolver {
-  def resolve(node: TypeDeclNode.ClassNode)(implicit registry: Registry): Compilation[ClassDefinition] = {
+  def resolve(node: TypeDeclNode.ClassNode)(implicit registry: Registry): Compilation[StructDefinition] = {
     implicit val position: Position = node.position
     implicit val typeScope: TypeScope = registry.typeScope
     val classType = registry.getClassType(node.name).getOrElse(
@@ -20,7 +20,7 @@ object ClassDefinitionResolver {
       node.ownedBy.map(TypeExpressionEvaluator.evaluate).toCompiledOption,
       node.members.map(resolveMember).simultaneous,
     ).simultaneous.flatMap { case (ownedBy, members) =>
-      val definition = new ClassDefinition(node.name, classType, ownedBy, node.isEntity, members, node.position)
+      val definition = new StructDefinition(node.name, classType, ownedBy, node.isEntity, members, node.position)
       classType.initialize(definition)
       node.constructors.map(resolveConstructor).simultaneous.map { constructors =>
         constructors.foreach(definition.registerConstructor)
@@ -64,7 +64,7 @@ object ClassDefinitionResolver {
   /**
     * Ensures that the default constructor exists, generating and registering it if it does not.
     */
-  private def ensureDefaultConstructor(classDefinition: ClassDefinition)(implicit registry: Registry): Unit = {
+  private def ensureDefaultConstructor(classDefinition: StructDefinition)(implicit registry: Registry): Unit = {
     if (classDefinition.getConstructor(classDefinition.name).isDefined) {
       return
     }
