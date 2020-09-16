@@ -43,6 +43,12 @@ class DeclarationResolver {
 
     val dependencyNames = declaration match {
       case TypeDeclNode.StructNode(_, implemented, _, members, _) =>
+        // We have to not only depend on the traits that the struct implements, but also on the declared types that
+        // the struct contains as components, because each component type +C is an explicit supertype of the struct.
+        // TODO: Evaluate whether it is feasible to depend on components' types right away, or whether we should
+        //       rather defer the resolution of such types until all traits and structs have been resolved. The
+        //       latter would be necessary if we need better flexibility, but I cannot evaluate the need without
+        //       first writing more and more complex Lore programs that contain components.
         implemented ++ members.filterType[TypeDeclNode.ComponentNode].map(_.name)
       case TypeDeclNode.TraitNode(_, extended, components, _) =>
         extended ++ components

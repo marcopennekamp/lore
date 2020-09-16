@@ -13,13 +13,6 @@ import scalax.collection.mutable.Graph
   */
 class DependencyGraph(owner: DependencyGraph.Owner) {
 
-  // TODO: Since component types are resolved right away, we have to add additional edges to the dependency graph, for
-  //       example from a struct A to a trait T which extends +A. The question is whether this will work and we can
-  //       find a good order in which to compile traits and structs, or whether we have to defer the resolution of
-  //       component types until all traits and structs have been resolved. The latter would be necessary in cases
-  //       where even just some of the idiomatic Lore programs (such as existing examples) wouldn't compile because of
-  //       this.
-
   /**
     * A mutable dependency graph, the nodes being type names. A type Any is the root of all declared types. Edges are
     * directed from supertype to subtype.
