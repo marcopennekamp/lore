@@ -4,7 +4,7 @@ import lore.compiler.core.{Compilation, CompilationException, Position}
 import lore.compiler.semantics.structures.{ComponentDefinition, MemberDefinition, PropertyDefinition, StructDefinition}
 import lore.compiler.semantics.{Registry, TypeScope}
 import lore.compiler.syntax.TypeDeclNode
-import lore.compiler.types.TypeExpressionEvaluator
+import lore.compiler.types.{BasicType, TypeExpressionEvaluator}
 
 object StructDefinitionResolver {
   def resolve(node: TypeDeclNode.StructNode)(implicit registry: Registry): Compilation[StructDefinition] = {
@@ -15,7 +15,7 @@ object StructDefinitionResolver {
     )
 
     (
-      node.ownedBy.map(TypeExpressionEvaluator.evaluate).toCompiledOption,
+      node.ownedBy.map(TypeExpressionEvaluator.evaluate).toCompiledOption.map(_.getOrElse(BasicType.Any)),
       node.members.map(resolveMember).simultaneous,
     ).simultaneous.map { case (ownedBy, members) =>
       val definition = new StructDefinition(node.name, structType, ownedBy, members, node.position)

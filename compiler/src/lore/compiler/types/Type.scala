@@ -98,6 +98,18 @@ object Type {
     case _: NamedType => Set.empty // TODO: Update when struct/trait types can have type parameters.
   }
 
+  /**
+    * Removes types from the set that are subtyped by other types in the list, essentially keeping the
+    * most specific types.
+    */
+  def mostSpecific(types: Set[Type]): Set[Type] = types.filterNot(t => types.exists(_ < t))
+
+  /**
+    * Removes types from the set that are supertyped by other types in the list, essentially keeping the
+    * most general types.
+    */
+  def mostGeneral(types: Set[Type]): Set[Type] = types.filterNot(t => types.exists(t < _))
+
   private sealed abstract class TypePrecedence(protected val value: Int) {
     def <(precedence: TypePrecedence): Boolean = this.value <= precedence.value
   }

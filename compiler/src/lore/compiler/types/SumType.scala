@@ -24,9 +24,7 @@ object SumType {
       case t: SumType => t.types
       case t => Set(t)
     }
-
-    // Remove strict subtypes of other parts.
-    val simplified = flattened.filterNot(t => flattened.exists(t < _))
+    val simplified = Type.mostGeneral(flattened)
 
     val sum = new SumType(simplified)
     if (sum.types.size == 1) sum.types.head else sum

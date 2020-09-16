@@ -7,12 +7,12 @@ import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.phases.verification.ReturnConstraints.{DeadCode, DefinitelyReturns, ImpossibleReturn, IsReturnAllowed}
 
 private class ReturnDeadCodeVisitor() extends CombiningStmtVisitor[DefinitelyReturns] {
-  override def combine(list: List[DefinitelyReturns]): DefinitelyReturns = {
-    if (list.isEmpty) false
-    else list.forall(identity)
+  override def combine(returns: Vector[DefinitelyReturns]): DefinitelyReturns = {
+    if (returns.isEmpty) false
+    else returns.forall(identity)
   }
 
-  override def visit(node: StmtNode, returns: List[DefinitelyReturns]): Compilation[DefinitelyReturns] = node match {
+  override def visit(node: StmtNode, returns: Vector[DefinitelyReturns]): Compilation[DefinitelyReturns] = node match {
     case StmtNode.ReturnNode(_, _) => true.compiled
     case ExprNode.BlockNode(statements, _) =>
       assert(statements.length == returns.length)

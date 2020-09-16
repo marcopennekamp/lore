@@ -5,6 +5,7 @@ import lore.compiler.core.Error
 import lore.compiler.semantics.functions.FunctionSignature
 
 object SignatureConstraints {
+
   /**
    * Verifies for the given signature:
    *   1. All parameters have unique names.
@@ -19,9 +20,10 @@ object SignatureConstraints {
 
   private def verifyUnique(signature: FunctionSignature): Verification = {
     val errors = signature.parameters.map(_.name).groupBy(identity).flatMap {
-      case (_, List(_)) => None
+      case (_, Vector(_)) => None
       case (name, _) => Some(NonUniqueParameterName(signature, name))
-    }.toList
+    }.toVector
     Verification.fromErrors(errors)
   }
+
 }

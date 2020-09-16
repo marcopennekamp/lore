@@ -11,7 +11,7 @@ class VerificationPhase()(implicit registry: Registry) extends Phase[Unit] {
     val withVerifiedConstraints = (
       // Verify declared type constraints.
       registry.getTypeDefinitions.values.map {
-        case definition: StructDefinition => ClassConstraints.verify(definition)
+        case definition: StructDefinition => StructConstraints.verify(definition)
         case _ => Verification.succeed
       }.toList.simultaneous,
       // Verify multi-function constraints.

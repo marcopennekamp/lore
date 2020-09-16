@@ -24,11 +24,12 @@ object TypeResolver {
   def resolve(node: TypeDeclNode.StructNode)(implicit registry: Registry): Compilation[StructType] = {
     implicit val typeScope: TypeScope = registry.typeScope
     implicit val position: Position = node.position
-    node.implemented.map(resolveType[TraitType](IllegalImplements(node))).simultaneous.flatMap { implementedTraits =>
-      node.members.filterType[TypeDeclNode.ComponentNode].map(resolveComponentType).simultaneous.map { componentTypes =>
-        val supertypes = implementedTraits ++ componentTypes.map(ComponentType)
-        new StructType(node.name, supertypes)
-      }
+    (
+      node.implemented.map(resolveType[TraitType](IllegalImplements(node))).simultaneous,
+      node.members.filterType[TypeDeclNode.ComponentNode].map(resolveComponentType).simultaneous,
+    ).simultaneous.map { case (implementedTraits, componentTypes) =>
+      val supertypes = implementedTraits ++ componentTypes.map(ComponentType)
+      new StructType(node.name, supertypes)
     }
   }
 

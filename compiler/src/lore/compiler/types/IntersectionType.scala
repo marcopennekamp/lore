@@ -29,9 +29,7 @@ object IntersectionType {
       case t: IntersectionType => t.types
       case t => Set(t)
     }
-
-    // Remove strict supertypes of other component types.
-    val simplified = flattened.filterNot(t => flattened.exists(_ < t))
+    val simplified = Type.mostSpecific(flattened)
 
     val intersection = new IntersectionType(simplified)
     if (intersection.types.size == 1) intersection.types.head else intersection

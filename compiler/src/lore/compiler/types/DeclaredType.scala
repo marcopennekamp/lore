@@ -10,27 +10,66 @@ trait DeclaredType extends NamedType {
   def name: String
 
   /**
-    * The supertypes of the declared type. Only traits and component types are currently allowed by the grammar to
-    * be supertypes of a declared type.
+    * The direct supertypes of the declared type. Only traits and component types are currently allowed by the grammar
+    * to be supertypes of a declared type.
+    *
+    * TODO: We could perhaps represent the supertype using an intersection type.
     */
   def supertypes: Vector[Type]
 
+  // TODO: A supertype list that contains ALL supertypes transitively without removing subsumed types, which could
+  //       then be used to very quickly look up whether this type is a subtype of a given type without having to
+  //       run up the supertype tree. This optimization is especially important for the runtime.
+
   /**
-    * The component types that this entity inherits from.
+    * All direct declared supertypes of the declared type.
     */
-  def componentTypes: Vector[ComponentType] = supertypes.filterType[ComponentType]
+  lazy val declaredSupertypes: Vector[DeclaredType] = supertypes.filterType[DeclaredType]
+
+  /**
+    * The component types that this declared type directly and indirectly inherits. This is an exhaustive list
+    * of all component types across the supertype hierarchy of this declared type. Since specialized component
+    * types subsume more general component types, the latter is also removed from the list.
+    *
+    * For example, take code such as this:
+    *   trait AnimalHousing extends +Animal, +Roof, +Walls
+    *   struct DogHouse implements AnimalHousing { component Dog, component SturdyRoof, component BrickWalls }
+    *
+    * The component types (as defined by this function) of DogHouse are: +Dog, +Roof, +Walls. Notably, +Animal
+    * has been removed from the list as it is subsumed by +Dog.
+    */
+  lazy val componentTypes: Set[ComponentType] = {
+    val all = supertypes.filterType[ComponentType] ++ declaredSupertypes.flatMap(_.componentTypes)
+    Type.mostSpecific(all.toSet).asInstanceOf[Set[ComponentType]]
+  }
 
   /**
     * Whether the declared type is an entity, i.e. it contains one or more components.
     */
-  def isEntity: Boolean = componentTypes.nonEmpty || supertypes.filterType[DeclaredType].exists(_.isEntity)
+  lazy val isEntity: Boolean = componentTypes.nonEmpty || supertypes.filterType[DeclaredType].exists(_.isEntity)
 
   /**
-    * The supertypes of the declared type that directly inherit from Any, possibly this type itself.
+    * The type that an entity owning this component must subtype. This type may be Any, which means that the
+    * declared type may be owned by any kind of entity.
+    *
+    * ownedBy is declared in DeclaredTypeDefinition, because once definitions are resolved, all types will have been
+    * loaded and the ownedBy type doesn't need to be resolved with a deferred approach.
     */
-  def rootSupertypes: Vector[Type] = if (supertypes.isEmpty) Vector(this) else supertypes.flatMap {
-    case dt: DeclaredType => dt.rootSupertypes
-    case t => Vector(t)
+  def ownedBy: Type = definition.ownedBy
+
+  /**
+    * The supertypes of the declared type that directly inherit from Any, possibly this type itself and
+    * including component types.
+    */
+  def rootSupertypes: Vector[Type] = {
+    if (supertypes.isEmpty) {
+      Vector(this)
+    } else {
+      supertypes.flatMap {
+        case dt: DeclaredType => dt.rootSupertypes
+        case t => Vector(t)
+      }
+    }
   }
 
   /**

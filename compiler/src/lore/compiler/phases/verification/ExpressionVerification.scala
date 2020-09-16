@@ -7,7 +7,7 @@ import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.types.{BasicType, ListType, ProductType, Type}
 
 object ExpressionVerification {
-  case class IllegallyTypedExpression(expression: Expression, expectedTypes: List[Type]) extends Error(expression) {
+  case class IllegallyTypedExpression(expression: Expression, expectedTypes: Vector[Type]) extends Error(expression) {
     override def message = s"The expression $expression at this position has the illegal type ${expression.tpe}.$expected"
     private def expected: String = {
       if (expectedTypes.nonEmpty) {
@@ -21,7 +21,7 @@ object ExpressionVerification {
     */
   def hasSubtype(expression: Expression, supertypes: Type*): Verification = {
     if (!supertypes.exists(expected => expression.tpe <= expected)) {
-      Compilation.fail(IllegallyTypedExpression(expression, supertypes.toList))
+      Compilation.fail(IllegallyTypedExpression(expression, supertypes.toVector))
     } else Verification.succeed
   }
 

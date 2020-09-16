@@ -8,7 +8,7 @@ import lore.compiler.utils.CollectionExtensions._
 class StructDefinition(
   override val name: String,
   override val tpe: StructType,
-  val ownedBy: Option[Type],
+  override val ownedBy: Type,
   val members: Vector[MemberDefinition],
   override val position: Position,
 ) extends DeclaredTypeDefinition {
