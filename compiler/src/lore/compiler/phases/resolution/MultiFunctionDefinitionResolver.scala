@@ -5,7 +5,7 @@ import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.phases.resolution.DeclarationResolver.FunctionAlreadyExists
 import lore.compiler.phases.resolution.ParameterDefinitionResolver.resolveParameterNode
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.syntax.DeclNode
 import lore.compiler.types.TypeExpressionEvaluator
 
@@ -29,8 +29,9 @@ object MultiFunctionDefinitionResolver {
       (
         node.parameters.map(resolveParameterNode).simultaneous,
         TypeExpressionEvaluator.evaluate(node.outputType),
-        ).simultaneous.map { case (parameters, outputType) =>
-        new FunctionDefinition(node.name, typeScope, parameters, outputType, node.body, node.position)
+      ).simultaneous.map { case (parameters, outputType) =>
+        val signature = FunctionSignature(node.name, parameters, outputType, node.position)
+        new FunctionDefinition(node.name, typeScope, signature, node.body, node.position)
       }
     }
   }
