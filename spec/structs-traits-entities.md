@@ -257,7 +257,7 @@ Note that one object can be a component of **multiple entities**. For example, y
 
 ##### Component Type Restrictions
 
-The freedom with which we allow subtyping of component types has a few **implications**. Say we have an entity type `E & C2` with `C1 < C2 < C3`. We could assign a value of either `C1` or `C2` to the entity. This already leads to a problem when we consider the compilation process:
+The freedom with which we allow **subtyping of component types** has a few implications. Say we have an entity type `E & C2` with `C1 < C2 < C3`. We could assign a value of either `C1` or `C2` to the entity. This already leads to a problem when we consider the compilation process:
 
 ```
 struct E1 { component C1 }
@@ -298,11 +298,11 @@ action f(e: +C) {
 We don't know whether `e.C` refers to `CA` or `CB`. Well, in fact, it refers to *both*. But we don't know that `e` is `E` in `f`. We just know that *some* entity has a component of type `C`. This means we have **two options:**
 
 1. Any component access **returns a list**.
-2. Any two components defined in an entity **must not share a supertrait**.
+2. Any two components defined in a struct **must not share a supertype**.
 
 The first option would make components effectively unusable. It is rarely desirable to have to always handle lists when we want to operate on components that should be standalone instances. Hence, we choose the **second option**.
 
-If no components share a supertrait (`Any` does not count, since it is not a trait), we can **always decide** which component belongs to a given component type `+C`. The downside is that we cannot have two components sharing a supertrait, such as:
+If no components share a supertype (`Any` does not count), we can **always decide** which component belongs to a given component type `+C`. The downside is that we cannot declare two components in a struct that share a supertype, such as:
 
 ```
 trait Stat
@@ -323,7 +323,7 @@ struct Hero {
 - Alternative 1: To be able to be used as a component, a type has to declare `owned by Any`.
 - Alternative 2: To be able to be used as a component, we have to declare entities as `component struct`/`component trait`.
 
-But of course, we can always **rewrite the entity** in a way that allows us to implement the desired design. Consider the following example. We lose a little bit of flexibility, but we gain flexibility by being able to access components by their supertype.
+But of course, we can always **rewrite the struct** in a way that allows us to implement the desired design. Consider the following example. We lose a little bit of flexibility, but we gain flexibility by being able to access components by their supertype.
 
 ```
 struct StatRepository {
@@ -335,6 +335,23 @@ struct Hero {
   component StatRepository
 }
 ```
+
+**Traits**, on the other hand, can have components that share a supertype perfectly coexist:
+
+```
+trait C
+trait C1 extends C
+trait C2 extends C
+struct C12 implements C1, C2
+
+trait A extends +C1
+trait B extends +C2
+struct E implements A, B {
+  component C12
+}
+```
+
+The component `C12` provides a backing for both `+C1` and `+C2`. Whether `C12` is accessed through trait `A` and `.C1` or trait `B` and `.C2` does not matter. It is clear to the runtime which component must be accessed and no ambiguity presents itself in this example.
 
 Luckily, by the way, **`+Any`** is not a valid type, since `Any` is not a trait or struct. So we don't shoot ourselves in the foot by disallowing the full trait hierarchy.
 
