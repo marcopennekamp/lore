@@ -68,7 +68,7 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
   private def forLoop[_: P]: P[ExprNode.ForNode] = {
     def extractor = P(Index ~ identifier ~ "<-" ~ expression).map(withIndex(ExprNode.ExtractorNode))
     P(Index ~ "for" ~ "(" ~ extractor.rep(1, sep = ",") ~ ")" ~ statement)
-      .map { case (index, extractors, stat) => (index, extractors.toList, stat) }
+      .map { case (index, extractors, stat) => (index, extractors.toVector, stat) }
       .map(withIndex(ExprNode.ForNode))
   }
 
@@ -158,20 +158,20 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
   private def fixedCall[_: P]: P[ExprNode] = P(Index ~ identifier ~ ".fixed" ~ typeArguments ~ arguments).map(withIndex(ExprNode.FixedFunctionCallNode))
   private def dynamicCall[_: P]: P[ExprNode] = P(Index ~ "dynamic" ~ singleTypeArgument ~ arguments).map(withIndex(ExprNode.DynamicCallNode))
   private def call[_: P]: P[ExprNode] = P(Index ~ identifier ~ ("." ~ identifier).? ~ arguments).map(withIndex(ExprNode.SimpleCallNode))
-  def arguments[_: P]: P[List[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toList)
-  private def typeArguments[_: P]: P[List[TypeExprNode]] = P("[" ~ typeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toList)
+  def arguments[_: P]: P[Vector[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toVector)
+  private def typeArguments[_: P]: P[Vector[TypeExprNode]] = P("[" ~ typeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toVector)
   private def singleTypeArgument[_: P]: P[TypeExprNode] = P("[" ~ typeParser.typeExpression ~ "]")
   private def variable[_: P]: P[ExprNode.VariableNode] = P(Index ~ identifier).map(withIndex(ExprNode.VariableNode))
   def block[_: P]: P[ExprNode.BlockNode] = {
-    def statements = P(statement.repX(0, Space.terminators).map(_.toList))
+    def statements = P(statement.repX(0, Space.terminators).map(_.toVector))
     P(Index ~ "{" ~ statements ~ "}").map(withIndex(ExprNode.BlockNode))
   }
   private def list[_: P]: P[ExprNode] = {
-    P(Index ~ "[" ~ expression.rep(sep = ",").map(_.toList) ~ "]").map(withIndex(ExprNode.ListNode))
+    P(Index ~ "[" ~ expression.rep(sep = ",").map(_.toVector) ~ "]").map(withIndex(ExprNode.ListNode))
   }
   private def map[_: P]: P[ExprNode] = {
     def keyValue = P(Index ~ expression ~ "->" ~ expression).map(withIndex(ExprNode.KeyValueNode))
-    P(Index ~ "%{" ~ keyValue.rep(sep = ",").map(_.toList) ~ "}").map(withIndex(ExprNode.MapNode))
+    P(Index ~ "%{" ~ keyValue.rep(sep = ",").map(_.toVector) ~ "}").map(withIndex(ExprNode.MapNode))
   }
 
   /**
@@ -182,7 +182,7 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     P(Index ~ "(" ~ (expression ~ ("," ~ expression).rep).? ~ ")").map {
       case (index, None) => ExprNode.UnitNode(Position(fragment, index))
       case (_, Some((expr, Seq()))) => expr
-      case (index, Some((left, expressions))) => ExprNode.TupleNode(left +: expressions.toList, Position(fragment, index))
+      case (index, Some((left, expressions))) => ExprNode.TupleNode(left +: expressions.toVector, Position(fragment, index))
     }
   }
 
@@ -204,11 +204,11 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
       .map(withIndex(ExprNode.StringLiteralNode))
     // We have to check content, interpolation, notStringEnd exactly in this order, otherwise notStringEnd would
     // consume parts that are meant to be escapes or interpolations.
-    P(Index ~ "'" ~ (content | interpolation | notStringEnd).rep.map(_.toList) ~ "'")
+    P(Index ~ "'" ~ (content | interpolation | notStringEnd).rep.map(_.toVector) ~ "'")
       .map {
-        case (index, List()) => ExprNode.StringLiteralNode("", Position(fragment, index))
+        case (index, Vector()) => ExprNode.StringLiteralNode("", Position(fragment, index))
         // This can either be a single string literal or any expression enclosed as such: '$expr'.
-        case (index, List(expression)) => expression match {
+        case (index, Vector(expression)) => expression match {
           case literal: StringLiteralNode =>
             // One unfortunate side effect of immutable positions is that we can't easily change the position of
             // an expression. The 'content' parser parses a string without the enclosing '' being factored in for

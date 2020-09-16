@@ -32,5 +32,5 @@ object SumType {
     if (sum.types.size == 1) sum.types.head else sum
   }
 
-  def construct(types: List[Type]): Type = construct(types.toSet)
+  def construct(types: Vector[Type]): Type = construct(types.toSet)
 }

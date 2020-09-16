@@ -4,7 +4,7 @@ import scala.util.hashing.MurmurHash3
 
 // TODO: Rename all instances of "component" to "element".
 
-case class ProductType(components: List[Type]) extends Type {
+case class ProductType(components: Vector[Type]) extends Type {
   /**
     * Since this is already a tuple, there is no need to enclose it in another tuple.
     */
@@ -14,5 +14,5 @@ case class ProductType(components: List[Type]) extends Type {
 }
 
 object ProductType {
-  val UnitType: ProductType = ProductType(List.empty)
+  val UnitType: ProductType = ProductType(Vector.empty)
 }

@@ -10,14 +10,14 @@ import scala.collection.mutable
   * An assignment is a single binding. An allocation is a nested set of assignments.
   */
 class TypeVariableAllocation() {
-  private val allocation = mutable.HashMap[TypeVariable, List[Type]]()
+  private val allocation = mutable.HashMap[TypeVariable, Vector[Type]]()
 
   /**
     * Adds the given type as an assignment of the type variable.
     */
   def addAssignment(tv: TypeVariable, tpe: Type): Unit = {
-    val types = allocation.getOrElse(tv, Nil)
-    allocation.put(tv, tpe +: types)
+    val types = allocation.getOrElse(tv, Vector.empty)
+    allocation.put(tv, types :+ tpe)
   }
 
   /**
@@ -31,7 +31,7 @@ class TypeVariableAllocation() {
 
   private def currentAssignments(): TypeVariable.Assignments = {
     allocation.view.mapValues {
-      case representative :: _ => representative
+      case representative +: _ => representative
       case _ => throw CompilationException("The allocation is invalid and thus doesn't define any consistent assignments.")
     }.toMap
   }
@@ -45,11 +45,11 @@ class TypeVariableAllocation() {
     // Check the "compatible assignments" property.
     allocation.forall { case (_, possibleAssignments) =>
       possibleAssignments.sliding(2).forall {
-        case List(left, right) =>
+        case Vector(left, right) =>
           // Since equality is transitive, we don't have to compare all types to each other.
           left == right
-        case List(_) =>
-          // List(_).sliding(2) will return List(_), so we have to manually evaluate to true for the special
+        case Vector(_) =>
+          // Vector(_).sliding(2) will return Vector(_), so we have to manually evaluate to true for the special
           // case of one-element lists.
           true
       }

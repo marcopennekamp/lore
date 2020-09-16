@@ -11,20 +11,20 @@ trait ExpressionVisitor[A] {
   def visit(expression: Expression.Assignment)(target: A, value: A): Result
 
   // Expressions
-  def visit(expression: Expression.Block)(expressions: List[A]): Result
+  def visit(expression: Expression.Block)(expressions: Vector[A]): Result
   def visit(expression: Expression.VariableAccess): Result
   def visit(expression: Expression.MemberAccess)(instance: A): Result
   def visit(expression: Expression.Literal): Result
-  def visit(expression: Expression.Tuple)(values: List[A]): Result
-  def visit(expression: Expression.ListConstruction)(values: List[A]): Result
-  def visit(expression: Expression.MapConstruction)(entries: List[(A, A)]): Result
+  def visit(expression: Expression.Tuple)(values: Vector[A]): Result
+  def visit(expression: Expression.ListConstruction)(values: Vector[A]): Result
+  def visit(expression: Expression.MapConstruction)(entries: Vector[(A, A)]): Result
   def visit(expression: Expression.UnaryOperation)(value: A): Result
   def visit(expression: Expression.BinaryOperation)(left: A, right: A): Result
-  def visit(expression: Expression.XaryOperation)(operands: List[A]): Result
-  def visit(expression: Expression.Call)(arguments: List[A]): Result
+  def visit(expression: Expression.XaryOperation)(operands: Vector[A]): Result
+  def visit(expression: Expression.Call)(arguments: Vector[A]): Result
   def visit(expression: Expression.IfElse)(condition: A, onTrue: A, onFalse: A): Result
   def visit(expression: Expression.WhileLoop)(condition: A, body: A): Result
-  def visit(expression: Expression.ForLoop)(extractors: List[A], body: A): Result
+  def visit(expression: Expression.ForLoop)(extractors: Vector[A], body: A): Result
 
   /**
     * Invoked before an expressions's subtrees are visited. This can be used to set up contexts.

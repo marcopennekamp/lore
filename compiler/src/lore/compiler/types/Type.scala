@@ -17,7 +17,7 @@ trait Type {
   /**
     * Returns a singleton product type enclosing this type, unless this type is already a product type.
     */
-  def toTuple: ProductType = ProductType(List(this))
+  def toTuple: ProductType = ProductType(Vector(this))
 
   def <=(rhs: Type): Boolean = Subtyping.isSubtype(this, rhs)
   def <(rhs: Type): Boolean = Subtyping.isStrictSubtype(this, rhs)
@@ -28,7 +28,7 @@ trait Type {
 }
 
 object Type {
-  val predefinedTypes: Map[String, NamedType] = List(
+  val predefinedTypes: Map[String, NamedType] = Vector(
     BasicType.Any,
     BasicType.Nothing,
     BasicType.Int,
@@ -49,7 +49,7 @@ object Type {
       // Note that we consider the idea of augmenting trait types here. If the intersection type contains at least one
       // non-trait type, we ignore trait types in the consideration. If the intersection type consists only of traits,
       // it is NOT an augmented type and thus abstract.
-      val exceptTraits = types.toList.filterNotType[TraitType]
+      val exceptTraits = types.toVector.filterNotType[TraitType]
       exceptTraits.isEmpty || exceptTraits.exists(isAbstract)
     case ProductType(elements) => elements.exists(isAbstract)
     case ListType(_) => false
@@ -120,11 +120,11 @@ object Type {
     val infix = stringifyInfixOperator(parentPrecedence, toStringWithPrecedence(_, verbose, _)) _
 
     t match {
-      case SumType(types) => infix(" | ", TypePrecedence.Sum, types.toList)
-      case IntersectionType(types) => infix(" & ", TypePrecedence.Intersection, types.toList)
+      case SumType(types) => infix(" | ", TypePrecedence.Sum, types.toVector)
+      case IntersectionType(types) => infix(" & ", TypePrecedence.Intersection, types.toVector)
       case ProductType(elements) => s"(${elements.map(toString(_, verbose)).mkString(", ")})"
       case ListType(element) => s"[${toString(element, verbose)}]"
-      case MapType(key, value) => infix(" -> ", TypePrecedence.Map, List(key, value))
+      case MapType(key, value) => infix(" -> ", TypePrecedence.Map, Vector(key, value))
       case ComponentType(underlying) => s"+${toString(underlying, verbose)}"
       case s: StructType =>
         if (verbose) {
@@ -143,7 +143,7 @@ object Type {
   private def stringifyInfixOperator(
     parentPrecedence: TypePrecedence,
     stringify: (Type, TypePrecedence) => String,
-  )(operator: String, operatorPrecedence: TypePrecedence, operands: List[Type]): String = {
+  )(operator: String, operatorPrecedence: TypePrecedence, operands: Vector[Type]): String = {
     val repr = operands.map(stringify(_, operatorPrecedence)).mkString(operator)
     if (operatorPrecedence < parentPrecedence) s"($repr)" else repr
   }
@@ -151,7 +151,7 @@ object Type {
   /**
     * Creates a unique, Javascript-friendly identifier of the given type.
     */
-  def uniqueIdentifier(tpe: Type): String = uniqueIdentifier(List(tpe))
+  def uniqueIdentifier(tpe: Type): String = uniqueIdentifier(Vector(tpe))
 
   /**
     * Creates a unique, Javascript-friendly identifier of the given list of types.
@@ -160,7 +160,7 @@ object Type {
     * concatenated to a single byte array, and then encoded using Base64 with '$' for the '+' character and
     * '_' for the '/' character. Padding characters are discarded as they are not needed for the identifier.
     */
-  def uniqueIdentifier(types: List[Type]): String = {
+  def uniqueIdentifier(types: Vector[Type]): String = {
     val stream = new ByteArrayOutputStream()
     types.foreach(t => stream.write(TypeEncoder.encode(t)))
     Base64.getEncoder.encodeToString(stream.toByteArray).replace('+', '$').replace('/', '_').replace("=", "")

@@ -27,7 +27,7 @@ class FragmentParser(implicit fragment: Fragment) {
   /**
     * Attempts to parse the fragment and returns the parsing result.
     */
-  lazy val parsed: Compilation[List[DeclNode]] = {
+  lazy val parsed: Compilation[Vector[DeclNode]] = {
     fastparse.parse(fragment.input, fullFragment(_)) match {
       case Parsed.Failure(_, _, extra) =>
         val message = s"Parsing failure: ${extra.trace().aggregateMsg}"
@@ -37,11 +37,11 @@ class FragmentParser(implicit fragment: Fragment) {
     }
   }
 
-  def fullFragment[_: P]: P[List[DeclNode]] = {
+  def fullFragment[_: P]: P[Vector[DeclNode]] = {
     // We repeat topDeclaration an arbitrary amount of times, terminated by Space.terminators. The repX in contrast
     // to rep does not take whitespace into account. We don't want it to consume the newline that needs to be consumed
     // by Space.terminators!
-    P(Space.WL ~~ topDeclaration.repX(0, Space.terminators) ~~ Space.WL ~~ End).map(_.toList)
+    P(Space.WL ~~ topDeclaration.repX(0, Space.terminators) ~~ Space.WL ~~ End).map(_.toVector)
   }
 
   private def topDeclaration[_: P]: P[DeclNode] = P(function | action | typeDeclaration)
@@ -59,18 +59,18 @@ class FragmentParser(implicit fragment: Fragment) {
     P(Index ~ "action" ~/ identifier ~ parameters ~ functionTypeVariables ~ block.?).map(withIndex(DeclNode.FunctionNode.fromAction _))
   }
 
-  private def parameters[_: P]: P[List[DeclNode.ParameterNode]] = {
+  private def parameters[_: P]: P[Vector[DeclNode.ParameterNode]] = {
     def parameter = P(Index ~ identifier ~ typeParser.typing).map(withIndex(DeclNode.ParameterNode))
-    P("(" ~ parameter.rep(sep = ",") ~ ")").map(_.toList)
+    P("(" ~ parameter.rep(sep = ",") ~ ")").map(_.toVector)
   }
 
-  private def functionTypeVariables[_: P]: P[List[DeclNode.TypeVariableNode]] = {
+  private def functionTypeVariables[_: P]: P[Vector[DeclNode.TypeVariableNode]] = {
     def typeVariable = {
       P(Index ~ identifier ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).?).map(withIndex(DeclNode.TypeVariableNode))
     }
     P(("where" ~ typeVariable.rep(1, CharIn(","))).?).map {
-      case None => Nil
-      case Some(seq) => seq.toList
+      case None => Vector.empty
+      case Some(seq) => seq.toVector
     }
   }
 

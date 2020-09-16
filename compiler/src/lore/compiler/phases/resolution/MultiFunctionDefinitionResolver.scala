@@ -10,13 +10,11 @@ import lore.compiler.syntax.DeclNode
 import lore.compiler.types.TypeExpressionEvaluator
 
 object MultiFunctionDefinitionResolver {
-  def resolve(functionNodes: List[DeclNode.FunctionNode])(implicit registry: Registry): Compilation[MultiFunctionDefinition] = {
+  def resolve(functionNodes: Vector[DeclNode.FunctionNode])(implicit registry: Registry): Compilation[MultiFunctionDefinition] = {
     // Of course, all functions added to the multi-function must have the same name. If that is not the case,
     // there is something very wrong with the compiler.
-    if (functionNodes.size > 1) {
-      if (!functionNodes.sliding(2).forall { case List(a, b) => a.name == b.name }) {
-        throw CompilationException("The function nodes of a multi-function don't all have the same name.")
-      }
+    if (functionNodes.size > 1 && functionNodes.sliding(2).exists { case Vector(a, b) => a.name != b.name }) {
+      throw CompilationException("The function nodes of a multi-function don't all have the same name.")
     }
 
     val name = functionNodes.head.name
@@ -42,7 +40,7 @@ object MultiFunctionDefinitionResolver {
     * input types aren't equally specific. If they are, multiple dispatch won't be able to differentiate between
     * such two functions, and hence they can't be valid.
     */
-  private def verifyFunctionsUnique(functions: List[FunctionDefinition]): Verification = {
+  private def verifyFunctionsUnique(functions: Vector[FunctionDefinition]): Verification = {
     functions.map { function =>
       // We decide "duplicity" based on the specificity two functions would have in a multi-function fit context.
       // That is, if two functions are equally specific, they are effectively the same in the eyes of multiple

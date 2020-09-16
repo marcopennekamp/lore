@@ -26,7 +26,7 @@ class DeclarationResolver {
   // TODO: We could move all this state into the resolve function and make it implicit.
 
   private val typeDeclarations: mutable.HashMap[String, TypeDeclNode] = mutable.HashMap()
-  private val multiFunctionDeclarations: mutable.HashMap[String, List[DeclNode.FunctionNode]] = mutable.HashMap()
+  private val multiFunctionDeclarations: mutable.HashMap[String, Vector[DeclNode.FunctionNode]] = mutable.HashMap()
   private val dependencyGraph: DependencyGraph = new DependencyGraph(new DependencyGraph.Owner {
     override def hasTypeDeclaration(name: String): Boolean = typeDeclarations.contains(name)
     override def getTypeDeclaration(name: String): Option[TypeDeclNode] = typeDeclarations.get(name)
@@ -58,16 +58,16 @@ class DeclarationResolver {
     */
   private def addFunctionDeclaration(declaration: DeclNode.FunctionNode): Verification = {
     multiFunctionDeclarations.updateWith(declaration.name) {
-      case None => Some(List(declaration))
-      case Some(functions) => Some(declaration :: functions)
+      case None => Some(Vector(declaration))
+      case Some(functions) => Some(functions :+ declaration)
     }
     Verification.succeed
   }
 
   /**
-    * Builds the registry and body pool from all declarations.
+    * Builds the registry from all declarations.
     */
-  def resolve(declarations: List[DeclNode]): Compilation[Registry] = {
+  def resolve(declarations: Vector[DeclNode]): Compilation[Registry] = {
     // Declare the registry as implicit now so that we don't have to break up the for-comprehension,
     // which sadly doesn't support implicit variable declarations.
     implicit lazy val registry: Registry = new Registry()
@@ -93,13 +93,12 @@ class DeclarationResolver {
 
       typeResolutionOrder <- computeTypeResolutionOrder()
       _ <- resolveDeclaredTypesInOrder(typeResolutionOrder)
-      _ <- resolveAliasTypes()
       _ <- resolveTypeDefinitionsInOrder(typeResolutionOrder)
       _ <- resolveMultiFunctions()
     } yield registry
   }
 
-  private def addDeclarations(declarations: List[DeclNode]): Verification = {
+  private def addDeclarations(declarations: Vector[DeclNode]): Verification = {
     declarations.map {
       case function: DeclNode.FunctionNode => addFunctionDeclaration(function)
       case tpe: TypeDeclNode => addTypeDeclaration(tpe)
@@ -109,7 +108,7 @@ class DeclarationResolver {
   /**
     * Computes the correct order in which to resolve type declarations.
     */
-  private def computeTypeResolutionOrder(): Compilation[List[TypeDeclNode]] = {
+  private def computeTypeResolutionOrder(): Compilation[Vector[TypeDeclNode]] = {
     dependencyGraph.computeTypeResolutionOrder().map { names =>
       if (names.head != "Any") {
         throw CompilationException("Any should be the first type in the type resolution order.")
@@ -123,7 +122,7 @@ class DeclarationResolver {
   /**
     * Resolve all declared types in the proper resolution order and register them with the Registry.
     */
-  private def resolveDeclaredTypesInOrder(typeResolutionOrder: List[TypeDeclNode])(implicit registry: Registry): Verification = {
+  private def resolveDeclaredTypesInOrder(typeResolutionOrder: Vector[TypeDeclNode])(implicit registry: Registry): Verification = {
     typeResolutionOrder.map { node =>
       (node match {
         case structNode: TypeDeclNode.StructNode => TypeResolver.resolve(structNode)
@@ -136,11 +135,11 @@ class DeclarationResolver {
     * Resolve all type definitions in the proper resolution order and register them with the Registry. This function
     * guarantees that definitions are returned in the type resolution order.
     */
-  private def resolveTypeDefinitionsInOrder(typeResolutionOrder: List[TypeDeclNode])(implicit registry: Registry): Verification = {
+  private def resolveTypeDefinitionsInOrder(typeResolutionOrder: Vector[TypeDeclNode])(implicit registry: Registry): Verification = {
     typeResolutionOrder.map { node =>
       (node match {
-        case structNode: TypeDeclNode.StructNode => TraitDefinitionResolver.resolve(structNode)
-        case traitNode: TypeDeclNode.TraitNode => StructDefinitionResolver.resolve(traitNode)
+        case structNode: TypeDeclNode.StructNode => StructDefinitionResolver.resolve(structNode)
+        case traitNode: TypeDeclNode.TraitNode => TraitDefinitionResolver.resolve(traitNode)
       }).map(registry.registerTypeDefinition)
     }.simultaneous.verification
   }
@@ -151,7 +150,7 @@ class DeclarationResolver {
   private def resolveMultiFunctions()(implicit registry: Registry): Verification = {
     multiFunctionDeclarations.map { case (_, nodes) =>
       MultiFunctionDefinitionResolver.resolve(nodes).map(registry.registerMultiFunction)
-    }.toList.simultaneous.verification
+    }.toVector.simultaneous.verification
   }
 }
 

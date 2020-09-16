@@ -11,7 +11,7 @@ object TypeVariableDeclarationResolver {
     * Resolves a type variable declaration list in order, ensuring that the order property of the type variables is
     * set correctly.
     */
-  def resolve(nodes: List[DeclNode.TypeVariableNode], parentScope: TypeScope): Compilation[TypeVariableScope] = {
+  def resolve(nodes: Vector[DeclNode.TypeVariableNode], parentScope: TypeScope): Compilation[TypeVariableScope] = {
     // The fold ensures that the first type variable is registered before the second one is resolved, so that the first
     // one can be used as a bound of the second one, and so on.
     val initial = (new TypeVariableScope(parentScope).compiled, 0)

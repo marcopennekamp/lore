@@ -10,7 +10,7 @@ import lore.compiler.semantics.Registry
 /**
   * The compiler instance orchestrates compilation through all phases.
   */
-class LoreCompiler(val sources: List[Fragment], val options: CompilerOptions) {
+class LoreCompiler(val sources: Vector[Fragment], val options: CompilerOptions) {
   /**
     * Compiles the given sources, either resulting in a list of errors and warnings or a completed compilation.
     */

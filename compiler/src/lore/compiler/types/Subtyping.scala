@@ -13,8 +13,8 @@ object Subtyping {
     */
   type Rule = PartialFunction[(Type, Type), Boolean]
 
-  def rules: List[Rule] = {
-    List(
+  def rules: Vector[Rule] = {
+    Vector(
       // All instances of v1 are definitely subtypes of t2 if v1's upper bound is a subtype of t2, hence ensuring
       // that any instance of v1 has t2 as a supertype.
       { case (v1: TypeVariable, t2) => isSubtype(v1.upperBound, t2) },

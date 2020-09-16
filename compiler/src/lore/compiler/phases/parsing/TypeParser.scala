@@ -36,7 +36,7 @@ class TypeParser(implicit fragment: Fragment) {
     */
   private def productType[_: P]: P[TypeExprNode.ProductNode] = {
     P(Index ~ "(" ~ typeExpression ~ ("," ~ typeExpression).rep(1) ~ ")").map {
-      case (index, e, es) => TypeExprNode.ProductNode(e +: es.toList, Position(fragment, index))
+      case (index, e, es) => TypeExprNode.ProductNode(e +: es.toVector, Position(fragment, index))
     }
   }
 

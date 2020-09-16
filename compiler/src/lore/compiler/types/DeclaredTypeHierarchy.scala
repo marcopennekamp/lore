@@ -112,7 +112,7 @@ class DeclaredTypeHierarchy {
     })
 
     // Set all Found ancestors of any Found node to Excluded.
-    def getFoundTypes = status.toList.filter { case (_, status) => status == Found }.map(_._1)
+    def getFoundTypes = status.toVector.filter { case (_, status) => status == Found }.map(_._1)
     getFoundTypes.foreach { tpe =>
       val node = subtypingGraph.get(tpe)
       node.diPredecessors.foreach { predecessor =>
@@ -130,12 +130,12 @@ class DeclaredTypeHierarchy {
     * Searches the graph breadth-first, but in the opposite direction, going towards predecessors.
     */
   private def reverseBfs(start: subtypingGraph.NodeT, visit: subtypingGraph.NodeT => Unit): Unit = {
-    var remaining = start :: Nil
+    var remaining = Vector(start)
     while (remaining.nonEmpty) {
       val node = remaining.head
       remaining = remaining.tail
       visit(node)
-      remaining = remaining ::: node.diPredecessors.toList
+      remaining = remaining ++ node.diPredecessors.toVector
     }
   }
 }

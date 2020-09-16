@@ -2,7 +2,7 @@ package lore.compiler.types
 
 import lore.compiler.semantics.Registry
 import scalaz.Monad
-import scalaz.std.list._
+import scalaz.std.vector._
 import scalaz.syntax.traverse._
 
 object Ards {
@@ -18,7 +18,7 @@ object Ards {
       override def point[A](a: => A): Set[A] = Set(a)
       override def bind[A, B](fa: Set[A])(f: A => Set[B]): Set[B] = fa.flatMap(f)
     }
-    def combinations(components: List[Set[Type]]) = components.sequence
+    def combinations(components: Vector[Set[Type]]) = components.sequence
 
     // TODO: For all traits A, B, C, ... which extend a component type +T, shouldn't +T have A, B, C, ... as direct
     //       declared subtypes? If we declare an abstract function over +T, we would have to check that all traits
@@ -34,7 +34,7 @@ object Ards {
       case _ if !Type.isAbstract(t) => Set(t)
       case dt: DeclaredType => registry.declaredTypeHierarchy.getDirectSubtypes(dt).toSet
       case ProductType(components) => combinations(components.map(abstractResolvedDirectSubtypes)).map(ProductType(_))
-      case IntersectionType(types) => combinations(types.map(abstractResolvedDirectSubtypes).toList).map(IntersectionType.construct)
+      case IntersectionType(types) => combinations(types.map(abstractResolvedDirectSubtypes).toVector).map(IntersectionType.construct)
       case SumType(types) => types.flatMap(abstractResolvedDirectSubtypes)
       case BasicType.Any =>
         // TODO: Really? This should rather be the set of all types which have no supertype, i.e. direct descendants

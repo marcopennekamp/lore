@@ -10,7 +10,7 @@ import lore.compiler.types.Type
 import scala.util.Using
 
 object Lore {
-  val pyramid = List(
+  val pyramid = Vector(
     fragment("pyramid.collections", Path.of("pyramid", "collections.lore")),
     fragment("pyramid.core", Path.of("pyramid", "core.lore")),
     fragment("pyramid.io", Path.of("pyramid", "io.lore")),
@@ -31,7 +31,7 @@ object Lore {
     val options = CompilerOptions(
       runtimeLogging = false,
     )
-    val compiler = new LoreCompiler(pyramid ++ List(fragment), options)
+    val compiler = new LoreCompiler(pyramid :+ fragment, options)
     compiler.compile()
   }
 

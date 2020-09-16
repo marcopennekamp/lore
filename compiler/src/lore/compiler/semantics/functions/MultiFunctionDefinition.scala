@@ -7,7 +7,7 @@ import scalax.collection.mutable.Graph
 
 import scala.collection.mutable
 
-case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinition]) {
+case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefinition]) {
 
   /**
     * A hierarchy of functions ordered according to their input types. Not necessarily connected, but
@@ -25,7 +25,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
   /**
     * All root nodes in the hierarchy, i.e. those functions with a super-function.
     */
-  lazy val hierarchyRoots: List[hierarchy.NodeT] = hierarchy.nodes.filter(_.inDegree == 0).toList
+  lazy val hierarchyRoots: Vector[hierarchy.NodeT] = hierarchy.nodes.filter(_.inDegree == 0).toVector
 
   /**
     * When used as a visit-predicate for [[traverseHierarchy]], all and only nodes that are part of the function
@@ -36,7 +36,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
   /**
     * Calculates the multi-function's fit set.
     */
-  def fit(tpe: Type): List[FunctionDefinition] = {
+  def fit(tpe: Type): Vector[FunctionDefinition] = {
     traverseHierarchy(
       // We only have to visit nodes that are a supertype of the input type, because any children of these nodes
       // won't be a supertype of the input type if their parent isn't already a supertype.
@@ -48,7 +48,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
   /**
     * Calculates the multi-function's min set.
     */
-  def min(tpe: Type): List[FunctionDefinition] = {
+  def min(tpe: Type): Vector[FunctionDefinition] = {
     // Even though min is defined in terms of the fit, we don't use the fit function and instead compute everything in
     // one traversal.
     val visit = predicateVisitFit(tpe.toTuple) _
@@ -89,20 +89,20 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
   private def traverseHierarchy(
     visit: hierarchy.NodeT => Boolean,
     select: hierarchy.NodeT => Boolean,
-  ): List[FunctionDefinition] = {
+  ): Vector[FunctionDefinition] = {
     var remaining = hierarchyRoots
-    var results: List[FunctionDefinition] = Nil
+    var results: Vector[FunctionDefinition] = Vector.empty
     val visited = mutable.HashSet[FunctionDefinition]()
     while (remaining.nonEmpty) {
       val node = remaining.head
       remaining = remaining.tail
       if (!visited.contains(node) && visit(node)) {
         if (select(node)) {
-          results = node :: results
+          results = results :+ node
         }
 
         // Add the children to the unseen list in any case. Whether they should be visited is checked later.
-        remaining = node.diSuccessors.toList ::: remaining
+        remaining = node.diSuccessors.toVector ++ remaining
       }
       visited.add(node)
     }
@@ -133,7 +133,7 @@ case class MultiFunctionDefinition(name: String, functions: List[FunctionDefinit
       val zeros = hierarchy.nodes.filter(_.outDegree == 0)
 
       // All unused functions that don't have a super-function in the unused set.
-      val supers = unused.toList.filter { f =>
+      val supers = unused.toVector.filter { f =>
         val allExceptSelf = unused.filter(f2 => f2 != f)
         !allExceptSelf.exists(f2 => Fit.fits(f.signature.inputType, f2.signature.inputType))
       }

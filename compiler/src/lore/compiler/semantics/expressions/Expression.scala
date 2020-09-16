@@ -29,7 +29,7 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Block expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class Block(expressions: List[Expression], position: Position) extends Expression {
+  case class Block(expressions: Vector[Expression], position: Position) extends Expression {
     override val tpe: Type = expressions.lastOption.map(_.tpe).getOrElse(ProductType.UnitType)
   }
 
@@ -56,11 +56,11 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // TODO: In Scala 3, just use a sum type instead of Any. :)
   case class Literal(value: Any, tpe: BasicType, position: Position) extends Expression
-  case class Tuple(values: List[Expression], position: Position) extends Expression {
+  case class Tuple(values: Vector[Expression], position: Position) extends Expression {
     override val tpe: Type = if (values.isEmpty) ProductType.UnitType else ProductType(values.map(_.tpe))
   }
-  case class ListConstruction(values: List[Expression], tpe: Type, position: Position) extends Expression
-  case class MapConstruction(entries: List[MapEntry], tpe: Type, position: Position) extends Expression
+  case class ListConstruction(values: Vector[Expression], tpe: Type, position: Position) extends Expression
+  case class MapConstruction(entries: Vector[MapEntry], tpe: Type, position: Position) extends Expression
   case class MapEntry(key: Expression, value: Expression)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -93,12 +93,12 @@ object Expression {
 
   case class UnaryOperation(operator: UnaryOperator, value: Expression, tpe: Type, position: Position) extends Expression
   case class BinaryOperation(operator: BinaryOperator, left: Expression, right: Expression, tpe: Type, position: Position) extends Expression
-  case class XaryOperation(operator: XaryOperator, expressions: List[Expression], tpe: Type, position: Position) extends Expression
+  case class XaryOperation(operator: XaryOperator, expressions: Vector[Expression], tpe: Type, position: Position) extends Expression
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Multi-function, fixed function and dynamic calls.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class Call(target: CallTarget, arguments: List[Expression], position: Position) extends Expression.Apply(target.outputType)
+  case class Call(target: CallTarget, arguments: Vector[Expression], position: Position) extends Expression.Apply(target.outputType)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and loop expressions.
@@ -109,6 +109,6 @@ object Expression {
     def body: Expression
   }
   case class WhileLoop(condition: Expression, body: Expression, tpe: Type, position: Position) extends Loop
-  case class ForLoop(extractors: List[Extractor], body: Expression, tpe: Type, position: Position) extends Loop
+  case class ForLoop(extractors: Vector[Extractor], body: Expression, tpe: Type, position: Position) extends Loop
   case class Extractor(variable: LocalVariable, collection: Expression)
 }

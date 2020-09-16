@@ -17,7 +17,7 @@ class Registry {
   /**
     * The list of named types declared in the whole project, including predefined types such as Int and Real.
     */
-  private val types = mutable.HashMap[String, NamedType](Type.predefinedTypes.toList: _*)
+  private val types = mutable.HashMap[String, NamedType](Type.predefinedTypes.toVector: _*)
   private var typeRegistrationOrder = Vector[String]()
   private val typeDefinitions = mutable.HashMap[String, DeclaredTypeDefinition]()
   private val multiFunctions = mutable.HashMap[String, MultiFunctionDefinition]()
@@ -150,7 +150,7 @@ class Registry {
     * Gets an exact function with the given name and parameter types. If it cannot be found, the operation fails
     * with a compilation error.
     */
-  def resolveExactFunction(name: String, types: List[Type])(implicit position: Position): Compilation[FunctionDefinition] = {
+  def resolveExactFunction(name: String, types: Vector[Type])(implicit position: Position): Compilation[FunctionDefinition] = {
     resolveMultiFunction(name).flatMap { mf =>
       mf.exact(ProductType(types)) match {
         case None => Compilation.fail(ExactFunctionNotFound(name, types))
@@ -169,7 +169,7 @@ object Registry {
     override def message = s"The multi-function $name does not exist in the current scope."
   }
 
-  case class ExactFunctionNotFound(name: String, types: List[Type])(implicit position: Position) extends Error(position) {
+  case class ExactFunctionNotFound(name: String, types: Vector[Type])(implicit position: Position) extends Error(position) {
     override def message = s"The exact function $name[${types.mkString(", ")}] does not exist in the current scope."
   }
 }

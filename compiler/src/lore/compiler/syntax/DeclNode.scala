@@ -14,7 +14,7 @@ object DeclNode {
     *             represent TopLevelExprNode.
     */
   case class FunctionNode(
-    name: String, parameters: List[ParameterNode], outputType: TypeExprNode, typeVariables: List[TypeVariableNode],
+    name: String, parameters: Vector[ParameterNode], outputType: TypeExprNode, typeVariables: Vector[TypeVariableNode],
     body: Option[ExprNode], position: Position,
   ) extends DeclNode {
     def isAbstract: Boolean = body.isEmpty
@@ -22,7 +22,7 @@ object DeclNode {
 
   object FunctionNode {
     def fromAction(
-      name: String, parameters: List[ParameterNode], typeVariables: List[TypeVariableNode],
+      name: String, parameters: Vector[ParameterNode], typeVariables: Vector[TypeVariableNode],
       body: Option[ExprNode], position: Position,
     ): FunctionNode = {
       DeclNode.FunctionNode(name, parameters, TypeExprNode.UnitNode(position), typeVariables, body, position)

@@ -15,7 +15,7 @@ object StmtNode {
   sealed abstract class UnaryNode(val child: StmtNode) extends StmtNode
   sealed abstract class BinaryNode(val child1: StmtNode, val child2: StmtNode) extends TopLevelExprNode
   sealed abstract class TernaryNode(val child1: StmtNode, val child2: StmtNode, val child3: StmtNode) extends ExprNode
-  sealed abstract class XaryNode(val children: List[StmtNode]) extends TopLevelExprNode
+  sealed abstract class XaryNode(val children: Vector[StmtNode]) extends TopLevelExprNode
 
   // TODO: Do we even need to differentiate between TopLevelExpressions and Statements or can we just give the return
   //       node an inferred type of nothing?
@@ -79,8 +79,8 @@ object ExprNode {
   // Boolean expressions and comparison operators.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class BoolLiteralNode(value: Boolean, position: Position) extends LeafNode with ExprNode
-  case class ConjunctionNode(expressions: List[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
-  case class DisjunctionNode(expressions: List[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
+  case class ConjunctionNode(expressions: Vector[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
+  case class DisjunctionNode(expressions: Vector[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
   case class LogicalNotNode(expr: ExprNode, position: Position) extends UnaryNode(expr) with ExprNode
   case class EqualsNode(left: ExprNode, right: ExprNode, position: Position) extends BinaryNode(left, right) with ExprNode
   case class NotEqualsNode(left: ExprNode, right: ExprNode, position: Position) extends BinaryNode(left, right) with ExprNode
@@ -94,12 +94,12 @@ object ExprNode {
   // String expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class StringLiteralNode(value: String, position: Position) extends LeafNode with ExprNode
-  case class ConcatenationNode(expressions: List[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
+  case class ConcatenationNode(expressions: Vector[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Tuple expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class TupleNode(expressions: List[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
+  case class TupleNode(expressions: Vector[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
 
   /**
     * The unit tuple.
@@ -109,8 +109,8 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Collection expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class ListNode(expressions: List[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
-  case class MapNode(kvs: List[KeyValueNode], position: Position) extends ExprNode
+  case class ListNode(expressions: Vector[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
+  case class MapNode(kvs: Vector[KeyValueNode], position: Position) extends ExprNode
   case class KeyValueNode(key: ExprNode, value: ExprNode, position: Position) extends Node
   case class AppendNode(collection: ExprNode, element: ExprNode, position: Position) extends BinaryNode(collection, element) with ExprNode
 
@@ -124,7 +124,7 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Block expressions. Note that blocks can hold statements.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class BlockNode(statements: List[StmtNode], position: Position) extends XaryNode(statements) with ExprNode
+  case class BlockNode(statements: Vector[StmtNode], position: Position) extends XaryNode(statements) with ExprNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Function calls.
@@ -134,14 +134,14 @@ object ExprNode {
     * based on syntax, so the compiler will have to decide in later stages.
     */
   case class SimpleCallNode(
-    name: String, qualifier: Option[String], arguments: List[ExprNode], position: Position,
+    name: String, qualifier: Option[String], arguments: Vector[ExprNode], position: Position,
   ) extends XaryNode(arguments) with ExprNode with CallNode[InternalCallTarget]
 
   /**
     * Since fixed function calls also require type arguments, they can be differentiated from call nodes.
     */
   case class FixedFunctionCallNode(
-    name: String, types: List[TypeExprNode], arguments: List[ExprNode], position: Position
+    name: String, types: Vector[TypeExprNode], arguments: Vector[ExprNode], position: Position
   ) extends XaryNode(arguments) with ExprNode with CallNode[InternalCallTarget]
 
   /**
@@ -150,7 +150,7 @@ object ExprNode {
     * The name of the dynamic function must be the first argument, as a string.
     */
   case class DynamicCallNode(
-    resultType: TypeExprNode, arguments: List[ExprNode], position: Position
+    resultType: TypeExprNode, arguments: Vector[ExprNode], position: Position
   ) extends XaryNode(arguments) with ExprNode with CallNode[DynamicCallTarget]
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -176,7 +176,7 @@ object ExprNode {
   ) extends BinaryNode(condition, body) with LoopNode
 
   case class ForNode(
-    extractors: List[ExtractorNode], body: StmtNode, position: Position,
+    extractors: Vector[ExtractorNode], body: StmtNode, position: Position,
   ) extends LoopNode
 
   case class ExtractorNode(

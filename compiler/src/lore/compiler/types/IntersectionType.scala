@@ -37,5 +37,5 @@ object IntersectionType {
     if (intersection.types.size == 1) intersection.types.head else intersection
   }
 
-  def construct(types: List[Type]): Type = construct(types.toSet)
+  def construct(types: Vector[Type]): Type = construct(types.toSet)
 }

@@ -108,19 +108,19 @@ object TypeEncoder {
       case SumType(types) => (Tag.variableSize(Kind.sum, types.size), None, types)
       case IntersectionType(types) => (Tag.variableSize(Kind.intersection, types.size), None, types)
       case ProductType(elements) => (Tag.variableSize(Kind.product, elements.size), None, elements)
-      case ListType(element) => (Tag.list, None, List(element))
-      case MapType(key, value) => (Tag.map, None, List(key, value))
-      case ComponentType(underlying) => (Tag.component, None, List(underlying))
+      case ListType(element) => (Tag.list, None, Vector(element))
+      case MapType(key, value) => (Tag.map, None, Vector(key, value))
+      case ComponentType(underlying) => (Tag.component, None, Vector(underlying))
       case tv: TypeVariable =>
         val (tag, bounds) = (tv.lowerBound, tv.upperBound) match {
-          case (BasicType.Nothing, BasicType.Any) => (Tag.variableNothingAny, Nil)
-          case (_, BasicType.Any) => (Tag.variableAny, List(tv.lowerBound))
-          case (BasicType.Nothing, _) => (Tag.variableNothing, List(tv.upperBound))
-          case _ => (Tag.variable, List(tv.lowerBound, tv.upperBound))
+          case (BasicType.Nothing, BasicType.Any) => (Tag.variableNothingAny, Vector.empty)
+          case (_, BasicType.Any) => (Tag.variableAny, Vector(tv.lowerBound))
+          case (BasicType.Nothing, _) => (Tag.variableNothing, Vector(tv.upperBound))
+          case _ => (Tag.variable, Vector(tv.lowerBound, tv.upperBound))
         }
         (tag, Some(tv.name), bounds)
-      case t: BasicType => (Tag.basic(t), None, Nil)
-      case t: NamedType => (Tag(Kind.named), Some(t.name), Nil)
+      case t: BasicType => (Tag.basic(t), None, Vector.empty)
+      case t: NamedType => (Tag(Kind.named), Some(t.name), Vector.empty)
     }
 
     stream.write(tag)

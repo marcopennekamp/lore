@@ -34,17 +34,12 @@ trait StmtVisitor[A] {
   /**
     * Visits a node with exactly one list of children.
     */
-  def visitXary(node: StmtNode.XaryNode)(arguments: List[A]): Compilation[A]
-
-  /**
-    * Visits a construct node with its arguments and super call.
-    */
-  def visitConstruct(node: TopLevelExprNode.ConstructNode)(arguments: List[A], withSuper: Option[A]): Compilation[A]
+  def visitXary(node: StmtNode.XaryNode)(arguments: Vector[A]): Compilation[A]
 
   /**
     * Visits a map node with its key/value entries.
     */
-  def visitMap(node: ExprNode.MapNode)(entries: List[(A, A)]): Compilation[A]
+  def visitMap(node: ExprNode.MapNode)(entries: Vector[(A, A)]): Compilation[A]
 
   /**
     * Visits an iteration node with its extractors and the body.
@@ -52,7 +47,7 @@ trait StmtVisitor[A] {
     * We don't pass the evaluated body but rather a function that visits the body expression. This allows the
     * iteration visitor to process the extractors before the body is visited.
     */
-  def visitIteration(node: ExprNode.ForNode)(extractors: List[(String, A)], visitBody: () => Compilation[A]): Compilation[A]
+  def visitIteration(node: ExprNode.ForNode)(extractors: Vector[(String, A)], visitBody: () => Compilation[A]): Compilation[A]
 
   /**
     * Invoked before a node's subtrees are visited. This can be used to set up contexts and such.
