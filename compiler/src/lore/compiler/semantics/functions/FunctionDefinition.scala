@@ -17,15 +17,16 @@ import lore.compiler.types.{Fit, Type}
   * @param typeScope The scope that saves type variables declared with the function.
   */
 class FunctionDefinition(
-  val name: String,
-  val typeScope: TypeScope,
   val signature: FunctionSignature,
+  val typeScope: TypeScope,
   val bodyNode: Option[ExprNode],
-  override val position: Position,
 ) extends Positioned {
+  override val position: Position = signature.position
+  override def toString = s"${if (isAbstract) "abstract " else ""}$name(${signature.parameters.mkString(", ")})"
+
+  val name: String = signature.name
   val isAbstract: Boolean = bodyNode.isEmpty
   lazy val isPolymorphic: Boolean = signature.isPolymorphic
-  override def toString = s"${if (isAbstract) "abstract " else ""}$name(${signature.parameters.mkString(", ")})"
 
   /**
     * This is a variable because it may be transformed during the course of the compilation.

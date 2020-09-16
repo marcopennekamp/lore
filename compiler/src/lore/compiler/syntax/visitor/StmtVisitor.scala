@@ -2,7 +2,6 @@ package lore.compiler.syntax.visitor
 
 import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.core.Compilation
-import lore.compiler.syntax.TopLevelExprNode.ConstructNode
 
 /**
   * Visits any statement node, returning a value of type Compilation[A]. Subtrees are visited automatically.
@@ -77,13 +76,6 @@ object StmtVisitor {
         case node: BinaryNode => (visit(node.child1, props), visit(node.child2, props)).simultaneous.flatMap((visitor.visitBinary(node) _).tupled)
         case node: TernaryNode => (visit(node.child1, props), visit(node.child2, props), visit(node.child3, props)).simultaneous.flatMap((visitor.visitTernary(node) _).tupled)
         case node: XaryNode => node.children.map(c => visit(c, props)).simultaneous.flatMap(visitor.visitXary(node))
-
-        // Construct node.
-        case node@ConstructNode(arguments, withSuper, _) =>
-          (
-            arguments.map(a => visit(a, props)).simultaneous,
-            withSuper.map(c => visit(c, props)).toCompiledOption
-          ).simultaneous.flatMap((visitor.visitConstruct(node) _).tupled)
 
         // Map node.
         case node@MapNode(kvs, _) =>

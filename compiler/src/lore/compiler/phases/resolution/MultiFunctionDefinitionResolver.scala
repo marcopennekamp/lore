@@ -31,7 +31,7 @@ object MultiFunctionDefinitionResolver {
         TypeExpressionEvaluator.evaluate(node.outputType),
       ).simultaneous.map { case (parameters, outputType) =>
         val signature = FunctionSignature(node.name, parameters, outputType, node.position)
-        new FunctionDefinition(node.name, typeScope, signature, node.body, node.position)
+        new FunctionDefinition(signature, typeScope, node.body)
       }
     }
   }
