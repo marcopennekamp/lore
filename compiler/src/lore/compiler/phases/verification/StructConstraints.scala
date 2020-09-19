@@ -88,13 +88,13 @@ object StructConstraints {
     */
   private def verifyComponentsImplemented(definition: StructDefinition): Verification = {
     // Since the struct's own components are also part of the struct's supertypes, we have some redundant checks
-    // in the current approach, but this is outweighed by its simplicity. Note that while componentTypes is a list
-    // of types with component types that are subsumed removed, this does not invalidate its usage: If a component
+    // in the current approach, but this is outweighed by its simplicity. Note that while inheritedComponentTypes is a
+    // list of types with component types that are subsumed removed, this does not invalidate its usage: If a component
     // type +C is subsumed by a component type +C1, and C1 just so happens to be a component declared in the struct
     // to be checked, we do not have to check +C but only +C1. If an entity is +C1, of course it will also be a +C,
     // and the removal from the list is just another way of ticking the box.
     definition.tpe.inheritedComponentTypes.toVector.map { componentType =>
-      if (definition.components.exists(_.tpe <= componentType)) Verification.succeed
+      if (definition.components.exists(_.tpe <= componentType.underlying)) Verification.succeed
       else Compilation.fail(ComponentNotImplemented(definition, componentType))
     }.simultaneous.verification
   }
