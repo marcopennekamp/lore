@@ -10,6 +10,7 @@ import lore.compiler.semantics.functions.FunctionDefinition
 import lore.compiler.types.Type
 
 object FunctionTranspiler {
+
   def transpile(
     function: FunctionDefinition,
     multiFunctionNameProvider: TemporaryNameProvider,
@@ -22,7 +23,7 @@ object FunctionTranspiler {
 
     // Parameters aren't necessarily only those declared for the function but also the local type variable
     // assignments in case of polymorphic functions.
-    var parameterNames = function.parameters.map(_.asLocalVariable.transpiledName)
+    var parameterNames = function.signature.parameters.map(_.asLocalVariable.transpiledName)
     if (function.isPolymorphic) {
       parameterNames = TranspiledNames.localTypeVariableAssignments +: parameterNames
     }
@@ -50,4 +51,5 @@ object FunctionTranspiler {
       (code, runtimeTypeVariables)
     }
   }
+
 }

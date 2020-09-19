@@ -4,7 +4,7 @@ import { fits, fitsMonomorphic, fitsPolymorphic } from './fit.ts'
 import {
   any,
   boolean,
-  classType,
+  structType,
   component,
   int,
   intersection,
@@ -43,7 +43,7 @@ export default {
   component,
   list,
   map,
-  classType,
+  structType,
 
   // Unsafe constructors.
   unsafe: {

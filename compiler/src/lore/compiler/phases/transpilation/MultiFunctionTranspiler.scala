@@ -14,6 +14,7 @@ import scala.collection.mutable
 import scala.util.Using
 
 class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry) {
+
   private val varArgumentType = "argumentType"
   private val varDispatchCache = s"${mf.name}__dispatchCache"
 
@@ -85,9 +86,9 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     *
     * TODO: We could technically even use the proper names if they don't differ across functions.
     */
-  private lazy val jsParameterNames: List[String] = uniqueArity match {
-    case None => "args" :: Nil
-    case Some(arity) => (0 until arity).map(index => s"arg$index").toList
+  private lazy val jsParameterNames: Vector[String] = uniqueArity match {
+    case None => Vector("args")
+    case Some(arity) => (0 until arity).map(index => s"arg$index").toVector
   }
 
   /**
@@ -215,7 +216,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     val varCachedTarget = "cachedTarget"
     def varFits(index: Int): String = s"fits$index"
 
-    def transpileFitsConsts(nodes: List[(mf.hierarchy.NodeT, Int)]): Unit = {
+    def transpileFitsConsts(nodes: Vector[(mf.hierarchy.NodeT, Int)]): Unit = {
       nodes.foreach { case (node, index) =>
         // TODO: Assert (at run-time) that the input type isn't polymorphic?
         val varRightType = inputTypeJsNames(node.signature.inputType)
@@ -229,7 +230,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     }
 
     def transpileDispatchNode(node: mf.hierarchy.NodeT, varFitsX: String): Unit = {
-      val successors = node.diSuccessors.toList.zipWithIndex
+      val successors = node.diSuccessors.toVector.zipWithIndex
       val function = node.value
       printer.println(s"if ($varFitsX) {")
       val addFunction = if (!function.isAbstract) {
@@ -292,4 +293,5 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     }
     transpileTargetCall(varTarget)
   }
+
 }

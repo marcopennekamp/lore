@@ -6,10 +6,10 @@ import { numberHash, stringHash } from '../utils/hash.ts'
 
 export default {
   // Value APIs.
-  list,
-  object,
   tuple,
+  list,
   map,
+  object,
 
   // Core functions operating on values of any type.
   areEqual: (a: any, b: any) => a == b,

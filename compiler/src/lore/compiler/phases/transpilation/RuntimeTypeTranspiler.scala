@@ -5,6 +5,7 @@ import lore.compiler.types.TypeExtensions._
 import lore.compiler.types._
 
 object RuntimeTypeTranspiler {
+
   type RuntimeTypeVariables = Map[TypeVariable, JsExpr]
 
   /**
@@ -24,17 +25,20 @@ object RuntimeTypeTranspiler {
   /**
     * Transpiles the given type to its runtime representation. Any type variables need to be transpiled first using
     * [[transpileTypeVariables]], references to them being included in the implicit runtimeTypeVariables map.
+    *
+    * Since type variables aren't instantiated at run-time with this method, we do not need to simplify sum and
+    * intersection types at run-time.
     */
   def transpile(tpe: Type)(implicit runtimeTypeVariables: RuntimeTypeVariables): JsExpr = {
     transpile(tpe, simplifyAtRuntime = false, tv => runtimeTypeVariables(tv))
   }
 
   /**
-    * Transpiles the type to a runtime version where type variables are replaced with their actual assignments. Must
+    * Transpiles the type to a run-time version where type variables are replaced with their actual assignments. Must
     * have access to a type variable assignment context such as [[TranspiledNames.localTypeVariableAssignments]].
     *
-    * Since type variables are resolved at runtime, we also have to simplify sum and intersection types to their
-    * normal forms.
+    * Since type variables are resolved at run-time, we also have to simplify sum and intersection types to their
+    * normal forms at run-time.
     */
   def transpileSubstitute(tpe: Type)(implicit runtimeTypeVariables: RuntimeTypeVariables): JsExpr = {
     transpile(tpe, simplifyAtRuntime = true, tv => {
@@ -59,9 +63,6 @@ object RuntimeTypeTranspiler {
       case BasicType.String => api.string
       case ProductType.UnitType => api.unit
       case declaredType: DeclaredType => TranspiledNames.namedType(declaredType)
-      // TODO: Now that sum and intersection types can be constructed at run-time using type variable assignments, we
-      //       have to also introduce sum and intersection type simplifications in the run-time. However, we only have
-      //       to apply these simplifications when the type contains a type variable and they are substituted.
       case SumType(types) =>
         val sum = if (simplifyAtRuntime) api.sumSimplified else api.sum
         s"$sum([${types.map(rec).mkString(", ")}])"
@@ -74,4 +75,5 @@ object RuntimeTypeTranspiler {
       case ComponentType(underlying) => s"${api.component}(${rec(underlying)})"
     }
   }
+
 }

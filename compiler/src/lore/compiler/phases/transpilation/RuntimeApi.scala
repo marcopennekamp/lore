@@ -25,7 +25,7 @@ object RuntimeApi {
     val component = s"$base.component"
     val list = s"$base.list"
     val map = s"$base.map"
-    val classType = s"$base.classType"
+    val structType = s"$base.structType"
 
     // Unsafe constructors.
     object unsafe {
@@ -47,6 +47,13 @@ object RuntimeApi {
     val base = s"${RuntimeApi.base}.values"
 
     // Value APIs.
+    object tuple {
+      val base = s"${RuntimeApi.values.base}.tuple"
+
+      val create = s"$base.create"
+      val unit = s"$base.unit"
+    }
+
     object list {
       val base = s"${RuntimeApi.values.base}.list"
 
@@ -55,18 +62,17 @@ object RuntimeApi {
       val forEach = s"$base.forEach"
     }
 
-    object tuple {
-      val base = s"${RuntimeApi.values.base}.tuple"
-
-      val create = s"$base.create"
-      val unit = s"$base.unit"
-    }
-
     object map {
       val base = s"${RuntimeApi.values.base}.map"
 
       val create = s"$base.create"
       val entries = s"$base.entries"
+    }
+
+    object `object` {
+      val base = s"${RuntimeApi.values.base}.object"
+
+      val create = s"$base.create"
     }
 
     // Core functions operating on values of any type.

@@ -25,7 +25,7 @@ private[transpilation] class FunctionTranspilationVisitor()(
 
   override def visit(expression: Return)(value: TranspiledChunk): Transpilation = {
     val ret = s"return ${value.expression.get};"
-    Transpilation.chunk(value.statements :: ret :: Nil, RuntimeApi.values.tuple.unit)
+    Transpilation.chunk(Vector(value.statements, ret), RuntimeApi.values.tuple.unit)
   }
 
   override def visit(expression: VariableDeclaration)(value: TranspiledChunk): Transpilation = {
@@ -39,9 +39,7 @@ private[transpilation] class FunctionTranspilationVisitor()(
     Transpilation.binary(target, value, "=", wrap = false)
   }
 
-  override def visit(expression: Construct)(arguments: List[TranspiledChunk], superCall: Option[TranspiledChunk]): Transpilation = default(expression)
-
-  override def visit(expression: Block)(expressions: List[TranspiledChunk]): Transpilation = Transpilation.sequencedIdentity(expressions)
+  override def visit(expression: Block)(expressions: Vector[TranspiledChunk]): Transpilation = Transpilation.sequencedIdentity(expressions)
 
   override def visit(expression: VariableAccess): Transpilation = Transpilation.expression(expression.variable.transpiledName)
 
@@ -58,7 +56,7 @@ private[transpilation] class FunctionTranspilationVisitor()(
       Transpilation.expression(s"'${literal.value}'")
   }
 
-  override def visit(expression: Tuple)(values: List[TranspiledChunk]): Transpilation = {
+  override def visit(expression: Tuple)(values: Vector[TranspiledChunk]): Transpilation = {
     if (expression.tpe == ProductType.UnitType) {
       Transpilation.expression(RuntimeApi.values.tuple.unit)
     } else {
@@ -68,14 +66,14 @@ private[transpilation] class FunctionTranspilationVisitor()(
     }
   }
 
-  override def visit(expression: ListConstruction)(values: List[TranspiledChunk]): Transpilation = {
+  override def visit(expression: ListConstruction)(values: Vector[TranspiledChunk]): Transpilation = {
     transpileArrayBasedValue(expression, RuntimeApi.values.list.create, values)
   }
 
-  override def visit(expression: MapConstruction)(entries: List[(TranspiledChunk, TranspiledChunk)]): Transpilation = {
+  override def visit(expression: MapConstruction)(entries: Vector[(TranspiledChunk, TranspiledChunk)]): Transpilation = {
     val entryChunks = entries.map { case (keyChunk, valueChunk) =>
-      TranspiledChunk.combined(List(keyChunk, valueChunk)) {
-        case List(keyExpr, valueExpr) => s"[$keyExpr, $valueExpr]"
+      TranspiledChunk.combined(Vector(keyChunk, valueChunk)) {
+        case Vector(keyExpr, valueExpr) => s"[$keyExpr, $valueExpr]"
       }
     }
     // The extra arguments are passed to the create function of the map and represent the hash and equals methods used
@@ -110,7 +108,7 @@ private[transpilation] class FunctionTranspilationVisitor()(
     }
   }
 
-  override def visit(expression: XaryOperation)(operands: List[TranspiledChunk]): Transpilation = {
+  override def visit(expression: XaryOperation)(operands: Vector[TranspiledChunk]): Transpilation = {
     val operatorString = expression.operator match {
       case XaryOperator.Conjunction => "&&"
       case XaryOperator.Disjunction => "||"
@@ -119,7 +117,7 @@ private[transpilation] class FunctionTranspilationVisitor()(
     Transpilation.operatorChain(operands, operatorString)
   }
 
-  override def visit(expression: Call)(arguments: List[TranspiledChunk]): Transpilation = {
+  override def visit(expression: Call)(arguments: Vector[TranspiledChunk]): Transpilation = {
     expression.target match {
       case _: FunctionInstance | _: DynamicCallTarget => transpileCall(expression.target.name, arguments)
       case _ => default(expression) // Constructor calls are not yet supported.
@@ -158,7 +156,7 @@ private[transpilation] class FunctionTranspilationVisitor()(
     * Transpile a for-loop. We use direct iteration for this instead of a more succinct forEach because we need to
     * be able to return from within the loop.
     */
-  override def visit(loop: ForLoop)(extractors: List[TranspiledChunk], body: TranspiledChunk): Transpilation = {
+  override def visit(loop: ForLoop)(extractors: Vector[TranspiledChunk], body: TranspiledChunk): Transpilation = {
     val loopShell = loop.extractors.zip(extractors).map {
       case (extractor, chunk) =>
         (inner: String) => extractor.collection.tpe match {
@@ -220,14 +218,14 @@ private[transpilation] class FunctionTranspilationVisitor()(
            |  [],
            |  $resultType,
            |);""".stripMargin
-      Transpilation.chunk(List(resultVarDeclaration, loopCode(Some(varResult), resultType)), varResult)
+      Transpilation.chunk(Vector(resultVarDeclaration, loopCode(Some(varResult), resultType)), varResult)
     }
   }
 
   /**
     * Transpiles a call with the given target name and arguments.
     */
-  private def transpileCall(targetName: String, arguments: List[TranspiledChunk]): Transpilation = {
+  private def transpileCall(targetName: String, arguments: Vector[TranspiledChunk]): Transpilation = {
     // TODO: Rather take the target as an argument?
     Transpilation.combined(arguments) { expressions =>
       s"$targetName(${expressions.mkString(", ")})"
@@ -238,7 +236,7 @@ private[transpilation] class FunctionTranspilationVisitor()(
     * Transpiles a xary-constructed value that is created using an API function wrapped around an array of parts.
     */
   private def transpileArrayBasedValue(
-    expression: Expression, createApiFunction: String, values: List[TranspiledChunk], extra: String = "",
+    expression: Expression, createApiFunction: String, values: Vector[TranspiledChunk], extra: String = "",
   ): Transpilation = {
     val typeExpr = RuntimeTypeTranspiler.transpileSubstitute(expression.tpe)
     Transpilation.combined(values) { valueExprs =>
@@ -260,7 +258,7 @@ private[transpilation] class FunctionTranspilationVisitor()(
     //       functions. Because if we have a function over a list [T] and an element T and we call the function
     //       with, say, T = Int, we don't want the resulting list type to be [T] but rather [Int].
     val typeExpr = RuntimeTypeTranspiler.transpileSubstitute(resultType)
-    Transpilation.combined(List(list, element)) { case List(listExpr, elementExpr) =>
+    Transpilation.combined(Vector(list, element)) { case Vector(listExpr, elementExpr) =>
       s"${RuntimeApi.values.list.append}($listExpr, $elementExpr, $typeExpr)"
     }
   }

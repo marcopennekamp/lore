@@ -1,6 +1,6 @@
 import {
-  AnyType, BooleanType, ClassType, ComponentType,
-  IntersectionType, IntType, LabelType, ListType,
+  AnyType, BooleanType, StructType, ComponentType,
+  IntersectionType, IntType, TraitType, ListType,
   MapType, NothingType, ProductType, RealType,
   StringType, SumType, Type, TypeVariable,
 } from './types.ts'
@@ -37,8 +37,8 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
   (t1: BooleanType, t2: BooleanType) => true,
   (t1: StringType, t2: StringType) => true,
 
-  (t1: ClassType, t2: ClassType) => false, // TODO: Implement
-  (t1: LabelType, t2: LabelType) => false, // TODO: Implement
+  (t1: StructType, t2: StructType) => false, // TODO: Implement
+  (t1: TraitType, t2: TraitType) => false, // TODO: Implement
 
   // To prove that two sum or intersection types are equal, we find for each part in t1 an equal part in t2
   // and vice versa.

@@ -122,10 +122,10 @@ export const unit: ProductType = product([])
 
 
 export interface ComponentType extends Type {
-  underlying: ClassType
+  underlying: StructType
 }
 
-export function component(underlying: ClassType): ComponentType {
+export function component(underlying: StructType): ComponentType {
   if (underlying.kind !== Kind.Class) {
     throw Error("A component type must have an underlying class type.")
   }
@@ -152,21 +152,26 @@ export function map(key: Type, value: Type): MapType {
 }
 
 
-export interface ClassType extends Type {
+export interface StructType extends Type {
   name: string
-  supertype?: ClassType
-  ownedBy?: Type
+  declaredSupertypes: Array<TraitType>
   componentTypes: Array<ComponentType>
+  ownedBy?: Type
   isEntity: Boolean
+  // members
 }
 
-export function classType(
-  name: string, supertype: ClassType | undefined, ownedBy: Type | undefined, componentTypes: Array<ComponentType>, isEntity: boolean,
-): ClassType {
-  return { kind: Kind.Class, name, supertype, ownedBy, componentTypes, isEntity, hash: stringHashWithSeed(name, 0x38ba128e) }
+export function structType(
+  name: string, declaredSupertypes: Array<TraitType>, componentTypes: Array<ComponentType>, ownedBy: Type | undefined, isEntity: boolean,
+): StructType {
+  return { kind: Kind.Class, name, declaredSupertypes, componentTypes, ownedBy, isEntity, hash: stringHashWithSeed(name, 0x38ba128e) }
 }
 
 
-export interface LabelType extends Type {
+export interface TraitType extends Type {
   name: string
+  // supertraits
+  // componentTypes
+  // ownedBy
+  // isEntity
 }
