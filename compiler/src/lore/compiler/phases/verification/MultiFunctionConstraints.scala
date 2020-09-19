@@ -1,6 +1,5 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.syntax.visitor.StmtVisitor
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.Error
 import lore.compiler.semantics.Registry
@@ -8,33 +7,21 @@ import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefin
 import lore.compiler.types.{Ards, Fit, Type}
 
 object MultiFunctionConstraints {
+
   /**
     * Verifies:
-    *   1. No function body contains a continuation node.
-    *   2. The input abstractness constraint.
-    *   3. The totality constraint.
-    *   4. A child function's output type is a subtype of its parent function's output type.
+    *   1. The input abstractness constraint.
+    *   2. The totality constraint.
+    *   3. A child function's output type is a subtype of its parent function's output type.
+    *
+    * Note that uniqueness is already checked by the DeclarationResolver.
     */
   def verify(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
     (
-      // Note that uniqueness is already checked in the DeclarationResolver.
-      verifyNoContinuation(mf),
       verifyInputAbstractness(mf),
       verifyTotalityConstraint(mf),
       verifyOutputTypes(mf),
     ).simultaneous.verification
-  }
-
-  /**
-    * Verifies that none of the functions contain a continuation node in their bodies.
-    */
-  def verifyNoContinuation(mf: MultiFunctionDefinition): Verification = {
-    mf.functions.map { function =>
-      function.bodyNode match {
-        case None => Verification.succeed
-        case Some(expression) => StmtVisitor.visit(new NoContinuationVisitor)(expression)
-      }
-    }.simultaneous.verification
   }
 
   case class FunctionIllegallyAbstract(function: FunctionDefinition) extends Error(function) {
@@ -51,7 +38,7 @@ object MultiFunctionConstraints {
     }
   }
 
-  case class AbstractFunctionNotTotal(function: FunctionDefinition, missing: List[Type]) extends Error(function) {
+  case class AbstractFunctionNotTotal(function: FunctionDefinition, missing: Vector[Type]) extends Error(function) {
     override def message: String = s"The abstract function ${function.signature} is not fully implemented and thus doesn't" +
       s" satisfy the totality constraint. Please implement functions for the following input types: ${missing.mkString(", ")}."
   }
@@ -73,13 +60,13 @@ object MultiFunctionConstraints {
       * satisfied, an empty list is returned. Otherwise, a list of input types for which a function has to be implemented
       * is returned.
       */
-    def verifyFunction(f: FunctionDefinition): List[Type] = {
+    def verifyFunction(f: FunctionDefinition): Vector[Type] = {
       // We need to use the direct declared subtypes of the ABSTRACT parameters. An example will clear this up:
       //    Say we have types abstract A, A1 <: A, A2 <: A, non-abstract B, B1 <: B, B2 <: B.
       //    An abstract function f(a: A, b: B) with a non-abstract B must also cover the case f(a: AX, b: B), not just for
       //    B1 and B2, if the given value of type B is neither B1 nor B2, since it could just be B. Hence, we cannot use
       //    directDeclaredSubtypes, because it would substitute B1 and B2 for B, leaving B out of the equation entirely.
-      Ards.abstractResolvedDirectSubtypes(f.signature.inputType).toList.flatMap { subtype =>
+      Ards.abstractResolvedDirectSubtypes(f.signature.inputType).toVector.flatMap { subtype =>
         // TODO: Can we optimize this given the new hierarchy?
         val isValid = mf.functions.exists { f2 =>
           Fit.isMoreSpecific(f2.signature.inputType, f.signature.inputType) && mf.fit(subtype).contains(f2)
@@ -113,12 +100,13 @@ object MultiFunctionConstraints {
       successors.map { successor =>
         val child = successor.value
         val errors = if (!(child.signature.outputType <= parent.signature.outputType)) {
-          List(IncompatibleOutputTypes(child, parent))
-        } else Nil
+          Vector(IncompatibleOutputTypes(child, parent))
+        } else Vector.empty
         Verification.fromErrors(errors).flatMap(_ => successors.map(verifyHierarchyNode).simultaneous.verification)
       }.simultaneous.verification
     }
 
     mf.hierarchyRoots.map(verifyHierarchyNode).simultaneous.verification
   }
+
 }

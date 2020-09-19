@@ -6,6 +6,36 @@ import lore.compiler.core.{Compilation, Error}
 import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.phases.verification.ReturnConstraints.{DeadCode, DefinitelyReturns, ImpossibleReturn, IsReturnAllowed}
 
+object ReturnConstraints {
+  type DefinitelyReturns = Boolean
+  type IsReturnAllowed = Boolean
+
+  case class DeadCode(node: StmtNode) extends Error(node) {
+    override def message = s"This node represents dead code after a previous return."
+  }
+
+  case class ImpossibleReturn(node: StmtNode.ReturnNode) extends Error(node) {
+    override def message = s"You cannot return inside this expression."
+  }
+
+  /**
+    * Verifies the following two constraints:
+    * - Any return must not be followed by code in the same block. This effectively disallows dead code after
+    *   a return statement.
+    * - Constructions such as `if ({ return 0 }) a else b` are not allowed. Returning should not be
+    *   possible from non-top-level expressions.
+    *
+    * These constraints should be verified before function transformation so that we can operate the transformation
+    * under tighter constraints.
+    */
+  def verify(body: StmtNode): Verification = {
+    (
+      StmtVisitor.visit(new ReturnDeadCodeVisitor())(body),
+      new ReturnAllowedApplicator().visit(body, true)
+    ).simultaneous.verification
+  }
+}
+
 private class ReturnDeadCodeVisitor() extends CombiningStmtVisitor[DefinitelyReturns] {
   override def combine(returns: Vector[DefinitelyReturns]): DefinitelyReturns = {
     if (returns.isEmpty) false
@@ -61,7 +91,7 @@ private class ReturnAllowedApplicator()
           case ExprNode.ExtractorNode(_, collection, _) => visit(collection, false)
         }.simultaneous,
         visit(body, isReturnAllowed),
-      ).simultaneous.verification
+        ).simultaneous.verification
     case _ => super.handleMatch(node, false)
   }
 
@@ -69,35 +99,5 @@ private class ReturnAllowedApplicator()
     // At the top level of the function, we allow a return, of course. This is propagated to any children that can
     // be statements, but quickly gets stomped when an expression is expected.
     visit(body, true)
-  }
-}
-
-object ReturnConstraints {
-  type DefinitelyReturns = Boolean
-  type IsReturnAllowed = Boolean
-
-  case class DeadCode(node: StmtNode) extends Error(node) {
-    override def message = s"This node represents dead code after a previous return."
-  }
-
-  case class ImpossibleReturn(node: StmtNode.ReturnNode) extends Error(node) {
-    override def message = s"You cannot return inside this expression."
-  }
-
-  /**
-    * Verifies the following two constraints:
-    * - Any return must not be followed by code in the same block. This effectively disallows dead code after
-    *   a return statement.
-    * - Constructions such as `if ({ return 0 }) a else b` are not allowed. Returning should not be
-    *   possible from non-top-level expressions.
-    *
-    * These constraints should be verified before function transformation so that we can operate the transformation
-    * under tighter constraints.
-    */
-  def verify(body: StmtNode): Verification = {
-    (
-      StmtVisitor.visit(new ReturnDeadCodeVisitor())(body),
-      new ReturnAllowedApplicator().visit(body, true)
-    ).simultaneous.verification
   }
 }

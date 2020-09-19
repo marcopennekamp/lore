@@ -14,20 +14,14 @@ object StructConstraints {
   /**
     * Verifies:
     *   1. Members must be unique.
-    *   2. All declared type constraints hold.
-    *   3. Each component in a struct may not share a supertype with any other component defined in the same struct.
-    *   4. For each component declared via an implemented trait, there must be a component defined in the struct
+    *   2. Each component in a struct may not share a supertype with any other component defined in the same struct.
+    *   3. For each component declared via an implemented trait, there must be a component defined in the struct
     *      that backs the component.
     */
   def verify(definition: StructDefinition)(implicit registry: Registry): Verification = {
-    for {
-      // We verify in order instead of simultaneously because, for example, a supertype sharing error may actually
-      // be a non-uniqueness error and so on.
-      _ <- verifyMembersUnique(definition)
-      _ <- DeclaredTypeConstraints.verify(definition)
-      _ <- verifyComponentsNoSharedSupertype(definition)
-      _ <- verifyComponentsImplemented(definition)
-    } yield ()
+    verifyMembersUnique(definition)
+      .flatMap(_ => verifyComponentsNoSharedSupertype(definition))
+      .flatMap(_ => verifyComponentsImplemented(definition))
   }
 
   case class MemberDuplicateDeclaration(definition: StructDefinition, member: MemberDefinition) extends Error(member) {
@@ -37,7 +31,7 @@ object StructConstraints {
   /**
     * Verifies that this struct's members are unique.
     */
-  def verifyMembersUnique(definition: StructDefinition): Verification = {
+  private def verifyMembersUnique(definition: StructDefinition): Verification = {
     definition.members.groupBy(_.name).values.map {
       case Vector(_) => Verification.succeed
       case members if members.size > 1 => Compilation.fail(MemberDuplicateDeclaration(definition, members.head))
@@ -66,7 +60,7 @@ object StructConstraints {
     *   2. For each root supertype, create a "bucket" in a hash map where components can be put. If two or more
     *      components share the same bucket, they share that supertype and are thus invalid.
     */
-  def verifyComponentsNoSharedSupertype(definition: StructDefinition): Verification = {
+  private def verifyComponentsNoSharedSupertype(definition: StructDefinition): Verification = {
     val buckets = mutable.HashMap[DeclaredType, Vector[ComponentDefinition]]()
 
     definition.components.foreach { component =>
@@ -92,7 +86,7 @@ object StructConstraints {
     * Verifies that each component type ascribed to the struct via any trait is actually implemented, i.e. that
     * defined components are backed by an actual component defined in the struct.
     */
-  def verifyComponentsImplemented(definition: StructDefinition): Verification = {
+  private def verifyComponentsImplemented(definition: StructDefinition): Verification = {
     // Since the struct's own components are also part of the struct's supertypes, we have some redundant checks
     // in the current approach, but this is outweighed by its simplicity. Note that while componentTypes is a list
     // of types with component types that are subsumed removed, this does not invalidate its usage: If a component

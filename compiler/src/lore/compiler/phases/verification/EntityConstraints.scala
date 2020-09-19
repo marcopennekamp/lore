@@ -24,7 +24,7 @@ object EntityConstraints {
     * Verifies that the given entity can in fact own a component of the given type. (In principle, with the information
     * available at compile-time.)
     */
-  def verifyCanOwn(entity: DeclaredTypeDefinition, componentType: ComponentType): Verification = {
+  private def verifyCanOwn(entity: DeclaredTypeDefinition, componentType: ComponentType): Verification = {
     if (entity.tpe <= componentType.underlying.ownedBy) Verification.succeed
     else Compilation.fail(EntityCannotOwnComponent(entity, componentType))
   }
