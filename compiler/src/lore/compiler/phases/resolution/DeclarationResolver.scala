@@ -53,9 +53,14 @@ class DeclarationResolver {
       case TypeDeclNode.TraitNode(_, extended, components, _) =>
         extended ++ components
     }
-    dependencyNames.foreach(dependency => dependencyGraph.add(declaration.name, dependency))
-    typeDeclarations.put(declaration.name, declaration)
 
+    if (dependencyNames.nonEmpty) {
+      dependencyNames.foreach(dependency => dependencyGraph.add(declaration.name, dependency))
+    } else {
+      dependencyGraph.add(declaration.name, "Any")
+    }
+
+    typeDeclarations.put(declaration.name, declaration)
     Verification.succeed
   }
 
