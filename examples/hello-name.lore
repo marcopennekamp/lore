@@ -17,7 +17,7 @@ function isEmpty(list: [A]): Boolean where A = false
 function isEmpty(list: [Nothing]): Boolean = true
 
 action test() {
-  let names: [String | Int] = []
+  let mut names: [String | Int] = []
   names = names :+ 'world'
   names = names :+ 5
   names = names :+ 'marco'
@@ -32,25 +32,25 @@ action test() {
 }
 
 function testPerformanceInner(times: Int): Real = {
-  const now = now() // TODO: This should lead to a "variable not found/initialized" error once we introduce first-class functions.
-  let i = 0
+  let now = now() // TODO: This should lead to a "variable not found/initialized" error once we introduce first-class functions.
+  let mut i = 0
   while (i < times) {
     test()
     i += 1
   }
-  const now2 = now()
+  let now2 = now()
   now2 - now
 }
 
 action testPerformance(times: Int) {
   // Pre-run for the JIT.
-  const time1 = testPerformanceInner(times)
+  let time1 = testPerformanceInner(times)
   println('Pre-Running test() $times times took ${time1}ms.')
 
   // Then run ten times and see how performance evolves.
-  let i = 0
+  let mut i = 0
   while (i < 10) {
-    const time = testPerformanceInner(times)
+    let time = testPerformanceInner(times)
     println('Running test() $times times took ${time}ms.')
     i += 1
   }

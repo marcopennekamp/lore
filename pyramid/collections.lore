@@ -18,16 +18,16 @@ function get(list: [A], index: Int): A where A = dynamic[A]('Lore.values.list.ge
 
 function stringJoin(list: [A], separator: String): String where A = {
   // TODO: Implement using init and last.
-  let result = ''
-  let i = 0
-  let n = length(list)
+  let mut result = ''
+  let mut i = 0
+  let mut n = length(list)
   while (i < n - 1) {
-    const s = toString(get(list, i))
+    let s = toString(get(list, i))
     result = '$result$s$separator'
     i += 1
   }
 
-  const s = if (n > 0) {
+  let s = if (n > 0) {
     toString(get(list, i))
   } else ''
 

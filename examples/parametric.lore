@@ -14,8 +14,8 @@ function combine[A <: C](v1: A, v2: A): A = ...
 // The way we are currently checking subtypes seems to only be sufficient for multiple dispatch,
 // but not for checking types in function bodies. Consider:
 function foo(a: A): [A] where A = {
-  const x: A = 'x'
-  const y: A = 1.5
+  let x: A = 'x'
+  let y: A = 1.5
   [x, y]
 }
 
