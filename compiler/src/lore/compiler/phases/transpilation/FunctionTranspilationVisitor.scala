@@ -81,6 +81,17 @@ private[transpilation] class FunctionTranspilationVisitor()(
     transpileArrayBasedValue(expression, RuntimeApi.values.map.create, entryChunks, extra = "hash, areEqual,")
   }
 
+  override def visit(expression: Instantiation)(arguments: Vector[TranspiledChunk]): Transpilation = {
+    Transpilation.combined(arguments) { argumentJsExprs =>
+      // TODO: To properly support components, we will have to put the types of the actual components into the object
+      //       type. This goes hand-in-hand with the component type TODO in DeclaredTypeTranspiler.
+      val members = expression.arguments.map(_.member)
+      val objectProperties = members.zip(argumentJsExprs).map { case (member, jsExpr) => s"${member.name}: $jsExpr" }
+      val varType = TranspiledNames.declaredType(expression.struct.tpe)
+      s"${RuntimeApi.values.`object`.create}({ ${objectProperties.mkString(",")} }, $varType)"
+    }
+  }
+
   override def visit(expression: UnaryOperation)(value: TranspiledChunk): Transpilation = {
     val operatorString = expression.operator match {
       case UnaryOperator.Negation => "-"

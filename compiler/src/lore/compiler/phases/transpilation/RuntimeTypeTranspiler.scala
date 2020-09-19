@@ -62,7 +62,7 @@ object RuntimeTypeTranspiler {
       case BasicType.Boolean => api.boolean
       case BasicType.String => api.string
       case ProductType.UnitType => api.unit
-      case declaredType: DeclaredType => TranspiledNames.namedType(declaredType)
+      case declaredType: DeclaredType => TranspiledNames.declaredType(declaredType)
       case SumType(types) =>
         val sum = if (simplifyAtRuntime) api.sumSimplified else api.sum
         s"$sum([${types.map(rec).mkString(", ")}])"

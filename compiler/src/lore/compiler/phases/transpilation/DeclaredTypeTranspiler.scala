@@ -19,9 +19,13 @@ object DeclaredTypeTranspiler {
   }
 
   private def transpileStructType(tpe: StructType): Compilation[String] = {
-    val varStructType = TranspiledNames.namedType(tpe)
-    val varDeclaredSupertypes = tpe.declaredSupertypes.map(TranspiledNames.namedType).mkString(", ")
-    // TODO: Support componentTypes.
+    val varStructType = TranspiledNames.declaredType(tpe)
+    val varDeclaredSupertypes = tpe.declaredSupertypes.map(TranspiledNames.declaredType).mkString(", ")
+    // TODO: Support componentTypes. To properly support components, we will have to instantiate a new type for each
+    //       new object, because we need the concrete type of the actual components. (This is in addition to the
+    //       "golden standard" struct type which always contains the compile-time component types). So in addition
+    //       to the varStructType below, which is the golden standard type, we have to transpile an instantiation
+    //       function that creates such a struct type for a given list of run-time component types.
     // TODO: Support ownedBy types.
     // TODO: Support isEntity.
     s"""const $varStructType = ${RuntimeApi.types.structType}(
