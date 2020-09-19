@@ -3,7 +3,7 @@ package lore.compiler.semantics.structures
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.VirtualMember
 import lore.compiler.semantics.functions.ParameterDefinition
-import lore.compiler.types.{ComponentType, DeclaredType, StructType, Type}
+import lore.compiler.types.{ComponentType, DeclaredType, Type}
 
 // TODO: "mutable" should actually be "writeable", since immutability implies that the whole data structure within
 //       that member is unchangeable, while we are actually just gating the top-level write access to the member.

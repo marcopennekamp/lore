@@ -22,6 +22,8 @@ case class VirtualMember(
   isMutable: Boolean = false,
   underlying: Option[MemberDefinition] = None,
 ) {
+  val isImmutable: Boolean = !isMutable
+
   override def equals(obj: Any): Boolean = obj match {
     case VirtualMember(name2, tpe2, _, _, _) => name == name2 && tpe == tpe2
     case _ => false
