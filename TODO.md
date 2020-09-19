@@ -30,6 +30,10 @@ Entities:
   - Passed down via inheritance, explicitly (re-)declared
   - Access to the owner's type through component types
 
+Cleanup:
+- Replace Lists with Vectors.
+- Replace assertions with proper CompilationExceptions. Report the position with a CompilationException, if possible.
+
 NEXT:
 - Finish transpilation and verification for the current MVL constructs.
 - THINK: We need to make a fundamental decision: Are list and map types decided at compile-time or at run-time? So, for example, if we have a list of type `[Animal]` but it only has elements of type `Cat`, is the actual type of the list `[Animal]` or `[Cat]`? It seems like it should be the former, but the latter would be more useful, wouldn't it?  

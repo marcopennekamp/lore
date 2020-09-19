@@ -5,7 +5,6 @@ import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
-import lore.compiler.semantics.structures.StructDefinition
 import lore.compiler.semantics.{LocalVariable, Registry, TypeScope}
 import lore.compiler.syntax.visitor.StmtVisitor
 import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode}
@@ -13,19 +12,14 @@ import lore.compiler.types._
 
 private[verification] class FunctionTransformationVisitor(
   /**
-    * The signature of the function or constructor for which we want to infer types.
+    * The signature of the function which we want to transform.
     */
   topSignature: FunctionSignature,
 
   /**
-    * The type scope of the function or constructor for which we want to infer types.
+    * The type scope of the function which we want to transform.
     */
   functionTypeScope: TypeScope,
-
-  /**
-    * The class that owns the constructor IF the signature represents a constructor.
-    */
-  classDefinition: Option[StructDefinition],
 )(implicit registry: Registry) extends StmtVisitor[Expression] {
   import ExprNode._
   import FunctionTransformationVisitor._
@@ -328,19 +322,6 @@ private[verification] class FunctionTransformationVisitor(
 private[verification] object FunctionTransformationVisitor {
   case class ImmutableAssignment(access: Expression.Access) extends Error(access) {
     override def message = s"The variable or member ${access.name} you are trying to assign to is immutable."
-  }
-
-  case class EmptyFit(mf: MultiFunctionDefinition, inputType: Type)(implicit callPosition: Position) extends Error(callPosition) {
-    override def message: String = s"The multi-function call ${mf.name} at this site has an empty fit. We cannot" +
-      s" find a function of that name that would accept the given arguments with the type $inputType."
-  }
-
-  case class AmbiguousCall(
-    mf: MultiFunctionDefinition, inputType: Type, min: List[FunctionDefinition],
-  )(implicit callPosition: Position) extends Error(callPosition) {
-    override def message: String = s"The multi-function call ${mf.name} at this site has an ambiguous min-set." +
-      s" That is, we are finding TOO MANY functions that would accept the given arguments with the type $inputType." +
-      s" These are: ${min.mkString(", ")}."
   }
 
   case class DynamicFunctionNameExpected()(implicit position: Position) extends Error(position) {

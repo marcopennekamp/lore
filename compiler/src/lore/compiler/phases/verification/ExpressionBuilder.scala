@@ -1,12 +1,27 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.core.{Compilation, Position}
-import lore.compiler.phases.verification.FunctionTransformationVisitor.{AmbiguousCall, EmptyFit}
+import lore.compiler.core.{Compilation, Error, Position}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.types.ProductType
+import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.types.{ProductType, Type}
 
 object ExpressionBuilder {
+
+  case class EmptyFit(mf: MultiFunctionDefinition, inputType: Type)(implicit callPosition: Position) extends Error(callPosition) {
+    override def message: String = s"The multi-function call ${mf.name} at this site has an empty fit. We cannot" +
+      s" find a function of that name that would accept the given arguments with the type $inputType."
+  }
+
+  case class AmbiguousCall(
+    mf: MultiFunctionDefinition, inputType: Type, min: Vector[FunctionDefinition],
+  )(implicit callPosition: Position) extends Error(callPosition) {
+    override def message: String = s"The multi-function call ${mf.name} at this site is ambiguous." +
+      s" That is, we are finding too many functions that would accept the given arguments of type $inputType." +
+      s" These are: ${min.mkString(", ")}."
+  }
+
+
   /**
     * Builds a simple multi-function call. Cannot be used to build constructor calls!
     */
@@ -24,4 +39,5 @@ object ExpressionBuilder {
       }
     }
   }
+
 }

@@ -2,54 +2,42 @@ package lore.compiler.phases.verification
 
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Error}
+import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature}
-import lore.compiler.semantics.structures.StructDefinition
-import lore.compiler.semantics.{Registry, TypeScope}
-import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.StmtVisitor
 
 /**
-  * For a given function or constructor, builds a semantic expression tree from the body's abstract syntax tree.
-  * It infers and checks expression types and checks all other constraints on expressions of that function's body.
+  * For a given function, builds a semantic expression tree from the body's abstract syntax tree. It infers and checks
+  * expression types and checks all other constraints on expressions of that function's body.
   */
 object FunctionTransformation {
+
   /**
     * Builds a semantic expression tree from the function body's abstract syntax tree. Infers and checks types of the
     * given function body and applies function transformations. Ensures that all other expression constraints hold.
     * Also ensures that the return type of the signature is sound compared to the type of the body.
     */
   def transform(function: FunctionDefinition)(implicit registry: Registry): Verification = {
-    function.bodyNode.map(bodyNode => transform(function.signature, function.typeScope, bodyNode, None)).toCompiledOption.map {
-      body => function.body = body
+    SignatureConstraints.verify(function.signature).flatMap { _ =>
+      transformBody(function).flatMap { body =>
+        body.map(body => verifyOutputType(function.signature, body)).getOrElse(Verification.succeed).map { _ =>
+          function.body = body
+        }
+      }
     }
   }
 
-  /**
-    * Builds a semantic expression tree from the constructor body's abstract syntax tree. Infers and checks types of
-    * the given constructor body and applies function transformations. Ensures that all other expression constraints
-    * hold. Also ensures that constructor and construct calls are soundly typed.
-    */
-  def transform(constructor: ConstructorDefinition, classDefinition: StructDefinition)(implicit registry: Registry): Verification = {
-    transform(constructor.signature, constructor.typeScope, constructor.bodyNode, Some(classDefinition)).map {
-      body => constructor.body = body.asInstanceOf[Expression.Block] // TODO: There has to be a better solution...
-    }
-  }
-
-  private def transform(
-    signature: FunctionSignature, typeScope: TypeScope, bodyNode: ExprNode,
-    classDefinition: Option[StructDefinition],
-  )(implicit registry: Registry): Compilation[Expression] = {
+  private def transformBody(function: FunctionDefinition)(implicit registry: Registry): Compilation[Option[Expression]] = {
     // TODO: A Unit function should manually add a return value of () if the last expression's value isn't already that.
     //       Otherwise the function won't compile, because the last expression doesn't fit the expected return type.
     //          action foo() { concat([12], [15]) }  <-- doesn't compile (concat returns a list)
-    for {
-      _ <- SignatureConstraints.verify(signature)
-      _ <- ReturnConstraints.verify(bodyNode)
-      visitor = new FunctionTransformationVisitor(signature, typeScope, classDefinition)
-      body <- StmtVisitor.visit(visitor)(bodyNode)
-      _ <- verifyOutputType(signature, body)
-    } yield body
+    function.bodyNode.map { bodyNode =>
+      ReturnConstraints.verify(bodyNode).flatMap { _ =>
+        val visitor = new FunctionTransformationVisitor(function.signature, function.typeScope)
+        StmtVisitor.visit(visitor)(bodyNode)
+      }
+    }.toCompiledOption
   }
 
   case class IllegallyTypedBody(signature: FunctionSignature, body: Expression) extends Error(signature.position) {
@@ -67,7 +55,7 @@ object FunctionTransformation {
     if (body.tpe <= signature.outputType || allPathsReturn(body)) {
       Verification.succeed
     } else {
-      Verification.fromErrors(List(IllegallyTypedBody(signature, body)))
+      Verification.fromErrors(Vector(IllegallyTypedBody(signature, body)))
     }
   }
 
@@ -77,7 +65,7 @@ object FunctionTransformation {
     * function returns the correct value regardless of the type of the actual expression.
     *
     * We only look at the last expression of a function block to decide whether the returns suffice. That is only
-    * valid because we combine it with dead code analysis and dead code resulting in an error. A function like the
+    * valid because we combine it with dead code analysis, dead code resulting in an error. A function like the
     * following thus could never be valid:
     *   function foo(): Int = {
     *     return 5
@@ -95,4 +83,5 @@ object FunctionTransformation {
       case _ => false
     }
   }
+
 }

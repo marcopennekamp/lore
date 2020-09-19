@@ -12,8 +12,6 @@ object EntityConstraints {
     *   1. If a component has an owned-by type, we verify that the component can be in fact owned by this entity.
     */
   def verify(entity: DeclaredTypeDefinition): Verification = {
-    // TODO: Make sure that componentTypes also contains the components declared in supertraits and such, i.e.
-    //       that it is an exhaustive list. See the other TODO in DeclaredType.
     entity.tpe.componentTypes.map(t => verifyCanOwn(entity, t)).simultaneous.verification
   }
 

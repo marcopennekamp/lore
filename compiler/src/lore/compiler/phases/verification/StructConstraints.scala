@@ -16,8 +16,8 @@ object StructConstraints {
     *   1. Members must be unique.
     *   2. All declared type constraints hold.
     *   3. Each component in a struct may not share a supertype with any other component defined in the same struct.
-    *   4. TODO: For each component declared via an implemented trait, there must be a defined component in the struct
-    *            that backs that component.
+    *   4. For each component declared via an implemented trait, there must be a component defined in the struct
+    *      that backs the component.
     */
   def verify(definition: StructDefinition)(implicit registry: Registry): Verification = {
     for {
