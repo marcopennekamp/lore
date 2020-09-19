@@ -56,7 +56,7 @@ private[verification] class FunctionTransformationVisitor(
     case IntLiteralNode(value, position) => Expression.Literal(value, BasicType.Int, position).compiled
     case BoolLiteralNode(value, position) => Expression.Literal(value, BasicType.Boolean, position).compiled
     case StringLiteralNode(value, position) => Expression.Literal(value, BasicType.String, position).compiled
-    case UnitNode(position) => Expression.Tuple(Nil, position).compiled
+    case UnitNode(position) => Expression.Tuple(Vector.empty, position).compiled
   }
 
   override def visitUnary(node: UnaryNode)(expression: Expression): Compilation[Expression] = node match {
@@ -103,7 +103,7 @@ private[verification] class FunctionTransformationVisitor(
       }
       for {
         // Ensure that the variable or property is even mutable.
-        _ <- Verification.fromErrors(if (!isMutable) ImmutableAssignment(access) :: Nil else Nil)
+        _ <- Verification.fromErrors(if (!isMutable) Vector(ImmutableAssignment(access)) else Vector.empty)
         // Ensure that the value has the right type.
         _ <- ExpressionVerification.hasSubtype(value, tpe)
       } yield Expression.Assignment(access, value, position)
@@ -147,7 +147,7 @@ private[verification] class FunctionTransformationVisitor(
           val combinedType = LeastUpperBound.leastUpperBound(elementType, right.tpe)
           Expression.BinaryOperation(BinaryOperator.Append, left, right, ListType(combinedType), position).compiled
         // TODO: Implement append for maps?
-        case _ => Compilation.fail(ExpressionVerification.IllegallyTypedExpression(left, ListType(BasicType.Any) :: Nil))
+        case _ => Compilation.fail(ExpressionVerification.IllegallyTypedExpression(left, Vector(ListType(BasicType.Any))))
       }
 
     // Loops.
@@ -179,7 +179,7 @@ private[verification] class FunctionTransformationVisitor(
       }
   }
 
-  override def visitXary(node: XaryNode)(expressions: List[Expression]): Compilation[Expression] = node match {
+  override def visitXary(node: XaryNode)(expressions: Vector[Expression]): Compilation[Expression] = node match {
     case BlockNode(_, position) =>
       // This is AFTER the block has been visited. The scope has already been opened and needs to be closed.
       context.closeScope()
@@ -204,7 +204,7 @@ private[verification] class FunctionTransformationVisitor(
       for {
         transformedExpressions <- expressions.map { expression =>
           if (expression.tpe == BasicType.String) expression.compiled
-          else ExpressionBuilder.multiFunctionCall("toString", List(expression), expression.position)
+          else ExpressionBuilder.multiFunctionCall("toString", Vector(expression), expression.position)
         }.simultaneous
       } yield Expression.XaryOperation(XaryOperator.Concatenation, transformedExpressions, BasicType.String, position)
 
@@ -212,21 +212,19 @@ private[verification] class FunctionTransformationVisitor(
     case SimpleCallNode(name, qualifier, _, position) =>
       implicit val pos: Position = position
       // A simple call may either be a function or a constructor call. We immediately try to differentiate this based
-      // on whether a class type can be found for the function name.
+      // on whether a struct type can be found for the function name.
       registry.getStructType(name) match {
-        case Some(classType) => StatementTransformation.transformConstructorCall(classType.definition, qualifier, expressions)
-        case None =>
-          // If we couldn't find a class type for the function, but qualifier is not None, this is not a valid function
-          // call and we assume that the type name is wrong. Hence the TypeNotFound error.
-          if (qualifier.isDefined) Compilation.fail(Registry.TypeNotFound(name))
-          else ExpressionBuilder.multiFunctionCall(name, expressions, position)
+        case Some(structType) => StatementTransformation.transformCallStyleInstantiation(structType.definition, expressions)
+        case None => ExpressionBuilder.multiFunctionCall(name, expressions, position)
       }
+
     case FixedFunctionCallNode(name, typeExpressions, _, position) =>
       for {
         types <- typeExpressions.map(TypeExpressionEvaluator.evaluate).simultaneous
         function <- registry.resolveExactFunction(name, types)(position)
         instance <- function.instantiate(ProductType(types))
       } yield Expression.Call(instance, expressions, position)
+
     case DynamicCallNode(resultType, _, position) =>
       (
         // The first argument to the dynamic call must be a constant function name.
@@ -238,36 +236,9 @@ private[verification] class FunctionTransformationVisitor(
       ).simultaneous.map { case (name, resultType) =>
         Expression.Call(DynamicCallTarget(name, resultType), expressions.tail, position)
       }
-    case node@ConstructorCallNode(qualifier, isSuper, _, position) =>
-      implicit val pos: Position = position
-      // Continue with a constructor this.name. We have already verified that only a constructor can contain a
-      // continuation, so we can safely get the class definition here as part of the contract of this visitor.
-      classDefinition match {
-        case None => throw CompilationException("Only constructors can contain continuations.")
-        case Some(definition) =>
-          for {
-            targetDefinition <- if (isSuper) {
-              definition.supertypeDefinition match {
-                case None => Compilation.fail(MissingSuperConstructor(node))
-                case Some(sd) => sd.compiled
-              }
-            } else definition.compiled
-            call <- StatementTransformation.transformConstructorCall(targetDefinition, qualifier, expressions)
-          } yield call
-      }
   }
 
-  override def visitConstruct(node: ConstructNode)(arguments: List[Expression], withSuper: Option[Expression]): Compilation[Expression] = {
-    classDefinition match {
-      case None => throw CompilationException("Only constructors can contain continuations.")
-      case Some(definition) =>
-        ExpressionVerification.adhereToSignature(arguments, definition.constructSignature, node.position).map { _ =>
-          Expression.Construct(definition, arguments, withSuper, node.position)
-        }
-    }
-  }
-
-  override def visitMap(node: MapNode)(kvs: List[(Expression, Expression)]): Compilation[Expression] = {
+  override def visitMap(node: MapNode)(kvs: Vector[(Expression, Expression)]): Compilation[Expression] = {
     val entries = kvs.map(Expression.MapEntry.tupled)
     val keyType = entries.map(_.key.tpe).foldLeft(BasicType.Nothing: Type)(LeastUpperBound.leastUpperBound)
     val valueType = entries.map(_.value.tpe).foldLeft(BasicType.Nothing: Type)(LeastUpperBound.leastUpperBound)
@@ -275,7 +246,7 @@ private[verification] class FunctionTransformationVisitor(
   }
 
   override def visitIteration(node: ForNode)(
-    extractorTuples: List[(String, Expression)], visitBody: () => Compilation[Expression],
+    extractorTuples: Vector[(String, Expression)], visitBody: () => Compilation[Expression],
   ): Compilation[Expression] = {
     // TODO: Alternative solution: Add a function visitExtractor which visits the extractor nodes first. Then we can
     //       open the scope and loop context in before, add each extractor to the scope in visitExtractor, and clean
@@ -292,7 +263,7 @@ private[verification] class FunctionTransformationVisitor(
       for {
         elementType <- collection.tpe match {
           case ListType(element) => Compilation.succeed(element)
-          case MapType(key, value) => Compilation.succeed(ProductType(List(key, value)))
+          case MapType(key, value) => Compilation.succeed(ProductType(Vector(key, value)))
           case _ => Compilation.fail(CollectionExpected(collection))
         }
         localVariable = LocalVariable(variableName, elementType, isMutable = false)
@@ -327,10 +298,6 @@ private[verification] object FunctionTransformationVisitor {
   case class DynamicFunctionNameExpected()(implicit position: Position) extends Error(position) {
     override def message: String = "Dynamic calls require a string literal as their first argument, which represents the" +
       " name of the function. Since the name must be available at compile-time, it must be a constant."
-  }
-
-  case class MissingSuperConstructor(node: TopLevelExprNode.ConstructorCallNode) extends Error(node) {
-    override def message: String = "The super constructor cannot be called because the current class doesn't have a superclass."
   }
 
   case class CollectionExpected(expression: Expression) extends Error(expression) {

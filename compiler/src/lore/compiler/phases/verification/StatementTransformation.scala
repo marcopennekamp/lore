@@ -5,6 +5,7 @@ import lore.compiler.core.{Compilation, CompilationException, Position}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, XaryOperator}
+import lore.compiler.semantics.structures.StructDefinition
 import lore.compiler.types.BasicType
 
 /**
@@ -45,5 +46,16 @@ object StatementTransformation {
       }
     }
   }
+
+  def transformCallStyleInstantiation(struct: StructDefinition, arguments: Vector[Expression])(implicit position: Position): Compilation[Expression] = {
+    ExpressionVerification.adhereToSignature(arguments, struct.constructorSignature, position).map { _ =>
+      val instantiationArguments = struct.members.zip(arguments).map(Expression.Instantiation.Argument.tupled)
+      Expression.Instantiation(struct, instantiationArguments, position)
+    }
+  }
+
+  /* def transformMapStyleInstantiation(struct: StructDefinition, kvs: Vector[(String, Expression)]): Compilation[Expression] = {
+
+  } */
 
 }

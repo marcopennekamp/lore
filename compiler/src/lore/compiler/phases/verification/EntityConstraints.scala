@@ -12,7 +12,7 @@ object EntityConstraints {
     *   1. If a component has an owned-by type, we verify that the component can be in fact owned by this entity.
     */
   def verify(entity: DeclaredTypeDefinition): Verification = {
-    entity.tpe.componentTypes.map(t => verifyCanOwn(entity, t)).simultaneous.verification
+    entity.tpe.inheritedComponentTypes.map(t => verifyCanOwn(entity, t)).toVector.simultaneous.verification
   }
 
   case class EntityCannotOwnComponent(entity: DeclaredTypeDefinition, componentType: ComponentType) extends Error(entity) {

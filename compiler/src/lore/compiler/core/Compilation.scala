@@ -175,9 +175,9 @@ object Compilation {
       implicit def caseCompilation[A, B <: HList]: Case.Aux[Compilation[A], Compilation[B], Compilation[A :: B]] = at[Compilation[A], Compilation[B]] {
         case (Result(a, infosA), Result(b, infosB)) => Result(a :: b, infosA ++ infosB)
         case (ca, cb) =>
-          // As either ca or cb is guaranteed to be a failed compilation, combine will simply aggregate the errors
+          // As either ca or cb is guaranteed to be a failed compilation, simultaneous will simply aggregate the errors
           // and hence also produce an Errors object. This makes the type cast valid.
-          List(ca, cb).simultaneous.asInstanceOf[Compilation[A :: B]]
+          Vector(ca, cb).simultaneous.asInstanceOf[Compilation[A :: B]]
       }
     }
   }

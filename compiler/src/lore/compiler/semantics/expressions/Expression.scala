@@ -3,6 +3,7 @@ package lore.compiler.semantics.expressions
 import lore.compiler.core.Position
 import lore.compiler.semantics.{LocalVariable, VirtualMember}
 import lore.compiler.semantics.functions.CallTarget
+import lore.compiler.semantics.structures.{MemberDefinition, StructDefinition}
 import lore.compiler.types.{BasicType, ProductType, Type}
 
 sealed trait Expression {
@@ -56,12 +57,27 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // TODO: In Scala 3, just use a sum type instead of Any. :)
   case class Literal(value: Any, tpe: BasicType, position: Position) extends Expression
+
   case class Tuple(values: Vector[Expression], position: Position) extends Expression {
     override val tpe: Type = if (values.isEmpty) ProductType.UnitType else ProductType(values.map(_.tpe))
   }
+
   case class ListConstruction(values: Vector[Expression], tpe: Type, position: Position) extends Expression
+
   case class MapConstruction(entries: Vector[MapEntry], tpe: Type, position: Position) extends Expression
   case class MapEntry(key: Expression, value: Expression)
+
+  /**
+    * Creates a new instance of a given struct. This expression represents both the call and map syntax. The arguments
+    * are passed in their syntactic order to preserve the intended execution order of side effects and should thus be
+    * transpiled such that their evaluation results in the same order.
+    */
+  case class Instantiation(struct: StructDefinition, arguments: Vector[Instantiation.Argument], position: Position) extends Expression {
+    override def tpe: Type = struct.tpe
+  }
+  object Instantiation {
+    case class Argument(member: MemberDefinition, value: Expression)
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Operators.

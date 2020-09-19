@@ -27,6 +27,11 @@ trait DeclaredType extends NamedType {
   lazy val declaredSupertypes: Vector[DeclaredType] = supertypes.filterType[DeclaredType]
 
   /**
+    * All direct component supertypes of the declared type.
+    */
+  lazy val componentSupertypes: Vector[ComponentType] = supertypes.filterType[ComponentType]
+
+  /**
     * The component types that this declared type directly and indirectly inherits. This is an exhaustive list
     * of all component types across the supertype hierarchy of this declared type. Since specialized component
     * types subsume more general component types, the latter is also removed from the list.
@@ -38,15 +43,15 @@ trait DeclaredType extends NamedType {
     * The component types (as defined by this function) of DogHouse are: +Dog, +Roof, +Walls. Notably, +Animal
     * has been removed from the list as it is subsumed by +Dog.
     */
-  lazy val componentTypes: Set[ComponentType] = {
-    val all = supertypes.filterType[ComponentType] ++ declaredSupertypes.flatMap(_.componentTypes)
+  lazy val inheritedComponentTypes: Set[ComponentType] = {
+    val all = supertypes.filterType[ComponentType] ++ declaredSupertypes.flatMap(_.inheritedComponentTypes)
     Type.mostSpecific(all.toSet).asInstanceOf[Set[ComponentType]]
   }
 
   /**
     * Whether the declared type is an entity, i.e. it contains one or more components.
     */
-  lazy val isEntity: Boolean = componentTypes.nonEmpty || supertypes.filterType[DeclaredType].exists(_.isEntity)
+  lazy val isEntity: Boolean = inheritedComponentTypes.nonEmpty
 
   /**
     * The type that an entity owning this component must subtype. This type may be Any, which means that the

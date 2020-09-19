@@ -18,6 +18,7 @@ trait ExpressionVisitor[A] {
   def visit(expression: Expression.Tuple)(values: Vector[A]): Result
   def visit(expression: Expression.ListConstruction)(values: Vector[A]): Result
   def visit(expression: Expression.MapConstruction)(entries: Vector[(A, A)]): Result
+  def visit(expression: Expression.Instantiation)(arguments: Vector[A]): Result
   def visit(expression: Expression.UnaryOperation)(value: A): Result
   def visit(expression: Expression.BinaryOperation)(left: A, right: A): Result
   def visit(expression: Expression.XaryOperation)(operands: Vector[A]): Result
@@ -53,6 +54,7 @@ object ExpressionVisitor {
       case node@Expression.Tuple(values, _) => values.map(rec).simultaneous.flatMap(visitor.visit(node))
       case node@Expression.ListConstruction(values, _, _) => values.map(rec).simultaneous.flatMap(visitor.visit(node))
       case node@Expression.MapConstruction(entries, _, _) => entries.map(e => (rec(e.key), rec(e.value)).simultaneous).simultaneous.flatMap(visitor.visit(node))
+      case node@Expression.Instantiation(_, arguments, _) => arguments.map(_.value).map(rec).simultaneous.flatMap(visitor.visit(node))
       case node@Expression.UnaryOperation(_, value, _, _) => rec(value).flatMap(visitor.visit(node))
       case node@Expression.BinaryOperation(_, left, right, _, _) => (rec(left), rec(right)).simultaneous.flatMap((visitor.visit(node) _).tupled)
       case node@Expression.XaryOperation(_, expressions, _, _) => expressions.map(rec).simultaneous.flatMap(visitor.visit(node))

@@ -67,7 +67,7 @@ object MemberExplorer {
         // types not inducing any additional members (see the struct explanation above) also holds for traits. The trait
         // itself has to satisfy the owned-by typing of each of its components, which means that no additional members
         // can be added through an owned-by type to the trait's list of members.
-        HashMap(traitType.componentTypes.map(c => component(c.underlying)).toVector: _*).compiled
+        HashMap(traitType.inheritedComponentTypes.map(c => component(c.underlying)).toVector: _*).compiled
 
       case ComponentType(underlying) =>
         // A component type directly defines a single member that has the name and type of its underlying declared

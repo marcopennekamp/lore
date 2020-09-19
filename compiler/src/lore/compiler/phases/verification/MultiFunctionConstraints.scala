@@ -96,7 +96,7 @@ object MultiFunctionConstraints {
   def verifyOutputTypes(mf: MultiFunctionDefinition): Verification = {
     def verifyHierarchyNode(node: mf.hierarchy.NodeT): Verification = {
       val parent = node.value
-      val successors = node.diSuccessors.toList
+      val successors = node.diSuccessors.toVector
       successors.map { successor =>
         val child = successor.value
         val errors = if (!(child.signature.outputType <= parent.signature.outputType)) {

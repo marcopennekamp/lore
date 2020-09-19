@@ -32,7 +32,7 @@ object ExpressionBuilder {
     registry.resolveMultiFunction(functionName).flatMap { mf =>
       val inputType = ProductType(arguments.map(_.tpe))
       mf.min(inputType) match {
-        case Vector.empty => Compilation.fail(EmptyFit(mf, inputType))
+        case min if min.isEmpty => Compilation.fail(EmptyFit(mf, inputType))
         case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, inputType, min))
         case functionDefinition +: _ =>
           functionDefinition.instantiate(inputType).map(instance => Expression.Call(instance, arguments, position))

@@ -93,7 +93,7 @@ object StructConstraints {
     // type +C is subsumed by a component type +C1, and C1 just so happens to be a component declared in the struct
     // to be checked, we do not have to check +C but only +C1. If an entity is +C1, of course it will also be a +C,
     // and the removal from the list is just another way of ticking the box.
-    definition.tpe.componentTypes.map { componentType =>
+    definition.tpe.inheritedComponentTypes.toVector.map { componentType =>
       if (definition.components.exists(_.tpe <= componentType)) Verification.succeed
       else Compilation.fail(ComponentNotImplemented(definition, componentType))
     }.simultaneous.verification
