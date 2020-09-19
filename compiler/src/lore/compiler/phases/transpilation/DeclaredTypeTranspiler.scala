@@ -20,7 +20,7 @@ object DeclaredTypeTranspiler {
 
   private def transpileStructType(tpe: StructType): Compilation[String] = {
     val varStructType = TranspiledNames.declaredType(tpe)
-    val varDeclaredSupertypes = tpe.declaredSupertypes.map(TranspiledNames.declaredType).mkString(", ")
+    val varDeclaredSupertypes = tpe.declaredSupertypes.map(TranspiledNames.declaredType)
     // TODO: Support componentTypes. To properly support components, we will have to instantiate a new type for each
     //       new object, because we need the concrete type of the actual components. (This is in addition to the
     //       "golden standard" struct type which always contains the compile-time component types). So in addition
@@ -30,15 +30,16 @@ object DeclaredTypeTranspiler {
     // TODO: Support isEntity.
     s"""const $varStructType = ${RuntimeApi.types.structType}(
        |  '${tpe.name}',
-       |  $varDeclaredSupertypes,
+       |  [${varDeclaredSupertypes.mkString(", ")}],
        |  [],
        |  undefined,
        |  false,
-       |)""".stripMargin.compiled
+       |);""".stripMargin.compiled
   }
 
   private def transpileTraitType(tpe: TraitType): Compilation[String] = {
-    "".compiled // TODO: Implement.
+    val varTraitType = TranspiledNames.declaredType(tpe)
+    s"const $varTraitType = { };".compiled // TODO: Implement.
   }
 
 }
