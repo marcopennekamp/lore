@@ -209,7 +209,7 @@ private[verification] class FunctionTransformationVisitor(
       } yield Expression.XaryOperation(XaryOperator.Concatenation, transformedExpressions, BasicType.String, position)
 
     // Function calls.
-    case SimpleCallNode(name, qualifier, _, position) =>
+    case SimpleCallNode(name, _, position) =>
       implicit val pos: Position = position
       // A simple call may either be a function or a constructor call. We immediately try to differentiate this based
       // on whether a struct type can be found for the function name.

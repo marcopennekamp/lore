@@ -157,7 +157,7 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
   }
   private def fixedCall[_: P]: P[ExprNode] = P(Index ~ identifier ~ ".fixed" ~ typeArguments ~ arguments).map(withIndex(ExprNode.FixedFunctionCallNode))
   private def dynamicCall[_: P]: P[ExprNode] = P(Index ~ "dynamic" ~ singleTypeArgument ~ arguments).map(withIndex(ExprNode.DynamicCallNode))
-  private def call[_: P]: P[ExprNode] = P(Index ~ identifier ~ ("." ~ identifier).? ~ arguments).map(withIndex(ExprNode.SimpleCallNode))
+  private def call[_: P]: P[ExprNode] = P(Index ~ identifier ~ arguments).map(withIndex(ExprNode.SimpleCallNode))
   def arguments[_: P]: P[Vector[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toVector)
   private def typeArguments[_: P]: P[Vector[TypeExprNode]] = P("[" ~ typeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toVector)
   private def singleTypeArgument[_: P]: P[TypeExprNode] = P("[" ~ typeParser.typeExpression ~ "]")

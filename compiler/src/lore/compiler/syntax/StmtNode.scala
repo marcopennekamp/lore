@@ -134,7 +134,7 @@ object ExprNode {
     * based on syntax, so the compiler will have to decide in later stages.
     */
   case class SimpleCallNode(
-    name: String, qualifier: Option[String], arguments: Vector[ExprNode], position: Position,
+    name: String, arguments: Vector[ExprNode], position: Position,
   ) extends XaryNode(arguments) with ExprNode with CallNode[InternalCallTarget]
 
   /**
