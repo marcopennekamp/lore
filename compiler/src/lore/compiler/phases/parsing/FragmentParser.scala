@@ -80,8 +80,8 @@ class FragmentParser(implicit fragment: Fragment) {
   private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`trait` | struct)
 
   private def `trait`[_: P]: P[TypeDeclNode.TraitNode] = {
-    P(Index ~ "trait" ~/ identifier ~ `extends`)
-      .map { case (index, name, (extended, components)) => (index, name, extended, components) }
+    P(Index ~ "trait" ~/ identifier ~ `extends` ~ ownedBy.?)
+      .map { case (index, name, (extended, components), ownedBy) => (index, name, extended, components, ownedBy) }
       .map(withIndex(TypeDeclNode.TraitNode))
   }
 

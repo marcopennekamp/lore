@@ -67,7 +67,7 @@ object TypeDeclNode {
     override val name: String,
     extended: Vector[String],
     components: Vector[String],
-    // TODO: Owned by.
+    ownedBy: Option[TypeExprNode],
     position: Position
   ) extends TypeDeclNode
 }
