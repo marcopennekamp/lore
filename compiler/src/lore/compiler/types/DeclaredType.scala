@@ -4,6 +4,7 @@ import lore.compiler.semantics.structures.DeclaredTypeDefinition
 import lore.compiler.utils.CollectionExtensions._
 
 trait DeclaredType extends NamedType {
+
   /**
     * The name of the declared type.
     */
@@ -12,8 +13,6 @@ trait DeclaredType extends NamedType {
   /**
     * The direct supertypes of the declared type. Only traits and component types are currently allowed by the grammar
     * to be supertypes of a declared type.
-    *
-    * TODO: We could perhaps represent the supertype using an intersection type.
     */
   def supertypes: Vector[Type]
 
@@ -44,7 +43,7 @@ trait DeclaredType extends NamedType {
     * has been removed from the list as it is subsumed by +Dog.
     */
   lazy val inheritedComponentTypes: Set[ComponentType] = {
-    val all = supertypes.filterType[ComponentType] ++ declaredSupertypes.flatMap(_.inheritedComponentTypes)
+    val all = componentSupertypes ++ declaredSupertypes.flatMap(_.inheritedComponentTypes)
     Type.mostSpecific(all.toSet).asInstanceOf[Set[ComponentType]]
   }
 
@@ -88,6 +87,7 @@ trait DeclaredType extends NamedType {
     case _ => false
   }
   override lazy val hashCode: Int = name.hashCode
+
 }
 
 object DeclaredType {
