@@ -21,7 +21,7 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
     * Assert that the given named source's compilation results in a list of errors, as required by the assertion.
     * The list of errors is passed as sorted into the assertion function, in order of lines starting from line 1.
     */
-  def assertCompilationErrors(name: String)(assert: List[Error] => Assertion): Assertion = {
+  def assertCompilationErrors(name: String)(assert: Vector[Error] => Assertion): Assertion = {
     Lore.fromExample(name) match {
       case Result(_, _) => Assertions.fail(s"Compilation of $name should have failed with errors, but unexpectedly succeeded.")
       case Errors(errors, _) => assert(errors.sortWith { case (e1, e2) => e1.position < e2.position })
@@ -42,7 +42,7 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
   /**
     * Matches error lists that match the given list of error signatures. Errors have to match in order.
     */
-  def assertErrorsMatchSignatures(errors: List[Error], signatures: List[ErrorSignature]): Assertion = {
+  def assertErrorsMatchSignatures(errors: Vector[Error], signatures: Vector[ErrorSignature]): Assertion = {
     errors should have length signatures.length
     forAll(errors.zip(signatures)) { case (error, signature) =>
       signature.assertMatches(error)

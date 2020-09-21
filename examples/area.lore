@@ -1,15 +1,8 @@
-class BoundingBox {
-  x: Real
-  xEnd: Real
-  y: Real
-  yEnd: Real
-}
+struct BoundingBox { x: Real, xEnd: Real, y: Real, yEnd: Real }
 
-class Circle {
-  radius: Real
-}
+struct Circle { radius: Real }
 
-class Rectangle
+struct Rectangle
 
 function area(box: BoundingBox): Real = (box.xEnd - box.x) * (box.yEnd - box.y)
 function area(circle: Circle): Real = circle.radius * circle.radius * pi()

@@ -28,12 +28,10 @@ object TestNodes {
     val Function = withWildcard(FunctionNode.apply _)
     val Parameter = withWildcard(ParameterNode)
     val TypeVariable = withWildcard(TypeVariableNode)
-    val Alias = withWildcard(AliasNode)
-    val Label = withWildcard(LabelNode)
-    val Class = withWildcard(ClassNode)
+    val Struct = withWildcard(StructNode)
+    val Trait = withWildcard(TraitNode)
     val Property = withWildcard(PropertyNode)
     val Component = withWildcard(ComponentNode)
-    val Constructor = withWildcard(ConstructorNode)
   }
 
   object Stmt {
@@ -45,8 +43,6 @@ object TestNodes {
 
     val VariableDeclaration = withWildcard(VariableDeclarationNode)
     val Assignment = withWildcard(AssignmentNode)
-    val ConstructorCall = withWildcard(ConstructorCallNode)
-    val Construct = withWildcard(ConstructNode)
 
     val Variable = withWildcard(VariableNode)
     val RealLiteral = withWildcard(RealLiteralNode)
@@ -87,9 +83,9 @@ object TestNodes {
   object Type {
     import TypeExprNode._
 
-    val Nominal = withWildcard(IdentifierNode)
-    val Intersection = withWildcard(IntersectionNode)
+    val Identifier = withWildcard(IdentifierNode)
     val Sum = withWildcard(SumNode)
+    val Intersection = withWildcard(IntersectionNode)
     val Product = withWildcard(ProductNode)
     val Unit = withWildcard(UnitNode)
     val List = withWildcard(ListNode)
@@ -100,10 +96,10 @@ object TestNodes {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Types.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  lazy val tReal = Type.Nominal("Real")
-  lazy val tInt = Type.Nominal("Int")
-  lazy val tString = Type.Nominal("String")
-  lazy val tBoolean = Type.Nominal("Boolean")
+  lazy val tReal = Type.Identifier("Real")
+  lazy val tInt = Type.Identifier("Int")
+  lazy val tString = Type.Identifier("String")
+  lazy val tBoolean = Type.Identifier("Boolean")
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Variables.

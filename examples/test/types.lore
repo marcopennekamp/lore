@@ -2,41 +2,39 @@
  * This file contains definitions for Least Upper Bound and Subtyping/Fit tests.
  */
 
-abstract class Animal
-abstract class Bird extends Animal
-abstract class Mammal extends Animal
-abstract class Fish extends Animal
-class Chicken extends Bird
-class Penguin extends Bird
-class Raven extends Bird
-class Human extends Mammal
-class Cat extends Mammal
-class ScottishFold extends Cat
-class Unicorn extends Mammal
-class Goldfish extends Fish
+trait Animal
+trait Bird extends Animal
+trait Mammal extends Animal
+trait Fish extends Animal
+struct Chicken implements Bird
+struct Penguin implements Bird
+struct Raven implements Bird
+struct Human implements Mammal
+trait Cat extends Mammal
+struct ScottishFold implements Cat
+struct Unicorn implements Mammal
+struct Goldfish implements Fish
 
-label Status
-label Healthy extends Status
-label Sick extends Status
+trait Status
+trait Healthy extends Status
+trait Sick extends Status
 
-abstract class Wheel
-class CoolWheel extends Wheel
-class CheapWheel extends Wheel
-abstract class Engine
-class GasEngine extends Engine
-class ElectricEngine extends Engine
+trait Wheel
+struct CoolWheel implements Wheel
+struct CheapWheel implements Wheel
+trait Engine
+struct GasEngine implements Engine
+struct ElectricEngine implements Engine
 
-abstract entity Car {
+trait Car extends +Wheel, +Engine
+
+trait Cycle extends +Wheel
+
+struct Motorcycle implements Cycle {
   component Wheel
   component Engine
 }
 
-abstract entity Cycle {
+struct Bicycle implements Cycle {
   component Wheel
 }
-
-abstract entity Motorcycle extends Cycle {
-  component Engine
-}
-
-abstract entity Bicycle extends Cycle
