@@ -10,9 +10,8 @@ class ConstraintsSpec extends BaseSpec {
       assertErrorsMatchSignatures(errors, Vector(
         ErrorSignature(classOf[DeclaredTypeConstraints.OwnedByMustBeSubtype], 7),
         ErrorSignature(classOf[EntityConstraints.EntityCannotOwnComponent], 12),
-        ErrorSignature(classOf[Registry.TypeNotFound], 23),
-        ErrorSignature(classOf[StructConstraints.ComponentsShareSupertype], 27),
-        ErrorSignature(classOf[StructConstraints.ComponentNotImplemented], 41),
+        ErrorSignature(classOf[StructConstraints.ComponentsShareSupertype], 22),
+        ErrorSignature(classOf[StructConstraints.ComponentNotImplemented], 36),
       ))
     }
   }
