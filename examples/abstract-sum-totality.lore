@@ -1,8 +1,8 @@
-label X
-label A extends X
-label B extends X
-label C extends X
-label T
+trait X
+trait A extends X
+trait B extends X
+trait C extends X
+trait T
 
 action f(v: X & T)
 action f(v: (A | B) & T) { }

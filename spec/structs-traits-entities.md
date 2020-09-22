@@ -469,6 +469,8 @@ Ownership is **not fully type-safe at compile-time**, because the ability to spe
     property x: Real of box: Box = box.xStart + width(box) / 2
     // or:
     function x(box: Box): Real = box.xStart + width(box) / 2
+    // or:
+    property x(box: Box): Real = box.xStart + width(box) / 2
     ```
 
     This would internally still be represented by multi-functions, but the declaration in traits is shorter and more natural. **Potential downside:** This way of declaring trait properties could confuse users into thinking that properties are inherited. It could also make the idea that trait properties are just multi-functions under the hood harder to convey. Another question is which namespace/module these property functions will be part of.

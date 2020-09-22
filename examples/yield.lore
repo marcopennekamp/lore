@@ -1,9 +1,10 @@
-class A {
-  value: Int
-}
-class B {
-  value: Int
-}
+struct A { value: Int }
+struct B { value: Int }
 
-function transform(a: A): B = B(a.value)
-function transformList(as: [A]): [B] = for (a <- as) { transform(a) }
+function transform(a: A): B = B(a.value + 2)
+function transform(as: [A]): [B] = for (a <- as) { transform(a) }
+
+action test() {
+  let list = [A(1), A(5), A(10), A(-12)]
+  for (b <- transform(list)) { println(b.value) }
+}

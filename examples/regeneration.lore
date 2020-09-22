@@ -1,4 +1,4 @@
-class HealthState {
+struct HealthState {
   mut health: Real
 }
 
@@ -6,7 +6,7 @@ action heal(entity: +HealthState, amount: Real) { entity.HealthState.health += a
 action damage(entity: +HealthState, amount: Real) { entity.HealthState.health -= amount }
 
 
-class Regeneration owned by +HealthState {
+struct Regeneration owned by +HealthState {
   amount: Real
   interval: Int
   mut counter: Int
@@ -19,3 +19,5 @@ action updateHealth(entity: +Regeneration) {
   }
   r.counter += 1
 }
+
+// TODO: Write a test function with an entity for this example. :)
