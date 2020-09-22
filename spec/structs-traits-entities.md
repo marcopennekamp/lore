@@ -449,6 +449,32 @@ Ownership is **not fully type-safe at compile-time**, because the ability to spe
 
   Note: Since this proposal does not add any additional expressiveness to the language (only convenience), it is not a candidate for the MVL itself. Also, another question is how this system interacts with namespacing, and thus it would be prudent to define the module system first and THEN turn our attention to this proposal.
 
+  - **Alternative:**
+
+    ```
+    trait Position {
+      x: Real
+    }
+    
+    action test(pos: Position) {
+      println(pos.x)
+    }
+    
+    // Direct mapping
+    struct Point implements Position {
+      x: Real implements Position.x
+    }
+    
+    // Indirect mapping
+    property x: Real of box: Box = box.xStart + width(box) / 2
+    // or:
+    function x(box: Box): Real = box.xStart + width(box) / 2
+    ```
+
+    This would internally still be represented by multi-functions, but the declaration in traits is shorter and more natural. **Potential downside:** This way of declaring trait properties could confuse users into thinking that properties are inherited. It could also make the idea that trait properties are just multi-functions under the hood harder to convey. Another question is which namespace/module these property functions will be part of.
+
+    Another downside is that we can't easily tie properties to ANY types with this syntax, which would be especially problematic for computed properties of structs. However, we could consider supporting both syntaxes. In fact, the trait property syntax would be the natural way for traits (at the trait's declaration site, of course, not for "monkey patching"), while the `property` syntax would be the natural way for other types. Going a step further: `property` would be the keyword for functions that accept a single `instance` parameter and are called like `instance.property` *without* parentheses. (What about setters, then?)
+
 - One step further: Automatic, optional **memoization of properties**.
 
 - The lack of struct inheritance currently has the big disadvantage that one cannot **"mix in" property definitions**. If you have a trait `Entity` that requires all its implementors to specify a `name: String` property and a `Sprite` component, this has to be re-declared inside every struct that implements `Entity`. I can see two main ways to solve this problem: (1) add mixins as a language feature or (2) allow users to solve this problem with a macro system. **Mixins** would firmly concern themselves with the realm of data representation; they would not even define their own types. Hence, adding mixins would preserve our stated goal of separating data representation and abstract data structure and behavior. You could declare a mixin alongside a trait if close data coupling is desired, but each struct would at least have to declare that it's using the mixin. There would be no language-level coupling between mixins and traits.
