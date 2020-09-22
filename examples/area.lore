@@ -1,11 +1,23 @@
+// TODO: Maybe rename the example to "shapes" and add more functions?
+
+// TODO: We could really use mixins for the coordinates.
 struct BoundingBox { x: Real, xEnd: Real, y: Real, yEnd: Real }
-
-struct Circle { radius: Real }
-
-struct Rectangle
+struct Circle { x: Real, y: Real, radius: Real }
+struct Rectangle { x: Real, y: Real, width: Real, height: Real }
 
 function area(box: BoundingBox): Real = (box.xEnd - box.x) * (box.yEnd - box.y)
 function area(circle: Circle): Real = circle.radius * circle.radius * pi()
+function area(rectangle: Rectangle): Real = rectangle.width * rectangle.height
 
 // Yeah, I know. We don't have global constants yet.
 function pi(): Real = 3.14159265359
+
+action test() {
+  let box = BoundingBox(0, 10, -5, 20)
+  let circle = Circle(0, 5, 2.7)
+  let rectangle = Rectangle(-5, -5, 20, 77)
+
+  println(area(box))
+  println(area(circle))
+  println(area(rectangle))
+}
