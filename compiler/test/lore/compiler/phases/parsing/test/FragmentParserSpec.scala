@@ -1,9 +1,9 @@
 package lore.compiler.phases.parsing.test
 
 import fastparse.P
-import lore.compiler.syntax._
-import lore.compiler.core.{Fragment, Position}
+import lore.compiler.core.Fragment
 import lore.compiler.phases.parsing.FragmentParser
+import lore.compiler.syntax._
 import lore.compiler.test.BaseSpec
 
 class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclNode]] {
@@ -15,8 +15,8 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
   "The function declaration parser" should "parse function declarations correctly" in {
     """
     |  function pow(x: Real, exp: Int): Real = {
-    |    let e = exp
-    |    let result = 1.0
+    |    let mut e = exp
+    |    let mut result = 1.0
     |    while (e > 0) {
     |      result *= x
     |      e -= 1
@@ -49,7 +49,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
   it should "parse action declarations correctly" in {
     """
     |  action attack(source: +Arms, target: +Health) {
-    |    const power = combinedPower(source.Arms)
+    |    let power = combinedPower(source.Arms)
     |    damage(target, power)
     |  }
     """.stripMargin --> Vector(Decl.Function(
@@ -113,7 +113,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
         ),
         Type.Identifier("Position"),
         Vector.empty,
-        Some(Stmt.Block(Vector(Stmt.SimpleCall("Position", Vector(vx, vy, vz))))),
+        Some(Stmt.Block(Vector(Stmt.SimpleCall("Position", Vector(vx, vy, Stmt.RealLiteral(0.0)))))),
       ),
       Decl.Function(
         "from1D",
@@ -122,7 +122,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
         ),
         Type.Identifier("Position"),
         Vector.empty,
-        Some(Stmt.Block(Vector(Stmt.SimpleCall("from2D", Vector(vx, vy))))),
+        Some(Stmt.Block(Vector(Stmt.SimpleCall("from2D", Vector(vx, Stmt.RealLiteral(0.0)))))),
       ),
     )
   }
@@ -147,11 +147,11 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
       Decl.Struct("P", Vector.empty, None, Vector.empty),
       Decl.Trait("O1", Vector("L1", "L2"), Vector.empty, None),
       Decl.Struct("O2", Vector("O1"), None, Vector.empty),
-      Decl.Trait("A", Vector.empty, Vector.empty, Some(Type.Intersection(Vector(Type.Identifier("O1"), Type.Identifier("L"))))),
+      Decl.Trait("A", Vector.empty, Vector.empty, Some(Type.Intersection(Vector(Type.Identifier("O1"), Type.Identifier("L1"))))),
       Decl.Struct(
         "B",
         Vector("A", "L2"),
-        Some(Type.Intersection(Vector(Type.Identifier("O2"), Type.Identifier("L")))),
+        Some(Type.Intersection(Vector(Type.Identifier("O2"), Type.Identifier("L1")))),
         Vector(
           Decl.Property("property1", Type.Identifier("P"), true),
           Decl.Property("property2", Type.Identifier("P"), false),

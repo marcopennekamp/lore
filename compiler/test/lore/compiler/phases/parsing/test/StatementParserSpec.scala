@@ -183,7 +183,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     // Iterations.
     """
     |{
-    |  const people: [String] = ['abra', 'betty', 'carl']
+    |  let people: [String] = ['abra', 'betty', 'carl']
     |  for (name <- people) println('Hey, $name!')
     |}
     |""".stripMargin --> Stmt.Block(Vector(
@@ -208,11 +208,11 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   }
 
   it should "parse instantiation, multi-function calls, fixed function calls, and dynamic calls correctly" in {
-    "const point = Point(1, 5)" --> Stmt.VariableDeclaration(
+    "let point = Point(1, 5)" --> Stmt.VariableDeclaration(
       "point", false, None,
       Stmt.SimpleCall("Point", Vector(Stmt.IntLiteral(1), Stmt.IntLiteral(5))),
     )
-    "let position: Position3D = Position3D(5.5, 6.7)" --> Stmt.VariableDeclaration(
+    "let mut position: Position3D = Position3D(5.5, 6.7)" --> Stmt.VariableDeclaration(
       "position", true, Some(Type.Identifier("Position3D")),
       Stmt.SimpleCall("Position3D", Vector(Stmt.RealLiteral(5.5), Stmt.RealLiteral(6.7))),
     )
@@ -243,9 +243,9 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
       Stmt.PropertyAccess(Stmt.PropertyAccess(va, "b"), "c"),
       vx,
     )
-    "const x: Int = a" --> Stmt.VariableDeclaration("x", false, Some(Type.Identifier("Int")), va)
-    "let y: Real = b" --> Stmt.VariableDeclaration("y", true, Some(Type.Identifier("Real")), vb)
-    "const z: E & +C1 & +C2 & L = c" --> Stmt.VariableDeclaration(
+    "let x: Int = a" --> Stmt.VariableDeclaration("x", false, Some(Type.Identifier("Int")), va)
+    "let mut y: Real = b" --> Stmt.VariableDeclaration("y", true, Some(Type.Identifier("Real")), vb)
+    "let z: E & +C1 & +C2 & L = c" --> Stmt.VariableDeclaration(
       "z", false,
       Some(Type.Intersection(Vector(
         Type.Identifier("E"), Type.Component("C1"),
@@ -308,17 +308,17 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   }
 
   it should "assign the correct indices (variable declaration)" in {
-    inside("let position: Position3D = Position3D.from2D(5.5, 6.7)".parsed) {
+    inside("let mut position: Position3D = Position3D(5.5, 6.7)".parsed) {
       case decl: TopLevelExprNode.VariableDeclarationNode =>
         decl.position.index shouldEqual 0
-        decl.tpe.value.position.index shouldEqual 14
+        decl.tpe.value.position.index shouldEqual 18
         inside(decl.value) {
           case call: ExprNode.SimpleCallNode =>
-            call.position.index shouldEqual 27
+            call.position.index shouldEqual 31
             inside(call.arguments) {
               case Seq(rl1: ExprNode.RealLiteralNode, rl2: ExprNode.RealLiteralNode) =>
-                rl1.position.index shouldEqual 45
-                rl2.position.index shouldEqual 50
+                rl1.position.index shouldEqual 42
+                rl2.position.index shouldEqual 47
             }
         }
     }
@@ -411,28 +411,28 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   }
 
   "Statements and top-level expressions" should "only appear in blocks, conditionals, and repetitions" in {
-    "const x = a + return 0".fails
+    "let x = a + return 0".fails
     "if (return x) a else b".fails
     "(yield 0) | b | c".fails
     "repeat while (yield x) { yield b }".fails
     "b + yield 0".fails
-    "if (const a = false) { }".fails
-    "repeat while (const a = false) { }".fails
-    "-(const a = 2)".fails
+    "if (let a = false) { }".fails
+    "repeat while (let a = false) { }".fails
+    "-(let a = 2)".fails
 
-    "b + { const a = 4 \n a * a }" --> Stmt.Addition(
+    "b + { let a = 4 \n a * a }" --> Stmt.Addition(
       vb,
       Stmt.Block(Vector(
         Stmt.VariableDeclaration("a", false, None, Stmt.IntLiteral(4)),
         Stmt.Multiplication(va, va),
       )),
     )
-    "if (false) const a = 0" --> Stmt.IfElse(
+    "if (false) let a = 0" --> Stmt.IfElse(
       Stmt.BoolLiteral(false),
       Stmt.VariableDeclaration("a", false, None, Stmt.IntLiteral(0)),
       Stmt.Unit(),
     )
-    "for (e <- list) const a = e" --> Stmt.Iteration(
+    "for (e <- list) let a = e" --> Stmt.Iteration(
       Vector(Stmt.Extractor("e", Stmt.Variable("list"))),
       Stmt.VariableDeclaration("a", false, None, Stmt.Variable("e")),
     )

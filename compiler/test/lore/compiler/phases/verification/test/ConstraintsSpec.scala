@@ -1,7 +1,6 @@
 package lore.compiler.phases.verification.test
 
 import lore.compiler.phases.verification.{DeclaredTypeConstraints, EntityConstraints, MultiFunctionConstraints, ReturnConstraints, StructConstraints}
-import lore.compiler.semantics.Registry
 import lore.compiler.test.BaseSpec
 
 class ConstraintsSpec extends BaseSpec {
@@ -9,7 +8,7 @@ class ConstraintsSpec extends BaseSpec {
     assertCompilationErrors("test/constraints/entities") { errors =>
       assertErrorsMatchSignatures(errors, Vector(
         ErrorSignature(classOf[DeclaredTypeConstraints.OwnedByMustBeSubtype], 7),
-        ErrorSignature(classOf[EntityConstraints.EntityCannotOwnComponent], 12),
+        ErrorSignature(classOf[EntityConstraints.EntityCannotOwnComponent], 9),
         ErrorSignature(classOf[StructConstraints.ComponentsShareSupertype], 22),
         ErrorSignature(classOf[StructConstraints.ComponentNotImplemented], 36),
       ))

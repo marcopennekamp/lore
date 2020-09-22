@@ -1,6 +1,6 @@
-class A
-class B1 extends A
-class B2 extends A
+trait A
+struct B1 implements A
+struct B2 implements A
 
 function f(value: A): Int = 0
 
