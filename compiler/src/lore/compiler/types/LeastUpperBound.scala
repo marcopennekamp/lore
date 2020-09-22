@@ -1,8 +1,8 @@
 package lore.compiler.types
 
-import lore.compiler.core.CompilationException
 import lore.compiler.semantics.Registry
 import lore.compiler.types.TypeExtensions._
+import lore.compiler.utils.CollectionExtensions.FilterTypeVectorExtension
 
 object LeastUpperBound {
 
@@ -118,21 +118,19 @@ object LeastUpperBound {
 
       // Component types simply delegate to declared types.
       case (c1: ComponentType, c2: ComponentType) =>
-        // TODO: This needs a rework... A band-aid fix would probably be to return the component type of the LCS
-        //       if EXACTLY one struct or trait is the result of the LCS. Otherwise, clearly the two types cannot
-        //       be lubbed, and we default to our fallback. Once we introduce "non-component" traits (see the
-        //       proposal in the spec), we will also have to filter these traits out of our consideration, since
-        //       they cannot be the underlying type of a component type. Basically, we will have to find exactly
-        //       one trait which is the common supertype of the two underlying types AND which is itself a type
-        //       that can be a component.
+        // TODO: Once we introduce "non-component" traits (see the proposal in the spec), we will have to filter these
+        //       traits out of our consideration, since they cannot be the underlying type of a component type.
         registry.declaredTypeHierarchy.leastCommonSupertype(c1.underlying, c2.underlying) match {
           case IntersectionType(types) =>
-            // If we have an intersection type as the LCS, there are multiple LCSs. However, only one of them can
-            // be a class type. So we filter for that one.
-            val classTypes = types.filter(_.isInstanceOf[StructType])
-            if (classTypes.size != 1) throw CompilationException("There can (and must) only be one!")
-            classTypes.head
-          case classType: StructType => ComponentType(classType)
+            // Let's say the underlying types U1 and U2 have the least upper bound A & B. This means that both types
+            // can be represented either as A or as B, interchangeably. So if we have an entity e1 with a component +U1
+            // and another e2 with a component +U2, they can be represented both as +A and +B. We can say e1.A and refer
+            // to U1. We can say e2.A and refer to U2. We can say e1.B and refer to U1... The point being that the
+            // common denominator of +U1 and +U2 is that they can be viewed through the lens of both +A and +B. Hence,
+            // it is legal to define LUB(+U1, +U2) as +A & +B. This stretches to intersection types with more than two
+            // parts.
+            IntersectionType.construct(types.toVector.filterType[DeclaredType].map(ComponentType))
+          case tpe: DeclaredType => ComponentType(tpe)
           case t => t.fallbackIfAny
         }
 

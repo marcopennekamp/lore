@@ -55,7 +55,8 @@ class LeastUpperBoundSpec extends TypeSpec {
     (BasicType.Int | BasicType.Real, BasicType.Nothing) --> BasicType.Real
   }
 
-  it should "return the most specific supertype for entities, intersection types and components" in {
+  it should "return the most specific supertype for entities, intersection types and component types" in {
+    (+CoolWheel, +CheapWheel) --> +Wheel
     (+CoolWheel & +ElectricEngine, +CheapWheel & +GasEngine) --> (+Wheel & +Engine)
     (Car, +Wheel & +Engine) --> (+Wheel & +Engine)
     (Car & +Wheel, +Wheel) --> +Wheel
