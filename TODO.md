@@ -3,32 +3,43 @@
 Structs:
 - Struct declaration:
   - Implementing any number of traits
+    - Compiler ✓
+    - Runtime X
   - Properties:
-    - mutable and immutable
-    - delimited by newlines or commas
+    - mutable and immutable ✓
+    - delimited by newlines or commas ✓
   - Components
+    - Compiler ✓
+    - Runtime X
 - Construction:
-  - call syntax
+  - call syntax ✓
   - map syntax
     - shorthand (omitting name)
-- Ownership
+- Ownership ✓
+  - TODO: Do more testing.
 
 Traits:
 - Trait declaration:
   - Inheritance:
-    - From traits
-    - From component types
-    - Inheritance is implicitly passed down the hierarchy
-- Ownership
+    - From traits ✓
+    - From component types ✓
+    - Inheritance is implicitly passed down the hierarchy ✓
+    - Runtime:
+      - Subtyping rules and hierarchies
+      - Test and possibly improve performance 
+- Ownership ✓
+  - TODO: Do more testing.
 
 Entities:
-- Constraints:
-  - Immutability
-  - Component Type Restrictions
+- Component Constraints:
+  - Immutability ✓
+  - Component Type Restrictions ✓
 - Ownership:
-  - Declaration (structs and entities)
-  - Passed down via inheritance, explicitly (re-)declared
-  - Access to the owner's type through component types
+  - Declaration (structs and entities) ✓
+  - Passed down via inheritance, explicitly (re-)declared ✓
+  - Access to the owner's type through component types ✓
+  - Runtime:
+    - Test ownership during struct instantiation.
 
 Cleanup:
 - Replace Lists with Vectors.

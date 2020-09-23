@@ -24,8 +24,8 @@ export const api = {
   /**
    * Creates a new (immutable) list by appending the element to the given list. The type has to be supplied manually
    * as we don't calculate it at run-time. Rather, the compiler decides what kind of type this list receives. This
-   * behavior is in line with other collections and also fits with how type arguments will work for class types: at
-   * the point of construction, the collection's or class's type is decided based on its type at compile-time.
+   * behavior is in line with other collections and also fits with how type arguments will work for declared types: at
+   * the point of construction, the collection's or struct's/trait's type is decided based on its type at compile-time.
    */
   append<A, B extends A>(list: ListValue<A>, element: B, type: ListType): ListValue<A> {
     return { array: [...list.array, element], lore$type: type }

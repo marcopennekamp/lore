@@ -18,6 +18,19 @@ object DeclaredTypeTranspiler {
     }
   }
 
+  /**
+    * Transpiles a struct type to its Javascript representation.
+    *
+    * A transpiled struct type consists of three parts:
+    *   1. The type schema which saves the information (names, ownedBy, etc.) common to all instances of the struct
+    *      type, regardless of which component types are actually instantiated.
+    *   2. The "newtype" function which can be used to create a new instance of the struct type. This is needed
+    *      because struct types are dependent on their actual components' types at run-time. Hence, for each struct
+    *      instantiated, we also have to create a new type.
+    *   3. The archetypal compile-time type instance, which is a struct type instantiated with the component types
+    *      that it owns at compile-time. This type is used when being referred to in multiple dispatch and other
+    *      static uses.
+    */
   private def transpileStructType(tpe: StructType): Compilation[String] = {
     val varStructType = TranspiledNames.declaredType(tpe)
     val varDeclaredSupertypes = tpe.declaredSupertypes.map(TranspiledNames.declaredType)
@@ -28,6 +41,10 @@ object DeclaredTypeTranspiler {
     //       function that creates such a struct type for a given list of run-time component types.
     // TODO: Support ownedBy types.
     // TODO: Support isEntity.
+
+
+
+
     s"""const $varStructType = ${RuntimeApi.types.structType}(
        |  '${tpe.name}',
        |  [${varDeclaredSupertypes.mkString(", ")}],
@@ -37,6 +54,13 @@ object DeclaredTypeTranspiler {
        |);""".stripMargin.compiled
   }
 
+  /**
+    * Transpiles a trait type to its Javascript representation.
+    *
+    * To preserve symmetry with struct types, trait types also have a schema and a newtype function. These are not
+    * strictly necessary, but ease the burden on runtime definitions.
+    *
+    */
   private def transpileTraitType(tpe: TraitType): Compilation[String] = {
     val varTraitType = TranspiledNames.declaredType(tpe)
     s"const $varTraitType = { };".compiled // TODO: Implement.

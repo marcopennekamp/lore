@@ -16,8 +16,8 @@ export function isPolymorphic(type: Type): boolean {
     case Kind.Boolean:
     case Kind.String:
       return false
-    case Kind.Class:
-    case Kind.Label:
+    case Kind.Struct:
+    case Kind.Trait:
       return false // TODO: Change this once we allow type parameters for classes and labels.
     case Kind.Intersection:
     case Kind.Sum:

@@ -1,10 +1,14 @@
 package lore.compiler.phases.transpilation
 
 import lore.compiler.semantics.functions.FunctionDefinition
-import lore.compiler.types.{DeclaredType, Type}
+import lore.compiler.types.{DeclaredType, StructType, Type}
 
 object TranspiledNames {
   def declaredType(tpe: DeclaredType): String = s"lore_type_${tpe.name}"
+  def typeSchema(tpe: DeclaredType): String = s"lore_schema_${tpe.name}"
+  def newType(tpe: DeclaredType): String = s"lore_newtype_${tpe.name}"
+  def instantiate(struct: StructType): String = s"lore_instantiate_${struct.name}"
+
   def temporaryVariable(name: String): String = s"lore_tmp_$name"
   def localVariable(loreName: String): String = s"lore_lv_$loreName"
 

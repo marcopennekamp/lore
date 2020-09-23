@@ -17,9 +17,7 @@ export const api = {
     return { elements, lore$type: product(elementTypes) }
   },
 
-  unit(): TupleValue {
-    return { elements: [], lore$type: unit }
-  },
+  unit: { elements: [], lore$type: unit } as TupleValue,
 
   get(tuple: TupleValue, index: number): any {
     // TODO: Surely proper bounds checking, no?

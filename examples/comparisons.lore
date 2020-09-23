@@ -52,8 +52,6 @@ function width(box: BoundingBox): Real = box.xEnd - box.x
 function height(box: BoundingBox): Real = box.yEnd - box.y
 
 
-
-// TODO: Actually instantiate the objects here, which isn't possible currently due to the transpiler not supporting it.
 action test() {
   let bird = Bird('Raven', 1.5, 1.2)
   let plane = Plane('B-2 Spirit', 2, 52.4)

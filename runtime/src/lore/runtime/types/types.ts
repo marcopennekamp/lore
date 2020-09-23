@@ -121,13 +121,15 @@ export function unhashedProduct(types: Array<Type>): ProductType {
 export const unit: ProductType = product([])
 
 
+// TODO: We could easily intern component types by giving each declared type exactly one ComponentType instance...
+
 export interface ComponentType extends Type {
-  underlying: StructType
+  underlying: DeclaredType
 }
 
-export function component(underlying: StructType): ComponentType {
-  if (underlying.kind !== Kind.Class) {
-    throw Error("A component type must have an underlying class type.")
+export function component(underlying: DeclaredType): ComponentType {
+  if (underlying.kind !== Kind.Struct && underlying.kind !== Kind.Trait) {
+    throw Error("A component type must have an underlying declared type.")
   }
   return { kind: Kind.Component, underlying, hash: singleHash(underlying, 0x4cab1ec0) }
 }
@@ -152,26 +154,64 @@ export function map(key: Type, value: Type): MapType {
 }
 
 
-export interface StructType extends Type {
+export interface DeclaredTypeSchema {
   name: string
+  ownedBy: Type
+  isEntity: boolean
+}
+
+export interface DeclaredType extends Type {
+  schema: DeclaredTypeSchema
+  supertypes: Array<TraitType | ComponentType>
+}
+
+/**
+ * Returns a list of all component types that the declared type inherits, excluding component types that are fully
+ * subsumed. A struct's actual component types are always all necessary inherited component types, since the struct
+ * has to satisfy all the component types it inherits from.
+ */
+export function inheritedComponentTypes(declaredType: DeclaredType): Array<ComponentType> {
+  if (declaredType.kind === Kind.Struct) return (<StructType> declaredType).componentTypes
+  else if (declaredType.kind === Kind.Trait) return (<TraitType> declaredType).schema.inheritedComponentTypes
+  else return []
+}
+
+
+export interface StructSchema extends DeclaredTypeSchema {
   declaredSupertypes: Array<TraitType>
-  componentTypes: Array<ComponentType>
-  ownedBy?: Type
-  isEntity: Boolean
   // members
 }
 
-export function structType(
-  name: string, declaredSupertypes: Array<TraitType>, componentTypes: Array<ComponentType>, ownedBy: Type | undefined, isEntity: boolean,
-): StructType {
-  return { kind: Kind.Class, name, declaredSupertypes, componentTypes, ownedBy, isEntity, hash: stringHashWithSeed(name, 0x38ba128e) }
+export function structSchema(name: string, declaredSupertypes: Array<TraitType>, ownedBy: Type, isEntity: boolean): StructSchema {
+  return { name, declaredSupertypes, ownedBy, isEntity }
 }
 
+export interface StructType extends DeclaredType {
+  schema: StructSchema
+  componentTypes: Array<ComponentType>
+}
 
-export interface TraitType extends Type {
-  name: string
-  // supertraits
-  // componentTypes
-  // ownedBy
-  // isEntity
+// TODO: Rename to "struct".
+export function structType(schema: StructSchema, componentTypes: Array<ComponentType>): StructType {
+  // TODO: Is this array creation really necessary? This will slow down the instantiation of all entity structs.
+  const supertypes = [...schema.declaredSupertypes, ...componentTypes]
+  return { kind: Kind.Struct, schema, supertypes, componentTypes, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
+}
+
+// TODO: We need a way to create a struct type with ACTUAL component types dynamically at run-time. These component
+//       types will suffice for subtyping and such as they must subsume all inherited component types. There is thus
+//       likely no need to supply the compile-time component types of structs, except for correctness checking (which
+//       should perhaps be done for all members, including properties).
+//       Action plan: For each struct, create an instantiation method that also takes care of creating the struct type.
+//       We have one archetypal struct type also created during compilation, which gets exactly the component types
+//       that it has at compile-time. This archetypal struct type is referred to by multi-function parameters and such.
+//       The instantiated types are passed around with the values and used in fit checks on the left-hand side.
+
+
+export interface TraitSchema extends DeclaredTypeSchema {
+  inheritedComponentTypes: Array<ComponentType>
+}
+
+export interface TraitType extends DeclaredType {
+  schema: TraitSchema
 }

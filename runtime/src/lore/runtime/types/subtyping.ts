@@ -1,12 +1,13 @@
 import {
   ComponentType,
+  DeclaredType, inheritedComponentTypes,
   IntersectionType,
   ListType,
   MapType,
   ProductType,
   SumType,
   Type,
-  TypeVariable
+  TypeVariable,
 } from './types.ts'
 import { Kind } from './kinds.ts'
 import { areEqual } from './equality.ts'
@@ -34,15 +35,27 @@ export function isSubtype(t1: Type, t2: Type): boolean {
     case Kind.Int:
       if (t2.kind === Kind.Real) return true
       break
-    case Kind.Class:
-    case Kind.Label:
-      // TODO: Implement these two cases
-      // d1.supertype.exists(isSubtype(_, d2))
-      // { case (e1: ClassType, p2: ComponentType) if e1.isEntity => e1.componentTypes.exists(p1 => isSubtype(p1.underlying, p2.underlying)) },
-      // TODO: Per the spec, entities must match in multiple dispatch based on ACTUAL types of component objects, not their
-      //       declared types in the source code. Confer: "Entities are dispatched based on their actual type and the types
-      //       of their components at run-time." Ensure that this is the case here! (We will have to get the actual types
-      //       of the components instead of their declared entity.componentTypes...)
+    case Kind.Struct:
+    case Kind.Trait:
+      const d1 = <DeclaredType> t1
+      if (t2.kind === Kind.Trait || t2.kind === Kind.Struct) {
+        const d2 = <DeclaredType> t2
+
+        // If the schemas of these two declared types are equal, we have the same type. The equality might not have
+        // been caught by the === check above because a struct type can have multiple instances with different actual
+        // component types.
+        if (d1.schema === d2.schema) return true
+
+        const supertypes = d1.supertypes
+        for (let i = 0; i < supertypes.length; i += 1) {
+          if (isSubtype(supertypes[i], d2)) return true
+        }
+      } else if (t2.kind === Kind.Component && d1.schema.isEntity) {
+        const componentTypes = inheritedComponentTypes(d1)
+        for (let i = 0; i < componentTypes.length; i += 1) {
+          if (isSubtype(componentTypes[i], t2)) return true
+        }
+      }
       break
     case Kind.Intersection:
       if (t2.kind === Kind.Intersection) {
@@ -62,7 +75,7 @@ export function isSubtype(t1: Type, t2: Type): boolean {
       if (t2.kind === Kind.Product && productSubtypeProduct(<ProductType> t1, <ProductType> t2)) return true
       break
     case Kind.Component:
-      // TODO: New rule: { case (p1: ComponentType, t2) => p1.underlying.ownedBy.exists(ownedBy => isSubtype(ownedBy, t2)) },
+      // TODO: New rule: { case (p1: ComponentType, t2) => isSubtype(p1.underlying.ownedBy, t2) },
       if (
         t2.kind === Kind.Component &&
         isSubtype((<ComponentType> t1).underlying, (<ComponentType> t2).underlying)

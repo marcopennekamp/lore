@@ -37,8 +37,8 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
   (t1: BooleanType, t2: BooleanType) => true,
   (t1: StringType, t2: StringType) => true,
 
-  (t1: StructType, t2: StructType) => false, // TODO: Implement
-  (t1: TraitType, t2: TraitType) => false, // TODO: Implement
+  (t1: StructType, t2: StructType) => t1.schema === t2.schema,
+  (t1: TraitType, t2: TraitType) => false, // If the traits are not referentially equal, they cannot be equal.
 
   // To prove that two sum or intersection types are equal, we find for each part in t1 an equal part in t2
   // and vice versa.
