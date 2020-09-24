@@ -1,5 +1,5 @@
 export enum Kind {
-  TypeVariable = 0,
+  TypeVariable,
   Any,
   Nothing,
   Real,

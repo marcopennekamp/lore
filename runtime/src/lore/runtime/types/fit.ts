@@ -131,6 +131,7 @@ class TypeVariableAllocation {
       case Kind.Struct:
       case Kind.Trait:
         break // TODO: Change this once we allow type parameters for classes and labels.
+
       case Kind.Product:
         if (t1.kind === Kind.Product) {
           const types1 = (<ProductType> t1).types
@@ -142,8 +143,10 @@ class TypeVariableAllocation {
           }
         }
         break
+
       case Kind.Component:
         break // TODO: Change this once we allow type parameters for classes and labels?
+
       case Kind.List:
         if (t1.kind === Kind.List) {
           const l1 = <ListType> t1
@@ -151,6 +154,7 @@ class TypeVariableAllocation {
           TypeVariableAllocation.assign(l1.element, l2.element, allocation)
         }
         break
+
       case Kind.Map:
         if (t1.kind === Kind.Map) {
           const m1 = <MapType> t1

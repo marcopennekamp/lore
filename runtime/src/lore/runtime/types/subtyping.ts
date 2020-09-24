@@ -30,11 +30,14 @@ export function isSubtype(t1: Type, t2: Type): boolean {
     case Kind.TypeVariable:
       if (isSubtype((<TypeVariable> t1).upperBound, t2)) return true
       break
+
     case Kind.Nothing:
       return true
+
     case Kind.Int:
       if (t2.kind === Kind.Real) return true
       break
+
     case Kind.Struct:
     case Kind.Trait:
       const d1 = <DeclaredType> t1
@@ -57,6 +60,7 @@ export function isSubtype(t1: Type, t2: Type): boolean {
         }
       }
       break
+
     case Kind.Intersection:
       if (t2.kind === Kind.Intersection) {
         if (intersectionSubtypeIntersection(<IntersectionType> t1, <IntersectionType> t2)) return true
@@ -64,6 +68,7 @@ export function isSubtype(t1: Type, t2: Type): boolean {
         if (intersectionSubtypeType(<IntersectionType> t1, t2)) return true
       }
       break
+
     case Kind.Sum:
       if (t2.kind === Kind.Sum) {
         if (sumSubtypeSum(<SumType> t1, <SumType> t2)) return true
@@ -71,18 +76,25 @@ export function isSubtype(t1: Type, t2: Type): boolean {
         if (sumSubtypeType(<SumType> t1, t2)) return true
       }
       break
+
     case Kind.Product:
       if (t2.kind === Kind.Product && productSubtypeProduct(<ProductType> t1, <ProductType> t2)) return true
       break
+
     case Kind.Component:
-      // TODO: New rule: { case (p1: ComponentType, t2) => isSubtype(p1.underlying.ownedBy, t2) },
-      if (
-        t2.kind === Kind.Component &&
-        isSubtype((<ComponentType> t1).underlying, (<ComponentType> t2).underlying)
-      ) {
-        return true
+      const c1 = <ComponentType> t1
+      if (t2.kind === Kind.Component) {
+        const c2 = <ComponentType> t2
+        if (isSubtype(c1.underlying, c2.underlying)) {
+          return true
+        }
+      } else {
+        if (isSubtype(c1.underlying.schema.ownedBy, t2)) {
+          return true
+        }
       }
       break
+
     case Kind.List:
       if (
         t2.kind === Kind.List &&
@@ -91,6 +103,7 @@ export function isSubtype(t1: Type, t2: Type): boolean {
         return true
       }
       break
+
     case Kind.Map:
       if (
         t2.kind === Kind.Map &&
@@ -107,8 +120,10 @@ export function isSubtype(t1: Type, t2: Type): boolean {
     case Kind.TypeVariable:
       if (isSubtype(t1, (<TypeVariable> t2).lowerBound)) return true
       break
+
     case Kind.Any:
       return true
+
     case Kind.Intersection:
       // t1 could be an intersection type, but then we'd already have checked it in the first switch and since we have
       // arrived here, it is clear that in that case the answer was not true. So we can safely only apply this rule
@@ -117,6 +132,7 @@ export function isSubtype(t1: Type, t2: Type): boolean {
         if (typeSubtypeIntersection(t1, <IntersectionType> t2)) return true
       }
       break
+
     case Kind.Sum:
       // t1 could be a sum type, but then we'd already have checked it in the first switch and since we have
       // arrived here, it is clear that in that case the answer was not true. So we can safely only apply this rule
