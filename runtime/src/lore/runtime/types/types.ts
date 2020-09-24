@@ -179,7 +179,7 @@ export function inheritedComponentTypes(declaredType: DeclaredType): Array<Compo
 
 export interface StructSchema extends DeclaredTypeSchema {
   declaredSupertypes: Array<TraitType>
-  // members
+  // TODO: members
 }
 
 export function structSchema(name: string, declaredSupertypes: Array<TraitType>, ownedBy: Type, isEntity: boolean): StructSchema {
@@ -191,27 +191,29 @@ export interface StructType extends DeclaredType {
   componentTypes: Array<ComponentType>
 }
 
-// TODO: Rename to "struct".
 export function struct(schema: StructSchema, componentTypes: Array<ComponentType>): StructType {
   // TODO: Is this array creation really necessary? This will slow down the instantiation of all entity structs.
   const supertypes = [...schema.declaredSupertypes, ...componentTypes]
   return { kind: Kind.Struct, schema, supertypes, componentTypes, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
 }
 
-// TODO: We need a way to create a struct type with ACTUAL component types dynamically at run-time. These component
-//       types will suffice for subtyping and such as they must subsume all inherited component types. There is thus
-//       likely no need to supply the compile-time component types of structs, except for correctness checking (which
-//       should perhaps be done for all members, including properties).
-//       Action plan: For each struct, create an instantiation method that also takes care of creating the struct type.
-//       We have one archetypal struct type also created during compilation, which gets exactly the component types
-//       that it has at compile-time. This archetypal struct type is referred to by multi-function parameters and such.
-//       The instantiated types are passed around with the values and used in fit checks on the left-hand side.
-
 
 export interface TraitSchema extends DeclaredTypeSchema {
+  declaredSupertypes: Array<TraitType>
   inheritedComponentTypes: Array<ComponentType>
+}
+
+export function traitSchema(
+  name: string, declaredSupertypes: Array<TraitType>, inheritedComponentTypes: Array<ComponentType>, ownedBy: Type, isEntity: boolean,
+): TraitSchema {
+  return { name, declaredSupertypes, inheritedComponentTypes, ownedBy, isEntity }
 }
 
 export interface TraitType extends DeclaredType {
   schema: TraitSchema
+}
+
+export function trait(schema: TraitSchema): TraitType {
+  const supertypes = [...schema.declaredSupertypes, ...schema.inheritedComponentTypes]
+  return { kind: Kind.Trait, schema, supertypes, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
 }

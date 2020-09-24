@@ -21,6 +21,8 @@ object StructTranspiler {
     *   4. An instantiation function which takes a members object and calculates the correct run-time type.
     */
   def transpile(tpe: StructType): Compilation[String] = {
+    // TODO: Transpile member definitions into the schema?
+
     val varSchema = TranspiledNames.typeSchema(tpe)
     val varDeclaredSupertypes = tpe.declaredSupertypes.map(TranspiledNames.declaredType)
     // TODO: Don't we have to take care that owned-by types are ordered? Otherwise, we might have an owned-by type
