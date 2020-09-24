@@ -25,7 +25,14 @@ object RuntimeApi {
     val component = s"$base.component"
     val list = s"$base.list"
     val map = s"$base.map"
-    val structType = s"$base.structType"
+    val struct = s"$base.struct"
+
+    // Type schemas.
+    object schema {
+      val base = s"${RuntimeApi.types.base}.schema"
+
+      val struct = s"$base.struct"
+    }
 
     // Unsafe constructors.
     object unsafe {

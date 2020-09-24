@@ -4,7 +4,7 @@ import { fits, fitsMonomorphic, fitsPolymorphic } from './fit.ts'
 import {
   any,
   boolean,
-  structType,
+  struct,
   component,
   int,
   intersection,
@@ -19,7 +19,7 @@ import {
   sumSimplified,
   unhashedProduct,
   unit,
-  variable,
+  variable, structSchema,
 } from './types.ts'
 import { typeOf } from './typeof.ts'
 
@@ -43,7 +43,14 @@ export default {
   component,
   list,
   map,
-  structType,
+  struct,
+  //trait,
+
+  // Type schemas.
+  schema: {
+    struct: structSchema,
+    //trait: traitSchema,
+  },
 
   // Unsafe constructors.
   unsafe: {

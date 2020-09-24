@@ -192,7 +192,7 @@ export interface StructType extends DeclaredType {
 }
 
 // TODO: Rename to "struct".
-export function structType(schema: StructSchema, componentTypes: Array<ComponentType>): StructType {
+export function struct(schema: StructSchema, componentTypes: Array<ComponentType>): StructType {
   // TODO: Is this array creation really necessary? This will slow down the instantiation of all entity structs.
   const supertypes = [...schema.declaredSupertypes, ...componentTypes]
   return { kind: Kind.Struct, schema, supertypes, componentTypes, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
