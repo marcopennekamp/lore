@@ -156,13 +156,14 @@ export function map(key: Type, value: Type): MapType {
 
 export interface DeclaredTypeSchema {
   name: string
+  supertraits: Array<TraitType>
   ownedBy: Type
   isEntity: boolean
 }
 
 export interface DeclaredType extends Type {
   schema: DeclaredTypeSchema
-  supertypes: Array<TraitType | ComponentType>
+  componentTypes: Array<ComponentType>
 }
 
 /**
@@ -172,48 +173,53 @@ export interface DeclaredType extends Type {
  */
 export function inheritedComponentTypes(declaredType: DeclaredType): Array<ComponentType> {
   if (declaredType.kind === Kind.Struct) return (<StructType> declaredType).componentTypes
-  else if (declaredType.kind === Kind.Trait) return (<TraitType> declaredType).schema.inheritedComponentTypes
+  else if (declaredType.kind === Kind.Trait) return (<TraitType> declaredType).componentTypes
   else return []
 }
 
 
 export interface StructSchema extends DeclaredTypeSchema {
-  declaredSupertypes: Array<TraitType>
   // TODO: members
 }
 
-export function structSchema(name: string, declaredSupertypes: Array<TraitType>, ownedBy: Type, isEntity: boolean): StructSchema {
-  return { name, declaredSupertypes, ownedBy, isEntity }
+export function structSchema(name: string, supertraits: Array<TraitType>, ownedBy: Type, isEntity: boolean): StructSchema {
+  return { name, supertraits, ownedBy, isEntity }
 }
 
+/**
+ * The type of a struct. For each struct that is instantiated, a new struct type is created, as the list of component
+ * types differs based on the actual components present at run-time.
+ */
 export interface StructType extends DeclaredType {
   schema: StructSchema
-  componentTypes: Array<ComponentType>
 }
 
 export function struct(schema: StructSchema, componentTypes: Array<ComponentType>): StructType {
-  // TODO: Is this array creation really necessary? This will slow down the instantiation of all entity structs.
-  const supertypes = [...schema.declaredSupertypes, ...componentTypes]
-  return { kind: Kind.Struct, schema, supertypes, componentTypes, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
+  return { kind: Kind.Struct, schema, componentTypes, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
 }
 
 
-export interface TraitSchema extends DeclaredTypeSchema {
-  declaredSupertypes: Array<TraitType>
-  inheritedComponentTypes: Array<ComponentType>
-}
+export interface TraitSchema extends DeclaredTypeSchema { }
 
 export function traitSchema(
-  name: string, declaredSupertypes: Array<TraitType>, inheritedComponentTypes: Array<ComponentType>, ownedBy: Type, isEntity: boolean,
+  name: string, supertraits: Array<TraitType>, ownedBy: Type, isEntity: boolean,
 ): TraitSchema {
-  return { name, declaredSupertypes, inheritedComponentTypes, ownedBy, isEntity }
+  return { name, supertraits, ownedBy, isEntity }
 }
 
+/**
+ * A trait type. Only one type is instantiated for each trait, as their supertypes are not dependent on run-time
+ * values. Component types could be kept in the TraitSchema, but to achieve symmetry with structs, they are kept
+ * in the TraitType. This has no adverse effect on memory (right now), because at most one trait type is created
+ * for each trait.
+ *
+ * The component types of a trait correspond to the "inheritedComponentTypes" of the compiler. That is, we only
+ * include component types that are not subsumed by other component types, keeping the list at a minimum.
+ */
 export interface TraitType extends DeclaredType {
   schema: TraitSchema
 }
 
-export function trait(schema: TraitSchema): TraitType {
-  const supertypes = [...schema.declaredSupertypes, ...schema.inheritedComponentTypes]
-  return { kind: Kind.Trait, schema, supertypes, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
+export function trait(schema: TraitSchema, componentTypes: Array<ComponentType>): TraitType {
+  return { kind: Kind.Trait, schema, componentTypes, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
 }

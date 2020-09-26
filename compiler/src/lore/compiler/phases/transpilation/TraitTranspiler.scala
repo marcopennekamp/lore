@@ -11,24 +11,12 @@ object TraitTranspiler {
     * also have a schema.
     */
   def transpile(tpe: TraitType): Compilation[String] = {
-    // TODO: Can't we solve most of the schema generation in a shared DeclaredTypeTranspiler method?
-    val varSchema = TranspiledNames.typeSchema(tpe)
-    val varDeclaredSupertypes = tpe.declaredSupertypes.map(TranspiledNames.declaredType)
-    val inheritedComponentTypes = tpe.inheritedComponentTypes.map(RuntimeTypeTranspiler.transpile(_)(Map.empty))
-    // TODO: The same applies here about owned-by types as in StructTranspiler.
-    val ownedBy = RuntimeTypeTranspiler.transpile(tpe.ownedBy)(Map.empty)
-    val schema =
-      s"""const $varSchema = ${RuntimeApi.types.schema.`trait`}(
-         |  '${tpe.name}',
-         |  [${varDeclaredSupertypes.mkString(", ")}],
-         |  [${inheritedComponentTypes.mkString(", ")}],
-         |  $ownedBy,
-         |  ${tpe.isEntity},
-         |);""".stripMargin
+    val (varSchema, schema) = DeclaredTypeTranspiler.transpileSchema(tpe, RuntimeApi.types.schema.`trait`)
 
     val varType = TranspiledNames.declaredType(tpe)
+    val componentTypes = tpe.inheritedComponentTypes.toVector.map(RuntimeTypeTranspiler.transpile(_)(Map.empty))
     s"""$schema
-       |const $varType = ${RuntimeApi.types.`trait`}($varSchema);
+       |const $varType = ${RuntimeApi.types.`trait`}($varSchema, [${componentTypes.mkString(", ")}]);
        |""".stripMargin.compiled
   }
 

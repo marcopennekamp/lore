@@ -22,20 +22,7 @@ object StructTranspiler {
     */
   def transpile(tpe: StructType): Compilation[String] = {
     // TODO: Transpile member definitions into the schema?
-
-    val varSchema = TranspiledNames.typeSchema(tpe)
-    val varDeclaredSupertypes = tpe.declaredSupertypes.map(TranspiledNames.declaredType)
-    // TODO: Don't we have to take care that owned-by types are ordered? Otherwise, we might have an owned-by type
-    //       A in a schema, but A is undefined at that point and only later defined. Do we have to use lazy loading
-    //       here? Or add owned-by types to the DeclarationResolver?
-    val ownedBy = RuntimeTypeTranspiler.transpile(tpe.ownedBy)(Map.empty)
-    val schema =
-      s"""const $varSchema = ${RuntimeApi.types.schema.struct}(
-         |  '${tpe.name}',
-         |  [${varDeclaredSupertypes.mkString(", ")}],
-         |  $ownedBy,
-         |  ${tpe.isEntity},
-         |);""".stripMargin
+    val (varSchema, schema) = DeclaredTypeTranspiler.transpileSchema(tpe, RuntimeApi.types.schema.struct)
 
     val varNewtype = TranspiledNames.newType(tpe)
     val varArchetype = TranspiledNames.declaredType(tpe)
@@ -44,7 +31,6 @@ object StructTranspiler {
       s"""function $varNewtype(componentTypes) {
          |  return ${RuntimeApi.types.struct}($varSchema, componentTypes);
          |}
-         |
          |const $varArchetype = $varNewtype([${archetypeComponentTypes.mkString(", ")}]);""".stripMargin
     } else {
       s"""const $varArchetype = ${RuntimeApi.types.struct}($varSchema, []);"""
@@ -54,7 +40,9 @@ object StructTranspiler {
     val componentNames = tpe.definition.components.map(_.name)
     val instantiatedType = if (tpe.isEntity) {
       // Instantiates the object with the actual component types, which are retrieved using typeOf.
-      s"$varNewtype([${componentNames.map(name => s"${RuntimeApi.types.typeOf}(members.$name)").mkString(", ")}])"
+      s"$varNewtype([${componentNames.map { name =>
+        s"${RuntimeApi.types.component}(${RuntimeApi.types.typeOf}(members.$name))"
+      }.mkString(", ")}])"
     } else varArchetype
     val instantiationFunction = s"""function $varInstantiate(members) {
        |  return ${RuntimeApi.values.`object`.create}(members, $instantiatedType);

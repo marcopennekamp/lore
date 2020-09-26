@@ -49,12 +49,16 @@ export function isSubtype(t1: Type, t2: Type): boolean {
         // component types.
         if (d1.schema === d2.schema) return true
 
-        const supertypes = d1.supertypes
-        for (let i = 0; i < supertypes.length; i += 1) {
-          if (isSubtype(supertypes[i], d2)) return true
+        const supertraits = d1.schema.supertraits
+        for (let i = 0; i < supertraits.length; i += 1) {
+          if (isSubtype(supertraits[i], d2)) return true
+        }
+        const componentTypes = d1.componentTypes
+        for (let i = 0; i < componentTypes.length; i += 1) {
+          if (isSubtype(componentTypes[i], d2)) return true
         }
       } else if (t2.kind === Kind.Component && d1.schema.isEntity) {
-        const componentTypes = inheritedComponentTypes(d1)
+        const componentTypes = d1.componentTypes
         for (let i = 0; i < componentTypes.length; i += 1) {
           if (isSubtype(componentTypes[i], t2)) return true
         }

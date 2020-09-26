@@ -20,6 +20,9 @@ function areEqual(p1: Plane, p2: Plane): Boolean = p1.model == p2.model & p1.cap
 //       assume that defining areEqual(Bird, Plane) covers all cases, while he/she leaves out the (Plane, Bird) case
 //       without encountering any warning. This problem might not even be discovered at first, if only bird == plane
 //       comparisons are used, and only later plane == bird comparisons are added.
+// Idea: This could maybe be solved once we have a macro system. We could allow creating arbitrary keywords for
+//       functions and such and then implement a "symmetric" keyword that declares for a function over (a, b) another
+//       function over (b, a).
 function areEqual(bird: Bird, plane: Plane): Boolean = bird.wingspan == plane.wingspan
 function areEqual(plane: Plane, bird: Bird): Boolean = bird == plane
 
@@ -32,7 +35,6 @@ function width(shape: Shape): Real
 function height(shape: Shape): Real
 
 // Methods.
-// TODO: The dispatch doesn't work here yet because struct subtyping with traits isn't implemented in the runtime yet.
 function area(shape: Shape): Real = width(shape) * height(shape)
 function isLessThan(s1: Shape, s2: Shape): Boolean = area(s1) < area(s2)
 function isLessThanOrEqual(s1: Shape, s2: Shape): Boolean = area(s1) <= area(s2)

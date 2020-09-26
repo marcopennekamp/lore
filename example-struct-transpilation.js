@@ -9,7 +9,7 @@ struct Test implements A {
 
 const lore_schema_Test = Lore.types.schema.struct(
   "Test",           // name
-  [lore_type_A],    // declared supertypes
+  [lore_type_A],    // supertraits
   Lore.types.any,   // ownedBy
   true,             // isEntity
 );
