@@ -4,13 +4,15 @@ Structs:
 - Struct declaration:
   - Implementing any number of traits
     - Compiler ✓
-    - Runtime X
+    - Runtime ✓
   - Properties:
     - mutable and immutable ✓
     - delimited by newlines or commas ✓
   - Components
     - Compiler ✓
-    - Runtime X
+    - Runtime:
+      - Instantiation ✓
+      - Dynamic Retrieval x
 - Construction:
   - call syntax ✓
   - map syntax
@@ -25,7 +27,7 @@ Traits:
     - From component types ✓
     - Inheritance is implicitly passed down the hierarchy ✓
     - Runtime:
-      - Subtyping rules and hierarchies
+      - Subtyping rules ✓
       - Test and possibly improve performance 
 - Ownership ✓
   - TODO: Do more testing.
@@ -42,7 +44,7 @@ Entities:
     - Test ownership during struct instantiation.
 
 Cleanup:
-- Replace Lists with Vectors.
+- Replace Lists with Vectors. ✓
 - Replace assertions with proper CompilationExceptions. Report the position with a CompilationException, if possible.
 
 NEXT:
