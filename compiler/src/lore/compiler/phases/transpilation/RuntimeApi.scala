@@ -1,5 +1,8 @@
 package lore.compiler.phases.transpilation
 
+// TODO: Change the runtime API so that we have list.type instead of types.list and so on. Essentially structure
+//       the API alongside semantics first instead of a type/value distinction.
+
 object RuntimeApi {
   private val base = "Lore"
 
@@ -82,6 +85,7 @@ object RuntimeApi {
       val base = s"${RuntimeApi.values.base}.object"
 
       val create = s"$base.create"
+      val retrieve = s"$base.retrieve"
     }
 
     // Core functions operating on values of any type.

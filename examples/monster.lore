@@ -13,21 +13,51 @@ struct Bass implements Fish {
 }
 function name(bass: Bass): String = bass.name
 
-// A Monster made of several different parts, but currently only a fish... Maybe its leg!
+struct Trout implements Fish
+function name(trout: Trout): String = 'Fred'
+
+trait Extremity
+trait Limb extends Extremity
+trait Armish extends Limb
+trait AlmostAnArm extends Armish
+struct Arm implements AlmostAnArm
+struct MANDIBLE implements AlmostAnArm
+struct Head
+struct Torso
+
+function toString(extremity: Extremity): String = 'extremity'
+function toString(mandible: MANDIBLE): String = 'MANDIBLE'
+
+// A Monster made of several different parts, but currently only a fish... Maybe its Head!
 struct Monster {
   component Fish
+  component Extremity
+  component Head
+  component Torso
 }
 
 action react(entity: Monster) {
   println('A monster with a fish named ${name(entity.Fish)} sticking out of it!!')
 }
 
+action react(entity: Monster & +MANDIBLE) {
+  println('FUCK! IT HAS A ${entity.MANDIBLE} as an ${entity.Extremity}!!!')
+}
+
 action react(entity: Monster & +Bass) {
   println('Slap that bass called ${entity.Bass.name}!!!')
+  let mut i = 0
+  let list = while (i < 100) {
+    i += 1
+    entity.Head
+    entity.Torso
+    entity.Extremity
+    entity.Bass.name
+  }
+  println(list)
 }
 
 action test() {
-  let fish = Bass('Les')
-  let monster = Monster(fish)
-  react(monster)
+  react(Monster(Bass('Les'), Arm(), Head(), Torso()))
+  react(Monster(Trout(), MANDIBLE(), Head(), Torso()))
 }

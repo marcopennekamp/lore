@@ -2,6 +2,7 @@ package lore.compiler.phases.transpilation
 
 import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.ToCompilationExtension
+import lore.compiler.semantics.structures.MemberDefinition
 import lore.compiler.types.StructType
 
 object StructTranspiler {
@@ -21,8 +22,17 @@ object StructTranspiler {
     *   4. An instantiation function which takes a members object and calculates the correct run-time type.
     */
   def transpile(tpe: StructType): Compilation[String] = {
-    // TODO: Transpile member definitions into the schema?
-    val (varSchema, schema) = DeclaredTypeTranspiler.transpileSchema(tpe, RuntimeApi.types.schema.struct)
+    def transpileMemberDefinition(member: MemberDefinition): String = s"{ name: '${member.name}' }"
+    val propertyDefinitions = tpe.definition.properties.map(transpileMemberDefinition)
+    val componentDefinitions = tpe.definition.components.map(transpileMemberDefinition)
+    val (varSchema, schema) = DeclaredTypeTranspiler.transpileSchema(
+      tpe,
+      RuntimeApi.types.schema.struct,
+      Vector(
+        s"[${propertyDefinitions.mkString(", ")}]",
+        s"[${componentDefinitions.mkString(", ")}]",
+      ),
+    )
 
     val varNewtype = TranspiledNames.newType(tpe)
     val varArchetype = TranspiledNames.declaredType(tpe)
@@ -41,11 +51,11 @@ object StructTranspiler {
     val instantiatedType = if (tpe.isEntity) {
       // Instantiates the object with the actual component types, which are retrieved using typeOf.
       s"$varNewtype([${componentNames.map { name =>
-        s"${RuntimeApi.types.component}(${RuntimeApi.types.typeOf}(members.$name))"
+        s"${RuntimeApi.types.component}(${RuntimeApi.types.typeOf}(components.$name))"
       }.mkString(", ")}])"
     } else varArchetype
-    val instantiationFunction = s"""function $varInstantiate(members) {
-       |  return ${RuntimeApi.values.`object`.create}(members, $instantiatedType);
+    val instantiationFunction = s"""function $varInstantiate(members, components) {
+       |  return ${RuntimeApi.values.`object`.create}(members, components, $instantiatedType);
        |}""".stripMargin
 
     s"""$schema

@@ -2,12 +2,13 @@ package lore.compiler.phases.transpilation
 
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException, Error}
-import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.RuntimeTypeVariables
+import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.{RuntimeTypeVariables, transpile}
 import lore.compiler.phases.transpilation.Transpilation.Transpilation
 import lore.compiler.phases.transpilation.TranspiledChunk.{JsCode, JsExpr}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.functions.{DynamicCallTarget, FunctionInstance}
+import lore.compiler.semantics.structures.MemberDefinition
 import lore.compiler.types.{BasicType, ListType, MapType, ProductType, Type}
 
 case class UnsupportedTranspilation(expression: Expression) extends Error(expression) {
@@ -44,9 +45,15 @@ private[transpilation] class FunctionTranspilationVisitor()(
   override def visit(expression: VariableAccess): Transpilation = Transpilation.expression(expression.variable.transpiledName)
 
   override def visit(expression: MemberAccess)(instance: TranspiledChunk): Transpilation = {
-    // TODO: This is only a naive implementation which may be temporary. We will ultimately have to ensure that
-    //       this works in all cases and perhaps complicate this.
-    instance.mapExpression(instance => s"$instance.${expression.member.name}").compiled
+    instance.mapExpression { instance =>
+      val member = expression.member
+      if (member.isComponent) {
+        val searchTarget = RuntimeTypeTranspiler.transpile(member.tpe)(Map.empty)
+        s"${RuntimeApi.values.`object`.retrieve}($instance, $searchTarget)"
+      } else {
+        s"$instance.${member.name}"
+      }
+    }.compiled
   }
 
   override def visit(literal: Literal): Transpilation = literal.tpe match {
@@ -82,11 +89,18 @@ private[transpilation] class FunctionTranspilationVisitor()(
   }
 
   override def visit(expression: Instantiation)(arguments: Vector[TranspiledChunk]): Transpilation = {
+    def transpileMembers(list: Vector[(MemberDefinition, JsExpr)]): String = {
+      list.map { case (member, jsExpr) => s"${member.name}: $jsExpr" }.mkString(", ")
+    }
+
     Transpilation.combined(arguments) { argumentJsExprs =>
-      val members = expression.arguments.map(_.member)
-      val objectProperties = members.zip(argumentJsExprs).map { case (member, jsExpr) => s"${member.name}: $jsExpr" }
+      val members = expression.arguments.map(_.member).zip(argumentJsExprs)
+      var arguments = Vector(s"{ ${transpileMembers(members.filterNot(_._1.isComponent))} }")
+      if (expression.struct.tpe.isEntity) {
+        arguments = arguments :+ s"{ ${transpileMembers(members.filter(_._1.isComponent))} }"
+      }
       val varInstantiate = TranspiledNames.instantiate(expression.struct.tpe)
-      s"$varInstantiate({ ${objectProperties.mkString(",")} })"
+      s"$varInstantiate(${arguments.mkString(", ")})"
     }
   }
 

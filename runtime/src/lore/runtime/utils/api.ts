@@ -20,8 +20,8 @@ export default {
     },
   },
   typeMap: {
-    create<V>(): HashMap<Type, V> {
-      return new HashMap<Type, V>(
+    create<K extends Type, V>(): HashMap<K, V> {
+      return new HashMap<K, V>(
         (type) => type.hash,
         areEqual,
       )

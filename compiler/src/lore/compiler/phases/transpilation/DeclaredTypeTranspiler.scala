@@ -20,7 +20,9 @@ object DeclaredTypeTranspiler {
   /**
     * Transpiles the schema creation of the declared type, returning the schema variable and schema code.
     */
-  def transpileSchema(tpe: DeclaredType, schemaFunction: String): (String, String) = {
+  def transpileSchema(
+    tpe: DeclaredType, schemaFunction: String, additionalArguments: Vector[String] = Vector.empty
+  ): (String, String) = {
     val varSchema = TranspiledNames.typeSchema(tpe)
     val varDeclaredSupertypes = tpe.declaredSupertypes.map(TranspiledNames.declaredType)
     // TODO: Don't we have to take care that owned-by types are ordered? Otherwise, we might have an owned-by type
@@ -33,6 +35,7 @@ object DeclaredTypeTranspiler {
          |  [${varDeclaredSupertypes.mkString(", ")}],
          |  $ownedBy,
          |  ${tpe.isEntity},
+         |  ${additionalArguments.mkString(", ")}
          |);""".stripMargin
     (varSchema, schema)
   }

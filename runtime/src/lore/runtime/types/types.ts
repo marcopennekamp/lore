@@ -10,6 +10,7 @@ import {
 } from '../utils/hash.ts'
 import { allExcluding, flattenedUnique } from './util.ts'
 import { isSubtype } from './subtyping.ts'
+import { HashMap } from '../utils/HashMap.ts'
 
 export interface Type extends Hashed {
   kind: Kind
@@ -166,24 +167,36 @@ export interface DeclaredType extends Type {
   componentTypes: Array<ComponentType>
 }
 
-/**
- * Returns a list of all component types that the declared type inherits, excluding component types that are fully
- * subsumed. A struct's actual component types are always all necessary inherited component types, since the struct
- * has to satisfy all the component types it inherits from.
- */
-export function inheritedComponentTypes(declaredType: DeclaredType): Array<ComponentType> {
-  if (declaredType.kind === Kind.Struct) return (<StructType> declaredType).componentTypes
-  else if (declaredType.kind === Kind.Trait) return (<TraitType> declaredType).componentTypes
-  else return []
-}
 
+export interface MemberDefinition {
+  name: string
+  // TODO: type?
+}
 
 export interface StructSchema extends DeclaredTypeSchema {
-  // TODO: members
+  properties: Array<MemberDefinition>
+  components: Array<MemberDefinition>
+
+  /**
+   * A cache that maps a declared type, used by the compiler to access a given component, to this struct's corresponding
+   * component name. The cache significantly increases access performance, because without it we will have to resort to
+   * checking subtypes. This cache only has to exist once per schema, as the actual run-time component types have no
+   * bearing on field names.
+   *
+   * The cache is instantiated during the first retrieval.
+   */
+  componentAccessCache?: HashMap<DeclaredType, string>
 }
 
-export function structSchema(name: string, supertraits: Array<TraitType>, ownedBy: Type, isEntity: boolean): StructSchema {
-  return { name, supertraits, ownedBy, isEntity }
+export function structSchema(
+  name: string,
+  supertraits: Array<TraitType>,
+  ownedBy: Type,
+  isEntity: boolean,
+  properties: Array<MemberDefinition>,
+  components: Array<MemberDefinition>,
+): StructSchema {
+  return { name, supertraits, ownedBy, isEntity, properties, components }
 }
 
 /**
@@ -195,6 +208,9 @@ export interface StructType extends DeclaredType {
 }
 
 export function struct(schema: StructSchema, componentTypes: Array<ComponentType>): StructType {
+  // TODO: The hash of the struct type must not only depend on the name, but also on the component types. Otherwise,
+  //       structs with different component types altogether get different hashes, which is bad for dispatch cache
+  //       performance.
   return { kind: Kind.Struct, schema, componentTypes, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
 }
 
