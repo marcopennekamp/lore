@@ -47,6 +47,10 @@ action react(entity: Monster & +MANDIBLE) {
 action react(entity: Monster & +Bass) {
   println('Slap that bass called ${entity.Bass.name}!!!')
   let mut i = 0
+  // TODO: The iteration count scales superlinearly because our current list implementation copies the whole array with
+  //       every appends operation. We should try playing with the count here once we have a sane list implementation...
+  //       We might even optimize list construction in loops by first constructing a plain array, then passing it to
+  //       the list.
   let list = while (i < 100) {
     i += 1
     entity.Head
@@ -59,5 +63,11 @@ action react(entity: Monster & +Bass) {
 
 action test() {
   react(Monster(Bass('Les'), Arm(), Head(), Torso()))
-  react(Monster(Trout(), MANDIBLE(), Head(), Torso()))
+
+  let mut i = 0
+  let monster2 = Monster(Trout(), MANDIBLE(), Head(), Torso())
+  while (i < 100) {
+    react(monster2)
+    i += 1
+  }
 }

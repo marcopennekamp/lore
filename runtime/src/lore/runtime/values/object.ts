@@ -53,19 +53,14 @@ export const api = {
 
     const cachedName = schema.componentAccessCache.get(searchTarget)
     if (cachedName) {
-      console.log('cached!')
       return components[cachedName]
     } else {
       const componentDefinitions = schema.components
       for (let i = 0; i < componentDefinitions.length; i += 1) {
         const name = componentDefinitions[i].name
-        console.log(name)
         const component: ObjectValue = components[name]
-        console.log(component)
         if (isSubtype(component.lore$type, searchTarget)) {
-          console.log('IS SUBTYPE')
-          console.log(components[name])
-          //schema.componentAccessCache.set(searchTarget, name)
+          schema.componentAccessCache.set(searchTarget, name)
           return component
         }
       }

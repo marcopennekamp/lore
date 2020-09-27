@@ -36,19 +36,31 @@ export function isSubtype(t1: Type, t2: Type): boolean {
       if (t2.kind === Kind.Trait || t2.kind === Kind.Struct) {
         const d2 = <DeclaredType> t2
 
-        // If the schemas of these two declared types are equal, we have the same type. The equality might not have
-        // been caught by the === check above because a struct type can have multiple instances with different actual
-        // component types.
-        // TODO: Now that areEqual also depends on the run-time component types, do we have to check this here as well?
-        //       What worries me is that t1 <= t2 && t2 <= t1 should imply areEqual(t1, t2), but with the changes to
-        //       component type handling, it doesn't. On the other hand, won't the struct on the left side always
-        //       have the run-time components while the struct on the right side will be an archetype? So it would be
-        //       fine without the check. But then, if we ever introduce a feature where we want to have a run-time
-        //       struct type on the right-hand side, is a struct A with a component C1 a subtype of a struct A that
-        //       has a component C2 with C1 < C2? It isn't, is it? We couldn't assign the former struct to a variable
-        //       that accepts the latter. Of course, we cannot have such variables declared since struct types are all
-        //       the same at compile-time. But run-time subtyping should be SOUND and we need this for that.
-        if (d1.schema === d2.schema) return true
+        // If the schemas of these two declared types are equal, we have the same type most of the time. The equality
+        // might not have been caught by the === check above because a struct type can have multiple instances with
+        // different actual component types.
+        // We also have to take component types into account when deciding subtyping, however. Let's say we have a
+        // struct a1: A with a component C1 and another struct a2: A with a component C2. Given C2 < C1, is a1's
+        // struct type a subtype of a2's struct type?
+        // It is not. We couldn't assign a1 to a variable that explicitly expects a type like a2. This is of no
+        // importance at compile-time, of course, since struct types are all "archetypes" then. But to get sound
+        // run-time subtyping, we also have to look at the components.
+        // Fortunately, we only have to do that if the right-hand type t2 is not an archetype and only if the type
+        // is an entity, of course. Otherwise, checking the schema will suffice.
+        if (d1.schema === d2.schema) {
+          // We could "optimize" this check by requiring d2 to be a struct, but equal traits are already caught
+          // by the reference equality check above. Also, d1 will almost never be a trait, so if the schemas are
+          // equal, we can already be almost 100% certain that we are dealing with structs.
+          // TODO: Implement archetype check.
+          //       if (!d2.isArchetype) { ... }
+          const componentTypes1 = d1.componentTypes
+          const componentTypes2 = d2.componentTypes
+          for (let i = 0; i < componentTypes1.length; i += 1) {
+            if (!isSubtype(componentTypes1[i], componentTypes2[i])) return false
+          }
+
+          return true
+        }
 
         const supertraits = d1.schema.supertraits
         for (let i = 0; i < supertraits.length; i += 1) {

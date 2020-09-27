@@ -207,6 +207,12 @@ export interface StructType extends DeclaredType {
   schema: StructSchema
 }
 
+// TODO: Interning struct types might bring big performance gains for multiple dispatch, because the more components a
+//       struct has, the more expensive the areEqual test gets. This test HAS to be performed at least once per
+//       dispatch cache access. Interned struct types would allow us to decide struct type equality via referential
+//       equality as there would be exactly one struct type per component type combination. Many structs may only ever
+//       have their archetype, too, which would further speed up type checking.
+
 export function struct(schema: StructSchema, componentTypes: Array<ComponentType>): StructType {
   // TODO: The hash of the struct type must not only depend on the name, but also on the component types. Otherwise,
   //       structs with different component types altogether get different hashes, which is bad for dispatch cache
