@@ -37,7 +37,28 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
   (t1: BooleanType, t2: BooleanType) => true,
   (t1: StringType, t2: StringType) => true,
 
-  (t1: StructType, t2: StructType) => t1.schema === t2.schema,
+  (t1: StructType, t2: StructType) => {
+    // Struct type equality is more complicated than one might expect due to the influence of component types. A struct
+    // type can only be equal to another struct type if all of their component types agree. Otherwise, dispatch might
+    // be handled differently based on the component type and thus the types cannot be equal, especially in respect to
+    // the dispatch cache. Of course, we only need to consider components when the schema indicates that the types are
+    // entities.
+    if (t1.schema === t2.schema) {
+      if (t1.schema.isEntity) {
+        // For all intents and purposes, we can assume that the component type arrays are both of equal length and are
+        // in the same order. If this is not the case, the struct types have been instantiated incorrectly.
+        const componentTypes1 = t1.componentTypes
+        const componentTypes2 = t2.componentTypes
+        for (let i = 0; i < componentTypes1.length; i += 1) {
+          if (!areEqual(componentTypes1[i], componentTypes2[i])) {
+            return false
+          }
+        }
+      }
+      return true
+    }
+    return false
+  },
   (t1: TraitType, t2: TraitType) => false, // If the traits are not referentially equal, they cannot be equal.
 
   // To prove that two sum or intersection types are equal, we find for each part in t1 an equal part in t2

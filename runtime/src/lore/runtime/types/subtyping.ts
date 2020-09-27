@@ -1,13 +1,5 @@
 import {
-  ComponentType,
-  DeclaredType, inheritedComponentTypes,
-  IntersectionType,
-  ListType,
-  MapType,
-  ProductType,
-  SumType,
-  Type,
-  TypeVariable,
+  ComponentType, DeclaredType, IntersectionType, ListType, MapType, ProductType, SumType, Type, TypeVariable,
 } from './types.ts'
 import { Kind } from './kinds.ts'
 import { areEqual } from './equality.ts'
@@ -47,6 +39,15 @@ export function isSubtype(t1: Type, t2: Type): boolean {
         // If the schemas of these two declared types are equal, we have the same type. The equality might not have
         // been caught by the === check above because a struct type can have multiple instances with different actual
         // component types.
+        // TODO: Now that areEqual also depends on the run-time component types, do we have to check this here as well?
+        //       What worries me is that t1 <= t2 && t2 <= t1 should imply areEqual(t1, t2), but with the changes to
+        //       component type handling, it doesn't. On the other hand, won't the struct on the left side always
+        //       have the run-time components while the struct on the right side will be an archetype? So it would be
+        //       fine without the check. But then, if we ever introduce a feature where we want to have a run-time
+        //       struct type on the right-hand side, is a struct A with a component C1 a subtype of a struct A that
+        //       has a component C2 with C1 < C2? It isn't, is it? We couldn't assign the former struct to a variable
+        //       that accepts the latter. Of course, we cannot have such variables declared since struct types are all
+        //       the same at compile-time. But run-time subtyping should be SOUND and we need this for that.
         if (d1.schema === d2.schema) return true
 
         const supertraits = d1.schema.supertraits
