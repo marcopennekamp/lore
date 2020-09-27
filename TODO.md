@@ -12,7 +12,8 @@ Structs:
     - Compiler ✓
     - Runtime:
       - Instantiation ✓
-      - Dynamic Retrieval x
+      - Dynamic Retrieval ✓
+      - Intern struct types
 - Construction:
   - call syntax ✓
   - map syntax
