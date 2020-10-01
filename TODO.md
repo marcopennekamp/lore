@@ -39,7 +39,7 @@ Entities:
   - Passed down via inheritance, explicitly (re-)declared ✓
   - Access to the owner's type through component types ✓
   - Runtime:
-    - Test ownership during struct instantiation.
+    - Test ownership during struct instantiation. ✓
 
 Cleanup:
 - Replace Lists with Vectors. ✓

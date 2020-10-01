@@ -1,0 +1,15 @@
+trait A
+struct A1 implements A
+struct A2 implements A
+
+trait B owned by +A
+struct B1 implements B owned by +A1
+
+struct E { component A, component B }
+
+action test() {
+  let a: A = A2()
+  let b: B = B1()
+  E(a, b)  // This should fail with an error at run-time.
+  ()
+}

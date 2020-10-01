@@ -13,6 +13,7 @@ import { isSubtype } from './subtyping.ts'
 import { HashMap } from '../utils/HashMap.ts'
 import { LazyValue } from '../utils/LazyValue.ts'
 
+// TODO: Create a toString function for types.
 export interface Type extends Hashed {
   kind: Kind
 }
@@ -228,10 +229,28 @@ export interface StructType extends DeclaredType {
 //       have their archetype, too, which would further speed up type checking.
 
 export function struct(schema: StructSchema, componentTypes: Array<ComponentType>, isArchetype: boolean): StructType {
-  // TODO: The hash of the struct type must not only depend on the name, but also on the component types. Otherwise,
-  //       structs with different component types altogether get different hashes, which is bad for dispatch cache
-  //       performance.
-  return { kind: Kind.Struct, schema, componentTypes, isArchetype, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
+  const type: StructType = {
+    kind: Kind.Struct,
+    schema,
+    componentTypes,
+    isArchetype,
+    // TODO: The hash of the struct type must not only depend on the name, but also on the component types. Otherwise,
+    //       structs with different component types altogether get different hashes, which is bad for dispatch cache
+    //       performance.
+    hash: stringHashWithSeed(schema.name, 0x38ba128e),
+  }
+
+  // Check that all component types can be owned by the given struct.
+  for (let i = 0; i < componentTypes.length; i += 1) {
+    const componentType = componentTypes[i]
+    const ownedBy = componentType.underlying.schema.ownedBy.value()
+    if (!isSubtype(type, ownedBy, false)) {
+      const componentTypeNames = componentTypes.map(c => c.underlying.schema.name)
+      throw Error(`The struct type ${schema.name} with the components ${componentTypeNames.join(', ')} cannot own the component ${componentType.underlying.schema.name}, which has an owned-by type of ${ownedBy}.`)
+    }
+  }
+
+  return type
 }
 
 
