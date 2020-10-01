@@ -165,6 +165,12 @@ export interface DeclaredTypeSchema {
 export interface DeclaredType extends Type {
   schema: DeclaredTypeSchema
   componentTypes: Array<ComponentType>
+
+  /**
+   * Whether this declared type is the one that represents the compile-time type, i.e. its component types are
+   * exactly equal to the compile-time component types.
+   */
+  isArchetype: boolean
 }
 
 
@@ -213,11 +219,11 @@ export interface StructType extends DeclaredType {
 //       equality as there would be exactly one struct type per component type combination. Many structs may only ever
 //       have their archetype, too, which would further speed up type checking.
 
-export function struct(schema: StructSchema, componentTypes: Array<ComponentType>): StructType {
+export function struct(schema: StructSchema, componentTypes: Array<ComponentType>, isArchetype: boolean): StructType {
   // TODO: The hash of the struct type must not only depend on the name, but also on the component types. Otherwise,
   //       structs with different component types altogether get different hashes, which is bad for dispatch cache
   //       performance.
-  return { kind: Kind.Struct, schema, componentTypes, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
+  return { kind: Kind.Struct, schema, componentTypes, isArchetype, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
 }
 
 
@@ -231,17 +237,16 @@ export function traitSchema(
 
 /**
  * A trait type. Only one type is instantiated for each trait, as their supertypes are not dependent on run-time
- * values. Component types could be kept in the TraitSchema, but to achieve symmetry with structs, they are kept
- * in the TraitType. This has no adverse effect on memory (right now), because at most one trait type is created
- * for each trait.
+ * values. Thus, a trait type is also always an archetype. Component types could be kept in the TraitSchema,
+ * but to achieve symmetry with structs, they are kept in the TraitType.
  *
  * The component types of a trait correspond to the "inheritedComponentTypes" of the compiler. That is, we only
- * include component types that are not subsumed by other component types, keeping the list at a minimum.
+ * include component types that are not subsumed by other component types, keeping a minimal version of the list.
  */
 export interface TraitType extends DeclaredType {
   schema: TraitSchema
 }
 
 export function trait(schema: TraitSchema, componentTypes: Array<ComponentType>): TraitType {
-  return { kind: Kind.Trait, schema, componentTypes, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
+  return { kind: Kind.Trait, schema, componentTypes, isArchetype: true, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
 }

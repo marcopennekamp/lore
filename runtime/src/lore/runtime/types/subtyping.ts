@@ -51,12 +51,12 @@ export function isSubtype(t1: Type, t2: Type): boolean {
           // We could "optimize" this check by requiring d2 to be a struct, but equal traits are already caught
           // by the reference equality check above. Also, d1 will almost never be a trait, so if the schemas are
           // equal, we can already be almost 100% certain that we are dealing with structs.
-          // TODO: Implement archetype check.
-          //       if (!d2.isArchetype) { ... }
-          const componentTypes1 = d1.componentTypes
-          const componentTypes2 = d2.componentTypes
-          for (let i = 0; i < componentTypes1.length; i += 1) {
-            if (!isSubtype(componentTypes1[i], componentTypes2[i])) return false
+          if (!d2.isArchetype) {
+            const componentTypes1 = d1.componentTypes
+            const componentTypes2 = d2.componentTypes
+            for (let i = 0; i < componentTypes1.length; i += 1) {
+              if (!isSubtype(componentTypes1[i], componentTypes2[i])) return false
+            }
           }
 
           return true

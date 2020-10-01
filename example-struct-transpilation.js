@@ -14,13 +14,13 @@ const lore_schema_Test = Lore.types.schema.struct(
   true,             // isEntity
 );
 
-function lore_newtype_Test(componentTypes) {
-  return Lore.types.struct(lore_schema_Test, componentTypes);
+function lore_newtype_Test(componentTypes, isArchetype) {
+  return Lore.types.struct(lore_schema_Test, componentTypes, isArchetype);
 }
 
-const lore_type_Test = lore_newtype_Test([Lore.types.component(lore_types_C)]);
+const lore_type_Test = lore_newtype_Test([Lore.types.component(lore_types_C)], true);
 
 function lore_instantiate_Test(members) {
-  const tpe = lore_newtype_Test([members.C.lore$type]);
+  const tpe = lore_newtype_Test([members.C.lore$type], false);
   return Lore.values.object.create(members, tpe);
 }

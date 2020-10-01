@@ -38,12 +38,12 @@ object StructTranspiler {
     val varArchetype = TranspiledNames.declaredType(tpe)
     val definitions = if (tpe.isEntity) {
       val archetypeComponentTypes = tpe.componentSupertypes.map(RuntimeTypeTranspiler.transpile(_)(Map.empty))
-      s"""function $varNewtype(componentTypes) {
-         |  return ${RuntimeApi.types.struct}($varSchema, componentTypes);
+      s"""function $varNewtype(componentTypes, isArchetype) {
+         |  return ${RuntimeApi.types.struct}($varSchema, componentTypes, isArchetype);
          |}
-         |const $varArchetype = $varNewtype([${archetypeComponentTypes.mkString(", ")}]);""".stripMargin
+         |const $varArchetype = $varNewtype([${archetypeComponentTypes.mkString(", ")}], true);""".stripMargin
     } else {
-      s"""const $varArchetype = ${RuntimeApi.types.struct}($varSchema, []);"""
+      s"""const $varArchetype = ${RuntimeApi.types.struct}($varSchema, [], true);"""
     }
 
     val varInstantiate = TranspiledNames.instantiate(tpe)
@@ -52,7 +52,7 @@ object StructTranspiler {
       // Instantiates the object with the actual component types, which are retrieved using typeOf.
       s"$varNewtype([${componentNames.map { name =>
         s"${RuntimeApi.types.component}(${RuntimeApi.types.typeOf}(components.$name))"
-      }.mkString(", ")}])"
+      }.mkString(", ")}], false)"
     } else varArchetype
     val instantiationFunction = s"""function $varInstantiate(members, components) {
        |  return ${RuntimeApi.values.`object`.create}(members, components, $instantiatedType);
