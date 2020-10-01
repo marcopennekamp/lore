@@ -11,6 +11,7 @@ import {
 import { allExcluding, flattenedUnique } from './util.ts'
 import { isSubtype } from './subtyping.ts'
 import { HashMap } from '../utils/HashMap.ts'
+import { LazyValue } from '../utils/LazyValue.ts'
 
 export interface Type extends Hashed {
   kind: Kind
@@ -158,7 +159,14 @@ export function map(key: Type, value: Type): MapType {
 export interface DeclaredTypeSchema {
   name: string
   supertraits: Array<TraitType>
-  ownedBy: Type
+
+  /**
+   * The owned-by type of the declared type. It must be passed as a lazy value, because it needs to be loaded after all
+   * other types have been initialised. The reason is simple: we can have two types that mention each other in their
+   * owned-by types, and so if we evaluated this eagerly, one of the types would have a null reference!
+   */
+  ownedBy: LazyValue<Type>
+
   isEntity: boolean
 }
 
@@ -197,7 +205,7 @@ export interface StructSchema extends DeclaredTypeSchema {
 export function structSchema(
   name: string,
   supertraits: Array<TraitType>,
-  ownedBy: Type,
+  ownedBy: LazyValue<Type>,
   isEntity: boolean,
   properties: Array<MemberDefinition>,
   components: Array<MemberDefinition>,
@@ -230,7 +238,7 @@ export function struct(schema: StructSchema, componentTypes: Array<ComponentType
 export interface TraitSchema extends DeclaredTypeSchema { }
 
 export function traitSchema(
-  name: string, supertraits: Array<TraitType>, ownedBy: Type, isEntity: boolean,
+  name: string, supertraits: Array<TraitType>, ownedBy: LazyValue<Type>, isEntity: boolean,
 ): TraitSchema {
   return { name, supertraits, ownedBy, isEntity }
 }

@@ -124,6 +124,12 @@ object RuntimeApi {
       val create = s"$base.create"
     }
 
+    object `lazy` {
+      val base = s"${RuntimeApi.utils.base}.lazy"
+
+      val of = s"$base.of"
+    }
+
     object error {
       val base = s"${RuntimeApi.utils.base}.error"
 

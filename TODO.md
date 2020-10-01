@@ -13,13 +13,11 @@ Structs:
     - Runtime:
       - Instantiation ✓
       - Dynamic Retrieval ✓
-      - Intern struct types
 - Construction:
   - call syntax ✓
   - map syntax
     - shorthand (omitting name)
 - Ownership ✓
-  - TODO: Do more testing.
 
 Traits:
 - Trait declaration:
@@ -31,7 +29,6 @@ Traits:
       - Subtyping rules ✓
       - Test and possibly improve performance 
 - Ownership ✓
-  - TODO: Do more testing.
 
 Entities:
 - Component Constraints:
@@ -47,6 +44,12 @@ Entities:
 Cleanup:
 - Replace Lists with Vectors. ✓
 - Replace assertions with proper CompilationExceptions. Report the position with a CompilationException, if possible.
+
+Performance:
+- Provide a sane immutable list implementation.
+- Provide a sane immutable map implementation.
+- Intern component types.
+- Intern struct types and check performance with monster.lore.
 
 NEXT:
 - Finish transpilation and verification for the current MVL constructs.

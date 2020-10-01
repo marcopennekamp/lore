@@ -33,7 +33,7 @@ object DeclaredTypeTranspiler {
       s"""const $varSchema = $schemaFunction(
          |  '${tpe.name}',
          |  [${varDeclaredSupertypes.mkString(", ")}],
-         |  $ownedBy,
+         |  ${RuntimeApi.utils.`lazy`.of}(() => $ownedBy),
          |  ${tpe.isEntity},
          |  ${additionalArguments.mkString(", ")}
          |);""".stripMargin

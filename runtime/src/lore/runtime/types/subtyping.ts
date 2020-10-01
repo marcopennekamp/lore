@@ -7,7 +7,7 @@ import { areEqual } from './equality.ts'
 /**
  * Checks whether t1 is a subtype of t2.
  */
-export function isSubtype(t1: Type, t2: Type): boolean {
+export function isSubtype(t1: Type, t2: Type, considerOwnedBy = true): boolean {
   if (t1 === t2) return true
 
   // How this is executed: Because multiple rules can sometimes apply to the same type pattern, we have two main
@@ -103,10 +103,8 @@ export function isSubtype(t1: Type, t2: Type): boolean {
         if (isSubtype(c1.underlying, c2.underlying)) {
           return true
         }
-      } else {
-        if (isSubtype(c1.underlying.schema.ownedBy, t2)) {
-          return true
-        }
+      } else if (considerOwnedBy && isSubtype(c1.underlying.schema.ownedBy.value(), t2)) {
+        return true
       }
       break
 
