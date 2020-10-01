@@ -27,7 +27,6 @@ Traits:
     - Inheritance is implicitly passed down the hierarchy ✓
     - Runtime:
       - Subtyping rules ✓
-      - Test and possibly improve performance 
 - Ownership ✓
 
 Entities:
@@ -50,6 +49,7 @@ Performance:
 - Provide a sane immutable map implementation.
 - Intern component types.
 - Intern struct types and check performance with monster.lore.
+- Turn declared type subtyping into a simple HashSet lookup so that we don't need to branch up the supertype tree to decide whether one declared type is the subtype of another. This would be possible by giving each type an exhaustive (transitive) list of supertypes. Downsides might become apparent especially once we introduce dynamic specialization. 
 
 NEXT:
 - Finish transpilation and verification for the current MVL constructs.
