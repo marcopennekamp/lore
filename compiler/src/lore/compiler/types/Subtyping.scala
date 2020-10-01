@@ -1,10 +1,35 @@
 package lore.compiler.types
 
-object Subtyping {
+// TODO: Do we rather need to define type equality in terms of subtyping (t1 <= t2 && t2 <= t1)? I suspect
+//       new edge cases especially with the introduction of polymorphic types. Of course, this might severely
+//       affect performance and thus needs to be looked at first.
 
-  // TODO: Do we rather need to define type equality in terms of subtyping (t1 <= t2 && t2 <= t1)? I suspect
-  //       new edge cases especially with the introduction of polymorphic types. Of course, this might severely
-  //       affect performance and thus needs to be looked at first.
+/**
+  * A specific shape of subtyping built from a given set of rules.
+  */
+trait Subtyping {
+  /**
+    * Whether t1 is a subtype of t2.
+    */
+  def isSubtype(t1: Type, t2: Type): Boolean
+
+  /**
+    * Whether t1 is a supertype of t2.
+    */
+  def isSupertype(t1: Type, t2: Type): Boolean = isSubtype(t2, t1)
+
+  /**
+    * Whether t1 is a strict subtype of t2.
+    */
+  def isStrictSubtype(t1: Type, t2: Type): Boolean = t1 != t2 && isSubtype(t1, t2)
+
+  /**
+    * Whether t1 is a strict supertype of t2.
+    */
+  def isStrictSupertype(t1: Type, t2: Type): Boolean = t1 != t2 && isSupertype(t1, t2)
+}
+
+object Subtyping {
 
   /**
     * We define the calculation of the subtyping relation in terms of rules that possibly match a pair of types
@@ -97,38 +122,20 @@ object Subtyping {
     t1 == t2 || rules.exists(rule => rule.isDefinedAt((t1, t2)) && rule.apply((t1, t2)))
   }
 
-  private val rules = createRules(isSubtype, considerOwnedBy = true)
+  /**
+    * The default subtyping relationship taking all rules into account.
+    */
+  object Default extends Subtyping {
+    private val rules = createRules(isSubtype, considerOwnedBy = true)
+    override def isSubtype(t1: Type, t2: Type): Boolean = isSubtypeGiven(rules)(t1, t2)
+  }
 
   /**
-    * Whether t1 is a subtype of t2.
+    * The subtyping relationship without taking owned-by types into account.
     */
-  def isSubtype(t1: Type, t2: Type): Boolean = isSubtypeGiven(rules)(t1, t2)
-
-  /**
-    * Whether t1 is a supertype of t2.
-    */
-  def isSupertype(t1: Type, t2: Type): Boolean = isSubtype(t2, t1)
-
-  /**
-    * Whether t1 is a strict subtype of t2.
-    */
-  def isStrictSubtype(t1: Type, t2: Type): Boolean = t1 != t2 && isSubtype(t1, t2)
-
-  /**
-    * Whether t1 is a strict supertype of t2.
-    */
-  def isStrictSupertype(t1: Type, t2: Type): Boolean = t1 != t2 && isSupertype(t1, t2)
-
-  /**
-    * Subtyping relationships without taking owned-by types into account.
-    */
-  object noOwnedBy {
-    private val noOwnedByRules = createRules(noOwnedBy.isSubtype, considerOwnedBy = false)
-
-    /**
-      * Whether t1 is a subtype of t2 without taking owned-by types into account.
-      */
-    def isSubtype(t1: Type, t2: Type): Boolean = isSubtypeGiven(noOwnedByRules)(t1, t2)
+  object NoOwnedBy extends Subtyping {
+    private val rules = createRules(isSubtype, considerOwnedBy = false)
+    override def isSubtype(t1: Type, t2: Type): Boolean = isSubtypeGiven(rules)(t1, t2)
   }
 
 }

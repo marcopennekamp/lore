@@ -29,8 +29,7 @@ object IntersectionType {
       case t: IntersectionType => t.types
       case t => Set(t)
     }
-    val simplified = Type.mostSpecific(flattened)
-
+    val simplified = Type.mostSpecific(flattened, Subtyping.Default)
     val intersection = new IntersectionType(simplified)
     if (intersection.types.size == 1) intersection.types.head else intersection
   }

@@ -24,8 +24,7 @@ object SumType {
       case t: SumType => t.types
       case t => Set(t)
     }
-    val simplified = Type.mostGeneral(flattened)
-
+    val simplified = Type.mostGeneral(flattened, Subtyping.Default)
     val sum = new SumType(simplified)
     if (sum.types.size == 1) sum.types.head else sum
   }

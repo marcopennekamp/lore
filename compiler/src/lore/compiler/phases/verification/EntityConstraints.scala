@@ -48,7 +48,7 @@ object EntityConstraints {
     * whether E can in fact own C1 and cannot use the owned-by type of C1 to prove that.
     */
   private def verifyCanOwn(entity: DeclaredTypeDefinition, componentType: ComponentType): Verification = {
-    if (Subtyping.noOwnedBy.isSubtype(entity.tpe, componentType.underlying.ownedBy)) Verification.succeed
+    if (Subtyping.NoOwnedBy.isSubtype(entity.tpe, componentType.underlying.ownedBy)) Verification.succeed
     else Compilation.fail(EntityCannotOwnComponent(entity, componentType))
   }
 

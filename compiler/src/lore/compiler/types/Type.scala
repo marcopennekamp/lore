@@ -19,8 +19,8 @@ trait Type {
     */
   def toTuple: ProductType = ProductType(Vector(this))
 
-  def <=(rhs: Type): Boolean = Subtyping.isSubtype(this, rhs)
-  def <(rhs: Type): Boolean = Subtyping.isStrictSubtype(this, rhs)
+  def <=(rhs: Type): Boolean = Subtyping.Default.isSubtype(this, rhs)
+  def <(rhs: Type): Boolean = Subtyping.Default.isStrictSubtype(this, rhs)
   def >=(rhs: Type): Boolean = rhs <= this
   def >(rhs: Type): Boolean = rhs < this
 
@@ -102,13 +102,17 @@ object Type {
     * Removes types from the set that are subtyped by other types in the list, essentially keeping the
     * most specific types.
     */
-  def mostSpecific(types: Set[Type]): Set[Type] = types.filterNot(t => types.exists(_ < t))
+  def mostSpecific(types: Set[Type], subtyping: Subtyping): Set[Type] = {
+    types.filterNot(t => types.exists(subtyping.isStrictSubtype(_, t)))
+  }
 
   /**
     * Removes types from the set that are supertyped by other types in the list, essentially keeping the
     * most general types.
     */
-  def mostGeneral(types: Set[Type]): Set[Type] = types.filterNot(t => types.exists(t < _))
+  def mostGeneral(types: Set[Type], subtyping: Subtyping): Set[Type] = {
+    types.filterNot(t => types.exists(subtyping.isStrictSubtype(t, _)))
+  }
 
   private sealed abstract class TypePrecedence(protected val value: Int) {
     def <(precedence: TypePrecedence): Boolean = this.value <= precedence.value

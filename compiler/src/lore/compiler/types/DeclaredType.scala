@@ -33,7 +33,8 @@ trait DeclaredType extends NamedType {
   /**
     * The component types that this declared type directly and indirectly inherits. This is an exhaustive list
     * of all component types across the supertype hierarchy of this declared type. Since specialized component
-    * types subsume more general component types, the latter is also removed from the list.
+    * types subsume more general component types, the latter are also removed from the list. Subsumption is decided
+    * without taking owned-by types into account.
     *
     * For example, take code such as this:
     *   trait AnimalHousing extends +Animal, +Roof, +Walls
@@ -44,7 +45,7 @@ trait DeclaredType extends NamedType {
     */
   lazy val inheritedComponentTypes: Set[ComponentType] = {
     val all = componentSupertypes ++ declaredSupertypes.flatMap(_.inheritedComponentTypes)
-    Type.mostSpecific(all.toSet).asInstanceOf[Set[ComponentType]]
+    Type.mostSpecific(all.toSet, Subtyping.NoOwnedBy).asInstanceOf[Set[ComponentType]]
   }
 
   /**
