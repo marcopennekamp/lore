@@ -14,8 +14,6 @@ export function isSubtype(t1: Type, t2: Type): boolean {
   // switch statements that match on the kinds of the left type and right type respectively. It is paramount that
   // neither switch statement returns false prematurely, as it has to be guaranteed that when the first switch can't
   // find any rule that holds, the second switch needs to try once more.
-  // The idea with using switch instead of just using ifs is simple. An optimizing compiler will be able to generate
-  // jump tables for carefully executed switch statements. TODO: Verify this.
 
   // These rules match on the left type. They are all exclusive of each other.
   switch (t1.kind) {
