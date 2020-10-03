@@ -1,5 +1,4 @@
-//struct Point { x: Real /* = 0 */, y: Real /* = 0 */, z: Real /* = 0 */ }
-struct Point { x: Real, y: Real, z: Real }
+struct Point { x: Real /* = 0 */, y: Real /* = 0 */, z: Real /* = 0 */ }
 
 // TODO: Provide a default implementation for toString of structs? Or provide an easy macro down the line? Annotations?
 function toString(point: Point): String = '{ x = ${point.x}, y = ${point.y}, z = ${point.z} }'

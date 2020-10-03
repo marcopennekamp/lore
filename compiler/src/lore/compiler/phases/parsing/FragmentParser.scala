@@ -108,10 +108,12 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def structBody[_: P]: P[Vector[TypeDeclNode.MemberNode]] = {
-    // We manually apply whitespace parsers here, because we want to be able to terminate a member with a newline while
-    // also adding a comment on the same line.
-    def member = P(Space.WS ~ (property | component) ~ Space.WS)
-    def members = P(member.repX(sep = Space.terminators | CharIn(","))).map(_.toVector)
+    // We have to parse the members in a tiered structure because newline separators may only be used with repX,
+    // otherwise the newline is consumed by the whitespace parser. We want members separated by commas to contain
+    // a comment between the member and the comma, so we have to apply the .rep parser there.
+    def member = P(property | component)
+    def memberLine = P(member.rep(sep = CharIn(","))).map(_.toVector)
+    def members = P(memberLine.repX(sep = Space.terminators)).map(_.toVector.flatten)
     P(("{" ~ members ~ "}").?).map(_.getOrElse(Vector.empty))
   }
 
