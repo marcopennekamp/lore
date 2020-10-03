@@ -7,7 +7,7 @@ import lore.compiler.semantics.functions.FunctionDefinition
 import lore.compiler.semantics.{Registry, TypeScope}
 import lore.compiler.syntax.{DeclNode, TypeDeclNode}
 import lore.compiler.types.Type
-import lore.compiler.utils.CollectionExtensions.FilterTypeVectorExtension
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 import scala.collection.mutable
 

@@ -5,7 +5,7 @@ import lore.compiler.core.{Compilation, Error, Position}
 import lore.compiler.semantics.{Registry, TypeScope}
 import lore.compiler.syntax.TypeDeclNode
 import lore.compiler.types._
-import lore.compiler.utils.CollectionExtensions.FilterTypeVectorExtension
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 import scala.reflect.ClassTag
 

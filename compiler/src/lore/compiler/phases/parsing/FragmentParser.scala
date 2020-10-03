@@ -108,11 +108,12 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def structBody[_: P]: P[Vector[TypeDeclNode.MemberNode]] = {
+    // We manually apply whitespace parsers here, because we want to be able to terminate a member with a newline while
+    // also adding a comment on the same line.
+    def member = P(Space.WS ~ (property | component) ~ Space.WS)
     def members = P(member.repX(sep = Space.terminators | CharIn(","))).map(_.toVector)
     P(("{" ~ members ~ "}").?).map(_.getOrElse(Vector.empty))
   }
-
-  private def member[_: P]: P[TypeDeclNode.MemberNode] = P(property | component)
 
   private def property[_: P]: P[TypeDeclNode.PropertyNode] = {
     P(Index ~ "mut".!.?.map(_.isDefined) ~ identifier ~ typeParser.typing)

@@ -17,8 +17,7 @@ object StmtNode {
   sealed abstract class TernaryNode(val child1: StmtNode, val child2: StmtNode, val child3: StmtNode) extends ExprNode
   sealed abstract class XaryNode(val children: Vector[StmtNode]) extends TopLevelExprNode
 
-  // TODO: Do we even need to differentiate between TopLevelExpressions and Statements or can we just give the return
-  //       node an inferred type of nothing?
+  // TODO: Do we even need to differentiate between TopLevelExpressions and Statements?
   case class ReturnNode(expr: ExprNode, position: Position) extends UnaryNode(expr)
 }
 
@@ -118,8 +117,17 @@ object ExprNode {
   // Object expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class MemberAccessNode(
-    instance: ExprNode, name: String, position: Position,
+    instance: ExprNode,
+    name: String,
+    position: Position,
   ) extends UnaryNode(instance) with ExprNode with AddressNode
+
+  case class ObjectMapNode(
+    structName: String,
+    entries: Vector[ObjectEntryNode],
+    position: Position,
+  ) extends XaryNode(entries.map(_.expression)) with ExprNode
+  case class ObjectEntryNode(name: String, expression: ExprNode, position: Position) extends Node
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Block expressions. Note that blocks can hold statements.

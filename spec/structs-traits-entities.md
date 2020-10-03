@@ -33,7 +33,7 @@ struct Person {
 
 Creating new struct instances is possible with two independent **constructor** syntaxes. The **call syntax** is a convenient way to create instances, but with the requirement that all properties need to be specified, including those that could have a default value. In contrast, the **map syntax** is most convenient when default values should be applied to properties or when more self-evident code is desired. It is also useful when properties should be specified out of order for some pragmatic reason. 
 
-When using the map syntax, one may **omit some verbosity** in a definition like `property: value` if the value is a variable and named exactly like the property. An example of this is included below.
+When using the map syntax, one may **omit some verbosity** in a definition like `property = value` if the value is a variable and named exactly like the property. An example of this is included below.
 
 Apart from these two constructor styles, all **derivative constructors** will have to be defined as ordinary (multi-)functions. 
 
@@ -45,14 +45,14 @@ action test() {
   let point = Point(0.5, 1.5, 2.5)
   let position = Position(point)
   // Map syntax.
-  let person = Person { name: 'Mellow', Position: position }
+  let person = Person { name = 'Mellow', Position = position }
 }
 
 action test2() { 
   // If the variable name matches the property name, it's possible to
   // omit the colon entirely.
   let name = 'Shallow'
-  let person = Person { name, Position: Position(Point { }) }
+  let person = Person { name, Position = Position(Point { }) }
 }
 ```
 

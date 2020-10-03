@@ -8,6 +8,7 @@ Structs:
   - Properties:
     - mutable and immutable ✓
     - delimited by newlines or commas ✓
+    - default values
   - Components
     - Compiler ✓
     - Runtime:
@@ -15,8 +16,8 @@ Structs:
       - Dynamic Retrieval ✓
 - Construction:
   - call syntax ✓
-  - map syntax
-    - shorthand (omitting name)
+  - map syntax ✓
+    - shorthand ✓
 - Ownership ✓
 
 Traits:

@@ -186,16 +186,31 @@ private[verification] class FunctionTransformationVisitor(
       Expression.Block(expressions, position).compiled
 
     // Value constructors.
-    case TupleNode(_, position) => Expression.Tuple(expressions, position).compiled
+    case TupleNode(_, position) =>
+      Expression.Tuple(expressions, position).compiled
+
     case ListNode(_, position) =>
       // If we type empty lists as [Nothing], we can assign this empty list to any kind of list, which makes
       // coders happy. :) Hence the default value in the fold.
       val elementType = expressions.map(_.tpe).foldLeft(BasicType.Nothing: Type)(LeastUpperBound.leastUpperBound)
       Expression.ListConstruction(expressions, ListType(elementType), position).compiled
 
+    case ObjectMapNode(structName, entryNodes, position) =>
+      implicit val pos: Position = position
+      registry.resolveType(structName).flatMap {
+        case structType: StructType =>
+          val entries = entryNodes.zip(expressions).map { case (ObjectEntryNode(name, _, _), expression) => (name, expression) }
+          InstantiationTransformation.transformMapStyleInstantiation(structType.definition, entries)
+        case _ => Compilation.fail(StructExpected(structName))
+      }
+
     // Xary operations.
-    case ConjunctionNode(_, position) => StatementTransformation.transformBooleanOperation(XaryOperator.Conjunction, expressions, position)
-    case DisjunctionNode(_, position) => StatementTransformation.transformBooleanOperation(XaryOperator.Disjunction, expressions, position)
+    case ConjunctionNode(_, position) =>
+      StatementTransformation.transformBooleanOperation(XaryOperator.Conjunction, expressions, position)
+
+    case DisjunctionNode(_, position) =>
+      StatementTransformation.transformBooleanOperation(XaryOperator.Disjunction, expressions, position)
+
     case ConcatenationNode(_, position) =>
       // TODO: We actually have to ensure that the current context has a registered function "toString".
       // TODO: Do we HAVE to hard-code the function name? Maybe this could be specified as a compiler option? Or
@@ -214,7 +229,7 @@ private[verification] class FunctionTransformationVisitor(
       // A simple call may either be a function or a constructor call. We immediately try to differentiate this based
       // on whether a struct type can be found for the function name.
       registry.getStructType(name) match {
-        case Some(structType) => StatementTransformation.transformCallStyleInstantiation(structType.definition, expressions)
+        case Some(structType) => InstantiationTransformation.transformCallStyleInstantiation(structType.definition, expressions)
         case None => ExpressionBuilder.multiFunctionCall(name, expressions, position)
       }
 
@@ -302,5 +317,9 @@ private[verification] object FunctionTransformationVisitor {
 
   case class CollectionExpected(expression: Expression) extends Error(expression) {
     override def message: String = s"Expected a collection at this position. Got a value of type ${expression.tpe}."
+  }
+
+  case class StructExpected(name: String)(implicit position: Position) extends Error(position) {
+    override def message: String = s"The name $name must refer to a struct."
   }
 }

@@ -6,7 +6,7 @@ import java.nio.file.{Files, Path}
 import lore.compiler.core._
 import lore.compiler.semantics.Registry
 import lore.compiler.types.Type
-import lore.compiler.utils.CollectionExtensions.FilterTypeVectorExtension
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 import scala.util.Using
 

@@ -5,7 +5,7 @@ import lore.compiler.core.{Compilation, Error}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.{ComponentDefinition, MemberDefinition, StructDefinition}
 import lore.compiler.types.{ComponentType, DeclaredType}
-import lore.compiler.utils.CollectionExtensions.FilterTypeVectorExtension
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 import scala.collection.mutable
 

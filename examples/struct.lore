@@ -1,0 +1,50 @@
+//struct Point { x: Real /* = 0 */, y: Real /* = 0 */, z: Real /* = 0 */ }
+struct Point { x: Real, y: Real, z: Real }
+
+// TODO: Provide a default implementation for toString of structs? Or provide an easy macro down the line? Annotations?
+function toString(point: Point): String = '{ x = ${point.x}, y = ${point.y}, z = ${point.z} }'
+
+
+// TODO: This Position struct could be bypassed if we allowed mutable components.
+struct Position {
+  mut point: Point
+}
+
+function toString(position: Position): String = toString(position.point)
+
+
+struct Person {
+  name: String
+  age: Int /* = 20 */
+  calling: String /* = 'Arts and Science' */
+  component Position
+}
+
+function toString(person: Person): String = 'Person(name = ${person.name}, age = ${person.age}, calling = ${person.calling}, position = ${person.Position})'
+
+
+action test() {
+  let point = Point(0.5, 1.0, 2.0)
+  println(toString(point))
+
+  let point2 = Point { x = 1.33, z = 0.55, y = -2.4 }
+  println(toString(point2))
+
+  //let point3 = Point { x = 1.33, z = 0.5 }  // Should result in a missing entry error.
+
+  let position = Position { point }
+  println(toString(position))
+
+  let position2 = Position(point2)
+  println(toString(position2))
+
+  //let position3 = Position { point2 }  // Should result in a missing entry and illegal entry error each.
+
+  let person = Person('Weislaus', 30 + 2 - 2, 'Music', position)
+  println(person)
+
+  // TODO: Improve parsing error reporting within blocks. If we remove the "age =", for example, the parser will
+  //       report an error in line 26 (action test() { ...). This is not good at all.
+  let person2 = Person { name = 'Bartold', age = 32 + 2 - 2, calling = 'Cryptozoology', Position = position2 }
+  println(person2)
+}

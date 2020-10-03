@@ -4,7 +4,7 @@ import lore.compiler.CompilerOptions
 import lore.compiler.core.{Compilation, Phase}
 import lore.compiler.semantics.Registry
 import lore.compiler.types.DeclaredType
-import lore.compiler.utils.CollectionExtensions.FilterTypeVectorExtension
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 class TranspilationPhase()(implicit compilerOptions: CompilerOptions, registry: Registry) extends Phase[String] {
   override def result: Compilation[String] = {

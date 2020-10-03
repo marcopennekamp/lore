@@ -2,7 +2,7 @@ package lore.compiler.types
 
 import lore.compiler.semantics.Registry
 import lore.compiler.types.TypeExtensions._
-import lore.compiler.utils.CollectionExtensions.FilterTypeVectorExtension
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object LeastUpperBound {
 

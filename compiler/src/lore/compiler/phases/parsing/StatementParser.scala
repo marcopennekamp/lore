@@ -145,7 +145,7 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     * All expressions immediately accessible via postfix dot notation.
     */
   private def accessible[_: P]: P[ExprNode] = {
-    P(literal | fixedCall | dynamicCall | call | variable | block | list | map | enclosed)
+    P(literal | fixedCall | dynamicCall | call | objectMap | variable | block | list | map | enclosed)
   }
 
   private def literal[_: P]: P[ExprNode] = {
@@ -155,20 +155,38 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     // Reals have to be parsed before ints so that ints don't consume the portion of the real before the fraction.
     P(real | int | booleanLiteral | string)
   }
+
   private def fixedCall[_: P]: P[ExprNode] = P(Index ~ identifier ~ ".fixed" ~ typeArguments ~ arguments).map(withIndex(ExprNode.FixedFunctionCallNode))
+
   private def dynamicCall[_: P]: P[ExprNode] = P(Index ~ "dynamic" ~ singleTypeArgument ~ arguments).map(withIndex(ExprNode.DynamicCallNode))
+
   private def call[_: P]: P[ExprNode] = P(Index ~ identifier ~ arguments).map(withIndex(ExprNode.SimpleCallNode))
-  def arguments[_: P]: P[Vector[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toVector)
+
+  private def arguments[_: P]: P[Vector[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toVector)
   private def typeArguments[_: P]: P[Vector[TypeExprNode]] = P("[" ~ typeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toVector)
   private def singleTypeArgument[_: P]: P[TypeExprNode] = P("[" ~ typeParser.typeExpression ~ "]")
+
+  private def objectMap[_: P]: P[ExprNode.ObjectMapNode] = {
+    def entry = P(Index ~ identifier ~ "=" ~ expression).map(withIndex(ExprNode.ObjectEntryNode))
+    def shorthand = P(Index ~ identifier).map { case (index, name) =>
+      val position = Position(fragment, index)
+      ExprNode.ObjectEntryNode(name, ExprNode.VariableNode(name, position), position)
+    }
+    def entries = P((entry | shorthand).rep(sep = ",")).map(_.toVector)
+    P(Index ~ identifier ~ "{" ~ entries ~ "}").map(withIndex(ExprNode.ObjectMapNode))
+  }
+
   private def variable[_: P]: P[ExprNode.VariableNode] = P(Index ~ identifier).map(withIndex(ExprNode.VariableNode))
+
   def block[_: P]: P[ExprNode.BlockNode] = {
     def statements = P(statement.repX(0, Space.terminators).map(_.toVector))
     P(Index ~ "{" ~ statements ~ "}").map(withIndex(ExprNode.BlockNode))
   }
+
   private def list[_: P]: P[ExprNode] = {
     P(Index ~ "[" ~ expression.rep(sep = ",").map(_.toVector) ~ "]").map(withIndex(ExprNode.ListNode))
   }
+
   private def map[_: P]: P[ExprNode] = {
     def keyValue = P(Index ~ expression ~ "->" ~ expression).map(withIndex(ExprNode.KeyValueNode))
     P(Index ~ "%{" ~ keyValue.rep(sep = ",").map(_.toVector) ~ "}").map(withIndex(ExprNode.MapNode))
