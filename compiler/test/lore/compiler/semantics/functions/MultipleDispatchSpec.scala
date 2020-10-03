@@ -34,12 +34,13 @@ class MultipleDispatchSpec extends BaseSpec with TypeSyntax {
     val test = testFitAndMin(area) _
     val setCircle = Set(area.exactGet("Circle"))
     val setBoundingBox = Set(area.exactGet("BoundingBox"))
+    val setRectangle = Set(area.exactGet("Rectangle"))
 
     test("Circle", setCircle, setCircle)
     test("BoundingBox", setBoundingBox, setBoundingBox)
     test("Circle" & "BoundingBox", setCircle ++ setBoundingBox, setCircle ++ setBoundingBox)
-    test("Rectangle", Set.empty, Set.empty)
-    test("Rectangle" & "BoundingBox", setBoundingBox, setBoundingBox)
+    test("Rectangle", setRectangle, setRectangle)
+    test("Rectangle" & "BoundingBox", setRectangle ++ setBoundingBox, setRectangle ++ setBoundingBox)
   }
 
   it should "be correctly defined for abstract.lore" in {
