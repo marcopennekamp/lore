@@ -26,12 +26,12 @@ object StructDefinitionResolver {
 
   private def resolveMember(node: TypeDeclNode.MemberNode)(implicit typeScope: TypeScope): Compilation[MemberDefinition] = {
     node match {
-      case TypeDeclNode.PropertyNode(name, tpe, isMutable, _) =>
+      case TypeDeclNode.PropertyNode(name, tpe, isMutable, defaultValue, _) =>
         for {
           tpe <- TypeExpressionEvaluator.evaluate(tpe)
-        } yield new PropertyDefinition(name, tpe, isMutable, node.position)
-      case node: TypeDeclNode.ComponentNode =>
-        TypeResolver.resolveComponentType(node).map(tpe => new ComponentDefinition(node.name, tpe, node.position))
+        } yield new PropertyDefinition(name, tpe, isMutable, defaultValue, node.position)
+      case node@TypeDeclNode.ComponentNode(name, defaultValue, position) =>
+        TypeResolver.resolveComponentType(node).map(tpe => new ComponentDefinition(name, tpe, defaultValue, position))
     }
   }
 }

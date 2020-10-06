@@ -3,7 +3,7 @@ package lore.compiler.phases.verification
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Error}
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.{LocalVariable, Registry, Scope, TypeScope}
+import lore.compiler.semantics.{LocalVariable, Registry, Scope, TypeScope, VariableScope}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.StmtVisitor
 import lore.compiler.types.Type
@@ -18,7 +18,7 @@ object ExpressionTransformation {
     node: ExprNode,
     expectedType: Type,
     typeScope: TypeScope,
-    variableScope: Scope[LocalVariable],
+    variableScope: VariableScope,
   )(implicit registry: Registry): Compilation[Expression] = {
     // TODO: A block expected to return Unit should manually add a return value of () if the last expression's value
     //       isn't already that. Otherwise a, for example, function won't compile, because the last expression doesn't

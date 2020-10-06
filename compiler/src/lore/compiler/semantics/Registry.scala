@@ -73,7 +73,7 @@ class Registry {
   }
 
   /**
-    * The TypeScope view of the registry. This is strictly an immutable view.
+    * The global type scope backed by the registry. This is strictly an immutable view.
     */
   val typeScope: TypeScope = new TypeScope {
     override protected def local(name: String): Option[NamedType] = getType(name)
@@ -82,6 +82,12 @@ class Registry {
     }
     override protected def unknownEntry(name: String)(implicit position: Position): Error = TypeNotFound(name)
   }
+
+  /**
+    * The global variable scope backed by the registry. This is still an empty scope and only implemented to
+    * make the code more future-proof.
+    */
+  val variableScope: VariableScope = new GlobalScope()
 
   /**
     * Searches for a struct type with the given name.

@@ -56,8 +56,8 @@ object TypeDeclNode {
   ) extends TypeDeclNode
 
   sealed trait MemberNode extends Node
-  case class PropertyNode(name: String, tpe: TypeExprNode, isMutable: Boolean, position: Position) extends MemberNode
-  case class ComponentNode(name: String, position: Position) extends MemberNode
+  case class PropertyNode(name: String, tpe: TypeExprNode, isMutable: Boolean, defaultValue: Option[ExprNode], position: Position) extends MemberNode
+  case class ComponentNode(name: String, defaultValue: Option[ExprNode], position: Position) extends MemberNode
 
   /**
     * @param extended The names of all traits that the trait extends.

@@ -5,7 +5,7 @@ import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
-import lore.compiler.semantics.{LocalVariable, Registry, Scope, TypeScope}
+import lore.compiler.semantics.{LocalVariable, Registry, Scope, TypeScope, VariableScope}
 import lore.compiler.syntax.visitor.StmtVisitor
 import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.types._
@@ -26,7 +26,7 @@ private[verification] class ExpressionTransformationVisitor(
   /**
     * The variable scope of the surrounding code, such as a function scope.
     */
-  variableScope: Scope[LocalVariable],
+  variableScope: VariableScope,
 )(implicit registry: Registry) extends StmtVisitor[Expression] {
   import ExprNode._
   import ExpressionTransformationVisitor._

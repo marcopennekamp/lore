@@ -1,14 +1,14 @@
 package lore.compiler.phases.verification
 
-import lore.compiler.semantics.{BlockScope, LocalVariable, Scope}
+import lore.compiler.semantics.{BlockScope, LocalVariable, Scope, VariableScope}
 
 /**
   * A context for expression transformation passes, for example to hold local variable scopes.
   */
-class ExpressionTransformationContext(parentScope: Scope[LocalVariable]) {
-  private var scopes: List[Scope[LocalVariable]] = List(parentScope)
+class ExpressionTransformationContext(parentScope: VariableScope) {
+  private var scopes: List[VariableScope] = List(parentScope)
 
-  def currentScope: Scope[LocalVariable] = scopes.head
+  def currentScope: VariableScope = scopes.head
 
   def openScope(): Unit = {
     val scope = new BlockScope(currentScope)

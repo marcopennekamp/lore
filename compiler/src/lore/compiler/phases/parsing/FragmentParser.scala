@@ -118,14 +118,16 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def property[_: P]: P[TypeDeclNode.PropertyNode] = {
-    P(Index ~ "mut".!.?.map(_.isDefined) ~ identifier ~ typeParser.typing)
-      .map { case (index, isMutable, name, tpe) => (index, name, tpe, isMutable) }
+    P(Index ~ "mut".!.?.map(_.isDefined) ~ identifier ~ typeParser.typing ~ defaultValue.?)
+      .map { case (index, isMutable, name, tpe, defaultValue) => (index, name, tpe, isMutable, defaultValue) }
       .map(withIndex(TypeDeclNode.PropertyNode))
   }
 
   private def component[_: P]: P[TypeDeclNode.ComponentNode] = {
-    P(Index ~ "component" ~ identifier).map(withIndex(TypeDeclNode.ComponentNode))
+    P(Index ~ "component" ~ identifier ~ defaultValue.?).map(withIndex(TypeDeclNode.ComponentNode))
   }
+
+  private def defaultValue[_: P]: P[ExprNode] = P("=" ~ statementParser.expression)
 
   private def ownedBy[_: P]: P[TypeExprNode] = P("owned by" ~ typeExpression)
 }

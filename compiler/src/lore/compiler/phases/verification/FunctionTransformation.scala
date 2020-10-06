@@ -21,7 +21,7 @@ object FunctionTransformation {
           node,
           function.signature.outputType,
           function.typeScope,
-          new FunctionScope(function.signature)
+          new FunctionScope(function.signature, registry.variableScope)
         )
       }.toCompiledOption
 
