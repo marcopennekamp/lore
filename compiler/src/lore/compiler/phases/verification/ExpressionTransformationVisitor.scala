@@ -5,24 +5,31 @@ import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
-import lore.compiler.semantics.{LocalVariable, Registry, TypeScope}
+import lore.compiler.semantics.{LocalVariable, Registry, Scope, TypeScope}
 import lore.compiler.syntax.visitor.StmtVisitor
 import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.types._
 
-private[verification] class FunctionTransformationVisitor(
+private[verification] class ExpressionTransformationVisitor(
   /**
-    * The signature of the function which we want to transform.
+    * The expected result type of the transformed expression. Note that this is merely used to check the result
+    * type of a return expression. It does not guarantee that the visitor returns an expression with the given
+    * type. That needs to be checked separately.
     */
-  topSignature: FunctionSignature,
+  expectedType: Type,
 
   /**
-    * The type scope of the function which we want to transform.
+    * The type scope of the surrounding code, such as a function's type scope.
     */
-  functionTypeScope: TypeScope,
+  typeScope: TypeScope,
+
+  /**
+    * The variable scope of the surrounding code, such as a function scope.
+    */
+  variableScope: Scope[LocalVariable],
 )(implicit registry: Registry) extends StmtVisitor[Expression] {
   import ExprNode._
-  import FunctionTransformationVisitor._
+  import ExpressionTransformationVisitor._
   import StatementTransformation._
   import StmtNode._
   import TopLevelExprNode._
@@ -30,17 +37,8 @@ private[verification] class FunctionTransformationVisitor(
   // TODO: Ensure that loops with a Unit expression body cannot be used as an expression, since Unit loops
   //       are optimized by the transpiler.
 
-  /**
-    * The type scope is made implicit so that it can be used throughout the verification process. This allows
-    * us to easily handle type variables defined with a function or even those defined with the class of a
-    * constructor.
-    */
-  implicit val typeScope: TypeScope = functionTypeScope
-
-  /**
-    * The function verification context used by the visitor to open and close scopes.
-    */
-  val context = new FunctionTransformationContext(topSignature)
+  val context = new ExpressionTransformationContext(variableScope)
+  implicit val typeScopeImplicit: TypeScope = typeScope
 
   // TODO: Move more code to StatementVerification.
 
@@ -60,8 +58,8 @@ private[verification] class FunctionTransformationVisitor(
   }
 
   override def visitUnary(node: UnaryNode)(expression: Expression): Compilation[Expression] = node match {
-    case ReturnNode(_, position) =>
-      ExpressionVerification.hasSubtype(expression, topSignature.outputType).map(_ => Expression.Return(expression, position))
+    case node@ReturnNode(_, position) =>
+      ExpressionVerification.hasSubtype(expression, expectedType).map(_ => Expression.Return(expression, position))
 
     case VariableDeclarationNode(name, isMutable, maybeTypeNode, _, _) =>
       implicit val position: Position = node.position
@@ -305,7 +303,7 @@ private[verification] class FunctionTransformationVisitor(
   }
 }
 
-private[verification] object FunctionTransformationVisitor {
+private[verification] object ExpressionTransformationVisitor {
   case class ImmutableAssignment(access: Expression.Access) extends Error(access) {
     override def message = s"The variable or member ${access.name} you are trying to assign to is immutable."
   }
