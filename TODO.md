@@ -8,7 +8,7 @@ Structs:
   - Properties:
     - mutable and immutable ✓
     - delimited by newlines or commas ✓
-    - default values
+    - default values ✓
   - Components
     - Compiler ✓
     - Runtime:
