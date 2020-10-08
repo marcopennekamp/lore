@@ -3,7 +3,7 @@ package lore.compiler.semantics.structures
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.VirtualMember
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.functions.ParameterDefinition
+import lore.compiler.semantics.functions.{DynamicCallTarget, ParameterDefinition}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.types.{ComponentType, DeclaredType, Type}
 
@@ -30,8 +30,10 @@ sealed trait MemberDefinition extends Positioned {
   /**
     * This is a variable because it may be transformed during the course of the compilation.
     */
-  var defaultValue: Option[Expression] = _
+  var defaultValue: Option[DefaultValue] = _
 }
+
+case class DefaultValue(expression: Expression, callTarget: DynamicCallTarget)
 
 class PropertyDefinition(
   override val name: String,

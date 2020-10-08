@@ -88,7 +88,7 @@ object StructTranspiler {
         val varDefaultValue = TranspiledName.defaultValue(tpe, member)
 
         // TODO: We need to supply runtime type variables here once structs can have type parameters.
-        ExpressionTranspiler.transpile(defaultValue)(registry, Map.empty).map { chunk =>
+        ExpressionTranspiler.transpile(defaultValue.expression)(registry, Map.empty).map { chunk =>
           if (chunk.expression.isEmpty) {
             throw CompilationException(s"A transpiled default value must always contain a chunk. Member ${member.name}" +
               s" of struct ${tpe.name} does not have such a valid default value.")

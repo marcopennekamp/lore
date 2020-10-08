@@ -16,7 +16,7 @@ struct Person {
   name: String
   age: Int = 20
   calling: String = 'Arts and Science'
-  component Position = Position(Point(1.5, 2.5, 3.5))
+  component Position = Position(Point { })
 }
 
 function toString(person: Person): String = 'Person(name = ${person.name}, age = ${person.age}, calling = ${person.calling}, position = ${person.Position})'
@@ -24,18 +24,19 @@ function toString(person: Person): String = 'Person(name = ${person.name}, age =
 
 action test() {
   let point = Point(0.5, 1.0, 2.0)
-  println(toString(point))
+  println(point)
 
   let point2 = Point { x = 1.33, z = 0.55, y = -2.4 }
-  println(toString(point2))
+  println(point2)
 
-  //let point3 = Point { x = 1.33, z = 0.5 }  // Should result in a missing entry error.
+  let point3 = Point { x = 1.33, z = 0.5 }  // Applies the default value of 0 to the coordinate y.
+  println(point3)
 
   let position = Position { point }
-  println(toString(position))
+  println(position)
 
   let position2 = Position(point2)
-  println(toString(position2))
+  println(position2)
 
   //let position3 = Position { point2 }  // Should result in a missing entry and illegal entry error each.
 
@@ -46,4 +47,7 @@ action test() {
   //       report an error in line 26 (action test() { ...). This is not good at all.
   let person2 = Person { name = 'Bartold', age = 32 + 2 - 2, calling = 'Cryptozoology', Position = position2 }
   println(person2)
+
+  let averagePerson = Person { name = 'John Doe' }
+  println(averagePerson)
 }

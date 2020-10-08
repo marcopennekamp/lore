@@ -4,7 +4,6 @@ import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Error, Position}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.structures.{MemberDefinition, StructDefinition}
-import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object InstantiationTransformation {
 
@@ -43,13 +42,30 @@ object InstantiationTransformation {
       }.toVector.simultaneous.verification
     }
 
+    /**
+      * Assigns entries to members, potentially filling missing members with their default values.
+      */
     def correlateEntries(): Compilation[Vector[(MemberDefinition, Expression)]] = {
-      val (pairs, missing, illegal) = struct.members.correlate(entries) { case (member, (name, _)) => member.name == name }
+      var pairs = Vector.empty[(MemberDefinition, Expression)]
+      var missing = Vector.empty[String]
+      val illegal = entries.map(_._1).diff(struct.members.map(_.name))
+
+      struct.members.foreach { member =>
+        entries.find { case (name, _) => name == member.name } match {
+          case Some((_, expression)) =>
+            pairs = pairs :+ (member, expression)
+          case None =>
+            member.defaultValue match {
+              case Some(defaultValue) => pairs = pairs :+ (member, Expression.Call(defaultValue.callTarget, Vector.empty, position))
+              case None => missing = missing :+ member.name
+            }
+        }
+      }
 
       if (missing.isEmpty && illegal.isEmpty) {
-        Compilation.succeed(pairs.map { case (member, (_, expression)) => (member, expression) })
+        Compilation.succeed(pairs)
       } else {
-        Compilation.fail(missing.map(member => MissingMember(member.name)) ++ illegal.map { case (name, _) => IllegalEntry(name) }: _*)
+        Compilation.fail(missing.map(MissingMember(_)) ++ illegal.map(IllegalEntry(_)): _*)
       }
     }
 
