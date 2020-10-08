@@ -6,6 +6,7 @@ import lore.compiler.CompilerOptions
 import lore.compiler.core.Compilation
 import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.RuntimeTypeVariables
 import lore.compiler.phases.transpilation.TranspiledChunk.JsCode
+import lore.compiler.phases.transpilation.TranspiledName.StringExtension
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.types.{ProductType, Type}
@@ -15,11 +16,11 @@ import scala.util.Using
 
 class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry) {
 
-  private val varArgumentType = "argumentType"
-  private val varDispatchCache = s"${mf.name}__dispatchCache"
+  private val varArgumentType = "argumentType".asName
+  private val varDispatchCache = s"${mf.name}__dispatchCache".asName
 
   // TODO: This could be passed around as an immutable map instead of being "global" state.
-  private val inputTypeJsNames = mutable.HashMap[Type, String]()
+  private val inputTypeJsNames = mutable.HashMap[Type, TranspiledName]()
 
   private implicit val nameProvider: TemporaryNameProvider = new TemporaryNameProvider(s"${mf.name}__")
 
@@ -86,9 +87,9 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     *
     * TODO: We could technically even use the proper names if they don't differ across functions.
     */
-  private lazy val jsParameterNames: Vector[String] = uniqueArity match {
-    case None => Vector("args")
-    case Some(arity) => (0 until arity).map(index => s"arg$index").toVector
+  private lazy val jsParameterNames: Vector[TranspiledName] = uniqueArity match {
+    case None => Vector("args".asName)
+    case Some(arity) => (0 until arity).map(index => s"arg$index".asName).toVector
   }
 
   /**
@@ -212,9 +213,9 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     * Hence, we can cache the result of this dispatch algorithm at runtime for real values.
     */
   private def transpileDispatchCall(printer: PrintStream): Unit = {
-    val varTarget = "target"
-    val varCachedTarget = "cachedTarget"
-    def varFits(index: Int): String = s"fits$index"
+    val varTarget = "target".asName
+    val varCachedTarget = "cachedTarget".asName
+    def varFits(index: Int) = s"fits$index".asName
 
     def transpileFitsConsts(nodes: Vector[(mf.hierarchy.NodeT, Int)]): Unit = {
       nodes.foreach { case (node, index) =>
@@ -229,12 +230,12 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
       }
     }
 
-    def transpileDispatchNode(node: mf.hierarchy.NodeT, varFitsX: String): Unit = {
+    def transpileDispatchNode(node: mf.hierarchy.NodeT, varFitsX: TranspiledName): Unit = {
       val successors = node.diSuccessors.toVector.zipWithIndex
       val function = node.value
       printer.println(s"if ($varFitsX) {")
       val addFunction = if (!function.isAbstract) {
-        val candidateName = TranspiledNames.function(function)
+        val candidateName = TranspiledName.function(function)
         val candidate = if (function.isPolymorphic) {
           // The first parameter of a polymorphic function is the map of type variable assignments passed to it at
           // run-time. Hence, we have to bind that map (saved in the fitsX variable after being returned by
@@ -268,7 +269,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
       printer.println("}")
     }
 
-    def transpileTargetCall(target: String): Unit = {
+    def transpileTargetCall(target: TranspiledName): Unit = {
       printer.println(s"return $target($jsParameters);")
     }
 

@@ -1,4 +1,4 @@
-struct Point { x: Real /* = 0 */, y: Real /* = 0 */, z: Real /* = 0 */ }
+struct Point { x: Real = 0, y: Real = 0, z: Real = 0 }
 
 // TODO: Provide a default implementation for toString of structs? Or provide an easy macro down the line? Annotations?
 function toString(point: Point): String = '{ x = ${point.x}, y = ${point.y}, z = ${point.z} }'
@@ -14,9 +14,9 @@ function toString(position: Position): String = toString(position.point)
 
 struct Person {
   name: String
-  age: Int /* = 20 */
-  calling: String /* = 'Arts and Science' */
-  component Position
+  age: Int = 20
+  calling: String = 'Arts and Science'
+  component Position = Position(Point(1.5, 2.5, 3.5))
 }
 
 function toString(person: Person): String = 'Person(name = ${person.name}, age = ${person.age}, calling = ${person.calling}, position = ${person.Position})'

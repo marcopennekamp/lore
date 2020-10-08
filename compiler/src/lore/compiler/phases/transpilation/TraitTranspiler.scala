@@ -13,7 +13,7 @@ object TraitTranspiler {
   def transpile(tpe: TraitType): Compilation[String] = {
     val (varSchema, schema) = DeclaredTypeTranspiler.transpileSchema(tpe, RuntimeApi.types.schema.`trait`)
 
-    val varType = TranspiledNames.declaredType(tpe)
+    val varType = TranspiledName.declaredType(tpe)
     val componentTypes = tpe.inheritedComponentTypes.toVector.map(RuntimeTypeTranspiler.transpile(_)(Map.empty))
     s"""$schema
        |const $varType = ${RuntimeApi.types.`trait`}($varSchema, [${componentTypes.mkString(", ")}]);

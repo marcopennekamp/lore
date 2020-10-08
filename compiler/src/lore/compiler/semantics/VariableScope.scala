@@ -1,11 +1,11 @@
 package lore.compiler.semantics
 
-import lore.compiler.phases.transpilation.TranspiledNames
+import lore.compiler.phases.transpilation.TranspiledName
 import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.types.Type
 
 case class LocalVariable(name: String, tpe: Type, isMutable: Boolean) extends Scope.Entry {
-  lazy val transpiledName: String = TranspiledNames.localVariable(name)
+  lazy val transpiledName: TranspiledName = TranspiledName.localVariable(name)
 }
 
 /**

@@ -2,6 +2,7 @@
 trait A
 
 struct Test implements A {
+  name = 'Test'
   p: B
   component C
 }
@@ -23,4 +24,8 @@ const lore_type_Test = lore_newtype_Test([Lore.types.component(lore_types_C)], t
 function lore_instantiate_Test(members) {
   const tpe = lore_newtype_Test([members.C.lore$type], false);
   return Lore.values.object.create(members, tpe);
+}
+
+function lore_type_Test__default_name() {
+  return 'Test';
 }

@@ -3,6 +3,8 @@ package lore.compiler.phases.transpilation
 // TODO: Change the runtime API so that we have list.type instead of types.list and so on. Essentially structure
 //       the API alongside semantics first instead of a type/value distinction.
 
+// TODO: Return TranspiledName values instead of plain strings?
+
 object RuntimeApi {
   private val base = "Lore"
 

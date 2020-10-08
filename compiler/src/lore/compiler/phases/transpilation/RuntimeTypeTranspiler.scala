@@ -14,7 +14,7 @@ object RuntimeTypeTranspiler {
     */
   def transpileTypeVariables(variables: List[TypeVariable])(implicit nameProvider: TemporaryNameProvider): (JsCode, RuntimeTypeVariables) = {
     val orderedVariables = variables.declarationOrder
-    implicit val names: RuntimeTypeVariables = orderedVariables.map(tv => (tv, nameProvider.createName())).toMap
+    implicit val names: RuntimeTypeVariables = orderedVariables.map(tv => (tv, nameProvider.createName().name)).toMap
     val definitions = orderedVariables.declarationOrder.map { tv =>
       val varTypeVariable = names(tv)
       s"const $varTypeVariable = ${RuntimeApi.types.variable}('${tv.name}', ${transpile(tv.lowerBound)}, ${transpile(tv.upperBound)});"
@@ -35,14 +35,14 @@ object RuntimeTypeTranspiler {
 
   /**
     * Transpiles the type to a run-time version where type variables are replaced with their actual assignments. Must
-    * have access to a type variable assignment context such as [[TranspiledNames.localTypeVariableAssignments]].
+    * have access to a type variable assignment context such as [[TranspiledName.localTypeVariableAssignments]].
     *
     * Since type variables are resolved at run-time, we also have to simplify sum and intersection types to their
     * normal forms at run-time.
     */
   def transpileSubstitute(tpe: Type)(implicit runtimeTypeVariables: RuntimeTypeVariables): JsExpr = {
     transpile(tpe, simplifyAtRuntime = true, tv => {
-      s"${RuntimeApi.utils.tinyMap.get}(${TranspiledNames.localTypeVariableAssignments}, ${runtimeTypeVariables(tv)})"
+      s"${RuntimeApi.utils.tinyMap.get}(${TranspiledName.localTypeVariableAssignments}, ${runtimeTypeVariables(tv)})"
     })
   }
 
@@ -62,7 +62,7 @@ object RuntimeTypeTranspiler {
       case BasicType.Boolean => api.boolean
       case BasicType.String => api.string
       case ProductType.UnitType => api.unit
-      case declaredType: DeclaredType => TranspiledNames.declaredType(declaredType)
+      case declaredType: DeclaredType => TranspiledName.declaredType(declaredType).name
       case SumType(types) =>
         val sum = if (simplifyAtRuntime) api.sumSimplified else api.sum
         s"$sum([${types.map(rec).mkString(", ")}])"

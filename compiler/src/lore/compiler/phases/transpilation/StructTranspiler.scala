@@ -1,7 +1,8 @@
 package lore.compiler.phases.transpilation
 
-import lore.compiler.core.Compilation
+import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.core.Compilation.ToCompilationExtension
+import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.MemberDefinition
 import lore.compiler.types.StructType
 
@@ -20,12 +21,28 @@ object StructTranspiler {
     *      that it owns at compile-time. This type is used when being referred to in multiple dispatch and other
     *      static uses.
     *   4. An instantiation function which takes a members object and calculates the correct run-time type.
+    *   5. One function for each default value of the struct's members. This function can be invoked by the code
+    *      to generate another default value during instantiation.
     */
-  def transpile(tpe: StructType): Compilation[String] = {
+  def transpile(tpe: StructType)(implicit registry: Registry): Compilation[String] = {
+    val (varSchema, schema) = transpileSchema(tpe)
+    val (varNewtype, varArchetype, definitions) = transpileTypeDefinitions(tpe, varSchema)
+    val instantiationFunction = transpileInstatiation(tpe, varNewtype, varArchetype)
+
+    transpileDefaultValues(tpe).map { defaultValueFunctions =>
+      s"""$schema
+         |$definitions
+         |$instantiationFunction
+         |${defaultValueFunctions.mkString("\n")}
+         |""".stripMargin
+    }
+  }
+
+  private def transpileSchema(tpe: StructType) = {
     def transpileMemberDefinition(member: MemberDefinition): String = s"{ name: '${member.name}' }"
     val propertyDefinitions = tpe.definition.properties.map(transpileMemberDefinition)
     val componentDefinitions = tpe.definition.components.map(transpileMemberDefinition)
-    val (varSchema, schema) = DeclaredTypeTranspiler.transpileSchema(
+    DeclaredTypeTranspiler.transpileSchema(
       tpe,
       RuntimeApi.types.schema.struct,
       Vector(
@@ -33,9 +50,11 @@ object StructTranspiler {
         s"[${componentDefinitions.mkString(", ")}]",
       ),
     )
+  }
 
-    val varNewtype = TranspiledNames.newType(tpe)
-    val varArchetype = TranspiledNames.declaredType(tpe)
+  private def transpileTypeDefinitions(tpe: StructType, varSchema: TranspiledName) = {
+    val varNewtype = TranspiledName.newType(tpe)
+    val varArchetype = TranspiledName.declaredType(tpe)
     val definitions = if (tpe.isEntity) {
       val archetypeComponentTypes = tpe.componentSupertypes.map(RuntimeTypeTranspiler.transpile(_)(Map.empty))
       s"""function $varNewtype(componentTypes, isArchetype) {
@@ -45,8 +64,11 @@ object StructTranspiler {
     } else {
       s"""const $varArchetype = ${RuntimeApi.types.struct}($varSchema, [], true);"""
     }
+    (varNewtype, varArchetype, definitions)
+  }
 
-    val varInstantiate = TranspiledNames.instantiate(tpe)
+  private def transpileInstatiation(tpe: StructType, varNewtype: TranspiledName, varArchetype: TranspiledName) = {
+    val varInstantiate = TranspiledName.instantiate(tpe)
     val componentNames = tpe.definition.components.map(_.name)
     val instantiatedType = if (tpe.isEntity) {
       // Instantiates the object with the actual component types, which are retrieved using typeOf.
@@ -54,14 +76,31 @@ object StructTranspiler {
         s"${RuntimeApi.types.component}(${RuntimeApi.types.typeOf}(components.$name))"
       }.mkString(", ")}], false)"
     } else varArchetype
-    val instantiationFunction = s"""function $varInstantiate(members, components) {
+
+    s"""function $varInstantiate(members, components) {
        |  return ${RuntimeApi.values.`object`.create}(members, components, $instantiatedType);
        |}""".stripMargin
+  }
 
-    s"""$schema
-       |$definitions
-       |$instantiationFunction
-       |""".stripMargin.compiled
+  private def transpileDefaultValues(tpe: StructType)(implicit registry: Registry) = {
+    tpe.definition.members.flatMap { member =>
+      member.defaultValue.map { defaultValue =>
+        val varDefaultValue = TranspiledName.defaultValue(tpe, member)
+
+        // TODO: We need to supply runtime type variables here once structs can have type parameters.
+        ExpressionTranspiler.transpile(defaultValue)(registry, Map.empty).map { chunk =>
+          if (chunk.expression.isEmpty) {
+            throw CompilationException(s"A transpiled default value must always contain a chunk. Member ${member.name}" +
+              s" of struct ${tpe.name} does not have such a valid default value.")
+          }
+
+          s"""function $varDefaultValue() {
+             |  ${chunk.statements}
+             |  return ${chunk.expression.get};
+             |}""".stripMargin
+        }
+      }
+    }.simultaneous
   }
 
 }

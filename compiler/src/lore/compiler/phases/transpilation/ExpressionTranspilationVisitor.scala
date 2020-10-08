@@ -2,20 +2,20 @@ package lore.compiler.phases.transpilation
 
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException, Error}
-import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.{RuntimeTypeVariables, transpile}
+import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.RuntimeTypeVariables
 import lore.compiler.phases.transpilation.Transpilation.Transpilation
 import lore.compiler.phases.transpilation.TranspiledChunk.{JsCode, JsExpr}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.functions.{DynamicCallTarget, FunctionInstance}
 import lore.compiler.semantics.structures.MemberDefinition
-import lore.compiler.types.{BasicType, ListType, MapType, ProductType, Type}
+import lore.compiler.types._
 
 case class UnsupportedTranspilation(expression: Expression) extends Error(expression) {
   override def message = s"The Lore compiler doesn't yet support the transpilation of ${expression.getClass.getSimpleName}."
 }
 
-private[transpilation] class FunctionTranspilationVisitor()(
+private[transpilation] class ExpressionTranspilationVisitor()(
   implicit registry: Registry, runtimeTypeVariables: RuntimeTypeVariables
 ) extends ExpressionVisitor[TranspiledChunk] {
   import Expression._
@@ -42,7 +42,7 @@ private[transpilation] class FunctionTranspilationVisitor()(
 
   override def visit(expression: Block)(expressions: Vector[TranspiledChunk]): Transpilation = Transpilation.sequencedIdentity(expressions)
 
-  override def visit(expression: VariableAccess): Transpilation = Transpilation.expression(expression.variable.transpiledName)
+  override def visit(expression: VariableAccess): Transpilation = Transpilation.expression(expression.variable.transpiledName.name)
 
   override def visit(expression: MemberAccess)(instance: TranspiledChunk): Transpilation = {
     instance.mapExpression { instance =>
@@ -99,7 +99,7 @@ private[transpilation] class FunctionTranspilationVisitor()(
       if (expression.struct.tpe.isEntity) {
         arguments = arguments :+ s"{ ${transpileMembers(members.filter(_._1.isComponent))} }"
       }
-      val varInstantiate = TranspiledNames.instantiate(expression.struct.tpe)
+      val varInstantiate = TranspiledName.instantiate(expression.struct.tpe)
       s"$varInstantiate(${arguments.mkString(", ")})"
     }
   }
@@ -161,7 +161,7 @@ private[transpilation] class FunctionTranspilationVisitor()(
          |  ${onFalse.expression.map(e => s"$varResult = $e;").getOrElse("")}
          |}
          |""".stripMargin
-    Transpilation.chunk(code, varResult)
+    Transpilation.chunk(code, varResult.name)
   }
 
   override def visit(loop: WhileLoop)(condition: TranspiledChunk, body: TranspiledChunk): Transpilation = {
@@ -216,7 +216,7 @@ private[transpilation] class FunctionTranspilationVisitor()(
     // The loop's inferred type is Unit if its body type is Unit, so this checks out.
     val ignoreResult = loop.tpe == ProductType.UnitType
 
-    def loopCode(varResult: Option[String], resultType: JsExpr = ""): String = {
+    def loopCode(varResult: Option[TranspiledName], resultType: JsExpr = ""): String = {
       val statements = s"${body.statements};"
       val bodyCode = body.expression.map { e =>
         varResult.map { v =>
@@ -241,7 +241,7 @@ private[transpilation] class FunctionTranspilationVisitor()(
            |  [],
            |  $resultType,
            |);""".stripMargin
-      Transpilation.chunk(Vector(resultVarDeclaration, loopCode(Some(varResult), resultType)), varResult)
+      Transpilation.chunk(Vector(resultVarDeclaration, loopCode(Some(varResult), resultType)), varResult.name)
     }
   }
 
