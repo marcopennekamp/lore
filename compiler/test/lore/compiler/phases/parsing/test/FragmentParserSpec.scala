@@ -85,7 +85,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
 
   "The type declaration parser" should "parse struct and property declarations correctly" in {
     """
-    |  struct Position { x: Real, y: Real, z: Real }
+    |  struct Position { x: Real = 0.0, y: Real = 0.0, z: Real = 0.0 }
     |
     |  function from2D(x: Real, y: Real): Position = {
     |    Position(x, y, 0.0)
@@ -100,9 +100,9 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
         Vector.empty,
         None,
         Vector(
-          Decl.Property("x", tReal, false),
-          Decl.Property("y", tReal, false),
-          Decl.Property("z", tReal, false),
+          Decl.Property("x", tReal, false, Some(Stmt.RealLiteral(0.0))),
+          Decl.Property("y", tReal, false, Some(Stmt.RealLiteral(0.0))),
+          Decl.Property("z", tReal, false, Some(Stmt.RealLiteral(0.0))),
         ),
       ),
       Decl.Function(
@@ -153,8 +153,8 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
         Vector("A", "L2"),
         Some(Type.Intersection(Vector(Type.Identifier("O2"), Type.Identifier("L1")))),
         Vector(
-          Decl.Property("property1", Type.Identifier("P"), true),
-          Decl.Property("property2", Type.Identifier("P"), false),
+          Decl.Property("property1", Type.Identifier("P"), true, None),
+          Decl.Property("property2", Type.Identifier("P"), false, None),
         ),
       ),
     )
@@ -182,8 +182,8 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
         Vector("E1"),
         None,
         Vector(
-          Decl.Component("D2"),
-          Decl.Property("count", Type.Identifier("Real"), true),
+          Decl.Component("D2", None),
+          Decl.Property("count", Type.Identifier("Real"), true, None),
         ),
       ),
     )
