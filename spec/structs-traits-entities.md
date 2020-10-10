@@ -251,13 +251,13 @@ At run-time, `E` might actually be a type `E & +C3` given `C3 < C1`, if a value 
 
 Once assigned to an entity, a component cannot be replaced or removed: **components are immutable**. Note that, while the *reference* is immutable, the component *itself* does not have to be immutable. You can, of course, still model changing state in Lore, but that change needs to be applied inside the component, not by replacing a component.
 
-We would love to get rid of this **constraint**, but components must be immutable because they are part of the run-time type of the entity, as the actual component value is significant in multiple-dispatch. If a component's type could change during execution, so would the entity type, and this is not permitted due to our policy of requiring the types of run-time values to be immutable after the value's construction.
+Right now, this limitation exists due to **implementation concerns**. Components must be immutable because they are part of the run-time type of the entity. If a component's type could change during execution, so would the entity type, and this is currently not possible. Once we introduce dynamic specialization and generalization in the future, we will also permit mutable components.
 
-Note that one object can be a component of **multiple entities**. For example, you could share a health state between two bosses in a boss fight. We don't want to remove this freedom and so Lore asks extra diligence of the programmer when it comes to component instantiation.
+Note that one object can be a component of **multiple entities**. For example, you could share a health state between two bosses in a boss fight.
 
 ##### Component Type Restrictions
 
-The freedom with which we allow **subtyping of component types** has a few implications. Say we have an entity type `E & C2` with `C1 < C2 < C3`. We could assign a value of either `C1` or `C2` to the entity. This already leads to a problem when we consider the compilation process:
+The freedom with which we allow **subtyping of component types** has a few implications. Say we have an entity type `E & C2` with `C1 < C2 < C3`. We could assign a value of either `C1` or `C2` to the component. This already leads to a problem when we consider the compilation process:
 
 ```
 struct E1 { component C1 }
