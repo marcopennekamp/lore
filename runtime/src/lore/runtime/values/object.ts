@@ -45,6 +45,10 @@ export const api = {
    * member name will always stay the same, regardless of the actual types of each component.
    */
   retrieve(struct: ObjectValue, searchTarget: DeclaredType) {
+    if (!searchTarget.schema.isOwnable) {
+      throw Error(`Components may only be retrieved through ownable declared types. ${searchTarget.schema.name} is independent.`)
+    }
+
     const schema = struct.lore$type.schema
     const components = struct.lore$components
     if (!schema.componentAccessCache) {

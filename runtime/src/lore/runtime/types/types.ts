@@ -132,7 +132,10 @@ export interface ComponentType extends Type {
 
 export function component(underlying: DeclaredType): ComponentType {
   if (underlying.kind !== Kind.Struct && underlying.kind !== Kind.Trait) {
-    throw Error("A component type must have an underlying declared type.")
+    throw Error('A component type must have an underlying declared type.')
+  }
+  if (!underlying.schema.isOwnable) {
+    throw Error('A component type must contain an ownable declared type.')
   }
   return { kind: Kind.Component, underlying, hash: singleHash(underlying, 0x4cab1ec0) }
 }
@@ -168,6 +171,7 @@ export interface DeclaredTypeSchema {
    */
   ownedBy: LazyValue<Type>
 
+  isOwnable: boolean
   isEntity: boolean
 }
 
@@ -207,11 +211,12 @@ export function structSchema(
   name: string,
   supertraits: Array<TraitType>,
   ownedBy: LazyValue<Type>,
+  isOwnable: boolean,
   isEntity: boolean,
   properties: Array<MemberDefinition>,
   components: Array<MemberDefinition>,
 ): StructSchema {
-  return { name, supertraits, ownedBy, isEntity, properties, components }
+  return { name, supertraits, ownedBy, isOwnable, isEntity, properties, components }
 }
 
 /**
@@ -257,9 +262,9 @@ export function struct(schema: StructSchema, componentTypes: Array<ComponentType
 export interface TraitSchema extends DeclaredTypeSchema { }
 
 export function traitSchema(
-  name: string, supertraits: Array<TraitType>, ownedBy: LazyValue<Type>, isEntity: boolean,
+  name: string, supertraits: Array<TraitType>, ownedBy: LazyValue<Type>, isOwnable: boolean, isEntity: boolean,
 ): TraitSchema {
-  return { name, supertraits, ownedBy, isEntity }
+  return { name, supertraits, ownedBy, isOwnable, isEntity }
 }
 
 /**

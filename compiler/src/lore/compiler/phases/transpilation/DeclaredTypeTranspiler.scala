@@ -35,6 +35,7 @@ object DeclaredTypeTranspiler {
          |  '${tpe.name}',
          |  [${varDeclaredSupertypes.mkString(", ")}],
          |  ${RuntimeApi.utils.`lazy`.of}(() => $ownedBy),
+         |  ${tpe.isOwnable},
          |  ${tpe.isEntity},
          |  ${additionalArguments.mkString(", ")}
          |);""".stripMargin
