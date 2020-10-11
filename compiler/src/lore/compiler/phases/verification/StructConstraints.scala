@@ -55,20 +55,18 @@ object StructConstraints {
     * specification.
     *
     * Algorithm:
-    *   1. Map each component to its root supertypes, excluding component types.
+    *   1. Map each component to its ownable root supertypes, excluding component types.
     *      - We have to exclude component types because they cannot be nested. A type +(+C) is impossible, so if
     *        two components A and B have a type +C in common, that should not be of concern. We only have to look
     *        at common traits and structs.
-    *   2. For each root supertype, create a "bucket" in a hash map where components can be put. If two or more
-    *      components share the same bucket, they share that supertype and are thus invalid.
+    *   2. For each ownable root supertype, create a "bucket" in a hash map where components can be put. If two or
+    *      more components share the same bucket, they share that supertype and are thus invalid.
     */
   private def verifyComponentsNoSharedSupertype(definition: StructDefinition): Verification = {
-    // TODO: This algorithm needs to be redesigned to account for independent supertypes.
-
     val buckets = mutable.HashMap[DeclaredType, Vector[ComponentDefinition]]()
 
     definition.components.foreach { component =>
-      component.tpe.rootSupertypes.filterType[DeclaredType].foreach { supertype =>
+      component.tpe.ownableRootSupertypes.foreach { supertype =>
         buckets.updateWith(supertype) {
           case None => Some(Vector(component))
           case Some(bucket) => Some(bucket :+ component)

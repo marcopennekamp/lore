@@ -16,7 +16,7 @@ struct E {
   e.C
 } */
 
-action foo() {
+action test() {
   let e = E(CA(), CB())
   println(e.CA)
   println(e.CB)

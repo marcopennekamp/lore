@@ -68,18 +68,20 @@ trait DeclaredType extends NamedType {
   def ownedBy: Type = definition.ownedBy
 
   /**
-    * The supertypes of the declared type that directly inherit from Any, possibly this type itself and
-    * including component types.
+    * The ownable root supertypes of the declared type, possibly this type itself if it has no ownable supertypes. Note
+    * that the result list is empty if the declared type itself is not ownable.
     */
-  def rootSupertypes: Vector[Type] = {
-    if (supertypes.isEmpty) {
-      Vector(this)
-    } else {
-      supertypes.flatMap {
-        case dt: DeclaredType => dt.rootSupertypes
-        case t => Vector(t)
-      }
+  def ownableRootSupertypes: Vector[DeclaredType] = {
+    if (!this.isOwnable) {
+      return Vector.empty
     }
+
+    val results = supertypes.flatMap {
+      case dt: DeclaredType if dt.isOwnable => dt.ownableRootSupertypes
+      case _ => Vector.empty
+    }
+
+    if (results.nonEmpty) results else Vector(this)
   }
 
   /**
