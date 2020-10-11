@@ -52,6 +52,7 @@ object TypeDeclNode {
     implemented: Vector[String],
     ownedBy: Option[TypeExprNode],
     members: Vector[MemberNode],
+    isIndependent: Boolean,
     position: Position
   ) extends TypeDeclNode
 
@@ -68,6 +69,7 @@ object TypeDeclNode {
     extended: Vector[String],
     components: Vector[String],
     ownedBy: Option[TypeExprNode],
+    isIndependent: Boolean,
     position: Position
   ) extends TypeDeclNode
 }

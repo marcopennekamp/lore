@@ -80,8 +80,8 @@ class FragmentParser(implicit fragment: Fragment) {
   private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`trait` | struct)
 
   private def `trait`[_: P]: P[TypeDeclNode.TraitNode] = {
-    P(Index ~ "trait" ~/ identifier ~ `extends` ~ ownedBy.?)
-      .map { case (index, name, (extended, components), ownedBy) => (index, name, extended, components, ownedBy) }
+    P(Index ~ "independent".!.? ~ "trait" ~/ identifier ~ `extends` ~ ownedBy.?)
+      .map { case (index, independent, name, (extended, components), ownedBy) => (index, name, extended, components, ownedBy, independent.isDefined) }
       .map(withIndex(TypeDeclNode.TraitNode))
   }
 
@@ -99,7 +99,9 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def struct[_: P]: P[TypeDeclNode.StructNode] = {
-    P(Index ~ "struct" ~/ identifier ~ implements ~ ownedBy.? ~ structBody).map(withIndex(TypeDeclNode.StructNode))
+    P(Index ~ "independent".!.? ~ "struct" ~/ identifier ~ implements ~ ownedBy.? ~ structBody)
+      .map { case (index, independent, name, implements, ownedBy, members) => (index, name, implements, ownedBy, members, independent.isDefined) }
+      .map(withIndex(TypeDeclNode.StructNode))
   }
 
   private def implements[_: P]: P[Vector[String]] = {

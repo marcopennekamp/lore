@@ -104,6 +104,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
           Decl.Property("y", tReal, false, Some(Stmt.RealLiteral(0.0))),
           Decl.Property("z", tReal, false, Some(Stmt.RealLiteral(0.0))),
         ),
+        false,
       ),
       Decl.Function(
         "from2D",
@@ -127,10 +128,10 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
     )
   }
 
-  it should "parse structs, traits, inheritance, and ownership correctly" in {
+  it should "parse structs, traits, inheritance, ownership, and independence correctly" in {
     """
-    |  trait L1
-    |  trait L2
+    |  independent trait L1
+    |  independent trait L2
     |  struct P
     |
     |  trait O1 extends L1, L2
@@ -142,12 +143,12 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
     |    property2: P
     |  }
     """.stripMargin --> Vector(
-      Decl.Trait("L1", Vector.empty, Vector.empty, None),
-      Decl.Trait("L2", Vector.empty, Vector.empty, None),
-      Decl.Struct("P", Vector.empty, None, Vector.empty),
-      Decl.Trait("O1", Vector("L1", "L2"), Vector.empty, None),
-      Decl.Struct("O2", Vector("O1"), None, Vector.empty),
-      Decl.Trait("A", Vector.empty, Vector.empty, Some(Type.Intersection(Vector(Type.Identifier("O1"), Type.Identifier("L1"))))),
+      Decl.Trait("L1", Vector.empty, Vector.empty, None, true),
+      Decl.Trait("L2", Vector.empty, Vector.empty, None, true),
+      Decl.Struct("P", Vector.empty, None, Vector.empty, false),
+      Decl.Trait("O1", Vector("L1", "L2"), Vector.empty, None, false),
+      Decl.Struct("O2", Vector("O1"), None, Vector.empty, false),
+      Decl.Trait("A", Vector.empty, Vector.empty, Some(Type.Intersection(Vector(Type.Identifier("O1"), Type.Identifier("L1")))), false),
       Decl.Struct(
         "B",
         Vector("A", "L2"),
@@ -156,6 +157,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
           Decl.Property("property1", Type.Identifier("P"), true, None),
           Decl.Property("property2", Type.Identifier("P"), false, None),
         ),
+        false,
       ),
     )
   }
@@ -173,10 +175,10 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
     |    mut count: Real
     |  }
     """.stripMargin --> Vector(
-      Decl.Struct("C1", Vector.empty, Some(Type.Identifier("E1")), Vector.empty),
-      Decl.Trait("D1", Vector.empty, Vector.empty, None),
-      Decl.Struct("D2", Vector("D1"), None, Vector.empty),
-      Decl.Trait("E1", Vector("L1", "L2"), Vector("C1", "C2"), None),
+      Decl.Struct("C1", Vector.empty, Some(Type.Identifier("E1")), Vector.empty, false),
+      Decl.Trait("D1", Vector.empty, Vector.empty, None, false),
+      Decl.Struct("D2", Vector("D1"), None, Vector.empty, false),
+      Decl.Trait("E1", Vector("L1", "L2"), Vector("C1", "C2"), None, false),
       Decl.Struct(
         "E2",
         Vector("E1"),
@@ -185,6 +187,7 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
           Decl.Component("D2", None),
           Decl.Property("count", Type.Identifier("Real"), true, None),
         ),
+        false,
       ),
     )
   }
