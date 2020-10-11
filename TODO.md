@@ -14,6 +14,7 @@ Structs:
     - Runtime:
       - Instantiation ✓
       - Dynamic Retrieval ✓
+  - Independence
 - Construction:
   - call syntax ✓
   - map syntax ✓
@@ -28,6 +29,7 @@ Traits:
     - Inheritance is implicitly passed down the hierarchy ✓
     - Runtime:
       - Subtyping rules ✓
+  - Independence
 - Ownership ✓
 
 Entities:

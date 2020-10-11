@@ -305,36 +305,46 @@ The first option would make components effectively unusable. It is rarely desira
 If no components share a supertype (`Any` does not count), we can **always decide** which component belongs to a given component type `+C`. The downside is that we cannot declare two components in a struct that share a supertype, such as:
 
 ```
-trait Stat
+
+```
+
+To help with this issue, any trait or struct can be declared to be **independent**. An independent type cannot be owned by an entity, cannot be used as the underlying type of a component type, and consequently doesn't need to be included in the component type restrictions. Any independent type can have **non-independent subtypes**, but all of the type's **supertraits must be independent**.
+
+```
+independent trait Stat
 struct Strength extends Stat
 struct Dexterity extends Stat
 
 struct Hero {
-  // Does not compile: Strength and Dexterity share a supertrait.
+  // Success!
   component Strength
   component Dexterity
 }
 ```
 
-**TODO:** Maybe we could introduce traits which cannot be components, which would remove them from this whole restriction. I anticipate that there are a handful traits that this restriction will be very prohibitive for, e.g. Hashable, which might be applied to two structs that would otherwise be components coexisting in perfect harmony. (Perhaps even just with the syntax `owned by Nothing`. Might be super elegant. Although we have to be careful about how owned by translates to a subtrait or struct implementing a trait…)
-
-- `owned by Nothing` doesn't work, because subtypes of the entity should be able to be owned (such as `Position <: Hashable` being able to be owned as a component). Hence, we will have to introduce some sort of keyword for this.
-- Maybe just the keyword `ownerless`.
-- Alternative 1: To be able to be used as a component, a type has to declare `owned by Any`.
-- Alternative 2: To be able to be used as a component, we have to declare entities as `component struct`/`component trait`.
-
-But of course, we can always **rewrite the struct** in a way that allows us to implement the desired design. Consider the following example. We lose a little bit of flexibility, but we gain flexibility by being able to access components by their supertype.
+We can rewrite another one of the above **examples** as such:
 
 ```
-struct StatRepository {
-  strength: Strength
-  dexterity: Dexterity
+independent trait C
+struct CA extends C
+struct CB extends C
+
+struct E {
+  component CA
+  component CB
 }
 
-struct Hero {
-  component StatRepository
+// So far, so good. The entity E is now valid, because CA and CB only
+// share the supertype C, which is independent.
+
+// +C is now illegal, because C is independent! Hence, the typing cannot
+// exist and the predicament of accessing e.C does not occur.
+action f(e: +C) {
+  e.C
 }
 ```
+
+Especially **common traits**, such as `Hashable`, profit from this, but also **label types**. So we could declare `independent trait Hashable` and then have two components that are hashable in the same entity. If this feature didn't exist, it would be virtually impossible to work with common traits.
 
 **Traits**, on the other hand, can have components that share a supertype perfectly coexist:
 
@@ -352,8 +362,6 @@ struct E implements A, B {
 ```
 
 The component `C12` provides a backing for both `+C1` and `+C2`. Whether `C12` is accessed through trait `A` and `.C1` or trait `B` and `.C2` does not matter. It is clear to the runtime which component must be accessed and no ambiguity presents itself in this example.
-
-Luckily, by the way, **`+Any`** is not a valid type, since `Any` is not a trait or struct. So we don't shoot ourselves in the foot by disallowing the full trait hierarchy.
 
 ##### Ownership
 
