@@ -305,15 +305,24 @@ The first option would make components effectively unusable. It is rarely desira
 If no components share a supertype (`Any` does not count), we can **always decide** which component belongs to a given component type `+C`. The downside is that we cannot declare two components in a struct that share a supertype, such as:
 
 ```
+trait Stat
+struct Strength implements Stat
+struct Dexterity implements Stat
 
+struct Hero {
+  // Strength and Dexterity cannot be both components of Hero since
+  // they share a supertype.
+  component Strength
+  component Dexterity
+}
 ```
 
 To help with this issue, any trait or struct can be declared to be **independent**. An independent type cannot be owned by an entity, cannot be used as the underlying type of a component type, and consequently doesn't need to be included in the component type restrictions. Any independent type can have **non-independent subtypes**, but all of the type's **supertraits must be independent**.
 
 ```
 independent trait Stat
-struct Strength extends Stat
-struct Dexterity extends Stat
+struct Strength implements Stat
+struct Dexterity implements Stat
 
 struct Hero {
   // Success!

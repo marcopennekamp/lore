@@ -1,0 +1,23 @@
+independent trait C
+
+struct CA implements C
+function toString(c: CA): String = 'CA'
+
+struct CB implements C
+function toString(c: CB): String = 'CB'
+
+struct E {
+  component CA
+  component CB
+}
+
+// +C is illegal because C is independent!
+/* action f(e: +C) {
+  e.C
+} */
+
+action foo() {
+  let e = E(CA(), CB())
+  println(e.CA)
+  println(e.CB)
+}

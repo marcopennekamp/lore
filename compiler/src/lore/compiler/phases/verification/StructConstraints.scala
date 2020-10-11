@@ -14,7 +14,8 @@ object StructConstraints {
   /**
     * Verifies:
     *   1. Members must be unique.
-    *   2. Each component in a struct may not share a supertype with any other component defined in the same struct.
+    *   2. Each component in a struct may not share an ownable supertype with any other component defined in the same
+    *      struct.
     *   3. For each component declared via an implemented trait, there must be a component defined in the struct
     *      that backs the component.
     */
@@ -43,13 +44,14 @@ object StructConstraints {
     supertype: DeclaredType,
     components: Vector[ComponentDefinition],
   ) extends Error(definition) {
-    override def message: String = s"The following components are invalid because they share a supertype" +
-      s" $supertype: ${components.map(_.name).mkString(", ")}. Components may not share a supertype, because" +
-      s" component types such as +C have to remain unambiguous for all possible entities."
+    override def message: String = s"The following components are invalid because they share an ownable supertype" +
+      s" $supertype: ${components.map(_.name).mkString(", ")}. Components may not share an ownable supertype, because" +
+      s" component types such as +C have to remain unambiguous for all possible entities. To resolve this issue, consider" +
+      s" declaring $supertype as independent."
   }
 
   /**
-    * Verifies that no two components share the same supertype, which is a restriction outlined in detail in the
+    * Verifies that no two components share the same ownable supertype, which is a restriction outlined in detail in the
     * specification.
     *
     * Algorithm:
@@ -61,6 +63,8 @@ object StructConstraints {
     *      components share the same bucket, they share that supertype and are thus invalid.
     */
   private def verifyComponentsNoSharedSupertype(definition: StructDefinition): Verification = {
+    // TODO: This algorithm needs to be redesigned to account for independent supertypes.
+
     val buckets = mutable.HashMap[DeclaredType, Vector[ComponentDefinition]]()
 
     definition.components.foreach { component =>

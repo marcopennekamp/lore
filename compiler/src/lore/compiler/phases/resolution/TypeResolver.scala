@@ -29,7 +29,7 @@ object TypeResolver {
       node.members.filterType[TypeDeclNode.ComponentNode].map(resolveComponentType).simultaneous,
     ).simultaneous.map { case (implementedTraits, componentTypes) =>
       val supertypes = implementedTraits ++ componentTypes.map(ComponentType)
-      new StructType(node.name, supertypes)
+      new StructType(node.name, supertypes, !node.isIndependent)
     }
   }
 
@@ -44,7 +44,7 @@ object TypeResolver {
       node.components.map(resolveType[DeclaredType](IllegalExtends(node))).simultaneous,
     ).simultaneous.map { case (extendedTraits, componentTypes) =>
       val supertypes = extendedTraits ++ componentTypes.map(ComponentType)
-      new TraitType(node.name, supertypes)
+      new TraitType(node.name, supertypes, !node.isIndependent)
     }
   }
 
@@ -61,9 +61,14 @@ object TypeResolver {
     override def message = s"The component ${node.name} is not a valid struct or trait."
   }
 
+  case class ComponentMustBeOwnable(node: TypeDeclNode.ComponentNode) extends Error(node) {
+    override def message = s"The component ${node.name} cannot be declared because the underlying declared type is independent."
+  }
+
   def resolveComponentType(node: TypeDeclNode.ComponentNode)(implicit typeScope: TypeScope): Compilation[DeclaredType] = {
     typeScope.resolve(node.name)(node.position)
       .require(_.isInstanceOf[DeclaredType])(ComponentMustBeDeclaredType(node))
       .map(_.asInstanceOf[DeclaredType])
+      .require(_.isOwnable)(ComponentMustBeOwnable(node))
   }
 }

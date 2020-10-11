@@ -10,6 +10,10 @@ object TypeExpressionEvaluator {
     override def message: String = s"The component type +${node.underlyingName} must contain a declared type. ${node.underlyingName} is not a struct or trait."
   }
 
+  case class ComponentTypeMustContainOwnable(node: TypeExprNode.ComponentNode) extends Error(node) {
+    override def message: String = s"The component type +${node.underlyingName} must contain an ownable type. ${node.underlyingName} is, however, independent."
+  }
+
   def evaluate(expression: TypeExprNode)(implicit typeScope: TypeScope): Compilation[Type] = {
     implicit val position: Position = expression.position
     val eval = evaluate _
@@ -21,9 +25,10 @@ object TypeExpressionEvaluator {
       case TypeExprNode.UnitNode(_) => ProductType.UnitType.compiled
       case TypeExprNode.ListNode(element, _) => eval(element).map(ListType)
       case TypeExprNode.MapNode(key, value, _) => (eval(key), eval(value)).simultaneous.map(MapType.tupled)
-      case componentNode@TypeExprNode.ComponentNode(underlying, _) => typeScope.resolve(underlying).flatMap {
-        case tpe: DeclaredType => ComponentType(tpe).compiled
-        case _ => Compilation.fail(ComponentTypeMustContainDeclaredType(componentNode))
+      case node@TypeExprNode.ComponentNode(underlying, _) => typeScope.resolve(underlying).flatMap {
+        case tpe: DeclaredType if tpe.isOwnable => ComponentType(tpe).compiled
+        case _: DeclaredType => Compilation.fail(ComponentTypeMustContainOwnable(node))
+        case _ => Compilation.fail(ComponentTypeMustContainDeclaredType(node))
       }
     }
   }

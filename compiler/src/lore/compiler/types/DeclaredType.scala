@@ -54,6 +54,11 @@ trait DeclaredType extends NamedType {
   lazy val isEntity: Boolean = inheritedComponentTypes.nonEmpty
 
   /**
+    * Whether this declared type can be owned as a component.
+    */
+  def isOwnable: Boolean
+
+  /**
     * The type that an entity owning this component must subtype. This type may be Any, which means that the
     * declared type may be owned by any kind of entity.
     *

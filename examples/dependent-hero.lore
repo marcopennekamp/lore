@@ -1,0 +1,9 @@
+trait Stat
+struct Strength extends Stat
+struct Dexterity extends Stat
+
+struct Hero {
+  // Strength and Dexterity cannot be both components of Hero since they share a supertype.
+  component Strength
+  component Dexterity
+}
