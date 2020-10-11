@@ -1,5 +1,5 @@
 function concat(as: [A], bs: [B]): [A | B] where A, B = {
-  let result: [A | B] = as
+  let mut result: [A | B] = as
   for (b <- bs) {
     result = result :+ b
   }
@@ -23,12 +23,12 @@ action printList(list: [String | Int | Boolean]) {
 }
 
 action test() {
-  const list = [10]
+  let list = [10]
   printList(list)
-  const merged = concat(list, ['test'])
+  let merged = concat(list, ['test'])
   printList(merged)
-  const merged2 = concat(merged, [true])
+  let merged2 = concat(merged, [true])
   printList(merged2)
-  const merged3 = concat(merged2, [15])
+  let merged3 = concat(merged2, [15])
   printList(merged3)
 }

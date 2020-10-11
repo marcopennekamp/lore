@@ -63,7 +63,7 @@ class Regeneration owned by +HealthState {
 // Regeneration to be attached to entities that also have a HealthState, we can access the health state without
 // declaring it explicitly.
 action updateHealth(entity: +Regeneration) {
-  const r = entity.Regeneration
+  let r = entity.Regeneration
   if (remainder(r.counter, r.interval) == 0) {
     heal(entity, r.amount)
   }

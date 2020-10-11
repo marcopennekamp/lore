@@ -1,12 +1,12 @@
 // Just two examples to test custom comparisons.
 
-class Bird {
+struct Bird {
   species: String
   weight: Real
   wingspan: Real
 }
 
-class Plane {
+struct Plane {
   model: String
   capacity: Int
   wingspan: Real
@@ -20,15 +20,17 @@ function areEqual(p1: Plane, p2: Plane): Boolean = p1.model == p2.model & p1.cap
 //       assume that defining areEqual(Bird, Plane) covers all cases, while he/she leaves out the (Plane, Bird) case
 //       without encountering any warning. This problem might not even be discovered at first, if only bird == plane
 //       comparisons are used, and only later plane == bird comparisons are added.
+// Idea: This could maybe be solved once we have a macro system. We could allow creating arbitrary keywords for
+//       functions and such and then implement a "symmetric" keyword that declares for a function over (a, b) another
+//       function over (b, a).
 function areEqual(bird: Bird, plane: Plane): Boolean = bird.wingspan == plane.wingspan
 function areEqual(plane: Plane, bird: Bird): Boolean = bird == plane
 
 
 
-// TODO: Would be better suited as a label once we allow classes to extend labels.
-abstract class Shape
+trait Shape
 
-// "Computed"/"Virtual" properties.
+// "Computed"/"Virtual" properties. Could be improved with the property syntax for types/traits suggested in the spec.
 function width(shape: Shape): Real
 function height(shape: Shape): Real
 
@@ -38,33 +40,26 @@ function isLessThan(s1: Shape, s2: Shape): Boolean = area(s1) < area(s2)
 function isLessThanOrEqual(s1: Shape, s2: Shape): Boolean = area(s1) <= area(s2)
 
 
-class Rectangle extends Shape {
-  width: Real
-  height: Real
-}
+struct Rectangle implements Shape { width: Real, height: Real }
 
-// TODO: This way of extracting an argument from an object via a function to make it accessible in a trait-ish
-//       context could be something that we can support with syntactic sugar, if it becomes very popular.
-//       This would actually be a way to partially simulate traits without introducing them. (I say partially
-//       because traits can also add (mutable) fields to a class, which isn't possible with a label, for example.)
+// The same suggestions about a property syntax apply here. This is quite verbose, but alright for the MVL, since
+// we should focus on functionality/correctness first, not syntactic nicety.
 function width(rect: Rectangle): Real = rect.width
 function height(rect: Rectangle): Real = rect.height
 
 
-class BoundingBox extends Shape {
-  x: Real
-  xEnd: Real
-  y: Real
-  yEnd: Real
-}
+struct BoundingBox implements Shape { x: Real, xEnd: Real, y: Real, yEnd: Real }
 
 function width(box: BoundingBox): Real = box.xEnd - box.x
 function height(box: BoundingBox): Real = box.yEnd - box.y
 
 
+action test() {
+  let bird = Bird('Raven', 1.5, 1.2)
+  let plane = Plane('B-2 Spirit', 2, 52.4)
+  let rect = Rectangle(15, 20)
+  let box = BoundingBox(2, 10, 8, 16)
 
-// TODO: Actually instantiate the objects here, which isn't possible currently due to the transpiler not supporting it.
-action test(bird: Bird, plane: Plane, rect: Rectangle, box: BoundingBox) {
   if (bird == bird) {
     println('Equal birds!')
   }

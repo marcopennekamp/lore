@@ -7,7 +7,7 @@ function f2(): Int = {
 }
 
 function f3(): Int = {
-  const list = [1, 2, 3]
+  let list = [1, 2, 3]
   for (x <- list) {
     if (x == 2) {
       return 5

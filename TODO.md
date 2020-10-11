@@ -1,5 +1,59 @@
 ### TODO
 
+Structs:
+- Struct declaration:
+  - Implementing any number of traits
+    - Compiler ✓
+    - Runtime ✓
+  - Properties:
+    - mutable and immutable ✓
+    - delimited by newlines or commas ✓
+    - default values ✓
+  - Components
+    - Compiler ✓
+    - Runtime:
+      - Instantiation ✓
+      - Dynamic Retrieval ✓
+  - Independence
+- Construction:
+  - call syntax ✓
+  - map syntax ✓
+    - shorthand ✓
+- Ownership ✓
+
+Traits:
+- Trait declaration:
+  - Inheritance:
+    - From traits ✓
+    - From component types ✓
+    - Inheritance is implicitly passed down the hierarchy ✓
+    - Runtime:
+      - Subtyping rules ✓
+  - Independence
+- Ownership ✓
+
+Entities:
+- Component Constraints:
+  - Immutability ✓
+  - Component Type Restrictions ✓
+- Ownership:
+  - Declaration (structs and entities) ✓
+  - Passed down via inheritance, explicitly (re-)declared ✓
+  - Access to the owner's type through component types ✓
+  - Runtime:
+    - Test ownership during struct instantiation. ✓
+
+Cleanup:
+- Replace Lists with Vectors. ✓
+- Replace assertions with proper CompilationExceptions. Report the position with a CompilationException, if possible.
+
+Performance:
+- Provide a sane immutable list implementation.
+- Provide a sane immutable map implementation.
+- Intern component types.
+- Intern struct types and check performance with monster.lore.
+- Turn declared type subtyping into a simple HashSet lookup so that we don't need to branch up the supertype tree to decide whether one declared type is the subtype of another. This would be possible by giving each type an exhaustive (transitive) list of supertypes. Downsides might become apparent especially once we introduce dynamic specialization. 
+
 NEXT:
 - Finish transpilation and verification for the current MVL constructs.
 - THINK: We need to make a fundamental decision: Are list and map types decided at compile-time or at run-time? So, for example, if we have a list of type `[Animal]` but it only has elements of type `Cat`, is the actual type of the list `[Animal]` or `[Cat]`? It seems like it should be the former, but the latter would be more useful, wouldn't it?  

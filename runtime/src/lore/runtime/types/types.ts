@@ -10,7 +10,10 @@ import {
 } from '../utils/hash.ts'
 import { allExcluding, flattenedUnique } from './util.ts'
 import { isSubtype } from './subtyping.ts'
+import { HashMap } from '../utils/HashMap.ts'
+import { LazyValue } from '../utils/LazyValue.ts'
 
+// TODO: Create a toString function for types.
 export interface Type extends Hashed {
   kind: Kind
 }
@@ -121,13 +124,18 @@ export function unhashedProduct(types: Array<Type>): ProductType {
 export const unit: ProductType = product([])
 
 
+// TODO: We could easily intern component types by giving each declared type exactly one ComponentType instance...
+
 export interface ComponentType extends Type {
-  underlying: ClassType
+  underlying: DeclaredType
 }
 
-export function component(underlying: ClassType): ComponentType {
-  if (underlying.kind !== Kind.Class) {
-    throw Error("A component type must have an underlying class type.")
+export function component(underlying: DeclaredType): ComponentType {
+  if (underlying.kind !== Kind.Struct && underlying.kind !== Kind.Trait) {
+    throw Error('A component type must have an underlying declared type.')
+  }
+  if (!underlying.schema.isOwnable) {
+    throw Error('A component type must contain an ownable declared type.')
   }
   return { kind: Kind.Component, underlying, hash: singleHash(underlying, 0x4cab1ec0) }
 }
@@ -152,21 +160,125 @@ export function map(key: Type, value: Type): MapType {
 }
 
 
-export interface ClassType extends Type {
+export interface DeclaredTypeSchema {
   name: string
-  supertype?: ClassType
-  ownedBy?: Type
+  supertraits: Array<TraitType>
+
+  /**
+   * The owned-by type of the declared type. It must be passed as a lazy value, because it needs to be loaded after all
+   * other types have been initialised. The reason is simple: we can have two types that mention each other in their
+   * owned-by types, and so if we evaluated this eagerly, one of the types would have a null reference!
+   */
+  ownedBy: LazyValue<Type>
+
+  isOwnable: boolean
+  isEntity: boolean
+}
+
+export interface DeclaredType extends Type {
+  schema: DeclaredTypeSchema
   componentTypes: Array<ComponentType>
-  isEntity: Boolean
+
+  /**
+   * Whether this declared type is the one that represents the compile-time type, i.e. its component types are
+   * exactly equal to the compile-time component types.
+   */
+  isArchetype: boolean
 }
 
-export function classType(
-  name: string, supertype: ClassType | undefined, ownedBy: Type | undefined, componentTypes: Array<ComponentType>, isEntity: boolean,
-): ClassType {
-  return { kind: Kind.Class, name, supertype, ownedBy, componentTypes, isEntity, hash: stringHashWithSeed(name, 0x38ba128e) }
-}
 
-
-export interface LabelType extends Type {
+export interface MemberDefinition {
   name: string
+  // TODO: type?
+}
+
+export interface StructSchema extends DeclaredTypeSchema {
+  properties: Array<MemberDefinition>
+  components: Array<MemberDefinition>
+
+  /**
+   * A cache that maps a declared type, used by the compiler to access a given component, to this struct's corresponding
+   * component name. The cache significantly increases access performance, because without it we will have to resort to
+   * checking subtypes. This cache only has to exist once per schema, as the actual run-time component types have no
+   * bearing on field names.
+   *
+   * The cache is instantiated during the first retrieval.
+   */
+  componentAccessCache?: HashMap<DeclaredType, string>
+}
+
+export function structSchema(
+  name: string,
+  supertraits: Array<TraitType>,
+  ownedBy: LazyValue<Type>,
+  isOwnable: boolean,
+  isEntity: boolean,
+  properties: Array<MemberDefinition>,
+  components: Array<MemberDefinition>,
+): StructSchema {
+  return { name, supertraits, ownedBy, isOwnable, isEntity, properties, components }
+}
+
+/**
+ * The type of a struct. For each struct that is instantiated, a new struct type is created, as the list of component
+ * types differs based on the actual components present at run-time.
+ */
+export interface StructType extends DeclaredType {
+  schema: StructSchema
+}
+
+// TODO: Interning struct types might bring big performance gains for multiple dispatch, because the more components a
+//       struct has, the more expensive the areEqual test gets. This test HAS to be performed at least once per
+//       dispatch cache access. Interned struct types would allow us to decide struct type equality via referential
+//       equality as there would be exactly one struct type per component type combination. Many structs may only ever
+//       have their archetype, too, which would further speed up type checking.
+
+export function struct(schema: StructSchema, componentTypes: Array<ComponentType>, isArchetype: boolean): StructType {
+  const type: StructType = {
+    kind: Kind.Struct,
+    schema,
+    componentTypes,
+    isArchetype,
+    // TODO: The hash of the struct type must not only depend on the name, but also on the component types. Otherwise,
+    //       structs with different component types altogether get different hashes, which is bad for dispatch cache
+    //       performance.
+    hash: stringHashWithSeed(schema.name, 0x38ba128e),
+  }
+
+  // Check that all component types can be owned by the given struct.
+  for (let i = 0; i < componentTypes.length; i += 1) {
+    const componentType = componentTypes[i]
+    const ownedBy = componentType.underlying.schema.ownedBy.value()
+    if (!isSubtype(type, ownedBy, false)) {
+      const componentTypeNames = componentTypes.map(c => c.underlying.schema.name)
+      throw Error(`The struct type ${schema.name} with the components ${componentTypeNames.join(', ')} cannot own the component ${componentType.underlying.schema.name}, which has an owned-by type of ${ownedBy}.`)
+    }
+  }
+
+  return type
+}
+
+
+export interface TraitSchema extends DeclaredTypeSchema { }
+
+export function traitSchema(
+  name: string, supertraits: Array<TraitType>, ownedBy: LazyValue<Type>, isOwnable: boolean, isEntity: boolean,
+): TraitSchema {
+  return { name, supertraits, ownedBy, isOwnable, isEntity }
+}
+
+/**
+ * A trait type. Only one type is instantiated for each trait, as their supertypes are not dependent on run-time
+ * values. Thus, a trait type is also always an archetype. Component types could be kept in the TraitSchema,
+ * but to achieve symmetry with structs, they are kept in the TraitType.
+ *
+ * The component types of a trait correspond to the "inheritedComponentTypes" of the compiler. That is, we only
+ * include component types that are not subsumed by other component types, keeping a minimal version of the list.
+ */
+export interface TraitType extends DeclaredType {
+  schema: TraitSchema
+}
+
+export function trait(schema: TraitSchema, componentTypes: Array<ComponentType>): TraitType {
+  return { kind: Kind.Trait, schema, componentTypes, isArchetype: true, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
 }

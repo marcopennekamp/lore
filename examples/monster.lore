@@ -1,17 +1,73 @@
-class Animal {
+trait Animal
+function name(animal: Animal): String
+
+trait Fish extends Animal
+// TODO: Should we allow traits to "inherit" all abstract functions implicitly? Having to redeclare abstract
+//       functions like this could be a nuisance indeed... Maybe we can fix this in a simple way?
+//       Obviously, the totality constraint would have to be checked by looking for specialized functions of the
+//       implicit function, but this seems like a step we can take in the checking algorithm.
+function name(fish: Fish): String
+
+struct Bass implements Fish {
   name: String
 }
-class Fish extends Animal
-class Bass extends Fish
+function name(bass: Bass): String = bass.name
 
-// A Monster made of several different parts, but currently only a fish... Maybe its leg!
-entity Monster {
+struct Trout implements Fish
+function name(trout: Trout): String = 'Fred'
+
+trait Extremity
+trait Limb extends Extremity
+trait Armish extends Limb
+trait AlmostAnArm extends Armish
+struct Arm implements AlmostAnArm
+struct MANDIBLE implements AlmostAnArm
+struct Head
+struct Torso
+
+function toString(extremity: Extremity): String = 'extremity'
+function toString(mandible: MANDIBLE): String = 'MANDIBLE'
+
+// A Monster made of several different parts, but currently only a fish... Maybe its Head!
+struct Monster {
   component Fish
+  component Extremity
+  component Head
+  component Torso
 }
 
 action react(entity: Monster) {
-  println('A monster with a fish named ${entity.Fish.name} sticking out of it!!')
+  println('A monster with a fish named ${name(entity.Fish)} sticking out of it!!')
 }
+
+action react(entity: Monster & +MANDIBLE) {
+  println('FUCK! IT HAS A ${entity.MANDIBLE} as an ${entity.Extremity}!!!')
+}
+
 action react(entity: Monster & +Bass) {
   println('Slap that bass called ${entity.Bass.name}!!!')
+  let mut i = 0
+  // TODO: The iteration count scales superlinearly because our current list implementation copies the whole array with
+  //       every appends operation. We should try playing with the count here once we have a sane list implementation...
+  //       We might even optimize list construction in loops by first constructing a plain array, then passing it to
+  //       the list.
+  let list = while (i < 100) {
+    i += 1
+    entity.Head
+    entity.Torso
+    entity.Extremity
+    entity.Bass.name
+  }
+  println(list)
+}
+
+action test() {
+  react(Monster(Bass('Les'), Arm(), Head(), Torso()))
+
+  let mut i = 0
+  let monster2 = Monster(Trout(), MANDIBLE(), Head(), Torso())
+  while (i < 100) {
+    react(monster2)
+    i += 1
+  }
 }

@@ -33,7 +33,7 @@ struct Person {
 
 Creating new struct instances is possible with two independent **constructor** syntaxes. The **call syntax** is a convenient way to create instances, but with the requirement that all properties need to be specified, including those that could have a default value. In contrast, the **map syntax** is most convenient when default values should be applied to properties or when more self-evident code is desired. It is also useful when properties should be specified out of order for some pragmatic reason. 
 
-When using the map syntax, one may **omit some verbosity** in a definition like `property: value` if the value is a variable and named exactly like the property. An example of this is included below.
+When using the map syntax, one may **omit some verbosity** in a definition like `property = value` if the value is a variable and named exactly like the property. An example of this is included below.
 
 Apart from these two constructor styles, all **derivative constructors** will have to be defined as ordinary (multi-)functions. 
 
@@ -45,14 +45,14 @@ action test() {
   let point = Point(0.5, 1.5, 2.5)
   let position = Position(point)
   // Map syntax.
-  let person = Person { name: 'Mellow', Position: position }
+  let person = Person { name = 'Mellow', Position = position }
 }
 
 action test2() { 
   // If the variable name matches the property name, it's possible to
   // omit the colon entirely.
   let name = 'Shallow'
-  let person = Person { name, Position: Position(Point { }) }
+  let person = Person { name, Position = Position(Point { }) }
 }
 ```
 
@@ -251,13 +251,13 @@ At run-time, `E` might actually be a type `E & +C3` given `C3 < C1`, if a value 
 
 Once assigned to an entity, a component cannot be replaced or removed: **components are immutable**. Note that, while the *reference* is immutable, the component *itself* does not have to be immutable. You can, of course, still model changing state in Lore, but that change needs to be applied inside the component, not by replacing a component.
 
-We would love to get rid of this **constraint**, but components must be immutable because they are part of the run-time type of the entity, as the actual component value is significant in multiple-dispatch. If a component's type could change during execution, so would the entity type, and this is not permitted due to our policy of requiring the types of run-time values to be immutable after the value's construction.
+Right now, this limitation exists due to **implementation concerns**. Components must be immutable because they are part of the run-time type of the entity. If a component's type could change during execution, so would the entity type, and this is currently not possible. Once we introduce dynamic specialization and generalization in the future, we will also permit mutable components.
 
-Note that one object can be a component of **multiple entities**. For example, you could share a health state between two bosses in a boss fight. We don't want to remove this freedom and so Lore asks extra diligence of the programmer when it comes to component instantiation.
+Note that one object can be a component of **multiple entities**. For example, you could share a health state between two bosses in a boss fight.
 
 ##### Component Type Restrictions
 
-The freedom with which we allow subtyping of component types has a few **implications**. Say we have an entity type `E & C2` with `C1 < C2 < C3`. We could assign a value of either `C1` or `C2` to the entity. This already leads to a problem when we consider the compilation process:
+The freedom with which we allow **subtyping of component types** has a few implications. Say we have an entity type `E & C2` with `C1 < C2 < C3`. We could assign a value of either `C1` or `C2` to the component. This already leads to a problem when we consider the compilation process:
 
 ```
 struct E1 { component C1 }
@@ -298,45 +298,79 @@ action f(e: +C) {
 We don't know whether `e.C` refers to `CA` or `CB`. Well, in fact, it refers to *both*. But we don't know that `e` is `E` in `f`. We just know that *some* entity has a component of type `C`. This means we have **two options:**
 
 1. Any component access **returns a list**.
-2. Any two components defined in an entity **must not share a supertrait**.
+2. Any two components defined in a struct **must not share a supertype**.
 
 The first option would make components effectively unusable. It is rarely desirable to have to always handle lists when we want to operate on components that should be standalone instances. Hence, we choose the **second option**.
 
-If no components share a supertrait (`Any` does not count, since it is not a trait), we can **always decide** which component belongs to a given component type `+C`. The downside is that we cannot have two components sharing a supertrait, such as:
+If no components share a supertype (`Any` does not count), we can **always decide** which component belongs to a given component type `+C`. The downside is that we cannot declare two components in a struct that share a supertype, such as:
 
 ```
 trait Stat
-struct Strength extends Stat
-struct Dexterity extends Stat
+struct Strength implements Stat
+struct Dexterity implements Stat
 
 struct Hero {
-  // Does not compile: Strength and Dexterity share a supertrait.
+  // Strength and Dexterity cannot be both components of Hero since
+  // they share a supertype.
   component Strength
   component Dexterity
 }
 ```
 
-**TODO:** Maybe we could introduce traits which cannot be components, which would remove them from this whole restriction. I anticipate that there are a handful traits that this restriction will be very prohibitive for, e.g. Hashable, which might be applied to two structs that would otherwise be components coexisting in perfect harmony. (Perhaps even just with the syntax `owned by Nothing`. Might be super elegant. Although we have to be careful about how owned by translates to a subtrait or struct implementing a trait…)
-
-- `owned by Nothing` doesn't work, because subtypes of the entity should be able to be owned (such as `Position <: Hashable` being able to be owned as a component). Hence, we will have to introduce some sort of keyword for this.
-- Maybe just the keyword `ownerless`.
-- Alternative 1: To be able to be used as a component, a type has to declare `owned by Any`.
-- Alternative 2: To be able to be used as a component, we have to declare entities as `component struct`/`component trait`.
-
-But of course, we can always **rewrite the entity** in a way that allows us to implement the desired design. Consider the following example. We lose a little bit of flexibility, but we gain flexibility by being able to access components by their supertype.
+To help with this issue, any trait or struct can be declared to be **independent**. An independent type cannot be owned by an entity, cannot be used as the underlying type of a component type, and consequently doesn't need to be included in the component type restrictions. Any independent type can have **non-independent subtypes**, but all of the type's **supertraits must be independent**.
 
 ```
-struct StatRepository {
-  strength: Strength
-  dexterity: Dexterity
-}
+independent trait Stat
+struct Strength implements Stat
+struct Dexterity implements Stat
 
 struct Hero {
-  component StatRepository
+  // Success!
+  component Strength
+  component Dexterity
 }
 ```
 
-Luckily, by the way, **`+Any`** is not a valid type, since `Any` is not a trait or struct. So we don't shoot ourselves in the foot by disallowing the full trait hierarchy.
+We can rewrite another one of the above **examples** as such:
+
+```
+independent trait C
+struct CA extends C
+struct CB extends C
+
+struct E {
+  component CA
+  component CB
+}
+
+// So far, so good. The entity E is now valid, because CA and CB only
+// share the supertype C, which is independent.
+
+// +C is now illegal, because C is independent! Hence, the typing cannot
+// exist and the predicament of accessing e.C does not occur.
+action f(e: +C) {
+  e.C
+}
+```
+
+Especially **common traits**, such as `Hashable`, profit from this, but also **label types**. So we could declare `independent trait Hashable` and then have two components that are hashable in the same entity. If this feature didn't exist, it would be virtually impossible to work with common traits.
+
+**Traits**, on the other hand, can have components that share a supertype perfectly coexist:
+
+```
+trait C
+trait C1 extends C
+trait C2 extends C
+struct C12 implements C1, C2
+
+trait A extends +C1
+trait B extends +C2
+struct E implements A, B {
+  component C12
+}
+```
+
+The component `C12` provides a backing for both `+C1` and `+C2`. Whether `C12` is accessed through trait `A` and `.C1` or trait `B` and `.C2` does not matter. It is clear to the runtime which component must be accessed and no ambiguity presents itself in this example.
 
 ##### Ownership
 
@@ -431,6 +465,34 @@ Ownership is **not fully type-safe at compile-time**, because the ability to spe
   ```
 
   Note: Since this proposal does not add any additional expressiveness to the language (only convenience), it is not a candidate for the MVL itself. Also, another question is how this system interacts with namespacing, and thus it would be prudent to define the module system first and THEN turn our attention to this proposal.
+
+  - **Alternative:**
+
+    ```
+    trait Position {
+      x: Real
+    }
+    
+    action test(pos: Position) {
+      println(pos.x)
+    }
+    
+    // Direct mapping
+    struct Point implements Position {
+      x: Real implements Position.x
+    }
+    
+    // Indirect mapping
+    property x: Real of box: Box = box.xStart + width(box) / 2
+    // or:
+    function x(box: Box): Real = box.xStart + width(box) / 2
+    // or:
+    property x(box: Box): Real = box.xStart + width(box) / 2
+    ```
+
+    This would internally still be represented by multi-functions, but the declaration in traits is shorter and more natural. **Potential downside:** This way of declaring trait properties could confuse users into thinking that properties are inherited. It could also make the idea that trait properties are just multi-functions under the hood harder to convey. Another question is which namespace/module these property functions will be part of.
+
+    Another downside is that we can't easily tie properties to ANY types with this syntax, which would be especially problematic for computed properties of structs. However, we could consider supporting both syntaxes. In fact, the trait property syntax would be the natural way for traits (at the trait's declaration site, of course, not for "monkey patching"), while the `property` syntax would be the natural way for other types. Going a step further: `property` would be the keyword for functions that accept a single `instance` parameter and are called like `instance.property` *without* parentheses. (What about setters, then?)
 
 - One step further: Automatic, optional **memoization of properties**.
 

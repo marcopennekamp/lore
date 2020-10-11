@@ -14,7 +14,7 @@ object DeclNode {
     *             represent TopLevelExprNode.
     */
   case class FunctionNode(
-    name: String, parameters: List[ParameterNode], outputType: TypeExprNode, typeVariables: List[TypeVariableNode],
+    name: String, parameters: Vector[ParameterNode], outputType: TypeExprNode, typeVariables: Vector[TypeVariableNode],
     body: Option[ExprNode], position: Position,
   ) extends DeclNode {
     def isAbstract: Boolean = body.isEmpty
@@ -22,14 +22,17 @@ object DeclNode {
 
   object FunctionNode {
     def fromAction(
-      name: String, parameters: List[ParameterNode], typeVariables: List[TypeVariableNode], body: Option[ExprNode], position: Position,
+      name: String, parameters: Vector[ParameterNode], typeVariables: Vector[TypeVariableNode],
+      body: Option[ExprNode], position: Position,
     ): FunctionNode = {
       DeclNode.FunctionNode(name, parameters, TypeExprNode.UnitNode(position), typeVariables, body, position)
     }
   }
 
   case class ParameterNode(name: String, tpe: TypeExprNode, position: Position) extends Node
-  case class TypeVariableNode(name: String, lowerBound: Option[TypeExprNode], upperBound: Option[TypeExprNode], position: Position) extends Node
+  case class TypeVariableNode(
+    name: String, lowerBound: Option[TypeExprNode], upperBound: Option[TypeExprNode], position: Position,
+  ) extends Node
 }
 
 /**
@@ -40,33 +43,33 @@ sealed trait TypeDeclNode extends DeclNode {
 }
 
 object TypeDeclNode {
-  case class AliasNode(override val name: String, tpe: TypeExprNode, position: Position) extends TypeDeclNode
-
-  sealed trait DeclaredNode extends TypeDeclNode {
-    def supertypeName: Option[String]
-  }
-
-  case class LabelNode(override val name: String, override val supertypeName: Option[String], position: Position) extends DeclaredNode
 
   /**
-    * Either a class or an entity depending on whether members contains a component.
+    * @param implemented The names of all traits that the struct implements.
     */
-  case class ClassNode(
-    override val name: String, override val supertypeName: Option[String], ownedBy: Option[TypeExprNode],
-    isAbstract: Boolean, isEntity: Boolean, members: List[MemberNode], constructors: List[ConstructorNode],
-    position: Position,
-  ) extends DeclaredNode
+  case class StructNode(
+    override val name: String,
+    implemented: Vector[String],
+    ownedBy: Option[TypeExprNode],
+    members: Vector[MemberNode],
+    isIndependent: Boolean,
+    position: Position
+  ) extends TypeDeclNode
 
   sealed trait MemberNode extends Node
-  case class PropertyNode(name: String, tpe: TypeExprNode, isMutable: Boolean, position: Position) extends MemberNode
-  case class ComponentNode(name: String, overrides: Option[String], position: Position) extends MemberNode
+  case class PropertyNode(name: String, tpe: TypeExprNode, isMutable: Boolean, defaultValue: Option[ExprNode], position: Position) extends MemberNode
+  case class ComponentNode(name: String, defaultValue: Option[ExprNode], position: Position) extends MemberNode
 
   /**
-    * This node is the default constructor if its name equals the name of the class it belongs to.
-    *
-    * The node is only valid if the last statement of the body is a continuation node.
+    * @param extended The names of all traits that the trait extends.
+    * @param components The names of all declared types that the trait should have as components.
     */
-  case class ConstructorNode(
-    name: String, parameters: List[DeclNode.ParameterNode], body: ExprNode.BlockNode, position: Position,
-  ) extends Node
+  case class TraitNode(
+    override val name: String,
+    extended: Vector[String],
+    components: Vector[String],
+    ownedBy: Option[TypeExprNode],
+    isIndependent: Boolean,
+    position: Position
+  ) extends TypeDeclNode
 }

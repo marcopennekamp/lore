@@ -1,28 +1,87 @@
 package lore.compiler.types
 
-import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.DeclaredTypeDefinition
+import lore.compiler.utils.CollectionExtensions._
 
-/**
-  * A declared type as defined by the spec.
-  */
 trait DeclaredType extends NamedType {
+
   /**
     * The name of the declared type.
     */
   def name: String
 
   /**
-    * The supertype of the declared type.
+    * The direct supertypes of the declared type. Only traits and component types are currently allowed by the grammar
+    * to be supertypes of a declared type.
     */
-  def supertype: Option[DeclaredType]
+  def supertypes: Vector[Type]
+
+  // TODO: A supertype list that contains ALL supertypes transitively without removing subsumed types, which could
+  //       then be used to very quickly look up whether this type is a subtype of a given type without having to
+  //       run up the supertype tree. This optimization is especially important for the runtime.
 
   /**
-    * The supertype of the declared type that directly inherits from Any, possibly this type itself.
+    * All direct declared supertypes of the declared type.
     */
-  def rootSupertype: DeclaredType = supertype match {
-    case None => this
-    case Some(tpe) => tpe.rootSupertype
+  lazy val declaredSupertypes: Vector[DeclaredType] = supertypes.filterType[DeclaredType]
+
+  /**
+    * All direct component supertypes of the declared type.
+    */
+  lazy val componentSupertypes: Vector[ComponentType] = supertypes.filterType[ComponentType]
+
+  /**
+    * The component types that this declared type directly and indirectly inherits. This is an exhaustive list
+    * of all component types across the supertype hierarchy of this declared type. Since specialized component
+    * types subsume more general component types, the latter are also removed from the list. Subsumption is decided
+    * without taking owned-by types into account.
+    *
+    * For example, take code such as this:
+    *   trait AnimalHousing extends +Animal, +Roof, +Walls
+    *   struct DogHouse implements AnimalHousing { component Dog, component SturdyRoof, component BrickWalls }
+    *
+    * The component types (as defined by this function) of DogHouse are: +Dog, +Roof, +Walls. Notably, +Animal
+    * has been removed from the list as it is subsumed by +Dog.
+    */
+  lazy val inheritedComponentTypes: Set[ComponentType] = {
+    val all = componentSupertypes ++ declaredSupertypes.flatMap(_.inheritedComponentTypes)
+    Type.mostSpecific(all.toSet, Subtyping.NoOwnedBy).asInstanceOf[Set[ComponentType]]
+  }
+
+  /**
+    * Whether the declared type is an entity, i.e. it contains one or more components.
+    */
+  lazy val isEntity: Boolean = inheritedComponentTypes.nonEmpty
+
+  /**
+    * Whether this declared type can be owned as a component.
+    */
+  def isOwnable: Boolean
+
+  /**
+    * The type that an entity owning this component must subtype. This type may be Any, which means that the
+    * declared type may be owned by any kind of entity.
+    *
+    * ownedBy is declared in DeclaredTypeDefinition, because once definitions are resolved, all types will have been
+    * loaded and the ownedBy type doesn't need to be resolved with a deferred approach.
+    */
+  def ownedBy: Type = definition.ownedBy
+
+  /**
+    * The ownable root supertypes of the declared type, possibly this type itself if it has no ownable supertypes. Note
+    * that the result list is empty if the declared type itself is not ownable.
+    */
+  def ownableRootSupertypes: Vector[DeclaredType] = {
+    if (!this.isOwnable) {
+      return Vector.empty
+    }
+
+    val results = supertypes.flatMap {
+      case dt: DeclaredType if dt.isOwnable => dt.ownableRootSupertypes
+      case _ => Vector.empty
+    }
+
+    if (results.nonEmpty) results else Vector(this)
   }
 
   /**
@@ -30,21 +89,13 @@ trait DeclaredType extends NamedType {
     */
   def definition: DeclaredTypeDefinition
 
-  /**
-    * Returns the set of explicitly declared immediate subtypes, for example direct subclasses or direct
-    * sub-label types.
-    */
-  def directDeclaredSubtypes(implicit registry: Registry): Set[Type] = {
-    // We need the .toSet at the end to cast DeclaredType to Type, since sets are invariant.
-    registry.declaredTypeHierarchy.getDirectSubtypes(this).toSet
-  }
-
   // We define equality of declared types as nominal equality.
   override def equals(obj: Any): Boolean = obj match {
     case rhs: DeclaredType => this.eq(rhs) || name == rhs.name
     case _ => false
   }
   override lazy val hashCode: Int = name.hashCode
+
 }
 
 object DeclaredType {

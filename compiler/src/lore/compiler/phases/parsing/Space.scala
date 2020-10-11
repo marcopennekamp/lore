@@ -7,8 +7,8 @@ import fastparse._
   * Some of the whitespace handling code has been copied from Li Haoyi's scalaparse implementation.
   */
 object Space {
-  def whitespaces[_: P] = P(NoTrace(CharsWhileIn("\u0020\u0009")))
-  def newline[_: P] = P(NoTrace(StringIn("\r\n", "\n")))
+  def whitespaces[_: P]: P[Unit] = P(NoTrace(CharsWhileIn("\u0020\u0009")))
+  def newline[_: P]: P[Unit] = P(NoTrace(StringIn("\r\n", "\n")))
 
   /**
     * Scala-style comments. Note that these parser definitions need to line up with the implicit whitespace
@@ -16,10 +16,10 @@ object Space {
     * syntax.
     */
   def commentChunk[_: P]: P[Unit] = P(CharsWhile(c => c != '/' && c != '*') | multilineComment | !"*/" ~ AnyChar)
-  def multilineComment[_: P] = P("/*" ~/ commentChunk.rep ~ "*/")
-  def sameLineCharChunks[_: P] = P(CharsWhile(c => c != '\n' && c != '\r') | !newline ~ AnyChar)
-  def lineComment[_: P] = P("//" ~ sameLineCharChunks.rep ~ &(newline | End))
-  def comment[_: P] = P(multilineComment | lineComment)
+  def multilineComment[_: P]: P[Unit] = P("/*" ~/ commentChunk.rep ~ "*/")
+  def sameLineCharChunks[_: P]: P[Unit] = P(CharsWhile(c => c != '\n' && c != '\r') | !newline ~ AnyChar)
+  def lineComment[_: P]: P[Unit] = P("//" ~ sameLineCharChunks.rep ~ &(newline | End))
+  def comment[_: P]: P[Unit] = P(multilineComment | lineComment)
 
   /**
     * Parses whitespace except for newlines.
@@ -35,6 +35,6 @@ object Space {
   /**
     * Parses a statement terminator. For now, this can only be a newline.
     */
-  def terminator[_: P] = P(newline.rep(1))
-  def terminators[_: P] = P(NoTrace(NoCut(WS) ~ terminator.rep(1, NoCut(WS)) ~ NoCut(WS)) )
+  def terminator[_: P]: P[Unit] = P(newline.rep(1))
+  def terminators[_: P]: P[Unit] = P(NoTrace(NoCut(WS) ~ terminator.rep(1, NoCut(WS)) ~ NoCut(WS)) )
 }

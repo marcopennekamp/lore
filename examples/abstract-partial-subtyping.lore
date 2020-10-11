@@ -1,9 +1,9 @@
-label A
-label A1 extends A
-label A2 extends A
-label B
-label B1 extends B
-label B2 extends B
+trait A
+struct A1 implements A
+struct A2 implements A
+trait B
+struct B1 implements B
+struct B2 implements B
 
 action f(a: A, b: B)
 action f(a: A1, b: B) { }

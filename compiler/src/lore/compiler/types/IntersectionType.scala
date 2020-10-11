@@ -22,20 +22,17 @@ object IntersectionType {
     * be dropped. This is especially useful to simplify intersection types that contain an entity and a
     * related component type.
     *
-    * The resulting flattened "normal form" is a requirement for subtyping to work correctly.
+    * The resulting flattened normal form is a requirement for subtyping to work correctly.
     */
   def construct(types: Set[Type]): Type = {
     val flattened = types.flatMap {
       case t: IntersectionType => t.types
       case t => Set(t)
     }
-
-    // Remove strict supertypes of other component types.
-    val simplified = flattened.filterNot(t => flattened.exists(_ < t))
-
+    val simplified = Type.mostSpecific(flattened, Subtyping.Default)
     val intersection = new IntersectionType(simplified)
     if (intersection.types.size == 1) intersection.types.head else intersection
   }
 
-  def construct(types: List[Type]): Type = construct(types.toSet)
+  def construct(types: Vector[Type]): Type = construct(types.toSet)
 }

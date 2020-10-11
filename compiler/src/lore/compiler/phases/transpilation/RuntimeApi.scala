@@ -1,5 +1,10 @@
 package lore.compiler.phases.transpilation
 
+// TODO: Change the runtime API so that we have list.type instead of types.list and so on. Essentially structure
+//       the API alongside semantics first instead of a type/value distinction.
+
+// TODO: Return TranspiledName values instead of plain strings?
+
 object RuntimeApi {
   private val base = "Lore"
 
@@ -25,7 +30,16 @@ object RuntimeApi {
     val component = s"$base.component"
     val list = s"$base.list"
     val map = s"$base.map"
-    val classType = s"$base.classType"
+    val struct = s"$base.struct"
+    val `trait` = s"$base.trait"
+
+    // Type schemas.
+    object schema {
+      val base = s"${RuntimeApi.types.base}.schema"
+
+      val struct = s"$base.struct"
+      val `trait` = s"$base.trait"
+    }
 
     // Unsafe constructors.
     object unsafe {
@@ -47,6 +61,13 @@ object RuntimeApi {
     val base = s"${RuntimeApi.base}.values"
 
     // Value APIs.
+    object tuple {
+      val base = s"${RuntimeApi.values.base}.tuple"
+
+      val create = s"$base.create"
+      val unit = s"$base.unit"
+    }
+
     object list {
       val base = s"${RuntimeApi.values.base}.list"
 
@@ -55,18 +76,18 @@ object RuntimeApi {
       val forEach = s"$base.forEach"
     }
 
-    object tuple {
-      val base = s"${RuntimeApi.values.base}.tuple"
-
-      val create = s"$base.create"
-      val unit = s"$base.unit"
-    }
-
     object map {
       val base = s"${RuntimeApi.values.base}.map"
 
       val create = s"$base.create"
       val entries = s"$base.entries"
+    }
+
+    object `object` {
+      val base = s"${RuntimeApi.values.base}.object"
+
+      val create = s"$base.create"
+      val retrieve = s"$base.retrieve"
     }
 
     // Core functions operating on values of any type.
@@ -103,6 +124,12 @@ object RuntimeApi {
       val base = s"${RuntimeApi.utils.base}.typeMap"
 
       val create = s"$base.create"
+    }
+
+    object `lazy` {
+      val base = s"${RuntimeApi.utils.base}.lazy"
+
+      val of = s"$base.of"
     }
 
     object error {

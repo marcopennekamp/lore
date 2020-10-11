@@ -4,6 +4,7 @@ import { HashMap } from './HashMap.ts'
 import { EqualsFunction, HashFunction } from './definitions.ts'
 import { Type } from '../types/types.ts'
 import { areEqual } from '../types/equality.ts'
+import { LazyValue } from './LazyValue.ts'
 
 export default {
   tinyMap: {
@@ -20,12 +21,20 @@ export default {
     },
   },
   typeMap: {
-    create<V>(): HashMap<Type, V> {
-      return new HashMap<Type, V>(
+    create<K extends Type, V>(): HashMap<K, V> {
+      return new HashMap<K, V>(
         (type) => type.hash,
         areEqual,
       )
     },
+  },
+  lazy: {
+    /**
+     * Creates a lazy value from the given generator function.
+     */
+    of<V>(generate: () => V): LazyValue<V> {
+      return new LazyValue(generate)
+    }
   },
   // TODO: I feel like this should rather be part of some "core" or "error" API.
   error: {

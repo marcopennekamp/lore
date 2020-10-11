@@ -7,7 +7,7 @@ import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.types.{BasicType, ListType, ProductType, Type}
 
 object ExpressionVerification {
-  case class IllegallyTypedExpression(expression: Expression, expectedTypes: List[Type]) extends Error(expression) {
+  case class IllegallyTypedExpression(expression: Expression, expectedTypes: Vector[Type]) extends Error(expression) {
     override def message = s"The expression $expression at this position has the illegal type ${expression.tpe}.$expected"
     private def expected: String = {
       if (expectedTypes.nonEmpty) {
@@ -21,7 +21,7 @@ object ExpressionVerification {
     */
   def hasSubtype(expression: Expression, supertypes: Type*): Verification = {
     if (!supertypes.exists(expected => expression.tpe <= expected)) {
-      Compilation.fail(IllegallyTypedExpression(expression, supertypes.toList))
+      Compilation.fail(IllegallyTypedExpression(expression, supertypes.toVector))
     } else Verification.succeed
   }
 
@@ -36,7 +36,7 @@ object ExpressionVerification {
     * Verifies that the types of the given expressions are numeric types.
     */
   def areNumeric(expressions: Expression*): Verification = {
-    expressions.toList.map(isNumeric).simultaneous.verification
+    expressions.toVector.map(isNumeric).simultaneous.verification
   }
 
   /**
@@ -50,7 +50,7 @@ object ExpressionVerification {
     * Verifies that the types of the given expressions are boolean types.
     */
   def areBooleans(expressions: Expression*): Verification = {
-    expressions.toList.map(isBoolean).simultaneous.verification
+    expressions.toVector.map(isBoolean).simultaneous.verification
   }
 
   case class WrongNumberOfArguments(signature: FunctionSignature, callPos: Position) extends Error(callPos) {
@@ -63,7 +63,7 @@ object ExpressionVerification {
     *
     * We are assuming that the signature is fixed, so don't use this for multi-functions!
     */
-  def adhereToSignature(arguments: List[Expression], signature: FunctionSignature, position: Position): Verification = {
+  def adhereToSignature(arguments: Vector[Expression], signature: FunctionSignature, position: Position): Verification = {
     val parameterTypes = signature.parameters.map(_.tpe)
     if (parameterTypes.size != arguments.size) {
       Compilation.fail(WrongNumberOfArguments(signature, position))

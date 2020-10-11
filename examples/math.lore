@@ -5,10 +5,10 @@ function max(a: Int, b: Int): Int = if (a > b) a else b
 function add(a: Real, b: Real): Real = a + b
 
 function mul(a: Int, b: Int): Int = {
-  let remaining = a
-  const isNegative = remaining < 0
+  let mut remaining = a
+  let isNegative = remaining < 0
   if (isNegative) remaining = -remaining
-  let result = 0
+  let mut result = 0
   while (remaining > 0) {
     result += b
     remaining -= 1
@@ -17,7 +17,7 @@ function mul(a: Int, b: Int): Int = {
   result
 }
 action testMul() {
-  const result = mul(12, 5)
+  let result = mul(12, 5)
   println('Multiplication result: $result')
 }
 
@@ -27,8 +27,8 @@ function double(list: [Real]): [Real] = {
   }
 }
 action testDouble() {
-  const list = [1, 2, 3, 4]
-  const result = double(list)
+  let list = [1, 2, 3, 4]
+  let result = double(list)
   println('Doubled list: $result')
 }
 
@@ -38,8 +38,8 @@ function combinations(list: [Real]): [(Real, Real)] = {
   }
 }
 action testCombinations() {
-  const list = [1, 2, 3, 4]
-  const result = combinations(list)
+  let list = [1, 2, 3, 4]
+  let result = combinations(list)
   println('Combinations: $result')
 }
 

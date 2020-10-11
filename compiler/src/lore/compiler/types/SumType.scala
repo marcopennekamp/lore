@@ -17,20 +17,17 @@ object SumType {
     * We also apply the following simplification: In a sum type A | B | ..., if B < A, then B can be dropped.
     * That is, A already "clears the way" for values of type B to be part of the sum type.
     *
-    * The resulting flattened "normal form" is a requirement for subtyping to work correctly.
+    * The resulting flattened normal form is a requirement for subtyping to work correctly.
     */
   def construct(types: Set[Type]): Type = {
     val flattened = types.flatMap {
       case t: SumType => t.types
       case t => Set(t)
     }
-
-    // Remove strict subtypes of other parts.
-    val simplified = flattened.filterNot(t => flattened.exists(t < _))
-
+    val simplified = Type.mostGeneral(flattened, Subtyping.Default)
     val sum = new SumType(simplified)
     if (sum.types.size == 1) sum.types.head else sum
   }
 
-  def construct(types: List[Type]): Type = construct(types.toSet)
+  def construct(types: Vector[Type]): Type = construct(types.toSet)
 }

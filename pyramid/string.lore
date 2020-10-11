@@ -7,7 +7,7 @@ function toString(value: String): String = value
  * Converts a Lore list to a string.
  */
 function toString(list: [A]): String where A = {
-  const strings = for (a <- list) {
+  let strings = for (a <- list) {
     toString(a)
   }
   stringJoin(strings, ', ')

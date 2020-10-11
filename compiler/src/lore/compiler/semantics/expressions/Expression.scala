@@ -3,7 +3,7 @@ package lore.compiler.semantics.expressions
 import lore.compiler.core.Position
 import lore.compiler.semantics.{LocalVariable, VirtualMember}
 import lore.compiler.semantics.functions.CallTarget
-import lore.compiler.semantics.structures.ClassDefinition
+import lore.compiler.semantics.structures.{MemberDefinition, StructDefinition}
 import lore.compiler.types.{BasicType, ProductType, Type}
 
 sealed trait Expression {
@@ -27,15 +27,10 @@ object Expression {
     target: Expression.Access, value: Expression, position: Position,
   ) extends Expression.Apply(ProductType.UnitType)
 
-  case class Construct(
-    definition: ClassDefinition, arguments: List[Expression], withSuper: Option[Expression],
-    position: Position,
-  ) extends Expression.Apply(definition.tpe)
-
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Block expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class Block(expressions: List[Expression], position: Position) extends Expression {
+  case class Block(expressions: Vector[Expression], position: Position) extends Expression {
     override val tpe: Type = expressions.lastOption.map(_.tpe).getOrElse(ProductType.UnitType)
   }
 
@@ -62,12 +57,27 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // TODO: In Scala 3, just use a sum type instead of Any. :)
   case class Literal(value: Any, tpe: BasicType, position: Position) extends Expression
-  case class Tuple(values: List[Expression], position: Position) extends Expression {
+
+  case class Tuple(values: Vector[Expression], position: Position) extends Expression {
     override val tpe: Type = if (values.isEmpty) ProductType.UnitType else ProductType(values.map(_.tpe))
   }
-  case class ListConstruction(values: List[Expression], tpe: Type, position: Position) extends Expression
-  case class MapConstruction(entries: List[MapEntry], tpe: Type, position: Position) extends Expression
+
+  case class ListConstruction(values: Vector[Expression], tpe: Type, position: Position) extends Expression
+
+  case class MapConstruction(entries: Vector[MapEntry], tpe: Type, position: Position) extends Expression
   case class MapEntry(key: Expression, value: Expression)
+
+  /**
+    * Creates a new instance of a given struct. This expression represents both the call and map syntax. The arguments
+    * are passed in their syntactic order to preserve the intended execution order of side effects and should thus be
+    * transpiled such that their evaluation results in the same order.
+    */
+  case class Instantiation(struct: StructDefinition, arguments: Vector[Instantiation.Argument], position: Position) extends Expression {
+    override def tpe: Type = struct.tpe
+  }
+  object Instantiation {
+    case class Argument(member: MemberDefinition, value: Expression)
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Operators.
@@ -99,12 +109,12 @@ object Expression {
 
   case class UnaryOperation(operator: UnaryOperator, value: Expression, tpe: Type, position: Position) extends Expression
   case class BinaryOperation(operator: BinaryOperator, left: Expression, right: Expression, tpe: Type, position: Position) extends Expression
-  case class XaryOperation(operator: XaryOperator, expressions: List[Expression], tpe: Type, position: Position) extends Expression
+  case class XaryOperation(operator: XaryOperator, expressions: Vector[Expression], tpe: Type, position: Position) extends Expression
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Function/constructor/dynamic calls.
+  // Multi-function, fixed function and dynamic calls.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class Call(target: CallTarget, arguments: List[Expression], position: Position) extends Expression.Apply(target.outputType)
+  case class Call(target: CallTarget, arguments: Vector[Expression], position: Position) extends Expression.Apply(target.outputType)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and loop expressions.
@@ -115,6 +125,6 @@ object Expression {
     def body: Expression
   }
   case class WhileLoop(condition: Expression, body: Expression, tpe: Type, position: Position) extends Loop
-  case class ForLoop(extractors: List[Extractor], body: Expression, tpe: Type, position: Position) extends Loop
+  case class ForLoop(extractors: Vector[Extractor], body: Expression, tpe: Type, position: Position) extends Loop
   case class Extractor(variable: LocalVariable, collection: Expression)
 }

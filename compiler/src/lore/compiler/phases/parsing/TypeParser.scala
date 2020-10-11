@@ -36,7 +36,7 @@ class TypeParser(implicit fragment: Fragment) {
     */
   private def productType[_: P]: P[TypeExprNode.ProductNode] = {
     P(Index ~ "(" ~ typeExpression ~ ("," ~ typeExpression).rep(1) ~ ")").map {
-      case (index, e, es) => TypeExprNode.ProductNode(e +: es.toList, Position(fragment, index))
+      case (index, e, es) => TypeExprNode.ProductNode(e +: es.toVector, Position(fragment, index))
     }
   }
 
@@ -47,7 +47,7 @@ class TypeParser(implicit fragment: Fragment) {
   /**
     * Parses a nominal type. Assigns the index itself because it's used by componentType.
     */
-  private def nominalType[_: P]: P[TypeExprNode.NominalNode] = P(Index ~ identifier).map(withIndex(TypeExprNode.NominalNode))
+  private def nominalType[_: P]: P[TypeExprNode.IdentifierNode] = P(Index ~ identifier).map(withIndex(TypeExprNode.IdentifierNode))
 
   private def enclosedType[_: P]: P[TypeExprNode] = P("(" ~ typeExpression ~ ")")
 }

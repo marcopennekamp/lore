@@ -5,7 +5,7 @@
 // First of all, we have a few basic functional operations that are defined for any collections and in a
 // broader sense monads.
 
-const list = [1, 2, 3]
+let list = [1, 2, 3]
 list.map(n => n + 2)  // [3, 4, 5]
 list.flatMap(n => [n + 1, n + 2])  // [2, 3, 3, 4, 4, 5]
 list.filter(n => n > 1)  // [2, 3]
@@ -23,19 +23,19 @@ n <- list if n > 1 else 0  // [0, 2, 3]
 e1 <- list1
 // The rest executes for all e1 in list1. That is, the extraction wraps the rest of the block in a sort of
 // map/flatMap context.
-const x = something(e1)
+let x = something(e1)
 e2 <- list2
 // The rest executes for all e2 in list2.
-const maybeY = whatever(e2)  // Returns an optional value.
+let maybeY = whatever(e2)  // Returns an optional value.
 y <- maybeY
 // Only executes for a given y in maybeY. Stops if None.
 foo(e1, e2, y)
 
 // This is essentially compiled to:
 list1.flatMap { e1 =>
-  const x = something(e1)
+  let x = something(e1)
   list2.flatMap { e2 =>
-    const maybeY = whatever(e2)
+    let maybeY = whatever(e2)
     maybeY.map { y =>
       foo(e1, e2, y)
     }

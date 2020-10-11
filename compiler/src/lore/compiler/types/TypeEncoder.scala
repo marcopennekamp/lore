@@ -13,7 +13,7 @@ import lore.compiler.core.CompilationException
   *   - The first byte of a type's representation, the tag, determines the kind of the type and, possibly,
   *     its number of operands. Types are divided into variable-size types, fixed-size types and basic types:
   *       - Variable size: Sum, Intersection, Product, Named
-  *         - Named has, for now, always zero operands, as we have not introduced parametric classes yet.
+  *         - Named has, for now, always zero operands, as we have not introduced parametric structs/traits yet.
   *         - Also note that Named excludes type variables!
   *       - Basic type: Any, Nothing, Real, Int, Boolean, String
   *       - Fixed size: List, Map, Component, Variable
@@ -108,19 +108,19 @@ object TypeEncoder {
       case SumType(types) => (Tag.variableSize(Kind.sum, types.size), None, types)
       case IntersectionType(types) => (Tag.variableSize(Kind.intersection, types.size), None, types)
       case ProductType(elements) => (Tag.variableSize(Kind.product, elements.size), None, elements)
-      case ListType(element) => (Tag.list, None, List(element))
-      case MapType(key, value) => (Tag.map, None, List(key, value))
-      case ComponentType(underlying) => (Tag.component, None, List(underlying))
+      case ListType(element) => (Tag.list, None, Vector(element))
+      case MapType(key, value) => (Tag.map, None, Vector(key, value))
+      case ComponentType(underlying) => (Tag.component, None, Vector(underlying))
       case tv: TypeVariable =>
         val (tag, bounds) = (tv.lowerBound, tv.upperBound) match {
-          case (BasicType.Nothing, BasicType.Any) => (Tag.variableNothingAny, Nil)
-          case (_, BasicType.Any) => (Tag.variableAny, List(tv.lowerBound))
-          case (BasicType.Nothing, _) => (Tag.variableNothing, List(tv.upperBound))
-          case _ => (Tag.variable, List(tv.lowerBound, tv.upperBound))
+          case (BasicType.Nothing, BasicType.Any) => (Tag.variableNothingAny, Vector.empty)
+          case (_, BasicType.Any) => (Tag.variableAny, Vector(tv.lowerBound))
+          case (BasicType.Nothing, _) => (Tag.variableNothing, Vector(tv.upperBound))
+          case _ => (Tag.variable, Vector(tv.lowerBound, tv.upperBound))
         }
         (tag, Some(tv.name), bounds)
-      case t: BasicType => (Tag.basic(t), None, Nil)
-      case t: NamedType => (Tag(Kind.named), Some(t.name), Nil)
+      case t: BasicType => (Tag.basic(t), None, Vector.empty)
+      case t: NamedType => (Tag(Kind.named), Some(t.name), Vector.empty)
     }
 
     stream.write(tag)

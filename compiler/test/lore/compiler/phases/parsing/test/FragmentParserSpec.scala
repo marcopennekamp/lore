@@ -1,41 +1,42 @@
 package lore.compiler.phases.parsing.test
 
 import fastparse.P
-import lore.compiler.syntax._
-import lore.compiler.core.{Fragment, Position}
+import lore.compiler.core.Fragment
 import lore.compiler.phases.parsing.FragmentParser
+import lore.compiler.syntax._
 import lore.compiler.test.BaseSpec
 
-class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNode]] {
-  override def parser[_: P](implicit fragment: Fragment): P[List[DeclNode]] = new FragmentParser().fullFragment
+class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclNode]] {
+
+  override def parser[_: P](implicit fragment: Fragment): P[Vector[DeclNode]] = new FragmentParser().fullFragment
 
   import TestNodes._
 
   "The function declaration parser" should "parse function declarations correctly" in {
     """
     |  function pow(x: Real, exp: Int): Real = {
-    |    let e = exp
-    |    let result = 1.0
+    |    let mut e = exp
+    |    let mut result = 1.0
     |    while (e > 0) {
     |      result *= x
     |      e -= 1
     |    }
     |    result
     |  }
-    |""".stripMargin --> List(Decl.Function(
+    |""".stripMargin --> Vector(Decl.Function(
       "pow",
-      List(
+      Vector(
         Decl.Parameter("x", tReal),
         Decl.Parameter("exp", tInt),
       ),
       tReal,
-      Nil,
-      Some(Stmt.Block(List(
+      Vector.empty,
+      Some(Stmt.Block(Vector(
         Stmt.VariableDeclaration("e", true, None, Stmt.Variable("exp")),
         Stmt.VariableDeclaration("result", true, None, Stmt.RealLiteral(1.0)),
         Stmt.Repetition(
           Stmt.GreaterThan(Stmt.Variable("e"), Stmt.IntLiteral(0)),
-          Stmt.Block(List(
+          Stmt.Block(Vector(
             Stmt.Assignment(Stmt.Variable("result"), Stmt.Multiplication(Stmt.Variable("result"), vx)),
             Stmt.Assignment(Stmt.Variable("e"), Stmt.Subtraction(Stmt.Variable("e"), Stmt.IntLiteral(1))),
           )),
@@ -48,22 +49,22 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
   it should "parse action declarations correctly" in {
     """
     |  action attack(source: +Arms, target: +Health) {
-    |    const power = combinedPower(source.Arms)
+    |    let power = combinedPower(source.Arms)
     |    damage(target, power)
     |  }
-    """.stripMargin --> List(Decl.Function(
+    """.stripMargin --> Vector(Decl.Function(
       "attack",
-      List(
+      Vector(
         Decl.Parameter("source", Type.Component("Arms")),
         Decl.Parameter("target", Type.Component("Health")),
       ),
       Type.Unit(),
-      Nil,
-      Some(Stmt.Block(List(
+      Vector.empty,
+      Some(Stmt.Block(Vector(
         Stmt.VariableDeclaration(
-          "power", false, None, Stmt.SimpleCall("combinedPower", None, List(Stmt.PropertyAccess(Stmt.Variable("source"), "Arms"))),
+          "power", false, None, Stmt.SimpleCall("combinedPower", Vector(Stmt.PropertyAccess(Stmt.Variable("source"), "Arms"))),
         ),
-        Stmt.SimpleCall("damage", None, List(Stmt.Variable("target"), Stmt.Variable("power"))),
+        Stmt.SimpleCall("damage", Vector(Stmt.Variable("target"), Stmt.Variable("power"))),
       ))),
     ))
   }
@@ -82,204 +83,113 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[List[DeclNod
     }
   }
 
-  "The type declaration parser" should "parse class, property and constructor declarations correctly" in {
+  "The type declaration parser" should "parse struct and property declarations correctly" in {
     """
-    |  class Position {
-    |    x: Real
-    |    y: Real
-    |    z: Real
+    |  struct Position { x: Real = 0.0, y: Real = 0.0, z: Real = 0.0 }
     |
-    |    Position(x: Real, y: Real, z: Real) {
-    |      construct(x, y, z)
-    |    }
-    |
-    |    from2D(x: Real, y: Real) {
-    |      // We declare z like this to test whether the parser correctly separates the statement list
-    |      // and the continuation at the end.
-    |      const z = 0.0
-    |      this(x, y, z)
-    |    }
-    |
-    |    from1D(x: Real) {
-    |      const y = 0.0
-    |      this.from2D(x, y)
-    |    }
+    |  function from2D(x: Real, y: Real): Position = {
+    |    Position(x, y, 0.0)
     |  }
-    """.stripMargin --> List(Decl.Class(
-      "Position", None, None, false, false,
-      List(
-        Decl.Property("x", tReal, false),
-        Decl.Property("y", tReal, false),
-        Decl.Property("z", tReal, false),
+    |
+    |  function from1D(x: Real): Position = {
+    |    from2D(x, 0.0)
+    |  }
+    """.stripMargin --> Vector(
+      Decl.Struct(
+        "Position",
+        Vector.empty,
+        None,
+        Vector(
+          Decl.Property("x", tReal, false, Some(Stmt.RealLiteral(0.0))),
+          Decl.Property("y", tReal, false, Some(Stmt.RealLiteral(0.0))),
+          Decl.Property("z", tReal, false, Some(Stmt.RealLiteral(0.0))),
+        ),
+        false,
       ),
-      List(
-        Decl.Constructor(
-          "Position",
-          List(
-            Decl.Parameter("x", tReal),
-            Decl.Parameter("y", tReal),
-            Decl.Parameter("z", tReal),
-          ),
-          Stmt.Block(List(
-            Stmt.Construct(List(vx, vy, vz), None),
-          )),
+      Decl.Function(
+        "from2D",
+        Vector(
+          Decl.Parameter("x", tReal),
+          Decl.Parameter("y", tReal),
         ),
-        Decl.Constructor(
-          "from2D",
-          List(
-            Decl.Parameter("x", tReal),
-            Decl.Parameter("y", tReal),
-          ),
-          Stmt.Block(List(
-            Stmt.VariableDeclaration("z", false, None, Stmt.RealLiteral(0.0)),
-            Stmt.ConstructorCall(None, false, List(vx, vy, vz)),
-          )),
-        ),
-        Decl.Constructor(
-          "from1D",
-          List(
-            Decl.Parameter("x", tReal),
-          ),
-          Stmt.Block(List(
-            Stmt.VariableDeclaration("y", false, None, Stmt.RealLiteral(0.0)),
-            Stmt.ConstructorCall(Some("from2D"), false, List(vx, vy)),
-          )),
-        )
+        Type.Identifier("Position"),
+        Vector.empty,
+        Some(Stmt.Block(Vector(Stmt.SimpleCall("Position", Vector(vx, vy, Stmt.RealLiteral(0.0)))))),
       ),
-    ))
-  }
-
-  it should "parse abstractness, inheritance, and ownership correctly" in {
-    """
-      |  label L
-      |
-      |  class P
-      |  class Q
-      |
-      |  abstract class O1
-      |  class O2 extends O1
-      |
-      |  abstract class A owned by O1 & L {
-      |    property: P
-      |  }
-      |
-      |  class B extends A owned by O2 & L {
-      |    mut quoperty: Q
-      |  }
-    """.stripMargin --> List(
-      Decl.Label("L", None),
-      Decl.Class("P", None, None, false, false, Nil, Nil),
-      Decl.Class("Q", None, None, false, false, Nil, Nil),
-      Decl.Class("O1", None, None, true, false, Nil, Nil),
-      Decl.Class("O2", Some("O1"), None, false, false, Nil, Nil),
-      TypeDeclNode.ClassNode(
-        "A",
-        supertypeName = None,
-        ownedBy = Some(
-          Type.Intersection(List(Type.Nominal("O1"), Type.Nominal("L")))
+      Decl.Function(
+        "from1D",
+        Vector(
+          Decl.Parameter("x", tReal),
         ),
-        isAbstract = true,
-        isEntity = false,
-        members = List(
-          Decl.Property("property", Type.Nominal("P"), false),
-        ),
-        constructors = Nil,
-        Position.Wildcard,
-      ),
-      TypeDeclNode.ClassNode(
-        "B",
-        supertypeName = Some("A"),
-        ownedBy = Some(
-          Type.Intersection(List(Type.Nominal("O2"), Type.Nominal("L")))
-        ),
-        isAbstract = false,
-        isEntity = false,
-        members = List(
-          Decl.Property("quoperty", Type.Nominal("Q"), true),
-        ),
-        constructors = Nil,
-        Position.Wildcard,
+        Type.Identifier("Position"),
+        Vector.empty,
+        Some(Stmt.Block(Vector(Stmt.SimpleCall("from2D", Vector(vx, Stmt.RealLiteral(0.0)))))),
       ),
     )
   }
 
-  it should "fail on classes declaring component members" in {
+  it should "parse structs, traits, inheritance, ownership, and independence correctly" in {
     """
-      |  class C
-      |  class D
-      |
-      |  class E {
-      |    component C
-      |    component D
-      |  }
-    """.stripMargin.fails
+    |  independent trait L1
+    |  independent trait L2
+    |  struct P
+    |
+    |  trait O1 extends L1, L2
+    |  struct O2 implements O1
+    |
+    |  trait A owned by O1 & L1
+    |  struct B implements A, L2 owned by O2 & L1 {
+    |    mut property1: P
+    |    property2: P
+    |  }
+    """.stripMargin --> Vector(
+      Decl.Trait("L1", Vector.empty, Vector.empty, None, true),
+      Decl.Trait("L2", Vector.empty, Vector.empty, None, true),
+      Decl.Struct("P", Vector.empty, None, Vector.empty, false),
+      Decl.Trait("O1", Vector("L1", "L2"), Vector.empty, None, false),
+      Decl.Struct("O2", Vector("O1"), None, Vector.empty, false),
+      Decl.Trait("A", Vector.empty, Vector.empty, Some(Type.Intersection(Vector(Type.Identifier("O1"), Type.Identifier("L1")))), false),
+      Decl.Struct(
+        "B",
+        Vector("A", "L2"),
+        Some(Type.Intersection(Vector(Type.Identifier("O2"), Type.Identifier("L1")))),
+        Vector(
+          Decl.Property("property1", Type.Identifier("P"), true, None),
+          Decl.Property("property2", Type.Identifier("P"), false, None),
+        ),
+        false,
+      ),
+    )
   }
 
   it should "parse entity and component declarations correctly" in {
     """
-      |  class C1 owned by E1
-      |  class D1
-      |  class D2 extends D1
-      |
-      |  abstract entity E1 {
-      |    component C1
-      |    component D1
-      |
-      |    E1(c1: C1, d1: D1) {
-      |      construct(c1, d1)
-      |    }
-      |  }
-      |
-      |  entity E2 extends E1 {
-      |    component D2 overrides D1
-      |
-      |    E2(c1: C1, d2: D2) {
-      |      construct(d2) with super(c1, d2)
-      |    }
-      |  }
-    """.stripMargin --> List(
-      Decl.Class("C1", None, Some(Type.Nominal("E1")), false, false, Nil, Nil),
-      Decl.Class("D1", None, None, false, false, Nil, Nil),
-      Decl.Class("D2", Some("D1"), None, false, false, Nil, Nil),
-      TypeDeclNode.ClassNode(
-        "E1",
-        supertypeName = None,
-        ownedBy = None,
-        isAbstract = true,
-        isEntity = true,
-        members = List(Decl.Component("C1", None), Decl.Component("D1", None)),
-        constructors = List(
-          Decl.Constructor(
-            "E1",
-            List(Decl.Parameter("c1", Type.Nominal("C1")), Decl.Parameter("d1", Type.Nominal("D1"))),
-            Stmt.Block(List(
-              Stmt.Construct(List(Stmt.Variable("c1"), Stmt.Variable("d1")), None),
-            )),
-          ),
-        ),
-        Position.Wildcard,
-      ),
-      TypeDeclNode.ClassNode(
+    |  struct C1 owned by E1
+    |  trait D1
+    |  struct D2 implements D1
+    |
+    |  trait E1 extends +C1, L1, +C2, L2
+    |
+    |  struct E2 implements E1 {
+    |    component D2
+    |    mut count: Real
+    |  }
+    """.stripMargin --> Vector(
+      Decl.Struct("C1", Vector.empty, Some(Type.Identifier("E1")), Vector.empty, false),
+      Decl.Trait("D1", Vector.empty, Vector.empty, None, false),
+      Decl.Struct("D2", Vector("D1"), None, Vector.empty, false),
+      Decl.Trait("E1", Vector("L1", "L2"), Vector("C1", "C2"), None, false),
+      Decl.Struct(
         "E2",
-        supertypeName = Some("E1"),
-        ownedBy = None,
-        isAbstract = false,
-        isEntity = true,
-        members = List(Decl.Component("D2", Some("D1"))),
-        constructors = List(
-          Decl.Constructor(
-            "E2",
-            List(Decl.Parameter("c1", Type.Nominal("C1")), Decl.Parameter("d2", Type.Nominal("D2"))),
-            Stmt.Block(List(
-              Stmt.Construct(
-                List(Stmt.Variable("d2")),
-                Some(Stmt.ConstructorCall(None, true, List(Stmt.Variable("c1"), Stmt.Variable("d2")))),
-              ),
-            )),
-          ),
+        Vector("E1"),
+        None,
+        Vector(
+          Decl.Component("D2", None),
+          Decl.Property("count", Type.Identifier("Real"), true, None),
         ),
-        Position.Wildcard,
+        false,
       ),
     )
   }
+
 }

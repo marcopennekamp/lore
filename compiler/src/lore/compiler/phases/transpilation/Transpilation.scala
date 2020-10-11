@@ -53,7 +53,7 @@ object TranspiledChunk {
   /**
     * Creates a transpiled chunk with the given statements and an expression.
     */
-  def chunk(statements: List[JsCode], expr: JsExpr): TranspiledChunk = TranspiledChunk(concatStatements(statements: _*), Some(expr))
+  def chunk(statements: Vector[JsCode], expr: JsExpr): TranspiledChunk = TranspiledChunk(concatStatements(statements: _*), Some(expr))
 
   /**
     * Creates a transpiled chunk that consists only of a statement list.
@@ -64,7 +64,7 @@ object TranspiledChunk {
     * Combines the transpiled chunks. Statements are simply concatenated, while expressions are combined according
     * to the transformation function.
     */
-  def combined(chunks: List[TranspiledChunk])(transform: List[JsExpr] => JsExpr): TranspiledChunk = {
+  def combined(chunks: Vector[TranspiledChunk])(transform: Vector[JsExpr] => JsExpr): TranspiledChunk = {
     val statements = chunks.map(_.statements).mkString("\n")
     val expressions = chunks.map(_.expression.getOrElse(throw CompilationException("This must be an expression.")))
     TranspiledChunk(statements, Some(transform(expressions)))
@@ -75,7 +75,7 @@ object TranspiledChunk {
     *
     * @param wrap Whether to wrap the resulting expression in parentheses.
     */
-  def operatorChain(chunks: List[TranspiledChunk], operator: String, wrap: Boolean = false): TranspiledChunk = {
+  def operatorChain(chunks: Vector[TranspiledChunk], operator: String, wrap: Boolean = false): TranspiledChunk = {
     combined(chunks) { expressions =>
       val result = expressions.mkString(operator)
       if (wrap) s"($result)" else result
@@ -88,27 +88,27 @@ object TranspiledChunk {
     * @param wrap Whether to wrap the resulting expression in parentheses.
     */
   def binary(left: TranspiledChunk, right: TranspiledChunk, operator: String, wrap: Boolean = false): TranspiledChunk = {
-    operatorChain(List(left, right), operator, wrap)
+    operatorChain(Vector(left, right), operator, wrap)
   }
 
   /**
     * Sequences the list of transpiled chunks, concatenating each chunk's statement list AND expression,
     * except for the last chunk, whose expression becomes the expression of the resulting chunk.
     */
-  def sequencedIdentity(chunks: List[TranspiledChunk]): TranspiledChunk = sequenced(chunks)(TranspiledChunk.apply)
+  def sequencedIdentity(chunks: Vector[TranspiledChunk]): TranspiledChunk = sequenced(chunks)(TranspiledChunk.apply)
 
   /**
     * Sequences the list of transpiled chunks, concatenating each chunk's statement list AND expression,
     * except for the last chunks, whose expression is the second value of the transformation function.
     */
-  def sequenced(chunks: List[TranspiledChunk])(transform: (JsCode, Option[JsExpr]) => TranspiledChunk): TranspiledChunk = {
+  def sequenced(chunks: Vector[TranspiledChunk])(transform: (JsCode, Option[JsExpr]) => TranspiledChunk): TranspiledChunk = {
     val statements = (chunks.dropRight(1).map(_.code) :+ chunks.lastOption.map(_.statements).getOrElse("")).mkString("\n")
     val expression = chunks.lastOption.flatMap(_.expression)
     transform(statements, expression)
   }
 
-  implicit class ListExtension(chunks: List[TranspiledChunk]) {
-    def combined(transform: List[JsExpr] => JsExpr): TranspiledChunk = TranspiledChunk.combined(chunks)(transform)
+  implicit class VectorExtension(chunks: Vector[TranspiledChunk]) {
+    def combined(transform: Vector[JsExpr] => JsExpr): TranspiledChunk = TranspiledChunk.combined(chunks)(transform)
     def operatorChain(operator: String, wrap: Boolean = false): TranspiledChunk = TranspiledChunk.operatorChain(chunks, operator, wrap)
     def sequencedIdentity: TranspiledChunk = TranspiledChunk.sequencedIdentity(chunks)
     def sequenced(transform: (JsCode, Option[JsExpr]) => TranspiledChunk): TranspiledChunk = TranspiledChunk.sequenced(chunks)(transform)
@@ -121,7 +121,7 @@ object Transpilation {
   def chunk(statements: JsCode, expression: JsExpr): Transpilation = {
     TranspiledChunk(statements, Some(expression)).compiled
   }
-  def chunk(statements: List[JsCode], expression: JsExpr): Transpilation = {
+  def chunk(statements: Vector[JsCode], expression: JsExpr): Transpilation = {
     TranspiledChunk.chunk(statements, expression).compiled
   }
   def statements(statements: JsCode*): Transpilation = {
@@ -130,19 +130,19 @@ object Transpilation {
   def expression(expression: JsExpr): Transpilation = {
     TranspiledChunk.expression(expression).compiled
   }
-  def combined(chunks: List[TranspiledChunk])(transform: List[JsExpr] => JsExpr): Transpilation = {
+  def combined(chunks: Vector[TranspiledChunk])(transform: Vector[JsExpr] => JsExpr): Transpilation = {
     chunks.combined(transform).compiled
   }
-  def operatorChain(chunks: List[TranspiledChunk], operator: String, wrap: Boolean = true): Transpilation = {
+  def operatorChain(chunks: Vector[TranspiledChunk], operator: String, wrap: Boolean = true): Transpilation = {
     chunks.operatorChain(operator, wrap).compiled
   }
   def binary(left: TranspiledChunk, right: TranspiledChunk, operator: String, wrap: Boolean = true): Transpilation = {
     TranspiledChunk.binary(left, right, operator, wrap).compiled
   }
-  def sequencedIdentity(chunks: List[TranspiledChunk]): Transpilation = {
+  def sequencedIdentity(chunks: Vector[TranspiledChunk]): Transpilation = {
     chunks.sequencedIdentity.compiled
   }
-  def sequenced(chunks: List[TranspiledChunk])(transform: (JsCode, Option[JsExpr]) => TranspiledChunk): Transpilation = {
+  def sequenced(chunks: Vector[TranspiledChunk])(transform: (JsCode, Option[JsExpr]) => TranspiledChunk): Transpilation = {
     chunks.sequenced(transform).compiled
   }
 }

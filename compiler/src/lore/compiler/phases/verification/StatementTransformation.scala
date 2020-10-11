@@ -5,13 +5,13 @@ import lore.compiler.core.{Compilation, CompilationException, Position}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, XaryOperator}
-import lore.compiler.semantics.structures.ClassDefinition
 import lore.compiler.types.BasicType
 
 /**
   * Provides functions for transforming statement nodes into expressions.
   */
 object StatementTransformation {
+
   def transformNumericOperation(
     operator: BinaryOperator, left: Expression, right: Expression, position: Position,
   ): Compilation[Expression.BinaryOperation] = {
@@ -20,7 +20,7 @@ object StatementTransformation {
     }
   }
 
-  def transformBooleanOperation(operator: XaryOperator, expressions: List[Expression], position: Position): Compilation[Expression.XaryOperation] = {
+  def transformBooleanOperation(operator: XaryOperator, expressions: Vector[Expression], position: Position): Compilation[Expression.XaryOperation] = {
     ExpressionVerification.areBooleans(expressions: _*).map { _ =>
       Expression.XaryOperation(operator, expressions, BasicType.Boolean, position)
     }
@@ -36,7 +36,7 @@ object StatementTransformation {
   )(implicit registry: Registry): Compilation[Expression] = {
     (left.tpe, right.tpe) match {
       case (_: BasicType, _: BasicType) => Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position).compiled
-      case _ => ExpressionBuilder.multiFunctionCall(functionName, List(left, right), position).map { call =>
+      case _ => ExpressionBuilder.multiFunctionCall(functionName, Vector(left, right), position).map { call =>
         // TODO: Should this rather be a regular compilation Error?
         if (call.tpe != BasicType.Boolean) {
           throw CompilationException(s"The function $functionName must return a Boolean value.")
@@ -46,12 +46,4 @@ object StatementTransformation {
     }
   }
 
-  def transformConstructorCall(
-    definition: ClassDefinition, qualifier: Option[String], arguments: List[Expression],
-  )(implicit position: Position, registry: Registry): Compilation[Expression] = {
-    for {
-      constructor <- definition.resolveConstructor(qualifier.getOrElse(definition.name))(position)
-      _ <- ExpressionVerification.adhereToSignature(arguments, constructor.signature, position)
-    } yield Expression.Call(constructor, arguments, position)
-  }
 }

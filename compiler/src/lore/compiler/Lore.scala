@@ -3,14 +3,15 @@ package lore.compiler
 import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.file.{Files, Path}
 
-import lore.compiler.core.{Compilation, Errors, FeedbackPrinter, Fragment, Result}
+import lore.compiler.core._
 import lore.compiler.semantics.Registry
 import lore.compiler.types.Type
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 import scala.util.Using
 
 object Lore {
-  val pyramid = List(
+  lazy val pyramid: Vector[FragmentResolution] = Vector(
     fragment("pyramid.collections", Path.of("pyramid", "collections.lore")),
     fragment("pyramid.core", Path.of("pyramid", "core.lore")),
     fragment("pyramid.io", Path.of("pyramid", "io.lore")),
@@ -18,21 +19,41 @@ object Lore {
     fragment("pyramid.string", Path.of("pyramid", "string.lore")),
   )
 
-  def fragment(name: String, path: Path): Fragment = {
+  trait FragmentResolution
+  object FragmentResolution {
+    case class Success(fragment: Fragment) extends FragmentResolution
+    case class NotFound(path: Path) extends FragmentResolution
+  }
+
+  def fragment(name: String, path: Path): FragmentResolution = {
     import scala.jdk.CollectionConverters._
-    val source = Files.lines(path).iterator().asScala.mkString("\n") + "\n" // Ensure that the file ends in a newline.
-    Fragment(name, source)
+
+    if (Files.notExists(path)) {
+      FragmentResolution.NotFound(path)
+    } else {
+      val source = Files.lines(path).iterator().asScala.mkString("\n") + "\n" // Ensure that the file ends in a newline.
+      FragmentResolution.Success(Fragment(name, source))
+    }
   }
 
   /**
     * Compiles a Lore program from a single source.
     */
-  def fromSingleSource(fragment: Fragment): Compilation[(Registry, String)] = {
+  def fromSingleSource(resolution: FragmentResolution): Compilation[(Registry, String)] = {
     val options = CompilerOptions(
       runtimeLogging = false,
     )
-    val compiler = new LoreCompiler(pyramid ++ List(fragment), options)
-    compiler.compile()
+    val resolutions = pyramid :+ resolution
+    val failures = resolutions.filterType[FragmentResolution.NotFound]
+    if (failures.nonEmpty) {
+      for (failure <- failures) {
+        println(s"${FeedbackPrinter.tagError} The file '${failure.path}' does not exist!")
+      }
+      throw CompilationException("Not all files to be compiled were found. Consult the console output above for a list of these files.")
+    } else {
+      val compiler = new LoreCompiler(resolutions.filterType[FragmentResolution.Success].map(_.fragment), options)
+      compiler.compile()
+    }
   }
 
   /**

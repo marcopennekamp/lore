@@ -6,6 +6,7 @@ import lore.compiler.semantics.Registry.{ExactFunctionNotFound, MultiFunctionNot
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.semantics.structures._
 import lore.compiler.types._
+import lore.compiler.utils.CollectionExtensions._
 
 import scala.collection.{MapView, mutable}
 
@@ -16,7 +17,7 @@ class Registry {
   /**
     * The list of named types declared in the whole project, including predefined types such as Int and Real.
     */
-  private val types = mutable.HashMap[String, NamedType](Type.predefinedTypes.toList: _*)
+  private val types = mutable.HashMap[String, NamedType](Type.predefinedTypes.toVector: _*)
   private var typeRegistrationOrder = Vector[String]()
   private val typeDefinitions = mutable.HashMap[String, DeclaredTypeDefinition]()
   private val multiFunctions = mutable.HashMap[String, MultiFunctionDefinition]()
@@ -72,7 +73,7 @@ class Registry {
   }
 
   /**
-    * The TypeScope view of the registry. This is strictly an immutable view.
+    * The global type scope backed by the registry. This is strictly an immutable view.
     */
   val typeScope: TypeScope = new TypeScope {
     override protected def local(name: String): Option[NamedType] = getType(name)
@@ -83,14 +84,20 @@ class Registry {
   }
 
   /**
-    * Searches for a class type with the given name.
+    * The global variable scope backed by the registry. This is still an empty scope and only implemented to
+    * make the code more future-proof.
     */
-  def getClassType(name: String): Option[ClassType] = getType(name).filter(_.isInstanceOf[ClassType]).map(_.asInstanceOf[ClassType])
+  val variableScope: VariableScope = new GlobalScope()
 
   /**
-    * Searches for a label type with the given name.
+    * Searches for a struct type with the given name.
     */
-  def getLabelType(name: String): Option[LabelType] = getType(name).filter(_.isInstanceOf[LabelType]).map(_.asInstanceOf[LabelType])
+  def getStructType(name: String): Option[StructType] = getType(name).filterType[StructType]
+
+  /**
+    * Searches for a trait type with the given name.
+    */
+  def getTraitType(name: String): Option[TraitType] = getType(name).filterType[TraitType]
 
   /**
     * Registers the given type definition.
@@ -98,11 +105,12 @@ class Registry {
   def registerTypeDefinition(definition: DeclaredTypeDefinition): Unit = {
     // Because types are resolved before definitions, at this point a type for this definition should have been registered.
     if (getType(definition.name).isEmpty) {
-      throw CompilationException(s"A type for the declared type ${definition.name} should have been registered by now!")
+      throw CompilationException(s"A type for the declared type ${definition.name} should have been registered by now.")
     }
 
     if (typeDefinitions.contains(definition.name)) {
-      throw CompilationException(s"A type definition with the name ${definition.name} has been registered already!")
+      // TODO: Do we actually check for duplicate definitions beforehand?
+      throw CompilationException(s"A type definition with the name ${definition.name} has been registered already.")
     }
     typeDefinitions.put(definition.name, definition)
   }
@@ -148,7 +156,7 @@ class Registry {
     * Gets an exact function with the given name and parameter types. If it cannot be found, the operation fails
     * with a compilation error.
     */
-  def resolveExactFunction(name: String, types: List[Type])(implicit position: Position): Compilation[FunctionDefinition] = {
+  def resolveExactFunction(name: String, types: Vector[Type])(implicit position: Position): Compilation[FunctionDefinition] = {
     resolveMultiFunction(name).flatMap { mf =>
       mf.exact(ProductType(types)) match {
         case None => Compilation.fail(ExactFunctionNotFound(name, types))
@@ -167,7 +175,7 @@ object Registry {
     override def message = s"The multi-function $name does not exist in the current scope."
   }
 
-  case class ExactFunctionNotFound(name: String, types: List[Type])(implicit position: Position) extends Error(position) {
+  case class ExactFunctionNotFound(name: String, types: Vector[Type])(implicit position: Position) extends Error(position) {
     override def message = s"The exact function $name[${types.mkString(", ")}] does not exist in the current scope."
   }
 }

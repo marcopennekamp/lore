@@ -24,7 +24,7 @@ sealed trait Feedback {
   /**
     * A stack trace of the instance where the feedback was initialized.
     */
-  val stackTrace: List[StackTraceElement] = new Throwable().getStackTrace.toList
+  val stackTrace: Vector[StackTraceElement] = new Throwable().getStackTrace.toVector
 }
 
 /**

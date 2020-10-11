@@ -1,12 +1,5 @@
 import {
-  ComponentType,
-  IntersectionType,
-  ListType,
-  MapType,
-  ProductType,
-  SumType,
-  Type,
-  TypeVariable
+  ComponentType, DeclaredType, IntersectionType, ListType, MapType, ProductType, SumType, Type, TypeVariable,
 } from './types.ts'
 import { Kind } from './kinds.ts'
 import { areEqual } from './equality.ts'
@@ -14,36 +7,75 @@ import { areEqual } from './equality.ts'
 /**
  * Checks whether t1 is a subtype of t2.
  */
-export function isSubtype(t1: Type, t2: Type): boolean {
+export function isSubtype(t1: Type, t2: Type, considerOwnedBy = true): boolean {
   if (t1 === t2) return true
 
   // How this is executed: Because multiple rules can sometimes apply to the same type pattern, we have two main
   // switch statements that match on the kinds of the left type and right type respectively. It is paramount that
   // neither switch statement returns false prematurely, as it has to be guaranteed that when the first switch can't
   // find any rule that holds, the second switch needs to try once more.
-  // The idea with using switch instead of just using ifs is simple. An optimizing compiler will be able to generate
-  // jump tables for carefully executed switch statements. TODO: Verify this.
 
   // These rules match on the left type. They are all exclusive of each other.
   switch (t1.kind) {
     case Kind.TypeVariable:
       if (isSubtype((<TypeVariable> t1).upperBound, t2)) return true
       break
+
     case Kind.Nothing:
       return true
+
     case Kind.Int:
       if (t2.kind === Kind.Real) return true
       break
-    case Kind.Class:
-    case Kind.Label:
-      // TODO: Implement these two cases
-      // d1.supertype.exists(isSubtype(_, d2))
-      // { case (e1: ClassType, p2: ComponentType) if e1.isEntity => e1.componentTypes.exists(p1 => isSubtype(p1.underlying, p2.underlying)) },
-      // TODO: Per the spec, entities must match in multiple dispatch based on ACTUAL types of component objects, not their
-      //       declared types in the source code. Confer: "Entities are dispatched based on their actual type and the types
-      //       of their components at run-time." Ensure that this is the case here! (We will have to get the actual types
-      //       of the components instead of their declared entity.componentTypes...)
+
+    case Kind.Struct:
+    case Kind.Trait:
+      const d1 = <DeclaredType> t1
+      if (t2.kind === Kind.Trait || t2.kind === Kind.Struct) {
+        const d2 = <DeclaredType> t2
+
+        // If the schemas of these two declared types are equal, we have the same type most of the time. The equality
+        // might not have been caught by the === check above because a struct type can have multiple instances with
+        // different actual component types.
+        // We also have to take component types into account when deciding subtyping, however. Let's say we have a
+        // struct a1: A with a component C1 and another struct a2: A with a component C2. Given C2 < C1, is a1's
+        // struct type a subtype of a2's struct type?
+        // It is not. We couldn't assign a1 to a variable that explicitly expects a type like a2. This is of no
+        // importance at compile-time, of course, since struct types are all "archetypes" then. But to get sound
+        // run-time subtyping, we also have to look at the components.
+        // Fortunately, we only have to do that if the right-hand type t2 is not an archetype and only if the type
+        // is an entity, of course. Otherwise, checking the schema will suffice.
+        if (d1.schema === d2.schema) {
+          // We could "optimize" this check by requiring d2 to be a struct, but equal traits are already caught
+          // by the reference equality check above. Also, d1 will almost never be a trait, so if the schemas are
+          // equal, we can already be almost 100% certain that we are dealing with structs.
+          if (!d2.isArchetype) {
+            const componentTypes1 = d1.componentTypes
+            const componentTypes2 = d2.componentTypes
+            for (let i = 0; i < componentTypes1.length; i += 1) {
+              if (!isSubtype(componentTypes1[i], componentTypes2[i])) return false
+            }
+          }
+
+          return true
+        }
+
+        const supertraits = d1.schema.supertraits
+        for (let i = 0; i < supertraits.length; i += 1) {
+          if (isSubtype(supertraits[i], d2)) return true
+        }
+        const componentTypes = d1.componentTypes
+        for (let i = 0; i < componentTypes.length; i += 1) {
+          if (isSubtype(componentTypes[i], d2)) return true
+        }
+      } else if (t2.kind === Kind.Component && d1.schema.isEntity) {
+        const componentTypes = d1.componentTypes
+        for (let i = 0; i < componentTypes.length; i += 1) {
+          if (isSubtype(componentTypes[i], t2)) return true
+        }
+      }
       break
+
     case Kind.Intersection:
       if (t2.kind === Kind.Intersection) {
         if (intersectionSubtypeIntersection(<IntersectionType> t1, <IntersectionType> t2)) return true
@@ -51,6 +83,7 @@ export function isSubtype(t1: Type, t2: Type): boolean {
         if (intersectionSubtypeType(<IntersectionType> t1, t2)) return true
       }
       break
+
     case Kind.Sum:
       if (t2.kind === Kind.Sum) {
         if (sumSubtypeSum(<SumType> t1, <SumType> t2)) return true
@@ -58,18 +91,23 @@ export function isSubtype(t1: Type, t2: Type): boolean {
         if (sumSubtypeType(<SumType> t1, t2)) return true
       }
       break
+
     case Kind.Product:
       if (t2.kind === Kind.Product && productSubtypeProduct(<ProductType> t1, <ProductType> t2)) return true
       break
+
     case Kind.Component:
-      // TODO: New rule: { case (p1: ComponentType, t2) => p1.underlying.ownedBy.exists(ownedBy => isSubtype(ownedBy, t2)) },
-      if (
-        t2.kind === Kind.Component &&
-        isSubtype((<ComponentType> t1).underlying, (<ComponentType> t2).underlying)
-      ) {
+      const c1 = <ComponentType> t1
+      if (t2.kind === Kind.Component) {
+        const c2 = <ComponentType> t2
+        if (isSubtype(c1.underlying, c2.underlying)) {
+          return true
+        }
+      } else if (considerOwnedBy && isSubtype(c1.underlying.schema.ownedBy.value(), t2)) {
         return true
       }
       break
+
     case Kind.List:
       if (
         t2.kind === Kind.List &&
@@ -78,6 +116,7 @@ export function isSubtype(t1: Type, t2: Type): boolean {
         return true
       }
       break
+
     case Kind.Map:
       if (
         t2.kind === Kind.Map &&
@@ -94,8 +133,10 @@ export function isSubtype(t1: Type, t2: Type): boolean {
     case Kind.TypeVariable:
       if (isSubtype(t1, (<TypeVariable> t2).lowerBound)) return true
       break
+
     case Kind.Any:
       return true
+
     case Kind.Intersection:
       // t1 could be an intersection type, but then we'd already have checked it in the first switch and since we have
       // arrived here, it is clear that in that case the answer was not true. So we can safely only apply this rule
@@ -104,6 +145,7 @@ export function isSubtype(t1: Type, t2: Type): boolean {
         if (typeSubtypeIntersection(t1, <IntersectionType> t2)) return true
       }
       break
+
     case Kind.Sum:
       // t1 could be a sum type, but then we'd already have checked it in the first switch and since we have
       // arrived here, it is clear that in that case the answer was not true. So we can safely only apply this rule

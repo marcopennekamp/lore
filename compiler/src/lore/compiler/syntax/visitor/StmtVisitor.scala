@@ -2,7 +2,6 @@ package lore.compiler.syntax.visitor
 
 import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.core.Compilation
-import lore.compiler.syntax.TopLevelExprNode.ConstructNode
 
 /**
   * Visits any statement node, returning a value of type Compilation[A]. Subtrees are visited automatically.
@@ -34,17 +33,12 @@ trait StmtVisitor[A] {
   /**
     * Visits a node with exactly one list of children.
     */
-  def visitXary(node: StmtNode.XaryNode)(arguments: List[A]): Compilation[A]
-
-  /**
-    * Visits a construct node with its arguments and super call.
-    */
-  def visitConstruct(node: TopLevelExprNode.ConstructNode)(arguments: List[A], withSuper: Option[A]): Compilation[A]
+  def visitXary(node: StmtNode.XaryNode)(arguments: Vector[A]): Compilation[A]
 
   /**
     * Visits a map node with its key/value entries.
     */
-  def visitMap(node: ExprNode.MapNode)(entries: List[(A, A)]): Compilation[A]
+  def visitMap(node: ExprNode.MapNode)(entries: Vector[(A, A)]): Compilation[A]
 
   /**
     * Visits an iteration node with its extractors and the body.
@@ -52,7 +46,7 @@ trait StmtVisitor[A] {
     * We don't pass the evaluated body but rather a function that visits the body expression. This allows the
     * iteration visitor to process the extractors before the body is visited.
     */
-  def visitIteration(node: ExprNode.IterationNode)(extractors: List[(String, A)], visitBody: () => Compilation[A]): Compilation[A]
+  def visitIteration(node: ExprNode.ForNode)(extractors: Vector[(String, A)], visitBody: () => Compilation[A]): Compilation[A]
 
   /**
     * Invoked before a node's subtrees are visited. This can be used to set up contexts and such.
@@ -83,13 +77,6 @@ object StmtVisitor {
         case node: TernaryNode => (visit(node.child1, props), visit(node.child2, props), visit(node.child3, props)).simultaneous.flatMap((visitor.visitTernary(node) _).tupled)
         case node: XaryNode => node.children.map(c => visit(c, props)).simultaneous.flatMap(visitor.visitXary(node))
 
-        // Construct node.
-        case node@ConstructNode(arguments, withSuper, _) =>
-          (
-            arguments.map(a => visit(a, props)).simultaneous,
-            withSuper.map(c => visit(c, props)).toCompiledOption
-          ).simultaneous.flatMap((visitor.visitConstruct(node) _).tupled)
-
         // Map node.
         case node@MapNode(kvs, _) =>
           val entries = kvs.map {
@@ -98,7 +85,7 @@ object StmtVisitor {
           entries.flatMap(visitor.visitMap(node))
 
         // Iteration node.
-        case node@IterationNode(extractors, body, _) =>
+        case node@ForNode(extractors, body, _) =>
           val extracts = extractors.map {
             case ExtractorNode(name, collection, _) => visit(collection, props).map((name, _))
           }.simultaneous

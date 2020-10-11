@@ -1,8 +1,8 @@
 package lore.compiler.types
 
-import lore.compiler.core.CompilationException
 import lore.compiler.semantics.Registry
 import lore.compiler.types.TypeExtensions._
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object LeastUpperBound {
 
@@ -81,9 +81,11 @@ object LeastUpperBound {
         if (left.size != right.size) fallback
         else ProductType(left.zip(right).map(lubPassOnSettings.tupled))
 
+      // TODO: This MIGHT not be needed anymore since component types are now part of the supertype list of a struct.
+      //       Consequently, the DeclaredTypeHierarchy should actually return the correct common component types.
       // We have the special case that component types can also be supertypes of entity types.
       // We add these to the LUB resolved by the type hierarchy.
-      case (e1: ClassType, e2: ClassType) if e1.isEntity && e2.isEntity =>
+      /* case (e1: StructType, e2: StructType) if e1.isEntity && e2.isEntity =>
         val componentTypes = e1.definition.commonComponentTypes(e2.definition)
         val superclassList = declaredTypeLcs(e1, e2) match {
           // We choose Any as the supertype only if there are no common component types. Otherwise we prefer to
@@ -92,10 +94,10 @@ object LeastUpperBound {
           case t => t :: Nil
         }
         IntersectionType.construct(
-          superclassList ::: componentTypes
-        ).fallbackIfAny
+          superclassList ++ componentTypes
+        ).fallbackIfAny */
 
-      // For class and label types, the LUB is calculated by the type hierarchy. If the result would be Any, we return
+      // For declared types, the LUB is calculated by the type hierarchy. If the result would be Any, we return
       // the sum type instead.
       // TODO: Now that we have schemas, we have to check whether types e1 and e2 assign the same type variables
       //       for their most specific common supertype. Since type variables of a child type do not have to
@@ -116,14 +118,19 @@ object LeastUpperBound {
 
       // Component types simply delegate to declared types.
       case (c1: ComponentType, c2: ComponentType) =>
+        // TODO: Once we introduce "non-component" traits (see the proposal in the spec), we will have to filter these
+        //       traits out of our consideration, since they cannot be the underlying type of a component type.
         registry.declaredTypeHierarchy.leastCommonSupertype(c1.underlying, c2.underlying) match {
           case IntersectionType(types) =>
-            // If we have an intersection type as the LCS, there are multiple LCSs. However, only one of them can
-            // be a class type. So we filter for that one.
-            val classTypes = types.filter(_.isInstanceOf[ClassType])
-            if (classTypes.size != 1) throw CompilationException("There can (and must) only be one!")
-            classTypes.head
-          case classType: ClassType => ComponentType(classType)
+            // Let's say the underlying types U1 and U2 have the least upper bound A & B. This means that both types
+            // can be represented either as A or as B, interchangeably. So if we have an entity e1 with a component +U1
+            // and another e2 with a component +U2, they can be represented both as +A and +B. We can say e1.A and refer
+            // to U1. We can say e2.A and refer to U2. We can say e1.B and refer to U1... The point being that the
+            // common denominator of +U1 and +U2 is that they can be viewed through the lens of both +A and +B. Hence,
+            // it is legal to define LUB(+U1, +U2) as +A & +B. This stretches to intersection types with more than two
+            // parts.
+            IntersectionType.construct(types.toVector.filterType[DeclaredType].map(ComponentType))
+          case tpe: DeclaredType => ComponentType(tpe)
           case t => t.fallbackIfAny
         }
 
@@ -138,7 +145,7 @@ object LeastUpperBound {
       case (BasicType.Real, BasicType.Int) => BasicType.Real
 
       // In any other case, we can say that t1 and t2 are inherently incompatible. For example, a product type and
-      // a class type could never be unified in this sense. Hence we return the default.
+      // a struct type could never be unified in this sense. Hence we return the default.
       case _ => fallback
     }
   }

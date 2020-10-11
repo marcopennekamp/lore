@@ -17,10 +17,10 @@ object PrecedenceParser {
   }
 
   case class XaryOperator[Operand <: Node](
-    precedence: Int, constructor: (List[Operand], Position) => Operand
+    precedence: Int, constructor: (Vector[Operand], Position) => Operand
   )(implicit fragment: Fragment) extends Operator {
     override def isXary: Boolean = true
-    val constructorWithIndex: (Index, List[Operand]) => Operand = Node.withIndexUntupled(constructor)
+    val constructorWithIndex: (Index, Vector[Operand]) => Operand = Node.withIndexUntupled(constructor)
   }
 
   case class BinaryOperator[Operand <: Node](
@@ -61,7 +61,7 @@ object PrecedenceParser {
           case (operands, stack) => operandStack = stack; operands.reverse
         }
         val index = operands.head.position.index
-        operandStack = topOp.constructorWithIndex(index, operands) +: operandStack
+        operandStack = topOp.constructorWithIndex(index, operands.toVector) +: operandStack
       case topOp: BinaryOperator[Operand] =>
         // We process one operator with two operands.
         operatorStack = operatorStack.drop(1) // Actually drop the topOp from the stack.

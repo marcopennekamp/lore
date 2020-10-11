@@ -1,7 +1,6 @@
 package lore.compiler.types
 
 import java.io.ByteArrayOutputStream
-import java.nio.charset.Charset
 import java.util.Base64
 
 import lore.compiler.utils.CollectionExtensions._
@@ -18,18 +17,18 @@ trait Type {
   /**
     * Returns a singleton product type enclosing this type, unless this type is already a product type.
     */
-  def toTuple: ProductType = ProductType(List(this))
+  def toTuple: ProductType = ProductType(Vector(this))
 
-  def <=(rhs: Type): Boolean = Subtyping.isSubtype(this, rhs)
-  def <(rhs: Type): Boolean = Subtyping.isStrictSubtype(this, rhs)
+  def <=(rhs: Type): Boolean = Subtyping.Default.isSubtype(this, rhs)
+  def <(rhs: Type): Boolean = Subtyping.Default.isStrictSubtype(this, rhs)
   def >=(rhs: Type): Boolean = rhs <= this
   def >(rhs: Type): Boolean = rhs < this
 
-  override def toString: String = Type.toString(this, verbose = false)
+  override def toString: String = Type.toString(this)
 }
 
 object Type {
-  val predefinedTypes: Map[String, NamedType] = List(
+  val predefinedTypes: Map[String, NamedType] = Vector(
     BasicType.Any,
     BasicType.Nothing,
     BasicType.Int,
@@ -47,27 +46,17 @@ object Type {
     case _: TypeVariable => false // TODO: Is this correct?
     case SumType(_) => true
     case IntersectionType(types) =>
-      // Note that we consider the idea of augmenting label types here. If the intersection type contains at least one
-      // non-label type, we ignore label types in the consideration.
-      val exceptLabels = types.toList.filterNotType[LabelType]
-
-      // If the intersection type consists only of labels, it is NOT an augmented type and thus abstract since
-      // non-augmenting label types are abstract.
-      if (exceptLabels.isEmpty) {
-        true
-      } else {
-        // In all other cases, we decide abstractness WITHOUT taking augmenting labels into account.
-        exceptLabels.exists(isAbstract)
-      }
+      // Note that we consider the idea of augmenting trait types here. If the intersection type contains at least one
+      // non-trait type, we ignore trait types in the consideration. If the intersection type consists only of traits,
+      // it is NOT an augmented type and thus abstract.
+      val exceptTraits = types.toVector.filterNotType[TraitType]
+      exceptTraits.isEmpty || exceptTraits.exists(isAbstract)
     case ProductType(elements) => elements.exists(isAbstract)
     case ListType(_) => false
     case MapType(_, _) => false
     case ComponentType(underlying) => isAbstract(underlying)
-    case c: ClassType => c.isAbstract
-    case _: LabelType =>
-      // A label type is abstract unless it is an augmentation. That case is handled in the implementation of
-      // intersection type's isAbstract.
-      true
+    case _: StructType => false
+    case _: TraitType => true
     // Any isn't abstract because checking ARDS for it would be inadvisable.
     // Effectively, Nothing cannot be the supertype of anything, so declaring an abstract function for it
     // will only result in a useless deadlock.
@@ -86,7 +75,7 @@ object Type {
     case ListType(element) => isPolymorphic(element)
     case MapType(key, value) => isPolymorphic(key) || isPolymorphic(value)
     case ComponentType(_) => false // TODO: This might change once component types can be parameterized. (If they ever can.)
-    case _: DeclaredType => false // TODO: For now. This needs to be set to true for classes with type parameters, of course.
+    case _: DeclaredType => false // TODO: For now. This needs to be set to true for structs/traits with type parameters, of course.
     case _ => false
   }
 
@@ -106,7 +95,23 @@ object Type {
     case ListType(element) => variables(element)
     case MapType(key, value) => variables(key) ++ variables(value)
     case ComponentType(_) => Set.empty // TODO: Update when component types can have type parameters?
-    case _: NamedType => Set.empty // TODO: Update when class types can have type parameters.
+    case _: NamedType => Set.empty // TODO: Update when struct/trait types can have type parameters.
+  }
+
+  /**
+    * Removes types from the set that are subtyped by other types in the list, essentially keeping the
+    * most specific types.
+    */
+  def mostSpecific(types: Set[Type], subtyping: Subtyping): Set[Type] = {
+    types.filterNot(t => types.exists(subtyping.isStrictSubtype(_, t)))
+  }
+
+  /**
+    * Removes types from the set that are supertyped by other types in the list, essentially keeping the
+    * most general types.
+    */
+  def mostGeneral(types: Set[Type], subtyping: Subtyping): Set[Type] = {
+    types.filterNot(t => types.exists(subtyping.isStrictSubtype(t, _)))
   }
 
   private sealed abstract class TypePrecedence(protected val value: Int) {
@@ -131,22 +136,22 @@ object Type {
     val infix = stringifyInfixOperator(parentPrecedence, toStringWithPrecedence(_, verbose, _)) _
 
     t match {
-      case SumType(types) => infix(" | ", TypePrecedence.Sum, types.toList)
-      case IntersectionType(types) => infix(" & ", TypePrecedence.Intersection, types.toList)
+      case SumType(types) => infix(" | ", TypePrecedence.Sum, types.toVector)
+      case IntersectionType(types) => infix(" & ", TypePrecedence.Intersection, types.toVector)
       case ProductType(elements) => s"(${elements.map(toString(_, verbose)).mkString(", ")})"
       case ListType(element) => s"[${toString(element, verbose)}]"
-      case MapType(key, value) => infix(" -> ", TypePrecedence.Map, List(key, value))
+      case MapType(key, value) => infix(" -> ", TypePrecedence.Map, Vector(key, value))
       case ComponentType(underlying) => s"+${toString(underlying, verbose)}"
-      case c: ClassType =>
+      case s: StructType =>
         if (verbose) {
-          val inherits = c.supertype.map(s => s" extends ${toString(s, verbose)}").getOrElse("")
-          s"${if (c.isAbstract) s"abstract class" else "class"} ${c.name}$inherits"
-        } else c.name
-      case l: LabelType =>
+          val implements = if (s.supertypes.nonEmpty) s" implements ${s.supertypes.map(toString(_, verbose)).mkString(", ")}" else ""
+          s"struct ${s.name}$implements"
+        } else s.name
+      case t: TraitType =>
         if (verbose) {
-          val inherits = l.supertype.map(s => s" < ${toString(s, verbose)}").getOrElse("")
-          s"label ${l.name}$inherits"
-        } else l.name
+          val extended = if (t.supertypes.nonEmpty) s" extends ${t.supertypes.map(toString(_, verbose)).mkString(", ")}" else ""
+          s"trait ${t.name}$extended"
+        } else t.name
       case t: NamedType => t.name
     }
   }
@@ -154,7 +159,7 @@ object Type {
   private def stringifyInfixOperator(
     parentPrecedence: TypePrecedence,
     stringify: (Type, TypePrecedence) => String,
-  )(operator: String, operatorPrecedence: TypePrecedence, operands: List[Type]): String = {
+  )(operator: String, operatorPrecedence: TypePrecedence, operands: Vector[Type]): String = {
     val repr = operands.map(stringify(_, operatorPrecedence)).mkString(operator)
     if (operatorPrecedence < parentPrecedence) s"($repr)" else repr
   }
@@ -162,7 +167,7 @@ object Type {
   /**
     * Creates a unique, Javascript-friendly identifier of the given type.
     */
-  def uniqueIdentifier(tpe: Type): String = uniqueIdentifier(List(tpe))
+  def uniqueIdentifier(tpe: Type): String = uniqueIdentifier(Vector(tpe))
 
   /**
     * Creates a unique, Javascript-friendly identifier of the given list of types.
@@ -171,7 +176,7 @@ object Type {
     * concatenated to a single byte array, and then encoded using Base64 with '$' for the '+' character and
     * '_' for the '/' character. Padding characters are discarded as they are not needed for the identifier.
     */
-  def uniqueIdentifier(types: List[Type]): String = {
+  def uniqueIdentifier(types: Vector[Type]): String = {
     val stream = new ByteArrayOutputStream()
     types.foreach(t => stream.write(TypeEncoder.encode(t)))
     Base64.getEncoder.encodeToString(stream.toByteArray).replace('+', '$').replace('/', '_').replace("=", "")

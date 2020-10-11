@@ -16,12 +16,12 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
 
   // Parse a handful of top-level expressions before jumping into the deep end.
   def topLevelExpression[_: P]: P[TopLevelExprNode] = {
-    P(variableDeclaration | assignment | continuation | expression)
+    P(variableDeclaration | assignment | expression)
   }
 
   private def variableDeclaration[_: P]: P[TopLevelExprNode.VariableDeclarationNode] = {
-    P(Index ~ ("const" | "let").! ~ identifier ~ typeParser.typing.? ~ "=" ~ expression)
-      .map { case (index, qualifier, name, tpe, value) => (index, name, qualifier == "let", tpe, value) }
+    P(Index ~ "let" ~ "mut".!.?.map(_.isDefined) ~ identifier ~ typeParser.typing.? ~ "=" ~ expression)
+      .map { case (index, isMutable, name, tpe, value) => (index, name, isMutable, tpe, value) }
       .map(withIndex(TopLevelExprNode.VariableDeclarationNode))
   }
 
@@ -49,26 +49,11 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
   private def address[_: P]: P[ExprNode.AddressNode] = {
     // We can cast to PropertyAccessNode because we set minAccess to 1, which ensures that the parse results in such
     // a node.
-    def prop = P(propertyAccess(minAccess = 1)).asInstanceOf[P[ExprNode.PropertyAccessNode]]
+    def prop = P(propertyAccess(minAccess = 1)).asInstanceOf[P[ExprNode.MemberAccessNode]]
     P(prop | variable)
   }
 
-  private def continuation[_: P] = {
-    def constructorCall(isSuper: Boolean) = {
-      P(Index ~ ("." ~ identifier).? ~ arguments)
-        .map { case (index, qualifier, arguments) => (index, qualifier, isSuper, arguments) }
-        .map(withIndex(TopLevelExprNode.ConstructorCallNode))
-    }
-    def thisCall = P("this" ~ constructorCall(isSuper = false))
-    def superCall = P("super" ~ constructorCall(isSuper = true))
-    def constructCall = {
-      P(Index ~ "construct" ~ arguments ~ ("with" ~ superCall).?).map(withIndex(TopLevelExprNode.ConstructNode))
-    }
-    P(thisCall | constructCall)
-  }
-
-  // Parse expressions. Finally!
-  def expression[_: P]: P[ExprNode] = P(ifElse | repetition | iteration | operatorExpression)
+  def expression[_: P]: P[ExprNode] = P(ifElse | whileLoop | forLoop | operatorExpression)
 
   private def ifElse[_: P]: P[ExprNode] = {
     P(Index ~ "if" ~ "(" ~ expression ~ ")" ~ statement ~ ("else" ~ statement).?)
@@ -76,15 +61,15 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
       .map(withIndex(ExprNode.IfElseNode))
   }
 
-  private def repetition[_: P]: P[ExprNode.RepetitionNode] = {
-    P(Index ~ "while" ~ "(" ~ expression ~ ")" ~ statement).map(withIndex(ExprNode.RepetitionNode))
+  private def whileLoop[_: P]: P[ExprNode.WhileNode] = {
+    P(Index ~ "while" ~ "(" ~ expression ~ ")" ~ statement).map(withIndex(ExprNode.WhileNode))
   }
 
-  private def iteration[_: P]: P[ExprNode.IterationNode] = {
+  private def forLoop[_: P]: P[ExprNode.ForNode] = {
     def extractor = P(Index ~ identifier ~ "<-" ~ expression).map(withIndex(ExprNode.ExtractorNode))
     P(Index ~ "for" ~ "(" ~ extractor.rep(1, sep = ",") ~ ")" ~ statement)
-      .map { case (index, extractors, stat) => (index, extractors.toList, stat) }
-      .map(withIndex(ExprNode.IterationNode))
+      .map { case (index, extractors, stat) => (index, extractors.toVector, stat) }
+      .map(withIndex(ExprNode.ForNode))
   }
 
   // TODO: The single & and | style feels quite weird when actually using it. Maybe we should just introduce
@@ -151,7 +136,7 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
       // Create a PropertyAccessNode for every property access or just return the expression if there is
       // no property access.
       propertyAccesses.foldLeft(expr) { case (instance, (index, name)) =>
-        ExprNode.PropertyAccessNode(instance, name, Position(fragment, index))
+        ExprNode.MemberAccessNode(instance, name, Position(fragment, index))
       }
     }
   }
@@ -160,7 +145,7 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     * All expressions immediately accessible via postfix dot notation.
     */
   private def accessible[_: P]: P[ExprNode] = {
-    P(literal | fixedCall | dynamicCall | call | variable | block | list | map | enclosed)
+    P(literal | fixedCall | dynamicCall | call | objectMap | variable | block | list | map | enclosed)
   }
 
   private def literal[_: P]: P[ExprNode] = {
@@ -170,23 +155,41 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     // Reals have to be parsed before ints so that ints don't consume the portion of the real before the fraction.
     P(real | int | booleanLiteral | string)
   }
+
   private def fixedCall[_: P]: P[ExprNode] = P(Index ~ identifier ~ ".fixed" ~ typeArguments ~ arguments).map(withIndex(ExprNode.FixedFunctionCallNode))
+
   private def dynamicCall[_: P]: P[ExprNode] = P(Index ~ "dynamic" ~ singleTypeArgument ~ arguments).map(withIndex(ExprNode.DynamicCallNode))
-  private def call[_: P]: P[ExprNode] = P(Index ~ identifier ~ ("." ~ identifier).? ~ arguments).map(withIndex(ExprNode.SimpleCallNode))
-  def arguments[_: P]: P[List[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toList)
-  private def typeArguments[_: P]: P[List[TypeExprNode]] = P("[" ~ typeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toList)
+
+  private def call[_: P]: P[ExprNode] = P(Index ~ identifier ~ arguments).map(withIndex(ExprNode.SimpleCallNode))
+
+  private def arguments[_: P]: P[Vector[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toVector)
+  private def typeArguments[_: P]: P[Vector[TypeExprNode]] = P("[" ~ typeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toVector)
   private def singleTypeArgument[_: P]: P[TypeExprNode] = P("[" ~ typeParser.typeExpression ~ "]")
+
+  private def objectMap[_: P]: P[ExprNode.ObjectMapNode] = {
+    def entry = P(Index ~ identifier ~ "=" ~ expression).map(withIndex(ExprNode.ObjectEntryNode))
+    def shorthand = P(Index ~ identifier).map { case (index, name) =>
+      val position = Position(fragment, index)
+      ExprNode.ObjectEntryNode(name, ExprNode.VariableNode(name, position), position)
+    }
+    def entries = P((entry | shorthand).rep(sep = ",")).map(_.toVector)
+    P(Index ~ identifier ~ "{" ~ entries ~ "}").map(withIndex(ExprNode.ObjectMapNode))
+  }
+
   private def variable[_: P]: P[ExprNode.VariableNode] = P(Index ~ identifier).map(withIndex(ExprNode.VariableNode))
+
   def block[_: P]: P[ExprNode.BlockNode] = {
-    def statements = P(statement.repX(0, Space.terminators).map(_.toList))
+    def statements = P(statement.repX(0, Space.terminators).map(_.toVector))
     P(Index ~ "{" ~ statements ~ "}").map(withIndex(ExprNode.BlockNode))
   }
+
   private def list[_: P]: P[ExprNode] = {
-    P(Index ~ "[" ~ expression.rep(sep = ",").map(_.toList) ~ "]").map(withIndex(ExprNode.ListNode))
+    P(Index ~ "[" ~ expression.rep(sep = ",").map(_.toVector) ~ "]").map(withIndex(ExprNode.ListNode))
   }
+
   private def map[_: P]: P[ExprNode] = {
     def keyValue = P(Index ~ expression ~ "->" ~ expression).map(withIndex(ExprNode.KeyValueNode))
-    P(Index ~ "%{" ~ keyValue.rep(sep = ",").map(_.toList) ~ "}").map(withIndex(ExprNode.MapNode))
+    P(Index ~ "%{" ~ keyValue.rep(sep = ",").map(_.toVector) ~ "}").map(withIndex(ExprNode.MapNode))
   }
 
   /**
@@ -197,7 +200,7 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     P(Index ~ "(" ~ (expression ~ ("," ~ expression).rep).? ~ ")").map {
       case (index, None) => ExprNode.UnitNode(Position(fragment, index))
       case (_, Some((expr, Seq()))) => expr
-      case (index, Some((left, expressions))) => ExprNode.TupleNode(left +: expressions.toList, Position(fragment, index))
+      case (index, Some((left, expressions))) => ExprNode.TupleNode(left +: expressions.toVector, Position(fragment, index))
     }
   }
 
@@ -219,11 +222,11 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
       .map(withIndex(ExprNode.StringLiteralNode))
     // We have to check content, interpolation, notStringEnd exactly in this order, otherwise notStringEnd would
     // consume parts that are meant to be escapes or interpolations.
-    P(Index ~ "'" ~ (content | interpolation | notStringEnd).rep.map(_.toList) ~ "'")
+    P(Index ~ "'" ~ (content | interpolation | notStringEnd).rep.map(_.toVector) ~ "'")
       .map {
-        case (index, List()) => ExprNode.StringLiteralNode("", Position(fragment, index))
+        case (index, Vector()) => ExprNode.StringLiteralNode("", Position(fragment, index))
         // This can either be a single string literal or any expression enclosed as such: '$expr'.
-        case (index, List(expression)) => expression match {
+        case (index, Vector(expression)) => expression match {
           case literal: StringLiteralNode =>
             // One unfortunate side effect of immutable positions is that we can't easily change the position of
             // an expression. The 'content' parser parses a string without the enclosing '' being factored in for

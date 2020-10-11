@@ -28,7 +28,7 @@ class DependencyGraph(owner: DependencyGraph.Owner) {
   /**
     * Calculates the order in which classes need to be resolved.
     */
-  def computeTypeResolutionOrder(): Compilation[List[String]] = {
+  def computeTypeResolutionOrder(): Compilation[Vector[String]] = {
     removeNonExistentTypes()
     for {
       _ <- verifyNotCyclical()
@@ -44,7 +44,7 @@ class DependencyGraph(owner: DependencyGraph.Owner) {
         _ => throw CompilationException(
           "Topological sort on the dependency graph found a cycle, even though we verified earlier that there was no such cycle."
         ),
-        order => order.toList.map(_.value)
+        order => order.toVector.map(_.value)
       )
 
       // The first element in the type resolution order must be Any, as it's the ultimate root type.
@@ -92,7 +92,7 @@ class DependencyGraph(owner: DependencyGraph.Owner) {
           val occurrence = owner.getTypeDeclaration(cycle.startNode).getOrElse(
             throw CompilationException("Type declarations didn't contain a declaration that was part of the dependency graph."),
           )
-          InheritanceCycle(cycle.nodes.map(_.value).toList, occurrence)
+          InheritanceCycle(cycle.nodes.map(_.value).toVector, occurrence)
         }: _*
       )
     }
@@ -106,13 +106,13 @@ class DependencyGraph(owner: DependencyGraph.Owner) {
     *
     * This function is not guaranteed to find ALL cycles, but there is a good chance that it does.
     */
-  private def distinctCycles: List[graph.Cycle] = {
-    var cycles = List.empty[graph.Cycle]
+  private def distinctCycles: Vector[graph.Cycle] = {
+    var cycles = Vector.empty[graph.Cycle]
     for (node <- graph.nodes) {
       node.partOfCycle.foreach { cycle =>
         // We have found a cycle. Now we need to ensure that it isn't in the list yet.
         if (!cycles.exists(_.sameAs(cycle))) {
-          cycles = cycle :: cycles
+          cycles = cycles :+ cycle
         }
 
         // This is not the most efficient way to compare cycles. We are operating on the assumption that dependency
@@ -140,10 +140,11 @@ object DependencyGraph {
   /**
     * @param occurrence One of the type declarations where the cycles occurs, so that we can report one error location.
     */
-  case class InheritanceCycle(cycle: List[String], occurrence: TypeDeclNode) extends Error(occurrence) {
+  case class InheritanceCycle(cycle: Vector[String], occurrence: TypeDeclNode) extends Error(occurrence) {
     override def message: String =
       s"""An inheritance cycle between the following types has been detected: ${cycle.mkString(", ")}.
-         |A class or label A cannot inherit from a class/label B that also inherits from A directly or indirectly. The
-         |subtyping relationships of declared types must result in a directed, acyclic graph.""".stripMargin.replaceAll("\n", " ").trim
+         |A trait cannot inherit from another trait that also inherits from the former directly or indirectly. The
+         |subtyping and component relationships of declared types must result in a directed, acyclic graph."""
+        .stripMargin.replaceAll("\n", " ").trim
   }
 }

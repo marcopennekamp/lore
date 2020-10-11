@@ -16,9 +16,14 @@ import scala.util.hashing.MurmurHash3
   * @param underlying The member definition underlying this virtual member.
   */
 case class VirtualMember(
-  name: String, tpe: Type, isComponent: Boolean = false, isMutable: Boolean = false,
+  name: String,
+  tpe: Type,
+  isComponent: Boolean = false,
+  isMutable: Boolean = false,
   underlying: Option[MemberDefinition] = None,
 ) {
+  val isImmutable: Boolean = !isMutable
+
   override def equals(obj: Any): Boolean = obj match {
     case VirtualMember(name2, tpe2, _, _, _) => name == name2 && tpe == tpe2
     case _ => false

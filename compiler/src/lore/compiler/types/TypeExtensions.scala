@@ -19,8 +19,8 @@ object TypeExtensions {
       * Orders the type variables in their order of declaration so that depending variables follow their
       * dependencies.
       */
-    def declarationOrder: List[TypeVariable] = {
-      variables.toList.sortBy(_.declarationOrder)
+    def declarationOrder: Vector[TypeVariable] = {
+      variables.toVector.sortBy(_.declarationOrder)
     }
   }
 }

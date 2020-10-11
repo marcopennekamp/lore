@@ -32,7 +32,7 @@ export function fitsMonomorphic(t1: Type, t2: Type): boolean {
  * Returns a set of type variable assignments if t1 fits into (polymorphic) t2. Otherwise returns false to
  * signal that t1 does not fit into t2. The assignments map is used during multiple dispatch to pass type context
  * to the called polymorphic function, which can then be used to construct new types such as lists, maps, and later
- * type-polymorphic classes.
+ * type-parametric declared types.
  */
 export function fitsPolymorphic(t1: Type, t2: Type): Assignments | boolean {
   const allocation = TypeVariableAllocation.of(t1, t2)
@@ -128,9 +128,10 @@ class TypeVariableAllocation {
     }
 
     switch (t2.kind) {
-      case Kind.Class:
-      case Kind.Label:
+      case Kind.Struct:
+      case Kind.Trait:
         break // TODO: Change this once we allow type parameters for classes and labels.
+
       case Kind.Product:
         if (t1.kind === Kind.Product) {
           const types1 = (<ProductType> t1).types
@@ -142,8 +143,10 @@ class TypeVariableAllocation {
           }
         }
         break
+
       case Kind.Component:
         break // TODO: Change this once we allow type parameters for classes and labels?
+
       case Kind.List:
         if (t1.kind === Kind.List) {
           const l1 = <ListType> t1
@@ -151,6 +154,7 @@ class TypeVariableAllocation {
           TypeVariableAllocation.assign(l1.element, l2.element, allocation)
         }
         break
+
       case Kind.Map:
         if (t1.kind === Kind.Map) {
           const m1 = <MapType> t1

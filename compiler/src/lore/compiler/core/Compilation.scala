@@ -16,7 +16,7 @@ sealed trait Compilation[+A] {
   /**
     * A list of info feedback that is always carried forward through operations such as flatMap and combine.
     */
-  def infos: List[InfoFeedback]
+  def infos: Vector[InfoFeedback]
 
   /**
     * Returns the result value or the alternative if this compilation is an error.
@@ -43,7 +43,7 @@ sealed trait Compilation[+A] {
   /**
     * Maps the result value of type A to a new value of type B.
     */
-  def map[B](f: A => B): Compilation[B] = flatMap(a => Result(f(a), List.empty))
+  def map[B](f: A => B): Compilation[B] = flatMap(a => Result(f(a), Vector.empty))
 
   /**
     * Executes the function `f` with the contained value if the compilation is a result.
@@ -58,16 +58,16 @@ sealed trait Compilation[+A] {
     * the compilation results in the given errors.
     */
   def require(p: A => Boolean)(errors: Error*): Compilation[A] = this match {
-    case r@Result(a, infos) => if (p(a)) r else Errors(errors.toList, infos)
+    case r@Result(a, infos) => if (p(a)) r else Errors(errors.toVector, infos)
     case x => x
   }
 
   /**
     * Attaches the given list of infos to a copy of the current compilation.
     */
-  def withInfos(infos: List[InfoFeedback]): Compilation[A] = this match {
-    case Result(a, infos2) => Result(a, infos ::: infos2)
-    case Errors(errors, infos2) => Errors(errors, infos ::: infos2)
+  def withInfos(infos: Vector[InfoFeedback]): Compilation[A] = this match {
+    case Result(a, infos2) => Result(a, infos ++ infos2)
+    case Errors(errors, infos2) => Errors(errors, infos ++ infos2)
   }
 
   /**
@@ -81,7 +81,7 @@ sealed trait Compilation[+A] {
   /**
     * If this compilation has failed, try to recover from a given set of errors to a new compilation.
     */
-  def recover[B >: A](f: PartialFunction[List[Error], Compilation[B]]): Compilation[B] = this match {
+  def recover[B >: A](f: PartialFunction[Vector[Error], Compilation[B]]): Compilation[B] = this match {
     case Result(_, _) => this
     case Errors(errors, infos) => if (f.isDefinedAt(errors)) f(errors).withInfos(infos) else this
   }
@@ -100,18 +100,18 @@ sealed trait Compilation[+A] {
   def verification: Verification = map(_ => ())
 }
 
-case class Result[+A](value: A, override val infos: List[InfoFeedback]) extends Compilation[A] {
+case class Result[+A](value: A, override val infos: Vector[InfoFeedback]) extends Compilation[A] {
   override def isError = false
 }
-case class Errors[+A](errors: List[Error], override val infos: List[InfoFeedback]) extends Compilation[A] {
+case class Errors[+A](errors: Vector[Error], override val infos: Vector[InfoFeedback]) extends Compilation[A] {
   override def isError = true
 }
 
 object Compilation {
-  def fail(errors: Error*): Compilation[Nothing] = Errors(errors.toList, List.empty)
-  def failInfo(errors: Error*)(infos: InfoFeedback*): Compilation[Nothing] = Errors(errors.toList, infos.toList)
-  def succeed[A](a: A): Compilation[A] = Result(a, List.empty)
-  def succeedInfo[A](a: A)(infos: InfoFeedback*): Compilation[A] = Result(a, infos.toList)
+  def fail(errors: Error*): Compilation[Nothing] = Errors(errors.toVector, Vector.empty)
+  def failInfo(errors: Error*)(infos: InfoFeedback*): Compilation[Nothing] = Errors(errors.toVector, infos.toVector)
+  def succeed[A](a: A): Compilation[A] = Result(a, Vector.empty)
+  def succeedInfo[A](a: A)(infos: InfoFeedback*): Compilation[A] = Result(a, infos.toVector)
 
   /**
     * An abbreviation for Compilation[Unit]. A verification is an operation that returns nothing of note when
@@ -129,38 +129,35 @@ object Compilation {
       * Creates a verification result from the given error list. If the list is empty, the verification is assumed to
       * be successful. Otherwise, the verification fails with the given errors.
       */
-    def fromErrors(errors: List[Error]): Verification = {
-      if (errors.nonEmpty) Errors(errors, List.empty) else succeed
+    def fromErrors(errors: Vector[Error]): Verification = {
+      if (errors.nonEmpty) Errors(errors, Vector.empty) else succeed
     }
   }
 
-  implicit class CompilationListExtension[A](compilations: List[Compilation[A]]) {
+  implicit class CompilationIterableExtension[A](compilations: Vector[Compilation[A]]) {
     /**
-      * Combines all the compilations from a list into a single compilation. If any of the compilations have
+      * Combines all the compilations from an iterable into a single compilation. If any of the compilations have
       * resulted in an error, the combined compilation results in an error. This operation collects all errors
       * in unspecified order.
       */
-    def simultaneous: Compilation[List[A]] = {
+    def simultaneous: Compilation[Vector[A]] = {
       // We could also implement this using foldRight, which would perhaps be more functional in style, but the
       // present definition is actually easier to parse, as foldRight requires matching on two compilations for each
       // iteration.
       // This implementation, on the other hand, does not need to match on two compilations. We collect all values
-      // and errors independently, then decide whether the combined compilation is a list of errors or results.
-      // The decision is very simple: If the list of errors is not empty, there is at least one compilation that has
-      // failed, and thus the whole compilation has failed with the given errors.
-      var results: List[A] = Nil
-      var errors: List[Error] = Nil
-      var infos: List[InfoFeedback] = Nil
+      // and errors independently.
+      var results: Vector[A] = Vector.empty
+      var errors: Vector[Error] = Vector.empty
+      var infos: Vector[InfoFeedback] = Vector.empty
       var hasFailed = false
-      // We have to reverse the list first since prepending to results will effectively swap the direction of the list.
-      compilations.reverse.foreach {
+      compilations.foreach {
         case Result(value, infos2) =>
-          results = value :: results
-          infos = infos2 ::: infos
+          results = results :+ value
+          infos = infos ++ infos2
         case Errors(errors2, infos2) =>
           hasFailed = true
-          errors = errors2 ::: errors
-          infos = infos2 ::: infos
+          errors = errors ++ errors2
+          infos = infos ++ infos2
       }
       // There is a special case where we don't have any errors but the compilation still failed. Hence, we can't rely
       // on whether the error list is empty or not and have to check whether there is any failure.
@@ -176,11 +173,11 @@ object Compilation {
       */
     object simultaneous extends Poly2 {
       implicit def caseCompilation[A, B <: HList]: Case.Aux[Compilation[A], Compilation[B], Compilation[A :: B]] = at[Compilation[A], Compilation[B]] {
-        case (Result(a, infosA), Result(b, infosB)) => Result(a :: b, infosA ::: infosB)
+        case (Result(a, infosA), Result(b, infosB)) => Result(a :: b, infosA ++ infosB)
         case (ca, cb) =>
-          // As either ca or cb is guaranteed to be a failed compilation, combine will simply aggregate the errors
+          // As either ca or cb is guaranteed to be a failed compilation, simultaneous will simply aggregate the errors
           // and hence also produce an Errors object. This makes the type cast valid.
-          List(ca, cb).simultaneous.asInstanceOf[Compilation[A :: B]]
+          Vector(ca, cb).simultaneous.asInstanceOf[Compilation[A :: B]]
       }
     }
   }

@@ -8,7 +8,7 @@ object FeedbackPrinter {
   /**
     * Prints a list of feedback to a string.
     */
-  def print(feedback: List[Feedback]): String = {
+  def print(feedback: Vector[Feedback]): String = {
     // Sort feedback such that instances are ordered by fragments first and index second.
     val sorted = feedback.sortWith { case (f1, f2) => f1.position < f2.position }
 

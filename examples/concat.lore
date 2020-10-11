@@ -1,7 +1,7 @@
-label ToString
-label List extends ToString
-label LinkedList extends List
-label Sorted
+trait ToString
+trait List extends ToString
+trait LinkedList extends List
+trait Sorted
 
 // We would actually have to return ToString/List/LinkedList with these operations, but we only care about the
 // input type here, as this example is used to test multiple dispatch.
