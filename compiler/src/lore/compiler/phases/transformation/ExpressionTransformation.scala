@@ -1,7 +1,8 @@
-package lore.compiler.phases.verification
+package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Error}
+import lore.compiler.phases.transformation.ExpressionVerification.IllegallyTypedExpression
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.{LocalVariable, Registry, Scope, TypeScope, VariableScope}
 import lore.compiler.syntax.ExprNode
@@ -33,11 +34,6 @@ object ExpressionTransformation {
     } yield expression
   }
 
-  case class IllegallyTypedExpression(expression: Expression, expectedType: Type) extends Error(expression) {
-    override def message: String = s"The expression $expression should return a value of type $expectedType, but actually returns" +
-      s" a value of type ${expression.tpe}."
-  }
-
   /**
     * Verifies that the expected result type is compatible with the type of the expression. If the actual type is not
     * compatible, it might be the case that all paths of the expression's last expression return a valid value. In such
@@ -48,7 +44,7 @@ object ExpressionTransformation {
     if (expression.tpe <= expectedType || allPathsReturn(expression)) {
       Verification.succeed
     } else {
-      Verification.fromErrors(Vector(IllegallyTypedExpression(expression, expectedType)))
+      Verification.fromErrors(Vector(IllegallyTypedExpression(expression, Vector(expectedType))))
     }
   }
 

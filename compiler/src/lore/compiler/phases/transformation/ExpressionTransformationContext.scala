@@ -1,4 +1,4 @@
-package lore.compiler.phases.verification
+package lore.compiler.phases.transformation
 
 import lore.compiler.semantics.{BlockScope, LocalVariable, Scope, VariableScope}
 

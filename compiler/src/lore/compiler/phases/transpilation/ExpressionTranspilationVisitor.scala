@@ -22,8 +22,6 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   private implicit val nameProvider: TemporaryNameProvider = new TemporaryNameProvider
 
-  private def default(expression: Expression): Transpilation = Compilation.fail(UnsupportedTranspilation(expression))
-
   override def visit(expression: Return)(value: TranspiledChunk): Transpilation = {
     val ret = s"return ${value.expression.get};"
     Transpilation.chunk(Vector(value.statements, ret), RuntimeApi.values.tuple.unit)
@@ -142,8 +140,9 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   override def visit(expression: Call)(arguments: Vector[TranspiledChunk]): Transpilation = {
     expression.target match {
-      case _: FunctionInstance | _: DynamicCallTarget => transpileCall(expression.target.name, arguments)
-      case _ => default(expression) // Constructor calls are not yet supported.
+      case _: FunctionInstance | _: DynamicCallTarget => Transpilation.combined(arguments) { expressions =>
+        s"${expression.target.name}(${expressions.mkString(", ")})"
+      }
     }
   }
 
@@ -246,16 +245,6 @@ private[transpilation] class ExpressionTranspilationVisitor()(
   }
 
   /**
-    * Transpiles a call with the given target name and arguments.
-    */
-  private def transpileCall(targetName: String, arguments: Vector[TranspiledChunk]): Transpilation = {
-    // TODO: Rather take the target as an argument?
-    Transpilation.combined(arguments) { expressions =>
-      s"$targetName(${expressions.mkString(", ")})"
-    }
-  }
-
-  /**
     * Transpiles a xary-constructed value that is created using an API function wrapped around an array of parts.
     */
   private def transpileArrayBasedValue(
@@ -275,11 +264,6 @@ private[transpilation] class ExpressionTranspilationVisitor()(
     // TODO: We could also translate the append operation to a dynamic function call in the FunctionTransformationVisitor.
     //       However, we will have to support passing types as expressions, at least for the compiler, because the
     //       last argument to 'append' has to be the new list type.
-    // TODO: This type transpilation is not quite correct for type variables. Assuming the appends happens in a
-    //       function context, we will have to take the actual type assigned to the type variable during this
-    //       specific function call (at run-time) from a sort of type context that gets populated in polymorphic
-    //       functions. Because if we have a function over a list [T] and an element T and we call the function
-    //       with, say, T = Int, we don't want the resulting list type to be [T] but rather [Int].
     val typeExpr = RuntimeTypeTranspiler.transpileSubstitute(resultType)
     Transpilation.combined(Vector(list, element)) { case Vector(listExpr, elementExpr) =>
       s"${RuntimeApi.values.list.append}($listExpr, $elementExpr, $typeExpr)"

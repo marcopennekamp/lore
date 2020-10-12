@@ -84,8 +84,6 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
 
   /**
     * The list of multi-function parameters.
-    *
-    * TODO: We could technically even use the proper names if they don't differ across functions.
     */
   private lazy val jsParameterNames: Vector[TranspiledName] = uniqueArity match {
     case None => Vector("args".asName)
@@ -219,7 +217,6 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
 
     def transpileFitsConsts(nodes: Vector[(mf.hierarchy.NodeT, Int)]): Unit = {
       nodes.foreach { case (node, index) =>
-        // TODO: Assert (at run-time) that the input type isn't polymorphic?
         val varRightType = inputTypeJsNames(node.signature.inputType)
         // We can decide at compile-time which version of the fit should be used, because the type on the right side
         // is constant. If the parameter type isn't polymorphic now, it won't ever be, so we can skip all that testing

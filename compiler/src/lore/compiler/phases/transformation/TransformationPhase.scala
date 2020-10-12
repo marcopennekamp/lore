@@ -1,4 +1,4 @@
-package lore.compiler.phases.verification
+package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation._
 import lore.compiler.core.Phase
@@ -6,8 +6,7 @@ import lore.compiler.semantics.Registry
 import lore.compiler.types.StructType
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
-// TODO: Rename to TransformationPhase?
-class VerificationPhase()(implicit registry: Registry) extends Phase[Unit] {
+class TransformationPhase()(implicit registry: Registry) extends Phase[Unit] {
   override def result: Verification = {
     val withVerifiedConstraints = (
       registry.getTypeDefinitions.values.toVector.map(DeclaredTypeConstraints.verify).simultaneous,

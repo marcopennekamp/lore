@@ -1,11 +1,13 @@
-package lore.compiler.types
+package lore.compiler.phases.resolution
 
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, Error, Position}
 import lore.compiler.semantics.TypeScope
 import lore.compiler.syntax.TypeExprNode
+import lore.compiler.types._
 
 object TypeExpressionEvaluator {
+
   case class ComponentTypeMustContainDeclaredType(node: TypeExprNode.ComponentNode) extends Error(node) {
     override def message: String = s"The component type +${node.underlyingName} must contain a declared type. ${node.underlyingName} is not a struct or trait."
   }
@@ -32,4 +34,5 @@ object TypeExpressionEvaluator {
       }
     }
   }
+
 }

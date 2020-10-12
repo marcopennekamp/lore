@@ -4,7 +4,7 @@ import lore.compiler.core.{Compilation, CompilationException, Position}
 import lore.compiler.semantics.structures.{ComponentDefinition, MemberDefinition, PropertyDefinition, StructDefinition}
 import lore.compiler.semantics.{Registry, TypeScope}
 import lore.compiler.syntax.TypeDeclNode
-import lore.compiler.types.{BasicType, TypeExpressionEvaluator}
+import lore.compiler.types.BasicType
 
 object StructDefinitionResolver {
   def resolve(node: TypeDeclNode.StructNode)(implicit registry: Registry): Compilation[StructDefinition] = {

@@ -1,4 +1,4 @@
-package lore.compiler.phases.verification
+package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, Error, Position}
@@ -96,10 +96,6 @@ object MemberExplorer {
           members.groupBy(_.name).map {
             case (_, Vector(member)) => (member.name -> member).compiled
             case (name, members) if members.length >= 2 =>
-              // TODO: Instead of differentiating between mutable and immutable members here, we could pick our
-              //       algorithm based on whether a member is accessed for a read or a write. On the other hand,
-              //       this would complicate caching, and might not be consistent enough: If we can access a member
-              //       to read it, why would a write be prohibited?
               if (members.exists(_.isMutable)) {
                 // If we have multiple members and at least one member is mutable, ALL members must be mutable
                 // and share the exact same type.

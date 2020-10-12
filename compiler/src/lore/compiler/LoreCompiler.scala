@@ -4,7 +4,7 @@ import lore.compiler.core.{Compilation, Fragment}
 import lore.compiler.phases.parsing.ParsingPhase
 import lore.compiler.phases.resolution.ResolutionPhase
 import lore.compiler.phases.transpilation.TranspilationPhase
-import lore.compiler.phases.verification.VerificationPhase
+import lore.compiler.phases.transformation.TransformationPhase
 import lore.compiler.semantics.Registry
 
 /**
@@ -22,7 +22,7 @@ class LoreCompiler(val sources: Vector[Fragment], val options: CompilerOptions) 
       // Phase 2: Resolve declarations using DeclarationResolver and build the Registry.
       registry <- new ResolutionPhase(fragmentsWithDeclarations).result
       // Phase 3: Check constraints and ascribe types.
-      _ <- new VerificationPhase()(registry).result
+      _ <- new TransformationPhase()(registry).result
       // Phase 4: Transpile the Lore program to Javascript.
       output <- new TranspilationPhase()(options, registry).result
     } yield (registry, output)

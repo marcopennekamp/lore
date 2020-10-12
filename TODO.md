@@ -3,6 +3,7 @@
 #### Features
 
 - Finish transformation and transpilation of the current MVL constructs. (WHICH ONES ARE THESE?)
+  - Ranges still need to be supported, as they are already part of the specification.
 
 ##### Type System
 

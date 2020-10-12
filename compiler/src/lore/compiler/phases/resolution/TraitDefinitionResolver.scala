@@ -4,7 +4,7 @@ import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.TraitDefinition
 import lore.compiler.syntax.TypeDeclNode
-import lore.compiler.types.{BasicType, TypeExpressionEvaluator}
+import lore.compiler.types.BasicType
 
 object TraitDefinitionResolver {
   def resolve(node: TypeDeclNode.TraitNode)(implicit registry: Registry): Compilation[TraitDefinition] = {

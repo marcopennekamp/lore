@@ -89,13 +89,6 @@ class DeclarationResolver {
     for {
       _ <- addDeclarations(declarations)
 
-      // TODO: If we want to support external libraries, we should add these here, especially to the dependency graph.
-      //       Supporting external libraries will need a redesign of some of the early aspects. I am assuming that the
-      //       compiler will produce a manifest of all type and function signatures when it compiles a project. This
-      //       manifest can then be used to add externally declared types and functions to the current project. However,
-      //       we will have to redesign Definition structures so that constructor and function bodies are optional when
-      //       a definition has been declared as "external".
-
       // We do three separate passes over type declarations:
       //  1. Resolve types.
       //  2. Resolve class/label definitions.

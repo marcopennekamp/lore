@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, Position}
 import lore.compiler.semantics.{TypeScope, TypeVariableScope}
 import lore.compiler.syntax.DeclNode
-import lore.compiler.types.{BasicType, TypeExpressionEvaluator, TypeVariable}
+import lore.compiler.types.{BasicType, TypeVariable}
 
 object TypeVariableDeclarationResolver {
   /**

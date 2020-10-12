@@ -4,8 +4,6 @@ Lore is an expression-based language, which means that there are no statements, 
 
 **TODO:** How do we implement type casts / conversions? (Typings / Type Assertions: `expr :: Type`.)
 
-**TODO:** Consider introducing Swift-style `guard` statements with a twist: They operate within blocks. If the condition is false, continue the code, otherwise *return the value of the else part from the block*. I think this could be super useful in game development.
-
 
 
 ### Top-Level Expressions
@@ -162,8 +160,6 @@ Numbers are equal and ordered in accordance with the rules of sanity. Integers a
 
 ### Booleans
 
-**TODO:** Long-term, we could define booleans within Lore as singleton types.
-
 Lore supports **booleans**. Their type is `Boolean`. They are implemented using the standard Javascript boolean type. There are two boolean **values:** `true` and `false`. 
 
 ##### Logical Operators
@@ -177,10 +173,6 @@ a | b  // Disjunction
 ```
 
 We define *logical not* using a **tilde** so we can reserve the `?!` combo of characters for handling optional values.
-
-**TODO:** We could consider, once we have introduced nullable/optional values (`Int?`), to turn the logical operators into operators that accept any argument types and return "truthy" values. Compare to Clojure, Elixir, or Javascript.
-
-**TODO:** Rethink the syntax of these symbols. Maybe rather `&&` or even `and`?
 
 ##### Equality and Order
 
@@ -228,8 +220,6 @@ Lore supports **tuples**. As described by product types, tuples are fixed-size, 
 
 ###### Example
 
-**TODO:** How can we define `get` such that it supports tuples of arbitrary length? Give every product type a supertype called `Product` and implement `get` via multiple dispatch?
-
 ```
 let t = (a, b, c)
 get(t, 0) // a
@@ -244,8 +234,6 @@ Lore supports a **unit** value, which is simply the empty tuple. It is written `
 
 Two tuples are equal if they have the same size and their elements are equal.
 
-**TODO:** Tuple order should be possible and quite easy to implement.
-
 
 
 ### Lists
@@ -257,8 +245,6 @@ You can **construct** a list by putting comma-separated elements inside square b
 ##### Equality and Order
 
 Two lists are equal if they have the same lengths and each of their elements, considered in order, are equal. Lists are not ordered by default.
-
-**TODO:** We could also define a default order for lists, which would probably make programmer life easier.
 
 
 
@@ -338,8 +324,6 @@ To **define order** for a given type, specialize the function `isLessThan(a, b)`
 
 ### Multi-Function Calls
 
-**TODO:** In a later version of Lore, we can support a feature such as Swift's trailing closures, maybe add some way to pass two or more closures. (Or just multiple parameter lists.)
-
 **Multi-Function calls** are the heart of Lore. Their syntax is simple:
 
 ```
@@ -388,17 +372,6 @@ if (cond) statement2 else statement2
 
 Note that either `statement` (or even `cond`) may be a block. The else part is, of course, optional. The so-called **dangling else** is always parsed as belonging to the `if` closest to it.
 
-**TODO:** Add a match-like expression that executes the first case where a boolean expression is true:
-
-```
-??? {
-  foo(x, y) => 'hello'
-  bar(x, y) => 'world'
-  baz(x, y) & baz(y, x) & baz(z, z) => 'hello darkness'
-  _ => 'default'
-}
-```
-
 
 
 ### Loops
@@ -446,8 +419,6 @@ for (i <- range(0, 10)) { // 0 inclusive, 10 exclusive
 
 Internally, we can of course replace the range construction with a standard index-increment for-loop. Using a range is certainly more concise and clearer than writing `for (let i = 0; i < 10; i += 1)`.
 
-**TODO:** Don't forget to add compiler support for ranges…
-
 ##### Loop Expressions
 
 Loops are expressions, too. Similar to if-expressions and blocks, the loop body expression determines the result of the loop. However, these evaluations are **aggregated into a list**.
@@ -486,3 +457,37 @@ Note that we don't view assignments as operators. **Complex expressions** such a
 ```
 
 **TODO:** Is this still true?
+
+
+
+### Post-MVL Extensions (Ideas)
+
+- Consider introducing **Swift-style `guard` statements** with a twist: They operate within blocks. If the condition is false, continue the code, otherwise *return the value of the else part from the block*. I think this could be super useful in game development.
+
+- We could consider, once we have introduced nullable/optional values (`Int?`), to **turn the logical operators into operators that accept any argument types** and return "truthy" values. Compare to Clojure, Elixir, or Javascript.
+
+- **Lists:**
+
+  - Define a default **order** for lists, which would probably make programmer life easier.
+
+- **Tuples:**
+
+  - How can we define `get` such that it **supports tuples of arbitrary length**? Give every product type a supertype called `Product` and implement `get` via multiple dispatch?
+  - Implement some default tuple **ordering**.
+
+- A feature such as Swift's **trailing closures**, maybe add some way to pass two or more closures. (Or just multiple parameter lists.)
+
+- Add a match-like expression that executes the **first case where a boolean expression is true:**
+
+  ```
+  ??? {
+    foo(x, y) => 'hello'
+    bar(x, y) => 'world'
+    baz(x, y) & baz(y, x) & baz(z, z) => 'hello darkness'
+    _ => 'default'
+  }
+  ```
+
+- **If-else:**
+
+  - If only **one branch** of an if-else expression supplies a value, return an **option** of the evaluated type.

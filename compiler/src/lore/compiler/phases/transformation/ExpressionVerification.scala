@@ -1,4 +1,4 @@
-package lore.compiler.phases.verification
+package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.core.{Compilation, Error, Position}
@@ -8,7 +8,16 @@ import lore.compiler.types.{BasicType, ListType, ProductType, Type}
 
 object ExpressionVerification {
   case class IllegallyTypedExpression(expression: Expression, expectedTypes: Vector[Type]) extends Error(expression) {
-    override def message = s"The expression $expression at this position has the illegal type ${expression.tpe}.$expected"
+    override def message = s"The expression $expression has the illegal type ${expression.tpe}.$expected"
+    private def expected: String = {
+      if (expectedTypes.nonEmpty) {
+        s" We expected one of the following types (or a subtype thereof): ${expectedTypes.mkString(",")}."
+      } else ""
+    }
+  }
+
+  case class IllegalReturnType(call: Expression.Call, expectedTypes: Vector[Type]) extends Error(call) {
+    override def message = s"Calling ${call.target.name} returns the illegal type ${call.tpe}.$expected"
     private def expected: String = {
       if (expectedTypes.nonEmpty) {
         s" We expected one of the following types (or a subtype thereof): ${expectedTypes.mkString(",")}."

@@ -7,7 +7,6 @@ import lore.compiler.phases.resolution.ParameterDefinitionResolver.resolveParame
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.syntax.DeclNode
-import lore.compiler.types.TypeExpressionEvaluator
 
 object MultiFunctionDefinitionResolver {
   def resolve(functionNodes: Vector[DeclNode.FunctionNode])(implicit registry: Registry): Compilation[MultiFunctionDefinition] = {

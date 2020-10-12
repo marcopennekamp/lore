@@ -1,10 +1,10 @@
-package lore.compiler.phases.verification
+package lore.compiler.phases.transformation
 
 import lore.compiler.syntax.visitor.{CombiningStmtVisitor, StmtVisitor, VerificationStmtVisitor}
 import lore.compiler.syntax.{ExprNode, StmtNode}
 import lore.compiler.core.{Compilation, Error}
 import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
-import lore.compiler.phases.verification.ReturnConstraints.{DeadCode, DefinitelyReturns, ImpossibleReturn, IsReturnAllowed}
+import lore.compiler.phases.transformation.ReturnConstraints.{DeadCode, DefinitelyReturns, ImpossibleReturn, IsReturnAllowed}
 
 object ReturnConstraints {
   type DefinitelyReturns = Boolean

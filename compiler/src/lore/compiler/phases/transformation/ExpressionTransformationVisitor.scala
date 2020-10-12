@@ -1,7 +1,8 @@
-package lore.compiler.phases.verification
+package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.core.{Compilation, CompilationException, Error, Position}
+import lore.compiler.phases.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
@@ -10,7 +11,7 @@ import lore.compiler.syntax.visitor.StmtVisitor
 import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.types._
 
-private[verification] class ExpressionTransformationVisitor(
+private[transformation] class ExpressionTransformationVisitor(
   /**
     * The expected result type of the transformed expression. Note that this is merely used to check the result
     * type of a return expression. It does not guarantee that the visitor returns an expression with the given
@@ -135,13 +136,6 @@ private[verification] class ExpressionTransformationVisitor(
           // The immutable list is constructed from the existing list and another element. The resulting type of the
           // list will be the least upper bound of the two types. If the two types aren't related, we default to sum
           // types, which provide a sensible default for complex list construction.
-          // TODO: If we have an append between, say, a type variable A <: Mammal as the list's element type and a
-          //       new element type of Human, should we decide the type at run-time (LUB of A and Human) or at
-          //       compile-time? I think currently, the type is decided at compile-time, which means that with a
-          //       correct implementation of LUBs for type variables, the type will just be Mammal. It could be
-          //       narrower at run-time, but that would mean rethinking list types once again. Maybe we should let
-          //       it be as is, focus on other aspects of the language, and later come back here once we have more
-          //       feedback from actually using Lore (both my own feedback and maybe user feedback).
           val combinedType = LeastUpperBound.leastUpperBound(elementType, right.tpe)
           Expression.BinaryOperation(BinaryOperator.Append, left, right, ListType(combinedType), position).compiled
         // TODO: Implement append for maps?
@@ -169,9 +163,6 @@ private[verification] class ExpressionTransformationVisitor(
       val onFalse = argument3
       // TODO: Warn if the result type is Any?
       ExpressionVerification.isBoolean(condition).map { _ =>
-        // TODO: If only one branch supplies a value, return an OPTION of the evaluated type. Of course, we don't
-        //       HAVE options just yet. This also needs to become part of the spec before it's implemented, IF we
-        //       implement this feature.
         val tpe = LeastUpperBound.leastUpperBound(onTrue.tpe, onFalse.tpe)
         Expression.IfElse(condition, onTrue, onFalse, tpe, position)
       }
@@ -261,12 +252,6 @@ private[verification] class ExpressionTransformationVisitor(
   override def visitIteration(node: ForNode)(
     extractorTuples: Vector[(String, Expression)], visitBody: () => Compilation[Expression],
   ): Compilation[Expression] = {
-    // TODO: Alternative solution: Add a function visitExtractor which visits the extractor nodes first. Then we can
-    //       open the scope and loop context in before, add each extractor to the scope in visitExtractor, and clean
-    //       up the scope and list context in this method, visit iteration. (Or we can go back to pattern-matching
-    //       up in the verify method again.)
-    // TODO: Also consider using a custom Applicator instead.
-
     // Before we visit the body, we have to push a new scope and later, once extractors have been evaluated, also
     // a new loop context.
     context.openScope()
@@ -303,7 +288,7 @@ private[verification] class ExpressionTransformationVisitor(
   }
 }
 
-private[verification] object ExpressionTransformationVisitor {
+private[transformation] object ExpressionTransformationVisitor {
   case class ImmutableAssignment(access: Expression.Access) extends Error(access) {
     override def message = s"The variable or member ${access.name} you are trying to assign to is immutable."
   }

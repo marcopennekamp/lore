@@ -1,4 +1,4 @@
-package lore.compiler.phases.verification
+package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Error, Position}
@@ -33,8 +33,6 @@ object InstantiationTransformation {
   }
 
   def transformMapStyleInstantiation(struct: StructDefinition, entries: Vector[(String, Expression)])(implicit position: Position): Compilation[Expression] = {
-    // TODO: Deal with default values.
-
     def verifyNamesUnique(): Verification = {
       entries.map(_._1).groupBy(identity).map {
         case (name, vector) if vector.length > 1 => Compilation.fail(DuplicateMember(name))
