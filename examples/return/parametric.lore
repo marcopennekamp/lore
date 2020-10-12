@@ -1,0 +1,40 @@
+struct Position { x: Real = 0, y: Real = 0, z: Real = 0 }
+
+function toString(position: Position): String = '{ x = ${position.x}, y = ${position.y}, z = ${position.z} }'
+
+
+independent trait Movable
+
+function position(movable: Movable): Position
+action setPosition(movable: Movable, position: Position)
+
+action move(movable: Movable, x: Real, y: Real, z: Real) {
+  let old = position(movable)
+  let position = Position(old.x + x, old.y + y, old.z + z)
+  setPosition(movable, position)
+}
+
+
+struct Zombie implements Movable {
+  name: String
+  mut position: Position = Position { }
+}
+
+function position(zombie: Zombie): Position = zombie.position
+action setPosition(zombie: Zombie, position: Position) {
+  zombie.position = position
+}
+
+function toString(zombie: Zombie): String = '${zombie.name} is at position ${zombie.position}'
+
+
+function update(a: A): A where A <: Movable = {
+  move(a, 1.7, 1.5, 0)
+  a
+}
+
+action test() {
+  let zombie = Zombie { name = 'Fred' }
+  let updatedZombie: Zombie = update(zombie)
+  println(updatedZombie)
+}
