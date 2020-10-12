@@ -88,7 +88,9 @@ object TypeVariableAllocation {
 
     (t1, t2) match {
       case (_, tv2: TypeVariable) => allocation.addAssignment(tv2, t1)
-      case (d1: DeclaredType, d2: DeclaredType) => ???
+      case (d1: DeclaredType, d2: DeclaredType) =>
+        // TODO: What to do here?
+        ???
       case (l1: ListType, l2: ListType) => assign(l1.element, l2.element)
       case (m1: MapType, m2: MapType) =>
         // TODO: Is this correct?

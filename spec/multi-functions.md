@@ -41,6 +41,8 @@ function foo(a: A, b: B, c: C): Boolean where A, B, C >: A <: B = true
 
 This is not a property of multi-functions but **individual functions**. As subtyping and fit have been extended for type variables, Lore can decide the specificity of two functions even if one of them is parametric and also do so at run-time during multiple dispatch. More on that later.
 
+Note that type variables can only be used in bounds if they are declared **preceding** the bound. So in the example above, `A` and `B` must be declared before `C`.
+
 
 
 ### Multiple Dispatch
