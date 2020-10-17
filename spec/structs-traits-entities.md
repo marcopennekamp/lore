@@ -415,6 +415,18 @@ Ownership is **not fully type-safe at compile-time**, because the ability to spe
 
 - Easy **getters and setters** for struct properties?
 
+- **Mutable Components:**
+
+  - Mutating components is technically possible, but will be a **relatively costly** operation IF the new component's type is different from the current component's type, as we'll then have to change the struct's type. Most mutations will hopefully replace structs of equal types, though.
+
+  - Mutability will also need to **become part of component types**. `+Position` won't suffice if we want to mutate it. Candidates would be:
+
+    ```
+    mut +Position
+    +mut Position
+    +=Position (or another symbol combination)
+    ```
+
 - **Visibility declarations** like private/public/protected for struct properties?
 
 - **Syntactic Sugar for Properties:**

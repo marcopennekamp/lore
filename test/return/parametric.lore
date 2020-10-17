@@ -17,6 +17,8 @@ action move(movable: Movable, x: Real, y: Real, z: Real) {
 
 struct Zombie implements Movable {
   name: String
+  // TODO: This could also be a component once we support mutable components. Then we wouldn't have to define the
+  //       Movable trait but could rather work directly on +Position entities.
   mut position: Position = Position { }
 }
 
