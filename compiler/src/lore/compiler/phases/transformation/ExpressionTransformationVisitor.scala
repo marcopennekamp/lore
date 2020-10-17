@@ -6,7 +6,7 @@ import lore.compiler.phases.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
-import lore.compiler.semantics.{LocalVariable, Registry, Scope, TypeScope, VariableScope}
+import lore.compiler.semantics.{LocalVariable, Registry, TypeScope, VariableScope}
 import lore.compiler.syntax.visitor.StmtVisitor
 import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode}
 import lore.compiler.types._
@@ -52,7 +52,12 @@ private[transformation] class ExpressionTransformationVisitor(
       context.currentScope.resolve(name).map(Expression.VariableAccess(_, position))
 
     case RealLiteralNode(value, position) => Expression.Literal(value, BasicType.Real, position).compiled
-    case IntLiteralNode(value, position) => Expression.Literal(value, BasicType.Int, position).compiled
+    case node@IntLiteralNode(value, position) =>
+      if (BasicType.Int.minSafeInteger <= value && value <= BasicType.Int.maxSafeInteger) {
+        Expression.Literal(value, BasicType.Int, position).compiled
+      } else {
+        Compilation.fail(UnsafeInteger(node))
+      }
     case BoolLiteralNode(value, position) => Expression.Literal(value, BasicType.Boolean, position).compiled
     case StringLiteralNode(value, position) => Expression.Literal(value, BasicType.String, position).compiled
     case UnitNode(position) => Expression.Tuple(Vector.empty, position).compiled
@@ -289,6 +294,12 @@ private[transformation] class ExpressionTransformationVisitor(
 }
 
 private[transformation] object ExpressionTransformationVisitor {
+  case class UnsafeInteger(node: ExprNode.IntLiteralNode) extends Error(node) {
+    override def message: String = s"The integer literal ${node.value} is outside the safe run-time range of" +
+      s" ${BasicType.Int.minSafeInteger} and ${BasicType.Int.maxSafeInteger}. The Javascript runtime will not be able" +
+      s" to properly store and process integers this large."
+  }
+
   case class ImmutableAssignment(access: Expression.Access) extends Error(access) {
     override def message = s"The variable or member ${access.name} you are trying to assign to is immutable."
   }

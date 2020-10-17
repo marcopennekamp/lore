@@ -67,7 +67,7 @@ object ExprNode {
   // Numeric expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class RealLiteralNode(value: Double, position: Position) extends LeafNode with ExprNode
-  case class IntLiteralNode(value: Int, position: Position) extends LeafNode with ExprNode
+  case class IntLiteralNode(value: Long, position: Position) extends LeafNode with ExprNode
   case class AdditionNode(left: ExprNode, right: ExprNode, position: Position) extends BinaryNode(left, right) with ExprNode
   case class SubtractionNode(left: ExprNode, right: ExprNode, position: Position) extends BinaryNode(left, right) with ExprNode
   case class MultiplicationNode(left: ExprNode, right: ExprNode, position: Position) extends BinaryNode(left, right) with ExprNode

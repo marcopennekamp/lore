@@ -45,6 +45,6 @@ object LexicalParser {
   ))
 
   def identifier[_: P]: P[String] = P(!criticalKeyword ~ (letter | "_") ~ (letter | digit | "_").rep).!
-  def integer[_: P]: P[Int] = P(negatable[Int, Any](digitsNoTrailing.!.map(_.toInt)))
+  def integer[_: P]: P[Long] = P(negatable[Long, Any](digitsNoTrailing.!.map(_.toLong)))
   def real[_: P]: P[Double] = P(negatable[Double, Any]((digitsNoTrailing ~ fraction).!.map(_.toDouble)))
 }

@@ -16,11 +16,21 @@ object BasicType {
   case object Nothing extends BasicType("Nothing")
   // TODO: How does Nothing interact with abstract subtypes, totality constraint, etc.?
 
-  // TODO: There is a slight problem with how Reals and Ints are handled. Invariant structs: If we have a Struct[Real],
-  //       we technically aren't able to "apply" a 5 to it, because 5 is strictly an Int. So clearly we have to type
-  //       values such as 5 as Real AND Int, while 5.1 is typed only as Real.
   case object Real extends BasicType("Real")
-  case object Int extends BasicType("Int")
+
+  case object Int extends BasicType("Int") {
+    /**
+      * The maximum safe run-time integer value supported by Javascript.
+      */
+    val maxSafeInteger: Long = 9007199254740991L
+
+    /**
+      * The minimum safe run-time integer value supported by Javascript.
+      */
+    val minSafeInteger: Long = -9007199254740991L
+  }
+
   case object Boolean extends BasicType("Boolean")
+
   case object String extends BasicType("String")
 }
