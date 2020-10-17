@@ -11,12 +11,12 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scala.util.Using
 
 object Lore {
-  lazy val pyramid: Vector[FragmentResolution] = Vector(
-    fragment("pyramid.collections", Path.of("pyramid", "collections.lore")),
-    fragment("pyramid.core", Path.of("pyramid", "core.lore")),
-    fragment("pyramid.io", Path.of("pyramid", "io.lore")),
-    fragment("pyramid.math", Path.of("pyramid", "math.lore")),
-    fragment("pyramid.string", Path.of("pyramid", "string.lore")),
+  def pyramid(baseDirectory: Path): Vector[FragmentResolution] = Vector(
+    fragment("pyramid.collections", baseDirectory.resolve(Path.of("pyramid", "collections.lore"))),
+    fragment("pyramid.core", baseDirectory.resolve(Path.of("pyramid", "core.lore"))),
+    fragment("pyramid.io",baseDirectory.resolve( Path.of("pyramid", "io.lore"))),
+    fragment("pyramid.math", baseDirectory.resolve(Path.of("pyramid", "math.lore"))),
+    fragment("pyramid.string", baseDirectory.resolve(Path.of("pyramid", "string.lore"))),
   )
 
   trait FragmentResolution
@@ -36,20 +36,31 @@ object Lore {
     }
   }
 
+  def toDirectoryPath(directory: String): Path = {
+    val path = Path.of(directory)
+    if (!path.toFile.exists) {
+      throw new RuntimeException(s"The directory $path does not exist.")
+    }
+    if (!path.toFile.isDirectory) {
+      throw new RuntimeException(s"The directory $path is not a directory.")
+    }
+    path
+  }
+
   /**
     * Compiles a Lore program from a single source.
     */
-  def fromSingleSource(resolution: FragmentResolution): Compilation[(Registry, String)] = {
+  def fromSingleSource(baseDirectory: Path, resolution: FragmentResolution): Compilation[(Registry, String)] = {
     val options = CompilerOptions(
       runtimeLogging = false,
     )
-    val resolutions = pyramid :+ resolution
+    val resolutions = pyramid(baseDirectory) :+ resolution
     val failures = resolutions.filterType[FragmentResolution.NotFound]
     if (failures.nonEmpty) {
       for (failure <- failures) {
         println(s"${FeedbackPrinter.tagError} The file '${failure.path}' does not exist!")
       }
-      throw CompilationException("Not all files to be compiled were found. Consult the console output above for a list of these files.")
+      throw new RuntimeException("Not all files to be compiled were found. Consult the console output above for a list of these files.")
     } else {
       val compiler = new LoreCompiler(resolutions.filterType[FragmentResolution.Success].map(_.fragment), options)
       compiler.compile()
@@ -57,11 +68,11 @@ object Lore {
   }
 
   /**
-    * Compiles a Lore program from a named example within the Lore examples directory.
+    * Compiles a Lore program from the given base directory and fragment name.
     */
-  def fromExample(name: String): Compilation[(Registry, String)] = {
-    val path = Path.of("examples", s"$name.lore")
-    fromSingleSource(fragment(name, path))
+  def fromSingleSourcePath(baseDirectory: String, fragmentName: String): Compilation[(Registry, String)] = {
+    val baseDirectoryPath = toDirectoryPath(baseDirectory)
+    fromSingleSource(baseDirectoryPath, fragment(fragmentName, baseDirectoryPath.resolve(s"$fragmentName.lore")))
   }
 
   /**
@@ -80,9 +91,8 @@ object Lore {
           if (feedback.nonEmpty) printer.println(FeedbackPrinter.print(feedback))
         case Result(registry, infos) =>
           printer.println()
-          printer.println(s"${FeedbackPrinter.tagSuccess} Compilation was successful:")
+          printer.println(s"${FeedbackPrinter.tagSuccess} Compilation was successful.")
           if(infos.nonEmpty) printer.println(FeedbackPrinter.print(infos))
-          printer.println(s"${FeedbackPrinter.tagSuccess} Compilation result: $registry")
 
           // Print types for debugging.
           printer.println()
@@ -105,17 +115,23 @@ object Lore {
   /**
     * Writes the result of the compilation to the file system.
     */
-  def writeResult(output: String): Unit = {
-    Files.writeString(Path.of("lore-program.js"), output)
-    Runtime.getRuntime.exec("prettier --write lore-program.js")
+  def writeResult(baseDirectory: Path)(output: String): Unit = {
+    val path = baseDirectory.resolve("lore-program.js")
+    Files.writeString(path, output)
+    Runtime.getRuntime.exec(s"prettier --write ${path.toString}")
   }
 
+  /**
+    * Invokes the compiler from a single source given the following arguments:
+    *   - The base directory which is prepended to the fragment source's name.
+    *   - The name of the fragment, possibly a path separated by /.
+    */
   def main(args: Array[String]): Unit = {
     val beforeCompile = System.nanoTime()
-    val result = fromExample(args(0))
+    val result = fromSingleSourcePath(args(0), args(1))
     val afterCompile = System.nanoTime()
     println(stringifyCompilationInfo(result.map(_._1)))
-    result.map(_._2).foreach(writeResult)
+    result.map(_._2).foreach(writeResult(Path.of(args(0))))
     println(s"Compile time: ${((afterCompile - beforeCompile) / 1000) / 1000.0}ms.")
   }
 }

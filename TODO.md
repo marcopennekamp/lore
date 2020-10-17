@@ -11,6 +11,11 @@
 - Investigate how type variables affect abstract functions and the ARDS function.
 - Support intersection and sum types in TypeVariableAllocation.
 
+##### CLI
+
+- Support compiling multiple files, either specified through multiple arguments or with a pattern.
+- Support an output file other than `lore-program.js`.
+
 
 #### Testing
 

@@ -24,6 +24,7 @@ main.pdf
 
 # Lore
 lore-program.js
+test/lore.jar
 
 # Deno
 bundle.js

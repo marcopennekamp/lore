@@ -16,8 +16,4 @@ function f3(): Int = {
   0
 }
 
-action test() {
-  println(f1())
-  println(f2())
-  println(f3())
-}
+function test(): (Int, Int, Int) = (f1(), f2(), f3())

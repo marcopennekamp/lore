@@ -1,1 +1,1 @@
-lazy val compiler = (project in file("compiler"))
+lazy val compiler = project in file("compiler")

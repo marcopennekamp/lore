@@ -15,14 +15,14 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
   lazy val areaRegistry: Registry = prepareRegistry("area")
   lazy val concatRegistry: Registry = prepareRegistry("concat")
 
-  def prepareRegistry(exampleName: String): Registry = Lore.fromExample(exampleName).toOption.map(_._1).value
+  def prepareRegistry(exampleName: String): Registry = Lore.fromSingleSourcePath(".", "examples/" + exampleName).toOption.map(_._1).value
 
   /**
     * Assert that the given named source's compilation results in a list of errors, as required by the assertion.
     * The list of errors is passed as sorted into the assertion function, in order of lines starting from line 1.
     */
   def assertCompilationErrors(name: String)(assert: Vector[Error] => Assertion): Assertion = {
-    Lore.fromExample(name) match {
+    Lore.fromSingleSourcePath(".", "examples/" + name) match {
       case Result(_, _) => Assertions.fail(s"Compilation of $name should have failed with errors, but unexpectedly succeeded.")
       case Errors(errors, _) => assert(errors.sortWith { case (e1, e2) => e1.position < e2.position })
     }
