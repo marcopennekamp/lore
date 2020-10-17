@@ -1,5 +1,7 @@
 package lore.compiler.test
 
+import java.nio.file.Path
+
 import lore.compiler.Lore
 import lore.compiler.core.{Error, Errors, Result}
 import lore.compiler.semantics.Registry
@@ -11,18 +13,19 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.matchers.{MatchResult, Matcher}
 
 trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside with Inspectors {
-  lazy val abstractRegistry: Registry = prepareRegistry("abstract")
-  lazy val areaRegistry: Registry = prepareRegistry("area")
-  lazy val concatRegistry: Registry = prepareRegistry("concat")
-
-  def prepareRegistry(exampleName: String): Registry = Lore.fromSingleSourcePath(".", "examples/" + exampleName).toOption.map(_._1).value
+  def prepareRegistry(exampleName: String): Registry = {
+    Lore.fromSources(Path.of("."), Path.of("examples", exampleName + ".lore")).toOption match {
+      case Some((registry, _)) => registry
+      case None => throw new RuntimeException(s"Compiling example $exampleName failed!")
+    }
+  }
 
   /**
     * Assert that the given named source's compilation results in a list of errors, as required by the assertion.
     * The list of errors is passed as sorted into the assertion function, in order of lines starting from line 1.
     */
   def assertCompilationErrors(name: String)(assert: Vector[Error] => Assertion): Assertion = {
-    Lore.fromSingleSourcePath(".", "examples/" + name) match {
+    Lore.fromSources(Path.of("."), Path.of("examples", name + ".lore")) match {
       case Result(_, _) => Assertions.fail(s"Compilation of $name should have failed with errors, but unexpectedly succeeded.")
       case Errors(errors, _) => assert(errors.sortWith { case (e1, e2) => e1.position < e2.position })
     }

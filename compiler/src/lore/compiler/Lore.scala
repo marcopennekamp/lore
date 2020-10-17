@@ -48,31 +48,24 @@ object Lore {
   }
 
   /**
-    * Compiles a Lore program from a single source.
+    * Compiles a Lore program from the given base directory and relative fragment paths (including the file extension).
     */
-  def fromSingleSource(baseDirectory: Path, resolution: FragmentResolution): Compilation[(Registry, String)] = {
+  def fromSources(baseDirectory: Path, paths: Path*): Compilation[(Registry, String)] = {
     val options = CompilerOptions(
       runtimeLogging = false,
     )
-    val resolutions = pyramid(baseDirectory) :+ resolution
-    val failures = resolutions.filterType[FragmentResolution.NotFound]
+    val resolutions = paths.map { path => fragment(path.toString, baseDirectory.resolve(path)) }
+    val allResolutions = pyramid(baseDirectory) ++ resolutions
+    val failures = allResolutions.filterType[FragmentResolution.NotFound]
     if (failures.nonEmpty) {
       for (failure <- failures) {
         println(s"${FeedbackPrinter.tagError} The file '${failure.path}' does not exist!")
       }
       throw new RuntimeException("Not all files to be compiled were found. Consult the console output above for a list of these files.")
     } else {
-      val compiler = new LoreCompiler(resolutions.filterType[FragmentResolution.Success].map(_.fragment), options)
+      val compiler = new LoreCompiler(allResolutions.filterType[FragmentResolution.Success].map(_.fragment), options)
       compiler.compile()
     }
-  }
-
-  /**
-    * Compiles a Lore program from the given base directory and fragment name.
-    */
-  def fromSingleSourcePath(baseDirectory: String, fragmentName: String): Compilation[(Registry, String)] = {
-    val baseDirectoryPath = toDirectoryPath(baseDirectory)
-    fromSingleSource(baseDirectoryPath, fragment(fragmentName, baseDirectoryPath.resolve(s"$fragmentName.lore")))
   }
 
   /**
@@ -122,13 +115,19 @@ object Lore {
   }
 
   /**
-    * Invokes the compiler from a single source given the following arguments:
-    *   - The base directory which is prepended to the fragment source's name.
-    *   - The name of the fragment, possibly a path separated by /.
+    * Invokes the compiler for any number of sources given the following arguments:
+    *   - The base directory which is used as a resolution starting point for the fragment paths.
+    *   - One or more fragment paths specified without the .lore file extension.
     */
   def main(args: Array[String]): Unit = {
+    if (args.length < 2) {
+      throw new RuntimeException("The compiler expects at least a base directory and a single fragment to compile.")
+    }
+
+    val baseDirectory = Path.of(args.head)
+    val fragmentPaths = args.tail.toVector.map(path => Path.of(s"$path.lore"))
     val beforeCompile = System.nanoTime()
-    val result = fromSingleSourcePath(args(0), args(1))
+    val result = fromSources(baseDirectory, fragmentPaths: _*)
     val afterCompile = System.nanoTime()
     println(stringifyCompilationInfo(result.map(_._1)))
     result.map(_._2).foreach(writeResult(Path.of(args(0))))

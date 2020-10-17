@@ -9,20 +9,20 @@ import { assert } from 'https://deno.land/std/testing/asserts.ts'
  * command is correct.
  */
 export const LoreTest = {
-  async run(path: string): Promise<any> {
-    await LoreTest.compile(path)
+  async run(...paths: string[]): Promise<any> {
+    await LoreTest.compile(...paths)
     return LoreTest.execute()
   },
 
   /**
    * Compiles a given test file to <lore root>/lore-program.js and asserts that the compilation was successful.
    *
-   * @param path A path to the test file, with <lore root>/test as the base directory and without a file extension. For
-   *             example, giving 'return/simple' as the test path would result in <lore root>/test/return/simple.lore.
+   * @param paths All paths to the test files, with <lore root>/test as the base directory and without a file extension.
+   *              For example, giving 'return/simple' as the test path would result in <lore root>/test/return/simple.lore.
    */
-  async compile(path: string): Promise<void> {
+  async compile(...paths: string[]): Promise<void> {
     const process = Deno.run({
-      cmd: ['java', '-jar', 'lore.jar', '..', `test/${path}`],
+      cmd: ['java', '-jar', 'lore.jar', '..', ...paths.map(path => `test/${path}`)],
       stdout: 'piped',
     })
 
@@ -34,7 +34,7 @@ export const LoreTest = {
     //    [success] Compilation was successful.
     // This line is always and only posted by the Lore compiler when compilation is successful.
     const isSuccessful = messages.includes('[\u001b[32msuccess\u001b[0m] Compilation was successful.')
-    const failMessage = `The given Lore source code ${path} cannot be compiled. Compiler output:\n` + messages.join('\n')
+    const failMessage = `The given Lore source code in ${paths.join(', ')} cannot be compiled. Compiler output:\n` + messages.join('\n')
     assert(isSuccessful, failMessage)
   },
 

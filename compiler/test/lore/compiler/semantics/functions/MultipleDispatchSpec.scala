@@ -11,7 +11,7 @@ class MultipleDispatchSpec extends BaseSpec with TypeSyntax {
   }
 
   "The multi-function fit and min" should "be correctly defined for concat.lore" in {
-    implicit val registry = concatRegistry
+    implicit val registry = prepareRegistry("concat")
     val concat = registry.getMultiFunction("concat").value
     val test = testFitAndMin(concat) _
     val setToString = Set(concat.exactGet(("ToString", "ToString")))
@@ -29,7 +29,7 @@ class MultipleDispatchSpec extends BaseSpec with TypeSyntax {
   }
 
   it should "be correctly defined for area.lore" in {
-    implicit val registry = areaRegistry
+    implicit val registry = prepareRegistry("area")
     val area = registry.getMultiFunction("area").value
     val test = testFitAndMin(area) _
     val setCircle = Set(area.exactGet("Circle"))
@@ -44,7 +44,7 @@ class MultipleDispatchSpec extends BaseSpec with TypeSyntax {
   }
 
   it should "be correctly defined for abstract.lore" in {
-    implicit val registry = abstractRegistry
+    implicit val registry = prepareRegistry("abstract")
     val mf = registry.getMultiFunction("f").value
     val test = testFitAndMin(mf) _
     val setT = Set(mf.exactGet("A" | "B" | "C"))
