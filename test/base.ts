@@ -9,6 +9,11 @@ import { assert } from 'https://deno.land/std/testing/asserts.ts'
  * command is correct.
  */
 export const LoreTest = {
+  async run(path: string): Promise<any> {
+    await LoreTest.compile(path)
+    return LoreTest.execute()
+  },
+
   /**
    * Compiles a given test file to <lore root>/lore-program.js and asserts that the compilation was successful.
    *

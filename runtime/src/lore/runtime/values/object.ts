@@ -7,6 +7,8 @@ import { isSubtype } from '../types/subtyping.ts'
  * An object consists of the lore$type property and all of its properties directly. Components are contained in their
  * own object to make retrieval possible. Without this tiered structure, we'd have to tag each component member
  * individually as a component.
+ *
+ * TODO: Rename to StructValue?
  */
 export interface ObjectValue extends LoreValue {
   // TODO: Rethink the lore$ naming scheme to bring it more in line with other transpiled names.
