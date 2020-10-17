@@ -144,11 +144,12 @@ a / b  // Division
 -a     // Negation
 ```
 
-Arithmetic operations have the following **conversion rules:** 
+Arithmetic operations have the following **conversion rules** for types:
 
-- If both arguments are real or integer, the result is also of the same type.
-- If one of the arguments is real, the result will also be real.
-- **TODO:** This is wrong. Calculations like `2.5 * 2` don't necessarily yield a `Real`, since `Int` is decided at run-time.
+- If both arguments are real or integer, the result is also **of the same type**.
+- If one of the arguments is real, the result will also **be real**.
+
+This only concerns types at **compile time**, of course. A calculation such as `2.5 * 2` might be typed as `Real` at compile-time, but provides a run-time value of `Int`. This is not a problem, since `Int` is a subtype of `Real`. This cannot happen in reverse, either: two integers will always produce another integer, unless the result exceeds (or would exceed) the MAX_SAFE_INTEGER or MIN_SAFE_INTEGER limit.
 
 ##### Equality and Order
 
