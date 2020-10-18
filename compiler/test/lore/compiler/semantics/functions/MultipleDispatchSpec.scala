@@ -28,21 +28,6 @@ class MultipleDispatchSpec extends BaseSpec with TypeSyntax {
     test(("LinkedList" & "Sorted", "LinkedList" & "Sorted"), setToString ++ setList ++ setLinkedList ++ setLinkedListSorted, setLinkedListSorted)
   }
 
-  it should "be correctly defined for area.lore" in {
-    implicit val registry = prepareRegistry("area")
-    val area = registry.getMultiFunction("area").value
-    val test = testFitAndMin(area) _
-    val setCircle = Set(area.exactGet("Circle"))
-    val setBoundingBox = Set(area.exactGet("BoundingBox"))
-    val setRectangle = Set(area.exactGet("Rectangle"))
-
-    test("Circle", setCircle, setCircle)
-    test("BoundingBox", setBoundingBox, setBoundingBox)
-    test("Circle" & "BoundingBox", setCircle ++ setBoundingBox, setCircle ++ setBoundingBox)
-    test("Rectangle", setRectangle, setRectangle)
-    test("Rectangle" & "BoundingBox", setRectangle ++ setBoundingBox, setRectangle ++ setBoundingBox)
-  }
-
   it should "be correctly defined for abstract.lore" in {
     implicit val registry = prepareRegistry("abstract")
     val mf = registry.getMultiFunction("f").value

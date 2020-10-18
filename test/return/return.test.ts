@@ -1,5 +1,5 @@
-import { LoreTest } from '../base.ts'
 import { assertEquals } from 'https://deno.land/std/testing/asserts.ts'
+import { LoreTest } from '../base.ts'
 import { Kind } from '../../runtime/src/lore/runtime/types/kinds.ts'
 import { TupleValue } from '../../runtime/src/lore/runtime/values/tuple.ts'
 import { ObjectValue } from '../../runtime/src/lore/runtime/values/object.ts'

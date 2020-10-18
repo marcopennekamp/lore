@@ -1,0 +1,9 @@
+trait Shape
+
+// TODO: We could really use mixins for the coordinates.
+struct BoundingBox implements Shape { x: Real, xEnd: Real, y: Real, yEnd: Real }
+struct Circle implements Shape { x: Real, y: Real, radius: Real }
+struct Rectangle implements Shape { x: Real, y: Real, width: Real, height: Real }
+
+// Yeah, I know. We don't have global constants yet.
+function pi(): Real = 3.14159265359

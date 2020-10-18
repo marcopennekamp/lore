@@ -1,0 +1,15 @@
+function area(shape: Shape): Real
+
+function area(box: BoundingBox): Real = (box.xEnd - box.x) * (box.yEnd - box.y)
+function area(circle: Circle): Real = circle.radius * circle.radius * pi()
+function area(rectangle: Rectangle): Real = rectangle.width * rectangle.height
+
+function test(): [Real] = {
+  let shapes = [
+    BoundingBox(0, 10, -5, 20),
+    Circle(0, 5, 2.7),
+    Rectangle(-5, -5, 20, 77) // TODO: Allow trailing commas.
+  ]
+
+  for (shape <- shapes) { area(shape) }
+}
