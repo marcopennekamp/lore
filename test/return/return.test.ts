@@ -4,13 +4,13 @@ import { Kind } from '../../runtime/src/lore/runtime/types/kinds.ts'
 import { TupleValue } from '../../runtime/src/lore/runtime/values/tuple.ts'
 import { ObjectValue } from '../../runtime/src/lore/runtime/values/object.ts'
 
-Deno.test('return/simple: evaluates to (10, 1, 5)', async () => {
+Deno.test('return/simple', async () => {
   const result: TupleValue = await LoreTest.run('return/simple')
   assertEquals(result.lore$type.kind, Kind.Product)
   assertEquals(result.elements, [10, 1, 5])
 })
 
-Deno.test('return/parametric: evaluates to a zombie with the correct name and position', async () => {
+Deno.test('return/parametric', async () => {
   const zombie: ObjectValue = await LoreTest.run('return/parametric')
   assertEquals(zombie.lore$type.kind, Kind.Struct)
   assertEquals(zombie.lore$type.schema.name, 'Zombie')

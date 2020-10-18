@@ -43,6 +43,9 @@ export const LoreTest = {
    * from the process's JSON output.
    */
   async execute(): Promise<any> {
+    // TODO: Deno currently outputs a "Check file:///.../execute.ts" for every test that is run. This is very messy,
+    //       but cannot be fixed easily. The culprit is an info! call with "Check" in tsc.rs in Deno's source. It is
+    //       annotated with a TODO ("TSC shouldn't print anything") and can thus be expected to be fixed at some point.
     const process = Deno.run({
       cmd: ['deno', 'run', 'execute.ts'],
       stdout: 'piped',
