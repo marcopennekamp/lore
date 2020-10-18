@@ -1,0 +1,7 @@
+function combinations(list: [Real]): [(Real, Real)] = {
+  for (a <- list, b <- list) {
+    (a, b)
+  }
+}
+
+function test(): [(Real, Real)] = combinations([1, 2, 3, 4])
