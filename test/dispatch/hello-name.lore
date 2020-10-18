@@ -1,0 +1,15 @@
+function hello(value: String | Int): String
+function hello(name: String): String = 'Hello, $name.'
+function hello(id: Int): String = 'Hello, anonymous #$id.'
+
+function greetings(): [String] = {
+  let mut names: [String | Int] = []
+  names = names :+ 'world'
+  names = names :+ 5
+  names = names :+ 'marco'
+  names = names :+ 'console'
+  names = names :+ 100
+  for (name <- names) { hello(name) }
+}
+
+function test(): [String] = greetings()
