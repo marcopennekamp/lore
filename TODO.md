@@ -47,6 +47,7 @@
 
 #### Performance
 
+- Compile-time: We can easily implement the following optimization: If the fit of a call at compile-time contains exactly one function, we can call that function directly, because no other functions exist that could specialize the one function contained in the fit. This of course requires whole-program compilation, which is our current approach. 
 - Provide a sane immutable list implementation.
 - Provide a sane immutable map implementation.
 - Runtime: Intern component types.
