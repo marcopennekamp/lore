@@ -1,0 +1,30 @@
+function concat(as: [A], bs: [B]): [A | B] where A, B = {
+  let mut result: [A | B] = as
+  for (b <- bs) {
+    result = result :+ b
+  }
+  result
+}
+
+function printList(list: [A]): String where A = 'Generic list: $list'
+function printList(list: [Int]): String = 'Int list: $list'
+function printList(list: [String | Int]): String = 'String/Int list: $list'
+function printList(list: [String | Int | Boolean]): String = 'String/Int/Boolean list: $list'
+
+function test(): [String] = {
+  let mut results: [String] = []
+
+  let list = [10]
+  results = results :+ printList(list)
+
+  let merged = concat(list, ['test'])
+  results = results :+ printList(merged)
+
+  let merged2 = concat(merged, [true, 'wow'])
+  results = results :+ printList(merged2)
+
+  let merged3 = concat(merged2, [15])
+  results = results :+ printList(merged3)
+
+  results
+}
