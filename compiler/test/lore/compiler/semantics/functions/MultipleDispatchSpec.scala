@@ -27,24 +27,4 @@ class MultipleDispatchSpec extends BaseSpec with TypeSyntax {
     test(("LinkedList" & "Sorted", "LinkedList"), setToString ++ setList ++ setLinkedList, setLinkedList)
     test(("LinkedList" & "Sorted", "LinkedList" & "Sorted"), setToString ++ setList ++ setLinkedList ++ setLinkedListSorted, setLinkedListSorted)
   }
-
-  it should "be correctly defined for abstract.lore" in {
-    implicit val registry = prepareRegistry("abstract")
-    val mf = registry.getMultiFunction("f").value
-    val test = testFitAndMin(mf) _
-    val setT = Set(mf.exactGet("A" | "B" | "C"))
-    val setA = Set(mf.exactGet("A"))
-    val setA1 = Set(mf.exactGet("A1"))
-    val setA2 = Set(mf.exactGet("A2"))
-    val setB = Set(mf.exactGet("B"))
-    val setC = Set(mf.exactGet("C"))
-
-    setT.head should beAbstract
-    setA.head should beAbstract
-
-    test("A1", setT ++ setA ++ setA1, setA1)
-    test("B", setT ++ setB, setB)
-    test("A2", setT ++ setA ++ setA2, setA2)
-    test("C", setT ++ setC, setC)
-  }
 }

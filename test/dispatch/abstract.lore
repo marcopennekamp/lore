@@ -1,0 +1,24 @@
+trait A
+trait X
+trait Y extends X
+
+struct A1 implements A
+struct A2 implements A
+struct A3 implements A, Y
+struct B
+struct C
+struct D implements Y
+struct E implements X
+
+function f(t: A | B | C): Int
+function f(a: A): Int
+function f(y: Y): Int = 1
+function f(x: X): Int = 2
+function f(a: A1): Int = 3
+function f(a: A2 | A3): Int = 4
+// TODO: Shouldn't the totality constraint for f(a: A) be satisfied if we have A3 <: Y and f(y: Y) exists? Because
+//       all A3 are Y and are thus covered by this function. Any A dispatched via f(a: A) finds a "home", so to speak.
+function f(a: A3): Int = 1
+function f(b: B | C): Int = 5
+
+function test(): [Int] = [f(A1()), f(A2()), f(A3()), f(B()), f(C()), f(D()), f(E())]
