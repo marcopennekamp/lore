@@ -32,15 +32,10 @@ object Ards {
     //       be a direct subtype either.
     t match {
       case _ if !Type.isAbstract(t) => Set(t)
-      case dt: DeclaredType => registry.declaredTypeHierarchy.getDirectSubtypes(dt).toSet
+      case dt: DeclaredType => registry.declaredTypeHierarchy.getDirectSubtypes(dt)
       case ProductType(components) => combinations(components.map(abstractResolvedDirectSubtypes)).map(ProductType(_))
       case IntersectionType(types) => combinations(types.map(abstractResolvedDirectSubtypes).toVector).map(IntersectionType.construct)
       case SumType(types) => types.flatMap(abstractResolvedDirectSubtypes)
-      case BasicType.Any =>
-        // TODO: Really? This should rather be the set of all types which have no supertype, i.e. direct descendants
-        //       of Any. Or maybe, rather, let's not fuck with Any for abstract functions and return an error here.
-        Set.empty
-      case BasicType.Nothing => Set.empty
     }
   }
 }

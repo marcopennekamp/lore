@@ -1,0 +1,9 @@
+trait A
+trait Y
+
+struct A1 implements A
+struct A2 implements A, Y
+
+function f(a: A): Int
+function f(a: A1): Int = 2
+function f(y: Y): String = '1'

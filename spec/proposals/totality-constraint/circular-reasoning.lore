@@ -1,0 +1,10 @@
+// If we implement the proposal, this definitely needs to raise a compilation error (as it does now). The totality
+// constraint should discover that f is never implemented for X.
+
+trait A
+trait B
+
+struct X implements A, B
+
+function f(a: A): Int
+function f(b: B): Int
