@@ -1,9 +1,0 @@
-trait X
-trait A extends X
-trait B extends X
-trait C extends X
-trait T
-
-action f(v: X & T)
-action f(v: (A | B) & T) { }
-action f(v: C & T) { }

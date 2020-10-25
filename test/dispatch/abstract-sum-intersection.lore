@@ -1,0 +1,12 @@
+trait X
+trait T
+
+struct A implements X, T
+struct B implements X, T
+struct C implements X, T
+
+function f(v: X & T): String
+function f(v: (A | B) & T): String = '(A|B)&T'
+function f(v: C & T): String = 'C&T'
+
+function test(): [String] = [f(A()), f(B()), f(C())]

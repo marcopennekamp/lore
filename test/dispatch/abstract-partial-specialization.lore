@@ -1,0 +1,13 @@
+trait A
+struct A1 implements A
+struct A2 implements A
+
+trait B
+struct B1 implements B
+struct B2 implements B
+
+function f(a: A, b: B): String
+function f(a: A1, b: B): String = 'A1,B'
+function f(a: A2, b: B): String = 'A2,B'
+
+function test(): [String] = [f(A1(), B1()), f(A1(), B2()), f(A2(), B1()), f(A2(), B2())]
