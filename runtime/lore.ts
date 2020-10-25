@@ -1,3 +1,4 @@
+import { parse } from 'https://deno.land/std/flags/mod.ts';
 import { test } from '../lore-program.js'
 import { benchmark } from './benchmarks/benchmark.ts'
 
@@ -6,4 +7,7 @@ import { benchmark } from './benchmarks/benchmark.ts'
 // compiled to bytecode if it hasn't been done yet. Interpreted performance is likely about 10-20 times slower than
 // JIT performance, so keep that in mind if you're developing "high performance" code.
 
-benchmark('test', test, 1)
+const args = parse(Deno.args)
+const repetitions = args.n ?? 1
+
+benchmark('test', test, repetitions)
