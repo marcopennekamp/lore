@@ -11,13 +11,7 @@ struct E {
   component CB
 }
 
-// +C is illegal because C is independent!
-/* action f(e: +C) {
-  e.C
-} */
-
-action test() {
+function test(): [String] = {
   let e = E(CA(), CB())
-  println(e.CA)
-  println(e.CB)
+  [toString(e.CA), toString(e.CB)]
 }
