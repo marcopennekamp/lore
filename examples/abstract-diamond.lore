@@ -1,3 +1,5 @@
+// TODO: Turn this into a Scala test case.
+
 trait A
 struct AI implements A
 trait B

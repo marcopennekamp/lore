@@ -4,6 +4,7 @@
 
 - Finish transformation and transpilation of the current MVL constructs. (WHICH ONES ARE THESE?)
   - Ranges still need to be supported, as they are already part of the specification.
+- Allow trailing commas.
 
 ##### Type System
 
@@ -13,7 +14,7 @@
 
 ##### CLI
 
-- Support compiling multiple files, either specified through multiple arguments or with a pattern.
+- Support compiling files using a pattern instead of just plain filenames.
 - Support an output file other than `lore-program.js`.
 
 
@@ -28,6 +29,10 @@
     2. Functional tests for complete Lore programs that test the compiler as a whole, the runtime as a whole, and Pyramid as a whole.
 - In the long run, we should build a simple testing framework written in Lore and use it to unit-test Pyramid.
 - Add multiple tests that verify that we correctly handle the negative side of totality constraint verification / abstract functions. This is especially important so that changes to the totality constraint checking algorithm don't accidentally lead to illegal programs not being detected anymore. Use the Scala testing environment for this, because the functional tests are not well suited to testing negative compilation outcomes.
+
+##### Benchmarks
+
+- We should leverage the test suite to also run benchmarks to be able to record performance changes when we optimize the compiler. "Real" programs like `dispatch/hello-name.lore` would be especially suitable to benchmarking, but probably also artificial cases such as `dispatch/intersection.lore`.
 
 
 #### Specification
@@ -47,7 +52,7 @@
 
 #### Performance
 
-- Compile-time: We can easily implement the following optimization: If the fit of a call at compile-time contains exactly one function, we can call that function directly, because no other functions exist that could specialize the one function contained in the fit. This of course requires whole-program compilation, which is our current approach. 
+- Compile-time: We can easily implement the following optimization: If the function to be called is a leaf in the hierarchy, i.e. it isn't specialized further, we can call that function directly, because no other functions exist that could specialize the one function contained in the fit. This of course requires whole-program compilation, which is our current approach.
 - Provide a sane immutable list implementation.
 - Provide a sane immutable map implementation.
 - Runtime: Intern component types.

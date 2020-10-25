@@ -8,7 +8,7 @@ function test(): [Real] = {
   let shapes = [
     BoundingBox(0, 10, -5, 20),
     Circle(0, 5, 2.7),
-    Rectangle(-5, -5, 20, 77) // TODO: Allow trailing commas.
+    Rectangle(-5, -5, 20, 77)
   ]
 
   for (shape <- shapes) { area(shape) }

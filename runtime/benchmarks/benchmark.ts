@@ -25,5 +25,6 @@ export function benchmark(name: string, f: () => any, times: number): void {
     bucket = f()
   }
   const after = performance.now()
-  console.log(`Benchmark '${name}' took about ${toNs(before, after, times)}ns per operation. It had the result ${bucket}.`)
+  console.log(`Benchmark '${name}' took about ${toNs(before, after, times)}ns per operation. It had the following result:`)
+  console.log(bucket)
 }
