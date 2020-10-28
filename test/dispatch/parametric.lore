@@ -1,0 +1,16 @@
+function foo(a: X, b: Y): Int where X, Y = 1
+function foo(a: A, b: A): Int where A = 2
+function foo(a: String, b: A): Int where A = 3
+function foo(a: String, b: String): Int = 4
+
+struct Block
+
+function test(): [Int] = [
+  foo(Block(), 'Code'),
+  foo('Art', 5),
+  foo(5, 5),
+  foo(4.5, 5.0), // TODO: Man, this poses a problem. We'd expect the second function to be called, but of course Int != Real.
+  foo('Code', Block()),
+  foo(Block(), Block()),
+  foo('Hello', 'World')
+]

@@ -32,3 +32,9 @@ Deno.test('dispatch/intersection', async () => {
   assertEquals(result.lore$type.kind, Kind.List)
   assertEquals(result.array, ['X&W,Y&L2', 'X,Y', 'Y,Z&L1', 'Z,W&L1', 'Y&L,X&Y', 'Y&L1,X&Y', 'Y&W&L1,X&Y', 'Z,W&L1', 'T1,T2'])
 })
+
+Deno.test('dispatch/parametric', async () => {
+  const result: ListValue<number> = await LoreTest.run('dispatch/parametric')
+  assertEquals(result.lore$type.kind, Kind.List)
+  assertEquals(result.array, [1, 3, 2, 1, 3, 2, 4])
+})
