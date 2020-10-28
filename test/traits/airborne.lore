@@ -1,0 +1,84 @@
+trait Named
+function name(named: Named): String
+
+trait Airborne
+function wingspan(airborne: Airborne): Real
+
+struct Bird implements Named, Airborne {
+  species: String
+  weight: Real
+  wingspan: Real
+}
+function name(bird: Bird): String = bird.species
+function wingspan(bird: Bird): Real = bird.wingspan
+
+struct Plane implements Named, Airborne {
+  model: String
+  capacity: Int
+  wingspan: Real
+}
+function name(plane: Plane): String = plane.model
+function wingspan(plane: Plane): Real = plane.wingspan
+
+function areEqual(a1: Airborne, a2: Airborne): Boolean = wingspan(a1) == wingspan(a2)
+function areEqual(b1: Bird, b2: Bird): Boolean = b1.species == b2.species & b1.weight == b2.weight & b1.wingspan == b2.wingspan
+function areEqual(p1: Plane, p2: Plane): Boolean = p1.model == p2.model & p1.capacity == p2.capacity & p1.wingspan == p2.wingspan
+
+// TODO: This actually presents an interesting dilemma: The equals operation is symmetric, but multiple dispatch needs
+//       two function definitions to model this binary symmetry. The problem here is that the average programmer would
+//       assume that defining areEqual(Bird, Plane) covers all cases, while he/she leaves out the (Plane, Bird) case
+//       without encountering any warning. This problem might not even be discovered at first, if only bird == plane
+//       comparisons are used, and only later plane == bird comparisons are added.
+// Idea: This could maybe be solved once we have a macro system. We could allow creating arbitrary keywords for
+//       functions and such and then implement a "symmetric" keyword that declares for a function over (a, b) another
+//       function over (b, a).
+//function areEqual(bird: Bird, plane: Plane): Boolean = bird.wingspan == plane.wingspan
+//function areEqual(plane: Plane, bird: Bird): Boolean = bird == plane
+
+/**
+ * Creates pairs with elements from the given list. If the list contains two elements A and B, only one pair (A, B) or
+ * (B, A) will be included in the result. It is thus assumed that the pairs are symmetric and only one of the pairs
+ * needs to be included.
+ *
+ * This function requires the list to contain distinct elements.
+ */
+function pairsSymmetric(list: [A]): [(A, A)] where A = {
+  // TODO: Write this in a functional style, instead.
+  let mut result: [(A, A)] = []
+  let length = length(list)
+  let mut i = 0
+  while (i < length) {
+    let mut j = i
+    while (j < length) {
+      result = result :+ (get(list, i), get(list, j))
+      j += 1
+    }
+    i += 1
+  }
+  result
+}
+
+function check(v1: Named, v2: Named, results: [String]): [String] = {
+  if (v1 == v2) {
+    results :+ '${name(v1)} == ${name(v2)}'
+  } else results
+}
+
+function test(): [String] = {
+  let airbornes = [
+    Bird('Raven', 1.5, 1.2),
+    Bird('Dragon', 6000.0, 12),
+    Bird('Crow', 1.0, 1.2),
+    Plane('B-2 Spirit', 2, 52.4),
+    Plane('Cessna', 2, 12),
+    Plane('Model Plane', 0, 1.2)
+  ]
+
+  let pairs = pairsSymmetric(airbornes)
+  let mut result: [String] = []
+  for (pair <- pairs) {
+    result = check(first(pair), second(pair), result)
+  }
+
+  result
+}
