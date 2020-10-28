@@ -128,11 +128,11 @@ private[transformation] class ExpressionTransformationVisitor(
     case LessThanNode(_, _, position) =>
       StatementTransformation.transformComparison("isLessThan", BinaryOperator.LessThan, left, right, position)
     case LessThanEqualsNode(_, _, position) =>
-      StatementTransformation.transformComparison("isLessThanOrEqual", BinaryOperator.LessThan, left, right, position)
+      StatementTransformation.transformComparison("isLessThanOrEqual", BinaryOperator.LessThanEquals, left, right, position)
     case GreaterThanNode(_, _, position) =>
       StatementTransformation.transformComparison("isLessThan", BinaryOperator.LessThan, right, left, position)
     case GreaterThanEqualsNode(_, _, position) =>
-      StatementTransformation.transformComparison("isLessThanOrEqual", BinaryOperator.LessThan, right, left, position)
+      StatementTransformation.transformComparison("isLessThanOrEqual", BinaryOperator.LessThanEquals, right, left, position)
 
     // Collection operations.
     case AppendNode(_, _, position) =>

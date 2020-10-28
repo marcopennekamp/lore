@@ -1,7 +1,7 @@
 package lore.compiler.phases.transpilation
 
 import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, CompilationException, Error}
+import lore.compiler.core.{CompilationException, Error}
 import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.RuntimeTypeVariables
 import lore.compiler.phases.transpilation.Transpilation.Transpilation
 import lore.compiler.phases.transpilation.TranspiledChunk.{JsCode, JsExpr}

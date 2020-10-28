@@ -62,3 +62,11 @@
 - Runtime: Intern component types.
 - Runtime: Intern struct types and check performance with monster.lore.
 - Runtime: Turn declared type subtyping into a simple HashSet lookup so that we don't need to branch up the supertype tree to decide whether one declared type is the subtype of another. This would be possible by giving each type an exhaustive (transitive) list of supertypes. Downsides might become apparent especially once we introduce dynamic specialization. 
+
+
+#### Editor Support
+
+- Implement a Language Server:
+  - https://microsoft.github.io/language-server-protocol/
+  - https://code.visualstudio.com/api/language-extensions/overview
+  - There are plugins adding LSP support for IntelliJ, so creating a language server seems like the future-facing choice. See: https://github.com/gtache/intellij-lsp.
