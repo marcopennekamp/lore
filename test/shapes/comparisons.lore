@@ -1,0 +1,33 @@
+function isLessThan(s1: Shape, s2: Shape): Boolean = area(s1) < area(s2)
+function isLessThanOrEqual(s1: Shape, s2: Shape): Boolean = area(s1) <= area(s2)
+
+function check(s1: Shape, s2: Shape): [String] = {
+  let mut result: [String] = []
+
+  if (s1 < s2) {
+    result = result :+ '${name(s1)} < ${name(s2)}'
+  }
+  if (s1 <= s2) {
+    result = result :+ '${name(s1)} <= ${name(s2)}'
+  }
+  if (s2 < s1) {
+    result = result :+ '${name(s2)} < ${name(s1)}'
+  }
+  if (s2 <= s1) {
+    result = result :+ '${name(s2)} <= ${name(s1)}'
+  }
+
+  result
+}
+
+function test(): [String] = {
+  let rect = Rectangle(0, 0, 6, 8)
+  let box = BoundingBox(2, 10, 8, 14)
+  let circle = Circle(0, 0, 5)
+
+  flatten([
+    check(rect, box),
+    check(rect, circle),
+    check(box, circle)
+  ])
+}
