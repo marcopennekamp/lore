@@ -58,11 +58,7 @@ function pairsSymmetric(list: [A]): [(A, A)] where A = {
   result
 }
 
-function check(v1: Named, v2: Named, results: [String]): [String] = {
-  if (v1 == v2) {
-    results :+ '${name(v1)} == ${name(v2)}'
-  } else results
-}
+function check(v1: Named, v2: Named): [String] = if (v1 == v2) ['${name(v1)} == ${name(v2)}'] else []
 
 function test(): [String] = {
   let airbornes = [
@@ -75,10 +71,9 @@ function test(): [String] = {
   ]
 
   let pairs = pairsSymmetric(airbornes)
-  let mut result: [String] = []
-  for (pair <- pairs) {
-    result = check(first(pair), second(pair), result)
-  }
-
-  result
+  flatten({
+    for (pair <- pairs) {
+      check(first(pair), second(pair))
+    }
+  })
 }

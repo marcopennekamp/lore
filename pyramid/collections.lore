@@ -11,6 +11,22 @@
 function length(list: [A]): Int where A = dynamic[Int]('Lore.values.list.length', list)
 function get(list: [A], index: Int): A where A = dynamic[A]('Lore.values.list.get', list, index)
 
+function concat(as: [A], bs: [B]): [A | B] where A, B = {
+  let mut result: [A | B] = as
+  for (b <- bs) {
+    result = result :+ b
+  }
+  result
+}
+
+function flatten(lists: [[A]]): [A] where A = {
+  let mut result: [A] = []
+  for (list <- lists) {
+    result = concat(result, list)
+  }
+  result
+}
+
 //function head(list: [A]): A
 //function tail()
 //function init()

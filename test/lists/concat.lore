@@ -1,11 +1,3 @@
-function concat(as: [A], bs: [B]): [A | B] where A, B = {
-  let mut result: [A | B] = as
-  for (b <- bs) {
-    result = result :+ b
-  }
-  result
-}
-
 function printList(list: [A]): String where A = 'Generic list: $list'
 function printList(list: [Int]): String = 'Int list: $list'
 function printList(list: [String | Int]): String = 'String/Int list: $list'
