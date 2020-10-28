@@ -64,10 +64,14 @@ private[transformation] class ExpressionTransformationVisitor(
   }
 
   override def visitUnary(node: UnaryNode)(expression: Expression): Compilation[Expression] = node match {
-    case node@ReturnNode(_, position) =>
+    case ReturnNode(_, position) =>
       ExpressionVerification.hasSubtype(expression, expectedType).map(_ => Expression.Return(expression, position))
 
     case VariableDeclarationNode(name, isMutable, maybeTypeNode, _, _) =>
+      // TODO: Add a variable with type Any (if inferred) if the assignment's type check goes wrong. Currently,
+      //       if a variable declaration is incorrect, subsequent uses of the variable also lead to a confusing
+      //       "this scope does not know entry x" error. The entry should be known. It's type is just wrong for
+      //       the time being.
       implicit val position: Position = node.position
       for {
         // Either infer the type from the value or, if a type has been explicitly declared, check that the

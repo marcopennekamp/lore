@@ -1,0 +1,9 @@
+function test(): [String] = {
+  // TODO: This is, understandably, not valid and needs a different kind of runtime type handling as outlined in runtime-types.
+  //let empty: String -> Int = %{ }
+
+  let map = %{ 'a' -> 0, 'b' -> 1, 'c' -> 2 }
+  for (entry <- map) {
+    '${first(entry)} is ${second(entry)}'
+  }
+}
