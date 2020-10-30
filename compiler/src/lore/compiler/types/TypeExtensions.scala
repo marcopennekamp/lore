@@ -9,8 +9,8 @@ object TypeExtensions {
       * the sum type.
       */
     def join(implicit registry: Registry): Type = {
-      if (sumType.types.size == 1) sumType.types.head
-      else sumType.types.reduceLeft(LeastUpperBound.configurableLub(defaultToSum = false))
+      if (sumType.parts.size == 1) sumType.parts.head
+      else sumType.parts.reduceLeft(LeastUpperBound.configurableLub(defaultToSum = false))
     }
   }
 

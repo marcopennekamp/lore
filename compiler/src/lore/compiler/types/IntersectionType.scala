@@ -2,21 +2,15 @@ package lore.compiler.types
 
 import scala.util.hashing.MurmurHash3
 
-// TODO: The construct function ensures that an intersection type contains only unique components. Hence, it is
-//       questionable whether types needs to be a set. We would have to be careful with implementing equality
-//       and hash codes, but I can see Sets bring about performance problems down the line.
-
-// TODO: Rename all instances of "component" to "part".
-
-case class IntersectionType private (types: Set[Type]) extends Type {
-  assert(types.nonEmpty)
-  override val hashCode: Int = MurmurHash3.setHash(types)
+case class IntersectionType private (parts: Set[Type]) extends Type {
+  assert(parts.nonEmpty)
+  override val hashCode: Int = MurmurHash3.setHash(parts)
 }
 
 object IntersectionType {
   /**
     * Constructs an intersection type from the given types and flattens it if necessary. If the resulting
-    * intersection type has only one component, this type is returned instead.
+    * intersection type has only one part, this type is returned instead.
     *
     * We also apply the following simplification: In an intersection type A & B & ..., if A < B, then B can
     * be dropped. This is especially useful to simplify intersection types that contain an entity and a
@@ -24,15 +18,15 @@ object IntersectionType {
     *
     * The resulting flattened normal form is a requirement for subtyping to work correctly.
     */
-  def construct(types: Set[Type]): Type = {
-    val flattened = types.flatMap {
-      case t: IntersectionType => t.types
+  def construct(parts: Set[Type]): Type = {
+    val flattened = parts.flatMap {
+      case t: IntersectionType => t.parts
       case t => Set(t)
     }
     val simplified = Type.mostSpecific(flattened, Subtyping.Default)
     val intersection = new IntersectionType(simplified)
-    if (intersection.types.size == 1) intersection.types.head else intersection
+    if (intersection.parts.size == 1) intersection.parts.head else intersection
   }
 
-  def construct(types: Vector[Type]): Type = construct(types.toSet)
+  def construct(parts: Vector[Type]): Type = construct(parts.toSet)
 }

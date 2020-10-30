@@ -60,22 +60,24 @@ class DeclaredTypeHierarchy {
   /**
     * Returns all direct subtypes of the given type. `tpe` may either be Any, a declared type, or a component type.
     * If the given type cannot be found in the hierarchy, it is assumed that it does not have any direct subtypes
-    * (such as a component type that is not part of any struct or trait) and the empty set is returned.
+    * (such as a component type that is not part of any struct or trait) and the empty list is returned.
     *
     * @param tpe Either Any, a declared type, or a component type.
-    * @return A set of declared types and component types.
+    * @return A list of distinct declared types and component types.
     */
-  def getDirectSubtypes(tpe: Type): Set[Type] = {
+  def getDirectSubtypes(tpe: Type): Vector[Type] = {
     assertCanContain(tpe)
     if (subtypingGraph.contains(tpe)) {
-      subtypingGraph.get(tpe).outgoing.map(_.to.value).map {
+      // The resulting vector should contain only distinct elements. This is already given by the structure of the
+      // type hierarchy, however. The given type will never be connected to the same subtype twice.
+      subtypingGraph.get(tpe).outgoing.toVector.map(_.to.value).map {
         // Since only the root may be Any, any possible direct subtype should be a declared type or a component type.
         case subtype: DeclaredType => subtype
         case subtype: ComponentType => subtype
         case subtype =>
           throw CompilationException(s"The type $subtype should be a declared type or a component type, as it's a subtype in a type hierarchy.")
       }
-    } else Set.empty
+    } else Vector.empty
   }
 
   /**

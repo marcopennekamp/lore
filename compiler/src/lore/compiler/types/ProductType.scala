@@ -4,12 +4,9 @@ import scala.util.hashing.MurmurHash3
 
 // TODO: Rename all instances of "component" to "element".
 
-case class ProductType(components: Vector[Type]) extends Type {
-  /**
-    * Since this is already a tuple, there is no need to enclose it in another tuple.
-    */
-  override def toTuple: ProductType = this
+// TODO: Strongly consider renaming product types to tuple types. This split between value and type naming is annoying.
 
+case class ProductType(components: Vector[Type]) extends Type {
   override val hashCode: Int = MurmurHash3.unorderedHash(components)
 }
 

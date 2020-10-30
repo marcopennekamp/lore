@@ -4,8 +4,7 @@ import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.Error
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.compiler.types.Type.isAbstract
-import lore.compiler.types.{Ards, Fit, Type}
+import lore.compiler.types.{Fit, Type}
 
 object MultiFunctionConstraints {
 
@@ -48,50 +47,48 @@ object MultiFunctionConstraints {
     * Verifies the multi-function for the totality constraint.
     */
   def verifyTotalityConstraint(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
-    // TODO: Refactor this with the new fit changes. (It will be a fucking shit-show, no doubt.)
-
-    /**
-      * Verifies whether the given input type of an abstract function is covered by specialized functions. If this
-      * verification fails, a list of input types for which the function has to be implemented is returned.
-      *
-      * Some notes on the implementation:
-      *
-      * - The algorithm looks at all the abstract-resolved direct subtypes of the input type. An abstract parameter
-      *   can be checked by finding an implementation that covers each of its subtypes. A concrete parameter, on the
-      *   other hand, cannot be covered solely by implementing functions for subtypes, as the concrete type itself
-      *   may be instanced without being one of its subtypes. Hence, the algorithm is restricted to checking ARDS.
-      * - For each subtype, the algorithm first tries to find another function that covers the subtype. This may be
-      *   another abstract function or a concrete function.
-      * - If such a function cannot be found and the subtype is abstract, we assume that the subtype is supposed to
-      *   be an input type of an implicit abstract function. For example, we might declare an abstract function `name`
-      *   for a trait `Animal`, and another trait `Fish` without wishing to have to redeclare the function `name`. This
-      *   special case in the algorithm makes it possible to check the totality of the `name(animal: Animal)` function
-      *   without having to declare a function `name(fish: Fish)`. We merely have to declare the function for all types
-      *   that extend/implement `Fish`.
-      */
-    def verifyInputType(inputType: Type): Vector[Type] = {
-      Ards.abstractResolvedDirectSubtypes(inputType).toVector.flatMap { subtype =>
-        // TODO: Can we optimize this given the new hierarchy?
-        val isImplemented = mf.functions.exists { f2 =>
-          Fit.isMoreSpecific(f2.signature.inputType, inputType) && mf.fit(subtype).contains(f2)
-        }
-
-        if (!isImplemented) {
-          if (Type.isAbstract(subtype)) {
-            verifyInputType(subtype)
-          } else {
-            Vector(subtype)
-          }
-        } else {
-          Vector.empty
-        }
-      }
-    }
-
     Verification.fromErrors {
       mf.functions.filter(_.isAbstract).flatMap { function =>
-        val missing = verifyInputType(function.signature.inputType)
+        val missing = verifyInputTypeTotality(mf, function.signature.inputType)
         if (missing.nonEmpty) Some(AbstractFunctionNotTotal(function, missing)) else None
+      }
+    }
+  }
+
+  /**
+    * Verifies whether the given input type of an abstract function is covered by specialized functions. If this
+    * verification fails, a list of input types for which the function has to be implemented is returned.
+    *
+    * Some notes on the implementation:
+    *
+    * - The algorithm looks at all the abstract-resolved direct subtypes of the input type. An abstract parameter
+    *   can be checked by finding an implementation that covers each of its subtypes. A concrete parameter, on the
+    *   other hand, cannot be covered solely by implementing functions for subtypes, as the concrete type itself
+    *   may be instanced without being one of its subtypes. Hence, the algorithm is restricted to checking ARDS.
+    * - For each subtype, the algorithm first tries to find another function that covers the subtype. This may be
+    *   another abstract function or a concrete function.
+    * - If such a function cannot be found and the subtype is abstract, we assume that the subtype is supposed to
+    *   be an input type of an implicit abstract function. For example, we might declare an abstract function `name`
+    *   for a trait `Animal`, and another trait `Fish` without wishing to have to redeclare the function `name`. This
+    *   special case in the algorithm makes it possible to check the totality of the `name(animal: Animal)` function
+    *   without having to declare a function `name(fish: Fish)`. We merely have to declare the function for all types
+    *   that extend/implement `Fish`.
+    */
+  private def verifyInputTypeTotality(mf: MultiFunctionDefinition, inputType: Type)(implicit registry: Registry): Vector[Type] = {
+    Type.abstractResolvedDirectSubtypes(inputType).flatMap { subtype =>
+      // TODO: Can we optimize this given the new hierarchy?
+      val isImplemented = mf.functions.exists { f2 =>
+        Fit.isMoreSpecific(f2.signature.inputType, inputType) && mf.fit(subtype).contains(f2)
+      }
+
+      if (!isImplemented) {
+        if (Type.isAbstract(subtype)) {
+          verifyInputTypeTotality(mf, subtype)
+        } else {
+          Vector(subtype)
+        }
+      } else {
+        Vector.empty
       }
     }
   }
@@ -103,8 +100,8 @@ object MultiFunctionConstraints {
   }
 
   /**
-    * Verifies that the output types of the functions in the multi-function's hierarchy are compatible with each
-    * other. That is, a hierarchy child's output type must be a subtype of its hierarchy parent's output type.
+    * Verifies that the output types of the functions in the multi-function are compatible with each other. That is, a
+    * child's output type must be a subtype of the parent's output type.
     */
   def verifyOutputTypes(mf: MultiFunctionDefinition): Verification = {
     def verifyHierarchyNode(node: mf.hierarchy.NodeT): Verification = {

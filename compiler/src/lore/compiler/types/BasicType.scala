@@ -14,7 +14,6 @@ object BasicType {
     * The "bottom" type which is the subtype of all types.
     */
   case object Nothing extends BasicType("Nothing")
-  // TODO: How does Nothing interact with abstract subtypes, totality constraint, etc.?
 
   case object Real extends BasicType("Real")
 

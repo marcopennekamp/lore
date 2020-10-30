@@ -3,7 +3,10 @@ package lore.compiler.types
 import java.io.ByteArrayOutputStream
 import java.util.Base64
 
+import lore.compiler.semantics.Registry
 import lore.compiler.utils.CollectionExtensions._
+import scalaz.std.vector._
+import scalaz.syntax.traverse._
 
 /**
   * Any Lore type.
@@ -12,13 +15,6 @@ import lore.compiler.utils.CollectionExtensions._
   * compiler. At times, we will hash types heavily, and so fast hash access is important.
   */
 trait Type {
-  // TODO: Add .product, .sum, and .intersection helper methods to List[Type] for easy construction.
-
-  /**
-    * Returns a singleton product type enclosing this type, unless this type is already a product type.
-    */
-  def toTuple: ProductType = ProductType(Vector(this))
-
   def <=(rhs: Type): Boolean = Subtyping.Default.isSubtype(this, rhs)
   def <(rhs: Type): Boolean = Subtyping.Default.isStrictSubtype(this, rhs)
   def >=(rhs: Type): Boolean = rhs <= this
@@ -105,6 +101,14 @@ object Type {
   }
 
   /**
+    * Returns a singleton product type enclosing the given type or the type itself if it's a product type,
+    */
+  def tupled(tpe: Type): ProductType = tpe match {
+    case tpe: ProductType => tpe
+    case _ => ProductType(Vector(tpe))
+  }
+
+  /**
     * Removes types from the set that are subtyped by other types in the list, essentially keeping the
     * most specific types.
     */
@@ -118,6 +122,26 @@ object Type {
     */
   def mostGeneral(types: Set[Type], subtyping: Subtyping): Set[Type] = {
     types.filterNot(t => types.exists(subtyping.isStrictSubtype(t, _)))
+  }
+
+  /**
+    * Abstract-resolved direct subtypes: A set of direct subtypes that are resolved IF the given type is abstract.
+    *
+    * Note that type variables are always concrete and thus will never be specialized.
+    *
+    * @return A list of distinct abstract-resolved direct subtypes.
+    */
+  def abstractResolvedDirectSubtypes(t: Type)(implicit registry: Registry): Vector[Type] = {
+    // TODO: ARDS is confusing terminology. "Abstract resolved" makes little sense. What we are actually doing is to
+    //       specialize a given type if it is abstract. So maybe "specializeAbstractTypes" would be better terminology?
+
+    t match {
+      case _ if !Type.isAbstract(t) => Vector(t)
+      case dt: DeclaredType => registry.declaredTypeHierarchy.getDirectSubtypes(dt)
+      case ProductType(elements) => elements.map(abstractResolvedDirectSubtypes).sequence.map(ProductType(_))
+      case IntersectionType(parts) => parts.toVector.map(abstractResolvedDirectSubtypes).sequence.map(IntersectionType.construct).distinct
+      case SumType(parts) => parts.toVector.flatMap(abstractResolvedDirectSubtypes).distinct
+    }
   }
 
   private sealed abstract class TypePrecedence(protected val value: Int) {
@@ -135,9 +159,6 @@ object Type {
     */
   def toString(t: Type, verbose: Boolean = false): String = toStringWithPrecedence(t, verbose, TypePrecedence.Parenthesized)
 
-  /**
-    * Creates a pretty string representation of the type.
-    */
   private def toStringWithPrecedence(t: Type, verbose: Boolean = false, parentPrecedence: TypePrecedence): String = {
     val infix = stringifyInfixOperator(parentPrecedence, toStringWithPrecedence(_, verbose, _)) _
 

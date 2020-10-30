@@ -40,7 +40,7 @@ case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefin
     traverseHierarchy(
       // We only have to visit nodes that are a supertype of the input type, because any children of these nodes
       // won't be a supertype of the input type if their parent isn't already a supertype.
-      visit  = predicateVisitFit(tpe.toTuple),
+      visit  = predicateVisitFit(Type.tupled(tpe)),
       select = _ => true,
     )
   }
@@ -51,7 +51,7 @@ case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefin
   def min(tpe: Type): Vector[FunctionDefinition] = {
     // Even though min is defined in terms of the fit, we don't use the fit function and instead compute everything in
     // one traversal.
-    val visit = predicateVisitFit(tpe.toTuple) _
+    val visit = predicateVisitFit(Type.tupled(tpe)) _
     traverseHierarchy(
       visit,
       // We select all nodes for which no children are visited. This is easy to see: Min is defined in terms of
@@ -74,9 +74,9 @@ case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefin
     //       first.
 
     // Using traverseHierarchy ensures that we only visit subtrees that could contain the exact candidate.
-    val input = tpe.toTuple
+    val input = Type.tupled(tpe)
     traverseHierarchy(
-      visit  = predicateVisitFit(tpe.toTuple),
+      visit  = predicateVisitFit(input),
       select = node => Fit.isEquallySpecific(input, node.signature.inputType),
     ).headOption
   }
