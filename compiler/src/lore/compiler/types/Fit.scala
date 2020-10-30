@@ -35,7 +35,7 @@ object Fit {
       }
 
       // The subtyping handles (4).
-      val substituted = if (assignments.nonEmpty) Substitution.substitute(assignments, t2) else t2
+      val substituted = if (assignments.nonEmpty) Type.substitute(assignments, t2) else t2
       missingVariables.isEmpty && t1 <= substituted
     }
   }

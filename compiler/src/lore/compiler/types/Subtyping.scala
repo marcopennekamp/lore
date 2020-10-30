@@ -95,7 +95,7 @@ object Subtyping {
       // and each element of p1 is a subtype of the element in p2 that is at the same position.
       {
         case (p1: ProductType, p2: ProductType) =>
-          p1.components.size == p2.components.size && p1.components.zip(p2.components).forall {
+          p1.elements.size == p2.elements.size && p1.elements.zip(p2.elements).forall {
             case (e1, e2) => isSubtype(e1, e2)
           }
       },

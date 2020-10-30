@@ -4,7 +4,7 @@ import scala.util.hashing.MurmurHash3
 
 case class IntersectionType private (parts: Set[Type]) extends Type {
   assert(parts.nonEmpty)
-  override val hashCode: Int = MurmurHash3.setHash(parts)
+  override val hashCode: Int = MurmurHash3.unorderedHash(parts, 0x74a2317d)
 }
 
 object IntersectionType {

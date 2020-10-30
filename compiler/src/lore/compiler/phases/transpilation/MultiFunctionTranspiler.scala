@@ -105,8 +105,8 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     val inputTypes = mf.functions.map(_.signature.inputType).toSet
     inputTypes.foreach { inputType =>
       val simplifiedInputType = if (canUnpackInputProduct) {
-        assert(inputType.components.size == 1)
-        inputType.components.head
+        assert(inputType.elements.size == 1)
+        inputType.elements.head
       } else inputType
       val varType = nameProvider.createName()
       val typeExpr = RuntimeTypeTranspiler.transpile(simplifiedInputType)

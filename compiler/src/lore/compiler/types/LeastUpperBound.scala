@@ -78,21 +78,6 @@ object LeastUpperBound {
 
       // For declared types, the LUB is calculated by the type hierarchy. If the result would be Any, we return
       // the sum type instead.
-      // TODO: Now that we have schemas, we have to check whether types e1 and e2 assign the same type variables
-      //       for their most specific common supertype. Since type variables of a child type do not have to
-      //       correspond 1:1 to those of a parent type, we have to follow the "call chain" of supertypes until
-      //       we arrive at the desired schema, for both types, while substituting the right types. Only if we
-      //       arrive at equal type arguments to the LUB is it actually a common supertype. Since there may be
-      //       multiple such types, we have to check it for each independently, and then create an intersection
-      //       type (or Any) with the fitting supertypes.
-      // TODO: I don't think the above works so naively. Take the following type hierarchy:
-      //       abstract class A
-      //       abstract class B[T] extends A
-      //       class C[T] extends B[T]
-      //       class D[T] extends B[T]
-      //       The LUB of C[Int] and D[String] should be A, but the algorithm as envisioned would return Any, because
-      //       the declared type hierarchy returns only B as the most specific common schema. The way to fix this is
-      //       to instantiate a subgraph of the declared type hierarchy with the given type arguments.
       case (d1: DeclaredType, d2: DeclaredType) => registry.declaredTypeHierarchy.leastCommonSupertype(d1, d2).fallbackIfAny
 
       // Component types mostly delegate to declared types.

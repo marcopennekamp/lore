@@ -8,7 +8,6 @@ case class ComponentType(underlying: DeclaredType) extends Type {
   assert(underlying.isOwnable)
 
   override val hashCode: Int = {
-    // We use a product hash here to differentiate the hash code from declared type hashes.
-    MurmurHash3.productHash(("component", underlying))
+    MurmurHash3.orderedHash(Vector(underlying), 0x4cab1ec0)
   }
 }

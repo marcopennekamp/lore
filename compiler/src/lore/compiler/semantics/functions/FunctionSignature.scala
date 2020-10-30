@@ -20,10 +20,10 @@ case class FunctionSignature(name: String, parameters: Vector[ParameterDefinitio
     if (assignments.isEmpty) return this
 
     val substitutedParameters = parameters.map { parameter =>
-      val substitutedType = Substitution.substitute(assignments, parameter.tpe)
+      val substitutedType = Type.substitute(assignments, parameter.tpe)
       new ParameterDefinition(parameter.name, substitutedType, parameter.position)
     }
-    val substitutedOutputType = Substitution.substitute(assignments, outputType)
+    val substitutedOutputType = Type.substitute(assignments, outputType)
     FunctionSignature(name, substitutedParameters, substitutedOutputType, position)
   }
 

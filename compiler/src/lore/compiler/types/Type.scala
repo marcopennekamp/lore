@@ -93,11 +93,32 @@ object Type {
     case tv: TypeVariable => Set(tv)
     case SumType(types) => types.flatMap(variables)
     case IntersectionType(types) => types.flatMap(variables)
-    case ProductType(components) => components.flatMap(variables).toSet
+    case ProductType(elements) => elements.flatMap(variables).toSet
     case ListType(element) => variables(element)
     case MapType(key, value) => variables(key) ++ variables(value)
     case ComponentType(_) => Set.empty // TODO: Update when component types can have type parameters?
     case _: NamedType => Set.empty // TODO: Update when struct/trait types can have type parameters.
+  }
+
+  /**
+    * Substitute occurrences of variables in the given type with values from the given assignments. Variables that
+    * do not occur in the assignments are not substituted.
+    */
+  def substitute(assignments: TypeVariable.Assignments, tpe: Type): Type = {
+    def rec(t: Type) = substitute(assignments, t)
+
+    tpe match {
+      case tv: TypeVariable => assignments.get(tv) match {
+        case None => tv
+        case Some(t) => t
+      }
+      case SumType(types) => SumType(types.map(rec))
+      case IntersectionType(types) => IntersectionType(types.map(rec))
+      case ProductType(elements) => ProductType(elements.map(rec))
+      case ListType(element) => ListType(rec(element))
+      case MapType(key, value) => MapType(rec(key), rec(value))
+      case t => t
+    }
   }
 
   /**

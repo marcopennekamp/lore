@@ -40,7 +40,7 @@ object TranspiledName {
     * Unit functions thus are represented by the simple name function$.
     */
   def function(function: FunctionDefinition): TranspiledName = {
-    val id = Type.uniqueIdentifier(function.signature.inputType.components)
+    val id = Type.uniqueIdentifier(function.signature.inputType.elements)
     s"${function.name}$$$id".asName
   }
 }

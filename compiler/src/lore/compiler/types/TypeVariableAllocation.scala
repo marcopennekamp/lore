@@ -62,8 +62,8 @@ class TypeVariableAllocation() {
         //       - I don't think this is the case, because we don't substitute allocated variables into the bounds,
         //         as all variables should be instanced with types not containing the allocated variables. At most
         //         we will have type variables from the type we are assigning type from.
-        val actualLowerBound = Substitution.substitute(assignments, variable.lowerBound)
-        val actualUpperBound = Substitution.substitute(assignments, variable.upperBound)
+        val actualLowerBound = Type.substitute(assignments, variable.lowerBound)
+        val actualUpperBound = Type.substitute(assignments, variable.upperBound)
         actualLowerBound <= tpe && tpe <= actualUpperBound
       }
     }
@@ -97,8 +97,8 @@ object TypeVariableAllocation {
         assign(m1.key, m2.key)
         assign(m1.value, m2.value)
       case (p1: ProductType, p2: ProductType) =>
-        if (p1.components.size == p2.components.size) {
-          p1.components.zip(p2.components).foreach { case (c1, c2) => assign(c1, c2) }
+        if (p1.elements.size == p2.elements.size) {
+          p1.elements.zip(p2.elements).foreach { case (c1, c2) => assign(c1, c2) }
         }
 
       // Allocating types to intersection types and sum types is quite complex, since the allocation mechanism

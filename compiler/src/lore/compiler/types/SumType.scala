@@ -4,7 +4,7 @@ import scala.util.hashing.MurmurHash3
 
 case class SumType private (parts: Set[Type]) extends Type {
   assert(parts.nonEmpty)
-  override val hashCode: Int = MurmurHash3.setHash(parts)
+  override val hashCode: Int = MurmurHash3.unorderedHash(parts, 0x85f5fe35)
 }
 
 object SumType {
