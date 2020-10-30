@@ -2,7 +2,6 @@ package lore.compiler.types.test
 
 import lore.compiler.types._
 import org.scalatest.Assertion
-import org.scalatest.events.ScopeOpened
 
 class LeastUpperBoundSpec extends TypeSpec {
   import TypesExample._
@@ -14,7 +13,7 @@ class LeastUpperBoundSpec extends TypeSpec {
     }
   }
 
-  "The least upper bound function" should "return the most specific supertype for classes and labels" in {
+  "The least upper bound function" should "return the most specific supertype for traits and structs" in {
     (Bird, Mammal) --> Animal
     (Fish, Bird) --> Animal
     (Fish, Animal) --> Animal
@@ -66,6 +65,8 @@ class LeastUpperBoundSpec extends TypeSpec {
     (Car, Bicycle) --> +Wheel
     (Car, Motorcycle) --> (+Wheel & +Engine)
     (Motorcycle, Bicycle) --> Cycle
+    // Notably, the LUB is not +Hashable, because Hashable is independent.
+    (+Wheel, +Engine) --> (+Wheel | +Engine)
   }
 
   it should "return the most specific supertype for lists and maps" in {

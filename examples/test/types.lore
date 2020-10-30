@@ -19,10 +19,12 @@ trait Status
 trait Healthy extends Status
 trait Sick extends Status
 
-trait Wheel
+independent trait Hashable
+
+trait Wheel extends Hashable
 struct CoolWheel implements Wheel
 struct CheapWheel implements Wheel
-trait Engine
+trait Engine extends Hashable
 struct GasEngine implements Engine
 struct ElectricEngine implements Engine
 
