@@ -43,7 +43,13 @@ object Type {
     * For an elaboration on the choices made here consult the specification.
     */
   def isAbstract(t: Type): Boolean = t match {
-    case _: TypeVariable => false // TODO: Is this correct?
+    case _: TypeVariable =>
+      // There may be cases in which a type variable can only represent abstract types, for example when a type
+      // variable has traits as upper and lower bounds. Calling a function having such a type variable would be
+      // effectively meaningless, however, since no value could inhabit the type expected by the type variable.
+      // Additionally, it is not clear to me how a function with an abstract type variable would be intuitively
+      // specialized. Hence, we decided that type variables must always be concrete.
+      false
     case SumType(_) => true
     case IntersectionType(types) =>
       // Note that we consider the idea of augmenting trait types here. If the intersection type contains at least one
@@ -57,11 +63,11 @@ object Type {
     case ComponentType(underlying) => isAbstract(underlying)
     case _: StructType => false
     case _: TraitType => true
-    // Any isn't abstract because checking ARDS for it would be inadvisable.
-    // Effectively, Nothing cannot be the supertype of anything, so declaring an abstract function for it
-    // will only result in a useless deadlock.
-    // All other basic types clearly aren't abstract either.
-    case _: BasicType => false
+    case _: BasicType =>
+      // Any isn't abstract because declaring an abstract function over it is more than inadvisable. Effectively,
+      // Nothing cannot be the supertype of anything, so declaring an abstract function over it will only result in
+      // dead code. All other basic types clearly aren't abstract either.
+      false
   }
 
   /**
