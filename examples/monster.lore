@@ -2,11 +2,6 @@ trait Animal
 function name(animal: Animal): String
 
 trait Fish extends Animal
-// TODO: Should we allow traits to "inherit" all abstract functions implicitly? Having to redeclare abstract
-//       functions like this could be a nuisance indeed... Maybe we can fix this in a simple way?
-//       Obviously, the totality constraint would have to be checked by looking for specialized functions of the
-//       implicit function, but this seems like a step we can take in the checking algorithm.
-function name(fish: Fish): String
 
 struct Bass implements Fish {
   name: String
@@ -28,7 +23,9 @@ struct Torso
 function toString(extremity: Extremity): String = 'extremity'
 function toString(mandible: MANDIBLE): String = 'MANDIBLE'
 
-// A Monster made of several different parts, but currently only a fish... Maybe its Head!
+/**
+ * A monster made up of several different animal parts.
+ */
 struct Monster {
   component Fish
   component Extremity

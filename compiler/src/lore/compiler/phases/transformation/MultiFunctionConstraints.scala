@@ -4,6 +4,7 @@ import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.Error
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.types.Type.isAbstract
 import lore.compiler.types.{Ards, Fit, Type}
 
 object MultiFunctionConstraints {
@@ -49,35 +50,47 @@ object MultiFunctionConstraints {
   def verifyTotalityConstraint(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
     // TODO: Refactor this with the new fit changes. (It will be a fucking shit-show, no doubt.)
 
-    //  We have the following interesting case:
-    //  Say we have types abstract X, A < X, B < X, C < X and a component +T. We have an abstract function with
-    //  input X & +T that is implemented by a function with input (A | B) & +T, and a function with input C & +T.
-    //  The totality constraint is checked such that the above situation is legal. This is implemented in the file
-    //  abstract-sum-totality.lore.
-
     /**
-      * Verifies whether the given abstract function satisfies the totality constraint. If the totality constraint is
-      * satisfied, an empty list is returned. Otherwise, a list of input types for which a function has to be implemented
-      * is returned.
+      * Verifies whether the given input type of an abstract function is covered by specialized functions. If this
+      * verification fails, a list of input types for which the function has to be implemented is returned.
+      *
+      * Some notes on the implementation:
+      *
+      * - The algorithm looks at all the abstract-resolved direct subtypes of the input type. An abstract parameter
+      *   can be checked by finding an implementation that covers each of its subtypes. A concrete parameter, on the
+      *   other hand, cannot be covered solely by implementing functions for subtypes, as the concrete type itself
+      *   may be instanced without being one of its subtypes. Hence, the algorithm is restricted to checking ARDS.
+      * - For each subtype, the algorithm first tries to find another function that covers the subtype. This may be
+      *   another abstract function or a concrete function.
+      * - If such a function cannot be found and the subtype is abstract, we assume that the subtype is supposed to
+      *   be an input type of an implicit abstract function. For example, we might declare an abstract function `name`
+      *   for a trait `Animal`, and another trait `Fish` without wishing to have to redeclare the function `name`. This
+      *   special case in the algorithm makes it possible to check the totality of the `name(animal: Animal)` function
+      *   without having to declare a function `name(fish: Fish)`. We merely have to declare the function for all types
+      *   that extend/implement `Fish`.
       */
-    def verifyFunction(f: FunctionDefinition): Vector[Type] = {
-      // We need to use the direct declared subtypes of the ABSTRACT parameters. An example will clear this up:
-      //    Say we have types abstract A, A1 <: A, A2 <: A, non-abstract B, B1 <: B, B2 <: B.
-      //    An abstract function f(a: A, b: B) with a non-abstract B must also cover the case f(a: AX, b: B), not just for
-      //    B1 and B2, if the given value of type B is neither B1 nor B2, since it could just be B. Hence, we cannot use
-      //    directDeclaredSubtypes, because it would substitute B1 and B2 for B, leaving B out of the equation entirely.
-      Ards.abstractResolvedDirectSubtypes(f.signature.inputType).toVector.flatMap { subtype =>
+    def verifyInputType(inputType: Type): Vector[Type] = {
+      Ards.abstractResolvedDirectSubtypes(inputType).toVector.flatMap { subtype =>
         // TODO: Can we optimize this given the new hierarchy?
-        val isValid = mf.functions.exists { f2 =>
-          Fit.isMoreSpecific(f2.signature.inputType, f.signature.inputType) && mf.fit(subtype).contains(f2)
+        val isImplemented = mf.functions.exists { f2 =>
+          Fit.isMoreSpecific(f2.signature.inputType, inputType) && mf.fit(subtype).contains(f2)
         }
-        if (!isValid) Some(subtype) else None
+
+        if (!isImplemented) {
+          if (Type.isAbstract(subtype)) {
+            verifyInputType(subtype)
+          } else {
+            Vector(subtype)
+          }
+        } else {
+          Vector.empty
+        }
       }
     }
 
     Verification.fromErrors {
       mf.functions.filter(_.isAbstract).flatMap { function =>
-        val missing = verifyFunction(function)
+        val missing = verifyInputType(function.signature.inputType)
         if (missing.nonEmpty) Some(AbstractFunctionNotTotal(function, missing)) else None
       }
     }

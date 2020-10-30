@@ -142,8 +142,6 @@ On top of that, the execution engine makes **type variable assignments available
 
 ### Abstract Functions
 
-**TODO:** We definitely have to think more about how type variables affect abstract functions.
-
 Abstract functions are essentially functions **missing an implementation**. At run-time, if the compiler should screw up, trying to call an abstract function (without any suitable specializations available) will lead to an error. It is our goal to catch most violations tied to abstract functions at compile-time. The core verification is handled by two constraints: input abstractness and totality.
 
 ##### Input Abstractness Constraint
@@ -186,27 +184,45 @@ Now, the totality constraint is satisfied for all functions. But then the code c
 ```
 struct A
 struct B
-type T = A | B
 
 function f(a: A): A = ...
 function f(b: B): B = ...
 ```
 
-Suppose we have a value `v` of type `T`. If we try to call `f(v)`, we will get an **empty-fit error at compile time**, because both functions are too specific for the more general type `T`. At run-time, of course, *we* are certain that one of the functions must be called, because `v` must either have type `A` or `B`. But of course the compiler doesn't know.
+Suppose we have a value `v` of type `A | B`. If we try to call `f(v)`, we will get an **empty-fit error at compile time**, because both functions are too specific for the more general type `A | B`. At run-time, of course, *we* are certain that one of the functions must be called, because `v` must either have type `A` or `B`. But of course the compiler doesn't know.
 
 This demonstrates the **usefulness of abstract functions**. We define the following additional function to fix our issue:
 
 ```
-function f(t: T): T
+function f(v: A | B): A | B
 ```
 
 This function is abstract because it has no definition. It satisfies the totality constraint because the concrete subtypes `A` and `B` each have an associated concrete function. The input abstractness constraint is also satisfied as sum types are abstract by definition. We can now call `f(v)` without getting a compilation error.
+
+###### Example 3
+
+```
+trait Animal
+function name(animal: Animal): String
+
+trait Fish extends Animal
+
+struct Bass implements Fish
+function name(bass: Bass): String = 'Bass'
+
+struct Trout implements Fish
+function name(trout: Trout): String = 'Trout'
+```
+
+Abstract functions do not need to be **redeclared** for subtypes. The example above demonstrates this by having the trait `Fish` omit a declaration of the multi-function `name`. The constraint's checking algorithm for `name(Animal)` will try to find a function `name(Fish)` and upon failure, assume that it is implicitly abstract. The totality constraint will then be checked given the input type `Fish`. 
+
+Any errors will be reported for the most specific abstract function. If the `name(Bass)` function wasn't declared, the compiler would report a missing implementation for the input type `Bass` with the `name(Animal)` function, not the implicit `name(Fish)` function.
 
 
 
 ### Fixed Function Calls
 
-Sometimes, we want to bypass dispatch and ensure that we call a specific function irregardless of the argument type at run-time. A **fixed function call** looks like this:
+Sometimes, we want to bypass dispatch and ensure that we call a specific function regardless of the argument type at run-time. A **fixed function call** looks like this:
 
 ```
 f.fixed[T1, T2, ...](a1, a2, ...)
