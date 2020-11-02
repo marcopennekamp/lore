@@ -1,6 +1,5 @@
-package lore.compiler.phases.transformation.test
+package lore.compiler.phases.transformation
 
-import lore.compiler.phases.transformation.{DeclaredTypeConstraints, EntityConstraints, MultiFunctionConstraints, ReturnConstraints, StructConstraints}
 import lore.compiler.test.BaseSpec
 
 class ConstraintsSpec extends BaseSpec {

@@ -1,4 +1,4 @@
-package lore.compiler.phases.parsing.test
+package lore.compiler.phases.parsing
 
 import fastparse._
 import lore.compiler.syntax._

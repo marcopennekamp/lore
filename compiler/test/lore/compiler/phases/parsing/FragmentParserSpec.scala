@@ -1,4 +1,4 @@
-package lore.compiler.phases.parsing.test
+package lore.compiler.phases.parsing
 
 import fastparse.P
 import lore.compiler.core.Fragment

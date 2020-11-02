@@ -1,8 +1,7 @@
-package lore.compiler.types.test
+package lore.compiler.types
 
 import lore.compiler.semantics.Registry
 import lore.compiler.test.{BaseSpec, TypeSyntax}
-import lore.compiler.types.{StructType, TraitType}
 
 trait TypeSpec extends BaseSpec with TypeSyntax {
   def havingTrait(name: String)(implicit registry: Registry): TraitType = registry.getType(name).get.asInstanceOf[TraitType]

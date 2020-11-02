@@ -1,4 +1,4 @@
-package lore.compiler.phases.parsing.test
+package lore.compiler.phases.parsing
 
 import lore.compiler.core.Position
 import lore.compiler.syntax.{DeclNode, TypeDeclNode, StmtNode, TopLevelExprNode, ExprNode, TypeExprNode}

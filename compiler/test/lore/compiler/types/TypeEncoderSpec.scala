@@ -1,7 +1,6 @@
-package lore.compiler.types.test
+package lore.compiler.types
 
 import lore.compiler.test.BaseSpec
-import lore.compiler.types.{BasicType, ListType, MapType, Type, TypeEncoder, TypeVariable}
 import org.scalatest.Assertion
 
 class TypeEncoderSpec extends BaseSpec {

@@ -1,6 +1,5 @@
-package lore.compiler.types.test
+package lore.compiler.types
 
-import lore.compiler.types._
 import org.scalatest.Assertion
 
 class SubtypingSpec extends TypeSpec {
