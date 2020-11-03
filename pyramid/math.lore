@@ -1,1 +1,5 @@
+function floor(x: Real): Int = dynamic[Int]('Lore.math.floor', x)
+function round(x: Real): Int = dynamic[Int]('Lore.math.round', x)
+function ceil(x: Real): Int = dynamic[Int]('Lore.math.ceil', x)
+
 function remainder(a: Int, b: Int): Int = dynamic[Int]('Lore.math.remainder', a, b)

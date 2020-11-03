@@ -21,7 +21,6 @@
 
 #### Testing
 
-- Clean up parametric.lore to free up more examples.
 - We probably should remove the parser tests once we have automated Lore program testing. It neatly covers aspects of the parser. We might design some Lore test programs based on the current parser tests, to catch syntactical strangeness. (The biggest argument in favor of throwing out parser testing is that it slows down prototyping syntax heavily. A test that checks some Lore program's output is much easier to write than a unit test relying on the compiler's internal parsing representation.)
 - Figure out which portions of the compiler and runtime to unit test.
 - We should ideally invest in a system that can test the parts that are replicated in both the compiler and the runtime with the same values. This system should read type relationships from text files and then execute tests. This is crucial because as we discover type system bugs, we should add test cases that cover those bugs. 
@@ -57,6 +56,9 @@
   - Problem: Let's say we have a concrete function `f(a: A)` with `A` being a trait. We also have a trait `Y` and a concrete function `f(y: Y)`. We have a struct `A1 implements A, Y`. The optimization above leads us to call function `f(a: A)` directly at compile-time, given a value of type `A`. However, at run-time, this value is actually an `A1`. Calling `f` directly with it should result in an ambiguity error, since both functions are equally specific and in the fit of the given input, but because at compile-time we applied the optimization, `f(a: A)` is incorrectly called.
     - To solve this issue, we have to add additional conditions to the optimization. We could, for example, analyze the trait `A` and only apply the optimization if none of `A`'s implementations extend other traits (conservative) or other traits that are also found in the multiple dispatch hierarchy of the multi-function (opportunistic). Such an optimization seems too complicated for the MVL, though, especially considering that the language might still change quite a bit. 
   - A simpler and safe optimization: Call a function directly if the multi-function consists of exactly and only one function. This would already cover a huge category of functions that the more complicated optimization would also cover: "private"-style functions that are used to simplify a given implementation and many, many (library) functions that don't need polymorphism at all. It seems more prudent to work on a module system to vastly reduce the pressure on individual names and then to implement this simple optimization than to implement the complex optimization first.
+    - Note: Best apply this optimization not at the call site but rather with the definition of the multi-function. If there is only a single possible dispatch target, simply don't even transpile all the dispatch logic.
+      - A potential problem with this approach is that calling Lore functions from Javascript would forego the type check, even if the values provided may not be correct. So we might have to still do the type check, even though we can skip dispatch (and the dispatch cache) entirely.
+      - Then we can further optimize this at the call site when coming from Lore code by calling the specific function and even circumventing the type check. This is only possible because the Lore compiler can ensure that the arguments are a fit for the function even at run-time.
 - Provide a sane immutable list implementation.
 - Provide a sane immutable map implementation.
 - Runtime: Intern component types.

@@ -32,3 +32,9 @@ Deno.test('math/naivemethic', async () => {
   const result: number = await LoreTest.run('math/naivemethic')
   assertEquals(result, 60)
 })
+
+Deno.test('math/pow', async () => {
+  const result: ListValue<number> = await LoreTest.run('math/pow')
+  assertEquals(result.lore$type.kind, Kind.List)
+  assertEquals(result.array, [1, 0.25, 16, 9, 0, 16, 256])
+})

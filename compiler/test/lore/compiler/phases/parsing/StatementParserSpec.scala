@@ -3,7 +3,6 @@ package lore.compiler.phases.parsing
 import fastparse._
 import lore.compiler.syntax._
 import lore.compiler.core.Fragment
-import lore.compiler.phases.parsing.{StatementParser, TypeParser}
 import lore.compiler.test.BaseSpec
 
 class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {

@@ -2,7 +2,6 @@ package lore.compiler.phases.parsing
 
 import fastparse.P
 import lore.compiler.core.Fragment
-import lore.compiler.phases.parsing.FragmentParser
 import lore.compiler.syntax._
 import lore.compiler.test.BaseSpec
 
@@ -11,40 +10,6 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
   override def parser[_: P](implicit fragment: Fragment): P[Vector[DeclNode]] = new FragmentParser().fullFragment
 
   import TestNodes._
-
-  "The function declaration parser" should "parse function declarations correctly" in {
-    """
-    |  function pow(x: Real, exp: Int): Real = {
-    |    let mut e = exp
-    |    let mut result = 1.0
-    |    while (e > 0) {
-    |      result *= x
-    |      e -= 1
-    |    }
-    |    result
-    |  }
-    |""".stripMargin --> Vector(Decl.Function(
-      "pow",
-      Vector(
-        Decl.Parameter("x", tReal),
-        Decl.Parameter("exp", tInt),
-      ),
-      tReal,
-      Vector.empty,
-      Some(Stmt.Block(Vector(
-        Stmt.VariableDeclaration("e", true, None, Stmt.Variable("exp")),
-        Stmt.VariableDeclaration("result", true, None, Stmt.RealLiteral(1.0)),
-        Stmt.Repetition(
-          Stmt.GreaterThan(Stmt.Variable("e"), Stmt.IntLiteral(0)),
-          Stmt.Block(Vector(
-            Stmt.Assignment(Stmt.Variable("result"), Stmt.Multiplication(Stmt.Variable("result"), vx)),
-            Stmt.Assignment(Stmt.Variable("e"), Stmt.Subtraction(Stmt.Variable("e"), Stmt.IntLiteral(1))),
-          )),
-        ),
-        Stmt.Variable("result"),
-      ))),
-    ))
-  }
 
   it should "parse action declarations correctly" in {
     """

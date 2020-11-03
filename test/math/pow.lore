@@ -1,0 +1,19 @@
+function pow(x: Real, exp: Int): Real = {
+  let mut e = exp
+  let mut result = 1.0
+  while (e > 0) {
+    result *= x
+    e -= 1
+  }
+  result
+}
+
+function test(): [Real] = [
+  pow(0.5, 0),
+  pow(0.5, 2),
+  pow(2, 4),
+  pow(3, 2),
+  pow(0, 5),
+  pow(pow(2, 2), 2),
+  pow(pow(2, floor(pow(2, 2))), 2)
+]
