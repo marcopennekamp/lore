@@ -3,15 +3,14 @@ import { LoreTest } from '../base.ts'
 import { Kind } from '../../runtime/src/lore/runtime/types/kinds.ts'
 import { TupleValue } from '../../runtime/src/lore/runtime/values/tuple.ts'
 import { ObjectValue } from '../../runtime/src/lore/runtime/values/object.ts'
+import { assertIsStruct } from '../assertions.ts'
 
 Deno.test('return/parametric', async () => {
   const zombie: ObjectValue = await LoreTest.run('return/parametric')
-  assertEquals(zombie.lore$type.kind, Kind.Struct)
-  assertEquals(zombie.lore$type.schema.name, 'Zombie')
+  assertIsStruct(zombie, 'Zombie')
   assertEquals((zombie as any).name, 'Fred')
   const position: ObjectValue = (zombie as any).position
-  assertEquals(position.lore$type.kind, Kind.Struct)
-  assertEquals(position.lore$type.schema.name, 'Position')
+  assertIsStruct(position, 'Position')
   assertEquals((position as any).x, 1.7)
   assertEquals((position as any).y, 2.5)
   assertEquals((position as any).z, 0.5)

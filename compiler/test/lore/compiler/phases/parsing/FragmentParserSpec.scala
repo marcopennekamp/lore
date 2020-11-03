@@ -48,51 +48,6 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
     }
   }
 
-  "The type declaration parser" should "parse struct and property declarations correctly" in {
-    """
-    |  struct Position { x: Real = 0.0, y: Real = 0.0, z: Real = 0.0 }
-    |
-    |  function from2D(x: Real, y: Real): Position = {
-    |    Position(x, y, 0.0)
-    |  }
-    |
-    |  function from1D(x: Real): Position = {
-    |    from2D(x, 0.0)
-    |  }
-    """.stripMargin --> Vector(
-      Decl.Struct(
-        "Position",
-        Vector.empty,
-        None,
-        Vector(
-          Decl.Property("x", tReal, false, Some(Stmt.RealLiteral(0.0))),
-          Decl.Property("y", tReal, false, Some(Stmt.RealLiteral(0.0))),
-          Decl.Property("z", tReal, false, Some(Stmt.RealLiteral(0.0))),
-        ),
-        false,
-      ),
-      Decl.Function(
-        "from2D",
-        Vector(
-          Decl.Parameter("x", tReal),
-          Decl.Parameter("y", tReal),
-        ),
-        Type.Identifier("Position"),
-        Vector.empty,
-        Some(Stmt.Block(Vector(Stmt.SimpleCall("Position", Vector(vx, vy, Stmt.RealLiteral(0.0)))))),
-      ),
-      Decl.Function(
-        "from1D",
-        Vector(
-          Decl.Parameter("x", tReal),
-        ),
-        Type.Identifier("Position"),
-        Vector.empty,
-        Some(Stmt.Block(Vector(Stmt.SimpleCall("from2D", Vector(vx, Stmt.RealLiteral(0.0)))))),
-      ),
-    )
-  }
-
   it should "parse structs, traits, inheritance, ownership, and independence correctly" in {
     """
     |  independent trait L1
