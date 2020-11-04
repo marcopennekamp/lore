@@ -1,30 +1,15 @@
-import { assertEquals } from 'https://deno.land/std/testing/asserts.ts'
 import { ListValue } from '../../runtime/src/lore/runtime/values/list.ts'
 import { LoreTest } from '../base.ts'
-import { Kind } from '../../runtime/src/lore/runtime/types/kinds.ts'
 import { ObjectValue } from '../../runtime/src/lore/runtime/values/object.ts'
-import { assertIsStruct } from '../assertions.ts'
+import { assertListEquals, assertListForall, assertStructHasValues } from '../assertions.ts'
 
 Deno.test('structs/independent', async () => {
-  const result: ListValue<number> = await LoreTest.run('structs/independent')
-  assertEquals(result.lore$type.kind, Kind.List)
-  assertEquals(result.array, ['CA', 'CB'])
+  const result: ListValue<string> = await LoreTest.run('structs/independent')
+  assertListEquals(result, ['CA', 'CB'])
 })
 
 Deno.test('structs/position', async () => {
   const result: ListValue<ObjectValue> = await LoreTest.run('structs/position')
-  assertEquals(result.lore$type.kind, Kind.List)
-  const positions = result.array
-
-  assertPosition(positions[0], 1, 2, 3)
-  assertPosition(positions[1], 0, 5, 0)
-  assertPosition(positions[2], 20, 10, 0)
-  assertPosition(positions[3], 7, 0, 0)
-
-  function assertPosition(position: ObjectValue, x: number, y: number, z: number) {
-    assertIsStruct(position, 'Position')
-    assertEquals((position as any).x, x)
-    assertEquals((position as any).y, y)
-    assertEquals((position as any).z, z)
-  }
+  const expected = [{ x: 1, y: 2, z: 3 }, { x: 0, y: 5, z: 0 }, { x: 20, y: 10, z: 0 }, { x: 7, y: 0, z: 0}]
+  assertListForall(result, expected, (actual, expected) => assertStructHasValues(actual, 'Position', expected))
 })

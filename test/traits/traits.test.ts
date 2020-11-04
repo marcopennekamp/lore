@@ -1,12 +1,10 @@
-import { assertEquals } from 'https://deno.land/std/testing/asserts.ts'
 import { ListValue } from '../../runtime/src/lore/runtime/values/list.ts'
 import { LoreTest } from '../base.ts'
-import { Kind } from '../../runtime/src/lore/runtime/types/kinds.ts'
+import { assertListEquals } from '../assertions.ts'
 
 Deno.test('traits/airborne', async () => {
   const result: ListValue<number> = await LoreTest.run('traits/airborne')
-  assertEquals(result.lore$type.kind, Kind.List)
-  assertEquals(result.array, [
+  assertListEquals(result, [
     'Raven == Raven',
     'Raven == Model Plane',
     'Dragon == Dragon',
