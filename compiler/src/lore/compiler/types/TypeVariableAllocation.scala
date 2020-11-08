@@ -82,15 +82,20 @@ object TypeVariableAllocation {
   }
 
   private def assign(t1: Type, t2: Type)(implicit allocation: TypeVariableAllocation): Unit = {
+    // If the right-hand type contains no variables, there is no way we could assign anything, and thus the assignment
+    // can be skipped. This "optimization" is currently important for correct compiler operation, as we only want to
+    // raise an "unsupported substitution" error in cases where the right-hand type even contains type variables.
+    if (Type.isMonomorphic(t2)) {
+      return
+    }
+
     def unsupportedSubstitution: Nothing = {
-      throw CompilationException("Intersection and sum type type variable allocations are not yet supported.")
+      throw CompilationException(s"Intersection and sum type type variable allocations are not yet supported." +
+        s" Given types: $t1 and $t2.")
     }
 
     (t1, t2) match {
       case (_, tv2: TypeVariable) => allocation.addAssignment(tv2, t1)
-      case (d1: DeclaredType, d2: DeclaredType) =>
-        // TODO: What to do here?
-        ???
       case (l1: ListType, l2: ListType) => assign(l1.element, l2.element)
       case (m1: MapType, m2: MapType) =>
         // TODO: Is this correct?
@@ -113,9 +118,9 @@ object TypeVariableAllocation {
 
       // In all other cases, there is no need to assign anything. Note that component types can't contain
       // type variables, currently, as they expect a declared type.
+      // TODO: Declared types will be able to contain type variables when they become polymorphic.
       // TODO: Component types will be able to contain type variables when declared types become polymorphic.
       case _ =>
     }
   }
-
 }
