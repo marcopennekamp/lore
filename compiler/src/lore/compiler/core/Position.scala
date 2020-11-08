@@ -7,7 +7,7 @@ import lore.compiler.syntax.Node.Index
   */
 case class Position(fragment: Fragment, index: Index) {
   def <(position: Position): Boolean = {
-    this.fragment.name < position.fragment.name || this.index < position.index
+    this.fragment.name < position.fragment.name && this.index < position.index
   }
 
   /**
