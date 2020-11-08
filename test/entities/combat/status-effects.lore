@@ -1,0 +1,111 @@
+trait StatusEffect
+
+/**
+ * Applies the given status effect to the stat identified with the given label.
+ */
+function affectStat(effect: StatusEffect, statLabel: StatLabel, value: A): A where A = value
+
+/**
+ * Called during the end-of-turn status effect update.
+ */
+action onUpdate(effect: StatusEffect) { }
+
+/**
+ * Called whenever the entity gets hit by an attack (after a potential dodge failed).
+ *
+ * TODO: Instead of following this callback approach, we could try to implement functional reactive programming
+ *       at some point, maybe even support it natively in the language.
+ */
+action onHit(effect: StatusEffect) { }
+
+/**
+ * Whether the given status effect is active.
+ */
+function isActive(effect: StatusEffect): Boolean = true
+
+
+struct DurationLimit owned by StatusEffect {
+  mut duration: Int
+}
+
+action onUpdate(effect: +DurationLimit) {
+  if (isActive(effect)) {
+    effect.DurationLimit.duration -= 1
+  }
+}
+
+function isActive(effect: +DurationLimit): Boolean = effect.DurationLimit.duration > 0
+
+
+struct HitLimit owned by StatusEffect {
+  mut hits: Int
+}
+
+action onHit(effect: +HitLimit) {
+  if (isActive(effect)) {
+    effect.HitLimit.hits -= 1
+  }
+}
+
+function isActive(effect: +HitLimit): Boolean = effect.HitLimit.hits > 0
+
+
+/**
+ * The entity is armored and has increased defense. The armor breaks after a set amount of hits.
+ */
+struct Armored implements StatusEffect {
+  armor: Int
+  component HitLimit
+}
+
+function createArmored(armor: Int, durability: Int): Armored = Armored(armor, HitLimit(durability))
+
+function affectStat(effect: Armored, statLabel: StatDefense, value: Int): Int = value + effect.armor
+
+
+/**
+ * The entity is infused with Stormlight.
+ */
+struct Infusion implements StatusEffect {
+  component DurationLimit
+}
+
+function createInfusion(duration: Int): Infusion = Infusion(DurationLimit(duration))
+
+function affectStat(effect: Infusion, statLabel: StatAttack | StatSpeed, value: Int): Int = floor(value * 1.5)
+function affectStat(effect: Infusion, statLabel: StatDodge, value: Real): Real = 1.0 // Dodge all attacks while infused.
+function affectStat(effect: Infusion, statLabel: StatRegeneration, value: Int): Int = 5
+
+
+struct StatusEffects {
+  mut effects: [StatusEffect]
+}
+
+action buff(entity: +StatusEffects, effect: StatusEffect) {
+  entity.StatusEffects.effects = entity.StatusEffects.effects :+ effect
+}
+
+// TODO: If we introduce a "call all fitting functions/call all min functions"-style call, we can implement this
+//       as an update or tick function that gets called implicitly with an entity's update function.
+/**
+ * Updates status effects, removing those from the list that have expired.
+ */
+action updateStatusEffects(entity: +StatusEffects) {
+  // TODO: Once we support anonymous functions, this can be solved with a forEach and a filter.
+  let effects = entity.StatusEffects.effects
+  for (effect <- effects) {
+    onUpdate(effect)
+  }
+
+  let mut actives: [StatusEffect] = []
+  for (effect <- effects) {
+    if (isActive(effect)) {
+      actives = actives :+ effect
+    }
+  }
+  entity.StatusEffects.effects = actives
+}
+
+action onHit(statusEffects: StatusEffects) {
+  for (effect <- statusEffects.effects) onHit(effect)
+}

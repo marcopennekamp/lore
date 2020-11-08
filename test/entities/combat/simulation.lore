@@ -1,0 +1,161 @@
+trait Combatant extends +Stats, +StatusEffects
+
+function name(combatant: Combatant): String
+
+/**
+ * This is called once at the beginning of combat to give each combatant a chance to prepare.
+ */
+action enterCombat(combatant: Combatant) { }
+
+action onHit(combatant: Combatant) {
+  onHit(combatant.StatusEffects)
+}
+
+// TODO: This wouldn't need two separate implementations if we'd have StatLabel[Int], StatLabel[Real] etc. stat labels.
+//       Also see the TODO above the declaration of baseStat in stats.lore.
+function stat(combatant: Combatant, statLabel: StatRegeneration | StatDefense | StatAttack | StatRange | StatSpeed): Int = {
+  let mut result = baseStat(combatant, statLabel)
+  for (effect <- combatant.StatusEffects.effects) {
+    result = affectStat(effect, statLabel, result)
+  }
+  result
+}
+
+function stat(combatant: Combatant, statLabel: StatDodge): Real = {
+  let mut result = baseStat(combatant, statLabel)
+  for (effect <- combatant.StatusEffects.effects) {
+    result = affectStat(effect, statLabel, result)
+  }
+  result
+}
+
+
+trait SimulationResult
+struct SimulationVictory implements SimulationResult { winner: Combatant }
+struct SimulationStalemate implements SimulationResult
+
+/**
+ * Simulate the combat between two combatants using a turn-based algorithm. The left combatant has the initiative
+ * and gets to take their turns first.
+ *
+ * Returns the winner of the engagement.
+ */
+function simulateCombat(left: Combatant, right: Combatant): SimulationResult = {
+  let mut turn = 1
+  let mut distance = 8
+  let mut leftCumulativeDodge = 0.0
+  let mut rightCumulativeDodge = 0.0
+
+  enterCombat(left)
+  enterCombat(right)
+
+  let leftState = CombatantState { combatant = left }
+  let rightState = CombatantState { combatant = right }
+
+  while (isAlive(left) & isAlive(right)) {
+    println('Turn $turn:')
+
+    // Phase 1: Closing the distance.
+    if (distance > 0) {
+      distance = closeDistance(left, distance)
+      distance = closeDistance(right, distance)
+    }
+
+    // Phase 2: Attack phase.
+    attemptAttack(leftState, rightState, distance)
+    attemptAttack(rightState, leftState, distance)
+
+    // Phase 3: Post-attack regeneration and status effect updates.
+    updateCombatantPostAttack(left)
+    updateCombatantPostAttack(right)
+
+    println('${name(left)} health: ${left.Stats.health}')
+    println('${name(right)} health: ${right.Stats.health}')
+
+    turn += 1
+
+    println('')
+  }
+
+  if (isAlive(left) & ~isAlive(right)) {
+    SimulationVictory(left)
+  } else if (~isAlive(left) & isAlive(right)) {
+    SimulationVictory(right)
+  } else {
+    SimulationStalemate()
+  }
+}
+
+struct CombatantState {
+  combatant: Combatant
+  mut dodge: Real = 0.0
+}
+
+/**
+ * Whether the combatant is in range, based on the entity's range stat.
+ */
+function isInRange(combatant: Combatant, distance: Int): Boolean = stat(combatant, StatRange()) >= distance
+
+/**
+ * Closes the given distance to the other combatant, provided the given combatant isn't already in range.
+ */
+function closeDistance(combatant: Combatant, distance: Int): Int = {
+  if (distance > 0 & ~isInRange(combatant, distance)) {
+    let new = max(distance - stat(combatant, StatSpeed()), 0)
+    println('${name(combatant)} closes distance to $new.')
+    new
+  } else distance
+}
+
+/**
+ * Performs dodge calculations for the given state and returns whether the current attempt succeeded. This function
+ * has side effects.
+ */
+function attemptDodge(state: CombatantState): Boolean = {
+  state.dodge += stat(state.combatant, StatDodge())
+  if (state.dodge >= 1.0) {
+    println('${name(state.combatant)} dodges an attack.')
+    state.dodge -= 1.0
+    true
+  } else false
+}
+
+action attemptAttack(attackerState: CombatantState, defenderState: CombatantState, distance: Int) {
+  if (isInRange(attackerState.combatant, distance)) {
+    let dodgeSuccessful = attemptDodge(defenderState)
+    if (~dodgeSuccessful) {
+      let attack = stat(attackerState.combatant, StatAttack())
+      hit(attackerState.combatant, defenderState.combatant, attack)
+    }
+  }
+}
+
+/**
+ * Damages a target, taking into account defense but not dodge. Also triggers onHit calls.
+ */
+action hit(source: Combatant, target: Combatant, damage: Int) {
+  let defense = stat(target, StatDefense())
+  let damageAfterDefense = max(damage - defense, 0)
+  println('${name(source)} attacks ${name(target)} for $damageAfterDefense damage given a defense of $defense.')
+  target.Stats.health -= damageAfterDefense
+  onHit(target)
+}
+
+/**
+ * Performs post-attack regeneration and status effect updates provided the combatant is still alive.
+ */
+action updateCombatantPostAttack(combatant: Combatant) {
+  if (isAlive(combatant)) {
+    heal(combatant, stat(combatant, StatRegeneration()))
+    updateStatusEffects(combatant)
+  }
+}
+
+action heal(target: Combatant, amount: Int) {
+  let stats = target.Stats
+  let oldHealth = stats.health
+  stats.health = min(stats.health + amount, stats.maximumHealth)
+  if (stats.health > oldHealth) {
+    println('${name(target)} is healed by ${stats.health - oldHealth} points.')
+  }
+}

@@ -1,0 +1,85 @@
+/**
+ * All combat stats for fighting entities.
+ *
+ * Note that you should use the accompanying baseStat function to access all stats except health, which may be accessed
+ * directly. The reason is that select entities may want to overwrite the stats without changing the Stats object.
+ *
+ * TODO: We could implement some form of visibility for struct properties, likely in conjunction with the module
+ *       system, to prevent third parties from accessing the stat values instead of using the designated functions.
+ */
+struct Stats {
+  // TODO: Does this really belong here?
+  mut health: Int
+
+  /**
+   * The current health stat cannot surpass this maximum value.
+   */
+  maximumHealth: Int
+
+  /**
+   * Regeneration determines how much health the combatant regenerates at the end of each combat turn.
+   */
+  regeneration: Int = 0
+
+  /**
+   * Damage reduction, point-by-point.
+   */
+  defense: Int = 0
+
+  /**
+   * Dodge reduces damage received for every nth hit. A dodge of 0 means that the entity cannot dodge, while a value of
+   * 0.5 means that the entity will dodge every second hit, 0.25 every fourth hit, and so on.
+   *
+   * Note that dodge would usually be implemented with an element of chance, but this would not lead to consistent
+   * test results.
+   */
+  dodge: Real = 0.0
+
+  /**
+   * Attack determines the regular damage done by an attack.
+   */
+  attack: Int = 0
+
+  /**
+   * The range of the attack. A range of 0 means melee distance, while each successive increment allows the combatant
+   * to hit their enemy earlier. In most combat situations, opponents start 6-8 points apart.
+   */
+  range: Int = 0
+
+  /**
+   * The running speed of the entity, per turn. This is used to close the distance to an opponent with ranged attacks.
+   */
+  speed: Int = 1
+}
+
+/**
+ * A type used to create "labels" for various stats.
+ *
+ * TODO: Note that, for now, we don't support global constants, which means that any Stat label object needs to be
+ *       instantiated anew each time it is used.
+ */
+trait StatLabel
+// TODO: This would be a case object in Scala. We could support this with the planned singleton types, which would be
+//       very appropriate here.
+//       type StatLabel = 'Regeneration | 'Defense | 'Dodge | 'Attack | 'Range | 'Speed
+struct StatRegeneration implements StatLabel
+struct StatDefense implements StatLabel
+struct StatDodge implements StatLabel
+struct StatAttack implements StatLabel
+struct StatRange implements StatLabel
+struct StatSpeed implements StatLabel
+
+// TODO: To make these functions more type-safe, we should require StatLabel to be parameterized over A. Then StatDefense
+//       would extend StatLabel[Int] and stat would only be definable over StatDefense if A is Int. The same applies
+//       to affectStat, where this would also provide additional type safety.
+//       Also, we wouldn't have to define functions over StatRegeneration | StatDefense | ... and so on.
+function baseStat(entity: +Stats, label: StatLabel): Int | Real
+function baseStat(entity: +Stats, label: StatRegeneration | StatDefense | StatAttack | StatRange | StatSpeed): Int
+function baseStat(entity: +Stats, label: StatRegeneration): Int = entity.Stats.regeneration
+function baseStat(entity: +Stats, label: StatDefense): Int = entity.Stats.defense
+function baseStat(entity: +Stats, label: StatDodge): Real = entity.Stats.dodge
+function baseStat(entity: +Stats, label: StatAttack): Int = entity.Stats.attack
+function baseStat(entity: +Stats, label: StatRange): Int = entity.Stats.range
+function baseStat(entity: +Stats, label: StatSpeed): Int = entity.Stats.speed
+
+function isAlive(entity: +Stats): Boolean = entity.Stats.health > 0

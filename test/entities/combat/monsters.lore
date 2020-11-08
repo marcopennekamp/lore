@@ -1,0 +1,21 @@
+trait Monster extends Combatant
+
+// TODO: We could at some point differentiate between stats based on form.
+struct Voidbringer implements Monster {
+  component Stats = Stats {
+    health = 30,
+    maximumHealth = 30,
+    regeneration = 2,
+    dodge = 0.2,
+    attack = 5,
+    speed = 2
+  }
+
+  component StatusEffects = StatusEffects([])
+}
+
+function name(voidbringer: Voidbringer): String = 'Voidbringer'
+
+action enterCombat(voidbringer: Voidbringer) {
+  buff(voidbringer, createArmored(2, 3))
+}

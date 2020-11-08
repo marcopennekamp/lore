@@ -1,0 +1,21 @@
+trait Weapon
+trait RangedWeapon extends Weapon
+struct Sword implements Weapon
+struct Shardblade implements Weapon
+struct Spear implements Weapon
+struct Bow implements RangedWeapon
+
+function weaponStrength(weapon: Weapon): Int
+function weaponStrength(sword: Sword): Int = 7
+function weaponStrength(shardblade: Shardblade): Int = 15
+function weaponStrength(spear: Spear): Int = 5
+function weaponStrength(bow: Bow): Int = 4
+
+function weaponRange(weapon: RangedWeapon): Int
+function weaponRange(bow: Bow): Int = 10
+
+
+function baseStat(entity: +Stats & +Weapon, label: StatAttack): Int = weaponStrength(entity.Weapon)
+
+function baseStat(entity: +Stats & +Weapon, label: StatRange): Int = 0
+function baseStat(entity: +Stats & +RangedWeapon, label: StatRange): Int = weaponRange(entity.RangedWeapon)
