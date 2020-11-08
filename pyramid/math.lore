@@ -8,4 +8,4 @@ function remainder(a: Int, b: Int): Int = dynamic[Int]('Lore.math.remainder', a,
 function min(x: Real, y: Real): Real = if (x < y) x else y
 function min(x: Int, y: Int): Int = if (x < y) x else y
 function max(x: Real, y: Real): Real = if (x > y) x else y
-function max(x: Int, y: Int): Real = if (x > y) x else y
+function max(x: Int, y: Int): Int = if (x > y) x else y
