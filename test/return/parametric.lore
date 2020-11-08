@@ -30,6 +30,8 @@ action setPosition(zombie: Zombie, position: Position) {
 function toString(zombie: Zombie): String = '${zombie.name} is at position ${zombie.position}'
 
 
+function update(a: A): A where A = a
+
 // This is essentially a way to test that the compiler and runtime correctly handle returning an argument that
 // doesn't have a concrete type at compile-time.
 function update(a: A): A where A <: Movable = {

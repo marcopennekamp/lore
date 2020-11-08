@@ -3,7 +3,7 @@ package lore.compiler.phases.transformation
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.Error
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.types.{Fit, Type}
 
 object MultiFunctionConstraints {
@@ -93,15 +93,30 @@ object MultiFunctionConstraints {
     }
   }
 
-  case class IncompatibleOutputTypes(child: FunctionDefinition, parent: FunctionDefinition) extends Error(child) {
-    override def message: String = s"The functions ${parent.signature} and ${child.signature} are in a hierarchical relationship, but the latter's" +
-      s" output type is not a subtype of the former's output type. Concretely, it should hold that ${child.signature.outputType} <:" +
-      s" ${parent.signature.outputType}, but this is not the case."
+  case class IncompatibleOutputTypes(
+    child: FunctionSignature, parent: FunctionSignature, parentInstance: FunctionSignature
+  ) extends Error(child) {
+    override def message: String = s"The functions $parent and $child are in a hierarchical relationship, but the latter's" +
+      s" output type is not a subtype of the former's output type. Concretely, it should hold that ${child.outputType} <:" +
+      s" ${parentInstance.outputType}, but this is not the case."
   }
 
   /**
     * Verifies that the output types of the functions in the multi-function are compatible with each other. That is, a
     * child's output type must be a subtype of the parent's output type.
+    *
+    * This gets slightly more complicated with polymorphic output types. If a parent function has a polymorphic output
+    * type, we have to allocate the variables according to the "argument" types provided by the child function. An
+    * example will clear this up:
+    *
+    *     function identity(x: A): A = x
+    *     function identity(x: Int): Int = x
+    *
+    * This should compile, because since we assign A = Int for the second function, its return type also has to be a
+    * subtype of A = Int. That is the case here. Intuitively, it makes sense to specialize a function in this way: The
+    * more general function states a contract between the input and output types: "Given an input of type A, the output
+    * must also be of type A." The specializing function fulfills this contract, since it takes and returns a value of
+    * the same type.
     */
   def verifyOutputTypes(mf: MultiFunctionDefinition): Verification = {
     def verifyHierarchyNode(node: mf.hierarchy.NodeT): Verification = {
@@ -109,10 +124,12 @@ object MultiFunctionConstraints {
       val successors = node.diSuccessors.toVector
       successors.map { successor =>
         val child = successor.value
-        val errors = if (!(child.signature.outputType <= parent.signature.outputType)) {
-          Vector(IncompatibleOutputTypes(child, parent))
-        } else Vector.empty
-        Verification.fromErrors(errors).flatMap(_ => successors.map(verifyHierarchyNode).simultaneous.verification)
+        parent.instantiate(child.signature.inputType).flatMap { parentInstance =>
+          val errors = if (!(child.signature.outputType <= parentInstance.signature.outputType)) {
+            Vector(IncompatibleOutputTypes(child.signature, parent.signature, parentInstance.signature))
+          } else Vector.empty
+          Verification.fromErrors(errors).flatMap(_ => successors.map(verifyHierarchyNode).simultaneous.verification)
+        }
       }.simultaneous.verification
     }
 

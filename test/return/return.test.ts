@@ -1,7 +1,13 @@
 import { LoreTest } from '../base.ts'
 import { TupleValue } from '../../runtime/src/lore/runtime/values/tuple.ts'
 import { ObjectValue } from '../../runtime/src/lore/runtime/values/object.ts'
-import { assertStructHasValues, assertTupleEquals } from '../assertions.ts'
+import { assertListEquals, assertStructHasValues, assertTupleEquals } from '../assertions.ts'
+import { ListValue } from '../../runtime/src/lore/runtime/values/list.ts'
+
+Deno.test('return/identity', async () => {
+  const result: ListValue<any> = await LoreTest.run('return/identity')
+  assertListEquals(result, [0, 1.2, 'Hello', true])
+})
 
 Deno.test('return/parametric', async () => {
   const zombie: ObjectValue = await LoreTest.run('return/parametric')
