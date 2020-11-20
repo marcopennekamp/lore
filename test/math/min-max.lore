@@ -1,12 +1,3 @@
-function min(a: Real, b: Real): Real = if (a < b) a else b
-function min(a: Int, b: Int): Int = if (a < b) a else b
-function max(a: Real, b: Real): Real = if (a > b) a else b
-function max(a: Int, b: Int): Int = if (a > b) a else b
-
-// TODO: If we had run-time LUBs, we could define the following generic min function:
-//    function min(a: A, b: B): LUB(A, B) where A <: Real, B <: Real = if (a < b) a else b
-// The problem is essentially that we want the result type to be Int if both arguments are Int and otherwise Real.
-// A similar problem has already occurred with the appends operator for lists, so we should think about adding such
-// a LUB operator to the language.
+// The min and max functions are already declared in pyramid/math.lore.
 
 function test(): [Real] = [min(-5, 0), max(-5, 0), max(1.8, 1), max(min(2, 1.2), -1), max(min(max(0, 2), 1), min(-2, 2))]

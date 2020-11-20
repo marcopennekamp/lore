@@ -4,8 +4,13 @@ function ceil(x: Real): Int = dynamic[Int]('Lore.math.ceil', x)
 
 function remainder(a: Int, b: Int): Int = dynamic[Int]('Lore.math.remainder', a, b)
 
-// TODO: See test/math/min-max.lore on why we need two function definitions here.
 function min(x: Real, y: Real): Real = if (x < y) x else y
 function min(x: Int, y: Int): Int = if (x < y) x else y
 function max(x: Real, y: Real): Real = if (x > y) x else y
 function max(x: Int, y: Int): Int = if (x > y) x else y
+
+// TODO: If we had run-time LUBs, we could define the following generic min function:
+//    function min(a: A, b: B): LUB(A, B) where A <: Real, B <: Real = if (a < b) a else b
+// The problem is essentially that we want the result type to be Int if both arguments are Int and otherwise Real.
+// A similar problem has already occurred with the appends operator for lists, so we should think about adding such
+// a LUB operator to the language.
