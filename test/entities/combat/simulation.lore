@@ -34,6 +34,10 @@ trait SimulationResult
 struct SimulationVictory implements SimulationResult { winner: Combatant }
 struct SimulationStalemate implements SimulationResult
 
+action combatLog(message: String) {
+  println(message)
+}
+
 /**
  * Simulate the combat between two combatants using a turn-based algorithm. The left combatant has the initiative
  * and gets to take their turns first.
@@ -53,7 +57,7 @@ function simulateCombat(left: Combatant, right: Combatant): SimulationResult = {
   let rightState = CombatantState { combatant = right }
 
   while (isAlive(left) & isAlive(right)) {
-    println('Turn $turn:')
+    combatLog('Turn $turn:')
 
     // Phase 1: Closing the distance.
     if (distance > 0) {
@@ -69,12 +73,12 @@ function simulateCombat(left: Combatant, right: Combatant): SimulationResult = {
     updateCombatantPostAttack(left)
     updateCombatantPostAttack(right)
 
-    println('${name(left)} health: ${left.Stats.health}')
-    println('${name(right)} health: ${right.Stats.health}')
+    combatLog('${name(left)} health: ${left.Stats.health}')
+    combatLog('${name(right)} health: ${right.Stats.health}')
 
     turn += 1
 
-    println('')
+    combatLog('')
   }
 
   if (isAlive(left) & ~isAlive(right)) {
@@ -102,7 +106,7 @@ function isInRange(combatant: Combatant, distance: Int): Boolean = stat(combatan
 function closeDistance(combatant: Combatant, distance: Int): Int = {
   if (distance > 0 & ~isInRange(combatant, distance)) {
     let new = max(distance - stat(combatant, StatSpeed()), 0)
-    println('${name(combatant)} closes distance to $new.')
+    combatLog('${name(combatant)} closes distance to $new.')
     new
   } else distance
 }
@@ -114,7 +118,7 @@ function closeDistance(combatant: Combatant, distance: Int): Int = {
 function attemptDodge(state: CombatantState): Boolean = {
   state.dodge += stat(state.combatant, StatDodge())
   if (state.dodge >= 1.0) {
-    println('${name(state.combatant)} dodges an attack.')
+    combatLog('${name(state.combatant)} dodges an attack.')
     state.dodge -= 1.0
     true
   } else false
@@ -136,7 +140,7 @@ action attemptAttack(attackerState: CombatantState, defenderState: CombatantStat
 action hit(source: Combatant, target: Combatant, damage: Int) {
   let defense = stat(target, StatDefense())
   let damageAfterDefense = max(damage - defense, 0)
-  println('${name(source)} attacks ${name(target)} for $damageAfterDefense damage given a defense of $defense.')
+  combatLog('${name(source)} attacks ${name(target)} for $damageAfterDefense damage given a defense of $defense.')
   target.Stats.health -= damageAfterDefense
   onHit(target)
 }
@@ -156,6 +160,6 @@ action heal(target: Combatant, amount: Int) {
   let oldHealth = stats.health
   stats.health = min(stats.health + amount, stats.maximumHealth)
   if (stats.health > oldHealth) {
-    println('${name(target)} is healed by ${stats.health - oldHealth} points.')
+    combatLog('${name(target)} is healed by ${stats.health - oldHealth} points.')
   }
 }

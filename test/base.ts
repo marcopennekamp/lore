@@ -55,7 +55,7 @@ export const LoreTest = {
 
     process.close()
 
-    return JSON.parse(messages[0])
+    return JSON.parse(messages[messages.length - 1])
   },
 }
 
