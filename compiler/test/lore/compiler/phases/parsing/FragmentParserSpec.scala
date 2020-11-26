@@ -11,29 +11,6 @@ class FragmentParserSpec extends BaseSpec with ParserSpecExtensions[Vector[DeclN
 
   import TestNodes._
 
-  it should "parse action declarations correctly" in {
-    """
-    |  action attack(source: +Arms, target: +Health) {
-    |    let power = combinedPower(source.Arms)
-    |    damage(target, power)
-    |  }
-    """.stripMargin --> Vector(Decl.Function(
-      "attack",
-      Vector(
-        Decl.Parameter("source", Type.Component("Arms")),
-        Decl.Parameter("target", Type.Component("Health")),
-      ),
-      Type.Unit(),
-      Vector.empty,
-      Some(Stmt.Block(Vector(
-        Stmt.VariableDeclaration(
-          "power", false, None, Stmt.SimpleCall("combinedPower", Vector(Stmt.PropertyAccess(Stmt.Variable("source"), "Arms"))),
-        ),
-        Stmt.SimpleCall("damage", Vector(Stmt.Variable("target"), Stmt.Variable("power"))),
-      ))),
-    ))
-  }
-
   it should "assign the correct indices" in {
     "function add(a: Real, b: Real): Real = a + b".parsed.head match {
       case fn: DeclNode.FunctionNode =>
