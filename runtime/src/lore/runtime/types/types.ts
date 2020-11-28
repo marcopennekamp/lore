@@ -249,8 +249,7 @@ export function struct(schema: StructSchema, componentTypes: Array<ComponentType
   for (let i = 0; i < componentTypes.length; i += 1) {
     const componentType = componentTypes[i]
     const ownedBy = componentType.underlying.schema.ownedBy.value()
-
-    if (Subtyping.NoOwnedBy.isSubtype(type, ownedBy)) {
+    if (!Subtyping.NoOwnedBy.isSubtype(type, ownedBy)) {
       const componentTypeNames = componentTypes.map(c => c.underlying.schema.name)
       throw Error(`The struct type ${schema.name} with the components ${componentTypeNames.join(', ')} cannot own the component ${componentType.underlying.schema.name}, which has an owned-by type of ${ownedBy}.`)
     }

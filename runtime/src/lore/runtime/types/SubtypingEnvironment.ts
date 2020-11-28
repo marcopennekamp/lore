@@ -1,12 +1,12 @@
-/**
- * A subtyping environment provides a specific implementation of the isSubtype function given a configuration.
- */
 import {
   ComponentType, DeclaredType, IntersectionType, ListType, MapType, ProductType, SumType, Type, TypeVariable
 } from "./types.ts";
 import {Kind} from "./kinds.ts";
 import {areEqual} from "./equality.ts";
 
+/**
+ * A subtyping environment provides a specific implementation of the isSubtype function given a configuration.
+ */
 export class SubtypingEnvironment {
   /**
    * Whether owned-by types should be considered in subtyping. This needs to be turned off for owned-by checks to

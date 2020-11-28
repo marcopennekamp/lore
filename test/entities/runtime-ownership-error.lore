@@ -18,7 +18,7 @@ struct B implements A, L2 owned by O2 & L1 {
 
 
 // TODO: Execute the test and expect the run-time error.
-action test() = {
+action test() {
   let p1 = P()
   let p2 = P()
   let a = B(p1, p2)
