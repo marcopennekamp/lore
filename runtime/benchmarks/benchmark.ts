@@ -25,6 +25,9 @@ export function benchmark(name: string, f: () => any, times: number): void {
     bucket = f()
   }
   const after = performance.now()
-  console.log(`Benchmark '${name}' was run ${times} times, each run taking about ${toNs(before, after, times)}ns. It had the following result:`)
-  console.log(bucket)
+
+  const paddedName = name + ' '.repeat(Math.max(0, 60 - name.length))
+  const ns = `${toNs(before, after, times)}ns`
+  const paddedNs = ' '.repeat(Math.max(0, 16 - ns.length)) + ns
+  console.log(`${paddedName}... ${paddedNs} [${bucket}]`)
 }
