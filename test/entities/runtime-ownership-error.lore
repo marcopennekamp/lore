@@ -1,0 +1,27 @@
+independent trait L1
+independent trait L2
+struct P
+
+trait O1 extends L1, L2
+struct O2 implements O1 {
+  component A
+}
+struct O3 implements O1 {
+  component A
+}
+
+trait A owned by O1 & L1
+struct B implements A, L2 owned by O2 & L1 {
+  mut property1: P
+  property2: P
+}
+
+
+// TODO: Execute the test and expect the run-time error.
+action test() = {
+  let p1 = P()
+  let p2 = P()
+  let a = B(p1, p2)
+  let o2 = O2(a)
+  let o3 = O3(a)
+}
