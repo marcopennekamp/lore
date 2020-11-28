@@ -49,17 +49,34 @@ export const LoreTest = {
     const process = Deno.run({
       cmd: ['deno', 'run', 'execute.ts'],
       stdout: 'piped',
+      stderr: 'piped',
     })
 
+    let result: any = undefined
+    const errors = await stderrMessages(process)
+    // Has to be awaited here, because the piped stdout needs to be closed.
     const messages = await stdoutMessages(process)
+    if (errors.length) {
+      result = errors[0]
+    } else {
+      result = JSON.parse(messages[messages.length - 1])
+    }
 
     process.close()
 
-    return JSON.parse(messages[messages.length - 1])
+    return result
   },
 }
 
 async function stdoutMessages(process: Deno.Process): Promise<Array<string>> {
-  const output = new TextDecoder().decode(await process.output())
+  return messages(await process.output())
+}
+
+async function stderrMessages(process: Deno.Process): Promise<Array<string>> {
+  return messages(await process.stderrOutput())
+}
+
+function messages(binaryOutput: Uint8Array): Array<string> {
+  const output = new TextDecoder().decode(binaryOutput)
   return output.split('\n').map(line => line.trim()).filter(line => !!line)
 }

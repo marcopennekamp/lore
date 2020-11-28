@@ -1,0 +1,34 @@
+independent trait L1
+independent trait L2
+struct P
+
+trait O1 extends L1, L2
+struct O2 implements O1 {
+  component A
+}
+struct O3 implements O1 {
+  component A
+}
+
+trait A owned by O1 & L1
+struct B implements A, L2 owned by O2 & L1 {
+  mut property1: P
+  property2: P
+}
+
+
+/**
+ * This test is expected to fail at run-time. `a` is a B, but B can only be owned by O2. Hence, the instantiation
+ * of `O3(a)` is invalid.
+ *
+ * TODO: We could catch this error at compile-time, in this case. We should implement this check at compile-time
+ *       as well. Then, to preserve the runtime-error-ness of this test, we can just declare `a` as `a: A` and
+ *       the compiler won't be able to bicker.
+ */
+action test() {
+  let p1 = P()
+  let p2 = P()
+  let a = B(p1, p2)
+  let o2 = O2(a)
+  let o3 = O3(a)
+}
