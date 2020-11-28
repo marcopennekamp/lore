@@ -9,7 +9,7 @@ import {
   unorderedHashWithSeed,
 } from '../utils/hash.ts'
 import { allExcluding, flattenedUnique } from './util.ts'
-import { isSubtype } from './subtyping.ts'
+import { isSubtype, Subtyping } from './subtyping.ts'
 import { HashMap } from '../utils/HashMap.ts'
 import { LazyValue } from '../utils/LazyValue.ts'
 
@@ -240,7 +240,7 @@ export function struct(schema: StructSchema, componentTypes: Array<ComponentType
     componentTypes,
     isArchetype,
     // TODO: The hash of the struct type must not only depend on the name, but also on the component types. Otherwise,
-    //       structs with different component types altogether get different hashes, which is bad for dispatch cache
+    //       structs with different component types altogether get the same hashes, which is bad for dispatch cache
     //       performance.
     hash: stringHashWithSeed(schema.name, 0x38ba128e),
   }
@@ -249,7 +249,8 @@ export function struct(schema: StructSchema, componentTypes: Array<ComponentType
   for (let i = 0; i < componentTypes.length; i += 1) {
     const componentType = componentTypes[i]
     const ownedBy = componentType.underlying.schema.ownedBy.value()
-    if (!isSubtype(type, ownedBy, false)) {
+
+    if (Subtyping.NoOwnedBy.isSubtype(type, ownedBy)) {
       const componentTypeNames = componentTypes.map(c => c.underlying.schema.name)
       throw Error(`The struct type ${schema.name} with the components ${componentTypeNames.join(', ')} cannot own the component ${componentType.underlying.schema.name}, which has an owned-by type of ${ownedBy}.`)
     }
