@@ -1,0 +1,245 @@
+// This document presents the goals of an entity component system, shows the current implementation with the entity
+// system, and considers alternative approaches.
+
+
+
+// Goal 1: Defining functionality over partial structure.
+
+// Current implementation:
+
+struct Position {
+  mut x: Real
+  mut y: Real
+}
+
+struct Player {
+  component Position
+}
+
+action move(entity: +Position, x: Real, y: Real) {
+  entity.Position.x += x
+  entity.Position.y += y
+}
+
+action test() {
+  let player = Player(Position(0, 0))
+  move(player, 5, 0)
+}
+
+
+// The idea with the following alternative is to get rid of the complexities of implicitly naming components. The
+// biggest problem with a component being named by its type is that an entity must always only contain components
+// in such a way that referring to a component A with any type B <: A or B >: A is not ambiguous. This not only leads
+// to a more complex compiler implementation, but also to complexities that seep through to the user. For example,
+// there is a need for independent traits because some types are not meant to be part of the component hierarchy.
+// Independent traits require a programmer to anticipate that a given trait will not be used as a component name.
+// Because traits have to be declared independent at their point of declaration, this might lead library developers
+// to declare traits as independent defensively. A user of a library might want to use a trait as a component, but
+// won't be able to if the trait is independent.
+// Implicitly named components are also more difficult to access, because various names may be used to refer to
+// various components. The semantics of this at run-time require a scan of the type hierarchy and benefit from
+// caching, both of which come with additional overhead for the simple operation of accessing a component. The
+// run-time semantics must be compatible with the compile-time restrictions; the potential for bugs here is large,
+// as subtyping is already quite complex and there are many different sorts of component hierarchy shapes.
+// A final consideration: Components as a language feature are quite complex, while they seem to be limited
+// in their application. This alternative is developed using more generally applicable language features, which
+// are useful beyond the scope of entity-component systems. This should ultimately result in more expressiveness
+// for Lore.
+
+// First we'd introduce partial structural typing. So one could write a type such as this:
+
+{ position: Position }
+
+// Any struct that contains a member position: P with P <: Position (trivial in this case since Position is a struct,
+// but more generally the structural member type could be anything) is a subtype of the type defined above.
+// Then we can define the following type, given that + becomes a part of type namespaces.
+
+type +Position = { position: Position }
+
+// And now we can implement the example:
+
+// Struct Position remains unchanged.
+
+// The implements is technically redundant, but good form to avoid silent errors when the field name in +Position or
+// the struct is changed carelessly.
+struct Player implements +Position {
+  position: Position
+}
+
+action move(entity: +Position, x: Real, y: Real) {
+  entity.position.x += x
+  entity.position.y += y
+}
+
+// Action test remains unchanged.
+
+
+
+// Goal 2: Specialization of functionality via more specific components (inheritance) or multiple components (intersection).
+//         Multiple dispatch on actual component types.
+
+// Current implementation:
+
+struct Stats { ... }
+
+trait Weapon
+trait RangedWeapon extends Weapon
+struct Sword implements Weapon
+struct Bow implements RangedWeapon
+
+function weaponStrength(weapon: Weapon): Int
+function weaponStrength(sword: Sword): Int = 7
+function weaponStrength(bow: Bow): Int = 4
+
+function weaponRange(weapon: RangedWeapon): Int
+function weaponRange(bow: Bow): Int = 10
+
+
+function baseStat(entity: +Stats & +Weapon, label: StatAttack): Int = weaponStrength(entity.Weapon)
+
+function baseStat(entity: +Stats & +Weapon, label: StatRange): Int = 0
+function baseStat(entity: +Stats & +RangedWeapon, label: StatRange): Int = weaponRange(entity.RangedWeapon)
+
+
+// Alternative. Multiple dispatch on actual "component" types is still possible, because structural types allow
+// subtyping. So an instance hero of a struct Hero { stats: Stats, weapon: Weapon } with weapon = Bow() would
+// be a subtype of +Weapon, but also a subtype of +RangedWeapon. Multiple dispatch then intuitively finds the
+// correct implementation.
+
+type +Stats = { stats: Stats }
+
+type +Weapon = { weapon: Weapon }
+type +RangedWeapon = { weapon: RangedWeapon }
+
+function baseStat(entity: +Stats & +Weapon, label: StatAttack): Int = weaponStrength(entity.weapon)
+
+function baseStat(entity: +Stats & +Weapon, label: StatRange): Int = 0
+function baseStat(entity: +Stats & +RangedWeapon, label: StatRange): Int = weaponRange(entity.weapon)
+
+// Having to redeclare a structural type for each possible "component type" gets quite tedious. A solution could
+// be implemented with macros:
+
+component weapon is Weapon, RangedWeapon
+
+// This would be compiled to:
+
+type +Weapon = { weapon: Weapon }
+type +RangedWeapon = { weapon: RangedWeapon }
+
+// If Weapon and RangedWeapon are declared in a library, but a user wants to add a new weapon type, they could
+// just use the component macro again:
+
+component weapon is CheatWeapon
+
+// TODO: Any better ideas for this? In particular, the two "component" declarations have no inherent link, so if
+//       the "weapon" of the first declaration is renamed, the "weapon" of the second might not be.
+
+
+
+// Goal 3: Declare structs to contain components.
+
+// Current implementation:
+
+struct Player {
+  component Position
+}
+
+
+// Alternative.
+
+struct Player implements +Position {
+  position: Position
+}
+
+// We've already seen this above, of course. The point is that the "old" syntax is much simpler and we'd crave for
+// a similar, easy style with the new syntax. So here is an approach using "mix":
+
+// "mix" adds all the members declared in the given type as members of the struct. Must be a structural type.
+struct Player {
+  mix +Position
+}
+
+// Advantages:
+//    1. We not only solve the problem of concisely specifying a "component", but could also use this same syntax to
+//       "mix in" members required by traits.
+//    2. We don't have to allow "implements" to take any types but traits. Given the code above, we'd have to allow
+//       "implements +Position", because otherwise we lose the constraint that ensures that all necessary members
+//       are part of the structure for it to be a subtype of +Position. But if we mix these members right in, the
+//       entity type and the struct will always be congruent.
+
+
+// Disadvantages:
+//    1. What if the structural type is created by an intersection, which is commutative? Which member would be
+//       declared first?
+//    2. What if the structural type is in an intersection with a trait type? For example, when we simulate
+//       "ownership", we'd have a type such as +A = { b: B } & T. Why would this be a form we could use with
+//       mix?
+
+
+
+
+
+
+// Goal 4: Allow components to declare sibling components: If a declared type A is a component of an entity,
+//         its "sibling" B is also a component of the entity. Also, allow restricting component ownership to
+//         specific traits or even structs.
+
+// Current implementation:
+
+trait StatusEffect
+
+function isActive(effect: StatusEffect): Boolean = true
+
+struct DurationLimit owned by StatusEffect {
+  mut duration: Int
+}
+
+action onUpdate(effect: +DurationLimit) {
+  if (isActive(effect)) {
+    effect.DurationLimit.duration -= 1
+  }
+}
+
+struct Infusion implements StatusEffect {
+  component DurationLimit
+}
+
+
+// Alternative. It should be noted that the restrictive qualities of ownership get lost here. However, it is still
+// possible to treat a +DurationLimit as a StatusEffect, which is the main point of ownership. Since with the new
+// approach it is impossible to limit DurationLimit as a "component" to StatusEffect, we won't pursue that avenue.
+// You could simply declare a type +DurationLimit2 = { limit: DurationLimit } without any StatusEffect type.
+// Of course, we could keep the owned by declaration as part of structs, but then where do we draw the line with
+// checking? Can such a struct be part of (owned by?) a list? Or would it only apply to struct members? Needless to
+// say, this would result in an overly complex and probably underused language feature. (Which is exactly what we
+// are trying to get rid of with this alternative in the first place.)
+
+struct DurationLimit {
+  mut duration: Int
+}
+
+type +DurationLimit = { limit: DurationLimit } & StatusEffect
+
+action onUpdate(effect: +DurationLimit) {
+  if (isActive(effect)) {
+    effect.limit.duration -= 1
+  }
+}
+
+struct Infusion implements +DurationLimit {
+  limit: DurationLimit
+}
+
+// With the given example, it's of course questionable whether the StatusEffect should be implicit. So this might
+// be better:
+
+type +DurationLimit = { limit: DurationLimit }
+
+action onUpdate(effect: StatusEffect & +DurationLimit) {
+  if (isActive(effect)) {
+    effect.limit.duration -= 1
+  }
+}
+
+
+

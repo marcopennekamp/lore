@@ -10,7 +10,7 @@
 
 ### Structs
 
-A **struct** describes the type and representation of user-defined data. In concrete terms, a struct is a set of **properties** (mutable and immutable) and possibly **components**, both allowing optional default values. A struct can **implement** any number of traits, which together determine the functions that the struct must implement and the components that the struct must contain. An instance of a struct, also called an object, can be **constructed** using one of two provided syntaxes. As structs describe actual instances, a struct type is **always concrete and never abstract**.
+A **struct** describes the type and representation of user-defined data. In concrete terms, a struct is a set of **properties** (immutable and, if you must, mutable) and possibly **components**, both allowing optional default values. A struct can **implement** any number of traits, which together determine the functions that the struct must implement and the components that the struct must contain. An instance of a struct, also called an object (**TODO:** Maybe move away from the OOP connotation?), can be **constructed** using one of two provided syntaxes. As structs describe actual instances, a struct type is **always concrete and never abstract**.
 
 Structs do not support **inheritance** in and of themselves. Traits are the mechanism to facilitate inheritance, which has the huge advantage of cleanly separating the concerns of data representation (structs) and abstract structure/behavior (traits).
 
