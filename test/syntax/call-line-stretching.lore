@@ -1,0 +1,9 @@
+// Argument whitespace has to be handled manually so that the beginning of function call parentheses doesn't stretch
+// to the next line.
+
+// If not parsed correctly, Lore would try to compile a multi-function call x().
+function test(): () = {
+  let x = 5
+  let y = x
+  ()
+}
