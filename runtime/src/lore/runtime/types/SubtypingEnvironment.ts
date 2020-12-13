@@ -60,7 +60,6 @@ export class SubtypingEnvironment {
           // Fortunately, we only have to do that if the right-hand type t2 is not an archetype and only if the type
           // is an entity, of course. Otherwise, checking the schema will suffice.
           if (d1.schema === d2.schema) {
-            console.log('Schemas match!')
             // We could "optimize" this check by requiring d2 to be a struct, but equal traits are already caught
             // by the reference equality check above. Also, d1 will almost never be a trait, so if the schemas are
             // equal, we can already be almost 100% certain that we are dealing with structs.
