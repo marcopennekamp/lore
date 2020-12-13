@@ -1,4 +1,5 @@
-import { parse } from 'https://deno.land/std/flags/mod.ts';
+import { parse } from 'https://deno.land/std/flags/mod.ts'
+import { unit } from './src/lore/runtime/types/types.ts'
 import { test } from '../lore-program.js'
 import { benchmark } from './benchmarks/benchmark.ts'
 
@@ -9,5 +10,9 @@ import { benchmark } from './benchmarks/benchmark.ts'
 
 const args = parse(Deno.args)
 const repetitions = args.n ?? 1
+const depth = args.depth ?? 5
 
-benchmark('test', test, repetitions)
+const result = benchmark('test', test, repetitions)
+if (result?.lore$type && result.lore$type !== unit) {
+  console.log(Deno.inspect(result, { depth }))
+}

@@ -18,7 +18,7 @@ export function withSilentLogging(f: () => any): void {
 }
 
 let bucket: any = undefined
-export function benchmark(name: string, f: () => any, times: number): void {
+export function benchmark(name: string, f: () => any, times: number): any {
   withSilentLogging(f)
   const before = performance.now()
   for (let i = 0; i < times; i += 1) {
@@ -30,4 +30,5 @@ export function benchmark(name: string, f: () => any, times: number): void {
   const ns = `${toNs(before, after, times)}ns`
   const paddedNs = ' '.repeat(Math.max(0, 16 - ns.length)) + ns
   console.log(`${paddedName}... ${paddedNs} [${bucket}]`)
+  return bucket
 }
