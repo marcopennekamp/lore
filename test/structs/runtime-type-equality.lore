@@ -1,0 +1,36 @@
+// This example demonstrates that struct types bearing the same name may not always be equal or subtypes of each
+// other at run-time. This has implications on the use of type parameters, where the run-time type matters most.
+// A Lore programmer should be aware of these "quirks".
+// Note that this behavior is not by design. We have to achieve consistent type equality and subtyping at run-time.
+// These operations are defined without any regards to the "outside world" and shouldn't be changed because some
+// other part of the system would benefit from a rule change.
+
+trait Material
+struct Leather implements Material
+struct Cloth implements Material
+
+struct Bag {
+  component Material
+}
+
+function equalTypes(a1: A, a2: B): Boolean where A, B = false
+function equalTypes(a1: A, a2: A): Boolean where A = true
+
+function subtype(a: A, b: B): Boolean where A, B = false
+function subtype(a: A, b: B): Boolean where A, B <: A = true
+
+function test(): [Boolean] = {
+  let leatherBag = Bag(Leather())
+  let clothBag = Bag(Cloth())
+
+  [
+    equalTypes(leatherBag, leatherBag),   // --> true
+    equalTypes(clothBag, clothBag),       // --> true
+    equalTypes(leatherBag, clothBag),     // --> false
+    equalTypes(clothBag, leatherBag),     // --> false
+    subtype(leatherBag, leatherBag),      // --> true
+    subtype(clothBag, clothBag),          // --> true
+    subtype(leatherBag, clothBag),        // --> false
+    subtype(clothBag, leatherBag)         // --> false
+  ]
+}
