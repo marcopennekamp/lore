@@ -30,7 +30,7 @@ export function assertIsList(actual: ListValue<any>) {
   assertEquals(actual.lore$type.kind, Kind.List)
 }
 
-export function assertListEquals(actual: ListValue<any>, expected: Array<any>) {
+export function assertListEquals<A>(actual: ListValue<A>, expected: Array<A>) {
   assertIsList(actual)
   assertEquals(actual.array, expected)
 }

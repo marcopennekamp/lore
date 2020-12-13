@@ -8,6 +8,6 @@ Deno.test('shapes/area', async () => {
 })
 
 Deno.test('shapes/comparisons', async () => {
-  const result: ListValue<number> = await LoreTest.run('shapes/comparisons', 'shapes/shapes')
+  const result: ListValue<string> = await LoreTest.run('shapes/comparisons', 'shapes/shapes')
   assertListEquals(result, ['rect <= box', 'box <= rect', 'rect < circle', 'rect <= circle', 'box < circle', 'box <= circle'])
 })

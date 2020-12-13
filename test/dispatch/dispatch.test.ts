@@ -3,7 +3,7 @@ import { LoreTest } from '../base.ts'
 import { assertListEquals } from '../assertions.ts'
 
 Deno.test('dispatch/abstract-partial-specialization', async () => {
-  const result: ListValue<number> = await LoreTest.run('dispatch/abstract-partial-specialization')
+  const result: ListValue<string> = await LoreTest.run('dispatch/abstract-partial-specialization')
   assertListEquals(result, ['A1,B', 'A1,B', 'A2,B', 'A2,B'])
 })
 
@@ -13,7 +13,7 @@ Deno.test('dispatch/abstract-sum', async () => {
 })
 
 Deno.test('dispatch/abstract-sum-intersection', async () => {
-  const result: ListValue<number> = await LoreTest.run('dispatch/abstract-sum-intersection')
+  const result: ListValue<string> = await LoreTest.run('dispatch/abstract-sum-intersection')
   assertListEquals(result, ['(A|B)&T', '(A|B)&T', 'C&T'])
 })
 
@@ -29,7 +29,7 @@ Deno.test('dispatch/hello-name', async () => {
 })
 
 Deno.test('dispatch/intersection', async () => {
-  const result: ListValue<number> = await LoreTest.run('dispatch/intersection')
+  const result: ListValue<string> = await LoreTest.run('dispatch/intersection')
   assertListEquals(result, ['X&W,Y&L2', 'X,Y', 'Y,Z&L1', 'Z,W&L1', 'Y&L,X&Y', 'Y&L1,X&Y', 'Y&W&L1,X&Y', 'Z,W&L1', 'T1,T2'])
 })
 
