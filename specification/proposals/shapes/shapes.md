@@ -49,6 +49,8 @@ Shape types are *structural types*. A struct or shape type A is a **subtype** of
 
 Any **mutable** properties of a *struct* are erased from subtyping considerations. Given a shape `{ x: X }`, a struct with a single property `mut x: X` will **not** be able to subtype the shape, since `x` is mutable and thus not taken into consideration during subtyping.
 
+**TODO:** We might want to rethink the mutability restriction. Mutable properties would *only* need to require type mutation if the property in question is also open. Otherwise, the type need not change on reassignment since the run-time type of the property is of no concern.
+
 ###### Example
 
 ```
@@ -125,8 +127,45 @@ action test() {
 
 
 
-### Example: Component-based Programming
+### Component-based Programming
 
-...
+One way to build programs with a healthy level of abstraction is **component-based programming**. The idea is that data consists of multiple components which can each provide already implemented functionality. For example, an *entity* called `Hero` may have a component `Position` and a component `Shape`. There may be functions such as `move` to manipulate position and a function `render` that requires both a `Position` and a `Shape` to work.
 
+We can support such **entity-component systems** natively (and especially with type safety) in Lore using structural typing. The following code implements the constellation of Hero, Position and Shape:
+
+```
+struct Position { mut x: Real, mut y: Real, mut z: Real }
+type +Position = { position: Position }
+
+action move(entity: +Position, distance: Real, direction: Vector3) {
+  // calculate new x, y and z coordinates...
+  entity.position.x = x
+  entity.position.y = y
+  entity.position.z = z
+}
+
+struct Shape { width: Real, height: Real, depth: Real, model: Model }
+type +Shape = { shape: Shape }
+
+action render(entity: +Position & +Shape) {
+  // use entity.position and entity.shape to render the entity...
+}
+
+// The `implements` is not strictly necessary, but provides additional compile-time safety should either
+// +Position/+Shape or the corresponding properties change unexpectedly.
+struct Hero implements +Position, +Shape {
+  position: Position  // Note that position does not need to be open since structs can't have subtypes.
+  shape: Shape
+}
+```
+
+The remarkable benefit of this approach: any struct or shape that contains a property `position: Position` and `shape: Shape` can be used as an entity for the  `move` and `render` functions. We can conceive any number of additional entities that can just as much use these already existing functions. This enables **generic programming over partial structures**, i.e. entities and components.
+
+**Specialization** is another great aspect of this programming model. Imagine we want to implement an additional `render` function for those entities that not only have `Position` and `Shape`, but also `Color`. We can simply write a second function:
+
+```
+action render(entity: +Position & +Shape & +Color) {
+  // use position, shape AND color to render the entity...
+}
+```
 
