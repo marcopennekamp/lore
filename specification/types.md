@@ -90,6 +90,8 @@ Any value that is *both* a `Fish` *and* a `Mammal` is typed by `Fish & Mammal`.
 
 ### Product Types
 
+**TODO:** Rename to Tuple Types.
+
 A **product type** describes tuples. A type at any position is called an element of the product type.
 
 ###### Syntax Example
@@ -132,6 +134,8 @@ String -> (Fish & Mammal)
 
 
 ### Component Types
+
+**TODO:** Replace with Shape Types.
 
 A **component type** describes an arbitrary entity that has a specific component, denoted `+C` where `C` is the name of a struct or trait. The component type reasons only about having that one specific component; all other components and types belonging to the actual entity are unknown to the component type. Component types are covariant.
 

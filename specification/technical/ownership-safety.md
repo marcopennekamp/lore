@@ -1,5 +1,7 @@
 # Ownership Safety
 
+**TODO:** This can be thrown out now that we have shapes instead of components.
+
 **Specializing ownership** is not fully type-safe at compile-time. For example, consider this piece of code:
 
 ```

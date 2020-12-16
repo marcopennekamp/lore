@@ -1,6 +1,6 @@
 # Multi-Functions
 
-**Multi-functions** are *the* core feature of Lore. From inheritance to behavioral abstraction to extendability and specialization of subtypes, implementation of functionality for components, dynamic specialization and generalization, everything hinges on the concept of multiple dispatch.
+**Multi-functions** are *the* core feature of Lore. From inheritance to behavioral abstraction to extendability and specialization of subtypes, implementation of functionality for shapes, dynamic specialization and generalization, everything hinges on the concept of multiple dispatch.
 
 A **multi-function** is a set of functions bearing the same name, embedded in a specificity hierarchy. When a multi-function is called, the actual function to be executed is decided at run-time based on the argument types passed during the call. In contrast to single dispatch, where such run-time function calls are decided over one argument (often the `this` value in object-oriented languages), **multiple dispatch** generalizes this notion to any number of arguments.
 
