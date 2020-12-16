@@ -2,6 +2,21 @@
 
 #### Features
 
+- Remove entity/component features.
+  - Component types
+  - Component declarations
+  - Entity property and constraints
+  - Owned by property and constraints
+- Implement alternative map syntax. (`#['hello' -> 1, 'world' -> 2]`)
+- Add shape features.
+  - Shape types
+  - Subtyping
+    - compiler
+    - runtime
+  - Open properties
+    - struct property declarations
+    - run-time type instantiation
+  - Shape values
 - Finish transformation and transpilation of the current MVL constructs. (WHICH ONES ARE THESE?)
   - Ranges still need to be supported, as they are already part of the specification.
 - Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.
@@ -18,6 +33,7 @@
 
 - Support compiling files using a pattern instead of just plain filenames.
 - Support an output file other than `lore-program.js`.
+- Maybe require file extensions after all. It feels weird to type "abc" into the CLI and it becomes "abc.lore".
 
 
 #### Testing
