@@ -339,7 +339,7 @@ Of course, the question is always whether one should introduce a **label type** 
 
 ##### General use with intersection types
 
-**TODO:** Use with component types / entities. Use with label types.
+**TODO:** Use with structural types and component-based programming. Use with label types.
 
 ##### Extension Methods
 

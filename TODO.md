@@ -4,9 +4,11 @@
 
 - Remove entity/component features.
   - Component types
+    - Runtime
   - Component declarations
   - Entity property and constraints
   - Owned by property and constraints
+    - Run-time property and check
 - Implement alternative map syntax. (`#['hello' -> 1, 'world' -> 2]`)
 - Add shape features.
   - Shape types
@@ -54,6 +56,7 @@
 
 #### Specification
 
+- Add global constants to the specification.
 - Clear TODOs in documents: expressions, minimum-viable-language, multi-functions, types.
 - Possibly throw away the technical/compiler document, as it is probably massively outdated. Maybe write a shorter summary of the compiler architecture.
 - Decide what will happen with the technical/multi-functions document.

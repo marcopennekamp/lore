@@ -26,33 +26,37 @@ Top-level expressions are currently **variable declarations**, **assignments**, 
 
 
 
-### Variable Declarations, Assignments, and Expressions
+### Variable Declarations and Expressions
 
-A **variable declaration** lets you define a new variable, while an **assignment** lets you assign a value to a variable or property. Both are **top-level expressions**. A **variable expression** is simply an expression that evaluates to the value of its mentioned variable.
+A **variable declaration** is a top-level expression that lets you define a new variable. The type of the variable will be inferred from the assignment, but you can specify the type manually. Values need to be explicitly assigned to declared variables, even if they are desired to be `0`, `''`, `[]`, etc. We believe in the value of explicitness.
 
-Here is the **syntax** of declarations, assignments, and variable expressions:
+Variables can be **immutable or mutable**. Only mutable variables can be changed after their initial declaration. We recommend to declare all variables as immutable unless mutability is specifically needed. This is also one reason why the mutability syntax is relatively verbose.
+
+A **variable expression** is an expression that evaluates to the value of its named variable.
+
+###### Syntax Example
 
 ```
 let x: T = v1      // immutable variable declaration
 let mut x: T = v1  // mutable variable declaration
-x = v2             // variable assignment (only valid if x is mutable)
-x				   // evaluates to v2
+x				   // variable expression
 ```
 
-A **declaration** creates a new variable. The type of the variable will be inferred from the assignment, but you can specify the type manually. Values need to be manually assigned to declared variables, even if they are desired to be `0`, `''`, `[]`, etc. We believe in being explicit, especially since most variables should be constants anyway.
 
-Variables can be **mutable or immutable**. Only mutable variables can be assigned to after setting their value with the initial declaration. We recommend to declare all variables as immutable unless mutability is specifically needed. This is also the reason why the mutability syntax is relatively verbose.
 
-An **assignment** overwrites the value of a variable or property with some new value. The value on the right side must be compatible with the type of the variable or property. The name on the left side may be a variable or a property:
+### Assignments
+
+An **assignment** lets you assign a new value to a mutable variable or property. The type of the right-side value must be compatible with the type of the variable or property. Assignment is a **top-level expression** that evaluates to unit.
+
+###### Syntax Example
 
 ```
-let mut x = 0.0
-x = 5                        // Variable assignment
-character.name = 'Weislaus'  // Property assignment
-character.Position.x = x     // Deep property assignment
+x = 5                        // variable assignment, only valid if x is mutable
+character.name = 'Weislaus'  // property assignment, name must be mutable
+character.Position.x = x     // deep property assignment, only x must be mutable
 ```
 
-Both declarations and assignments are technically expressions and they return the **unit type**. This result is of course mostly useless.
+##### Shorthands
 
 Lore offers the following **assignment shorthands:**
 
@@ -67,7 +71,7 @@ a /= b  // a = a / b
 
 ### Return
 
-The **return** top-level expression returns a value from a function. The syntax is `return expr`, with `expr` evaluating to the value to return. Use return only if you 'desperately' need to return early from a function. Prefer *using blocks and control structures as expressions*. Return evaluates to the `Nothing` type, since it interrupts code execution.
+The **return** top-level expression returns a value from a function. The syntax is `return expr`, with `expr` evaluating to the returned value. Use return only if you 'desperately' need to return early from a function. Prefer using blocks and control structures as expressions. Return evaluates to the `Nothing` type, since it interrupts code execution.
 
 ###### Syntax Example
 
@@ -83,7 +87,7 @@ function foo(x: Int): String = {
 
 ##### Nesting Returns
 
-Returns **cannot be nested** in top-level expressions that are not at the top-level of a function. For example, the following code is illegal:
+Returns cannot be nested in top-level expressions that are not at the **top-level of a function**. For example, the following code is illegal:
 
 ```
 function foo(): String = {
@@ -97,7 +101,7 @@ Lore's semantics would not be well defined if we allowed such constellations.
 
 ### Blocks
 
-A **block** is a sequence of expressions, the last of which becomes the value of the block. *Blocks are expressions*. You can write code like this:
+A **block** is a sequence of expressions, the last of which is what the block evaluates to. *Blocks are expressions*. You can write code like this:
 
 ```
 let result = {
@@ -127,14 +131,14 @@ Internally, integers are represented as reals, but with additional **guarantees 
   - Since there are no precision issues, there is no need to require manual casting of integers to reals.
 - If we dynamically **dispatch** on the `Real` type, the actual type at runtime is determined using `isInteger`. If true, we dispatch with the value having `Int` as its type, and otherwise having `Real` as its type.
 
-For now, we want to keep literal grammar to a minimum. Hence, we do not support scientific notation and only support base 10. Here are the **valid number formats:**
+For now, we want to keep literal grammar to a minimum. Hence, we do not support scientific notation and only support decimal numbers. Here are the **valid number formats:**
 
 - **Integers:** `x` or `-x`, x being any number from 0 to MAX_SAFE_INTEGER.
 - **Reals:** `x.y` or `-x.y`, with both x and y being numbers. We do not allow notations such as `.0` or `1.`.
 
 ##### Arithmetic Operators
 
-The following **arithmetic operators** can be used on numbers. Note that the remainder operator will be implemented as a function.
+The following **arithmetic operators** can be used on numbers. Note that the remainder operator is implemented as a function.
 
 ```
 a + b  // Addition
@@ -144,7 +148,7 @@ a / b  // Division
 -a     // Negation
 ```
 
-Arithmetic operations have the following **conversion rules** for types:
+Arithmetic operations have the following **typing rules:**
 
 - If both arguments are real or integer, the result is also **of the same type**.
 - If one of the arguments is real, the result will also **be real**.
@@ -162,6 +166,8 @@ Numbers are equal and ordered in accordance with the rules of sanity. Integers a
 Lore supports **booleans**. Their type is `Boolean`. They are implemented using the standard Javascript boolean type. There are two boolean **values:** `true` and `false`. 
 
 ##### Logical Operators
+
+**TODO:** Use a more familiar syntax.
 
 The following **logical operators** can be used on booleans. All arguments have to be `Boolean` values.
 
@@ -181,7 +187,7 @@ True is equal to true, false is equal to false. Booleans are unordered.
 
 ### Strings
 
-Lore supports UTF-8 **strings**. Their type is `String`. We will implement strings using the standard Javascript string type. Javascript's string functions will *not* be available by default; instead, Lore will define its own functions.
+Lore supports UTF-8 **strings**. Their type is `String`. Strings are implemented using the standard Javascript string type. Javascript's string functions will *not* be available by default; instead, Lore will define its own functions.
 
 Conceptually, a string is *not* a list of characters. **A string is just a string.** If you access a single character at a specific index either with iteration or the `character` function, you will get another string. We believe this is a more unified framework than adding a type just for characters.
 
@@ -243,7 +249,7 @@ You can **construct** a list by putting comma-separated elements inside square b
 
 ##### Equality and Order
 
-Two lists are equal if they have the same lengths and each of their elements, considered in order, are equal. Lists are not ordered by default.
+Two lists are equal if they have the same lengths and each of their elements, considered in order, are equal. Lists are unordered by default.
 
 
 
@@ -251,7 +257,7 @@ Two lists are equal if they have the same lengths and each of their elements, co
 
 Lore supports **maps** as first-class constructs. A map is a homogenous, indexed collection of key/value pairs. Maps are *immutable*. Map types are denoted `A -> B`. We will eventually differentiate between immutable and mutable maps.
 
-You can **construct** a map with the following syntax: `%{ k1 -> v1, k2 -> v2, k3 -> v3 }`. The empty map is denoted `%{ }`.
+You can **construct** a map with the following syntax: `#[k1 -> v1, k2 -> v2, k3 -> v3]`. The empty map is denoted `#[]`.
 
 **TODO:** Appending to a map?
 
@@ -260,19 +266,36 @@ You can **construct** a map with the following syntax: `%{ k1 -> v1, k2 -> v2, k
 We can define a map from strings to integers:
 
 ```
-let points = %{ 'Ameela' -> 120, 'Bart' -> 14, 'Morrigan' -> 50 }
+let points = #['Ameela' -> 120, 'Bart' -> 14, 'Morrigan' -> 50]
 // points: String -> Int
 ```
 
 ##### Equality and Order
 
-Two maps are equal if for each key/value pair in the first map, there is a key/value pair in the second map, and vice versa. Maps don't define an order by default.
+Two maps are equal if for each key/value pair in the first map, there is a key/value pair in the second map, and vice versa. Maps are unordered by default.
 
 
 
-### Objects
+### Shapes
 
-Lore supports **object construction**, i.e. the instantiation of an object given a struct constructor and the required arguments. There are two possible syntax flavors:
+**Shapes** are first-class values. Refer to [structs, traits, and shapes]() for more information.
+
+###### Example
+
+```
+let barkOptions = %{ showTeeth: true, volume: 80 }
+// barkOptions: { showTeeth: Boolean, volume: Int }
+```
+
+##### Equality and Order
+
+Two shapes are equal if their properties are equal. Shapes are unordered by default.
+
+
+
+### Structs
+
+Lore supports **struct instantiation**. There are two possible syntax flavors:
 
 ```
 // Assuming another value b: B
@@ -283,15 +306,13 @@ let a = A { b }     // Map syntax with shorthand
 
 ##### Equality and Order
 
-Object equality is defined as **referential equality** by default.
+Struct equality is defined as **referential equality** by default. (**TODO:** Really? Not very useful. Structs should have some default notion of equality.)
 
 
 
 ### Member Access
 
-You can access the **member** of an object with the `.` notation. The type of the expression is the type of the member. The syntax is simply: `object.member`.
-
-Although the dot notation will eventually be overloaded for multi-function invocation, **property access takes precedence**. In such a case, you can always invoke the multi-function without using the dot-notation.
+You can access a **member** of a value with the `.` notation. The type of the expression is the type of the member. The syntax is simply: `value.member`.
 
 
 
@@ -313,6 +334,7 @@ To **define equality** for a given type, you can specialize the function `isEqua
 ```
 function isEqual(c1: Car, c2: Car): Boolean = ...
 function isEqual(c1: SportsCar, c2: CheapCar): Boolean = false
+function isEqual(c1: CheapCar, c2: SportsCar): Boolean = false // Don't forget to be symmetric!
 ```
 
 To **define order** for a given type, specialize the function `isLessThan(a, b)`. The *greater than* operator is strictly defined as `~(a < b) & a =/= b`.
@@ -355,7 +377,7 @@ The **syntax** of a dynamic function call is as follows:
 dynamic[ResultType]('f', a1, a2, ...)
 ```
 
-For now, the Lore compiler will **trust** the programmer that, when named, such a function is actually available, takes the given arguments, and returns a value that conforms to the required type bounds. The name of the function doesn't have to be a simple name, but may be valid Javascript, such as accessing a namespace: `'Lore.list.push'`. However, the name is required to be a string literal (that doesn't include interpolation).
+The first argument is the name of the function to call. For now, the Lore compiler will **trust** the programmer that, when named, such a function is actually available, takes the given arguments, and returns a value that conforms to the required type bounds. The name of the function doesn't have to be a simple name, but may be valid Javascript, such as accessing a namespace: `'Lore.list.push'`. However, the name is required to be a string literal (that doesn't include interpolation).
 
 In the long term, we want to be able to use, for example, TypeScript declaration files to provide more **type safety** when interfacing with Javascript or TypeScript code. Also note that, as of now, special Lore objects are passed to a native function, which are Javascript values additionally wrapped in an object to provide type information at run-time. Only primitives such as numbers and strings are unwrapped. A dynamic function will have to deal with these idiosyncrasies until we have come up with a native unwrapping solution.
 
@@ -397,12 +419,12 @@ for (e1 <- col1, e2 <- col2, ...) statement
 
 In the syntax above, `col2` is fully iterated for each `e1` and so on, so supplying multiple extractors effectively turns the comprehension into **nested iteration**.
 
-For now, we only define iteration for **elements in lists and maps**. Ultimately, we want any type defining a monadic `flatMap` to be iterable using a for comprehension.
+For now, we only define iteration for **lists and maps**. Ultimately, we want any type defining a monadic `flatMap` to be iterable using a for comprehension. (Or, alternatively, any type implementing an enumerable-like interface.)
 
 As we don't support pattern matching yet, **map iteration** looks like this:
 
 ```
-for (kv <- m) {
+for (kv <- m) {  // kv is a tuple
   let key = first(kv)
   let value = second(kv)
 }
@@ -415,8 +437,6 @@ for (i <- range(0, 10)) { // 0 inclusive, 10 exclusive
   println(i)
 }
 ```
-
-Internally, we can of course replace the range construction with a standard index-increment for-loop. Using a range is certainly more concise and clearer than writing `for (let i = 0; i < 10; i += 1)`.
 
 ##### Loop Expressions
 

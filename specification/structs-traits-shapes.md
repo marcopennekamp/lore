@@ -1,4 +1,4 @@
-# Structs, Traits, and Entities
+# Structs, Traits, and Shapes
 
 **Structs, traits and shapes** are the abstractions with which complex data types can be built in Lore. These three concepts can be roughly differentiated as such:
 
@@ -247,18 +247,6 @@ function bark(options: Options): String = { ... }
 action test() {
   bark(%{ showTeeth: true, volume: 80 })
 }
-```
-
-###### Leads to Alternative Map Syntax
-
-**TODO:** Work this syntax into the specification.
-
-```
-// Type:
-String -> Int
-
-// Value:
-#['hello' -> 1, 'world' -> 2]
 ```
 
 ##### Type Semantics
@@ -523,5 +511,5 @@ action render(entity: +Position & +Shape & +Color) {
 
   The constructor takes the underlying values as arguments and doesn't require any envelope boilerplate.
   
-- **Attaching properties at run-time:** Adding properties to arbitrary structs and shapes could be very powerful combined with structural dispatch. (Especially to dynamically add components to an entity.)
+- **Attaching properties at run-time:** Adding properties to arbitrary structs and shapes could be very powerful combined with structural dispatch. (Especially to dynamically add components to a struct.)
 
