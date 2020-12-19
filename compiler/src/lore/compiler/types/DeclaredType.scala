@@ -11,8 +11,10 @@ trait DeclaredType extends NamedType {
   def name: String
 
   /**
-    * The direct supertypes of the declared type. Only traits and component types are currently allowed by the grammar
-    * to be supertypes of a declared type.
+    * The direct supertypes of the declared type. Only trait types are currently allowed by the grammar to be supertypes
+    * of a declared type.
+    *
+    * TODO (shape): Shape types will be added soon, so don't rip out this abstraction.
     */
   def supertypes: Vector[Type]
 
@@ -25,10 +27,10 @@ trait DeclaredType extends NamedType {
     */
   lazy val declaredSupertypes: Vector[DeclaredType] = supertypes.filterType[DeclaredType]
 
-  /**
-    * All direct component supertypes of the declared type.
-    */
-  lazy val componentSupertypes: Vector[ComponentType] = supertypes.filterType[ComponentType]
+  // TODO (shape): We will likely have to write a similar definition to the one below for shape types.
+  //               In concrete terms, we could create a `lazy val inheritedShapeType: ShapeType` for any given
+  //               declared type that just combines all the shape types the declared type directly or indirectly
+  //               extends.
 
   /**
     * The component types that this declared type directly and indirectly inherits. This is an exhaustive list
@@ -43,46 +45,10 @@ trait DeclaredType extends NamedType {
     * The component types (as defined by this function) of DogHouse are: +Dog, +Roof, +Walls. Notably, +Animal
     * has been removed from the list as it is subsumed by +Dog.
     */
-  lazy val inheritedComponentTypes: Set[ComponentType] = {
+  /* lazy val inheritedComponentTypes: Set[ComponentType] = {
     val all = componentSupertypes ++ declaredSupertypes.flatMap(_.inheritedComponentTypes)
     Type.mostSpecific(all.toSet, Subtyping.NoOwnedBy).asInstanceOf[Set[ComponentType]]
-  }
-
-  /**
-    * Whether the declared type is an entity, i.e. it contains one or more components.
-    */
-  lazy val isEntity: Boolean = inheritedComponentTypes.nonEmpty
-
-  /**
-    * Whether this declared type can be owned as a component.
-    */
-  def isOwnable: Boolean
-
-  /**
-    * The type that an entity owning this component must subtype. This type may be Any, which means that the
-    * declared type may be owned by any kind of entity.
-    *
-    * ownedBy is declared in DeclaredTypeDefinition, because once definitions are resolved, all types will have been
-    * loaded and the ownedBy type doesn't need to be resolved with a deferred approach.
-    */
-  def ownedBy: Type = definition.ownedBy
-
-  /**
-    * The ownable root supertypes of the declared type, possibly this type itself if it has no ownable supertypes. Note
-    * that the result list is empty if the declared type itself is not ownable.
-    */
-  def ownableRootSupertypes: Vector[DeclaredType] = {
-    if (!this.isOwnable) {
-      return Vector.empty
-    }
-
-    val results = supertypes.flatMap {
-      case dt: DeclaredType if dt.isOwnable => dt.ownableRootSupertypes
-      case _ => Vector.empty
-    }
-
-    if (results.nonEmpty) results else Vector(this)
-  }
+  } */
 
   /**
     * The definition associated with this type.

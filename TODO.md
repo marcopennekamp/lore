@@ -12,6 +12,8 @@
 - Implement alternative map syntax. (`#['hello' -> 1, 'world' -> 2]`)
 - Add shape features.
   - Shape types
+    - Type aliases
+    - `+` as part of a valid type name
   - Subtyping
     - compiler
     - runtime

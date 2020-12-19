@@ -36,7 +36,6 @@ import lore.compiler.core.CompilationException
   *       - fixed-size type:
   *         - 00000: List
   *         - 00001: Map
-  *         - 00010: Component
   *         - 00100: Variable without bounds (lower bound: Nothing, upper bound: Any)
   *         - 00101: Variable with custom lower bound (upper bound: Any)
   *         - 00110: Variable with custom upper bound (lower bound: Nothing)
@@ -54,8 +53,11 @@ import lore.compiler.core.CompilationException
   *     - Variable:
   *       - The name of the variable, encoded as a UTF-8 string with a length.
   *       - The lower and/or upper bound based on the specific kind, as outlined above.
+  *
+  * TODO (shape): Don't forget to add shapes to this.
   */
 object TypeEncoder {
+
   private object Kind {
     val sum: Byte = 0
     val intersection: Byte = 1
@@ -89,7 +91,6 @@ object TypeEncoder {
     // Fixed-size types.
     val list: Byte = Tag(Kind.fixedSize, 0)
     val map: Byte = Tag(Kind.fixedSize, 1)
-    val component: Byte = Tag(Kind.fixedSize, 2)
     val variableNothingAny: Byte = Tag(Kind.fixedSize, 4)
     val variableAny: Byte = Tag(Kind.fixedSize, 5)
     val variableNothing: Byte = Tag(Kind.fixedSize, 6)
@@ -110,7 +111,6 @@ object TypeEncoder {
       case ProductType(elements) => (Tag.variableSize(Kind.product, elements.size), None, elements)
       case ListType(element) => (Tag.list, None, Vector(element))
       case MapType(key, value) => (Tag.map, None, Vector(key, value))
-      case ComponentType(underlying) => (Tag.component, None, Vector(underlying))
       case tv: TypeVariable =>
         val (tag, bounds) = (tv.lowerBound, tv.upperBound) match {
           case (BasicType.Nothing, BasicType.Any) => (Tag.variableNothingAny, Vector.empty)
@@ -143,4 +143,5 @@ object TypeEncoder {
     }
     stream.write(bytes)
   }
+
 }

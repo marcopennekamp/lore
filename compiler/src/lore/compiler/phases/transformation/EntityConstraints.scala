@@ -3,7 +3,7 @@ package lore.compiler.phases.transformation
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Error}
 import lore.compiler.semantics.structures.DeclaredTypeDefinition
-import lore.compiler.types.{ComponentType, Subtyping}
+import lore.compiler.types.Subtyping
 
 object EntityConstraints {
 

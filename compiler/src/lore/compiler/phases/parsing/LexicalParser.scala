@@ -27,8 +27,7 @@ object LexicalParser {
     * keywords are automatically disallowed as identifiers: only critical keywords have that restriction.
     */
   def keyword[_: P]: P[Unit] = P(criticalKeyword | StringIn(
-    "action", "component", "extends", "function", "implements", "independent", "mut", "owned by", "struct", "trait",
-    "type",
+    "action", "extends", "function", "implements", "mut", "struct", "trait", "type",
   ))
 
   /**

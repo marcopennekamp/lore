@@ -3,7 +3,7 @@ package lore.compiler.phases.transformation
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Error, Position}
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.structures.{MemberDefinition, StructDefinition}
+import lore.compiler.semantics.structures.{PropertyDefinition, StructDefinition}
 
 object InstantiationTransformation {
 
@@ -26,7 +26,7 @@ object InstantiationTransformation {
     override def message: String = s"The struct to be instantiated does not have a member $name."
   }
 
-  case class IllegallyTypedMember(member: MemberDefinition, expression: Expression) extends Error(expression) {
+  case class IllegallyTypedMember(member: PropertyDefinition, expression: Expression) extends Error(expression) {
     override def message: String =
       s"The member ${member.name} is supposed to be assigned a value of type ${expression.tpe}. However," +
         s" the member itself has the type ${member.tpe}, which is not a subtype of ${expression.tpe}."
@@ -43,8 +43,8 @@ object InstantiationTransformation {
     /**
       * Assigns entries to members, potentially filling missing members with their default values.
       */
-    def correlateEntries(): Compilation[Vector[(MemberDefinition, Expression)]] = {
-      var pairs = Vector.empty[(MemberDefinition, Expression)]
+    def correlateEntries(): Compilation[Vector[(PropertyDefinition, Expression)]] = {
+      var pairs = Vector.empty[(PropertyDefinition, Expression)]
       var missing = Vector.empty[String]
       val illegal = entries.map(_._1).diff(struct.members.map(_.name))
 
@@ -67,7 +67,7 @@ object InstantiationTransformation {
       }
     }
 
-    def verifyEntryTypes(pairs: Vector[(MemberDefinition, Expression)]): Verification = {
+    def verifyEntryTypes(pairs: Vector[(PropertyDefinition, Expression)]): Verification = {
       pairs.map { case (member, expression) =>
         if (expression.tpe <= member.tpe) Verification.succeed else Compilation.fail(IllegallyTypedMember(member, expression))
       }.simultaneous.verification

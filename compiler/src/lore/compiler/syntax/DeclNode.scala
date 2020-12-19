@@ -50,26 +50,18 @@ object TypeDeclNode {
   case class StructNode(
     override val name: String,
     implemented: Vector[String],
-    ownedBy: Option[TypeExprNode],
-    members: Vector[MemberNode],
-    isIndependent: Boolean,
+    properties: Vector[PropertyNode],
     position: Position
   ) extends TypeDeclNode
 
-  sealed trait MemberNode extends Node
-  case class PropertyNode(name: String, tpe: TypeExprNode, isMutable: Boolean, defaultValue: Option[ExprNode], position: Position) extends MemberNode
-  case class ComponentNode(name: String, defaultValue: Option[ExprNode], position: Position) extends MemberNode
+  case class PropertyNode(name: String, tpe: TypeExprNode, isMutable: Boolean, defaultValue: Option[ExprNode], position: Position) extends Node
 
   /**
     * @param extended The names of all traits that the trait extends.
-    * @param components The names of all declared types that the trait should have as components.
     */
   case class TraitNode(
     override val name: String,
     extended: Vector[String],
-    components: Vector[String],
-    ownedBy: Option[TypeExprNode],
-    isIndependent: Boolean,
     position: Position
   ) extends TypeDeclNode
 }

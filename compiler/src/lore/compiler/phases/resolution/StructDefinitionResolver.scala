@@ -1,7 +1,7 @@
 package lore.compiler.phases.resolution
 
 import lore.compiler.core.{Compilation, CompilationException, Position}
-import lore.compiler.semantics.structures.{ComponentDefinition, MemberDefinition, PropertyDefinition, StructDefinition}
+import lore.compiler.semantics.structures.{ComponentDefinition, PropertyDefinition, PropertyDefinitionImpl, StructDefinition}
 import lore.compiler.semantics.{Registry, TypeScope}
 import lore.compiler.syntax.TypeDeclNode
 import lore.compiler.types.BasicType
@@ -16,7 +16,7 @@ object StructDefinitionResolver {
 
     (
       node.ownedBy.map(TypeExpressionEvaluator.evaluate).toCompiledOption.map(_.getOrElse(BasicType.Any)),
-      node.members.map(resolveMember).simultaneous,
+      node.properties.map(resolveMember).simultaneous,
     ).simultaneous.map { case (ownedBy, members) =>
       val definition = new StructDefinition(node.name, structType, ownedBy, members, node.position)
       structType.initialize(definition)
@@ -24,12 +24,12 @@ object StructDefinitionResolver {
     }
   }
 
-  private def resolveMember(node: TypeDeclNode.MemberNode)(implicit typeScope: TypeScope): Compilation[MemberDefinition] = {
+  private def resolveMember(node: TypeDeclNode.MemberNode)(implicit typeScope: TypeScope): Compilation[PropertyDefinition] = {
     node match {
       case TypeDeclNode.PropertyNode(name, tpe, isMutable, defaultValue, _) =>
         for {
           tpe <- TypeExpressionEvaluator.evaluate(tpe)
-        } yield new PropertyDefinition(name, tpe, isMutable, defaultValue, node.position)
+        } yield new PropertyDefinitionImpl(name, tpe, isMutable, defaultValue, node.position)
       case node@TypeDeclNode.ComponentNode(name, defaultValue, position) =>
         TypeResolver.resolveComponentType(node).map(tpe => new ComponentDefinition(name, tpe, defaultValue, position))
     }

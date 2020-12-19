@@ -5,7 +5,7 @@ package lore.compiler.types
 //       affect performance and thus needs to be looked at first.
 
 /**
-  * A specific shape of subtyping built from a given set of rules.
+  * A specific approach to subtyping built from a given set of rules.
   */
 trait Subtyping {
   /**
@@ -31,6 +31,8 @@ trait Subtyping {
 
 object Subtyping {
 
+  // TODO: Now that ownedBy has been removed, we can go back to subtyping without the ruleset abstraction.
+
   /**
     * We define the calculation of the subtyping relation in terms of rules that possibly match a pair of types
     * and then decides whether these types are in the relation or not. We define rules as partial functions
@@ -38,7 +40,7 @@ object Subtyping {
     */
   type Rule = PartialFunction[(Type, Type), Boolean]
 
-  def createRules(isSubtype: (Type, Type) => Boolean, considerOwnedBy: Boolean): Vector[Rule] = {
+  def createRules(isSubtype: (Type, Type) => Boolean): Vector[Rule] = {
     def isAnyPartSubtypeOf(intersectionType: IntersectionType, candidateSupertype: Type): Boolean = {
       intersectionType.parts.exists(t => isSubtype(t, candidateSupertype))
     }
@@ -63,18 +65,9 @@ object Subtyping {
       //       for declared types in a performant manner!
       { case (d1: DeclaredType, d2: DeclaredType) => d1 == d2 || d1.supertypes.exists(isSubtype(_, d2)) },
 
-      // A component type p1 is a subtype of component type p2 if p1's underlying type is a subtype of p2's underlying
-      // type.
-      { case (p1: ComponentType, p2: ComponentType) => isSubtype(p1.underlying, p2.underlying) },
-      // An entity type e1 is a subtype of a component type p2 if e1 has the component type p1 that is a subtype of p2.
-      { case (e1: DeclaredType, p2: ComponentType) if e1.isEntity => e1.inheritedComponentTypes.exists(p1 => isSubtype(p1, p2)) },
-      // Let's say p1 = +u. Since +u must adhere to u's owned-by type, we have +u <= u.ownedBy. So to know if +u <= t2,
-      // we can check u.ownedBy <= t2 and rely on the following typing relationship: +u <= u.ownedBy <= t2.
-      { case (p1: ComponentType, t2) if considerOwnedBy => isSubtype(p1.underlying.ownedBy, t2) },
-
       // An intersection type i1 is the subtype of an intersection type i2, if all types in i2 are subsumed by i1.
       { case (i1: IntersectionType, i2: IntersectionType) => i2.parts.forall(ic2 => isAnyPartSubtypeOf(i1, ic2)) },
-      // An intersection type i1 is the subtype of another type t2 if one component of i1 is a subtype of t2.
+      // An intersection type i1 is the subtype of another type t2 if one part of i1 is a subtype of t2.
       { case (i1: IntersectionType, t2) => isAnyPartSubtypeOf(i1, t2) },
       // A non-intersection type t1 is the subtype of an intersection type i2, if t1 is the subtype of all types in i2.
       { case (t1, i2: IntersectionType) => i2.parts.forall(ic2 => isSubtype(t1, ic2)) },
@@ -126,15 +119,7 @@ object Subtyping {
     * The default subtyping relationship taking all rules into account.
     */
   object Default extends Subtyping {
-    private val rules = createRules(isSubtype, considerOwnedBy = true)
-    override def isSubtype(t1: Type, t2: Type): Boolean = isSubtypeGiven(rules)(t1, t2)
-  }
-
-  /**
-    * The subtyping relationship without taking owned-by types into account.
-    */
-  object NoOwnedBy extends Subtyping {
-    private val rules = createRules(isSubtype, considerOwnedBy = false)
+    private val rules = createRules(isSubtype)
     override def isSubtype(t1: Type, t2: Type): Boolean = isSubtypeGiven(rules)(t1, t2)
   }
 

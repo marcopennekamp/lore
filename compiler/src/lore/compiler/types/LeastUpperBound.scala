@@ -80,8 +80,9 @@ object LeastUpperBound {
       // the sum type instead.
       case (d1: DeclaredType, d2: DeclaredType) => registry.declaredTypeHierarchy.leastCommonSupertype(d1, d2).fallbackIfAny
 
+      // TODO (shape): Maybe have a look at the following code when implementing the LUB for shape types.
       // Component types mostly delegate to declared types.
-      case (c1: ComponentType, c2: ComponentType) =>
+      /* case (c1: ComponentType, c2: ComponentType) =>
         val candidates = registry.declaredTypeHierarchy.leastCommonSupertype(c1.underlying, c2.underlying) match {
           case IntersectionType(types) =>
             // Let's say the underlying types U1 and U2 have the least upper bound A & B. This means that both types
@@ -101,7 +102,7 @@ object LeastUpperBound {
         // For full correctness, we have to ensure that only ownable declared types can be the underlying types of
         // the new component types.
         val parts = candidates.filter(_.isOwnable)
-        if (parts.nonEmpty) IntersectionType.construct(parts.map(ComponentType)) else fallback
+        if (parts.nonEmpty) IntersectionType.construct(parts.map(ComponentType)) else fallback */
 
       // Lists simply wrap the lubbed types.
       case (ListType(e1), ListType(e2)) => ListType(lubPassOnSettings(e1, e2))

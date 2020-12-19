@@ -24,6 +24,8 @@ trait Type {
 }
 
 object Type {
+
+  // TODO: Add a Unit type.
   val predefinedTypes: Map[String, NamedType] = Vector(
     BasicType.Any,
     BasicType.Nothing,
@@ -56,7 +58,6 @@ object Type {
     case ProductType(elements) => elements.exists(isAbstract)
     case ListType(_) => false
     case MapType(_, _) => false
-    case ComponentType(underlying) => isAbstract(underlying)
     case _: StructType => false
     case _: TraitType => true
     case _: BasicType =>
@@ -76,7 +77,6 @@ object Type {
     case ProductType(elements) => elements.exists(isPolymorphic)
     case ListType(element) => isPolymorphic(element)
     case MapType(key, value) => isPolymorphic(key) || isPolymorphic(value)
-    case ComponentType(_) => false // TODO: This might change once component types can be parameterized. (If they ever can.)
     case _: DeclaredType => false // TODO: For now. This needs to be set to true for structs/traits with type parameters, of course.
     case _ => false
   }
@@ -96,7 +96,6 @@ object Type {
     case ProductType(elements) => elements.flatMap(variables).toSet
     case ListType(element) => variables(element)
     case MapType(key, value) => variables(key) ++ variables(value)
-    case ComponentType(_) => Set.empty // TODO: Update when component types can have type parameters?
     case _: NamedType => Set.empty // TODO: Update when struct/trait types can have type parameters.
   }
 
@@ -189,7 +188,6 @@ object Type {
       case ProductType(elements) => s"(${elements.map(toString(_, verbose)).mkString(", ")})"
       case ListType(element) => s"[${toString(element, verbose)}]"
       case MapType(key, value) => infix(" -> ", TypePrecedence.Map, Vector(key, value))
-      case ComponentType(underlying) => s"+${toString(underlying, verbose)}"
       case s: StructType =>
         if (verbose) {
           val implements = if (s.supertypes.nonEmpty) s" implements ${s.supertypes.map(toString(_, verbose)).mkString(", ")}" else ""
@@ -229,4 +227,5 @@ object Type {
     types.foreach(t => stream.write(TypeEncoder.encode(t)))
     Base64.getEncoder.encodeToString(stream.toByteArray).replace('+', '$').replace('/', '_').replace("=", "")
   }
+
 }

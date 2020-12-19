@@ -3,8 +3,8 @@ package lore.compiler.phases.transformation
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Error}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.structures.{ComponentDefinition, MemberDefinition, StructDefinition}
-import lore.compiler.types.{ComponentType, DeclaredType}
+import lore.compiler.semantics.structures.{ComponentDefinition, PropertyDefinition, StructDefinition}
+import lore.compiler.types.DeclaredType
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 import scala.collection.mutable
@@ -25,7 +25,7 @@ object StructConstraints {
       .flatMap(_ => verifyComponentsImplemented(definition))
   }
 
-  case class MemberDuplicateDeclaration(definition: StructDefinition, member: MemberDefinition) extends Error(member) {
+  case class MemberDuplicateDeclaration(definition: StructDefinition, member: PropertyDefinition) extends Error(member) {
     override def message = s"The member ${member.name} is declared twice in the struct ${definition.name}."
   }
 

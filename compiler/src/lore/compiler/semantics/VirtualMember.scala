@@ -1,6 +1,6 @@
 package lore.compiler.semantics
 
-import lore.compiler.semantics.structures.MemberDefinition
+import lore.compiler.semantics.structures.PropertyDefinition
 import lore.compiler.types.Type
 
 import scala.util.hashing.MurmurHash3
@@ -14,13 +14,15 @@ import scala.util.hashing.MurmurHash3
   * an entity E1 with a component Immunity which is overridden by entity E2 and the component PoisonImmunity.
   *
   * @param underlying The member definition underlying this virtual member.
+  *
+  * TODO (shape): We can rename this to Member now that structs only contain properties.
   */
 case class VirtualMember(
   name: String,
   tpe: Type,
   isComponent: Boolean = false,
   isMutable: Boolean = false,
-  underlying: Option[MemberDefinition] = None,
+  underlying: Option[PropertyDefinition] = None,
 ) {
   val isImmutable: Boolean = !isMutable
 

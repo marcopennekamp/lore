@@ -26,7 +26,7 @@ object TypeResolver {
     implicit val position: Position = node.position
     (
       node.implemented.map(resolveType[TraitType](IllegalImplements(node))).simultaneous,
-      node.members.filterType[TypeDeclNode.ComponentNode].map(resolveComponentType).simultaneous,
+      node.properties.filterType[TypeDeclNode.ComponentNode].map(resolveComponentType).simultaneous,
     ).simultaneous.map { case (implementedTraits, componentTypes) =>
       val supertypes = implementedTraits ++ componentTypes.map(ComponentType)
       new StructType(node.name, supertypes, !node.isIndependent)

@@ -10,6 +10,7 @@ import scala.collection.mutable
   * A hierarchical scope resolving entries of some type A by name.
   */
 trait Scope[A <: Scope.Entry] {
+
   /**
     * Fetches the entry with the given name from the CURRENT scope.
     */
@@ -61,6 +62,7 @@ trait Scope[A <: Scope.Entry] {
     * Creates an "already declared" error. You may override this to provide better error messages.
     */
   protected def alreadyDeclared(name: String)(implicit position: Position): Error = AlreadyDeclared(name)
+
 }
 
 abstract class BasicScope[A <: Scope.Entry](val parent: Option[Scope[A]]) extends Scope[A] {

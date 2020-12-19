@@ -3,7 +3,7 @@ package lore.compiler.phases.transpilation
 import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.structures.MemberDefinition
+import lore.compiler.semantics.structures.PropertyDefinition
 import lore.compiler.types.StructType
 
 object StructTranspiler {
@@ -39,7 +39,7 @@ object StructTranspiler {
   }
 
   private def transpileSchema(tpe: StructType) = {
-    def transpileMemberDefinition(member: MemberDefinition): String = s"{ name: '${member.name}' }"
+    def transpileMemberDefinition(member: PropertyDefinition): String = s"{ name: '${member.name}' }"
     val propertyDefinitions = tpe.definition.properties.map(transpileMemberDefinition)
     val componentDefinitions = tpe.definition.components.map(transpileMemberDefinition)
     DeclaredTypeTranspiler.transpileSchema(

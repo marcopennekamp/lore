@@ -170,6 +170,7 @@ Each type is either **abstract** or concrete. Functions may only be declared as 
 - A **list type** is always concrete.
 - A **map type** is always concrete.
 - A **shape type** is always concrete.
+  - Shape types would behave like product types if we could guarantee that run-time property types are always taken into account for multiple dispatch. This would require all struct properties to be open, which I do not want to support. It remains to be seen whether this poses a problem for defining abstract functions for component shape types.
 - A **trait** is always abstract on its own and as an augmentation only abstract if it's intersecting merely with abstract types.
   - An **augmentation** trait takes diminished preference compared to a struct or any other concrete type. This is to avoid the following scenario: Assume that augmentations *could* be abstract. Define an abstract function `f(v: Struct & Trait)` over a struct `Struct` that gets called with a dynamically specialized type. That is, we create an object of type `Struct`, attach the label `Trait`, and call the abstract function. It won't be able to dispatch to specializing functions, as the struct is quite literally the end of the line (assuming no other specializing functions), and there is no implementation to be found. So `Struct & Trait` obviously shouldn't be an abstract type.
   - The "special" case in which **multiple traits intersect** is simply handled by the fact that the resulting intersection type is abstract since it does not contain a concrete type.

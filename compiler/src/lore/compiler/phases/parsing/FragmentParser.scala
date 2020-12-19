@@ -80,28 +80,15 @@ class FragmentParser(implicit fragment: Fragment) {
   private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`trait` | struct)
 
   private def `trait`[_: P]: P[TypeDeclNode.TraitNode] = {
-    P(Index ~ "independent".!.? ~ "trait" ~/ identifier ~ `extends` ~ ownedBy.?)
-      .map { case (index, independent, name, (extended, components), ownedBy) => (index, name, extended, components, ownedBy, independent.isDefined) }
-      .map(withIndex(TypeDeclNode.TraitNode))
+    P(Index ~ "trait" ~/ identifier ~ `extends`).map(withIndex(TypeDeclNode.TraitNode))
   }
 
-  private def `extends`[_: P]: P[(Vector[String], Vector[String])] = {
-    // The boolean signifies whether the extended type is a component.
-    def extendable = P("+".!.?.map(_.isDefined) ~ identifier)
-    P(("extends" ~ extendable.rep(1, CharIn(","))).?).map {
-      _.getOrElse(Seq.empty).foldLeft((Vector.empty[String], Vector.empty[String])) {
-        case ((extended, components), extendable) => extendable match {
-          case (false, name) => (extended :+ name, components)
-          case (true, name) => (extended, components :+ name)
-        }
-      }
-    }
+  private def `extends`[_: P]: P[Vector[String]] = {
+    P(("extends" ~ identifier.rep(1, CharIn(","))).?).map(_.map(_.toVector).getOrElse(Vector.empty))
   }
 
   private def struct[_: P]: P[TypeDeclNode.StructNode] = {
-    P(Index ~ "independent".!.? ~ "struct" ~/ identifier ~ implements ~ ownedBy.? ~ structBody)
-      .map { case (index, independent, name, implements, ownedBy, members) => (index, name, implements, ownedBy, members, independent.isDefined) }
-      .map(withIndex(TypeDeclNode.StructNode))
+    P(Index ~ "struct" ~/ identifier ~ implements ~ structBody).map(withIndex(TypeDeclNode.StructNode))
   }
 
   private def implements[_: P]: P[Vector[String]] = {
@@ -109,14 +96,13 @@ class FragmentParser(implicit fragment: Fragment) {
       .map(_.map(_.toVector).getOrElse(Vector.empty))
   }
 
-  private def structBody[_: P]: P[Vector[TypeDeclNode.MemberNode]] = {
-    // We have to parse the members in a tiered structure because newline separators may only be used with repX,
-    // otherwise the newline is consumed by the whitespace parser. We want members separated by commas to contain
-    // a comment between the member and the comma, so we have to apply the .rep parser there.
-    def member = P(property | component)
-    def memberLine = P(member.rep(sep = CharIn(","))).map(_.toVector)
-    def members = P(memberLine.repX(sep = Space.terminators)).map(_.toVector.flatten)
-    P(("{" ~ members ~ "}").?).map(_.getOrElse(Vector.empty))
+  private def structBody[_: P]: P[Vector[TypeDeclNode.PropertyNode]] = {
+    // We have to parse the properties in a tiered structure because newline separators may only be used with repX,
+    // otherwise the newline is consumed by the whitespace parser. We want properties separated by commas to contain
+    // a comment between the property and the comma, so we have to apply the .rep parser there.
+    def propertyLine = P(property.rep(sep = CharIn(","))).map(_.toVector)
+    def properties = P(propertyLine.repX(sep = Space.terminators)).map(_.toVector.flatten)
+    P(("{" ~ properties ~ "}").?).map(_.getOrElse(Vector.empty))
   }
 
   private def property[_: P]: P[TypeDeclNode.PropertyNode] = {
@@ -125,11 +111,5 @@ class FragmentParser(implicit fragment: Fragment) {
       .map(withIndex(TypeDeclNode.PropertyNode))
   }
 
-  private def component[_: P]: P[TypeDeclNode.ComponentNode] = {
-    P(Index ~ "component" ~ identifier ~ defaultValue.?).map(withIndex(TypeDeclNode.ComponentNode))
-  }
-
   private def defaultValue[_: P]: P[ExprNode] = P("=" ~ statementParser.expression)
-
-  private def ownedBy[_: P]: P[TypeExprNode] = P("owned by" ~ typeExpression)
 }
