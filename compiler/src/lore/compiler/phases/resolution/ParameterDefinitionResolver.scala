@@ -7,6 +7,6 @@ import lore.compiler.syntax.DeclNode
 
 object ParameterDefinitionResolver {
   def resolveParameterNode(node: DeclNode.ParameterNode)(implicit typeScope: TypeScope): Compilation[ParameterDefinition] = {
-    TypeExpressionEvaluator.evaluate(node.tpe).map(t => new ParameterDefinition(node.name, t, node.position))
+    TypeExpressionEvaluator.evaluate(node.tpe).map(t => ParameterDefinition(node.name, t, node.position))
   }
 }

@@ -7,6 +7,7 @@ import lore.compiler.syntax.DeclNode
 import lore.compiler.types.{BasicType, TypeVariable}
 
 object TypeVariableDeclarationResolver {
+
   /**
     * Resolves a type variable declaration list in order, ensuring that the order property of the type variables is
     * set correctly.
@@ -36,4 +37,5 @@ object TypeVariableDeclarationResolver {
       upperBound <- node.upperBound.map(TypeExpressionEvaluator.evaluate).toCompiledOption
     } yield new TypeVariable(node.name, lowerBound.getOrElse(BasicType.Nothing), upperBound.getOrElse(BasicType.Any), order)
   }
+
 }
