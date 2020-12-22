@@ -25,6 +25,7 @@
   - Ranges still need to be supported, as they are already part of the specification.
 - Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.
 - Allow trailing commas.
+- A rudimentary form of tree shaking to avoid transpiling functions that aren't used by any other function. This unfortunately requires specifying an entry point. Maybe we could perform tree shaking if such entry points are specified at all.
 
 ##### Type System
 
