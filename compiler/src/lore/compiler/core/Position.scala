@@ -6,8 +6,8 @@ import lore.compiler.syntax.Node.Index
   * A position identifies a code location across a whole Lore project.
   */
 case class Position(fragment: Fragment, index: Index) {
-  def <(position: Position): Boolean = {
-    this.fragment.name < position.fragment.name && this.index < position.index
+  def <(other: Position): Boolean = {
+    this.fragment.name < other.fragment.name || (this.fragment.name == other.fragment.name && this.index < other.index)
   }
 
   /**
