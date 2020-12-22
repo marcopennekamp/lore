@@ -116,10 +116,8 @@ object TypeVariableAllocation {
       case (_: SumType, _) => unsupportedSubstitution
       case (_, _: SumType) => unsupportedSubstitution
 
-      // In all other cases, there is no need to assign anything. Note that component types can't contain
-      // type variables, currently, as they expect a declared type.
+      // In all other cases, there is no need to assign anything.
       // TODO: Declared types will be able to contain type variables when they become polymorphic.
-      // TODO: Component types will be able to contain type variables when declared types become polymorphic.
       case _ =>
     }
   }

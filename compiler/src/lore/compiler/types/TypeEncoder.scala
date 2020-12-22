@@ -16,7 +16,7 @@ import lore.compiler.core.CompilationException
   *         - Named has, for now, always zero operands, as we have not introduced parametric structs/traits yet.
   *         - Also note that Named excludes type variables!
   *       - Basic type: Any, Nothing, Real, Int, Boolean, String
-  *       - Fixed size: List, Map, Component, Variable
+  *       - Fixed size: List, Map, Variable
   *     The first three bits determine the kind of the type:
   *       - 000: Sum
   *       - 001: Intersection
@@ -49,7 +49,6 @@ import lore.compiler.core.CompilationException
   *     - Basic types: No operands.
   *     - List: A single element type.
   *     - Map: A key type and a value type.
-  *     - Component: A single underlying type.
   *     - Variable:
   *       - The name of the variable, encoded as a UTF-8 string with a length.
   *       - The lower and/or upper bound based on the specific kind, as outlined above.

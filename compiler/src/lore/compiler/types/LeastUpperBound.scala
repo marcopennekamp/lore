@@ -48,9 +48,9 @@ object LeastUpperBound {
       case (t1, v2: TypeVariable) => lubPassOnSettings(v2, t1)
 
       // Intersection types can lead to a number of candidates. That is, if we have types A & B and C & D, we have
-      // the following candidates: LUB(A, C), LUB(A, D), LUB(B, C), LUB(B, D). That's because any component of an
+      // the following candidates: LUB(A, C), LUB(A, D), LUB(B, C), LUB(B, D). That's because any part of an
       // intersection type is its supertype, so the least upper bound of two intersection types would be a combination
-      // of one component from t1 and another component from t2.
+      // of one part from t1 and another part from t2.
       // From the candidates, we choose the most specific types, meaning those who don't have a strict subtype in the
       // candidate list. This part of the algorithm is taken care of by IntersectionType.construct, as intersection
       // types are specifically simplified according to this rule.

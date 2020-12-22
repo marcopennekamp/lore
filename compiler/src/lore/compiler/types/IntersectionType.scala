@@ -13,8 +13,7 @@ object IntersectionType {
     * intersection type has only one part, this type is returned instead.
     *
     * We also apply the following simplification: In an intersection type A & B & ..., if A < B, then B can
-    * be dropped. This is especially useful to simplify intersection types that contain an entity and a
-    * related component type.
+    * be dropped.
     *
     * The resulting flattened normal form is a requirement for subtyping to work correctly.
     */

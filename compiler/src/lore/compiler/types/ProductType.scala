@@ -2,8 +2,6 @@ package lore.compiler.types
 
 import scala.util.hashing.MurmurHash3
 
-// TODO: Rename all instances of "component" to "element".
-
 // TODO: Strongly consider renaming product types to tuple types. This split between value and type naming is annoying.
 
 case class ProductType(elements: Vector[Type]) extends Type {
