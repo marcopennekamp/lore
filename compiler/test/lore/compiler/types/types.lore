@@ -19,12 +19,13 @@ trait Status
 trait Healthy extends Status
 trait Sick extends Status
 
-independent trait Hashable
+// TODO: Port these traits/structs to use shape types once we've implemented them.
+trait Hashable
 
 trait Wheel extends Hashable
 struct CoolWheel implements Wheel
 struct CheapWheel implements Wheel
-trait Engine extends Hashable
+/* trait Engine extends Hashable
 struct GasEngine implements Engine
 struct ElectricEngine implements Engine
 
@@ -39,4 +40,4 @@ struct Motorcycle implements Cycle {
 
 struct Bicycle implements Cycle {
   component Wheel
-}
+} */

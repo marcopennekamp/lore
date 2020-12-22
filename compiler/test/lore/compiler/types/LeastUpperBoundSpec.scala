@@ -29,7 +29,6 @@ class LeastUpperBoundSpec extends TypeSpec {
     ((Penguin, Chicken, Raven): Type, (Chicken, Raven, Penguin): Type) --> (Bird, Bird, Bird)
     ((Chicken & Penguin, Goldfish & Cat, Unicorn & Healthy): Type, (Raven & Sick, Fish & Sick, Human & Sick): Type) -->
       ((Bird, Fish, Mammal & Status))
-    ((+Wheel, +Engine): Type, (Car, ElectricEngine): Type) --> (+Wheel, +Engine | ElectricEngine)
   }
 
   it should "return the most specific supertype for intersection types" in {
@@ -51,21 +50,6 @@ class LeastUpperBoundSpec extends TypeSpec {
     // either in the LUB or in the sum type construction itself. Where exactly doesn't matter for the
     // test.
     (BasicType.Int | BasicType.Real, BasicType.Nothing) --> BasicType.Real
-  }
-
-  it should "return the most specific supertype for entities, intersection types and component types" in {
-    (+CoolWheel, +CheapWheel) --> +Wheel
-    (+CoolWheel & +ElectricEngine, +CheapWheel & +GasEngine) --> (+Wheel & +Engine)
-    (Car, +Wheel & +Engine) --> (+Wheel & +Engine)
-    (Car & +Wheel, +Wheel) --> +Wheel
-    // These component types aren't related, so they cannot have a common component type as ancestor.
-    (+CheapWheel, +ElectricEngine) --> (+CheapWheel | +ElectricEngine)
-    (Car & +Wheel, Car & +Engine) --> Car
-    (Car, Bicycle) --> +Wheel
-    (Car, Motorcycle) --> (+Wheel & +Engine)
-    (Motorcycle, Bicycle) --> Cycle
-    // Notably, the LUB is not +Hashable, because Hashable is independent.
-    (+Wheel, +Engine) --> (+Wheel | +Engine)
   }
 
   it should "return the most specific supertype for lists and maps" in {

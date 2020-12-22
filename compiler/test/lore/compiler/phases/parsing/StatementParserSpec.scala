@@ -5,6 +5,8 @@ import lore.compiler.syntax._
 import lore.compiler.core.Fragment
 import lore.compiler.test.BaseSpec
 
+// TODO: Implement these tests using functional tests.
+
 class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   override def parser[_: P](implicit fragment: Fragment): P[StmtNode] = new StatementParser(new TypeParser()).statement
 
@@ -218,8 +220,8 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     "concat('stringA', 'stringB', 'stringC')" --> Stmt.SimpleCall(
       "concat", Vector(Stmt.StringLiteral("stringA"), Stmt.StringLiteral("stringB"), Stmt.StringLiteral("stringC")),
     )
-    "applyDot.fixed[Dot, +Health](dot, e)" --> Stmt.FixedFunctionCall(
-      "applyDot", Vector(Type.Identifier("Dot"), Type.Component("Health")),
+    "applyDot.fixed[Dot, Health](dot, e)" --> Stmt.FixedFunctionCall(
+      "applyDot", Vector(Type.Identifier("Dot"), Type.Identifier("Health")),
       Vector(Stmt.Variable("dot"), Stmt.Variable("e")),
     )
     "dynamic[String]('readFile', 'file.ext')" --> Stmt.DynamicCall(
@@ -244,12 +246,9 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     )
     "let x: Int = a" --> Stmt.VariableDeclaration("x", false, Some(Type.Identifier("Int")), va)
     "let mut y: Real = b" --> Stmt.VariableDeclaration("y", true, Some(Type.Identifier("Real")), vb)
-    "let z: E & +C1 & +C2 & L = c" --> Stmt.VariableDeclaration(
+    "let z: E & L = c" --> Stmt.VariableDeclaration(
       "z", false,
-      Some(Type.Intersection(Vector(
-        Type.Identifier("E"), Type.Component("C1"),
-        Type.Component("C2"), Type.Identifier("L"),
-      ))),
+      Some(Type.Intersection(Vector(Type.Identifier("E"), Type.Identifier("L")))),
       vc,
     )
   }
@@ -324,18 +323,18 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   }
 
   it should "assign the correct indices (fixed function call)" in {
-    inside("applyDot.fixed[Dot, +Health](dot, e)".parsed) {
+    inside("applyDot.fixed[Dot, Health](dot, e)".parsed) {
       case call: ExprNode.FixedFunctionCallNode =>
         call.position.index shouldEqual 0
         inside(call.types) {
-          case Seq(t1: TypeExprNode.IdentifierNode, t2: TypeExprNode.ComponentNode) =>
+          case Seq(t1: TypeExprNode.IdentifierNode, t2: TypeExprNode.IdentifierNode) =>
             t1.position.index shouldEqual 15
             t2.position.index shouldEqual 20
         }
         inside(call.arguments) {
           case Seq(dot: ExprNode.VariableNode, e: ExprNode.VariableNode) =>
-            dot.position.index shouldEqual 29
-            e.position.index shouldEqual 34
+            dot.position.index shouldEqual 28
+            e.position.index shouldEqual 33
         }
     }
   }

@@ -42,10 +42,6 @@ class TypeEncoderSpec extends BaseSpec {
     // TODO: Write this test.
   }
 
-  it should "correctly encode component types" in {
-    // TODO: Write this test.
-  }
-
   it should "correctly encode nested type constructors with basic type leaves" in {
     // TODO: Write this test.
   }

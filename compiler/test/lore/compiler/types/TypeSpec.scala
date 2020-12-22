@@ -30,12 +30,12 @@ trait TypeSpec extends BaseSpec with TypeSyntax {
     val Wheel = havingTrait("Wheel")
     val CoolWheel = havingStruct("CoolWheel")
     val CheapWheel = havingStruct("CheapWheel")
-    val Engine = havingTrait("Engine")
+    /* val Engine = havingTrait("Engine")
     val GasEngine = havingStruct("GasEngine")
     val ElectricEngine = havingStruct("ElectricEngine")
     val Car = havingTrait("Car")
     val Cycle = havingTrait("Cycle")
     val Motorcycle = havingStruct("Motorcycle")
-    val Bicycle = havingStruct("Bicycle")
+    val Bicycle = havingStruct("Bicycle") */
   }
 }
