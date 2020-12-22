@@ -1,0 +1,15 @@
+// Obscuring the tuple types forces the compiler to dispatch to the most general `consume` at compile-time.
+function obscure(x: Any, y: Any): (Any, Any) = (x, y)
+
+function consume(tuple: (Any, Any)): String = 'Consume any and any!'
+function consume(tuple: (Int, Any)): String = 'Consume int and any!'
+function consume(tuple: (String, Int)): String = 'Consume string and int!'
+function consume(tuple: (Boolean, String)): String = 'Consume boolean and string!'
+
+function test(): [String] = [
+  consume(obscure('string', 15)),
+  consume(obscure(15, 'string')),
+  consume(obscure('string', false)),
+  consume(obscure(true, 'string')),
+  consume(obscure('string', 'string'))
+]

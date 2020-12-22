@@ -46,3 +46,14 @@ Deno.test('dispatch/savable', async () => {
   // Because the list only contains String and Real values, its type should be [String | Real].
   assertSumTypeParts(result.lore$type.element, ({ kind }) => kind === Kind.Real || kind === Kind.String)
 })
+
+Deno.test('dispatch/tuple', async () => {
+  const result: ListValue<string> = await LoreTest.run('dispatch/tuple')
+  assertListEquals(result, [
+    'Consume string and int!',
+    'Consume int and any!',
+    'Consume any and any!',
+    'Consume boolean and string!',
+    'Consume any and any!',
+  ])
+})
