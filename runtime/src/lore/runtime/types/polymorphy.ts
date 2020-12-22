@@ -29,8 +29,6 @@ export function isPolymorphic(type: Type): boolean {
       }
       return false
     }
-    case Kind.Component:
-      return false // TODO: Change this once we allow type parameters for classes and labels?
     case Kind.List:
       return isPolymorphic((<ListType> type).element)
     case Kind.Map:

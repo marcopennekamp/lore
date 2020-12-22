@@ -144,9 +144,6 @@ class TypeVariableAllocation {
         }
         break
 
-      case Kind.Component:
-        break // TODO: Change this once we allow type parameters for classes and labels?
-
       case Kind.List:
         if (t1.kind === Kind.List) {
           const l1 = <ListType> t1

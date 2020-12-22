@@ -72,7 +72,6 @@ object RuntimeTypeTranspiler {
       case ProductType(elements) => s"${api.product}([${elements.map(rec).mkString(", ")}])"
       case ListType(element) => s"${api.list}(${rec(element)})"
       case MapType(key, value) => s"${api.map}(${rec(key)}, ${rec(value)})"
-      case ComponentType(underlying) => s"${api.component}(${rec(underlying)})"
     }
   }
 

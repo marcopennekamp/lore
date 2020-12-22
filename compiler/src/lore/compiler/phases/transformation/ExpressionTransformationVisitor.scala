@@ -110,7 +110,7 @@ private[transformation] class ExpressionTransformationVisitor(
         case memberAccess: Expression.MemberAccess => (memberAccess.tpe, memberAccess.member.isMutable)
       }
       for {
-        // Ensure that the variable or property is even mutable.
+        // Ensure that the variable or member is even mutable.
         _ <- Verification.fromErrors(if (!isMutable) Vector(ImmutableAssignment(access)) else Vector.empty)
         // Ensure that the value has the right type.
         _ <- ExpressionVerification.hasSubtype(value, tpe)

@@ -43,15 +43,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
   override def visit(expression: VariableAccess): Transpilation = Transpilation.expression(expression.variable.transpiledName.name)
 
   override def visit(expression: MemberAccess)(instance: TranspiledChunk): Transpilation = {
-    instance.mapExpression { instance =>
-      val member = expression.member
-      if (member.isComponent) {
-        val searchTarget = RuntimeTypeTranspiler.transpile(member.tpe)(Map.empty)
-        s"${RuntimeApi.values.`object`.retrieve}($instance, $searchTarget)"
-      } else {
-        s"$instance.${member.name}"
-      }
-    }.compiled
+    instance.mapExpression(instance => s"$instance.${expression.member.name}").compiled
   }
 
   override def visit(literal: Literal): Transpilation = literal.tpe match {
@@ -87,18 +79,15 @@ private[transpilation] class ExpressionTranspilationVisitor()(
   }
 
   override def visit(expression: Instantiation)(arguments: Vector[TranspiledChunk]): Transpilation = {
-    def transpileMembers(list: Vector[(PropertyDefinition, JsExpr)]): String = {
-      list.map { case (member, jsExpr) => s"${member.name}: $jsExpr" }.mkString(", ")
-    }
-
     Transpilation.combined(arguments) { argumentJsExprs =>
-      val members = expression.arguments.map(_.property).zip(argumentJsExprs)
-      var arguments = Vector(s"{ ${transpileMembers(members.filterNot(_._1.isComponent))} }")
-      if (expression.struct.tpe.isEntity) {
-        arguments = arguments :+ s"{ ${transpileMembers(members.filter(_._1.isComponent))} }"
+      // The argument passed to the instantiation function at run-time is an object with the required properties
+      // already set. We're building this object here.
+      val entries = expression.arguments.map(_.property).zip(argumentJsExprs).map { case (property, jsExpr) =>
+        s"${property.name}: $jsExpr"
       }
+      val argument = s"{ ${entries.mkString(", ")} }"
       val varInstantiate = TranspiledName.instantiate(expression.struct.tpe)
-      s"$varInstantiate(${arguments.mkString(", ")})"
+      s"$varInstantiate(${argument})"
     }
   }
 

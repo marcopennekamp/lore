@@ -1,5 +1,5 @@
 import {
-  AnyType, BooleanType, StructType, ComponentType,
+  AnyType, BooleanType, StructType,
   IntersectionType, IntType, TraitType, ListType,
   MapType, NothingType, ProductType, RealType,
   StringType, SumType, Type, TypeVariable,
@@ -38,12 +38,15 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
   (t1: StringType, t2: StringType) => true,
 
   (t1: StructType, t2: StructType) => {
-    // Struct type equality is more complicated than one might expect due to the influence of component types. A struct
+    // TODO: Reimplement this taking open property types into account instead of component types:
+
+    /* // Struct type equality is more complicated than one might expect due to the influence of component types. A struct
     // type can only be equal to another struct type if all of their component types agree. Otherwise, dispatch might
     // be handled differently based on the component type and thus the types cannot be equal, especially in respect to
     // the dispatch cache. Of course, we only need to consider components when the schema indicates that the types are
     // entities.
     if (t1.schema === t2.schema) {
+
       if (t1.schema.isEntity) {
         // For all intents and purposes, we can assume that the component type arrays are both of equal length and are
         // in the same order. If this is not the case, the struct types have been instantiated incorrectly.
@@ -57,7 +60,8 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
       }
       return true
     }
-    return false
+    return false */
+    return t1.schema === t2.schema
   },
   (t1: TraitType, t2: TraitType) => false, // If the traits are not referentially equal, they cannot be equal.
 
@@ -84,7 +88,6 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
     return true
   },
 
-  (t1: ComponentType, t2: ComponentType) => areEqual(t1.underlying, t2.underlying),
   (t1: ListType, t2: ListType) => areEqual(t1.element, t2.element),
   (t1: MapType, t2: MapType) => areEqual(t1.key, t2.key) && areEqual(t1.value, t2.value),
 ]

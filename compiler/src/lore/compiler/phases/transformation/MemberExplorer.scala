@@ -49,32 +49,10 @@ object MemberExplorer {
   }
 
   private def membersOf(tpe: Type)(implicit position: Position): Compilation[MemberMap] = {
-    def component(underlying: DeclaredType): (String, VirtualMember) = {
-      underlying.name -> VirtualMember(underlying.name, underlying, isComponent = true)
-    }
-
+    // TODO (shape): A trait may have members once it can extend shape types.
     tpe match {
       case structType: StructType =>
-        // A struct type has exactly the members that are declared in it. One might think that it could have additional
-        // members by the way of traits extending component types, but all such components are already guaranteed to
-        // be part of the struct. The same is true for owned-by types of such components. The struct has to adhere to
-        // each component's owned-by type anyway, so there won't be any additional members defined through such an
-        // owned-by constellation.
-        HashMap(structType.definition.members.map(m => m.name -> m.asVirtualMember): _*).compiled
-
-      case traitType: TraitType =>
-        // A trait's members are limited to the components that the trait contains. The same stipulation about owned-by
-        // types not inducing any additional members (see the struct explanation above) also holds for traits. The trait
-        // itself has to satisfy the owned-by typing of each of its components, which means that no additional members
-        // can be added through an owned-by type to the trait's list of members.
-        HashMap(traitType.inheritedComponentTypes.map(c => component(c.underlying)).toVector: _*).compiled
-
-      case ComponentType(underlying) =>
-        // A component type directly defines a single member that has the name and type of its underlying declared
-        // type. It also additionally defines members based on its "owned by" type.
-        MemberExplorer.members(underlying.ownedBy).map { ownedByMembers =>
-          ownedByMembers + component(underlying)
-        }
+        HashMap(structType.definition.properties.map(property => property.name -> property.asVirtualMember): _*).compiled
 
       case tv: TypeVariable =>
         // A type variable's members are defined by its upper bound. If a member is a member of the upper bound type,

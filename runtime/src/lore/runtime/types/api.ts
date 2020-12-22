@@ -2,7 +2,7 @@ import { areEqual } from './equality.ts'
 import { isSubtype } from './subtyping.ts'
 import { fits, fitsMonomorphic, fitsPolymorphic } from './fit.ts'
 import {
-  any, boolean, struct, component, int, intersection, intersectionSimplified, list, map, nothing, product, real,
+  any, boolean, struct, int, intersection, intersectionSimplified, list, map, nothing, product, real,
   string, sum, sumSimplified, unhashedProduct, unit, variable, structSchema, trait, traitSchema,
 } from './types.ts'
 import { typeOf } from './typeof.ts'
@@ -24,7 +24,6 @@ export default {
   intersection,
   intersectionSimplified,
   product,
-  component,
   list,
   map,
   struct,

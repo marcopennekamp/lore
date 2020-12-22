@@ -37,8 +37,6 @@ export function substitute(assignments: Assignments, type: Type): Type {
       return sum(substituteMany(assignments, (<SumType> type).types))
     case Kind.Product:
       return product(substituteMany(assignments, (<ProductType> type).types))
-    case Kind.Component:
-      return type // TODO: Change this once we allow type parameters for classes and labels?
     case Kind.List:
       return list(substitute(assignments, (<ListType> type).element))
     case Kind.Map:

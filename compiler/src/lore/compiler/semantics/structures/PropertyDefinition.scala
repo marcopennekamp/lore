@@ -14,10 +14,10 @@ import lore.compiler.types.Type
 //       We can just say: `let var x = 5`
 
 class PropertyDefinition(
-  name: String,
-  tpe: Type,
-  isMutable: Boolean,
-  defaultValueNode: Option[ExprNode],
+  val name: String,
+  val tpe: Type,
+  val isMutable: Boolean,
+  val defaultValueNode: Option[ExprNode],
   override val position: Position,
 ) extends Positioned {
 

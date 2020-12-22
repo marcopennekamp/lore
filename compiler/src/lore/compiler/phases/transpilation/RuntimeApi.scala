@@ -27,7 +27,6 @@ object RuntimeApi {
     val intersection = s"$base.intersection"
     val intersectionSimplified = s"$base.intersectionSimplified"
     val product = s"$base.product"
-    val component = s"$base.component"
     val list = s"$base.list"
     val map = s"$base.map"
     val struct = s"$base.struct"
