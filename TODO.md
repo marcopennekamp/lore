@@ -2,7 +2,6 @@
 
 #### Features
 
-- Implement alternative map syntax. (`#['hello' -> 1, 'world' -> 2]`)
 - Add shape features.
   - Shape types
     - Type aliases

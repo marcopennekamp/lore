@@ -121,17 +121,17 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     ))
 
     // Map constructors.
-    "%{ }" --> Stmt.Map(Vector.empty)
-    "%{ a -> 5, b -> 10 }" --> Stmt.Map(Vector(Stmt.KeyValue(va, Stmt.IntLiteral(5)), Stmt.KeyValue(vb, Stmt.IntLiteral(10))))
-    "%{ 'foo' -> (a, b), 'bar' -> (c, c) }" --> Stmt.Map(Vector(
+    "#[]" --> Stmt.Map(Vector.empty)
+    "#[a -> 5, b -> 10]" --> Stmt.Map(Vector(Stmt.KeyValue(va, Stmt.IntLiteral(5)), Stmt.KeyValue(vb, Stmt.IntLiteral(10))))
+    "#['foo' -> (a, b), 'bar' -> (c, c)]" --> Stmt.Map(Vector(
       Stmt.KeyValue(Stmt.StringLiteral("foo"), Stmt.Tuple(Vector(va, vb))),
       Stmt.KeyValue(Stmt.StringLiteral("bar"), Stmt.Tuple(Vector(vc, vc))),
     ))
-    "%{ a -> %{ 'test' -> 'me' }, b -> %{ 'test' -> 'well $c' } }" --> Stmt.Map(Vector(
+    "#[a -> #['test' -> 'me'], b -> #['test' -> 'well $c']]" --> Stmt.Map(Vector(
       Stmt.KeyValue(va, Stmt.Map(Vector(Stmt.KeyValue(Stmt.StringLiteral("test"), Stmt.StringLiteral("me"))))),
       Stmt.KeyValue(vb, Stmt.Map(Vector(Stmt.KeyValue(Stmt.StringLiteral("test"), Stmt.Concatenation(Vector(Stmt.StringLiteral("well "), vc)))))),
     ))
-    "%{ 1 -> a + b, 5 -> a * c, 10 -> x < 5.3 }" --> Stmt.Map(Vector(
+    "#[1 -> a + b, 5 -> a * c, 10 -> x < 5.3]" --> Stmt.Map(Vector(
       Stmt.KeyValue(Stmt.IntLiteral(1), Stmt.Addition(va, vb)),
       Stmt.KeyValue(Stmt.IntLiteral(5), Stmt.Multiplication(va, vc)),
       Stmt.KeyValue(Stmt.IntLiteral(10), Stmt.LessThan(vx, Stmt.RealLiteral(5.3))),
@@ -340,33 +340,33 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
   }
 
   it should "assign the correct indices (map construction)" in {
-    inside("%{ a -> %{ 'test' -> 'me' }, b -> %{ 'test' -> 'well $c' } }".parsed) {
+    inside("#[a -> #['test' -> 'me'], b -> #['test' -> 'well $c']]".parsed) {
       case map: ExprNode.MapNode =>
         map.position.index shouldEqual 0
         inside(map.kvs) {
           case Seq(a: ExprNode.KeyValueNode, b: ExprNode.KeyValueNode) =>
-            a.position.index shouldEqual 3
-            a.key.position.index shouldEqual 3
+            a.position.index shouldEqual 2
+            a.key.position.index shouldEqual 2
             inside(a.value) {
               case innerMap: ExprNode.MapNode =>
-                innerMap.position.index shouldEqual 8
+                innerMap.position.index shouldEqual 7
                 inside(innerMap.kvs) {
                   case Seq(test: ExprNode.KeyValueNode) =>
-                    test.position.index shouldEqual 11
-                    test.key.position.index shouldEqual 11
-                    test.value.position.index shouldEqual 21
+                    test.position.index shouldEqual 9
+                    test.key.position.index shouldEqual 9
+                    test.value.position.index shouldEqual 19
                 }
             }
-            b.position.index shouldEqual 29
-            b.key.position.index shouldEqual 29
+            b.position.index shouldEqual 26
+            b.key.position.index shouldEqual 26
             inside(b.value) {
               case innerMap: ExprNode.MapNode =>
-                innerMap.position.index shouldEqual 34
+                innerMap.position.index shouldEqual 31
                 inside(innerMap.kvs) {
                   case Seq(test: ExprNode.KeyValueNode) =>
-                    test.position.index shouldEqual 37
-                    test.key.position.index shouldEqual 37
-                    test.value.position.index shouldEqual 47
+                    test.position.index shouldEqual 33
+                    test.key.position.index shouldEqual 33
+                    test.value.position.index shouldEqual 43
                 }
             }
         }
