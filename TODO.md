@@ -2,13 +2,6 @@
 
 #### Features
 
-- Remove entity/component features.
-  - Component types
-    - Runtime
-  - Component declarations
-  - Entity property and constraints
-  - Owned by property and constraints
-    - Run-time property and check
 - Implement alternative map syntax. (`#['hello' -> 1, 'world' -> 2]`)
 - Add shape features.
   - Shape types

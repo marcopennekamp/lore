@@ -18,8 +18,8 @@ Lore is an expression-based language, which means that there are no statements, 
 
 // They are legal as the body of conditionals and loops.
 if (y == 0) x = 0 else x = 5
-repeat while (i < 10) i = i + 1
-for (entity in entities) count = count + 1
+repeat while (i < 10) i += 1
+for (entity <- entities) count += 1
 ```
 
 Top-level expressions are currently **variable declarations**, **assignments**, and **returns**.
