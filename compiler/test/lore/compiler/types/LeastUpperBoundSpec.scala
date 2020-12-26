@@ -59,6 +59,13 @@ class LeastUpperBoundSpec extends TypeSpec {
     (MapType(BasicType.Real, Cat & Healthy), MapType(BasicType.Int, ScottishFold & Sick)) --> MapType(BasicType.Real, Cat & Status)
   }
 
+  it should "return the most specific supertype for shape types and structs" in {
+    (Goldfish, ShapeTypes.Named) --> ShapeTypes.Named
+    (ShapeTypes.Sized, Goldfish) --> ShapeTypes.Sized
+    (ShapeTypes.Sized, ShapeTypes.Named) --> ShapeTypes.Empty
+    (shape("animal" -> (Cat | Penguin)), shape("animal" -> Raven)) --> shape("animal" -> Animal)
+  }
+
   it should "return the correct least upper bounds for type variables" in {
     val A = new TypeVariable("A", BasicType.Nothing, Bird, 0)
     val B = new TypeVariable("B", BasicType.Nothing, Mammal, 1)
