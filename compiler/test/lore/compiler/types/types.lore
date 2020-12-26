@@ -13,7 +13,14 @@ struct Human implements Mammal
 trait Cat extends Mammal
 struct ScottishFold implements Cat
 struct Unicorn implements Mammal
-struct Goldfish implements Fish
+struct Goldfish implements Fish {
+  name: String
+  size: Real
+}
+
+struct Zoo {
+  animals: [Animal]
+}
 
 trait Status
 trait Healthy extends Status
