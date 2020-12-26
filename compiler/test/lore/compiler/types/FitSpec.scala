@@ -3,6 +3,7 @@ package lore.compiler.types
 import org.scalatest.Assertion
 
 class FitSpec extends TypeSpec {
+
   import TypesExample._
 
   private implicit class TypeExtension(t1: Type) {
@@ -49,4 +50,36 @@ class FitSpec extends TypeSpec {
       ((ListType(BasicType.String | BasicType.Int), BasicType.Int): ProductType) fitsInto (ListType(B), A)
     }
   }
+
+  it should "handle shape types and structs correctly" in {
+    import ShapeTypes._
+
+    { val A = new TypeVariable("A", BasicType.Nothing, BasicType.Any, 0)
+      Goldfish fitsInto shape("name" -> A)
+      Goldfish fitsInto shape("name" -> A, "size" -> BasicType.Real)
+      Goldfish fitsInto shape("name" -> BasicType.String, "size" -> A)
+      Goldfish fitsNotInto shape("name" -> A, "size" -> A)
+    }
+    { val X = new TypeVariable("X", BasicType.Nothing, BasicType.Real, 0)
+      val Y = new TypeVariable("Y", BasicType.Nothing, BasicType.Real, 1)
+      val Z = new TypeVariable("Z", BasicType.Nothing, BasicType.Real, 2)
+      val T2D = shape("x" -> X, "y" -> Y)
+      //val T3D = T2D & shape("z" -> Z)   TODO: Use this once intersection types combine shape types during simplification.
+      val T3D = shape("x" -> X, "y" -> Y, "z" -> Z)
+      Position2D fitsInto T2D
+      Position2D fitsNotInto T3D
+      Position3D fitsInto T2D
+      Position3D fitsInto T3D
+      Box2D fitsInto T2D
+      Box2D fitsNotInto T3D
+    }
+    { val A = new TypeVariable("A", BasicType.Nothing, BasicType.Any, 0)
+      // TODO: The test with B currently does not work. See the TODO in TypeVariableAllocation.of.
+      //val B = new TypeVariable("B", BasicType.Nothing, ListType(A), 1)
+      //Zoo fitsInto shape("animals" -> B)
+
+      Zoo fitsInto shape("animals" -> ListType(A))
+    }
+  }
+
 }

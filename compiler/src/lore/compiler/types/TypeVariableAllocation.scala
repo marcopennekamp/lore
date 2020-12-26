@@ -77,6 +77,17 @@ object TypeVariableAllocation {
   /**
     * Creates a type variable allocation that represents all type variables in t2 which have been assigned types
     * from t1.
+    *
+    * TODO: Make this work for the following function:
+    *           function foo(list: B) where A, B <: [A] = ...
+    *       Currently, A cannot be inferred from the assigned type of B. However, we have the opportunity to infer
+    *       it from the upper bound of B. In general: If we assign type t to B, we should also check whether we can
+    *       assign t to B's upper bound (and lower bound). If the bounds contain variables, we will automatically
+    *       "infer" the right type for A. Furthermore, this will result in a much needed type check for the
+    *       following function:
+    *           function foo(element: A, list: B) where A, B <: [A] = ...
+    *       If we don't assign list's type to [A], we might not catch that element's A is not the same as B's A,
+    *       i.e. when the given element and the given list have different (element) types.
     */
   def of(t1: Type, t2: Type): TypeVariableAllocation = {
     val allocation = new TypeVariableAllocation
@@ -99,11 +110,14 @@ object TypeVariableAllocation {
 
     (t1, t2) match {
       case (_, tv2: TypeVariable) => allocation.addAssignment(tv2, t1)
+
       case (p1: ProductType, p2: ProductType) =>
         if (p1.elements.size == p2.elements.size) {
           p1.elements.zip(p2.elements).foreach { case (c1, c2) => assign(c1, c2) }
         }
+
       case (l1: ListType, l2: ListType) => assign(l1.element, l2.element)
+
       case (m1: MapType, m2: MapType) =>
         // TODO: Is this correct?
         assign(m1.key, m2.key)
@@ -131,4 +145,5 @@ object TypeVariableAllocation {
       case _ =>
     }
   }
+
 }
