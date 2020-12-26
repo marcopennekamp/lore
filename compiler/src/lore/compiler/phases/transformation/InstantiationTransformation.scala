@@ -3,7 +3,7 @@ package lore.compiler.phases.transformation
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Error, Position}
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.structures.{PropertyDefinition, StructDefinition}
+import lore.compiler.semantics.structures.{StructPropertyDefinition, StructDefinition}
 
 object InstantiationTransformation {
 
@@ -26,7 +26,7 @@ object InstantiationTransformation {
     override def message: String = s"The struct to be instantiated does not have a property $name."
   }
 
-  case class IllegallyTypedProperty(property: PropertyDefinition, expression: Expression) extends Error(expression) {
+  case class IllegallyTypedProperty(property: StructPropertyDefinition, expression: Expression) extends Error(expression) {
     override def message: String =
       s"The property ${property.name} is supposed to be assigned a value of type ${expression.tpe}. However," +
         s" the property itself has the type ${property.tpe}, which is not a subtype of ${expression.tpe}."
@@ -43,8 +43,8 @@ object InstantiationTransformation {
     /**
       * Assigns entries to properties, potentially filling missing properties with their default values.
       */
-    def correlateEntries(): Compilation[Vector[(PropertyDefinition, Expression)]] = {
-      var pairs = Vector.empty[(PropertyDefinition, Expression)]
+    def correlateEntries(): Compilation[Vector[(StructPropertyDefinition, Expression)]] = {
+      var pairs = Vector.empty[(StructPropertyDefinition, Expression)]
       var missing = Vector.empty[String]
       val illegal = entries.map(_._1).diff(struct.properties.map(_.name))
 
@@ -67,7 +67,7 @@ object InstantiationTransformation {
       }
     }
 
-    def verifyEntryTypes(pairs: Vector[(PropertyDefinition, Expression)]): Verification = {
+    def verifyEntryTypes(pairs: Vector[(StructPropertyDefinition, Expression)]): Verification = {
       pairs.map { case (property, expression) =>
         if (expression.tpe <= property.tpe) Verification.succeed else Compilation.fail(IllegallyTypedProperty(property, expression))
       }.simultaneous.verification

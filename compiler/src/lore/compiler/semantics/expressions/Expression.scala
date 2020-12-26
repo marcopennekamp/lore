@@ -3,7 +3,7 @@ package lore.compiler.semantics.expressions
 import lore.compiler.core.Position
 import lore.compiler.semantics.{LocalVariable, VirtualMember}
 import lore.compiler.semantics.functions.CallTarget
-import lore.compiler.semantics.structures.{PropertyDefinition, StructDefinition}
+import lore.compiler.semantics.structures.{StructPropertyDefinition, StructDefinition}
 import lore.compiler.types.{BasicType, ProductType, Type}
 
 sealed trait Expression {
@@ -76,7 +76,7 @@ object Expression {
     override def tpe: Type = struct.tpe
   }
   object Instantiation {
-    case class Argument(property: PropertyDefinition, value: Expression)
+    case class Argument(property: StructPropertyDefinition, value: Expression)
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

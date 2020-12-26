@@ -1,14 +1,13 @@
 package lore.compiler.types
 
-import lore.compiler.core.CompilationException
 import lore.compiler.semantics.Registry
 import lore.compiler.types.TypeExtensions._
-import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object LeastUpperBound {
 
-  def leastUpperBound(t1: Type, t2: Type)(implicit registry: Registry): Type = configurableLub(defaultToSum = true)(t1, t2)
-  private def lubNoDefaultSum(t1: Type, t2: Type)(implicit registry: Registry): Type = configurableLub(defaultToSum = false)(t1, t2)
+  def leastUpperBound(t1: Type, t2: Type)(implicit registry: Registry): Type = lubDefaultToSum(t1, t2)
+  private[types] def lubDefaultToSum(t1: Type, t2: Type)(implicit registry: Registry): Type = configurableLub(defaultToSum = true)(t1, t2)
+  private[types] def lubNoDefaultSum(t1: Type, t2: Type)(implicit registry: Registry): Type = configurableLub(defaultToSum = false)(t1, t2)
 
   /**
     * Calculates the least upper bound of two types, which is the most specific (super-)type that values of both
@@ -17,12 +16,22 @@ object LeastUpperBound {
     *
     * In general, we can say that if t1 <= t2, then t2 is the solution to this problem. This is easy to see: We
     * want the most specific common supertype. What could be more specific than one of the types themselves?
+    *
+    * When deciding the LUB of a type that contains a sum type, we should not allow the LUB of the inner sum type to
+    * fallback to a sum type. Otherwise, the LUB never converges and just produces long chains of sum types. This is
+    * the reason why we're using lubNoDefaultSum to handle part LUBs of intersection types, sum types, and type
+    * variable bounds.
     */
-  private[types] def configurableLub(defaultToSum: Boolean)(t1: Type, t2: Type)(implicit registry: Registry): Type = {
+  private def configurableLub(defaultToSum: Boolean)(t1: Type, t2: Type)(implicit registry: Registry): Type = {
     /**
       * The fallback LUB, which is either Any or t1 | t2 depending on the settings.
       */
     def fallback = if (defaultToSum) SumType.construct(Set(t1, t2)) else BasicType.Any
+
+    // TODO: I don't think we should pass on settings in cases where child types are lubbed. The setting should not
+    //       propagate through several layers. Otherwise, if we lub two shape types contained in a sum type, we
+    //       suddenly cannot fallback to the sum of two property types because the surrounding sum type's LUB is
+    //       calculated with `defaultToSum = false`.
     def lubPassOnSettings = configurableLub(defaultToSum) _
 
     implicit class FallbackIfAny(tpe: Type) {
@@ -54,18 +63,30 @@ object LeastUpperBound {
       // From the candidates, we choose the most specific types, meaning those who don't have a strict subtype in the
       // candidate list. This part of the algorithm is taken care of by IntersectionType.construct, as intersection
       // types are specifically simplified according to this rule.
+      // We have to use lubNoDefaultSum for the candidate LUBs because we have to be able to decide which candidates
+      // are good and which aren't. Take for example `LUB(Cat & Sick, Penguin & Healthy)`. What we want is a type
+      // `Animal & Status`. But if we allow `LUB(Sick, Penguin)` to default to a sum type, we get `Sick | Penguin`
+      // which is then irreducible and leads to weird types like `Animal & (Cat | Healthy) & (Sick | Penguin) & Status`.
+      // Defaulting to Any immediately removes these parts from the intersection type, so we only include types in
+      // the intersection which add useful information.
       // TODO: Is this algorithm the same when applied via reduction (reducing to the LUB by pairs) and to a list
       //       of intersection types? That is, does the following hold: LUB(LUB(A, B), C) = LUB(A, B, C)?
       case (t1: IntersectionType, t2: IntersectionType) =>
         // TODO: When calling lubNoDefaultSum, should we pass the "no default to sum" setting down the call tree,
         //       actually? Or should this be confined to the immediate concern of having a correct candidate algorithm?
         //       We need to test this with more complex examples, though they should still make sense, of course.
-        val candidates = for  {c1 <- t1.parts; c2 <- t2.parts} yield lubNoDefaultSum(c1, c2)
+        val candidates = for {c1 <- t1.parts; c2 <- t2.parts} yield lubNoDefaultSum(c1, c2)
         IntersectionType.construct(candidates)
       case (t1: IntersectionType, _) => lubPassOnSettings(t1, IntersectionType(Set(t2)))
       case (_, t2: IntersectionType) => lubPassOnSettings(t2, t1)
 
-      // In this step, we always try to join sum types.
+      // In this step, we always try to join sum types. The ordering in the match is important: if we compare an
+      // intersection type with a sum type, we want the intersection handling above to be executed by the match.
+      // TODO: Can't we refine this? If we join each sum immediately, we might lose opportunity in cases where
+      //       the left and right type taken together provide enough information for a good decision. For
+      //       example, given structs s1, s2 and shape type s3, LUB(s1 | s2, s3) could lead to a shape type
+      //       that correctly combines properties from s1, s2, and s3. But if we join s1 and s2 immediately,
+      //       resulting for example in a trait, we cannot further LUB that with the shape type s3.
       case (t1: SumType, _) =>
         lubNoDefaultSum(
           t1.join,
@@ -77,38 +98,34 @@ object LeastUpperBound {
       case (ProductType(left), ProductType(right)) if left.size == right.size => ProductType(left.zip(right).map(lubPassOnSettings.tupled))
 
       // For declared types, the LUB is calculated by the type hierarchy. If the result would be Any, we return
-      // the sum type instead.
+      // the fallback type instead.
+      // We specifically don't default to a shape type (which would be possible if we LUB two structs) because we only
+      // want to produce shape types if a shape type is already part of the types to LUB. This "disables" structural
+      // typing until the programmer explicitly says that they want it.
       case (d1: DeclaredType, d2: DeclaredType) => registry.declaredTypeHierarchy.leastCommonSupertype(d1, d2).fallbackIfAny
-
-      // TODO (shape): Maybe have a look at the following code when implementing the LUB for shape types.
-      // Component types mostly delegate to declared types.
-      /* case (c1: ComponentType, c2: ComponentType) =>
-        val candidates = registry.declaredTypeHierarchy.leastCommonSupertype(c1.underlying, c2.underlying) match {
-          case IntersectionType(types) =>
-            // Let's say the underlying types U1 and U2 have the least upper bound A & B. This means that both types
-            // can be represented either as A or as B, interchangeably. So if we have an entity e1 with a component +U1
-            // and another e2 with a component +U2, they can be represented both as +A and +B. We can say e1.A and refer
-            // to U1. We can say e2.A and refer to U2. We can say e1.B and refer to U1... The point being that the
-            // common denominator of +U1 and +U2 is that they can be viewed through the lens of both +A and +B. Hence,
-            // it is legal to define LUB(+U1, +U2) as +A & +B. This stretches to intersection types with more than two
-            // parts.
-            types.toVector.filterType[DeclaredType]
-          case tpe: DeclaredType => Vector(tpe)
-          case BasicType.Any => Vector.empty
-          case _ => throw CompilationException(s"The least upper bound of $c1 and $c2 is ill-defined because the least" +
-            s" common supertype of the underlying types is neither an intersection type nor a declared type nor Any.")
-        }
-
-        // For full correctness, we have to ensure that only ownable declared types can be the underlying types of
-        // the new component types.
-        val parts = candidates.filter(_.isOwnable)
-        if (parts.nonEmpty) IntersectionType.construct(parts.map(ComponentType)) else fallback */
 
       // Lists simply wrap the lubbed types.
       case (ListType(e1), ListType(e2)) => ListType(lubPassOnSettings(e1, e2))
 
       // Maps also wrap the lubbed types, but for both key and value types.
       case (MapType(k1, v1), MapType(k2, v2)) => MapType(lubPassOnSettings(k1, k2), lubPassOnSettings(v1, v2))
+
+      // The LUB of two shape types or a struct type and a shape type are the properties common to the two types.
+      // Note that we don't produce a shape type as the LUB of two structs because that case is correctly handled
+      // by querying the declared type hierarchy.
+      // TODO: Big problem: Let's say we have a LUB of two structs s1, s2 and a shape type s3. s1 and s2 implement
+      //       trait t1. If we LUB s1 and s2 first, we get t1. Then LUB(t1, s3) = Any, because traits don't have
+      //       properties. Whereas if we first have LUB(s1, s3) = { a: A, b: B } = s4 and the LUB(s2, s4) = { a: A },
+      //       we would get another result. The correct one.
+      //       Clearly, if we are lubbing more than one struct with at least one shape type, we want to default to
+      //       structural typing. Without any shape type present, we want to consult the type hierarchy.
+      case (s1: ShapeType, s2: ShapeType) =>
+        val properties = s1.common(s2).map {
+          case (p1, p2) => ShapeType.Property(p1.name, lubPassOnSettings(p1.tpe, p2.tpe))
+        }
+        ShapeType(properties)
+      case (s1: StructType, s2: ShapeType) => lubPassOnSettings(s1.asShapeType, s2)
+      case (s1: ShapeType, s2: StructType) => lubPassOnSettings(s1, s2.asShapeType)
 
       // Handle Int and Real specifically.
       case (BasicType.Int, BasicType.Real) => BasicType.Real

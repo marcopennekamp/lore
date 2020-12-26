@@ -1,7 +1,5 @@
 package lore.compiler.types
 
-import java.io.ByteArrayOutputStream
-
 import lore.compiler.core.CompilationException
 
 /**
@@ -22,10 +20,12 @@ import lore.compiler.core.CompilationException
   *       - 001: Intersection
   *       - 010: Product
   *       - 011: Named
-  *       - 100: basic type
-  *       - 101: fixed-size type
+  *       - 100: Shape
+  *       - 101: basic type
+  *       - 110: fixed-size type
   *     The last five bits are determined as follows:
   *       - Sum/Intersection/Product/Named: the number of operands (0 to 31)
+  *       - Shape: the number of properties (0 to 31)
   *       - basic type:
   *         - 00000: Any
   *         - 00001: Nothing
@@ -46,14 +46,16 @@ import lore.compiler.core.CompilationException
   *     - Named:
   *       - The name of the type, encoded as a UTF-8 string with a length.
   *       - Any child types according to the encoded number of operands.
+  *     - Shape:
+  *       - For each property contained in the shape, ordered alphabetically:
+  *         - The property's name, encoded as a UTF-8 string with a length.
+  *         - The property's type.
   *     - Basic types: No operands.
   *     - List: A single element type.
   *     - Map: A key type and a value type.
   *     - Variable:
   *       - The name of the variable, encoded as a UTF-8 string with a length.
   *       - The lower and/or upper bound based on the specific kind, as outlined above.
-  *
-  * TODO (shape): Don't forget to add shapes to this.
   */
 object TypeEncoder {
 
@@ -62,8 +64,9 @@ object TypeEncoder {
     val intersection: Byte = 1
     val product: Byte = 2
     val named: Byte = 3
-    val basic: Byte = 4
-    val fixedSize: Byte = 5
+    val shape: Byte = 4
+    val basic: Byte = 5
+    val fixedSize: Byte = 6
   }
 
   private object Tag {
@@ -96,51 +99,43 @@ object TypeEncoder {
     val variable: Byte = Tag(Kind.fixedSize, 7)
   }
 
-  def encode(tpe: Type): Array[Byte] = {
-    implicit val stream: ByteArrayOutputStream = new ByteArrayOutputStream()
-    writeType(tpe)
-    stream.toByteArray
-  }
+  def encode(tpe: Type): Vector[Byte] = writeType(tpe)
 
-  private def writeType(t: Type)(implicit stream: ByteArrayOutputStream): Unit = {
+  private def writeType(t: Type): Vector[Byte] = t match {
     // TODO: Order intersection and sum parts to disambiguate sets.
-    val (tag, name, children) = t match {
-      case SumType(types) => (Tag.variableSize(Kind.sum, types.size), None, types)
-      case IntersectionType(types) => (Tag.variableSize(Kind.intersection, types.size), None, types)
-      case ProductType(elements) => (Tag.variableSize(Kind.product, elements.size), None, elements)
-      case ListType(element) => (Tag.list, None, Vector(element))
-      case MapType(key, value) => (Tag.map, None, Vector(key, value))
-      case tv: TypeVariable =>
-        val (tag, bounds) = (tv.lowerBound, tv.upperBound) match {
-          case (BasicType.Nothing, BasicType.Any) => (Tag.variableNothingAny, Vector.empty)
-          case (_, BasicType.Any) => (Tag.variableAny, Vector(tv.lowerBound))
-          case (BasicType.Nothing, _) => (Tag.variableNothing, Vector(tv.upperBound))
-          case _ => (Tag.variable, Vector(tv.lowerBound, tv.upperBound))
-        }
-        (tag, Some(tv.name), bounds)
-      case t: BasicType => (Tag.basic(t), None, Vector.empty)
-      case t: NamedType => (Tag(Kind.named), Some(t.name), Vector.empty)
-    }
-
-    stream.write(tag)
-    name.foreach(writeString)
-    children.foreach(writeType)
+    case SumType(types) => Tag.variableSize(Kind.sum, types.size) +: types.toVector.flatMap(writeType)
+    case IntersectionType(types) => Tag.variableSize(Kind.intersection, types.size) +: types.toVector.flatMap(writeType)
+    case ProductType(elements) => Tag.variableSize(Kind.product, elements.size) +: elements.flatMap(writeType)
+    case ListType(element) => Tag.list +: writeType(element)
+    case MapType(key, value) => (Tag.map +: writeType(key)) ++ writeType(value)
+    case ShapeType(properties) =>
+      val propertyBytes = properties.values.toVector.sortBy(_.name).flatMap(property => writeString(property.name) ++ writeType(property.tpe))
+      Tag.variableSize(Kind.shape, properties.size) +: propertyBytes
+    case tv: TypeVariable =>
+      val (tag, bounds) = (tv.lowerBound, tv.upperBound) match {
+        case (BasicType.Nothing, BasicType.Any) => (Tag.variableNothingAny, Vector.empty)
+        case (_, BasicType.Any) => (Tag.variableAny, writeType(tv.lowerBound))
+        case (BasicType.Nothing, _) => (Tag.variableNothing, writeType(tv.upperBound))
+        case _ => (Tag.variable, writeType(tv.lowerBound) ++ writeType(tv.upperBound))
+      }
+      (tag +: writeString(tv.name)) ++ bounds
+    case t: BasicType => Vector(Tag.basic(t))
+    case t: NamedType => Tag(Kind.named) +: writeString(t.name)
   }
 
   /**
-    * Writes a string to the stream as UTF-8, encoding its length using one or two additional bytes (in big-endian).
+    * Writes a string to the result as UTF-8, encoding its length using one or two additional bytes (big-endian).
     */
-  private def writeString(string: String)(implicit stream: ByteArrayOutputStream): Unit = {
+  private def writeString(string: String): Vector[Byte] = {
     val bytes = string.getBytes("UTF-8")
     // If the length is less than 128, we have one length byte with a leftmost 0. If the length is less than 32768,
     // we have two length bytes with the leftmost bit of the first byte always a 1. This ensures that the first
     // bit of the string's length correctly encodes whether we have extended length or not.
     bytes.length match {
-      case l if l < 128 => stream.write(l)
-      case l if l < 32768 => stream.write(0x80 | ((l & 0x7F00) >>> 8)); stream.write(l & 0xFF)
-      case _ => throw CompilationException("Names with lengths of more than ")
+      case l if l < 128 => l.toByte +: bytes.toVector
+      case l if l < 32768 => (0x80 | ((l & 0x7F00) >>> 8)).toByte +: ((l & 0xFF).toByte +: bytes.toVector)
+      case _ => throw CompilationException("Names with lengths of more than 32767 UTF-8 bytes cannot be encoded.")
     }
-    stream.write(bytes)
   }
 
 }

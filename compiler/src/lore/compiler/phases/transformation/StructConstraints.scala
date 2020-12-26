@@ -3,7 +3,7 @@ package lore.compiler.phases.transformation
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Error}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.structures.{PropertyDefinition, StructDefinition}
+import lore.compiler.semantics.structures.{StructPropertyDefinition, StructDefinition}
 
 object StructConstraints {
 
@@ -18,7 +18,7 @@ object StructConstraints {
     verifyPropertiesUnique(definition)
   }
 
-  case class DuplicateProperty(definition: StructDefinition, property: PropertyDefinition) extends Error(property) {
+  case class DuplicateProperty(definition: StructDefinition, property: StructPropertyDefinition) extends Error(property) {
     override def message = s"The property ${property.name} is declared twice in the struct ${definition.name}."
   }
 

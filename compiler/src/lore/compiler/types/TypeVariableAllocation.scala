@@ -4,6 +4,8 @@ import lore.compiler.core.CompilationException
 
 import scala.collection.mutable
 
+// TODO: Can we rewrite this with immutability?
+
 /**
   * Allows checking whether type variable assignments are consistent.
   *
@@ -71,6 +73,7 @@ class TypeVariableAllocation() {
 }
 
 object TypeVariableAllocation {
+
   /**
     * Creates a type variable allocation that represents all type variables in t2 which have been assigned types
     * from t1.
@@ -83,8 +86,8 @@ object TypeVariableAllocation {
 
   private def assign(t1: Type, t2: Type)(implicit allocation: TypeVariableAllocation): Unit = {
     // If the right-hand type contains no variables, there is no way we could assign anything, and thus the assignment
-    // can be skipped. This "optimization" is currently important for correct compiler operation, as we only want to
-    // raise an "unsupported substitution" error in cases where the right-hand type even contains type variables.
+    // can be skipped. This check is currently important for correct compiler operation, as we only want to raise an
+    // "unsupported substitution" error in cases where the right-hand type even contains type variables.
     if (Type.isMonomorphic(t2)) {
       return
     }
@@ -96,15 +99,22 @@ object TypeVariableAllocation {
 
     (t1, t2) match {
       case (_, tv2: TypeVariable) => allocation.addAssignment(tv2, t1)
+      case (p1: ProductType, p2: ProductType) =>
+        if (p1.elements.size == p2.elements.size) {
+          p1.elements.zip(p2.elements).foreach { case (c1, c2) => assign(c1, c2) }
+        }
       case (l1: ListType, l2: ListType) => assign(l1.element, l2.element)
       case (m1: MapType, m2: MapType) =>
         // TODO: Is this correct?
         assign(m1.key, m2.key)
         assign(m1.value, m2.value)
-      case (p1: ProductType, p2: ProductType) =>
-        if (p1.elements.size == p2.elements.size) {
-          p1.elements.zip(p2.elements).foreach { case (c1, c2) => assign(c1, c2) }
+
+      case (s1: ShapeType, s2: ShapeType) =>
+        s2.correlate(s1).foreach {
+          case (p2, Some(p1)) => assign(p1.tpe, p2.tpe)
+          case _ =>
         }
+      case (s1: StructType, s2: ShapeType) => assign(s1.asShapeType, s2)
 
       // Allocating types to intersection types and sum types is quite complex, since the allocation mechanism
       // suddenly come upon more than one possible allocation. Take, for example, a sum type A | B, to which we

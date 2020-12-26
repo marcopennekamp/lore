@@ -22,7 +22,8 @@ object IntersectionType {
       case t: IntersectionType => t.parts
       case t => Set(t)
     }
-    val simplified = Type.mostSpecific(flattened, Subtyping.Default)
+    // TODO: Combine multiple shape types into one. (Also mirror to `intersectionSimplified` in the runtime.)
+    val simplified = Type.mostSpecific(flattened)
     val intersection = new IntersectionType(simplified)
     if (intersection.parts.size == 1) intersection.parts.head else intersection
   }

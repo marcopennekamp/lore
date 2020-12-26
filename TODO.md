@@ -2,17 +2,19 @@
 
 #### Features
 
-- Add shape features.
+- Shape features:
   - Shape types
-    - Type aliases
-    - `+` as part of a valid type name
-  - Subtyping
-    - compiler
-    - runtime
+    - compiler: ~~data structure~~, ~~subtyping~~, ~~variable allocation~~, ~~Type functions~~, ~~type encoding~~, ~~least upper bound~~, parser, transpiler, combine shape types in intersection types
+    - runtime: data structure, subtyping, type equality, variable allocation, combine shape types in intersection types
   - Open properties
     - struct property declarations
     - run-time type instantiation
   - Shape values
+    - compiler: AST, expression tree, parser, transformer & type inference, transpiler
+    - runtime: data structure, run-time type instantiation
+  - Auxiliary features:
+    - Type aliases
+    - `+` as part of a valid type name
 - Finish transformation and transpilation of the current MVL constructs. (WHICH ONES ARE THESE?)
   - Ranges still need to be supported, as they are already part of the specification.
 - Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.

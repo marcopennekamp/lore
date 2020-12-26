@@ -1,6 +1,6 @@
 package lore.compiler.semantics
 
-import lore.compiler.semantics.structures.PropertyDefinition
+import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.types.Type
 
 import scala.util.hashing.MurmurHash3
@@ -16,7 +16,7 @@ case class VirtualMember(
   name: String,
   tpe: Type,
   isMutable: Boolean = false,
-  underlying: Option[PropertyDefinition] = None,
+  underlying: Option[StructPropertyDefinition] = None,
 ) {
   val isImmutable: Boolean = !isMutable
 

@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation.Verification
 import lore.compiler.phases.transpilation.TranspiledName
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.DynamicCallTarget
-import lore.compiler.semantics.structures.{DefaultValue, StructDefinition}
+import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 
 object StructTransformation {
 
@@ -22,7 +22,7 @@ object StructTransformation {
 
       compiledExpression.map { maybeExpression =>
         property.defaultValue = maybeExpression.map { expression =>
-          DefaultValue(expression, DynamicCallTarget(TranspiledName.defaultValue(struct.tpe, property).name, expression.tpe))
+          StructPropertyDefinition.DefaultValue(expression, DynamicCallTarget(TranspiledName.defaultValue(struct.tpe, property).name, expression.tpe))
         }
       }
     }.simultaneous.verification

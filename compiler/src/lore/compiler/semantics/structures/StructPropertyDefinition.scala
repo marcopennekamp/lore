@@ -13,7 +13,7 @@ import lore.compiler.types.Type
 //       immutability which doesn't just make a property readonly, but actually applies to the whole data structure.
 //       We can just say: `let var x = 5`
 
-class PropertyDefinition(
+class StructPropertyDefinition(
   val name: String,
   val tpe: Type,
   val isMutable: Boolean,
@@ -24,7 +24,7 @@ class PropertyDefinition(
   /**
     * This is a variable because it may be transformed during the course of the compilation.
     */
-  var defaultValue: Option[DefaultValue] = _
+  var defaultValue: Option[StructPropertyDefinition.DefaultValue] = _
 
   def hasDefault: Boolean = defaultValueNode.nonEmpty
 
@@ -33,4 +33,6 @@ class PropertyDefinition(
 
 }
 
-case class DefaultValue(expression: Expression, callTarget: DynamicCallTarget)
+object StructPropertyDefinition {
+  case class DefaultValue(expression: Expression, callTarget: DynamicCallTarget)
+}

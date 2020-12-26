@@ -8,7 +8,7 @@ import lore.compiler.phases.transpilation.TranspiledChunk.{JsCode, JsExpr}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.functions.{DynamicCallTarget, FunctionInstance}
-import lore.compiler.semantics.structures.PropertyDefinition
+import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.types._
 
 case class UnsupportedTranspilation(expression: Expression) extends Error(expression) {

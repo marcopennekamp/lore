@@ -1,7 +1,7 @@
 package lore.compiler.phases.resolution
 
 import lore.compiler.core.{Compilation, CompilationException, Position}
-import lore.compiler.semantics.structures.{PropertyDefinition, StructDefinition}
+import lore.compiler.semantics.structures.{StructPropertyDefinition, StructDefinition}
 import lore.compiler.semantics.{Registry, TypeScope}
 import lore.compiler.syntax.TypeDeclNode
 
@@ -20,7 +20,7 @@ object StructDefinitionResolver {
     }
   }
 
-  private def resolveProperty(node: TypeDeclNode.PropertyNode)(implicit typeScope: TypeScope): Compilation[PropertyDefinition] = {
-    TypeExpressionEvaluator.evaluate(node.tpe).map(tpe => new PropertyDefinition(node.name, tpe, node.isMutable, node.defaultValue, node.position))
+  private def resolveProperty(node: TypeDeclNode.PropertyNode)(implicit typeScope: TypeScope): Compilation[StructPropertyDefinition] = {
+    TypeExpressionEvaluator.evaluate(node.tpe).map(tpe => new StructPropertyDefinition(node.name, tpe, node.isMutable, node.defaultValue, node.position))
   }
 }

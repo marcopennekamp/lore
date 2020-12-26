@@ -7,7 +7,7 @@ import lore.compiler.types.StructType
 class StructDefinition(
   override val name: String,
   override val tpe: StructType,
-  val properties: Vector[PropertyDefinition],
+  val properties: Vector[StructPropertyDefinition],
   override val position: Position,
 ) extends DeclaredTypeDefinition {
 

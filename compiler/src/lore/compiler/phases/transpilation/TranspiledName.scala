@@ -1,7 +1,7 @@
 package lore.compiler.phases.transpilation
 
 import lore.compiler.semantics.functions.FunctionDefinition
-import lore.compiler.semantics.structures.PropertyDefinition
+import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.types.{DeclaredType, StructType, Type}
 
 class TranspiledName(val name: String) extends AnyVal {
@@ -17,7 +17,7 @@ object TranspiledName {
   def typeSchema(tpe: DeclaredType): TranspiledName = s"lore_schema_${tpe.name}".asName
   def newType(tpe: DeclaredType): TranspiledName = s"lore_newtype_${tpe.name}".asName
   def instantiate(struct: StructType): TranspiledName = s"lore_instantiate_${struct.name}".asName
-  def defaultValue(struct: StructType, property: PropertyDefinition): TranspiledName = s"${declaredType(struct)}__default_${property.name}".asName
+  def defaultValue(struct: StructType, property: StructPropertyDefinition): TranspiledName = s"${declaredType(struct)}__default_${property.name}".asName
 
   def temporaryVariable(name: String): TranspiledName = s"lore_tmp_$name".asName
   def localVariable(loreName: String): TranspiledName = s"lore_lv_$loreName".asName
