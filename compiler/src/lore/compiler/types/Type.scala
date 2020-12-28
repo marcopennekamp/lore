@@ -195,7 +195,7 @@ object Type {
         val propertyRepresentations = properties.values.map { property =>
           s"${property.name}: ${toString(property.tpe, verbose)}"
         }
-        s"%{ ${propertyRepresentations.mkString(", ")} }"
+        s"{ ${propertyRepresentations.mkString(", ")} }"
       case s: StructType =>
         if (verbose) {
           val implements = if (s.supertypes.nonEmpty) s" implements ${s.supertypes.map(toString(_, verbose)).mkString(", ")}" else ""

@@ -1,9 +1,10 @@
 package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, Error}
+import lore.compiler.core.Error
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.structures.{StructPropertyDefinition, StructDefinition}
+import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object StructConstraints {
 
@@ -26,10 +27,7 @@ object StructConstraints {
     * Verifies that this struct's properties are unique.
     */
   private def verifyPropertiesUnique(definition: StructDefinition): Verification = {
-    definition.properties.groupBy(_.name).values.map {
-      case Vector(_) => Verification.succeed
-      case properties if properties.size > 1 => Compilation.fail(DuplicateProperty(definition, properties.head))
-    }.toVector.simultaneous.verification
+    definition.properties.requireUnique(_.name, property => DuplicateProperty(definition, property)).verification
   }
 
 }

@@ -25,7 +25,7 @@ class TypeParser(implicit fragment: Fragment) {
   }
 
   private def atom[_: P]: P[TypeExprNode] = {
-    P(unitType | productType | listType | namedType | enclosedType)
+    P(unitType | productType | listType | shapeType | namedType | enclosedType)
   }
 
   private def unitType[_: P]: P[TypeExprNode] = P(Index ~ "(" ~ ")").map(index => TypeExprNode.UnitNode(Position(fragment, index)))
@@ -41,6 +41,11 @@ class TypeParser(implicit fragment: Fragment) {
   }
 
   private def listType[_: P]: P[TypeExprNode.ListNode] = P(Index ~ "[" ~ typeExpression ~ "]").map(withIndex(TypeExprNode.ListNode))
+
+  private def shapeType[_: P]: P[TypeExprNode.ShapeNode] = {
+    def property = P(Index ~ identifier ~ typing).map(withIndex(TypeExprNode.ShapePropertyNode))
+    P(Index ~ "{" ~ property.rep(0, ",").map(_.toVector) ~ "}").map(withIndex(TypeExprNode.ShapeNode))
+  }
 
   private def namedType[_: P]: P[TypeExprNode.IdentifierNode] = P(Index ~ identifier).map(withIndex(TypeExprNode.IdentifierNode))
 
