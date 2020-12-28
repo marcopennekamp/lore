@@ -25,18 +25,10 @@ object Fit {
     // Two types trivially fit into each other if they are equal.
     if (t1 == t2) return true
 
-    // The type allocation in this.assignments handles (2) partially and all of (3).
+    // The type allocation in this.assignments handles (1), (2), and (3).
     assignments(t1, t2).exists { assignments =>
-      // This handles (1).
-      val missingVariables = Type.variables(t2) -- assignments.keySet
-      if (missingVariables.nonEmpty) {
-        // TODO: Use debug or trace logging here.
-        //println(s"Not all variables from $t2 are assigned types from $t1: ${missingVariables.mkString(", ")}.")
-      }
-
-      // The subtyping handles (4).
       val substituted = if (assignments.nonEmpty) Type.substitute(assignments, t2) else t2
-      missingVariables.isEmpty && t1 <= substituted
+      t1 <= substituted
     }
   }
 

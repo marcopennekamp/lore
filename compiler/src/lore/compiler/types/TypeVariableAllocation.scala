@@ -11,7 +11,7 @@ import scala.collection.mutable
   *
   * An assignment is a single binding. An allocation is a nested set of assignments.
   */
-class TypeVariableAllocation() {
+class TypeVariableAllocation(variables: Set[TypeVariable]) {
   private val allocation = mutable.HashMap[TypeVariable, Vector[Type]]()
 
   /**
@@ -39,12 +39,22 @@ class TypeVariableAllocation() {
   }
 
   /**
-    * Whether these allocations are consistent. We essentially check two properties:
-    *   1. All types assigned to the same variable are compatible (equal) to each other.
-    *   2. Assigned types are consistent with their variable's type bounds.
+    * Whether these allocations are consistent. We essentially check these properties:
+    *   1. All type variables are assigned a type.
+    *   2. All types assigned to the same variable are equal.
+    *   3. Assigned types are consistent with their variable's type bounds.
     */
-  lazy val isConsistent: Boolean = {
-    // Check the "compatible assignments" property.
+  lazy val isConsistent: Boolean = allVariablesAssigned && areAssignmentsUnique && areBoundsKept
+
+  /**
+    * All type variables are assigned a type.
+    */
+  private def allVariablesAssigned: Boolean = (variables -- allocation.keySet).isEmpty
+
+  /**
+    * All types assigned to the same variable are equal.
+    */
+  private def areAssignmentsUnique: Boolean = {
     allocation.forall { case (_, possibleAssignments) =>
       possibleAssignments.sliding(2).forall {
         case Vector(left, right) =>
@@ -55,19 +65,23 @@ class TypeVariableAllocation() {
           // case of one-element lists.
           true
       }
-    } && {
-      // Check the "type bounds" property.
-      val assignments = currentAssignments()
-      assignments.forall { case (variable, tpe) =>
-        // TODO: We might have to substitute multiple times until no substitutions occur. We should verify this
-        //       using a fitting example.
-        //       - I don't think this is the case, because we don't substitute allocated variables into the bounds,
-        //         as all variables should be instanced with types not containing the allocated variables. At most
-        //         we will have type variables from the type we are assigning type from.
-        val actualLowerBound = Type.substitute(assignments, variable.lowerBound)
-        val actualUpperBound = Type.substitute(assignments, variable.upperBound)
-        actualLowerBound <= tpe && tpe <= actualUpperBound
-      }
+    }
+  }
+
+  /**
+    * Assigned types are consistent with their variable's type bounds.
+    */
+  private def areBoundsKept: Boolean = {
+    val assignments = currentAssignments()
+    assignments.forall { case (variable, tpe) =>
+      // TODO: We might have to substitute multiple times until no substitutions occur. We should verify this
+      //       using a fitting example.
+      //       - I don't think this is the case, because we don't substitute allocated variables into the bounds,
+      //         as all variables should be instanced with types not containing the allocated variables. At most
+      //         we will have type variables from the type we are assigning type from.
+      val actualLowerBound = Type.substitute(assignments, variable.lowerBound)
+      val actualUpperBound = Type.substitute(assignments, variable.upperBound)
+      actualLowerBound <= tpe && tpe <= actualUpperBound
     }
   }
 }
@@ -88,9 +102,32 @@ object TypeVariableAllocation {
     *           function foo(element: A, list: B) where A, B <: [A] = ...
     *       If we don't assign list's type to [A], we might not catch that element's A is not the same as B's A,
     *       i.e. when the given element and the given list have different (element) types.
+    *       However, we have to be cautious. Consider the following function:
+    *           function foo(a: A, b: B, c: C) where A, B <: A, C <: A = ...
+    *       If we just blindly assign B's actual type to A (the upper bound) and do the same with C, we suddenly
+    *       have an inconsistent assignment. For example: A = Int, B = Real, C = Real.
+    *       So, we seem to arrive at a "forking" point for assignments:
+    *         1. If a variable is mentioned in a parameter type, all instances of this variable must be equal.
+    *         2. If a variable is mentioned in a bound of a variable, we have a subtyping relationship, not an
+    *            equality relationship.
+    *       We could collect both of these rules for all variables and then try to infer the type. If there is a
+    *       proper assignment of the first kind, we only have to check that the other rules of the second kind
+    *       hold as well with the given type. If there are only rules of the second kind, we can infer a variable
+    *       assignment from the given subtyping rules, potentially using a LUB to resolve the issue.
+    *
+    * TODO: Considering that we want to infer variable assignments from upper and lower bounds, how can we still
+    *       disallow the following?
+    *           function genericListify(shape: { x: X, y: Y }): [R] where R, X <: R, Y <: R = [shape.x, shape.y]
+    *           function genericListify(shape: { x: X, y: Y, z: Z }): [R] where R, X <: R, Y <: R, Z <: R = [shape.x, shape.y, shape.z]
+    *       The problem with this multi-function is that when we pass a value of type { x: Real, y: Real } at compile-time
+    *       and get a return type of [Real], we could easily pass a value of type { x: Real, y: Real, z: String } and
+    *       get a return type of [Real | String] at run-time. This is clearly not valid!! So if we infer R = X | Y | Z,
+    *       we will have to take care that the return type checks consider this, so that "[R = X | Y | Z] is not a
+    *       subtype of [R = X | Y]" is the result of that constraint. NOT "[R] is equal to [R] so they are subtypes,
+    *       clearly." That would be very bad. :)
     */
   def of(t1: Type, t2: Type): TypeVariableAllocation = {
-    val allocation = new TypeVariableAllocation
+    val allocation = new TypeVariableAllocation(Type.variables(t2))
     assign(t1, t2)(allocation)
     allocation
   }
