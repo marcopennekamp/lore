@@ -4,7 +4,7 @@
 
 - Shape features:
   - Shape types
-    - compiler: ~~data structure~~, ~~subtyping~~, ~~variable allocation~~, ~~Type functions~~, ~~type encoding~~, ~~least upper bound~~, parser, transpiler, combine shape types in intersection types
+    - compiler: ~~data structure~~, ~~subtyping~~, ~~variable allocation~~, ~~Type functions~~, ~~type encoding~~, ~~least upper bound~~, member explorer, ~~parser~~, transpiler, combine shape types in intersection types
     - runtime: data structure, subtyping, type equality, variable allocation, combine shape types in intersection types
   - Open properties
     - struct property declarations
