@@ -1,6 +1,7 @@
 package lore.compiler.types
 
 import lore.compiler.core.CompilationException
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 import scala.collection.mutable
 
@@ -54,19 +55,7 @@ class TypeVariableAllocation(variables: Set[TypeVariable]) {
   /**
     * All types assigned to the same variable are equal.
     */
-  private def areAssignmentsUnique: Boolean = {
-    allocation.forall { case (_, possibleAssignments) =>
-      possibleAssignments.sliding(2).forall {
-        case Vector(left, right) =>
-          // Since equality is transitive, we don't have to compare all types to each other.
-          left == right
-        case Vector(_) =>
-          // Vector(_).sliding(2) will return Vector(_), so we have to manually evaluate to true for the special
-          // case of one-element lists.
-          true
-      }
-    }
-  }
+  private def areAssignmentsUnique: Boolean = allocation.values.forall(_.allEqual(identity))
 
   /**
     * Assigned types are consistent with their variable's type bounds.

@@ -26,6 +26,10 @@ object CollectionExtensions {
       case Vector(a) => Compilation.succeed(a)
       case group if group.size > 1 => Compilation.fail(duplicate(group.head))
     }.toVector.simultaneous
+
+    def allEqual[V](by: A => V): Boolean = {
+      vector.length <= 1 || vector.sliding(2).forall { case Vector(left, right) => by(left) == by(right) }
+    }
   }
 
   implicit class OptionExtension[A](option: Option[A]) {
