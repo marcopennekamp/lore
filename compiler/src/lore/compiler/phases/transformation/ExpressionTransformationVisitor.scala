@@ -92,7 +92,7 @@ private[transformation] class ExpressionTransformationVisitor(
 
     case MemberAccessNode(_, name, _) =>
       implicit val position: Position = node.position
-      MemberExplorer.find(name, expression.tpe).map(member => Expression.MemberAccess(expression, member, position))
+      expression.tpe.member(name).map(member => Expression.MemberAccess(expression, member, position))
   }
 
   override def visitBinary(node: BinaryNode)(left: Expression, right: Expression): Compilation[Expression] = node match {
@@ -107,7 +107,7 @@ private[transformation] class ExpressionTransformationVisitor(
       val value = right
       val (tpe, isMutable) = access match {
         case variableAccess: Expression.VariableAccess => (variableAccess.tpe, variableAccess.variable.isMutable)
-        case memberAccess: Expression.MemberAccess => (memberAccess.tpe, memberAccess.member.isMutable)
+        case memberAccess: Expression.MemberAccess => (memberAccess.tpe, memberAccess.member.isAssignable)
       }
       for {
         // Ensure that the variable or member is even mutable.

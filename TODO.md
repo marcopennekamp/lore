@@ -66,6 +66,7 @@
 - Clean all TODOs within the source code or add them to this TODO list.
 - Replace assertions with proper CompilationExceptions. 
 - Add positions to CompilationExceptions.
+- We should reconsider whether positions should be implicit parameters. It's probably better to explicitly state which functions should receive which positions, so that there can be no ambiguity. Implicits are also hard to reason about when we get multiple implicits in nested scopes.
 
 
 #### Performance

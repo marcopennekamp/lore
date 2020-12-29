@@ -13,7 +13,7 @@ import scalaz.syntax.traverse._
   * Note: hashCode should be defined as a val or lazy val to avoid recomputing hashes during the runtime of the
   * compiler. At times, we will hash types heavily, and so fast hash access is important.
   */
-trait Type {
+trait Type extends HasMembers {
   def <=(rhs: Type): Boolean = Subtyping.isSubtype(this, rhs)
   def <(rhs: Type): Boolean = Subtyping.isStrictSubtype(this, rhs)
   def >=(rhs: Type): Boolean = rhs <= this

@@ -1,9 +1,10 @@
 package lore.compiler.semantics.structures
 
 import lore.compiler.core.{Position, Positioned}
-import lore.compiler.semantics.VirtualMember
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.{DynamicCallTarget, ParameterDefinition}
+import lore.compiler.semantics.members
+import lore.compiler.semantics.members.Member
 import lore.compiler.syntax.ExprNode
 import lore.compiler.types.Type
 
@@ -29,7 +30,7 @@ class StructPropertyDefinition(
   def hasDefault: Boolean = defaultValueNode.nonEmpty
 
   def asParameter: ParameterDefinition = ParameterDefinition(name, tpe, position)
-  def asVirtualMember: VirtualMember = VirtualMember(name, tpe, isMutable = isMutable, underlying = Some(this))
+  def asMember: Member = Member(name, tpe, isAssignable = isMutable, isMutable)
 
 }
 
