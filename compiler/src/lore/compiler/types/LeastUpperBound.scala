@@ -5,6 +5,8 @@ import lore.compiler.types.TypeExtensions._
 
 object LeastUpperBound {
 
+  def leastUpperBound(types: Vector[Type])(implicit registry: Registry): Type = types.foldLeft(BasicType.Nothing: Type)(LeastUpperBound.leastUpperBound)
+
   def leastUpperBound(t1: Type, t2: Type)(implicit registry: Registry): Type = lubDefaultToSum(t1, t2)
   private[types] def lubDefaultToSum(t1: Type, t2: Type)(implicit registry: Registry): Type = configurableLub(defaultToSum = true)(t1, t2)
   private[types] def lubNoDefaultSum(t1: Type, t2: Type)(implicit registry: Registry): Type = configurableLub(defaultToSum = false)(t1, t2)

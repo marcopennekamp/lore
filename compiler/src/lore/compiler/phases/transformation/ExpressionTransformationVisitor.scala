@@ -190,7 +190,7 @@ private[transformation] class ExpressionTransformationVisitor(
     case ListNode(_, position) =>
       // If we type empty lists as [Nothing], we can assign this empty list to any kind of list, which makes
       // coders happy. :) Hence the default value in the fold.
-      val elementType = expressions.map(_.tpe).foldLeft(BasicType.Nothing: Type)(LeastUpperBound.leastUpperBound)
+      val elementType = LeastUpperBound.leastUpperBound(expressions.map(_.tpe))
       Expression.ListConstruction(expressions, ListType(elementType), position).compiled
 
     case ObjectMapNode(structName, entryNodes, position) =>
@@ -253,8 +253,8 @@ private[transformation] class ExpressionTransformationVisitor(
 
   override def visitMap(node: MapNode)(kvs: Vector[(Expression, Expression)]): Compilation[Expression] = {
     val entries = kvs.map(Expression.MapEntry.tupled)
-    val keyType = entries.map(_.key.tpe).foldLeft(BasicType.Nothing: Type)(LeastUpperBound.leastUpperBound)
-    val valueType = entries.map(_.value.tpe).foldLeft(BasicType.Nothing: Type)(LeastUpperBound.leastUpperBound)
+    val keyType = LeastUpperBound.leastUpperBound(entries.map(_.key.tpe))
+    val valueType = LeastUpperBound.leastUpperBound(entries.map(_.value.tpe))
     Expression.MapConstruction(entries, MapType(keyType, valueType), node.position).compiled
   }
 
