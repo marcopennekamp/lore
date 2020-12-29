@@ -1,5 +1,6 @@
 package lore.compiler.types
 
+import lore.compiler.semantics.VirtualMember
 import lore.compiler.semantics.structures.StructPropertyDefinition
 
 case class ShapeType(properties: Map[String, ShapeType.Property]) extends Type {
@@ -31,6 +32,8 @@ object ShapeType {
 
   case class Property(name: String, tpe: Type) {
     def mapType(f: Type => Type): ShapeType.Property = this.copy(tpe = f(tpe))
+
+    def asVirtualMember: VirtualMember = VirtualMember(name, tpe, isMutable = false, None)
   }
 
   object Property {

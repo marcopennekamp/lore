@@ -13,10 +13,10 @@ import scala.collection.immutable.HashMap
   */
 object MemberExplorer {
 
-  // TODO: Maybe just turn members into a lazy property of types? I'm worried about race conditions here...
+  // TODO: Maybe just turn members into a lazy property of types? I'm worried about cache race conditions here...
   //       That'd mean we'd have to intern types, though, and just moves the problem a goalpost further.
   //       Other idea: Give members a mutex, keep the cache, but also give each member map to the respective
-  //       type.
+  //       type. That way, a type only has to ask once for its cached member map.
   type MemberMap = Map[String, VirtualMember]
   private var cache = HashMap.empty[Type, MemberMap]
 
@@ -49,10 +49,12 @@ object MemberExplorer {
   }
 
   private def membersOf(tpe: Type)(implicit position: Position): Compilation[MemberMap] = {
-    // TODO (shape): A trait may have members once it can extend shape types.
     tpe match {
       case structType: StructType =>
         HashMap(structType.definition.properties.map(property => property.name -> property.asVirtualMember): _*).compiled
+
+      case shapeType: ShapeType =>
+        shapeType.properties.map { case (name, property) => name -> property.asVirtualMember }.compiled
 
       case tv: TypeVariable =>
         // A type variable's members are defined by its upper bound. If a member is a member of the upper bound type,
