@@ -1,6 +1,5 @@
 package lore.compiler.semantics.members
 
-import lore.compiler.semantics.Registry
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
@@ -30,10 +29,13 @@ object MemberExplorer {
     *                 resulting member is nonassignable and mutable.
     *       - Case 3: All members are nonassignable and immutable. Then the resulting member is also nonassignable
     *                 and immutable.
-    *     The type of the resulting member is always the least upper bound of all member types, defaulting to a sum
-    *     type if Any would be the true least upper bound.
+    *       - The type of the resulting member is always the intersection of all member types, because we are saying
+    *         "this property has types A, B, C, ... at the same time." For example, if we have a type
+    *         `{ x: Real } & { x: String }`, `x` is both a `Real` and a `String`. Because `{ x: Real }` and
+    *         `{ x: String }` must both be supertypes of `{ x: Real } & { x: String }`, `{ x: Real & String }` is the
+    *         only sensible solution. See also [[ShapeType.combine]].
     */
-  def members(tpe: Type)(implicit registry: Registry): MemberMap = {
+  def members(tpe: Type): MemberMap = {
     tpe match {
       case structType: StructType =>
         HashMap(structType.definition.properties.map(property => property.name -> property.asMember): _*)
@@ -55,7 +57,7 @@ object MemberExplorer {
             if (members.forall(_.isAssignable) && members.allEqual(_.tpe)) {
               members.head
             } else {
-              val tpe = LeastUpperBound.leastUpperBound(members.map(_.tpe))
+              val tpe = IntersectionType.construct(members.map(_.tpe))
 
               // Case 2.
               if (members.exists(m => m.isAssignable || m.isMutable)) {
