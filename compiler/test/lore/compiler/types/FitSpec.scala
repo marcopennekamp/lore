@@ -64,8 +64,7 @@ class FitSpec extends TypeSpec {
       val Y = new TypeVariable("Y", BasicType.Nothing, BasicType.Real, 1)
       val Z = new TypeVariable("Z", BasicType.Nothing, BasicType.Real, 2)
       val T2D = shape("x" -> X, "y" -> Y)
-      //val T3D = T2D & shape("z" -> Z)   TODO: Use this once intersection types combine shape types during simplification.
-      val T3D = shape("x" -> X, "y" -> Y, "z" -> Z)
+      val T3D = T2D & shape("z" -> Z)
       Position2D fitsInto T2D
       Position2D fitsNotInto T3D
       Position3D fitsInto T2D

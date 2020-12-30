@@ -17,6 +17,16 @@ object CollectionExtensions {
       case value => Some(value)
     }
 
+    def separateByType[T <: A](implicit tag: ClassTag[T]): (Vector[A], Vector[T]) = {
+      var as = Vector.empty[A]
+      var ts = Vector.empty[T]
+      vector.foreach {
+        case t: T => ts = ts :+ t
+        case a => as = as :+ a
+      }
+      (as, ts)
+    }
+
     /**
       * Requires that the vector's elements are unique in respect to the key produced by the `key` function. If more
       * than one element share a key, the `duplicate` function is consulted with any representative element of that

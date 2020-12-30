@@ -17,15 +17,14 @@ object SumType {
     *
     * The resulting flattened normal form is a requirement for subtyping to work correctly.
     */
-  def construct(parts: Set[Type]): Type = {
+  def construct(parts: Vector[Type]): Type = {
     val flattened = parts.flatMap {
       case t: SumType => t.parts
-      case t => Set(t)
+      case t => Vector(t)
     }
-    val simplified = Type.mostGeneral(flattened)
-    val sum = new SumType(simplified)
-    if (sum.parts.size == 1) sum.parts.head else sum
+    val simplified = Type.mostGeneral(flattened).toSet
+    if (simplified.size == 1) simplified.head else new SumType(simplified)
   }
 
-  def construct(parts: Vector[Type]): Type = construct(parts.toSet)
+  def construct(parts: Set[Type]): Type = construct(parts.toVector)
 }

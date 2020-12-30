@@ -40,4 +40,30 @@ object ShapeType {
     def apply(definition: StructPropertyDefinition): Property = Property(definition.name, definition.tpe)
   }
 
+  /**
+    * Combines the given list of shape types into a single shape type. Property types are combined with an
+    * intersection. Consider the following example:
+    *
+    *     { x: A } & { x: B } = { x: A & B }
+    *
+    * This treatment of property types leads to the correct subtyping behavior:
+    *
+    *     { x: A & B } <: { x: A }
+    *     { x: A & B } <: { x: B }
+    *
+    * Which needs to hold, because looking at it without the shape type we get:
+    *
+    *     X & Y = Z
+    *     Z <: X
+    *     Z <: Y
+    *
+    * Which are the standard intersection type subtyping rules.
+    */
+  def combine(shapes: Vector[ShapeType]): ShapeType = {
+    val combinedProperties = shapes.flatMap(_.properties.values).groupBy(_.name).map {
+      case (name, properties) => Property(name, IntersectionType.construct(properties.map(_.tpe)))
+    }
+    ShapeType(combinedProperties)
+  }
+
 }

@@ -12,8 +12,8 @@ trait TypeSyntax {
   implicit def toProductTypeTT(tuple: (Type, Type))(implicit registry: Registry): ProductType = ProductType(Vector(tuple._1, tuple._2))
   implicit def toProductTypeTTT(tuple: (Type, Type, Type))(implicit registry: Registry): ProductType = ProductType(Vector(tuple._1, tuple._2, tuple._3))
   implicit class TypeOperators(t1: Type) {
-    def &(t2: Type)(implicit registry: Registry): Type = IntersectionType.construct(Set(t1, t2))
-    def |(t2: Type)(implicit registry: Registry): Type = SumType.construct(Set(t1, t2))
+    def &(t2: Type): Type = IntersectionType.construct(Vector(t1, t2))
+    def |(t2: Type): Type = SumType.construct(Vector(t1, t2))
   }
   implicit class StringTypeOperators(s1: String) {
     def &(t2: Type)(implicit registry: Registry): Type = toType(s1) & t2

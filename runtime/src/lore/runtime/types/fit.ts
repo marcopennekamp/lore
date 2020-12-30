@@ -98,6 +98,7 @@ class TypeVariableAllocation {
       const entry = assignments[i]
       const variable = entry.key
       const type = entry.value
+      // TODO: We only have to check the lower/upper bound if they are not Nothing/Any.
       const actualLowerBound = substitute(assignments, variable.lowerBound)
       const actualUpperBound = substitute(assignments, variable.upperBound)
       if (!isSubtype(actualLowerBound, type) || !isSubtype(type, actualUpperBound)) {

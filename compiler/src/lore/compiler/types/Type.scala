@@ -132,18 +132,18 @@ object Type {
   }
 
   /**
-    * Removes types from the set that are subtyped by other types in the list, essentially keeping the
+    * Removes types from the list that are subtyped by other types in the list, essentially keeping the
     * most specific types.
     */
-  def mostSpecific(types: Set[Type]): Set[Type] = {
+  def mostSpecific(types: Vector[Type]): Vector[Type] = {
     types.filterNot(t => types.exists(_ < t))
   }
 
   /**
-    * Removes types from the set that are supertyped by other types in the list, essentially keeping the
+    * Removes types from the list that are supertyped by other types in the list, essentially keeping the
     * most general types.
     */
-  def mostGeneral(types: Set[Type]): Set[Type] = {
+  def mostGeneral(types: Vector[Type]): Vector[Type] = {
     types.filterNot(t => types.exists(t < _))
   }
 

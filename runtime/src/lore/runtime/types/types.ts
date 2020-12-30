@@ -93,6 +93,8 @@ export function intersectionSimplified(types: Array<Type>): Type {
   //       checking, and also simplification that involves intersection and/or sum types.
   const flattened = flattenedUnique(Kind.Intersection, types)
 
+  // TODO: Combine shape types.
+
   // Remove strict supertypes of other parts. Conceptually, we have to check for strict supertypes here, but we have
   // already established that no two types in the list are equal. Since the definition of strict supertyping t1 > t2
   // is t1 =/= t2 && t1 >= t2, we can forego the strict check here and just use normal subtyping.

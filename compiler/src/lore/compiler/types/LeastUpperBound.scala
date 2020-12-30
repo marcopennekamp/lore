@@ -28,7 +28,7 @@ object LeastUpperBound {
     /**
       * The fallback LUB, which is either Any or t1 | t2 depending on the settings.
       */
-    def fallback = if (defaultToSum) SumType.construct(Set(t1, t2)) else BasicType.Any
+    def fallback = if (defaultToSum) SumType.construct(Vector(t1, t2)) else BasicType.Any
 
     // TODO: I don't think we should pass on settings in cases where child types are lubbed. The setting should not
     //       propagate through several layers. Otherwise, if we lub two shape types contained in a sum type, we
@@ -77,7 +77,7 @@ object LeastUpperBound {
         // TODO: When calling lubNoDefaultSum, should we pass the "no default to sum" setting down the call tree,
         //       actually? Or should this be confined to the immediate concern of having a correct candidate algorithm?
         //       We need to test this with more complex examples, though they should still make sense, of course.
-        val candidates = for {c1 <- t1.parts; c2 <- t2.parts} yield lubNoDefaultSum(c1, c2)
+        val candidates = for { c1 <- t1.parts; c2 <- t2.parts } yield lubNoDefaultSum(c1, c2)
         IntersectionType.construct(candidates)
       case (t1: IntersectionType, _) => lubPassOnSettings(t1, IntersectionType(Set(t2)))
       case (_, t2: IntersectionType) => lubPassOnSettings(t2, t1)

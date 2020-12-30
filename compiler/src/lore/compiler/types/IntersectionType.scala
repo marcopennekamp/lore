@@ -1,5 +1,7 @@
 package lore.compiler.types
 
+import lore.compiler.utils.CollectionExtensions.VectorExtension
+
 import scala.util.hashing.MurmurHash3
 
 case class IntersectionType private (parts: Set[Type]) extends Type {
@@ -10,23 +12,28 @@ case class IntersectionType private (parts: Set[Type]) extends Type {
 object IntersectionType {
   /**
     * Constructs an intersection type from the given types and flattens it if necessary. If the resulting
-    * intersection type has only one part, this type is returned instead.
+    * intersection type has only one part, that type is returned instead. If the intersection type contains
+    * multiple shape types, they are combined into a single shape type.
     *
     * We also apply the following simplification: In an intersection type A & B & ..., if A < B, then B can
     * be dropped.
     *
     * The resulting flattened normal form is a requirement for subtyping to work correctly.
     */
-  def construct(parts: Set[Type]): Type = {
+  def construct(parts: Vector[Type]): Type = {
     val flattened = parts.flatMap {
       case t: IntersectionType => t.parts
-      case t => Set(t)
+      case t => Vector(t)
     }
-    // TODO: Combine multiple shape types into one. (Also mirror to `intersectionSimplified` in the runtime.)
-    val simplified = Type.mostSpecific(flattened)
-    val intersection = new IntersectionType(simplified)
-    if (intersection.parts.size == 1) intersection.parts.head else intersection
+
+    val (noShapes, shapes) = flattened.separateByType[ShapeType]
+    val shapesCombined = if (shapes.length > 1) {
+      noShapes :+ ShapeType.combine(shapes)
+    } else flattened
+
+    val simplified = Type.mostSpecific(shapesCombined).toSet
+    if (simplified.size == 1) simplified.head else new IntersectionType(simplified)
   }
 
-  def construct(parts: Vector[Type]): Type = construct(parts.toSet)
+  def construct(parts: Set[Type]): Type = construct(parts.toVector)
 }
