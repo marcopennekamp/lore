@@ -6,8 +6,8 @@ import { Kind } from './kinds.ts'
  * Flattens an array of types of the given kind and ensures that each element of the resulting type list is
  * unique in respect to areEqual.
  *
- * This functions flattens only at a single level of depth. Deeper flattening should not be necessary if
- * this function is applied diligently during the construction of new types.
+ * This function flattens only at a single level of depth. Deeper flattening should not be necessary if
+ * flattening is applied diligently during the construction of new types.
  */
 export function flattenedUnique(kind: Kind, types: Array<Type>): Array<Type> {
   const flattened: Array<Type> = []
