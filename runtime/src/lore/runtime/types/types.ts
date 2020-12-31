@@ -239,6 +239,12 @@ export function struct(schema: StructSchema, isArchetype: boolean, propertyTypes
   }
 }
 
+export const Structs = {
+  getPropertyType(type: StructType, name: string): Type {
+    return (type.propertyTypes && type.propertyTypes[name]) ?? type.schema.propertyTypes[name]?.value()
+  }
+}
+
 
 export interface TraitSchema extends DeclaredTypeSchema { }
 

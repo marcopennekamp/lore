@@ -1,6 +1,16 @@
 import {
-  DeclaredType, IntersectionType, ListType, MapType, ProductType, SumType, Type, TypeVariable
-} from "./types.ts";
+  DeclaredType,
+  IntersectionType,
+  ListType,
+  MapType,
+  ProductType,
+  ShapeType,
+  Structs,
+  StructType,
+  SumType,
+  Type,
+  TypeVariable,
+} from './types.ts'
 import { Kind } from "./kinds.ts";
 import { areEqual } from "./equality.ts";
 
@@ -42,12 +52,17 @@ export class SubtypingEnvironment {
         break
 
       case Kind.Struct:
+        // Handle shape subtyping specifically for structs.
+        if (t2.kind === Kind.Shape && this.structSubtypeShape(<StructType> t1, <ShapeType> t2)) {
+          return true
+        }
+        // fallthrough
       case Kind.Trait:
         const d1 = <DeclaredType> t1
         if (t2.kind === Kind.Trait || t2.kind === Kind.Struct) {
           const d2 = <DeclaredType> t2
 
-          // TODO: Rebuild this for open property types:
+          // TODO: Rebuild this for open property types (structs only, though):
 
           /* // If the schemas of these two declared types are equal, we have the same type most of the time. The equality
           // might not have been caught by the === check above because a struct type can have multiple instances with
@@ -117,6 +132,13 @@ export class SubtypingEnvironment {
             areEqual((<MapType> t1).key, (<MapType> t2).key) &&
             areEqual((<MapType> t1).value, (<MapType> t2).value)
         ) {
+          return true
+        }
+        break
+
+      // This needs to be placed lower than the Kind.Struct case, because structs handle struct/shape subtyping.
+      case Kind.Shape:
+        if (t2.kind === Kind.Shape && this.shapeSubtypeShape(<ShapeType> t1, <ShapeType> t2)) {
           return true
         }
         break
@@ -239,6 +261,32 @@ export class SubtypingEnvironment {
       if (!this.isSubtype(e1, e2)) return false
     }
 
+    return true
+  }
+
+  /**
+   * Whether struct type s1 is a subtype of shape type s2.
+   */
+  private structSubtypeShape(s1: StructType, s2: ShapeType): boolean {
+    for (const p2Name of Object.keys(s2.propertyTypes)) {
+      const p1Type = Structs.getPropertyType(s1, p2Name)
+      if (!p1Type || !this.isSubtype(p1Type, s2.propertyTypes[p2Name])) {
+        return false
+      }
+    }
+    return true
+  }
+
+  /**
+   * Whether shape type s1 is a subtype of shape type s2.
+   */
+  private shapeSubtypeShape(s1: ShapeType, s2: ShapeType): boolean {
+    for (const p2Name of Object.keys(s2.propertyTypes)) {
+      const p1Type = s1.propertyTypes[p2Name]
+      if (!p1Type || !this.isSubtype(p1Type, s2.propertyTypes[p2Name])) {
+        return false
+      }
+    }
     return true
   }
 }
