@@ -29,6 +29,7 @@ object RuntimeApi {
     val product = s"$base.product"
     val list = s"$base.list"
     val map = s"$base.map"
+    val shape = s"$base.shape"
     val struct = s"$base.struct"
     val `trait` = s"$base.trait"
 

@@ -3,6 +3,8 @@ package lore.compiler.types
 import lore.compiler.semantics.members.Member
 import lore.compiler.semantics.structures.StructPropertyDefinition
 
+import scala.util.hashing.MurmurHash3
+
 case class ShapeType(properties: Map[String, ShapeType.Property]) extends Type {
 
   /**
@@ -23,6 +25,8 @@ case class ShapeType(properties: Map[String, ShapeType.Property]) extends Type {
   def common(other: ShapeType): Vector[(ShapeType.Property, ShapeType.Property)] = {
     correlate(other).flatMap { case (p1, maybeP2) => maybeP2.map(p2 => (p1, p2)) }
   }
+
+  override val hashCode: Int = MurmurHash3.unorderedHash(properties.values, 0xf38da2c4)
 
 }
 

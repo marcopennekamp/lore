@@ -13,4 +13,5 @@ export enum Kind {
   Product,
   List,
   Map,
+  Shape,
 }

@@ -2,7 +2,6 @@ package lore.compiler.phases.transpilation
 
 import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.types.StructType
 
 object StructTranspiler {

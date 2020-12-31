@@ -3,7 +3,7 @@ import { isSubtype } from './subtyping.ts'
 import { fits, fitsMonomorphic, fitsPolymorphic } from './fit.ts'
 import {
   any, boolean, struct, int, intersection, intersectionSimplified, list, map, nothing, product, real,
-  string, sum, sumSimplified, unhashedProduct, unit, variable, structSchema, trait, traitSchema,
+  string, sum, sumSimplified, unhashedProduct, unit, variable, structSchema, trait, traitSchema, shape,
 } from './types.ts'
 import { typeOf } from './typeof.ts'
 
@@ -26,6 +26,7 @@ export default {
   product,
   list,
   map,
+  shape,
   struct,
   trait,
 
