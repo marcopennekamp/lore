@@ -10,11 +10,11 @@ import {
   map,
   MapType,
   product,
-  ProductType,
+  ProductType, shape, ShapeType,
   sum,
   SumType,
   Type,
-  TypeVariable
+  TypeVariable,
 } from './types.ts'
 import { Kind } from './kinds.ts'
 import { TinyMap } from '../utils/TinyMap.ts'
@@ -42,6 +42,13 @@ export function substitute(assignments: Assignments, type: Type): Type {
     case Kind.Map:
       const m1 = <MapType> type
       return map(substitute(assignments, m1.key), substitute(assignments, m1.value))
+    case Kind.Shape:
+      const result: { [key: string]: Type } = { }
+      const propertyTypes = (<ShapeType> type).propertyTypes
+      for (const name of Object.keys(propertyTypes)) {
+        result[name] = substitute(assignments, propertyTypes[name])
+      }
+      return shape(result)
     default:
       return type
   }
