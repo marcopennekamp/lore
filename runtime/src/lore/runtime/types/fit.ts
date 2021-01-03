@@ -1,5 +1,5 @@
-import { ListType, MapType, ProductType, Type, TypeVariable } from './types.ts'
-import { isPolymorphic } from './polymorphy.ts'
+import { ListType, MapType, ProductType, ShapeType, Structs, StructType, Type, TypeVariable } from './types.ts'
+import { isPolymorphic, variables } from './polymorphy.ts'
 import { areEqual } from './equality.ts'
 import { isSubtype } from './subtyping.ts'
 import { Kind } from './kinds.ts'
@@ -16,7 +16,7 @@ export type Assignments = TinyMap<TypeVariable, Type>
  */
 export function fits(t1: Type, t2: Type): boolean {
   if (isPolymorphic(t2)) {
-    return !!fitsPolymorphic(t1, t2)
+    return !!fitsPolymorphic(t1, t2, variables(t2))
   }
   return fitsMonomorphic(t1, t2)
 }
@@ -34,14 +34,13 @@ export function fitsMonomorphic(t1: Type, t2: Type): boolean {
  * to the called polymorphic function, which can then be used to construct new types such as lists, maps, and later
  * type-parametric declared types.
  */
-export function fitsPolymorphic(t1: Type, t2: Type): Assignments | boolean {
+export function fitsPolymorphic(t1: Type, t2: Type, variables: Array<TypeVariable>): Assignments | boolean {
   const allocation = TypeVariableAllocation.of(t1, t2)
-  if (!allocation.isConsistent()) {
+  if (!allocation.isConsistent(variables)) {
     return false
   }
 
   const assignments = allocation.assignments()
-  // TODO: Check missing variables? (See the compiler's corresponding fit definition.)
   const st2 = substitute(assignments, t2)
   if (!isSubtype(t1, st2)) {
     return false
@@ -81,28 +80,62 @@ class TypeVariableAllocation {
     return assignments
   }
 
-  isConsistent(): boolean {
+  /**
+   * Whether the type variable allocation is consistent in respect to the given expected variables.
+   */
+  isConsistent(variables: Array<TypeVariable>): boolean {
+    return this.allVariablesAssigned(variables) && this.areAssignmentsUnique() && this.areBoundsKept()
+  }
+
+  private allVariablesAssigned(variables: Array<TypeVariable>): boolean {
+    const allocation = this.allocation
+    for (let i = 0; i < variables.length; i += 1) {
+      const variable = variables[i]
+      let found = false
+      for (let j = 0; j < allocation.length; j += 1) {
+        if (allocation[j].key === variable) {
+          found = true
+          break
+        }
+      }
+      if (!found) return false
+    }
+    return true
+  }
+
+  private areAssignmentsUnique(): boolean {
     const allocation = this.allocation
     for (let i = 0; i < allocation.length; i += 1) {
       const entry = allocation[i]
       const possibleAssignments = entry.value
-      for (let i = 0; i < possibleAssignments.length - 1; i += 1) {
-        const left = possibleAssignments[i]
-        const right = possibleAssignments[i + 1]
+      for (let j = 0; j < possibleAssignments.length - 1; j += 1) {
+        const left = possibleAssignments[j]
+        const right = possibleAssignments[j + 1]
         if (!areEqual(left, right)) return false
       }
     }
+    return true
+  }
 
+  private areBoundsKept(): boolean {
     const assignments = this.assignments()
     for (let i = 0; i < assignments.length; i += 1) {
       const entry = assignments[i]
       const variable = entry.key
       const type = entry.value
-      // TODO: We only have to check the lower/upper bound if they are not Nothing/Any.
-      const actualLowerBound = substitute(assignments, variable.lowerBound)
-      const actualUpperBound = substitute(assignments, variable.upperBound)
-      if (!isSubtype(actualLowerBound, type) || !isSubtype(type, actualUpperBound)) {
-        return false
+
+      if (variable.upperBound.kind !== Kind.Any) {
+        const actualUpperBound = substitute(assignments, variable.upperBound)
+        if (!isSubtype(type, actualUpperBound)) {
+          return false
+        }
+      }
+
+      if (variable.lowerBound.kind !== Kind.Nothing) {
+        const actualLowerBound = substitute(assignments, variable.lowerBound)
+        if (!isSubtype(actualLowerBound, type)) {
+          return false
+        }
       }
     }
     return true
@@ -161,6 +194,7 @@ class TypeVariableAllocation {
           TypeVariableAllocation.assign(m1.value, m2.value, allocation)
         }
         break
+
       case Kind.Shape:
         if (t1.kind === Kind.Shape) {
           const s1 = <ShapeType> t1
