@@ -161,6 +161,27 @@ class TypeVariableAllocation {
           TypeVariableAllocation.assign(m1.value, m2.value, allocation)
         }
         break
+      case Kind.Shape:
+        if (t1.kind === Kind.Shape) {
+          const s1 = <ShapeType> t1
+          const s2 = <ShapeType> t2
+          for (const p2Name of Object.keys(s2.propertyTypes)) {
+            const p1Type = s1.propertyTypes[p2Name]
+            if (p1Type) {
+              TypeVariableAllocation.assign(p1Type, s2.propertyTypes[p2Name], allocation)
+            }
+          }
+        } else if (t1.kind === Kind.Struct) {
+          const s1 = <StructType> t1
+          const s2 = <ShapeType> t2
+          for (const p2Name of Object.keys(s2.propertyTypes)) {
+            const p1Type = Structs.getPropertyType(s1, p2Name)
+            if (p1Type) {
+              TypeVariableAllocation.assign(p1Type, s2.propertyTypes[p2Name], allocation)
+            }
+          }
+        }
+        break
     }
   }
 }
