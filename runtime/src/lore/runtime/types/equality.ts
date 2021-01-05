@@ -107,8 +107,8 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
   // in s1 (by name). Practically, this means that we only have to establish equal length and then compare s1's
   // properties to s2's properties. There's no need to do the reverse.
   (s1: ShapeType, s2: ShapeType) => {
-    const s1Keys = Object.keys(s1)
-    if (s1Keys.length !== Object.keys(s2).length) {
+    const s1Keys = Object.keys(s1.propertyTypes)
+    if (s1Keys.length !== Object.keys(s2.propertyTypes).length) {
       return false
     }
     for (const p1Name of s1Keys) {
