@@ -1,4 +1,7 @@
-import { boolean, int, intersection, list, map, product, string, sum } from '../src/lore/runtime/types/types.ts'
+import {
+  boolean, int, intersection, list, map,
+  product, real, shape, string, sum,
+} from '../src/lore/runtime/types/types.ts'
 import { areEqual } from '../src/lore/runtime/types/equality.ts'
 import { benchmark } from './benchmark.ts'
 import { isSubtype } from '../src/lore/runtime/types/subtyping.ts'
@@ -17,6 +20,9 @@ const product1 = product([sum2, int1, list3])
 const product2 = product([sum2, int1, list3])
 const product3 = product([sum([string, int, boolean]), intersection([string, int, boolean]), list(map(string, int))])
 const product4 = product([sum([string, int, boolean]), intersection([string, int, boolean]), list(map(string, int))])
+const shape1 = shape({ x: real, y: real })
+const shape2 = shape({ x: real, y: real, c: int, d: string })
+const shape3 = shape({ d: string, c: int, x: real, y: real })
 
 export function benchmarkAreEqual(): void {
   console.log('Benchmarking areEqual:')
@@ -36,6 +42,7 @@ export function benchmarkAreEqual(): void {
   // to verify equality, since a map can have duplicate entries for a given hash key.
   benchmark('equal product (structural, shallow)', () => areEqual(product1, product2), times)
   benchmark('equal product (structural, deep)', () => areEqual(product3, product4), times)
+  benchmark('equal shape (structural)', () => areEqual(shape2, shape3), times)
   benchmark('empty run', () => { }, times) // This can be used to gauge the benchmark's own overhead.
   console.log()
 }
@@ -55,6 +62,7 @@ export function benchmarkIsSubtype(): void {
   benchmark('not subtyped list', () => isSubtype(list1, list3), times)
   benchmark('subtyped product (structural, shallow)', () => isSubtype(product1, product2), times)
   benchmark('subtyped product (structural, deep)', () => isSubtype(product3, product4), times)
+  benchmark('subtyped shape (structural)', () => isSubtype(shape2, shape1), times)
   benchmark('empty run', () => { }, times) // This can be used to gauge the benchmark's own overhead.
   console.log()
 }
