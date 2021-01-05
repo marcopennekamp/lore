@@ -1,8 +1,8 @@
 import { assertEquals } from 'https://deno.land/std/testing/asserts.ts'
-import { LoreTest } from '../base.ts'
-import { ListValue } from '../../runtime/src/lore/runtime/values/list.ts'
-import { TupleValue } from '../../runtime/src/lore/runtime/values/tuple.ts'
+import { ListValue } from '../../runtime/src/lore/runtime/lists.ts'
+import { TupleValue } from '../../runtime/src/lore/runtime/tuples.ts'
 import { assertListEquals, assertListForall, assertTupleEquals } from '../assertions.ts'
+import { LoreTest } from '../base.ts'
 
 Deno.test('math/combinations', async () => {
   const result: ListValue<TupleValue> = await LoreTest.run('math/combinations')

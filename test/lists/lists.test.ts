@@ -1,8 +1,8 @@
 import { assertEquals } from 'https://deno.land/std/testing/asserts.ts'
-import { ListValue } from '../../runtime/src/lore/runtime/values/list.ts'
-import { LoreTest } from '../base.ts'
+import { ListValue } from '../../runtime/src/lore/runtime/lists.ts'
+import { StructValue } from '../../runtime/src/lore/runtime/structs.ts'
 import { assertIsStruct, assertListEquals, assertListForall } from '../assertions.ts'
-import { ObjectValue } from '../../runtime/src/lore/runtime/values/object.ts'
+import { LoreTest } from '../base.ts'
 
 Deno.test('lists/concat', async () => {
   const result: ListValue<string> = await LoreTest.run('lists/concat')
@@ -18,7 +18,7 @@ Deno.test('lists/concat', async () => {
 })
 
 Deno.test('lists/yield', async () => {
-  const result: ListValue<ObjectValue> = await LoreTest.run('lists/yield')
+  const result: ListValue<StructValue> = await LoreTest.run('lists/yield')
   assertListForall(result, [2, 10, 20, 24], (actual, expected) => {
     assertIsStruct(actual, 'Gold')
     assertEquals((<any> actual).value, expected)

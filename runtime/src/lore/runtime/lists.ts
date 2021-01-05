@@ -1,5 +1,11 @@
-import { ListType } from '../types/types.ts'
-import { LoreValue } from './values.ts'
+import { Kind } from './types/kinds.ts'
+import { Type } from './types/types.ts'
+import { singleHash } from './utils/hash.ts'
+import { Value } from './values.ts'
+
+export interface ListType extends Type {
+  element: Type
+}
 
 /**
  * An immutable list, the standard list type of Lore.
@@ -11,13 +17,17 @@ import { LoreValue } from './values.ts'
  * prepending as a standard way of building a list. Rather, appending should be the way to go in general,
  * as it is more intuitive to build a list from left to right, in the way it is iterated.
  */
-export interface ListValue<A> extends LoreValue {
+export interface ListValue<A> extends Value {
   array: Array<A>
   lore$type: ListType
 }
 
-export const api = {
-  create<A>(array: Array<A>, type: ListType): ListValue<A> {
+export const List = {
+  type(element: Type): ListType {
+    return { kind: Kind.List, element, hash: singleHash(element, 0xfb04146c) }
+  },
+
+  value<A>(array: Array<A>, type: ListType): ListValue<A> {
     return { array, lore$type: type }
   },
 

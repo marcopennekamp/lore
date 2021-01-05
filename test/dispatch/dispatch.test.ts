@@ -1,7 +1,7 @@
-import { ListValue } from '../../runtime/src/lore/runtime/values/list.ts'
-import { LoreTest } from '../base.ts'
-import { assertListEquals, assertSumTypeParts } from '../assertions.ts'
+import { ListValue } from '../../runtime/src/lore/runtime/lists.ts'
 import { Kind } from '../../runtime/src/lore/runtime/types/kinds.ts'
+import { assertListEquals, assertSumTypeParts } from '../assertions.ts'
+import { LoreTest } from '../base.ts'
 
 Deno.test('dispatch/abstract-partial-specialization', async () => {
   const result: ListValue<string> = await LoreTest.run('dispatch/abstract-partial-specialization')

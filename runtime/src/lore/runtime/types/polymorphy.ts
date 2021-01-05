@@ -1,6 +1,9 @@
-import { ListType, MapType, ShapeType, Type, TypeVariable, XaryType } from './types.ts'
-import { Kind } from './kinds.ts'
+import { ListType } from '../lists.ts'
+import { MapType } from '../maps.ts'
+import { ShapeType } from '../shapes.ts'
 import { TinySet } from '../utils/TinySet.ts'
+import { Kind } from './kinds.ts'
+import { Type, TypeVariable, XaryType } from './types.ts'
 
 // There is no need to cache whether a type is polymorphic. The important use of this function is to determine
 // whether a type is polymorphic at run-time. For the right-hand types in multiple dispatch (where this property

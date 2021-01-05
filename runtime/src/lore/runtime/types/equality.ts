@@ -1,8 +1,13 @@
+import { IntersectionType } from '../intersections.ts'
+import { ListType } from '../lists.ts'
+import { MapType } from '../maps.ts'
+import { ShapeType } from '../shapes.ts'
+import { StructType } from '../structs.ts'
+import { SumType } from '../sums.ts'
+import { TraitType } from '../traits.ts'
+import { ProductType } from '../tuples.ts'
 import {
-  AnyType, BooleanType, StructType,
-  IntersectionType, IntType, TraitType, ListType,
-  MapType, NothingType, ProductType, RealType,
-  StringType, SumType, Type, TypeVariable, ShapeType,
+  AnyType, BooleanType, IntType, NothingType, RealType, StringType, Type, TypeVariable,
 } from './types.ts'
 
 /**

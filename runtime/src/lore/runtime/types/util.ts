@@ -1,6 +1,6 @@
-import { Type, XaryType } from './types.ts'
 import { areEqual } from './equality.ts'
 import { Kind } from './kinds.ts'
+import { Type, XaryType } from './types.ts'
 
 /**
  * Flattens an array of types of the given kind and ensures that each element of the resulting type list is

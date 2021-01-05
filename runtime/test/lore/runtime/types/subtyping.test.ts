@@ -5,9 +5,13 @@
 //       and then interpret these "config" files in each of our test suites.
 
 import { assert } from 'https://deno.land/std/testing/asserts.ts'
-import { boolean, int, string, sum, sumSimplified } from '../../../../src/lore/runtime/types/types.ts'
+import { Sum } from '../../../../src/lore/runtime/sums.ts'
 import { isSubtype } from '../../../../src/lore/runtime/types/subtyping.ts'
+import { Types } from '../../../../src/lore/runtime/types/types.ts'
 
 Deno.test("types/subtyping: sum types are subtyped correctly", () => {
-  assert(isSubtype(sumSimplified([sum([string, int]), boolean]), sum([string, int, boolean])))
+  assert(isSubtype(
+    Sum.simplified([Sum.type([Types.string, Types.int]), Types.boolean]),
+    Sum.type([Types.string, Types.int, Types.boolean])
+  ))
 })

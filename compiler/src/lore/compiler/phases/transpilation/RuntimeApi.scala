@@ -1,8 +1,5 @@
 package lore.compiler.phases.transpilation
 
-// TODO: Change the runtime API so that we have list.type instead of types.list and so on. Essentially structure
-//       the API alongside semantics first instead of a type/value distinction.
-
 // TODO: Return TranspiledName values instead of plain strings?
 
 object RuntimeApi {
@@ -11,90 +8,103 @@ object RuntimeApi {
   object types {
     val base = s"${RuntimeApi.base}.types"
 
-    // Type constants.
     val any = s"$base.any"
     val nothing = s"$base.nothing"
     val real = s"$base.real"
     val int = s"$base.int"
     val boolean = s"$base.boolean"
     val string = s"$base.string"
-    val unit = s"$base.unit"
 
-    // Type constructors.
     val variable = s"$base.variable"
-    val sum = s"$base.sum"
-    val sumSimplified = s"$base.sumSimplified"
-    val intersection = s"$base.intersection"
-    val intersectionSimplified = s"$base.intersectionSimplified"
-    val product = s"$base.product"
-    val list = s"$base.list"
-    val map = s"$base.map"
-    val shape = s"$base.shape"
-    val struct = s"$base.struct"
-    val `trait` = s"$base.trait"
 
-    // Type schemas.
-    object schema {
-      val base = s"${RuntimeApi.types.base}.schema"
-
-      val struct = s"$base.struct"
-      val `trait` = s"$base.trait"
-    }
-
-    // Unsafe constructors.
-    object unsafe {
-      val base = s"${RuntimeApi.types.base}.unsafe"
-
-      val unhashedProduct = s"$base.unhashedProduct"
-    }
-
-    // Type relationships.
     val isSubtype = s"$base.isSubtype"
     val areEqual = s"$base.areEqual"
     val fits = s"$base.fits"
     val fitsMonomorphic = s"$base.fitsMonomorphic"
     val fitsPolymorphic = s"$base.fitsPolymorphic"
     val typeOf = s"$base.typeOf"
+    val isPolymorphic = s"$base.isPolymorphic"
+    val variables = s"$base.variables"
   }
 
   object values {
     val base = s"${RuntimeApi.base}.values"
 
-    // Value APIs.
-    object tuple {
-      val base = s"${RuntimeApi.values.base}.tuple"
-
-      val create = s"$base.create"
-      val unit = s"$base.unit"
-    }
-
-    object list {
-      val base = s"${RuntimeApi.values.base}.list"
-
-      val create = s"$base.create"
-      val append = s"$base.append"
-      val forEach = s"$base.forEach"
-    }
-
-    object map {
-      val base = s"${RuntimeApi.values.base}.map"
-
-      val create = s"$base.create"
-      val entries = s"$base.entries"
-    }
-
-    object `object` {
-      val base = s"${RuntimeApi.values.base}.object"
-
-      val create = s"$base.create"
-      val retrieve = s"$base.retrieve"
-    }
-
-    // Core functions operating on values of any type.
     val areEqual = s"$base.areEqual"
     val isLessThan = s"$base.isLessThan"
     val hash = s"$base.hash"
     val loreToString = s"$base.toString" // TODO: This clashes with the JVM toString. Maybe we should rename it anyway?
+  }
+
+  object sums {
+    val base = s"${RuntimeApi.base}.sums"
+
+    val tpe = s"$base.type"
+    val simplified = s"$base.simplified"
+  }
+
+  object intersections {
+    val base = s"${RuntimeApi.base}.intersections"
+
+    val tpe = s"$base.type"
+    val simplified = s"$base.simplified"
+  }
+
+  object tuples {
+    val base = s"${RuntimeApi.base}.tuples"
+
+    val tpe = s"$base.type"
+    val unhashedType = s"$base.unhashedType"
+    val unitType = s"$base.unitType"
+    val value = s"$base.value"
+    val unitValue = s"$base.unitValue"
+    val get = s"$base.get"
+  }
+
+  object lists {
+    val base = s"${RuntimeApi.base}.lists"
+
+    val tpe = s"$base.type"
+    val value = s"$base.value"
+    val append = s"$base.append"
+    val get = s"$base.get"
+    val forEach = s"$base.forEach"
+    val length = s"$base.lenght"
+  }
+
+  object maps {
+    val base = s"${RuntimeApi.base}.maps"
+
+    val tpe = s"$base.type"
+    val value = s"$base.value"
+    val set = s"$base.set"
+    val get = s"$base.get"
+    val contains = s"$base.contains"
+    val entries = s"$base.entries"
+    val length = s"$base.length"
+  }
+
+  object shapes {
+    val base = s"${RuntimeApi.base}.shapes"
+
+    val tpe = s"$base.type"
+    val combine = s"$base.combine"
+  }
+
+  object traits {
+    val base = s"${RuntimeApi.base}.traits"
+
+    val schema = s"$base.schema"
+    val tpe = s"$base.type"
+  }
+
+  object structs {
+    val base = s"${RuntimeApi.base}.structs"
+
+    val schema = s"$base.schema"
+    val tpe = s"$base.type"
+    val value = s"$base.value"
+    val getPropertyType = s"$base.getPropertyType"
   }
 
   object utils {

@@ -1,4 +1,4 @@
-export default {
+export const LoreMath = {
   floor(x: number): number {
     return Math.floor(x)
   },

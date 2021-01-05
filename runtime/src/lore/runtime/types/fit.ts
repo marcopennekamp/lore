@@ -1,10 +1,15 @@
-import { ListType, MapType, ProductType, ShapeType, Structs, StructType, Type, TypeVariable } from './types.ts'
-import { isPolymorphic, variables } from './polymorphy.ts'
-import { areEqual } from './equality.ts'
-import { isSubtype } from './subtyping.ts'
-import { Kind } from './kinds.ts'
-import { substitute } from './substitution.ts'
+import { ListType } from '../lists.ts'
+import { MapType } from '../maps.ts'
+import { ShapeType } from '../shapes.ts'
+import { Struct, StructType } from '../structs.ts'
+import { ProductType } from '../tuples.ts'
 import { TinyMap } from '../utils/TinyMap.ts'
+import { areEqual } from './equality.ts'
+import { Kind } from './kinds.ts'
+import { isPolymorphic, variables } from './polymorphy.ts'
+import { substitute } from './substitution.ts'
+import { isSubtype } from './subtyping.ts'
+import { Type, TypeVariable } from './types.ts'
 
 export type Assignments = TinyMap<TypeVariable, Type>
 
@@ -209,7 +214,7 @@ class TypeVariableAllocation {
           const s1 = <StructType> t1
           const s2 = <ShapeType> t2
           for (const p2Name of Object.keys(s2.propertyTypes)) {
-            const p1Type = Structs.getPropertyType(s1, p2Name)
+            const p1Type = Struct.getPropertyType(s1, p2Name)
             if (p1Type) {
               TypeVariableAllocation.assign(p1Type, s2.propertyTypes[p2Name], allocation)
             }

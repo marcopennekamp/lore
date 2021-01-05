@@ -1,13 +1,32 @@
-import types from './types/api.ts'
-import values from './values/api.ts'
+import { Intersection } from './intersections.ts'
+import { LoreIO } from './io.ts'
+import { List } from './lists.ts'
+import { Map } from './maps.ts'
+import { LoreMath } from './math.ts'
+import { Shape } from './shapes.ts'
+import { Struct } from './structs.ts'
+import { Sum } from './sums.ts'
+import { Trait } from './traits.ts'
+import { Tuple } from './tuples.ts'
+import { Types } from './types/types.ts'
 import utils from './utils/api.ts'
-import io from './io/api.ts'
-import math from './math/api.ts'
+import { Values } from './values.ts'
 
 export default {
-  types,
-  values,
+  // APIs used by the compiler.
+  types: Types,
+  values: Values,
+  sums: Sum,
+  intersections: Intersection,
+  tuples: Tuple,
+  lists: List,
+  maps: Map,
+  shapes: Shape,
+  traits: Trait,
+  structs: Struct,
   utils,
-  io,
-  math,
+
+  // APIs used by Pyramid.
+  io: LoreIO,
+  math: LoreMath,
 }

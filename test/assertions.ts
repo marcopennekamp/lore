@@ -1,9 +1,10 @@
-import { assertEquals, assert } from 'https://deno.land/std/testing/asserts.ts'
-import { ObjectValue } from '../runtime/src/lore/runtime/values/object.ts'
+import { assert, assertEquals } from 'https://deno.land/std/testing/asserts.ts'
+import { ListValue } from '../runtime/src/lore/runtime/lists.ts'
+import { StructValue } from '../runtime/src/lore/runtime/structs.ts'
+import { SumType } from '../runtime/src/lore/runtime/sums.ts'
+import { TupleValue } from '../runtime/src/lore/runtime/tuples.ts'
 import { Kind } from '../runtime/src/lore/runtime/types/kinds.ts'
-import { ListValue } from '../runtime/src/lore/runtime/values/list.ts'
-import { TupleValue } from '../runtime/src/lore/runtime/values/tuple.ts'
-import { SumType, Type } from '../runtime/src/lore/runtime/types/types.ts'
+import { Type } from '../runtime/src/lore/runtime/types/types.ts'
 
 export function assertIsTuple(actual: TupleValue) {
   assertEquals(actual.lore$type.kind, Kind.Product)
@@ -14,12 +15,12 @@ export function assertTupleEquals(actual: TupleValue, expected: Array<any>) {
   assertEquals(actual.elements, expected)
 }
 
-export function assertIsStruct(actual: ObjectValue, fullName: string) {
+export function assertIsStruct(actual: StructValue, fullName: string) {
   assertEquals(actual.lore$type.kind, Kind.Struct)
   assertEquals(actual.lore$type.schema.name, fullName)
 }
 
-export function assertStructHasValues(actual: ObjectValue, expectedFullStructName: string, expectedValues: object) {
+export function assertStructHasValues(actual: StructValue, expectedFullStructName: string, expectedValues: object) {
   assertIsStruct(actual, expectedFullStructName)
   Object.entries(expectedValues).forEach(kv => {
     const [key, value] = kv

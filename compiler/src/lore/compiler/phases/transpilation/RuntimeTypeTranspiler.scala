@@ -61,20 +61,20 @@ object RuntimeTypeTranspiler {
       case BasicType.Int => api.int
       case BasicType.Boolean => api.boolean
       case BasicType.String => api.string
-      case ProductType.UnitType => api.unit
+      case ProductType.UnitType => RuntimeApi.tuples.unitType
       case declaredType: DeclaredType => TranspiledName.declaredType(declaredType).name
       case SumType(types) =>
-        val sum = if (simplifyAtRuntime) api.sumSimplified else api.sum
+        val sum = if (simplifyAtRuntime) RuntimeApi.sums.simplified else RuntimeApi.sums.tpe
         s"$sum([${types.map(rec).mkString(", ")}])"
       case IntersectionType(types) =>
-        val intersection = if (simplifyAtRuntime) api.intersectionSimplified else api.intersection
+        val intersection = if (simplifyAtRuntime) RuntimeApi.intersections.simplified else RuntimeApi.intersections.tpe
         s"$intersection([${types.map(rec).mkString(", ")}])"
-      case ProductType(elements) => s"${api.product}([${elements.map(rec).mkString(", ")}])"
-      case ListType(element) => s"${api.list}(${rec(element)})"
-      case MapType(key, value) => s"${api.map}(${rec(key)}, ${rec(value)})"
+      case ProductType(elements) => s"${RuntimeApi.tuples.tpe}([${elements.map(rec).mkString(", ")}])"
+      case ListType(element) => s"${RuntimeApi.lists.tpe}(${rec(element)})"
+      case MapType(key, value) => s"${RuntimeApi.maps.tpe}(${rec(key)}, ${rec(value)})"
       case ShapeType(properties) =>
         val propertyTypes = properties.values.map(property => s"${property.name}: ${rec(property.tpe)}")
-        s"${api.shape}({ ${propertyTypes.mkString(", ")} })"
+        s"${RuntimeApi.shapes.tpe}({ ${propertyTypes.mkString(", ")} })"
     }
   }
 

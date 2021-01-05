@@ -46,7 +46,7 @@ object StructTranspiler {
 
     DeclaredTypeTranspiler.transpileSchema(
       tpe,
-      RuntimeApi.types.schema.struct,
+      RuntimeApi.structs.schema,
       Vector(
         s"{ ${propertyTypes.mkString(", ")} }",
       ),
@@ -64,11 +64,11 @@ object StructTranspiler {
       // so we don't need to override any property types. The schema will provide all these types when used in
       // subtyping.
       s"""function $varNewtype(isArchetype, propertyTypes) {
-         |  return ${RuntimeApi.types.struct}($varSchema, isArchetype, propertyTypes);
+         |  return ${RuntimeApi.structs.tpe}($varSchema, isArchetype, propertyTypes);
          |}
          |const $varArchetype = $varNewtype(true);""".stripMargin
     } else {
-      s"""const $varArchetype = ${RuntimeApi.types.struct}($varSchema, true);"""
+      s"""const $varArchetype = ${RuntimeApi.structs.tpe}($varSchema, true);"""
     }
     (varNewtype, varArchetype, definitions)
   }
@@ -87,7 +87,7 @@ object StructTranspiler {
     } else varArchetype
 
     s"""function $varInstantiate(properties) {
-       |  return ${RuntimeApi.values.`object`.create}(properties, $instantiatedType);
+       |  return ${RuntimeApi.structs.value}(properties, $instantiatedType);
        |}""".stripMargin
   }
 

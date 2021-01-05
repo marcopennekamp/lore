@@ -1,5 +1,5 @@
+import { SubtypingEnvironment } from './SubtypingEnvironment.ts'
 import { Type } from './types.ts'
-import { SubtypingEnvironment } from "./SubtypingEnvironment.ts";
 
 const defaultSubtyping = new SubtypingEnvironment()
 

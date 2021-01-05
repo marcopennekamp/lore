@@ -1,18 +1,13 @@
-import {
-  DeclaredType,
-  IntersectionType,
-  ListType,
-  MapType,
-  ProductType,
-  ShapeType,
-  Structs,
-  StructType,
-  SumType,
-  Type,
-  TypeVariable,
-} from './types.ts'
-import { Kind } from "./kinds.ts";
-import { areEqual } from "./equality.ts";
+import { IntersectionType } from '../intersections.ts'
+import { ListType } from '../lists.ts'
+import { MapType } from '../maps.ts'
+import { ShapeType } from '../shapes.ts'
+import { Struct, StructType } from '../structs.ts'
+import { SumType } from '../sums.ts'
+import { ProductType } from '../tuples.ts'
+import { areEqual } from './equality.ts'
+import { Kind } from './kinds.ts'
+import { DeclaredType, Type, TypeVariable } from './types.ts'
 
 /**
  * A subtyping environment provides a specific implementation of the isSubtype function given a configuration.
@@ -97,19 +92,19 @@ export class SubtypingEnvironment {
         }
         break
 
-      case Kind.Intersection:
-        if (t2.kind === Kind.Intersection) {
-          if (this.intersectionSubtypeIntersection(<IntersectionType> t1, <IntersectionType> t2)) return true
-        } else {
-          if (this.intersectionSubtypeType(<IntersectionType> t1, t2)) return true
-        }
-        break
-
       case Kind.Sum:
         if (t2.kind === Kind.Sum) {
           if (this.sumSubtypeSum(<SumType> t1, <SumType> t2)) return true
         } else {
           if (this.sumSubtypeType(<SumType> t1, t2)) return true
+        }
+        break
+
+      case Kind.Intersection:
+        if (t2.kind === Kind.Intersection) {
+          if (this.intersectionSubtypeIntersection(<IntersectionType> t1, <IntersectionType> t2)) return true
+        } else {
+          if (this.intersectionSubtypeType(<IntersectionType> t1, t2)) return true
         }
         break
 
@@ -153,21 +148,21 @@ export class SubtypingEnvironment {
       case Kind.Any:
         return true
 
-      case Kind.Intersection:
-        // t1 could be an intersection type, but then we'd already have checked it in the first switch and since we have
-        // arrived here, it is clear that in that case the answer was not true. So we can safely only apply this rule
-        // if t1 is not an intersection type.
-        if (t1.kind !== Kind.Intersection) {
-          if (this.typeSubtypeIntersection(t1, <IntersectionType> t2)) return true
-        }
-        break
-
       case Kind.Sum:
         // t1 could be a sum type, but then we'd already have checked it in the first switch and since we have
         // arrived here, it is clear that in that case the answer was not true. So we can safely only apply this rule
         // if t1 is not a sum type.
         if (t1.kind !== Kind.Sum) {
           if (this.typeSubtypeSum(t1, <SumType> t2)) return true
+        }
+        break
+
+      case Kind.Intersection:
+        // t1 could be an intersection type, but then we'd already have checked it in the first switch and since we have
+        // arrived here, it is clear that in that case the answer was not true. So we can safely only apply this rule
+        // if t1 is not an intersection type.
+        if (t1.kind !== Kind.Intersection) {
+          if (this.typeSubtypeIntersection(t1, <IntersectionType> t2)) return true
         }
         break
     }
@@ -269,7 +264,7 @@ export class SubtypingEnvironment {
    */
   private structSubtypeShape(s1: StructType, s2: ShapeType): boolean {
     for (const p2Name of Object.keys(s2.propertyTypes)) {
-      const p1Type = Structs.getPropertyType(s1, p2Name)
+      const p1Type = Struct.getPropertyType(s1, p2Name)
       if (!p1Type || !this.isSubtype(p1Type, s2.propertyTypes[p2Name])) {
         return false
       }

@@ -11,11 +11,11 @@ object TraitTranspiler {
     * also have a schema.
     */
   def transpile(tpe: TraitType): Compilation[String] = {
-    val (varSchema, schema) = DeclaredTypeTranspiler.transpileSchema(tpe, RuntimeApi.types.schema.`trait`)
+    val (varSchema, schema) = DeclaredTypeTranspiler.transpileSchema(tpe, RuntimeApi.traits.schema)
 
     val varType = TranspiledName.declaredType(tpe)
     s"""$schema
-       |const $varType = ${RuntimeApi.types.`trait`}($varSchema);
+       |const $varType = ${RuntimeApi.traits.tpe}($varSchema);
        |""".stripMargin.compiled
   }
 

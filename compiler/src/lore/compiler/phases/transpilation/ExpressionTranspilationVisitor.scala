@@ -24,7 +24,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   override def visit(expression: Return)(value: TranspiledChunk): Transpilation = {
     val ret = s"return ${value.expression.get};"
-    Transpilation.chunk(Vector(value.statements, ret), RuntimeApi.values.tuple.unit)
+    Transpilation.chunk(Vector(value.statements, ret), RuntimeApi.tuples.unitValue)
   }
 
   override def visit(expression: VariableDeclaration)(value: TranspiledChunk): Transpilation = {
@@ -55,16 +55,16 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   override def visit(expression: Tuple)(values: Vector[TranspiledChunk]): Transpilation = {
     if (expression.tpe == ProductType.UnitType) {
-      Transpilation.expression(RuntimeApi.values.tuple.unit)
+      Transpilation.expression(RuntimeApi.tuples.unitValue)
     } else {
       Transpilation.combined(values) { values =>
-        s"${RuntimeApi.values.tuple.create}([${values.mkString(",")}])"
+        s"${RuntimeApi.tuples.value}([${values.mkString(",")}])"
       }
     }
   }
 
   override def visit(expression: ListConstruction)(values: Vector[TranspiledChunk]): Transpilation = {
-    transpileArrayBasedValue(expression, RuntimeApi.values.list.create, values)
+    transpileArrayBasedValue(expression, RuntimeApi.lists.value, values)
   }
 
   override def visit(expression: MapConstruction)(entries: Vector[(TranspiledChunk, TranspiledChunk)]): Transpilation = {
@@ -75,7 +75,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
     }
     // The extra arguments are passed to the create function of the map and represent the hash and equals methods used
     // by the hash map. We cannot reference these from the runtime because we can't import them there!
-    transpileArrayBasedValue(expression, RuntimeApi.values.map.create, entryChunks, extra = "hash, areEqual,")
+    transpileArrayBasedValue(expression, RuntimeApi.maps.value, entryChunks, extra = "hash, areEqual,")
   }
 
   override def visit(expression: Instantiation)(arguments: Vector[TranspiledChunk]): Transpilation = {
@@ -183,7 +183,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
             val varIterator = nameProvider.createName()
             val varResult = nameProvider.createName()
             s"""${chunk.statements}
-               |const $varIterator = ${RuntimeApi.values.map.entries}(${chunk.expression.get});
+               |const $varIterator = ${RuntimeApi.maps.entries}(${chunk.expression.get});
                |let $varResult = $varIterator.next();
                |while(!$varResult.done) {
                |  const ${extractor.variable.transpiledName} = $varResult.value;
@@ -209,7 +209,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
       val bodyCode = body.expression.map { e =>
         varResult.map { v =>
           s"""$statements
-             |$v = ${RuntimeApi.values.list.append}($v, $e, $resultType);
+             |$v = ${RuntimeApi.lists.append}($v, $e, $resultType);
              |""".stripMargin
         } getOrElse {
           s"""$statements
@@ -225,7 +225,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
       val varResult = nameProvider.createName()
       val resultType = RuntimeTypeTranspiler.transpileSubstitute(loop.tpe)
       val resultVarDeclaration =
-        s"""let $varResult = ${RuntimeApi.values.list.create}(
+        s"""let $varResult = ${RuntimeApi.lists.value}(
            |  [],
            |  $resultType,
            |);""".stripMargin
@@ -255,7 +255,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
     //       last argument to 'append' has to be the new list type.
     val typeExpr = RuntimeTypeTranspiler.transpileSubstitute(resultType)
     Transpilation.combined(Vector(list, element)) { case Vector(listExpr, elementExpr) =>
-      s"${RuntimeApi.values.list.append}($listExpr, $elementExpr, $typeExpr)"
+      s"${RuntimeApi.lists.append}($listExpr, $elementExpr, $typeExpr)"
     }
   }
 }

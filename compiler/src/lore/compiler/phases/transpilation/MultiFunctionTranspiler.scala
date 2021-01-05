@@ -159,7 +159,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   private def transpileArgumentTypeGathering(printer: PrintStream): Unit = {
     // Single unit functions are the best.
     if (isSingleUnitFunction) {
-      printer.println(s"const $varArgumentType = ${RuntimeApi.types.unit};")
+      printer.println(s"const $varArgumentType = ${RuntimeApi.tuples.unitType};")
       return
     }
 
@@ -171,7 +171,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     }
 
     // If we don't use the cache, there is no reason to hash this transient product type.
-    val productConstructor = if (shouldUseDispatchCache) RuntimeApi.types.product else RuntimeApi.types.unsafe.unhashedProduct
+    val productConstructor = if (shouldUseDispatchCache) RuntimeApi.tuples.tpe else RuntimeApi.tuples.unhashedType
 
     // If we are using rest parameters, we will have to gather the argument type with a loop.
     if (usingRestParameters) {

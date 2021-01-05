@@ -8,8 +8,8 @@
 // Note that the append operator is defined by the compiler and thus doesn't need to be defined here.
 
 // TODO: Rename to size to have a consistent approach to collection size? Map size should also be called size.
-function length(list: [A]): Int where A = dynamic[Int]('Lore.values.list.length', list)
-function get(list: [A], index: Int): A where A = dynamic[A]('Lore.values.list.get', list, index)
+function length(list: [A]): Int where A = dynamic[Int]('Lore.lists.length', list)
+function get(list: [A], index: Int): A where A = dynamic[A]('Lore.lists.get', list, index)
 
 function concat(as: [A], bs: [B]): [A | B] where A, B = {
   let mut result: [A | B] = as
@@ -58,6 +58,6 @@ function stringJoin(list: [A], separator: String): String where A = {
 
 
 // TODO: Tuples need a more generic solution.
-function first(tuple: (A, B)): A where A, B = dynamic[A]('Lore.values.tuple.get', tuple, 0)
-function second(tuple: (A, B)): B where A, B = dynamic[B]('Lore.values.tuple.get', tuple, 1)
+function first(tuple: (A, B)): A where A, B = dynamic[A]('Lore.tuples.get', tuple, 0)
+function second(tuple: (A, B)): B where A, B = dynamic[B]('Lore.tuples.get', tuple, 1)
 

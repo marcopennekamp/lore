@@ -1,10 +1,10 @@
-import { ListValue } from '../../runtime/src/lore/runtime/values/list.ts'
-import { LoreTest } from '../base.ts'
-import { ObjectValue } from '../../runtime/src/lore/runtime/values/object.ts'
+import { ListValue } from '../../runtime/src/lore/runtime/lists.ts'
+import { StructValue } from '../../runtime/src/lore/runtime/structs.ts'
 import { assertListEquals, assertListForall, assertStructHasValues } from '../assertions.ts'
+import { LoreTest } from '../base.ts'
 
 Deno.test('structs/position', async () => {
-  const result: ListValue<ObjectValue> = await LoreTest.run('structs/position')
+  const result: ListValue<StructValue> = await LoreTest.run('structs/position')
   const expected = [{ x: 1, y: 2, z: 3 }, { x: 0, y: 5, z: 0 }, { x: 20, y: 10, z: 0 }, { x: 7, y: 0, z: 0}]
   assertListForall(result, expected, (actual, expected) => assertStructHasValues(actual, 'Position', expected))
 })
