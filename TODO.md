@@ -4,14 +4,16 @@
 
 - Shape features:
   - Shape types
-    - compiler: ~~data structure~~, ~~subtyping~~, ~~variable allocation~~, ~~Type functions~~, ~~type encoding~~, ~~least upper bound~~, ~~member explorer~~, ~~parser~~, ~~transpiler~~, ~~combine shape types in intersection types~~
-    - runtime: ~~data structure~~, ~~subtyping~~, ~~type equality~~, variable allocation, combine shape types in intersection types
+    - compiler: ~~data structure~~, ~~subtyping~~, ~~type variable allocation~~, ~~Type functions~~, ~~type encoding~~, ~~least upper bound~~, ~~member explorer~~, ~~parser~~, ~~transpiler~~, ~~combine shape types in intersection types~~
+    - runtime: ~~data structure~~, ~~subtyping~~, ~~type equality~~, ~~type variable allocation~~, ~~substitution~~, ~~isPolymorphic~~, ~~variables~~, combine shape types in intersection types
   - Open properties
     - struct property declarations
     - run-time type instantiation
   - Shape values
     - compiler: AST, expression tree, parser, transformer & type inference, transpiler
     - runtime: data structure, run-time type instantiation
+  - Inheritance:
+    - compiler: traits extending shapes, structs implementing shapes
   - Auxiliary features:
     - Type aliases
     - `+` as part of a valid type name

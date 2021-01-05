@@ -6,6 +6,7 @@ import {
   string, sum, sumSimplified, unhashedProduct, unit, variable, structSchema, trait, traitSchema, shape,
 } from './types.ts'
 import { typeOf } from './typeof.ts'
+import { isPolymorphic, variables } from './polymorphy.ts'
 
 export default {
   // Type constants.
@@ -48,4 +49,6 @@ export default {
   fitsMonomorphic,
   fitsPolymorphic,
   typeOf,
+  isPolymorphic,
+  variables,
 }

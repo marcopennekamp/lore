@@ -1,4 +1,4 @@
-import { ListType, MapType, Type, TypeVariable, XaryType } from './types.ts'
+import { ListType, MapType, ShapeType, Type, TypeVariable, XaryType } from './types.ts'
 import { Kind } from './kinds.ts'
 import { TinySet } from '../utils/TinySet.ts'
 
@@ -41,7 +41,9 @@ export function isPolymorphic(type: Type): boolean {
       return isPolymorphic((<MapType> type).key) || isPolymorphic((<MapType> type).value)
 
     case Kind.Shape:
-      // TODO (shape): Implement.
+      for (const propertyType of Object.values((<ShapeType> type).propertyTypes)) {
+        if (isPolymorphic(propertyType)) return true
+      }
       return false
   }
   return false
@@ -80,8 +82,10 @@ export function variables(type: Type): TinySet<TypeVariable> {
         break
 
       case Kind.Shape:
-        // TODO (shape): Implement.
-        return false
+        for (const propertyType of Object.values((<ShapeType> type).propertyTypes)) {
+          traverse(propertyType)
+        }
+        break
     }
   }
 
