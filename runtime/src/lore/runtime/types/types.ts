@@ -65,6 +65,10 @@ export function sum(types: Array<Type>): SumType {
  * contain a single part, we instead return the type itself.
  */
 export function sumSimplified(types: Array<Type>): Type {
+  if (types.length === 1) {
+    return types[0]
+  }
+
   // TODO: If we ordered types by some type ordering, we could probably achieve a speedup for subtyping, equality
   //       checking, and also simplification that involves intersection and/or sum types.
   const flattened = flattenedUnique(Kind.Sum, types)
@@ -88,17 +92,36 @@ export function intersection(types: Array<Type>): IntersectionType {
   return { kind: Kind.Intersection, types, hash: unorderedHashWithSeed(types, 0x74a2317d) }
 }
 
+// TODO: Move to an object namespace as Intersections.simplify?
 export function intersectionSimplified(types: Array<Type>): Type {
+  if (types.length === 1) {
+    return types[0]
+  }
+
   // TODO: If we ordered types by some type ordering, we could probably achieve a speedup for subtyping, equality
   //       checking, and also simplification that involves intersection and/or sum types.
   const flattened = flattenedUnique(Kind.Intersection, types)
 
-  // TODO: Combine shape types.
+  const noShapes: Array<Type> = []
+  const shapes: Array<ShapeType> = []
+  for (const type of types) {
+    if (type.kind === Kind.Shape) {
+      shapes.push(<ShapeType> type)
+    } else {
+      noShapes.push(type)
+    }
+  }
+
+  let shapesCombined = flattened
+  if (shapes.length > 1) {
+    noShapes.push(Shapes.combine(shapes))
+    shapesCombined = noShapes
+  }
 
   // Remove strict supertypes of other parts. Conceptually, we have to check for strict supertypes here, but we have
   // already established that no two types in the list are equal. Since the definition of strict supertyping t1 > t2
   // is t1 =/= t2 && t1 >= t2, we can forego the strict check here and just use normal subtyping.
-  const simplified = allExcluding(flattened, (self, other) => isSubtype(other, self))
+  const simplified = allExcluding(shapesCombined, (self, other) => isSubtype(other, self))
 
   if (simplified.length === 1) {
     return simplified[0]
@@ -162,6 +185,36 @@ export function shape(propertyTypes: PropertyTypes): ShapeType {
   }
 
   return { kind: Kind.Shape, propertyTypes, hash: unorderedHashWithSeed(propertyHashes, 0xf38da2c4) }
+}
+
+export const Shapes = {
+  /**
+   * Combines the given shape types into a single shape type. Mirrors the compiler implementation of ShapeType.combine.
+   *
+   * This operation is expensive because for each property with more than one occurrence, we need to simplify the
+   * intersection of the property's types.
+   */
+  combine(shapes: Array<ShapeType>): ShapeType {
+    const combinedProperties: Map<string, Array<Type>> = new Map()
+    for (const shape of shapes) {
+      for (const propertyName of Object.keys(shape.propertyTypes)) {
+        const propertyType = shape.propertyTypes[propertyName]
+        const list = combinedProperties.get(propertyName)
+        if (!list) {
+          combinedProperties.set(propertyName, [propertyType])
+        } else {
+          list.push(propertyType)
+        }
+      }
+    }
+
+    const shapeProperties: { [key: string]: Type } = { }
+    for (const [name, types] of combinedProperties) {
+      shapeProperties[name] = intersectionSimplified(types)
+    }
+
+    return shape(shapeProperties)
+  }
 }
 
 
