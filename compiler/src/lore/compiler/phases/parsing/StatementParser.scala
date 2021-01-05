@@ -189,7 +189,7 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
 
   private def map[_: P]: P[ExprNode] = {
     def keyValue = P(Index ~ expression ~ "->" ~ expression).map(withIndex(ExprNode.KeyValueNode))
-    P(Index ~ "%{" ~ keyValue.rep(sep = ",").map(_.toVector) ~ "}").map(withIndex(ExprNode.MapNode))
+    P(Index ~ "#[" ~ keyValue.rep(sep = ",").map(_.toVector) ~ "]").map(withIndex(ExprNode.MapNode))
   }
 
   /**

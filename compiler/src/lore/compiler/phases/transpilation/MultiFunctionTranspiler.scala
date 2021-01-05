@@ -14,6 +14,13 @@ import lore.compiler.types.{ProductType, Type}
 import scala.collection.mutable
 import scala.util.Using
 
+// TODO: This needs a serious overhaul. The transpilation of all this logic is very complex and relies on the
+//       intertwining of several states and timing. We should rather consider creating an intermediate representation
+//       which can be transpiled more easily. This would separate decision making (call fits poly or mono, unpack
+//       input product, use dispatch cache, etc.) and the model (transpiled input types and type variables, transpiled
+//       argument types, dispatch nodes, etc.) from the actual transpilation to Javascript.
+//       The transpiler is also sufficiently complex that it could be moved to its own package.
+
 class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry) {
 
   private val varArgumentType = "argumentType".asName
@@ -46,7 +53,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
         }
 
         transpileArgumentTypeGathering(printer)
-        transpileDispatchCall(printer)
+        transpileDispatchCall(printer)(runtimeTypeVariables)
         printer.println("}")
       }
     }
@@ -210,7 +217,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     * can rely on the invariant that the target function will always stay the same for the same input type.
     * Hence, we can cache the result of this dispatch algorithm at runtime for real values.
     */
-  private def transpileDispatchCall(printer: PrintStream): Unit = {
+  private def transpileDispatchCall(printer: PrintStream)(implicit runtimeTypeVariables: RuntimeTypeVariables): Unit = {
     val varTarget = "target".asName
     val varCachedTarget = "cachedTarget".asName
     def varFits(index: Int) = s"fits$index".asName
@@ -218,12 +225,22 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     def transpileFitsConsts(nodes: Vector[(mf.hierarchy.NodeT, Int)]): Unit = {
       nodes.foreach { case (node, index) =>
         val varRightType = inputTypeJsNames(node.signature.inputType)
+
         // We can decide at compile-time which version of the fit should be used, because the type on the right side
         // is constant. If the parameter type isn't polymorphic now, it won't ever be, so we can skip all that testing
         // for polymorphy at run-time.
-        val fitsFunction = if (node.isPolymorphic) RuntimeApi.types.fitsPolymorphic else RuntimeApi.types.fitsMonomorphic
+        val fitsCall = if (node.isPolymorphic) {
+          // We transpile a list of variables of the input type so that this list can be used at run-time to check
+          // whether all variables have been assigned. The advantage of doing this at compile-time is that we don't
+          // have to expend the effort of extracting the variable list from the type at run-time.
+          val rightTypeVariables = Type.variables(node.signature.inputType).toVector.map(runtimeTypeVariables)
+          s"${RuntimeApi.types.fitsPolymorphic}($varArgumentType, $varRightType, [${rightTypeVariables.mkString(", ")}])"
+        } else {
+          s"${RuntimeApi.types.fitsMonomorphic}($varArgumentType, $varRightType)"
+        }
+
         // If we invoke the fitsPolymorphic function and the type fits, an Assignments map is returned rather than a boolean.
-        printer.println(s"const ${varFits(index)} = $fitsFunction($varArgumentType, $varRightType);")
+        printer.println(s"const ${varFits(index)} = $fitsCall;")
       }
     }
 

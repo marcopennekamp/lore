@@ -117,6 +117,10 @@ object MultiFunctionConstraints {
     * more general function states a contract between the input and output types: "Given an input of type A, the output
     * must also be of type A." The specializing function fulfills this contract, since it takes and returns a value of
     * the same type.
+    *
+    * TODO: This is yet a bit more complicated when the return type of the child function is inferred via the
+    *       type variable allocation. See [[lore.compiler.types.TypeVariableAllocation.of]] with the genericListify
+    *       example.
     */
   def verifyOutputTypes(mf: MultiFunctionDefinition): Verification = {
     def verifyHierarchyNode(node: mf.hierarchy.NodeT): Verification = {

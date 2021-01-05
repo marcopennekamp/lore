@@ -1,9 +1,10 @@
 package lore.compiler.semantics.expressions
 
 import lore.compiler.core.Position
-import lore.compiler.semantics.{LocalVariable, VirtualMember}
+import lore.compiler.semantics.LocalVariable
 import lore.compiler.semantics.functions.CallTarget
-import lore.compiler.semantics.structures.{MemberDefinition, StructDefinition}
+import lore.compiler.semantics.members.Member
+import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.types.{BasicType, ProductType, Type}
 
 sealed trait Expression {
@@ -48,7 +49,7 @@ object Expression {
   case class VariableAccess(variable: LocalVariable, position: Position) extends Expression.Apply(variable.tpe) with Access {
     override val name: String = variable.name
   }
-  case class MemberAccess(instance: Expression, member: VirtualMember, position: Position) extends Expression.Apply(member.tpe) with Access {
+  case class MemberAccess(instance: Expression, member: Member, position: Position) extends Expression.Apply(member.tpe) with Access {
     override val name: String = member.name
   }
 
@@ -76,7 +77,7 @@ object Expression {
     override def tpe: Type = struct.tpe
   }
   object Instantiation {
-    case class Argument(member: MemberDefinition, value: Expression)
+    case class Argument(property: StructPropertyDefinition, value: Expression)
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

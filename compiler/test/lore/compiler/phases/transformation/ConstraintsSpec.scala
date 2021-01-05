@@ -8,19 +8,8 @@ class ConstraintsSpec extends BaseSpec {
   // TODO: Cover other constraints so that at least all possible constraint errors are tested with at least one
   //       test source each.
 
-  "constraints/entities" should "be compiled with various errors" in {
-    assertCompilationErrors(s"$fragmentBase/entities") { errors =>
-      assertErrorsMatchSignatures(errors, Vector(
-        ErrorSignature(classOf[DeclaredTypeConstraints.OwnedByMustBeSubtype], 7),
-        ErrorSignature(classOf[EntityConstraints.EntityCannotOwnComponent], 9),
-        ErrorSignature(classOf[StructConstraints.ComponentsShareSupertype], 22),
-        ErrorSignature(classOf[StructConstraints.ComponentNotImplemented], 36),
-      ))
-    }
-  }
-
-  "constraints/output-types" should "be compiled with various errors" in {
-    assertCompilationErrors(s"$fragmentBase/output-types") { errors =>
+  "constraints/return-types" should "be compiled with various errors" in {
+    assertCompilationErrors(s"$fragmentBase/return-types") { errors =>
       assertErrorsMatchSignatures(errors, Vector(
         ErrorSignature(classOf[MultiFunctionConstraints.IncompatibleOutputTypes], 8),
         ErrorSignature(classOf[MultiFunctionConstraints.IncompatibleOutputTypes], 11),

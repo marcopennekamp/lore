@@ -1,22 +1,31 @@
 import {
-  ComponentType, DeclaredType, IntersectionType, ListType, MapType, ProductType, SumType, Type, TypeVariable
-} from "./types.ts";
+  DeclaredType,
+  IntersectionType,
+  ListType,
+  MapType,
+  ProductType,
+  ShapeType,
+  Structs,
+  StructType,
+  SumType,
+  Type,
+  TypeVariable,
+} from './types.ts'
 import { Kind } from "./kinds.ts";
 import { areEqual } from "./equality.ts";
 
 /**
  * A subtyping environment provides a specific implementation of the isSubtype function given a configuration.
+ *
+ * TODO: Since there are no current configurations, we can remove the environment again.
  */
 export class SubtypingEnvironment {
-  /**
-   * Whether owned-by types should be considered in subtyping. This needs to be turned off for owned-by checks to
-   * avoid cyclic reasoning.
-   */
-  private readonly considerOwnedBy: boolean
-
-  constructor(considerOwnedBy: boolean) {
-    this.considerOwnedBy = considerOwnedBy
+  constructor() {
   }
+
+  // TODO (shape): Implementing structural subtyping for struct < shape: Take all properties defined in the shape
+  //               and get their types by: (1) checking the openPropertyTypes map and (2) the type of the
+  //               PropertyDefinition.
 
   /**
    * Checks whether t1 is a subtype of t2.
@@ -43,14 +52,21 @@ export class SubtypingEnvironment {
         break
 
       case Kind.Struct:
+        // Handle shape subtyping specifically for structs.
+        if (t2.kind === Kind.Shape && this.structSubtypeShape(<StructType> t1, <ShapeType> t2)) {
+          return true
+        }
+        // fallthrough
       case Kind.Trait:
         const d1 = <DeclaredType> t1
         if (t2.kind === Kind.Trait || t2.kind === Kind.Struct) {
           const d2 = <DeclaredType> t2
 
-          // If the schemas of these two declared types are equal, we have the same type most of the time. The equality
+          // TODO: Rebuild this for open property types (structs only, though):
+
+          /* // If the schemas of these two declared types are equal, we have the same type most of the time. The equality
           // might not have been caught by the === check above because a struct type can have multiple instances with
-          // different actual component types.
+          // different actual (open) property types.
           // We also have to take component types into account when deciding subtyping, however. Let's say we have a
           // struct a1: A with a component C1 and another struct a2: A with a component C2. Given C2 < C1, is a1's
           // struct type a subtype of a2's struct type?
@@ -72,20 +88,11 @@ export class SubtypingEnvironment {
             }
 
             return true
-          }
+          } */
 
           const supertraits = d1.schema.supertraits
           for (let i = 0; i < supertraits.length; i += 1) {
             if (this.isSubtype(supertraits[i], d2)) return true
-          }
-          const componentTypes = d1.componentTypes
-          for (let i = 0; i < componentTypes.length; i += 1) {
-            if (this.isSubtype(componentTypes[i], d2)) return true
-          }
-        } else if (t2.kind === Kind.Component && d1.schema.isEntity) {
-          const componentTypes = d1.componentTypes
-          for (let i = 0; i < componentTypes.length; i += 1) {
-            if (this.isSubtype(componentTypes[i], t2)) return true
           }
         }
         break
@@ -110,18 +117,6 @@ export class SubtypingEnvironment {
         if (t2.kind === Kind.Product && this.productSubtypeProduct(<ProductType> t1, <ProductType> t2)) return true
         break
 
-      case Kind.Component:
-        const c1 = <ComponentType> t1
-        if (t2.kind === Kind.Component) {
-          const c2 = <ComponentType> t2
-          if (this.isSubtype(c1.underlying, c2.underlying)) {
-            return true
-          }
-        } else if (this.considerOwnedBy && this.isSubtype(c1.underlying.schema.ownedBy.value(), t2)) {
-          return true
-        }
-        break
-
       case Kind.List:
         if (
             t2.kind === Kind.List &&
@@ -137,6 +132,13 @@ export class SubtypingEnvironment {
             areEqual((<MapType> t1).key, (<MapType> t2).key) &&
             areEqual((<MapType> t1).value, (<MapType> t2).value)
         ) {
+          return true
+        }
+        break
+
+      // This needs to be placed lower than the Kind.Struct case, because structs handle struct/shape subtyping.
+      case Kind.Shape:
+        if (t2.kind === Kind.Shape && this.shapeSubtypeShape(<ShapeType> t1, <ShapeType> t2)) {
           return true
         }
         break
@@ -259,6 +261,32 @@ export class SubtypingEnvironment {
       if (!this.isSubtype(e1, e2)) return false
     }
 
+    return true
+  }
+
+  /**
+   * Whether struct type s1 is a subtype of shape type s2.
+   */
+  private structSubtypeShape(s1: StructType, s2: ShapeType): boolean {
+    for (const p2Name of Object.keys(s2.propertyTypes)) {
+      const p1Type = Structs.getPropertyType(s1, p2Name)
+      if (!p1Type || !this.isSubtype(p1Type, s2.propertyTypes[p2Name])) {
+        return false
+      }
+    }
+    return true
+  }
+
+  /**
+   * Whether shape type s1 is a subtype of shape type s2.
+   */
+  private shapeSubtypeShape(s1: ShapeType, s2: ShapeType): boolean {
+    for (const p2Name of Object.keys(s2.propertyTypes)) {
+      const p1Type = s1.propertyTypes[p2Name]
+      if (!p1Type || !this.isSubtype(p1Type, s2.propertyTypes[p2Name])) {
+        return false
+      }
+    }
     return true
   }
 }

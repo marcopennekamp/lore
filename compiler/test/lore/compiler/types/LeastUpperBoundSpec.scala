@@ -29,7 +29,6 @@ class LeastUpperBoundSpec extends TypeSpec {
     ((Penguin, Chicken, Raven): Type, (Chicken, Raven, Penguin): Type) --> (Bird, Bird, Bird)
     ((Chicken & Penguin, Goldfish & Cat, Unicorn & Healthy): Type, (Raven & Sick, Fish & Sick, Human & Sick): Type) -->
       ((Bird, Fish, Mammal & Status))
-    ((+Wheel, +Engine): Type, (Car, ElectricEngine): Type) --> (+Wheel, +Engine | ElectricEngine)
   }
 
   it should "return the most specific supertype for intersection types" in {
@@ -53,26 +52,18 @@ class LeastUpperBoundSpec extends TypeSpec {
     (BasicType.Int | BasicType.Real, BasicType.Nothing) --> BasicType.Real
   }
 
-  it should "return the most specific supertype for entities, intersection types and component types" in {
-    (+CoolWheel, +CheapWheel) --> +Wheel
-    (+CoolWheel & +ElectricEngine, +CheapWheel & +GasEngine) --> (+Wheel & +Engine)
-    (Car, +Wheel & +Engine) --> (+Wheel & +Engine)
-    (Car & +Wheel, +Wheel) --> +Wheel
-    // These component types aren't related, so they cannot have a common component type as ancestor.
-    (+CheapWheel, +ElectricEngine) --> (+CheapWheel | +ElectricEngine)
-    (Car & +Wheel, Car & +Engine) --> Car
-    (Car, Bicycle) --> +Wheel
-    (Car, Motorcycle) --> (+Wheel & +Engine)
-    (Motorcycle, Bicycle) --> Cycle
-    // Notably, the LUB is not +Hashable, because Hashable is independent.
-    (+Wheel, +Engine) --> (+Wheel | +Engine)
-  }
-
   it should "return the most specific supertype for lists and maps" in {
     (ListType(Bird), ListType(Mammal)) --> ListType(Animal)
     (ListType(Bird & Fish), ListType(Mammal & Fish)) --> ListType(Fish)
     (MapType(BasicType.String, Human), MapType(BasicType.Int, Unicorn)) --> MapType(BasicType.String | BasicType.Int, Mammal)
     (MapType(BasicType.Real, Cat & Healthy), MapType(BasicType.Int, ScottishFold & Sick)) --> MapType(BasicType.Real, Cat & Status)
+  }
+
+  it should "return the most specific supertype for shape types and structs" in {
+    (Goldfish, ShapeTypes.Named) --> ShapeTypes.Named
+    (ShapeTypes.Sized, Goldfish) --> ShapeTypes.Sized
+    (ShapeTypes.Sized, ShapeTypes.Named) --> ShapeTypes.Empty
+    (shape("animal" -> (Cat | Penguin)), shape("animal" -> Raven)) --> shape("animal" -> Animal)
   }
 
   it should "return the correct least upper bounds for type variables" in {

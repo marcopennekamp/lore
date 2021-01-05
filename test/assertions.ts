@@ -3,6 +3,7 @@ import { ObjectValue } from '../runtime/src/lore/runtime/values/object.ts'
 import { Kind } from '../runtime/src/lore/runtime/types/kinds.ts'
 import { ListValue } from '../runtime/src/lore/runtime/values/list.ts'
 import { TupleValue } from '../runtime/src/lore/runtime/values/tuple.ts'
+import { SumType, Type } from '../runtime/src/lore/runtime/types/types.ts'
 
 export function assertIsTuple(actual: TupleValue) {
   assertEquals(actual.lore$type.kind, Kind.Product)
@@ -56,5 +57,13 @@ export function assertListForall<A, B>(actual: ListValue<A>, expected: Array<B>,
   actual.array.forEach((act, index) => {
     const exp = expected[index]
     assertCondition(act, exp)
+  })
+}
+
+export function assertSumTypeParts(actual: Type, partPredicate: (part: Type) => Boolean) {
+  assertEquals(actual.kind, Kind.Sum)
+  const sumType = <SumType> actual
+  sumType.types.forEach((part) => {
+    assert(partPredicate(part), `The type ${part} may not be part of the sum type according to the given predicate.`)
   })
 }

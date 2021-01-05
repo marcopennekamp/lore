@@ -7,13 +7,15 @@ import lore.compiler.phases.resolution.ParameterDefinitionResolver.resolveParame
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.syntax.DeclNode
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object MultiFunctionDefinitionResolver {
   def resolve(functionNodes: Vector[DeclNode.FunctionNode])(implicit registry: Registry): Compilation[MultiFunctionDefinition] = {
     // Of course, all functions added to the multi-function must have the same name. If that is not the case,
     // there is something very wrong with the compiler.
-    if (functionNodes.size > 1 && functionNodes.sliding(2).exists { case Vector(a, b) => a.name != b.name }) {
-      throw CompilationException("The function nodes of a multi-function don't all have the same name.")
+    if (!functionNodes.allEqual(_.name)) {
+      val uniqueNames = functionNodes.map(_.name).toSet
+      throw CompilationException(s"The function nodes of a multi-function don't all have the same name. Names: ${uniqueNames.mkString(", ")}.")
     }
 
     val name = functionNodes.head.name

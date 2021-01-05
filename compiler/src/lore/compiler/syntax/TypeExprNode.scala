@@ -14,5 +14,6 @@ object TypeExprNode {
   case class UnitNode(position: Position) extends TypeExprNode
   case class ListNode(element: TypeExprNode, position: Position) extends TypeExprNode
   case class MapNode(key: TypeExprNode, value: TypeExprNode, position: Position) extends TypeExprNode
-  case class ComponentNode(underlyingName: String, position: Position) extends TypeExprNode
+  case class ShapeNode(properties: Vector[ShapePropertyNode], position: Position) extends TypeExprNode
+  case class ShapePropertyNode(name: String, tpe: TypeExprNode, position: Position) extends Node
 }

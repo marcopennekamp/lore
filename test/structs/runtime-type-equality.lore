@@ -10,7 +10,7 @@ struct Leather implements Material
 struct Cloth implements Material
 
 struct Bag {
-  component Material
+  component Material  // TODO: This needs to be an open property instead so that the test makes sense again.
 }
 
 function equalTypes(a1: A, a2: B): Boolean where A, B = false

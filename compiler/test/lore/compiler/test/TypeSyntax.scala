@@ -4,6 +4,7 @@ import lore.compiler.semantics.Registry
 import lore.compiler.types._
 
 trait TypeSyntax {
+  def shape(properties: (String, Type)*): ShapeType = ShapeType(properties.toVector.map { case (name, tpe) => ShapeType.Property(name, tpe) })
   implicit def toType(name: String)(implicit registry: Registry): Type = registry.getType(name).get
   implicit def toProductTypeSS(tuple: (String, String))(implicit registry: Registry): ProductType = toProductTypeTT((toType(tuple._1), toType(tuple._2)))
   implicit def toProductTypeTS(tuple: (Type, String))(implicit registry: Registry): ProductType = toProductTypeTT((tuple._1, toType(tuple._2)))
@@ -11,14 +12,11 @@ trait TypeSyntax {
   implicit def toProductTypeTT(tuple: (Type, Type))(implicit registry: Registry): ProductType = ProductType(Vector(tuple._1, tuple._2))
   implicit def toProductTypeTTT(tuple: (Type, Type, Type))(implicit registry: Registry): ProductType = ProductType(Vector(tuple._1, tuple._2, tuple._3))
   implicit class TypeOperators(t1: Type) {
-    def &(t2: Type)(implicit registry: Registry): Type = IntersectionType.construct(Set(t1, t2))
-    def |(t2: Type)(implicit registry: Registry): Type = SumType.construct(Set(t1, t2))
+    def &(t2: Type): Type = IntersectionType.construct(Vector(t1, t2))
+    def |(t2: Type): Type = SumType.construct(Vector(t1, t2))
   }
   implicit class StringTypeOperators(s1: String) {
     def &(t2: Type)(implicit registry: Registry): Type = toType(s1) & t2
     def |(t2: Type)(implicit registry: Registry): Type = toType(s1) | t2
-  }
-  implicit class DeclaredTypeOperators(c1: DeclaredType) {
-    def unary_+(): ComponentType = ComponentType(c1)
   }
 }

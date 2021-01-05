@@ -5,7 +5,12 @@ import lore.compiler.types._
 
 import scala.util.hashing.MurmurHash3
 
-case class FunctionSignature(name: String, parameters: Vector[ParameterDefinition], outputType: Type, override val position: Position) extends Positioned {
+case class FunctionSignature(
+  name: String,
+  parameters: Vector[ParameterDefinition],
+  outputType: Type,
+  override val position: Position
+) extends Positioned {
   val inputType: ProductType = ProductType(parameters.map(_.tpe))
   val isPolymorphic: Boolean = Type.isPolymorphic(inputType)
   val arity: Int = parameters.size
@@ -21,7 +26,7 @@ case class FunctionSignature(name: String, parameters: Vector[ParameterDefinitio
 
     val substitutedParameters = parameters.map { parameter =>
       val substitutedType = Type.substitute(assignments, parameter.tpe)
-      new ParameterDefinition(parameter.name, substitutedType, parameter.position)
+      ParameterDefinition(parameter.name, substitutedType, parameter.position)
     }
     val substitutedOutputType = Type.substitute(assignments, outputType)
     FunctionSignature(name, substitutedParameters, substitutedOutputType, position)

@@ -1,3 +1,4 @@
+// Not to be confused with shape types and shape values. :)
 trait Shape
 
 // "Computed"/"Virtual" properties. Could be improved with the property syntax for types/traits suggested in the spec.

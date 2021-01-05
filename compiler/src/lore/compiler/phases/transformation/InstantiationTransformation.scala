@@ -3,59 +3,59 @@ package lore.compiler.phases.transformation
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Error, Position}
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.structures.{MemberDefinition, StructDefinition}
+import lore.compiler.semantics.structures.{StructPropertyDefinition, StructDefinition}
 
 object InstantiationTransformation {
 
   def transformCallStyleInstantiation(struct: StructDefinition, arguments: Vector[Expression])(implicit position: Position): Compilation[Expression] = {
     ExpressionVerification.adhereToSignature(arguments, struct.constructorSignature, position).map { _ =>
-      val instantiationArguments = struct.members.zip(arguments).map(Expression.Instantiation.Argument.tupled)
+      val instantiationArguments = struct.properties.zip(arguments).map(Expression.Instantiation.Argument.tupled)
       Expression.Instantiation(struct, instantiationArguments, position)
     }
   }
 
-  case class DuplicateMember(name: String)(implicit position: Position) extends Error(position) {
-    override def message: String = s"The member $name occurs more than once. Members must be unique in map-style instantiation."
+  case class DuplicateProperty(name: String)(implicit position: Position) extends Error(position) {
+    override def message: String = s"The property $name occurs more than once in the instantiation. Properties must be unique here."
   }
 
-  case class MissingMember(name: String)(implicit position: Position) extends Error(position) {
-    override def message: String = s"This map-style instantiation is missing a member $name."
+  case class MissingProperty(name: String)(implicit position: Position) extends Error(position) {
+    override def message: String = s"This map-style instantiation is missing a property $name."
   }
 
-  case class IllegalEntry(name: String)(implicit position: Position) extends Error(position) {
-    override def message: String = s"The struct to be instantiated does not have a member $name."
+  case class IllegalProperty(name: String)(implicit position: Position) extends Error(position) {
+    override def message: String = s"The struct to be instantiated does not have a property $name."
   }
 
-  case class IllegallyTypedMember(member: MemberDefinition, expression: Expression) extends Error(expression) {
+  case class IllegallyTypedProperty(property: StructPropertyDefinition, expression: Expression) extends Error(expression) {
     override def message: String =
-      s"The member ${member.name} is supposed to be assigned a value of type ${expression.tpe}. However," +
-        s" the member itself has the type ${member.tpe}, which is not a subtype of ${expression.tpe}."
+      s"The property ${property.name} is supposed to be assigned a value of type ${expression.tpe}. However," +
+        s" the property itself has the type ${property.tpe}, which is not a subtype of ${expression.tpe}."
   }
 
   def transformMapStyleInstantiation(struct: StructDefinition, entries: Vector[(String, Expression)])(implicit position: Position): Compilation[Expression] = {
     def verifyNamesUnique(): Verification = {
       entries.map(_._1).groupBy(identity).map {
-        case (name, vector) if vector.length > 1 => Compilation.fail(DuplicateMember(name))
+        case (name, vector) if vector.length > 1 => Compilation.fail(DuplicateProperty(name))
         case _ => Verification.succeed
       }.toVector.simultaneous.verification
     }
 
     /**
-      * Assigns entries to members, potentially filling missing members with their default values.
+      * Assigns entries to properties, potentially filling missing properties with their default values.
       */
-    def correlateEntries(): Compilation[Vector[(MemberDefinition, Expression)]] = {
-      var pairs = Vector.empty[(MemberDefinition, Expression)]
+    def correlateEntries(): Compilation[Vector[(StructPropertyDefinition, Expression)]] = {
+      var pairs = Vector.empty[(StructPropertyDefinition, Expression)]
       var missing = Vector.empty[String]
-      val illegal = entries.map(_._1).diff(struct.members.map(_.name))
+      val illegal = entries.map(_._1).diff(struct.properties.map(_.name))
 
-      struct.members.foreach { member =>
-        entries.find { case (name, _) => name == member.name } match {
+      struct.properties.foreach { property =>
+        entries.find { case (name, _) => name == property.name } match {
           case Some((_, expression)) =>
-            pairs = pairs :+ (member, expression)
+            pairs = pairs :+ (property, expression)
           case None =>
-            member.defaultValue match {
-              case Some(defaultValue) => pairs = pairs :+ (member, Expression.Call(defaultValue.callTarget, Vector.empty, position))
-              case None => missing = missing :+ member.name
+            property.defaultValue match {
+              case Some(defaultValue) => pairs = pairs :+ (property, Expression.Call(defaultValue.callTarget, Vector.empty, position))
+              case None => missing = missing :+ property.name
             }
         }
       }
@@ -63,13 +63,13 @@ object InstantiationTransformation {
       if (missing.isEmpty && illegal.isEmpty) {
         Compilation.succeed(pairs)
       } else {
-        Compilation.fail(missing.map(MissingMember(_)) ++ illegal.map(IllegalEntry(_)): _*)
+        Compilation.fail(missing.map(MissingProperty(_)) ++ illegal.map(IllegalProperty(_)): _*)
       }
     }
 
-    def verifyEntryTypes(pairs: Vector[(MemberDefinition, Expression)]): Verification = {
-      pairs.map { case (member, expression) =>
-        if (expression.tpe <= member.tpe) Verification.succeed else Compilation.fail(IllegallyTypedMember(member, expression))
+    def verifyEntryTypes(pairs: Vector[(StructPropertyDefinition, Expression)]): Verification = {
+      pairs.map { case (property, expression) =>
+        if (expression.tpe <= property.tpe) Verification.succeed else Compilation.fail(IllegallyTypedProperty(property, expression))
       }.simultaneous.verification
     }
 

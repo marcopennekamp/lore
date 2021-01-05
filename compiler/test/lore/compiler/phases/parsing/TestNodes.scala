@@ -31,7 +31,6 @@ object TestNodes {
     val Struct = withWildcard(StructNode)
     val Trait = withWildcard(TraitNode)
     val Property = withWildcard(PropertyNode)
-    val Component = withWildcard(ComponentNode)
   }
 
   object Stmt {
@@ -90,7 +89,6 @@ object TestNodes {
     val Unit = withWildcard(UnitNode)
     val List = withWildcard(ListNode)
     val Map = withWildcard(MapNode)
-    val Component = withWildcard(ComponentNode)
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

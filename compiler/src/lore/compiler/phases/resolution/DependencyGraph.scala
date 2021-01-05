@@ -143,8 +143,8 @@ object DependencyGraph {
   case class InheritanceCycle(cycle: Vector[String], occurrence: TypeDeclNode) extends Error(occurrence) {
     override def message: String =
       s"""An inheritance cycle between the following types has been detected: ${cycle.mkString(", ")}.
-         |A trait cannot inherit from another trait that also inherits from the former directly or indirectly. The
-         |subtyping and component relationships of declared types must result in a directed, acyclic graph."""
+         |A trait A cannot inherit from another trait B if B also inherits from A directly or indirectly. The
+         |subtyping relationships of declared types must result in a directed, acyclic graph."""
         .stripMargin.replaceAll("\n", " ").trim
   }
 }

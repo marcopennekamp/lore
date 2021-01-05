@@ -26,7 +26,7 @@ class FunctionDefinition(
 
   val name: String = signature.name
   val isAbstract: Boolean = bodyNode.isEmpty
-  lazy val isPolymorphic: Boolean = signature.isPolymorphic
+  val isPolymorphic: Boolean = signature.isPolymorphic
 
   /**
     * This is a variable because it may be transformed during the course of the compilation.

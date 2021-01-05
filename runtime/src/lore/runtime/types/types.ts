@@ -9,8 +9,7 @@ import {
   unorderedHashWithSeed,
 } from '../utils/hash.ts'
 import { allExcluding, flattenedUnique } from './util.ts'
-import { isSubtype, Subtyping } from './subtyping.ts'
-import { HashMap } from '../utils/HashMap.ts'
+import { isSubtype } from './subtyping.ts'
 import { LazyValue } from '../utils/LazyValue.ts'
 
 // TODO: Create a toString function for types.
@@ -66,6 +65,10 @@ export function sum(types: Array<Type>): SumType {
  * contain a single part, we instead return the type itself.
  */
 export function sumSimplified(types: Array<Type>): Type {
+  if (types.length === 1) {
+    return types[0]
+  }
+
   // TODO: If we ordered types by some type ordering, we could probably achieve a speedup for subtyping, equality
   //       checking, and also simplification that involves intersection and/or sum types.
   const flattened = flattenedUnique(Kind.Sum, types)
@@ -89,15 +92,36 @@ export function intersection(types: Array<Type>): IntersectionType {
   return { kind: Kind.Intersection, types, hash: unorderedHashWithSeed(types, 0x74a2317d) }
 }
 
+// TODO: Move to an object namespace as Intersections.simplify?
 export function intersectionSimplified(types: Array<Type>): Type {
+  if (types.length === 1) {
+    return types[0]
+  }
+
   // TODO: If we ordered types by some type ordering, we could probably achieve a speedup for subtyping, equality
   //       checking, and also simplification that involves intersection and/or sum types.
   const flattened = flattenedUnique(Kind.Intersection, types)
 
+  const noShapes: Array<Type> = []
+  const shapes: Array<ShapeType> = []
+  for (const type of types) {
+    if (type.kind === Kind.Shape) {
+      shapes.push(<ShapeType> type)
+    } else {
+      noShapes.push(type)
+    }
+  }
+
+  let shapesCombined = flattened
+  if (shapes.length > 1) {
+    noShapes.push(Shapes.combine(shapes))
+    shapesCombined = noShapes
+  }
+
   // Remove strict supertypes of other parts. Conceptually, we have to check for strict supertypes here, but we have
   // already established that no two types in the list are equal. Since the definition of strict supertyping t1 > t2
   // is t1 =/= t2 && t1 >= t2, we can forego the strict check here and just use normal subtyping.
-  const simplified = allExcluding(flattened, (self, other) => isSubtype(other, self))
+  const simplified = allExcluding(shapesCombined, (self, other) => isSubtype(other, self))
 
   if (simplified.length === 1) {
     return simplified[0]
@@ -124,23 +148,6 @@ export function unhashedProduct(types: Array<Type>): ProductType {
 export const unit: ProductType = product([])
 
 
-// TODO: We could easily intern component types by giving each declared type exactly one ComponentType instance...
-
-export interface ComponentType extends Type {
-  underlying: DeclaredType
-}
-
-export function component(underlying: DeclaredType): ComponentType {
-  if (underlying.kind !== Kind.Struct && underlying.kind !== Kind.Trait) {
-    throw Error('A component type must have an underlying declared type.')
-  }
-  if (!underlying.schema.isOwnable) {
-    throw Error('A component type must contain an ownable declared type.')
-  }
-  return { kind: Kind.Component, underlying, hash: singleHash(underlying, 0x4cab1ec0) }
-}
-
-
 export interface ListType extends Type {
   element: Type
 }
@@ -160,125 +167,152 @@ export function map(key: Type, value: Type): MapType {
 }
 
 
+export type PropertyTypes = { [key: string]: Type }
+export type LazyPropertyTypes = { [key: string]: LazyValue<Type> }
+
+export interface ShapeType extends Type {
+  propertyTypes: PropertyTypes
+}
+
+export function shape(propertyTypes: PropertyTypes): ShapeType {
+  // Note that creating the Hashable intermediate objects is only needed because unorderedHashWithSeed and pairHash
+  // have the API limitation of expecting { hash: string } objects. If this ever causes performance problems, we can
+  // move to a separate implementation that accepts raw hashes.
+  const propertyHashes: Array<Hashed> = []
+  for (const name of Object.keys(propertyTypes)) {
+    let hash = pairHash({ hash: stringHash(name) }, propertyTypes[name], 0x4cb3052e)
+    propertyHashes.push({ hash })
+  }
+
+  return { kind: Kind.Shape, propertyTypes, hash: unorderedHashWithSeed(propertyHashes, 0xf38da2c4) }
+}
+
+export const Shapes = {
+  /**
+   * Combines the given shape types into a single shape type. Mirrors the compiler implementation of ShapeType.combine.
+   *
+   * This operation is expensive because for each property with more than one occurrence, we need to simplify the
+   * intersection of the property's types.
+   */
+  combine(shapes: Array<ShapeType>): ShapeType {
+    const combinedProperties: Map<string, Array<Type>> = new Map()
+    for (const shape of shapes) {
+      for (const propertyName of Object.keys(shape.propertyTypes)) {
+        const propertyType = shape.propertyTypes[propertyName]
+        const list = combinedProperties.get(propertyName)
+        if (!list) {
+          combinedProperties.set(propertyName, [propertyType])
+        } else {
+          list.push(propertyType)
+        }
+      }
+    }
+
+    const shapeProperties: { [key: string]: Type } = { }
+    for (const [name, types] of combinedProperties) {
+      shapeProperties[name] = intersectionSimplified(types)
+    }
+
+    return shape(shapeProperties)
+  }
+}
+
+
 export interface DeclaredTypeSchema {
   name: string
   supertraits: Array<TraitType>
-
-  /**
-   * The owned-by type of the declared type. It must be passed as a lazy value, because it needs to be loaded after all
-   * other types have been initialised. The reason is simple: we can have two types that mention each other in their
-   * owned-by types, and so if we evaluated this eagerly, one of the types would have a null reference!
-   */
-  ownedBy: LazyValue<Type>
-
-  isOwnable: boolean
-  isEntity: boolean
 }
 
 export interface DeclaredType extends Type {
   schema: DeclaredTypeSchema
-  componentTypes: Array<ComponentType>
 
   /**
-   * Whether this declared type is the one that represents the compile-time type, i.e. its component types are
-   * exactly equal to the compile-time component types.
+   * Whether this declared type is the one that represents the compile-time type, i.e. its open property types are
+   * exactly equal to the compile-time property types.
    */
   isArchetype: boolean
 }
 
 
-export interface MemberDefinition {
-  name: string
-  // TODO: type?
-}
-
 export interface StructSchema extends DeclaredTypeSchema {
-  properties: Array<MemberDefinition>
-  components: Array<MemberDefinition>
-
   /**
-   * A cache that maps a declared type, used by the compiler to access a given component, to this struct's corresponding
-   * component name. The cache significantly increases access performance, because without it we will have to resort to
-   * checking subtypes. This cache only has to exist once per schema, as the actual run-time component types have no
-   * bearing on field names.
+   * The struct's properties, with each name as the key, and their respective compile-time types.
    *
-   * The cache is instantiated during the first retrieval.
+   * Since open property types are handled by the struct's transpiled instantiation function, we do not need to
+   * label properties as open at run-time. The specific type instance's property types will simply override the
+   * property types found in the schema's map.
+   *
+   * The property type map must contain lazy types, because schemas are created at the start of the program with no
+   * respect to property type order. Property types can easily reference declared types, which would lead to undefined
+   * types if types are loaded in the wrong order. Since schema property types will be infrequently accessed, likely
+   * only for structural typing, making the type lazy is acceptable.
    */
-  componentAccessCache?: HashMap<DeclaredType, string>
+  propertyTypes: LazyPropertyTypes
 }
 
 export function structSchema(
   name: string,
   supertraits: Array<TraitType>,
-  ownedBy: LazyValue<Type>,
-  isOwnable: boolean,
-  isEntity: boolean,
-  properties: Array<MemberDefinition>,
-  components: Array<MemberDefinition>,
+  propertyTypes: LazyPropertyTypes,
 ): StructSchema {
-  return { name, supertraits, ownedBy, isOwnable, isEntity, properties, components }
+  return { name, supertraits, propertyTypes }
 }
 
 /**
- * The type of a struct. For each struct that is instantiated, a new struct type is created, as the list of component
- * types differs based on the actual components present at run-time.
+ * The type of a struct. For each struct that is instantiated (assuming the struct has open properties), a new struct
+ * type is created, as the list of open property types differs based on the actual properties present at run-time.
  */
 export interface StructType extends DeclaredType {
   schema: StructSchema
+
+  // TODO: Once traits can extend shape types, this needs to also apply to traits.
+  /**
+   * The actual run-time types of the struct's properties IF they deviate from their compile-time type. The map may be
+   * empty or undefined.
+   */
+  propertyTypes?: PropertyTypes
 }
 
-// TODO: Interning struct types might bring big performance gains for multiple dispatch, because the more components a
+// TODO: Interning struct types might bring big performance gains for multiple dispatch, because the more open properties a
 //       struct has, the more expensive the areEqual test gets. This test HAS to be performed at least once per
 //       dispatch cache access. Interned struct types would allow us to decide struct type equality via referential
-//       equality as there would be exactly one struct type per component type combination. Many structs may only ever
+//       equality as there would be exactly one struct type per property type combination. Many structs may only ever
 //       have their archetype, too, which would further speed up type checking.
 
-export function struct(schema: StructSchema, componentTypes: Array<ComponentType>, isArchetype: boolean): StructType {
-  const type: StructType = {
+export function struct(schema: StructSchema, isArchetype: boolean, propertyTypes?: PropertyTypes): StructType {
+  return {
     kind: Kind.Struct,
     schema,
-    componentTypes,
     isArchetype,
-    // TODO: The hash of the struct type must not only depend on the name, but also on the component types. Otherwise,
-    //       structs with different component types altogether get the same hashes, which is bad for dispatch cache
+    propertyTypes,
+    // TODO: The hash of the struct type must not only depend on the name, but also on the open property types. Otherwise,
+    //       structs with different property types altogether get the same hashes, which is bad for dispatch cache
     //       performance.
     hash: stringHashWithSeed(schema.name, 0x38ba128e),
   }
+}
 
-  // Check that all component types can be owned by the given struct.
-  for (let i = 0; i < componentTypes.length; i += 1) {
-    const componentType = componentTypes[i]
-    const ownedBy = componentType.underlying.schema.ownedBy.value()
-    if (!Subtyping.NoOwnedBy.isSubtype(type, ownedBy)) {
-      const componentTypeNames = componentTypes.map(c => c.underlying.schema.name)
-      throw Error(`The struct type ${schema.name} with the components ${componentTypeNames.join(', ')} cannot own the component ${componentType.underlying.schema.name}, which has an owned-by type of ${ownedBy}.`)
-    }
+export const Structs = {
+  getPropertyType(type: StructType, name: string): Type {
+    return (type.propertyTypes && type.propertyTypes[name]) ?? type.schema.propertyTypes[name]?.value()
   }
-
-  return type
 }
 
 
 export interface TraitSchema extends DeclaredTypeSchema { }
 
-export function traitSchema(
-  name: string, supertraits: Array<TraitType>, ownedBy: LazyValue<Type>, isOwnable: boolean, isEntity: boolean,
-): TraitSchema {
-  return { name, supertraits, ownedBy, isOwnable, isEntity }
+export function traitSchema(name: string, supertraits: Array<TraitType>): TraitSchema {
+  return { name, supertraits }
 }
 
 /**
  * A trait type. Only one type is instantiated for each trait, as their supertypes are not dependent on run-time
- * values. Thus, a trait type is also always an archetype. Component types could be kept in the TraitSchema,
- * but to achieve symmetry with structs, they are kept in the TraitType.
- *
- * The component types of a trait correspond to the "inheritedComponentTypes" of the compiler. That is, we only
- * include component types that are not subsumed by other component types, keeping a minimal version of the list.
+ * values. Thus, a trait type is also always an archetype.
  */
 export interface TraitType extends DeclaredType {
   schema: TraitSchema
 }
 
-export function trait(schema: TraitSchema, componentTypes: Array<ComponentType>): TraitType {
-  return { kind: Kind.Trait, schema, componentTypes, isArchetype: true, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
+export function trait(schema: TraitSchema): TraitType {
+  return { kind: Kind.Trait, schema, isArchetype: true, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
 }

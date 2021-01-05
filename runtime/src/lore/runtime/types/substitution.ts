@@ -10,11 +10,11 @@ import {
   map,
   MapType,
   product,
-  ProductType,
+  ProductType, shape, ShapeType,
   sum,
   SumType,
   Type,
-  TypeVariable
+  TypeVariable,
 } from './types.ts'
 import { Kind } from './kinds.ts'
 import { TinyMap } from '../utils/TinyMap.ts'
@@ -37,13 +37,18 @@ export function substitute(assignments: Assignments, type: Type): Type {
       return sum(substituteMany(assignments, (<SumType> type).types))
     case Kind.Product:
       return product(substituteMany(assignments, (<ProductType> type).types))
-    case Kind.Component:
-      return type // TODO: Change this once we allow type parameters for classes and labels?
     case Kind.List:
       return list(substitute(assignments, (<ListType> type).element))
     case Kind.Map:
       const m1 = <MapType> type
       return map(substitute(assignments, m1.key), substitute(assignments, m1.value))
+    case Kind.Shape:
+      const result: { [key: string]: Type } = { }
+      const propertyTypes = (<ShapeType> type).propertyTypes
+      for (const name of Object.keys(propertyTypes)) {
+        result[name] = substitute(assignments, propertyTypes[name])
+      }
+      return shape(result)
     default:
       return type
   }

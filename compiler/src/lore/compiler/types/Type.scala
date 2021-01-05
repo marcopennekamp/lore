@@ -2,7 +2,6 @@ package lore.compiler.types
 
 import java.io.ByteArrayOutputStream
 import java.util.Base64
-
 import lore.compiler.semantics.Registry
 import lore.compiler.utils.CollectionExtensions._
 import scalaz.std.vector._
@@ -14,9 +13,9 @@ import scalaz.syntax.traverse._
   * Note: hashCode should be defined as a val or lazy val to avoid recomputing hashes during the runtime of the
   * compiler. At times, we will hash types heavily, and so fast hash access is important.
   */
-trait Type {
-  def <=(rhs: Type): Boolean = Subtyping.Default.isSubtype(this, rhs)
-  def <(rhs: Type): Boolean = Subtyping.Default.isStrictSubtype(this, rhs)
+trait Type extends HasMembers {
+  def <=(rhs: Type): Boolean = Subtyping.isSubtype(this, rhs)
+  def <(rhs: Type): Boolean = Subtyping.isStrictSubtype(this, rhs)
   def >=(rhs: Type): Boolean = rhs <= this
   def >(rhs: Type): Boolean = rhs < this
 
@@ -24,6 +23,8 @@ trait Type {
 }
 
 object Type {
+
+  // TODO: Add a Unit type.
   val predefinedTypes: Map[String, NamedType] = Vector(
     BasicType.Any,
     BasicType.Nothing,
@@ -56,7 +57,7 @@ object Type {
     case ProductType(elements) => elements.exists(isAbstract)
     case ListType(_) => false
     case MapType(_, _) => false
-    case ComponentType(underlying) => isAbstract(underlying)
+    case ShapeType(_) => false
     case _: StructType => false
     case _: TraitType => true
     case _: BasicType =>
@@ -76,7 +77,7 @@ object Type {
     case ProductType(elements) => elements.exists(isPolymorphic)
     case ListType(element) => isPolymorphic(element)
     case MapType(key, value) => isPolymorphic(key) || isPolymorphic(value)
-    case ComponentType(_) => false // TODO: This might change once component types can be parameterized. (If they ever can.)
+    case ShapeType(properties) => properties.values.map(_.tpe).exists(isPolymorphic)
     case _: DeclaredType => false // TODO: For now. This needs to be set to true for structs/traits with type parameters, of course.
     case _ => false
   }
@@ -96,7 +97,7 @@ object Type {
     case ProductType(elements) => elements.flatMap(variables).toSet
     case ListType(element) => variables(element)
     case MapType(key, value) => variables(key) ++ variables(value)
-    case ComponentType(_) => Set.empty // TODO: Update when component types can have type parameters?
+    case ShapeType(properties) => properties.values.map(_.tpe).flatMap(variables).toSet
     case _: NamedType => Set.empty // TODO: Update when struct/trait types can have type parameters.
   }
 
@@ -117,6 +118,7 @@ object Type {
       case ProductType(elements) => ProductType(elements.map(rec))
       case ListType(element) => ListType(rec(element))
       case MapType(key, value) => MapType(rec(key), rec(value))
+      case ShapeType(properties) => ShapeType(properties.values.map(_.mapType(rec)))
       case t => t
     }
   }
@@ -130,19 +132,19 @@ object Type {
   }
 
   /**
-    * Removes types from the set that are subtyped by other types in the list, essentially keeping the
+    * Removes types from the list that are subtyped by other types in the list, essentially keeping the
     * most specific types.
     */
-  def mostSpecific(types: Set[Type], subtyping: Subtyping): Set[Type] = {
-    types.filterNot(t => types.exists(subtyping.isStrictSubtype(_, t)))
+  def mostSpecific(types: Vector[Type]): Vector[Type] = {
+    types.filterNot(t => types.exists(_ < t))
   }
 
   /**
-    * Removes types from the set that are supertyped by other types in the list, essentially keeping the
+    * Removes types from the list that are supertyped by other types in the list, essentially keeping the
     * most general types.
     */
-  def mostGeneral(types: Set[Type], subtyping: Subtyping): Set[Type] = {
-    types.filterNot(t => types.exists(subtyping.isStrictSubtype(t, _)))
+  def mostGeneral(types: Vector[Type]): Vector[Type] = {
+    types.filterNot(t => types.exists(t < _))
   }
 
   /**
@@ -189,7 +191,11 @@ object Type {
       case ProductType(elements) => s"(${elements.map(toString(_, verbose)).mkString(", ")})"
       case ListType(element) => s"[${toString(element, verbose)}]"
       case MapType(key, value) => infix(" -> ", TypePrecedence.Map, Vector(key, value))
-      case ComponentType(underlying) => s"+${toString(underlying, verbose)}"
+      case ShapeType(properties) =>
+        val propertyRepresentations = properties.values.map { property =>
+          s"${property.name}: ${toString(property.tpe, verbose)}"
+        }
+        s"{ ${propertyRepresentations.mkString(", ")} }"
       case s: StructType =>
         if (verbose) {
           val implements = if (s.supertypes.nonEmpty) s" implements ${s.supertypes.map(toString(_, verbose)).mkString(", ")}" else ""
@@ -226,7 +232,8 @@ object Type {
     */
   def uniqueIdentifier(types: Vector[Type]): String = {
     val stream = new ByteArrayOutputStream()
-    types.foreach(t => stream.write(TypeEncoder.encode(t)))
+    types.foreach(t => stream.write(TypeEncoder.encode(t).toArray))
     Base64.getEncoder.encodeToString(stream.toByteArray).replace('+', '$').replace('/', '_').replace("=", "")
   }
+
 }

@@ -14,6 +14,7 @@ import scala.collection.{MapView, mutable}
   * The Registry holds all Definitions and Types known to the compiler.
   */
 class Registry {
+
   /**
     * The list of named types declared in the whole project, including predefined types such as Int and Real.
     */
@@ -164,6 +165,7 @@ class Registry {
       }
     }
   }
+
 }
 
 object Registry {

@@ -1,16 +1,19 @@
 package lore.compiler.types
 
 import lore.compiler.core.CompilationException
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
 
 import scala.collection.mutable
 
 /**
-  * A hierarchy of declared and component types to provide quick access to supertype/subtype relationships between
-  * structs, traits, and component types.
+  * A hierarchy of declared types to provide quick access to supertype/subtype relationships between structs and traits.
+  *
+  * TODO (shape): Do we need to include shape types here?
   */
 class DeclaredTypeHierarchy {
+
   /**
     * The graph that holds the subtyping relationship. We start with Any as the first node.
     */
@@ -20,26 +23,17 @@ class DeclaredTypeHierarchy {
   /**
     * Adds the given type and potentially its supertypes, if they aren't part of the hierarchy already. If the type to
     * add is already part of the hierarchy, this method does nothing.
-    *
-    * @param tpe Must either be a DeclaredType or a ComponentType.
     */
-  def addType(tpe: Type): Unit = {
+  def addType(tpe: DeclaredType): Unit = {
     if (subtypingGraph.contains(tpe)) return
 
-    tpe match {
-      case tpe: DeclaredType =>
-        if (tpe.supertypes.nonEmpty) {
-          tpe.supertypes.foreach { supertype =>
-            addType(supertype)
-            subtypingGraph.addEdge(supertype, tpe)
-          }
-        } else {
-          subtypingGraph.addEdge(BasicType.Any, tpe)
-        }
-      case tpe: ComponentType =>
-        subtypingGraph.addEdge(BasicType.Any, tpe)
-      case _ =>
-        throw CompilationException(s"Only declared types and component types may be added to the type hierarchy. Attempted to add type: $tpe.")
+    if (tpe.supertypes.nonEmpty) {
+      tpe.supertypes.filterType[DeclaredType].foreach { supertype =>
+        addType(supertype)
+        subtypingGraph.addEdge(supertype, tpe)
+      }
+    } else {
+      subtypingGraph.addEdge(BasicType.Any, tpe)
     }
 
     // We should make sure that the graph is still acyclic and connected.
@@ -48,22 +42,22 @@ class DeclaredTypeHierarchy {
   }
 
   /**
-    * Asserts that the given type can be contained within the hierarchy. Only declared types, component types, and Any
-    * can be contained in the hierarchy.
+    * Asserts that the given type can be contained within the hierarchy. Only declared types and Any can be contained
+    * in the hierarchy.
     */
   private def assertCanContain(tpe: Type): Unit = {
-    if (tpe != BasicType.Any && !tpe.isInstanceOf[DeclaredType] && !tpe.isInstanceOf[ComponentType]) {
-      throw CompilationException(s"Only declared types and component types are contained in the type hierarchy. Attempted to retrieve type: $tpe.")
+    if (tpe != BasicType.Any && !tpe.isInstanceOf[DeclaredType]) {
+      throw CompilationException(s"Only declared types are contained in the type hierarchy. Attempted to retrieve type: $tpe.")
     }
   }
 
   /**
-    * Returns all direct subtypes of the given type. `tpe` may either be Any, a declared type, or a component type.
-    * If the given type cannot be found in the hierarchy, it is assumed that it does not have any direct subtypes
-    * (such as a component type that is not part of any struct or trait) and the empty list is returned.
+    * Returns all direct subtypes of the given type. `tpe` may either be Any oe a declared type. If the given type
+    * cannot be found in the hierarchy, it is assumed that it does not have any direct subtypes and the empty list
+    * is returned.
     *
-    * @param tpe Either Any, a declared type, or a component type.
-    * @return A list of distinct declared types and component types.
+    * @param tpe Either Any or a declared type.
+    * @return A list of distinct declared types.
     */
   def getDirectSubtypes(tpe: Type): Vector[Type] = {
     assertCanContain(tpe)
@@ -71,11 +65,10 @@ class DeclaredTypeHierarchy {
       // The resulting vector should contain only distinct elements. This is already given by the structure of the
       // type hierarchy, however. The given type will never be connected to the same subtype twice.
       subtypingGraph.get(tpe).outgoing.toVector.map(_.to.value).map {
-        // Since only the root may be Any, any possible direct subtype should be a declared type or a component type.
+        // Since only the root may be Any, any possible direct subtype should be a declared type.
         case subtype: DeclaredType => subtype
-        case subtype: ComponentType => subtype
         case subtype =>
-          throw CompilationException(s"The type $subtype should be a declared type or a component type, as it's a subtype in a type hierarchy.")
+          throw CompilationException(s"The type $subtype should be a declared type, as it's a subtype in a type hierarchy.")
       }
     } else Vector.empty
   }
@@ -140,4 +133,5 @@ class DeclaredTypeHierarchy {
       remaining = remaining ++ node.diPredecessors.toVector
     }
   }
+
 }

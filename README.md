@@ -1,6 +1,6 @@
 # Lore
 
-**Lore** is a general-purpose programming language featuring multi-functions, a type-safe entity-component system, and intersection and semantic types.
+**Lore** is a general-purpose programming language featuring multi-functions, structs and traits, structural typing enabling component-based programming, and intersection and semantic types.
 
 To learn more about the language, read the [**overview**](specification/overview.md) of our specification.
 
@@ -20,9 +20,7 @@ This repository is divided into the following **parts:**
 
 ### State of the Project
 
-In April 2020, I finished a specification for a **"minimum viable language"** (MVL). My goal is to demonstrate the core concepts of Lore with a usable, minimal propotype compiler and run-time. I am currently implementing the compiler, which will transpile to Javascript because it's popular, ubiquitous, easy to interface with, and has an excellent VM/JIT implementation. Lore will also have a run-time environment due to the nature of multi-functions: multiple dispatch needs to be decided at run-time, based on actual argument types instead of declared parameter types.
-
-This is a **hobby project** I'm working on infrequently, although I have picked up the pace since April 2020. I'd be happy just getting the MVL implemented so that I can demonstrate the ideas that went into Lore not just theoretically, but with practical, usable, changeable examples.
+Originally since 2017, but more actively since April 2020, I've been working towards the implementation of a **"minimum viable language"** (MVL). My short-term goal is to create a solid basis of core concepts which I can successively build upon.
 
 
 

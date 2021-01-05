@@ -1,8 +1,8 @@
 import {
-  AnyType, BooleanType, StructType, ComponentType,
+  AnyType, BooleanType, StructType,
   IntersectionType, IntType, TraitType, ListType,
   MapType, NothingType, ProductType, RealType,
-  StringType, SumType, Type, TypeVariable,
+  StringType, SumType, Type, TypeVariable, ShapeType,
 } from './types.ts'
 
 /**
@@ -23,6 +23,17 @@ export function areEqual(t1: Type, t2: Type): boolean {
   return rules[t1.kind](t1, t2)
 }
 
+/**
+ * A list of rules to be used for checking type equality. The index of the rule must correspond to the numeric
+ * value of the type's kind.
+ *
+ * A note on performance: Because we already compare the hashes of t1 and t2, it is highly unlikely, though
+ * occasionally possible, that a rule is invoked with two types that are actually not equal. In the vast majority
+ * of cases, the two types will be equal. We just have to confirm that fact. So in the case of sum types, we could
+ * for example check whether both types have the same number of parts. Only then can they be equal. This is not
+ * needed to confirm equality, however, and as such shouldn't be part of these rules. In contrast, the check that
+ * two product types have the same length is vital, because the verification wouldn't be complete without.
+ */
 const rules: Array<(t1: any, t2: any) => boolean> = [
   // It has already been established that t1 and t2 are not referentially equal. Type variable equality is
   // referential equality, so at this point we can trivially return false.
@@ -38,12 +49,15 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
   (t1: StringType, t2: StringType) => true,
 
   (t1: StructType, t2: StructType) => {
-    // Struct type equality is more complicated than one might expect due to the influence of component types. A struct
+    // TODO: Reimplement this taking open property types into account instead of component types:
+
+    /* // Struct type equality is more complicated than one might expect due to the influence of component types. A struct
     // type can only be equal to another struct type if all of their component types agree. Otherwise, dispatch might
     // be handled differently based on the component type and thus the types cannot be equal, especially in respect to
     // the dispatch cache. Of course, we only need to consider components when the schema indicates that the types are
     // entities.
     if (t1.schema === t2.schema) {
+
       if (t1.schema.isEntity) {
         // For all intents and purposes, we can assume that the component type arrays are both of equal length and are
         // in the same order. If this is not the case, the struct types have been instantiated incorrectly.
@@ -57,7 +71,8 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
       }
       return true
     }
-    return false
+    return false */
+    return t1.schema === t2.schema
   },
   (t1: TraitType, t2: TraitType) => false, // If the traits are not referentially equal, they cannot be equal.
 
@@ -84,9 +99,24 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
     return true
   },
 
-  (t1: ComponentType, t2: ComponentType) => areEqual(t1.underlying, t2.underlying),
   (t1: ListType, t2: ListType) => areEqual(t1.element, t2.element),
   (t1: MapType, t2: MapType) => areEqual(t1.key, t2.key) && areEqual(t1.value, t2.value),
+
+  // To check shape type equality, we use the following idea: If all properties in s1 are equal to the properties
+  // in s2, and s1 and s2 have the same number of properties, there cannot be a property p2 in s2 that is not already
+  // in s1 (by name). Practically, this means that we only have to establish equal length and then compare s1's
+  // properties to s2's properties. There's no need to do the reverse.
+  (s1: ShapeType, s2: ShapeType) => {
+    const s1Keys = Object.keys(s1.propertyTypes)
+    if (s1Keys.length !== Object.keys(s2.propertyTypes).length) {
+      return false
+    }
+    for (const p1Name of s1Keys) {
+      const p2Type = s2.propertyTypes[p1Name]
+      if (!p2Type || !areEqual(s1.propertyTypes[p1Name], p2Type)) return false
+    }
+    return true
+  }
 ]
 
 /**

@@ -2,10 +2,11 @@ import { areEqual } from './equality.ts'
 import { isSubtype } from './subtyping.ts'
 import { fits, fitsMonomorphic, fitsPolymorphic } from './fit.ts'
 import {
-  any, boolean, struct, component, int, intersection, intersectionSimplified, list, map, nothing, product, real,
-  string, sum, sumSimplified, unhashedProduct, unit, variable, structSchema, trait, traitSchema,
+  any, boolean, struct, int, intersection, intersectionSimplified, list, map, nothing, product, real,
+  string, sum, sumSimplified, unhashedProduct, unit, variable, structSchema, trait, traitSchema, shape,
 } from './types.ts'
 import { typeOf } from './typeof.ts'
+import { isPolymorphic, variables } from './polymorphy.ts'
 
 export default {
   // Type constants.
@@ -24,9 +25,9 @@ export default {
   intersection,
   intersectionSimplified,
   product,
-  component,
   list,
   map,
+  shape,
   struct,
   trait,
 
@@ -48,4 +49,6 @@ export default {
   fitsMonomorphic,
   fitsPolymorphic,
   typeOf,
+  isPolymorphic,
+  variables,
 }

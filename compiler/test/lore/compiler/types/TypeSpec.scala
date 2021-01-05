@@ -23,6 +23,8 @@ trait TypeSpec extends BaseSpec with TypeSyntax {
     val Unicorn = havingStruct("Unicorn")
     val Goldfish = havingStruct("Goldfish")
 
+    val Zoo = havingStruct("Zoo")
+
     val Status = havingTrait("Status")
     val Healthy = havingTrait("Healthy")
     val Sick = havingTrait("Sick")
@@ -30,12 +32,25 @@ trait TypeSpec extends BaseSpec with TypeSyntax {
     val Wheel = havingTrait("Wheel")
     val CoolWheel = havingStruct("CoolWheel")
     val CheapWheel = havingStruct("CheapWheel")
-    val Engine = havingTrait("Engine")
+    /* val Engine = havingTrait("Engine")
     val GasEngine = havingStruct("GasEngine")
     val ElectricEngine = havingStruct("ElectricEngine")
     val Car = havingTrait("Car")
     val Cycle = havingTrait("Cycle")
     val Motorcycle = havingStruct("Motorcycle")
-    val Bicycle = havingStruct("Bicycle")
+    val Bicycle = havingStruct("Bicycle") */
+
+    object ShapeTypes {
+      val Empty = shape()
+
+      val Position2D = shape("x" -> BasicType.Real, "y" -> BasicType.Real)
+      val Position3D = shape("x" -> BasicType.Real, "y" -> BasicType.Real, "z" -> BasicType.Real)
+
+      val Box2D = shape("x" -> BasicType.Int, "y" -> BasicType.Int, "width" -> BasicType.Int, "height" -> BasicType.Int)
+
+      val Named = shape("name" -> BasicType.String)
+      val Sized = shape("size" -> BasicType.Real)
+      val NamedAndSized = Named & Sized
+    }
   }
 }

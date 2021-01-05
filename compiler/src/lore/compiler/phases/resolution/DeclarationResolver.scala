@@ -41,19 +41,10 @@ class DeclarationResolver {
       return Compilation.fail(TypeAlreadyExists(declaration))
     }
 
-    // Note that we don't have to depend on owned-by types because they are evaluated after all declared types
-    // have been registered.
+    // TODO (shape): Once we add extending shape types, we might have to account for them in the dependency hierarchy.
     val dependencyNames = declaration match {
-      case TypeDeclNode.StructNode(_, implemented, _, members, _, _) =>
-        // We have to not only depend on the traits that the struct implements, but also on the declared types that
-        // the struct contains as components, because each component type +C is an explicit supertype of the struct.
-        // TODO: Evaluate whether it is feasible to depend on components' types right away, or whether we should
-        //       rather defer the resolution of such types until all traits and structs have been resolved. The
-        //       latter would be necessary if we need better flexibility, but I cannot evaluate the need without
-        //       first writing more and more complex Lore programs that contain components.
-        implemented ++ members.filterType[TypeDeclNode.ComponentNode].map(_.name)
-      case TypeDeclNode.TraitNode(_, extended, components, _, _, _) =>
-        extended ++ components
+      case TypeDeclNode.StructNode(_, implemented, _, _) => implemented
+      case TypeDeclNode.TraitNode(_, extended, _) => extended
     }
 
     if (dependencyNames.nonEmpty) {

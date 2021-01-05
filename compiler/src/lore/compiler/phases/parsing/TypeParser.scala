@@ -25,7 +25,7 @@ class TypeParser(implicit fragment: Fragment) {
   }
 
   private def atom[_: P]: P[TypeExprNode] = {
-    P(unitType | productType | listType | componentType | nominalType | enclosedType)
+    P(unitType | productType | listType | shapeType | namedType | enclosedType)
   }
 
   private def unitType[_: P]: P[TypeExprNode] = P(Index ~ "(" ~ ")").map(index => TypeExprNode.UnitNode(Position(fragment, index)))
@@ -42,12 +42,12 @@ class TypeParser(implicit fragment: Fragment) {
 
   private def listType[_: P]: P[TypeExprNode.ListNode] = P(Index ~ "[" ~ typeExpression ~ "]").map(withIndex(TypeExprNode.ListNode))
 
-  private def componentType[_: P]: P[TypeExprNode.ComponentNode] = P(Index ~ "+" ~ identifier).map(withIndex(TypeExprNode.ComponentNode))
+  private def shapeType[_: P]: P[TypeExprNode.ShapeNode] = {
+    def property = P(Index ~ identifier ~ typing).map(withIndex(TypeExprNode.ShapePropertyNode))
+    P(Index ~ "{" ~ property.rep(0, ",").map(_.toVector) ~ "}").map(withIndex(TypeExprNode.ShapeNode))
+  }
 
-  /**
-    * Parses a nominal type. Assigns the index itself because it's used by componentType.
-    */
-  private def nominalType[_: P]: P[TypeExprNode.IdentifierNode] = P(Index ~ identifier).map(withIndex(TypeExprNode.IdentifierNode))
+  private def namedType[_: P]: P[TypeExprNode.IdentifierNode] = P(Index ~ identifier).map(withIndex(TypeExprNode.IdentifierNode))
 
   private def enclosedType[_: P]: P[TypeExprNode] = P("(" ~ typeExpression ~ ")")
 }

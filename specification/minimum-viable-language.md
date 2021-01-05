@@ -25,6 +25,8 @@ Hence, here is a **list of features** that will make up the minimum viable langu
 
 ### Going Beyond the MVL
 
+**TODO:** The first two updates might have to be made part of the MVL. I don't think Lore is a *viable* minimum version of itself without a module system or function types and functions as values. Both of these features are so much part of the core of the language that it'd be ridiculous to "ship" the language without them.  
+
 Once we have formulated the MVL, we can deliver **themed updates** that focus on a specific cross-cutting feature. For example, we could update with the following themes:
 
 - The **Module** Update (modules, exports and imports, visibility)

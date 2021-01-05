@@ -329,6 +329,8 @@ action test() {
 }
 ```
 
+**Alternative Idea:** If a struct inherits from a shape type, the properties in question become automatically open...
+
 ##### Component-based Programming
 
 One way to build programs with a healthy level of abstraction is **component-based programming**. The idea is that data consists of multiple components which can each provide already implemented functionality. For example, an **entity** called `Hero` may have a component `Position` and a component `Shape`. There may be functions such as `move` to manipulate position and a function `render` that requires both a `Position` and a `Shape` to work.
