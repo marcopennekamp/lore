@@ -6,17 +6,15 @@
   - Shape types
     - compiler: ~~data structure~~, ~~subtyping~~, ~~type variable allocation~~, ~~Type functions~~, ~~type encoding~~, ~~least upper bound~~, ~~member explorer~~, ~~parser~~, ~~transpiler~~, ~~combine shape types in intersection types~~
     - runtime: ~~data structure~~, ~~subtyping~~, ~~type equality~~, ~~type variable allocation~~, ~~substitution~~, ~~isPolymorphic~~, ~~variables~~, ~~combine shape types in intersection types~~
+  - Component-based programming:
+    - compiler: traits extending shapes, structs implementing shapes, type aliases, `+` as part of a valid type name
+    - runtime: trait/shape subtyping
   - Open properties
     - struct property declarations
     - run-time type instantiation
   - Shape values
     - compiler: AST, expression tree, parser, transformer & type inference, transpiler
     - runtime: data structure, run-time type instantiation
-  - Inheritance:
-    - compiler: traits extending shapes, structs implementing shapes
-  - Auxiliary features:
-    - Type aliases
-    - `+` as part of a valid type name
 - Finish transformation and transpilation of the current MVL constructs. (WHICH ONES ARE THESE?)
   - Ranges still need to be supported, as they are already part of the specification.
 - Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.
