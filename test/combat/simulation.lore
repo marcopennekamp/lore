@@ -8,7 +8,7 @@ function name(combatant: Combatant): String
 action enterCombat(combatant: Combatant) { }
 
 action onHit(combatant: Combatant) {
-  onHitStatusEffects(combatant.StatusEffects)
+  onHitStatusEffects(combatant)
 }
 
 // TODO: This wouldn't need two separate implementations if we'd have StatLabel[Int], StatLabel[Real] etc. stat labels.
@@ -71,8 +71,8 @@ function simulateCombat(left: Combatant, right: Combatant): SimulationResult = {
     updateCombatantPostAttack(left)
     updateCombatantPostAttack(right)
 
-    combatLog('${name(left)} health: ${left.Stats.health}')
-    combatLog('${name(right)} health: ${right.Stats.health}')
+    combatLog('${name(left)} health: ${left.stats.health}')
+    combatLog('${name(right)} health: ${right.stats.health}')
 
     turn += 1
 

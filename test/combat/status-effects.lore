@@ -100,7 +100,7 @@ action buff(entity: +StatusEffects, effect: StatusEffect) {
  */
 action updateStatusEffects(entity: +StatusEffects) {
   // TODO: Once we support anonymous functions, this can be solved with a forEach and a filter.
-  let effects = entity.StatusEffects.effects
+  let effects = entity.statusEffects.effects
   for (effect <- effects) {
     onUpdate(effect)
   }
@@ -111,7 +111,7 @@ action updateStatusEffects(entity: +StatusEffects) {
       actives = actives :+ effect
     }
   }
-  entity.StatusEffects.effects = actives
+  entity.statusEffects.effects = actives
 }
 
 // TODO: If we have a "call all leaves"-style call, we can simply call this onHit and wouldn't have to delegate

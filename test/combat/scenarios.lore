@@ -1,14 +1,14 @@
 function test(): SimulationResult = {
   let kaladin = Radiant {
     name = 'Kaladin',
-    Stats = Stats {
+    stats = Stats {
       health = 25,
       maximumHealth = 25,
       regeneration = 0,
       dodge = 0.34,
       speed = 3
     },
-    Weapon = Spear()
+    weapon = Spear()
   }
 
   let voidbringer = Voidbringer { }

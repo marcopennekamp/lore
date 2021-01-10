@@ -4,7 +4,7 @@ struct Shardbearer implements Hero {
   name: String
   stats: Stats
   statusEffects: StatusEffects = StatusEffects([])
-  weapon: Weapon
+  weapon: Weapon // TODO: This must be an open property so that weapon functions are properly dispatched.
 }
 
 function name(shardbearer: Shardbearer): String = shardbearer.name
