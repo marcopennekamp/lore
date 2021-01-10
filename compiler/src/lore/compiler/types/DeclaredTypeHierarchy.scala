@@ -27,8 +27,8 @@ class DeclaredTypeHierarchy {
   def addType(tpe: DeclaredType): Unit = {
     if (subtypingGraph.contains(tpe)) return
 
-    if (tpe.supertypes.nonEmpty) {
-      tpe.supertypes.filterType[DeclaredType].foreach { supertype =>
+    if (tpe.declaredSupertypes.nonEmpty) {
+      tpe.declaredSupertypes.foreach { supertype =>
         addType(supertype)
         subtypingGraph.addEdge(supertype, tpe)
       }
