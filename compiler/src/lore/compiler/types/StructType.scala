@@ -14,7 +14,7 @@ class StructType(
     * The struct viewed as a compile-time shape type. Whether the struct's properties are open has no bearing on
     * this representation.
     */
-  lazy val asShapeType: ShapeType = ShapeType(definition.properties.map(ShapeType.Property.apply))
+  override lazy val asShapeType: ShapeType = ShapeType(definition.properties.map(ShapeType.Property.apply))
 
   val hasOpenProperties = false
   val openProperties: Vector[StructPropertyDefinition] = Vector.empty

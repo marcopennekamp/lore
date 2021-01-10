@@ -16,7 +16,8 @@ object MemberExplorer {
     *
     * Given a type, we have the following way to determine all members of that type:
     *
-    *   - Struct/Shape: The members of a struct or shape are simply their declared properties.
+    *   - Declared Type/Shape: The members of a struct or shape are simply their declared properties. The members of
+    *     a trait are the properties of the trait viewed as a shape.
     *   - Type Variable: A type variable's members are defined by its upper bound. If a member is a member of the
     *     upper bound type, it must also be present in all possible instances of the type variable. If it wasn't, we
     *     would be violating a basic contract of polymorphism.
@@ -38,7 +39,11 @@ object MemberExplorer {
   def members(tpe: Type): MemberMap = {
     tpe match {
       case structType: StructType =>
+        // Note that we cannot implement this via .asShapeType, since we need the members to be initialized with
+        // mutability. The shape view loses mutability.
         HashMap(structType.definition.properties.map(property => property.name -> property.asMember): _*)
+
+      case traitType: TraitType => members(traitType.asShapeType)
 
       case shapeType: ShapeType =>
         shapeType.properties.map { case (name, property) => name -> property.asMember }

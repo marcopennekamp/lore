@@ -43,6 +43,7 @@ object Subtyping {
     { case (t1, v2: TypeVariable) => isSubtype(t1, v2.lowerBound) },
 
     // A declared type d1 is a subtype of d2 if d1 and d2 are equal or any of d1's hierarchical supertypes equal d2.
+    // It suffices to check for declared supertypes, since a shape supertype can never be a subtype of a declared type.
     // TODO: Once we have introduced covariant (and possibly contravariant) traits/structs, we will additionally have
     //       to check whether d1's typeArguments are a subtype of d2's type arguments.
     // TODO: Once we introduce parametric declared types, we might have to move this rule out of here.
@@ -52,7 +53,7 @@ object Subtyping {
     //       what we essentially have here is the question: Is d2 in the supertype map of d1? This optimization is
     //       especially potent for the runtime, where we will have to figure out how to solve the subtyping question
     //       for declared types in a performant manner!
-    { case (d1: DeclaredType, d2: DeclaredType) => d1 == d2 || d1.supertypes.exists(isSubtype(_, d2)) },
+    { case (d1: DeclaredType, d2: DeclaredType) => d1 == d2 || d1.declaredSupertypes.exists(isSubtype(_, d2)) },
 
     // An intersection type i1 is the subtype of an intersection type i2, if all types in i2 are subsumed by i1.
     { case (i1: IntersectionType, i2: IntersectionType) => i2.parts.forall(ic2 => isAnyPartSubtypeOf(i1, ic2)) },
@@ -97,8 +98,9 @@ object Subtyping {
           case _ => false
         }
     },
-    // Struct/shape subtyping can be delegated to shape/shape subtyping by viewing the struct as a shape type.
-    { case (s1: StructType, s2: ShapeType) => isSubtype(s1.asShapeType, s2) },
+    // Declared type/shape subtyping can be delegated to shape/shape subtyping by viewing the declared type as a shape
+    // type.
+    { case (d1: DeclaredType, s2: ShapeType) => isSubtype(d1.asShapeType, s2) },
 
     // Handle basic types. Int is a subtype of Real.
     { case (a: BasicType, b: BasicType) => a eq b },

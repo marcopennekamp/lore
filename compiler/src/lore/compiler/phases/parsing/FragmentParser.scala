@@ -87,18 +87,19 @@ class FragmentParser(implicit fragment: Fragment) {
     P(Index ~ "trait" ~/ typeIdentifier ~ `extends`).map(withIndex(TypeDeclNode.TraitNode))
   }
 
-  private def `extends`[_: P]: P[Vector[String]] = {
-    P(("extends" ~ typeIdentifier.rep(1, CharIn(","))).?).map(_.map(_.toVector).getOrElse(Vector.empty))
+  private def `extends`[_: P]: P[Vector[TypeExprNode]] = {
+    P(("extends" ~ inherits).?).map(_.getOrElse(Vector.empty))
   }
 
   private def struct[_: P]: P[TypeDeclNode.StructNode] = {
     P(Index ~ "struct" ~/ structIdentifier ~ implements ~ structBody).map(withIndex(TypeDeclNode.StructNode))
   }
 
-  private def implements[_: P]: P[Vector[String]] = {
-    P(("implements" ~ typeIdentifier.rep(1, CharIn(","))).?)
-      .map(_.map(_.toVector).getOrElse(Vector.empty))
+  private def implements[_: P]: P[Vector[TypeExprNode]] = {
+    P(("implements" ~ inherits).?).map(_.getOrElse(Vector.empty))
   }
+
+  private def inherits[_: P]: P[Vector[TypeExprNode]] = P(typeExpression.rep(1, CharIn(","))).map(_.toVector)
 
   private def structBody[_: P]: P[Vector[TypeDeclNode.PropertyNode]] = {
     // We have to parse the properties in a tiered structure because newline separators may only be used with repX,

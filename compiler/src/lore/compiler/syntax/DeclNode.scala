@@ -51,7 +51,7 @@ object TypeDeclNode {
     */
   case class StructNode(
     override val name: String,
-    implemented: Vector[String],
+    implemented: Vector[TypeExprNode],
     properties: Vector[PropertyNode],
     position: Position
   ) extends TypeDeclNode
@@ -63,7 +63,7 @@ object TypeDeclNode {
     */
   case class TraitNode(
     override val name: String,
-    extended: Vector[String],
+    extended: Vector[TypeExprNode],
     position: Position
   ) extends TypeDeclNode
 

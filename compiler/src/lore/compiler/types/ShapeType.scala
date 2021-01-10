@@ -32,7 +32,17 @@ case class ShapeType(properties: Map[String, ShapeType.Property]) extends Type {
 
 object ShapeType {
 
-  def apply(properties: Iterable[Property]): ShapeType = ShapeType(properties.map(property => (property.name, property)).toMap)
+  val empty: ShapeType = ShapeType(Map.empty[String, Property])
+
+  /**
+    * Creates a new shape type from the given list of properties. If the shape type would be empty, the function instead
+    * returns the common [[ShapeType.empty]] instance.
+    */
+  def apply(properties: Iterable[Property]): ShapeType = {
+    if (properties.nonEmpty) {
+      ShapeType(properties.map(property => (property.name, property)).toMap)
+    } else empty
+  }
 
   case class Property(name: String, tpe: Type) {
     def mapType(f: Type => Type): ShapeType.Property = this.copy(tpe = f(tpe))

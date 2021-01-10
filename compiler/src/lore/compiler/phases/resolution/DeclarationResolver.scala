@@ -42,11 +42,10 @@ class DeclarationResolver {
 
     // We have to filter out predefined types, as they may be mentioned in alias types or extended shape types,
     // but do not need to take part in any declaration order.
-    // TODO (shape): Once we add extending shape types, we might have to account for them in the dependency hierarchy.
     val dependencyNames = (declaration match {
       case TypeDeclNode.AliasNode(_, expr, _) => TypeExprNode.identifiers(expr)
-      case TypeDeclNode.StructNode(_, implemented, _, _) => implemented
-      case TypeDeclNode.TraitNode(_, extended, _) => extended
+      case TypeDeclNode.StructNode(_, implemented, _, _) => implemented.flatMap(TypeExprNode.identifiers)
+      case TypeDeclNode.TraitNode(_, extended, _) => extended.flatMap(TypeExprNode.identifiers)
     }).filterNot(Type.predefinedTypes.contains)
 
     if (dependencyNames.nonEmpty) {
