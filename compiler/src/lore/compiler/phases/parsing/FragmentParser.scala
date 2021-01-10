@@ -77,7 +77,11 @@ class FragmentParser(implicit fragment: Fragment) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Type Declarations.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`trait` | struct)
+  private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`type` | `trait` | struct)
+
+  private def `type`[_: P]: P[TypeDeclNode.AliasNode] = {
+    P(Index ~ "type" ~/ identifier ~ "=" ~ typeExpression).map(withIndex(TypeDeclNode.AliasNode))
+  }
 
   private def `trait`[_: P]: P[TypeDeclNode.TraitNode] = {
     P(Index ~ "trait" ~/ identifier ~ `extends`).map(withIndex(TypeDeclNode.TraitNode))

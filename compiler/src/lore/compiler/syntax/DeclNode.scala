@@ -44,6 +44,8 @@ sealed trait TypeDeclNode extends DeclNode {
 
 object TypeDeclNode {
 
+  case class AliasNode(override val name: String, tpe: TypeExprNode, position: Position) extends TypeDeclNode
+
   /**
     * @param implemented The names of all traits that the struct implements.
     */
@@ -64,4 +66,5 @@ object TypeDeclNode {
     extended: Vector[String],
     position: Position
   ) extends TypeDeclNode
+
 }
