@@ -5,21 +5,20 @@ import lore.compiler.core.{Compilation, CompilationException, Error}
 import lore.compiler.phases.resolution.DeclarationResolver.TypeAlreadyExists
 import lore.compiler.semantics.functions.FunctionDefinition
 import lore.compiler.semantics.{Registry, TypeScope}
-import lore.compiler.syntax.{DeclNode, TypeDeclNode}
+import lore.compiler.syntax.{DeclNode, TypeDeclNode, TypeExprNode}
 import lore.compiler.types.Type
-import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 import scala.collection.mutable
 
 /**
   * Declarations can occur unordered. This is not only true within a file, but especially across multiple files. We
-  * can declare class hierarchies across Lore files, define functions on their own, and so on. The way in which
+  * can declare trait hierarchies across Lore files, define functions on their own, and so on. The way in which
   * types and definitions are represented within the compiler requires us to find an order in which we can properly
-  * resolve these types, especially classes and entities.
+  * resolve these types, especially traits, structs, and type aliases.
   *
   * The DeclarationResolver holds all top-level declarations across all files parsed by the Lore compiler
   * still in AST form. While files are being parsed, it builds a hierarchy of types, which gives us the correct order
-  * in which we should, for example, build ClassDefinition and ClassType objects. Once all type declarations have been
+  * in which we should, for example, build struct types and definitions. Once all type declarations have been
   * turned into definitions, the DeclarationResolver builds a Registry object.
   */
 class DeclarationResolver {
@@ -41,11 +40,14 @@ class DeclarationResolver {
       return Compilation.fail(TypeAlreadyExists(declaration))
     }
 
+    // We have to filter out predefined types, as they may be mentioned in alias types or extended shape types,
+    // but do not need to take part in any declaration order.
     // TODO (shape): Once we add extending shape types, we might have to account for them in the dependency hierarchy.
-    val dependencyNames = declaration match {
+    val dependencyNames = (declaration match {
+      case TypeDeclNode.AliasNode(_, expr, _) => TypeExprNode.identifiers(expr)
       case TypeDeclNode.StructNode(_, implemented, _, _) => implemented
       case TypeDeclNode.TraitNode(_, extended, _) => extended
-    }
+    }).filterNot(Type.predefinedTypes.contains)
 
     if (dependencyNames.nonEmpty) {
       dependencyNames.foreach(dependency => dependencyGraph.add(declaration.name, dependency))
@@ -80,16 +82,14 @@ class DeclarationResolver {
     for {
       _ <- addDeclarations(declarations)
 
-      // We do three separate passes over type declarations:
+      // We perform two separate passes over type declarations:
       //  1. Resolve types.
-      //  2. Resolve class/label definitions.
-      //  3. Resolve constructors.
+      //  2. Resolve struct/trait definitions.
       // This has the distinct advantage that we don't need to defer typings of parameters and members, as all types
-      // have been added to the registry by then, and we are not limited by the class definition not being available
-      // when we generate additional constructors.
+      // have been added to the registry by then.
 
       typeResolutionOrder <- computeTypeResolutionOrder()
-      _ <- resolveDeclaredTypesInOrder(typeResolutionOrder)
+      _ <- resolveTypeDeclarationsInOrder(typeResolutionOrder)
       _ <- resolveTypeDefinitionsInOrder(typeResolutionOrder)
       _ <- resolveMultiFunctions()
     } yield registry
@@ -117,14 +117,15 @@ class DeclarationResolver {
   }
 
   /**
-    * Resolve all declared types in the proper resolution order and register them with the Registry.
+    * Resolve all type declarations in the proper resolution order and register them with the Registry.
     */
-  private def resolveDeclaredTypesInOrder(typeResolutionOrder: Vector[TypeDeclNode])(implicit registry: Registry): Verification = {
+  private def resolveTypeDeclarationsInOrder(typeResolutionOrder: Vector[TypeDeclNode])(implicit registry: Registry): Verification = {
     typeResolutionOrder.map { node =>
       (node match {
-        case structNode: TypeDeclNode.StructNode => TypeResolver.resolve(structNode)
-        case traitNode: TypeDeclNode.TraitNode => TypeResolver.resolve(traitNode)
-      }).map(tpe => registry.registerType(tpe.name, tpe))
+        case aliasNode: TypeDeclNode.AliasNode => TypeResolver.resolve(aliasNode).map(tpe => (aliasNode.name, tpe))
+        case structNode: TypeDeclNode.StructNode => TypeResolver.resolve(structNode).map(tpe => (tpe.name, tpe))
+        case traitNode: TypeDeclNode.TraitNode => TypeResolver.resolve(traitNode).map(tpe => (tpe.name, tpe))
+      }).map { case (name, tpe) => registry.registerType(name, tpe) }
     }.simultaneous.verification
   }
 
@@ -135,9 +136,10 @@ class DeclarationResolver {
   private def resolveTypeDefinitionsInOrder(typeResolutionOrder: Vector[TypeDeclNode])(implicit registry: Registry): Verification = {
     typeResolutionOrder.map { node =>
       (node match {
-        case structNode: TypeDeclNode.StructNode => StructDefinitionResolver.resolve(structNode)
-        case traitNode: TypeDeclNode.TraitNode => TraitDefinitionResolver.resolve(traitNode)
-      }).map(registry.registerTypeDefinition)
+        case _: TypeDeclNode.AliasNode => None
+        case structNode: TypeDeclNode.StructNode => Some(StructDefinitionResolver.resolve(structNode))
+        case traitNode: TypeDeclNode.TraitNode => Some(TraitDefinitionResolver.resolve(traitNode))
+      }).map(_.map(registry.registerTypeDefinition)).toCompiledOption
     }.simultaneous.verification
   }
 

@@ -14,7 +14,7 @@ class TransformationPhase()(implicit registry: Registry) extends Phase[Unit] {
     ).simultaneous
 
     val withTransformedStructs = withVerifiedConstraints.flatMap { _ =>
-      registry.getTypesInOrder.filterType[StructType].map { structType =>
+      registry.getTypeDeclarationsInOrder.map(_._2).filterType[StructType].map { structType =>
         StructTransformation.transform(structType.definition)
       }.simultaneous
     }

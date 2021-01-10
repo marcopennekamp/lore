@@ -1,6 +1,6 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.semantics.{BlockScope, LocalVariable, Scope, VariableScope}
+import lore.compiler.semantics.{BlockVariableScope, LocalVariable, Scope, VariableScope}
 
 /**
   * A context for expression transformation passes, for example to hold local variable scopes.
@@ -11,7 +11,7 @@ class ExpressionTransformationContext(parentScope: VariableScope) {
   def currentScope: VariableScope = scopes.head
 
   def openScope(): Unit = {
-    val scope = new BlockScope(currentScope)
+    val scope = new BlockVariableScope(currentScope)
     scopes = scope :: scopes
   }
 

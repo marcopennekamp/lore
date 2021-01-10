@@ -11,15 +11,20 @@ import lore.compiler.utils.CollectionExtensions._
 import scala.collection.{MapView, mutable}
 
 /**
-  * The Registry holds all Definitions and Types known to the compiler.
+  * The Registry holds all definitions and types known to the compiler.
   */
 class Registry {
 
+  // TODO: Combine aspects of the registry and declaration resolver into a function-ish where mutations are only
+  //       localized. There is no reason why the registry should be mutable. The registry should not offer register*
+  //       functions.
+
   /**
-    * The list of named types declared in the whole project, including predefined types such as Int and Real.
+    * The list of named types declared in the whole project, including predefined types such as Int and Real and
+    * type aliases.
     */
-  private val types = mutable.HashMap[String, NamedType](Type.predefinedTypes.toVector: _*)
-  private var typeRegistrationOrder = Vector[String]()
+  private val types = mutable.HashMap[String, Type](Type.predefinedTypes.toVector: _*)
+  private var typeDeclarationsInOrder = Vector[(String, Type)]()
   private val typeDefinitions = mutable.HashMap[String, DeclaredTypeDefinition]()
   private val multiFunctions = mutable.HashMap[String, MultiFunctionDefinition]()
   val declaredTypeHierarchy = new DeclaredTypeHierarchy()
@@ -27,16 +32,18 @@ class Registry {
   /**
     * Registers a type with the specific name.
     */
-  def registerType(name: String, tpe: NamedType): Unit = {
+  def registerType(name: String, tpe: Type): Unit = {
     // At this point, a legitimate error should have been raised if a type name is not unique, so this is
     // a compiler error.
     if (types.contains(name)) {
       throw CompilationException(s"The type $name has already been registered.")
     }
     types.put(name, tpe)
-    typeRegistrationOrder = typeRegistrationOrder :+ name
+    typeDeclarationsInOrder = typeDeclarationsInOrder :+ (name, tpe)
 
     // If this is a declared type, also register it in the declared type hierarchy.
+    // TODO: Can't we build this hierarchy after all types have been registered? This would reduce the complexity of
+    //       this function.
     tpe match {
       case declaredType: DeclaredType => declaredTypeHierarchy.addType(declaredType)
       case _ =>
@@ -44,14 +51,14 @@ class Registry {
   }
 
   /**
-    * Returns all registered types, accessible via an immutable map view.
+    * Returns all registered types, accessible via an immutable map view. Includes predefined types.
     */
-  def getTypes: MapView[String, NamedType] = types.view
+  def getTypes: MapView[String, Type] = types.view
 
   /**
-    * Returns all registered types in their order of registration.
+    * Returns all types in their order of registration. Excludes predefined types.
     */
-  def getTypesInOrder: Vector[NamedType] = typeRegistrationOrder.map(types(_))
+  def getTypeDeclarationsInOrder: Vector[(String, Type)] = typeDeclarationsInOrder
 
   /**
     * Whether a type with the given name has been registered.
@@ -61,15 +68,15 @@ class Registry {
   /**
     * Searches for a type with the given name.
     */
-  def getType(name: String): Option[NamedType] = types.get(name)
+  def getType(name: String): Option[Type] = types.get(name)
 
   /**
-    * Gets a named type with the given name. If the type cannot be found, the operation fails with a compilation error.
+    * Gets a type with the given name. If the type cannot be found, the operation fails with a compilation error.
     * The difference from getType is that this results in a compilation with a clear failure state.
     *
     * @param position The position where the type name occurs, to be used for error building.
     */
-  def resolveType(name: String)(implicit position: Position): Compilation[NamedType] = {
+  def resolveType(name: String)(implicit position: Position): Compilation[Type] = {
     typeScope.resolve(name)
   }
 
@@ -77,9 +84,9 @@ class Registry {
     * The global type scope backed by the registry. This is strictly an immutable view.
     */
   val typeScope: TypeScope = new TypeScope {
-    override protected def local(name: String): Option[NamedType] = getType(name)
-    override protected def add(entry: NamedType): Unit = {
-      throw new UnsupportedOperationException("You may not add types to the Registry via its TypeScope interface.")
+    override protected def local(name: String): Option[Type] = getType(name)
+    override protected def add(name: String, entry: Type): Unit = {
+      throw new UnsupportedOperationException(s"You may not add types to the Registry via its TypeScope interface. Name: $name. Type: $entry.")
     }
     override protected def unknownEntry(name: String)(implicit position: Position): Error = TypeNotFound(name)
   }
@@ -88,7 +95,7 @@ class Registry {
     * The global variable scope backed by the registry. This is still an empty scope and only implemented to
     * make the code more future-proof.
     */
-  val variableScope: VariableScope = new GlobalScope()
+  val variableScope: VariableScope = new GlobalVariableScope()
 
   /**
     * Searches for a struct type with the given name.

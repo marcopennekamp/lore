@@ -1,33 +1,37 @@
 package lore.compiler.semantics
 
 import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
-import lore.compiler.core.{Compilation, Error, Position}
+import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.semantics.Scope.{AlreadyDeclared, UnknownEntry}
 
 import scala.collection.mutable
 
+// TODO: Move all scope sources to a scopes subpackage.
+
 /**
   * A hierarchical scope resolving entries of some type A by name.
   */
-trait Scope[A <: Scope.Entry] {
+trait Scope[A] {
 
   /**
-    * Fetches the entry with the given name from the CURRENT scope.
+    * Fetches the entry with the given name from the current scope, disregarding any parent scopes.
     */
   protected def local(name: String): Option[A]
 
   /**
     * Adds the given entry to the scope.
     */
-  protected def add(entry: A): Unit
+  protected def add(name: String, entry: A): Unit
+
+  /**
+    * The scope's parent, which is used as a fallback if an entry cannot be found in the current scope.
+    */
+  protected def parent: Option[Scope[A]] = None
 
   /**
     * Fetches an entry with the given name from the closest scope.
-    *
-    * The implementation defaults to getting the entry from the local scope only, because the Scope trait
-    * doesn't know about parent scopes.
     */
-  def get(name: String): Option[A] = local(name)
+  def get(name: String): Option[A] = local(name).orElse(parent.flatMap(_.get(name)))
 
   /**
     * Resolves an entry with the given name from the closest scope. If it cannot be found, we return a
@@ -41,14 +45,14 @@ trait Scope[A <: Scope.Entry] {
   }
 
   /**
-    * Registers the given entry with the scope. If it is already registered in the CURRENT scope, an
+    * Registers the given entry with the scope. If it is already registered in the current scope, an
     * "already declared" error is returned instead.
     */
-  def register(entry: A)(implicit position: Position): Verification = {
-    if (local(entry.name).isDefined) {
-      Compilation.fail(alreadyDeclared(entry.name))
+  def register(name: String, entry: A)(implicit position: Position): Verification = {
+    if (local(name).isDefined) {
+      Compilation.fail(alreadyDeclared(name))
     } else {
-      add(entry)
+      add(name, entry)
       Verification.succeed
     }
   }
@@ -65,20 +69,22 @@ trait Scope[A <: Scope.Entry] {
 
 }
 
-abstract class BasicScope[A <: Scope.Entry](val parent: Option[Scope[A]]) extends Scope[A] {
+abstract class BasicScope[A](override val parent: Option[Scope[A]]) extends Scope[A] {
   protected val entries: mutable.Map[String, A] = new mutable.HashMap()
+
   override protected def local(name: String): Option[A] = entries.get(name)
-  override protected def add(entry: A): Unit = {
-    assert(!entries.contains(entry.name))
-    entries.put(entry.name, entry)
+
+  override protected def add(name: String, entry: A): Unit = {
+    if (entries.contains(name)) {
+      throw CompilationException(s"An entry '$name' is already defined in the local scope and cannot be redefined.")
+    }
+    entries.put(name, entry)
   }
-  override def get(name: String): Option[A] = local(name).orElse(parent.flatMap(_.get(name)))
 }
 
 object Scope {
-  trait Entry {
-    def name: String
-  }
+  // TODO: Specify what kind of entry is already declared/unknown. For example: "The current scope does not know a
+  //       type X."
 
   case class AlreadyDeclared(name: String)(implicit position: Position) extends Error(position) {
     override def message = s"An entry '$name' has already been declared in the current scope."

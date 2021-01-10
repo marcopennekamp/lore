@@ -2,7 +2,7 @@ package lore.compiler.phases.resolution
 
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, Position}
-import lore.compiler.semantics.{TypeScope, TypeVariableScope}
+import lore.compiler.semantics.{TypeScope, LocalTypeScope}
 import lore.compiler.syntax.DeclNode
 import lore.compiler.types.{BasicType, TypeVariable}
 
@@ -12,10 +12,10 @@ object TypeVariableDeclarationResolver {
     * Resolves a type variable declaration list in order, ensuring that the order property of the type variables is
     * set correctly.
     */
-  def resolve(nodes: Vector[DeclNode.TypeVariableNode], parentScope: TypeScope): Compilation[TypeVariableScope] = {
+  def resolve(nodes: Vector[DeclNode.TypeVariableNode], parentScope: TypeScope): Compilation[LocalTypeScope] = {
     // The fold ensures that the first type variable is registered before the second one is resolved, so that the first
     // one can be used as a bound of the second one, and so on.
-    val initial = (new TypeVariableScope(parentScope).compiled, 0)
+    val initial = (new LocalTypeScope(parentScope).compiled, 0)
     val (compilation, _) = nodes.foldLeft(initial) { case ((compilation, order), node) =>
       implicit val position: Position = node.position
       val nextCompilation = compilation.flatMap { implicit typeScope =>

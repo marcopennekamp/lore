@@ -6,11 +6,6 @@ import lore.compiler.utils.CollectionExtensions._
 trait DeclaredType extends NamedType {
 
   /**
-    * The name of the declared type.
-    */
-  def name: String
-
-  /**
     * The direct supertypes of the declared type. Only trait types are currently allowed by the grammar to be supertypes
     * of a declared type.
     *

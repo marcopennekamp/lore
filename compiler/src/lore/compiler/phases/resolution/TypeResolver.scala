@@ -17,6 +17,11 @@ object TypeResolver {
     override def message = s"The struct ${node.name} does not implement a trait but some other type."
   }
 
+  def resolve(node: TypeDeclNode.AliasNode)(implicit registry: Registry): Compilation[Type] = {
+    implicit val typeScope: TypeScope = registry.typeScope
+    TypeExpressionEvaluator.evaluate(node.tpe)
+  }
+
   def resolve(node: TypeDeclNode.StructNode)(implicit registry: Registry): Compilation[StructType] = {
     implicit val typeScope: TypeScope = registry.typeScope
     implicit val position: Position = node.position
