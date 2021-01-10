@@ -4,8 +4,6 @@ In Lore, the **type system** is central not only to safety and correctness of pr
 
 Lore has various **type constructors** with which complex types can be built, as well as **named types** and **declared types**. Named types refer to any type that can be referenced via a name, such as a type variable or trait, while declared types refer to those types that are specifically declared by the programmer—traits and structs.
 
-**TODO:** Add type aliases once more, as we need them for shapes.
-
 
 
 ### Syntax of Type Expressions
@@ -37,6 +35,19 @@ Type constructors have the following **precedence** (lowest priority first):
 
 
 
+### Type Aliases
+
+A **type alias** turns any type into a named type available in the global scope. Type aliases don't carry additional semantics, which makes them **referentially transparent**.
+
+###### Syntax Example
+
+```
+type Unit = ()
+type +Position = { position: Position }
+```
+
+
+
 ### Type Variables
 
 A **type variable** is a type that stands in for a range of possible types. An unbounded type variable can be assigned any type, including `Any` and `Nothing`. It is possible to give bounds to a variable, thereby reducing the set of types it may take on, increasing its expressiveness. Possible bounds are:
@@ -58,8 +69,6 @@ A **basic type** is one of the following, built-in *named types:*
 - `Int` represents integer values.
 - `Boolean` represents boolean values.
 - `String` represents string values.
-
-**TODO:** Add `Unit`.
 
 
 
