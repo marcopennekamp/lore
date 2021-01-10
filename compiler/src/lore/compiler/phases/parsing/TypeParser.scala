@@ -4,6 +4,7 @@ import fastparse.ScalaWhitespace._
 import fastparse._
 import lore.compiler.syntax._
 import lore.compiler.core.{Fragment, Position}
+import lore.compiler.phases.parsing.LexicalParser.typeIdentifier
 
 class TypeParser(implicit fragment: Fragment) {
   import Node._
@@ -47,7 +48,7 @@ class TypeParser(implicit fragment: Fragment) {
     P(Index ~ "{" ~ property.rep(0, ",").map(_.toVector) ~ "}").map(withIndex(TypeExprNode.ShapeNode))
   }
 
-  private def namedType[_: P]: P[TypeExprNode.IdentifierNode] = P(Index ~ identifier).map(withIndex(TypeExprNode.IdentifierNode))
+  private def namedType[_: P]: P[TypeExprNode.IdentifierNode] = P(Index ~ typeIdentifier).map(withIndex(TypeExprNode.IdentifierNode))
 
   private def enclosedType[_: P]: P[TypeExprNode] = P("(" ~ typeExpression ~ ")")
 }

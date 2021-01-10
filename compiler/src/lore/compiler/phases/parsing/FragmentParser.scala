@@ -11,7 +11,7 @@ import lore.compiler.syntax._
   * fragment. These are those nodes declared in [[DeclNode]].
   */
 class FragmentParser(implicit fragment: Fragment) {
-  import LexicalParser.identifier
+  import LexicalParser.{identifier, structIdentifier, typeIdentifier}
   import Node._
 
   val typeParser = new TypeParser
@@ -66,7 +66,7 @@ class FragmentParser(implicit fragment: Fragment) {
 
   private def functionTypeVariables[_: P]: P[Vector[DeclNode.TypeVariableNode]] = {
     def typeVariable = {
-      P(Index ~ identifier ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).?).map(withIndex(DeclNode.TypeVariableNode))
+      P(Index ~ typeIdentifier ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).?).map(withIndex(DeclNode.TypeVariableNode))
     }
     P(("where" ~ typeVariable.rep(1, CharIn(","))).?).map {
       case None => Vector.empty
@@ -80,23 +80,23 @@ class FragmentParser(implicit fragment: Fragment) {
   private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`type` | `trait` | struct)
 
   private def `type`[_: P]: P[TypeDeclNode.AliasNode] = {
-    P(Index ~ "type" ~/ identifier ~ "=" ~ typeExpression).map(withIndex(TypeDeclNode.AliasNode))
+    P(Index ~ "type" ~/ typeIdentifier ~ "=" ~ typeExpression).map(withIndex(TypeDeclNode.AliasNode))
   }
 
   private def `trait`[_: P]: P[TypeDeclNode.TraitNode] = {
-    P(Index ~ "trait" ~/ identifier ~ `extends`).map(withIndex(TypeDeclNode.TraitNode))
+    P(Index ~ "trait" ~/ typeIdentifier ~ `extends`).map(withIndex(TypeDeclNode.TraitNode))
   }
 
   private def `extends`[_: P]: P[Vector[String]] = {
-    P(("extends" ~ identifier.rep(1, CharIn(","))).?).map(_.map(_.toVector).getOrElse(Vector.empty))
+    P(("extends" ~ typeIdentifier.rep(1, CharIn(","))).?).map(_.map(_.toVector).getOrElse(Vector.empty))
   }
 
   private def struct[_: P]: P[TypeDeclNode.StructNode] = {
-    P(Index ~ "struct" ~/ identifier ~ implements ~ structBody).map(withIndex(TypeDeclNode.StructNode))
+    P(Index ~ "struct" ~/ structIdentifier ~ implements ~ structBody).map(withIndex(TypeDeclNode.StructNode))
   }
 
   private def implements[_: P]: P[Vector[String]] = {
-    P(("implements" ~ identifier.rep(1, CharIn(","))).?)
+    P(("implements" ~ typeIdentifier.rep(1, CharIn(","))).?)
       .map(_.map(_.toVector).getOrElse(Vector.empty))
   }
 

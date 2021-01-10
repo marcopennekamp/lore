@@ -11,7 +11,14 @@ Lore has various **type constructors** with which complex types can be built, as
 A **type expression** is a representation of a particular type, built with the toolbox of named types and type constructors. Their syntax can be described as such:
 
 - `id` — A **named type** (basic type, declared type, type variable) is accessible via its name. It has to be declared or bound in an outer or the current scope before it can be used in a type expression.
-  - The name of a type can contain the `+` symbol.
+  
+  - The name of a type may contain the following **special characters:**
+  
+    ```
+    +
+    ```
+  
+    **Struct names** cannot contain these special characters because a struct's name is also the name of its constructor.
 - `t1 | t2 | t3` — A **sum type** is simply constructed by connecting different type expressions with `|`.
 -  `t1 & t2 & t3` — An **intersection type** is constructed using the `&` symbol.
 - `(t1, t2, t3)` — **Product types** describing tuple values.

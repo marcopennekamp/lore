@@ -7,7 +7,7 @@
     - compiler: ~~data structure~~, ~~subtyping~~, ~~type variable allocation~~, ~~Type functions~~, ~~type encoding~~, ~~least upper bound~~, ~~member explorer~~, ~~parser~~, ~~transpiler~~, ~~combine shape types in intersection types~~
     - runtime: ~~data structure~~, ~~subtyping~~, ~~type equality~~, ~~type variable allocation~~, ~~substitution~~, ~~isPolymorphic~~, ~~variables~~, ~~combine shape types in intersection types~~
   - Component-based programming:
-    - compiler: traits extending shapes, structs implementing shapes, type aliases, `+` as part of a valid type name
+    - compiler: traits extending shapes, structs implementing shapes, ~~type aliases~~, ~~+ as part of a valid type name~~
     - runtime: trait/shape subtyping
   - Open properties
     - struct property declarations

@@ -4,6 +4,7 @@ import fastparse.ScalaWhitespace._
 import fastparse._
 import lore.compiler.syntax._
 import lore.compiler.core.{Fragment, Position}
+import lore.compiler.phases.parsing.LexicalParser.structIdentifier
 import lore.compiler.syntax.ExprNode.StringLiteralNode
 
 class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
@@ -173,7 +174,7 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
       ExprNode.ObjectEntryNode(name, ExprNode.VariableNode(name, position), position)
     }
     def entries = P((entry | shorthand).rep(sep = ",")).map(_.toVector)
-    P(Index ~ identifier ~ "{" ~ entries ~ "}").map(withIndex(ExprNode.ObjectMapNode))
+    P(Index ~ structIdentifier ~ "{" ~ entries ~ "}").map(withIndex(ExprNode.ObjectMapNode))
   }
 
   private def variable[_: P]: P[ExprNode.VariableNode] = P(Index ~ identifier).map(withIndex(ExprNode.VariableNode))
