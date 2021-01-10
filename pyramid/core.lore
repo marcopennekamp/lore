@@ -1,4 +1,10 @@
 /**
+  * The Unit type is represented by exactly one value: (). A Unit value effectively acts as a throwaway,
+  * equivalent in use to the `void` type of other languages.
+  */
+type Unit = ()
+
+/**
   * The default "equals" function used by the compiler for comparing complex types. This function is invoked
   * when using the == and =/= operators.
   */

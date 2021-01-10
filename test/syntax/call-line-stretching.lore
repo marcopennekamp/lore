@@ -2,7 +2,7 @@
 // to the next line.
 
 // If not parsed correctly, Lore would try to compile a multi-function call x().
-function test(): () = {
+action test() {
   let x = 5
   let y = x
   ()

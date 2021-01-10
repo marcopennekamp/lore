@@ -2,9 +2,9 @@ trait Hero extends Combatant, +Weapon
 
 struct Shardbearer implements Hero {
   name: String
-  component Stats
-  component StatusEffects = StatusEffects([])
-  component Weapon
+  stats: Stats
+  statusEffects: StatusEffects = StatusEffects([])
+  weapon: Weapon
 }
 
 function name(shardbearer: Shardbearer): String = shardbearer.name
@@ -23,9 +23,9 @@ struct Radiant implements Hero {
    */
   infusion: Int = 5
 
-  component Stats
-  component StatusEffects = StatusEffects([])
-  component Weapon
+  stats: Stats
+  statusEffects: StatusEffects = StatusEffects([])
+  weapon: Weapon
 }
 
 function name(radiant: Radiant): String = radiant.name

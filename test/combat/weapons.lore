@@ -1,5 +1,9 @@
 trait Weapon
+type +Weapon = { weapon: Weapon }
+
 trait RangedWeapon extends Weapon
+type +RangedWeapon = { weapon: RangedWeapon }
+
 struct Sword implements Weapon
 struct Shardblade implements Weapon
 struct Spear implements Weapon
@@ -15,7 +19,7 @@ function weaponRange(weapon: RangedWeapon): Int
 function weaponRange(bow: Bow): Int = 10
 
 
-function baseStat(entity: +Stats & +Weapon, label: StatAttack): Int = weaponStrength(entity.Weapon)
+function baseStat(entity: +Stats & +Weapon, label: StatAttack): Int = weaponStrength(entity.weapon)
 
 function baseStat(entity: +Stats & +Weapon, label: StatRange): Int = 0
-function baseStat(entity: +Stats & +RangedWeapon, label: StatRange): Int = weaponRange(entity.RangedWeapon)
+function baseStat(entity: +Stats & +RangedWeapon, label: StatRange): Int = weaponRange(entity.weapon)

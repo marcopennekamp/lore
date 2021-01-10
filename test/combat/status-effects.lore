@@ -24,30 +24,34 @@ action onHit(effect: StatusEffect) { }
 function isActive(effect: StatusEffect): Boolean = true
 
 
-struct DurationLimit owned by StatusEffect {
+struct DurationLimit {
   mut duration: Int
 }
 
+type +DurationLimit = { limit: DurationLimit }
+
 action onUpdate(effect: +DurationLimit) {
   if (isActive(effect)) {
-    effect.DurationLimit.duration -= 1
+    effect.limit.duration -= 1
   }
 }
 
-function isActive(effect: +DurationLimit): Boolean = effect.DurationLimit.duration > 0
+function isActive(effect: +DurationLimit): Boolean = effect.limit.duration > 0
 
 
-struct HitLimit owned by StatusEffect {
+struct HitLimit {
   mut hits: Int
 }
 
+type +HitLimit = { limit: HitLimit }
+
 action onHit(effect: +HitLimit) {
   if (isActive(effect)) {
-    effect.HitLimit.hits -= 1
+    effect.limit.hits -= 1
   }
 }
 
-function isActive(effect: +HitLimit): Boolean = effect.HitLimit.hits > 0
+function isActive(effect: +HitLimit): Boolean = effect.limit.hits > 0
 
 
 /**
@@ -55,7 +59,7 @@ function isActive(effect: +HitLimit): Boolean = effect.HitLimit.hits > 0
  */
 struct Armored implements StatusEffect {
   armor: Int
-  component HitLimit
+  limit: HitLimit
 }
 
 function createArmored(armor: Int, durability: Int): Armored = Armored(armor, HitLimit(durability))
@@ -67,7 +71,7 @@ function affectStat(effect: Armored, statLabel: StatDefense, value: Int): Int = 
  * The entity is infused with Stormlight.
  */
 struct Infusion implements StatusEffect {
-  component DurationLimit
+  limit: DurationLimit
 }
 
 function createInfusion(duration: Int): Infusion = Infusion(DurationLimit(duration))
@@ -81,8 +85,12 @@ struct StatusEffects {
   mut effects: [StatusEffect]
 }
 
+// TODO: If we allow shape types to contain mutable properties, we don't need to define a separate struct at all.
+//       Now that "components" can have any type, we could have a shape type { mut statusEffects: [StatusEffect] }.
+type +StatusEffects = { statusEffects: StatusEffects }
+
 action buff(entity: +StatusEffects, effect: StatusEffect) {
-  entity.StatusEffects.effects = entity.StatusEffects.effects :+ effect
+  entity.statusEffects.effects = entity.statusEffects.effects :+ effect
 }
 
 // TODO: If we introduce a "call all fitting functions/call all min functions"-style call, we can implement this

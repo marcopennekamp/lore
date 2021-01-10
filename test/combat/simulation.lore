@@ -15,7 +15,7 @@ action onHit(combatant: Combatant) {
 //       Also see the TODO above the declaration of baseStat in stats.lore.
 function stat(combatant: Combatant, statLabel: StatRegeneration | StatDefense | StatAttack | StatRange | StatSpeed): Int = {
   let mut result = baseStat(combatant, statLabel)
-  for (effect <- combatant.StatusEffects.effects) {
+  for (effect <- combatant.statusEffects.effects) {
     result = affectStat(effect, statLabel, result)
   }
   result
@@ -23,7 +23,7 @@ function stat(combatant: Combatant, statLabel: StatRegeneration | StatDefense | 
 
 function stat(combatant: Combatant, statLabel: StatDodge): Real = {
   let mut result = baseStat(combatant, statLabel)
-  for (effect <- combatant.StatusEffects.effects) {
+  for (effect <- combatant.statusEffects.effects) {
     result = affectStat(effect, statLabel, result)
   }
   result
@@ -47,8 +47,6 @@ action combatLog(message: String) {
 function simulateCombat(left: Combatant, right: Combatant): SimulationResult = {
   let mut turn = 1
   let mut distance = 8
-  let mut leftCumulativeDodge = 0.0
-  let mut rightCumulativeDodge = 0.0
 
   enterCombat(left)
   enterCombat(right)
@@ -96,7 +94,7 @@ struct CombatantState {
 }
 
 /**
- * Whether the combatant is in range, based on the entity's range stat.
+ * Whether the combatant is in range to attack, based on the entity's range stat.
  */
 function isInRange(combatant: Combatant, distance: Int): Boolean = stat(combatant, StatRange()) >= distance
 
@@ -141,7 +139,7 @@ action hit(source: Combatant, target: Combatant, damage: Int) {
   let defense = stat(target, StatDefense())
   let damageAfterDefense = max(damage - defense, 0)
   combatLog('${name(source)} attacks ${name(target)} for $damageAfterDefense damage given a defense of $defense.')
-  target.Stats.health -= damageAfterDefense
+  target.stats.health -= damageAfterDefense
   onHit(target)
 }
 
@@ -156,7 +154,7 @@ action updateCombatantPostAttack(combatant: Combatant) {
 }
 
 action heal(target: Combatant, amount: Int) {
-  let stats = target.Stats
+  let stats = target.stats
   let oldHealth = stats.health
   stats.health = min(stats.health + amount, stats.maximumHealth)
   if (stats.health > oldHealth) {

@@ -52,11 +52,13 @@ struct Stats {
   speed: Int = 1
 }
 
+type +Stats = { stats: Stats }
+
 /**
  * A type used to create "labels" for various stats.
  *
- * TODO: Note that, for now, we don't support global constants, which means that any Stat label object needs to be
- *       instantiated anew each time it is used.
+ * TODO: Note that, for now, we don't support global constants (or atom/keyword types), which means that any Stat label
+ *       object needs to be instantiated anew each time it is used.
  */
 trait StatLabel
 // TODO: This would be a case object in Scala. We could support this with the planned singleton types, which would be
@@ -75,11 +77,11 @@ struct StatSpeed implements StatLabel
 //       Also, we wouldn't have to define functions over StatRegeneration | StatDefense | ... and so on.
 function baseStat(entity: +Stats, label: StatLabel): Int | Real
 function baseStat(entity: +Stats, label: StatRegeneration | StatDefense | StatAttack | StatRange | StatSpeed): Int
-function baseStat(entity: +Stats, label: StatRegeneration): Int = entity.Stats.regeneration
-function baseStat(entity: +Stats, label: StatDefense): Int = entity.Stats.defense
-function baseStat(entity: +Stats, label: StatDodge): Real = entity.Stats.dodge
-function baseStat(entity: +Stats, label: StatAttack): Int = entity.Stats.attack
-function baseStat(entity: +Stats, label: StatRange): Int = entity.Stats.range
-function baseStat(entity: +Stats, label: StatSpeed): Int = entity.Stats.speed
+function baseStat(entity: +Stats, label: StatRegeneration): Int = entity.stats.regeneration
+function baseStat(entity: +Stats, label: StatDefense): Int = entity.stats.defense
+function baseStat(entity: +Stats, label: StatDodge): Real = entity.stats.dodge
+function baseStat(entity: +Stats, label: StatAttack): Int = entity.stats.attack
+function baseStat(entity: +Stats, label: StatRange): Int = entity.stats.range
+function baseStat(entity: +Stats, label: StatSpeed): Int = entity.stats.speed
 
-function isAlive(entity: +Stats): Boolean = entity.Stats.health > 0
+function isAlive(entity: +Stats): Boolean = entity.stats.health > 0
