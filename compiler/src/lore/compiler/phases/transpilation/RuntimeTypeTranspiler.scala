@@ -54,6 +54,20 @@ object RuntimeTypeTranspiler {
     val rec: Type => JsExpr = t => transpile(t, simplifyAtRuntime, transpileTypeVariable)
     val api = RuntimeApi.types
     tpe match {
+      // TODO (alias): Transpile type aliases by referring to them by name at run-time. We cannot use a global Type -> Name map
+      //       in the registry (as would be intuitive to avoid adding an alias property to Type), because we could for
+      //       example define two type aliases A = { name: String } and B = { name: String }. If we transpiled types
+      //       to their alias representations globally, we could not decide whether A or B had been mentioned. This
+      //       does not make a difference to the execution, but could become a failure point if we introduced
+      //       module-based compilation. And in any case, the generated code would be conceptually incorrect, if we
+      //       referred to A in one place where actually B was referenced in the Lore source.
+      //       Adding to this, we also have to take care that some types shouldn't be transpiled as aliases. For
+      //       example, if we have an alias A = S, where S is a struct, we should just substitute S for A without
+      //       transpiling the alias. So only "constructed" types should be able to receive an alias, not named types.
+      //       If we add an alias property to types, we will also have to ensure that this does not affect type
+      //       equality.
+      //       Also note that sometimes types may be normalized, such as combined shapes in intersection types or
+      //       flattened sums, and such new types shouldn't ever refer to the alias used to build the type.
       case tv: TypeVariable => transpileTypeVariable(tv)
       case BasicType.Any => api.any
       case BasicType.Nothing => api.nothing
