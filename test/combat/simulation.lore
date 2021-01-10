@@ -8,7 +8,7 @@ function name(combatant: Combatant): String
 action enterCombat(combatant: Combatant) { }
 
 action onHit(combatant: Combatant) {
-  onHit(combatant.StatusEffects)
+  onHitStatusEffects(combatant.StatusEffects)
 }
 
 // TODO: This wouldn't need two separate implementations if we'd have StatLabel[Int], StatLabel[Real] etc. stat labels.

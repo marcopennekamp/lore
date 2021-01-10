@@ -28,7 +28,7 @@ struct DurationLimit {
   mut duration: Int
 }
 
-type +DurationLimit = { limit: DurationLimit }
+type +DurationLimit = StatusEffect & { limit: DurationLimit }
 
 action onUpdate(effect: +DurationLimit) {
   if (isActive(effect)) {
@@ -43,7 +43,7 @@ struct HitLimit {
   mut hits: Int
 }
 
-type +HitLimit = { limit: HitLimit }
+type +HitLimit = StatusEffect & { limit: HitLimit }
 
 action onHit(effect: +HitLimit) {
   if (isActive(effect)) {
@@ -114,6 +114,8 @@ action updateStatusEffects(entity: +StatusEffects) {
   entity.StatusEffects.effects = actives
 }
 
-action onHit(statusEffects: StatusEffects) {
-  for (effect <- statusEffects.effects) onHit(effect)
+// TODO: If we have a "call all leaves"-style call, we can simply call this onHit and wouldn't have to delegate
+//       from Combatant's onHit function.
+action onHitStatusEffects(entity: +StatusEffects) {
+  for (effect <- entity.statusEffects.effects) onHit(effect)
 }
