@@ -17,6 +17,6 @@ class StructType(
   override lazy val asShapeType: ShapeType = ShapeType(definition.properties.map(ShapeType.Property.apply))
 
   val hasOpenProperties = false
-  val openProperties: Vector[StructPropertyDefinition] = Vector.empty
+  val openProperties: Vector[StructPropertyDefinition] = Vector.empty // TODO: This should rather be declared in the StructDefinition.
 
 }

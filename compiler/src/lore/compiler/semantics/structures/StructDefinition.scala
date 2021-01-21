@@ -11,6 +11,8 @@ class StructDefinition(
   override val position: Position,
 ) extends DeclaredTypeDefinition {
 
+  lazy val propertyMap: Map[String, StructPropertyDefinition] = properties.map(p => (p.name, p)).toMap
+
   /**
     * The signature of the call-style constructor.
     */
