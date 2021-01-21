@@ -1,0 +1,19 @@
+struct Id { value: Int }
+
+trait Question
+struct RudeQuestion implements Question
+struct HonestQuestion implements Question
+
+type Named = { name: String }
+type +Question = { question: Question }
+type Known = { knownBy: Int }
+
+trait Person extends { id: Int }
+trait Questioner extends Person, Named, +Question
+trait AncientPhilosopher extends Questioner, Known
+
+struct Plato implements AncientPhilosopher {
+  id: Id
+  knownBy: Real
+  question: RudeQuestion
+}
