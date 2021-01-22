@@ -33,7 +33,6 @@ export interface StructSchema extends DeclaredTypeSchema {
 export interface StructType extends DeclaredType {
   schema: StructSchema
 
-  // TODO: Once traits can extend shape types, this needs to also apply to traits.
   /**
    * The actual run-time types of the struct's properties IF they deviate from their compile-time type. The map may be
    * empty or undefined.

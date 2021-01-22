@@ -4,6 +4,7 @@ import { MapType } from '../maps.ts'
 import { ShapeType } from '../shapes.ts'
 import { Struct, StructType } from '../structs.ts'
 import { SumType } from '../sums.ts'
+import { TraitType } from '../traits.ts'
 import { ProductType } from '../tuples.ts'
 import { areEqual } from './equality.ts'
 import { Kind } from './kinds.ts'
@@ -17,10 +18,6 @@ import { DeclaredType, Type, TypeVariable } from './types.ts'
 export class SubtypingEnvironment {
   constructor() {
   }
-
-  // TODO (shape): Implementing structural subtyping for struct < shape: Take all properties defined in the shape
-  //               and get their types by: (1) checking the openPropertyTypes map and (2) the type of the
-  //               PropertyDefinition.
 
   /**
    * Checks whether t1 is a subtype of t2.
@@ -47,14 +44,15 @@ export class SubtypingEnvironment {
         break
 
       case Kind.Struct:
-        // Handle shape subtyping specifically for structs.
-        if (t2.kind === Kind.Shape && this.structSubtypeShape(<StructType> t1, <ShapeType> t2)) {
-          return true
-        }
-        // fallthrough
       case Kind.Trait:
-        const d1 = <DeclaredType> t1
-        if (t2.kind === Kind.Trait || t2.kind === Kind.Struct) {
+        if (t2.kind === Kind.Shape) {
+          if (t1.kind === Kind.Struct && this.structSubtypeShape(<StructType> t1, <ShapeType> t2)) {
+            return true
+          } else if (t1.kind === Kind.Trait && this.isSubtype((<TraitType> t1).schema.inheritedShapeType.value(), t2)) {
+            return true
+          }
+        } else if (t2.kind === Kind.Trait || t2.kind === Kind.Struct) {
+          const d1 = <DeclaredType> t1
           const d2 = <DeclaredType> t2
 
           // TODO: Rebuild this for open property types (structs only, though):

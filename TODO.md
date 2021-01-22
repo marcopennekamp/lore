@@ -8,7 +8,7 @@
     - runtime: ~~data structure~~, ~~subtyping~~, ~~type equality~~, ~~type variable allocation~~, ~~substitution~~, ~~isPolymorphic~~, ~~variables~~, ~~combine shape types in intersection types~~
   - Component-based programming:
     - compiler: ~~declared types inheriting from shapes~~, ~~trait/shape subtyping~~, ~~check that all inherited shape properties are implemented by a given struct~~, ~~type aliases~~, ~~+ as part of a valid type name~~
-    - runtime: trait schemas with properties, trait/shape subtyping
+    - runtime: ~~trait schema with inherited shape type~~, ~~trait/shape subtyping~~
   - Open properties
     - struct property declarations
     - run-time type instantiation
@@ -25,7 +25,6 @@
 
 ##### Type System
 
-- Introduce a `Unit` type constant, because using `()` is unwieldy.
 - Investigate how type variables affect abstract functions and the ARDS function.
 - Support intersection and sum types in TypeVariableAllocation.
 - We could theoretically introduce a limited form of ambiguity analysis at compile-time: For each function `f(a: A, b: B, ...)`, get a list of possible subtypes (mostly trait subtypes) and simulate dispatch with these types. If any of the inputs result in an ambiguity, raise at least a warning.    
