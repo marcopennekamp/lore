@@ -5,21 +5,21 @@ import lore.compiler.syntax.{DeclNode, TypeDeclNode, StmtNode, TopLevelExprNode,
 
 object TestNodes {
   private def withWildcard[R](construct: Position => R) =
-    () => construct(Position.Wildcard)
+    () => construct(Position.wildcard)
   private def withWildcard[A, R](construct: (A, Position) => R) =
-    (a: A) => construct(a, Position.Wildcard)
+    (a: A) => construct(a, Position.wildcard)
   private def withWildcard[A, B, R](construct: (A, B, Position) => R) =
-    (a: A, b: B) => construct(a, b, Position.Wildcard)
+    (a: A, b: B) => construct(a, b, Position.wildcard)
   private def withWildcard[A, B, C, R](construct: (A, B, C, Position) => R) =
-    (a: A, b: B, c: C) => construct(a, b, c, Position.Wildcard)
+    (a: A, b: B, c: C) => construct(a, b, c, Position.wildcard)
   private def withWildcard[A, B, C, D, R](construct: (A, B, C, D, Position) => R) =
-    (a: A, b: B, c: C, d: D) => construct(a, b, c, d, Position.Wildcard)
+    (a: A, b: B, c: C, d: D) => construct(a, b, c, d, Position.wildcard)
   private def withWildcard[A, B, C, D, E, R](construct: (A, B, C, D, E, Position) => R) =
-    (a: A, b: B, c: C, d: D, e: E) => construct(a, b, c, d, e, Position.Wildcard)
+    (a: A, b: B, c: C, d: D, e: E) => construct(a, b, c, d, e, Position.wildcard)
   private def withWildcard[A, B, C, D, E, F, R](construct: (A, B, C, D, E, F, Position) => R) =
-    (a: A, b: B, c: C, d: D, e: E, f: F) => construct(a, b, c, d, e, f, Position.Wildcard)
+    (a: A, b: B, c: C, d: D, e: E, f: F) => construct(a, b, c, d, e, f, Position.wildcard)
   private def withWildcard[A, B, C, D, E, F, G, R](construct: (A, B, C, D, E, F, G, Position) => R) =
-    (a: A, b: B, c: C, d: D, e: E, f: F, g: G) => construct(a, b, c, d, e, f, g, Position.Wildcard)
+    (a: A, b: B, c: C, d: D, e: E, f: F, g: G) => construct(a, b, c, d, e, f, g, Position.wildcard)
 
   object Decl {
     import DeclNode._

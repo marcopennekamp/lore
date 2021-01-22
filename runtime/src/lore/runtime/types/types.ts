@@ -3,6 +3,7 @@ import { Hashed, stringHash, stringHashWithSeed } from '../utils/hash.ts'
 import { LazyValue } from '../utils/LazyValue.ts'
 import { areEqual } from './equality.ts'
 import { fits, fitsMonomorphic, fitsPolymorphic } from './fit.ts'
+import { Introspection } from './introspection.ts'
 import { Kind } from './kinds.ts'
 import { isPolymorphic, variables } from './polymorphy.ts'
 import { isSubtype } from './subtyping.ts'
@@ -87,4 +88,7 @@ export const Types = {
   typeOf,
   isPolymorphic,
   variables,
+
+  // The type introspection API.
+  introspection: Introspection,
 }

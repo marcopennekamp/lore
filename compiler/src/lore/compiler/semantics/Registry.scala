@@ -71,6 +71,16 @@ class Registry {
   def getType(name: String): Option[Type] = types.get(name)
 
   /**
+    * Searches for a struct type with the given name.
+    */
+  def getStructType(name: String): Option[StructType] = getType(name).filterType[StructType]
+
+  /**
+    * Searches for a trait type with the given name.
+    */
+  def getTraitType(name: String): Option[TraitType] = getType(name).filterType[TraitType]
+
+  /**
     * Gets a type with the given name. If the type cannot be found, the operation fails with a compilation error.
     * The difference from getType is that this results in a compilation with a clear failure state.
     *
@@ -96,16 +106,6 @@ class Registry {
     * make the code more future-proof.
     */
   val variableScope: VariableScope = new GlobalVariableScope()
-
-  /**
-    * Searches for a struct type with the given name.
-    */
-  def getStructType(name: String): Option[StructType] = getType(name).filterType[StructType]
-
-  /**
-    * Searches for a trait type with the given name.
-    */
-  def getTraitType(name: String): Option[TraitType] = getType(name).filterType[TraitType]
 
   /**
     * Registers the given type definition.

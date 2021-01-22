@@ -14,6 +14,7 @@ object Lore {
   def pyramid(baseDirectory: Path): Vector[FragmentResolution] = Vector(
     fragment("pyramid.collections", baseDirectory.resolve(Path.of("pyramid", "collections.lore"))),
     fragment("pyramid.core", baseDirectory.resolve(Path.of("pyramid", "core.lore"))),
+    fragment("pyramid.introspection", baseDirectory.resolve(Path.of("pyramid", "introspection.lore"))),
     fragment("pyramid.io",baseDirectory.resolve( Path.of("pyramid", "io.lore"))),
     fragment("pyramid.math", baseDirectory.resolve(Path.of("pyramid", "math.lore"))),
     fragment("pyramid.string", baseDirectory.resolve(Path.of("pyramid", "string.lore"))),

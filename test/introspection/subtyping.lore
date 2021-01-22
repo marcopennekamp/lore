@@ -1,0 +1,29 @@
+trait Animal
+struct Ox implements Animal {
+  name: String
+  weight: Real
+}
+struct Crane implements Animal {
+  name: String
+  height: Real
+}
+
+function niuzao(): Ox = Ox('Niuzao', 387.23)
+function chiji(): Crane = Crane('Chi-Ji', 5.51)
+
+// TODO: Needs shape values first...
+//function shape(): { name: String, weight: Real } = %{ name: 'Peter', weight: 87.2 }
+
+function test(): [Boolean] = [
+  isSubtype(typeOf(1), typeOf(1.5)),               // --> true
+  isSubtype(typeOf(1.5), typeOf(1)),               // --> false
+  // TODO: How to get the Animal trait type for introspection? We would have to add compiler support.
+  //isSubtype(niuzao(), Animal),                   // --> true
+  true,
+  isSubtype(typeOf(niuzao()), typeOf(chiji())),    // --> false
+  isSubtype(typeOf(chiji()), typeOf(niuzao())),    // --> false
+  //isSubtype(typeOf(niuzao()), typeOf(shape())),  // --> true
+  true,
+  //isSubtype(typeOf(chiji()), typeOf(shape()))    // --> false
+  false
+]

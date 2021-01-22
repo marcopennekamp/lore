@@ -25,6 +25,12 @@ object RuntimeApi {
     val typeOf = s"$base.typeOf"
     val isPolymorphic = s"$base.isPolymorphic"
     val variables = s"$base.variables"
+
+    object introspection {
+      val base = s"${RuntimeApi.types.base}.introspection"
+
+      val initialize = s"${base}.initialize"
+    }
   }
 
   object values {

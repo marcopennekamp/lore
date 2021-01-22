@@ -36,7 +36,7 @@ case class Position(fragment: Fragment, index: Index) {
     * tests. A wildcard position is always equal to any other position, including itself.
     */
   override def equals(obj: Any): Boolean = obj match {
-    case other: Position => this.eq(Position.Wildcard) || other.eq(Position.Wildcard) || super.equals(other)
+    case other: Position => this.eq(Position.wildcard) || other.eq(Position.wildcard) || super.equals(other)
     case _ => false
   }
 }
@@ -46,5 +46,10 @@ object Position {
     * A Position that is equal to any other position. This is used in tests to make nodes equal regardless of their
     * position. It should never be used by the compiler!
     */
-  val Wildcard: Position = Position(Fragment("wildcard", ""), 0)
+  val wildcard: Position = Position(Fragment("wildcard", ""), 0)
+
+  /**
+    * An "internal" position that signals compiler-generated code without any sensible anchor.
+    */
+  val internal: Position = Position(Fragment("internal (compiler-generated)", ""), 0)
 }

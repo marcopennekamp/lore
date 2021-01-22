@@ -1,10 +1,10 @@
 package lore.compiler.phases.resolution
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, CompilationException, Error}
+import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.phases.resolution.DeclarationResolver.TypeAlreadyExists
 import lore.compiler.semantics.functions.FunctionDefinition
-import lore.compiler.semantics.{Registry, TypeScope}
+import lore.compiler.semantics.{Introspection, Registry, TypeScope}
 import lore.compiler.syntax.{DeclNode, TypeDeclNode, TypeExprNode}
 import lore.compiler.types.Type
 
@@ -95,10 +95,23 @@ class DeclarationResolver {
   }
 
   private def addDeclarations(declarations: Vector[DeclNode]): Verification = {
+    addIntrospectionTypeDeclaration()
+
     declarations.map {
       case function: DeclNode.FunctionNode => addFunctionDeclaration(function)
       case tpe: TypeDeclNode => addTypeDeclaration(tpe)
     }.simultaneous.verification
+  }
+
+  /**
+    * The run-time Introspection API requires the compiler to generate a special "Type" trait that represents actual
+    * Lore types. The trait cannot be defined in Pyramid because the compiler needs to call the initialization function
+    * of the Introspection API with the actual type.
+    *
+    * TODO: This feels a bit hacky. Maybe we can find a better solution.
+    */
+  private def addIntrospectionTypeDeclaration(): Verification = {
+    addTypeDeclaration(TypeDeclNode.TraitNode(Introspection.typeName, Vector.empty, Position.internal))
   }
 
   /**
