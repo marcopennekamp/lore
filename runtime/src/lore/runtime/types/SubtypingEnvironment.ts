@@ -51,9 +51,11 @@ export class SubtypingEnvironment {
           } else if (t1.kind === Kind.Trait && this.isSubtype((<TraitType> t1).schema.inheritedShapeType.value(), t2)) {
             return true
           }
-        } else if (t2.kind === Kind.Trait || t2.kind === Kind.Struct) {
-          const d1 = <DeclaredType> t1
-          const d2 = <DeclaredType> t2
+        } else if (t2.kind === Kind.Struct) {
+          // If t2 is a struct type, we don't have to check whether any of t1's supertraits are equal to t2, because
+          // a struct cannot be a supertrait. Because t1 and t2 aren't referentially equal either, we can return false.
+          // A struct can only ever be a subtype of a single struct: itself.
+          return false
 
           // TODO: Rebuild this for open property types (structs only, though):
 
@@ -82,6 +84,9 @@ export class SubtypingEnvironment {
 
             return true
           } */
+        } else if (t2.kind === Kind.Trait) {
+          const d1 = <DeclaredType> t1
+          const d2 = <DeclaredType> t2
 
           const supertraits = d1.schema.supertraits
           for (let i = 0; i < supertraits.length; i += 1) {
