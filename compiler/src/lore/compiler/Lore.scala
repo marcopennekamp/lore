@@ -5,7 +5,6 @@ import java.nio.file.{Files, Path}
 
 import lore.compiler.core._
 import lore.compiler.semantics.Registry
-import lore.compiler.types.Type
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 import scala.util.Using
@@ -73,7 +72,7 @@ object Lore {
     * Stringifies the compilation result in a user-palatable way, discussing errors or the successful result in
     * text form.
     */
-  def stringifyCompilationInfo(result: Compilation[Registry]): String = {
+  def stringifyCompilationInfo(result: Compilation[Registry], compileTime: Double): String = {
     val out = new ByteArrayOutputStream()
     Using(new PrintStream(out, true, "utf-8")) { printer =>
       // Print either errors or the compilation result to the output stream.
@@ -83,22 +82,10 @@ object Lore {
           printer.println()
           printer.println(s"${FeedbackPrinter.tagError} Compilation failed with errors:")
           if (feedback.nonEmpty) printer.println(FeedbackPrinter.print(feedback))
-        case Result(registry, infos) =>
+        case Result(_, infos) =>
           printer.println()
-          printer.println(s"${FeedbackPrinter.tagSuccess} Compilation was successful.")
-          if(infos.nonEmpty) printer.println(FeedbackPrinter.print(infos))
-
-          // Print types for debugging.
-          printer.println()
-          printer.println("Types:")
-          registry.getTypes.values.map(Type.toString(_, verbose = true)).foreach(s => printer.println(s"  $s"))
-
-          // Print functions for debugging.
-          registry.getMultiFunctions.values.foreach { mf =>
-            printer.println()
-            printer.println(s"${mf.name}:")
-            mf.functions.foreach(f => printer.println(s"  $f"))
-          }
+          printer.println(s"${FeedbackPrinter.tagSuccess} Compilation was successful. (Total time: ${compileTime}ms)")
+          if (infos.nonEmpty) printer.println(FeedbackPrinter.print(infos))
       }
 
       // Finally, return the constructed string.
@@ -130,8 +117,7 @@ object Lore {
     val beforeCompile = System.nanoTime()
     val result = fromSources(baseDirectory, fragmentPaths: _*)
     val afterCompile = System.nanoTime()
-    println(stringifyCompilationInfo(result.map(_._1)))
+    println(stringifyCompilationInfo(result.map(_._1), ((afterCompile - beforeCompile) / 1000) / 1000.0))
     result.map(_._2).foreach(writeResult(Path.of(args(0))))
-    println(s"Compile time: ${((afterCompile - beforeCompile) / 1000) / 1000.0}ms.")
   }
 }

@@ -30,10 +30,11 @@ export const LoreTest = {
 
     process.close()
 
-    // We judge the success of the compilation based on the following line being included in the standard output:
+    // We judge the success of the compilation based on the following line prefix being included in the standard output:
     //    [success] Compilation was successful.
-    // This line is always and only posted by the Lore compiler when compilation is successful.
-    const isSuccessful = messages.includes('[\u001b[32msuccess\u001b[0m] Compilation was successful.')
+    // This line is always and only posted by the Lore compiler when compilation is successful. It may contain
+    // additional information such as the total time taken, so we are checking for the prefix.
+    const isSuccessful = messages.some(message => message.startsWith('[\u001b[32msuccess\u001b[0m] Compilation was successful.'))
     const failMessage = `The given Lore source code in ${paths.join(', ')} cannot be compiled. Compiler output:\n` + messages.join('\n')
     assert(isSuccessful, failMessage)
   },
