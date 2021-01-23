@@ -5,8 +5,23 @@
     <title>A Lore Program</title>
   </head>
   <body>
-    <!-- Include the Lore program. -->
-    <script type="module" src="bundle.js"></script>
-    <!-- <script type="text/javascript" src="hello-name.js"></script> -->
+    <button id="start">Run Benchmark</button>
+    <p id="output"></p>
+
+    <script type="module" src="lore.js"></script>
+    <script type="module" src="lore-program.js"></script>
+    <script type="module">
+      import { test } from "./lore-program.js"
+
+      function runBenchmark() {
+        const text = document.querySelector('#output');
+        for (let i = 0; i < 100000; i += 1) {
+          test()
+        }
+        text.innerHTML = 'Benchmark Finished'
+      }
+
+      document.querySelector('#start').addEventListener('click', runBenchmark)
+    </script>
   </body>
 </html>

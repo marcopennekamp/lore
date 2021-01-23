@@ -24,7 +24,7 @@ lore-program.js
 test/lore.jar
 
 # Deno
-bundle.js
+lore.js
 
 # Rust (VM)
 vm/target
