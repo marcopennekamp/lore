@@ -1,15 +1,14 @@
 package lore.compiler.phases.transpilation
 
 import java.io.{ByteArrayOutputStream, PrintStream}
-
 import lore.compiler.CompilerOptions
 import lore.compiler.core.Compilation
 import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.RuntimeTypeVariables
 import lore.compiler.phases.transpilation.TranspiledChunk.JsCode
 import lore.compiler.phases.transpilation.TranspiledName.StringExtension
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.functions.MultiFunctionDefinition
-import lore.compiler.types.{ProductType, Type}
+import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.types.{IntersectionType, ListType, MapType, ProductType, ShapeType, SumType, TraitType, Type, TypeVariable}
 
 import scala.collection.mutable
 import scala.util.Using
@@ -123,17 +122,35 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   }
 
   /**
-    * This heuristic decides whether the dispatch cache should be used for this multi-function or not.
-    *
-    * The algorithm for this decision is, as of yet, very simple:
-    *   1. If ANY parameter type is polymorphic, using the cache will absolutely bring gains. Creating a type
-    *      allocation takes so much time that creating a hash from a type is almost 4-5 times faster than checking
-    *      one fit.
-    *   2. If there are at least three functions in the multi-function, we can assume that many invocations of the
-    *      function will require three fit tests. At that point a hash&cache operation is faster than testing multiple
-    *      fits.
+    * This heuristic decides whether the dispatch cache should be used for this multi-function or not. At some
+    * complexity threshold of the parameter types of all functions, we use the dispatch cache. This threshold is
+    * reached relatively early, so only the simplest functions won't use the dispatch cache.
     */
-  private lazy val shouldUseDispatchCache = mf.functions.size >= 3 || mf.functions.exists(f => f.isPolymorphic)
+  private lazy val shouldUseDispatchCache = {
+    // The estimated run-time complexity of checking a subtyping relationship when the type in question is on the
+    // right-hand side.
+    def typeComplexity(tpe: Type): Int = tpe match {
+      case tv: TypeVariable => 10 + typeComplexity(tv.lowerBound) + typeComplexity(tv.upperBound)
+      case SumType(parts) => 1 + parts.map(typeComplexity).sum
+      case IntersectionType(parts) => 1 + parts.map(typeComplexity).sum
+      case ProductType(elements) => 1 + elements.map(typeComplexity).sum
+      case ListType(element) => 1 + typeComplexity(element)
+      case MapType(key, value) => 1 + typeComplexity(key) + typeComplexity(value)
+      case _: TraitType =>
+        // Checking whether a trait is a supertype may be inherently expensive because we have to walk the left
+        // type's supertype hierarchy.
+        5
+      case ShapeType(properties) => 3 + properties.map(_._2.tpe).map(typeComplexity).sum * 2
+      case _ => 1
+    }
+
+    def signatureComplexity(function: FunctionDefinition): Int = function.signature.parameters.map(_.tpe).map(typeComplexity).sum
+
+    // TODO: To model the cost of the dispatch cache, which includes the hashing operation on the argument tuple type,
+    //       we could counter-model the estimated cost of the hash operation.
+
+    mf.functions.map(signatureComplexity).sum >= 5
+  }
 
   /**
     * Prepares the dispatch cache for later use.
