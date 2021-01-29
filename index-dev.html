@@ -3,10 +3,33 @@
   <head>
     <meta charset="UTF-8">
     <title>A Lore Program</title>
+    <style>
+      body {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        background: #333333;
+      }
+
+      .container {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #start {
+        font-size: 20px;
+        padding: 0.5em;
+      }
+    </style>
   </head>
   <body>
-    <button id="start">Run Benchmark</button>
-    <p id="output"></p>
+    <div class="container">
+      <button id="start">Run Benchmark</button>
+      <p id="output"></p>
+    </div>
 
     <script type="module" src="lore.js"></script>
     <script type="module" src="lore-program.js"></script>

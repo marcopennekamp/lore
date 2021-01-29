@@ -1,6 +1,7 @@
 package lore.compiler
 
 import lore.compiler.core.{Compilation, Fragment}
+import lore.compiler.phases.generation.GenerationPhase
 import lore.compiler.phases.parsing.ParsingPhase
 import lore.compiler.phases.resolution.ResolutionPhase
 import lore.compiler.phases.transpilation.TranspilationPhase
@@ -26,9 +27,11 @@ class LoreCompiler(val sources: Vector[Fragment], val options: CompilerOptions) 
       registry <- timed("Resolution", new ResolutionPhase(fragmentsWithDeclarations).result)
       // Phase 3: Check constraints and ascribe types.
       _ <- timed("Transformation", new TransformationPhase()(registry).result)
-      // Phase 4: Transpile the Lore program to Javascript.
-      output <- timed("Transpilation", new TranspilationPhase()(options, registry).result)
-    } yield (registry, output)
+      // Phase 4: Transpile the Lore program to our target representation.
+      target <- timed("Transpilation", new TranspilationPhase()(options, registry).result)
+      // Phase 5: Generate Javascript code from the target representation.
+      code <- timed("Generation", GenerationPhase.process(target))
+    } yield (registry, code)
   }
 
   def timed[R](phase: String, block: => R): R = {

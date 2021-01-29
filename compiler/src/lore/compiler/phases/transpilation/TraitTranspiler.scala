@@ -1,31 +1,27 @@
 package lore.compiler.phases.transpilation
 
-import lore.compiler.core.Compilation
-import lore.compiler.core.Compilation.ToCompilationExtension
+import lore.compiler.target.Target.TargetStatement
+import lore.compiler.target.TargetDsl.VariableExtension
 import lore.compiler.types.TraitType
 
 object TraitTranspiler {
 
   /**
-    * Transpiles a trait type to its Javascript representation. To preserve symmetry with struct types, trait types
-    * also have a schema.
+    * Transpiles a trait type to its target representation.
     */
-  def transpile(tpe: TraitType): Compilation[String] = {
-    val (varSchema, schema) = transpileSchema(tpe)
-    val varType = TranspiledName.declaredType(tpe)
-    s"""$schema
-       |const $varType = ${RuntimeApi.traits.tpe}($varSchema);
-       |""".stripMargin.compiled
-  }
+  def transpile(tpe: TraitType): Vector[TargetStatement] = {
+    val schema = RuntimeApi.traits.schema(
+      tpe.name,
+      DeclaredTypeTranspiler.transpileSupertraits(tpe),
+      // The trait's inherited shape type needs to be supplied to the runtime to support trait/shape subtyping.
+      RuntimeApi.utils.`lazy`.of(RuntimeTypeTranspiler.transpile(tpe.inheritedShapeType)(Map.empty))
+    )
 
-  private def transpileSchema(tpe: TraitType) = {
-    DeclaredTypeTranspiler.transpileSchema(
-      tpe,
-      RuntimeApi.traits.schema,
-      Vector(
-        // The trait's inherited shape type needs to be supplied to the runtime to support trait/shape subtyping.
-        s"${RuntimeApi.utils.`lazy`.of}(() => ${RuntimeTypeTranspiler.transpile(tpe.inheritedShapeType)(Map.empty)})",
-      )
+    val varSchema = TranspiledName.typeSchema(tpe).asVariable
+    val varType = TranspiledName.declaredType(tpe).asVariable
+    Vector(
+      varSchema.declareAs(schema),
+      varType.declareAs(RuntimeApi.traits.tpe(varSchema)),
     )
   }
 

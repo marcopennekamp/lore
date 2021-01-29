@@ -1,159 +1,135 @@
 package lore.compiler.phases.transpilation
 
-// TODO: Return TranspiledName values instead of plain strings?
+import lore.compiler.target.Target
+import lore.compiler.target.Target.TargetExpression
+import lore.compiler.target.TargetDsl._
 
+//noinspection TypeAnnotation
 object RuntimeApi {
-  private val base = "Lore"
+  private val base = "Lore".asVariable
+  private def named(name: String)(implicit base: TargetExpression) = base.prop(name)
 
   object types {
-    val base = s"${RuntimeApi.base}.types"
+    implicit val base = named("types")(RuntimeApi.base)
 
-    val any = s"$base.any"
-    val nothing = s"$base.nothing"
-    val real = s"$base.real"
-    val int = s"$base.int"
-    val boolean = s"$base.boolean"
-    val string = s"$base.string"
+    val any = named("any")
+    val nothing = named("nothing")
+    val real = named("real")
+    val int = named("int")
+    val boolean = named("boolean")
+    val string = named("string")
 
-    val variable = s"$base.variable"
+    def variable(name: String, lowerBound: TargetExpression, upperBound: TargetExpression) = {
+      named("variable").call(name.asLiteral, lowerBound, upperBound)
+    }
 
-    val isSubtype = s"$base.isSubtype"
-    val areEqual = s"$base.areEqual"
-    val fits = s"$base.fits"
-    val fitsMonomorphic = s"$base.fitsMonomorphic"
-    val fitsPolymorphic = s"$base.fitsPolymorphic"
-    val typeOf = s"$base.typeOf"
-    val isPolymorphic = s"$base.isPolymorphic"
-    val variables = s"$base.variables"
+    def fitsMonomorphic(t1: TargetExpression, t2: TargetExpression) = named("fitsMonomorphic").call(t1, t2)
+    def fitsPolymorphic(t1: TargetExpression, t2: TargetExpression, variables: TargetExpression = Target.Undefined) = named("fitsPolymorphic").call(t1, t2, variables)
+    def typeOf(value: TargetExpression) = named("typeOf").call(value)
 
     object introspection {
-      val base = s"${RuntimeApi.types.base}.introspection"
+      implicit val base = named("introspection")(RuntimeApi.types.base)
 
-      val initialize = s"${base}.initialize"
+      def initialize(traitType: TargetExpression) = named("initialize").call(traitType)
     }
-  }
-
-  object values {
-    val base = s"${RuntimeApi.base}.values"
-
-    val areEqual = s"$base.areEqual"
-    val isLessThan = s"$base.isLessThan"
-    val hash = s"$base.hash"
-    val loreToString = s"$base.toString" // TODO: This clashes with the JVM toString. Maybe we should rename it anyway?
   }
 
   object sums {
-    val base = s"${RuntimeApi.base}.sums"
+    implicit val base = named("sums")(RuntimeApi.base)
 
-    val tpe = s"$base.type"
-    val simplified = s"$base.simplified"
+    def tpe(types: Vector[TargetExpression]) = named("type").call(Target.List(types))
+    def simplified(types: Vector[TargetExpression]) = named("simplified").call(Target.List(types))
   }
 
   object intersections {
-    val base = s"${RuntimeApi.base}.intersections"
+    implicit val base = named("intersections")(RuntimeApi.base)
 
-    val tpe = s"$base.type"
-    val simplified = s"$base.simplified"
+    def tpe(types: Vector[TargetExpression]) = named("type").call(Target.List(types))
+    def simplified(types: Vector[TargetExpression]) = named("simplified").call(Target.List(types))
   }
 
   object tuples {
-    val base = s"${RuntimeApi.base}.tuples"
+    implicit val base = named("tuples")(RuntimeApi.base)
 
-    val tpe = s"$base.type"
-    val unhashedType = s"$base.unhashedType"
-    val unitType = s"$base.unitType"
-    val value = s"$base.value"
-    val unitValue = s"$base.unitValue"
-    val get = s"$base.get"
+    def tpe(types: TargetExpression): Target.Call = named("type").call(types)
+    def tpe(types: Vector[TargetExpression]): Target.Call = tpe(Target.List(types))
+    def unhashedType(types: TargetExpression): Target.Call = named("unhashedType").call(types)
+    def unhashedType(types: Vector[TargetExpression]): Target.Call = unhashedType(Target.List(types))
+    val unitType = named("unitType")
+    def value(elements: Vector[TargetExpression]) = named("value").call(Target.List(elements))
+    val unitValue = named("unitValue")
   }
 
   object lists {
-    val base = s"${RuntimeApi.base}.lists"
+    implicit val base = named("lists")(RuntimeApi.base)
 
-    val tpe = s"$base.type"
-    val value = s"$base.value"
-    val append = s"$base.append"
-    val get = s"$base.get"
-    val forEach = s"$base.forEach"
-    val length = s"$base.lenght"
+    def tpe(element: TargetExpression) = named("type").call(element)
+    def value(values: Vector[TargetExpression], tpe: TargetExpression) = named("value").call(Target.List(values), tpe)
+    def append(list: TargetExpression, element: TargetExpression, tpe: TargetExpression) = named("append").call(list, element, tpe)
   }
 
   object maps {
-    val base = s"${RuntimeApi.base}.maps"
+    implicit val base = named("maps")(RuntimeApi.base)
 
-    val tpe = s"$base.type"
-    val value = s"$base.value"
-    val set = s"$base.set"
-    val get = s"$base.get"
-    val contains = s"$base.contains"
-    val entries = s"$base.entries"
-    val length = s"$base.length"
+    def tpe(key: TargetExpression, value: TargetExpression) = named("type").call(key, value)
+    def value(entries: Vector[TargetExpression], tpe: TargetExpression, hash: TargetExpression, equals: TargetExpression) = named("value").call(Target.List(entries), tpe, hash, equals)
+    def entries(map: TargetExpression) = named("entries").call(map)
   }
 
   object shapes {
-    val base = s"${RuntimeApi.base}.shapes"
+    implicit val base = named("shapes")(RuntimeApi.base)
 
-    val tpe = s"$base.type"
-    val combine = s"$base.combine"
+    def tpe(propertyTypes: TargetExpression) = named("type").call(propertyTypes)
   }
 
   object traits {
-    val base = s"${RuntimeApi.base}.traits"
+    implicit val base = named("traits")(RuntimeApi.base)
 
-    val schema = s"$base.schema"
-    val tpe = s"$base.type"
+    def schema(name: String, supertraits: Vector[TargetExpression], inheritedShapeType: TargetExpression) = named("schema").call(name.asLiteral, Target.List(supertraits), inheritedShapeType)
+    def tpe(schema: TargetExpression) = named("type").call(schema)
   }
 
   object structs {
-    val base = s"${RuntimeApi.base}.structs"
+    implicit val base = named("structs")(RuntimeApi.base)
 
-    val schema = s"$base.schema"
-    val tpe = s"$base.type"
-    val value = s"$base.value"
-    val getPropertyType = s"$base.getPropertyType"
+    def schema(name: String, supertraits: Vector[TargetExpression], propertyTypes: TargetExpression) = named("schema").call(name.asLiteral, Target.List(supertraits), propertyTypes)
+    def tpe(schema: TargetExpression, isArchetype: TargetExpression, propertyTypes: TargetExpression) = named("type").call(schema, isArchetype, propertyTypes)
+    def value(properties: TargetExpression, tpe: TargetExpression) = named("value").call(properties, tpe)
   }
 
   object utils {
-    val base = s"${RuntimeApi.base}.utils"
+    implicit val base = named("utils")(RuntimeApi.base)
 
     object tinyMap {
-      val base = s"${RuntimeApi.utils.base}.tinyMap"
+      implicit val base = named("tinyMap")(RuntimeApi.utils.base)
 
-      val get = s"$base.get"
-      val add = s"$base.add"
-    }
-
-    object tinySet {
-      val base = s"${RuntimeApi.utils.base}.tinySet"
-
-      val has = s"$base.has"
-      val add = s"$base.add"
-    }
-
-    object hashMap {
-      val base = s"${RuntimeApi.utils.base}.hashMap"
-
-      val create = s"$base.create"
+      def get(map: TargetExpression, key: TargetExpression) = named("get").call(map, key)
     }
 
     object typeMap {
-      val base = s"${RuntimeApi.utils.base}.typeMap"
+      implicit val base = named("typeMap")(RuntimeApi.utils.base)
 
-      val create = s"$base.create"
+      def create() = named("create").call()
     }
 
     object `lazy` {
-      val base = s"${RuntimeApi.utils.base}.lazy"
+      implicit val base = named("lazy")(RuntimeApi.utils.base)
 
-      val of = s"$base.of"
+      def of(value: TargetExpression) = named("of").call(Target.Lambda(Vector.empty, value))
     }
 
     object error {
-      val base = s"${RuntimeApi.utils.base}.error"
+      implicit val base = named("error")(RuntimeApi.utils.base)
 
-      val ambiguousCall = s"$base.ambiguousCall"
-      val emptyFit = s"$base.emptyFit"
-      val missingImplementation = s"$base.missingImplementation"
+      def ambiguousCall(functionName: String, inputType: TargetExpression) = named("ambiguousCall").call(functionName.asLiteral, inputType)
+      def emptyFit(functionName: String, inputType: TargetExpression) = named("emptyFit").call(functionName.asLiteral, inputType)
+      def missingImplementation(functionName: String, parameterType: TargetExpression, argumentType: TargetExpression) = named("missingImplementation").call(functionName.asLiteral, parameterType, argumentType)
     }
+  }
+
+  object io {
+    implicit val base = named("io")(RuntimeApi.base)
+
+    def println(value: TargetExpression) = named("println").call(value)
   }
 }

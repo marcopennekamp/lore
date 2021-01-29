@@ -16,6 +16,7 @@ export const TinyMap = {
     }
     return undefined
   },
+
   set<A, B>(array: TinyMap<A, B>, key: A, value: B): void {
     // Find the key and overwrite the value.
     for (let i = 0; i < array.length; i += 1) {

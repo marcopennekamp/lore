@@ -23,6 +23,10 @@ export const Map = {
 
   /**
    * Creates a map from the initial array of entries with the given hash and equals functions.
+   *
+   * The `hash` and `equals` arguments are passed to the create function of the map and represent the hash and equals
+   * methods used by the underlying hash map. We cannot reference these from the runtime because they are declared in
+   * the Lore program!
    */
   value<K, V>(entries: Array<[K, V]>, type: MapType, hash: HashFunction<K>, equals: EqualsFunction<K>): MapValue<K, V> {
     const store = new HashMap<K, V>(hash, equals)

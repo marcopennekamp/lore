@@ -15,14 +15,4 @@ object TypeExtensions {
     }
   }
 
-  implicit class TypeVariableListExtension(variables: Iterable[TypeVariable]) {
-    /**
-      * Orders the type variables in their order of declaration so that depending variables follow their
-      * dependencies.
-      */
-    def declarationOrder: Vector[TypeVariable] = {
-      variables.toVector.sortBy(_.declarationOrder)
-    }
-  }
-
 }

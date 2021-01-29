@@ -1,261 +1,165 @@
 package lore.compiler.phases.transpilation
 
-import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{CompilationException, Error}
-import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.RuntimeTypeVariables
-import lore.compiler.phases.transpilation.Transpilation.Transpilation
-import lore.compiler.phases.transpilation.TranspiledChunk.{JsCode, JsExpr}
+import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.TranspiledTypeVariables
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.functions.{DynamicCallTarget, FunctionInstance}
-import lore.compiler.semantics.structures.StructPropertyDefinition
+import lore.compiler.target.TargetDsl._
+import lore.compiler.target.{Target, TargetOperator}
 import lore.compiler.types._
 
-case class UnsupportedTranspilation(expression: Expression) extends Error(expression) {
-  override def message = s"The Lore compiler doesn't yet support the transpilation of ${expression.getClass.getSimpleName}."
-}
-
 private[transpilation] class ExpressionTranspilationVisitor()(
-  implicit registry: Registry, runtimeTypeVariables: RuntimeTypeVariables
-) extends ExpressionVisitor[TranspiledChunk] {
+  implicit registry: Registry, runtimeTypeVariables: TranspiledTypeVariables
+) extends ExpressionVisitor[Chunk, Chunk] {
   import Expression._
 
   private implicit val nameProvider: TemporaryNameProvider = new TemporaryNameProvider
 
-  override def visit(expression: Return)(value: TranspiledChunk): Transpilation = {
-    val ret = s"return ${value.expression.get};"
-    Transpilation.chunk(Vector(value.statements, ret), RuntimeApi.tuples.unitValue)
+  override def visit(expression: Return)(value: Chunk): Chunk = {
+    Chunk(value.statements :+ Target.Return(value.expression), RuntimeApi.tuples.unitValue)
   }
 
-  override def visit(expression: VariableDeclaration)(value: TranspiledChunk): Transpilation = {
-    val variable = expression.variable
-    val modifier = if (variable.isMutable) "let" else "const"
-    val code = s"$modifier ${variable.transpiledName} = ${value.expression.get};"
-    Transpilation.statements(value.statements, code)
+  override def visit(expression: VariableDeclaration)(value: Chunk): Chunk = {
+    value.flatMap { value =>
+      Chunk.unit(Target.VariableDeclaration(expression.variable.transpiledName, value, expression.variable.isMutable))
+    }
   }
 
-  override def visit(expression: Assignment)(target: TranspiledChunk, value: TranspiledChunk): Transpilation = {
-    Transpilation.binary(target, value, "=", wrap = false)
+  override def visit(expression: Assignment)(target: Chunk, value: Chunk): Chunk = {
+    Chunk.combine(target, value) { case Vector(left, right) => Chunk.unit(left.assign(right)) }
   }
 
-  override def visit(expression: Block)(expressions: Vector[TranspiledChunk]): Transpilation = Transpilation.sequencedIdentity(expressions)
+  override def visit(expression: Block)(expressions: Vector[Chunk]): Chunk = Chunk.sequence(expressions)
 
-  override def visit(expression: VariableAccess): Transpilation = Transpilation.expression(expression.variable.transpiledName.name)
+  override def visit(expression: VariableAccess): Chunk = Chunk.expression(expression.variable.transpiledName.asVariable)
 
-  override def visit(expression: MemberAccess)(instance: TranspiledChunk): Transpilation = {
-    instance.mapExpression(instance => s"$instance.${expression.member.name}").compiled
+  override def visit(expression: MemberAccess)(instance: Chunk): Chunk = {
+    instance.mapExpression(_.prop(expression.member.name))
   }
 
-  override def visit(literal: Literal): Transpilation = literal.tpe match {
-    case BasicType.Real | BasicType.Int | BasicType.Boolean => Transpilation.expression(literal.value.toString)
-    case BasicType.String =>
-      // TODO: Escaped characters need to be handled correctly, which they currently are not. For example \'.
-      Transpilation.expression(s"'${literal.value}'")
+  override def visit(literal: Literal): Chunk = {
+    val result = literal.tpe match {
+      case BasicType.Real => Target.RealLiteral(literal.value.asInstanceOf[Double])
+      case BasicType.Int => Target.IntLiteral(literal.value.asInstanceOf[Long])
+      case BasicType.Boolean => Target.BooleanLiteral(literal.value.asInstanceOf[Boolean])
+      case BasicType.String => Target.StringLiteral(literal.value.asInstanceOf[String])
+    }
+    Chunk.expression(result)
   }
 
-  override def visit(expression: Tuple)(values: Vector[TranspiledChunk]): Transpilation = {
+  override def visit(expression: Tuple)(values: Vector[Chunk]): Chunk = {
     if (expression.tpe == ProductType.UnitType) {
-      Transpilation.expression(RuntimeApi.tuples.unitValue)
+      Chunk.expression(RuntimeApi.tuples.unitValue)
     } else {
-      Transpilation.combined(values) { values =>
-        s"${RuntimeApi.tuples.value}([${values.mkString(",")}])"
+      Chunk.combine(values) { values =>
+        Chunk.expression(RuntimeApi.tuples.value(values))
       }
     }
   }
 
-  override def visit(expression: ListConstruction)(values: Vector[TranspiledChunk]): Transpilation = {
-    transpileArrayBasedValue(expression, RuntimeApi.lists.value, values)
-  }
-
-  override def visit(expression: MapConstruction)(entries: Vector[(TranspiledChunk, TranspiledChunk)]): Transpilation = {
-    val entryChunks = entries.map { case (keyChunk, valueChunk) =>
-      TranspiledChunk.combined(Vector(keyChunk, valueChunk)) {
-        case Vector(keyExpr, valueExpr) => s"[$keyExpr, $valueExpr]"
-      }
+  override def visit(expression: ListConstruction)(values: Vector[Chunk]): Chunk = {
+    val tpe = RuntimeTypeTranspiler.transpileSubstitute(expression.tpe)
+    Chunk.combine(values) { values =>
+      Chunk.expression(RuntimeApi.lists.value(values, tpe))
     }
-    // The extra arguments are passed to the create function of the map and represent the hash and equals methods used
-    // by the hash map. We cannot reference these from the runtime because we can't import them there!
-    transpileArrayBasedValue(expression, RuntimeApi.maps.value, entryChunks, extra = "hash, areEqual,")
   }
 
-  override def visit(expression: Instantiation)(arguments: Vector[TranspiledChunk]): Transpilation = {
-    Transpilation.combined(arguments) { argumentJsExprs =>
+  override def visit(expression: MapConstruction)(entryChunks: Vector[(Chunk, Chunk)]): Chunk = {
+    val tpe = RuntimeTypeTranspiler.transpileSubstitute(expression.tpe)
+    val entries = entryChunks.map { case (key, value) =>
+      Chunk.combine(key, value)(elements => Chunk.expression(Target.List(elements)))
+    }
+
+    Chunk.combine(entries) { entries =>
+      Chunk.expression(RuntimeApi.maps.value(entries, tpe, "hash".asVariable, "areEqual".asVariable))
+    }
+  }
+
+  override def visit(expression: Instantiation)(arguments: Vector[Chunk]): Chunk = {
+    Chunk.combine(arguments) { values =>
       // The argument passed to the instantiation function at run-time is an object with the required properties
       // already set. We're building this object here.
-      val entries = expression.arguments.map(_.property).zip(argumentJsExprs).map { case (property, jsExpr) =>
-        s"${property.name}: $jsExpr"
-      }
-      val argument = s"{ ${entries.mkString(", ")} }"
-      val varInstantiate = TranspiledName.instantiate(expression.struct.tpe)
-      s"$varInstantiate(${argument})"
+      val properties = Target.Dictionary(
+        expression.arguments.map(_.property).zip(values).map { case (property, value) =>
+          Target.Property(property.name.asName, value)
+        }
+      )
+      Chunk.expression(TranspiledName.instantiate(expression.struct.tpe).asVariable.call(properties))
     }
   }
 
-  override def visit(expression: UnaryOperation)(value: TranspiledChunk): Transpilation = {
-    val operatorString = expression.operator match {
-      case UnaryOperator.Negation => "-"
-      case UnaryOperator.LogicalNot => "!"
+  override def visit(expression: UnaryOperation)(value: Chunk): Chunk = {
+    val operator = expression.operator match {
+      case UnaryOperator.Negation => TargetOperator.Negation
+      case UnaryOperator.LogicalNot => TargetOperator.Not
     }
-    value.mapExpression(e => s"$operatorString$e").compiled
+    Chunk.operation(operator, value)
   }
 
-  override def visit(expression: BinaryOperation)(left: TranspiledChunk, right: TranspiledChunk): Transpilation = {
+  override def visit(expression: BinaryOperation)(left: Chunk, right: Chunk): Chunk = {
     // Filter those cases first that can't simply be translated to a binary Javascript operator.
     expression.operator match {
       case BinaryOperator.Append => transpileListAppends(left, right, expression.tpe)
       case _ =>
-        val operatorString = expression.operator match {
-          case BinaryOperator.Addition => "+"
-          case BinaryOperator.Subtraction => "-"
-          case BinaryOperator.Multiplication => "*"
-          case BinaryOperator.Division => "/"
-          // All the complex cases have been filtered already and we can simply apply Javascript comparison.
-          case BinaryOperator.Equals => "==="
-          case BinaryOperator.LessThan => "<"
-          case BinaryOperator.LessThanEquals => "<="
+        val operator = expression.operator match {
+          case BinaryOperator.Addition => TargetOperator.Addition
+          case BinaryOperator.Subtraction => TargetOperator.Subtraction
+          case BinaryOperator.Multiplication => TargetOperator.Multiplication
+          case BinaryOperator.Division => TargetOperator.Division
+          // All the complex cases have been filtered already and we can apply simple comparison.
+          case BinaryOperator.Equals => TargetOperator.Equals
+          case BinaryOperator.LessThan => TargetOperator.LessThan
+          case BinaryOperator.LessThanEquals => TargetOperator.LessThanEquals
         }
-        Transpilation.binary(left, right, operatorString)
+        Chunk.operation(operator, left, right)
     }
   }
 
-  override def visit(expression: XaryOperation)(operands: Vector[TranspiledChunk]): Transpilation = {
-    val operatorString = expression.operator match {
-      case XaryOperator.Conjunction => "&&"
-      case XaryOperator.Disjunction => "||"
-      case XaryOperator.Concatenation => "+"
-    }
-    Transpilation.operatorChain(operands, operatorString)
-  }
-
-  override def visit(expression: Call)(arguments: Vector[TranspiledChunk]): Transpilation = {
-    expression.target match {
-      case _: FunctionInstance | _: DynamicCallTarget => Transpilation.combined(arguments) { expressions =>
-        s"${expression.target.name}(${expressions.mkString(", ")})"
-      }
-    }
-  }
-
-  override def visit(expression: IfElse)(condition: TranspiledChunk, onTrue: TranspiledChunk, onFalse: TranspiledChunk): Transpilation = {
-    // TODO: If the result is Unit there should be no varResult and no expression result.
-    val varResult = nameProvider.createName()
-    val code =
-      s"""${condition.statements}
-         |let $varResult;
-         |if (${condition.expression.get}) {
-         |  ${onTrue.statements}
-         |  ${onTrue.expression.map(e => s"$varResult = $e;").getOrElse("")}
-         |} else {
-         |  ${onFalse.statements}
-         |  ${onFalse.expression.map(e => s"$varResult = $e;").getOrElse("")}
-         |}
-         |""".stripMargin
-    Transpilation.chunk(code, varResult.name)
-  }
-
-  override def visit(loop: WhileLoop)(condition: TranspiledChunk, body: TranspiledChunk): Transpilation = {
-    val loopShell = (bodyCode: String) => {
-      s"""${condition.statements}
-         |while (${condition.expression.get}) {
-         |  $bodyCode
-         |}
-         |""".stripMargin
-    }
-    transpileLoop(loop, loopShell, body)
-  }
-
-  /**
-    * Transpile a for-loop. We use direct iteration for this instead of a more succinct forEach because we need to
-    * be able to return from within the loop.
-    */
-  override def visit(loop: ForLoop)(extractors: Vector[TranspiledChunk], body: TranspiledChunk): Transpilation = {
-    val loopShell = loop.extractors.zip(extractors).map {
-      case (extractor, chunk) =>
-        (inner: String) => extractor.collection.tpe match {
-          case ListType(_) =>
-            val varList = nameProvider.createName()
-            s"""${chunk.statements}
-               |const $varList = ${chunk.expression.get};
-               |for (let i = 0; i < $varList.array.length; i += 1) {
-               |  const ${extractor.variable.transpiledName} = $varList.array[i];
-               |  $inner
-               |}""".stripMargin
-          case MapType(_, _) =>
-            val varIterator = nameProvider.createName()
-            val varResult = nameProvider.createName()
-            s"""${chunk.statements}
-               |const $varIterator = ${RuntimeApi.maps.entries}(${chunk.expression.get});
-               |let $varResult = $varIterator.next();
-               |while(!$varResult.done) {
-               |  const ${extractor.variable.transpiledName} = $varResult.value;
-               |  $inner
-               |  $varResult = $varIterator.next();
-               |}""".stripMargin
-          case _ => throw CompilationException("Currently, only lists and maps can be used as collections in a for loop.")
-        }
-    }.foldRight(identity: String => String) { case (enclose, function) => function.andThen(enclose) }
-    transpileLoop(loop, loopShell, body)
-  }
-
-  /**
-    * Transpiles a loop, combining the scaffolding of loopShell with a correctly transpiled body.
-    */
-  private def transpileLoop(loop: Loop, loopShell: JsCode => JsCode, body: TranspiledChunk): Transpilation = {
-    // TODO: We also need to ignore the resulting list if it isn't used as an expression.
-    // The loop's inferred type is Unit if its body type is Unit, so this checks out.
-    val ignoreResult = loop.tpe == ProductType.UnitType
-
-    def loopCode(varResult: Option[TranspiledName], resultType: JsExpr = ""): String = {
-      val statements = s"${body.statements};"
-      val bodyCode = body.expression.map { e =>
-        varResult.map { v =>
-          s"""$statements
-             |$v = ${RuntimeApi.lists.append}($v, $e, $resultType);
-             |""".stripMargin
-        } getOrElse {
-          s"""$statements
-             |$e;""".stripMargin
-        }
-      } getOrElse statements
-      loopShell(bodyCode)
-    }
-
-    if (ignoreResult) {
-      Transpilation.statements(loopCode(None))
-    } else {
-      val varResult = nameProvider.createName()
-      val resultType = RuntimeTypeTranspiler.transpileSubstitute(loop.tpe)
-      val resultVarDeclaration =
-        s"""let $varResult = ${RuntimeApi.lists.value}(
-           |  [],
-           |  $resultType,
-           |);""".stripMargin
-      Transpilation.chunk(Vector(resultVarDeclaration, loopCode(Some(varResult), resultType)), varResult.name)
-    }
-  }
-
-  /**
-    * Transpiles a xary-constructed value that is created using an API function wrapped around an array of parts.
-    */
-  private def transpileArrayBasedValue(
-    expression: Expression, createApiFunction: String, values: Vector[TranspiledChunk], extra: String = "",
-  ): Transpilation = {
-    val typeExpr = RuntimeTypeTranspiler.transpileSubstitute(expression.tpe)
-    Transpilation.combined(values) { valueExprs =>
-      s"""$createApiFunction(
-         |  [${valueExprs.mkString(",")}],
-         |  $typeExpr,
-         |  $extra
-         |)""".stripMargin
-    }
-  }
-
-  private def transpileListAppends(list: TranspiledChunk, element: TranspiledChunk, resultType: Type): Transpilation = {
+  private def transpileListAppends(list: Chunk, element: Chunk, resultType: Type): Chunk = {
     // TODO: We could also translate the append operation to a dynamic function call in the FunctionTransformationVisitor.
     //       However, we will have to support passing types as expressions, at least for the compiler, because the
     //       last argument to 'append' has to be the new list type.
-    val typeExpr = RuntimeTypeTranspiler.transpileSubstitute(resultType)
-    Transpilation.combined(Vector(list, element)) { case Vector(listExpr, elementExpr) =>
-      s"${RuntimeApi.lists.append}($listExpr, $elementExpr, $typeExpr)"
+    val tpe = RuntimeTypeTranspiler.transpileSubstitute(resultType)
+    Chunk.combine(list, element) { case Vector(list, element) => Chunk.expression(RuntimeApi.lists.append(list, element, tpe)) }
+  }
+
+  override def visit(expression: XaryOperation)(operands: Vector[Chunk]): Chunk = {
+    val operator = expression.operator match {
+      case XaryOperator.Conjunction => TargetOperator.And
+      case XaryOperator.Disjunction => TargetOperator.Or
+      case XaryOperator.Concatenation => TargetOperator.Concat
+    }
+    Chunk.operation(operator, operands: _*)
+  }
+
+  override def visit(expression: Call)(arguments: Vector[Chunk]): Chunk = {
+    expression.target match {
+      case _: FunctionInstance | _: DynamicCallTarget =>
+        Chunk.combine(arguments) { arguments => Chunk.expression(Target.Call(expression.target.name.asVariable, arguments)) }
     }
   }
+
+  override def visit(expression: IfElse)(condition: Chunk, onTrue: Chunk, onFalse: Chunk): Chunk = {
+    // If the result type of the if-else is unit, we can ignore the results of the respective then and else blocks.
+    val varResult = if (expression.tpe != ProductType.UnitType) Some(nameProvider.createName().asVariable) else None
+    val resultDeclaration = varResult.map(_.declareMutableAs(Target.Undefined))
+
+    def asBlock(chunk: Chunk): Target.Block = {
+      // If there is a result variable, we want to assign the chunk's expression to the variable. Otherwise, we still
+      // want the expression to execute to preserve potential side effects! (But only if it's not a unit value.)
+      val lastStatement = varResult.map(_.assign(chunk.expression)).orElse(chunk.meaningfulExpression)
+      Target.Block(chunk.statements ++ lastStatement.toVector)
+    }
+
+    val ifElse = Target.IfElse(condition.expression, asBlock(onTrue), asBlock(onFalse))
+
+    Chunk(
+      condition.statements ++ resultDeclaration.toVector ++ Vector(ifElse),
+      varResult.getOrElse(RuntimeApi.tuples.unitValue)
+    )
+  }
+
+  override def visit(loop: WhileLoop)(condition: Chunk, body: Chunk): Chunk = LoopTranspiler().transpile(loop, condition, body)
+
+  override def visit(loop: ForLoop)(collections: Vector[Chunk], body: Chunk): Chunk = LoopTranspiler().transpile(loop, collections, body)
 }

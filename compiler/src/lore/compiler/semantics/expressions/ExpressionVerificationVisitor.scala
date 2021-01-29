@@ -2,7 +2,7 @@ package lore.compiler.semantics.expressions
 
 import lore.compiler.core.Compilation.Verification
 
-trait ExpressionVerificationVisitor extends ExpressionVisitor[Unit] {
+trait ExpressionVerificationVisitor extends ExpressionVisitor[Unit, Verification] {
   /**
     * Verifies any given expression. The default implementation succeeds.
     */
