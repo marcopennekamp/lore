@@ -13,6 +13,7 @@ case class FunctionSignature(
 ) extends Positioned {
   val inputType: ProductType = ProductType(parameters.map(_.tpe))
   val isPolymorphic: Boolean = Type.isPolymorphic(inputType)
+  val isMonomorphic: Boolean = !isPolymorphic
   val arity: Int = parameters.size
   override def toString: String = s"$name$inputType: $outputType"
   override val hashCode: Int = MurmurHash3.productHash((name, inputType, outputType))

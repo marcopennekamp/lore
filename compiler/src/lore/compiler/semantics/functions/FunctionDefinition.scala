@@ -27,6 +27,7 @@ class FunctionDefinition(
   val name: String = signature.name
   val isAbstract: Boolean = bodyNode.isEmpty
   val isPolymorphic: Boolean = signature.isPolymorphic
+  val isMonomorphic: Boolean = signature.isMonomorphic
 
   /**
     * This is a variable because it may be transformed during the course of the compilation.
