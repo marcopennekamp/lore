@@ -16,15 +16,6 @@ case class MultiFunctionProperties(mf: MultiFunctionDefinition) {
   lazy val isSingleFunction: Boolean = mf.functions.length == 1
 
   /**
-    * Whether this multi-function consists of a single function that also happens to have as its input type
-    * the unit type. This vastly simplifies our handling of argument type gathering.
-    *
-    * TODO: Use this to get rid of fits calls entirely and just check the number of arguments coming in.
-    *       That is, if args.length === 0, call the function, otherwise throw an emptyFit error.
-    */
-  lazy val isSingleUnitFunction: Boolean = isSingleFunction && mf.functions.head.signature.inputType == ProductType.UnitType
-
-  /**
     * All possible arities of the functions.
     */
   lazy val arities: Set[Int] = mf.functions.map(_.signature.arity).toSet

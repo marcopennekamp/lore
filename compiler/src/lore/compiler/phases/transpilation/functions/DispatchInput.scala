@@ -59,11 +59,6 @@ class DispatchInput(mf: MultiFunctionDefinition, properties: MultiFunctionProper
     * Transpiles the code that gathers the argument types into a product type.
     */
   def gatherArgumentTypes(): Vector[TargetStatement] = {
-    // Single unit functions are the best.
-    if (properties.isSingleUnitFunction) {
-      return Vector(varArgumentType.declareAs(RuntimeApi.tuples.unitType))
-    }
-
     // If we can unpack the argument tuple, the generated code is very simple.
     if (properties.mayUnpackArgumentTuple) {
       return Vector(varArgumentType.declareAs(RuntimeApi.types.typeOf(parameters.head.asVariable)))
