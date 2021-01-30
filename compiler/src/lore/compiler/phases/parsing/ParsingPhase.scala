@@ -1,15 +1,13 @@
 package lore.compiler.phases.parsing
 
+import lore.compiler.core.{Compilation, Fragment}
 import lore.compiler.syntax.DeclNode
-import lore.compiler.core.{Compilation, Fragment, Phase}
 
-class ParsingPhase(sources: Vector[Fragment]) extends Phase[Vector[DeclNode]] {
-  override lazy val result: Compilation[Vector[DeclNode]] = parseAll()
-
+object ParsingPhase {
   /**
-    * Parses all fragments or fails with parsing errors.
+    * Parses all fragments, resulting in declaration nodes or failing with parsing errors.
     */
-  def parseAll(): Compilation[Vector[DeclNode]] = {
+  def process(sources: Vector[Fragment]): Compilation[Vector[DeclNode]] = {
     sources.map { source =>
       val parser = new FragmentParser()(source)
       parser.parsed

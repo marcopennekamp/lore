@@ -1,14 +1,14 @@
 package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
-import lore.compiler.core.{Compilation, CompilationException, Error, Position}
+import lore.compiler.core.{Compilation, CompilationException, Error, Errors, Position, Result}
 import lore.compiler.phases.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
 import lore.compiler.semantics.{LocalVariable, Registry, TypeScope, VariableScope}
 import lore.compiler.syntax.visitor.StmtVisitor
-import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode}
+import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode, TypeExprNode}
 import lore.compiler.types._
 
 private[transformation] class ExpressionTransformationVisitor(
@@ -35,19 +35,11 @@ private[transformation] class ExpressionTransformationVisitor(
   import StmtNode._
   import TopLevelExprNode._
 
-  // TODO: Ensure that loops with a Unit expression body cannot be used as an expression, since Unit loops
-  //       are optimized by the transpiler.
-
   val context = new ExpressionTransformationContext(variableScope)
   implicit val typeScopeImplicit: TypeScope = typeScope
 
-  // TODO: Move more code to StatementVerification.
-
   override def visitLeaf(node: LeafNode): Compilation[Expression] = node match {
     case VariableNode(name, _) =>
-      // TODO: We will also need access to global variables if we introduce those into Lore.
-      // TODO: Once we treat functions as values, we will have to make this even more complicated by also
-      //       considering function names.
       implicit val position: Position = node.position
       context.currentScope.resolve(name).map(Expression.VariableAccess(_, position))
 
@@ -67,23 +59,32 @@ private[transformation] class ExpressionTransformationVisitor(
     case ReturnNode(_, position) =>
       ExpressionVerification.hasSubtype(expression, expectedType).map(_ => Expression.Return(expression, position))
 
-    case VariableDeclarationNode(name, isMutable, maybeTypeNode, _, _) =>
-      // TODO: Add a variable with type Any (if inferred) if the assignment's type check goes wrong. Currently,
-      //       if a variable declaration is incorrect, subsequent uses of the variable also lead to a confusing
-      //       "this scope does not know entry x" error. The entry should be known. It's type is just wrong for
-      //       the time being.
+    case VariableDeclarationNode(name, isMutable, maybeTypeExpr, _, _) =>
       implicit val position: Position = node.position
-      for {
-        // Either infer the type from the value or, if a type has been explicitly declared, check that the
-        // value adheres to the type bounds.
-        tpe <- maybeTypeNode.map { typeNode =>
-          TypeExpressionEvaluator.evaluate(typeNode).flatMap { tpe =>
-            ExpressionVerification.hasSubtype(expression, tpe).map(_ => tpe)
-          }
-        }.toCompiledOption.map(_.getOrElse(expression.tpe))
-        variable = LocalVariable(name, tpe, isMutable)
-        _ <- context.currentScope.register(variable)
-      } yield Expression.VariableDeclaration(variable, expression, position)
+
+      // Either infer the type from the value or, if a type has been explicitly declared, check that the value adheres
+      // to the type bounds.
+      val typeAnnotation = maybeTypeExpr.map(TypeExpressionEvaluator.evaluate).toCompiledOption
+      val inferredType = typeAnnotation.flatMap {
+        case Some(tpe) => ExpressionVerification.hasSubtype(expression, tpe).map(_ => tpe)
+        case None => expression.tpe.compiled
+      }
+
+      inferredType match {
+        case Result(_, _) => inferredType.map { tpe =>
+          val variable = LocalVariable(name, tpe, isMutable)
+          context.currentScope.register(variable)
+          Expression.VariableDeclaration(variable, expression, position)
+        }
+        case compilation@Errors(_, _) =>
+          // Add a variable with the correct type if the assignment's type check goes wrong. Currently, if a variable
+          // declaration is incorrect, subsequent uses of the variable also lead to a confusing "this scope does not
+          // know entry x" error. The entry should be known. Its type or expression is just wrong for the time being.
+          context.currentScope.register(
+            LocalVariable(name, typeAnnotation.map(_.getOrElse(expression.tpe)).getOrElse(BasicType.Any), isMutable)
+          )
+          compilation.asInstanceOf[Errors[Expression]]
+      }
 
     case NegationNode(_, position) =>
       ExpressionVerification.isNumeric(expression).map(_ => Expression.UnaryOperation(UnaryOperator.Negation, expression, expression.tpe, position))
@@ -147,7 +148,6 @@ private[transformation] class ExpressionTransformationVisitor(
           // types, which provide a sensible default for complex list construction.
           val combinedType = LeastUpperBound.leastUpperBound(elementType, right.tpe)
           Expression.BinaryOperation(BinaryOperator.Append, left, right, ListType(combinedType), position).compiled
-        // TODO: Implement append for maps?
         case _ => Compilation.fail(ExpressionVerification.IllegallyTypedExpression(left, Vector(ListType(BasicType.Any))))
       }
 
@@ -170,7 +170,6 @@ private[transformation] class ExpressionTransformationVisitor(
       val condition = argument1
       val onTrue = argument2
       val onFalse = argument3
-      // TODO: Warn if the result type is Any?
       ExpressionVerification.isBoolean(condition).map { _ =>
         val tpe = LeastUpperBound.leastUpperBound(onTrue.tpe, onFalse.tpe)
         Expression.IfElse(condition, onTrue, onFalse, tpe, position)
@@ -210,10 +209,6 @@ private[transformation] class ExpressionTransformationVisitor(
       StatementTransformation.transformBooleanOperation(XaryOperator.Disjunction, expressions, position)
 
     case ConcatenationNode(_, position) =>
-      // TODO: We actually have to ensure that the current context has a registered function "toString".
-      // TODO: Do we HAVE to hard-code the function name? Maybe this could be specified as a compiler option? Or
-      //       am I overthinking this. The idea was, from the start, to make pyramid an "optional" drop-in. So this
-      //       feels like one step of coupling the the compiler and pyramid together. We'll have to see.
       for {
         transformedExpressions <- expressions.map { expression =>
           if (expression.tpe == BasicType.String) expression.compiled

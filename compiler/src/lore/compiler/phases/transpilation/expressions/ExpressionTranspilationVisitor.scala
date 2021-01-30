@@ -117,9 +117,6 @@ private[transpilation] class ExpressionTranspilationVisitor()(
   }
 
   private def transpileListAppends(list: Chunk, element: Chunk, resultType: Type): Chunk = {
-    // TODO: We could also translate the append operation to a dynamic function call in the FunctionTransformationVisitor.
-    //       However, we will have to support passing types as expressions, at least for the compiler, because the
-    //       last argument to 'append' has to be the new list type.
     val tpe = TypeTranspiler.transpileSubstitute(resultType)
     Chunk.combine(list, element) { case Vector(list, element) => Chunk.expression(RuntimeApi.lists.append(list, element, tpe)) }
   }

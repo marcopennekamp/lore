@@ -13,8 +13,6 @@ import lore.compiler.semantics.Registry
   */
 class LoreCompiler(val sources: Vector[Fragment], val options: CompilerOptions) {
 
-  // TODO: We don't need the phases to be classes. They're just functions.
-
   /**
     * Compiles the given sources, either resulting in a list of errors and warnings or a completed compilation.
     */
@@ -22,13 +20,13 @@ class LoreCompiler(val sources: Vector[Fragment], val options: CompilerOptions) 
     implicit val options: CompilerOptions = this.options
     for {
       // Phase 1: Parse source files into a list of fragments.
-      fragmentsWithDeclarations <- timed("Parsing", new ParsingPhase(sources).result)
+      fragmentsWithDeclarations <- timed("Parsing", ParsingPhase.process(sources))
       // Phase 2: Resolve declarations using DeclarationResolver and build the Registry.
-      registry <- timed("Resolution", new ResolutionPhase(fragmentsWithDeclarations).result)
+      registry <- timed("Resolution", ResolutionPhase.process(fragmentsWithDeclarations))
       // Phase 3: Check constraints and ascribe types.
-      _ <- timed("Transformation", new TransformationPhase()(registry).result)
+      _ <- timed("Transformation", TransformationPhase.process(registry))
       // Phase 4: Transpile the Lore program to our target representation.
-      target <- timed("Transpilation", new TranspilationPhase()(options, registry).result)
+      target <- timed("Transpilation", TranspilationPhase.process(options, registry))
       // Phase 5: Generate Javascript code from the target representation.
       code <- timed("Generation", GenerationPhase.process(target))
     } yield (registry, code)

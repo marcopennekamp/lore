@@ -18,10 +18,16 @@
 - Finish transformation and transpilation of the current MVL constructs. (WHICH ONES ARE THESE?)
   - Ranges still need to be supported, as they are already part of the specification.
 - Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.
-- Allow trailing commas.
+- Implement an append operation for maps. In general, we will need to apply the same run-time typing considerations to maps.
 - Rethink properties: I don't like how shape properties are orthogonal to multi-functions right now. To use a shape, one is forced to ultimately give a property to an implementing struct. It would be much superior if properties could be declared "virtually", allowing traits to implement properties via some sort of function (perhaps even with dispatch on the accessed type). This feature should also simultaneously solve the question of "virtual/computed properties" posed in the geometry.lore example.
   - This would effectively mean that property types are always changeable and would either bar these kinds of properties to be open or would mean that we'd have to (a) rebuild the type each time the struct is used in dispatch or (b) disable the dispatch cache for multi-functions with shape types. Disallowing "virtual" properties to be open seems like an acceptable compromise, as the other options are far too detrimental on performance.
 - A rudimentary form of tree shaking to avoid transpiling functions that aren't used by any other function. This unfortunately requires specifying an entry point. Maybe we could perform tree shaking if such entry points are specified at all.
+
+##### Syntax
+
+- The single & and | style feels quite weird when actually using it. Maybe we should just introduce operators && and || or "and" and "or". Similarly with the not operator. And I don't quite like =/= either, in hindsight.
+- Allow question marks in identifiers. I like how Clojure approaches booleans and this would fit nicely into Lore, I hope. Example: `isSuccessful` would become `successful?`.
+- Allow trailing commas.
 
 ##### Type System
 
@@ -34,6 +40,19 @@
 - Support compiling files using a pattern instead of just plain filenames.
 - Support an output file other than `lore-program.js`.
 - Maybe require file extensions after all. It feels weird to type "abc" into the CLI and it becomes "abc.lore".
+
+##### Error Reporting
+
+- Replace assertions with proper CompilationExceptions.
+- Add positions to CompilationExceptions.
+- Add names to errors (similar to Typescript) so that programmers can quickly google/search for Lore errors.
+- Transformation phase: If the expression of a variable declaration is incorrect, the variable won't be registered and there will be follow-up errors that may be confusing for a user. There is already code to handle a similar case if the type required of the expression is false. However, the `visitUnary` of the visitor isn't even called when the subtree expression produces compilation errors, so we will have to introduce some other mechanism to the visitor.
+- Warn the user if the result type of an if-else expression is Any. This usually suggests an error on the side of the user.
+
+##### Correctness
+
+- Ensure that loops with a Unit expression body cannot be used as an expression, as Unit loops are optimized by the transpiler.
+- During loop transpilation, ignore the resulting list if it isn't used at all. This will require allowing expression visitors to query some state from the parent and is possibly complex to implement.
 
 
 #### Testing
@@ -62,11 +81,22 @@
 - Finish writing the technical/runtime-types document.
 
 
-#### Clean-Up
+#### Code Quality
+
+##### Architecture
+
+- The Transformation phase is currently responsible for verifying constraints and for transforming AST nodes into typed expression nodes. We could potentially split this phase into a constraints phase and an expression phase.
+- The name of the Transpilation phase may not be appropriate anymore, since we now have a subsequent code generation phase. A more apt name may be Translation phase, as we are translating the Lore expression IR to the target IR.
+- Clean up ExpressionTransformationVisitor by moving more functionality to helper objects like StatementTransformation.
+  - Reconsider some names, as ExpressionTransformation and StatementTransformation aren't similar in functionality even though their names suggest so.
+
+##### Type System
+
+- Rename Product types to Tuple types across the board. (This is already partially the case in the runtime.)
+
+##### Clean-Up
 
 - Clean all TODOs within the source code or add them to this TODO list.
-- Replace assertions with proper CompilationExceptions. 
-- Add positions to CompilationExceptions.
 - We should reconsider whether positions should be implicit parameters. It's probably better to explicitly state which functions should receive which positions, so that there can be no ambiguity. Implicits are also hard to reason about when we get multiple implicits in nested scopes.
 
 

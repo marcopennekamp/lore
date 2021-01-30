@@ -84,8 +84,6 @@ object StructTranspiler {
     val varInstantiate = RuntimeNames.instantiate(tpe)
     val paramProperties = "properties".asParameter
     val instantiatedType = if (tpe.hasOpenProperties) {
-      // TODO: We could only add types to the map that actually deviate from the schema's property types. However,
-      //       such an "optimization" requires checking which might perform worse than the naive solution.
       // Instantiates the struct with the actual run-time property types, which are retrieved using typeOf. This
       // overrides the property types defined in the schema.
       val openPropertyTypes = Target.Dictionary(tpe.openProperties.map { property =>

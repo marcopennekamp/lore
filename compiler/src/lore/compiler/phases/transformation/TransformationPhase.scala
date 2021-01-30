@@ -1,14 +1,12 @@
 package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation._
-import lore.compiler.core.Phase
 import lore.compiler.semantics.Registry
 import lore.compiler.types.StructType
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
-// TODO: Split into a verification and an expression/typing phase.
-class TransformationPhase()(implicit registry: Registry) extends Phase[Unit] {
-  override def result: Verification = {
+object TransformationPhase {
+  def process(implicit registry: Registry): Verification = {
     val withVerifiedConstraints = (
       registry.getTypeDefinitions.values.toVector.map(DeclaredTypeConstraints.verify).simultaneous,
       registry.getMultiFunctions.values.toVector.map(MultiFunctionConstraints.verify).simultaneous,

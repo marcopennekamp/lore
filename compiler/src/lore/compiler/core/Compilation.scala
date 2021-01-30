@@ -122,9 +122,6 @@ object Compilation {
   object Verification {
     def succeed: Verification = Compilation.succeed(())
 
-    // TODO: Provide versions of map and flatMap that don't take an argument, so that we can write code like:
-    //       verify(...).ifVerified { nextVerification }
-
     /**
       * Creates a verification result from the given error list. If the list is empty, the verification is assumed to
       * be successful. Otherwise, the verification fails with the given errors.

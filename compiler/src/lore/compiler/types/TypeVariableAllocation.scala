@@ -63,11 +63,6 @@ class TypeVariableAllocation(variables: Set[TypeVariable]) {
   private def areBoundsKept: Boolean = {
     val assignments = currentAssignments()
     assignments.forall { case (variable, tpe) =>
-      // TODO: We might have to substitute multiple times until no substitutions occur. We should verify this
-      //       using a fitting example.
-      //       - I don't think this is the case, because we don't substitute allocated variables into the bounds,
-      //         as all variables should be instanced with types not containing the allocated variables. At most
-      //         we will have type variables from the type we are assigning type from.
       val actualLowerBound = Type.substitute(assignments, variable.lowerBound)
       val actualUpperBound = Type.substitute(assignments, variable.upperBound)
       actualLowerBound <= tpe && tpe <= actualUpperBound

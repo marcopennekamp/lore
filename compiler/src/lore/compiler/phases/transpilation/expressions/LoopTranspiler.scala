@@ -68,7 +68,6 @@ case class LoopTranspiler()(implicit variableProvider: TemporaryVariableProvider
     * Transpiles a loop, combining the scaffolding of loopShell with an already transpiled body.
     */
   def transpile(loop: Loop, body: Chunk)(loopShell: Vector[TargetStatement] => Vector[TargetStatement]): Chunk = {
-    // TODO: We also need to ignore the resulting list if it isn't used as an expression.
     // The loop's inferred type is Unit if its body type is Unit, so this checks out.
     val ignoreResult = loop.tpe == ProductType.UnitType
 

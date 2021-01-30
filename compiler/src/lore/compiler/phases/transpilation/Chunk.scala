@@ -59,8 +59,6 @@ object Chunk {
 
   /**
     * Creates a chunk with no statements and the given expression.
-    *
-    * TODO: This could also be an implicit conversion, perhaps.
     */
   def expression(expression: TargetExpression): Chunk = Chunk(Vector.empty, expression)
 

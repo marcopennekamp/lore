@@ -76,7 +76,6 @@ object MultiFunctionConstraints {
     */
   private def verifyInputTypeTotality(mf: MultiFunctionDefinition, inputType: Type)(implicit registry: Registry): Vector[Type] = {
     Type.abstractResolvedDirectSubtypes(inputType).flatMap { subtype =>
-      // TODO: Can we optimize this given the new hierarchy?
       val isImplemented = mf.functions.exists { f2 =>
         Fit.isMoreSpecific(f2.signature.inputType, inputType) && mf.fit(subtype).contains(f2)
       }

@@ -1,8 +1,6 @@
 package lore.compiler.phases.transpilation.functions
 
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.compiler.target.Target
-import lore.compiler.target.TargetDsl.StringExtension
 import lore.compiler.types._
 
 /**
@@ -56,9 +54,6 @@ case class MultiFunctionProperties(mf: MultiFunctionDefinition) {
     }
 
     def signatureComplexity(function: FunctionDefinition): Int = function.signature.parameters.map(_.tpe).map(typeComplexity).sum
-
-    // TODO: To model the cost of the dispatch cache, which includes the hashing operation on the argument tuple type,
-    //       we could counter-model the estimated cost of the hash operation.
 
     mf.functions.map(signatureComplexity).sum >= 5
   }

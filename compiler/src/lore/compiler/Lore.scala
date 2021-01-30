@@ -50,10 +50,7 @@ object Lore {
   /**
     * Compiles a Lore program from the given base directory and relative fragment paths (including the file extension).
     */
-  def fromSources(baseDirectory: Path, paths: Path*): Compilation[(Registry, String)] = {
-    val options = CompilerOptions(
-      runtimeLogging = false,
-    )
+  def fromSources(baseDirectory: Path, paths: Path*)(implicit options: CompilerOptions): Compilation[(Registry, String)] = {
     val resolutions = paths.map { path => fragment(path.toString, baseDirectory.resolve(path)) }
     val allResolutions = pyramid(baseDirectory) ++ resolutions
     val failures = allResolutions.filterType[FragmentResolution.NotFound]
@@ -72,7 +69,7 @@ object Lore {
     * Stringifies the compilation result in a user-palatable way, discussing errors or the successful result in
     * text form.
     */
-  def stringifyCompilationInfo(result: Compilation[Registry], compileTime: Double): String = {
+  def stringifyCompilationInfo(result: Compilation[Registry], compileTime: Double)(implicit options: CompilerOptions): String = {
     val out = new ByteArrayOutputStream()
     Using(new PrintStream(out, true, "utf-8")) { printer =>
       // Print either errors or the compilation result to the output stream.
@@ -112,6 +109,7 @@ object Lore {
       throw new RuntimeException("The compiler expects at least a base directory and a single fragment to compile.")
     }
 
+    implicit val options: CompilerOptions = CompilerOptions(runtimeLogging = false)
     val baseDirectory = Path.of(args.head)
     val fragmentPaths = args.tail.toVector.map(path => Path.of(s"$path.lore"))
     val beforeCompile = System.nanoTime()

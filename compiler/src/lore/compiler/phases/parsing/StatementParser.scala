@@ -73,9 +73,6 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
       .map(withIndex(ExprNode.ForNode))
   }
 
-  // TODO: The single & and | style feels quite weird when actually using it. Maybe we should just introduce
-  //       operators && and || or "and" and "or". Similarly with the not operator. And I don't quite like =/=
-  //       either, in hindsight.
   def operatorExpression[_: P]: P[ExprNode] = {
     import PrecedenceParser._
     PrecedenceParser.parser(
@@ -106,7 +103,6 @@ class StatementParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     // I don't want to put atom before negation, because I want the parser to handle the minus symbol before considering
     // atoms. However, the way it'd work with a naive implementation of this parser, a negative number would be parsed
     // as NegationNode(IntLiteralNode(x)). Hence we handle this specific case here.
-    // TODO: We could also handle this inefficiency during the transformation phase...
     val position = Position(fragment, index)
     expr match {
       case ExprNode.IntLiteralNode(x, _) => ExprNode.IntLiteralNode(-x, position)

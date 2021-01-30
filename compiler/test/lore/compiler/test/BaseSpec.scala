@@ -1,8 +1,7 @@
 package lore.compiler.test
 
 import java.nio.file.Path
-
-import lore.compiler.Lore
+import lore.compiler.{CompilerOptions, Lore}
 import lore.compiler.core.{Error, Errors, Result}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
@@ -15,6 +14,8 @@ import org.scalatest.matchers.{MatchResult, Matcher}
 trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside with Inspectors {
 
   private val testFragmentBase: Path = Path.of("compiler", "test", "lore", "compiler")
+
+  private implicit val options: CompilerOptions = CompilerOptions(runtimeLogging = false)
 
   def prepareRegistry(fragmentName: String): Registry = {
     Lore.fromSources(Path.of("."), testFragmentBase.resolve(fragmentName + ".lore")).toOption match {

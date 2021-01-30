@@ -2,7 +2,7 @@ package lore.compiler.phases.transpilation
 
 import lore.compiler.CompilerOptions
 import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, CompilationException, Phase}
+import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.phases.transpilation.functions.MultiFunctionTranspiler
 import lore.compiler.phases.transpilation.structures.{DeclaredTypeTranspiler, TypeAliasTranspiler}
 import lore.compiler.semantics.{Introspection, Registry}
@@ -10,9 +10,8 @@ import lore.compiler.target.Target
 import lore.compiler.target.Target.TargetStatement
 import lore.compiler.types.DeclaredType
 
-// TODO: Maybe rename to translation?
-class TranspilationPhase()(implicit compilerOptions: CompilerOptions, registry: Registry) extends Phase[Vector[TargetStatement]] {
-  override def result: Compilation[Vector[TargetStatement]] = {
+object TranspilationPhase {
+  def process(implicit compilerOptions: CompilerOptions, registry: Registry): Compilation[Vector[TargetStatement]] = {
     val typeDeclarations = registry.getTypeDeclarationsInOrder.flatMap {
       case (_, declaredType: DeclaredType) => DeclaredTypeTranspiler.transpile(declaredType)
       case (name, tpe) => Vector(TypeAliasTranspiler.transpile(name, tpe))
