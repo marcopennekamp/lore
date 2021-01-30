@@ -12,7 +12,7 @@ object RuntimeNames {
   def typeSchema(tpe: DeclaredType): Target.Variable = s"lore_schema_${tpe.name}".asVariable
   def newType(tpe: DeclaredType): Target.Variable = s"lore_newtype_${tpe.name}".asVariable
   def instantiate(struct: StructType): Target.Variable = s"lore_instantiate_${struct.name}".asVariable
-  def defaultValue(struct: StructType, property: StructPropertyDefinition): Target.Variable = s"${declaredType(struct)}__default_${property.name}".asVariable
+  def defaultValue(struct: StructType, property: StructPropertyDefinition): Target.Variable = s"${declaredType(struct).name}__default_${property.name}".asVariable
 
   def temporaryVariable(name: String): Target.Variable = s"lore_tmp_$name".asVariable
   def localVariable(loreName: String): Target.Variable = s"lore_lv_$loreName".asVariable
