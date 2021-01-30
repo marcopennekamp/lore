@@ -18,8 +18,8 @@ object TraitTranspiler {
       RuntimeApi.utils.`lazy`.of(TypeTranspiler.transpile(tpe.inheritedShapeType)(Map.empty)),
     )
 
-    val varSchema = RuntimeNames.typeSchema(tpe).asVariable
-    val varType = RuntimeNames.declaredType(tpe).asVariable
+    val varSchema = RuntimeNames.typeSchema(tpe)
+    val varType = RuntimeNames.declaredType(tpe)
     Vector(
       varSchema.declareAs(schema),
       varType.declareAs(RuntimeApi.traits.tpe(varSchema)),

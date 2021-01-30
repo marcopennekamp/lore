@@ -2,7 +2,7 @@ package lore.compiler.phases.transpilation.functions
 
 import lore.compiler.CompilerOptions
 import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
-import lore.compiler.phases.transpilation.{RuntimeApi, TypeTranspiler, TemporaryNameProvider}
+import lore.compiler.phases.transpilation.{RuntimeApi, TypeTranspiler, TemporaryVariableProvider}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.target.Target
@@ -14,7 +14,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
 
   private val properties = MultiFunctionProperties(mf)
 
-  private implicit val nameProvider: TemporaryNameProvider = new TemporaryNameProvider(s"${mf.name}__")
+  private implicit val variableProvider: TemporaryVariableProvider = new TemporaryVariableProvider(s"${mf.name}__")
 
   def transpile(): Vector[TargetStatement] = {
     // Phase 1: Transpile type variables.

@@ -20,6 +20,6 @@ object DeclaredTypeTranspiler {
     }
   }
 
-  def transpileSupertraits(tpe: DeclaredType): Vector[TargetExpression] = tpe.declaredSupertypes.map(RuntimeNames.declaredType(_).asVariable)
+  def transpileSupertraits(tpe: DeclaredType): Vector[TargetExpression] = tpe.declaredSupertypes.map(RuntimeNames.declaredType)
 
 }

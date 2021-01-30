@@ -37,7 +37,7 @@ object StructTranspiler {
   }
 
   private def transpileSchema(tpe: StructType) = {
-    val varSchema = RuntimeNames.typeSchema(tpe).asVariable
+    val varSchema = RuntimeNames.typeSchema(tpe)
     val propertyTypes = Target.Dictionary(tpe.definition.properties.map { property =>
       // As noted in the runtime's StructSchema definition, schema property types must be lazy to ensure that all
       // declared types are defined when the property type is initialized.
@@ -54,9 +54,9 @@ object StructTranspiler {
   }
 
   private def transpileTypeDefinitions(tpe: StructType) = {
-    val varSchema = RuntimeNames.typeSchema(tpe).asVariable
-    val varNewtype = RuntimeNames.newType(tpe).asVariable
-    val varArchetype = RuntimeNames.declaredType(tpe).asVariable
+    val varSchema = RuntimeNames.typeSchema(tpe)
+    val varNewtype = RuntimeNames.newType(tpe)
+    val varArchetype = RuntimeNames.declaredType(tpe)
     val definitions = if (tpe.hasOpenProperties) {
       // The type-specific property types are undefined when creating the archetype so that we don't have to evaluate
       // these lazily. (Archetypes are created right away, eagerly, and may then run into type ordering issues since
@@ -81,7 +81,7 @@ object StructTranspiler {
   }
 
   private def transpileInstantiation(tpe: StructType, varNewtype: Target.Variable, varArchetype: Target.Variable) = {
-    val varInstantiate = RuntimeNames.instantiate(tpe).asVariable
+    val varInstantiate = RuntimeNames.instantiate(tpe)
     val paramProperties = "properties".asParameter
     val instantiatedType = if (tpe.hasOpenProperties) {
       // TODO: We could only add types to the map that actually deviate from the schema's property types. However,
@@ -105,7 +105,7 @@ object StructTranspiler {
   private def transpileDefaultValues(tpe: StructType)(implicit registry: Registry) = {
     tpe.definition.properties.flatMap { property =>
       property.defaultValue.map { defaultValue =>
-        val varDefaultValue = RuntimeNames.defaultValue(tpe, property).asVariable
+        val varDefaultValue = RuntimeNames.defaultValue(tpe, property)
         // TODO: We need to supply runtime type variables here once structs can have type parameters.
         val chunk = ExpressionTranspiler.transpile(defaultValue.expression)(registry, Map.empty)
         Target.Function(varDefaultValue.name, Vector.empty, chunk.asBody)

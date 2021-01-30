@@ -2,14 +2,14 @@ package lore.compiler.phases.transpilation.expressions
 
 import lore.compiler.core.CompilationException
 import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
-import lore.compiler.phases.transpilation.{Chunk, RuntimeApi, TemporaryNameProvider, TypeTranspiler}
+import lore.compiler.phases.transpilation.{Chunk, RuntimeApi, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.semantics.expressions.Expression.{Extractor, ForLoop, Loop, WhileLoop}
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl._
 import lore.compiler.target.{Target, TargetOperator}
 import lore.compiler.types.{ListType, MapType, ProductType}
 
-case class LoopTranspiler()(implicit nameProvider: TemporaryNameProvider, typeVariables: TranspiledTypeVariables) {
+case class LoopTranspiler()(implicit variableProvider: TemporaryVariableProvider, typeVariables: TranspiledTypeVariables) {
 
   def transpile(loop: WhileLoop, condition: Chunk, body: Chunk): Chunk = {
     transpile(loop, body) { body: Vector[TargetStatement] =>
@@ -34,21 +34,21 @@ case class LoopTranspiler()(implicit nameProvider: TemporaryNameProvider, typeVa
   }
 
   private def extractorListShell(extractor: Extractor, collection: Chunk)(inner: Vector[TargetStatement]): Vector[TargetStatement] = {
-    val varList = nameProvider.createName().asVariable
+    val varList = variableProvider.createVariable()
     collection.statements ++ Vector(
       varList.declareAs(collection.expression),
       Target.Iteration(
         varList.prop("array"),
-        extractor.variable.transpiledName,
+        extractor.variable.asTargetVariable.name,
         Target.Block(inner),
       ),
     )
   }
 
   private def extractorMapShell(extractor: Extractor, collection: Chunk)(inner: Vector[TargetStatement]): Vector[TargetStatement] = {
-    val varIterator = nameProvider.createName().asVariable
-    val varNext = nameProvider.createName().asVariable
-    val varExtractor = extractor.variable.transpiledName.asVariable
+    val varIterator = variableProvider.createVariable()
+    val varNext = variableProvider.createVariable()
+    val varExtractor = extractor.variable.asTargetVariable
     val callNext = varIterator.prop("next").call()
     collection.statements ++ Vector(
       varIterator.declareAs(RuntimeApi.maps.entries(collection.expression)),
@@ -85,7 +85,7 @@ case class LoopTranspiler()(implicit nameProvider: TemporaryNameProvider, typeVa
     if (ignoreResult) {
       Chunk.unit(loopCode(None): _*)
     } else {
-      val varResult = nameProvider.createName().asVariable
+      val varResult = variableProvider.createVariable()
       val resultType = TypeTranspiler.transpileSubstitute(loop.tpe)
       val resultVarDeclaration = varResult.declareMutableAs(RuntimeApi.lists.value(Vector.empty, resultType))
       Chunk(resultVarDeclaration +: loopCode(Some(varResult, resultType)), varResult)

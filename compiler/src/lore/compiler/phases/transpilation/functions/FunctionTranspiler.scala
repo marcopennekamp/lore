@@ -17,11 +17,11 @@ object FunctionTranspiler {
     if (function.isAbstract) {
       throw CompilationException(s"Cannot transpile abstract function $function.")
     }
-    val uniqueName = RuntimeNames.function(function)
+    val uniqueName = RuntimeNames.function(function).name
 
     // Parameters aren't necessarily only those declared for the function but also the local type variable
     // assignments in case of polymorphic functions.
-    var transpiledParameters = function.signature.parameters.map(_.asLocalVariable.transpiledName.asParameter)
+    var transpiledParameters = function.signature.parameters.map(_.asTargetParameter)
     if (function.isPolymorphic) {
       transpiledParameters = RuntimeNames.localTypeVariableAssignments.asParameter +: transpiledParameters
     }

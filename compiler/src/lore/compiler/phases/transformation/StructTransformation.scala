@@ -22,7 +22,7 @@ object StructTransformation {
 
       compiledExpression.map { maybeExpression =>
         property.defaultValue = maybeExpression.map { expression =>
-          StructPropertyDefinition.DefaultValue(expression, DynamicCallTarget(RuntimeNames.defaultValue(struct.tpe, property).name, expression.tpe))
+          StructPropertyDefinition.DefaultValue(expression, DynamicCallTarget(RuntimeNames.defaultValue(struct.tpe, property).name.name, expression.tpe))
         }
       }
     }.simultaneous.verification

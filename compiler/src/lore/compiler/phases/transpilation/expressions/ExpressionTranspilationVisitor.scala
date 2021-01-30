@@ -14,7 +14,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 ) extends ExpressionVisitor[Chunk, Chunk] {
   import Expression._
 
-  private implicit val nameProvider: TemporaryNameProvider = new TemporaryNameProvider
+  private implicit val variableProvider: TemporaryVariableProvider = new TemporaryVariableProvider
 
   override def visit(expression: Return)(value: Chunk): Chunk = {
     Chunk(value.statements :+ Target.Return(value.expression), RuntimeApi.tuples.unitValue)
@@ -22,7 +22,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   override def visit(expression: VariableDeclaration)(value: Chunk): Chunk = {
     value.flatMap { value =>
-      Chunk.unit(Target.VariableDeclaration(expression.variable.transpiledName, value, expression.variable.isMutable))
+      Chunk.unit(Target.VariableDeclaration(expression.variable.asTargetVariable.name, value, expression.variable.isMutable))
     }
   }
 
@@ -32,7 +32,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   override def visit(expression: Block)(expressions: Vector[Chunk]): Chunk = Chunk.sequence(expressions)
 
-  override def visit(expression: VariableAccess): Chunk = Chunk.expression(expression.variable.transpiledName.asVariable)
+  override def visit(expression: VariableAccess): Chunk = Chunk.expression(expression.variable.asTargetVariable)
 
   override def visit(expression: MemberAccess)(instance: Chunk): Chunk = {
     instance.mapExpression(_.prop(expression.member.name))
@@ -85,7 +85,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
           Target.Property(property.name.asName, value)
         }
       )
-      Chunk.expression(RuntimeNames.instantiate(expression.struct.tpe).asVariable.call(properties))
+      Chunk.expression(RuntimeNames.instantiate(expression.struct.tpe).call(properties))
     }
   }
 
@@ -142,7 +142,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   override def visit(expression: IfElse)(condition: Chunk, onTrue: Chunk, onFalse: Chunk): Chunk = {
     // If the result type of the if-else is unit, we can ignore the results of the respective then and else blocks.
-    val varResult = if (expression.tpe != ProductType.UnitType) Some(nameProvider.createName().asVariable) else None
+    val varResult = if (expression.tpe != ProductType.UnitType) Some(variableProvider.createVariable()) else None
     val resultDeclaration = varResult.map(_.declareMutableAs(Target.Undefined))
 
     def asBlock(chunk: Chunk): Target.Block = {

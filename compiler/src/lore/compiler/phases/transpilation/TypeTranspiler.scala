@@ -13,9 +13,9 @@ object TypeTranspiler {
     * Transpiles type variables such that they are defined as constants in the returned target statement. The names of
     * these constants are defined in the returned map.
     */
-  def transpileTypeVariables(variables: Vector[TypeVariable])(implicit nameProvider: TemporaryNameProvider): (Vector[TargetStatement], TranspiledTypeVariables) = {
+  def transpileTypeVariables(variables: Vector[TypeVariable])(implicit variableProvider: TemporaryVariableProvider): (Vector[TargetStatement], TranspiledTypeVariables) = {
     val orderedVariables = variables.sortBy(_.declarationOrder)
-    implicit val transpiledVariables: TranspiledTypeVariables = orderedVariables.map(tv => (tv, nameProvider.createName().asVariable)).toMap
+    implicit val transpiledVariables: TranspiledTypeVariables = orderedVariables.map(tv => (tv, variableProvider.createVariable())).toMap
     val definitions = orderedVariables.map { tv =>
       transpiledVariables(tv).declareAs(RuntimeApi.types.variable(tv.name, transpile(tv.lowerBound), transpile(tv.upperBound)))
     }
@@ -42,7 +42,7 @@ object TypeTranspiler {
     */
   def transpileSubstitute(tpe: Type)(implicit typeVariables: TranspiledTypeVariables): TargetExpression = {
     transpile(tpe, simplifyAtRuntime = true, tv => {
-      RuntimeApi.utils.tinyMap.get(RuntimeNames.localTypeVariableAssignments.asVariable, typeVariables(tv))
+      RuntimeApi.utils.tinyMap.get(RuntimeNames.localTypeVariableAssignments, typeVariables(tv))
     })
   }
 
@@ -76,7 +76,7 @@ object TypeTranspiler {
       case BasicType.Boolean => api.boolean
       case BasicType.String => api.string
       case ProductType.UnitType => RuntimeApi.tuples.unitType
-      case declaredType: DeclaredType => RuntimeNames.declaredType(declaredType).asVariable
+      case declaredType: DeclaredType => RuntimeNames.declaredType(declaredType)
       case SumType(types) =>
         val args = types.map(rec).toVector
         if (simplifyAtRuntime) RuntimeApi.sums.simplified(args) else RuntimeApi.sums.tpe(args)

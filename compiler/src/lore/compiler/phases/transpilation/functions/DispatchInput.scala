@@ -2,7 +2,7 @@ package lore.compiler.phases.transpilation.functions
 
 import lore.compiler.core.CompilationException
 import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
-import lore.compiler.phases.transpilation.{RuntimeApi, TypeTranspiler, TemporaryNameProvider}
+import lore.compiler.phases.transpilation.{RuntimeApi, TypeTranspiler, TemporaryVariableProvider}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.target.Target
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
@@ -13,7 +13,7 @@ import lore.compiler.types.Type
   * The dispatch argument transpiler covers input and argument types. The [[DispatchBehavior]] relies on the
   * types provided by this transpiler.
   */
-class DispatchInput(mf: MultiFunctionDefinition, properties: MultiFunctionProperties)(implicit nameProvider: TemporaryNameProvider, typeVariables: TranspiledTypeVariables) {
+class DispatchInput(mf: MultiFunctionDefinition, properties: MultiFunctionProperties)(implicit variableProvider: TemporaryVariableProvider, typeVariables: TranspiledTypeVariables) {
 
   val varArgumentType: Target.Variable = "argumentType".asVariable
 
@@ -34,7 +34,7 @@ class DispatchInput(mf: MultiFunctionDefinition, properties: MultiFunctionProper
         inputType.elements.head
       } else inputType
 
-      val varType = nameProvider.createName().asVariable
+      val varType = variableProvider.createVariable()
       val typeExpr = TypeTranspiler.transpile(simplifiedInputType)
       variables = variables + (inputType -> varType)
       varType.declareAs(typeExpr)
