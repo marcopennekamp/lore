@@ -60,6 +60,10 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     *       of the call.
     *       Polymorphic functions may still require assigning an argument type to a type variable, but this could then
     *       be done ad-hoc in the generated single function.
+    *
+    * TODO: This approach lacks correctness when Lore functions are called from Javascript. To improve interfacing
+    *       with native Javascript, we should transpile a second "external" function that actually does the type
+    *       checking. This would be the function that we export.
     */
   private def transpileSingleFunction(): Vector[TargetStatement] = {
     implicit val typeVariables: TranspiledTypeVariables = Map.empty
