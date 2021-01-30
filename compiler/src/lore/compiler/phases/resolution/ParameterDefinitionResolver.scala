@@ -1,8 +1,8 @@
 package lore.compiler.phases.resolution
 
 import lore.compiler.core.Compilation
-import lore.compiler.semantics.TypeScope
 import lore.compiler.semantics.functions.ParameterDefinition
+import lore.compiler.semantics.scopes.TypeScope
 import lore.compiler.syntax.DeclNode
 
 object ParameterDefinitionResolver {

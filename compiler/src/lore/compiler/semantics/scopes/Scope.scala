@@ -1,12 +1,10 @@
-package lore.compiler.semantics
+package lore.compiler.semantics.scopes
 
 import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.core.{Compilation, CompilationException, Error, Position}
-import lore.compiler.semantics.Scope.{AlreadyDeclared, UnknownEntry}
+import lore.compiler.semantics.scopes.Scope.{AlreadyDeclared, UnknownEntry}
 
 import scala.collection.mutable
-
-// TODO: Move all scope sources to a scopes subpackage.
 
 /**
   * A hierarchical scope resolving entries of some type A by name.

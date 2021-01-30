@@ -2,7 +2,8 @@ package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.semantics.functions.FunctionDefinition
-import lore.compiler.semantics.{FunctionVariableScope, Registry}
+import lore.compiler.semantics.Registry
+import lore.compiler.semantics.scopes.FunctionVariableScope
 
 /**
   * For a given function, builds a semantic expression tree from the body's abstract syntax tree. It infers and checks

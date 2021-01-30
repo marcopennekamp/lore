@@ -4,7 +4,8 @@ import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.phases.resolution.DeclarationResolver.TypeAlreadyExists
 import lore.compiler.semantics.functions.FunctionDefinition
-import lore.compiler.semantics.{Introspection, Registry, TypeScope}
+import lore.compiler.semantics.scopes.TypeScope
+import lore.compiler.semantics.{Introspection, Registry}
 import lore.compiler.syntax.{DeclNode, TypeDeclNode, TypeExprNode}
 import lore.compiler.types.Type
 

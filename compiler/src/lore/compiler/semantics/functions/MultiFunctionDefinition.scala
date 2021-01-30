@@ -17,11 +17,6 @@ case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefin
   private implicit val edgeFactory = DiEdge
   buildHierarchy()
 
-  // TODO: Instead of building a hierarchy, it might be cheaper to simply compare all functions IF the function
-  //       list is small or linear. For example, if there are only 10 functions associated with the multi-function,
-  //       building the hierarchy structure and traversal structures for traverseHierarchy might be more expensive
-  //       than going through all elements.
-
   /**
     * All root nodes in the hierarchy, i.e. those functions with a super-function.
     */

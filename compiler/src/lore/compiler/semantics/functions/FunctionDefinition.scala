@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, Error, Position, Positioned}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionDefinition.CannotInstantiateFunction
-import lore.compiler.semantics.TypeScope
+import lore.compiler.semantics.scopes.TypeScope
 import lore.compiler.syntax.ExprNode
 import lore.compiler.types.{Fit, Type}
 

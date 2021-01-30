@@ -2,7 +2,8 @@ package lore.compiler.phases.resolution
 
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, Error, Position}
-import lore.compiler.semantics.{Registry, TypeScope}
+import lore.compiler.semantics.Registry
+import lore.compiler.semantics.scopes.TypeScope
 import lore.compiler.syntax.{TypeDeclNode, TypeExprNode}
 import lore.compiler.types._
 

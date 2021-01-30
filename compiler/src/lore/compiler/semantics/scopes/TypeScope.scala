@@ -1,4 +1,4 @@
-package lore.compiler.semantics
+package lore.compiler.semantics.scopes
 
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.Position

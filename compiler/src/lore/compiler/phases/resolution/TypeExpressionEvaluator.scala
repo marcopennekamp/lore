@@ -2,7 +2,7 @@ package lore.compiler.phases.resolution
 
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, Error, Position}
-import lore.compiler.semantics.TypeScope
+import lore.compiler.semantics.scopes.TypeScope
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions.VectorExtension

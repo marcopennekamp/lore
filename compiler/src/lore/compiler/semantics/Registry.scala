@@ -4,6 +4,7 @@ import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.semantics.Registry.{ExactFunctionNotFound, MultiFunctionNotFound, TypeNotFound}
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.semantics.scopes.{GlobalVariableScope, TypeScope, VariableScope}
 import lore.compiler.semantics.structures._
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions._

@@ -4,7 +4,8 @@ import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.phases.transformation.ExpressionVerification.IllegallyTypedExpression
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.{Registry, TypeScope, VariableScope}
+import lore.compiler.semantics.scopes.{TypeScope, VariableScope}
+import lore.compiler.semantics.Registry
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.StmtVisitor
 import lore.compiler.types.{ProductType, Type}

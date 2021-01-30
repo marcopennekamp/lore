@@ -1,7 +1,7 @@
 package lore.compiler.syntax
 
 import lore.compiler.core.Position
-import lore.compiler.semantics.functions.{CallTarget, DynamicCallTarget, InternalCallTarget}
+import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.syntax.StmtNode._
 import lore.compiler.syntax.TopLevelExprNode.CallNode
 
@@ -143,14 +143,14 @@ object ExprNode {
     */
   case class SimpleCallNode(
     name: String, arguments: Vector[ExprNode], position: Position,
-  ) extends XaryNode(arguments) with ExprNode with CallNode[InternalCallTarget]
+  ) extends XaryNode(arguments) with ExprNode with CallNode[CallTarget.Internal]
 
   /**
     * Since fixed function calls also require type arguments, they can be differentiated from call nodes.
     */
   case class FixedFunctionCallNode(
     name: String, types: Vector[TypeExprNode], arguments: Vector[ExprNode], position: Position
-  ) extends XaryNode(arguments) with ExprNode with CallNode[InternalCallTarget]
+  ) extends XaryNode(arguments) with ExprNode with CallNode[CallTarget.Internal]
 
   /**
     * Just like fixed function calls, dynamic calls have a different set of attributes than simple calls.
@@ -159,7 +159,7 @@ object ExprNode {
     */
   case class DynamicCallNode(
     resultType: TypeExprNode, arguments: Vector[ExprNode], position: Position
-  ) extends XaryNode(arguments) with ExprNode with CallNode[DynamicCallTarget]
+  ) extends XaryNode(arguments) with ExprNode with CallNode[CallTarget.Dynamic]
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and loop expressions.

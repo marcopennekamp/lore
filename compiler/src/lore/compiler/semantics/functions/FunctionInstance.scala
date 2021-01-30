@@ -9,6 +9,6 @@ import lore.compiler.core.Position
 case class FunctionInstance(
   definition: FunctionDefinition,
   override val signature: FunctionSignature
-) extends InternalCallTarget {
+) extends CallTarget.Internal {
   override def position: Position = definition.position
 }

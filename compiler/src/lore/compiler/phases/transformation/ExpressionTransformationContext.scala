@@ -1,6 +1,7 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.semantics.{BlockVariableScope, LocalVariable, Scope, VariableScope}
+import lore.compiler.semantics.LocalVariable
+import lore.compiler.semantics.scopes.{BlockVariableScope, VariableScope}
 
 /**
   * A context for expression transformation passes, for example to hold local variable scopes.

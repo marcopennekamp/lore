@@ -3,7 +3,7 @@ package lore.compiler.phases.transformation
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.phases.transpilation.RuntimeNames
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.functions.DynamicCallTarget
+import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 
 object StructTransformation {
@@ -22,7 +22,7 @@ object StructTransformation {
 
       compiledExpression.map { maybeExpression =>
         property.defaultValue = maybeExpression.map { expression =>
-          StructPropertyDefinition.DefaultValue(expression, DynamicCallTarget(RuntimeNames.defaultValue(struct.tpe, property).name.name, expression.tpe))
+          StructPropertyDefinition.DefaultValue(expression, CallTarget.Dynamic(RuntimeNames.defaultValue(struct.tpe, property).name.name, expression.tpe))
         }
       }
     }.simultaneous.verification
