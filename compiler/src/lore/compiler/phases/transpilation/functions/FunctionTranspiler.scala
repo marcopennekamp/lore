@@ -7,17 +7,20 @@ import lore.compiler.phases.transpilation._
 import lore.compiler.phases.transpilation.expressions.ExpressionTranspiler
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.FunctionDefinition
-import lore.compiler.target.Target.TargetStatement
+import lore.compiler.target.Target.{TargetName, TargetStatement}
 import lore.compiler.target.TargetDsl._
 import lore.compiler.target.{Target, TargetOperator}
 
 object FunctionTranspiler {
 
   def transpile(function: FunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry, typeVariables: TranspiledTypeVariables): Vector[TargetStatement] = {
+    transpile(function, RuntimeNames.function(function).name, shouldExport = false)
+  }
+
+  def transpile(function: FunctionDefinition, name: TargetName, shouldExport: Boolean)(implicit compilerOptions: CompilerOptions, registry: Registry, typeVariables: TranspiledTypeVariables): Vector[TargetStatement] = {
     if (function.isAbstract) {
       throw CompilationException(s"Cannot transpile abstract function $function.")
     }
-    val uniqueName = RuntimeNames.function(function).name
 
     // Parameters aren't necessarily only those declared for the function but also the local type variable
     // assignments in case of polymorphic functions.
@@ -33,15 +36,16 @@ object FunctionTranspiler {
       RuntimeApi.io.println(
         Target.Operation(
           TargetOperator.Concat,
-          Vector(s"Called function $uniqueName with input: (".asLiteral) ++ argumentValues ++ Vector(")".asLiteral)
-        )
+          Vector(s"Called function $name with input: (".asLiteral) ++ argumentValues ++ Vector(")".asLiteral),
+        ),
       )
     } else Target.Empty
 
     Vector(Target.Function(
-      uniqueName,
+      name,
       transpiledParameters,
-      Chunk(Vector(preamble) ++ chunk.statements, chunk.expression).asBody
+      Chunk(Vector(preamble) ++ chunk.statements, chunk.expression).asBody,
+      shouldExport
     ))
   }
 
