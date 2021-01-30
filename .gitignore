@@ -6,11 +6,14 @@
 .history
 .lib/
 dist/*
-target/
+/target/
+compiler/target/
 lib_managed/
 src_managed/
 project/boot/
 project/plugins/project/
+project/target/
+project/project/target
 .bsp/
 
 # IntelliJ Idea
