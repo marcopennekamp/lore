@@ -1,0 +1,4 @@
+// Even though concat returns a list, the compiler should recognize that the action implicitly returns a unit value.
+action test() {
+  concat([12], [15])
+}

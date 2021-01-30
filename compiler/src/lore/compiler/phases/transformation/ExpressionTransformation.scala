@@ -1,13 +1,13 @@
 package lore.compiler.phases.transformation
 
+import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, Error}
 import lore.compiler.phases.transformation.ExpressionVerification.IllegallyTypedExpression
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.{LocalVariable, Registry, Scope, TypeScope, VariableScope}
+import lore.compiler.semantics.{Registry, TypeScope, VariableScope}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.StmtVisitor
-import lore.compiler.types.Type
+import lore.compiler.types.{ProductType, Type}
 
 object ExpressionTransformation {
 
@@ -21,17 +21,31 @@ object ExpressionTransformation {
     typeScope: TypeScope,
     variableScope: VariableScope,
   )(implicit registry: Registry): Compilation[Expression] = {
-    // TODO: A block expected to return Unit should manually add a return value of () if the last expression's value
-    //       isn't already that. Otherwise a, for example, function won't compile, because the last expression doesn't
-    //       fit the expected return type:
-    //          action foo() { concat([12], [15]) }  <-- doesn't compile (concat returns a list)
-
     for {
       _ <- ReturnConstraints.verify(node)
       visitor = new ExpressionTransformationVisitor(expectedType, typeScope, variableScope)
-      expression <- StmtVisitor.visit(visitor)(node)
+      expression <- StmtVisitor.visit(visitor)(node).map(withImplicitUnitValue(expectedType))
       _ <- verifyExpectedType(expression, expectedType)
     } yield expression
+  }
+
+  /**
+    * For a block expression expected to return Unit, we have to manually add a unit return value if the block's value
+    * isn't already a unit value.
+    *
+    * Example:
+    * {{{
+    * action test() {
+    *   concat([12], [15]) // Should compile even though it returns a list.
+    * }
+    * }}}
+    */
+  private def withImplicitUnitValue(expectedType: Type)(expression: Expression): Expression = {
+    expression match {
+      case Expression.Block(expressions, position) if expectedType == ProductType.UnitType && expression.tpe != ProductType.UnitType =>
+        Expression.Block(expressions :+ Expression.Tuple(Vector.empty, position), position)
+      case _ => expression
+    }
   }
 
   /**
