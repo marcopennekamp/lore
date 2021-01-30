@@ -2,8 +2,9 @@ package lore.compiler.phases.transpilation.functions
 
 import lore.compiler.CompilerOptions
 import lore.compiler.core.CompilationException
-import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.TranspiledTypeVariables
+import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
 import lore.compiler.phases.transpilation._
+import lore.compiler.phases.transpilation.expressions.ExpressionTranspiler
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.FunctionDefinition
 import lore.compiler.target.Target.TargetStatement
@@ -16,13 +17,13 @@ object FunctionTranspiler {
     if (function.isAbstract) {
       throw CompilationException(s"Cannot transpile abstract function $function.")
     }
-    val uniqueName = TranspiledName.function(function)
+    val uniqueName = RuntimeNames.function(function)
 
     // Parameters aren't necessarily only those declared for the function but also the local type variable
     // assignments in case of polymorphic functions.
     var transpiledParameters = function.signature.parameters.map(_.asLocalVariable.transpiledName.asParameter)
     if (function.isPolymorphic) {
-      transpiledParameters = TranspiledName.localTypeVariableAssignments.asParameter +: transpiledParameters
+      transpiledParameters = RuntimeNames.localTypeVariableAssignments.asParameter +: transpiledParameters
     }
 
     val chunk = ExpressionTranspiler.transpile(function.body.get)

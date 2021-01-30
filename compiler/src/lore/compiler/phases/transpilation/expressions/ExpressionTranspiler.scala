@@ -1,6 +1,7 @@
-package lore.compiler.phases.transpilation
+package lore.compiler.phases.transpilation.expressions
 
-import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.TranspiledTypeVariables
+import lore.compiler.phases.transpilation.Chunk
+import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 

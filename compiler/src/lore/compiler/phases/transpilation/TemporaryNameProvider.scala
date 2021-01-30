@@ -14,7 +14,7 @@ class TemporaryNameProvider(prefix: String = "") {
     * TODO: Needs to be thread-safe, probably.
     */
   def createName(): TargetName = {
-    val name = s"$prefix${TranspiledName.temporaryVariable(counter.toString)}".asName
+    val name = s"$prefix${RuntimeNames.temporaryVariable(counter.toString)}".asName
     counter += 1
     name
   }

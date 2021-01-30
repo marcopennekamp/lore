@@ -1,6 +1,7 @@
-package lore.compiler.phases.transpilation
+package lore.compiler.phases.transpilation.expressions
 
-import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.TranspiledTypeVariables
+import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
+import lore.compiler.phases.transpilation._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.functions.{DynamicCallTarget, FunctionInstance}
@@ -58,14 +59,14 @@ private[transpilation] class ExpressionTranspilationVisitor()(
   }
 
   override def visit(expression: ListConstruction)(values: Vector[Chunk]): Chunk = {
-    val tpe = RuntimeTypeTranspiler.transpileSubstitute(expression.tpe)
+    val tpe = TypeTranspiler.transpileSubstitute(expression.tpe)
     Chunk.combine(values) { values =>
       Chunk.expression(RuntimeApi.lists.value(values, tpe))
     }
   }
 
   override def visit(expression: MapConstruction)(entryChunks: Vector[(Chunk, Chunk)]): Chunk = {
-    val tpe = RuntimeTypeTranspiler.transpileSubstitute(expression.tpe)
+    val tpe = TypeTranspiler.transpileSubstitute(expression.tpe)
     val entries = entryChunks.map { case (key, value) =>
       Chunk.combine(key, value)(elements => Chunk.expression(Target.List(elements)))
     }
@@ -84,7 +85,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
           Target.Property(property.name.asName, value)
         }
       )
-      Chunk.expression(TranspiledName.instantiate(expression.struct.tpe).asVariable.call(properties))
+      Chunk.expression(RuntimeNames.instantiate(expression.struct.tpe).asVariable.call(properties))
     }
   }
 
@@ -119,7 +120,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
     // TODO: We could also translate the append operation to a dynamic function call in the FunctionTransformationVisitor.
     //       However, we will have to support passing types as expressions, at least for the compiler, because the
     //       last argument to 'append' has to be the new list type.
-    val tpe = RuntimeTypeTranspiler.transpileSubstitute(resultType)
+    val tpe = TypeTranspiler.transpileSubstitute(resultType)
     Chunk.combine(list, element) { case Vector(list, element) => Chunk.expression(RuntimeApi.lists.append(list, element, tpe)) }
   }
 

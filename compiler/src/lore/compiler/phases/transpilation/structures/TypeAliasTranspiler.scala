@@ -1,4 +1,4 @@
-package lore.compiler.phases.transpilation
+package lore.compiler.phases.transpilation.structures
 
 import lore.compiler.semantics.Registry
 import lore.compiler.target.Target

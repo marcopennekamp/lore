@@ -8,7 +8,7 @@ import lore.compiler.types.{DeclaredType, StructType, Type}
 
 // TODO: Return Target.Variable instead of TargetName.
 
-object TranspiledName {
+object RuntimeNames {
   def declaredType(tpe: DeclaredType): TargetName = s"lore_type_${tpe.name}".asName
   def typeSchema(tpe: DeclaredType): TargetName = s"lore_schema_${tpe.name}".asName
   def newType(tpe: DeclaredType): TargetName = s"lore_newtype_${tpe.name}".asName

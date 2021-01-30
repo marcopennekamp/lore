@@ -1,6 +1,7 @@
-package lore.compiler.phases.transpilation
+package lore.compiler.phases.transpilation.structures
 
-import lore.compiler.core.{Compilation, CompilationException}
+import lore.compiler.core.CompilationException
+import lore.compiler.phases.transpilation.RuntimeNames
 import lore.compiler.semantics.Registry
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.types.{DeclaredType, StructType, TraitType}
@@ -19,6 +20,6 @@ object DeclaredTypeTranspiler {
     }
   }
 
-  def transpileSupertraits(tpe: DeclaredType): Vector[TargetExpression] = tpe.declaredSupertypes.map(TranspiledName.declaredType(_).asVariable)
+  def transpileSupertraits(tpe: DeclaredType): Vector[TargetExpression] = tpe.declaredSupertypes.map(RuntimeNames.declaredType(_).asVariable)
 
 }

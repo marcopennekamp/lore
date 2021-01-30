@@ -1,8 +1,8 @@
 package lore.compiler.phases.transpilation.functions
 
 import lore.compiler.core.CompilationException
-import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.TranspiledTypeVariables
-import lore.compiler.phases.transpilation.{RuntimeApi, RuntimeTypeTranspiler, TemporaryNameProvider}
+import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
+import lore.compiler.phases.transpilation.{RuntimeApi, TypeTranspiler, TemporaryNameProvider}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.target.Target
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
@@ -35,7 +35,7 @@ class DispatchInput(mf: MultiFunctionDefinition, properties: MultiFunctionProper
       } else inputType
 
       val varType = nameProvider.createName().asVariable
-      val typeExpr = RuntimeTypeTranspiler.transpile(simplifiedInputType)
+      val typeExpr = TypeTranspiler.transpile(simplifiedInputType)
       variables = variables + (inputType -> varType)
       varType.declareAs(typeExpr)
     }

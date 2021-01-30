@@ -1,7 +1,8 @@
-package lore.compiler.phases.transpilation
+package lore.compiler.phases.transpilation.expressions
 
 import lore.compiler.core.CompilationException
-import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.TranspiledTypeVariables
+import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
+import lore.compiler.phases.transpilation.{Chunk, RuntimeApi, TemporaryNameProvider, TypeTranspiler}
 import lore.compiler.semantics.expressions.Expression.{Extractor, ForLoop, Loop, WhileLoop}
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl._
@@ -28,7 +29,7 @@ case class LoopTranspiler()(implicit nameProvider: TemporaryNameProvider, typeVa
           case MapType(_, _) => extractorMapShell(extractor, collection) _
           case _ => throw CompilationException("Currently, only lists and maps can be used as collections in a for loop.")
         }
-      }.foldRight(identity: Vector[TargetStatement] => Vector[TargetStatement]) { case (enclose, function) => function.andThen(enclose) }
+      }.foldRight(identity: Vector[TargetStatement] => Vector[TargetStatement]) { case (enclose, function) => function.andThen(enclose) },
     )
   }
 
@@ -39,8 +40,8 @@ case class LoopTranspiler()(implicit nameProvider: TemporaryNameProvider, typeVa
       Target.Iteration(
         varList.prop("array"),
         extractor.variable.transpiledName,
-        Target.Block(inner)
-      )
+        Target.Block(inner),
+      ),
     )
   }
 
@@ -57,9 +58,9 @@ case class LoopTranspiler()(implicit nameProvider: TemporaryNameProvider, typeVa
         Target.Block(
           Vector(varExtractor.declareAs(varNext.prop("value"))) ++
             inner ++
-            Vector(varNext.assign(callNext))
-        )
-      )
+            Vector(varNext.assign(callNext)),
+        ),
+      ),
     )
   }
 
@@ -77,7 +78,7 @@ case class LoopTranspiler()(implicit nameProvider: TemporaryNameProvider, typeVa
           result.map { case (varResult, resultType) =>
             varResult.assign(RuntimeApi.lists.append(varResult, e, resultType))
           }.getOrElse(e)
-        }.toVector
+        }.toVector,
       )
     }
 
@@ -85,7 +86,7 @@ case class LoopTranspiler()(implicit nameProvider: TemporaryNameProvider, typeVa
       Chunk.unit(loopCode(None): _*)
     } else {
       val varResult = nameProvider.createName().asVariable
-      val resultType = RuntimeTypeTranspiler.transpileSubstitute(loop.tpe)
+      val resultType = TypeTranspiler.transpileSubstitute(loop.tpe)
       val resultVarDeclaration = varResult.declareMutableAs(RuntimeApi.lists.value(Vector.empty, resultType))
       Chunk(resultVarDeclaration +: loopCode(Some(varResult, resultType)), varResult)
     }

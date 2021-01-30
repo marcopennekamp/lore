@@ -1,7 +1,7 @@
 package lore.compiler.phases.transpilation.functions
 
-import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.TranspiledTypeVariables
-import lore.compiler.phases.transpilation.{RuntimeApi, TemporaryNameProvider, TranspiledName}
+import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
+import lore.compiler.phases.transpilation.{RuntimeApi, TemporaryNameProvider, RuntimeNames}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl._
@@ -123,7 +123,7 @@ class DispatchBehavior(mf: MultiFunctionDefinition, properties: MultiFunctionPro
 
     // Sets the function represented by this node as the target of the mutli-function call.
     val setAsTarget = if (!function.isAbstract) {
-      val actualFunction = TranspiledName.function(function).asVariable
+      val actualFunction = RuntimeNames.function(function).asVariable
       val candidate = if (function.isPolymorphic) {
         // The first parameter of a polymorphic function is the map of type variable assignments passed to it at
         // run-time. Hence, we have to bind that map (saved in the fitsX variable after being returned by

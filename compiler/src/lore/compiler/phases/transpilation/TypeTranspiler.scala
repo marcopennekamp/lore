@@ -5,8 +5,7 @@ import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl.{StringExtension, VariableExtension}
 import lore.compiler.types._
 
-// TODO: Rename to TypeTranspiler.
-object RuntimeTypeTranspiler {
+object TypeTranspiler {
 
   type TranspiledTypeVariables = Map[TypeVariable, Target.Variable]
 
@@ -36,14 +35,14 @@ object RuntimeTypeTranspiler {
 
   /**
     * Transpiles the type to a run-time version where type variables are replaced with their actual assignments. Must
-    * have access to a type variable assignment context such as [[TranspiledName.localTypeVariableAssignments]].
+    * have access to a type variable assignment context such as [[RuntimeNames.localTypeVariableAssignments]].
     *
     * Since type variables are resolved at run-time, we also have to simplify sum and intersection types to their
     * normal forms at run-time.
     */
   def transpileSubstitute(tpe: Type)(implicit typeVariables: TranspiledTypeVariables): TargetExpression = {
     transpile(tpe, simplifyAtRuntime = true, tv => {
-      RuntimeApi.utils.tinyMap.get(TranspiledName.localTypeVariableAssignments.asVariable, typeVariables(tv))
+      RuntimeApi.utils.tinyMap.get(RuntimeNames.localTypeVariableAssignments.asVariable, typeVariables(tv))
     })
   }
 
@@ -77,7 +76,7 @@ object RuntimeTypeTranspiler {
       case BasicType.Boolean => api.boolean
       case BasicType.String => api.string
       case ProductType.UnitType => RuntimeApi.tuples.unitType
-      case declaredType: DeclaredType => TranspiledName.declaredType(declaredType).asVariable
+      case declaredType: DeclaredType => RuntimeNames.declaredType(declaredType).asVariable
       case SumType(types) =>
         val args = types.map(rec).toVector
         if (simplifyAtRuntime) RuntimeApi.sums.simplified(args) else RuntimeApi.sums.tpe(args)

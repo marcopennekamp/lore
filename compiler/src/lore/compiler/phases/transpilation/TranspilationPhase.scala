@@ -4,6 +4,7 @@ import lore.compiler.CompilerOptions
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException, Phase}
 import lore.compiler.phases.transpilation.functions.MultiFunctionTranspiler
+import lore.compiler.phases.transpilation.structures.{DeclaredTypeTranspiler, TypeAliasTranspiler}
 import lore.compiler.semantics.{Introspection, Registry}
 import lore.compiler.target.Target
 import lore.compiler.target.Target.TargetStatement
@@ -19,7 +20,7 @@ class TranspilationPhase()(implicit compilerOptions: CompilerOptions, registry: 
 
     val introspectionInitialization = registry.getTraitType(Introspection.typeName) match {
       case None => throw CompilationException(s"The compiler should generate a trait '${Introspection.typeName}' for the introspection API.")
-      case Some(introspectionType) => RuntimeApi.types.introspection.initialize(RuntimeTypeTranspiler.transpile(introspectionType)(Map.empty))
+      case Some(introspectionType) => RuntimeApi.types.introspection.initialize(TypeTranspiler.transpile(introspectionType)(Map.empty))
     }
 
     val functions = registry.getMultiFunctions.values.toVector.flatMap(new MultiFunctionTranspiler(_).transpile())

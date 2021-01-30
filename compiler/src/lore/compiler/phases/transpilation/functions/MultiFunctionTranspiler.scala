@@ -1,8 +1,8 @@
 package lore.compiler.phases.transpilation.functions
 
 import lore.compiler.CompilerOptions
-import lore.compiler.phases.transpilation.RuntimeTypeTranspiler.TranspiledTypeVariables
-import lore.compiler.phases.transpilation.{RuntimeApi, RuntimeTypeTranspiler, TemporaryNameProvider}
+import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
+import lore.compiler.phases.transpilation.{RuntimeApi, TypeTranspiler, TemporaryNameProvider}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.target.Target
@@ -52,7 +52,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   private lazy val transpiledInputTypeVariables: (Vector[TargetStatement], TranspiledTypeVariables) = {
     def handleFunction(function: FunctionDefinition) = {
       if (function.isPolymorphic) {
-        RuntimeTypeTranspiler.transpileTypeVariables(Type.variables(function.signature.inputType).toVector)
+        TypeTranspiler.transpileTypeVariables(Type.variables(function.signature.inputType).toVector)
       } else (Vector.empty, Map.empty: TranspiledTypeVariables)
     }
     mf.functions.map(handleFunction).foldLeft((Vector.empty[TargetStatement], Map.empty: TranspiledTypeVariables)) {
