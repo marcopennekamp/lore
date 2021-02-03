@@ -1,9 +1,16 @@
-function test(): SimulationResult = {
+function test(): [SimulationResult] = {
+  let scenarios = [kaladinVoidbringer(), sadeasDalinar()]
+  for (scenario <- scenarios) {
+    simulateCombat(first(scenario), second(scenario))
+  }
+}
+
+function kaladinVoidbringer(): (Combatant, Combatant) = {
   let kaladin = Radiant {
     name = 'Kaladin',
     stats = Stats {
       health = 25,
-      maximumHealth = 25,
+      maximumHealth = 25, // TODO: How can we set the health to the maximum health by default?
       regeneration = 0,
       dodge = 0.34,
       speed = 3
@@ -13,5 +20,33 @@ function test(): SimulationResult = {
 
   let voidbringer = Voidbringer { }
 
-  simulateCombat(kaladin, voidbringer)
+  (kaladin, voidbringer)
+}
+
+function sadeasDalinar(): (Combatant, Combatant) = {
+  let sadeas = Shardbearer {
+    name = 'Sadeas',
+    stats = Stats {
+      health = 15,
+      maximumHealth = 15,
+      regeneration = 0,
+      dodge = 0.2,
+      speed = 2
+    },
+    weapon = Shardbow()
+  }
+
+  let dalinar = Shardbearer {
+    name = 'Dalinar',
+    stats = Stats {
+      health = 30,
+      maximumHealth = 30,
+      regeneration = 0,
+      dodge = 0.15,
+      speed = 3
+    },
+    weapon = Shardblade()
+  }
+
+  (sadeas, dalinar)
 }

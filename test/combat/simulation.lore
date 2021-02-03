@@ -80,10 +80,13 @@ function simulateCombat(left: Combatant, right: Combatant): SimulationResult = {
   }
 
   if (isAlive(left) & ~isAlive(right)) {
+    combatLog('${name(left)} wins the battle!')
     SimulationVictory(left)
   } else if (~isAlive(left) & isAlive(right)) {
+    combatLog('${name(right)} wins the battle!')
     SimulationVictory(right)
   } else {
+    combatLog('We have a stalemate between ${name(left)} and ${name(right)}!')
     SimulationStalemate()
   }
 }

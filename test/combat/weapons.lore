@@ -1,21 +1,25 @@
 trait Weapon
 type +Weapon = { weapon: Weapon }
 
+// TODO: Ranged weapons should do half or a third of the damage in melee range.
 trait RangedWeapon extends Weapon
 type +RangedWeapon = { weapon: RangedWeapon }
 
 struct Sword implements Weapon
 struct Shardblade implements Weapon
 struct Spear implements Weapon
+struct Shardbow implements RangedWeapon
 struct Bow implements RangedWeapon
 
 function weaponStrength(weapon: Weapon): Int
 function weaponStrength(sword: Sword): Int = 7
 function weaponStrength(shardblade: Shardblade): Int = 15
 function weaponStrength(spear: Spear): Int = 5
+function weaponStrength(bow: Shardbow): Int = 10
 function weaponStrength(bow: Bow): Int = 4
 
 function weaponRange(weapon: RangedWeapon): Int
+function weaponRange(shardbow: Shardbow): Int = 20
 function weaponRange(bow: Bow): Int = 10
 
 
