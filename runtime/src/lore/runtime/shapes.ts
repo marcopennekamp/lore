@@ -1,7 +1,6 @@
 import { Intersection } from './intersections.ts'
 import { Kind } from './types/kinds.ts'
-import { PropertyTypes, Type } from './types/types.ts'
-import { Hashed, pairHash, stringHash, unorderedHashWithSeed } from './utils/hash.ts'
+import { hashPropertyTypes, PropertyTypes, Type } from './types/types.ts'
 
 export interface ShapeType extends Type {
   propertyTypes: PropertyTypes
@@ -9,16 +8,7 @@ export interface ShapeType extends Type {
 
 export const Shape = {
   type(propertyTypes: PropertyTypes): ShapeType {
-    // Note that creating the Hashable intermediate objects is only needed because unorderedHashWithSeed and pairHash
-    // have the API limitation of expecting { hash: string } objects. If this ever causes performance problems, we can
-    // move to a separate implementation that accepts raw hashes.
-    const propertyHashes: Array<Hashed> = []
-    for (const name of Object.keys(propertyTypes)) {
-      let hash = pairHash({ hash: stringHash(name) }, propertyTypes[name], 0x4cb3052e)
-      propertyHashes.push({ hash })
-    }
-
-    return { kind: Kind.Shape, propertyTypes, hash: unorderedHashWithSeed(propertyHashes, 0xf38da2c4) }
+    return { kind: Kind.Shape, propertyTypes, hash: hashPropertyTypes(propertyTypes, 0xf38da2c4) }
   },
 
   /**

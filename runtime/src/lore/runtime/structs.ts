@@ -1,7 +1,9 @@
 import { TraitType } from './traits.ts'
 import { Kind } from './types/kinds.ts'
-import { DeclaredType, DeclaredTypeSchema, LazyPropertyTypes, PropertyTypes, Type } from './types/types.ts'
-import { stringHashWithSeed } from './utils/hash.ts'
+import {
+  DeclaredType, DeclaredTypeSchema, hashPropertyTypes, LazyPropertyTypes, PropertyTypes, Type,
+} from './types/types.ts'
+import { pairHashRaw, stringHash, stringHashWithSeed } from './utils/hash.ts'
 import { Value } from './values.ts'
 
 export interface StructSchema extends DeclaredTypeSchema {
@@ -59,11 +61,15 @@ export const Struct = {
       schema,
       isArchetype,
       propertyTypes,
-      // TODO: The hash of the struct type must not only depend on the name, but also on the open property types. Otherwise,
-      //       structs with different property types altogether get the same hashes, which is bad for dispatch cache
-      //       performance.
-      hash: stringHashWithSeed(schema.name, 0x38ba128e),
+      hash: this.hash(schema, propertyTypes),
     }
+  },
+
+  hash(schema: StructSchema, propertyTypes?: PropertyTypes): number {
+    if (!propertyTypes) {
+      return stringHashWithSeed(schema.name, 0x38ba128e)
+    }
+    return pairHashRaw(stringHash(schema.name), hashPropertyTypes(propertyTypes, 0x281eba38), 0x38ba128e)
   },
 
   /**

@@ -11,7 +11,7 @@
     - runtime: ~~trait schema with inherited shape type~~, ~~trait/shape subtyping~~
   - Open properties
     - ~~open struct property declarations~~
-    - ~~subtyping~~, ~~type equality~~, type hashing
+    - ~~subtyping~~, ~~type equality~~, ~~struct type hashing~~
   - Shape values
     - compiler: AST, expression tree, parser, transformer & type inference, transpiler
     - runtime: data structure, run-time type instantiation

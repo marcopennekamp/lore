@@ -126,9 +126,13 @@ export function singleHash<A extends Hashed>(e1: A, seed: number): number {
  * differentiate these kinds of values.
  */
 export function pairHash<A extends Hashed, B extends Hashed>(e1: A, e2: B, seed: number): number {
+  return pairHashRaw(e1.hash, e2.hash, seed)
+}
+
+export function pairHashRaw(e1: number, e2: number, seed: number): number {
   let h = seed
-  h = mix(h, e1.hash)
-  h = mixLast(h, e2.hash)
+  h = mix(h, e1)
+  h = mixLast(h, e2)
   return finalize(h, 1)
 }
 
