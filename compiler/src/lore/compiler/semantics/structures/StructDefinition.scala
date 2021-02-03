@@ -13,6 +13,8 @@ class StructDefinition(
 
   lazy val propertyMap: Map[String, StructPropertyDefinition] = properties.map(p => (p.name, p)).toMap
 
+  lazy val openProperties: Vector[StructPropertyDefinition] = properties.filter(_.isOpen)
+
   /**
     * The signature of the call-style constructor.
     */

@@ -10,6 +10,7 @@ import lore.compiler.types.Type
 class StructPropertyDefinition(
   val name: String,
   val tpe: Type,
+  val isOpen: Boolean,
   val isMutable: Boolean,
   val defaultValueNode: Option[ExprNode],
   override val position: Position,

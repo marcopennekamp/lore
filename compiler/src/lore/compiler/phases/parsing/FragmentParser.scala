@@ -111,8 +111,8 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def property[_: P]: P[TypeDeclNode.PropertyNode] = {
-    P(Index ~ "mut".!.?.map(_.isDefined) ~ identifier ~ typeParser.typing ~ defaultValue.?)
-      .map { case (index, isMutable, name, tpe, defaultValue) => (index, name, tpe, isMutable, defaultValue) }
+    P(Index ~ "open".!.?.map(_.isDefined) ~ "mut".!.?.map(_.isDefined) ~ identifier ~ typeParser.typing ~ defaultValue.?)
+      .map { case (index, isOpen, isMutable, name, tpe, defaultValue) => (index, name, tpe, isOpen, isMutable, defaultValue) }
       .map(withIndex(TypeDeclNode.PropertyNode))
   }
 

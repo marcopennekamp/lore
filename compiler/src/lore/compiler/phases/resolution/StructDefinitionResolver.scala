@@ -1,6 +1,6 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.core.{Compilation, CompilationException, Position}
+import lore.compiler.core.{Compilation, CompilationException, Position, Error}
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.scopes.TypeScope
@@ -21,7 +21,17 @@ object StructDefinitionResolver {
     }
   }
 
+  case class MutableOpenProperty(node: TypeDeclNode.PropertyNode) extends Error(node) {
+    override def message = s"Open properties may not be mutable."
+  }
+
   private def resolveProperty(node: TypeDeclNode.PropertyNode)(implicit typeScope: TypeScope): Compilation[StructPropertyDefinition] = {
-    TypeExpressionEvaluator.evaluate(node.tpe).map(tpe => new StructPropertyDefinition(node.name, tpe, node.isMutable, node.defaultValue, node.position))
+    TypeExpressionEvaluator.evaluate(node.tpe).flatMap { tpe =>
+      if (node.isOpen && node.isMutable) {
+        Compilation.fail(MutableOpenProperty(node))
+      } else {
+        Compilation.succeed(new StructPropertyDefinition(node.name, tpe, node.isOpen, node.isMutable, node.defaultValue, node.position))
+      }
+    }
   }
 }

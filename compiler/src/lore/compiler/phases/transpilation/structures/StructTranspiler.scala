@@ -57,7 +57,7 @@ object StructTranspiler {
     val varSchema = RuntimeNames.typeSchema(tpe)
     val varNewtype = RuntimeNames.newType(tpe)
     val varArchetype = RuntimeNames.declaredType(tpe)
-    val definitions = if (tpe.hasOpenProperties) {
+    val definitions = if (tpe.openProperties.nonEmpty) {
       // The type-specific property types are undefined when creating the archetype so that we don't have to evaluate
       // these lazily. (Archetypes are created right away, eagerly, and may then run into type ordering issues since
       // declared types are referenced by Javascript variable.)
@@ -83,7 +83,7 @@ object StructTranspiler {
   private def transpileInstantiation(tpe: StructType, varNewtype: Target.Variable, varArchetype: Target.Variable) = {
     val varInstantiate = RuntimeNames.instantiate(tpe)
     val paramProperties = "properties".asParameter
-    val instantiatedType = if (tpe.hasOpenProperties) {
+    val instantiatedType = if (tpe.openProperties.nonEmpty) {
       // Instantiates the struct with the actual run-time property types, which are retrieved using typeOf. This
       // overrides the property types defined in the schema.
       val openPropertyTypes = Target.Dictionary(tpe.openProperties.map { property =>

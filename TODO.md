@@ -10,8 +10,8 @@
     - compiler: ~~declared types inheriting from shapes~~, ~~trait/shape subtyping~~, ~~check that all inherited shape properties are implemented by a given struct~~, ~~type aliases~~, ~~+ as part of a valid type name~~
     - runtime: ~~trait schema with inherited shape type~~, ~~trait/shape subtyping~~
   - Open properties
-    - struct property declarations
     - run-time type instantiation
+    - ~~open struct property declarations~~
   - Shape values
     - compiler: AST, expression tree, parser, transformer & type inference, transpiler
     - runtime: data structure, run-time type instantiation
@@ -19,6 +19,8 @@
   - Ranges still need to be supported, as they are already part of the specification.
 - Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.
 - Implement an append operation for maps. In general, we will need to apply the same run-time typing considerations to maps.
+- Implement anonymous functions.
+- Implement a module system.
 - Rethink properties: I don't like how shape properties are orthogonal to multi-functions right now. To use a shape, one is forced to ultimately give a property to an implementing struct. It would be much superior if properties could be declared "virtually", allowing traits to implement properties via some sort of function (perhaps even with dispatch on the accessed type). This feature should also simultaneously solve the question of "virtual/computed properties" posed in the geometry.lore example.
   - This would effectively mean that property types are always changeable and would either bar these kinds of properties to be open or would mean that we'd have to (a) rebuild the type each time the struct is used in dispatch or (b) disable the dispatch cache for multi-functions with shape types. Disallowing "virtual" properties to be open seems like an acceptable compromise, as the other options are far too detrimental on performance.
 - A rudimentary form of tree shaking to avoid transpiling functions that aren't used by any other function. This unfortunately requires specifying an entry point. Maybe we could perform tree shaking if such entry points are specified at all.

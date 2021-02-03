@@ -10,13 +10,12 @@ class StructType(
   override val supertypes: Vector[Type],
 ) extends DeclaredType with DeclaredType.DefinitionProperty[StructDefinition] {
 
+  def openProperties: Vector[StructPropertyDefinition] = definition.openProperties
+
   /**
     * The struct viewed as a compile-time shape type. Whether the struct's properties are open has no bearing on
     * this representation.
     */
   override lazy val asShapeType: ShapeType = ShapeType(definition.properties.map(ShapeType.Property.apply))
-
-  val hasOpenProperties = false
-  val openProperties: Vector[StructPropertyDefinition] = Vector.empty // TODO: This should rather be declared in the StructDefinition.
 
 }
