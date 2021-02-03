@@ -27,8 +27,8 @@ export function isPolymorphic(type: Type): boolean {
     case Kind.Trait:
       return false // TODO: Change this once we allow type parameters for classes and labels.
 
-    case Kind.Intersection:
     case Kind.Sum:
+    case Kind.Intersection:
     case Kind.Product: {
       const xary = <XaryType> type
       const types = xary.types

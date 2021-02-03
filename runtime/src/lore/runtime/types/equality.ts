@@ -2,12 +2,12 @@ import { IntersectionType } from '../intersections.ts'
 import { ListType } from '../lists.ts'
 import { MapType } from '../maps.ts'
 import { ShapeType } from '../shapes.ts'
-import { StructType } from '../structs.ts'
+import { Struct, StructType } from '../structs.ts'
 import { SumType } from '../sums.ts'
 import { TraitType } from '../traits.ts'
 import { ProductType } from '../tuples.ts'
 import {
-  AnyType, BooleanType, IntType, NothingType, RealType, StringType, Type, TypeVariable,
+  AnyType, BooleanType, IntType, NothingType, PropertyTypes, RealType, StringType, Type, TypeVariable,
 } from './types.ts'
 
 /**
@@ -54,30 +54,21 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
   (t1: StringType, t2: StringType) => true,
 
   (t1: StructType, t2: StructType) => {
-    // TODO: Reimplement this taking open property types into account instead of component types:
-
-    /* // Struct type equality is more complicated than one might expect due to the influence of component types. A struct
-    // type can only be equal to another struct type if all of their component types agree. Otherwise, dispatch might
-    // be handled differently based on the component type and thus the types cannot be equal, especially in respect to
-    // the dispatch cache. Of course, we only need to consider components when the schema indicates that the types are
-    // entities.
     if (t1.schema === t2.schema) {
-
-      if (t1.schema.isEntity) {
-        // For all intents and purposes, we can assume that the component type arrays are both of equal length and are
-        // in the same order. If this is not the case, the struct types have been instantiated incorrectly.
-        const componentTypes1 = t1.componentTypes
-        const componentTypes2 = t2.componentTypes
-        for (let i = 0; i < componentTypes1.length; i += 1) {
-          if (!areEqual(componentTypes1[i], componentTypes2[i])) {
-            return false
-          }
-        }
+      // Structs are only equal if all of their open properties agree as well. This is especially crucial for the
+      // dispatch cache, where a single different open property type may change the target function.
+      // The equality check assumes that a struct's open property types are either undefined or fully defined, i.e.
+      // contain all possible keys. That invariant allows us to iterate through one struct's propertyTypes object and
+      // still make sure that all keys are covered. There cannot be an open property type in the other struct that we
+      // missed.
+      if (t1.propertyTypes) {
+        return arePropertyTypesEqualTo(t1.propertyTypes, t2)
+      } else if (t2.propertyTypes) {
+        return arePropertyTypesEqualTo(t2.propertyTypes, t1)
       }
       return true
     }
-    return false */
-    return t1.schema === t2.schema
+    return false
   },
   (t1: TraitType, t2: TraitType) => false, // If the traits are not referentially equal, they cannot be equal.
 
@@ -123,6 +114,19 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
     return true
   }
 ]
+
+/**
+ * Checks that the given property types are exactly equal to the property types found in the given struct type.
+ */
+function arePropertyTypesEqualTo(propertyTypes: PropertyTypes, structType: StructType): boolean {
+  for (const p1Name of Object.keys(propertyTypes)) {
+    const p2Type = Struct.getPropertyType(structType, p1Name)
+    if (!p2Type || !areEqual(propertyTypes[p1Name], p2Type)) {
+      return false
+    }
+  }
+  return true
+}
 
 /**
  * Checks whether all types t1 in types1 have one type t2 in types2 with areEqual(t1, t2).
