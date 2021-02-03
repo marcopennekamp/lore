@@ -10,8 +10,8 @@
     - compiler: ~~declared types inheriting from shapes~~, ~~trait/shape subtyping~~, ~~check that all inherited shape properties are implemented by a given struct~~, ~~type aliases~~, ~~+ as part of a valid type name~~
     - runtime: ~~trait schema with inherited shape type~~, ~~trait/shape subtyping~~
   - Open properties
-    - run-time type instantiation
     - ~~open struct property declarations~~
+    - ~~subtyping~~, ~~type equality~~, type hashing
   - Shape values
     - compiler: AST, expression tree, parser, transformer & type inference, transpiler
     - runtime: data structure, run-time type instantiation

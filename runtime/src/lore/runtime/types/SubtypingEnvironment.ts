@@ -8,7 +8,7 @@ import { TraitType } from '../traits.ts'
 import { ProductType } from '../tuples.ts'
 import { areEqual } from './equality.ts'
 import { Kind } from './kinds.ts'
-import { DeclaredType, Type, TypeVariable } from './types.ts'
+import { DeclaredType, PropertyTypes, Type, TypeVariable } from './types.ts'
 
 /**
  * A subtyping environment provides a specific implementation of the isSubtype function given a configuration.
@@ -53,37 +53,31 @@ export class SubtypingEnvironment {
           }
         } else if (t2.kind === Kind.Struct) {
           // If t2 is a struct type, we don't have to check whether any of t1's supertraits are equal to t2, because
-          // a struct cannot be a supertrait. Because t1 and t2 aren't referentially equal either, we can return false.
-          // A struct can only ever be a subtype of a single struct: itself.
-          return false
+          // a struct cannot be a supertrait. Because t1 and t2 aren't referentially equal either, the only route to
+          // subtyping is through the open property types.
+          if (t1.kind === Kind.Struct) {
+            const s1 = <StructType> t1
+            const s2 = <StructType> t2
+            if (s1.schema === s2.schema) {
+              // The archetype is always a supertype of all the structs that could possibly be instantiated, because
+              // each property type of the archetype is the property's upper bound.
+              // Note that we can't trivially assume the reverse and return false if s1 is an archetype. Struct type s2
+              // might not be the archetype, but its open property types might still be equal to the property types of
+              // the archetype.
+              if (s2.isArchetype) {
+                return true
+              }
 
-          // TODO: Rebuild this for open property types (structs only, though):
-
-          /* // If the schemas of these two declared types are equal, we have the same type most of the time. The equality
-          // might not have been caught by the === check above because a struct type can have multiple instances with
-          // different actual (open) property types.
-          // We also have to take component types into account when deciding subtyping, however. Let's say we have a
-          // struct a1: A with a component C1 and another struct a2: A with a component C2. Given C2 < C1, is a1's
-          // struct type a subtype of a2's struct type?
-          // It is not. We couldn't assign a1 to a variable that explicitly expects a type like a2. This is of no
-          // importance at compile-time, of course, since struct types are all "archetypes" then. But to get sound
-          // run-time subtyping, we also have to look at the components.
-          // Fortunately, we only have to do that if the right-hand type t2 is not an archetype and only if the type
-          // is an entity, of course. Otherwise, checking the schema will suffice.
-          if (d1.schema === d2.schema) {
-            // We could "optimize" this check by requiring d2 to be a struct, but equal traits are already caught
-            // by the reference equality check above. Also, d1 will almost never be a trait, so if the schemas are
-            // equal, we can already be almost 100% certain that we are dealing with structs.
-            if (!d2.isArchetype) {
-              const componentTypes1 = d1.componentTypes
-              const componentTypes2 = d2.componentTypes
-              for (let i = 0; i < componentTypes1.length; i += 1) {
-                if (!this.isSubtype(componentTypes1[i], componentTypes2[i])) return false
+              // This subtyping check assumes that open property types are either undefined or fully defined. This
+              // allows us to check keys in only one direction.
+              if (s1.propertyTypes) {
+                return this.propertyTypesSubtypeStruct(s1.propertyTypes, s2)
+              } else if (s2.propertyTypes) {
+                return this.structSubtypesPropertyTypes(s1, s2.propertyTypes)
               }
             }
-
-            return true
-          } */
+          }
+          return false
         } else if (t2.kind === Kind.Trait) {
           const d1 = <DeclaredType> t1
           const d2 = <DeclaredType> t2
@@ -266,9 +260,29 @@ export class SubtypingEnvironment {
    * Whether struct type s1 is a subtype of shape type s2.
    */
   private structSubtypeShape(s1: StructType, s2: ShapeType): boolean {
-    for (const p2Name of Object.keys(s2.propertyTypes)) {
-      const p1Type = Struct.getPropertyType(s1, p2Name)
-      if (!p1Type || !this.isSubtype(p1Type, s2.propertyTypes[p2Name])) {
+    return this.structSubtypesPropertyTypes(s1, s2.propertyTypes)
+  }
+
+  /**
+   * Whether all given property types are supertypes of their respective struct property types.
+   */
+  private structSubtypesPropertyTypes(structType: StructType, propertyTypes: PropertyTypes): boolean {
+    for (const p2Name of Object.keys(propertyTypes)) {
+      const p1Type = Struct.getPropertyType(structType, p2Name)
+      if (!p1Type || !this.isSubtype(p1Type, propertyTypes[p2Name])) {
+        return false
+      }
+    }
+    return true
+  }
+
+  /**
+   * Whether all given property types are subtypes of their respective struct property types.
+   */
+  private propertyTypesSubtypeStruct(propertyTypes: PropertyTypes, structType: StructType): boolean {
+    for (const p1Name of Object.keys(propertyTypes)) {
+      const p2Type = Struct.getPropertyType(structType, p1Name)
+      if (!p2Type || !this.isSubtype(propertyTypes[p1Name], p2Type)) {
         return false
       }
     }
