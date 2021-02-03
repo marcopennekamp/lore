@@ -6,6 +6,7 @@ import { fits, fitsMonomorphic, fitsPolymorphic } from './fit.ts'
 import { Introspection } from './introspection.ts'
 import { Kind } from './kinds.ts'
 import { isPolymorphic, variables } from './polymorphy.ts'
+import { stringify } from './stringify.ts'
 import { isSubtype } from './subtyping.ts'
 import { typeOf } from './typeof.ts'
 
@@ -88,6 +89,7 @@ export const Types = {
   typeOf,
   isPolymorphic,
   variables,
+  stringify,
 
   // The type introspection API.
   introspection: Introspection,

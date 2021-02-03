@@ -1,3 +1,4 @@
+import { stringify } from '../types/stringify.ts'
 import { TinyMap } from './TinyMap.ts'
 import { TinySet } from './TinySet.ts'
 import { HashMap } from './HashMap.ts'
@@ -38,14 +39,14 @@ export default {
   },
   // TODO: I feel like this should rather be part of some "core" or "error" API.
   error: {
-    ambiguousCall(functionName: string, inputType: Type | string) {
-      throw new Error(`The multi-function ${functionName} is ambiguous for the input type ${inputType}.`);
+    ambiguousCall(functionName: string, inputType: Type) {
+      throw new Error(`The multi-function ${functionName} is ambiguous for the input type ${stringify(inputType)}.`);
     },
-    emptyFit(functionName: string, inputType: Type | string) {
-      throw new Error(`Could not find an implementation of ${functionName} for the input type ${inputType}.`);
+    emptyFit(functionName: string, inputType: Type) {
+      throw new Error(`Could not find an implementation of ${functionName} for the input type ${stringify(inputType)}.`);
     },
-    missingImplementation(functionName: string, parameterType: Type | string, argumentType: Type | string) {
-      throw new Error(`The abstract function ${functionName}${parameterType} is missing an implementation for ${argumentType}.`);
+    missingImplementation(functionName: string, parameterType: string, argumentType: Type) {
+      throw new Error(`The abstract function ${functionName}${parameterType} is missing an implementation for ${stringify(argumentType)}.`);
     },
   },
 }
