@@ -1,0 +1,180 @@
+trait Color
+struct Red implements Color
+struct Black implements Color
+struct Brown implements Color
+struct Yellow implements Color
+struct Blue implements Color
+
+
+trait Profession
+struct Tailor implements Profession
+struct Lawyer implements Profession
+struct Entrepreneur implements Profession
+struct Gardener implements Profession
+struct Assassin implements Profession
+
+
+trait Tool
+struct Scissors implements Tool
+struct Suitcase implements Tool
+struct Paperknife implements Tool
+struct Spade implements Tool
+struct Dagger implements Tool
+
+function tool(profession: Profession): Tool
+function tool(tailor: Tailor): Tool = Scissors()
+function tool(lawyer: Lawyer): Tool = Suitcase()
+function tool(entrepreneur: Entrepreneur): Tool = Paperknife()
+function tool(gardener: Gardener): Tool = Spade()
+function tool(assassin: Assassin): Tool = Dagger()
+
+function sharpness(tool: Tool): Real
+function sharpness(sharpTool: Scissors | Paperknife | Dagger): Real = 1
+function sharpness(bluntTool: Suitcase | Spade): Real = 0
+
+function bluntness(tool: Tool): Real = 1 - sharpness(tool)
+
+
+trait Relation
+trait Friendly extends Relation
+trait Neutral extends Relation
+trait Hostile extends Relation
+struct Professional implements Neutral
+struct Cordial implements Neutral
+struct Friends implements Friendly
+struct Lovers implements Friendly, Hostile
+struct Competing implements Hostile
+struct Shunned implements Hostile
+
+
+trait Approach
+struct Socialising implements Approach
+struct Calculating implements Approach
+struct Honest implements Approach
+struct Indifferent implements Approach
+
+
+struct Suspect {
+  name: String
+
+  open hairColor: Color
+  open clothesColor: Color
+  open profession: Profession
+
+  /**
+    * The suspect's general approach to social and professional situations.
+    */
+  open approach: Approach
+
+  /**
+    * The suspect's relation to the victim.
+    */
+  open relation: Relation
+}
+
+
+/**
+  * The kitchen maid saw a person leave by the staff entrance into the rainstorm outside. She noticed a flash of red as
+  * the door slammed behind the suspect. Detective Trout wonders: Was it the color of their clothes, their hair, or
+  * both?
+  */
+function colorFactor(suspect: { hairColor: Color, clothesColor: Color }): Real = 0.8
+function colorFactor(suspect: { hairColor: Red, clothesColor: Color }): Real = 1.2
+function colorFactor(suspect: { hairColor: Color, clothesColor: Red }): Real = 1.2
+function colorFactor(suspect: { hairColor: Red, clothesColor: Red }): Real = 1.5
+
+
+/**
+  * The suspect was murdered with a blunt weapon devoid of any sharpness. However, the murder weapon hasn't been
+  * found and Bunsnatcher's mansion is vast with an unaccountable number of objects. It cannot be ruled out that the
+  * murder weapon was already in the mansion before the suspect arrived, meaning the suspect didn't use their own
+  * tools of the trade.
+  */
+function weaponFactor(suspect: Suspect): Real = 1 + bluntness(tool(suspect.profession)) / 2
+
+
+/**
+  * Bertram Bunsnatcher was an influential man. He crossed paths with many people throughout his life, and some of them
+  * were blessed by his business, while others suffered from his influence.
+  *
+  * TODO: We could implement this using "call all" and then taking the maximum factor, which would allow us to deal with ambiguities.
+  */
+function motiveFactor(suspect: { }): Real = 1.0
+
+// Friends don't kill friends, right?
+function motiveFactor(suspect: { relation: Friendly }): Real = 0.8
+
+// Anyone who was hostile to Bunsnatcher could be the killer! "Let's also not forget that lovers are unpredictable,"
+// says Detective Trout.
+function motiveFactor(suspect: { relation: Hostile }): Real = 1.2
+
+// Some ex-employees of Bertram Bunsnatcher would have more than plenty of motive to kill him.
+function motiveFactor(suspect: { profession: Tailor | Lawyer | Gardener, relation: Shunned }): Real = 1.5
+
+// It is widely acknowledged that lawyers are utterly inhuman and thus cannot have or be friends. The lawyer must've
+// pretended to Bertram Bunsnatcher for some ulterior motive.
+function motiveFactor(suspect: { profession: Lawyer, relation: Friendly }): Real = 1.2
+function motiveFactor(suspect: { profession: Lawyer, relation: Lovers }): Real = 1.2 // Sadly needed for disambiguation.
+
+// Business rivals always have a good motive to kill such a wealthy business magnet.
+function motiveFactor(suspect: { profession: Entrepreneur, relation: Competing }): Real = 1.3
+
+// Shunned rivals even more so, as Bunsnatcher doesn't even acknowledge them anymore.
+function motiveFactor(suspect: { profession: Entrepreneur, relation: Shunned }): Real = 1.4
+
+// Perhaps a more than calculating business partner who murdered Bunsnatcher in cold blood?
+function motiveFactor(suspect: { profession: Entrepreneur, approach: Calculating, relation: Friendly | Neutral }): Real = 1.5
+
+// It is highly unlikely that an assassin would've done such a sloppy job, unless the victim and the assassin were
+// friends and the assassin messed up out of emotional attachment to the "job"!
+function motiveFactor(suspect: { profession: Assassin }): Real = 0.2
+function motiveFactor(suspect: { profession: Assassin, relation: Friendly }): Real = 1.5
+function motiveFactor(suspect: { profession: Assassin, relation: Lovers }): Real = 1.5 // Sadly needed for disambiguation.
+
+
+/**
+  * "75% of all cases are decided based on character," Detective Trout says. "Horrible people are more likely to commit
+  * horrible crimes."
+  */
+function characterFactor(suspect: { }): Real = 1.0
+
+// Honest jobs for honest people.
+function characterFactor(suspect: { profession: Tailor | Gardener | Assassin, approach: Honest }): Real = 0.5
+
+// Lawyers are terrible people, obviously. Except the honest ones. They are only slightly terrible.
+function characterFactor(suspect: { profession: Lawyer }): Real = 1.4
+function characterFactor(suspect: { profession: Lawyer, approach: Honest }): Real = 1.1
+
+// Do you like to exploit people? Then this is the profession for you! The honest ones are even worse: they don't even
+// hide or justify their exploitation behind a curtain of lies.
+function characterFactor(suspect: { profession: Entrepreneur }): Real = 1.2
+function characterFactor(suspect: { profession: Entrepreneur, approach: Honest }): Real = 1.3
+
+
+/**
+  * For the given suspect, returns the likelihood of their guilt. There can only be a single murderer.
+  */
+function guilt(suspect: Suspect): Real = colorFactor(suspect) * weaponFactor(suspect) * motiveFactor(suspect) * characterFactor(suspect)
+
+
+/**
+  * Let's set the scene: Bertram Bunsnatcher, a rich industrialist, was found murdered in his cliff-side manor. There
+  * are a number of suspects. Ten, to be precise. And Detective Truman Trout must find the culprit, as only one of them
+  * could've done it. Let's dive into the prejudiced mind of Detective Trout and test all the subjects' guilt!
+  */
+function test(): [Real] = {
+  let suspects = [
+    Suspect('Rilam Ralam', Black(), Yellow(), Entrepreneur(), Calculating(), Competing()),
+    Suspect('Warren Warner', Black(), Brown(), Gardener(), Honest(), Cordial()),
+    Suspect('Vichity Vichy', Yellow(), Red(), Lawyer(), Calculating(), Shunned()),
+    Suspect('Redmond Riley', Red(), Red(), Tailor(), Socialising(), Friends()),
+    Suspect('Mary Monroe', Red(), Blue(), Assassin(), Indifferent(), Lovers()),
+    Suspect('Burke Partnerton', Black(), Black(), Entrepreneur(), Socialising(), Professional()),
+    Suspect('Meredith Partnertwon', Red(), Black(), Entrepreneur(), Calculating(), Professional()),
+    Suspect('Ella Marsk', Brown(), Blue(), Gardener(), Socialising(), Shunned()),
+    Suspect('Rooney Rudigiani', Black(), Brown(), Lawyer(), Socialising(), Lovers()),
+    Suspect('Goodman Niceman', Black(), Black(), Assassin(), Honest(), Cordial())
+  ]
+
+  for (suspect <- suspects) guilt(suspect)
+}

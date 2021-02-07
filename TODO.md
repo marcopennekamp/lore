@@ -30,6 +30,7 @@
 - The single & and | style feels quite weird when actually using it. Maybe we should just introduce operators && and || or "and" and "or". Similarly with the not operator. And I don't quite like =/= either, in hindsight.
 - Allow question marks in identifiers. I like how Clojure approaches booleans and this would fit nicely into Lore, I hope. Example: `isSuccessful` would become `successful?`.
 - Allow trailing commas.
+- `implements` is annoying to type (especially to remember using it for structs in contrast to traits). I frequently trip up there. Maybe we should just use `extends` for structs as well to make the language easier to use.
 
 ##### Type System
 
