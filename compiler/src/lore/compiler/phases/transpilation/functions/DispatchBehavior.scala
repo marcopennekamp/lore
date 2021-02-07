@@ -65,7 +65,7 @@ class DispatchBehavior(mf: MultiFunctionDefinition, properties: MultiFunctionPro
     } else Vector.empty
 
     val targetDeclaration = varTarget.declareMutableAs(Target.Undefined)
-    val indexedRoots = withFitsVariables(mf.hierarchyRoots)
+    val indexedRoots = withFitsVariables(mf.hierarchy.roots)
     val dispatchStatements = indexedRoots.map(transpileFitsCall) ++ indexedRoots.map(transpileDispatchNode)
 
     cacheTry ++ Vector(targetDeclaration) ++ dispatchStatements ++ Vector(
@@ -83,14 +83,14 @@ class DispatchBehavior(mf: MultiFunctionDefinition, properties: MultiFunctionPro
     ).filterNot(_ == Target.Empty)
   }
 
-  private def withFitsVariables(nodes: Vector[mf.hierarchy.NodeT]): Vector[(mf.hierarchy.NodeT, Target.Variable)] = {
+  private def withFitsVariables(nodes: Vector[mf.hierarchy.graph.NodeT]): Vector[(mf.hierarchy.graph.NodeT, Target.Variable)] = {
     nodes.zipWithIndex.map { case (node, index) => (node, s"fits$index".asVariable) }
   }
 
   /**
     * Transpiles a singular fits decision and keeps it in a constant identified by the given `fitsX` variable.
     */
-  private def transpileFitsCall(node: mf.hierarchy.NodeT, varFitsX: Target.Variable): TargetStatement = {
+  private def transpileFitsCall(node: mf.hierarchy.graph.NodeT, varFitsX: Target.Variable): TargetStatement = {
     val varRightType = dispatchInput.inputTypes(node.signature.inputType)
 
     // We can decide at compile-time which version of the fit should be used, because the type on the right side
@@ -110,14 +110,14 @@ class DispatchBehavior(mf: MultiFunctionDefinition, properties: MultiFunctionPro
     varFitsX.declareAs(fitsCall)
   }
 
-  private def transpileFitsCall(value: (mf.hierarchy.NodeT, Target.Variable)): TargetStatement = transpileFitsCall(value._1, value._2)
+  private def transpileFitsCall(value: (mf.hierarchy.graph.NodeT, Target.Variable)): TargetStatement = transpileFitsCall(value._1, value._2)
 
   /**
     * For the given node/function, looks at varFitsX to determine whether this function could be called with the given
     * argument. If that's the case, the dispatch algorithm has to look at the successors of the node to ultimately
     * find out the dispatch target.
     */
-  private def transpileDispatchNode(node: mf.hierarchy.NodeT, varFitsX: Target.Variable): TargetStatement = {
+  private def transpileDispatchNode(node: mf.hierarchy.graph.NodeT, varFitsX: Target.Variable): TargetStatement = {
     val successors = withFitsVariables(node.diSuccessors.toVector)
     val function = node.value
 
@@ -170,6 +170,6 @@ class DispatchBehavior(mf: MultiFunctionDefinition, properties: MultiFunctionPro
     )
   }
 
-  private def transpileDispatchNode(value: (mf.hierarchy.NodeT, Target.Variable)): TargetStatement = transpileDispatchNode(value._1, value._2)
+  private def transpileDispatchNode(value: (mf.hierarchy.graph.NodeT, Target.Variable)): TargetStatement = transpileDispatchNode(value._1, value._2)
 
 }

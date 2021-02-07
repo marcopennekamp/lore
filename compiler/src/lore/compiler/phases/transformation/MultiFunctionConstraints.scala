@@ -122,7 +122,7 @@ object MultiFunctionConstraints {
     *       example.
     */
   def verifyOutputTypes(mf: MultiFunctionDefinition): Verification = {
-    def verifyHierarchyNode(node: mf.hierarchy.NodeT): Verification = {
+    def verifyHierarchyNode(node: mf.hierarchy.graph.NodeT): Verification = {
       val parent = node.value
       val successors = node.diSuccessors.toVector
       successors.map { successor =>
@@ -136,7 +136,7 @@ object MultiFunctionConstraints {
       }.simultaneous.verification
     }
 
-    mf.hierarchyRoots.map(verifyHierarchyNode).simultaneous.verification
+    mf.hierarchy.roots.map(verifyHierarchyNode).simultaneous.verification
   }
 
 }
