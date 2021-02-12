@@ -80,6 +80,7 @@ object RuntimeApi {
     implicit val base = named("shapes")(RuntimeApi.base)
 
     def tpe(propertyTypes: TargetExpression) = named("type").call(propertyTypes)
+    def value(properties: Target.Dictionary) = named("value").call(properties)
   }
 
   object traits {

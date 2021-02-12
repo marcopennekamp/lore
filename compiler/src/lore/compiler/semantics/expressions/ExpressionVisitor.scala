@@ -18,6 +18,7 @@ trait ExpressionVisitor[A, B] {
   def visit(expression: Expression.Tuple)(values: Vector[A]): B
   def visit(expression: Expression.ListConstruction)(values: Vector[A]): B
   def visit(expression: Expression.MapConstruction)(entries: Vector[(A, A)]): B
+  def visit(expression: Expression.ShapeValue)(properties: Vector[A]): B
   def visit(expression: Expression.Instantiation)(arguments: Vector[A]): B
   def visit(expression: Expression.UnaryOperation)(value: A): B
   def visit(expression: Expression.BinaryOperation)(left: A, right: A): B
@@ -55,6 +56,7 @@ object ExpressionVisitor {
       case node@Expression.ListConstruction(values, _, _) => visitor.visit(node)(values.map(rec))
       case node@Expression.MapConstruction(entries, _, _) => visitor.visit(node)(entries.map(e => (rec(e.key), rec(e.value))))
       case node@Expression.Instantiation(_, arguments, _) => visitor.visit(node)(arguments.map(arg => rec(arg.value)))
+      case node@Expression.ShapeValue(properties, _) => visitor.visit(node)(properties.map(p => rec(p.value)))
       case node@Expression.UnaryOperation(_, value, _, _) => visitor.visit(node)(rec(value))
       case node@Expression.BinaryOperation(_, left, right, _, _) => visitor.visit(node)(rec(left), rec(right))
       case node@Expression.XaryOperation(_, expressions, _, _) => visitor.visit(node)(expressions.map(rec))
@@ -85,6 +87,7 @@ object ExpressionVisitor {
       case node@Expression.Tuple(values, _) => values.map(rec).simultaneous.flatMap(visitor.visit(node))
       case node@Expression.ListConstruction(values, _, _) => values.map(rec).simultaneous.flatMap(visitor.visit(node))
       case node@Expression.MapConstruction(entries, _, _) => entries.map(e => (rec(e.key), rec(e.value)).simultaneous).simultaneous.flatMap(visitor.visit(node))
+      case node@Expression.ShapeValue(properties, _) => properties.map(p => rec(p.value)).simultaneous.flatMap(visitor.visit(node))
       case node@Expression.Instantiation(_, arguments, _) => arguments.map(_.value).map(rec).simultaneous.flatMap(visitor.visit(node))
       case node@Expression.UnaryOperation(_, value, _, _) => rec(value).flatMap(visitor.visit(node))
       case node@Expression.BinaryOperation(_, left, right, _, _) => (rec(left), rec(right)).simultaneous.flatMap((visitor.visit(node) _).tupled)

@@ -140,7 +140,7 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     * All expressions immediately accessible via postfix dot notation.
     */
   private def accessible[_: P]: P[ExprNode] = {
-    P(literal | fixedCall | dynamicCall | call | objectMap | variable | block | list | map | enclosed)
+    P(literal | fixedCall | dynamicCall | call | objectMap | variable | block | list | map | shape | enclosed)
   }
 
   private def literal[_: P]: P[ExprNode] = {
@@ -185,6 +185,16 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
   private def map[_: P]: P[ExprNode] = {
     def keyValue = P(Index ~ expression ~ "->" ~ expression).map(withPosition(ExprNode.KeyValueNode))
     P(Index ~ "#[" ~ keyValue.rep(sep = ",").map(_.toVector) ~ "]").map(withPosition(ExprNode.MapNode))
+  }
+
+  private def shape[_: P]: P[ExprNode.ShapeValueNode] = {
+    def property = P(Index ~ identifier ~ ":" ~ expression).map(withPosition(ExprNode.ShapeValuePropertyNode))
+    def shorthand = P(Index ~ identifier).map { case (index, name) =>
+      val position = Position(fragment, index)
+      ExprNode.ShapeValuePropertyNode(name, ExprNode.VariableNode(name, position), position)
+    }
+    def properties = P((property | shorthand).rep(sep = ",")).map(_.toVector)
+    P(Index ~ "%{" ~ properties ~ "}").map(withPosition(ExprNode.ShapeValueNode))
   }
 
   /**

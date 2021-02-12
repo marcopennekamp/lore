@@ -1,3 +1,4 @@
+
 package lore.compiler.phases.transpilation.expressions
 
 import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
@@ -73,6 +74,18 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
     Chunk.combine(entries) { entries =>
       Chunk.expression(RuntimeApi.maps.value(entries, tpe, "hash".asVariable, "areEqual".asVariable))
+    }
+  }
+
+  override def visit(expression: ShapeValue)(propertyChunks: Vector[Chunk]): Chunk = {
+    // The property types of the shape's type are determined at run-time, so we don't have to transpile the type here.
+    Chunk.combine(propertyChunks) { values =>
+      val dictionary = Target.Dictionary(
+        expression.properties.zip(values).map { case (property, value) =>
+          Target.Property(property.name.asName, value)
+        }
+      )
+      Chunk.expression(RuntimeApi.shapes.value(dictionary))
     }
   }
 

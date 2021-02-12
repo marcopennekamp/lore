@@ -201,6 +201,10 @@ private[transformation] class ExpressionTransformationVisitor(
         case _ => Compilation.fail(StructExpected(structName))
       }
 
+    case ShapeValueNode(propertyNodes, position) =>
+      val properties = propertyNodes.zip(expressions).map { case (propertyNode, value) => Expression.ShapeProperty(propertyNode.name, value) }
+      Expression.ShapeValue(properties, position).compiled
+
     // Xary operations.
     case ConjunctionNode(_, position) =>
       ExpressionTransformations.transformBooleanOperation(XaryOperator.Conjunction, expressions, position)

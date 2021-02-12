@@ -1,14 +1,34 @@
 import { Intersection } from './intersections.ts'
 import { Kind } from './types/kinds.ts'
+import { typeOf } from './types/typeof.ts'
 import { hashPropertyTypes, PropertyTypes, Type } from './types/types.ts'
+import { Value } from './values.ts'
 
 export interface ShapeType extends Type {
   propertyTypes: PropertyTypes
 }
 
+export interface ShapeValue extends Value {
+  lore$type: ShapeType
+}
+
 export const Shape = {
   type(propertyTypes: PropertyTypes): ShapeType {
     return { kind: Kind.Shape, propertyTypes, hash: hashPropertyTypes(propertyTypes, 0xf38da2c4) }
+  },
+
+  /**
+   * Creates a shape value from the given properties. The property types are determined at run-time using typeOf.
+   */
+  value(properties: any): ShapeValue {
+    const propertyTypes: PropertyTypes = { }
+    for (const key of Object.keys(properties)) {
+      propertyTypes[key] = typeOf(properties[key])
+    }
+
+    const value = properties as ShapeValue
+    value.lore$type = Shape.type(propertyTypes)
+    return value
   },
 
   /**

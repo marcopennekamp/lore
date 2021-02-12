@@ -13,8 +13,8 @@
     - ~~open struct property declarations~~
     - ~~subtyping~~, ~~type equality~~, ~~struct type hashing~~
   - Shape values
-    - compiler: AST, expression tree, parser, transformer & type inference, transpiler
-    - runtime: data structure, run-time type instantiation
+    - compiler: ~~AST~~, ~~expression tree~~, ~~parser~~, ~~transformer & type inference~~, ~~transpiler~~
+    - runtime: ~~data structure~~, ~~run-time type instantiation~~
 - Finish transformation and transpilation of the current MVL constructs. (WHICH ONES ARE THESE?)
   - Ranges still need to be supported, as they are already part of the specification.
 - Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.

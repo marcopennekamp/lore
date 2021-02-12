@@ -5,7 +5,7 @@ import lore.compiler.semantics.LocalVariable
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.semantics.members.Member
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
-import lore.compiler.types.{BasicType, ProductType, Type}
+import lore.compiler.types.{BasicType, ProductType, ShapeType, Type}
 
 sealed trait Expression {
   def position: Position
@@ -66,6 +66,13 @@ object Expression {
 
   case class MapConstruction(entries: Vector[MapEntry], tpe: Type, position: Position) extends Expression
   case class MapEntry(key: Expression, value: Expression)
+
+  case class ShapeValue(properties: Vector[ShapeProperty], position: Position) extends Expression {
+    override val tpe: Type = ShapeType(properties.map(_.asShapeTypeProperty))
+  }
+  case class ShapeProperty(name: String, value: Expression) {
+    def asShapeTypeProperty: ShapeType.Property = ShapeType.Property(name, value.tpe)
+  }
 
   /**
     * Creates a new instance of a given struct. This expression represents both the call and map syntax. The arguments
