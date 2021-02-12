@@ -32,12 +32,4 @@ case class FunctionSignature(
     val substitutedOutputType = Type.substitute(assignments, outputType)
     FunctionSignature(name, substitutedParameters, substitutedOutputType, position)
   }
-
-  /**
-    * Whether this function signature is equal in specificity to the given one.
-    */
-  def isEquallySpecific(other: FunctionSignature): Boolean = {
-    // TODO: What about the function's name?
-    Fit.isEquallySpecific(inputType, other.inputType)
-  }
 }

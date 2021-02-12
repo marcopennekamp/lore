@@ -16,8 +16,6 @@ trait VariableScope extends Scope[LocalVariable] {
 /**
   * The global variable scope does not have any entries yet, since there are no global variables (and functions
   * aren't counted among such names yet), but this declaration will hopefully make the code a little more future-proof.
-  *
-  * TODO: If we implement global variables, they should not continue to be called "LocalVariable".
   */
 class GlobalVariableScope() extends BasicScope[LocalVariable](None) with VariableScope {
   // The global scope is empty as of now.

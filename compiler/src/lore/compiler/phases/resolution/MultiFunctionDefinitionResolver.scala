@@ -7,6 +7,7 @@ import lore.compiler.phases.resolution.ParameterDefinitionResolver.resolveParame
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.syntax.DeclNode
+import lore.compiler.types.Fit
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object MultiFunctionDefinitionResolver {
@@ -47,7 +48,7 @@ object MultiFunctionDefinitionResolver {
       // We decide "duplicity" based on the specificity two functions would have in a multi-function fit context.
       // That is, if two functions are equally specific, they are effectively the same in the eyes of multiple
       // dispatch. This is what we want to avoid by verifying that all functions are "unique".
-      val containsDuplicate = functions.filterNot(_ == function).exists(_.signature.isEquallySpecific(function.signature))
+      val containsDuplicate = functions.filterNot(_ == function).exists(f2 => Fit.isEquallySpecific(f2.signature.inputType, function.signature.inputType))
       if (containsDuplicate) {
         Compilation.fail(FunctionAlreadyExists(function))
       } else {
