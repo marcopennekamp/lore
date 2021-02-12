@@ -22,3 +22,8 @@ Deno.test('shapes/listify', async () => {
     assertEquals(actual.array, expected)
   })
 })
+
+Deno.test('shapes/options', async () => {
+  const result: string = await LoreTest.run('shapes/options')
+  assertEquals(result, 'Your dog Robby barks at a MADNESS-INDUCING volume showing sharp teeth!')
+})
