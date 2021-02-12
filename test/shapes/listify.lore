@@ -24,10 +24,13 @@ function genericListify2D(shape: { x: X, y: Y }): [X | Y] where X, Y = [shape.x,
 function genericListify3D(shape: { x: X, y: Y, z: Z }): [X | Y | Z] where X, Y, Z = [shape.x, shape.y, shape.z]
 
 
-// TODO: Also test shape values.
-
 function test(): [[Real]] = {
   let pos2D = Position2D(1.2, 5)
   let pos3D = Position3D(0, 5.1, 4.8)
-  [listify(pos2D), listify(pos3D), genericListify2D(pos2D), genericListify3D(pos3D)]
+  let pos2DShape = %{ x: 1.2, y: 5 }
+  let pos3DShape = %{ x: 0, y: 5.1, z: 4.8 }
+  [
+    listify(pos2D), listify(pos3D), genericListify2D(pos2D), genericListify3D(pos3D),
+    listify(pos2DShape), listify(pos3DShape), genericListify2D(pos2DShape), genericListify3D(pos3DShape)
+  ]
 }
