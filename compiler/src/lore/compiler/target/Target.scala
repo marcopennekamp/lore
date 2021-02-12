@@ -25,7 +25,7 @@ object Target {
   case class IfElse(condition: TargetExpression, thenStatement: TargetStatement, elseStatement: TargetStatement) extends TargetStatement
   case class While(condition: TargetExpression, body: TargetStatement) extends TargetStatement
   case class For(init: TargetStatement, condition: TargetExpression, post: TargetStatement, body: TargetStatement) extends TargetStatement
-  case class Iteration(collection: TargetExpression, elementName: TargetName, body: TargetStatement) extends TargetStatement  // TODO: Generate code using for-of.
+  case class Iteration(collection: TargetExpression, elementName: TargetName, body: TargetStatement) extends TargetStatement
   case class Return(value: TargetExpression) extends TargetStatement
 
   def block(statements: TargetStatement*): Block = Block(statements.toVector)

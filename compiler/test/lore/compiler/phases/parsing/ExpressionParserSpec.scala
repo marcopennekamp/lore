@@ -7,12 +7,12 @@ import lore.compiler.test.BaseSpec
 
 // TODO: Implement these tests using functional tests.
 
-class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
-  override def parser[_: P](implicit fragment: Fragment): P[StmtNode] = new StatementParser(new TypeParser()).statement
+class ExpressionParserSpec extends BaseSpec with ParserSpecExtensions[TopLevelExprNode] {
+  override def parser[_: P](implicit fragment: Fragment): P[TopLevelExprNode] = new ExpressionParser(new TypeParser()).topLevelExpression
 
   import TestNodes._
 
-  "The statement parser" should "parse strings, escapes, and interpolations correctly" in {
+  "The expression parser" should "parse strings, escapes, and interpolations correctly" in {
     "''" --> Stmt.StringLiteral("")
     "'   '" --> Stmt.StringLiteral("   ")
     "'\\n'" --> Stmt.StringLiteral("\n")
@@ -285,7 +285,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
         inside(ifElse.onTrue) {
           case block: ExprNode.BlockNode =>
             block.position.index shouldEqual 13
-            inside(block.statements) {
+            inside(block.expressions) {
               case Seq(assign: TopLevelExprNode.AssignmentNode) =>
                 assign.position.index shouldEqual 15
                 assign.address.position.index shouldEqual 15
@@ -295,7 +295,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
         inside(ifElse.onFalse) {
           case block: ExprNode.BlockNode =>
             block.position.index shouldEqual 29
-            inside(block.statements) {
+            inside(block.expressions) {
               case Seq(assign: TopLevelExprNode.AssignmentNode) =>
                 assign.position.index shouldEqual 31
                 assign.address.position.index shouldEqual 31
@@ -408,7 +408,7 @@ class StatementParserSpec extends BaseSpec with ParserSpecExtensions[StmtNode] {
     }
   }
 
-  "Statements and top-level expressions" should "only appear in blocks, conditionals, and repetitions" in {
+  "Top-level expressions" should "only appear in blocks, conditionals, and repetitions" in {
     "let x = a + return 0".fails
     "if (return x) a else b".fails
     "(yield 0) | b | c".fails

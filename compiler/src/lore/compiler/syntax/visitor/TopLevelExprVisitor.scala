@@ -1,39 +1,39 @@
 package lore.compiler.syntax.visitor
 
-import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode}
+import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.core.Compilation
 
 /**
-  * Visits any statement node, returning a value of type Compilation[A]. Subtrees are visited automatically.
+  * Visits any top-level expression node, returning a value of type Compilation[A]. Subtrees are visited automatically.
   * Subtree compilations are aggregated and flat-mapped into higher nodes.
   *
   * Functions named before* are invoked BEFORE subtrees are visited. Functions named visit* are invoked AFTER.
   */
-trait StmtVisitor[A] {
+trait TopLevelExprVisitor[A] {
   /**
     * Visits a node in the AST without a child.
     */
-  def visitLeaf(node: StmtNode.LeafNode): Compilation[A]
+  def visitLeaf(node: TopLevelExprNode.LeafNode): Compilation[A]
 
   /**
     * Visits a node with exactly one child.
     */
-  def visitUnary(node: StmtNode.UnaryNode)(argument: A): Compilation[A]
+  def visitUnary(node: TopLevelExprNode.UnaryNode)(argument: A): Compilation[A]
 
   /**
     * Visits a node with exactly two children.
     */
-  def visitBinary(node: StmtNode.BinaryNode)(left: A, right: A): Compilation[A]
+  def visitBinary(node: TopLevelExprNode.BinaryNode)(left: A, right: A): Compilation[A]
 
   /**
     * Visits a node with exactly three children.
     */
-  def visitTernary(node: StmtNode.TernaryNode)(argument1: A, argument2: A, argument3: A): Compilation[A]
+  def visitTernary(node: TopLevelExprNode.TernaryNode)(argument1: A, argument2: A, argument3: A): Compilation[A]
 
   /**
     * Visits a node with exactly one list of children.
     */
-  def visitXary(node: StmtNode.XaryNode)(arguments: Vector[A]): Compilation[A]
+  def visitXary(node: TopLevelExprNode.XaryNode)(arguments: Vector[A]): Compilation[A]
 
   /**
     * Visits a map node with its key/value entries.
@@ -51,24 +51,24 @@ trait StmtVisitor[A] {
   /**
     * Invoked before a node's subtrees are visited. This can be used to set up contexts and such.
     */
-  def before: PartialFunction[StmtNode, Unit] = PartialFunction.empty
+  def before: PartialFunction[TopLevelExprNode, Unit] = PartialFunction.empty
 }
 
-object StmtVisitor {
-  class Applicator[A, Props](visitor: StmtVisitor[A]) {
+object TopLevelExprVisitor {
+  class Applicator[A, Props](visitor: TopLevelExprVisitor[A]) {
     /**
       * Visits the whole tree invoking begin* and visit* functions for every node.
       */
-    final def visit(node: StmtNode, props: Props): Compilation[A] = {
+    final def visit(node: TopLevelExprNode, props: Props): Compilation[A] = {
       // Apply the before* callback before we visit the node's subtrees.
-      visitor.before.applyOrElse(node, (_: StmtNode) => ())
+      visitor.before.applyOrElse(node, (_: TopLevelExprNode) => ())
       handleMatch(node, props)
     }
 
-    protected def handleMatch(node: StmtNode, props: Props): Compilation[A] = {
-      // Importing all statement nodes makes the code far easier to digest visually.
+    protected def handleMatch(node: TopLevelExprNode, props: Props): Compilation[A] = {
+      // Importing all expression nodes makes the code far easier to digest visually.
+      import TopLevelExprNode._
       import ExprNode._
-      import StmtNode._
 
       node match {
         case node: LeafNode => visitor.visitLeaf(node)
@@ -94,5 +94,5 @@ object StmtVisitor {
     }
   }
 
-  def visit[A](visitor: StmtVisitor[A])(node: StmtNode): Compilation[A] = new Applicator[A, Unit](visitor).visit(node, ())
+  def visit[A](visitor: TopLevelExprVisitor[A])(node: TopLevelExprNode): Compilation[A] = new Applicator[A, Unit](visitor).visit(node, ())
 }

@@ -5,7 +5,7 @@ import lore.compiler.core.{Compilation, Error, Position}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.structures.{StructPropertyDefinition, StructDefinition}
 
-object InstantiationTransformation {
+object InstantiationTransformations {
 
   def transformCallStyleInstantiation(struct: StructDefinition, arguments: Vector[Expression])(implicit position: Position): Compilation[Expression] = {
     ExpressionVerification.adhereToSignature(arguments, struct.constructorSignature, position).map { _ =>

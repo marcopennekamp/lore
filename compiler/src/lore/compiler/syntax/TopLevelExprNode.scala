@@ -2,34 +2,25 @@ package lore.compiler.syntax
 
 import lore.compiler.core.Position
 import lore.compiler.semantics.functions.CallTarget
-import lore.compiler.syntax.StmtNode._
-import lore.compiler.syntax.TopLevelExprNode.CallNode
+import lore.compiler.syntax.TopLevelExprNode._
 
 /**
-  * All statements and expressions.
+  * Top-level expression are all regular expressions and additionally expressions that are only allowed at the
+  * top-level, i.e. as immediate children of blocks or as a body of conditionals and repetitions. This concept is used
+  * to implement the restriction that assignments and returns can only stand in specific places.
   */
-sealed trait StmtNode extends Node
-object StmtNode {
+sealed trait TopLevelExprNode extends Node
+object TopLevelExprNode {
   // Node types that are used by StmtVisitor.
   sealed abstract class LeafNode extends ExprNode
-  sealed abstract class UnaryNode(val child: StmtNode) extends StmtNode
-  sealed abstract class BinaryNode(val child1: StmtNode, val child2: StmtNode) extends TopLevelExprNode
-  sealed abstract class TernaryNode(val child1: StmtNode, val child2: StmtNode, val child3: StmtNode) extends ExprNode
-  sealed abstract class XaryNode(val children: Vector[StmtNode]) extends TopLevelExprNode
+  sealed abstract class UnaryNode(val child: TopLevelExprNode) extends TopLevelExprNode
+  sealed abstract class BinaryNode(val child1: TopLevelExprNode, val child2: TopLevelExprNode) extends TopLevelExprNode
+  sealed abstract class TernaryNode(val child1: TopLevelExprNode, val child2: TopLevelExprNode, val child3: TopLevelExprNode) extends ExprNode
+  sealed abstract class XaryNode(val children: Vector[TopLevelExprNode]) extends TopLevelExprNode
 
-  // TODO: Do we even need to differentiate between TopLevelExpressions and Statements?
-  case class ReturnNode(expr: ExprNode, position: Position) extends UnaryNode(expr)
-}
-
-/**
-  * Expressions that are only allowed at the top-level, i.e. as immediate children of blocks or as a body
-  * of conditionals and repetitions.
-  *
-  * This concept is used to implement the restriction that assignments can only stand in specific places.
-  */
-sealed trait TopLevelExprNode extends StmtNode
-object TopLevelExprNode {
   sealed trait CallNode[T <: CallTarget] extends TopLevelExprNode
+
+  case class ReturnNode(expr: ExprNode, position: Position) extends UnaryNode(expr)
 
   case class VariableDeclarationNode(
     name: String, isMutable: Boolean, tpe: Option[TypeExprNode], value: ExprNode, position: Position,
@@ -40,9 +31,6 @@ object TopLevelExprNode {
   ) extends BinaryNode(address, value) with TopLevelExprNode
 }
 
-/**
-  * Expressions returning some kind of value. Almost every statement in Lore is an expression.
-  */
 sealed trait ExprNode extends TopLevelExprNode
 object ExprNode {
   // TODO: We could save a lot of nodes by turning Binary and Xary operations into their own node type (BinaryOperation,
@@ -57,11 +45,6 @@ object ExprNode {
   // Variable expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class VariableNode(name: String, position: Position) extends LeafNode with ExprNode with AddressNode
-  // TODO: If we introduce more complex referencing structures, such as global variables or global singleton objects,
-  //       we cannot simply assume that a "variable node" is actually a local variable. In that case we will have to
-  //       widen the notion of "having a local variable". For now, this seems to suffice, though. :)
-  //       (Note: In the AST, it would only need a name change. We can later branch this one node into several different
-  //        kinds of expressions depending on the kind of symbol that the name is referring to.)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Numeric expressions.
@@ -132,7 +115,7 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Block expressions. Note that blocks can hold statements.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class BlockNode(statements: Vector[StmtNode], position: Position) extends XaryNode(statements) with ExprNode
+  case class BlockNode(expressions: Vector[TopLevelExprNode], position: Position) extends XaryNode(expressions) with ExprNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Function calls.
@@ -169,22 +152,22 @@ object ExprNode {
     * @param onFalse Equals UnitNode if it doesn't exist.
     */
   case class IfElseNode(
-    condition: ExprNode, onTrue: StmtNode, onFalse: StmtNode, position: Position,
+    condition: ExprNode, onTrue: TopLevelExprNode, onFalse: TopLevelExprNode, position: Position,
   ) extends TernaryNode(condition, onTrue, onFalse) with ExprNode
 
   /**
     * A cross-cutting node for loops.
     */
   sealed trait LoopNode extends ExprNode {
-    def body: StmtNode
+    def body: TopLevelExprNode
   }
 
   case class WhileNode(
-    condition: ExprNode, body: StmtNode, position: Position,
+    condition: ExprNode, body: TopLevelExprNode, position: Position,
   ) extends BinaryNode(condition, body) with LoopNode
 
   case class ForNode(
-    extractors: Vector[ExtractorNode], body: StmtNode, position: Position,
+    extractors: Vector[ExtractorNode], body: TopLevelExprNode, position: Position,
   ) extends LoopNode
 
   case class ExtractorNode(

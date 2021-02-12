@@ -6,7 +6,7 @@ import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 
-object StructTransformation {
+object StructTransformer {
 
   /**
     * Transforms the default value expressions of struct properties and assigns them to their 'defaultValue' fields.
@@ -17,7 +17,7 @@ object StructTransformation {
         // Note that we pass the global variable scope, since other properties of the struct should not be accessible in
         // default value expressions.
         // TODO: Once we introduce parametric declared types, we have to provide the struct's type scope.
-        ExpressionTransformation.transform(node, property.tpe, registry.typeScope, registry.variableScope)
+        ExpressionTransformer.transform(node, property.tpe, registry.typeScope, registry.variableScope)
       }.toCompiledOption
 
       compiledExpression.map { maybeExpression =>

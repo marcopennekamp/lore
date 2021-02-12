@@ -388,10 +388,10 @@ In the long term, we want to be able to use, for example, TypeScript declaration
 Lore will support a variety of **conditional expressions** (especially pattern matching, guards, and so on). For now, we will have to make do with If:
 
 ```
-if (cond) statement2 else statement2
+if (cond) tle1 else tle2
 ```
 
-Note that either `statement` (or even `cond`) may be a block. The else part is, of course, optional. The so-called **dangling else** is always parsed as belonging to the `if` closest to it.
+Note that either top-level expression (TLE) (or even `cond`) may be a block. The else part is, of course, optional. The so-called **dangling else** is always parsed as belonging to the `if` closest to it.
 
 
 
@@ -404,7 +404,7 @@ Note that either `statement` (or even `cond`) may be a block. The else part is, 
 In Lore, a **while loop** repeats some piece of code as long as a given boolean expression is true:
 
 ```
-while (cond) statement
+while (cond) tle
 ```
 
 We have decided to provide **no support for do-while loops**, because we feel that these kinds of loops are very rarely used, but add noise to the language in the form of an additional keyword being reserved (such as `do` or `repeat`). You should instead work with a function and a while or recursion. This will only become easier once we introduce anonymous functions.
@@ -414,7 +414,7 @@ We have decided to provide **no support for do-while loops**, because we feel th
 A **for comprehension** iterates over some kind of collection:
 
 ```
-for (e1 <- col1, e2 <- col2, ...) statement
+for (e1 <- col1, e2 <- col2, ...) tle
 ```
 
 In the syntax above, `col2` is fully iterated for each `e1` and so on, so supplying multiple extractors effectively turns the comprehension into **nested iteration**.

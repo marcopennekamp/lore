@@ -14,13 +14,13 @@ object TransformationPhase {
 
     val withTransformedStructs = withVerifiedConstraints.flatMap { _ =>
       registry.getTypeDeclarationsInOrder.map(_._2).filterType[StructType].map { structType =>
-        StructTransformation.transform(structType.definition)
+        StructTransformer.transform(structType.definition)
       }.simultaneous
     }
 
     val withTransformedFunctions = withTransformedStructs.flatMap { _ =>
       registry.getMultiFunctions.values.toVector.map { mf =>
-        mf.functions.map(FunctionTransformation.transform).simultaneous
+        mf.functions.map(FunctionTransformer.transform).simultaneous
       }.simultaneous
     }
 

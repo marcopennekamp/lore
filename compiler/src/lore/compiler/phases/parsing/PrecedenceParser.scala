@@ -20,13 +20,13 @@ object PrecedenceParser {
     precedence: Int, constructor: (Vector[Operand], Position) => Operand
   )(implicit fragment: Fragment) extends Operator {
     override def isXary: Boolean = true
-    val constructorWithIndex: (Index, Vector[Operand]) => Operand = Node.withIndexUntupled(constructor)
+    val constructorWithPosition: (Index, Vector[Operand]) => Operand = Node.withPositionUntupled(constructor)
   }
 
   case class BinaryOperator[Operand <: Node](
     precedence: Int, constructor: (Operand, Operand, Position) => Operand
   )(implicit fragment: Fragment) extends Operator {
-    val constructorWithIndex: (Index, Operand, Operand) => Operand = Node.withIndexUntupled(constructor)
+    val constructorWithPosition: (Index, Operand, Operand) => Operand = Node.withPositionUntupled(constructor)
   }
 
   /**
@@ -61,7 +61,7 @@ object PrecedenceParser {
           case (operands, stack) => operandStack = stack; operands.reverse
         }
         val index = operands.head.position.index
-        operandStack = topOp.constructorWithIndex(index, operands.toVector) +: operandStack
+        operandStack = topOp.constructorWithPosition(index, operands.toVector) +: operandStack
       case topOp: BinaryOperator[Operand] =>
         // We process one operator with two operands.
         operatorStack = operatorStack.drop(1) // Actually drop the topOp from the stack.
@@ -70,7 +70,7 @@ object PrecedenceParser {
         // Again, the order of operands needs to be reversed for the AST node.
         val (b, a) = (operandStack.head, operandStack.tail.head)
         operandStack = operandStack.drop(2)
-        operandStack = topOp.constructorWithIndex(a.position.index, a, b) +: operandStack
+        operandStack = topOp.constructorWithPosition(a.position.index, a, b) +: operandStack
     }
 
     // Process the expression piece by piece. We handle two iterations of the standard shunting-yard algorithm in one.

@@ -7,10 +7,10 @@ import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.scopes.{TypeScope, VariableScope}
 import lore.compiler.semantics.Registry
 import lore.compiler.syntax.ExprNode
-import lore.compiler.syntax.visitor.StmtVisitor
+import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.types.{ProductType, Type}
 
-object ExpressionTransformation {
+object ExpressionTransformer {
 
   /**
     * Builds a semantic expression tree from the given expression node. Ensures that all other expression constraints
@@ -25,7 +25,7 @@ object ExpressionTransformation {
     for {
       _ <- ReturnConstraints.verify(node)
       visitor = new ExpressionTransformationVisitor(expectedType, typeScope, variableScope)
-      expression <- StmtVisitor.visit(visitor)(node).map(withImplicitUnitValue(expectedType))
+      expression <- TopLevelExprVisitor.visit(visitor)(node).map(withImplicitUnitValue(expectedType))
       _ <- verifyExpectedType(expression, expectedType)
     } yield expression
   }

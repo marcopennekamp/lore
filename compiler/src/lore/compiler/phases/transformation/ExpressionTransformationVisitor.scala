@@ -8,8 +8,8 @@ import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOper
 import lore.compiler.semantics.functions._
 import lore.compiler.semantics.scopes.{TypeScope, VariableScope}
 import lore.compiler.semantics.{LocalVariable, Registry}
-import lore.compiler.syntax.visitor.StmtVisitor
-import lore.compiler.syntax.{ExprNode, StmtNode, TopLevelExprNode}
+import lore.compiler.syntax.visitor.TopLevelExprVisitor
+import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.types._
 
 private[transformation] class ExpressionTransformationVisitor(
@@ -29,12 +29,11 @@ private[transformation] class ExpressionTransformationVisitor(
     * The variable scope of the surrounding code, such as a function scope.
     */
   variableScope: VariableScope,
-)(implicit registry: Registry) extends StmtVisitor[Expression] {
+)(implicit registry: Registry) extends TopLevelExprVisitor[Expression] {
+  import TopLevelExprNode._
   import ExprNode._
   import ExpressionTransformationVisitor._
-  import StatementTransformation._
-  import StmtNode._
-  import TopLevelExprNode._
+  import ExpressionTransformations._
 
   val context = new ExpressionTransformationContext(variableScope)
   implicit val typeScopeImplicit: TypeScope = typeScope
@@ -126,19 +125,19 @@ private[transformation] class ExpressionTransformationVisitor(
 
     // Boolean operations.
     case EqualsNode(_, _, position) =>
-      StatementTransformation.transformComparison("areEqual", BinaryOperator.Equals, left, right, position)
+      ExpressionTransformations.transformComparison("areEqual", BinaryOperator.Equals, left, right, position)
     case NotEqualsNode(_, _, position) =>
-      StatementTransformation.transformComparison("areEqual", BinaryOperator.Equals, left, right, position).map {
+      ExpressionTransformations.transformComparison("areEqual", BinaryOperator.Equals, left, right, position).map {
         areEqual => Expression.UnaryOperation(UnaryOperator.LogicalNot, areEqual, BasicType.Boolean, position)
       }
     case LessThanNode(_, _, position) =>
-      StatementTransformation.transformComparison("isLessThan", BinaryOperator.LessThan, left, right, position)
+      ExpressionTransformations.transformComparison("isLessThan", BinaryOperator.LessThan, left, right, position)
     case LessThanEqualsNode(_, _, position) =>
-      StatementTransformation.transformComparison("isLessThanOrEqual", BinaryOperator.LessThanEquals, left, right, position)
+      ExpressionTransformations.transformComparison("isLessThanOrEqual", BinaryOperator.LessThanEquals, left, right, position)
     case GreaterThanNode(_, _, position) =>
-      StatementTransformation.transformComparison("isLessThan", BinaryOperator.LessThan, right, left, position)
+      ExpressionTransformations.transformComparison("isLessThan", BinaryOperator.LessThan, right, left, position)
     case GreaterThanEqualsNode(_, _, position) =>
-      StatementTransformation.transformComparison("isLessThanOrEqual", BinaryOperator.LessThanEquals, right, left, position)
+      ExpressionTransformations.transformComparison("isLessThanOrEqual", BinaryOperator.LessThanEquals, right, left, position)
 
     // Collection operations.
     case AppendNode(_, _, position) =>
@@ -198,16 +197,16 @@ private[transformation] class ExpressionTransformationVisitor(
       registry.resolveType(structName).flatMap {
         case structType: StructType =>
           val entries = entryNodes.zip(expressions).map { case (ObjectEntryNode(name, _, _), expression) => (name, expression) }
-          InstantiationTransformation.transformMapStyleInstantiation(structType.definition, entries)
+          InstantiationTransformations.transformMapStyleInstantiation(structType.definition, entries)
         case _ => Compilation.fail(StructExpected(structName))
       }
 
     // Xary operations.
     case ConjunctionNode(_, position) =>
-      StatementTransformation.transformBooleanOperation(XaryOperator.Conjunction, expressions, position)
+      ExpressionTransformations.transformBooleanOperation(XaryOperator.Conjunction, expressions, position)
 
     case DisjunctionNode(_, position) =>
-      StatementTransformation.transformBooleanOperation(XaryOperator.Disjunction, expressions, position)
+      ExpressionTransformations.transformBooleanOperation(XaryOperator.Disjunction, expressions, position)
 
     case ConcatenationNode(_, position) =>
       for {
@@ -223,7 +222,7 @@ private[transformation] class ExpressionTransformationVisitor(
       // A simple call may either be a function or a constructor call. We immediately try to differentiate this based
       // on whether a struct type can be found for the function name.
       registry.getStructType(name) match {
-        case Some(structType) => InstantiationTransformation.transformCallStyleInstantiation(structType.definition, expressions)
+        case Some(structType) => InstantiationTransformations.transformCallStyleInstantiation(structType.definition, expressions)
         case None => ExpressionBuilder.multiFunctionCall(name, expressions, position)
       }
 
@@ -284,7 +283,7 @@ private[transformation] class ExpressionTransformationVisitor(
     } yield Expression.ForLoop(extractors, body, tpe, node.position)
   }
 
-  override def before: PartialFunction[StmtNode, Unit] = {
+  override def before: PartialFunction[TopLevelExprNode, Unit] = {
     case ExprNode.BlockNode(_, _) => context.openScope()
     case ExprNode.WhileNode(_, _, _) =>
       // A while loop needs to open its own scope in case there is exactly one variable declaration as the loop body,

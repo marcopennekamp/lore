@@ -1,7 +1,7 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.syntax.visitor.{CombiningStmtVisitor, StmtVisitor, VerificationStmtVisitor}
-import lore.compiler.syntax.{ExprNode, StmtNode}
+import lore.compiler.syntax.visitor.{CombiningTopLevelExprVisitor, TopLevelExprVisitor, VerificationTopLevelExprVisitor}
+import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.core.{Compilation, Error}
 import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.phases.transformation.ReturnConstraints.{DeadCode, DefinitelyReturns, ImpossibleReturn, IsReturnAllowed}
@@ -10,42 +10,42 @@ object ReturnConstraints {
   type DefinitelyReturns = Boolean
   type IsReturnAllowed = Boolean
 
-  case class DeadCode(node: StmtNode) extends Error(node) {
+  case class DeadCode(node: TopLevelExprNode) extends Error(node) {
     override def message = s"This node represents dead code after a previous return."
   }
 
-  case class ImpossibleReturn(node: StmtNode.ReturnNode) extends Error(node) {
+  case class ImpossibleReturn(node: TopLevelExprNode.ReturnNode) extends Error(node) {
     override def message = s"You cannot return inside this expression."
   }
 
   /**
     * Verifies the following two constraints:
     * - Any return must not be followed by code in the same block. This effectively disallows dead code after
-    *   a return statement.
+    *   a return TLE.
     * - Constructions such as `if ({ return 0 }) a else b` are not allowed. Returning should not be
     *   possible from non-top-level expressions.
     *
     * These constraints should be verified before function transformation so that we can operate the transformation
     * under tighter constraints.
     */
-  def verify(body: StmtNode): Verification = {
+  def verify(body: TopLevelExprNode): Verification = {
     (
-      StmtVisitor.visit(new ReturnDeadCodeVisitor())(body),
+      TopLevelExprVisitor.visit(new ReturnDeadCodeVisitor())(body),
       new ReturnAllowedApplicator().visit(body, true)
     ).simultaneous.verification
   }
 }
 
-private class ReturnDeadCodeVisitor() extends CombiningStmtVisitor[DefinitelyReturns] {
+private class ReturnDeadCodeVisitor() extends CombiningTopLevelExprVisitor[DefinitelyReturns] {
   override def combine(returns: Vector[DefinitelyReturns]): DefinitelyReturns = {
     if (returns.isEmpty) false
     else returns.forall(identity)
   }
 
-  override def visit(node: StmtNode, returns: Vector[DefinitelyReturns]): Compilation[DefinitelyReturns] = node match {
-    case StmtNode.ReturnNode(_, _) => true.compiled
-    case ExprNode.BlockNode(statements, _) =>
-      assert(statements.length == returns.length)
+  override def visit(node: TopLevelExprNode, returns: Vector[DefinitelyReturns]): Compilation[DefinitelyReturns] = node match {
+    case TopLevelExprNode.ReturnNode(_, _) => true.compiled
+    case ExprNode.BlockNode(expressions, _) =>
+      assert(expressions.length == returns.length)
 
       // Check that a return statement isn't followed by any other code. If we have a "definitely returns" at any
       // point before the last element, this is such a point.
@@ -53,7 +53,7 @@ private class ReturnDeadCodeVisitor() extends CombiningStmtVisitor[DefinitelyRet
       else {
         val returnIndex = returns.init.indexOf(true)
         if (returnIndex >= 0) {
-          val firstDeadNode = statements(returnIndex + 1)
+          val firstDeadNode = expressions(returnIndex + 1)
           Compilation.fail(DeadCode(firstDeadNode))
         } else returns.last.compiled
       }
@@ -74,13 +74,13 @@ private class ReturnDeadCodeVisitor() extends CombiningStmtVisitor[DefinitelyRet
   * Checks whether non-top-level expressions have a return. If that is the case, an error is returned.
   */
 private class ReturnAllowedApplicator()
-  extends StmtVisitor.Applicator[Unit, IsReturnAllowed](new VerificationStmtVisitor { })
+  extends TopLevelExprVisitor.Applicator[Unit, IsReturnAllowed](new VerificationTopLevelExprVisitor { })
 {
-  override def handleMatch(node: StmtNode, isReturnAllowed: IsReturnAllowed): Compilation[Unit] = node match {
-    case node@StmtNode.ReturnNode(expr, _) => visit(expr, false).flatMap { _ =>
+  override def handleMatch(node: TopLevelExprNode, isReturnAllowed: IsReturnAllowed): Compilation[Unit] = node match {
+    case node@TopLevelExprNode.ReturnNode(expr, _) => visit(expr, false).flatMap { _ =>
       if (!isReturnAllowed) Compilation.fail(ImpossibleReturn(node)) else Verification.succeed
     }
-    case ExprNode.BlockNode(statements, _) => statements.map(statement => visit(statement, isReturnAllowed)).simultaneous.verification
+    case ExprNode.BlockNode(expressions, _) => expressions.map(statement => visit(statement, isReturnAllowed)).simultaneous.verification
     case ExprNode.IfElseNode(condition, onTrue, onFalse, _) =>
       (visit(condition, false), visit(onTrue, isReturnAllowed), visit(onFalse, isReturnAllowed)).simultaneous.verification
     case ExprNode.WhileNode(condition, body, _) =>
@@ -95,9 +95,9 @@ private class ReturnAllowedApplicator()
     case _ => super.handleMatch(node, false)
   }
 
-  def verify(body: StmtNode): Verification = {
+  def verify(body: TopLevelExprNode): Verification = {
     // At the top level of the function, we allow a return, of course. This is propagated to any children that can
-    // be statements, but quickly gets stomped when an expression is expected.
+    // be TLEs, but quickly gets stomped when an expression is expected.
     visit(body, true)
   }
 }

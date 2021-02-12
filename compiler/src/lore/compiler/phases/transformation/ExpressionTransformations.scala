@@ -9,9 +9,9 @@ import lore.compiler.semantics.expressions.Expression.{BinaryOperator, XaryOpera
 import lore.compiler.types.BasicType
 
 /**
-  * Provides functions for transforming statement nodes into expressions.
+  * Provides functions for transforming expression nodes into expressions.
   */
-object StatementTransformation {
+object ExpressionTransformations {
 
   def transformNumericOperation(
     operator: BinaryOperator, left: Expression, right: Expression, position: Position,

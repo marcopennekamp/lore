@@ -41,14 +41,14 @@ class TypeParser(implicit fragment: Fragment) {
     }
   }
 
-  private def listType[_: P]: P[TypeExprNode.ListNode] = P(Index ~ "[" ~ typeExpression ~ "]").map(withIndex(TypeExprNode.ListNode))
+  private def listType[_: P]: P[TypeExprNode.ListNode] = P(Index ~ "[" ~ typeExpression ~ "]").map(withPosition(TypeExprNode.ListNode))
 
   private def shapeType[_: P]: P[TypeExprNode.ShapeNode] = {
-    def property = P(Index ~ identifier ~ typing).map(withIndex(TypeExprNode.ShapePropertyNode))
-    P(Index ~ "{" ~ property.rep(0, ",").map(_.toVector) ~ "}").map(withIndex(TypeExprNode.ShapeNode))
+    def property = P(Index ~ identifier ~ typing).map(withPosition(TypeExprNode.ShapePropertyNode))
+    P(Index ~ "{" ~ property.rep(0, ",").map(_.toVector) ~ "}").map(withPosition(TypeExprNode.ShapeNode))
   }
 
-  private def namedType[_: P]: P[TypeExprNode.IdentifierNode] = P(Index ~ typeIdentifier).map(withIndex(TypeExprNode.IdentifierNode))
+  private def namedType[_: P]: P[TypeExprNode.IdentifierNode] = P(Index ~ typeIdentifier).map(withPosition(TypeExprNode.IdentifierNode))
 
   private def enclosedType[_: P]: P[TypeExprNode] = P("(" ~ typeExpression ~ ")")
 }

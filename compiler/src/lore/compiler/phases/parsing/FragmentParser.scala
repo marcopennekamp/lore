@@ -17,8 +17,8 @@ class FragmentParser(implicit fragment: Fragment) {
   val typeParser = new TypeParser
   import typeParser.typeExpression
 
-  val statementParser = new StatementParser(typeParser)
-  import statementParser.{block, expression}
+  val expressionParser = new ExpressionParser(typeParser)
+  import expressionParser.{block, expression}
 
   case class ParsingError(fastparseError: String, pos: Position) extends Error(pos) {
     override def message: String = s"The file had parsing errors: $fastparseError"
@@ -52,21 +52,21 @@ class FragmentParser(implicit fragment: Fragment) {
   private def function[_: P]: P[DeclNode.FunctionNode] = {
     P(
       Index ~ "function" ~/ identifier ~ parameters ~ typeParser.typing ~ functionTypeVariables ~ ("=" ~ expression).?
-    ).map(withIndex(DeclNode.FunctionNode(_, _, _, _, _, _)))
+    ).map(withPosition(DeclNode.FunctionNode(_, _, _, _, _, _)))
   }
 
   private def action[_: P]: P[DeclNode.FunctionNode] = {
-    P(Index ~ "action" ~/ identifier ~ parameters ~ functionTypeVariables ~ block.?).map(withIndex(DeclNode.FunctionNode.fromAction _))
+    P(Index ~ "action" ~/ identifier ~ parameters ~ functionTypeVariables ~ block.?).map(withPosition(DeclNode.FunctionNode.fromAction _))
   }
 
   private def parameters[_: P]: P[Vector[DeclNode.ParameterNode]] = {
-    def parameter = P(Index ~ identifier ~ typeParser.typing).map(withIndex(DeclNode.ParameterNode))
+    def parameter = P(Index ~ identifier ~ typeParser.typing).map(withPosition(DeclNode.ParameterNode))
     P("(" ~ parameter.rep(sep = ",") ~ ")").map(_.toVector)
   }
 
   private def functionTypeVariables[_: P]: P[Vector[DeclNode.TypeVariableNode]] = {
     def typeVariable = {
-      P(Index ~ typeIdentifier ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).?).map(withIndex(DeclNode.TypeVariableNode))
+      P(Index ~ typeIdentifier ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).?).map(withPosition(DeclNode.TypeVariableNode))
     }
     P(("where" ~ typeVariable.rep(1, CharIn(","))).?).map {
       case None => Vector.empty
@@ -80,11 +80,11 @@ class FragmentParser(implicit fragment: Fragment) {
   private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`type` | `trait` | struct)
 
   private def `type`[_: P]: P[TypeDeclNode.AliasNode] = {
-    P(Index ~ "type" ~/ typeIdentifier ~ "=" ~ typeExpression).map(withIndex(TypeDeclNode.AliasNode))
+    P(Index ~ "type" ~/ typeIdentifier ~ "=" ~ typeExpression).map(withPosition(TypeDeclNode.AliasNode))
   }
 
   private def `trait`[_: P]: P[TypeDeclNode.TraitNode] = {
-    P(Index ~ "trait" ~/ typeIdentifier ~ `extends`).map(withIndex(TypeDeclNode.TraitNode))
+    P(Index ~ "trait" ~/ typeIdentifier ~ `extends`).map(withPosition(TypeDeclNode.TraitNode))
   }
 
   private def `extends`[_: P]: P[Vector[TypeExprNode]] = {
@@ -92,7 +92,7 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def struct[_: P]: P[TypeDeclNode.StructNode] = {
-    P(Index ~ "struct" ~/ structIdentifier ~ implements ~ structBody).map(withIndex(TypeDeclNode.StructNode))
+    P(Index ~ "struct" ~/ structIdentifier ~ implements ~ structBody).map(withPosition(TypeDeclNode.StructNode))
   }
 
   private def implements[_: P]: P[Vector[TypeExprNode]] = {
@@ -113,8 +113,8 @@ class FragmentParser(implicit fragment: Fragment) {
   private def property[_: P]: P[TypeDeclNode.PropertyNode] = {
     P(Index ~ "open".!.?.map(_.isDefined) ~ "mut".!.?.map(_.isDefined) ~ identifier ~ typeParser.typing ~ defaultValue.?)
       .map { case (index, isOpen, isMutable, name, tpe, defaultValue) => (index, name, tpe, isOpen, isMutable, defaultValue) }
-      .map(withIndex(TypeDeclNode.PropertyNode))
+      .map(withPosition(TypeDeclNode.PropertyNode))
   }
 
-  private def defaultValue[_: P]: P[ExprNode] = P("=" ~ statementParser.expression)
+  private def defaultValue[_: P]: P[ExprNode] = P("=" ~ expressionParser.expression)
 }

@@ -33,7 +33,7 @@ object Space {
   def WL[_: P]: P[Unit] = P(NoCut(WL0))
 
   /**
-    * Parses a statement terminator. For now, this can only be a newline.
+    * Parses an expression terminator. For now, this can only be a newline.
     */
   def terminator[_: P]: P[Unit] = P(newline.rep(1))
   def terminators[_: P]: P[Unit] = P(NoTrace(NoCut(WS) ~ terminator.rep(1, NoCut(WS)) ~ NoCut(WS)) )

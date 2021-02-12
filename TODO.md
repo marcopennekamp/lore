@@ -90,7 +90,7 @@
 
 - The Transformation phase is currently responsible for verifying constraints and for transforming AST nodes into typed expression nodes. We could potentially split this phase into a constraints phase and an expression phase.
 - The name of the Transpilation phase may not be appropriate anymore, since we now have a subsequent code generation phase. A more apt name may be Translation phase, as we are translating the Lore expression IR to the target IR.
-- Clean up ExpressionTransformationVisitor by moving more functionality to helper objects like StatementTransformation.
+- Clean up ExpressionTransformationVisitor by moving more functionality to helper objects like ExpressionTransformationHelper.
   - Reconsider some names, as ExpressionTransformation and StatementTransformation aren't similar in functionality even though their names suggest so.
 
 ##### Terminology
