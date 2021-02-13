@@ -68,22 +68,22 @@ class ExpressionParserSpec extends BaseSpec with ParserSpecExtensions[TopLevelEx
     "a > b" --> Stmt.GreaterThan(va, vb)
     "a >= b" --> Stmt.GreaterThanEquals(va, vb)
     "a == b" --> Stmt.Equals(va, vb)
-    "a =/= b" --> Stmt.NotEquals(va, vb)
-    "a | b | c" --> Stmt.Disjunction(Vector(va, vb, vc))
-    "a & b & c" --> Stmt.Conjunction(Vector(va, vb, vc))
+    "a != b" --> Stmt.NotEquals(va, vb)
+    "a || b || c" --> Stmt.Disjunction(Vector(va, vb, vc))
+    "a && b && c" --> Stmt.Conjunction(Vector(va, vb, vc))
   }
 
   it should "parse complex operator expressions correctly" in {
     "a + { b }" --> Stmt.Addition(va, Stmt.Block(Vector(vb)))
     "a + -b" --> Stmt.Addition(va, Stmt.Negation(vb))
-    "~(a == b) | (a < ~b) & (~a < c)" --> Stmt.Disjunction(Vector(
+    "!(a == b) || (a < !b) && (!a < c)" --> Stmt.Disjunction(Vector(
       Stmt.LogicalNot(Stmt.Equals(va, vb)),
       Stmt.Conjunction(Vector(
         Stmt.LessThan(va, Stmt.LogicalNot(vb)),
         Stmt.LessThan(Stmt.LogicalNot(va), vc),
       )),
     ))
-    "~a & ~b & c + -a * -b" --> Stmt.Conjunction(Vector(
+    "!a && !b && c + -a * -b" --> Stmt.Conjunction(Vector(
       Stmt.LogicalNot(va),
       Stmt.LogicalNot(vb),
       Stmt.Addition(
@@ -411,9 +411,9 @@ class ExpressionParserSpec extends BaseSpec with ParserSpecExtensions[TopLevelEx
   "Top-level expressions" should "only appear in blocks, conditionals, and repetitions" in {
     "let x = a + return 0".fails
     "if (return x) a else b".fails
-    "(yield 0) | b | c".fails
-    "repeat while (yield x) { yield b }".fails
-    "b + yield 0".fails
+    "(return 0) || b || c".fails
+    "repeat while (return x) { return b }".fails
+    "b + return 0".fails
     "if (let a = false) { }".fails
     "repeat while (let a = false) { }".fails
     "-(let a = 2)".fails

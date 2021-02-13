@@ -26,7 +26,7 @@ export const Sum = {
 
     // Remove strict subtypes of other parts. Conceptually, we have to check for strict subtypes here, but we have
     // already established that no two types in the list are equal. Since the definition of strict subtyping t1 < t2
-    // is t1 =/= t2 && t1 <= t2, we can forego the strict check here and just use normal subtyping.
+    // is t1 != t2 && t1 <= t2, we can forego the strict check here and just use normal subtyping.
     const simplified = allExcluding(flattened, (self, other) => isSubtype(self, other))
 
     if (simplified.length === 1) {

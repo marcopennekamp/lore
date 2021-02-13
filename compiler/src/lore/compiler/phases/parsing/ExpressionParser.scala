@@ -74,13 +74,13 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
   def operatorExpression[_: P]: P[ExprNode] = {
     import PrecedenceParser._
     PrecedenceParser.parser(
-      operator = StringIn("|", "&", "==", "=/=", "<", "<=", ">", ">=", ":+", "+", "-", "*", "/"),
+      operator = StringIn("||", "&&", "==", "!=", "<", "<=", ">", ">=", ":+", "+", "-", "*", "/"),
       operand = unary,
       operatorMeta = Map(
-        "|" -> XaryOperator[ExprNode](1, ExprNode.DisjunctionNode),
-        "&" -> XaryOperator[ExprNode](2, ExprNode.ConjunctionNode),
+        "||" -> XaryOperator[ExprNode](1, ExprNode.DisjunctionNode),
+        "&&" -> XaryOperator[ExprNode](2, ExprNode.ConjunctionNode),
         "==" -> BinaryOperator[ExprNode](3, ExprNode.EqualsNode),
-        "=/=" -> BinaryOperator[ExprNode](3, ExprNode.NotEqualsNode),
+        "!=" -> BinaryOperator[ExprNode](3, ExprNode.NotEqualsNode),
         "<" -> BinaryOperator[ExprNode](4, ExprNode.LessThanNode),
         "<=" -> BinaryOperator[ExprNode](4, ExprNode.LessThanEqualsNode),
         ">" -> BinaryOperator[ExprNode](4, ExprNode.GreaterThanNode),
@@ -108,7 +108,7 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
       case _ => ExprNode.NegationNode(expr, position)
     }
   }
-  private def logicalNot[_: P]: P[ExprNode] = P(Index ~ "~" ~ atom).map(withPosition(ExprNode.LogicalNotNode))
+  private def logicalNot[_: P]: P[ExprNode] = P(Index ~ "!" ~ atom).map(withPosition(ExprNode.LogicalNotNode))
 
   /**
     * Atomic operands of unary and binary operators.

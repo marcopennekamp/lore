@@ -6,7 +6,7 @@ type Unit = ()
 
 /**
   * The default "equals" function used by the compiler for comparing complex types. This function is invoked
-  * when using the == and =/= operators.
+  * when using the == and != operators.
   */
 function areEqual(a: Any, b: Any): Boolean = dynamic[Boolean]('Lore.values.areEqual', a, b)
 
@@ -21,7 +21,7 @@ function isLessThan(a: Any, b: Any): Boolean = dynamic[Boolean]('Lore.values.isL
  * when using the <= and >= operators. By default, isLessThan and areEqual are used to test the values, but this
  * behavior can be implemented more efficiently for specialized types.
  */
-function isLessThanOrEqual(a: Any, b: Any): Boolean = isLessThan(a, b) | areEqual(a, b)
+function isLessThanOrEqual(a: Any, b: Any): Boolean = isLessThan(a, b) || areEqual(a, b)
 
 // TODO: Restrict hashes to a Hashable label type. This would provide better safety when using maps. More often than
 //       not, especially when maps are easy to create, proper hash-ability of a type gets overlooked and keys are

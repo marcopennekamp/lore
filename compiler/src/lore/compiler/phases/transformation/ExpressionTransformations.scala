@@ -28,7 +28,7 @@ object ExpressionTransformations {
   }
 
   /**
-    * Transforms comparison operations (==, =/=, <, <=, >, >=) of non-basic types into function calls, invoking
+    * Transforms comparison operations (==, !=, <, <=, >, >=) of non-basic types into function calls, invoking
     * the standard functions areEqual, isLessThan, and isLessThanOrEqual. If this comparison is comparing basic types,
     * it instead applies the basic operator for comparison.
     *

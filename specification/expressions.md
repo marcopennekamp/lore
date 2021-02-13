@@ -167,17 +167,13 @@ Lore supports **booleans**. Their type is `Boolean`. They are implemented using 
 
 ##### Logical Operators
 
-**TODO:** Use a more familiar syntax.
-
 The following **logical operators** can be used on booleans. All arguments have to be `Boolean` values.
 
 ```
-a & b  // Conjunction
-a | b  // Disjunction
-~a     // Logical Not
+a && b  // Conjunction
+a || b  // Disjunction
+!a      // Logical Not
 ```
-
-We define *logical not* using a **tilde** so we can reserve the `?!` combo of characters for handling optional values.
 
 ##### Equality and Order
 
@@ -322,14 +318,14 @@ Lore supports the following **comparison operators:**
 
 ```
 a == b   // Equality
-a =/= b  // Inequality
+a != b  // Inequality
 a < b    // Less than
 a <= b   // Less than or equal
 a > b    // Greater than
 a >= b   // Greater than or equal
 ```
 
-To **define equality** for a given type, you can specialize the function `isEqual(a, b)`. Inequality is strictly defined as `~isEqual(a, b)`.
+To **define equality** for a given type, you can specialize the function `isEqual(a, b)`. Inequality is strictly defined as `!isEqual(a, b)`.
 
 ```
 function isEqual(c1: Car, c2: Car): Boolean = ...
@@ -337,9 +333,7 @@ function isEqual(c1: SportsCar, c2: CheapCar): Boolean = false
 function isEqual(c1: CheapCar, c2: SportsCar): Boolean = false // Don't forget to be symmetric!
 ```
 
-To **define order** for a given type, specialize the function `isLessThan(a, b)`. The *greater than* operator is strictly defined as `~(a < b) & a =/= b`.
-
-**TODO:** Rethink that "not equals" operator…
+To **define order** for a given type, specialize the function `isLessThan(a, b)`. The *greater than* operator is strictly defined as `!(a < b) && a != b`.
 
 
 
@@ -430,7 +424,7 @@ for (kv <- m) {  // kv is a tuple
 }
 ```
 
-To iterate over a list of indices, you can use a **range** function. Conceptually, it creates a *lazily* evaluated list of indices. We might ultimately support ranges with prettier operators.
+To iterate over a list of indices, you can use a **range** function. Conceptually, it creates a *lazily* evaluated list of indices. We might ultimately support ranges with prettier operators. (**Note:** This is not implemented yet.)
 
 ```
 for (i <- range(0, 10)) { // 0 inclusive, 10 exclusive
@@ -459,23 +453,21 @@ In the implementation, we can of course **optimize** the following case: When th
 Our **operator precedence** is as follows, from lowest to highest precedence:
 
 ```
-|
-&
-== =/=
+||
+&&
+== !=
 < <= > >=
 + -
 * /
-~
+! - (unary)
 atoms (including function application)
 ```
 
-Note that we don't view assignments as operators. **Complex expressions** such as conditionals and blocks cannot stand as an operand; you will have to enclose them in parentheses to use them with addition, for example:
+Note that we don't view assignments as operators. **Complex expressions** such as conditionals cannot stand as an operand; you will have to enclose them in parentheses to use them with addition, for example:
 
 ```
-5 + ({ 10 }) + (if (a == b) 5 else 15)
+5 + { 10 } + (if (a == b) 5 else 15)
 ```
-
-**TODO:** Is this still true?
 
 
 
@@ -483,7 +475,7 @@ Note that we don't view assignments as operators. **Complex expressions** such a
 
 - Consider introducing **Swift-style `guard` statements** with a twist: They operate within blocks. If the condition is false, continue the code, otherwise *return the value of the else part from the block*. I think this could be super useful in game development.
 
-- We could consider, once we have introduced nullable/optional values (`Int?`), to **turn the logical operators into operators that accept any argument types** and return "truthy" values. Compare to Clojure, Elixir, or Javascript.
+- We could consider, once we have introduced nullable/optional values, to **turn the logical operators into operators that accept any argument types** and return "truthy" values. Compare to Clojure, Elixir, or Javascript.
 
 - **Lists:**
 
@@ -502,7 +494,7 @@ Note that we don't view assignments as operators. **Complex expressions** such a
   ??? {
     foo(x, y) => 'hello'
     bar(x, y) => 'world'
-    baz(x, y) & baz(y, x) & baz(z, z) => 'hello darkness'
+    baz(x, y) && baz(y, x) && baz(z, z) => 'hello darkness'
     _ => 'default'
   }
   ```

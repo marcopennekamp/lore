@@ -54,7 +54,7 @@ function simulateCombat(left: Combatant, right: Combatant): SimulationResult = {
   let leftState = CombatantState { combatant = left }
   let rightState = CombatantState { combatant = right }
 
-  while (isAlive(left) & isAlive(right)) {
+  while (isAlive(left) && isAlive(right)) {
     combatLog('Turn $turn:')
 
     // Phase 1: Closing the distance.
@@ -79,10 +79,10 @@ function simulateCombat(left: Combatant, right: Combatant): SimulationResult = {
     combatLog('')
   }
 
-  if (isAlive(left) & ~isAlive(right)) {
+  if (isAlive(left) && !isAlive(right)) {
     combatLog('${name(left)} wins the battle!')
     SimulationVictory(left)
-  } else if (~isAlive(left) & isAlive(right)) {
+  } else if (!isAlive(left) && isAlive(right)) {
     combatLog('${name(right)} wins the battle!')
     SimulationVictory(right)
   } else {
@@ -105,7 +105,7 @@ function isInRange(combatant: Combatant, distance: Int): Boolean = stat(combatan
  * Closes the given distance to the other combatant, provided the given combatant isn't already in range.
  */
 function closeDistance(combatant: Combatant, distance: Int): Int = {
-  if (distance > 0 & ~isInRange(combatant, distance)) {
+  if (distance > 0 && !isInRange(combatant, distance)) {
     let new = max(distance - stat(combatant, StatSpeed()), 0)
     combatLog('${name(combatant)} closes distance to $new.')
     new
@@ -128,7 +128,7 @@ function attemptDodge(state: CombatantState): Boolean = {
 action attemptAttack(attackerState: CombatantState, defenderState: CombatantState, distance: Int) {
   if (isInRange(attackerState.combatant, distance)) {
     let dodgeSuccessful = attemptDodge(defenderState)
-    if (~dodgeSuccessful) {
+    if (!dodgeSuccessful) {
       let attack = stat(attackerState.combatant, StatAttack())
       hit(attackerState.combatant, defenderState.combatant, attack)
     }

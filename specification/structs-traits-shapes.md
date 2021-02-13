@@ -31,7 +31,7 @@ struct Person {
 
 ##### Construction
 
-Creating new struct instances is possible with two independent **constructor** syntaxes. The **call syntax** is a convenient way to create instances, but with the requirement that all properties need to be specified, including those that could have a default value. In contrast, the **map syntax** is most convenient when default values should be applied to properties or when more self-evident code is desired. It is also useful when properties should be specified out of order. 
+Creating new struct instances is possible with two independent **constructor** syntaxes. The **call syntax** is a convenient way to create instances, but with the requirement that all properties need to be specified, including those that could have a default value. In contrast, the **map syntax** is most convenient when default values should be applied to properties or when more self-evident code is desired. It is also useful when properties should be specified out of order.
 
 When using the map syntax, one may **omit some verbosity** in a definition like `property = value` if the value is a variable and named exactly like the property. An example of this is included below.
 
@@ -328,8 +328,6 @@ action test() {
   move(hero)
 }
 ```
-
-**Alternative Idea:** If a struct inherits from a shape type, the properties in question become automatically open...
 
 ##### Component-based Programming
 
