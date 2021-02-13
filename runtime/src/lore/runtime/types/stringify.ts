@@ -1,3 +1,4 @@
+import { FunctionType } from '../functions.ts'
 import { ListType } from '../lists.ts'
 import { MapType } from '../maps.ts'
 import { ShapeType } from '../shapes.ts'
@@ -29,6 +30,11 @@ export function stringify(type: Type): string {
     case Kind.Sum: return stringifyXary(<XaryType> type, " | ")
     case Kind.Intersection: return stringifyXary(<XaryType> type, " & ")
     case Kind.Product: return stringifyXary(<XaryType> type, ", ")
+
+    case Kind.Function: {
+      const func = <FunctionType> type
+      return `${stringify(func.input)} => ${stringify(func.output)}`
+    }
 
     case Kind.List: return `[${stringify((<ListType> type).element)}]`
     case Kind.Map: {

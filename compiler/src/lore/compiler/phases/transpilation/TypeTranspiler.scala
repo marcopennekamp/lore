@@ -84,6 +84,7 @@ object TypeTranspiler {
         val args = types.map(rec).toVector
         if (simplifyAtRuntime) RuntimeApi.intersections.simplified(args) else RuntimeApi.intersections.tpe(args)
       case ProductType(elements) => RuntimeApi.tuples.tpe(elements.map(rec))
+      case FunctionType(input, output) => RuntimeApi.functions.tpe(rec(input), rec(output))
       case ListType(element) => RuntimeApi.lists.tpe(rec(element))
       case MapType(key, value) => RuntimeApi.maps.tpe(rec(key), rec(value))
       case ShapeType(properties) =>

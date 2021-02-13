@@ -15,12 +15,13 @@ class TypeParser(implicit fragment: Fragment) {
   def typeExpression[_: P]: P[TypeExprNode] = {
     import PrecedenceParser._
     PrecedenceParser.parser(
-      operator = StringIn("|", "&", "->"),
+      operator = StringIn("|", "&", "=>", "->"),
       operand = atom,
       operatorMeta = Map(
         "|" -> XaryOperator[TypeExprNode](1, TypeExprNode.SumNode),
         "&" -> XaryOperator[TypeExprNode](2, TypeExprNode.IntersectionNode),
-        "->" -> BinaryOperator[TypeExprNode](3, TypeExprNode.MapNode),
+        "=>" -> BinaryOperator[TypeExprNode](3, TypeExprNode.FunctionNode),
+        "->" -> BinaryOperator[TypeExprNode](4, TypeExprNode.MapNode),
       ),
     )
   }

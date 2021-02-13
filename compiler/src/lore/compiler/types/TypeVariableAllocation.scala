@@ -137,10 +137,13 @@ object TypeVariableAllocation {
           p1.elements.zip(p2.elements).foreach { case (c1, c2) => assign(c1, c2) }
         }
 
+      case (f1: FunctionType, f2: FunctionType) =>
+        assign(f1.input, f2.input)
+        assign(f1.output, f2.output)
+
       case (l1: ListType, l2: ListType) => assign(l1.element, l2.element)
 
       case (m1: MapType, m2: MapType) =>
-        // TODO: Is this correct?
         assign(m1.key, m2.key)
         assign(m1.value, m2.value)
 

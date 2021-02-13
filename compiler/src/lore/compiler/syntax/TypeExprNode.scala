@@ -12,6 +12,7 @@ object TypeExprNode {
   case class IntersectionNode(types: Vector[TypeExprNode], position: Position) extends TypeExprNode
   case class ProductNode(types: Vector[TypeExprNode], position: Position) extends TypeExprNode
   case class UnitNode(position: Position) extends TypeExprNode
+  case class FunctionNode(input: TypeExprNode, output: TypeExprNode, position: Position) extends TypeExprNode
   case class ListNode(element: TypeExprNode, position: Position) extends TypeExprNode
   case class MapNode(key: TypeExprNode, value: TypeExprNode, position: Position) extends TypeExprNode
   case class ShapeNode(properties: Vector[ShapePropertyNode], position: Position) extends TypeExprNode
@@ -25,6 +26,7 @@ object TypeExprNode {
     case SumNode(types, _) => types.flatMap(identifiers).toSet
     case IntersectionNode(types, _) => types.flatMap(identifiers).toSet
     case ProductNode(types, _) => types.flatMap(identifiers).toSet
+    case FunctionNode(input, output, _) => identifiers(input) ++ identifiers(output)
     case ListNode(element, _) => identifiers(element)
     case MapNode(key, value, _) => identifiers(key) ++ identifiers(value)
     case ShapeNode(properties, _) => properties.map(_.tpe).flatMap(identifiers).toSet

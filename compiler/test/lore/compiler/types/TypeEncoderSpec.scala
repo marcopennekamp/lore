@@ -21,10 +21,10 @@ class TypeEncoderSpec extends BaseSpec {
   }
 
   it should "correctly encode list and map types with basic type children" in {
-    ListType(BasicType.Real) --> Vector(0xc0, 0xa2)
-    ListType(BasicType.String) --> Vector(0xc0, 0xa5)
-    MapType(BasicType.String, BasicType.Any) --> Vector(0xc1, 0xa5, 0xa0)
-    MapType(BasicType.String, BasicType.Boolean) --> Vector(0xc1, 0xa5, 0xa4)
+    ListType(BasicType.Real) --> Vector(0xc1, 0xa2)
+    ListType(BasicType.String) --> Vector(0xc1, 0xa5)
+    MapType(BasicType.String, BasicType.Any) --> Vector(0xc2, 0xa5, 0xa0)
+    MapType(BasicType.String, BasicType.Boolean) --> Vector(0xc2, 0xa5, 0xa4)
   }
 
   it should "correctly encode type variables with basic type bounds" in {

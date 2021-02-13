@@ -99,6 +99,14 @@ object LeastUpperBound {
       // In case of product types, we can decide the closest common supertype element by element.
       case (ProductType(left), ProductType(right)) if left.size == right.size => ProductType(left.zip(right).map(lubPassOnSettings.tupled))
 
+      // The function output types can be decided as a LUB, but the input types are contravariant. So they have to be
+      // merged as the reverse of a sum type: an intersection type.
+      case (f1: FunctionType, f2: FunctionType) =>
+        FunctionType(
+          IntersectionType.construct(Vector(f1.input, f2.input)),
+          lubPassOnSettings(f1.output, f2.output)
+        )
+
       // For declared types, the LUB is calculated by the type hierarchy. If the result would be Any, we return
       // the fallback type instead.
       // We specifically don't default to a shape type (which would be possible if we LUB two structs) because we only

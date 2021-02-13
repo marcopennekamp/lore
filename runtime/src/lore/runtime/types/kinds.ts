@@ -11,6 +11,7 @@ export enum Kind {
   Sum,
   Intersection,
   Product,
+  Function,
   List,
   Map,
   Shape,

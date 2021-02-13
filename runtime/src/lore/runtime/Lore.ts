@@ -11,6 +11,7 @@ import { Tuple } from './tuples.ts'
 import { Types } from './types/types.ts'
 import utils from './utils/api.ts'
 import { Values } from './values.ts'
+import { Function } from './functions.ts'
 
 export default {
   // APIs used by the compiler.
@@ -19,6 +20,7 @@ export default {
   sums: Sum,
   intersections: Intersection,
   tuples: Tuple,
+  functions: Function,
   lists: List,
   maps: Map,
   shapes: Shape,

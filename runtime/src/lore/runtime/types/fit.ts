@@ -1,3 +1,4 @@
+import { FunctionType } from '../functions.ts'
 import { ListType } from '../lists.ts'
 import { MapType } from '../maps.ts'
 import { ShapeType } from '../shapes.ts'
@@ -180,6 +181,15 @@ class TypeVariableAllocation {
               TypeVariableAllocation.assign(types1[i], types2[i], allocation)
             }
           }
+        }
+        break
+
+      case Kind.Function:
+        if (t1.kind === Kind.Function) {
+          const f1 = <FunctionType> t1
+          const f2 = <FunctionType> t2
+          TypeVariableAllocation.assign(f1.input, f2.input, allocation)
+          TypeVariableAllocation.assign(f1.output, f2.output, allocation)
         }
         break
 

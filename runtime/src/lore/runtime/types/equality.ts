@@ -1,3 +1,4 @@
+import { FunctionType } from '../functions.ts'
 import { IntersectionType } from '../intersections.ts'
 import { ListType } from '../lists.ts'
 import { MapType } from '../maps.ts'
@@ -94,6 +95,8 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
     }
     return true
   },
+
+  (t1: FunctionType, t2: FunctionType) => areEqual(t1.input, t2.input) && areEqual(t1.output, t2.output),
 
   (t1: ListType, t2: ListType) => areEqual(t1.element, t2.element),
   (t1: MapType, t2: MapType) => areEqual(t1.key, t2.key) && areEqual(t1.value, t2.value),

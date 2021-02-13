@@ -3,6 +3,7 @@ import { List, ListType } from '../lists.ts'
 import { Map, MapType } from '../maps.ts'
 import { Shape, ShapeType } from '../shapes.ts'
 import { Sum, SumType } from '../sums.ts'
+import { Function, FunctionType } from '../functions.ts'
 import { ProductType, Tuple } from '../tuples.ts'
 import { TinyMap } from '../utils/TinyMap.ts'
 import { Assignments } from './fit.ts'
@@ -27,11 +28,16 @@ export function substitute(assignments: Assignments, type: Type): Type {
       return Intersection.type(substituteMany(assignments, (<IntersectionType> type).types))
     case Kind.Product:
       return Tuple.type(substituteMany(assignments, (<ProductType> type).types))
+    case Kind.Function: {
+      const func = <FunctionType> type
+      return Function.type(substitute(assignments, func.input), substitute(assignments, func.output))
+    }
     case Kind.List:
       return List.type(substitute(assignments, (<ListType> type).element))
-    case Kind.Map:
-      const m1 = <MapType> type
-      return Map.type(substitute(assignments, m1.key), substitute(assignments, m1.value))
+    case Kind.Map: {
+      const map = <MapType> type
+      return Map.type(substitute(assignments, map.key), substitute(assignments, map.value))
+    }
     case Kind.Shape:
       const result: { [key: string]: Type } = { }
       const propertyTypes = (<ShapeType> type).propertyTypes

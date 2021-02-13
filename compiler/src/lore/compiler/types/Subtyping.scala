@@ -83,6 +83,9 @@ object Subtyping {
         }
     },
 
+    // Functions are contravariant in their input and covariant in their output.
+    { case (f1: FunctionType, f2: FunctionType) => isSubtype(f2.input, f1.input) && isSubtype(f1.output, f2.output) },
+
     // Lists are covariant.
     { case (l1: ListType, l2: ListType) => isSubtype(l1.element, l2.element) },
 

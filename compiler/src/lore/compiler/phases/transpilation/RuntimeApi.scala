@@ -60,6 +60,12 @@ object RuntimeApi {
     val unitValue = named("unitValue")
   }
 
+  object functions {
+    implicit val base = named("functions")(RuntimeApi.base)
+
+    def tpe(input: TargetExpression, output: TargetExpression) = named("type").call(input, output)
+  }
+
   object lists {
     implicit val base = named("lists")(RuntimeApi.base)
 

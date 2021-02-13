@@ -14,7 +14,7 @@ import lore.compiler.core.CompilationException
   *         - Named has, for now, always zero operands, as we have not introduced parametric structs/traits yet.
   *         - Also note that Named excludes type variables!
   *       - Basic type: Any, Nothing, Real, Int, Boolean, String
-  *       - Fixed size: List, Map, Variable
+  *       - Fixed size: Function, List, Map, Variable
   *     The first three bits determine the kind of the type:
   *       - 000: Sum
   *       - 001: Intersection
@@ -34,8 +34,9 @@ import lore.compiler.core.CompilationException
   *         - 00100: Boolean
   *         - 00101: String
   *       - fixed-size type:
-  *         - 00000: List
-  *         - 00001: Map
+  *         - 00000: Function
+  *         - 00001: List
+  *         - 00010: Map
   *         - 00100: Variable without bounds (lower bound: Nothing, upper bound: Any)
   *         - 00101: Variable with custom lower bound (upper bound: Any)
   *         - 00110: Variable with custom upper bound (lower bound: Nothing)
@@ -53,6 +54,7 @@ import lore.compiler.core.CompilationException
   *     - Basic types: No operands.
   *     - List: A single element type.
   *     - Map: A key type and a value type.
+  *     - Function: An input type and an output type.
   *     - Variable:
   *       - The name of the variable, encoded as a UTF-8 string with a length.
   *       - The lower and/or upper bound based on the specific kind, as outlined above.
@@ -91,8 +93,9 @@ object TypeEncoder {
     }
 
     // Fixed-size types.
-    val list: Byte = Tag(Kind.fixedSize, 0)
-    val map: Byte = Tag(Kind.fixedSize, 1)
+    val function: Byte = Tag(Kind.fixedSize, 0)
+    val list: Byte = Tag(Kind.fixedSize, 1)
+    val map: Byte = Tag(Kind.fixedSize, 2)
     val variableNothingAny: Byte = Tag(Kind.fixedSize, 4)
     val variableAny: Byte = Tag(Kind.fixedSize, 5)
     val variableNothing: Byte = Tag(Kind.fixedSize, 6)
@@ -106,6 +109,7 @@ object TypeEncoder {
     case SumType(types) => Tag.variableSize(Kind.sum, types.size) +: types.toVector.flatMap(writeType)
     case IntersectionType(types) => Tag.variableSize(Kind.intersection, types.size) +: types.toVector.flatMap(writeType)
     case ProductType(elements) => Tag.variableSize(Kind.product, elements.size) +: elements.flatMap(writeType)
+    case FunctionType(input, output) => (Tag.function +: writeType(input)) ++ writeType(output)
     case ListType(element) => Tag.list +: writeType(element)
     case MapType(key, value) => (Tag.map +: writeType(key)) ++ writeType(value)
     case ShapeType(properties) =>

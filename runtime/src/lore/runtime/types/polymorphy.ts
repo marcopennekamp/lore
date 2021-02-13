@@ -1,3 +1,4 @@
+import { FunctionType } from '../functions.ts'
 import { ListType } from '../lists.ts'
 import { MapType } from '../maps.ts'
 import { ShapeType } from '../shapes.ts'
@@ -38,6 +39,9 @@ export function isPolymorphic(type: Type): boolean {
       return false
     }
 
+    case Kind.Function:
+      return isPolymorphic((<FunctionType> type).input) || isPolymorphic((<FunctionType> type).output)
+
     case Kind.List:
       return isPolymorphic((<ListType> type).element)
     case Kind.Map:
@@ -75,6 +79,11 @@ export function variables(type: Type): TinySet<TypeVariable> {
         }
         break
       }
+
+      case Kind.Function:
+        traverse((<FunctionType> type).input)
+        traverse((<FunctionType> type).output)
+        break
 
       case Kind.List:
         traverse((<ListType> type).element)

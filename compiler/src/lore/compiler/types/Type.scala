@@ -55,6 +55,7 @@ object Type {
       val exceptTraits = types.toVector.filterNotType[TraitType]
       exceptTraits.isEmpty || exceptTraits.exists(isAbstract)
     case ProductType(elements) => elements.exists(isAbstract)
+    case FunctionType(_, _) => false
     case ListType(_) => false
     case MapType(_, _) => false
     case ShapeType(_) => false
@@ -75,6 +76,7 @@ object Type {
     case SumType(types) => types.exists(isPolymorphic)
     case IntersectionType(types) => types.exists(isPolymorphic)
     case ProductType(elements) => elements.exists(isPolymorphic)
+    case FunctionType(input, output) => isPolymorphic(input) || isPolymorphic(output)
     case ListType(element) => isPolymorphic(element)
     case MapType(key, value) => isPolymorphic(key) || isPolymorphic(value)
     case ShapeType(properties) => properties.values.map(_.tpe).exists(isPolymorphic)
@@ -95,6 +97,7 @@ object Type {
     case SumType(types) => types.flatMap(variables)
     case IntersectionType(types) => types.flatMap(variables)
     case ProductType(elements) => elements.flatMap(variables).toSet
+    case FunctionType(input, output) => variables(input) ++ variables(output)
     case ListType(element) => variables(element)
     case MapType(key, value) => variables(key) ++ variables(value)
     case ShapeType(properties) => properties.values.map(_.tpe).flatMap(variables).toSet
@@ -116,6 +119,7 @@ object Type {
       case SumType(types) => SumType(types.map(rec))
       case IntersectionType(types) => IntersectionType(types.map(rec))
       case ProductType(elements) => ProductType(elements.map(rec))
+      case FunctionType(input, output) => FunctionType(rec(input), rec(output))
       case ListType(element) => ListType(rec(element))
       case MapType(key, value) => MapType(rec(key), rec(value))
       case ShapeType(properties) => ShapeType(properties.values.map(_.mapType(rec)))
@@ -174,7 +178,8 @@ object Type {
     case object Parenthesized extends TypePrecedence(0)
     case object Sum extends TypePrecedence(1)
     case object Intersection extends TypePrecedence(2)
-    case object Map extends TypePrecedence(3)
+    case object Function extends TypePrecedence(3)
+    case object Map extends TypePrecedence(4)
   }
 
   /**
@@ -189,6 +194,7 @@ object Type {
       case SumType(types) => infix(" | ", TypePrecedence.Sum, types.toVector)
       case IntersectionType(types) => infix(" & ", TypePrecedence.Intersection, types.toVector)
       case ProductType(elements) => s"(${elements.map(toString(_, verbose)).mkString(", ")})"
+      case FunctionType(input, output) => infix(" => ", TypePrecedence.Function, Vector(input, output))
       case ListType(element) => s"[${toString(element, verbose)}]"
       case MapType(key, value) => infix(" -> ", TypePrecedence.Map, Vector(key, value))
       case ShapeType(properties) =>

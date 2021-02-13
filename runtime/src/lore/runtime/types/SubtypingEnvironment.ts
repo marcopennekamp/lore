@@ -1,3 +1,4 @@
+import { FunctionType } from '../functions.ts'
 import { IntersectionType } from '../intersections.ts'
 import { ListType } from '../lists.ts'
 import { MapType } from '../maps.ts'
@@ -107,6 +108,14 @@ export class SubtypingEnvironment {
 
       case Kind.Product:
         if (t2.kind === Kind.Product && this.productSubtypeProduct(<ProductType> t1, <ProductType> t2)) return true
+        break
+
+      case Kind.Function:
+        if (t2.kind === Kind.Function) {
+          const f1 = <FunctionType> t1
+          const f2 = <FunctionType> t2
+          if (this.isSubtype(f2.input, f1.input) && this.isSubtype(f1.output, f2.output)) return true
+        }
         break
 
       case Kind.List:
