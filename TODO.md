@@ -16,6 +16,7 @@
 - Allow question marks in identifiers. I like how Clojure approaches booleans and this would fit nicely into Lore, I hope. Example: `isSuccessful` would become `successful?`.
 - Allow trailing commas.
 - `implements` is annoying to type (especially to remember using it for structs in contrast to traits). I frequently trip up there. Maybe we should just use `extends` for structs as well to make the language easier to use.
+- We should find a symmetric syntax for map types.
 
 ##### Type System
 

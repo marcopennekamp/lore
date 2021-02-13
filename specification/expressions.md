@@ -18,7 +18,7 @@ Lore is an expression-based language, which means that there are no statements, 
 
 // They are legal as the body of conditionals and loops.
 if (y == 0) x = 0 else x = 5
-repeat while (i < 10) i += 1
+while (i < 10) i += 1
 for (entity <- entities) count += 1
 ```
 
@@ -32,7 +32,7 @@ A **variable declaration** is a top-level expression that lets you define a new 
 
 Variables can be **immutable or mutable**. Only mutable variables can be changed after their initial declaration. We recommend to declare all variables as immutable unless mutability is specifically needed. This is also one reason why the mutability syntax is relatively verbose.
 
-A **variable expression** is an expression that evaluates to the value of its named variable.
+A **variable expression** is an expression that evaluates to the value of its named variable. A variable expression may also evaluate to the function value of a multi-function with the same name.
 
 ###### Syntax Example
 
@@ -53,7 +53,7 @@ An **assignment** lets you assign a new value to a mutable variable or property.
 ```
 x = 5                        // variable assignment, only valid if x is mutable
 character.name = 'Weislaus'  // property assignment, name must be mutable
-character.Position.x = x     // deep property assignment, only x must be mutable
+character.position.x = x     // deep property assignment, only x must be mutable
 ```
 
 ##### Shorthands
@@ -87,7 +87,7 @@ function foo(x: Int): String = {
 
 ##### Nesting Returns
 
-Returns cannot be nested in top-level expressions that are not at the **top-level of a function**. For example, the following code is illegal:
+Returns cannot be nested in top-level expressions that are not at the **top-level of a function**. For example, the following code is *illegal*:
 
 ```
 function foo(): String = {
@@ -237,6 +237,19 @@ Two tuples are equal if they have the same size and their elements are equal.
 
 
 
+### Anonymous Functions
+
+In addition to multi-functions, Lore supports **anonymous functions**. An anonymous function is created as an immediate function value without dispatch mechanics. Parameter types may be specified optionally, but can also be inferred from *local* context. The return type of the anonymous function is always inferred.
+
+###### Example
+
+```
+let square: Real => Real = v => v * v
+map([1, 2, 3, 4, 5], v => v + 3)
+```
+
+
+
 ### Lists
 
 Lore supports **lists** as first-class constructs. A list is a homogenous, linear collection of an arbitrary number of elements. Lists are *immutable*. List types are denoted `[A]`. We will eventually differentiate between immutable lists and (mutable) arrays.
@@ -349,15 +362,21 @@ That's it! Types will be checked, values will be dispatched, and some function w
 
 We say *multi-function call*, because it only becomes a function call at run-time, when a function has been chosen according to the dispatch semantics. At compile-time, we are calling a whole multi-function with a bounded but unknown input type.
 
-##### Fixed Invocation
+##### Fixing Functions at Compile-Time
 
-Instead of dispatching at run-time, you can **fix a function to call at compile-time:**
+Instead of dispatching at run-time, you can **fix a function at compile-time:**
 
 ```
-f.fixed[T1, T2, ...](a1, a2, ...)
+f.fixed[T1, T2, ...]
 ```
 
-In the long term, `f.fixed[T1, T2, ...]` is supposed to return a function value. As we are not supporting these for now, the whole syntax is parsed and compiled as one big expression.
+The expression evaluates to a **function value** which may be subsequently invoked or passed around.
+
+
+
+### Function Calls
+
+**Function values** may be called with the same syntax as multi-functions. Because multiple dispatch is compiled on the implementing side, a function call may still lead to multiple dispatch and would thus be semantically equivalent to a regular multi-function call. The function value may also be an anonymous function, however, which doesn't engage in dispatch.
 
 
 

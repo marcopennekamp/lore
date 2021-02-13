@@ -19,11 +19,19 @@ A **type expression** is a representation of a particular type, built with the t
     ```
   
     **Struct names** cannot contain these special characters because a struct's name is also the name of its constructor.
+  
 - `t1 | t2 | t3` — A **sum type** is simply constructed by connecting different type expressions with `|`.
--  `t1 & t2 & t3` — An **intersection type** is constructed using the `&` symbol.
+
+- `t1 & t2 & t3` — An **intersection type** is constructed using the `&` symbol.
+
 - `(t1, t2, t3)` — **Product types** describing tuple values.
+
+- `t1 => t2` — **Function types** describing function values.
+
 - `t1 -> t2` — **Map types** describing *immutable* maps.
+
 - `[t]` — **List types** describing *immutable* lists.
+
 - `{ a: A, b: B }` — **Shape types** (partially) describing structs and shape values.
 
 Note that the compiler immediately performs the following **simplifications** on sum and intersection types:
@@ -36,6 +44,7 @@ Type constructors have the following **precedence** (lowest priority first):
 ```
 |                           // sum types
 &                           // intersection types
+=>							// function types
 ->                          // map types
 () (,) [] { ... } (...) id  // unit, product, list, shape, enclosed, names
 ```
@@ -122,6 +131,20 @@ A **product type** describes tuples. A type at any position is called an element
 
 
 
+### Function Types
+
+A **function type** describes function values (multi-functions and anonymous functions). The function type consists of an **input type** and an **output type**.
+
+###### Syntax Example
+
+```
+odd?: Int => Boolean
+flatten: [[A]] => [A]
+zip: ([A], [B]) => [(A, B)]
+```
+
+
+
 ### List Types
 
 A **list type** describes immutable lists and is covariant.
@@ -183,6 +206,7 @@ Each type is either **abstract** or concrete. Functions may only be declared as 
 - An **intersection type** is abstract if at least one of its parts is abstract.
   - Note that there are special rules concerning traits as **augmentations**, defined further below.
 - A **product type** is abstract if at least one of its elements is abstract.
+- A **function type** is always concrete, as one can always define the constant function.
 - A **list type** is always concrete.
 - A **map type** is always concrete.
 - A **shape type** is always concrete.
