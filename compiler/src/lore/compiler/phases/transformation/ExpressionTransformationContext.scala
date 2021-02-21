@@ -1,6 +1,5 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.semantics.LocalVariable
 import lore.compiler.semantics.scopes.{BlockVariableScope, VariableScope}
 
 /**

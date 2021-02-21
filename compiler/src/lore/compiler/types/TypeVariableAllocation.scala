@@ -134,7 +134,7 @@ object TypeVariableAllocation {
 
       case (p1: ProductType, p2: ProductType) =>
         if (p1.elements.size == p2.elements.size) {
-          p1.elements.zip(p2.elements).foreach { case (c1, c2) => assign(c1, c2) }
+          p1.elements.zip(p2.elements).foreach { case (e1, e2) => assign(e1, e2) }
         }
 
       case (f1: FunctionType, f2: FunctionType) =>
@@ -155,7 +155,7 @@ object TypeVariableAllocation {
       case (s1: StructType, s2: ShapeType) => assign(s1.asShapeType, s2)
 
       // Allocating types to intersection types and sum types is quite complex, since the allocation mechanism
-      // suddenly come upon more than one possible allocation. Take, for example, a sum type A | B, to which we
+      // suddenly comes upon more than one possible allocation. Take, for example, a sum type A | B, to which we
       // try to assign a type C. Should A or B become C? Surely not both A and B can be C (unless the sum type
       // is trivial). And even if we have a structurally similar type C | D, should A = C and B = D or A = D and
       // B = C? There are multiple possibilities.

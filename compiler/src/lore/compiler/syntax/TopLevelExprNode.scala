@@ -138,6 +138,16 @@ object ExprNode {
   ) extends XaryNode(arguments) with ExprNode with CallNode[CallTarget.Internal]
 
   /**
+    * An explicit call to a value that is not a variable, which would have been covered by simple call node.
+    *
+    * TODO: Once multi-functions become variables with their own types, this needs to be merged into SimpleCallNode
+    *       and simply become CallNode.
+    */
+  case class ValueCallNode(
+    value: ExprNode, arguments: Vector[ExprNode], position: Position
+  ) extends XaryNode(arguments) with ExprNode with CallNode[CallTarget.Internal]
+
+  /**
     * Since fixed function calls also require type arguments, they can be differentiated from call nodes.
     */
   case class FixedFunctionCallNode(

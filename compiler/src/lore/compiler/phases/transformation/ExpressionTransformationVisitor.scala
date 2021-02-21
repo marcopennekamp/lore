@@ -6,8 +6,8 @@ import lore.compiler.phases.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
-import lore.compiler.semantics.scopes.{TypeScope, VariableScope}
-import lore.compiler.semantics.{LocalVariable, Registry}
+import lore.compiler.semantics.scopes.{LocalVariable, TypeScope, VariableScope}
+import lore.compiler.semantics.{Registry, scopes}
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.types._
@@ -29,7 +29,7 @@ private[transformation] class ExpressionTransformationVisitor(
     * The variable scope of the surrounding code, such as a function scope.
     */
   variableScope: VariableScope,
-)(implicit registry: Registry) extends TopLevelExprVisitor[Expression] {
+)(implicit registry: Registry) extends TopLevelExprVisitor[Expression, Compilation[Expression]] {
   import TopLevelExprNode._
   import ExprNode._
   import ExpressionTransformationVisitor._
@@ -270,7 +270,7 @@ private[transformation] class ExpressionTransformationVisitor(
         elementType <- collection.tpe match {
           case ListType(element) => Compilation.succeed(element)
           case MapType(key, value) => Compilation.succeed(ProductType(Vector(key, value)))
-          case _ => Compilation.fail(CollectionExpected(collection))
+          case _ => Compilation.fail(CollectionExpected(collection.tpe, position))
         }
         localVariable = LocalVariable(variableName, elementType, isMutable = false)
         _ <- scope.register(localVariable)(position)
@@ -296,7 +296,7 @@ private[transformation] class ExpressionTransformationVisitor(
   }
 }
 
-private[transformation] object ExpressionTransformationVisitor {
+object ExpressionTransformationVisitor {
   case class UnsafeInteger(node: ExprNode.IntLiteralNode) extends Error(node) {
     override def message: String = s"The integer literal ${node.value} is outside the safe run-time range of" +
       s" ${BasicType.Int.minSafeInteger} and ${BasicType.Int.maxSafeInteger}. The Javascript runtime will not be able" +
@@ -312,8 +312,8 @@ private[transformation] object ExpressionTransformationVisitor {
       " name of the function. Since the name must be available at compile-time, it must be a constant."
   }
 
-  case class CollectionExpected(expression: Expression) extends Error(expression) {
-    override def message: String = s"Expected a collection at this position. Got a value of type ${expression.tpe}."
+  case class CollectionExpected(actualType: Type, pos: Position) extends Error(pos) {
+    override def message: String = s"Expected a collection at this position. Got a value of type $actualType."
   }
 
   case class StructExpected(name: String)(implicit position: Position) extends Error(position) {

@@ -122,7 +122,7 @@ object Type {
       case FunctionType(input, output) => FunctionType(rec(input), rec(output))
       case ListType(element) => ListType(rec(element))
       case MapType(key, value) => MapType(rec(key), rec(value))
-      case ShapeType(properties) => ShapeType(properties.values.map(_.mapType(rec)))
+      case shapeType: ShapeType => shapeType.mapPropertyTypes(rec)
       case t => t
     }
   }
@@ -213,6 +213,7 @@ object Type {
           s"trait ${t.name}$extended"
         } else t.name
       case t: NamedType => t.name
+      case _ => t.toString
     }
   }
 

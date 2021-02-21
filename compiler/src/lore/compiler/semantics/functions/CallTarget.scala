@@ -23,6 +23,10 @@ object CallTarget {
     override def outputType: Type = signature.outputType
   }
 
+  case class MultiFunction(mf: MultiFunctionDefinition, outputType: Type) extends CallTarget {
+    val name: String = mf.name
+  }
+
   /**
     * A dynamic call target, meaning that we trust in the runtime to provide the correct bindings. We don't know
     * anything about the input type.

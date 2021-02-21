@@ -4,9 +4,9 @@ import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, Error, Position, Positioned}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionDefinition.CannotInstantiateFunction
-import lore.compiler.semantics.scopes.TypeScope
+import lore.compiler.semantics.scopes.LocalTypeScope
 import lore.compiler.syntax.ExprNode
-import lore.compiler.types.{Fit, Type}
+import lore.compiler.types.{Fit, Type, TypeVariable}
 
 /**
   * A definition of a single function as part of a larger multi-function.
@@ -18,7 +18,7 @@ import lore.compiler.types.{Fit, Type}
   */
 class FunctionDefinition(
   val signature: FunctionSignature,
-  val typeScope: TypeScope,
+  val typeScope: LocalTypeScope,
   val bodyNode: Option[ExprNode],
 ) extends Positioned {
   override val position: Position = signature.position

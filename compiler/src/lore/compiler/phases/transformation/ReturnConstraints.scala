@@ -30,13 +30,13 @@ object ReturnConstraints {
     */
   def verify(body: TopLevelExprNode): Verification = {
     (
-      TopLevelExprVisitor.visit(new ReturnDeadCodeVisitor())(body),
-      new ReturnAllowedApplicator().visit(body, true)
+      TopLevelExprVisitor.visitCompilation(new ReturnDeadCodeVisitor())(body),
+      new ReturnAllowedCompilationApplicator().visit(body, true)
     ).simultaneous.verification
   }
 }
 
-private class ReturnDeadCodeVisitor() extends CombiningTopLevelExprVisitor[DefinitelyReturns] {
+private class ReturnDeadCodeVisitor() extends CombiningTopLevelExprVisitor.WithCompilation[DefinitelyReturns] {
   override def combine(returns: Vector[DefinitelyReturns]): DefinitelyReturns = {
     if (returns.isEmpty) false
     else returns.forall(identity)
@@ -73,8 +73,8 @@ private class ReturnDeadCodeVisitor() extends CombiningTopLevelExprVisitor[Defin
 /**
   * Checks whether non-top-level expressions have a return. If that is the case, an error is returned.
   */
-private class ReturnAllowedApplicator()
-  extends TopLevelExprVisitor.Applicator[Unit, IsReturnAllowed](new VerificationTopLevelExprVisitor { })
+private class ReturnAllowedCompilationApplicator()
+  extends TopLevelExprVisitor.CompilationApplicator[Unit, IsReturnAllowed](new VerificationTopLevelExprVisitor { })
 {
   override def handleMatch(node: TopLevelExprNode, isReturnAllowed: IsReturnAllowed): Compilation[Unit] = node match {
     case node@TopLevelExprNode.ReturnNode(expr, _) => visit(expr, false).flatMap { _ =>

@@ -1,9 +1,10 @@
 package lore.compiler.phases.typing
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, CompilationException, Error, Errors, Result}
-import lore.compiler.phases.typing.Inference.{NonassignableType, variables}
-import lore.compiler.phases.typing.InferenceAssignments.Assignments
+import lore.compiler.core.{Compilation, CompilationException, Error, Errors, Position, Result}
+import lore.compiler.phases.transformation.ExpressionBuilder.{AmbiguousCall, EmptyFit}
+import lore.compiler.phases.transformation.ExpressionTransformationVisitor.CollectionExpected
+import lore.compiler.phases.typing.InferenceAssignments._
 import lore.compiler.semantics.Registry
 import lore.compiler.types._
 
@@ -18,6 +19,9 @@ class Inference(judgments: Vector[TypingJudgment])(implicit registry: Registry) 
     //       For example, let's say we have an equality a :=: b and b is already defined as b(lower: Nothing, upper: X).
     //       So we define a as the same. But then b is later defined as b(lower: Y, upper: Y) through a more complicated
     //       judgment. Then we have to redefine a as a(lower: Y, upper: Y).
+    // TODO: To optimize checking assignments equality (we want to stop if old assignments == new assignments), we
+    //       could keep a changeset with each iteration of the algorithm that tracks bounds changes. If the changeset
+    //       is empty, assignments haven't changed and the algorithm can terminate.
 
     while (workingSet.nonEmpty) {
       // We have to pick judgments which we can resolve right away.
@@ -54,129 +58,114 @@ class Inference(judgments: Vector[TypingJudgment])(implicit registry: Registry) 
     case TypingJudgment.Equals(t1, t2, _) =>
       // The Equals judgment is resolvable if either t1 or t2 contain no undefined inference variables. Even if the
       // other type contains multiple inference variables, the judgment can be resolved by assigning multiple variables.
-      Inference.variables(t1).forall(assignments.isDefined) || Inference.variables(t2).forall(assignments.isDefined)
-
-    case TypingJudgment.Subtypes(_, t2, _) =>
-      // TODO: In addition to the below: Is a subtyping relationship t1 :<: t2 resolvable if t1 contains no undefined
-      //       inference variables but t2 does?
-      Inference.variables(t2).forall(assignments.isDefined)
-
-    case TypingJudgment.MemberAccess(_, source, _, _) =>
-      Inference.variables(source).forall(assignments.isDefined)
-
-    case TypingJudgment.LeastUpperBound(_, types, _) =>
-      types.flatMap(Inference.variables).forall(assignments.isDefined)
-
-    case TypingJudgment.Alternative(judgments, _) =>
-      judgments.forall(isResolvable(assignments, _))
-  }
-
-  private def resolve(assignments: Assignments, judgment: TypingJudgment)(implicit registry: Registry): Compilation[Assignments] = judgment match {
-    case TypingJudgment.Equals(t1, t2, _) =>
-      // If either type is not fully defined, we certainly want to apply the rule later once again to catch all
-      // relationships. This plays into the idea that the constraints need to be applied with a fixed-point algorithm.
-      val fullyDefined1 = Inference.variables(t1).forall(assignments.isDefined)
-      val compilation1 = if (fullyDefined1) {
-        assign(includeLowerBound = true, judgment)(assignments, assignments.instantiate(t1), t2)
-      } else Compilation.succeed(assignments)
-
-      compilation1.flatMap { assignments2 =>
-        val fullyDefined2 = Inference.variables(t2).forall(assignments2.isDefined)
-        if (fullyDefined2) {
-          assign(includeLowerBound = true, judgment)(assignments2, assignments2.instantiate(t2), t1)
-        } else Compilation.succeed(assignments2)
-      }
+      // TODO: Move the "isDefined" stuff into a helper function. Maybe rename to "hasVariables" or "hasInferenceVariables".
+      Inference.variables(t1).forall(isDefined(assignments, _)) || Inference.variables(t2).forall(isDefined(assignments, _))
 
     case TypingJudgment.Subtypes(t1, t2, _) =>
-      if (Inference.variables(t2).forall(assignments.isDefined)) {
-        // TODO: Is this order correct of assigning instantiated t2 to t1??
-        assign(includeLowerBound = false, judgment)(assignments, assignments.instantiate(t2), t1)
-      } else Compilation.succeed(assignments)
+      // Note that a subtyping relationship t1 :<: t2 where only t2 contains inference variables is still resolvable,
+      // because the inference algorithm can set the lower bound of t2 to t1, which provides useful information.
+      Inference.variables(t1).forall(isDefined(assignments, _)) || Inference.variables(t2).forall(isDefined(assignments, _))
 
-    case TypingJudgment.MemberAccess(target, source, name, _) =>
-      assignments.instantiate(source).member(name)(judgment.position).flatMap { member =>
-        // TODO: Shouldn't the lower bound be instantiated from the member type of the source's lower bound instantiation?
-        //       If we have an inference variable a(lower: { member: A2 }, upper: { member: A1 }) with A2 < A1, we want
-        //       a member access b <-- a.member to lead to an inference variable b(lower: A2, upper: A1).
-        assignments.assignBounds(target, Some(member.tpe), member.tpe, judgment)
-      }
+    case judgment: TypingJudgment.Operation => judgment.operands.flatMap(Inference.variables).forall(isDefined(assignments, _))
 
-    case TypingJudgment.LeastUpperBound(target, types, _) =>
-      val lub = LeastUpperBound.leastUpperBound(types.map(assignments.instantiate))
-      assignments.assignBounds(target, Some(lub), lub, judgment)
-
-    case TypingJudgment.Alternative(judgments, _) =>
-      ???
+    case TypingJudgment.MostSpecific(_, alternatives, _) =>
+      alternatives.forall(isResolvable(assignments, _))
   }
 
-  def assign(includeLowerBound: Boolean, context: TypingJudgment)(assignments: Assignments, source: Type, target: Type): Compilation[Assignments] = {
-    val rec = assign(includeLowerBound, context) _
+  /**
+    * Note: Resolution must be repeatable so that the fixed-point algorithm can work. Crucially, if a judgment is
+    * resolved given assignments A and all the judgment's aspects have been incorporated into A, `resolve` should lead
+    * to A and not another assignments map B or a compilation error, no matter how often the judgment is re-applied.
+    */
+  private def resolve(assignments: Assignments, judgment: TypingJudgment)(implicit registry: Registry): Compilation[Assignments] = judgment match {
+    case TypingJudgment.Equals(t1, t2, _) =>
+      // TODO: If either type is not fully defined, we certainly want to apply the rule later once again to catch all
+      //       relationships. This plays into the idea that the constraints need to be applied with a fixed-point
+      //       algorithm. Note that "fully defined" means that the bounds have settled on their eventual result. This
+      //       is in contrast to merely "defined" variables, which may still change their bounds.
+      correlateIfDefined(narrowBound)(assignments, t1, t2, Vector(BoundType.Lower, BoundType.Upper), judgment).flatMap(
+        assignments2 => correlateIfDefined(narrowBound)(assignments2, t2, t1, Vector(BoundType.Lower, BoundType.Upper), judgment)
+      )
 
-    // TODO: Don't we need to instantiate the types as best as we can before assigning them?
+    case TypingJudgment.Subtypes(t1, t2, _) =>
+      // A subtyping relationship t1 :<: t2 can inform both the upper bound of t1 as well as the lower bound of t2.
+      correlateIfDefined(ensureBound)(assignments, t2, t1, Vector(BoundType.Upper), judgment).flatMap(
+        assignments2 => correlateIfDefined(ensureBound)(assignments2, t1, t2, Vector(BoundType.Lower), judgment)
+      )
 
-    // If the right-hand type contains no inference variables, there is no way we could assign anything, and thus the
-    // assignment can be skipped. This check is currently important for correct compiler operation, as we only want to
-    // raise an "unsupported substitution" error in cases where the right-hand type even contains type variables.
-    if (variables(target).isEmpty) {
-      return Compilation.succeed(assignments)
-    }
+    case TypingJudgment.LeastUpperBound(target, types, _) =>
+      // TODO: Is this a derivative judgment? If so, shouldn't we override the bounds? We need to find examples and
+      //       counterexamples.
+      // The least upper bound calculated from the given types has to be calculated from the lower bounds and the upper
+      // bounds separately.
+      val lowerLub = LeastUpperBound.leastUpperBound(types.map(instantiate(assignments, _, BoundType.Lower)))
+      val upperLub = LeastUpperBound.leastUpperBound(types.map(instantiate(assignments, _, BoundType.Upper)))
+      narrowBounds(assignments, target, lowerLub, upperLub, judgment)
 
-    if (variables(source).nonEmpty) {
-      throw CompilationException(s"The source $source should have been assigned to target $target, but the source still contains inference variables.")
-    }
+    case TypingJudgment.MemberAccess(target, source, name, _) =>
+      // TODO: If we apply the fixpoint method, we might run into the following issue:
+      //       1. At first, the source's upper bound is type `{ a: A1 }`. So the member `a` is typed as `A1` in both
+      //          upper bound and lower bound.
+      //       2. Later, the algorithm revises the source's type to `{ a: A2 }`. The member should then be typed as
+      //          `A2`, but the lower bound is already `A1`. Supposing A2 < A1, the type inference algorithm will
+      //          result in a compilation error.
+      //       One of two things are going wrong here: Either the assumptions about lower bounds below are wrong, or we
+      //       will need some way to invalidate some bounds based on which bounds are changing. Crucially, we have a
+      //       sort of dependency graph where target depends on source. If the source's bounds change, the target
+      //       bounds should maybe be invalidated.
 
-    // TODO: Can we even live with unsupported substitutions here or do we have to bite the bullet? Sum and
-    //       intersection types need to be type checked...
-    def unsupportedSubstitution: Nothing = {
-      throw CompilationException(s"Intersection and sum type type inference assignments are not yet supported." +
-        s" Given types: $source and $target.")
-    }
+      // For member access, the upper bound of `source` is crucial. Because a subtype of the upper bound will always
+      // contain a member of a subtype compared to the upper bound's member, we can be sure that the upper bound's
+      // member type is always a feasible choice.
+      // The `target` inference variable gets this type not only as its upper bound, but also as its lower bound. The
+      // reasoning is simple: Because the member's parent may always have its upper bound as a run-time type, the
+      // member's type at run-time may also be what's now the type of the member chosen through the upper bound of
+      // `source`. If we set the lower bound to anything but the member's upper bound, the type inference algorithm
+      // might illegally narrow the type too far down.
+      // In particular, we want to avoid that a subtyping judgment member_type :<: A2 narrows the member's previously
+      // decided upper bound from A1 to A2.
+      // TODO: Also refer to the TODO above. We might give MemberAccess the ability to override target bounds.
+      //       Alternatively, maybe we need to go back to the drawing board and divide typing judgments into two
+      //       classes: Assignments (which may override target bounds) and "typings". Perhaps these two concepts are
+      //       actually wholly different. Maybe we need to create a "derivation" graph for the "assignments" like
+      //       MemberAccess and ElementType.
 
-    def nonassignableType: Compilation[Assignments] = Compilation.fail(NonassignableType(source, target, context))
+      instantiate(assignments, source, BoundType.Upper).member(name)(judgment.position).map { member =>
+        //narrowBounds(assignments, target, member.tpe, member.tpe, judgment)
+        // TODO: Overriding the bounds is an idea and still needs to be verified!
+        overrideBounds(assignments, target, member.tpe, member.tpe)
+      }
 
-    (source, target) match {
-      case (_, iv2: InferenceVariable) =>
-        val lowerBound = if (includeLowerBound) Some(source) else None
-        assignments.assignBounds(iv2, lowerBound, source, context)
+    case TypingJudgment.ElementType(target, collection, position) =>
+      // Much like member types, the element type is definitely determined by the collection type and may only change
+      // by overriding its bounds due to a changing collection type.
+      val instantiatedCollection = instantiate(assignments, collection, BoundType.Upper)
+      val elementType = instantiatedCollection match {
+        case ListType(element) => Compilation.succeed(element)
+        case MapType(key, value) => Compilation.succeed(ProductType(Vector(key, value)))
+        case _ => Compilation.fail(CollectionExpected(instantiatedCollection, position))
+      }
+      elementType.map(tpe => overrideBounds(assignments, target, tpe, tpe))
 
-      case (tv1: TypeVariable, tv2: TypeVariable) =>
-        // TODO: Do we need to assign lower and upper bounds of type variables for inference????
-        ???
-
-      case (p1: ProductType, p2: ProductType) =>
-        if (p1.elements.size == p2.elements.size) {
-          p1.elements.zip(p2.elements).foldLeft(Compilation.succeed(assignments)) {
-            case (compilation, (e1, e2)) => compilation.flatMap { assignments => rec(assignments, e1, e2) }
+    case TypingJudgment.MultiFunctionCall(target, mf, arguments, position) =>
+      // TODO: Once we activate the "MostSpecific" typing judgment that will also be generated with each multi-function
+      //       call, we will already have performed the dispatch using the constraint solver. There might be no need to
+      //       instantiate the function, for example, if we take the bounds inferred for the type variables, instead.
+      implicit val callPosition: Position = position
+      val inputType = ProductType(arguments.map(tpe => instantiate(assignments, tpe, BoundType.Upper)))
+      mf.min(inputType) match {
+        case min if min.isEmpty => Compilation.fail(EmptyFit(mf, inputType))
+        case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, inputType, min))
+        case functionDefinition +: _ =>
+          functionDefinition.instantiate(inputType).map { instance =>
+            // TODO: Should we override bounds here? Find examples and counterexamples.
+            val result = instance.signature.outputType
+            overrideBounds(assignments, target, result, result)
           }
-        } else nonassignableType
+      }
 
-      case (f1: FunctionType, f2: FunctionType) => rec(assignments, f1.input, f2.input).flatMap(rec(_, f1.output, f2.output))
-
-      case (l1: ListType, l2: ListType) => rec(assignments, l1.element, l2.element)
-
-      case (m1: MapType, m2: MapType) => rec(assignments, m1.key, m2.key).flatMap(rec(_, m1.value, m2.value))
-
-      case (s1: ShapeType, s2: ShapeType) =>
-        s2.correlate(s1).foldLeft(Compilation.succeed(assignments)) {
-          case (compilation, (p2, Some(p1))) => compilation.flatMap { assignments => rec(assignments, p1.tpe, p2.tpe) }
-          case (_, (_, None)) => nonassignableType
-        }
-      case (s1: StructType, s2: ShapeType) => rec(assignments, s1.asShapeType, s2)
-
-      // Allocating types to intersection types and sum types is quite complex, since the allocation mechanism
-      // suddenly comes upon more than one possible allocation. Take, for example, a sum type A | B, to which we
-      // try to assign a type C. Should A or B become C? Surely not both A and B can be C (unless the sum type
-      // is trivial). And even if we have a structurally similar type C | D, should A = C and B = D or A = D and
-      // B = C? There are multiple possibilities.
-      case (_: IntersectionType, _) => unsupportedSubstitution
-      case (_, _: IntersectionType) => unsupportedSubstitution
-      case (_: SumType, _) => unsupportedSubstitution
-      case (_, _: SumType) => unsupportedSubstitution
-
-      // In all other cases, there is no need to assign anything.
-      // TODO: Declared types will be able to contain inference variables when they become polymorphic.
-      case _ => Compilation.succeed(assignments)
-    }
+    case TypingJudgment.MostSpecific(reference, judgments, _) =>
+      ???
   }
 
   /**
@@ -185,12 +174,14 @@ class Inference(judgments: Vector[TypingJudgment])(implicit registry: Registry) 
     */
   private def check(assignments: Assignments)(judgment: TypingJudgment): Verification = judgment match {
     case TypingJudgment.Equals(t1, t2, position) =>
-      if (assignments.instantiate(t1) != assignments.instantiate(t2)) {
+      // TODO: Do we need to check upper and lower bounds or upper bounds only?
+      if (instantiate(assignments, t1, BoundType.Upper) != instantiate(assignments, t2, BoundType.Upper)) {
         Compilation.fail() // TODO: Types not equal.
       } else Verification.succeed
 
     case TypingJudgment.Subtypes(t1, t2, position) =>
-      if (!(assignments.instantiate(t1) <= assignments.instantiate(t2))) {
+      // TODO: Do we need to check upper and lower bounds or upper bounds only?
+      if (!(instantiate(assignments, t1, BoundType.Upper) <= instantiate(assignments, t2, BoundType.Upper))) {
         Compilation.fail() // TODO: Types aren't subtypes.
       } else Verification.succeed
 

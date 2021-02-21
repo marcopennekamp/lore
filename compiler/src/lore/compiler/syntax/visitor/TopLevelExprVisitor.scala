@@ -4,41 +4,41 @@ import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.core.Compilation
 
 /**
-  * Visits any top-level expression node, returning a value of type Compilation[A]. Subtrees are visited automatically.
-  * Subtree compilations are aggregated and flat-mapped into higher nodes.
+  * Visits any top-level expression node, returning a value of type B. Subtrees are visited automatically. Subtree
+  * compilations are aggregated and flat-mapped into higher nodes.
   *
   * Functions named before* are invoked BEFORE subtrees are visited. Functions named visit* are invoked AFTER.
   */
-trait TopLevelExprVisitor[A] {
+trait TopLevelExprVisitor[A, B] {
   /**
     * Visits a node in the AST without a child.
     */
-  def visitLeaf(node: TopLevelExprNode.LeafNode): Compilation[A]
+  def visitLeaf(node: TopLevelExprNode.LeafNode): B
 
   /**
     * Visits a node with exactly one child.
     */
-  def visitUnary(node: TopLevelExprNode.UnaryNode)(argument: A): Compilation[A]
+  def visitUnary(node: TopLevelExprNode.UnaryNode)(argument: A): B
 
   /**
     * Visits a node with exactly two children.
     */
-  def visitBinary(node: TopLevelExprNode.BinaryNode)(left: A, right: A): Compilation[A]
+  def visitBinary(node: TopLevelExprNode.BinaryNode)(left: A, right: A): B
 
   /**
     * Visits a node with exactly three children.
     */
-  def visitTernary(node: TopLevelExprNode.TernaryNode)(argument1: A, argument2: A, argument3: A): Compilation[A]
+  def visitTernary(node: TopLevelExprNode.TernaryNode)(argument1: A, argument2: A, argument3: A): B
 
   /**
     * Visits a node with exactly one list of children.
     */
-  def visitXary(node: TopLevelExprNode.XaryNode)(arguments: Vector[A]): Compilation[A]
+  def visitXary(node: TopLevelExprNode.XaryNode)(arguments: Vector[A]): B
 
   /**
     * Visits a map node with its key/value entries.
     */
-  def visitMap(node: ExprNode.MapNode)(entries: Vector[(A, A)]): Compilation[A]
+  def visitMap(node: ExprNode.MapNode)(entries: Vector[(A, A)]): B
 
   /**
     * Visits an iteration node with its extractors and the body.
@@ -46,7 +46,7 @@ trait TopLevelExprVisitor[A] {
     * We don't pass the evaluated body but rather a function that visits the body expression. This allows the
     * iteration visitor to process the extractors before the body is visited.
     */
-  def visitIteration(node: ExprNode.ForNode)(extractors: Vector[(String, A)], visitBody: () => Compilation[A]): Compilation[A]
+  def visitIteration(node: ExprNode.ForNode)(extractors: Vector[(String, A)], visitBody: () => B): B
 
   /**
     * Invoked before a node's subtrees are visited. This can be used to set up contexts and such.
@@ -55,7 +55,38 @@ trait TopLevelExprVisitor[A] {
 }
 
 object TopLevelExprVisitor {
-  class Applicator[A, Props](visitor: TopLevelExprVisitor[A]) {
+
+  def visit[A](visitor: TopLevelExprVisitor[A, A])(node: TopLevelExprNode): A = {
+    import TopLevelExprNode._
+    import ExprNode._
+
+    val rec = visit(visitor) _
+
+    visitor.before.applyOrElse(node, (_: TopLevelExprNode) => ())
+    node match {
+      case node: LeafNode => visitor.visitLeaf(node)
+      case node: UnaryNode => visitor.visitUnary(node)(rec(node.child))
+      case node: BinaryNode => visitor.visitBinary(node)(rec(node.child1), rec(node.child2))
+      case node: TernaryNode => visitor.visitTernary(node)(rec(node.child1), rec(node.child2), rec(node.child3))
+      case node: XaryNode => visitor.visitXary(node)(node.children.map(rec))
+
+      // Map node.
+      case node@MapNode(kvs, _) =>
+        val entries = kvs.map {
+          case KeyValueNode(key, value, _) => (rec(key), rec(value))
+        }
+        visitor.visitMap(node)(entries)
+
+      // Iteration node.
+      case node@ForNode(extractors, body, _) =>
+        val extracts = extractors.map {
+          case ExtractorNode(name, collection, _) => (name, rec(collection))
+        }
+        visitor.visitIteration(node)(extracts, () => rec(body))
+    }
+  }
+
+  class CompilationApplicator[A, Props](visitor: TopLevelExprVisitor[A, Compilation[A]]) {
     /**
       * Visits the whole tree invoking begin* and visit* functions for every node.
       */
@@ -66,7 +97,6 @@ object TopLevelExprVisitor {
     }
 
     protected def handleMatch(node: TopLevelExprNode, props: Props): Compilation[A] = {
-      // Importing all expression nodes makes the code far easier to digest visually.
       import TopLevelExprNode._
       import ExprNode._
 
@@ -94,5 +124,6 @@ object TopLevelExprVisitor {
     }
   }
 
-  def visit[A](visitor: TopLevelExprVisitor[A])(node: TopLevelExprNode): Compilation[A] = new Applicator[A, Unit](visitor).visit(node, ())
+  def visitCompilation[A](visitor: TopLevelExprVisitor[A, Compilation[A]])(node: TopLevelExprNode): Compilation[A] = new CompilationApplicator[A, Unit](visitor).visit(node, ())
+
 }

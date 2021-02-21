@@ -1,5 +1,6 @@
 package lore.compiler.phases.typing
 
+import lore.compiler.phases.typing.InferenceVariable.nameCounter
 import lore.compiler.types.Type
 
 /**
@@ -12,5 +13,16 @@ class InferenceVariable(val name: Option[String] = None) extends Type {
     case _ => false
   }
 
-  override def toString: String = name.getOrElse("<inference-variable>")
+  // TODO: This is only temporary!!
+  lazy val actualName: String = name.getOrElse {
+    nameCounter += 1
+    s"iv$nameCounter"
+  }
+
+  override def toString: String = actualName
+}
+
+object InferenceVariable {
+  // TODO: This is only temporary!!
+  protected var nameCounter = 0
 }

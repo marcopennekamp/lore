@@ -25,7 +25,7 @@ object ExpressionTransformer {
     for {
       _ <- ReturnConstraints.verify(node)
       visitor = new ExpressionTransformationVisitor(expectedType, typeScope, variableScope)
-      expression <- TopLevelExprVisitor.visit(visitor)(node).map(withImplicitUnitValue(expectedType))
+      expression <- TopLevelExprVisitor.visitCompilation(visitor)(node).map(withImplicitUnitValue(expectedType))
       _ <- verifyExpectedType(expression, expectedType)
     } yield expression
   }

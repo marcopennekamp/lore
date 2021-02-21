@@ -1,9 +1,10 @@
 package lore.compiler.semantics.expressions
 
 import lore.compiler.core.Position
-import lore.compiler.semantics.LocalVariable
+import lore.compiler.phases.typing.InferenceVariable
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.semantics.members.Member
+import lore.compiler.semantics.scopes.{LocalVariable, Variable}
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.types.{BasicType, ProductType, ShapeType, Type}
 
@@ -18,7 +19,7 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Top-level expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class Return(value: Expression, position: Position) extends Expression.Apply(ProductType.UnitType)
+  case class Return(value: Expression, position: Position) extends Expression.Apply(BasicType.Nothing)
 
   case class VariableDeclaration(
     variable: LocalVariable, value: Expression, position: Position,
@@ -46,12 +47,17 @@ object Expression {
     def name: String
   }
 
-  case class VariableAccess(variable: LocalVariable, position: Position) extends Expression.Apply(variable.tpe) with Access {
+  case class VariableAccess(variable: Variable, position: Position) extends Expression.Apply(variable.tpe) with Access {
     override val name: String = variable.name
   }
   case class MemberAccess(instance: Expression, member: Member, position: Position) extends Expression.Apply(member.tpe) with Access {
     override val name: String = member.name
   }
+
+  /**
+    * A member access that cannot yet be resolved because the expression's type hasn't been inferred.
+    */
+  case class UnresolvedMemberAccess(instance: Expression, name: String, tpe: InferenceVariable, position: Position) extends Expression with Access
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Literals and Value Constructors.

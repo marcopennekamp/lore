@@ -8,6 +8,11 @@ import scala.util.hashing.MurmurHash3
 case class ShapeType(properties: Map[String, ShapeType.Property]) extends Type {
 
   /**
+    * Maps the given function to each property type, constructing a new shape type in the process.
+    */
+  def mapPropertyTypes(f: Type => Type): ShapeType = ShapeType(properties.values.map(_.mapType(f)))
+
+  /**
     * Correlates each property from this shape type with a property from the other shape type.
     */
   def correlate(other: ShapeType): Vector[(ShapeType.Property, Option[ShapeType.Property])] = {

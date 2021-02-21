@@ -7,7 +7,7 @@ import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
   * A verification visitor which allows easier definition of visitor functions due to its automatic
   * discarding of compilation results (which are always Unit for a Verification).
   */
-trait VerificationTopLevelExprVisitor extends TopLevelExprVisitor[Unit] {
+trait VerificationTopLevelExprVisitor extends TopLevelExprVisitor[Unit, Verification] {
   /**
     * Verifies any given node. The default implementation succeeds.
     */
