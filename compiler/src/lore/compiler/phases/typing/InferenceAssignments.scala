@@ -8,7 +8,11 @@ object InferenceAssignments {
 
   type Assignments = Map[InferenceVariable, Bounds]
 
-  case class Bounds(variable: InferenceVariable, lower: Type, upper: Type)
+
+  case class Bounds(variable: InferenceVariable, lower: Option[Type], upper: Option[Type]) {
+    val lowerOrNothing: Type = lower.getOrElse(BasicType.Nothing)
+    val upperOrAny: Type = upper.getOrElse(BasicType.Any)
+  }
 
   // In Lore: type BoundType = #lower | #upper
   sealed trait BoundType
@@ -18,6 +22,15 @@ object InferenceAssignments {
   }
 
   def isDefined(assignments: Assignments, inferenceVariable: InferenceVariable): Boolean = assignments.contains(inferenceVariable)
+
+  /**
+    * Whether the given bounds are defined for the given inference variable.
+    */
+  def areBoundsDefined(assignments: Assignments, inferenceVariable: InferenceVariable, boundTypes: Vector[BoundType]): Boolean = {
+    assignments.get(inferenceVariable).exists { bounds =>
+      (!boundTypes.contains(BoundType.Lower) || bounds.lower.isDefined) && (!boundTypes.contains(BoundType.Upper) || bounds.upper.isDefined)
+    }
+  }
 
   /**
     * Instantiate all inference variables in the given type with their corresponding lower or upper bounds.
@@ -32,8 +45,8 @@ object InferenceAssignments {
       case iv: InferenceVariable =>
         val bounds = assignments.getOrElse(iv, throw CompilationException(s"The inference variable $iv should be defined."))
         boundType match {
-          case BoundType.Lower => bounds.lower
-          case BoundType.Upper => bounds.upper
+          case BoundType.Lower => bounds.lowerOrNothing
+          case BoundType.Upper => bounds.upperOrAny
         }
       case tv: TypeVariable =>
         if (Inference.isFullyInferred(tv)) tv
@@ -49,7 +62,9 @@ object InferenceAssignments {
     }
   }
 
-  def effectiveBounds(assignments: Assignments, inferenceVariable: InferenceVariable): Bounds = assignments.getOrElse(inferenceVariable, Bounds(inferenceVariable, BasicType.Nothing, BasicType.Any))
+  def effectiveBounds(assignments: Assignments, inferenceVariable: InferenceVariable): Bounds = {
+    assignments.getOrElse(inferenceVariable, Bounds(inferenceVariable, None, None))
+  }
 
   def narrowBounds(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, upperBound: Type, context: TypingJudgment): Compilation[Assignments] = {
     narrowBound(assignments, inferenceVariable, lowerBound, BoundType.Lower, context).flatMap(
@@ -74,10 +89,10 @@ object InferenceAssignments {
     val bounds = effectiveBounds(assignments, inferenceVariable)
 
     // TODO: Also ensure that the new lower bound is a subtype of the existing upper bound. Write an error message for this case.
-    if (Subtyping.isSubtype(bounds.lower, lowerBound)) {
-      Compilation.succeed(assignments.updated(inferenceVariable, Bounds(inferenceVariable, lowerBound, bounds.upper)))
+    if (bounds.lower.forall(Subtyping.isSubtype(_, lowerBound))) {
+      Compilation.succeed(assignments.updated(inferenceVariable, Bounds(inferenceVariable, Some(lowerBound), bounds.upper)))
     } else {
-      Compilation.fail(InvalidLowerBound(inferenceVariable, lowerBound, bounds.lower, context))
+      Compilation.fail(InvalidLowerBound(inferenceVariable, lowerBound, bounds.lowerOrNothing, context))
     }
   }
 
@@ -89,10 +104,10 @@ object InferenceAssignments {
     val bounds = effectiveBounds(assignments, inferenceVariable)
 
     // TODO: Also ensure that the new upper bound is a supertype of the existing lower bound. Write an error message for this case.
-    if (Subtyping.isSubtype(upperBound, bounds.upper)) {
-      Compilation.succeed(assignments.updated(inferenceVariable, Bounds(inferenceVariable, bounds.lower, upperBound)))
+    if (bounds.upper.forall(Subtyping.isSubtype(upperBound, _))) {
+      Compilation.succeed(assignments.updated(inferenceVariable, Bounds(inferenceVariable, bounds.lower, Some(upperBound))))
     } else {
-      Compilation.fail(InvalidUpperBound(inferenceVariable, upperBound, bounds.upper, context))
+      Compilation.fail(InvalidUpperBound(inferenceVariable, upperBound, bounds.upperOrAny, context))
     }
   }
 
@@ -102,7 +117,7 @@ object InferenceAssignments {
     * some other changing inference variables.
     */
   def overrideBounds(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, upperBound: Type): Assignments = {
-    assignments.updated(inferenceVariable, Bounds(inferenceVariable, lowerBound, upperBound))
+    assignments.updated(inferenceVariable, Bounds(inferenceVariable, Some(lowerBound), Some(upperBound)))
   }
 
   /**
@@ -123,7 +138,7 @@ object InferenceAssignments {
   def ensureBoundSupertypes(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, context: TypingJudgment): Compilation[Assignments] = {
     val bounds = effectiveBounds(assignments, inferenceVariable)
 
-    if (Subtyping.isSubtype(lowerBound, bounds.lower)) {
+    if (Subtyping.isSubtype(lowerBound, bounds.lowerOrNothing)) {
       Compilation.succeed(assignments)
     } else {
       narrowLowerBound(assignments, inferenceVariable, lowerBound, context)
@@ -140,7 +155,7 @@ object InferenceAssignments {
   def ensureBoundSubtypes(assignments: Assignments, inferenceVariable: InferenceVariable, upperBound: Type, context: TypingJudgment): Compilation[Assignments] = {
     val bounds = effectiveBounds(assignments, inferenceVariable)
 
-    if (Subtyping.isSubtype(bounds.upper, upperBound)) {
+    if (Subtyping.isSubtype(bounds.upperOrAny, upperBound)) {
       Compilation.succeed(assignments)
     } else {
       narrowUpperBound(assignments, inferenceVariable, upperBound, context)
@@ -223,12 +238,12 @@ object InferenceAssignments {
   }
 
   /**
-    * Correlates `source` to `target` if all inference variables in `source` are defined.
+    * Correlates `source` to `target` if all inference variables in `source` are defined for all the given bound types.
     */
   def correlateIfDefined(
     process: (Assignments, InferenceVariable, Type, BoundType, TypingJudgment) => Compilation[Assignments]
   )(assignments: Assignments, source: Type, target: Type, boundTypes: Vector[BoundType], context: TypingJudgment): Compilation[Assignments] = {
-    if (Inference.variables(source).forall(isDefined(assignments, _))) {
+    if (Inference.variables(source).forall(areBoundsDefined(assignments, _, boundTypes))) {
       boundTypes.foldLeft(Compilation.succeed(assignments)) {
         case (compilation, boundType) => compilation.flatMap(correlate(process)(_, source, target, boundType, context))
       }

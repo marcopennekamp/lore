@@ -83,9 +83,20 @@ class Inference(judgments: Vector[TypingJudgment])(implicit registry: Registry) 
       //       relationships. This plays into the idea that the constraints need to be applied with a fixed-point
       //       algorithm. Note that "fully defined" means that the bounds have settled on their eventual result. This
       //       is in contrast to merely "defined" variables, which may still change their bounds.
-      correlateIfDefined(narrowBound)(assignments, t1, t2, Vector(BoundType.Lower, BoundType.Upper), judgment).flatMap(
-        assignments2 => correlateIfDefined(narrowBound)(assignments2, t2, t1, Vector(BoundType.Lower, BoundType.Upper), judgment)
-      )
+
+      // The equality can be ensured in two ways: Either t1 is assigned to t2, or t2 is assigned to t1. If one of the
+      // assignments fails, we can try the other direction. If BOTH directions fail, we have a problem. In the end, the
+      // goal is to get the types to be unified.
+      // A good example why we have to gracefully fail potential assignments is the following. Suppose we have these
+      // typing judgments processed in the given order:
+      //    i1 :=: Int, i2 :<: Real, Int :<: i2, i2 :=: i1
+      // If we assign i2 to i1 first, we will fail because the upper bound Int of i1 cannot be narrowed to Real, the
+      // upper bound of i2. We might throw in the towel here, but we can still achieve the objective of the Equals
+      // typing judgment by assigning i1 to i2, which will give i2 the lower and upper bound Int. By failing gracefully
+      // and trying in the other direction, the ultimate goal of the Equals judgment is fulfilled.
+      correlateIfDefined(narrowBound)(assignments, t2, t1, Vector(BoundType.Lower, BoundType.Upper), judgment).recover {
+        _ => correlateIfDefined(narrowBound)(assignments, t1, t2, Vector(BoundType.Lower, BoundType.Upper), judgment)
+      }
 
     case TypingJudgment.Subtypes(t1, t2, _) =>
       // A subtyping relationship t1 :<: t2 can inform both the upper bound of t1 as well as the lower bound of t2.
