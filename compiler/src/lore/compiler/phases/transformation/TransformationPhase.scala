@@ -1,7 +1,7 @@
 package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation._
-import lore.compiler.phases.typing.{Inference, InferringExpressionTransformationVisitor}
+import lore.compiler.phases.typing.{InferenceResolution, InferringExpressionTransformationVisitor}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.scopes.FunctionVariableScope
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
@@ -25,9 +25,7 @@ object TransformationPhase {
           println()
 
           println("Inferred types:")
-          println(
-            new Inference(visitor.typingJudgments).inferTypes()
-          )
+          println(InferenceResolution.infer(visitor.typingJudgments))
           println()
           println()
 

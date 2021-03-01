@@ -1,6 +1,7 @@
 package lore.compiler.phases.typing
 
-import lore.compiler.phases.typing.InferenceVariable.nameCounter
+import lore.compiler.phases.typing.Inference.Assignments
+import lore.compiler.phases.typing.InferenceBounds.BoundType
 import lore.compiler.types.Type
 
 /**
@@ -15,14 +16,47 @@ class InferenceVariable(val name: Option[String] = None) extends Type {
 
   // TODO: This is only temporary!!
   lazy val actualName: String = name.getOrElse {
-    nameCounter += 1
-    s"iv$nameCounter"
+    InferenceVariable.nameCounter += 1
+    s"iv${InferenceVariable.nameCounter}"
   }
 
   override def toString: String = actualName
 }
 
 object InferenceVariable {
+
   // TODO: This is only temporary!!
   protected var nameCounter = 0
+
+  /**
+    * Whether the given inference variable is defined at all.
+    */
+  def isDefined(assignments: Assignments, inferenceVariable: InferenceVariable): Boolean = assignments.contains(inferenceVariable)
+
+  /**
+    * Whether the given inference variable is defined for the given bound.
+    */
+  def isDefinedAt(assignments: Assignments, inferenceVariable: InferenceVariable, boundType: BoundType): Boolean = {
+    assignments.get(inferenceVariable).exists { bounds =>
+      boundType match {
+        case BoundType.Lower => bounds.lower.isDefined
+        case BoundType.Upper => bounds.upper.isDefined
+      }
+    }
+  }
+
+  /**
+    * Whether the given inference variable is defined for the given bounds.
+    */
+  def isDefinedAt(assignments: Assignments, inferenceVariable: InferenceVariable, boundTypes: Vector[BoundType]): Boolean = {
+    boundTypes.forall(isDefinedAt(assignments, inferenceVariable, _))
+  }
+
+  /**
+    * The bounds of the given inference variable, no matter if it's already defined or not.
+    */
+  def effectiveBounds(assignments: Assignments, inferenceVariable: InferenceVariable): InferenceBounds = {
+    assignments.getOrElse(inferenceVariable, InferenceBounds(inferenceVariable, None, None))
+  }
+
 }
