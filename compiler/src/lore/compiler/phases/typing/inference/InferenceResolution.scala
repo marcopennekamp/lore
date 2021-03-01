@@ -1,13 +1,12 @@
-package lore.compiler.phases.typing
+package lore.compiler.phases.typing.inference
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, CompilationException, Errors, Position, Result}
+import lore.compiler.core._
 import lore.compiler.phases.transformation.ExpressionBuilder.{AmbiguousCall, EmptyFit}
 import lore.compiler.phases.transformation.ExpressionTransformationVisitor.CollectionExpected
-import lore.compiler.phases.typing.Inference.{Assignments, instantiate}
-import lore.compiler.phases.typing.InferenceBounds.{BoundType, narrowBounds, overrideBounds}
-import lore.compiler.phases.typing.InferenceVariable.isDefined
-import lore.compiler.phases.typing.inference.TypeMatcher
+import lore.compiler.phases.typing.inference.Inference.{Assignments, instantiate}
+import lore.compiler.phases.typing.inference.InferenceBounds.{BoundType, narrowBounds, overrideBounds}
+import lore.compiler.phases.typing.inference.InferenceVariable.isDefined
 import lore.compiler.semantics.Registry
 import lore.compiler.types.{LeastUpperBound, ListType, MapType, ProductType}
 
@@ -104,7 +103,7 @@ object InferenceResolution {
     case TypingJudgment.Subtypes(t1, t2, _) =>
       // A subtyping relationship t1 :<: t2 can inform both the upper bound of t1 as well as the lower bound of t2.
       TypeMatcher.ensureBoundsIfDefined(assignments, t2, t1, BoundType.Upper, judgment).flatMap(
-        TypeMatcher.ensureBoundsIfDefined(_, t1, t2, BoundType.Lower, judgment)
+        TypeMatcher.ensureBoundsIfDefined(_, t1, t2, BoundType.Lower, judgment),
       )
 
     case TypingJudgment.LeastUpperBound(target, types, _) =>

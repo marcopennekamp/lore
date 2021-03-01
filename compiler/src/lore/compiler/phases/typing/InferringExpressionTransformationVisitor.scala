@@ -5,6 +5,7 @@ import lore.compiler.core._
 import lore.compiler.phases.resolution.TypeExpressionEvaluator
 import lore.compiler.phases.transformation.ExpressionTransformationVisitor.{CollectionExpected, DynamicFunctionNameExpected, StructExpected, UnsafeInteger}
 import lore.compiler.phases.transformation.{ExpressionBuilder, ExpressionTransformationContext, ExpressionTransformations}
+import lore.compiler.phases.typing.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}

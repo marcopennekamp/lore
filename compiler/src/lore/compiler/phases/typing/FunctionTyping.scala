@@ -2,6 +2,7 @@ package lore.compiler.phases.typing
 
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, Error, Position}
+import lore.compiler.phases.typing.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.{CallTarget, FunctionSignature}

@@ -1,4 +1,4 @@
-package lore.compiler.phases.typing
+package lore.compiler.phases.typing.inference
 
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.functions.MultiFunctionDefinition

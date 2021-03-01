@@ -1,7 +1,7 @@
-package lore.compiler.phases.typing
+package lore.compiler.phases.typing.inference
 
 import lore.compiler.core.CompilationException
-import lore.compiler.phases.typing.InferenceBounds.BoundType
+import lore.compiler.phases.typing.inference.InferenceBounds.BoundType
 import lore.compiler.types._
 
 object Inference {

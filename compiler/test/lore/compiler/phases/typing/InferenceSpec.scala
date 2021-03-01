@@ -1,6 +1,7 @@
 package lore.compiler.phases.typing
 
 import lore.compiler.core.Position
+import lore.compiler.phases.typing.inference.InferenceVariable
 import lore.compiler.types.{BasicType, ListType, TypeSpec}
 
 class InferenceSpec extends TypeSpec {

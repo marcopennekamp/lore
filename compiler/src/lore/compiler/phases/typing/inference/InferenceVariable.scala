@@ -1,7 +1,7 @@
-package lore.compiler.phases.typing
+package lore.compiler.phases.typing.inference
 
-import lore.compiler.phases.typing.Inference.Assignments
-import lore.compiler.phases.typing.InferenceBounds.BoundType
+import lore.compiler.phases.typing.inference.Inference.Assignments
+import lore.compiler.phases.typing.inference.InferenceBounds.BoundType
 import lore.compiler.types.Type
 
 /**

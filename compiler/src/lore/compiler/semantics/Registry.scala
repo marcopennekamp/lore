@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.semantics.Registry.{ExactFunctionNotFound, MultiFunctionNotFound, TypeNotFound}
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.compiler.semantics.scopes.{GlobalVariableScope, TypeScope, VariableScope}
+import lore.compiler.semantics.scopes.{GlobalVariableScope, TypeScope, Variable, VariableScope}
 import lore.compiler.semantics.structures._
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions._
@@ -103,10 +103,15 @@ class Registry {
   }
 
   /**
-    * The global variable scope backed by the registry. This is still an empty scope and only implemented to
-    * make the code more future-proof.
+    * The global variable scope backed by the registry. This contains only multi-functions for now.
     */
-  val variableScope: VariableScope = new GlobalVariableScope()
+  val variableScope: VariableScope = new VariableScope {
+    override protected def local(name: String): Option[Variable] = ??? // getMultiFunction(name)
+    override protected def add(name: String, entry: Variable): Unit = {
+      throw new UnsupportedOperationException(s"You may not add variables to the Registry via its VariableScope interface. Name: $name. Variable: $entry.")
+    }
+    override protected def unknownEntry(name: String)(implicit position: Position): Error = MultiFunctionNotFound(name)
+  }
 
   /**
     * Registers the given type definition.

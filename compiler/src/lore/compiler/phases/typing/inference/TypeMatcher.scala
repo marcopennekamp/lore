@@ -1,10 +1,9 @@
 package lore.compiler.phases.typing.inference
 
 import lore.compiler.core.{Compilation, CompilationException, Error}
-import lore.compiler.phases.typing.Inference.{Assignments, instantiate, variables}
-import lore.compiler.phases.typing.InferenceBounds.BoundType
-import lore.compiler.phases.typing.InferenceVariable.{isDefined, isDefinedAt}
-import lore.compiler.phases.typing.{Inference, InferenceBounds, InferenceVariable, TypingJudgment}
+import Inference.{Assignments, instantiate, variables}
+import lore.compiler.phases.typing.inference.InferenceBounds.BoundType
+import lore.compiler.phases.typing.inference.InferenceVariable.{isDefined, isDefinedAt}
 import lore.compiler.types._
 
 object TypeMatcher {

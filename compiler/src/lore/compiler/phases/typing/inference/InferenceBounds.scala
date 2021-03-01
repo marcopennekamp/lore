@@ -1,8 +1,8 @@
-package lore.compiler.phases.typing
+package lore.compiler.phases.typing.inference
 
 import lore.compiler.core.{Compilation, Error}
-import lore.compiler.phases.typing.Inference.Assignments
-import lore.compiler.phases.typing.InferenceVariable.effectiveBounds
+import lore.compiler.phases.typing.inference.Inference.Assignments
+import lore.compiler.phases.typing.inference.InferenceVariable.effectiveBounds
 import lore.compiler.types.{BasicType, Subtyping, Type}
 
 // TODO: Do we still need the Option bounds now that Equals resolution has been fixed?
