@@ -52,10 +52,6 @@ object DispatchHierarchyBuilder {
       }
     }
 
-    if (mf.name == "motiveFactor") {
-      graph.edges.foreach(println)
-    }
-
     if (!graph.isAcyclic) {
       throw CompilationException(s"The dispatch hierarchy of ${mf.name} is cyclic and thus invalid.")
     }
