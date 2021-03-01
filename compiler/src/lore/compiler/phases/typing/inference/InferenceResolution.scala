@@ -8,7 +8,7 @@ import lore.compiler.phases.typing.inference.Inference.{Assignments, instantiate
 import lore.compiler.phases.typing.inference.InferenceBounds.{BoundType, narrowBounds, overrideBounds}
 import lore.compiler.phases.typing.inference.InferenceVariable.isDefined
 import lore.compiler.semantics.Registry
-import lore.compiler.types.{LeastUpperBound, ListType, MapType, ProductType}
+import lore.compiler.types.{LeastUpperBound, ListType, MapType, ProductType, Type}
 
 object InferenceResolution {
 
@@ -113,7 +113,6 @@ object InferenceResolution {
       narrowBounds(assignments, target, lowerLub, upperLub, judgment)
 
     case TypingJudgment.MemberAccess(target, source, name, _) =>
-
       // For member access, the upper bound of `source` is crucial. Because a subtype of the upper bound will always
       // contain a member of a subtype compared to the upper bound's member, we can be sure that the upper bound's
       // member type is always a feasible choice.
@@ -160,21 +159,31 @@ object InferenceResolution {
       ???
   }
 
+  case class UnsatisfiedEquals(judgment: TypingJudgment, t1: Type, t2: Type) extends Error(judgment) {
+    override def message: String = s"The judgment $t1 :=: $t2 remains unsatisfied after type inference!"
+  }
+
+  case class UnsatisfiedSubtypes(judgment: TypingJudgment, t1: Type, t2: Type) extends Error(judgment) {
+    override def message: String = s"The judgment $t1 :<: $t2 remains unsatisfied after type inference!"
+  }
+
   /**
-    * Checks the given typing judgment as instantiated by the variables in the given assignments. This ensures that
-    * type equality and subtyping relationships actually hold.
+    * Checks the given typing judgment with instantiated types. This ensures that type equality and subtyping
+    * relationships actually hold with the inferred type assignments.
     */
   private def check(assignments: Assignments)(judgment: TypingJudgment): Verification = judgment match {
-    case TypingJudgment.Equals(t1, t2, position) =>
-      // TODO: Do we need to check upper and lower bounds or upper bounds only?
-      if (instantiate(assignments, t1, BoundType.Upper) != instantiate(assignments, t2, BoundType.Upper)) {
-        Compilation.fail() // TODO: Types not equal.
+    case TypingJudgment.Equals(t1, t2, _) =>
+      val it1 = instantiate(assignments, t1, BoundType.Upper)
+      val it2 = instantiate(assignments, t2, BoundType.Upper)
+      if (it1 != it2) {
+        Compilation.fail(UnsatisfiedEquals(judgment, it1, it2))
       } else Verification.succeed
 
-    case TypingJudgment.Subtypes(t1, t2, position) =>
-      // TODO: Do we need to check upper and lower bounds or upper bounds only?
-      if (!(instantiate(assignments, t1, BoundType.Upper) <= instantiate(assignments, t2, BoundType.Upper))) {
-        Compilation.fail() // TODO: Types aren't subtypes.
+    case TypingJudgment.Subtypes(t1, t2, _) =>
+      val it1 = instantiate(assignments, t1, BoundType.Upper)
+      val it2 = instantiate(assignments, t2, BoundType.Upper)
+      if (!(it1 <= it2)) {
+        Compilation.fail(UnsatisfiedSubtypes(judgment, it1, it2))
       } else Verification.succeed
 
     case _ => Verification.succeed
