@@ -27,8 +27,6 @@ object InferenceResolution {
 
     while (workingSet.nonEmpty) {
       // We have to pick judgments which we can resolve right away.
-      // TODO: We certainly won't resolve cyclical relationships between inference variables this way. The question
-      //       is whether that's a problem or not. :)
       val resolvable = workingSet.filter(isResolvable(assignments, _))
       if (resolvable.isEmpty) {
         throw CompilationException(s"The type inference working set $workingSet cannot be reduced any further. This is likely due to a flaw in the type inference algorithm.")
@@ -60,7 +58,6 @@ object InferenceResolution {
     case TypingJudgment.Equals(t1, t2, _) =>
       // The Equals judgment is resolvable if either t1 or t2 contain no undefined inference variables. Even if the
       // other type contains multiple inference variables, the judgment can be resolved by assigning multiple variables.
-      // TODO: Move the "isDefined" stuff into a helper function. Maybe rename to "hasVariables" or "hasInferenceVariables".
       Inference.variables(t1).forall(isDefined(assignments, _)) || Inference.variables(t2).forall(isDefined(assignments, _))
 
     case TypingJudgment.Subtypes(t1, t2, _) =>
@@ -116,16 +113,6 @@ object InferenceResolution {
       narrowBounds(assignments, target, lowerLub, upperLub, judgment)
 
     case TypingJudgment.MemberAccess(target, source, name, _) =>
-      // TODO: If we apply the fixpoint method, we might run into the following issue:
-      //       1. At first, the source's upper bound is type `{ a: A1 }`. So the member `a` is typed as `A1` in both
-      //          upper bound and lower bound.
-      //       2. Later, the algorithm revises the source's type to `{ a: A2 }`. The member should then be typed as
-      //          `A2`, but the lower bound is already `A1`. Supposing A2 < A1, the type inference algorithm will
-      //          result in a compilation error.
-      //       One of two things are going wrong here: Either the assumptions about lower bounds below are wrong, or we
-      //       will need some way to invalidate some bounds based on which bounds are changing. Crucially, we have a
-      //       sort of dependency graph where target depends on source. If the source's bounds change, the target
-      //       bounds should maybe be invalidated.
 
       // For member access, the upper bound of `source` is crucial. Because a subtype of the upper bound will always
       // contain a member of a subtype compared to the upper bound's member, we can be sure that the upper bound's
@@ -137,15 +124,7 @@ object InferenceResolution {
       // might illegally narrow the type too far down.
       // In particular, we want to avoid that a subtyping judgment member_type :<: A2 narrows the member's previously
       // decided upper bound from A1 to A2.
-      // TODO: Also refer to the TODO above. We might give MemberAccess the ability to override target bounds.
-      //       Alternatively, maybe we need to go back to the drawing board and divide typing judgments into two
-      //       classes: Assignments (which may override target bounds) and "typings". Perhaps these two concepts are
-      //       actually wholly different. Maybe we need to create a "derivation" graph for the "assignments" like
-      //       MemberAccess and ElementType.
-
       instantiate(assignments, source, BoundType.Upper).member(name)(judgment.position).map { member =>
-        //narrowBounds(assignments, target, member.tpe, member.tpe, judgment)
-        // TODO: Overriding the bounds is an idea and still needs to be verified!
         overrideBounds(assignments, target, member.tpe, member.tpe)
       }
 

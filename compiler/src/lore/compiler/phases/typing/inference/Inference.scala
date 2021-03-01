@@ -18,7 +18,7 @@ object Inference {
     case ListType(element) => variables(element)
     case MapType(key, value) => variables(key) ++ variables(value)
     case ShapeType(properties) => properties.values.map(_.tpe).flatMap(variables).toSet
-    case _: NamedType => Set.empty // TODO: Update when struct/trait types can have type parameters.
+    case _: NamedType => Set.empty
   }
 
   /**

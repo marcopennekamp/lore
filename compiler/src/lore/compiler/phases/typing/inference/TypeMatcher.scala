@@ -63,18 +63,13 @@ object TypeMatcher {
       throw CompilationException(s"The source $actualSource should have been correlated with target $target, but the source still contains uninstantiated inference variables.")
     }
 
-    // TODO: Can we even live with unsupported assignments here or do we have to bite the bullet? Sum and
-    //       intersection types need to also be part of type inference beyond the most basic aspects...
     def unsupported: Nothing = {
       throw CompilationException(s"Inference variable correlation of intersection and sum types is not yet supported." +
         s" Given types: $actualSource and $target.")
     }
 
-    // TODO: Move the error here?
     def incompatibleMatch: Compilation[Assignments] = Compilation.fail(IncompatibleMatch(actualSource, target, context))
 
-    // TODO: We can still merge this implementation with the one from TypeVariableAllocation, right? (This depends on
-    //       how we want to handle sum/intersection types, though.)
     val rec = (newAssignments: Assignments, newSource: Type, newTarget: Type) => matchAll(process)(newAssignments, newSource, newTarget, boundType, context)
     (actualSource, target) match {
       case (t1, iv2: InferenceVariable) => process(assignments, iv2, t1, boundType, context)
@@ -103,12 +98,8 @@ object TypeMatcher {
         }
       case (s1: StructType, s2: ShapeType) => rec(assignments, s1.asShapeType, s2)
 
-      // TODO: Rewrite the following comment:
-      // Allocating types to intersection types and sum types is quite complex, since the allocation mechanism
-      // suddenly comes upon more than one possible allocation. Take, for example, a sum type A | B, to which we
-      // try to assign a type C. Should A or B become C? Surely not both A and B can be C (unless the sum type
-      // is trivial). And even if we have a structurally similar type C | D, should A = C and B = D or A = D and
-      // B = C? There are multiple possibilities.
+      // TODO: Can we even live with unsupported assignments here or do we have to bite the bullet? Sum and
+      //       intersection types need to also be part of type inference beyond the most basic aspects...
       case (_: IntersectionType, _) => unsupported
       case (_, _: IntersectionType) => unsupported
       case (_: SumType, _) => unsupported

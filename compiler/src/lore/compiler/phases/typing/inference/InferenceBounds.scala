@@ -21,12 +21,12 @@ object InferenceBounds {
     case object Upper extends BoundType
   }
 
-  case class InvalidLowerBound(inferenceVariable: InferenceVariable, actual: Type, expected: Type, context: TypingJudgment) extends Error(context.position) {
-    override def message: String = s"Type error: $actual must be a supertype of $expected."
+  case class InvalidLowerBound(inferenceVariable: InferenceVariable, newLowerBound: Type, currentBounds: InferenceBounds, context: TypingJudgment) extends Error(context.position) {
+    override def message: String = s"Type error: $newLowerBound must be a supertype of lower bound ${currentBounds.lowerOrNothing} and a subtype of upper bound ${currentBounds.upperOrAny}."
   }
 
-  case class InvalidUpperBound(inferenceVariable: InferenceVariable, actual: Type, expected: Type, context: TypingJudgment) extends Error(context.position) {
-    override def message: String = s"Type error: $actual must be a subtype of $expected."
+  case class InvalidUpperBound(inferenceVariable: InferenceVariable, newUpperBound: Type, currentBounds: InferenceBounds, context: TypingJudgment) extends Error(context.position) {
+    override def message: String = s"Type error: $newUpperBound must be a subtype of upper bound ${currentBounds.upperOrAny} and a supertype of lower bound ${currentBounds.lowerOrNothing}."
   }
 
   def narrowBounds(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, upperBound: Type, context: TypingJudgment): Compilation[Assignments] = {
@@ -51,11 +51,10 @@ object InferenceBounds {
   def narrowLowerBound(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, context: TypingJudgment): Compilation[Assignments] = {
     val bounds = effectiveBounds(assignments, inferenceVariable)
 
-    // TODO: Also ensure that the new lower bound is a subtype of the existing upper bound. Write an error message for this case.
-    if (bounds.lower.forall(Subtyping.isSubtype(_, lowerBound))) {
+    if (bounds.lower.forall(_ <= lowerBound) && lowerBound <= bounds.upperOrAny) {
       Compilation.succeed(assignments.updated(inferenceVariable, InferenceBounds(inferenceVariable, Some(lowerBound), bounds.upper)))
     } else {
-      Compilation.fail(InvalidLowerBound(inferenceVariable, lowerBound, bounds.lowerOrNothing, context))
+      Compilation.fail(InvalidLowerBound(inferenceVariable, lowerBound, bounds, context))
     }
   }
 
@@ -66,11 +65,10 @@ object InferenceBounds {
   def narrowUpperBound(assignments: Assignments, inferenceVariable: InferenceVariable, upperBound: Type, context: TypingJudgment): Compilation[Assignments] = {
     val bounds = effectiveBounds(assignments, inferenceVariable)
 
-    // TODO: Also ensure that the new upper bound is a supertype of the existing lower bound. Write an error message for this case.
-    if (bounds.upper.forall(Subtyping.isSubtype(upperBound, _))) {
+    if (bounds.upper.forall(upperBound <= _) && bounds.lowerOrNothing <= upperBound) {
       Compilation.succeed(assignments.updated(inferenceVariable, InferenceBounds(inferenceVariable, bounds.lower, Some(upperBound))))
     } else {
-      Compilation.fail(InvalidUpperBound(inferenceVariable, upperBound, bounds.upperOrAny, context))
+      Compilation.fail(InvalidUpperBound(inferenceVariable, upperBound, bounds, context))
     }
   }
 
