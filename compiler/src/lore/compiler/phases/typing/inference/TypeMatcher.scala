@@ -1,7 +1,7 @@
 package lore.compiler.phases.typing.inference
 
 import lore.compiler.core.{Compilation, CompilationException, Error}
-import Inference.{Assignments, instantiate, variables}
+import Inference.{Assignments, instantiate, isFullyInferred, variables}
 import lore.compiler.phases.typing.inference.InferenceBounds.BoundType
 import lore.compiler.phases.typing.inference.InferenceVariable.{isDefined, isDefinedAt}
 import lore.compiler.types._
@@ -54,12 +54,12 @@ object TypeMatcher {
     // If the target type contains no inference variables, there is no way we could process any, and thus the
     // operation can be skipped. This check is currently important for correct compiler operation, as we only want to
     // raise an "unsupported correlation" error in cases where the target type even contains inference variables.
-    if (variables(target).isEmpty) {
+    if (isFullyInferred(target)) {
       return Compilation.succeed(assignments)
     }
 
     val actualSource = instantiate(assignments, source, boundType)
-    if (variables(actualSource).nonEmpty) {
+    if (!isFullyInferred(actualSource)) {
       throw CompilationException(s"The source $actualSource should have been correlated with target $target, but the source still contains uninstantiated inference variables.")
     }
 

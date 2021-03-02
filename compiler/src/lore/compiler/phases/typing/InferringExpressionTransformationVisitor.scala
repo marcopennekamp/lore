@@ -3,8 +3,8 @@ package lore.compiler.phases.typing
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core._
 import lore.compiler.phases.resolution.TypeExpressionEvaluator
-import lore.compiler.phases.transformation.ExpressionTransformationVisitor.{CollectionExpected, DynamicFunctionNameExpected, StructExpected, UnsafeInteger}
-import lore.compiler.phases.transformation.{ExpressionBuilder, ExpressionTransformationContext, ExpressionTransformations}
+import lore.compiler.phases.transformation.ExpressionTransformationContext
+import lore.compiler.phases.transformation.ExpressionTransformationVisitor.{DynamicFunctionNameExpected, StructExpected, UnsafeInteger}
 import lore.compiler.phases.typing.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
@@ -46,8 +46,6 @@ class InferringExpressionTransformationVisitor(
   //       known, we can evaluate the judgment immediately to avoid clogging the type inference algorithm.
   //       The important idea here is that we can evaluate this when adding judgments, so that we don't have to rewrite
   //       the code for each node. It can happen "automagically".
-  // TODO: Typing judgments need to be added for parameters!! (Or do they? I think parameters just have plain types
-  //       that are posted into the model.)
   var typingJudgments: Vector[TypingJudgment] = Vector.empty
 
   override def visitLeaf(node: LeafNode): Compilation[Expression] = node match {
@@ -86,7 +84,7 @@ class InferringExpressionTransformationVisitor(
       }
 
       inferredType.map { tpe =>
-        val variable = LocalVariable(name, new InferenceVariable(), isMutable)
+        val variable = LocalVariable(name, new InferenceVariable, isMutable)
         context.currentScope.register(variable)
         typingJudgments = typingJudgments :+ TypingJudgment.Equals(variable.tpe, tpe, position)
         Expression.VariableDeclaration(variable, expression, position)
@@ -106,21 +104,13 @@ class InferringExpressionTransformationVisitor(
 
       // We cannot decide the member until the type has been inferred. Hence we first have to return an "unresolved
       // member access" expression node, which will be resolved later.
-
-      val memberType = new InferenceVariable()
+      val memberType = new InferenceVariable
       typingJudgments = typingJudgments :+ TypingJudgment.MemberAccess(memberType, expression.tpe, name, position)
       Expression.UnresolvedMemberAccess(expression, name, memberType, position).compiled
   }
 
   override def visitBinary(node: BinaryNode)(left: Expression, right: Expression): Compilation[Expression] = node match {
     case AssignmentNode(_, _, position) =>
-      // TODO: How can we make sure that an assignment typing judgment doesn't override the variable's declared type?
-      //       Does this come for free since we use TypingJudgment.Equals for variable declarations? Or do we have to
-      //       care about some kind of order here?
-
-      // TODO: Since we cannot resolve all member accesses at this stage, we have to check whether the accessed
-      //       variable or member can be written to at a later stage!
-
       // Ensure that the value on the right can be assigned to the variable or member on the left.
       typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(right.tpe, left.tpe, position)
 
@@ -137,9 +127,6 @@ class InferringExpressionTransformationVisitor(
     case DivisionNode(_, _, position) => transformNumericOperation(BinaryOperator.Division, left, right, position).compiled
 
     // Boolean operations.
-    // TODO: We can only decide whether areEqual/isLessThan/isLessThanOrEqual is called if we have the types of both
-    //       operands. Hence, we are doing that in a stage after type inference. For now, we simply create the right
-    //       expressions.
     case EqualsNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.Equals, left, right, BasicType.Boolean, position).compiled
     case NotEqualsNode(_, _, position) =>
       Expression.UnaryOperation(
@@ -154,8 +141,8 @@ class InferringExpressionTransformationVisitor(
     case GreaterThanEqualsNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.LessThanEquals, right, left, BasicType.Boolean, position).compiled
 
     // Collection operations.
-    // TODO: Here, too, we can only create the operation now and have to check for the type later.
     case AppendNode(_, _, position) =>
+      // TODO: If append also has to work for maps, we might have to rewrite these rules or even use alternative judgments.
       val elementType = new InferenceVariable
       val combinedType = new InferenceVariable
       typingJudgments = typingJudgments :+ TypingJudgment.Equals(ListType(elementType), left.tpe, position)
@@ -164,8 +151,6 @@ class InferringExpressionTransformationVisitor(
 
     // Loops.
     case WhileNode(_, _, position) =>
-      // TODO: Change the loop's result type from [Unit] to Unit in a later stage, once types are inferred.
-
       // Close the previously opened scope.
       context.closeScope()
       val condition = left
@@ -199,7 +184,7 @@ class InferringExpressionTransformationVisitor(
       val condition = argument1
       val onTrue = argument2
       val onFalse = argument3
-      val resultType = new InferenceVariable()
+      val resultType = new InferenceVariable
 
       typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(condition.tpe, BasicType.Boolean, position)
       typingJudgments = typingJudgments :+ TypingJudgment.LeastUpperBound(resultType, Vector(onTrue.tpe, onFalse.tpe), position)
@@ -218,7 +203,7 @@ class InferringExpressionTransformationVisitor(
       Expression.Tuple(expressions, position).compiled
 
     case ListNode(_, position) =>
-      val elementType = new InferenceVariable()
+      val elementType = new InferenceVariable
       typingJudgments = typingJudgments :+ TypingJudgment.LeastUpperBound(elementType, expressions.map(_.tpe), position)
       Expression.ListConstruction(expressions, ListType(elementType), position).compiled
 
@@ -243,13 +228,6 @@ class InferringExpressionTransformationVisitor(
       transformBooleanOperation(XaryOperator.Disjunction, expressions, position)
 
     case ConcatenationNode(_, position) =>
-      // TODO: The transformation needs to be done after inference...
-      /* for {
-        transformedExpressions <- expressions.map { expression =>
-          if (expression.tpe == BasicType.String) expression.compiled
-          else ExpressionBuilder.multiFunctionCall("toString", Vector(expression), expression.position)
-        }.simultaneous
-      } yield Expression.XaryOperation(XaryOperator.Concatenation, transformedExpressions, BasicType.String, position) */
       Expression.XaryOperation(XaryOperator.Concatenation, expressions, BasicType.String, position).compiled
 
     // Function calls.
@@ -294,8 +272,8 @@ class InferringExpressionTransformationVisitor(
   override def visitMap(node: MapNode)(kvs: Vector[(Expression, Expression)]): Compilation[Expression] = {
     val entries = kvs.map(Expression.MapEntry.tupled)
 
-    val keyType = new InferenceVariable()
-    val valueType = new InferenceVariable()
+    val keyType = new InferenceVariable
+    val valueType = new InferenceVariable
 
     typingJudgments = typingJudgments :+ TypingJudgment.LeastUpperBound(keyType, entries.map(_.key.tpe), node.position)
     typingJudgments = typingJudgments :+ TypingJudgment.LeastUpperBound(valueType, entries.map(_.value.tpe), node.position)
@@ -312,7 +290,7 @@ class InferringExpressionTransformationVisitor(
     val scope = context.currentScope
 
     def transformExtractor(variableName: String, collection: Expression, position: Position): Compilation[Expression.Extractor] = {
-      val elementType = new InferenceVariable()
+      val elementType = new InferenceVariable
       typingJudgments = typingJudgments :+ TypingJudgment.ElementType(elementType, collection.tpe, position)
 
       val localVariable = LocalVariable(variableName, elementType, isMutable = false)

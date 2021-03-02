@@ -17,7 +17,7 @@ object StructTransformer {
         // Note that we pass the global variable scope, since other properties of the struct should not be accessible in
         // default value expressions.
         // TODO: Once we introduce parametric declared types, we have to provide the struct's type scope.
-        ExpressionTransformer.transform(node, property.tpe, registry.typeScope, registry.variableScope)
+        ExpressionTransformer.transform(s"${struct.name}.${property.name}", node, property.tpe, registry.typeScope, registry.variableScope)
       }.toCompiledOption
 
       compiledExpression.map { maybeExpression =>

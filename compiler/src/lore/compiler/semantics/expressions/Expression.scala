@@ -1,6 +1,6 @@
 package lore.compiler.semantics.expressions
 
-import lore.compiler.core.Position
+import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.phases.typing.inference.InferenceVariable
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.semantics.members.Member
@@ -45,19 +45,25 @@ object Expression {
     */
   sealed trait Access extends Expression {
     def name: String
+    def isMutable: Boolean
   }
 
   case class VariableAccess(variable: Variable, position: Position) extends Expression.Apply(variable.tpe) with Access {
     override val name: String = variable.name
+    override val isMutable: Boolean = variable.isMutable
   }
+
   case class MemberAccess(instance: Expression, member: Member, position: Position) extends Expression.Apply(member.tpe) with Access {
     override val name: String = member.name
+    override def isMutable: Boolean = member.isMutable
   }
 
   /**
     * A member access that cannot yet be resolved because the expression's type hasn't been inferred.
     */
-  case class UnresolvedMemberAccess(instance: Expression, name: String, tpe: InferenceVariable, position: Position) extends Expression with Access
+  case class UnresolvedMemberAccess(instance: Expression, name: String, tpe: InferenceVariable, position: Position) extends Expression with Access {
+    override def isMutable: Boolean = throw CompilationException(s"$this has an undefined mutability.")
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Literals and Value Constructors.
@@ -70,11 +76,21 @@ object Expression {
 
   case class ListConstruction(values: Vector[Expression], tpe: Type, position: Position) extends Expression
 
-  case class MapConstruction(entries: Vector[MapEntry], tpe: Type, position: Position) extends Expression
+  case class MapConstruction(entries: Vector[MapEntry], tpe: Type, position: Position) extends Expression {
+    def withEntries(entries: Vector[(Expression, Expression)]): MapConstruction = this.copy(entries.map(MapEntry.tupled))
+  }
   case class MapEntry(key: Expression, value: Expression)
 
   case class ShapeValue(properties: Vector[ShapeProperty], position: Position) extends Expression {
     override val tpe: Type = ShapeType(properties.map(_.asShapeTypeProperty))
+
+    /**
+      * Creates a new shape value with the given property values. The order of properties and values must be
+      * compatible!
+      */
+    def withPropertyValues(values: Vector[Expression]): ShapeValue = {
+      this.copy(properties.zip(values).map { case (property, value) => property.copy(value = value) })
+    }
   }
   case class ShapeProperty(name: String, value: Expression) {
     def asShapeTypeProperty: ShapeType.Property = ShapeType.Property(name, value.tpe)
@@ -87,6 +103,14 @@ object Expression {
     */
   case class Instantiation(struct: StructDefinition, arguments: Vector[Instantiation.Argument], position: Position) extends Expression {
     override def tpe: Type = struct.tpe
+
+    /**
+      * Creates a new instantiation expression with the given argument values. The order of arguments and values must
+      * be compatible!
+      */
+    def withArgumentValues(values: Vector[Expression]): Instantiation = {
+      this.copy(arguments = arguments.zip(values).map { case (argument, value) => argument.copy(value = value) })
+    }
   }
   object Instantiation {
     case class Argument(property: StructPropertyDefinition, value: Expression)
@@ -137,7 +161,17 @@ object Expression {
   trait Loop extends Expression {
     def body: Expression
   }
+
   case class WhileLoop(condition: Expression, body: Expression, tpe: Type, position: Position) extends Loop
-  case class ForLoop(extractors: Vector[Extractor], body: Expression, tpe: Type, position: Position) extends Loop
+
+  case class ForLoop(extractors: Vector[Extractor], body: Expression, tpe: Type, position: Position) extends Loop {
+    /**
+      * Creates a for-loop expression with the given collection values. The order of extractors and collections must be
+      * compatible!
+      */
+    def withCollections(collections: Vector[Expression]): ForLoop = {
+      this.copy(extractors.zip(collections).map { case (extractor, collection) => extractor.copy(collection = collection) })
+    }
+  }
   case class Extractor(variable: LocalVariable, collection: Expression)
 }

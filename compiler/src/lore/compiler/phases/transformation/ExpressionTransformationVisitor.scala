@@ -3,11 +3,12 @@ package lore.compiler.phases.transformation
 import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.core.{Compilation, CompilationException, Error, Errors, Position, Result}
 import lore.compiler.phases.resolution.TypeExpressionEvaluator
+import lore.compiler.phases.typing.MutabilityVerifier.ImmutableAssignment
+import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
 import lore.compiler.semantics.scopes.{LocalVariable, TypeScope, VariableScope}
-import lore.compiler.semantics.{Registry, scopes}
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.types._
@@ -30,10 +31,10 @@ private[transformation] class ExpressionTransformationVisitor(
     */
   variableScope: VariableScope,
 )(implicit registry: Registry) extends TopLevelExprVisitor[Expression, Compilation[Expression]] {
-  import TopLevelExprNode._
   import ExprNode._
   import ExpressionTransformationVisitor._
   import ExpressionTransformations._
+  import TopLevelExprNode._
 
   val context = new ExpressionTransformationContext(variableScope)
   implicit val typeScopeImplicit: TypeScope = typeScope
@@ -301,10 +302,6 @@ object ExpressionTransformationVisitor {
     override def message: String = s"The integer literal ${node.value} is outside the safe run-time range of" +
       s" ${BasicType.Int.minSafeInteger} and ${BasicType.Int.maxSafeInteger}. The Javascript runtime will not be able" +
       s" to properly store and process integers this large."
-  }
-
-  case class ImmutableAssignment(access: Expression.Access) extends Error(access) {
-    override def message = s"The variable or member ${access.name} you are trying to assign to is immutable."
   }
 
   case class DynamicFunctionNameExpected()(implicit position: Position) extends Error(position) {

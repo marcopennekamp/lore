@@ -1,6 +1,7 @@
 package lore.compiler.semantics.functions
 
 import lore.compiler.core.Positioned
+import lore.compiler.phases.typing.inference.InferenceVariable
 import lore.compiler.types.Type
 
 /**
@@ -23,7 +24,11 @@ object CallTarget {
     override def outputType: Type = signature.outputType
   }
 
-  case class MultiFunction(mf: MultiFunctionDefinition, outputType: Type) extends CallTarget {
+  /**
+    * An as of yet unresolved multi-function call. During compilation, once the called function becomes apparent,
+    *
+    */
+  case class MultiFunction(mf: MultiFunctionDefinition, outputType: InferenceVariable) extends CallTarget {
     val name: String = mf.name
   }
 

@@ -71,7 +71,7 @@ object FunctionTyping {
     registry.resolveMultiFunction(functionName).map { mf =>
       // In essence, we want to choose the most specific argument type to then invoke multiple dispatch with the
       // "result argument type". Hence, this inference variable is the container that holds the ultimate argument type.
-      val resultArgumentType = new InferenceVariable()
+      val resultArgumentType = new InferenceVariable
 
       // We can filter by arity immediately, because a function with a different arity will never be callable with the
       // given arguments.
@@ -82,7 +82,7 @@ object FunctionTyping {
           // Replace all type variables declared in the function with inference variables. The inference algorithm
           // needs to do the actual work here. The "fast track" Fits/TypeVariableAllocation is not applicable with
           // typing judgments.
-          val assignments = variables.map(variable => (variable, new InferenceVariable())).toMap
+          val assignments = variables.map(variable => (variable, new InferenceVariable)).toMap
 
           // We have to model type variable bounds as typing judgments so that the bounds are taken into account during
           // inference.
@@ -121,8 +121,7 @@ object FunctionTyping {
         TypingJudgment.Conjunction(boundJudgments ++ argumentJudgments ++ resultJudgments, position)
       }
 
-
-      val resultType = new InferenceVariable()
+      val resultType = new InferenceVariable
       val judgments = Vector(
         // TODO: Pass EmptyFit and AmbiguousCall errors to "most specific". They conceptually correspond one to one.
         //          case min if min.isEmpty => Compilation.fail(EmptyFit(mf, inputType))

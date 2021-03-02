@@ -19,6 +19,7 @@ object FunctionTransformer {
     SignatureConstraints.verify(function.signature).flatMap { _ =>
       val compiledBody = function.bodyNode.map { node =>
         ExpressionTransformer.transform(
+          function.name,
           node,
           function.signature.outputType,
           function.typeScope,

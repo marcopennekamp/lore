@@ -3,7 +3,9 @@ package lore.compiler.phases.transformation
 import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.phases.transformation.ExpressionVerification.IllegallyTypedExpression
-import lore.compiler.semantics.expressions.Expression
+import lore.compiler.phases.typing.{BuiltinsVisitor, InferringExpressionTransformationVisitor, MutabilityVerifier, TypeRehydrationVisitor}
+import lore.compiler.phases.typing.inference.InferenceResolution
+import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.scopes.{TypeScope, VariableScope}
 import lore.compiler.semantics.Registry
 import lore.compiler.syntax.ExprNode
@@ -13,21 +15,47 @@ import lore.compiler.types.{ProductType, Type}
 object ExpressionTransformer {
 
   /**
-    * Builds a semantic expression tree from the given expression node. Ensures that all other expression constraints
-    * hold.
+    * Builds a semantic expression tree from the given AST expression node, performing type inference in the process.
+    * Ensures that all other expression constraints hold.
     */
   def transform(
+    name: String,
     node: ExprNode,
     expectedType: Type,
     typeScope: TypeScope,
-    variableScope: VariableScope,
+    variableScope: VariableScope
   )(implicit registry: Registry): Compilation[Expression] = {
     for {
       _ <- ReturnConstraints.verify(node)
-      visitor = new ExpressionTransformationVisitor(expectedType, typeScope, variableScope)
-      expression <- TopLevelExprVisitor.visitCompilation(visitor)(node).map(withImplicitUnitValue(expectedType))
-      _ <- verifyExpectedType(expression, expectedType)
-    } yield expression
+      visitor = new InferringExpressionTransformationVisitor(expectedType, typeScope, variableScope)
+      expression <- TopLevelExprVisitor.visitCompilation(visitor)(node)
+
+      _ = {
+        println(s"Typing judgments for $name:")
+        visitor.typingJudgments.foreach(println)
+        println()
+      }
+      inferredTypes <- InferenceResolution.infer(visitor.typingJudgments)
+      _ = {
+        println("Inferred types:")
+        println(inferredTypes)
+        println()
+        println()
+      }
+
+      rehydrationVisitor = new TypeRehydrationVisitor(inferredTypes)
+      typedExpression = ExpressionVisitor.visit(rehydrationVisitor)(expression)
+
+      mutabilityVerifier = new MutabilityVerifier
+      _ <- ExpressionVisitor.visitCompilation(mutabilityVerifier)(typedExpression)
+
+      builtinsVisitor = new BuiltinsVisitor
+      expressionWithBuiltins = ExpressionVisitor.visit(builtinsVisitor)(typedExpression)
+
+      expressionWithImplicitUnit = withImplicitUnitValue(expectedType)(expressionWithBuiltins)
+
+      _ <- verifyExpectedType(expressionWithImplicitUnit, expectedType)
+    } yield expressionWithImplicitUnit
   }
 
   /**
@@ -59,7 +87,7 @@ object ExpressionTransformer {
     if (expression.tpe <= expectedType || allPathsReturn(expression)) {
       Verification.succeed
     } else {
-      Verification.fromErrors(Vector(IllegallyTypedExpression(expression, Vector(expectedType))))
+      Compilation.fail(IllegallyTypedExpression(expression, Vector(expectedType)))
     }
   }
 

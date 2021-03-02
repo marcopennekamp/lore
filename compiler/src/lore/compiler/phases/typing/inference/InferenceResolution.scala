@@ -46,6 +46,9 @@ object InferenceResolution {
       workingSet = workingSet -- resolvable
     }
 
+    // TODO: Do we have to manually ensure that all inference variables contained in any judgment are assigned at least
+    //       an upper bound? If this is not the case for some judgment list, type inference is not complete!
+
     // Once all inference variables have been instantiated, make another pass over all judgments to check equality
     // and subtyping constraints.
     judgments.map(check(assignments)).simultaneous.map(_ => assignments)
