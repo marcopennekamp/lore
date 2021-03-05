@@ -12,7 +12,7 @@ object Inference {
     * This class is intended as an API for other components such as the [[lore.compiler.phases.typing.TypeRehydrationVisitor]].
     */
   implicit class AssignmentsExtension(assignments: Assignments) {
-    def instantiate(tpe: Type): Type = Inference.instantiate(assignments, tpe, BoundType.Upper)
+    def instantiate(tpe: Type): Type = Inference.instantiate(assignments, tpe, _.candidateType)
   }
 
   def variables(tpe: Type): Set[InferenceVariable] = tpe match {
@@ -45,9 +45,23 @@ object Inference {
   }
 
   /**
-    * Instantiates all defined inference variables in `tpe` with their corresponding lower or upper bounds.
+    * Instantiates all defined inference variables in `tpe` to the respective bound.
     */
-  def instantiate(assignments: Assignments, tpe: Type, boundType: BoundType): Type = {
+  def instantiateByBound(assignments: Assignments, tpe: Type, boundType: BoundType): Type = {
+    instantiate(
+      assignments,
+      tpe,
+      bounds => boundType match {
+        case BoundType.Lower => bounds.lowerOrNothing
+        case BoundType.Upper => bounds.upperOrAny
+      }
+    )
+  }
+
+  /**
+    * Instantiates all defined inference variables in `tpe` to a type given by `get`.
+    */
+  def instantiate(assignments: Assignments, tpe: Type, get: InferenceBounds => Type): Type = {
     // `instantiate` may be called with fully inferred types quite often. We want to avoid reconstructing types (with
     // all the required allocations) in such cases.
     if (isFullyInferred(tpe)) {
@@ -57,14 +71,10 @@ object Inference {
     // TODO: Wouldn't this inference constellation be a good test for Lore inference? Lore should be able to infer
     //       Type => Type for (t => instantiate(mode, t)) as long as that's the only function instance of instantiate
     //       with an arity of 2.
-    val rec = t => instantiate(assignments, t, boundType)
+    val rec = t => instantiate(assignments, t, get)
 
     tpe match {
-      case iv: InferenceVariable =>
-        assignments.get(iv).map(bounds => boundType match {
-          case BoundType.Lower => bounds.lowerOrNothing
-          case BoundType.Upper => bounds.upperOrAny
-        }).getOrElse(iv)
+      case iv: InferenceVariable => assignments.get(iv).map(get).getOrElse(iv)
       case tv: TypeVariable =>
         if (Inference.isFullyInferred(tv)) tv
         else ??? // TODO: How can we instantiate the type variable without destroying its reference equality? Maybe a type variable requires a UUID instead?

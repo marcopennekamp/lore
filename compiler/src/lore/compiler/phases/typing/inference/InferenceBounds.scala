@@ -6,10 +6,22 @@ import lore.compiler.phases.typing.inference.InferenceVariable.effectiveBounds
 import lore.compiler.types.{BasicType, Subtyping, Type}
 
 // TODO: Do we still need the Option bounds now that Equals resolution has been fixed?
+//          - It would seem so, as we now also need to differentiate between inference variables without any upper bound.
 
 case class InferenceBounds(variable: InferenceVariable, lower: Option[Type], upper: Option[Type]) {
   val lowerOrNothing: Type = lower.getOrElse(BasicType.Nothing)
   val upperOrAny: Type = upper.getOrElse(BasicType.Any)
+
+  /**
+    * The candidate type is used as the effectively inferred type and thus the inference result. This will most likely
+    * be the upper bound of the inference variable, but may also be the lower bound if the variable `iv` can only be
+    * inferred from `t <= iv` Subtypes or least upper bound judgments.
+    *
+    * TODO: Return an option instead of Any?
+    */
+  val candidateType: Type = upper.orElse(lower).getOrElse(BasicType.Any)
+
+  override def toString: String = s"$variable($lowerOrNothing, $upperOrAny)"
 }
 
 object InferenceBounds {
@@ -21,11 +33,11 @@ object InferenceBounds {
     case object Upper extends BoundType
   }
 
-  case class InvalidLowerBound(inferenceVariable: InferenceVariable, newLowerBound: Type, currentBounds: InferenceBounds, context: TypingJudgment) extends Error(context.position) {
+  case class InvalidLowerBound(inferenceVariable: InferenceVariable, newLowerBound: Type, currentBounds: InferenceBounds, context: TypingJudgment) extends Error(context) {
     override def message: String = s"Type error: $newLowerBound must be a supertype of lower bound ${currentBounds.lowerOrNothing} and a subtype of upper bound ${currentBounds.upperOrAny}."
   }
 
-  case class InvalidUpperBound(inferenceVariable: InferenceVariable, newUpperBound: Type, currentBounds: InferenceBounds, context: TypingJudgment) extends Error(context.position) {
+  case class InvalidUpperBound(inferenceVariable: InferenceVariable, newUpperBound: Type, currentBounds: InferenceBounds, context: TypingJudgment) extends Error(context) {
     override def message: String = s"Type error: $newUpperBound must be a subtype of upper bound ${currentBounds.upperOrAny} and a supertype of lower bound ${currentBounds.lowerOrNothing}."
   }
 
@@ -99,6 +111,8 @@ object InferenceBounds {
   def ensureBoundSupertypes(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, context: TypingJudgment): Compilation[Assignments] = {
     val bounds = effectiveBounds(assignments, inferenceVariable)
 
+    println(s"$bounds ensure lower $lowerBound")
+
     if (Subtyping.isSubtype(lowerBound, bounds.lowerOrNothing)) {
       Compilation.succeed(assignments)
     } else {
@@ -115,6 +129,8 @@ object InferenceBounds {
     */
   def ensureBoundSubtypes(assignments: Assignments, inferenceVariable: InferenceVariable, upperBound: Type, context: TypingJudgment): Compilation[Assignments] = {
     val bounds = effectiveBounds(assignments, inferenceVariable)
+
+    println(s"$bounds ensure upper $upperBound")
 
     if (Subtyping.isSubtype(bounds.upperOrAny, upperBound)) {
       Compilation.succeed(assignments)

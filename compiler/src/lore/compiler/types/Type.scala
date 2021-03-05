@@ -144,11 +144,29 @@ object Type {
   }
 
   /**
+    * TODO: Doesn't feel quite right. Maybe `mostSpecific` should filter out duplicates.
+    */
+  def minOrEqual(t1: Type, t2: Type): Option[Type] = {
+    if (t1 <= t2) Some(t1)
+    else if (t2 <= t1) Some(t2)
+    else None
+  }
+
+  /**
     * Removes types from the list that are supertyped by other types in the list, essentially keeping the
     * most general types.
     */
   def mostGeneral(types: Vector[Type]): Vector[Type] = {
     types.filterNot(t => types.exists(t < _))
+  }
+
+  /**
+    * TODO: Doesn't feel quite right. Maybe `mostGeneral` should filter out duplicates.
+    */
+  def maxOrEqual(t1: Type, t2: Type): Option[Type] = {
+    if (t1 >= t2) Some(t1)
+    else if (t2 >= t1) Some(t2)
+    else None
   }
 
   /**

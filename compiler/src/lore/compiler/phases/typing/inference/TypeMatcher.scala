@@ -1,7 +1,7 @@
 package lore.compiler.phases.typing.inference
 
 import lore.compiler.core.{Compilation, CompilationException, Error}
-import Inference.{Assignments, instantiate, isFullyInferred, variables}
+import lore.compiler.phases.typing.inference.Inference.{Assignments, instantiateByBound, isFullyInferred}
 import lore.compiler.phases.typing.inference.InferenceBounds.BoundType
 import lore.compiler.phases.typing.inference.InferenceVariable.{isDefined, isDefinedAt}
 import lore.compiler.types._
@@ -13,19 +13,30 @@ object TypeMatcher {
       s"narrow the bounds of all inference variables in $target."
   }
 
+  case class TargetFullyInferred(context: TypingJudgment) extends Error(context) {
+    override def message: String = "ABC" // TODO: Implement.
+  }
+
   /**
     * If all inference variables in `source` are defined, the function matches all inference variables in `target`
     * using [[InferenceBounds.narrowBound]] for both bound types.
     *
     * If some inference variables in `source` are not yet defined, the operation fails and results in a compilation
-    * error. This error will usually be recovered from during Equals judgment resolution.
+    * error. If `target` contains no inference variables, no bounds can be narrowed and the operation fails. These
+    * errors will usually be recovered from during Equals judgment resolution.
     */
   def narrowBounds(assignments: Assignments, source: Type, target: Type, context: TypingJudgment): Compilation[Assignments] = {
-    if (Inference.variables(source).forall(isDefined(assignments, _))) {
+    // TODO: Do we even need these errors now that we don't use error recovery as a means of implementing unification?
+    //       Or are they simply "does not apply" criteria?
+    if (!Inference.variables(source).forall(isDefined(assignments, _))) {
+      Compilation.fail(UndefinedInferenceVariables(source, target, context))
+    } else if (isFullyInferred(target)) {
+      Compilation.fail(TargetFullyInferred(context))
+    } else {
       matchAll(InferenceBounds.narrowBound)(assignments, source, target, BoundType.Lower, context).flatMap(
         matchAll(InferenceBounds.narrowBound)(_, source, target, BoundType.Upper, context)
       )
-    } else Compilation.fail(UndefinedInferenceVariables(source, target, context))
+    }
   }
 
   /**
@@ -46,7 +57,7 @@ object TypeMatcher {
     * Instantiates `source` (using the given `boundType`) and matches all types therein to their corresponding
     * inference variables in `target`, invoking `process` for each such pair. Incompatible matches lead to a
     * compilation error, so the function guarantees that `process` will be called for each target inference variable
-    * at least once.
+    * at least once. If `target` contains no inference variables, matchAll returns the assignments unchanged.
     */
   def matchAll(
     process: (Assignments, InferenceVariable, Type, BoundType, TypingJudgment) => Compilation[Assignments],
@@ -58,7 +69,7 @@ object TypeMatcher {
       return Compilation.succeed(assignments)
     }
 
-    val actualSource = instantiate(assignments, source, boundType)
+    val actualSource = instantiateByBound(assignments, source, boundType)
     if (!isFullyInferred(actualSource)) {
       throw CompilationException(s"The source $actualSource should have been correlated with target $target, but the source still contains uninstantiated inference variables.")
     }

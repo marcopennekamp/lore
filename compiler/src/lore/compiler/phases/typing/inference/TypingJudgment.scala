@@ -36,11 +36,37 @@ object TypingJudgment {
   case class Subtypes(t1: Type, t2: Type, position: Position) extends TypingJudgment
 
   /**
-    * Assigns the least upper bound of the given types to the `target` inference variable.
+    * Assigns matching types in `source` to inference variables in `target`.
+    *
+    * This is used by variable declarations, for example, to ensure that the variable's type is fixed in one direction.
+    * We don't want the following to be viable Lore code:
+    *
+    * let f = v => v.x > 5
+    * f(%{ x: 10 })
+    *
+    * The type of the variable declaration should become fixed at the point of declaration.
     */
-  case class LeastUpperBound(target: InferenceVariable, types: Vector[Type], position: Position) extends Operation {
-    override def operands: Vector[Type] = types
-  }
+  case class Assign(target: Type, source: Type, position: Position) extends TypingJudgment
+
+  /**
+    * Unifies the `target` inference variable with the least upper bound of all given `types`. The inference can happen
+    * in both directions:
+    *
+    *   1. If all inference variables in `types` are defined, the least upper bounds of the instantiated types (both
+    *      lower bound and upper bound instantiation) are assigned to the lower and upper bound of `target`.
+    *   2. If `target` is defined, the typing judgment `LUB(T, A_1, ..., A_n)` is effectively equal to
+    *      `A_1 :<: T`, ..., `A_n :<: T`. These "virtual" judgments are resolved, allowing the upper bounds of all
+    *      `A_x` to be defined through T.
+    *
+    * Crucially, this judgment is necessary because `LUB(T, A, B)` cannot be fully modeled as `Subtypes(A, T)` and
+    * `Subtypes(B, T)`. The Subtypes judgments only specify the lower bound of T, but not the upper bound. Why we need
+    * the upper bound specified might become clearer with an example: Assume we have an If-Else expression with body
+    * types A and B. We assign `LUB(A, B)` to T as the result type of the If-Else expression. If we do not assign an
+    * upper bound to T, a judgment such as `C :<: T` will have no choice but to infer Any as the upper bound of C. But
+    * we already know that the value whose type is modeled by T can only be `a: A` or `b: B`. So there is an upper
+    * bound for T, namely the LUB of A and B. C, then, also has the same upper bound.
+    */
+  case class LeastUpperBound(target: InferenceVariable, types: Vector[Type], position: Position) extends TypingJudgment
 
   /**
     * Simulates access of a member called `name` on the `source` type and assigns the member's result type to `target`.
@@ -84,7 +110,8 @@ object TypingJudgment {
   def stringify(judgment: TypingJudgment): String = judgment match {
     case Equals(t1, t2, _) => s"$t1 :=: $t2"
     case Subtypes(t1, t2, _) => s"$t1 :<: $t2"
-    case LeastUpperBound(target, types, _) => s"$target <- lub(${types.mkString(", ")})"
+    case Assign(target, source, _) => s"$target <- $source"
+    case LeastUpperBound(target, types, _) => s"$target :=: LUB(${types.mkString(", ")})"
     case MemberAccess(target, source, name, _) => s"$target <- $source.$name"
     case ElementType(target, collection, _) => s"$target <- $collection::elementType"
     case MultiFunctionCall(target, mf, arguments, _) => s"$target <- ${mf.name}(${arguments.mkString(", ")})"

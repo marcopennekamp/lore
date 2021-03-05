@@ -86,7 +86,7 @@ class InferringExpressionTransformationVisitor(
       inferredType.map { tpe =>
         val variable = LocalVariable(name, new InferenceVariable, isMutable)
         context.currentScope.register(variable)
-        typingJudgments = typingJudgments :+ TypingJudgment.Equals(variable.tpe, tpe, position)
+        typingJudgments = typingJudgments :+ TypingJudgment.Assign(variable.tpe, tpe, position)
         Expression.VariableDeclaration(variable, expression, position)
       }
 
@@ -101,6 +101,15 @@ class InferringExpressionTransformationVisitor(
       // TODO: A member only needs to be resolved lazily if the expression's type is not yet inferred. The expression's
       //       type will be clear in the majority of cases, so here is a chance to save on a lot of typing judgments
       //       if we check whether the expression actually even needs to be inferred.
+      // TODO: We might also have to add a judgment `expression.tpe :<: { name: memberType }` so that an inference
+      //       variable which is only typed through its lower bound (with an empty upper bound) cannot receive an upper
+      //       bound that doesn't contain the member. If we do this, however, we're opening the door to general type
+      //       inference of instances through member access as shape types. We will also have to handle upper bounds
+      //       narrowing with possibly intersection types. All quite hairy.
+      //          - Following the fixed-point approach of inference, an upper bound that doesn't contain the member
+      //            will eventually lead to a compilation error during type inference.
+      //          - Alternatively, the algorithm may check, in addition to Equals and Subtypes judgments, that member
+      //            accesses are all legal given the candidateType of each instance.
 
       // We cannot decide the member until the type has been inferred. Hence we first have to return an "unresolved
       // member access" expression node, which will be resolved later.
@@ -145,8 +154,13 @@ class InferringExpressionTransformationVisitor(
       // TODO: If append also has to work for maps, we might have to rewrite these rules or even use alternative judgments.
       val elementType = new InferenceVariable
       val combinedType = new InferenceVariable
+
+      // The Equals judgment is chosen deliberately, because we want the list's type to be able to be inferred from the
+      // combined type (which might in turn be inferred from an explicitly typed variable declaration). This inference
+      // is possible due to the bidirectionality of the LUB judgment.
       typingJudgments = typingJudgments :+ TypingJudgment.Equals(ListType(elementType), left.tpe, position)
       typingJudgments = typingJudgments :+ TypingJudgment.LeastUpperBound(combinedType, Vector(elementType, right.tpe), position)
+
       Expression.BinaryOperation(BinaryOperator.Append, left, right, ListType(combinedType), position).compiled
 
     // Loops.
@@ -171,10 +185,10 @@ class InferringExpressionTransformationVisitor(
     //       only need to be inferred if their instance expression is not yet inferred.)
     typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(left.tpe, BasicType.Real, position)
     typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(right.tpe, BasicType.Real, position)
-    val result = new InferenceVariable
-    typingJudgments = typingJudgments :+ TypingJudgment.LeastUpperBound(result, Vector(left.tpe, right.tpe), position)
+    val resultType = new InferenceVariable
+    typingJudgments = typingJudgments :+ TypingJudgment.LeastUpperBound(resultType, Vector(left.tpe, right.tpe), position)
 
-    Expression.BinaryOperation(operator, left, right, result, position)
+    Expression.BinaryOperation(operator, left, right, resultType, position)
   }
 
   override def visitTernary(node: TernaryNode)(
@@ -309,6 +323,13 @@ class InferringExpressionTransformationVisitor(
 
   private def inferLoopType(body: Expression, position: Position): InferenceVariable = {
     val resultType = new InferenceVariable
+    // The Equals judgment is chosen deliberately so that we can infer the body's type via a potentially explicitly
+    // specified result type.
+    // For example:
+    //    let things = [%{ x: 5 }, %{ x: -2 }, %{ x: 12 }]
+    //    let functions: %{ n: Int } => Int = for (v <- things) { v2 => v2.n * v.x }
+    // TODO: This also needs to work for map functions...
+    // TODO: Would Scala infer this with a for-yield and a map?
     typingJudgments = typingJudgments :+ TypingJudgment.Equals(resultType, ListType(body.tpe), position)
     resultType
   }
