@@ -32,8 +32,7 @@ class InferenceSpec extends TypeSpec {
     val result = InferenceResolution.infer(Vector(
       TypingJudgment.Subtypes(a, BasicType.Real, Position.internal),
       TypingJudgment.Subtypes(b, BasicType.Real, Position.internal),
-      TypingJudgment.Subtypes(a, c, Position.internal),
-      TypingJudgment.Subtypes(b, c, Position.internal),
+      TypingJudgment.LeastUpperBound(c, Vector(a, b), Position.internal),
     ))(null)
 
     println(result)
@@ -47,8 +46,7 @@ class InferenceSpec extends TypeSpec {
 
     val result = InferenceResolution.infer(Vector(
       TypingJudgment.Equals(ListType(element), list, Position.internal),
-      TypingJudgment.Subtypes(element, combined, Position.internal),
-      TypingJudgment.Subtypes(newElement, combined, Position.internal),
+      TypingJudgment.LeastUpperBound(combined, Vector(element, newElement), Position.internal),
     ))(null)
 
     println(result)

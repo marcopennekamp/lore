@@ -1,7 +1,7 @@
 package lore.compiler.phases.typing.inference
 
 import lore.compiler.core.{Compilation, CompilationException, Error}
-import lore.compiler.phases.typing.inference.Inference.{Assignments, instantiateByBound, isFullyInferred}
+import lore.compiler.phases.typing.inference.Inference.{Assignments, instantiateByBound, isFullyInferred, variables}
 import lore.compiler.phases.typing.inference.InferenceBounds.BoundType
 import lore.compiler.phases.typing.inference.InferenceVariable.{isDefined, isDefinedAt}
 import lore.compiler.types._
@@ -20,23 +20,13 @@ object TypeMatcher {
   /**
     * If all inference variables in `source` are defined, the function matches all inference variables in `target`
     * using [[InferenceBounds.narrowBound]] for both bound types.
-    *
-    * If some inference variables in `source` are not yet defined, the operation fails and results in a compilation
-    * error. If `target` contains no inference variables, no bounds can be narrowed and the operation fails. These
-    * errors will usually be recovered from during Equals judgment resolution.
     */
   def narrowBounds(assignments: Assignments, source: Type, target: Type, context: TypingJudgment): Compilation[Assignments] = {
-    // TODO: Do we even need these errors now that we don't use error recovery as a means of implementing unification?
-    //       Or are they simply "does not apply" criteria?
-    if (!Inference.variables(source).forall(isDefined(assignments, _))) {
-      Compilation.fail(UndefinedInferenceVariables(source, target, context))
-    } else if (isFullyInferred(target)) {
-      Compilation.fail(TargetFullyInferred(context))
-    } else {
+    if (Inference.variables(source).forall(isDefined(assignments, _))) {
       matchAll(InferenceBounds.narrowBound)(assignments, source, target, BoundType.Lower, context).flatMap(
         matchAll(InferenceBounds.narrowBound)(_, source, target, BoundType.Upper, context)
       )
-    }
+    } else Compilation.succeed(assignments)
   }
 
   /**

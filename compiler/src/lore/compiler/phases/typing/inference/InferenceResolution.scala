@@ -26,45 +26,16 @@ object InferenceResolution {
     //       and will remain likely due to its complexity), a fixed judgment order will make reproducing errors much
     //       easier.
 
-    // Simplify first so that we
-    simplify(judgments).flatMap { simplification =>
-      var assignments = simplification.assignments
-      var workingSet = simplification.complexJudgments.toSet
+    // Simplify first so that we throw fewer judgments at the fixed-point algorithm.
+    simplify(judgments).flatMap { case Simplification(complexJudgments, startingAssignments) =>
+      step(startingAssignments, complexJudgments.reverse).flatMap { finalAssignments =>
+        // TODO: Do we have to manually ensure that all inference variables contained in any judgment are assigned at least
+        //       a candidate type? If this is not the case for some judgment list, type inference is not complete!
 
-      while (workingSet.nonEmpty) {
-        // We have to pick judgments which we can resolve right away.
-        val resolvable = workingSet.filter(isResolvable(assignments, _))
-        if (resolvable.isEmpty) {
-          throw CompilationException(s"The type inference working set $workingSet cannot be reduced any further. This is likely due to a flaw in the type inference algorithm.")
-        }
-
-        //println(s"Resolvable: $resolvable")
-
-        val compilation = resolvable.toVector.foldLeft(Compilation.succeed(assignments)) {
-          case (compilation, typingJudgment) => compilation.flatMap { assignments => resolve(assignments, typingJudgment) }
-        }
-
-        compilation match {
-          case Result(newAssignments, _) =>
-            assignments = newAssignments
-          //println(s"New assignments:")
-          //newAssignments.values.toVector.sortBy(_.variable.actualName).foreach(println)
-          //println()
-          case Errors(_, _) =>
-            //println(s"Failed!")
-            //println()
-            return compilation
-        }
-
-        workingSet = workingSet -- resolvable
+        // Once all inference variables have been instantiated, make another pass over all judgments to check equality
+        // and subtyping constraints.
+        judgments.map(check(finalAssignments)).simultaneous.map(_ => finalAssignments)
       }
-
-      // TODO: Do we have to manually ensure that all inference variables contained in any judgment are assigned at least
-      //       a candidate type? If this is not the case for some judgment list, type inference is not complete!
-
-      // Once all inference variables have been instantiated, make another pass over all judgments to check equality
-      // and subtyping constraints.
-      judgments.map(check(assignments)).simultaneous.map(_ => assignments)
     }
   }
 
@@ -92,6 +63,29 @@ object InferenceResolution {
       }
 
       Simplification(complexJudgments, assignments)
+    }
+  }
+
+  /**
+    * Takes a single step in the inference process by applying all judgments to the given assignment map. If the
+    * assignments change, another step is initiated. Otherwise, the final assignments are returned.
+    *
+    * TODO: Terminate if we go 1000 iterations deep or detect cycles in another manner.
+    */
+  private def step(assignments: Assignments, judgments: Vector[TypingJudgment])(implicit registry: Registry): Compilation[Assignments] = {
+    val compilation = judgments.foldLeft(Compilation.succeed(assignments)) {
+      case (compilation, judgment) => compilation.flatMap(resolve(_, judgment))
+    }
+
+    compilation.flatMap { assignments2 =>
+      if (assignments != assignments2) {
+        println("Iteration result:")
+        assignments2.foreach(println)
+        println()
+        step(assignments2, judgments)
+      } else {
+        Compilation.succeed(assignments2)
+      }
     }
   }
 
@@ -128,10 +122,6 @@ object InferenceResolution {
     */
   private def resolve(assignments: Assignments, judgment: TypingJudgment)(implicit registry: Registry): Compilation[Assignments] = judgment match {
     case TypingJudgment.Equals(t1, t2, _) =>
-      // TODO: If either type is not fully defined, we certainly want to apply the rule later once again to catch all
-      //       relationships. This plays into the idea that the constraints need to be applied with a fixed-point
-      //       algorithm. Note that "fully defined" means that the bounds have settled on their eventual result. This
-      //       is in contrast to merely "defined" variables, which may still change their bounds.
       Unification.unify(assignments, t1, t2, judgment)
 
     case TypingJudgment.Subtypes(t1, t2, _) =>
@@ -147,7 +137,8 @@ object InferenceResolution {
         TypeMatcher.ensureBoundsIfDefined(_, t1, t2, BoundType.Lower, judgment),
       )
 
-    case TypingJudgment.Assign(target, source, _) => TypeMatcher.narrowBounds(assignments, source, target, judgment)
+    case TypingJudgment.Assign(target, source, _) =>
+      TypeMatcher.narrowBounds(assignments, source, target, judgment)
 
     case TypingJudgment.LeastUpperBound(target, types, _) =>
       val lubApplied = if (types.flatMap(Inference.variables).forall(isDefined(assignments, _))) {
@@ -195,21 +186,23 @@ object InferenceResolution {
       elementType.map(tpe => overrideBounds(assignments, target, tpe, tpe))
 
     case TypingJudgment.MultiFunctionCall(target, mf, arguments, position) =>
-      // TODO: Once we activate the "MostSpecific" typing judgment that will also be generated with each multi-function
-      //       call, we will already have performed the dispatch using the constraint solver. There might be no need to
-      //       instantiate the function, for example, if we take the bounds inferred for the type variables, instead.
-      implicit val callPosition: Position = position
-      val inputType = ProductType(arguments.map(tpe => instantiate(assignments, tpe, _.candidateType)))
-      mf.min(inputType) match {
-        case min if min.isEmpty => Compilation.fail(EmptyFit(mf, inputType))
-        case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, inputType, min))
-        case functionDefinition +: _ =>
-          functionDefinition.instantiate(inputType).map { instance =>
-            // TODO: Should we override bounds here? Find examples and counterexamples.
-            val result = instance.signature.outputType
-            overrideBounds(assignments, target, result, result)
-          }
-      }
+      if (arguments.flatMap(Inference.variables).forall(isDefined(assignments, _))) {
+        // TODO: Once we activate the "MostSpecific" typing judgment that will also be generated with each multi-function
+        //       call, we will already have performed the dispatch using the constraint solver. There might be no need to
+        //       instantiate the function, for example, if we take the bounds inferred for the type variables, instead.
+        implicit val callPosition: Position = position
+        val inputType = ProductType(arguments.map(tpe => instantiate(assignments, tpe, _.candidateType)))
+        mf.min(inputType) match {
+          case min if min.isEmpty => Compilation.fail(EmptyFit(mf, inputType))
+          case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, inputType, min))
+          case functionDefinition +: _ =>
+            functionDefinition.instantiate(inputType).map { instance =>
+              // TODO: Should we override bounds here? Find examples and counterexamples.
+              val result = instance.signature.outputType
+              overrideBounds(assignments, target, result, result)
+            }
+        }
+      } else Compilation.succeed(assignments)
 
     case TypingJudgment.MostSpecific(reference, judgments, _) =>
       ???
