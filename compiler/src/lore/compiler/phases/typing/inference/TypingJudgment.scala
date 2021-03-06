@@ -1,6 +1,7 @@
 package lore.compiler.phases.typing.inference
 
 import lore.compiler.core.{Position, Positioned}
+import lore.compiler.phases.typing.inference.Inference.isFullyInferred
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.types.Type
 
@@ -106,6 +107,16 @@ object TypingJudgment {
   case class MostSpecific(reference: InferenceVariable, alternatives: Vector[TypingJudgment], position: Position) extends TypingJudgment
 
   case class Conjunction(judgments: Vector[TypingJudgment], position: Position) extends TypingJudgment
+
+  def isSimple(judgment: TypingJudgment): Boolean = judgment match {
+    case Equals(t1, t2, _) => isFullyInferred(t1) || isFullyInferred(t2)
+    case Subtypes(t1, t2, _) => isFullyInferred(t1) || isFullyInferred(t2)
+    case Assign(_, source, _) => isFullyInferred(source)
+    case LeastUpperBound(_, types, _) => types.forall(isFullyInferred)
+    case operation: Operation => operation.operands.forall(isFullyInferred)
+    case MostSpecific(_, alternatives, _) => alternatives.forall(isSimple)
+    case Conjunction(judgments, _) => judgments.forall(isSimple)
+  }
 
   def stringify(judgment: TypingJudgment): String = judgment match {
     case Equals(t1, t2, _) => s"$t1 :=: $t2"

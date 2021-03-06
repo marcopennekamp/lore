@@ -13,9 +13,6 @@ import lore.compiler.types.{LeastUpperBound, ListType, MapType, ProductType, Typ
 object InferenceResolution {
 
   def infer(judgments: Vector[TypingJudgment])(implicit registry: Registry): Compilation[Assignments] = {
-    var assignments: Assignments = Map.empty
-    var workingSet = judgments.toSet
-
     // TODO: We probably need to solve this problem using a fixed-point approach, where the algorithm applies all
     //       resolvable judgments with each step until there are no more changes to the assignments.
     //       For example, let's say we have an equality a :=: b and b is already defined as b(lower: Nothing, upper: X).
@@ -24,41 +21,78 @@ object InferenceResolution {
     // TODO: To optimize checking assignments equality (we want to stop if old assignments == new assignments), we
     //       could keep a changeset with each iteration of the algorithm that tracks bounds changes. If the changeset
     //       is empty, assignments haven't changed and the algorithm can terminate.
+    // TODO: Always sort resolvables so that the algorithm remains predictable throughout compilation passes. A fixed
+    //       order isn't important when the algorithm is perfectly bug-free. But if the algorithm has a bug (which is
+    //       and will remain likely due to its complexity), a fixed judgment order will make reproducing errors much
+    //       easier.
 
-    while (workingSet.nonEmpty) {
-      // We have to pick judgments which we can resolve right away.
-      val resolvable = workingSet.filter(isResolvable(assignments, _))
-      if (resolvable.isEmpty) {
-        throw CompilationException(s"The type inference working set $workingSet cannot be reduced any further. This is likely due to a flaw in the type inference algorithm.")
+    // Simplify first so that we
+    simplify(judgments).flatMap { simplification =>
+      var assignments = simplification.assignments
+      var workingSet = simplification.complexJudgments.toSet
+
+      while (workingSet.nonEmpty) {
+        // We have to pick judgments which we can resolve right away.
+        val resolvable = workingSet.filter(isResolvable(assignments, _))
+        if (resolvable.isEmpty) {
+          throw CompilationException(s"The type inference working set $workingSet cannot be reduced any further. This is likely due to a flaw in the type inference algorithm.")
+        }
+
+        //println(s"Resolvable: $resolvable")
+
+        val compilation = resolvable.toVector.foldLeft(Compilation.succeed(assignments)) {
+          case (compilation, typingJudgment) => compilation.flatMap { assignments => resolve(assignments, typingJudgment) }
+        }
+
+        compilation match {
+          case Result(newAssignments, _) =>
+            assignments = newAssignments
+          //println(s"New assignments:")
+          //newAssignments.values.toVector.sortBy(_.variable.actualName).foreach(println)
+          //println()
+          case Errors(_, _) =>
+            //println(s"Failed!")
+            //println()
+            return compilation
+        }
+
+        workingSet = workingSet -- resolvable
       }
 
-      println(s"Resolvable: $resolvable")
+      // TODO: Do we have to manually ensure that all inference variables contained in any judgment are assigned at least
+      //       a candidate type? If this is not the case for some judgment list, type inference is not complete!
 
-      val compilation = resolvable.toVector.foldLeft(Compilation.succeed(assignments)) {
-        case (compilation, typingJudgment) => compilation.flatMap { assignments => resolve(assignments, typingJudgment) }
-      }
+      // Once all inference variables have been instantiated, make another pass over all judgments to check equality
+      // and subtyping constraints.
+      judgments.map(check(assignments)).simultaneous.map(_ => assignments)
+    }
+  }
 
-      compilation match {
-        case Result(newAssignments, _) =>
-          assignments = newAssignments
-          println(s"New assignments:")
-          newAssignments.values.toVector.sortBy(_.variable.actualName).foreach(println)
-          println()
-        case Errors(_, _) =>
-          println(s"Failed!")
-          println()
-          return compilation
-      }
+  case class Simplification(complexJudgments: Vector[TypingJudgment], assignments: Assignments)
 
-      workingSet = workingSet -- resolvable
+  /**
+    * Simplifies a given list of judgments by checking, applying, and removing the judgments which do not depend on any
+    * inference variables. The resulting assignment map can be viewed as a starting point for complex inference.
+    */
+  private def simplify(judgments: Vector[TypingJudgment])(implicit registry: Registry): Compilation[Simplification] = {
+    val (simpleJudgments, complexJudgments) = judgments.partition(TypingJudgment.isSimple)
+
+    val compilation = simpleJudgments.foldLeft(Compilation.succeed(Map.empty: Assignments)) {
+      case (compilation, judgment) => compilation.flatMap(assignments => InferenceResolution.resolve(assignments, judgment))
     }
 
-    // TODO: Do we have to manually ensure that all inference variables contained in any judgment are assigned at least
-    //       an upper bound? If this is not the case for some judgment list, type inference is not complete!
+    compilation.map { assignments =>
+      if (simpleJudgments.nonEmpty) {
+        println("Simplified the following judgments:")
+        simpleJudgments.foreach(println)
+        println()
+        println("Resulting in these starting assignments:")
+        assignments.values.foreach(println)
+        println()
+      }
 
-    // Once all inference variables have been instantiated, make another pass over all judgments to check equality
-    // and subtyping constraints.
-    judgments.map(check(assignments)).simultaneous.map(_ => assignments)
+      Simplification(complexJudgments, assignments)
+    }
   }
 
   /**
@@ -208,6 +242,7 @@ object InferenceResolution {
         Compilation.fail(UnsatisfiedSubtypes(judgment, it1, it2))
       } else Verification.succeed
 
+    // TODO: Check that LUB-based subtyping holds?
     case _ => Verification.succeed
   }
 
