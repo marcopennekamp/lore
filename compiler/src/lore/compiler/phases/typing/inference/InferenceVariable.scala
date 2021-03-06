@@ -28,6 +28,9 @@ object InferenceVariable {
   // TODO: This is only temporary!!
   protected var nameCounter = 0
 
+  // TODO: Match the notions of "isDefined" with the different versions of instantiate. There should be an isDefined
+  //       for lower, upper, lower AND upper, and candidate type versions.
+
   /**
     * Whether the given inference variable is defined at all.
     */

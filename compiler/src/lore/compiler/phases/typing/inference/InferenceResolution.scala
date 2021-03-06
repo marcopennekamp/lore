@@ -175,15 +175,17 @@ object InferenceResolution {
       }
 
     case TypingJudgment.ElementType(target, collection, position) =>
-      // Much like member types, the element type is definitely determined by the collection type and may only change
-      // by overriding its bounds due to a changing collection type.
-      val instantiatedCollection = instantiate(assignments, collection, _.candidateType)
-      val elementType = instantiatedCollection match {
-        case ListType(element) => Compilation.succeed(element)
-        case MapType(key, value) => Compilation.succeed(ProductType(Vector(key, value)))
-        case _ => Compilation.fail(CollectionExpected(instantiatedCollection, position))
-      }
-      elementType.map(tpe => overrideBounds(assignments, target, tpe, tpe))
+      if (Inference.variables(collection).forall(isDefined(assignments, _))) {
+        // Much like member types, the element type is definitely determined by the collection type and may only change
+        // by overriding its bounds due to a changing collection type.
+        val instantiatedCollection = instantiate(assignments, collection, _.candidateType)
+        val elementType = instantiatedCollection match {
+          case ListType(element) => Compilation.succeed(element)
+          case MapType(key, value) => Compilation.succeed(ProductType(Vector(key, value)))
+          case _ => Compilation.fail(CollectionExpected(instantiatedCollection, position))
+        }
+        elementType.map(tpe => overrideBounds(assignments, target, tpe, tpe))
+      } else Compilation.succeed(assignments)
 
     case TypingJudgment.MultiFunctionCall(target, mf, arguments, position) =>
       if (arguments.flatMap(Inference.variables).forall(isDefined(assignments, _))) {
