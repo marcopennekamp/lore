@@ -8,29 +8,29 @@ class ConstructionSpec extends TypeSpec {
 
   "IntersectionType.construct" should "handle shape types correctly" in {
     IntersectionType.construct(Vector(
-      shape("x" -> BasicType.Real),
-      shape("y" -> BasicType.Real),
-      shape("z" -> BasicType.Real),
-    )) shouldEqual shape("x" -> BasicType.Real, "y" -> BasicType.Real, "z" -> BasicType.Real)
+      ShapeType("x" -> BasicType.Real),
+      ShapeType("y" -> BasicType.Real),
+      ShapeType("z" -> BasicType.Real),
+    )) shouldEqual ShapeType("x" -> BasicType.Real, "y" -> BasicType.Real, "z" -> BasicType.Real)
 
     IntersectionType.construct(Vector(
-      shape("animal" -> Chicken),
-      shape("animal" -> Animal, "size" -> BasicType.Int),
-      shape("size" -> BasicType.Real),
-    )) shouldEqual shape("animal" -> Chicken, "size" -> BasicType.Int)
+      ShapeType("animal" -> Chicken),
+      ShapeType("animal" -> Animal, "size" -> BasicType.Int),
+      ShapeType("size" -> BasicType.Real),
+    )) shouldEqual ShapeType("animal" -> Chicken, "size" -> BasicType.Int)
 
     IntersectionType.construct(Vector(
       Cat,
-      shape("x" -> BasicType.Real),
+      ShapeType("x" -> BasicType.Real),
       Animal,
       Chicken,
-      shape("y" -> BasicType.Real),
+      ShapeType("y" -> BasicType.Real),
       BasicType.String,
-      shape("z" -> BasicType.Real),
+      ShapeType("z" -> BasicType.Real),
       BasicType.Any,
       ScottishFold,
     )) shouldEqual IntersectionType(Set(
-      shape("x" -> BasicType.Real, "y" -> BasicType.Real, "z" -> BasicType.Real),
+      ShapeType("x" -> BasicType.Real, "y" -> BasicType.Real, "z" -> BasicType.Real),
       ScottishFold,
       Chicken,
       BasicType.String,

@@ -55,16 +55,16 @@ class FitSpec extends TypeSpec {
     import ShapeTypes._
 
     { val A = new TypeVariable("A", BasicType.Nothing, BasicType.Any, 0)
-      Goldfish fitsInto shape("name" -> A)
-      Goldfish fitsInto shape("name" -> A, "size" -> BasicType.Real)
-      Goldfish fitsInto shape("name" -> BasicType.String, "size" -> A)
-      Goldfish fitsNotInto shape("name" -> A, "size" -> A)
+      Goldfish fitsInto ShapeType("name" -> A)
+      Goldfish fitsInto ShapeType("name" -> A, "size" -> BasicType.Real)
+      Goldfish fitsInto ShapeType("name" -> BasicType.String, "size" -> A)
+      Goldfish fitsNotInto ShapeType("name" -> A, "size" -> A)
     }
     { val X = new TypeVariable("X", BasicType.Nothing, BasicType.Real, 0)
       val Y = new TypeVariable("Y", BasicType.Nothing, BasicType.Real, 1)
       val Z = new TypeVariable("Z", BasicType.Nothing, BasicType.Real, 2)
-      val T2D = shape("x" -> X, "y" -> Y)
-      val T3D = T2D & shape("z" -> Z)
+      val T2D = ShapeType("x" -> X, "y" -> Y)
+      val T3D = T2D & ShapeType("z" -> Z)
       Position2D fitsInto T2D
       Position2D fitsNotInto T3D
       Position3D fitsInto T2D
@@ -75,9 +75,9 @@ class FitSpec extends TypeSpec {
     { val A = new TypeVariable("A", BasicType.Nothing, BasicType.Any, 0)
       // TODO: The test with B currently does not work. See the TODO in TypeVariableAllocation.of.
       //val B = new TypeVariable("B", BasicType.Nothing, ListType(A), 1)
-      //Zoo fitsInto shape("animals" -> B)
+      //Zoo fitsInto ShapeType("animals" -> B)
 
-      Zoo fitsInto shape("animals" -> ListType(A))
+      Zoo fitsInto ShapeType("animals" -> ListType(A))
     }
   }
 

@@ -41,15 +41,15 @@ trait TypeSpec extends BaseSpec with TypeSyntax {
     val Bicycle = havingStruct("Bicycle") */
 
     object ShapeTypes {
-      val Empty = shape()
+      val Empty = ShapeType()
 
-      val Position2D = shape("x" -> BasicType.Real, "y" -> BasicType.Real)
-      val Position3D = shape("x" -> BasicType.Real, "y" -> BasicType.Real, "z" -> BasicType.Real)
+      val Position2D = ShapeType("x" -> BasicType.Real, "y" -> BasicType.Real)
+      val Position3D = ShapeType("x" -> BasicType.Real, "y" -> BasicType.Real, "z" -> BasicType.Real)
 
-      val Box2D = shape("x" -> BasicType.Int, "y" -> BasicType.Int, "width" -> BasicType.Int, "height" -> BasicType.Int)
+      val Box2D = ShapeType("x" -> BasicType.Int, "y" -> BasicType.Int, "width" -> BasicType.Int, "height" -> BasicType.Int)
 
-      val Named = shape("name" -> BasicType.String)
-      val Sized = shape("size" -> BasicType.Real)
+      val Named = ShapeType("name" -> BasicType.String)
+      val Sized = ShapeType("size" -> BasicType.Real)
       val NamedAndSized = Named & Sized
     }
   }

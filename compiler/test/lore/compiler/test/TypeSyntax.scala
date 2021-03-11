@@ -4,7 +4,6 @@ import lore.compiler.semantics.Registry
 import lore.compiler.types._
 
 trait TypeSyntax {
-  def shape(properties: (String, Type)*): ShapeType = ShapeType(properties.toVector.map { case (name, tpe) => ShapeType.Property(name, tpe) })
   implicit def toType(name: String)(implicit registry: Registry): Type = registry.getType(name).get
   implicit def toProductTypeSS(tuple: (String, String))(implicit registry: Registry): ProductType = toProductTypeTT((toType(tuple._1), toType(tuple._2)))
   implicit def toProductTypeTS(tuple: (Type, String))(implicit registry: Registry): ProductType = toProductTypeTT((tuple._1, toType(tuple._2)))

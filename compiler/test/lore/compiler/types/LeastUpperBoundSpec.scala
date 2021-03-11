@@ -63,7 +63,7 @@ class LeastUpperBoundSpec extends TypeSpec {
     (Goldfish, ShapeTypes.Named) --> ShapeTypes.Named
     (ShapeTypes.Sized, Goldfish) --> ShapeTypes.Sized
     (ShapeTypes.Sized, ShapeTypes.Named) --> ShapeTypes.Empty
-    (shape("animal" -> (Cat | Penguin)), shape("animal" -> Raven)) --> shape("animal" -> Animal)
+    (ShapeType("animal" -> (Cat | Penguin)), ShapeType("animal" -> Raven)) --> ShapeType("animal" -> Animal)
   }
 
   it should "return the correct least upper bounds for type variables" in {
