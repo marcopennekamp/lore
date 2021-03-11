@@ -160,6 +160,7 @@ object TypingJudgment {
     case Subtypes(t1, t2, _) => isFullyInferred(t1) || isFullyInferred(t2)
     case Assign(_, source, _) => isFullyInferred(source)
     case LeastUpperBound(_, types, _) => types.forall(isFullyInferred)
+    case MemberAccess(_, source, _, _) => isFullyInferred(source)
     case operation: Operation => operation.operands.forall(isFullyInferred)
     case MostSpecific(_, alternatives, _) => alternatives.forall(isSimple)
     case Conjunction(judgments, _) => judgments.forall(isSimple)
