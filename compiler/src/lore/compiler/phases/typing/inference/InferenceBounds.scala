@@ -5,9 +5,6 @@ import lore.compiler.phases.typing.inference.Inference.Assignments
 import lore.compiler.phases.typing.inference.InferenceVariable.effectiveBounds
 import lore.compiler.types.{BasicType, Subtyping, Type}
 
-// TODO: Do we still need the Option bounds now that Equals resolution has been fixed?
-//          - It would seem so, as we now also need to differentiate between inference variables without any upper bound.
-
 case class InferenceBounds(variable: InferenceVariable, lower: Option[Type], upper: Option[Type]) {
   val lowerOrNothing: Type = lower.getOrElse(BasicType.Nothing)
   val upperOrAny: Type = upper.getOrElse(BasicType.Any)
@@ -111,8 +108,6 @@ object InferenceBounds {
   def ensureBoundSupertypes(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, context: TypingJudgment): Compilation[Assignments] = {
     val bounds = effectiveBounds(assignments, inferenceVariable)
 
-    println(s"$bounds ensure lower $lowerBound")
-
     if (Subtyping.isSubtype(lowerBound, bounds.lowerOrNothing)) {
       Compilation.succeed(assignments)
     } else {
@@ -129,8 +124,6 @@ object InferenceBounds {
     */
   def ensureBoundSubtypes(assignments: Assignments, inferenceVariable: InferenceVariable, upperBound: Type, context: TypingJudgment): Compilation[Assignments] = {
     val bounds = effectiveBounds(assignments, inferenceVariable)
-
-    println(s"$bounds ensure upper $upperBound")
 
     if (Subtyping.isSubtype(bounds.upperOrAny, upperBound)) {
       Compilation.succeed(assignments)

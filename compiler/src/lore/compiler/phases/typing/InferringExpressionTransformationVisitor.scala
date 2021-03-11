@@ -101,15 +101,6 @@ class InferringExpressionTransformationVisitor(
       // TODO: A member only needs to be resolved lazily if the expression's type is not yet inferred. The expression's
       //       type will be clear in the majority of cases, so here is a chance to save on a lot of typing judgments
       //       if we check whether the expression actually even needs to be inferred.
-      // TODO: We might also have to add a judgment `expression.tpe :<: { name: memberType }` so that an inference
-      //       variable which is only typed through its lower bound (with an empty upper bound) cannot receive an upper
-      //       bound that doesn't contain the member. If we do this, however, we're opening the door to general type
-      //       inference of instances through member access as shape types. We will also have to handle upper bounds
-      //       narrowing with possibly intersection types. All quite hairy.
-      //          - Following the fixed-point approach of inference, an upper bound that doesn't contain the member
-      //            will eventually lead to a compilation error during type inference.
-      //          - Alternatively, the algorithm may check, in addition to Equals and Subtypes judgments, that member
-      //            accesses are all legal given the candidateType of each instance.
 
       // We cannot decide the member until the type has been inferred. Hence we first have to return an "unresolved
       // member access" expression node, which will be resolved later.

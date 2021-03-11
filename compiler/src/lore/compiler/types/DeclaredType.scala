@@ -34,8 +34,8 @@ trait DeclaredType extends NamedType {
   lazy val inheritedShapeType: ShapeType = ShapeType.combine(supertypes.filterType[ShapeType] ++ declaredSupertypes.map(_.inheritedShapeType))
 
   /**
-    * The declared type viewed as a compile-time shape type. For traits, this is equal to the [[inheritedShapeType]].
-    * For structs, this
+    * The declared type viewed as a compile-time shape type. By default, this is equal to the [[inheritedShapeType]].
+    * Structs, however, implement `asShapeType` based on their properties.
     */
   def asShapeType: ShapeType = inheritedShapeType
 

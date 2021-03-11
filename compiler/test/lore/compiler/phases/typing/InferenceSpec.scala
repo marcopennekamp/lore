@@ -2,7 +2,7 @@ package lore.compiler.phases.typing
 
 import lore.compiler.core.Position
 import lore.compiler.phases.typing.inference.{InferenceResolution, InferenceVariable, TypingJudgment}
-import lore.compiler.types.{BasicType, ListType, TypeSpec}
+import lore.compiler.types.{BasicType, ListType, ShapeType, TraitType, TypeSpec}
 
 class InferenceSpec extends TypeSpec {
 
@@ -52,7 +52,46 @@ class InferenceSpec extends TypeSpec {
     println(result)
   }
 
-  // TODO: This should work.
+  it should "reject an incorrectly narrowed member type (test:inference:0001)" in {
+    val C = new TraitType("C", Vector.empty)
+    val B = new TraitType("B", Vector(C))
+
+    val p = new InferenceVariable(Some("p"))
+    val x = new InferenceVariable(Some("x"))
+
+    val result = InferenceResolution.infer(Vector(
+      TypingJudgment.Subtypes(x, B, Position.internal),
+      TypingJudgment.Equals(p, ShapeType("m" -> C), Position.internal),
+      TypingJudgment.MemberAccess(x, p, "m", Position.internal),
+    ))(null)
+
+    println(result)
+  }
+
+  it should "infer a prematurely narrowed member type correctly (test:inference:0002)" in {
+    val C = new TraitType("C", Vector.empty)
+    val B = new TraitType("B", Vector(C))
+
+    val p = new InferenceVariable(Some("p"))
+    val x = new InferenceVariable(Some("x"))
+    val z = new InferenceVariable(Some("z"))
+
+    // The idea here is that the algorithm will type `x` as `B` right away, because it is most straight-forward. Then
+    // the next straight-forward step is typing `x` as `C`, because we have a member access `p.m` which is `C` at
+    // first. If the algorithm rejects these judgments at that stage, it is false: we later narrow p's upper bound to
+    // `{ m: B }`, which means that `x` will now be typed as `B`. Ultimately, the judgments are perfectly legal. The
+    // point of this test is to ensure that the compiler doesn't make the mistake of failing prematurely.
+    val result = InferenceResolution.infer(Vector(
+      TypingJudgment.Equals(z, B, Position.internal),
+      TypingJudgment.Subtypes(x, B, Position.internal),
+      TypingJudgment.Subtypes(p, ShapeType("m" -> C), Position.internal),
+      TypingJudgment.Subtypes(p, ShapeType("m" -> z), Position.internal),
+      TypingJudgment.MemberAccess(x, p, "m", Position.internal),
+    ))(null)
+
+    println(result)
+  }
+
   it should "infer the result of a judgment (iv1, Int) :=: (Real, iv2)" in {
     val iv1 = new InferenceVariable(Some("iv1"))
     val iv2 = new InferenceVariable(Some("iv2"))

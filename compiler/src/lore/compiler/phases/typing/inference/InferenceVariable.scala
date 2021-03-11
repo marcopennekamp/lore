@@ -30,6 +30,7 @@ object InferenceVariable {
 
   // TODO: Match the notions of "isDefined" with the different versions of instantiate. There should be an isDefined
   //       for lower, upper, lower AND upper, and candidate type versions.
+  //       Maybe even call it `mayInstantiate`.
 
   /**
     * Whether the given inference variable is defined at all.

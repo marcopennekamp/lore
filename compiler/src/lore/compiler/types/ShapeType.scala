@@ -49,6 +49,8 @@ object ShapeType {
     } else empty
   }
 
+  def apply(properties: (String, Type)*): ShapeType = apply(properties.map { case (name, tpe) => ShapeType.Property(name, tpe) })
+
   case class Property(name: String, tpe: Type) {
     def mapType(f: Type => Type): ShapeType.Property = this.copy(tpe = f(tpe))
 

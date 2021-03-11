@@ -1,14 +1,15 @@
 package lore.compiler.phases.typing.inference
 
-import lore.compiler.core.Compilation.Verification
+import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.core._
 import lore.compiler.phases.transformation.ExpressionBuilder.{AmbiguousCall, EmptyFit}
 import lore.compiler.phases.transformation.ExpressionTransformationVisitor.CollectionExpected
 import lore.compiler.phases.typing.inference.Inference.{Assignments, instantiate, instantiateByBound}
-import lore.compiler.phases.typing.inference.InferenceBounds.{BoundType, narrowBounds, overrideBounds}
-import lore.compiler.phases.typing.inference.InferenceVariable.isDefined
+import lore.compiler.phases.typing.inference.InferenceBounds.{BoundType, ensureBound, narrowBounds, overrideBounds}
+import lore.compiler.phases.typing.inference.InferenceVariable.{isDefined, isDefinedAt}
 import lore.compiler.semantics.Registry
-import lore.compiler.types.{LeastUpperBound, ListType, MapType, ProductType, Type}
+import lore.compiler.semantics.members.Member
+import lore.compiler.types._
 
 object InferenceResolution {
 
@@ -31,6 +32,9 @@ object InferenceResolution {
       step(startingAssignments, complexJudgments.reverse).flatMap { finalAssignments =>
         // TODO: Do we have to manually ensure that all inference variables contained in any judgment are assigned at least
         //       a candidate type? If this is not the case for some judgment list, type inference is not complete!
+        //        - This is especially relevant now that member access has become more "soft", which might lead to some
+        //          target inference variables to receive no bound at all. (Though that would probably just lead to a
+        //          "member not found" compilation error during the final checks.)
 
         // Once all inference variables have been instantiated, make another pass over all judgments to check equality
         // and subtyping constraints.
@@ -90,32 +94,6 @@ object InferenceResolution {
   }
 
   /**
-    * A judgment is resolvable if all inference variables in a "source" position have been defined.
-    */
-  private def isResolvable(assignments: Assignments, judgment: TypingJudgment): Boolean = judgment match {
-    case TypingJudgment.Equals(t1, t2, _) =>
-      // The Equals judgment is resolvable if either t1 or t2 contain no undefined inference variables. Even if the
-      // other type contains multiple inference variables, the judgment can be resolved by assigning multiple variables.
-      Inference.variables(t1).forall(isDefined(assignments, _)) || Inference.variables(t2).forall(isDefined(assignments, _))
-
-    case TypingJudgment.Subtypes(t1, t2, _) =>
-      // Note that a subtyping relationship t1 :<: t2 where only t2 contains inference variables is still resolvable,
-      // because the inference algorithm can set the lower bound of t2 to t1, which provides useful information.
-      // TODO: Shouldn't either case have variables be defined at lower/upper bounds?
-      Inference.variables(t1).forall(isDefined(assignments, _)) || Inference.variables(t2).forall(isDefined(assignments, _))
-
-    case TypingJudgment.Assign(_, source, _) => Inference.variables(source).forall(isDefined(assignments, _))
-
-    case TypingJudgment.LeastUpperBound(target, types, _) =>
-      types.flatMap(Inference.variables).forall(isDefined(assignments, _)) || Inference.variables(target).forall(isDefined(assignments, _))
-
-    case judgment: TypingJudgment.Operation => judgment.operands.flatMap(Inference.variables).forall(isDefined(assignments, _))
-
-    case TypingJudgment.MostSpecific(_, alternatives, _) =>
-      alternatives.forall(isResolvable(assignments, _))
-  }
-
-  /**
     * Note: Resolution must be repeatable so that the fixed-point algorithm can work. Crucially, if a judgment is
     * resolved given assignments A and all the judgment's aspects have been incorporated into A, `resolve` should lead
     * to A and not another assignments map B or a compilation error, no matter how often the judgment is re-applied.
@@ -125,14 +103,6 @@ object InferenceResolution {
       Unification.unify(assignments, t1, t2, judgment)
 
     case TypingJudgment.Subtypes(t1, t2, _) =>
-      // A subtyping relationship t1 :<: t2 can inform both the upper bound of t1 as well as the lower bound of t2:
-      //  - In the upper-bound case, we instantiate t2's inference variables with their upper bounds. Consider the
-      //    following example: iv1 :<: iv2(Int, Real). Because iv2 can at most be Real, iv1's domain must also be
-      //    restricted to be at most Real. If we gave iv1 the upper bound Int, we might later type iv2 as Real and iv1
-      //    would have an upper bound that's too narrow.
-      //  - The lower-bound case is the dual to the upper-bound case. Given iv2(Int, Real) :<: iv1, we must assign to
-      //    iv1 the lower bound Int. If we gave iv1 the lower bound Real, we might later type iv2 as Int and iv1 would
-      //    have a lower bound that's too narrow.
       TypeMatcher.ensureBoundsIfDefined(assignments, t2, t1, BoundType.Upper, judgment).flatMap(
         TypeMatcher.ensureBoundsIfDefined(_, t1, t2, BoundType.Lower, judgment),
       )
@@ -155,24 +125,25 @@ object InferenceResolution {
       }
 
     case TypingJudgment.MemberAccess(target, source, name, _) =>
-      // For member access, the candidate type of `source` is crucial.
-      // TODO: Rewrite this:
-      // Because a subtype of the upper bound will always
-      // contain a member of a subtype compared to the upper bound's member, we can be sure that the upper bound's
-      // member type is always a feasible choice.
-      // The `target` inference variable gets this type not only as its upper bound, but also as its lower bound. The
-      // reasoning is simple: Because the member's parent may always have its upper bound as a run-time type, the
-      // member's type at run-time may also be what's now the type of the member chosen through the upper bound of
-      // `source`. If we set the lower bound to anything but the member's upper bound, the type inference algorithm
-      // might illegally narrow the type too far down.
-      // In particular, we want to avoid that a subtyping judgment member_type :<: A2 narrows the member's previously
-      // decided upper bound from A1 to A2.
-      // TODO: When any inference variable bounds change in the source type, the member access should be re-evaluated
-      //       right away (in the fixpoint algorithm view). We might need a dependency graph, generally, that allows us
-      //       to follow the right "flow" in respect to which inference variables should be computed first.
-      instantiate(assignments, source, _.candidateType).member(name)(judgment.position).map { member =>
-        overrideBounds(assignments, target, member.tpe, member.tpe)
+      def resolveAt(boundType: BoundType)(innerAssignments: Assignments) = {
+        if (Inference.variables(source).forall(isDefinedAt(innerAssignments, _, boundType))) {
+          val instantiatedSource = instantiateByBound(innerAssignments, source, boundType)
+          instantiatedSource.members.get(name) match {
+            case Some(member) => ensureBound(innerAssignments, target, member.tpe, boundType, judgment)
+            case None => innerAssignments.compiled
+          }
+        } else innerAssignments.compiled
       }
+
+      def resolveBackwards(innerAssignments: Assignments) = {
+        if (Inference.variables(target).forall(isDefinedAt(innerAssignments, _, BoundType.Upper))) {
+          // TODO: We need to merge shape types for this to work for two or more member accesses.
+          val shape = ShapeType(name -> instantiateByBound(innerAssignments, target, BoundType.Upper))
+          TypeMatcher.matchAll(InferenceBounds.ensureBound)(innerAssignments, shape, source, BoundType.Upper, judgment)
+        } else innerAssignments.compiled
+      }
+
+      resolveAt(BoundType.Lower)(assignments).flatMap(resolveAt(BoundType.Upper)).flatMap(resolveBackwards)
 
     case TypingJudgment.ElementType(target, collection, position) =>
       if (Inference.variables(collection).forall(isDefined(assignments, _))) {
@@ -218,6 +189,13 @@ object InferenceResolution {
     override def message: String = s"The judgment $t1 :<: $t2 remains unsatisfied after type inference!"
   }
 
+  case class UnsatisfiedMemberAccess(judgment: TypingJudgment, target: Type, source: Type, member: Member) extends Error(judgment) {
+    override def message: String = s"The member ${member.name} of type $source has the type ${member.tpe}. However," +
+      s" during inference, the type $target was inferred. There is likely not enough type information in your code." +
+      s" If you are sure that your code is correct, please create a bug report on Github. The type inference code is" +
+      s" by no means perfect. Much obliged!"
+  }
+
   /**
     * Checks the given typing judgment with instantiated types. This ensures that type equality and subtyping
     * relationships actually hold with the inferred type assignments.
@@ -236,6 +214,15 @@ object InferenceResolution {
       if (!(it1 <= it2)) {
         Compilation.fail(UnsatisfiedSubtypes(judgment, it1, it2))
       } else Verification.succeed
+
+    case TypingJudgment.MemberAccess(target, source, name, position) =>
+      val instantiatedTarget = instantiate(assignments, target, _.candidateType)
+      val instantiatedSource = instantiate(assignments, source, _.candidateType)
+      instantiatedSource.member(name)(position).flatMap { member =>
+        if (instantiatedTarget != member.tpe) {
+          Compilation.fail(UnsatisfiedMemberAccess(judgment, instantiatedTarget, instantiatedSource, member))
+        } else Verification.succeed
+      }
 
     // TODO: Check that LUB-based subtyping holds?
     case _ => Verification.succeed
