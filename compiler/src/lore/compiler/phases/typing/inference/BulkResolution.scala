@@ -45,7 +45,7 @@ object BulkResolution {
 
     compilation.flatMap {
       case (newAssignments, remainingJudgments) =>
-        // If no judgments have been consumed,
+        // If no judgments have been consumed, bulk resolution has failed. We need to fall back to cycle resolution.
         if (judgments.length == remainingJudgments.length) {
           CycleResolution.infer(assignments, influenceGraph, judgments)
         } else {
