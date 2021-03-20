@@ -1,12 +1,25 @@
 package lore.compiler.phases.typing.inference
 
-import lore.compiler.core.CompilationException
+import lore.compiler.core.Compilation
 import lore.compiler.phases.typing.inference.InferenceBounds.BoundType
+import lore.compiler.semantics.Registry
 import lore.compiler.types._
 
 object Inference {
 
   type Assignments = Map[InferenceVariable, InferenceBounds]
+
+  def infer(judgments: Vector[TypingJudgment])(implicit registry: Registry): Compilation[Assignments] = {
+    // TODO: Judgments are only reversed to test the robustness of the inference algorithm! Remove later!!!
+    // Note that the order of judgments is important for reproducibility: we should always process the judgments in
+    // their order of declaration. In addition, this will give the algorithm the best chance at resolving type
+    // inference in one go, as the flow of typing most often follows the natural judgment order.
+    BulkResolution.infer(Map.empty, judgments.reverse).flatMap { assignments =>
+      // Once all inference variables have been instantiated, make another pass over all judgments to check equality
+      // and subtyping constraints.
+      judgments.map(JudgmentChecker.check(_, assignments)).simultaneous.map(_ => assignments)
+    }
+  }
 
   /**
     * This class is intended as an API for other components such as the [[lore.compiler.phases.typing.TypeRehydrationVisitor]].

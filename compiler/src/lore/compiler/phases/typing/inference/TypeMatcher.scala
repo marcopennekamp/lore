@@ -1,42 +1,28 @@
 package lore.compiler.phases.typing.inference
 
 import lore.compiler.core.{Compilation, CompilationException, Error}
-import lore.compiler.phases.typing.inference.Inference.{Assignments, instantiateByBound, isFullyInferred, variables}
+import lore.compiler.phases.typing.inference.Inference.{Assignments, instantiateByBound, isFullyInferred}
 import lore.compiler.phases.typing.inference.InferenceBounds.BoundType
-import lore.compiler.phases.typing.inference.InferenceVariable.{isDefined, isDefinedAt}
 import lore.compiler.types._
 
 object TypeMatcher {
 
-  case class UndefinedInferenceVariables(source: Type, target: Type, context: TypingJudgment) extends Error(context) {
-    override def message: String = s"Not all inference variables in $source are defined and thus cannot be used to " +
-      s"narrow the bounds of all inference variables in $target."
-  }
-
-  case class TargetFullyInferred(context: TypingJudgment) extends Error(context) {
-    override def message: String = "ABC" // TODO: Implement.
-  }
-
   /**
-    * If all inference variables in `source` are defined, the function matches all inference variables in `target`
-    * using [[InferenceBounds.narrowBound]] for both bound types.
+    * The function matches all inference variables in `target` to types from `source` using
+    * [[InferenceBounds.narrowBound]] for both bound types.
     */
   def narrowBounds(assignments: Assignments, source: Type, target: Type, context: TypingJudgment): Compilation[Assignments] = {
-    if (Inference.variables(source).forall(isDefined(assignments, _))) {
-      matchAll(InferenceBounds.narrowBound)(assignments, source, target, BoundType.Lower, context).flatMap(
-        matchAll(InferenceBounds.narrowBound)(_, source, target, BoundType.Upper, context)
-      )
-    } else Compilation.succeed(assignments)
+    matchAll(InferenceBounds.narrowBound)(assignments, source, target, BoundType.Lower, context).flatMap(
+      matchAll(InferenceBounds.narrowBound)(_, source, target, BoundType.Upper, context)
+    )
   }
 
   /**
-    * If all inference variables in `source` are defined at the given bound type, the function ensures the bound of all
-    * inference variables in `target` using [[InferenceBounds.ensureBound]].
+    * The function ensures the bound of all inference variables in `target` with types from `source` using
+    * [[InferenceBounds.ensureBound]].
     */
-  def ensureBoundsIfDefined(assignments: Assignments, source: Type, target: Type, boundType: BoundType, context: TypingJudgment): Compilation[Assignments] = {
-    if (Inference.variables(source).forall(isDefinedAt(assignments, _, boundType))) {
-      matchAll(InferenceBounds.ensureBound)(assignments, source, target, boundType, context)
-    } else Compilation.succeed(assignments)
+  def ensureBounds(assignments: Assignments, source: Type, target: Type, boundType: BoundType, context: TypingJudgment): Compilation[Assignments] = {
+    matchAll(InferenceBounds.ensureBound)(assignments, source, target, boundType, context)
   }
 
   case class IncompatibleMatch(source: Type, target: Type, context: TypingJudgment) extends Error(context) {

@@ -3,11 +3,11 @@ package lore.compiler.phases.transformation
 import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.phases.transformation.ExpressionVerification.IllegallyTypedExpression
+import lore.compiler.phases.typing.inference.Inference
 import lore.compiler.phases.typing.{BuiltinsVisitor, InferringExpressionTransformationVisitor, MutabilityVerifier, TypeRehydrationVisitor}
-import lore.compiler.phases.typing.inference.InferenceResolution
+import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.scopes.{TypeScope, VariableScope}
-import lore.compiler.semantics.Registry
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.types.{ProductType, Type}
@@ -35,7 +35,7 @@ object ExpressionTransformer {
         visitor.typingJudgments.foreach(println)
         println()
       }
-      inferredTypes <- InferenceResolution.infer(visitor.typingJudgments)
+      inferredTypes <- Inference.infer(visitor.typingJudgments)
       _ = {
         println("Inferred types:")
         println(inferredTypes)

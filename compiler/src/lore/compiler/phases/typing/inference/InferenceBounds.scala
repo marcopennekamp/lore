@@ -30,6 +30,11 @@ object InferenceBounds {
     case object Upper extends BoundType
   }
 
+  /**
+    * Whether bounds may not change further.
+    */
+  def areFixed(bounds: InferenceBounds): Boolean = bounds.lower.exists(l => bounds.upper.contains(l))
+
   case class InvalidLowerBound(inferenceVariable: InferenceVariable, newLowerBound: Type, currentBounds: InferenceBounds, context: TypingJudgment) extends Error(context) {
     override def message: String = s"Type error: $newLowerBound must be a supertype of lower bound ${currentBounds.lowerOrNothing} and a subtype of upper bound ${currentBounds.upperOrAny}."
   }

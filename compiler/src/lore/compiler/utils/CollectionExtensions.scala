@@ -40,6 +40,22 @@ object CollectionExtensions {
     def allEqual[V](by: A => V): Boolean = {
       vector.length <= 1 || vector.sliding(2).forall { case Vector(left, right) => by(left) == by(right) }
     }
+
+    def ifEmpty[B >: A](v: => B): Vector[B] = if (vector.nonEmpty) vector else Vector(v)
+
+    /**
+      * Applies the given function to each element in the list, returning immediately if a defined result has been
+      * returned by a call `f(a)`.
+      */
+    def firstDefined[B](f: A => Option[B]): Option[B] = {
+      for (a <- vector) {
+        f(a) match {
+          case some@Some(_) => return some
+          case None =>
+        }
+      }
+      None
+    }
   }
 
   implicit class OptionExtension[A](option: Option[A]) {

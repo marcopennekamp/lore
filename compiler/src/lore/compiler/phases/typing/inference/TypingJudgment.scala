@@ -78,6 +78,8 @@ object TypingJudgment {
   case class LeastUpperBound(target: InferenceVariable, types: Vector[Type], position: Position) extends TypingJudgment
 
   /**
+    * TODO: Rewrite this description with the change to graph-based type inference.
+    *
     * A MemberAccess judgment `target <- source.name` is resolved as follows:
     *
     *   1. If `source`'s lower bound is defined and contains a member `name`, the judgment ensures that the lower bound
@@ -123,8 +125,6 @@ object TypingJudgment {
 
   /**
     * Assigns the element type of `collection` to `target`.
-    *
-    * TODO: Get rid of the bounds overriding performed during ElementType resolution.
     */
   case class ElementType(target: InferenceVariable, collection: Type, position: Position) extends Operation {
     override def operands: Vector[Type] = Vector(collection)
@@ -155,6 +155,21 @@ object TypingJudgment {
 
   case class Conjunction(judgments: Vector[TypingJudgment], position: Position) extends TypingJudgment
 
+  /**
+    * Trivial typing judgments contain no inference variables at all.
+    */
+  def isTrivial(judgment: TypingJudgment): Boolean = judgment match {
+    case Equals(t1, t2, _) => isFullyInferred(t1) && isFullyInferred(t2)
+    case Subtypes(t1, t2, _) => isFullyInferred(t1) && isFullyInferred(t2)
+    case Assign(target, source, _) => isFullyInferred(target) && isFullyInferred(source)
+    case Conjunction(judgments, _) => judgments.forall(isTrivial)
+    case _ => false
+  }
+
+  /**
+    * Simple typing judgments only contain inference variables on one side, marking them as possible starting points of
+    * inference.
+    */
   def isSimple(judgment: TypingJudgment): Boolean = judgment match {
     case Equals(t1, t2, _) => isFullyInferred(t1) || isFullyInferred(t2)
     case Subtypes(t1, t2, _) => isFullyInferred(t1) || isFullyInferred(t2)

@@ -32,6 +32,8 @@ object InferenceVariable {
   //       for lower, upper, lower AND upper, and candidate type versions.
   //       Maybe even call it `mayInstantiate`.
 
+  // TODO: Refactor the following functions to "data first".
+
   /**
     * Whether the given inference variable is defined at all.
     */
@@ -54,6 +56,10 @@ object InferenceVariable {
     */
   def isDefinedAt(assignments: Assignments, inferenceVariable: InferenceVariable, boundTypes: Vector[BoundType]): Boolean = {
     boundTypes.forall(isDefinedAt(assignments, inferenceVariable, _))
+  }
+
+  def isDefinedAt(assignments: Assignments, tpe: Type, boundType: BoundType): Boolean = {
+    Inference.variables(tpe).forall(isDefinedAt(assignments, _, boundType))
   }
 
   /**

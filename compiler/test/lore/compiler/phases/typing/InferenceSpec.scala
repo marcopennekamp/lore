@@ -1,7 +1,7 @@
 package lore.compiler.phases.typing
 
 import lore.compiler.core.Position
-import lore.compiler.phases.typing.inference.{InferenceResolution, InferenceVariable, TypingJudgment}
+import lore.compiler.phases.typing.inference.{Inference, InferenceVariable, TypingJudgment}
 import lore.compiler.types.{BasicType, ListType, ShapeType, TraitType, TypeSpec}
 
 class InferenceSpec extends TypeSpec {
@@ -13,7 +13,7 @@ class InferenceSpec extends TypeSpec {
     val b = new InferenceVariable(Some("b"))
     val c = new InferenceVariable(Some("c"))
 
-    val result = InferenceResolution.infer(Vector(
+    val result = Inference.infer(Vector(
       TypingJudgment.Equals(a, BasicType.Real, Position.internal),
       TypingJudgment.Equals(b, a, Position.internal),
       TypingJudgment.Equals(a, b, Position.internal),
@@ -29,7 +29,7 @@ class InferenceSpec extends TypeSpec {
     val b = new InferenceVariable(Some("b"))
     val c = new InferenceVariable(Some("c"))
 
-    val result = InferenceResolution.infer(Vector(
+    val result = Inference.infer(Vector(
       TypingJudgment.Subtypes(a, BasicType.Real, Position.internal),
       TypingJudgment.Subtypes(b, BasicType.Real, Position.internal),
       TypingJudgment.LeastUpperBound(c, Vector(a, b), Position.internal),
@@ -44,7 +44,7 @@ class InferenceSpec extends TypeSpec {
     val newElement = BasicType.Real
     val combined = new InferenceVariable(Some("combined"))
 
-    val result = InferenceResolution.infer(Vector(
+    val result = Inference.infer(Vector(
       TypingJudgment.Equals(ListType(element), list, Position.internal),
       TypingJudgment.LeastUpperBound(combined, Vector(element, newElement), Position.internal),
     ))(null)
@@ -59,7 +59,7 @@ class InferenceSpec extends TypeSpec {
     val p = new InferenceVariable(Some("p"))
     val x = new InferenceVariable(Some("x"))
 
-    val result = InferenceResolution.infer(Vector(
+    val result = Inference.infer(Vector(
       TypingJudgment.Subtypes(x, B, Position.internal),
       TypingJudgment.Equals(p, ShapeType("m" -> C), Position.internal),
       TypingJudgment.MemberAccess(x, p, "m", Position.internal),
@@ -81,7 +81,7 @@ class InferenceSpec extends TypeSpec {
     // first. If the algorithm rejects these judgments at that stage, it is false: we later narrow p's upper bound to
     // `{ m: B }`, which means that `x` will now be typed as `B`. Ultimately, the judgments are perfectly legal. The
     // point of this test is to ensure that the compiler doesn't make the mistake of failing prematurely.
-    val result = InferenceResolution.infer(Vector(
+    val result = Inference.infer(Vector(
       TypingJudgment.Equals(z, B, Position.internal),
       TypingJudgment.Subtypes(x, B, Position.internal),
       TypingJudgment.Subtypes(p, ShapeType("m" -> C), Position.internal),
@@ -96,7 +96,7 @@ class InferenceSpec extends TypeSpec {
     val iv1 = new InferenceVariable(Some("iv1"))
     val iv2 = new InferenceVariable(Some("iv2"))
 
-    val result = InferenceResolution.infer(Vector(
+    val result = Inference.infer(Vector(
       TypingJudgment.Equals((iv1, BasicType.Int), (BasicType.Real, iv2), Position.internal)
     ))(null)
 
