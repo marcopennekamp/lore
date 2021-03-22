@@ -1,7 +1,7 @@
 package lore.compiler.semantics.functions
 
 import lore.compiler.core.Positioned
-import lore.compiler.phases.typing.inference.InferenceVariable
+import lore.compiler.phases.transformation.inference.InferenceVariable
 import lore.compiler.types.Type
 
 /**

@@ -1,10 +1,8 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.phases.transformation.ExpressionVerification.IllegallyTypedExpression
-import lore.compiler.phases.typing.inference.Inference
-import lore.compiler.phases.typing.{BuiltinsVisitor, InferringExpressionTransformationVisitor, MutabilityVerifier, TypeRehydrationVisitor}
+import lore.compiler.core.{Compilation, Error}
+import lore.compiler.phases.transformation.inference.Inference
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.scopes.{TypeScope, VariableScope}
@@ -23,11 +21,11 @@ object ExpressionTransformer {
     node: ExprNode,
     expectedType: Type,
     typeScope: TypeScope,
-    variableScope: VariableScope
+    variableScope: VariableScope,
   )(implicit registry: Registry): Compilation[Expression] = {
+    val visitor = new InferringExpressionTransformationVisitor(expectedType, typeScope, variableScope)
+
     for {
-      _ <- ReturnConstraints.verify(node)
-      visitor = new InferringExpressionTransformationVisitor(expectedType, typeScope, variableScope)
       expression <- TopLevelExprVisitor.visitCompilation(visitor)(node)
 
       _ = {
@@ -50,7 +48,7 @@ object ExpressionTransformer {
       _ <- ExpressionVisitor.visitCompilation(mutabilityVerifier)(typedExpression)
 
       builtinsVisitor = new BuiltinsVisitor
-      expressionWithBuiltins = ExpressionVisitor.visit(builtinsVisitor)(typedExpression)
+      expressionWithBuiltins <- ExpressionVisitor.visitCompilation(builtinsVisitor)(typedExpression)
 
       expressionWithImplicitUnit = withImplicitUnitValue(expectedType)(expressionWithBuiltins)
 
@@ -77,6 +75,18 @@ object ExpressionTransformer {
     }
   }
 
+  // TODO: Move this error somewhere else. This might also be a good candidate for being merged with other errors...
+
+  case class IllegallyTypedExpression(expression: Expression, expectedTypes: Vector[Type]) extends Error(expression) {
+    override def message = s"The expression $expression has the illegal type ${expression.tpe}.$expected"
+
+    private def expected: String = {
+      if (expectedTypes.nonEmpty) {
+        s" We expected one of the following types (or a subtype thereof): ${expectedTypes.mkString(",")}."
+      } else ""
+    }
+  }
+
   /**
     * Verifies that the expected result type is compatible with the type of the expression. If the actual type is not
     * compatible, it might be the case that all paths of the expression's last expression return a valid value. In such
@@ -99,10 +109,10 @@ object ExpressionTransformer {
     * We only look at the last expression of a block to decide whether the returns suffice. That is only valid because
     * we combine it with dead code analysis, with dead code resulting in an error. A function like the following could
     * thus never be valid:
-    *   function foo(): Int = {
-    *     return 5
-    *     'You fool!'
-    *   }
+    * function foo(): Int = {
+    * return 5
+    * 'You fool!'
+    * }
     */
   private def allPathsReturn(expression: Expression): Boolean = {
     expression match {

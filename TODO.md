@@ -89,7 +89,7 @@
 - The name of the Transpilation phase may not be appropriate anymore, since we now have a subsequent code generation phase. A more apt name may be Translation phase, as we are translating the Lore expression IR to the target IR.
 - Clean up ExpressionTransformationVisitor by moving more functionality to helper objects like ExpressionTransformationHelper.
   - Reconsider some names, as ExpressionTransformation and StatementTransformation aren't similar in functionality even though their names suggest so.
-- Collect all errors in one package for a much improved overview.
+- Move errors to a more central location. It should be easy to see which errors a given phase can produce. This may also allow us to merge some errors.
 
 ##### Terminology
 

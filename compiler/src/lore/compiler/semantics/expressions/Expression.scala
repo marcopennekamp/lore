@@ -1,7 +1,7 @@
 package lore.compiler.semantics.expressions
 
 import lore.compiler.core.{CompilationException, Position}
-import lore.compiler.phases.typing.inference.InferenceVariable
+import lore.compiler.phases.transformation.inference.InferenceVariable
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.semantics.members.Member
 import lore.compiler.semantics.scopes.{LocalVariable, Variable}

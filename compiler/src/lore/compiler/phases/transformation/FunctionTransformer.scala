@@ -1,8 +1,9 @@
 package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.semantics.functions.FunctionDefinition
+import lore.compiler.phases.constraints.SignatureConstraints
 import lore.compiler.semantics.Registry
+import lore.compiler.semantics.functions.FunctionDefinition
 import lore.compiler.semantics.scopes.FunctionVariableScope
 
 /**
@@ -23,7 +24,7 @@ object FunctionTransformer {
           node,
           function.signature.outputType,
           function.typeScope,
-          new FunctionVariableScope(function.signature, registry.variableScope)
+          new FunctionVariableScope(function.signature, registry.variableScope),
         )
       }.toCompiledOption
 

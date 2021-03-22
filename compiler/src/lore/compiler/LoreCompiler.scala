@@ -1,6 +1,7 @@
 package lore.compiler
 
 import lore.compiler.core.{Compilation, Fragment}
+import lore.compiler.phases.constraints.ConstraintsPhase
 import lore.compiler.phases.generation.GenerationPhase
 import lore.compiler.phases.parsing.ParsingPhase
 import lore.compiler.phases.resolution.ResolutionPhase
@@ -23,11 +24,14 @@ class LoreCompiler(val sources: Vector[Fragment], val options: CompilerOptions) 
       fragmentsWithDeclarations <- timed("Parsing", ParsingPhase.process(sources))
       // Phase 2: Resolve declarations using DeclarationResolver and build the Registry.
       registry <- timed("Resolution", ResolutionPhase.process(fragmentsWithDeclarations))
-      // Phase 3: Check constraints and ascribe types.
+      // Phase 3: Check pre-transformation constraints.
+      _ <- timed("Pre-Transformation Constraints", ConstraintsPhase.process(registry))
+      // Phase 4: Produce expression trees for functions and default property values. Resolves names in expressions and
+      // infers local types.
       _ <- timed("Transformation", TransformationPhase.process(registry))
-      // Phase 4: Transpile the Lore program to our target representation.
+      // Phase 5: Transpile the Lore program to our target representation.
       target <- timed("Transpilation", TranspilationPhase.process(options, registry))
-      // Phase 5: Generate Javascript code from the target representation.
+      // Phase 6: Generate Javascript code from the target representation.
       code <- timed("Generation", GenerationPhase.process(target))
     } yield (registry, code)
   }
