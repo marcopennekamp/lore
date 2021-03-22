@@ -11,8 +11,8 @@ object MultiFunctionConstraints {
   /**
     * Verifies:
     *   1. The input abstractness constraint.
-    *      2. The totality constraint.
-    *      3. A child function's output type is a subtype of its parent function's output type.
+    *   2. The totality constraint.
+    *   3. A child function's output type is a subtype of its parent function's output type.
     *
     * Note that uniqueness is already checked by the DeclarationResolver.
     */
@@ -21,7 +21,7 @@ object MultiFunctionConstraints {
       verifyInputAbstractness(mf),
       verifyTotalityConstraint(mf),
       verifyOutputTypes(mf),
-      ).simultaneous.verification
+    ).simultaneous.verification
   }
 
   case class FunctionIllegallyAbstract(function: FunctionDefinition) extends Error(function) {
@@ -62,17 +62,17 @@ object MultiFunctionConstraints {
     * Some notes on the implementation:
     *
     * - The algorithm looks at all the abstract-resolved direct subtypes of the input type. An abstract parameter
-    * can be checked by finding an implementation that covers each of its subtypes. A concrete parameter, on the
-    * other hand, cannot be covered solely by implementing functions for subtypes, as the concrete type itself
-    * may be instanced without being one of its subtypes. Hence, the algorithm is restricted to checking ARDS.
+    *   can be checked by finding an implementation that covers each of its subtypes. A concrete parameter, on the
+    *   other hand, cannot be covered solely by implementing functions for subtypes, as the concrete type itself
+    *   may be instanced without being one of its subtypes. Hence, the algorithm is restricted to checking ARDS.
     * - For each subtype, the algorithm first tries to find another function that covers the subtype. This may be
-    * another abstract function or a concrete function.
+    *   another abstract function or a concrete function.
     * - If such a function cannot be found and the subtype is abstract, we assume that the subtype is supposed to
-    * be an input type of an implicit abstract function. For example, we might declare an abstract function `name`
-    * for a trait `Animal`, and another trait `Fish` without wishing to have to redeclare the function `name`. This
-    * special case in the algorithm makes it possible to check the totality of the `name(animal: Animal)` function
-    * without having to declare a function `name(fish: Fish)`. We merely have to declare the function for all types
-    * that extend/implement `Fish`.
+    *   be an input type of an implicit abstract function. For example, we might declare an abstract function `name`
+    *   for a trait `Animal`, and another trait `Fish` without wishing to have to redeclare the function `name`. This
+    *   special case in the algorithm makes it possible to check the totality of the `name(animal: Animal)` function
+    *   without having to declare a function `name(fish: Fish)`. We merely have to declare the function for all types
+    *   that extend/implement `Fish`.
     */
   private def verifyInputTypeTotality(mf: MultiFunctionDefinition, inputType: Type)(implicit registry: Registry): Vector[Type] = {
     Type.abstractResolvedDirectSubtypes(inputType).flatMap { subtype =>
@@ -108,8 +108,8 @@ object MultiFunctionConstraints {
     * type, we have to allocate the variables according to the "argument" types provided by the child function. An
     * example will clear this up:
     *
-    * function identity(x: A): A = x
-    * function identity(x: Int): Int = x
+    *     function identity(x: A): A = x
+    *     function identity(x: Int): Int = x
     *
     * This should compile, because since we assign A = Int for the second function, its return type also has to be a
     * subtype of A = Int. That is the case here. Intuitively, it makes sense to specialize a function in this way: The
@@ -118,8 +118,8 @@ object MultiFunctionConstraints {
     * the same type.
     *
     * TODO: This is yet a bit more complicated when the return type of the child function is inferred via the
-    * type variable allocation. See [[lore.compiler.types.TypeVariableAllocation.of]] with the genericListify
-    * example.
+    *       type variable allocation. See [[lore.compiler.types.TypeVariableAllocation.of]] with the genericListify
+    *       example.
     */
   def verifyOutputTypes(mf: MultiFunctionDefinition): Verification = {
     def verifyHierarchyNode(node: mf.hierarchy.graph.NodeT): Verification = {

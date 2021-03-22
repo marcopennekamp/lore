@@ -109,10 +109,13 @@ object ExpressionTransformer {
     * We only look at the last expression of a block to decide whether the returns suffice. That is only valid because
     * we combine it with dead code analysis, with dead code resulting in an error. A function like the following could
     * thus never be valid:
+    *
+    * {{{
     * function foo(): Int = {
-    * return 5
-    * 'You fool!'
+    *   return 5
+    *   'You fool!'
     * }
+    * }}}
     */
   private def allPathsReturn(expression: Expression): Boolean = {
     expression match {

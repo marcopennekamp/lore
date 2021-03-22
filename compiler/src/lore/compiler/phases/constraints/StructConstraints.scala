@@ -12,13 +12,13 @@ object StructConstraints {
   /**
     * Verifies:
     *   1. Properties must be unique.
-    *      2. The properties of the struct's inherited shape type must all be implemented.
+    *   2. The properties of the struct's inherited shape type must all be implemented.
     */
   def verify(definition: StructDefinition)(implicit registry: Registry): Verification = {
     (
       verifyPropertiesUnique(definition),
       verifyInheritedShapeProperties(definition),
-      ).simultaneous.verification
+    ).simultaneous.verification
   }
 
   case class DuplicateProperty(definition: StructDefinition, property: StructPropertyDefinition) extends Error(property) {
