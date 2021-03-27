@@ -119,7 +119,7 @@ object Type {
       case SumType(types) => SumType(types.map(rec))
       case IntersectionType(types) => IntersectionType(types.map(rec))
       case ProductType(elements) => ProductType(elements.map(rec))
-      case FunctionType(input, output) => FunctionType(rec(input), rec(output))
+      case FunctionType(input, output) => FunctionType(ProductType(input.elements.map(rec)), rec(output))
       case ListType(element) => ListType(rec(element))
       case MapType(key, value) => MapType(rec(key), rec(value))
       case shapeType: ShapeType => shapeType.mapPropertyTypes(rec)
@@ -128,7 +128,7 @@ object Type {
   }
 
   /**
-    * Returns a singleton product type enclosing the given type or the type itself if it's a product type,
+    * Returns a singleton product type enclosing the given type or the type itself if it's already a product type.
     */
   def tupled(tpe: Type): ProductType = tpe match {
     case tpe: ProductType => tpe

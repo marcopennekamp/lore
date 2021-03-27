@@ -21,7 +21,7 @@ object TypeExpressionEvaluator {
       case TypeExprNode.SumNode(expressions, _) => expressions.map(evaluate).simultaneous.map(SumType.construct)
       case TypeExprNode.ProductNode(expressions, _) => expressions.map(evaluate).simultaneous.map(ProductType(_))
       case TypeExprNode.UnitNode(_) => ProductType.UnitType.compiled
-      case TypeExprNode.FunctionNode(input, output, _) => (evaluate(input), evaluate(output)).simultaneous.map(FunctionType.tupled)
+      case TypeExprNode.FunctionNode(input, output, _) => (evaluate(input).map(Type.tupled), evaluate(output)).simultaneous.map(FunctionType.tupled)
       case TypeExprNode.ListNode(element, _) => evaluate(element).map(ListType)
       case TypeExprNode.MapNode(key, value, _) => (evaluate(key), evaluate(value)).simultaneous.map(MapType.tupled)
       case TypeExprNode.ShapeNode(propertyNodes, _) =>

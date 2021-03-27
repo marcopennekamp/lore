@@ -108,7 +108,7 @@ object FunctionTyping {
         // For each feasible function type, add an alternative typing for the arguments. This gives the inference
         // algorithm enough information to infer types of arguments should they not type themselves, which applies
         // to anonymous function expressions, for example.
-        val argumentJudgments = functionType.parameters.zip(arguments).map { case (parameterType, argument) =>
+        val argumentJudgments = functionType.input.elements.zip(arguments).map { case (parameterType, argument) =>
           TypingJudgment.Subtypes(argument.tpe, parameterType, argument.position)
         }
 

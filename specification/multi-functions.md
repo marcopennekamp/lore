@@ -8,7 +8,7 @@ A **multi-function** is a set of functions bearing the same name, embedded in a 
 
 ### Functions and Multi-Functions
 
-A **function** in Lore has a full name, a list of parameters, an input type, a return type (also called output type), and potentially an expression body. The full name might include the module or package name in future version of Lore. The input type is defined as the product type of all parameter types in order of their declaration. The type of the result of the expression body, as well as the types of all values returned using `return`, must be subtypes of the function's return type. If the body expression is omitted, a function is considered **abstract** and may not be called at run-time. A function that is not abstract is also called *concrete*.
+A **function** in Lore has a full name, a list of parameters, an input type, a return type (also called output type), and potentially an expression body. The full name might include the module or package name in a future version of Lore. The input type is defined as the tuple type of all parameter types in order of their declaration. The type of the result of the expression body, as well as the types of all values returned using `return`, must be subtypes of the function's return type. If the body expression is omitted, a function is considered **abstract** and may not be called at run-time. A function that is not abstract is also called *concrete*.
 
 An **action** is a function whose return type is always `Unit`. If concrete, an action must define a block as an expression body, rather than any kind of expression.
 
@@ -63,7 +63,7 @@ This is not the signature of the actual appends operator in Lore, but this funct
 
 ##### Multi-Function Fit and Min
 
-The **fit of a multi-function** for a given argument (product) type *t* is the set of functions that could be invoked with a tuple of type $t$. This can be defined formally, but for the purposes of this user-facing specification, we will content ourselves with intuition once again.
+The **fit of a multi-function** for a given argument type *t* is the set of functions that could be invoked with an argument of type *t*. This can be defined formally, but for the purposes of this user-facing specification, we will content ourselves with intuition once again.
 
 So we have an argument at run-time with a certain run-time type. We calculate the fit of the given call, which gives us the set of functions that could feasibly accept arguments of that type. How do we know **which function to call?**
 

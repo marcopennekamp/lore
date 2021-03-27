@@ -17,7 +17,7 @@ object TransformationPhase {
     (
       structDefinitions.map(StructTransformer.transform).simultaneous,
       functionDefinitions.map(FunctionTransformer.transform).simultaneous,
-      ).simultaneous.verification
+    ).simultaneous.verification
   }
 
 }

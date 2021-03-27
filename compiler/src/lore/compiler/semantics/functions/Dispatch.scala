@@ -9,11 +9,11 @@ object Dispatch {
   /**
     * Calculates the given hierarchy's fit set for the given type.
     */
-  def fit(hierarchy: DispatchHierarchy, tpe: Type): Vector[FunctionDefinition] = {
+  def fit(hierarchy: DispatchHierarchy, tpe: ProductType): Vector[FunctionDefinition] = {
     traverse(hierarchy)(
       // We only have to visit nodes that are a supertype of the input type, because any children of these nodes
       // won't be a supertype of the input type if their parent isn't already a supertype.
-      visit  = predicateVisitFit(hierarchy, Type.tupled(tpe)),
+      visit  = predicateVisitFit(hierarchy, tpe),
       select = _ => true,
     )
   }
@@ -21,10 +21,10 @@ object Dispatch {
   /**
     * Calculates the given hierarchy's min set for the given type.
     */
-  def min(hierarchy: DispatchHierarchy, tpe: Type): Vector[FunctionDefinition] = {
+  def min(hierarchy: DispatchHierarchy, tpe: ProductType): Vector[FunctionDefinition] = {
     // Even though min is defined in terms of the fit, we don't use the fit function and instead compute everything in
     // one traversal.
-    val visit = predicateVisitFit(hierarchy, Type.tupled(tpe)) _
+    val visit = predicateVisitFit(hierarchy, tpe) _
     traverse(hierarchy)(
       visit,
       // We select all nodes for which no children are visited. This is easy to see: Min is defined in terms of
@@ -39,7 +39,7 @@ object Dispatch {
   /**
     * Returns the function with the exact given input type contained in the given hierarchy.
     */
-  def exact(hierarchy: DispatchHierarchy, tpe: Type): Option[FunctionDefinition] = {
+  def exact(hierarchy: DispatchHierarchy, tpe: ProductType): Option[FunctionDefinition] = {
     // TODO: We cannot get fixed functions with type arguments, because an actual type and a type variable could never
     //       be equally specific... How can we deal with this? Obviously, we need to allow getting a fixed
     //       function with type variables if we want a complete programming language. If we do so, we will also have
@@ -47,10 +47,9 @@ object Dispatch {
     //       first.
 
     // Using traverseHierarchy ensures that we only visit subtrees that could contain the exact candidate.
-    val input = Type.tupled(tpe)
     traverse(hierarchy)(
-      visit  = predicateVisitFit(hierarchy, input),
-      select = node => Fit.isEquallySpecific(input, node.signature.inputType),
+      visit  = predicateVisitFit(hierarchy, tpe),
+      select = node => Fit.isEquallySpecific(tpe, node.signature.inputType),
     ).headOption
   }
 

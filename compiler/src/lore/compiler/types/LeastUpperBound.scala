@@ -103,7 +103,8 @@ object LeastUpperBound {
       // merged as the reverse of a sum type: an intersection type.
       case (f1: FunctionType, f2: FunctionType) =>
         FunctionType(
-          IntersectionType.construct(Vector(f1.input, f2.input)),
+          // TODO: Ensure that tuple types are combined. See the corresponding TODO in IntersectionType.construct. The Type.tupled is a workaround.
+          Type.tupled(IntersectionType.construct(Vector(f1.input, f2.input))),
           lubPassOnSettings(f1.output, f2.output)
         )
 

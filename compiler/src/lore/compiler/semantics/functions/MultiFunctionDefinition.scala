@@ -1,6 +1,6 @@
 package lore.compiler.semantics.functions
 
-import lore.compiler.types.Type
+import lore.compiler.types.{ProductType, Type}
 
 case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefinition]) {
 
@@ -9,16 +9,16 @@ case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefin
   /**
     * Calculates the multi-function's fit set for the given type.
     */
-  def fit(tpe: Type): Vector[FunctionDefinition] = Dispatch.fit(hierarchy, tpe)
+  def fit(tpe: ProductType): Vector[FunctionDefinition] = Dispatch.fit(hierarchy, tpe)
 
   /**
     * Calculates the multi-function's min set for the given type.
     */
-  def min(tpe: Type): Vector[FunctionDefinition] = Dispatch.min(hierarchy, tpe)
+  def min(tpe: ProductType): Vector[FunctionDefinition] = Dispatch.min(hierarchy, tpe)
 
   /**
     * Returns the function with the exact given input type contained in this multi-function.
     */
-  def exact(tpe: Type): Option[FunctionDefinition] = Dispatch.exact(hierarchy, tpe)
+  def exact(tpe: ProductType): Option[FunctionDefinition] = Dispatch.exact(hierarchy, tpe)
 
 }
