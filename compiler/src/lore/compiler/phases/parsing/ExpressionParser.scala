@@ -52,7 +52,7 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     P(prop | variable)
   }
 
-  def expression[_: P]: P[ExprNode] = P(ifElse | whileLoop | forLoop | operatorExpression)
+  def expression[_: P]: P[ExprNode] = P(ifElse | whileLoop | forLoop | anonymousFunction | operatorExpression)
 
   private def ifElse[_: P]: P[ExprNode] = {
     P(Index ~ "if" ~ "(" ~ expression ~ ")" ~ topLevelExpression ~ ("else" ~ topLevelExpression).?)
@@ -69,6 +69,18 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     P(Index ~ "for" ~ "(" ~ extractor.rep(1, sep = ",") ~ ")" ~ topLevelExpression)
       .map { case (index, extractors, stat) => (index, extractors.toVector, stat) }
       .map(withPosition(ExprNode.ForNode))
+  }
+
+  private def anonymousFunction[_: P]: P[ExprNode.AnonymousFunctionNode] = {
+    P(Index ~ anonymousFunctionParameters ~ "=>" ~ expression).map(withPosition(ExprNode.AnonymousFunctionNode))
+  }
+
+  private def anonymousFunctionParameters[_: P]: P[Vector[ExprNode.AnonymousFunctionParameterNode]] = {
+    def simpleParameter = P(Index ~ identifier).map {
+      case (index, name) => withPosition(ExprNode.AnonymousFunctionParameterNode)(index, name, None)
+    }
+    def parameter = P(Index ~ identifier ~ typeParser.typing.?).map(withPosition(ExprNode.AnonymousFunctionParameterNode))
+    P(simpleParameter.map(Vector(_)) | "(" ~ parameter.rep(sep = ",").map(_.toVector) ~ ")")
   }
 
   def operatorExpression[_: P]: P[ExprNode] = {

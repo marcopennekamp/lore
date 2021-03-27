@@ -72,6 +72,8 @@ private class ReturnDeadCodeVisitor() extends CombiningTopLevelExprVisitor.WithC
 
 /**
   * Checks whether non-top-level expressions have a return. If that is the case, an error is returned.
+  *
+  * TODO: How should we handle returns in anonymous functions?
   */
 private class ReturnAllowedCompilationApplicator()
   extends TopLevelExprVisitor.CompilationApplicator[Unit, IsReturnAllowed](new VerificationTopLevelExprVisitor { })

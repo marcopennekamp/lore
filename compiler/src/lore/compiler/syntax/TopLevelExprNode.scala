@@ -192,4 +192,19 @@ object ExprNode {
   case class ExtractorNode(
     variableName: String, collection: ExprNode, position: Position,
   ) extends Node
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Anonymous functions.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  case class AnonymousFunctionNode(
+    parameters: Vector[AnonymousFunctionParameterNode],
+    body: ExprNode,
+    position: Position,
+  ) extends UnaryNode(body) with ExprNode
+
+  case class AnonymousFunctionParameterNode(
+    name: String,
+    tpe: Option[TypeExprNode],
+    position: Position,
+  ) extends Node
 }

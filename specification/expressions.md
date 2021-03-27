@@ -241,6 +241,8 @@ Two tuples are equal if they have the same size and their elements are equal.
 
 In addition to multi-functions, Lore supports **anonymous functions**. An anonymous function is created as an immediate function value without dispatch mechanics. Parameter types may be specified optionally, but can also be inferred from *local* context. The return type of the anonymous function is always inferred.
 
+**TODO:** How should we handle returns in anonymous functions?
+
 ###### Example
 
 ```
