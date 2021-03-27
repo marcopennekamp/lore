@@ -6,7 +6,7 @@ import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.semantics.members.Member
 import lore.compiler.semantics.scopes.{LocalVariable, Variable}
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
-import lore.compiler.types.{BasicType, ProductType, ShapeType, Type}
+import lore.compiler.types.{BasicType, FunctionType, ProductType, ShapeType, Type}
 
 sealed trait Expression {
   def position: Position
@@ -74,6 +74,16 @@ object Expression {
     override val tpe: Type = if (values.isEmpty) ProductType.UnitType else ProductType(values.map(_.tpe))
   }
 
+  case class AnonymousFunction(
+    parameters: Vector[AnonymousFunctionParameter],
+    body: Expression,
+    position: Position,
+  ) extends Expression {
+    override val tpe: Type = FunctionType(ProductType(parameters.map(_.tpe)), body.tpe)
+  }
+
+  case class AnonymousFunctionParameter(name: String, tpe: Type, position: Position)
+
   case class ListConstruction(values: Vector[Expression], tpe: Type, position: Position) extends Expression
 
   case class MapConstruction(entries: Vector[MapEntry], tpe: Type, position: Position) extends Expression {
@@ -92,6 +102,7 @@ object Expression {
       this.copy(properties.zip(values).map { case (property, value) => property.copy(value = value) })
     }
   }
+
   case class ShapeProperty(name: String, value: Expression) {
     def asShapeTypeProperty: ShapeType.Property = ShapeType.Property(name, value.tpe)
   }

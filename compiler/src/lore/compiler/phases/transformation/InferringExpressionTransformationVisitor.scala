@@ -1,6 +1,6 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.core.Compilation.ToCompilationExtension
+import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.core._
 import lore.compiler.phases.resolution.TypeExpressionEvaluator
 import lore.compiler.phases.transformation.InferringExpressionTransformationVisitor.{DynamicFunctionNameExpected, StructExpected, UnsafeInteger}
@@ -31,7 +31,7 @@ class InferringExpressionTransformationVisitor(
     * The variable scope of the surrounding code, such as a function scope.
     */
   variableScope: VariableScope,
-)(implicit registry: Registry) extends TopLevelExprVisitor[Expression, Compilation[Expression]] {
+)(implicit registry: Registry) extends TopLevelExprVisitor[Expression, Compilation] {
 
   import ExprNode._
   import TopLevelExprNode._
@@ -105,6 +105,16 @@ class InferringExpressionTransformationVisitor(
       val memberType = new InferenceVariable
       typingJudgments = typingJudgments :+ TypingJudgment.MemberAccess(memberType, expression.tpe, name, position)
       Expression.UnresolvedMemberAccess(expression, name, memberType, position).compiled
+
+    case AnonymousFunctionNode(parameterNodes, _, position) =>
+      val parameters = parameterNodes.map { case AnonymousFunctionParameterNode(name, _, position) =>
+        val variable = scopeContext.currentScope.get(name).getOrElse(
+          throw CompilationException(s"The anonymous function parameter at $position should have a corresponding scope entry.")
+        )
+        Expression.AnonymousFunctionParameter(name, variable.tpe, position)
+      }
+      scopeContext.closeScope()
+      Expression.AnonymousFunction(parameters, expression, position).compiled
   }
 
   override def visitBinary(node: BinaryNode)(left: Expression, right: Expression): Compilation[Expression] = node match {
@@ -323,12 +333,26 @@ class InferringExpressionTransformationVisitor(
     resultType
   }
 
-  override def before: PartialFunction[TopLevelExprNode, Unit] = {
-    case ExprNode.BlockNode(_, _) => scopeContext.openScope()
+  override def before: PartialFunction[TopLevelExprNode, Verification] = {
+    case ExprNode.BlockNode(_, _) =>
+      scopeContext.openScope()
+      Verification.succeed
+
     case ExprNode.WhileNode(_, _, _) =>
       // A while loop needs to open its own scope in case there is exactly one variable declaration as the loop body,
       // which wouldn't get scoped by the block.
       scopeContext.openScope()
+      Verification.succeed
+
+    case ExprNode.AnonymousFunctionNode(parameterNodes, _, _) =>
+      scopeContext.openScope()
+      parameterNodes.map {
+        case AnonymousFunctionParameterNode(name, typeNode, position) =>
+          typeNode
+            .map(TypeExpressionEvaluator.evaluate).toCompiledOption
+            .map(_.getOrElse(new InferenceVariable))
+            .flatMap(tpe => scopeContext.currentScope.register(LocalVariable(name, tpe, isMutable = false))(position))
+      }.simultaneous.verification
   }
 
   def addJudgmentsFrom[A]: ((A, Vector[TypingJudgment])) => A = {

@@ -17,6 +17,7 @@ trait ExpressionVerificationVisitor extends ExpressionVisitor[Unit, Verification
   override def visit(expression: Expression.UnresolvedMemberAccess)(instance: Unit): Result = verify(expression)
   override def visit(expression: Expression.Literal): Result = verify(expression)
   override def visit(expression: Expression.Tuple)(values: Vector[Unit]): Result = verify(expression)
+  override def visit(expression: Expression.AnonymousFunction)(body: Unit): Verification = verify(expression)
   override def visit(expression: Expression.ListConstruction)(values: Vector[Unit]): Result = verify(expression)
   override def visit(expression: Expression.MapConstruction)(entries: Vector[(Unit, Unit)]): Result = verify(expression)
   override def visit(expression: Expression.Instantiation)(arguments: Vector[Unit]): Result = verify(expression)
