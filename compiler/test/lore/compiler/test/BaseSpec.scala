@@ -73,4 +73,5 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
     val difference = (time2 - time1).toInt
     difference should be < timeLimit
   }
+
 }

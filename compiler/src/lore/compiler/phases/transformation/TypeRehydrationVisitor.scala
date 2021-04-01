@@ -11,8 +11,6 @@ import lore.compiler.types.{ListType, ProductType, Type}
 
 /**
   * Replaces all inference variables with inferred types.
-  *
-  * TODO: Rename?
   */
 class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Registry) extends ExpressionVisitor[Expression, Expression] {
 
@@ -49,6 +47,11 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
   override def visit(expression: Literal): Expression = expression
 
   override def visit(expression: Tuple)(values: Vector[Expression]): Expression = expression.copy(values)
+
+  override def visit(expression: AnonymousFunction)(body: Expression): Expression = expression.copy(
+    expression.parameters.map(_.mapType(assignments.instantiate)),
+    body
+  )
 
   override def visit(expression: ListConstruction)(values: Vector[Expression]): Expression = expression.copy(
     values = values,

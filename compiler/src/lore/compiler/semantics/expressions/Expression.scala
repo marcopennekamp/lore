@@ -82,7 +82,9 @@ object Expression {
     override val tpe: Type = FunctionType(ProductType(parameters.map(_.tpe)), body.tpe)
   }
 
-  case class AnonymousFunctionParameter(name: String, tpe: Type, position: Position)
+  case class AnonymousFunctionParameter(name: String, tpe: Type, position: Position) {
+    def mapType(f: Type => Type): AnonymousFunctionParameter = this.copy(tpe = f(tpe))
+  }
 
   case class ListConstruction(values: Vector[Expression], tpe: Type, position: Position) extends Expression
 
