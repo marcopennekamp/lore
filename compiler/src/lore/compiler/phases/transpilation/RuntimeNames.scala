@@ -1,6 +1,6 @@
 package lore.compiler.phases.transpilation
 
-import lore.compiler.semantics.functions.FunctionDefinition
+import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.target.Target
 import lore.compiler.target.TargetDsl.StringExtension
@@ -11,7 +11,8 @@ object RuntimeNames {
   def declaredType(tpe: DeclaredType): Target.Variable = s"lore_type_${tpe.name}".asVariable
   def typeSchema(tpe: DeclaredType): Target.Variable = s"lore_schema_${tpe.name}".asVariable
   def newType(tpe: DeclaredType): Target.Variable = s"lore_newtype_${tpe.name}".asVariable
-  def instantiate(struct: StructType): Target.Variable = s"lore_instantiate_${struct.name}".asVariable
+  def instantiate(struct: StructType): Target.Variable = s"${declaredType(struct).name}__instantiate".asVariable
+  def constructor(struct: StructType): Target.Variable = s"${declaredType(struct).name}__constructor".asVariable
   def defaultValue(struct: StructType, property: StructPropertyDefinition): Target.Variable = s"${declaredType(struct).name}__default_${property.name}".asVariable
 
   def temporaryVariable(name: String): Target.Variable = s"lore_tmp_$name".asVariable
@@ -23,6 +24,12 @@ object RuntimeNames {
     * for the current call.
     */
   def localTypeVariableAssignments: Target.Variable = "lore_type_assignments".asVariable
+
+  /**
+    * Run-time multi-function names are unqualified for now. However, this function should be used so that we can
+    * change this later more easily.
+    */
+  def multiFunction(mf: MultiFunctionDefinition): Target.Variable = mf.name.asVariable
 
   /**
     * Returns a unique name for a given function definition. Because multi-functions contain many functions of the

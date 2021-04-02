@@ -1,7 +1,6 @@
 package lore.compiler.syntax
 
 import lore.compiler.core.Position
-import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.syntax.TopLevelExprNode._
 
 /**
@@ -17,8 +16,6 @@ object TopLevelExprNode {
   sealed abstract class BinaryNode(val child1: TopLevelExprNode, val child2: TopLevelExprNode) extends TopLevelExprNode
   sealed abstract class TernaryNode(val child1: TopLevelExprNode, val child2: TopLevelExprNode, val child3: TopLevelExprNode) extends ExprNode
   sealed abstract class XaryNode(val children: Vector[TopLevelExprNode]) extends TopLevelExprNode
-
-  sealed trait CallNode[T <: CallTarget] extends TopLevelExprNode
 
   case class ReturnNode(expr: ExprNode, position: Position) extends UnaryNode(expr)
 
@@ -110,6 +107,7 @@ object ExprNode {
     entries: Vector[ObjectEntryNode],
     position: Position,
   ) extends XaryNode(entries.map(_.expression)) with ExprNode
+
   case class ObjectEntryNode(name: String, expression: ExprNode, position: Position) extends Node
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -119,6 +117,7 @@ object ExprNode {
     properties: Vector[ShapeValuePropertyNode],
     position: Position
   ) extends XaryNode(properties.map(_.expression)) with ExprNode
+
   case class ShapeValuePropertyNode(name: String, expression: ExprNode, position: Position) extends Node
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -130,38 +129,35 @@ object ExprNode {
   // Function calls.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /**
-    * A call node can both be a multi-function call or an instantiation call. The parser can't decide between them
-    * based on syntax, so the compiler will have to decide in later stages.
+    * A call node represents calling any sort of function-compatible target, which can be an anonymous function, a
+    * multi-function, or a struct constructor.
     */
-  case class SimpleCallNode(
-    name: String, arguments: Vector[ExprNode], position: Position,
-  ) extends XaryNode(arguments) with ExprNode with CallNode[CallTarget.Internal]
+  case class CallNode(
+    target: ExprNode,
+    arguments: Vector[ExprNode],
+    position: Position,
+  ) extends ExprNode
 
   /**
-    * An explicit call to a value that is not a variable, which would have been covered by simple call node.
-    *
-    * TODO: Once multi-functions become variables with their own types, this needs to be merged into SimpleCallNode
-    *       and simply become CallNode.
-    */
-  case class ValueCallNode(
-    value: ExprNode, arguments: Vector[ExprNode], position: Position
-  ) extends XaryNode(arguments) with ExprNode with CallNode[CallTarget.Internal]
-
-  /**
-    * Since fixed function calls also require type arguments, they can be differentiated from call nodes.
+    * A fixed function call requires type arguments, which separates it from standard call nodes. Additionally, a fixed
+    * function call must always refer to a multi-function. The call target is thus specified as a string name instead
+    * of an expression node target.
     */
   case class FixedFunctionCallNode(
-    name: String, types: Vector[TypeExprNode], arguments: Vector[ExprNode], position: Position
-  ) extends XaryNode(arguments) with ExprNode with CallNode[CallTarget.Internal]
+    name: String,
+    types: Vector[TypeExprNode],
+    arguments: Vector[ExprNode],
+    position: Position,
+  ) extends XaryNode(arguments) with ExprNode
 
   /**
-    * Just like fixed function calls, dynamic calls have a different set of attributes than simple calls.
-    *
     * The name of the dynamic function must be the first argument, as a string.
     */
   case class DynamicCallNode(
-    resultType: TypeExprNode, arguments: Vector[ExprNode], position: Position
-  ) extends XaryNode(arguments) with ExprNode with CallNode[CallTarget.Dynamic]
+    resultType: TypeExprNode,
+    arguments: Vector[ExprNode],
+    position: Position,
+  ) extends XaryNode(arguments) with ExprNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and loop expressions.

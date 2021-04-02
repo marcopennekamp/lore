@@ -16,24 +16,27 @@ object StructTranspiler {
     * A transpiled struct consists of the following parts:
     *   1. The type schema which saves the information (property names, etc.) common to all instances of the struct
     *      type, regardless of which property types are actually instantiated.
-    *      2. The "newtype" function which can be used to create a new instance of the struct type. This is needed
+    *   2. The "newtype" function which can be used to create a new instance of the struct type. This is needed
     *      because struct types might be dependent on some actual property types at run-time. Hence in such cases,
     *      for each struct instantiated, we also have to create a new type.
-    *      3. The archetypal compile-time type instance, which is a struct type instantiated with the property types
+    *   3. The archetypal compile-time type instance, which is a struct type instantiated with the property types
     *      that it has at compile-time. This type is used when being referred to as the supertype in multiple dispatch
     *      and other static uses. It is also used for structs that don't have open property types.
-    *      4. An instantiation function which takes a properties object, computes the correct run-time type, and
+    *   4. An instantiation function which takes a properties object, computes the correct run-time type, and
     *      instantiates a value of the struct.
-    *      5. One function for each default value of the struct's properties. This function can be invoked to generate
+    *   5. A call-style constructor which delegates to the instantiation function. This constructor is essentially a
+    *      function, which simplifies compilation and allows a user to pass struct constructors as functions.
+    *   6. One function for each default value of the struct's properties. This function can be invoked to generate
     *      another default value during instantiation.
     */
   def transpile(tpe: StructType)(implicit registry: Registry): Vector[TargetStatement] = {
     val schema = transpileSchema(tpe)
     val (varNewtype, varArchetype, definitions) = transpileTypeDefinitions(tpe)
-    val instantiationFunction = transpileInstantiation(tpe, varNewtype, varArchetype)
+    val instantiate = transpileInstantiate(tpe, varNewtype, varArchetype)
+    val constructor = transpileConstructor(tpe)
     val defaultValueFunctions = transpileDefaultValues(tpe)
 
-    Vector(schema) ++ definitions ++ Vector(instantiationFunction) ++ defaultValueFunctions
+    Vector(schema) ++ definitions ++ Vector(instantiate) ++ Vector(constructor) ++ defaultValueFunctions
   }
 
   private def transpileSchema(tpe: StructType) = {
@@ -80,7 +83,7 @@ object StructTranspiler {
     (varNewtype, varArchetype, definitions)
   }
 
-  private def transpileInstantiation(tpe: StructType, varNewtype: Target.Variable, varArchetype: Target.Variable) = {
+  private def transpileInstantiate(tpe: StructType, varNewtype: Target.Variable, varArchetype: Target.Variable) = {
     val varInstantiate = RuntimeNames.instantiate(tpe)
     val paramProperties = "properties".asParameter
     val instantiatedType = if (tpe.openProperties.nonEmpty) {
@@ -97,6 +100,24 @@ object StructTranspiler {
 
     Target.Function(varInstantiate.name, Vector(paramProperties), Target.block(
       Target.Return(RuntimeApi.structs.value(paramProperties.asVariable, instantiatedType)),
+    ))
+  }
+
+  private def transpileConstructor(tpe: StructType) = {
+    val varInstantiate = RuntimeNames.instantiate(tpe)
+    val varConstructor = RuntimeNames.constructor(tpe)
+
+    // We use the actual parameter names here so that we can construct the properties object using shorthand syntax.
+    // For example:
+    //    function ABC__constructor(name, age) {
+    //      return ABC__instantiate({ name, age });
+    //    }
+    val parameterNames = tpe.definition.constructor.signature.parameters.map(_.name.asName)
+    val parameters = parameterNames.map(Target.Parameter(_))
+    val properties = Target.Dictionary(parameterNames.map(name => Target.Property(name, name.asVariable)))
+
+    Target.Function(varConstructor.name, parameters, Target.block(
+      Target.Return(Target.Call(varInstantiate, Vector(properties)))
     ))
   }
 

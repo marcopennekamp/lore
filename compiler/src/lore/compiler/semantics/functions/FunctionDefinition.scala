@@ -6,7 +6,7 @@ import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionDefinition.CannotInstantiateFunction
 import lore.compiler.semantics.scopes.LocalTypeScope
 import lore.compiler.syntax.ExprNode
-import lore.compiler.types.{Fit, Type, TypeVariable}
+import lore.compiler.types.{Fit, Type}
 
 /**
   * A definition of a single function as part of a larger multi-function.
@@ -38,10 +38,17 @@ class FunctionDefinition(
     * Attempts to instantiate the function definition with the given argument type.
     */
   def instantiate(argumentType: Type): Compilation[FunctionInstance] = {
-    Fit.assignments(argumentType, signature.inputType) match {
+    instantiateOption(argumentType) match {
       case None => Compilation.fail(CannotInstantiateFunction(this, argumentType))
-      case Some(assignments) => FunctionInstance(this, signature.substitute(assignments)).compiled
+      case Some(instance) => instance.compiled
     }
+  }
+
+  /**
+    * Attempts to instantiate the function definition with the given argument type.
+    */
+  def instantiateOption(argumentType: Type): Option[FunctionInstance] = {
+    Fit.assignments(argumentType, signature.inputType).map(assignments => FunctionInstance(this, signature.substitute(assignments)))
   }
 }
 

@@ -13,14 +13,6 @@ trait VariableScope extends Scope[Variable] {
 }
 
 /**
-  * The global variable scope does not have any entries yet, since there are no global variables (and functions
-  * aren't counted among such names yet), but this declaration will hopefully make the code a little more future-proof.
-  */
-class GlobalVariableScope() extends BasicScope[Variable](None) with VariableScope {
-  // The global scope is empty as of now.
-}
-
-/**
   * The root variable scope of a function.
   */
 class FunctionVariableScope(val signature: FunctionSignature, parent: VariableScope) extends BasicScope[Variable](Some(parent)) with VariableScope {

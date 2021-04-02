@@ -25,7 +25,7 @@ trait ExpressionVisitor[A, B] {
   def visit(expression: Expression.UnaryOperation)(value: A): B
   def visit(expression: Expression.BinaryOperation)(left: A, right: A): B
   def visit(expression: Expression.XaryOperation)(operands: Vector[A]): B
-  def visit(expression: Expression.Call)(arguments: Vector[A]): B
+  def visit(expression: Expression.Call)(target: Option[A], arguments: Vector[A]): B
   def visit(expression: Expression.IfElse)(condition: A, onTrue: A, onFalse: A): B
   def visit(expression: Expression.WhileLoop)(condition: A, body: A): B
   def visit(expression: Expression.ForLoop)(collections: Vector[A], body: A): B
@@ -64,7 +64,7 @@ object ExpressionVisitor {
       case node@Expression.UnaryOperation(_, value, _, _) => visitor.visit(node)(rec(value))
       case node@Expression.BinaryOperation(_, left, right, _, _) => visitor.visit(node)(rec(left), rec(right))
       case node@Expression.XaryOperation(_, expressions, _, _) => visitor.visit(node)(expressions.map(rec))
-      case node@Expression.Call(_, arguments, _) => visitor.visit(node)(arguments.map(rec))
+      case node@Expression.Call(target, arguments, _, _) => visitor.visit(node)(target.getExpression.map(rec), arguments.map(rec))
       case node@Expression.IfElse(condition, onTrue, onFalse, _, _) => visitor.visit(node)(rec(condition), rec(onTrue), rec(onFalse))
       case node@Expression.WhileLoop(condition, body, _, _) => visitor.visit(node)(rec(condition), rec(body))
       case node@Expression.ForLoop(extractors, body, _, _) => visitor.visit(node)(extractors.map(e => rec(e.collection)), rec(body))
@@ -98,7 +98,7 @@ object ExpressionVisitor {
       case node@Expression.UnaryOperation(_, value, _, _) => rec(value).flatMap(visitor.visit(node))
       case node@Expression.BinaryOperation(_, left, right, _, _) => (rec(left), rec(right)).simultaneous.flatMap((visitor.visit(node) _).tupled)
       case node@Expression.XaryOperation(_, expressions, _, _) => expressions.map(rec).simultaneous.flatMap(visitor.visit(node))
-      case node@Expression.Call(_, arguments, _) => arguments.map(rec).simultaneous.flatMap(visitor.visit(node))
+      case node@Expression.Call(target, arguments, _, _) => (target.getExpression.map(rec).toCompiledOption, arguments.map(rec).simultaneous).simultaneous.flatMap((visitor.visit(node) _).tupled)
       case node@Expression.IfElse(condition, onTrue, onFalse, _, _) =>
         (rec(condition), rec(onTrue), rec(onFalse)).simultaneous.flatMap((visitor.visit(node) _).tupled)
       case node@Expression.WhileLoop(condition, body, _, _) => (rec(condition), rec(body)).simultaneous.flatMap((visitor.visit(node) _).tupled)

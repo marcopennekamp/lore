@@ -14,7 +14,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
 
   private val properties = MultiFunctionProperties(mf)
 
-  private implicit val variableProvider: TemporaryVariableProvider = new TemporaryVariableProvider(s"${mf.name}__")
+  private implicit val variableProvider: TemporaryVariableProvider = new TemporaryVariableProvider(s"${mf.runtimeName}__")
 
   def transpile(): Vector[TargetStatement] = {
     if (properties.isSingleFunction && mf.functions.forall(_.isMonomorphic)) {
@@ -40,7 +40,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
 
     val body = Target.Block(loggingStatements ++ dispatchInput.gatherArgumentTypes() ++ dispatchBehavior.transpileDispatchCall())
     val multiFunctionDeclaration = Target.Function(
-      mf.name.asName,
+      mf.runtimeName,
       dispatchInput.parameters,
       body,
       shouldExport = true
@@ -67,7 +67,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     */
   private def transpileSingleFunction(): Vector[TargetStatement] = {
     implicit val typeVariables: TranspiledTypeVariables = Map.empty
-    FunctionTranspiler.transpile(mf.functions.head, mf.name.asName, shouldExport = true)
+    FunctionTranspiler.transpile(mf.functions.head, mf.runtimeName, shouldExport = true)
   }
 
   /**

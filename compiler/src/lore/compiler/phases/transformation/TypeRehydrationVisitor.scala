@@ -5,7 +5,6 @@ import lore.compiler.phases.transformation.inference.Inference.{Assignments, Ass
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression._
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
-import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.semantics.scopes.{LocalVariable, Variable}
 import lore.compiler.types.{ListType, ProductType, Type}
 
@@ -84,26 +83,10 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
     tpe = assignments.instantiate(expression.tpe)
   )
 
-  override def visit(expression: Call)(arguments: Vector[Expression]): Expression = expression.copy(
-    target = expression.target match {
-      case CallTarget.MultiFunction(mf, _) =>
-        // TODO: We are essentially doing the same decision making as during type inference. Can we assign the chosen
-        //       multi-function to the "outputType" inference variable or otherwise avoid having to recompute the min
-        //       and re-instantiate the function definition? This is similar to how member resolution has to be
-        //       calculated a second time in this visitor.
-        val inputType = ProductType(arguments.map(_.tpe))
-        mf.min(inputType) match {
-          case Vector(functionDefinition) =>
-            functionDefinition.instantiate(inputType).getOrElse(
-              throw CompilationException(s"After type inference, the function $functionDefinition should be instantiable with the input type $inputType.")
-            )
-          case _ => throw CompilationException(
-            s"The multi-function call $expression is empty or ambiguous. Type inference should have caught this ill-defined min. (Position: ${expression.position})"
-          )
-        }
-      case t => t
-    },
-    arguments = arguments
+  override def visit(expression: Call)(target: Option[Expression], arguments: Vector[Expression]): Expression = expression.copy(
+    target = expression.target.withExpression(target),
+    arguments = arguments,
+    tpe = assignments.instantiate(expression.tpe),
   )
 
   override def visit(expression: IfElse)(condition: Expression, onTrue: Expression, onFalse: Expression): Expression = expression.copy(

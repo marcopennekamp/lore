@@ -43,6 +43,11 @@ trait TopLevelExprVisitor[A, M[_]] {
   def visitMap(node: ExprNode.MapNode)(entries: Vector[(A, A)]): M[A]
 
   /**
+    * Visits a call node with its target and its arguments.
+    */
+  def visitCall(node: ExprNode.CallNode)(target: A, arguments: Vector[A]): M[A]
+
+  /**
     * Visits an iteration node with its extractors and the body.
     *
     * We don't pass the evaluated body but rather a function that visits the body expression. This allows the
@@ -72,14 +77,14 @@ object TopLevelExprVisitor {
       case node: TernaryNode => visitor.visitTernary(node)(rec(node.child1), rec(node.child2), rec(node.child3))
       case node: XaryNode => visitor.visitXary(node)(node.children.map(rec))
 
-      // Map node.
       case node@MapNode(kvs, _) =>
         val entries = kvs.map {
           case KeyValueNode(key, value, _) => (rec(key), rec(value))
         }
         visitor.visitMap(node)(entries)
 
-      // Iteration node.
+      case node@CallNode(target, arguments, _) => visitor.visitCall(node)(rec(target), arguments.map(rec))
+
       case node@ForNode(extractors, body, _) =>
         val extracts = extractors.map {
           case ExtractorNode(name, collection, _) => (name, rec(collection))
@@ -109,14 +114,16 @@ object TopLevelExprVisitor {
         case node: TernaryNode => (visit(node.child1, props), visit(node.child2, props), visit(node.child3, props)).simultaneous.flatMap((visitor.visitTernary(node) _).tupled)
         case node: XaryNode => node.children.map(c => visit(c, props)).simultaneous.flatMap(visitor.visitXary(node))
 
-        // Map node.
         case node@MapNode(kvs, _) =>
           val entries = kvs.map {
             case KeyValueNode(key, value, _) => (visit(key, props), visit(value, props)).simultaneous
           }.simultaneous
           entries.flatMap(visitor.visitMap(node))
 
-        // Iteration node.
+        case node@CallNode(target, arguments, _) =>
+          val children = (visit(target, props), arguments.map(visit(_, props)).simultaneous).simultaneous
+          children.flatMap((visitor.visitCall(node) _).tupled)
+
         case node@ForNode(extractors, body, _) =>
           val extracts = extractors.map {
             case ExtractorNode(name, collection, _) => visit(collection, props).map((name, _))

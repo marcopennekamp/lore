@@ -8,13 +8,6 @@ import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefin
 
 object InstantiationTransformation {
 
-  def transformCallStyleInstantiation(struct: StructDefinition, arguments: Vector[Expression])(implicit position: Position): Compilation[(Expression, Vector[TypingJudgment])] = {
-    FunctionTyping.adhereToSignature(arguments, struct.constructorSignature, position).map { judgments =>
-      val instantiationArguments = struct.properties.zip(arguments).map(Expression.Instantiation.Argument.tupled)
-      (Expression.Instantiation(struct, instantiationArguments, position), judgments)
-    }
-  }
-
   case class DuplicateProperty(name: String)(implicit position: Position) extends Error(position) {
     override def message: String = s"The property $name occurs more than once in the instantiation. Properties must be unique here."
   }
@@ -63,7 +56,7 @@ object InstantiationTransformation {
           pairs = pairs :+ (property, expression)
         case None =>
           property.defaultValue match {
-            case Some(defaultValue) => pairs = pairs :+ (property, Expression.Call(defaultValue.callTarget, Vector.empty, position))
+            case Some(defaultValue) => pairs = pairs :+ (property, Expression.Call(defaultValue.callTarget, Vector.empty, defaultValue.tpe, position))
             case None => missing = missing :+ property.name
           }
       }

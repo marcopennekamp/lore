@@ -29,5 +29,7 @@ class StructPropertyDefinition(
 }
 
 object StructPropertyDefinition {
-  case class DefaultValue(expression: Expression, callTarget: CallTarget.Dynamic)
+  case class DefaultValue(expression: Expression, callTarget: CallTarget.Dynamic) {
+    val tpe: Type = expression.tpe
+  }
 }

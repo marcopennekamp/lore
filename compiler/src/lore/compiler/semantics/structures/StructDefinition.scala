@@ -1,7 +1,6 @@
 package lore.compiler.semantics.structures
 
 import lore.compiler.core.Position
-import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.types.StructType
 
 class StructDefinition(
@@ -15,9 +14,6 @@ class StructDefinition(
 
   lazy val openProperties: Vector[StructPropertyDefinition] = properties.filter(_.isOpen)
 
-  /**
-    * The signature of the call-style constructor.
-    */
-  lazy val constructorSignature: FunctionSignature = FunctionSignature(name, properties.map(_.asParameter), tpe, position)
+  lazy val constructor: StructConstructorDefinition = StructConstructorDefinition(this)
 
 }

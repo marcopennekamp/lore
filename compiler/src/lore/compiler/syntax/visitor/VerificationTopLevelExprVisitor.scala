@@ -20,5 +20,6 @@ trait VerificationTopLevelExprVisitor extends TopLevelExprVisitor[Unit, Compilat
   override final def visitTernary(node: TopLevelExprNode.TernaryNode)(argument1: Unit, argument2: Unit, argument3: Unit): Verification = verify(node)
   override final def visitXary(node: TopLevelExprNode.XaryNode)(arguments: Vector[Unit]): Verification = verify(node)
   override final def visitMap(node: ExprNode.MapNode)(entries: Vector[(Unit, Unit)]): Verification = verify(node)
-  override def visitIteration(node: ExprNode.ForNode)(extractors: Vector[(String, Unit)], visitBody: () => Verification): Verification = verify(node)
+  override final def visitCall(node: ExprNode.CallNode)(target: Unit, arguments: Vector[Unit]): Verification = verify(node)
+  override def visitIteration(node: ExprNode.ForNode)(extractors: Vector[(String, Unit)], visitBody: () => Verification): Verification = visitBody().flatMap(_ => verify(node))
 }

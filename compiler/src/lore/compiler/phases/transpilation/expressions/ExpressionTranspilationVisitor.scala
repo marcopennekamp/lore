@@ -5,7 +5,7 @@ import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
 import lore.compiler.phases.transpilation._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
-import lore.compiler.semantics.functions.{CallTarget, FunctionInstance}
+import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.target.TargetDsl._
 import lore.compiler.target.{Target, TargetOperator}
 import lore.compiler.types._
@@ -58,6 +58,8 @@ private[transpilation] class ExpressionTranspilationVisitor()(
       }
     }
   }
+
+  override def visit(expression: AnonymousFunction)(body: Chunk): Chunk = ??? // TODO: Implement.
 
   override def visit(expression: ListConstruction)(values: Vector[Chunk]): Chunk = {
     val tpe = TypeTranspiler.transpileSubstitute(expression.tpe)
@@ -143,10 +145,15 @@ private[transpilation] class ExpressionTranspilationVisitor()(
     Chunk.operation(operator, operands: _*)
   }
 
-  override def visit(expression: Call)(arguments: Vector[Chunk]): Chunk = {
+  override def visit(expression: Call)(target: Option[Chunk], arguments: Vector[Chunk]): Chunk = {
+    def buildCall(expression: Target.TargetExpression) = {
+      Chunk.combine(arguments) { arguments => Chunk.expression(Target.Call(expression, arguments)) }
+    }
+
     expression.target match {
-      case _: FunctionInstance | _: CallTarget.Dynamic =>
-        Chunk.combine(arguments) { arguments => Chunk.expression(Target.Call(expression.target.name.asVariable, arguments)) }
+      case CallTarget.Value(_) => target.get.flatMap(buildCall)
+      case CallTarget.MultiFunction(mf) => buildCall(mf.asTargetVariable)
+      case CallTarget.Dynamic(name) => buildCall(name.asVariable)
     }
   }
 

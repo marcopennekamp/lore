@@ -1,10 +1,9 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, Error, Position}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.semantics.functions.{CallTarget, FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.types.{ProductType, Type}
 
 object CallTransformation {
@@ -25,7 +24,7 @@ object CallTransformation {
   }
 
   /**
-    * Builds a simple multi-function call. Argument types may not contain inference variables.
+    * Builds a simple multi-function call without inference. Argument types may not contain inference variables.
     */
   def multiFunctionCall(
     functionName: String,
@@ -39,7 +38,9 @@ object CallTransformation {
         case min if min.isEmpty => Compilation.fail(EmptyFit(mf, inputType))
         case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, inputType, min))
         case functionDefinition +: _ =>
-          functionDefinition.instantiate(inputType).map(instance => Expression.Call(instance, arguments, position))
+          functionDefinition.instantiate(inputType).map(
+            instance => Expression.Call(CallTarget.MultiFunction(mf), arguments, instance.signature.outputType, position)
+          )
       }
     }
   }

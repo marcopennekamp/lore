@@ -119,7 +119,7 @@ object Type {
       case SumType(types) => SumType(types.map(rec))
       case IntersectionType(types) => IntersectionType(types.map(rec))
       case ProductType(elements) => ProductType(elements.map(rec))
-      case FunctionType(input, output) => FunctionType(ProductType(input.elements.map(rec)), rec(output))
+      case FunctionType(input, output) => FunctionType(rec(input), rec(output))
       case ListType(element) => ListType(rec(element))
       case MapType(key, value) => MapType(rec(key), rec(value))
       case shapeType: ShapeType => shapeType.mapPropertyTypes(rec)

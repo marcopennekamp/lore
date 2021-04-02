@@ -3,13 +3,13 @@ package lore.compiler.phases.transformation
 import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.core._
 import lore.compiler.phases.resolution.TypeExpressionEvaluator
-import lore.compiler.phases.transformation.InferringExpressionTransformationVisitor.{DynamicFunctionNameExpected, StructExpected, UnsafeInteger}
+import lore.compiler.phases.transformation.InferringExpressionTransformationVisitor._
 import lore.compiler.phases.transformation.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
-import lore.compiler.semantics.scopes.{LocalVariable, TypeScope, VariableScope}
+import lore.compiler.semantics.scopes.{LocalVariable, TypeScope, Variable, VariableScope}
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.types._
@@ -109,7 +109,7 @@ class InferringExpressionTransformationVisitor(
     case AnonymousFunctionNode(parameterNodes, _, position) =>
       val parameters = parameterNodes.map { case AnonymousFunctionParameterNode(name, _, position) =>
         val variable = scopeContext.currentScope.get(name).getOrElse(
-          throw CompilationException(s"The anonymous function parameter at $position should have a corresponding scope entry.")
+          throw CompilationException(s"The anonymous function parameter at $position should have a corresponding scope entry."),
         )
         Expression.AnonymousFunctionParameter(name, variable.tpe, position)
       }
@@ -141,7 +141,7 @@ class InferringExpressionTransformationVisitor(
         UnaryOperator.LogicalNot,
         Expression.BinaryOperation(BinaryOperator.Equals, left, right, BasicType.Boolean, position),
         BasicType.Boolean,
-        position
+        position,
       ).compiled
     case LessThanNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.LessThan, left, right, BasicType.Boolean, position).compiled
     case LessThanEqualsNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.LessThanEquals, left, right, BasicType.Boolean, position).compiled
@@ -243,18 +243,7 @@ class InferringExpressionTransformationVisitor(
     case ConcatenationNode(_, position) =>
       Expression.XaryOperation(XaryOperator.Concatenation, expressions, BasicType.String, position).compiled
 
-    // Function calls.
-    case SimpleCallNode(name, _, position) =>
-      implicit val pos: Position = position
-      // A simple call may either be a function or a constructor call. We immediately try to differentiate this based
-      // on whether a struct type can be found for the function name.
-      registry.getStructType(name) match {
-        case Some(structType) =>
-          InstantiationTransformation.transformCallStyleInstantiation(structType.definition, expressions).map(addJudgmentsFrom)
-        case None =>
-          FunctionTyping.multiFunctionCall(name, expressions, position).map(addJudgmentsFrom)
-      }
-
+    // Xary function calls.
     case FixedFunctionCallNode(name, typeExpressions, _, position) =>
       // TODO: Implement later...
       /* for {
@@ -273,7 +262,7 @@ class InferringExpressionTransformationVisitor(
         },
         TypeExpressionEvaluator.evaluate(resultType),
       ).simultaneous.map { case (name, resultType) =>
-        Expression.Call(CallTarget.Dynamic(name, resultType), expressions.tail, position)
+        Expression.Call(CallTarget.Dynamic(name), expressions.tail, resultType, position)
       }
   }
 
@@ -294,20 +283,48 @@ class InferringExpressionTransformationVisitor(
     Expression.MapConstruction(entries, MapType(keyType, valueType), node.position).compiled
   }
 
+  override def visitCall(node: CallNode)(target: Expression, arguments: Vector[Expression]): Compilation[Expression] = {
+    def transformValueCall(inputType: Type, outputType: Type): Expression.Call = {
+      typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(ProductType(arguments.map(_.tpe)), inputType, target.position)
+
+      Expression.Call(CallTarget.Value(target), arguments, outputType, node.position)
+    }
+
+    // A call target may either be a multi-function or a value with a function type. Because multi-function types
+    // cannot be specified in Lore code, only inferred from multi-function variables, the multi-function type is
+    // guaranteed to be "inferred" at this point.
+    target.tpe match {
+      case MultiFunctionType(mf) => FunctionTyping.multiFunctionCall(mf, arguments, node.position).map(addJudgmentsFrom)
+
+      // If the target's type is defined now, we can take a shortcut, because it's definitely a function.
+      case FunctionType(input, output) => transformValueCall(input, output).compiled
+
+      // May or may not be a function type, so we have to make sure that the type is even a function. The Assign
+      // judgment ensures that the target's type is even a function type. For now, we don't want to infer the type of
+      // the target based on the provided arguments, so we're relying on one-way type inference.
+      case _ =>
+        val inputType = new InferenceVariable
+        val outputType = new InferenceVariable
+
+        typingJudgments = typingJudgments :+ TypingJudgment.Assign(FunctionType(inputType, outputType), target.tpe, target.position)
+
+        transformValueCall(inputType, outputType).compiled
+    }
+  }
+
   override def visitIteration(node: ForNode)(
     extractorTuples: Vector[(String, Expression)], visitBody: () => Compilation[Expression],
   ): Compilation[Expression] = {
     // Before we visit the body, we have to push a new scope and later, once extractors have been evaluated, also
     // a new loop context.
     scopeContext.openScope()
-    val scope = scopeContext.currentScope
 
     def transformExtractor(variableName: String, collection: Expression, position: Position): Compilation[Expression.Extractor] = {
       val elementType = new InferenceVariable
       typingJudgments = typingJudgments :+ TypingJudgment.ElementType(elementType, collection.tpe, position)
 
       val localVariable = LocalVariable(variableName, elementType, isMutable = false)
-      scope.register(localVariable)(position).map(_ => Expression.Extractor(localVariable, collection))
+      scopeContext.currentScope.register(localVariable)(position).map(_ => Expression.Extractor(localVariable, collection))
     }
 
     for {
@@ -378,6 +395,11 @@ object InferringExpressionTransformationVisitor {
 
   case class StructExpected(name: String)(implicit position: Position) extends Error(position) {
     override def message: String = s"The name $name must refer to a struct."
+  }
+
+  // TODO: This should be the error message for the Assign judgment created in visitCall.
+  case class FunctionExpected(variable: Variable, override val position: Position) extends Error(position) {
+    override def message: String = s"The variable ${variable.name} should be a function type, but is actually ${variable.tpe}."
   }
 
 }

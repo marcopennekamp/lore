@@ -6,7 +6,7 @@ import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.semantics.members.Member
 import lore.compiler.semantics.scopes.{LocalVariable, Variable}
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
-import lore.compiler.types.{BasicType, FunctionType, ProductType, ShapeType, Type}
+import lore.compiler.types._
 
 sealed trait Expression {
   def position: Position
@@ -162,9 +162,9 @@ object Expression {
   case class XaryOperation(operator: XaryOperator, expressions: Vector[Expression], tpe: Type, position: Position) extends Expression
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Multi-function, fixed function and dynamic calls.
+  // Function calls.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class Call(target: CallTarget, arguments: Vector[Expression], position: Position) extends Expression.Apply(target.outputType)
+  case class Call(target: CallTarget, arguments: Vector[Expression], tpe: Type, position: Position) extends Expression
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and loop expressions.

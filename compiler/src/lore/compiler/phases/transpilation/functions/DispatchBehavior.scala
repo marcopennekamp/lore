@@ -10,7 +10,7 @@ import lore.compiler.types.Type
 
 class DispatchBehavior(mf: MultiFunctionDefinition, properties: MultiFunctionProperties, dispatchInput: DispatchInput)(implicit variableProvider: TemporaryVariableProvider, typeVariables: TranspiledTypeVariables) {
 
-  private val varDispatchCache = s"${mf.name}__dispatchCache".asVariable
+  private val varDispatchCache = s"${mf.runtimeName}__dispatchCache".asVariable
 
   lazy val preamble: Vector[TargetStatement] = {
     // The cache is declared as a global constant so that it exists between multi-function calls.

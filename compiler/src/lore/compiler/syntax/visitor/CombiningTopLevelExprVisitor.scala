@@ -26,6 +26,9 @@ trait CombiningTopLevelExprVisitor[A, M[_]] extends TopLevelExprVisitor[A, M] {
   override def visitXary(node: TopLevelExprNode.XaryNode)(arguments: Vector[A]): M[A] = {
     visit(node, arguments)
   }
+  override def visitCall(node: ExprNode.CallNode)(target: A, arguments: Vector[A]): M[A] = {
+    visit(node, Vector(target) ++ arguments)
+  }
   override def visitMap(node: ExprNode.MapNode)(entries: Vector[(A, A)]): M[A] = {
     visit(node, entries.map { case (a, b) => combine(Vector(a, b)) })
   }

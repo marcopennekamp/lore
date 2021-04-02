@@ -8,7 +8,7 @@ import lore.compiler.types.Type
 object CallVerification {
 
   case class IllegalReturnType(call: Expression.Call, expectedTypes: Vector[Type]) extends Error(call) {
-    override def message = s"Calling ${call.target.name} returns the illegal type ${call.tpe}.$expected"
+    override def message = s"Calling ${call.target} returns the illegal type ${call.tpe}.$expected"
     private def expected: String = {
       if (expectedTypes.nonEmpty) {
         s" We expected one of the following types: ${expectedTypes.mkString(",")}."

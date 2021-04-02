@@ -25,6 +25,12 @@ import scala.collection.mutable
 class DeclarationResolver {
   // TODO: We could move all this state into the resolve function and make it implicit.
 
+  // TODO: Now that struct constructors can be passed around as functions, declared types and multi-functions reside
+  //       in the same namespace. Hence, names may not be shared! This should usually not be a problem since struct
+  //       names are upper-case and multi-function names lower-case, but still needs to be enforced, of course.
+  //       Alternatively, we could define that multi-function names shadow struct constructors. That is actually how it
+  //       works right now, so we wouldn't need to change anything except for the specification/documentation.
+
   private val typeDeclarations: mutable.HashMap[String, TypeDeclNode] = mutable.HashMap()
   private val multiFunctionDeclarations: mutable.HashMap[String, Vector[DeclNode.FunctionNode]] = mutable.HashMap()
   private val dependencyGraph: DependencyGraph = new DependencyGraph(new DependencyGraph.Owner {

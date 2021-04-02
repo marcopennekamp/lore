@@ -2,9 +2,9 @@ package lore.compiler.semantics
 
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException, Error, Position}
-import lore.compiler.semantics.Registry.{ExactFunctionNotFound, MultiFunctionNotFound, TypeNotFound}
+import lore.compiler.semantics.Registry.{ExactFunctionNotFound, MultiFunctionNotFound, RegistryVariableNotFound, TypeNotFound}
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.compiler.semantics.scopes.{GlobalVariableScope, TypeScope, Variable, VariableScope}
+import lore.compiler.semantics.scopes.{TypeScope, Variable, VariableScope}
 import lore.compiler.semantics.structures._
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions._
@@ -103,17 +103,6 @@ class Registry {
   }
 
   /**
-    * The global variable scope backed by the registry. This contains only multi-functions for now.
-    */
-  val variableScope: VariableScope = new VariableScope {
-    override protected def local(name: String): Option[Variable] = ??? // getMultiFunction(name)
-    override protected def add(name: String, entry: Variable): Unit = {
-      throw new UnsupportedOperationException(s"You may not add variables to the Registry via its VariableScope interface. Name: $name. Variable: $entry.")
-    }
-    override protected def unknownEntry(name: String)(implicit position: Position): Error = MultiFunctionNotFound(name)
-  }
-
-  /**
     * Registers the given type definition.
     */
   def registerTypeDefinition(definition: DeclaredTypeDefinition): Unit = {
@@ -179,6 +168,19 @@ class Registry {
     }
   }
 
+  def getStructConstructor(name: String): Option[StructConstructorDefinition] = getStructType(name).map(_.definition.constructor)
+
+  /**
+    * The global variable scope backed by the registry, containing multi-functions and struct constructors.
+    */
+  val variableScope: VariableScope = new VariableScope {
+    override protected def local(name: String): Option[Variable] = getMultiFunction(name).orElse(getStructConstructor(name))
+    override protected def add(name: String, entry: Variable): Unit = {
+      throw new UnsupportedOperationException(s"You may not add variables to the Registry via its VariableScope interface. Name: $name. Variable: $entry.")
+    }
+    override protected def unknownEntry(name: String)(implicit position: Position): Error = RegistryVariableNotFound(name, position)
+  }
+
 }
 
 object Registry {
@@ -192,5 +194,9 @@ object Registry {
 
   case class ExactFunctionNotFound(name: String, types: Vector[Type])(implicit position: Position) extends Error(position) {
     override def message = s"The exact function $name[${types.mkString(", ")}] does not exist in the current scope."
+  }
+
+  case class RegistryVariableNotFound(name: String, override val position: Position) extends Error(position) {
+    override def message = s"The multi-function or struct constructor $name does not exist in the current scope."
   }
 }

@@ -1,0 +1,7 @@
+struct Person { name: String, age: Int }
+
+function apply(create: (String, Int) => A): A where A = create('Ageless', 0)
+
+// TODO: To make this work, we have to wrap the Person constructor in a FunctionValue so that the right type is passed
+//       to `apply` at run-time.
+function test(): Person = apply(Person)

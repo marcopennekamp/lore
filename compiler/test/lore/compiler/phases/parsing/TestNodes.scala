@@ -68,7 +68,7 @@ object TestNodes {
     val KeyValue = withWildcard(KeyValueNode)
     val PropertyAccess = withWildcard(MemberAccessNode)
     val Block = withWildcard(BlockNode)
-    val SimpleCall = withWildcard(SimpleCallNode)
+    val SimpleCall = withWildcard(CallNode)
     val FixedFunctionCall = withWildcard(FixedFunctionCallNode)
     val DynamicCall = withWildcard(DynamicCallNode)
     val IfElse = withWildcard(IfElseNode)

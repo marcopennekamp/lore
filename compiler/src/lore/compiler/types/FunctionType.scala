@@ -1,12 +1,18 @@
 package lore.compiler.types
 
+import lore.compiler.core.CompilationException
+import lore.compiler.phases.transformation.inference.InferenceVariable
+
 import scala.util.hashing.MurmurHash3
 
 /**
-  * A type that describes multi-functions and anonymous functions as an input/output relation.
+  * A type that describes functions as a fixed input/output relation. In contrast to [[MultiFunctionType]], a function
+  * type makes no assumptions about internal dispatch mechanics. A multi-function may as well be viewed through the
+  * lens of a function type, but anonymous functions (as well typed through function types) have no dispatch mechanics
+  * at all.
   *
-  * The input type must always be a tuple type so that we can distinguish between functions which take a single tuple
-  * argument vs. two distinct arguments. That is, `((A, B)) => C` vs. `(A, B) => C`.
+  * The input type must always be a tuple type (or an inference variable) so that we can distinguish between functions
+  * which take a single tuple argument vs. two distinct arguments. That is, `((A, B)) => C` vs. `(A, B) => C`.
   *
   * TODO: It's bothering me slightly that the input type has to be a tuple type. I'm tempted to lift this
   *       "restriction", but there is one good argument for it: If FunctionType was Type => Type, the call syntax
@@ -15,6 +21,17 @@ import scala.util.hashing.MurmurHash3
   *       missing. `f v` would break even more assumptions. So it seems that for now the input type does indeed have
   *       to be a tuple type.
   */
-case class FunctionType(input: ProductType, output: Type) extends Type {
+case class FunctionType(input: Type, output: Type) extends Type {
+  // This seems like the best way to (softly) enforce the need for tuple types here. A sum type would be great, but
+  // isn't very comfortable in Scala 2.
+  if (!input.isInstanceOf[ProductType] && !input.isInstanceOf[InferenceVariable]) {
+    throw CompilationException(s"A function type's input type must either be a tuple type or an inference variable. Actual type: $input.")
+  }
+
+  lazy val parameters: Vector[Type] = input match {
+    case ProductType(elements) => elements
+    case _ => throw CompilationException(s"Can't retrieve parameters from non-tuple input type. Input type: $input.")
+  }
+
   override val hashCode: Int = MurmurHash3.productHash((input, output), 0xf4527105)
 }

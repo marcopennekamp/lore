@@ -48,7 +48,7 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
   private def address[_: P]: P[ExprNode.AddressNode] = {
     // We can cast to PropertyAccessNode because we set minAccess to 1, which ensures that the parse results in such
     // a node.
-    def prop = P(propertyAccess(minAccess = 1)).asInstanceOf[P[ExprNode.MemberAccessNode]]
+    def prop = P(propertyAccess(accessible, minAccess = 1)).asInstanceOf[P[ExprNode.MemberAccessNode]]
     P(prop | variable)
   }
 
@@ -129,7 +129,7 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     * dots are consumed greedily, we still create a chain of PropertyAccessNodes, because that'll make it easier to
     * to compile later.
     */
-  private def atom[_: P]: P[ExprNode] = P(propertyAccess(minAccess = 0))
+  private def atom[_: P]: P[ExprNode] = P(propertyAccess(accessible, minAccess = 0))
 
   /**
     * Surrounds an accessible expression with the possibility for property access. This is used by atom AND assignment
@@ -137,7 +137,7 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     *
     * @param minAccess The minimum number of times that the instance needs to be accessed.
     */
-  private def propertyAccess[_: P](minAccess: Int): P[ExprNode] = {
+  private def propertyAccess[_: P](accessible: P[ExprNode], minAccess: Int): P[ExprNode] = {
     def propertyAccess = P((Index ~ "." ~ identifier).rep(minAccess))
     P(accessible ~ propertyAccess).map { case (expr, propertyAccesses) =>
       // Create a PropertyAccessNode for every property access or just return the expression if there is
@@ -155,6 +155,13 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     P(literal | fixedCall | dynamicCall | call | objectMap | variable | block | list | map | shape | enclosed)
   }
 
+  /**
+    * All expressions immediately accessible via postfix dot notation that can be used as call targets.
+    */
+  private def accessibleCallTarget[_: P]: P[ExprNode] = {
+    P(literal | objectMap | variable | block | list | map | shape | enclosed)
+  }
+
   private def literal[_: P]: P[ExprNode] = {
     def real = P(Index ~ LexicalParser.real).map(withPosition(ExprNode.RealLiteralNode))
     def int = P(Index ~ LexicalParser.integer).map(withPosition(ExprNode.IntLiteralNode))
@@ -167,7 +174,19 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
 
   private def dynamicCall[_: P]: P[ExprNode] = P(Index ~ "dynamic" ~~ Space.WS ~~ singleTypeArgument ~~ Space.WS ~~ arguments).map(withPosition(ExprNode.DynamicCallNode))
 
-  private def call[_: P]: P[ExprNode] = P(Index ~ identifier ~~ Space.WS ~~ arguments).map(withPosition(ExprNode.SimpleCallNode))
+  /**
+    * To avoid infinite left-recursion, we don't allow the target expression to be an atom, but rather either a
+    * guaranteed property access, or an accessible itself without calls. To still allow calls such as `abc(a)(b)(c)`,
+    * if `abc(a)` returns a callable function and so on, we are parsing all argument lists in a row.
+    */
+  private def call[_: P]: P[ExprNode] = {
+    P(Index ~ propertyAccess(accessibleCallTarget, minAccess = 0) ~~ Space.WS ~~ arguments.rep(1)).map {
+      case (index, target, argumentLists) =>
+        argumentLists.foldLeft(target) { case (left, arguments) =>
+          withPosition(ExprNode.CallNode)(index, left, arguments)
+        }
+    }
+  }
 
   private def arguments[_: P]: P[Vector[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toVector)
   private def typeArguments[_: P]: P[Vector[TypeExprNode]] = P("[" ~ typeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toVector)
