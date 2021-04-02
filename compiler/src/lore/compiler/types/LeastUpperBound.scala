@@ -108,6 +108,10 @@ object LeastUpperBound {
           lubPassOnSettings(f1.output, f2.output)
         )
 
+      // Note that multi-function types can only be lubbed with function types if the function type is already a
+      // supertype of the multi-function type. Consequently, we do not have to add any special handling for
+      // multi-function types.
+
       // For declared types, the LUB is calculated by the type hierarchy. If the result would be Any, we return
       // the fallback type instead.
       // We specifically don't default to a shape type (which would be possible if we LUB two structs) because we only

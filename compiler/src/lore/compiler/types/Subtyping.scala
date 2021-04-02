@@ -26,7 +26,6 @@ object Subtyping {
     */
   def isStrictSupertype(t1: Type, t2: Type): Boolean = t1 != t2 && isSupertype(t1, t2)
 
-
   /**
     * We define the calculation of the subtyping relation in terms of rules that possibly match a pair of types
     * and then decide whether these types are in the relation or not. We define rules as partial functions
@@ -85,6 +84,20 @@ object Subtyping {
 
     // Functions are contravariant in their input and covariant in their output.
     { case (f1: FunctionType, f2: FunctionType) => isSubtype(f2.input, f1.input) && isSubtype(f1.output, f2.output) },
+
+    // A multi-function mf1 can implement a function type f2 if mf1 has at least one function that can handle the input
+    // of f2 while adhering to the output type of f2.
+    {
+      case (mf1: MultiFunctionType, f2: FunctionType) =>
+        mf1.mf.functions.exists { function =>
+          // This is equivalent to checking the fit of the two input types and then instantiating the function to get
+          // the correct output type. Instantiating and then checking for subtyping is a little more efficient and
+          // shorter.
+          function.instantiateOption(f2.input).exists { instance =>
+            f2.input <= instance.signature.inputType && function.signature.outputType <= f2.output
+          }
+        }
+    },
 
     // Lists are covariant.
     { case (l1: ListType, l2: ListType) => isSubtype(l1.element, l2.element) },

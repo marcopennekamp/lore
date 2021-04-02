@@ -24,7 +24,6 @@ trait Type extends HasMembers {
 
 object Type {
 
-  // TODO: Add a Unit type.
   val predefinedTypes: Map[String, NamedType] = Vector(
     BasicType.Any,
     BasicType.Nothing,
@@ -56,6 +55,7 @@ object Type {
       exceptTraits.isEmpty || exceptTraits.exists(isAbstract)
     case ProductType(elements) => elements.exists(isAbstract)
     case FunctionType(_, _) => false
+    case MultiFunctionType(_) => false
     case ListType(_) => false
     case MapType(_, _) => false
     case ShapeType(_) => false
