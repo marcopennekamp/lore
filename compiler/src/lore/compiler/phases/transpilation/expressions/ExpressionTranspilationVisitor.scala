@@ -59,16 +59,18 @@ private[transpilation] class ExpressionTranspilationVisitor()(
     }
   }
 
-  override def visit(expression: AnonymousFunction)(bodyChunk: Chunk): Chunk = {
-    bodyChunk.mapExpression { body =>
+  override def visit(expression: AnonymousFunction)(body: Chunk): Chunk = {
+    val lambdaParameters = expression.parameters.map(p => Target.Parameter(RuntimeNames.localVariable(p.name).name))
+    val targetBody = if (body.statements.nonEmpty) {
+      Target.Block(body.statements ++ Vector(Target.Return(body.expression)))
+    } else body.expression
+
+    Chunk.expression(
       RuntimeApi.functions.value(
-        Target.Lambda(
-          expression.parameters.map(p => Target.Parameter(RuntimeNames.localVariable(p.name).name)),
-          body,
-        ),
+        Target.Lambda(lambdaParameters, targetBody),
         TypeTranspiler.transpileSubstitute(expression.tpe),
       )
-    }
+    )
   }
 
   override def visit(expression: ListConstruction)(values: Vector[Chunk]): Chunk = {
