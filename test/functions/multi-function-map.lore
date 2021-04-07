@@ -1,0 +1,11 @@
+function simpleMap(list: [A], f: A => B): [B] where A, B = for (a <- list) f(a)
+
+trait Animal
+struct Cat implements Animal { fame: Real }
+struct Dog implements Animal { fame: Real }
+
+function coolness(animal: Animal): Real
+function coolness(cat: Cat): Real = 5.0 * cat.fame
+function coolness(dog: Dog): Real = 3.0 * dog.fame
+
+function test(): [Real] = simpleMap([Cat(1.2), Dog(5), Dog(3.50), Cat(7.7)], coolness)
