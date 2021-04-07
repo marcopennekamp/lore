@@ -30,7 +30,7 @@ export function substitute(assignments: Assignments, type: Type): Type {
       return Tuple.type(substituteMany(assignments, (<ProductType> type).types))
     case Kind.Function: {
       const func = <FunctionType> type
-      return Function.type(substitute(assignments, func.input), substitute(assignments, func.output))
+      return Function.type(<ProductType> substitute(assignments, func.input), substitute(assignments, func.output))
     }
     case Kind.List:
       return List.type(substitute(assignments, (<ListType> type).element))

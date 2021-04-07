@@ -89,13 +89,11 @@ object Subtyping {
     // of f2 while adhering to the output type of f2.
     {
       case (mf1: MultiFunctionType, f2: FunctionType) =>
-        mf1.mf.functions.exists { function =>
+        mf1.mf.functions.exists { f1 =>
           // This is equivalent to checking the fit of the two input types and then instantiating the function to get
           // the correct output type. Instantiating and then checking for subtyping is a little more efficient and
           // shorter.
-          function.instantiateOption(f2.input).exists { instance =>
-            f2.input <= instance.signature.inputType && function.signature.outputType <= f2.output
-          }
+          f1.instantiateOption(f2.input).exists { instance => isSubtype(instance.signature.functionType, f2) }
         }
     },
 

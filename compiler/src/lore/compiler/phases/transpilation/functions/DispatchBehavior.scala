@@ -123,7 +123,7 @@ class DispatchBehavior(mf: MultiFunctionDefinition, properties: MultiFunctionPro
 
     // Sets the function represented by this node as the target of the mutli-function call.
     val setAsTarget = if (!function.isAbstract) {
-      val actualFunction = RuntimeNames.function(function)
+      val actualFunction = RuntimeNames.functionDefinition(function)
       val candidate = if (function.isPolymorphic) {
         // The first parameter of a polymorphic function is the map of type variable assignments passed to it at
         // run-time. Hence, we have to bind that map (saved in the fitsX variable after being returned by

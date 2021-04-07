@@ -24,8 +24,8 @@ object StructTranspiler {
     *      and other static uses. It is also used for structs that don't have open property types.
     *   4. An instantiation function which takes a properties object, computes the correct run-time type, and
     *      instantiates a value of the struct.
-    *   5. A call-style constructor which delegates to the instantiation function. This constructor is essentially a
-    *      function, which simplifies compilation and allows a user to pass struct constructors as functions.
+    *   5. A call-style constructor function value which delegates to the instantiation function. This constructor
+    *      being a function value simplifies compilation and allows a user to pass struct constructors as functions.
     *   6. One function for each default value of the struct's properties. This function can be invoked to generate
     *      another default value during instantiation.
     */
@@ -109,16 +109,22 @@ object StructTranspiler {
 
     // We use the actual parameter names here so that we can construct the properties object using shorthand syntax.
     // For example:
-    //    function ABC__constructor(name, age) {
-    //      return ABC__instantiate({ name, age });
-    //    }
-    val parameterNames = tpe.definition.constructor.signature.parameters.map(_.name.asName)
+    //    const ABC__constructor = Lore.functions.value(
+    //      (name, age) => ABC__instantiate({ name, age }),
+    //      /* function type */,
+    //    );
+    val signature = tpe.definition.constructor.signature
+    val parameterNames = signature.parameters.map(_.name.asName)
     val parameters = parameterNames.map(Target.Parameter(_))
     val properties = Target.Dictionary(parameterNames.map(name => Target.Property(name, name.asVariable)))
 
-    Target.Function(varConstructor.name, parameters, Target.block(
-      Target.Return(Target.Call(varInstantiate, Vector(properties)))
-    ))
+    Target.VariableDeclaration(
+      varConstructor.name,
+      RuntimeApi.functions.value(
+        Target.Lambda(parameters, Target.Call(varInstantiate, Vector(properties))),
+        TypeTranspiler.transpile(signature.functionType)(Map.empty),
+      ),
+    )
   }
 
   private def transpileDefaultValues(tpe: StructType)(implicit registry: Registry) = {

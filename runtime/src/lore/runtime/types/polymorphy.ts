@@ -16,14 +16,6 @@ export function isPolymorphic(type: Type): boolean {
     case Kind.TypeVariable:
       return true
 
-    case Kind.Any:
-    case Kind.Nothing:
-    case Kind.Real:
-    case Kind.Int:
-    case Kind.Boolean:
-    case Kind.String:
-      return false
-
     case Kind.Struct:
     case Kind.Trait:
       return false // TODO: Change this once we allow type parameters for classes and labels.

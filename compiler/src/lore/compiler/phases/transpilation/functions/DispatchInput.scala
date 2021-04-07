@@ -10,8 +10,8 @@ import lore.compiler.target.TargetDsl._
 import lore.compiler.types.Type
 
 /**
-  * The dispatch argument transpiler covers input and argument types. The [[DispatchBehavior]] relies on the
-  * types provided by this transpiler.
+  * The dispatch input transpiler covers input and argument types. The [[DispatchBehavior]] relies on the types
+  * provided by this transpiler.
   */
 class DispatchInput(mf: MultiFunctionDefinition, properties: MultiFunctionProperties)(implicit variableProvider: TemporaryVariableProvider, typeVariables: TranspiledTypeVariables) {
 

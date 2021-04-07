@@ -64,6 +64,8 @@ object RuntimeApi {
     implicit val base = named("functions")(RuntimeApi.base)
 
     def tpe(input: TargetExpression, output: TargetExpression) = named("type").call(input, output)
+    def value(callable: TargetExpression, tpe: TargetExpression) = named("value").call(callable, tpe)
+    def call(function: TargetExpression, arguments: Vector[TargetExpression]) = Target.Call(named("call"), function +: arguments)
   }
 
   object lists {

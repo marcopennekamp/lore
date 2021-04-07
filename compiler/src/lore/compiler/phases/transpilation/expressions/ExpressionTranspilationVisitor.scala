@@ -146,14 +146,16 @@ private[transpilation] class ExpressionTranspilationVisitor()(
   }
 
   override def visit(expression: Call)(target: Option[Chunk], arguments: Vector[Chunk]): Chunk = {
-    def buildCall(expression: Target.TargetExpression) = {
-      Chunk.combine(arguments) { arguments => Chunk.expression(Target.Call(expression, arguments)) }
+    def withArguments(f: Vector[Target.TargetExpression] => Target.TargetExpression) = {
+      Chunk.combine(arguments) { arguments => Chunk.expression(f(arguments)) }
     }
+    def functionValueCall(function: Target.TargetExpression) = withArguments(RuntimeApi.functions.call(function, _))
+    def directCall(expression: Target.TargetExpression) = withArguments(Target.Call(expression, _))
 
     expression.target match {
-      case CallTarget.Value(_) => target.get.flatMap(buildCall)
-      case CallTarget.MultiFunction(mf) => buildCall(mf.asTargetVariable)
-      case CallTarget.Dynamic(name) => buildCall(name.asVariable)
+      case CallTarget.Value(_) => target.get.flatMap(functionValueCall)
+      case CallTarget.MultiFunction(mf) => directCall(mf.asTargetVariable)
+      case CallTarget.Dynamic(name) => directCall(name.asVariable)
     }
   }
 

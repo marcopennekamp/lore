@@ -26,12 +26,6 @@ object RuntimeNames {
   def localTypeVariableAssignments: Target.Variable = "lore_type_assignments".asVariable
 
   /**
-    * Run-time multi-function names are unqualified for now. However, this function should be used so that we can
-    * change this later more easily.
-    */
-  def multiFunction(mf: MultiFunctionDefinition): Target.Variable = mf.name.asVariable
-
-  /**
     * Returns a unique name for a given function definition. Because multi-functions contain many functions of the
     * same name, we have to incorporate the input type into the individual function's name. This is similar to C++'s
     * name mangling. It is also preferable to just giving the function an index or a UUID, because apart from removing
@@ -41,8 +35,14 @@ object RuntimeNames {
     * The input type's outer tuple is omitted from the identifier, as it solely represents redundant information.
     * Unit functions thus are represented by the simple name function$.
     */
-  def function(function: FunctionDefinition): Target.Variable = {
+  def functionDefinition(function: FunctionDefinition): Target.Variable = {
     val id = Type.uniqueIdentifier(function.signature.inputType.elements)
     s"${function.name}$$$id".asVariable
   }
+
+  /**
+    * Run-time multi-function names are unqualified for now. However, this function should be used so that we can
+    * change this later more easily.
+    */
+  def multiFunction(mf: MultiFunctionDefinition): Target.Variable = mf.name.asVariable
 }
