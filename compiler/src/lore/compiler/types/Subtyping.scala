@@ -85,18 +85,6 @@ object Subtyping {
     // Functions are contravariant in their input and covariant in their output.
     { case (f1: FunctionType, f2: FunctionType) => isSubtype(f2.input, f1.input) && isSubtype(f1.output, f2.output) },
 
-    // A multi-function mf1 can implement a function type f2 if mf1 has at least one function that can handle the input
-    // of f2 while adhering to the output type of f2.
-    {
-      case (mf1: MultiFunctionType, f2: FunctionType) =>
-        mf1.mf.functions.exists { f1 =>
-          // This is equivalent to checking the fit of the two input types and then instantiating the function to get
-          // the correct output type. Instantiating and then checking for subtyping is a little more efficient and
-          // shorter.
-          f1.instantiateOption(f2.input).exists { instance => isSubtype(instance.signature.functionType, f2) }
-        }
-    },
-
     // Lists are covariant.
     { case (l1: ListType, l2: ListType) => isSubtype(l1.element, l2.element) },
 

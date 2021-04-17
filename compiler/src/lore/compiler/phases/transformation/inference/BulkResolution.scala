@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.phases.transformation.inference.Inference.Assignments
 import lore.compiler.phases.transformation.inference.InferenceOrder.InfluenceGraph
-import lore.compiler.phases.transformation.inference.JudgmentResolver.ResolutionDirection
+import lore.compiler.phases.transformation.inference.JudgmentResolver.{ResolutionDirection, resolve}
 import lore.compiler.semantics.Registry
 import lore.compiler.types.Type
 
@@ -106,6 +106,11 @@ object BulkResolution {
           resolveTowards(ResolutionDirection.Forwards)
         } else None
 
+      case TypingJudgment.MultiFunctionValue(target, _, _) =>
+        if (isFullyInferred(target, assignments, influenceGraph)) {
+          resolveTowards(ResolutionDirection.Forwards)
+        } else None
+
       case TypingJudgment.MostSpecific(_, _, _) => ???
     }
   }
@@ -121,7 +126,7 @@ object BulkResolution {
     */
   private def isFullyInferred(iv: InferenceVariable, assignments: Assignments, influenceGraph: InfluenceGraph): Boolean = {
     val bounds = InferenceVariable.effectiveBounds(assignments, iv)
-    InferenceBounds.areFixed(bounds) || !influenceGraph.get(iv).hasPredecessors
+    InferenceBounds.areFixed(bounds) || !influenceGraph.find(iv).exists(_.hasPredecessors)
   }
 
   private def isFullyInferred(tpe: Type, assignments: Assignments, influenceGraph: InfluenceGraph): Boolean = {

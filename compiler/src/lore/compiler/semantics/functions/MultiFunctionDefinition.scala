@@ -3,14 +3,13 @@ package lore.compiler.semantics.functions
 import lore.compiler.phases.transpilation.RuntimeNames
 import lore.compiler.semantics.scopes.Variable
 import lore.compiler.target.Target
-import lore.compiler.types.{MultiFunctionType, ProductType, Type}
+import lore.compiler.types.ProductType
 
 case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefinition]) extends Variable {
 
   val hierarchy: DispatchHierarchy = DispatchHierarchyBuilder.build(this)
 
-  override val tpe: Type = MultiFunctionType(this)
-  override val asTargetVariable: Target.Variable = RuntimeNames.multiFunction(this)
+  override val asTargetVariable: Target.Variable = RuntimeNames.multiFunction(this) // TODO: Do we need this?
   val runtimeName: Target.TargetName = asTargetVariable.name
 
   /**

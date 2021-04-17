@@ -139,6 +139,14 @@ object TypingJudgment {
   }
 
   /**
+    * Types the given multi-function as a function, `target` containing the resulting type. Candidate types are
+    * narrowed down first by taking the context surrounding `target` into account.
+    *
+    * TODO: Add an example.
+    */
+  case class MultiFunctionValue(target: InferenceVariable, mf: MultiFunctionDefinition, position: Position) extends TypingJudgment
+
+  /**
     * From the given list of `alternatives`, the system first chooses all alternatives that result in a correct
     * inference result. Each alternative must result in a correct typing of the given `reference`. Finally, the
     * alternative which produces the most specific `reference` type wins and gets chosen. If multiple reference types
@@ -179,6 +187,7 @@ object TypingJudgment {
     case operation: Operation => operation.operands.forall(isFullyInferred)
     case MostSpecific(_, alternatives, _) => alternatives.forall(isSimple)
     case Conjunction(judgments, _) => judgments.forall(isSimple)
+    case _ => false
   }
 
   def stringify(judgment: TypingJudgment): String = judgment match {
@@ -189,6 +198,7 @@ object TypingJudgment {
     case MemberAccess(target, source, name, _) => s"$target <- $source.$name"
     case ElementType(target, collection, _) => s"$target <- $collection::elementType"
     case MultiFunctionCall(target, mf, arguments, _) => s"$target <- ${mf.name}(${arguments.mkString(", ")})"
+    case MultiFunctionValue(function, mf, _) => s"$function <- ${mf.name} as function"
     case MostSpecific(reference, alternatives, _) =>s"$reference <- mostSpecific(\n    ${alternatives.mkString(",\n    ")}\n)"
     case Conjunction(judgments, _) => judgments.mkString(" & ")
   }

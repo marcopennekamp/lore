@@ -6,10 +6,9 @@ import lore.compiler.phases.transformation.inference.InferenceVariable
 import scala.util.hashing.MurmurHash3
 
 /**
-  * A type that describes functions as a fixed input/output relation. In contrast to [[MultiFunctionType]], a function
-  * type makes no assumptions about internal dispatch mechanics. A multi-function may as well be viewed through the
-  * lens of a function type, but anonymous functions (as well typed through function types) have no dispatch mechanics
-  * at all.
+  * A type that describes functions as a fixed input/output relation. A function type makes no assumptions about
+  * internal dispatch mechanics. A multi-function may as well be viewed through the lens of a function type, while
+  * anonymous functions have no dispatch mechanics at all.
   *
   * The input type must always be a tuple type (or an inference variable) so that we can distinguish between functions
   * which take a single tuple argument vs. two distinct arguments. That is, `((A, B)) => C` vs. `(A, B) => C`.
@@ -27,6 +26,8 @@ case class FunctionType(input: Type, output: Type) extends Type {
   if (!input.isInstanceOf[ProductType] && !input.isInstanceOf[InferenceVariable]) {
     throw CompilationException(s"A function type's input type must either be a tuple type or an inference variable. Actual type: $input.")
   }
+
+  lazy val inputTuple: ProductType = input.asInstanceOf[ProductType]
 
   lazy val parameters: Vector[Type] = input match {
     case ProductType(elements) => elements

@@ -24,10 +24,7 @@ import lore.compiler.core.CompilationException
   *       - 101: basic type
   *       - 110: fixed-size type
   *     The last five bits are determined as follows:
-  *       - Sum/Intersection/Product: the number of operands (0 to 31)
-  *       - Named:
-  *         - 00000: Declared types
-  *         - 10000: Multi-function types
+  *       - Sum/Intersection/Product/Named: the number of operands (0 to 31)
   *       - Shape: the number of properties (0 to 31)
   *       - basic type:
   *         - 00000: Any
@@ -127,12 +124,7 @@ object TypeEncoder {
       }
       (tag +: writeString(tv.name)) ++ bounds
     case t: BasicType => Vector(Tag.basic(t))
-    case t: NamedType =>
-      val variant: Byte = t match {
-        case _: DeclaredType => 0
-        case MultiFunctionType(_) => 16
-      }
-      Tag(Kind.named, variant) +: writeString(t.name)
+    case t: NamedType => Tag(Kind.named) +: writeString(t.name)
   }
 
   /**

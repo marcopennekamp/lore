@@ -26,6 +26,9 @@ object InferenceOrder {
       case TypingJudgment.LeastUpperBound(target, types, _) => processBiDependencies(graph, Vector(target), types)
       case TypingJudgment.MemberAccess(target, source, _, _) => processBiDependencies(graph, target, source)
       case operation: TypingJudgment.Operation => processDependencies(graph, operation.operands, operation.target)
+      case TypingJudgment.MultiFunctionValue(_, _, _) =>
+        // There is no need to add dependencies here, since `target` will get its dependencies from the context.
+        graph
       case TypingJudgment.MostSpecific(reference, alternatives, position) =>
         // TODO: What to do here??? We can't just require all variables occurring in the alternatives to already be
         //       fully inferred, because some inference variables are supposed to be inferred VIA the alternative

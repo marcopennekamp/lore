@@ -129,14 +129,27 @@ object ExprNode {
   // Function calls.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /**
-    * A call node represents calling any sort of function-compatible target, which can be an anonymous function, a
-    * multi-function, or a struct constructor.
+    * A call node represents calling any sort of value, which can be an anonymous function, a multi-function typed as a
+    * function, or a struct constructor. Full multi-function calls are always represented via [[SimpleCall]].
     */
   case class CallNode(
     target: ExprNode,
     arguments: Vector[ExprNode],
     position: Position,
   ) extends ExprNode
+
+  /**
+    * A simple call represents calling a named entity, which will usually be a multi-function.
+    *
+    * Simple calls are split from more complex target calls because they are the only way to call a multi-function
+    * directly. In all other cases, if the multi-function is used as a variable, it is immediately coerced to a
+    * function type. Splitting these concerns at the syntax level leads to a simpler implementation down the pipeline.
+    */
+  case class SimpleCallNode(
+    name: String,
+    arguments: Vector[ExprNode],
+    position: Position,
+  ) extends XaryNode(arguments) with ExprNode
 
   /**
     * A fixed function call requires type arguments, which separates it from standard call nodes. Additionally, a fixed

@@ -9,7 +9,7 @@ import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
-import lore.compiler.semantics.scopes.{LocalVariable, TypeScope, Variable, VariableScope}
+import lore.compiler.semantics.scopes.{LocalVariable, TypeScope, TypedVariable, VariableScope}
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.types._
@@ -49,7 +49,15 @@ class InferringExpressionTransformationVisitor(
   override def visitLeaf(node: LeafNode): Compilation[Expression] = node match {
     case VariableNode(name, _) =>
       implicit val position: Position = node.position
-      scopeContext.currentScope.resolve(name).map(Expression.VariableAccess(_, position))
+      scopeContext.currentScope.resolve(name).map {
+        case mf: MultiFunctionDefinition =>
+          // Multi-functions which aren't used in a simple call must be converted to function values immediately.
+          val functionType = new InferenceVariable
+          typingJudgments = typingJudgments :+ TypingJudgment.MultiFunctionValue(functionType, mf, position)
+          Expression.MultiFunctionValue(mf, functionType, position)
+
+        case variable: TypedVariable => Expression.VariableAccess(variable, position)
+      }
 
     case RealLiteralNode(value, position) => Expression.Literal(value, BasicType.Real, position).compiled
     case node@IntLiteralNode(value, position) =>
@@ -108,9 +116,11 @@ class InferringExpressionTransformationVisitor(
 
     case AnonymousFunctionNode(parameterNodes, _, position) =>
       val parameters = parameterNodes.map { case AnonymousFunctionParameterNode(name, _, position) =>
+        // TODO: The fact that we have to resolve the variable again, despite it being declared within the before hook,
+        //       is not optimal. Maybe we can come up with a better solution here.
         val variable = scopeContext.currentScope.get(name).getOrElse(
           throw CompilationException(s"The anonymous function parameter at $position should have a corresponding scope entry."),
-        )
+        ).asInstanceOf[TypedVariable]
         Expression.AnonymousFunctionParameter(name, variable.tpe, position)
       }
       scopeContext.closeScope()
@@ -244,6 +254,12 @@ class InferringExpressionTransformationVisitor(
       Expression.XaryOperation(XaryOperator.Concatenation, expressions, BasicType.String, position).compiled
 
     // Xary function calls.
+    case SimpleCallNode(name, _, position) =>
+      scopeContext.currentScope.resolve(name)(position).flatMap {
+        case mf: MultiFunctionDefinition => FunctionTyping.multiFunctionCall(mf, expressions, node.position).map(addJudgmentsFrom)
+        case variable: TypedVariable => transformValueCall(Expression.VariableAccess(variable, position), expressions, position).compiled
+      }
+
     case FixedFunctionCallNode(name, typeExpressions, _, position) =>
       // TODO: Implement later...
       /* for {
@@ -284,20 +300,14 @@ class InferringExpressionTransformationVisitor(
   }
 
   override def visitCall(node: CallNode)(target: Expression, arguments: Vector[Expression]): Compilation[Expression] = {
-    def transformValueCall(inputType: Type, outputType: Type): Expression.Call = {
-      typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(ProductType(arguments.map(_.tpe)), inputType, target.position)
+    transformValueCall(target, arguments, node.position).compiled
+  }
 
-      Expression.Call(CallTarget.Value(target), arguments, outputType, node.position)
-    }
-
-    // A call target may either be a multi-function or a value with a function type. Because multi-function types
-    // cannot be specified in Lore code, only inferred from multi-function variables, the multi-function type is
-    // guaranteed to be "inferred" at this point.
-    target.tpe match {
-      case MultiFunctionType(mf) => FunctionTyping.multiFunctionCall(mf, arguments, node.position).map(addJudgmentsFrom)
-
+  private def transformValueCall(target: Expression, arguments: Vector[Expression], position: Position): Expression.Call = {
+    // A call target must be a value with a function type.
+    val (inputType, outputType) = target.tpe match {
       // If the target's type is defined now, we can take a shortcut, because it's definitely a function.
-      case FunctionType(input, output) => transformValueCall(input, output).compiled
+      case FunctionType(input, output) => (input, output)
 
       // May or may not be a function type, so we have to make sure that the type is even a function. The Assign
       // judgment ensures that the target's type is even a function type. For now, we don't want to infer the type of
@@ -308,8 +318,12 @@ class InferringExpressionTransformationVisitor(
 
         typingJudgments = typingJudgments :+ TypingJudgment.Assign(FunctionType(inputType, outputType), target.tpe, target.position)
 
-        transformValueCall(inputType, outputType).compiled
+        (inputType, outputType)
     }
+
+    typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(ProductType(arguments.map(_.tpe)), inputType, target.position)
+
+    Expression.Call(CallTarget.Value(target), arguments, outputType, position)
   }
 
   override def visitIteration(node: ForNode)(
@@ -398,7 +412,7 @@ object InferringExpressionTransformationVisitor {
   }
 
   // TODO: This should be the error message for the Assign judgment created in visitCall.
-  case class FunctionExpected(variable: Variable, override val position: Position) extends Error(position) {
+  case class FunctionExpected(variable: TypedVariable, override val position: Position) extends Error(position) {
     override def message: String = s"The variable ${variable.name} should be a function type, but is actually ${variable.tpe}."
   }
 

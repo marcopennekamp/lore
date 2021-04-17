@@ -5,7 +5,7 @@ import lore.compiler.phases.transformation.inference.Inference.{Assignments, Ass
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression._
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
-import lore.compiler.semantics.scopes.{LocalVariable, Variable}
+import lore.compiler.semantics.scopes.{LocalVariable, TypedVariable, Variable}
 import lore.compiler.types.{ListType, ProductType, Type}
 
 /**
@@ -51,6 +51,8 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
     expression.parameters.map(_.mapType(assignments.instantiate)),
     body
   )
+
+  override def visit(expression: MultiFunctionValue): Expression = expression.copy(tpe = assignments.instantiate(expression.tpe))
 
   override def visit(expression: ListConstruction)(values: Vector[Expression]): Expression = expression.copy(
     values = values,
@@ -111,7 +113,7 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
     )
   }
 
-  private def instantiateVariable(variable: Variable): Variable = variable match {
+  private def instantiateVariable(variable: TypedVariable): TypedVariable = variable match {
     case variable: LocalVariable => instantiateLocalVariable(variable)
     case v => v
   }

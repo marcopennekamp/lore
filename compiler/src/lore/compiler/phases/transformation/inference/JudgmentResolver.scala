@@ -5,10 +5,10 @@ import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiate, instantiateByBound}
 import lore.compiler.phases.transformation.inference.InferenceBounds.{BoundType, ensureBound, narrowBounds}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.semantics.functions.{FunctionDefinition, FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
 import lore.compiler.types.HasMembers.MemberNotFound
-import lore.compiler.types.{LeastUpperBound, ListType, MapType, ProductType, Type}
+import lore.compiler.types._
 
 object JudgmentResolver {
 
@@ -35,6 +35,22 @@ object JudgmentResolver {
     override def message: String = s"The multi-function call ${mf.name} at this site is ambiguous." +
       s" That is, we are finding too many functions that would accept the given arguments of type $inputType." +
       s" These are: ${min.mkString(", ")}."
+  }
+
+  object MultiFunctionCoercion {
+
+    case class FunctionContextExpected(mf: MultiFunctionDefinition, targetType: Type, pos: Position) extends Error(pos) {
+      override def message: String = s"A multi-function can only be coerced to a function type. The target type is" +
+        s" currently inferred to be $targetType, which is not a function type. Most likely, the multi-function" +
+        s" ${mf.name} cannot be used as a value in this context."
+    }
+
+    case class IllegalOutput(mf: MultiFunctionDefinition, expectedFunction: FunctionType, actualFunction: FunctionType, pos: Position) extends Error(pos) {
+      override def message: String = s"While coercing the multi-function ${mf.name} to a function, the following function type" +
+        s" was expected: $expectedFunction. The actual function type inferred via dispatch is $actualFunction. The" +
+        s" multi-function cannot be coerced to the expected function type because the output types are incompatible."
+    }
+
   }
 
   def resolve(
@@ -136,17 +152,35 @@ object JudgmentResolver {
           // TODO: Once we activate the "MostSpecific" typing judgment that will also be generated with each multi-function
           //       call, we will already have performed the dispatch using the constraint solver. There might be no need to
           //       instantiate the function, for example, if we take the bounds inferred for the type variables, instead.
-          implicit val callPosition: Position = position
-          // TODO: Candidate type or separate lower and upper bounds?
-          val inputType = ProductType(arguments.map(tpe => instantiate(assignments, tpe, _.candidateType)))
-          mf.min(inputType) match {
-            case min if min.isEmpty => Compilation.fail(EmptyFit(mf, inputType))
-            case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, inputType, min))
-            case functionDefinition +: _ =>
-              functionDefinition.instantiate(inputType).flatMap { instance =>
-                val result = instance.signature.outputType
-                narrowBounds(assignments, target, result, result, judgment)
+          // TODO: Handle upper and lower bounds separately.
+          resolveDispatch(mf, ProductType(arguments), position, assignments).flatMap { instance =>
+            val result = instance.signature.outputType
+            narrowBounds(assignments, target, result, result, judgment)
+          }
+
+        case ResolutionDirection.Backwards => illegalBackwards
+      }
+
+      case TypingJudgment.MultiFunctionValue(target, mf, position) => direction match {
+        case ResolutionDirection.Forwards =>
+          // The resolution of a MultiFunctionValue judgment mostly depends on `target` already having some sort of
+          // context with which to extract the fitting function type from the multi-function.
+          // TODO: Handle the case that `target` can't even be instantiated. The error should say something like "more
+          //       context needed" OR we could attempt to type the multi-function as its root type. This only works if
+          //       there is only one root function, of course.
+          instantiate(assignments, target, _.candidateType) match {
+            case expectedFunctionType: FunctionType =>
+              // TODO: Handle upper and lower bounds separately.
+              resolveDispatch(mf, expectedFunctionType.inputTuple, position, assignments).flatMap { instance =>
+                val actualFunctionType = instance.signature.functionType
+                if (actualFunctionType.output <= expectedFunctionType.output) {
+                  narrowBounds(assignments, target, actualFunctionType, actualFunctionType, judgment)
+                } else {
+                  Compilation.fail(MultiFunctionCoercion.IllegalOutput(mf, expectedFunctionType, actualFunctionType, position))
+                }
               }
+
+            case candidateType => Compilation.fail(MultiFunctionCoercion.FunctionContextExpected(mf, candidateType, position))
           }
 
         case ResolutionDirection.Backwards => illegalBackwards
@@ -154,6 +188,18 @@ object JudgmentResolver {
 
       case TypingJudgment.MostSpecific(reference, alternatives, position) => ??? // TODO: Implement.
       case TypingJudgment.Conjunction(judgments, position) => ??? // TODO: Implement.
+    }
+  }
+
+  /**
+    * TODO: Handle both upper and lower bounds separately.
+    */
+  private def resolveDispatch(mf: MultiFunctionDefinition, uninstantiatedInputType: ProductType, position: Position, assignments: Inference.Assignments): Compilation[FunctionInstance] = {
+    val inputType = instantiate(assignments, uninstantiatedInputType, _.candidateType).asInstanceOf[ProductType]
+    mf.min(inputType) match {
+      case min if min.isEmpty => Compilation.fail(EmptyFit(mf, inputType)(position))
+      case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, inputType, min)(position))
+      case functionDefinition +: _ => functionDefinition.instantiate(inputType)
     }
   }
 

@@ -2,9 +2,9 @@ package lore.compiler.semantics.expressions
 
 import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.phases.transformation.inference.InferenceVariable
-import lore.compiler.semantics.functions.CallTarget
+import lore.compiler.semantics.functions.{CallTarget, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
-import lore.compiler.semantics.scopes.{LocalVariable, Variable}
+import lore.compiler.semantics.scopes.{LocalVariable, TypedVariable, Variable}
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.types._
 
@@ -48,7 +48,7 @@ object Expression {
     def isMutable: Boolean
   }
 
-  case class VariableAccess(variable: Variable, position: Position) extends Expression.Apply(variable.tpe) with Access {
+  case class VariableAccess(variable: TypedVariable, position: Position) extends Expression.Apply(variable.tpe) with Access {
     override val name: String = variable.name
     override val isMutable: Boolean = variable.isMutable
   }
@@ -85,6 +85,11 @@ object Expression {
   case class AnonymousFunctionParameter(name: String, tpe: Type, position: Position) {
     def mapType(f: Type => Type): AnonymousFunctionParameter = this.copy(tpe = f(tpe))
   }
+
+  /**
+    * A multi-function typed as a function. It can be passed around like any other function value.
+    */
+  case class MultiFunctionValue(mf: MultiFunctionDefinition, tpe: Type, position: Position) extends Expression
 
   case class ListConstruction(values: Vector[Expression], tpe: Type, position: Position) extends Expression
 

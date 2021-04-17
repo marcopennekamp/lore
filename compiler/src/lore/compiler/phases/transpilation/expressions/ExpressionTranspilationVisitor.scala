@@ -61,16 +61,26 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   override def visit(expression: AnonymousFunction)(body: Chunk): Chunk = {
     val lambdaParameters = expression.parameters.map(p => Target.Parameter(RuntimeNames.localVariable(p.name).name))
-    val targetBody = if (body.statements.nonEmpty) {
+    val lambdaBody = if (body.statements.nonEmpty) {
       Target.Block(body.statements ++ Vector(Target.Return(body.expression)))
     } else body.expression
 
     Chunk.expression(
       RuntimeApi.functions.value(
-        Target.Lambda(lambdaParameters, targetBody),
+        Target.Lambda(lambdaParameters, lambdaBody),
         TypeTranspiler.transpileSubstitute(expression.tpe),
       )
     )
+  }
+
+  override def visit(expression: MultiFunctionValue): Chunk = {
+    // TODO: Transpile one such function value per function instance so that function values don't have to be
+    //       recreated. (This only works for monomorphic functions.) Alternatively, at least pull the function value
+    //       into the global scope as a constant for the given function, so that it doesn't have to be recreated every
+    //       time the function is called. (Unless type variable substitutions are necessary.)
+    val target = expression.mf.runtimeName.asVariable
+    val tpe = TypeTranspiler.transpileSubstitute(expression.tpe)
+    Chunk.expression(RuntimeApi.functions.value(target, tpe))
   }
 
   override def visit(expression: ListConstruction)(values: Vector[Chunk]): Chunk = {

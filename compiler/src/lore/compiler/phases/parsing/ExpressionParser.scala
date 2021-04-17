@@ -152,7 +152,7 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     * All expressions immediately accessible via postfix dot notation.
     */
   private def accessible[_: P]: P[ExprNode] = {
-    P(literal | fixedCall | dynamicCall | call | objectMap | variable | block | list | map | shape | enclosed)
+    P(literal | fixedCall | dynamicCall | simpleCall | call | objectMap | variable | block | list | map | shape | enclosed)
   }
 
   /**
@@ -174,17 +174,24 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
 
   private def dynamicCall[_: P]: P[ExprNode] = P(Index ~ "dynamic" ~~ Space.WS ~~ singleTypeArgument ~~ Space.WS ~~ arguments).map(withPosition(ExprNode.DynamicCallNode))
 
+  private def simpleCall[_: P]: P[ExprNode] = P(Index ~ identifier ~~ Space.WS ~~ arguments.rep(1)).map {
+    case (index, name, argumentLists) =>
+      val firstCall = withPosition(ExprNode.SimpleCallNode)(index, name, argumentLists.head)
+      foldCalls(index, firstCall, argumentLists.tail)
+  }
+
   /**
     * To avoid infinite left-recursion, we don't allow the target expression to be an atom, but rather either a
     * guaranteed property access, or an accessible itself without calls. To still allow calls such as `abc(a)(b)(c)`,
     * if `abc(a)` returns a callable function and so on, we are parsing all argument lists in a row.
     */
   private def call[_: P]: P[ExprNode] = {
-    P(Index ~ propertyAccess(accessibleCallTarget, minAccess = 0) ~~ Space.WS ~~ arguments.rep(1)).map {
-      case (index, target, argumentLists) =>
-        argumentLists.foldLeft(target) { case (left, arguments) =>
-          withPosition(ExprNode.CallNode)(index, left, arguments)
-        }
+    P(Index ~ propertyAccess(accessibleCallTarget, minAccess = 0) ~~ Space.WS ~~ arguments.rep(1)).map((foldCalls _).tupled)
+  }
+
+  private def foldCalls(index: Index, target: ExprNode, argumentLists: Seq[Vector[ExprNode]]): ExprNode = {
+    argumentLists.foldLeft(target) {
+      case (target, arguments) => withPosition(ExprNode.CallNode)(index, target, arguments)
     }
   }
 
