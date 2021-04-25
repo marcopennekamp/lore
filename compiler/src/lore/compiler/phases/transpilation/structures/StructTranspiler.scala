@@ -28,15 +28,18 @@ object StructTranspiler {
     *      being a function value simplifies compilation and allows a user to pass struct constructors as functions.
     *   6. One function for each default value of the struct's properties. This function can be invoked to generate
     *      another default value during instantiation.
+    *
+    * Due to initialization order constraints, the constructor function values (5) are transpiled after all declared
+    * types have been transpiled. This is the only way to avoid having to lazily initialize the constructor's function
+    * value.
     */
   def transpile(tpe: StructType)(implicit registry: Registry): Vector[TargetStatement] = {
     val schema = transpileSchema(tpe)
     val (varNewtype, varArchetype, definitions) = transpileTypeDefinitions(tpe)
     val instantiate = transpileInstantiate(tpe, varNewtype, varArchetype)
-    val constructor = transpileConstructor(tpe)
     val defaultValueFunctions = transpileDefaultValues(tpe)
 
-    Vector(schema) ++ definitions ++ Vector(instantiate) ++ Vector(constructor) ++ defaultValueFunctions
+    Vector(schema) ++ definitions ++ Vector(instantiate) ++ defaultValueFunctions
   }
 
   private def transpileSchema(tpe: StructType) = {
@@ -103,7 +106,18 @@ object StructTranspiler {
     ))
   }
 
-  private def transpileConstructor(tpe: StructType) = {
+  private def transpileDefaultValues(tpe: StructType)(implicit registry: Registry) = {
+    tpe.definition.properties.flatMap { property =>
+      property.defaultValue.map { defaultValue =>
+        val varDefaultValue = RuntimeNames.defaultValue(tpe, property)
+        // TODO: We need to supply runtime type variables here once structs can have type parameters.
+        val chunk = ExpressionTranspiler.transpile(defaultValue.expression)(registry, Map.empty)
+        Target.Function(varDefaultValue.name, Vector.empty, chunk.asBody)
+      }
+    }
+  }
+
+  def transpileConstructor(tpe: StructType): TargetStatement = {
     val varInstantiate = RuntimeNames.instantiate(tpe)
     val varConstructor = RuntimeNames.constructor(tpe)
 
@@ -125,17 +139,6 @@ object StructTranspiler {
         TypeTranspiler.transpile(signature.functionType)(Map.empty),
       ),
     )
-  }
-
-  private def transpileDefaultValues(tpe: StructType)(implicit registry: Registry) = {
-    tpe.definition.properties.flatMap { property =>
-      property.defaultValue.map { defaultValue =>
-        val varDefaultValue = RuntimeNames.defaultValue(tpe, property)
-        // TODO: We need to supply runtime type variables here once structs can have type parameters.
-        val chunk = ExpressionTranspiler.transpile(defaultValue.expression)(registry, Map.empty)
-        Target.Function(varDefaultValue.name, Vector.empty, chunk.asBody)
-      }
-    }
   }
 
 }

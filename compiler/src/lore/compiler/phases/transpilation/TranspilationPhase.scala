@@ -17,6 +17,13 @@ object TranspilationPhase {
       case (name, tpe) => Vector(TypeAliasTranspiler.transpile(name, tpe))
     }.filterNot(_ == Target.Empty)
 
+    // Transpile any additional parts of declared types that require all types to be initialized, regardless of type
+    // order.
+    val typeDeclarationDeferredDefinitions = registry.getTypeDeclarationsInOrder.flatMap {
+      case (_, declaredType: DeclaredType) => DeclaredTypeTranspiler.transpileDeferred(declaredType)
+      case _ => Vector.empty
+    }
+
     val introspectionInitialization = registry.getTraitType(Introspection.typeName) match {
       case None => throw CompilationException(s"The compiler should generate a trait '${Introspection.typeName}' for the introspection API.")
       case Some(introspectionType) => RuntimeApi.types.introspection.initialize(TypeTranspiler.transpile(introspectionType)(Map.empty))
@@ -24,7 +31,7 @@ object TranspilationPhase {
 
     val functions = registry.getMultiFunctions.values.toVector.flatMap(new MultiFunctionTranspiler(_).transpile())
 
-    (typeDeclarations ++ Vector(introspectionInitialization) ++ functions).compiled
+    (typeDeclarations ++ typeDeclarationDeferredDefinitions ++ Vector(introspectionInitialization) ++ functions).compiled
   }
 
   //private val divider = s"\n\n/* ${"=".repeat(74)} */\n\n"

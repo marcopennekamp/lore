@@ -20,6 +20,17 @@ object DeclaredTypeTranspiler {
     }
   }
 
+  /**
+    * Transpiles any additional definitions of the given declared type that could depend on ANY type regardless of type
+    * order. These have to be initialized after all types have been initialized, hence the "deferred" transpilation.
+    */
+  def transpileDeferred(tpe: DeclaredType)(implicit registry: Registry): Vector[TargetStatement] = {
+    tpe match {
+      case structType: StructType => Vector(StructTranspiler.transpileConstructor(structType))
+      case _ => Vector.empty
+    }
+  }
+
   def transpileSupertraits(tpe: DeclaredType): Vector[TargetExpression] = tpe.declaredSupertypes.map(RuntimeNames.declaredType)
 
 }
