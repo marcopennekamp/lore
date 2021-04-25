@@ -1,7 +1,7 @@
 package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, Error}
+import lore.compiler.core.{Compilation, Error, Errors, Result}
 import lore.compiler.phases.transformation.inference.Inference
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
@@ -33,7 +33,14 @@ object ExpressionTransformer {
         visitor.typingJudgments.foreach(println)
         println()
       }
-      inferredTypes <- Inference.infer(visitor.typingJudgments)
+      inferredTypes <- Inference.infer(visitor.typingJudgments) match {
+        case result@Result(_, _) => result
+        case errors@Errors(_, _) =>
+          println("Inference failed!")
+          println()
+          println()
+          errors
+      }
       _ = {
         println("Inferred types:")
         println(inferredTypes)
