@@ -68,16 +68,16 @@ object FunctionTyping {
         var boundJudgments = Vector.empty[TypingJudgment]
         variables.foreach { variable =>
           if (variable.upperBound != BasicType.Any) {
-            boundJudgments = boundJudgments :+ TypingJudgment.Subtypes(assignments(variable), Type.substitute(assignments, variable.upperBound), position)
+            boundJudgments = boundJudgments :+ TypingJudgment.Subtypes(assignments(variable), Type.substitute(variable.upperBound, assignments), position)
           }
 
           if (variable.lowerBound != BasicType.Nothing) {
-            boundJudgments = boundJudgments :+ TypingJudgment.Subtypes(Type.substitute(assignments, variable.lowerBound), assignments(variable), position)
+            boundJudgments = boundJudgments :+ TypingJudgment.Subtypes(Type.substitute(variable.lowerBound, assignments), assignments(variable), position)
           }
         }
 
         (
-          Type.substitute(assignments, originalType).asInstanceOf[FunctionType], // TODO: Can we resolve the manual cast?
+          Type.substitute(originalType, assignments).asInstanceOf[FunctionType], // TODO: Can we resolve the manual cast?
           boundJudgments
         )
       } else (originalType, Vector.empty)

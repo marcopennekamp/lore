@@ -27,7 +27,7 @@ object Fit {
 
     // The type allocation in this.assignments handles (1), (2), and (3).
     assignments(t1, t2).exists { assignments =>
-      val substituted = if (assignments.nonEmpty) Type.substitute(assignments, t2) else t2
+      val substituted = if (assignments.nonEmpty) Type.substitute(t2, assignments) else t2
       t1 <= substituted
     }
   }

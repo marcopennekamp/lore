@@ -3,6 +3,7 @@ package lore.compiler.types
 import java.io.ByteArrayOutputStream
 import java.util.Base64
 import lore.compiler.semantics.Registry
+import lore.compiler.types.TypeVariable.Assignments
 import lore.compiler.utils.CollectionExtensions._
 import scalaz.std.vector._
 import scalaz.syntax.traverse._
@@ -107,14 +108,24 @@ object Type {
     * Substitute occurrences of variables in the given type with values from the given assignments. Variables that
     * do not occur in the assignments are not substituted.
     */
-  def substitute(assignments: TypeVariable.Assignments, tpe: Type): Type = {
-    def rec(t: Type) = substitute(assignments, t)
-
-    tpe match {
-      case tv: TypeVariable => assignments.get(tv) match {
+  def substitute(tpe: Type, assignments: Assignments): Type = {
+    substitute(
+      tpe,
+      tv => assignments.get(tv) match {
         case None => tv
         case Some(t) => t
       }
+    )
+  }
+
+  /**
+    * Substitute occurrences of variables `tv` in the given type with a type obtained by calling `f(tv)`.
+    */
+  def substitute(tpe: Type, f: TypeVariable => Type): Type = {
+    def rec(t: Type) = substitute(t, f)
+
+    tpe match {
+      case tv: TypeVariable => f(tv)
       case SumType(types) => SumType(types.map(rec))
       case IntersectionType(types) => IntersectionType(types.map(rec))
       case ProductType(elements) => ProductType(elements.map(rec))

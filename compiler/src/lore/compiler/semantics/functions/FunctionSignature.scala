@@ -27,10 +27,10 @@ case class FunctionSignature(
     if (assignments.isEmpty) return this
 
     val substitutedParameters = parameters.map { parameter =>
-      val substitutedType = Type.substitute(assignments, parameter.tpe)
+      val substitutedType = Type.substitute(parameter.tpe, assignments)
       ParameterDefinition(parameter.name, substitutedType, parameter.position)
     }
-    val substitutedOutputType = Type.substitute(assignments, outputType)
+    val substitutedOutputType = Type.substitute(outputType, assignments)
     FunctionSignature(name, substitutedParameters, substitutedOutputType, position)
   }
 }

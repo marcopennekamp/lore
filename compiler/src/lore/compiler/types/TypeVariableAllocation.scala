@@ -63,8 +63,8 @@ class TypeVariableAllocation(variables: Set[TypeVariable]) {
   private def areBoundsKept: Boolean = {
     val assignments = currentAssignments()
     assignments.forall { case (variable, tpe) =>
-      val actualLowerBound = Type.substitute(assignments, variable.lowerBound)
-      val actualUpperBound = Type.substitute(assignments, variable.upperBound)
+      val actualLowerBound = Type.substitute(variable.lowerBound, assignments)
+      val actualUpperBound = Type.substitute(variable.upperBound, assignments)
       actualLowerBound <= tpe && tpe <= actualUpperBound
     }
   }
