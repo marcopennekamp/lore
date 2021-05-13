@@ -29,13 +29,15 @@ object InferenceOrder {
       case TypingJudgment.MultiFunctionValue(_, _, _) =>
         // There is no need to add dependencies here, since `target` will get its dependencies from the context.
         graph
-      case TypingJudgment.MostSpecific(reference, alternatives, position) =>
+      case TypingJudgment.MostSpecific(_, alternatives, _) =>
         // TODO: What to do here??? We can't just require all variables occurring in the alternatives to already be
         //       fully inferred, because some inference variables are supposed to be inferred VIA the alternative
         //       judgments. Maybe this form is too powerful and can be cut down to something more manageable. (For
         //       example uni-directed judgments.)
-        ???
-      case TypingJudgment.Conjunction(judgments, position) => ??? // TODO: What to do here?
+
+        // TODO: This is just a naive approach which will likely fail. :)
+        alternatives.foldLeft(graph)(addJudgment)
+      case TypingJudgment.Conjunction(judgments, _) => judgments.foldLeft(graph)(addJudgment)
     }
   }
 

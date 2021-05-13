@@ -3,7 +3,8 @@ package lore.compiler.phases.transformation.inference
 import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.phases.transformation.inference.Inference.Assignments
 import lore.compiler.phases.transformation.inference.InferenceOrder.InfluenceGraph
-import lore.compiler.phases.transformation.inference.JudgmentResolver.ResolutionDirection
+import lore.compiler.phases.transformation.inference.resolvers.JudgmentResolver
+import lore.compiler.phases.transformation.inference.resolvers.JudgmentResolver.ResolutionDirection
 import lore.compiler.semantics.Registry
 import lore.compiler.types.Type
 import lore.compiler.utils.CollectionExtensions.VectorExtension
@@ -14,11 +15,13 @@ object CycleResolution {
     * When no judgments can be picked with fully inferred inference variables, we have a cycle in the influence graph.
     * Such a cycle has to be resolved by trial and error, with educated guesses about the pick.
     *
-    * To pick an applicable judgment, we disregard first the backwards direction and then the forwards direction of the
+    * To pick an applicable judgment, we regard first the forwards direction and then the backwards direction of the
     * judgment. If the required source variables in the specific direction have no dependencies, we try to resolve the
-    * judgment in that direction. If the direction fails, we try the other one.
+    * judgment in that direction.
     *
     * TODO: Actually implement the "trial and recover" approach...
+    *
+    * TODO: If the direction fails, we should try the other direction.
     *
     * TODO: For now, the algorithm is greedy, always considering the first judgment that can be resolved in one or the
     *       other direction. We could also consider ALL applicable judgments in turn, recovering to the next one if
@@ -35,11 +38,9 @@ object CycleResolution {
   def infer(assignments: Assignments, influenceGraph: InfluenceGraph, judgments: Vector[TypingJudgment])(implicit registry: Registry): Compilation[Assignments] = {
     judgments.firstDefined(judgment => isApplicable(judgment, influenceGraph).map((judgment, _))) match {
       case Some((judgment, direction)) =>
-        JudgmentResolver.resolve(judgment, direction, assignments).flatMap { newAssignments =>
-          val remainingJudgments = judgments.filter(_ != judgment)
-          BulkResolution.logIterationResult(newAssignments)
-          BulkResolution.infer(newAssignments, remainingJudgments)
-        }
+        JudgmentResolver.resolve(judgment, direction, assignments, judgments.filter(_ != judgment))
+          .map(SimpleResolution.logIterationResult)
+          .flatMap((SimpleResolution.infer _).tupled)
 
       case None =>
         throw CompilationException(
@@ -68,23 +69,24 @@ object CycleResolution {
       } else None
 
     case TypingJudgment.LeastUpperBound(target, types, _) =>
-      // TODO: Add backwards direction once it's implemented in `resolve`.
+      // TODO: Add backwards direction once it's implemented in the judgment resolver.
       if (!hasExternalDependencies(types.flatMap(Inference.variables).toSet, Set(target), influenceGraph)) {
         Some(ResolutionDirection.Forwards)
       } else None
 
     case TypingJudgment.MemberAccess(target, source, _, _) =>
-      // TODO: Add backwards direction once it's implemented in `resolve`.
+      // TODO: Add backwards direction once it's implemented in the judgment resolver.
       if (!hasExternalDependencies(source, target, influenceGraph)) {
         Some(ResolutionDirection.Forwards)
       } else None
 
-    case TypingJudgment.MostSpecific(reference, alternatives, position) => ??? // TODO: Implement.
+    case TypingJudgment.MostSpecific(reference, alternatives, position) => ??? // TODO: Implement?
 
-    case TypingJudgment.Conjunction(judgments, position) => ??? // TODO: Implement.
+    case TypingJudgment.Conjunction(judgments, position) => ??? // TODO: Implement?
+
 
     case _ =>
-      // Other judgments like Assign or Operations can't have a cycle, because only forward-inference is allowed.
+      // Other judgments like Assign can't have a cycle, because only one resolution direction is allowed.
       None
   }
 

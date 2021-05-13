@@ -5,6 +5,17 @@ import lore.compiler.phases.transformation.inference.Inference.Assignments
 import lore.compiler.phases.transformation.inference.InferenceVariable.effectiveBounds
 import lore.compiler.types.{BasicType, Subtyping, Type}
 
+// TODO: Do we still need option bounds now that resolution order is graph-based?
+//       I think this only hinges on whether we can implement member judgment resolution in such a way that we can
+//       treat "instance Any" => "member Any" and "instance Nothing" => "member Nothing". Then we don't need to differentiate
+//       between an instance that is inferred to be Any or Nothing vs. an instance that just doesn't have these bounds.
+//       Typing Any.x as Any even though Any doesn't have a member x is technically not correct for the WHOLE language,
+//       as we are disregarding that a valid member access must always access a member that exists in the first place.
+//       But it might as well be defined as such for type inference only. Then we just have to ensure that an access to
+//       a member that doesn't exist gets caught later!
+//       The second use case for this is unification, specifically the function `unifyInferenceVariableWithType`. We
+//       should find out whether this function can also be implemented without the Option bounds.
+
 case class InferenceBounds(variable: InferenceVariable, lower: Option[Type], upper: Option[Type]) {
   val lowerOrNothing: Type = lower.getOrElse(BasicType.Nothing)
   val upperOrAny: Type = upper.getOrElse(BasicType.Any)

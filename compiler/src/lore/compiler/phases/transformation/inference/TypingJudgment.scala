@@ -199,8 +199,8 @@ object TypingJudgment {
     case ElementType(target, collection, _) => s"$target <- $collection::elementType"
     case MultiFunctionCall(target, mf, arguments, _) => s"$target <- ${mf.name}(${arguments.mkString(", ")})"
     case MultiFunctionValue(function, mf, _) => s"$function <- ${mf.name} as function"
-    case MostSpecific(reference, alternatives, _) =>s"$reference <- mostSpecific(\n    ${alternatives.mkString(",\n    ")}\n)"
-    case Conjunction(judgments, _) => judgments.mkString(" & ")
+    case MostSpecific(reference, alternatives, _) =>s"$reference <- mostSpecific(\n    ${alternatives.mkString(";\n    ")}\n)"
+    case Conjunction(judgments, _) => judgments.mkString(", ")
   }
 
 }

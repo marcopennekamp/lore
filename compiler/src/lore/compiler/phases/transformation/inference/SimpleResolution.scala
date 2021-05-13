@@ -1,26 +1,25 @@
 package lore.compiler.phases.transformation.inference
 
 import lore.compiler.core.Compilation
-import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.phases.transformation.inference.Inference.Assignments
 import lore.compiler.phases.transformation.inference.InferenceOrder.InfluenceGraph
-import lore.compiler.phases.transformation.inference.JudgmentResolver.{ResolutionDirection, resolve}
+import lore.compiler.phases.transformation.inference.resolvers.JudgmentResolver
+import lore.compiler.phases.transformation.inference.resolvers.JudgmentResolver.ResolutionDirection
 import lore.compiler.semantics.Registry
 import lore.compiler.types.Type
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
-object BulkResolution {
+object SimpleResolution {
 
   /**
     * Infers a set of assignments from the given assignments and judgments. First builds an influence graph from the
-    * list of judgments, then resolves all resolvable judgments, consuming them in the process. This produces a new set
-    * of assignments and a shorter judgment list, which is given to the next step recursively.
+    * list of judgments, then resolves one resolvable judgment, consuming it in the process. This produces a new set
+    * of assignments and a new judgment list, which is given to the next step recursively.
     *
     * This function might delegate to [[CycleResolution.infer]] if it cannot resolve judgments directly.
     *
-    * Because backtracking needs certain errors to be raised as soon as possible, the influence graph approach has the
-    * distinct advantage of being able to fail clearly and fast (as opposed to a fixed-point approach). For example, a
-    * faulty member access should always raise an error as soon as possible, which is harder to accomplish in
-    * fixed-point type inference.
+    * The influence graph approach has the distinct advantage of being able to fail clearly and fast, compared to some
+    * other methods such as fixed-point inference.
     */
   def infer(assignments: Assignments, judgments: Vector[TypingJudgment])(implicit registry: Registry): Compilation[Assignments] = {
     if (judgments.isEmpty) {
@@ -33,25 +32,16 @@ object BulkResolution {
     //       representation to prepare the same information.
     val influenceGraph = InferenceOrder.buildInfluenceGraph(judgments)
 
-    // Simultaneously build the new assignments and the list of remaining judgments.
-    val compilation = judgments.foldLeft((assignments, Vector.empty[TypingJudgment]).compiled) { case (compilation, judgment) =>
-      compilation.flatMap { case (assignments2, remainingJudgments) =>
-        attempt(assignments2, influenceGraph, judgment) match {
-          case Some(compilation2) => compilation2.map(assignments3 => (assignments3, remainingJudgments))
-          case None => (assignments2, remainingJudgments :+ judgment).compiled
-        }
-      }
-    }
+    println()
+    influenceGraph.edges.foreach(println)
+    println()
 
-    compilation.flatMap {
-      case (newAssignments, remainingJudgments) =>
-        // If no judgments have been consumed, bulk resolution has failed. We need to fall back to cycle resolution.
-        if (judgments.length == remainingJudgments.length) {
-          CycleResolution.infer(assignments, influenceGraph, judgments)
-        } else {
-          logIterationResult(newAssignments)
-          infer(newAssignments, remainingJudgments)
-        }
+    judgments.firstDefined(judgment => attempt(assignments, influenceGraph, judgment, judgments.filter(_ != judgment))) match {
+      case None =>
+        // If no judgments have been resolved, simple resolution has failed. We need to fall back to cycle resolution.
+        CycleResolution.infer(assignments, influenceGraph, judgments)
+
+      case Some(compilation) => compilation.map(logIterationResult).flatMap((infer _).tupled)
     }
   }
 
@@ -63,8 +53,9 @@ object BulkResolution {
     assignments: Inference.Assignments,
     influenceGraph: InfluenceGraph,
     judgment: TypingJudgment,
-  )(implicit registry: Registry): Option[Compilation[Assignments]] = {
-    def resolveTowards(direction: ResolutionDirection): Option[Compilation[Assignments]] = Some(JudgmentResolver.resolve(judgment, direction, assignments))
+    remainingJudgments: Vector[TypingJudgment],
+  )(implicit registry: Registry): Option[Compilation[JudgmentResolver.Result]] = {
+    def resolveTowards(direction: ResolutionDirection) = Some(JudgmentResolver.resolve(judgment, direction, assignments, remainingJudgments))
 
     judgment match {
       case TypingJudgment.Equals(t1, t2, _) =>
@@ -85,13 +76,13 @@ object BulkResolution {
         } else None
 
       case TypingJudgment.LeastUpperBound(_, types, _) =>
-        // TODO: Add backwards direction once it's implemented in `resolve`.
+        // TODO: Add backwards direction once it's implemented in the judgment resolver.
         if (areFullyInferred(types, assignments, influenceGraph)) {
           resolveTowards(ResolutionDirection.Forwards)
         } else None
 
       case TypingJudgment.MemberAccess(_, source, _, _) =>
-        // TODO: Add backwards direction once it's implemented in `resolve`.
+        // TODO: Add backwards direction once it's implemented in the judgment resolver.
         if (isFullyInferred(source, assignments, influenceGraph)) {
           resolveTowards(ResolutionDirection.Forwards)
         } else None
@@ -130,7 +121,6 @@ object BulkResolution {
   }
 
   private def isFullyInferred(tpe: Type, assignments: Assignments, influenceGraph: InfluenceGraph): Boolean = {
-    // TODO: Does the constant inference variable extraction lead to performance issues?
     Inference.variables(tpe).forall(isFullyInferred(_, assignments, influenceGraph))
   }
 
@@ -138,10 +128,11 @@ object BulkResolution {
     types.forall(isFullyInferred(_, assignments, influenceGraph))
   }
 
-  def logIterationResult(assignments: Assignments): Unit = {
-    println("Iteration result:")
-    assignments.foreach(println)
+  def logIterationResult(result: JudgmentResolver.Result): JudgmentResolver.Result = {
+    println("Iteration result assignments:")
+    result._1.foreach(println)
     println()
+    result
   }
 
 }
