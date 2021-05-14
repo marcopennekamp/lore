@@ -1,7 +1,7 @@
 package lore.compiler.phases.transformation.inference
 
 import lore.compiler.core.{Compilation, CompilationException, Error}
-import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiate, instantiateByBound, isFullyInferred}
+import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiateByBound, isFullyInstantiated}
 import lore.compiler.phases.transformation.inference.InferenceBounds.{BoundType, narrowBound, narrowBounds, overrideBounds}
 import lore.compiler.phases.transformation.inference.InferenceVariable.{effectiveBounds, isDefined}
 import lore.compiler.phases.transformation.inference.TypeMatcher.{IncompatibleMatch, matchAll}
@@ -114,12 +114,12 @@ object Unification {
   private def unifyInferenceVariableWithType(assignments: Assignments, iv: InferenceVariable, tpe: Type, context: TypingJudgment): Compilation[Assignments] = {
     val typeLower = instantiateByBound(assignments, tpe, BoundType.Lower)
     val typeUpper = instantiateByBound(assignments, tpe, BoundType.Upper)
-    val typeToVariable = if (isFullyInferred(typeLower) && isFullyInferred(typeUpper)) {
+    val typeToVariable = if (isFullyInstantiated(typeLower) && isFullyInstantiated(typeUpper)) {
       narrowBounds(assignments, iv, typeLower, typeUpper, context)
     } else Compilation.succeed(assignments)
 
     typeToVariable.flatMap { assignments2 =>
-      if (isDefined(assignments2, iv) && !isFullyInferred(tpe)) {
+      if (isDefined(assignments2, iv) && !isFullyInstantiated(tpe)) {
         val ivLower = instantiateByBound(assignments2, iv, BoundType.Lower)
         val ivUpper = instantiateByBound(assignments2, iv, BoundType.Upper)
         matchAll(narrowBound)(assignments2, ivLower, tpe, BoundType.Lower, context).flatMap(

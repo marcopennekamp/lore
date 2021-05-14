@@ -44,16 +44,16 @@ object Inference {
   /**
     * Whether the given type contains no inference variables at all, which means that it can bypass type inference.
     */
-  def isFullyInferred(tpe: Type): Boolean = tpe match {
+  def isFullyInstantiated(tpe: Type): Boolean = tpe match {
     case _: InferenceVariable => false
-    case tv: TypeVariable => isFullyInferred(tv.lowerBound) && isFullyInferred(tv.upperBound)
-    case SumType(types) => types.forall(isFullyInferred)
-    case IntersectionType(types) => types.forall(isFullyInferred)
-    case ProductType(elements) => elements.forall(isFullyInferred)
-    case FunctionType(input, output) => isFullyInferred(input) && isFullyInferred(output)
-    case ListType(element) => isFullyInferred(element)
-    case MapType(key, value) => isFullyInferred(key) && isFullyInferred(value)
-    case ShapeType(properties) => properties.values.map(_.tpe).forall(isFullyInferred)
+    case tv: TypeVariable => isFullyInstantiated(tv.lowerBound) && isFullyInstantiated(tv.upperBound)
+    case SumType(types) => types.forall(isFullyInstantiated)
+    case IntersectionType(types) => types.forall(isFullyInstantiated)
+    case ProductType(elements) => elements.forall(isFullyInstantiated)
+    case FunctionType(input, output) => isFullyInstantiated(input) && isFullyInstantiated(output)
+    case ListType(element) => isFullyInstantiated(element)
+    case MapType(key, value) => isFullyInstantiated(key) && isFullyInstantiated(value)
+    case ShapeType(properties) => properties.values.map(_.tpe).forall(isFullyInstantiated)
     case _: NamedType => true
   }
 
@@ -75,9 +75,9 @@ object Inference {
     * Instantiates all defined inference variables in `tpe` to a type given by `get`.
     */
   def instantiate(assignments: Assignments, tpe: Type, get: InferenceBounds => Type): Type = {
-    // `instantiate` may be called with fully inferred types quite often. We want to avoid reconstructing types (with
-    // all the required allocations) in such cases.
-    if (isFullyInferred(tpe)) {
+    // `instantiate` may be called with simple types quite often. We want to avoid reconstructing types (with  all the
+    // required allocations) in such cases.
+    if (isFullyInstantiated(tpe)) {
       return tpe
     }
 
@@ -89,7 +89,7 @@ object Inference {
     tpe match {
       case iv: InferenceVariable => assignments.get(iv).map(get).getOrElse(iv)
       case tv: TypeVariable =>
-        if (Inference.isFullyInferred(tv)) tv
+        if (Inference.isFullyInstantiated(tv)) tv
         else ??? // TODO: How can we instantiate the type variable without destroying its reference equality? Maybe a type variable requires a UUID instead?
       case SumType(types) => SumType.construct(types.map(rec))
       case IntersectionType(types) => IntersectionType.construct(types.map(rec))

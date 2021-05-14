@@ -1,7 +1,6 @@
 package lore.compiler.phases.transformation.inference
 
 import lore.compiler.core.{Position, Positioned}
-import lore.compiler.phases.transformation.inference.Inference.isFullyInferred
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.types.Type
 
@@ -163,32 +162,6 @@ object TypingJudgment {
 
   case class Conjunction(judgments: Vector[TypingJudgment], position: Position) extends TypingJudgment
 
-  /**
-    * Trivial typing judgments contain no inference variables at all.
-    */
-  def isTrivial(judgment: TypingJudgment): Boolean = judgment match {
-    case Equals(t1, t2, _) => isFullyInferred(t1) && isFullyInferred(t2)
-    case Subtypes(t1, t2, _) => isFullyInferred(t1) && isFullyInferred(t2)
-    case Assign(target, source, _) => isFullyInferred(target) && isFullyInferred(source)
-    case Conjunction(judgments, _) => judgments.forall(isTrivial)
-    case _ => false
-  }
-
-  /**
-    * Simple typing judgments only contain inference variables on one side, marking them as possible starting points of
-    * inference.
-    */
-  def isSimple(judgment: TypingJudgment): Boolean = judgment match {
-    case Equals(t1, t2, _) => isFullyInferred(t1) || isFullyInferred(t2)
-    case Subtypes(t1, t2, _) => isFullyInferred(t1) || isFullyInferred(t2)
-    case Assign(_, source, _) => isFullyInferred(source)
-    case LeastUpperBound(_, types, _) => types.forall(isFullyInferred)
-    case MemberAccess(_, source, _, _) => isFullyInferred(source)
-    case operation: Operation => operation.operands.forall(isFullyInferred)
-    case MostSpecific(_, alternatives, _) => alternatives.forall(isSimple)
-    case Conjunction(judgments, _) => judgments.forall(isSimple)
-    case _ => false
-  }
 
   def stringify(judgment: TypingJudgment): String = judgment match {
     case Equals(t1, t2, _) => s"$t1 :=: $t2"

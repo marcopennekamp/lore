@@ -101,6 +101,8 @@ object InferenceBounds {
     * Override the bounds of the given inference variable without checking the previous bounds. This function is useful
     * when processing "dependent" typings that might change the bounds of an inference variable altogether based on
     * some other changing inference variables.
+    *
+    * TODO: Get rid of this. It's too dangerous.
     */
   def overrideBounds(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, upperBound: Type): Assignments = {
     assignments.updated(inferenceVariable, InferenceBounds(inferenceVariable, Some(lowerBound), Some(upperBound)))
