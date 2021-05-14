@@ -157,11 +157,19 @@ object TypingJudgment {
     *
     * TODO: We should be able to pass custom "no results" (corresponding to empty fit) and "too many results"
     *       (corresponding to ambiguous call) errors.
+    *
+    * TODO: Instead of modeling these complex judgments in FunctionTyping, it might actually be preferable to produce
+    *       these ad-hoc typings when resolving the MultiFunctionCall judgment. We would then have to make that
+    *       judgment resolvable in both directions.
+    *       OR: Keep the MultiFunctionCall judgment as is and introduce a second "MultiFunctionHint" judgment that
+    *       provides a "typing hint" to the arguments.
     */
   case class MostSpecific(reference: InferenceVariable, alternatives: Vector[TypingJudgment], position: Position) extends TypingJudgment
 
   case class Conjunction(judgments: Vector[TypingJudgment], position: Position) extends TypingJudgment
 
+  // TODO: Rename to "most specific" or something? At least work this into the name somehow?
+  case class MultiFunctionHint(mf: MultiFunctionDefinition, arguments: Vector[Type], position: Position) extends TypingJudgment
 
   def stringify(judgment: TypingJudgment): String = judgment match {
     case Equals(t1, t2, _) => s"$t1 :=: $t2"
@@ -174,6 +182,7 @@ object TypingJudgment {
     case MultiFunctionValue(function, mf, _) => s"$function <- ${mf.name} as function"
     case MostSpecific(reference, alternatives, _) =>s"$reference <- mostSpecific(\n    ${alternatives.mkString(";\n    ")}\n)"
     case Conjunction(judgments, _) => judgments.mkString(", ")
+    case MultiFunctionHint(mf, arguments, _) => s"${mf.name}::hint(${arguments.mkString(", ")})"
   }
 
 }

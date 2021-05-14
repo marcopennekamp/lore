@@ -38,6 +38,7 @@ object InferenceOrder {
         // TODO: This is just a naive approach which will likely fail. :)
         alternatives.foldLeft(graph)(addJudgment)
       case TypingJudgment.Conjunction(judgments, _) => judgments.foldLeft(graph)(addJudgment)
+      case TypingJudgment.MultiFunctionHint(_, _, _) => graph
     }
   }
 

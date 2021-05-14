@@ -84,6 +84,12 @@ object CycleResolution {
 
     case TypingJudgment.Conjunction(judgments, position) => ??? // TODO: Implement?
 
+    case TypingJudgment.MultiFunctionHint(mf, arguments, position) =>
+      // TODO: There can't even be cycles because the judgment has no internal inference variables, right?
+      //       If so, a MultiFunctionHint can only be resolved during BulkResolution.
+      //       This would fit with the notion that only bidirectional judgments can be taken into account during cycle
+      //       resolution.
+      None
 
     case _ =>
       // Other judgments like Assign can't have a cycle, because only one resolution direction is allowed.

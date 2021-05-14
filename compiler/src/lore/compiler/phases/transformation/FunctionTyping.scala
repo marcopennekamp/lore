@@ -109,6 +109,8 @@ object FunctionTyping {
       //       become truly relevant with anonymous functions.
       //TypingJudgment.MostSpecific(resultArgumentType, alternatives, position),
 
+      TypingJudgment.MultiFunctionHint(mf, arguments.map(_.tpe), position),
+
       // TODO: This will technically be a bit redundant, since we'd already have modeled the dispatch using typing judgments above.
       TypingJudgment.MultiFunctionCall(resultType, mf, arguments.map(_.tpe), position),
     )
