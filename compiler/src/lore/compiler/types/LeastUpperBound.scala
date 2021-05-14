@@ -135,7 +135,7 @@ object LeastUpperBound {
       //       Clearly, if we are lubbing more than one struct with at least one shape type, we want to default to
       //       structural typing. Without any shape type present, we want to consult the type hierarchy.
       case (s1: ShapeType, s2: ShapeType) =>
-        val properties = s1.common(s2).map {
+        val properties = ShapeType.common(s1, s2).map {
           case (p1, p2) => ShapeType.Property(p1.name, lubPassOnSettings(p1.tpe, p2.tpe))
         }
         ShapeType(properties)

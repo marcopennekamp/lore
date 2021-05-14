@@ -24,13 +24,6 @@ case class ShapeType(properties: Map[String, ShapeType.Property]) extends Type {
     }.toVector
   }
 
-  /**
-    * Lists all properties that this shape type and another have in common.
-    */
-  def common(other: ShapeType): Vector[(ShapeType.Property, ShapeType.Property)] = {
-    correlate(other).flatMap { case (p1, maybeP2) => maybeP2.map(p2 => (p1, p2)) }
-  }
-
   override val hashCode: Int = MurmurHash3.unorderedHash(properties.values, 0xf38da2c4)
 
 }
@@ -85,6 +78,30 @@ object ShapeType {
       case (name, properties) => Property(name, IntersectionType.construct(properties.map(_.tpe)))
     }
     ShapeType(combinedProperties)
+  }
+
+  /**
+    * Lists all properties that this shape type and another have in common.
+    */
+  def common(s1: ShapeType, s2: ShapeType): Vector[(ShapeType.Property, ShapeType.Property)] = {
+    s1.correlate(s2).flatMap { case (p1, maybeP2) => maybeP2.map(p2 => (p1, p2)) }
+  }
+
+  /**
+    * Correlates each property from s1 with a property from s2 and vice versa.
+    */
+  def bicorrelate(s1: ShapeType, s2: ShapeType): Vector[(Option[ShapeType.Property], Option[ShapeType.Property])] = {
+    val left = s1.correlate(s2).map {
+      case (p1, maybeP2) => (Some(p1), maybeP2)
+    }
+
+    // We only have to take properties that aren't already in s1, because the other results will already be included in
+    // `left`. It suffices to take all tuples where the correlated property is None.
+    val right = s2.correlate(s1).filter(_._2.isEmpty).map {
+      case (p2, None) => (None, Some(p2))
+    }
+
+    left ++ right
   }
 
 }

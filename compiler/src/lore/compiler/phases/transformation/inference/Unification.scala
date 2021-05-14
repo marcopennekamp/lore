@@ -4,18 +4,21 @@ import lore.compiler.core.{Compilation, CompilationException, Error}
 import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiateByBound, isFullyInstantiated}
 import lore.compiler.phases.transformation.inference.InferenceBounds.{BoundType, narrowBound, narrowBounds, overrideBounds}
 import lore.compiler.phases.transformation.inference.InferenceVariable.{effectiveBounds, isDefined}
-import lore.compiler.phases.transformation.inference.TypeMatcher.{IncompatibleMatch, matchAll}
+import lore.compiler.phases.transformation.inference.TypeMatcher.matchAll
 import lore.compiler.types._
 
 object Unification {
 
-  case class CannotUnifyIncompatibleTypes(t1: Type, t2: Type, context: TypingJudgment) extends Error(context) {
-    override def message: String = s"Cannot unify types $t1 and $t2. The types don't match."
+  case class ExpectedTypeEquality(t1: Type, t2: Type, context: TypingJudgment) extends Error(context) {
+    override def message: String = s"The types $t1 and $t2 aren't equal and cannot be unified."
   }
 
   /**
-    * Unifies `t1` with `t2`, ensuring that all inference variables in both `t1` and `t2` are defined such that
-    * `instantiate(t1) == instantiate(t2)`.
+    * Ensures that `t1` and `t2` are equal:
+    *
+    *   - If `t1` and `t2` are both fully instantiated, this resolution defers to a simple type equality check.
+    *   - Otherwise, if `t1` or `t2` contain inference variables, the two types are unified, ensuring that all
+    *     inference variables are defined such that `instantiate(t1) == instantiate(t2)`.
     */
   def unify(assignments: Assignments, t1: Type, t2: Type, context: TypingJudgment): Compilation[Assignments] = {
     def unsupported: Nothing = {
@@ -23,8 +26,7 @@ object Unification {
         s" Given types: $t1 and $t2.")
     }
 
-    // TODO: Use error customized for unification.
-    def incompatibleMatch: Compilation[Assignments] = Compilation.fail(IncompatibleMatch(t1, t2, context))
+    def expectedTypeEquality: Compilation[Assignments] = Compilation.fail(ExpectedTypeEquality(t1, t2, context))
 
     val rec = (assignments2: Assignments, u1: Type, u2: Type) => unify(assignments2, u1, u2, context)
     (t1, t2) match {
@@ -41,7 +43,7 @@ object Unification {
           p1.elements.zip(p2.elements).foldLeft(Compilation.succeed(assignments)) {
             case (compilation, (e1, e2)) => compilation.flatMap(rec(_, e1, e2))
           }
-        } else incompatibleMatch
+        } else expectedTypeEquality
 
       case (f1: FunctionType, f2: FunctionType) => rec(assignments, f1.input, f2.input).flatMap(rec(_, f1.output, f2.output))
 
@@ -50,11 +52,11 @@ object Unification {
       case (m1: MapType, m2: MapType) => rec(assignments, m1.key, m2.key).flatMap(rec(_, m1.value, m2.value))
 
       case (s1: ShapeType, s2: ShapeType) =>
-        s2.correlate(s1).foldLeft(Compilation.succeed(assignments)) {
-          case (compilation, (p2, Some(p1))) => compilation.flatMap(rec(_, p1.tpe, p2.tpe))
-          case (_, (_, None)) => incompatibleMatch
+        // Shape types must share all properties to be equal.
+        ShapeType.bicorrelate(s1, s2).foldLeft(Compilation.succeed(assignments)) {
+          case (compilation, (Some(p1), Some(p2))) => compilation.flatMap(rec(_, p1.tpe, p2.tpe))
+          case _ => expectedTypeEquality
         }
-      case (s1: StructType, s2: ShapeType) => rec(assignments, s1.asShapeType, s2)
 
       // TODO: Can we even live with unsupported assignments here or do we have to bite the bullet? Sum and
       //       intersection types need to also be part of type inference beyond the most basic aspects...
@@ -63,7 +65,7 @@ object Unification {
       case (_: SumType, _) => unsupported
       case (_, _: SumType) => unsupported
 
-      case _ => incompatibleMatch
+      case _ => expectedTypeEquality
     }
   }
 
@@ -101,6 +103,7 @@ object Unification {
       return Compilation.fail(ConflictingBounds(bounds1, bounds2, context))
     }
 
+    // TODO: Can't this work without the override? Overriding is dangerous and should be removed.
     val assignments2 = overrideBounds(assignments, iv1, lower, upper)
     val assignments3 = overrideBounds(assignments2, iv2, lower, upper)
 
@@ -122,6 +125,8 @@ object Unification {
       if (isDefined(assignments2, iv) && !isFullyInstantiated(tpe)) {
         val ivLower = instantiateByBound(assignments2, iv, BoundType.Lower)
         val ivUpper = instantiateByBound(assignments2, iv, BoundType.Upper)
+
+        // TODO: Can't we get rid of this match? :/
         matchAll(narrowBound)(assignments2, ivLower, tpe, BoundType.Lower, context).flatMap(
           matchAll(narrowBound)(_, ivUpper, tpe, BoundType.Upper, context)
         )
