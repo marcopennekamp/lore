@@ -32,6 +32,11 @@ sealed trait Compilation[+A] {
   def isError: Boolean
 
   /**
+    * Whether the current compilation is successful.
+    */
+  def isSuccess: Boolean = !isError
+
+  /**
     * Maps the result value of type A to a compilation resulting in B. In the context of compilations, flatMap is
     * to be understood as a "chain of computation" which is broken as soon as the first error appears.
     */
