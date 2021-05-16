@@ -21,6 +21,7 @@ object MultiFunctionValueJudgmentResolver extends JudgmentResolver[TypingJudgmen
   //       then only be resolved via cycle resolution. This would ensure that judgments like MultiFunctionHints are
   //       resolved before the MultiFunctionValue judgments, which are crucial to properly type the target inference
   //       variable. If that doesn't pan out, we can still implement backtracking.
+
   override def forwards(
     judgment: TypingJudgment.MultiFunctionValue,
     assignments: Assignments,

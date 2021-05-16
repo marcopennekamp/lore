@@ -81,10 +81,20 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
         Some(TypingJudgment.Subtypes(typeVariableAssignments(tv), Type.substitute(tv.upperBound, typeVariableAssignments), position))
       }
 
+      // For each argument/parameter pair, we add two typing judgments:
+      //  - The Fits judgment ensures that any type variables on the parameter side (represented by inference
+      //    variables) are properly assigned their bounds.
+      //  - The Subtypes judgment allows inference of an argument's type based on the parameter type.
       val inputType = Type.substitute(function.signature.inputType, typeVariableAssignments).asInstanceOf[ProductType]
-      val argumentJudgments = inputType.elements.zip(arguments).map {
-        // TODO: Can we actually pass the argument's position here?
-        case (parameterType, argument) => TypingJudgment.Subtypes(argument, parameterType, position)
+      val argumentJudgments = inputType.elements.zip(arguments).flatMap {
+        case (parameterType, argument) => Vector(
+          // TODO: Can't we pass the argument's position here?
+          TypingJudgment.Fits(argument, parameterType, position),
+          // TODO: We only really need the direction parameter --> argument. The other direction is already covered by
+          //       the Fits judgment. Can we not restrict the Subtypes to a single direction here? This will likely
+          //       reduce the "area of attack" for any bugs.
+          TypingJudgment.Subtypes(argument, parameterType, position),
+        )
       }
 
       /* val resultJudgments = Vector(

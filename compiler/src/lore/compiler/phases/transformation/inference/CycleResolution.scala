@@ -38,6 +38,7 @@ object CycleResolution {
   def infer(assignments: Assignments, influenceGraph: InfluenceGraph, judgments: Vector[TypingJudgment])(implicit registry: Registry): Compilation[Assignments] = {
     judgments.firstDefined(judgment => isApplicable(judgment, influenceGraph).map((judgment, _))) match {
       case Some((judgment, direction)) =>
+        println(s"Cycle resolve $judgment")
         JudgmentResolver.resolve(judgment, direction, assignments, judgments.filter(_ != judgment))
           .map(SimpleResolution.logIterationResult)
           .flatMap((SimpleResolution.infer _).tupled)

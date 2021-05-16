@@ -33,6 +33,7 @@ object TypingJudgment {
     * Asserts that `t1` must be a subtype of `t2`.
     *
     * A Subtypes judgment `t1 :<: t2` can inform both the upper bound of t1 as well as the lower bound of t2:
+    *
     *   - In the upper-bound case, we instantiate t2's inference variables with their upper bounds. Consider the
     *     following example: `iv1 :<: iv2[Int, Real]`. Because iv2 can at most be `Real`, iv1's domain must also be
     *     restricted to be at most `Real`. If we gave iv1 the upper bound `Int`, we might later type iv2 as `Real` and
@@ -53,8 +54,22 @@ object TypingJudgment {
     * f(%{ x: 10 })
     *
     * The type of the variable declaration should become fixed at the point of declaration.
+    *
+    * TODO: Also ensure that the instantiated target and source types are EQUAL after the judgment has been resolved.
+    *       When we have an assignment `target <- source`, the implicit assumption is that target will be equal to
+    *       source.
     */
   case class Assign(target: Type, source: Type, position: Position) extends TypingJudgment
+
+  /**
+    * Asserts that `t1` must fit into `t2`, with inference variables in `t2` representing type variables.
+    *
+    * The judgment is unidirectional (t1 --> t2) and will only be processed when `t1` can be instantiated. Because
+    * inference variables in `t2` represent type variables, any types from `t1` matching with an inference variable
+    * `iv2` will be <b>assigned</b> to `iv2` in both bounds. This is consistent with how type variable allocations are
+    * built.
+    */
+  case class Fits(t1: Type, t2: Type, position: Position) extends TypingJudgment
 
   /**
     * Unifies the `target` inference variable with the least upper bound of all given `types`. The inference can happen
@@ -181,6 +196,7 @@ object TypingJudgment {
     case Equals(t1, t2, _) => s"$t1 :=: $t2"
     case Subtypes(t1, t2, _) => s"$t1 :<: $t2"
     case Assign(target, source, _) => s"$target <- $source"
+    case Fits(t1, t2, _) => s"$t1 fits $t2"
     case LeastUpperBound(target, types, _) => s"$target :=: LUB(${types.mkString(", ")})"
     case MemberAccess(target, source, name, _) => s"$target <- $source.$name"
     case ElementType(target, collection, _) => s"$target <- $collection::elementType"

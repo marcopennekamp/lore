@@ -55,7 +55,10 @@ object SimpleResolution {
     judgment: TypingJudgment,
     remainingJudgments: Vector[TypingJudgment],
   )(implicit registry: Registry): Option[Compilation[JudgmentResolver.Result]] = {
-    def resolveTowards(direction: ResolutionDirection) = Some(JudgmentResolver.resolve(judgment, direction, assignments, remainingJudgments))
+    def resolveTowards(direction: ResolutionDirection) = {
+      println(s"Simple resolve $judgment")
+      Some(JudgmentResolver.resolve(judgment, direction, assignments, remainingJudgments))
+    }
 
     judgment match {
       case TypingJudgment.Equals(t1, t2, _) =>
@@ -72,6 +75,11 @@ object SimpleResolution {
 
       case TypingJudgment.Assign(_, source, _) =>
         if (isFullyInferred(source, assignments, influenceGraph)) {
+          resolveTowards(ResolutionDirection.Forwards)
+        } else None
+
+      case TypingJudgment.Fits(t1, _, _) =>
+        if (isFullyInferred(t1, assignments, influenceGraph)) {
           resolveTowards(ResolutionDirection.Forwards)
         } else None
 

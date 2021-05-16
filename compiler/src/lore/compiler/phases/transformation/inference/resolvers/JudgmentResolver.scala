@@ -147,6 +147,7 @@ object JudgmentResolver {
       case _: TypingJudgment.Equals => EqualsJudgmentResolver
       case _: TypingJudgment.Subtypes => SubtypesJudgmentResolver
       case _: TypingJudgment.Assign => AssignJudgmentResolver
+      case _: TypingJudgment.Fits => FitsJudgmentResolver
       case _: TypingJudgment.LeastUpperBound => LeastUpperBoundJudgmentResolver
       case _: TypingJudgment.MemberAccess => MemberAccessJudgmentResolver
       case _: TypingJudgment.ElementType => ElementTypeJudgmentResolver

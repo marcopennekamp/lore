@@ -23,6 +23,7 @@ object InferenceOrder {
       case TypingJudgment.Equals(t1, t2, _) => processBiDependencies(graph, t1, t2)
       case TypingJudgment.Subtypes(t1, t2, _) => processBiDependencies(graph, t1, t2)
       case TypingJudgment.Assign(target, source, _) => processDependencies(graph, source, target)
+      case TypingJudgment.Fits(t1, t2, _) => processDependencies(graph, t1, t2)
       case TypingJudgment.LeastUpperBound(target, types, _) => processBiDependencies(graph, Vector(target), types)
       case TypingJudgment.MemberAccess(target, source, _, _) => processBiDependencies(graph, target, source)
       case operation: TypingJudgment.Operation => processDependencies(graph, operation.operands, operation.target)
