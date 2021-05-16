@@ -13,9 +13,4 @@ function coolness(dog: Dog): Real = 3.0 * dog.fame
 function coolness(real: Real): Real = 3.14
 function coolness(vehicle: Vehicle): Real = 2.0
 
-//function test(): [Real] = simpleMap([Cat(1.2), Dog(5), Dog(3.50), Cat(7.7)], coolness)
-
-function test(): [Real] = {
-  let localMap = (list: [Animal], f: Animal => Real) => for (a <- list) f(a)
-  localMap([Cat(1.2), Dog(5), Dog(3.50), Cat(7.7)], coolness)
-}
+function test(): [Real] = simpleMap([Cat(1.2), Dog(5), Dog(3.50), Cat(7.7)], coolness)

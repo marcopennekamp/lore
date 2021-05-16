@@ -1,6 +1,3 @@
 function simpleMap(list: [A], f: A => B): [B] where A, B = for (a <- list) f(a)
 
-// TODO: Without qualifying the type of `v`, Lore currently infers the function as (Real) => Real. This is because
-//       there is no connection between the type of the list and the type of the function yet. We will have to support
-//       full-fledged multi-function call type inference in both directions.
-function test(): [Int] = simpleMap([1, 2, 3, 4, 5], (v: Int) => v + 3)
+function test(): [Int] = simpleMap([1, 2, 3, 4, 5], v => v + 3)
