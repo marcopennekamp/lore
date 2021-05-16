@@ -79,4 +79,26 @@ object InferenceOrder {
     }
   }
 
+  /**
+    * Find all inference variables that the given inference variables depend on.
+    */
+  def findDependencies(graph: InfluenceGraph, ivs: Set[InferenceVariable]): Set[InferenceVariable] = {
+    graph.nodes
+      .filter(node => node.findSuccessor(successor => successor.value match {
+        case iv: InferenceVariable => ivs.contains(iv)
+        case _ => false
+      }).isDefined)
+      .map(_.value)
+      .toSet
+      .filterType[InferenceVariable]
+  }
+
+  /**
+    * Find all typing judgments from the given list that may influence the bounds of one of the given inference
+    * variables.
+    */
+  def findJudgmentsInfluencing(judgments: Vector[TypingJudgment], ivs: Set[InferenceVariable]): Vector[TypingJudgment] = {
+    judgments.filter(judgment => dependenciesOf(judgment).exists(dependency => ivs.contains(dependency.target)))
+  }
+
 }

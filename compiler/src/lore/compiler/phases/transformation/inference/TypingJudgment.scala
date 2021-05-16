@@ -55,6 +55,10 @@ object TypingJudgment {
     *
     * The type of the variable declaration should become fixed at the point of declaration.
     *
+    * TODO: To make the above comment true ("ensure that the variable's type is fixed"), we have to assign the
+    *       CANDIDATE TYPE of `source` to both bounds of `target`. Otherwise, `target` isn't guaranteed to be fixed.
+    *       This is relevant more than ever now that we're using Assign when resolving MultiFunctionHints, which is
+    *       currently failing because function subtyping doesn't play well with Nothing/Any.
     * TODO: Also ensure that the instantiated target and source types are EQUAL after the judgment has been resolved.
     *       When we have an assignment `target <- source`, the implicit assumption is that target will be equal to
     *       source.
@@ -166,7 +170,7 @@ object TypingJudgment {
     *
     * In some cases, especially when anonymous function or multi-function value arguments are involved, the argument
     * needs the context information from the multi-function to be correctly typed. The judgment resolver computes a
-    * list of possible function definitions and then runs backtracking inference for each of them, choosing the most
+    * list of possible function definitions and then runs argument type inference for each of them, choosing the most
     * specific argument type as the path to follow. The MultiFunctionHint resolver might run into an empty fit or
     * ambiguity error, which are reported as a compilation errors to the user.
     */

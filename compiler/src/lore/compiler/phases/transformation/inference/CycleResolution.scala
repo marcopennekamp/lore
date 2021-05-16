@@ -39,7 +39,7 @@ object CycleResolution {
     judgments.firstDefined(judgment => isApplicable(judgment, influenceGraph).map((judgment, _))) match {
       case Some((judgment, direction)) =>
         println(s"Cycle resolve $judgment")
-        JudgmentResolver.resolve(judgment, direction, assignments, judgments.filter(_ != judgment))
+        JudgmentResolver.resolve(judgment, direction, assignments, influenceGraph, judgments.filter(_ != judgment))
           .map(SimpleResolution.logIterationResult)
           .flatMap((SimpleResolution.infer _).tupled)
 

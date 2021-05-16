@@ -57,7 +57,7 @@ object SimpleResolution {
   )(implicit registry: Registry): Option[Compilation[JudgmentResolver.Result]] = {
     def resolveTowards(direction: ResolutionDirection) = {
       println(s"Simple resolve $judgment")
-      Some(JudgmentResolver.resolve(judgment, direction, assignments, remainingJudgments))
+      Some(JudgmentResolver.resolve(judgment, direction, assignments, influenceGraph, remainingJudgments))
     }
 
     judgment match {

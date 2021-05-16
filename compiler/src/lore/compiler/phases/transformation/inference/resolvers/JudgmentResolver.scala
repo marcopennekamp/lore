@@ -2,6 +2,7 @@ package lore.compiler.phases.transformation.inference.resolvers
 
 import lore.compiler.core.{Compilation, CompilationException, Error, Position}
 import lore.compiler.phases.transformation.inference.Inference.Assignments
+import lore.compiler.phases.transformation.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.phases.transformation.inference.resolvers.JudgmentResolver.{illegalBackwards, illegalForwards}
 import lore.compiler.phases.transformation.inference.{Inference, TypingJudgment}
 import lore.compiler.semantics.Registry
@@ -27,12 +28,14 @@ trait JudgmentResolver[A <: TypingJudgment] {
   def forwards(
     judgment: A,
     assignments: Assignments,
+    influenceGraph: InfluenceGraph,
     remainingJudgments: Vector[TypingJudgment],
   )(implicit registry: Registry): Compilation[JudgmentResolver.Result] = JudgmentResolver.flat(remainingJudgments)(forwards(judgment, assignments))
 
   def backwards(
     judgment: A,
     assignments: Assignments,
+    influenceGraph: InfluenceGraph,
     remainingJudgments: Vector[TypingJudgment],
   )(implicit registry: Registry): Compilation[JudgmentResolver.Result] = JudgmentResolver.flat(remainingJudgments)(backwards(judgment, assignments))
 
@@ -76,20 +79,23 @@ object JudgmentResolver {
     def nondirectional(
       judgment: A,
       assignments: Assignments,
+      influenceGraph: InfluenceGraph,
       remainingJudgments: Vector[TypingJudgment],
     )(implicit registry: Registry): Compilation[JudgmentResolver.Result] = JudgmentResolver.flat(remainingJudgments)(nondirectional(judgment, assignments))
 
     override final def forwards(
       judgment: A,
       assignments: Assignments,
+      influenceGraph: InfluenceGraph,
       remainingJudgments: Vector[TypingJudgment]
-    )(implicit registry: Registry): Compilation[JudgmentResolver.Result] = nondirectional(judgment, assignments, remainingJudgments)
+    )(implicit registry: Registry): Compilation[JudgmentResolver.Result] = nondirectional(judgment, assignments, influenceGraph, remainingJudgments)
 
     override final def backwards(
       judgment: A,
       assignments: Assignments,
+      influenceGraph: InfluenceGraph,
       remainingJudgments: Vector[TypingJudgment]
-    )(implicit registry: Registry): Compilation[JudgmentResolver.Result] = nondirectional(judgment, assignments, remainingJudgments)
+    )(implicit registry: Registry): Compilation[JudgmentResolver.Result] = nondirectional(judgment, assignments, influenceGraph, remainingJudgments)
 
     override final def forwards(judgment: A, assignments: Assignments)(implicit registry: Registry): Compilation[Assignments] = throw new UnsupportedOperationException
 
@@ -139,6 +145,7 @@ object JudgmentResolver {
     judgment: TypingJudgment,
     direction: ResolutionDirection,
     assignments: Inference.Assignments,
+    influenceGraph: InfluenceGraph,
     remainingJudgments: Vector[TypingJudgment],
   )(implicit registry: Registry): Compilation[JudgmentResolver.Result] = {
     // Casting to JudgmentResolver[TypingJudgment] is sadly necessary, because the type system doesn't see that the
@@ -157,8 +164,8 @@ object JudgmentResolver {
     }).asInstanceOf[JudgmentResolver[TypingJudgment]]
 
     direction match {
-      case ResolutionDirection.Forwards => resolver.forwards(judgment, assignments, remainingJudgments)
-      case ResolutionDirection.Backwards => resolver.backwards(judgment, assignments, remainingJudgments)
+      case ResolutionDirection.Forwards => resolver.forwards(judgment, assignments, influenceGraph, remainingJudgments)
+      case ResolutionDirection.Backwards => resolver.backwards(judgment, assignments, influenceGraph, remainingJudgments)
     }
   }
 
