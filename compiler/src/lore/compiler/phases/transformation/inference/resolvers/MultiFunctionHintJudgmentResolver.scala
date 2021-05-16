@@ -5,7 +5,7 @@ import lore.compiler.phases.transformation.inference.Inference.{Assignments, ins
 import lore.compiler.phases.transformation.inference.InferenceBounds.BoundType
 import lore.compiler.phases.transformation.inference.{InferenceVariable, SimpleResolution, TypingJudgment}
 import lore.compiler.semantics.Registry
-import lore.compiler.types.{BasicType, FunctionType, ProductType, Type}
+import lore.compiler.types.{ProductType, Type}
 
 object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment.MultiFunctionHint] {
 
@@ -74,15 +74,11 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       val typeVariableAssignments = typeVariables.map(tv => (tv, new InferenceVariable)).toMap
 
       val lowerBoundsJudgments = typeVariables.flatMap { tv =>
-        if (tv.lowerBound != BasicType.Nothing) {
-          Some(TypingJudgment.Subtypes(Type.substitute(tv.lowerBound, typeVariableAssignments), typeVariableAssignments(tv), position))
-        } else None
+        Some(TypingJudgment.Subtypes(Type.substitute(tv.lowerBound, typeVariableAssignments), typeVariableAssignments(tv), position))
       }
 
       val upperBoundsJudgments = typeVariables.flatMap { tv =>
-        if (tv.upperBound != BasicType.Any) {
-          Some(TypingJudgment.Subtypes(typeVariableAssignments(tv), Type.substitute(tv.upperBound, typeVariableAssignments), position))
-        } else None
+        Some(TypingJudgment.Subtypes(typeVariableAssignments(tv), Type.substitute(tv.upperBound, typeVariableAssignments), position))
       }
 
       val inputType = Type.substitute(function.signature.inputType, typeVariableAssignments).asInstanceOf[ProductType]

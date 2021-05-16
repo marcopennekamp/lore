@@ -126,7 +126,7 @@ object InferenceBounds {
   def ensureBoundSupertypes(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, context: TypingJudgment): Compilation[Assignments] = {
     val bounds = effectiveBounds(assignments, inferenceVariable)
 
-    if (Subtyping.isSubtype(lowerBound, bounds.lowerOrNothing)) {
+    if (assignments.isDefinedAt(inferenceVariable) && Subtyping.isSubtype(lowerBound, bounds.lowerOrNothing)) {
       Compilation.succeed(assignments)
     } else {
       narrowLowerBound(assignments, inferenceVariable, lowerBound, context)
@@ -143,7 +143,7 @@ object InferenceBounds {
   def ensureBoundSubtypes(assignments: Assignments, inferenceVariable: InferenceVariable, upperBound: Type, context: TypingJudgment): Compilation[Assignments] = {
     val bounds = effectiveBounds(assignments, inferenceVariable)
 
-    if (Subtyping.isSubtype(bounds.upperOrAny, upperBound)) {
+    if (assignments.isDefinedAt(inferenceVariable) && Subtyping.isSubtype(bounds.upperOrAny, upperBound)) {
       Compilation.succeed(assignments)
     } else {
       narrowUpperBound(assignments, inferenceVariable, upperBound, context)
