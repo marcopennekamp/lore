@@ -255,9 +255,9 @@ class InferringExpressionTransformationVisitor(
 
     // Xary function calls.
     case SimpleCallNode(name, _, position) =>
-      scopeContext.currentScope.resolve(name)(position).flatMap {
-        case mf: MultiFunctionDefinition => FunctionTyping.multiFunctionCall(mf, expressions, node.position).map(addJudgmentsFrom)
-        case variable: TypedVariable => transformValueCall(Expression.VariableAccess(variable, position), expressions, position).compiled
+      scopeContext.currentScope.resolve(name)(position).map {
+        case mf: MultiFunctionDefinition => addJudgmentsFrom(FunctionTyping.multiFunctionCall(mf, expressions, node.position))
+        case variable: TypedVariable => transformValueCall(Expression.VariableAccess(variable, position), expressions, position)
       }
 
     case FixedFunctionCallNode(name, typeExpressions, _, position) =>
