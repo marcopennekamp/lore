@@ -41,8 +41,6 @@ object CollectionExtensions {
       vector.length <= 1 || vector.sliding(2).forall { case Vector(left, right) => by(left) == by(right) }
     }
 
-    def ifEmpty[B >: A](v: => B): Vector[B] = if (vector.nonEmpty) vector else Vector(v)
-
     /**
       * Applies the given function to each element in the list, returning immediately if a defined result has been
       * returned by a call `f(a)`.
@@ -56,6 +54,17 @@ object CollectionExtensions {
       }
       None
     }
+  }
+
+  implicit class SetExtension[A](set: Set[A]) {
+    def filterType[T <: A](implicit tag: ClassTag[T]): Set[T] = set.flatMap {
+      case value: T => Some(value)
+      case _ => None
+    }
+
+    def ifEmptySingle(v: => A): Set[A] = if (set.nonEmpty) set else Set(v)
+
+    def ifEmpty(set2: => Set[A]): Set[A] = if (set.nonEmpty) set else set2
   }
 
   implicit class OptionExtension[A](option: Option[A]) {
