@@ -72,22 +72,25 @@ object Inference {
   }
 
   /**
-    * Instantiates all defined inference variables in `tpe` to a type given by `get`.
+    * Instantiates all defined inference variables in `tpe` to a type given by `get`. Undefined inference variables are
+    * left as-is.
     */
-  def instantiate(assignments: Assignments, tpe: Type, get: InferenceBounds => Type): Type = {
+  def instantiate(assignments: Assignments, tpe: Type, get: InferenceBounds => Type): Type = instantiate(assignments, tpe, get, identity)
+
+  /**
+    * Instantiates all defined inference variables in `tpe` to a type given by `get`. Undefined inference variables are
+    * instantiated to a type given by `undefined`.
+    */
+  def instantiate(assignments: Assignments, tpe: Type, get: InferenceBounds => Type, undefined: InferenceVariable => Type): Type = {
     // `instantiate` may be called with simple types quite often. We want to avoid reconstructing types (with  all the
     // required allocations) in such cases.
     if (isFullyInstantiated(tpe)) {
       return tpe
     }
 
-    // TODO: Wouldn't this inference constellation be a good test for Lore inference? Lore should be able to infer
-    //       Type => Type for (t => instantiate(mode, t)) as long as that's the only function instance of instantiate
-    //       with an arity of 2.
-    val rec = t => instantiate(assignments, t, get)
-
+    val rec = (t: Type) => instantiate(assignments, t, get, undefined)
     tpe match {
-      case iv: InferenceVariable => assignments.get(iv).map(get).getOrElse(iv)
+      case iv: InferenceVariable => assignments.get(iv).map(get).getOrElse(undefined(iv))
       case tv: TypeVariable =>
         if (Inference.isFullyInstantiated(tv)) tv
         else ??? // TODO: How can we instantiate the type variable without destroying its reference equality? Maybe a type variable requires a UUID instead?
