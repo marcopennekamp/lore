@@ -169,7 +169,13 @@ object TypingJudgment {
   case class Conjunction(judgments: Vector[TypingJudgment], position: Position) extends TypingJudgment
 
   // TODO: Rename to "most specific" or something? At least work this into the name somehow?
-  case class MultiFunctionHint(mf: MultiFunctionDefinition, arguments: Vector[Type], position: Position) extends TypingJudgment
+  case class MultiFunctionHint(mf: MultiFunctionDefinition, arguments: Vector[Type], position: Position) extends TypingJudgment {
+    /**
+      * This inference variable is used by [[InferenceOrder]] to set the MultiFunctionHint as a dependency of the
+      * hint's arguments.
+      */
+    lazy val dependencyVariable: InferenceVariable = new InferenceVariable
+  }
 
   def stringify(judgment: TypingJudgment): String = judgment match {
     case Equals(t1, t2, _) => s"$t1 :=: $t2"
@@ -182,7 +188,7 @@ object TypingJudgment {
     case MultiFunctionValue(function, mf, _) => s"$function <- ${mf.name} as function"
     case MostSpecific(reference, alternatives, _) =>s"$reference <- mostSpecific(\n    ${alternatives.mkString(";\n    ")}\n)"
     case Conjunction(judgments, _) => judgments.mkString(", ")
-    case MultiFunctionHint(mf, arguments, _) => s"${mf.name}::hint(${arguments.mkString(", ")})"
+    case hint@MultiFunctionHint(mf, arguments, _) => s"${mf.name}::hint(${arguments.mkString(", ")}) <dependency ${hint.dependencyVariable}>"
   }
 
 }

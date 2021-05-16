@@ -104,10 +104,7 @@ object SimpleResolution {
 
       case TypingJudgment.MostSpecific(_, _, _) => ???
 
-      case TypingJudgment.MultiFunctionHint(_, arguments, _) =>
-        if (areFullyInferred(arguments, assignments, influenceGraph)) {
-          resolveTowards(ResolutionDirection.Backwards)
-        } else None
+      case TypingJudgment.MultiFunctionHint(_, _, _) => resolveTowards(ResolutionDirection.Backwards)
     }
   }
 

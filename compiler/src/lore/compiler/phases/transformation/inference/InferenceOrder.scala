@@ -38,7 +38,7 @@ object InferenceOrder {
         // TODO: This is just a naive approach which will likely fail. :)
         alternatives.foldLeft(graph)(addJudgment)
       case TypingJudgment.Conjunction(judgments, _) => judgments.foldLeft(graph)(addJudgment)
-      case TypingJudgment.MultiFunctionHint(_, _, _) => graph
+      case hint@TypingJudgment.MultiFunctionHint(_, arguments, _) => processDependencies(graph, hint.dependencyVariable, arguments)
     }
   }
 
@@ -62,6 +62,12 @@ object InferenceOrder {
     val sourceVariables = sources.flatMap(Inference.variables).distinct
     if (sourceVariables.nonEmpty) addDependencies(graph, sourceVariables, Vector(target))
     else sources.foldLeft(graph) { case (graph2, source) => processDependencies(graph2, source, target) }
+  }
+
+  private def processDependencies(graph: InfluenceGraph, source: Type, targets: Vector[Type]): InfluenceGraph = {
+    val targetVariables = targets.flatMap(Inference.variables).distinct
+    if (targetVariables.nonEmpty) addDependencies(graph, Vector(source), targetVariables)
+    else graph
   }
 
   private def processBiDependencies(graph: InfluenceGraph, t1: Type, t2: Type): InfluenceGraph = {
