@@ -118,6 +118,30 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
 
     // TODO: Take the assignments that result in the MOST SPECIFIC function being chosen. If there is no such most
     //       specific function (either due to ambiguity or empty fit), return a compilation error.
+    // TODO: We have to be careful with failed compilations. There are basically two cases:
+    //        1. The compilation failed because an argument was typed incorrectly or because the multi-function call
+    //           failed. In that case, we want to exclude the compilation from the "real" set.
+    //        2. The compilation failed because of some other code error down the line, but the multi-function call
+    //           went through correctly. We have to report this error to the user instead of suppressing it. So we have
+    //           to somehow detect that and add it to the "real" set of compilation errors.
+    //       In the end, we must not actually look at just the successes to determine which errors to pass to the user,
+    //       but also at SOME of the failed compilations.
+    //       This is all complicated by the fact that most likely, if the multi-function call is ambiguous, there will
+    //       be no successes, but multiple compilation errors, some of which are the right errors to report.
+    //       As for an approach how to solve this problem, I think we can look at the `resultArgumentType`. If this
+    //       type is correctly set, the arguments have been correctly typed, which means that the compilation error is
+    //       either due to an MF ambiguity/empty fit (which we want to report) or because of a compilation error down
+    //       the line (which we also want to report). This of course requires that we get back the assignments from the
+    //       nested inference even in the event of a compilation error...
+    //       ANOTHER IDEA: Maybe we can only pass the supplementalJudgments to SimpleResolution.infer. However, that
+    //       doesn't quite work. We also have to pass additional judgments that type the arguments further to the
+    //       inference call. One judgment that comes to mind is a MultiFunctionValue judgment, which is definitely
+    //       resolved AFTER the MultiFunctionHint. Deciding which to pass might be quite tricky. (It might be as easy
+    //       as passing all judgments which the argument inference variables still depend on, but I haven't given this
+    //       enough thought.) However, the advantage of this idea is that we can definitely concentrate on the
+    //       compilation successes, as all compilation errors will be due to argument typing errors. This might even
+    //       help with performance, because we're not performing the whole rest of inference inside the backtracking
+    //       step.
 
     val successes = compilations.filter(_.isSuccess)
     if (successes.length == 1) {
