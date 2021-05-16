@@ -153,8 +153,6 @@ object JudgmentResolver {
       case _: TypingJudgment.ElementType => ElementTypeJudgmentResolver
       case _: TypingJudgment.MultiFunctionCall => MultiFunctionCallJudgmentResolver
       case _: TypingJudgment.MultiFunctionValue => MultiFunctionValueJudgmentResolver
-      case _: TypingJudgment.MostSpecific => ??? // TODO: Implement? (Probably throw away if MultiFunctionHint works.)
-      case _: TypingJudgment.Conjunction => ??? // TODO: Implement? (Probably throw away if MultiFunctionHint works.)
       case _: TypingJudgment.MultiFunctionHint => MultiFunctionHintJudgmentResolver
     }).asInstanceOf[JudgmentResolver[TypingJudgment]]
 

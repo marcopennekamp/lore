@@ -110,8 +110,6 @@ object SimpleResolution {
           resolveTowards(ResolutionDirection.Forwards)
         } else None
 
-      case TypingJudgment.MostSpecific(_, _, _) => ???
-
       case TypingJudgment.MultiFunctionHint(_, _, _) => resolveTowards(ResolutionDirection.Backwards)
     }
   }

@@ -161,29 +161,6 @@ object TypingJudgment {
   case class MultiFunctionValue(target: InferenceVariable, mf: MultiFunctionDefinition, position: Position) extends TypingJudgment
 
   /**
-    * From the given list of `alternatives`, the system first chooses all alternatives that result in a correct
-    * inference result. Each alternative must result in a correct typing of the given `reference`. Finally, the
-    * alternative which produces the most specific `reference` type wins and gets chosen. If multiple reference types
-    * are equally specific, the typing judgment fails and results in an appropriate error.
-    *
-    * This typing judgment might seem esoteric at first glance, but it can be used to simulate argument selection of
-    * multiple dispatch. Choosing the most specific `reference` type corresponds to choosing the most specific input
-    * type in multiple dispatch, i.e. the `min` construction.
-    *
-    * TODO: We should be able to pass custom "no results" (corresponding to empty fit) and "too many results"
-    *       (corresponding to ambiguous call) errors.
-    *
-    * TODO: Instead of modeling these complex judgments in FunctionTyping, it might actually be preferable to produce
-    *       these ad-hoc typings when resolving the MultiFunctionCall judgment. We would then have to make that
-    *       judgment resolvable in both directions.
-    *       OR: Keep the MultiFunctionCall judgment as is and introduce a second "MultiFunctionHint" judgment that
-    *       provides a "typing hint" to the arguments.
-    */
-  case class MostSpecific(reference: InferenceVariable, alternatives: Vector[TypingJudgment], position: Position) extends TypingJudgment
-
-  case class Conjunction(judgments: Vector[TypingJudgment], position: Position) extends TypingJudgment
-
-  /**
     * A MultiFunctionHint provides typing information to multi-function arguments. Usually, all arguments will be fully
     * typed, in which case the MultiFunctionHint serves no purpose and will be quickly skipped.
     *
@@ -211,8 +188,6 @@ object TypingJudgment {
     case ElementType(target, collection, _) => s"$target <- $collection::elementType"
     case MultiFunctionCall(target, mf, arguments, _) => s"$target <- ${mf.name}(${arguments.mkString(", ")})"
     case MultiFunctionValue(function, mf, _) => s"$function <- ${mf.name} as function"
-    case MostSpecific(reference, alternatives, _) =>s"$reference <- mostSpecific(\n    ${alternatives.mkString(";\n    ")}\n)"
-    case Conjunction(judgments, _) => judgments.mkString(", ")
     case hint@MultiFunctionHint(mf, arguments, _) => s"${mf.name}::hint(${arguments.mkString(", ")}) <dependency ${hint.dependencyVariable}>"
   }
 

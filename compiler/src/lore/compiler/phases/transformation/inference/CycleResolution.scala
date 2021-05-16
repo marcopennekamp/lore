@@ -81,10 +81,6 @@ object CycleResolution {
         Some(ResolutionDirection.Forwards)
       } else None
 
-    case TypingJudgment.MostSpecific(reference, alternatives, position) => ??? // TODO: Implement?
-
-    case TypingJudgment.Conjunction(judgments, position) => ??? // TODO: Implement?
-
     case TypingJudgment.MultiFunctionHint(mf, arguments, position) =>
       // TODO: There can't even be cycles because the judgment has no internal inference variables, right?
       //       If so, a MultiFunctionHint can only be resolved during BulkResolution.
