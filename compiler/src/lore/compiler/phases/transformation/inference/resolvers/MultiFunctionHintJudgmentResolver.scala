@@ -1,6 +1,6 @@
 package lore.compiler.phases.transformation.inference.resolvers
 
-import lore.compiler.core.{Compilation, CompilationException}
+import lore.compiler.core.{Compilation, Error}
 import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiateByBound}
 import lore.compiler.phases.transformation.inference.InferenceBounds.BoundType
 import lore.compiler.phases.transformation.inference.{InferenceVariable, SimpleResolution, TypingJudgment}
@@ -8,6 +8,10 @@ import lore.compiler.semantics.Registry
 import lore.compiler.types.{BasicType, FunctionType, ProductType, Type}
 
 object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment.MultiFunctionHint] {
+
+  case class MultiFunctionHintMissingImplementation(judgment: TypingJudgment, successes: Int, compilations: Vector[Compilation[_]]) extends Error(judgment) {
+    override def message: String = s"The MultiFunctionHint judgment $judgment cannot be resolved yet if there are $successes options. Sorry. Compilations: $compilations."
+  }
 
   override def backwards(
     judgment: TypingJudgment.MultiFunctionHint,
@@ -110,7 +114,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
     } else {
       println(successes)
       println()
-      throw CompilationException(s"The MultiFunctionHint judgment $judgment cannot be resolved yet if there are ${successes.length} options. Sorry.")
+      Compilation.fail(MultiFunctionHintMissingImplementation(judgment, successes.length, compilations))
     }
   }
 
