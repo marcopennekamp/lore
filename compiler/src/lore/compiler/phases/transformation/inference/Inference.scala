@@ -14,7 +14,7 @@ object Inference {
     // Note that the order of judgments is important for reproducibility: we should always process the judgments in
     // their order of declaration. In addition, this will give the algorithm the best chance at resolving type
     // inference in one go, as the flow of typing most often follows the natural judgment order.
-    SimpleResolution.infer(Map.empty, judgments.reverse).flatMap { assignments =>
+    SimpleResolution.infer(Map.empty, judgments).flatMap { assignments =>
       // Once all inference variables have been instantiated, make another pass over all judgments to check equality
       // and subtyping constraints.
       judgments.map(JudgmentChecker.check(_, assignments)).simultaneous.map(_ => assignments)
