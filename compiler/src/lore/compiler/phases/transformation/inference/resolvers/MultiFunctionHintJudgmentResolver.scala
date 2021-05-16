@@ -3,7 +3,7 @@ package lore.compiler.phases.transformation.inference.resolvers
 import lore.compiler.core.{Compilation, Error}
 import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiateByBound}
 import lore.compiler.phases.transformation.inference.InferenceBounds.BoundType
-import lore.compiler.phases.transformation.inference.{InferenceVariable, SimpleResolution, TypingJudgment}
+import lore.compiler.phases.transformation.inference.{Inference, InferenceBounds, InferenceVariable, SimpleResolution, TypingJudgment}
 import lore.compiler.semantics.Registry
 import lore.compiler.types.{ProductType, Type}
 
@@ -18,10 +18,13 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
     assignments: Assignments,
     remainingJudgments: Vector[TypingJudgment],
   )(implicit registry: Registry): Compilation[(Assignments, Vector[TypingJudgment])] = {
-    // TODO: Backtracking and shit...
-    //       To implement backtracking, we have to allow the JudgmentResolver to add and remove judgments...
-
     val TypingJudgment.MultiFunctionHint(mf, arguments, position) = judgment
+
+    // Performance shortcut: If all inference variables are inferred to a point that they cannot change further, we can
+    // skip the MultiFunctionHint, because it will provide no useful information.
+    if (arguments.flatMap(Inference.variables).forall(v => assignments.get(v).exists(InferenceBounds.areFixed))) {
+      return Compilation.succeed((assignments, remainingJudgments))
+    }
 
     val inferredArgumentBounds = arguments.map { argument =>
       // This will always create bounds even if the inference variables of some arguments haven't been inferred yet,
@@ -73,10 +76,12 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       val typeVariables = function.typeScope.localTypeVariables
       val typeVariableAssignments = typeVariables.map(tv => (tv, new InferenceVariable)).toMap
 
+      // TODO: When the bounds are fully instantiated types, we can simply change the assignments instead of adding new judgments.
       val lowerBoundsJudgments = typeVariables.flatMap { tv =>
         Some(TypingJudgment.Subtypes(Type.substitute(tv.lowerBound, typeVariableAssignments), typeVariableAssignments(tv), position))
       }
 
+      // TODO: When the bounds are fully instantiated types, we can simply change the assignments instead of adding new judgments.
       val upperBoundsJudgments = typeVariables.flatMap { tv =>
         Some(TypingJudgment.Subtypes(typeVariableAssignments(tv), Type.substitute(tv.upperBound, typeVariableAssignments), position))
       }

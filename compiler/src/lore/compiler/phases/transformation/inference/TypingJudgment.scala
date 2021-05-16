@@ -183,7 +183,16 @@ object TypingJudgment {
 
   case class Conjunction(judgments: Vector[TypingJudgment], position: Position) extends TypingJudgment
 
-  // TODO: Rename to "most specific" or something? At least work this into the name somehow?
+  /**
+    * A MultiFunctionHint provides typing information to multi-function arguments. Usually, all arguments will be fully
+    * typed, in which case the MultiFunctionHint serves no purpose and will be quickly skipped.
+    *
+    * In some cases, especially when anonymous function or multi-function value arguments are involved, the argument
+    * needs the context information from the multi-function to be correctly typed. The judgment resolver computes a
+    * list of possible function definitions and then runs backtracking inference for each of them, choosing the most
+    * specific argument type as the path to follow. The MultiFunctionHint resolver might run into an empty fit or
+    * ambiguity error, which are reported as a compilation errors to the user.
+    */
   case class MultiFunctionHint(mf: MultiFunctionDefinition, arguments: Vector[Type], position: Position) extends TypingJudgment {
     /**
       * This inference variable is used by [[InferenceOrder]] to set the MultiFunctionHint as a dependency of the
