@@ -1,6 +1,6 @@
 package lore.compiler.phases.transformation.inference
 
-import lore.compiler.core.Compilation
+import lore.compiler.core.{Compilation, Errors, Result}
 import lore.compiler.phases.transformation.inference.Inference.Assignments
 import lore.compiler.phases.transformation.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.phases.transformation.inference.resolvers.JudgmentResolver
@@ -14,7 +14,7 @@ object SimpleResolution {
   /**
     * Infers a set of assignments from the given assignments and judgments. First builds an influence graph from the
     * list of judgments, then resolves one resolvable judgment, consuming it in the process. This produces a new set
-    * of assignments and a new judgment list, which is given to the next step recursively.
+    * of assignments and a new judgment list, which is given to the next step iteratively.
     *
     * This function might delegate to [[CycleResolution.infer]] if it cannot resolve judgments directly.
     *
@@ -22,8 +22,25 @@ object SimpleResolution {
     * other methods such as fixed-point inference.
     */
   def infer(assignments: Assignments, judgments: Vector[TypingJudgment])(implicit registry: Registry): Compilation[Assignments] = {
+    var currentAssignments = assignments
+    var currentJudgments = judgments
+
+    // This loop isn't quite idiomatic, but should keep the stack size manageable as opposed to a recursive approach.
+    while (currentJudgments.nonEmpty) {
+      step(currentAssignments, currentJudgments) match {
+        case Result((assignments2, judgments2), _) =>
+          currentAssignments = assignments2
+          currentJudgments = judgments2
+        case compilation: Errors[Nothing] => return compilation
+      }
+    }
+
+    Compilation.succeed(currentAssignments)
+  }
+
+  private def step(assignments: Assignments, judgments: Vector[TypingJudgment])(implicit registry: Registry): Compilation[JudgmentResolver.Result] = {
     if (judgments.isEmpty) {
-      return Compilation.succeed(assignments)
+      return Compilation.succeed((assignments, judgments))
     }
 
     // TODO: Rebuilding the graph with every step is simple to code, but may be detrimental to performance. If this
@@ -41,7 +58,7 @@ object SimpleResolution {
         // If no judgments have been resolved, simple resolution has failed. We need to fall back to cycle resolution.
         CycleResolution.infer(assignments, influenceGraph, judgments)
 
-      case Some(compilation) => compilation.map(logIterationResult).flatMap((infer _).tupled)
+      case Some(compilation) => compilation.map(logIterationResult)
     }
   }
 
