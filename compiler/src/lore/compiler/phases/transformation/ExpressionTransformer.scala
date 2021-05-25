@@ -9,6 +9,7 @@ import lore.compiler.semantics.scopes.{TypeScope, VariableScope}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.types.{ProductType, Type}
+import lore.compiler.utils.Timer.timed
 
 object ExpressionTransformer {
 
@@ -33,13 +34,15 @@ object ExpressionTransformer {
         visitor.typingJudgments.foreach(println)
         println()
       }
-      inferredTypes <- Inference.infer(visitor.typingJudgments) match {
-        case result@Result(_, _) => result
-        case errors@Errors(_, _) =>
-          println("Inference failed!")
-          println()
-          println()
-          errors
+      inferredTypes <- timed(s"Inference for $name") {
+        Inference.infer(visitor.typingJudgments) match {
+          case result@Result(_, _) => result
+          case errors@Errors(_, _) =>
+            println("Inference failed!")
+            println()
+            println()
+            errors
+        }
       }
       _ = {
         println("Inferred types:")

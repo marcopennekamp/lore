@@ -10,7 +10,6 @@ object Inference {
   type Assignments = Map[InferenceVariable, InferenceBounds]
 
   def infer(judgments: Vector[TypingJudgment])(implicit registry: Registry): Compilation[Assignments] = {
-    // TODO: Judgments are only reversed to test the robustness of the inference algorithm! Remove later!!!
     // Note that the order of judgments is important for reproducibility: we should always process the judgments in
     // their order of declaration. In addition, this will give the algorithm the best chance at resolving type
     // inference in one go, as the flow of typing most often follows the natural judgment order.

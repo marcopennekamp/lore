@@ -5,6 +5,11 @@ import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.types.Type
 
 sealed trait TypingJudgment extends Positioned {
+  /**
+    * The source/target dependencies induced by the current typing judgment.
+    */
+  lazy val dependencies: Set[InferenceDependency] = InferenceDependency.dependenciesOf(this)
+
   override def toString: String = TypingJudgment.stringify(this)
 }
 
