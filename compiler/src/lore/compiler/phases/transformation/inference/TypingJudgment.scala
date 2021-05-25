@@ -45,7 +45,8 @@ object TypingJudgment {
   case class Subtypes(t1: Type, t2: Type, position: Position) extends TypingJudgment
 
   /**
-    * Assigns matching types in `source` to inference variables in `target`.
+    * Assigns matching types in `source` (inference variables instantiated as candidate types) to inference variables
+    * in `target`.
     *
     * This is used by variable declarations, for example, to ensure that the variable's type is fixed in one direction.
     * We don't want the following to be viable Lore code:
@@ -54,14 +55,6 @@ object TypingJudgment {
     * f(%{ x: 10 })
     *
     * The type of the variable declaration should become fixed at the point of declaration.
-    *
-    * TODO: To make the above comment true ("ensure that the variable's type is fixed"), we have to assign the
-    *       CANDIDATE TYPE of `source` to both bounds of `target`. Otherwise, `target` isn't guaranteed to be fixed.
-    *       This is relevant more than ever now that we're using Assign when resolving MultiFunctionHints, which is
-    *       currently failing because function subtyping doesn't play well with Nothing/Any.
-    * TODO: Also ensure that the instantiated target and source types are EQUAL after the judgment has been resolved.
-    *       When we have an assignment `target <- source`, the implicit assumption is that target will be equal to
-    *       source.
     */
   case class Assign(target: Type, source: Type, position: Position) extends TypingJudgment
 

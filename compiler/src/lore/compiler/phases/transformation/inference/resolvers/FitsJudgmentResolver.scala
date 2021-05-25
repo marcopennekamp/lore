@@ -3,7 +3,8 @@ package lore.compiler.phases.transformation.inference.resolvers
 import lore.compiler.core.Compilation
 import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiate}
 import lore.compiler.phases.transformation.inference.InferenceBounds.narrowBounds
-import lore.compiler.phases.transformation.inference.{SubtypingMatcher, TypingJudgment}
+import lore.compiler.phases.transformation.inference.TypingJudgment
+import lore.compiler.phases.transformation.inference.matchers.{Matchers, SubtypingMatcher}
 import lore.compiler.semantics.Registry
 
 object FitsJudgmentResolver extends JudgmentResolver.Nondirectional[TypingJudgment.Fits] {
@@ -13,7 +14,7 @@ object FitsJudgmentResolver extends JudgmentResolver.Nondirectional[TypingJudgme
     assignments: Assignments,
   )(implicit registry: Registry): Compilation[Assignments] = {
     SubtypingMatcher.matchSubtype(
-      (_, _, _, _) => { throw new UnsupportedOperationException },
+      Matchers.unsupported,
       (t1, iv2, assignments, context) => narrowBounds(assignments, iv2, t1, t1, context),
     )(instantiate(assignments, judgment.t1, _.candidateType), judgment.t2, assignments, judgment)
   }

@@ -1,13 +1,14 @@
-package lore.compiler.phases.transformation.inference
+package lore.compiler.phases.transformation.inference.matchers
 
 import lore.compiler.core.{Compilation, CompilationException, Error}
 import lore.compiler.phases.transformation.inference.Inference.{Assignments, isFullyInstantiated}
+import lore.compiler.phases.transformation.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.types._
 
 object SubtypingMatcher {
 
   case class ExpectedSubtype(t1: Type, t2: Type, context: TypingJudgment) extends Error(context) {
-    override def message: String = s"$t1 is not a subtype of $t2."
+    override def message: String = s"$t1 should be a subtype of $t2, but is not."
   }
 
   /**
@@ -19,8 +20,8 @@ object SubtypingMatcher {
     *     `instantiate(t1) <= instantiate(t2)`.
     */
   def matchSubtype(
-    process1: (InferenceVariable, Type, Assignments, TypingJudgment) => Compilation[Assignments],
-    process2: (Type, InferenceVariable, Assignments, TypingJudgment) => Compilation[Assignments],
+    processIv1: (InferenceVariable, Type, Assignments, TypingJudgment) => Compilation[Assignments],
+    processIv2: (Type, InferenceVariable, Assignments, TypingJudgment) => Compilation[Assignments],
   )(t1: Type, t2: Type, assignments: Assignments, context: TypingJudgment): Compilation[Assignments] = {
     if (isFullyInstantiated(t1) && isFullyInstantiated(t2)) {
       return if (t1 <= t2) Compilation.succeed(assignments) else Compilation.fail(ExpectedSubtype(t1, t2, context))
@@ -31,24 +32,19 @@ object SubtypingMatcher {
         s" Given types: $t1 and $t2.")
     }
 
-    def expectedSubtype: Compilation[Assignments] = Compilation.fail(ExpectedSubtype(t1, t2, context))
+    def expectedSubtype = Compilation.fail(ExpectedSubtype(t1, t2, context))
 
-    val rec = (newAssignments: Assignments, u1: Type, u2: Type) => matchSubtype(process1, process2)(u1, u2, newAssignments, context)
+    val rec = (newAssignments: Assignments, u1: Type, u2: Type) => matchSubtype(processIv1, processIv2)(u1, u2, newAssignments, context)
     (t1, t2) match {
-      case (iv1: InferenceVariable, t2) => process1(iv1, t2, assignments, context)
-      case (t1, iv2: InferenceVariable) => process2(t1, iv2, assignments, context)
       case (_: InferenceVariable, _: InferenceVariable) => ??? // TODO: Either resolve this case or throw a proper error.
+      case (iv1: InferenceVariable, t2) => processIv1(iv1, t2, assignments, context)
+      case (t1, iv2: InferenceVariable) => processIv2(t1, iv2, assignments, context)
 
       case (tv1: TypeVariable, tv2: TypeVariable) =>
         // TODO: Do we need to assign lower and upper bounds of type variables for inference????
         ???
 
-      case (p1: ProductType, p2: ProductType) =>
-        if (p1.elements.size == p2.elements.size) {
-          p1.elements.zip(p2.elements).foldLeft(Compilation.succeed(assignments)) {
-            case (compilation, (e1, e2)) => compilation.flatMap(rec(_, e1, e2))
-          }
-        } else expectedSubtype
+      case (p1: ProductType, p2: ProductType) => Matchers.matchTuple(p1, p2, assignments, rec, expectedSubtype)
 
       case (f1: FunctionType, f2: FunctionType) => rec(assignments, f1.input, f2.input).flatMap(rec(_, f1.output, f2.output))
 
