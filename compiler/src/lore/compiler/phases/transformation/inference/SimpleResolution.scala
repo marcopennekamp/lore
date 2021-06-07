@@ -1,7 +1,7 @@
 package lore.compiler.phases.transformation.inference
 
 import lore.compiler.core.{Compilation, Errors, Result}
-import lore.compiler.phases.transformation.inference.Inference.Assignments
+import lore.compiler.phases.transformation.inference.Inference.{Assignments, AssignmentsExtension}
 import lore.compiler.phases.transformation.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.phases.transformation.inference.resolvers.JudgmentResolver
 import lore.compiler.phases.transformation.inference.resolvers.JudgmentResolver.ResolutionDirection
@@ -151,7 +151,7 @@ object SimpleResolution {
 
   def logIterationResult(result: JudgmentResolver.Result): JudgmentResolver.Result = {
     println("Iteration result assignments:")
-    result._1.foreach(println)
+    println(result._1.stringified)
     println()
     result
   }

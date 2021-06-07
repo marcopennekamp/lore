@@ -21,6 +21,7 @@ object Inference {
     */
   implicit class AssignmentsExtension(assignments: Assignments) {
     def instantiate(tpe: Type): Type = Inference.instantiate(assignments, tpe, _.candidateType)
+    def stringified: String = assignments.values.toVector.sortBy(_.variable.name).mkString("\n")
   }
 
   def variables(tpe: Type): Set[InferenceVariable] = tpe match {

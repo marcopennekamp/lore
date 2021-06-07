@@ -1,7 +1,7 @@
 package lore.compiler.phases.transformation.inference
 
 import lore.compiler.core.{Compilation, CompilationException}
-import lore.compiler.phases.transformation.inference.Inference.Assignments
+import lore.compiler.phases.transformation.inference.Inference.{Assignments, AssignmentsExtension}
 import lore.compiler.phases.transformation.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.phases.transformation.inference.resolvers.JudgmentResolver
 import lore.compiler.phases.transformation.inference.resolvers.JudgmentResolver.ResolutionDirection
@@ -33,8 +33,8 @@ object CycleResolution {
         throw CompilationException(
           "Type inference cannot further reduce the following list of judgments:\n" +
             judgments.mkString("\n") +
-            "\nGiven the following list of assignments:\n" + // TODO: Print assignments in order.
-            assignments.mkString("\n") +
+            "\nGiven the following list of assignments:\n" +
+            assignments.stringified +
             "\nAnd the following influence graph:\n" +
             influenceGraph.edges.mkString("\n") +
             "\n"
