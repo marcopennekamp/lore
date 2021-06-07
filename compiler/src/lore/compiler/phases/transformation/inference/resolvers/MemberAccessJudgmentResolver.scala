@@ -1,10 +1,9 @@
 package lore.compiler.phases.transformation.inference.resolvers
 
-import lore.compiler.types.Type
 import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiateByBound}
-import lore.compiler.phases.transformation.inference.InferenceBounds.{BoundType, ensureBound}
+import lore.compiler.phases.transformation.inference.InferenceBounds.{BoundType, ensureBoundSubtypes, ensureBoundSupertypes}
 import lore.compiler.phases.transformation.inference.{Inference, InferenceVariable, TypingJudgment}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.members.Member
@@ -24,13 +23,13 @@ object MemberAccessJudgmentResolver extends JudgmentResolver[TypingJudgment.Memb
       memberAt(BoundType.Upper, judgment, assignments).flatMap { upperMember =>
         if (lowerMember.nonEmpty || upperMember.nonEmpty) {
           val compilationLower = lowerMember match {
-            case Some(member) => ensureBound(assignments, judgment.target, member.tpe, BoundType.Lower, judgment)
+            case Some(member) => ensureBoundSupertypes(assignments, judgment.target, member.tpe, judgment)
             case None => Compilation.succeed(assignments)
           }
 
           compilationLower.flatMap { assignments2 =>
             upperMember match {
-              case Some(member) => ensureBound(assignments2, judgment.target, member.tpe, BoundType.Upper, judgment)
+              case Some(member) => ensureBoundSubtypes(assignments2, judgment.target, member.tpe, judgment)
               case None => Compilation.succeed(assignments2)
             }
           }

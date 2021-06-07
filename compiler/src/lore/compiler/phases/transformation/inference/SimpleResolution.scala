@@ -43,10 +43,6 @@ object SimpleResolution {
       return Compilation.succeed((assignments, judgments))
     }
 
-    // TODO: Rebuilding the graph with every step is simple to code, but may be detrimental to performance. If this
-    //       ever causes problems, we might want to consider removing fully inferred variables manually.
-    //       As an alternative, we don't even NEED to build a graph, necessarily. There may be other kinds of
-    //       representation to prepare the same information.
     val influenceGraph = InferenceOrder.buildInfluenceGraph(judgments)
 
     println()

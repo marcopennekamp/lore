@@ -12,28 +12,16 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
 object CycleResolution {
 
   /**
-    * When no judgments can be picked with fully inferred inference variables, we have a cycle in the influence graph.
-    * Such a cycle has to be resolved by trial and error, with educated guesses about the pick.
+    * When no judgments can be picked with fully inferred source inference variables, we have a cycle in the influence
+    * graph. Such a cycle has to be resolved by picking an appropriate judgment.
     *
-    * To pick an applicable judgment, we regard first the forwards direction and then the backwards direction of the
-    * judgment. If the required source variables in the specific direction have no dependencies, we try to resolve the
-    * judgment in that direction.
+    * To pick such a judgment, we regard either the forwards or the backwards direction of the judgment. If the
+    * required source variables in that direction have no external dependencies (meaning that only the judgment
+    * itself will influence the inference variables), we try to resolve the judgment in that direction.
     *
-    * TODO: Actually implement the "trial and recover" approach...
-    *
-    * TODO: If the direction fails, we should try the other direction.
-    *
-    * TODO: For now, the algorithm is greedy, always considering the first judgment that can be resolved in one or the
-    *       other direction. We could also consider ALL applicable judgments in turn, recovering to the next one if
-    *       compilation fails.
-    *
-    * TODO: Look at all judgments and see which are most desirable by assigning a sort of score. Choose the judgment
-    *       with the best bounds score (i.e. both bounds set = 3, upper bound set = 2, lower bound set = 1; take the
-    *       avg if multiple variables). Of course, the judgment must still be applicable, so the direction source may
-    *       not have any external inbound edges (--> score = 0). The score should be calculated for both directions.
-    *       The purpose of this is to avoid catastrophic inference degradation inferring Any or Nothing for every
-    *       variable when starting at the wrong end. We should always strive to resolve the cycle with the most
-    *       information available first.
+    * Once picked, the choice is final. We do not recover from a compilation failure to pick another judgment or
+    * direction. The reason is simple: We cannot differentiate between a compilation failure due to a faulty program
+    * and a compilation failure due to a bad pick.
     */
   def infer(assignments: Assignments, influenceGraph: InfluenceGraph, judgments: Vector[TypingJudgment])(implicit registry: Registry): Compilation[JudgmentResolver.Result] = {
     judgments.firstDefined(judgment => isApplicable(judgment, influenceGraph).map((judgment, _))) match {
@@ -79,13 +67,6 @@ object CycleResolution {
         Some(ResolutionDirection.Forwards)
       } else None
 
-    case TypingJudgment.MultiFunctionHint(mf, arguments, position) =>
-      // TODO: There can't even be cycles because the judgment has no internal inference variables, right?
-      //       If so, a MultiFunctionHint can only be resolved during BulkResolution.
-      //       This would fit with the notion that only bidirectional judgments can be taken into account during cycle
-      //       resolution.
-      None
-
     case _ =>
       // Other judgments like Assign can't have a cycle, because only one resolution direction is allowed.
       None
@@ -94,8 +75,6 @@ object CycleResolution {
   /**
     * Whether the source inference variables have external dependencies, meaning that there is at least one inbound
     * edge to a source variable that doesn't come from a target variable.
-    *
-    * TODO: This function may later also be used to calculate the score.
     */
   def hasExternalDependencies(ivs: Set[InferenceVariable], internalIvs: Set[InferenceVariable], influenceGraph: InfluenceGraph): Boolean = {
     ivs.toVector.map(iv => influenceGraph.get(iv)).exists {

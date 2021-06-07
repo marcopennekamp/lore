@@ -14,7 +14,6 @@ object ElementTypeJudgmentResolver extends JudgmentResolver[TypingJudgment.Eleme
     judgment: TypingJudgment.ElementType,
     assignments: Assignments,
   )(implicit registry: Registry): Compilation[Assignments] = {
-    // TODO: Candidate type or separate lower and upper bounds?
     val instantiatedCollection = instantiate(assignments, judgment.collection, _.candidateType)
     val elementType = instantiatedCollection match {
       case ListType(element) => Compilation.succeed(element)

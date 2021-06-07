@@ -24,8 +24,6 @@ case class InferenceBounds(variable: InferenceVariable, lower: Option[Type], upp
     * The candidate type is used as the effectively inferred type and thus the inference result. This will most likely
     * be the upper bound of the inference variable, but may also be the lower bound if the variable `iv` can only be
     * inferred from `t <= iv` Subtypes or least upper bound judgments.
-    *
-    * TODO: Return an option instead of Any?
     */
   val candidateType: Type = upper.orElse(lower).getOrElse(BasicType.Any)
 
@@ -95,25 +93,6 @@ object InferenceBounds {
     } else {
       Compilation.fail(InvalidUpperBound(inferenceVariable, upperBound, bounds, context))
     }
-  }
-
-  /**
-    * Override the bounds of the given inference variable without checking the previous bounds. This function is useful
-    * when processing "dependent" typings that might change the bounds of an inference variable altogether based on
-    * some other changing inference variables.
-    *
-    * TODO: Get rid of this. It's too dangerous.
-    */
-  def overrideBounds(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, upperBound: Type): Assignments = {
-    assignments.updated(inferenceVariable, InferenceBounds(inferenceVariable, Some(lowerBound), Some(upperBound)))
-  }
-
-  /**
-    * @see [[ensureBoundSupertypes]], [[ensureBoundSubtypes]]
-    */
-  def ensureBound(assignments: Assignments, inferenceVariable: InferenceVariable, bound: Type, boundType: BoundType, context: TypingJudgment): Compilation[Assignments] = boundType match {
-    case BoundType.Lower => ensureBoundSupertypes(assignments, inferenceVariable, bound, context)
-    case BoundType.Upper => ensureBoundSubtypes(assignments, inferenceVariable, bound, context)
   }
 
   /**

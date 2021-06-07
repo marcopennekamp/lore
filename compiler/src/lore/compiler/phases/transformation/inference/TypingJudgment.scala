@@ -13,8 +13,6 @@ sealed trait TypingJudgment extends Positioned {
   override def toString: String = TypingJudgment.stringify(this)
 }
 
-// TODO: Support custom error messages instead of (only) positions!
-
 object TypingJudgment {
 
   /**

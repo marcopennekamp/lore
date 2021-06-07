@@ -25,19 +25,6 @@ object Unification {
     )(t1, t2, assignments, context)
   }
 
-  case class CannotUnifyLowerBounds(bounds1: InferenceBounds, bounds2: InferenceBounds, context: TypingJudgment) extends Error(context) {
-    override def message: String = s"Type error: Cannot unify lower bounds of $bounds1 and $bounds2." // TODO: Create a more user-friendly error.
-  }
-
-  case class CannotUnifyUpperBounds(bounds1: InferenceBounds, bounds2: InferenceBounds, context: TypingJudgment) extends Error(context) {
-    override def message: String = s"Type error: Cannot unify upper bounds of $bounds1 and $bounds2." // TODO: Create a more user-friendly error.
-  }
-
-  // TODO: Remove.
-  case class ConflictingBounds(bounds1: InferenceBounds, bounds2: InferenceBounds, context: TypingJudgment) extends Error(context) {
-    override def message: String = s"Type error: Cannot unify bounds $bounds1 and $bounds2 because the lower and upper bounds conflict." // TODO: Create a more user-friendly error.
-  }
-
   /**
     * Unify the bounds of the two inference variables such that they have the same bounds which must also be a narrowed
     * version of their prior bounds.
@@ -51,7 +38,7 @@ object Unification {
     val compilationLower = if (boundTypes.contains(BoundType.Lower)) {
       val lower = Type.maxOrEqual(bounds1.lowerOrNothing, bounds2.lowerOrNothing) match {
         case Some(t) => t
-        case None => return Compilation.fail(CannotUnifyLowerBounds(bounds1, bounds2, context))
+        case None => return Compilation.fail(ExpectedTypeEquality(bounds1.lowerOrNothing, bounds2.lowerOrNothing, context))
       }
 
       narrowBound(assignments, iv1, lower, BoundType.Lower, context)
@@ -61,7 +48,7 @@ object Unification {
     compilationLower.flatMap { assignments2 =>
       val upper = Type.minOrEqual(bounds1.upperOrAny, bounds2.upperOrAny) match {
         case Some(t) => t
-        case None => return Compilation.fail(CannotUnifyUpperBounds(bounds1, bounds2, context))
+        case None => return Compilation.fail(ExpectedTypeEquality(bounds1.lowerOrNothing, bounds2.lowerOrNothing, context))
       }
 
       narrowBound(assignments2, iv1, upper, BoundType.Upper, context)
