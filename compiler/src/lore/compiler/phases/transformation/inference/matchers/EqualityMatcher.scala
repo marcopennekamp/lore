@@ -41,10 +41,6 @@ object EqualityMatcher {
       case (iv1: InferenceVariable, t2) => processIv1(iv1, t2, assignments, context)
       case (t1, iv2: InferenceVariable) => processIv2(t1, iv2, assignments, context)
 
-      case (tv1: TypeVariable, tv2: TypeVariable) =>
-        // TODO: Do we need to assign lower and upper bounds of type variables for inference????
-        ???
-
       case (p1: ProductType, p2: ProductType) => Matchers.matchTuple(p1, p2, assignments, rec, expectedTypeEquality)
 
       case (f1: FunctionType, f2: FunctionType) => rec(assignments, f1.input, f2.input).flatMap(rec(_, f1.output, f2.output))
