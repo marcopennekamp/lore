@@ -16,6 +16,7 @@ object FitsJudgmentResolver extends JudgmentResolver.Nondirectional[TypingJudgme
     SubtypingMatcher.matchSubtype(
       Matchers.unsupported,
       (t1, iv2, assignments, context) => narrowBounds(assignments, iv2, t1, t1, context),
+      Matchers.unsupported,
     )(instantiate(assignments, judgment.t1, _.candidateType), judgment.t2, assignments, judgment)
   }
 

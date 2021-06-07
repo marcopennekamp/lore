@@ -22,6 +22,7 @@ object SubtypingMatcher {
   def matchSubtype(
     processIv1: (InferenceVariable, Type, Assignments, TypingJudgment) => Compilation[Assignments],
     processIv2: (Type, InferenceVariable, Assignments, TypingJudgment) => Compilation[Assignments],
+    processBoth: (InferenceVariable, InferenceVariable, Assignments, TypingJudgment) => Compilation[Assignments],
   )(t1: Type, t2: Type, assignments: Assignments, context: TypingJudgment): Compilation[Assignments] = {
     if (isFullyInstantiated(t1) && isFullyInstantiated(t2)) {
       return if (t1 <= t2) Compilation.succeed(assignments) else Compilation.fail(ExpectedSubtype(t1, t2, context))
@@ -34,9 +35,9 @@ object SubtypingMatcher {
 
     def expectedSubtype = Compilation.fail(ExpectedSubtype(t1, t2, context))
 
-    val rec = (newAssignments: Assignments, u1: Type, u2: Type) => matchSubtype(processIv1, processIv2)(u1, u2, newAssignments, context)
+    val rec = (newAssignments: Assignments, u1: Type, u2: Type) => matchSubtype(processIv1, processIv2, processBoth)(u1, u2, newAssignments, context)
     (t1, t2) match {
-      case (_: InferenceVariable, _: InferenceVariable) => ??? // TODO: Either resolve this case or throw a proper error.
+      case (iv1: InferenceVariable, iv2: InferenceVariable) => processBoth(iv1, iv2, assignments, context)
       case (iv1: InferenceVariable, t2) => processIv1(iv1, t2, assignments, context)
       case (t1, iv2: InferenceVariable) => processIv2(t1, iv2, assignments, context)
 
