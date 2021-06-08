@@ -74,8 +74,8 @@ object TypingJudgment {
   /**
     * Ensures that `target` is the least upper bound of all `types`. The inference can happen in both directions:
     *
-    *   1. If all inference variables in `types` are defined, the least upper bounds of the instantiated types (both
-    *      lower bound and upper bound instantiation) are assigned to the lower and upper bound of `target`.
+    *   1. If all inference variables in `types` are fully inferred, the least upper bounds of the instantiated types
+    *      (both lower bound and upper bound instantiation) are assigned to the lower and upper bound of `target`.
     *   2. If `target` is defined, the typing judgment `LUB(T, A_1, ..., A_n)` is effectively equal to
     *      `A_1 :<: T`, ..., `A_n :<: T`. These "virtual" judgments are resolved, allowing the upper bounds of all
     *      `A_x` to be defined through T.
@@ -91,48 +91,21 @@ object TypingJudgment {
   case class LeastUpperBound(target: InferenceVariable, types: Vector[Type], position: Position) extends TypingJudgment
 
   /**
-    * TODO: Rewrite this description with the change to graph-based type inference.
+    * A MemberAccess judgment `target <- source.member` is resolved as follows:
     *
-    * A MemberAccess judgment `target <- source.name` is resolved as follows:
+    *   1. If `source` is fully inferred, the judgment ensures that the candidate instantiation of `source` contains
+    *      a member `member`. The type of `member` is assigned to `target`.
+    *   2. If `target` is fully inferred, the judgment ensures that the upper bound of `source` is a subtype of the
+    *      type `{ member: A }` with `A` being the upper-bound instantiation of `target`.
     *
-    *   1. If `source`'s lower bound is defined and contains a member `name`, the judgment ensures that the lower bound
-    *      of `target` is a supertype of the member's type.
-    *   2. If `source`'s upper bound is defined and contains a member `name`, the judgment ensures that the upper bound
-    *      of `target` is a subtype of the member's type.
-    *   3. If `target`'s upper bound is defined, the judgment ensures that the upper bound of `source` is a subtype of
-    *      the type `{ name: A }` with `A` being the upper-bound instantiation of `target`.
+    * The target type is taken from the candidate type of `source` in resolution (1) to produce stable assignments. The
+    * member's type held in `target` must always be equal to `source`'s member type, so the bounds must be fixed right
+    * away. (The bounds of `source` are already unchanging, because it's fully inferred.) For an example showing why
+    * this is important, see test:inference:0001.
     *
-    * During checking after principal inference, the following is ensured (given `target` and `source` instantiated
-    * with their candidate types): `target == source.name`. That is, the member must exist and the inferred member type
-    * must be equal to the actual member type. These checks are necessary because the resolution is not guaranteed to
-    * infer the correct types.
-    *
-    * For example, checking will ensure that the upper bound of `target` is not restricted further than the `source`
-    * would allow. Take these judgments (see test:inference:0001): `p :=: { m: C }`, `x <- p.m`, and `x :<: B` given
-    * B < C. The upper bound of `x` will be narrowed to B, but checking requires its candidate type, in this case the
-    * upper bound, to be C.
-    *
-    * One might expect this judgment to reject source types which don't contain the member; however, this would be
-    * detrimental to smart type inference, since we want to be able to successively narrow the bounds of the source
-    * type without rejecting the membership too early. During the course of type inference, `source` may well become a
-    * type which contains the desired member. Failing too early, too greedily, would lead to some incorrect inference
-    * edge cases. This is why (1) and (2) are only applied when the instantiated source contains the member.
-    *
-    * (1) and (2) only ensure the lower and upper bounds (instead of narrowing them). This is due to how more complex
-    * member accesses evolve during fixed-point evaluation. For an example, consider test:inference:0002.
-    *
-    * Resolution (3) is used to infer the `source` type from the `target` member type (backwards inference). We cannot
+    * Resolution (2) is used to infer the `source` type from the `target` member type (backwards inference). We cannot
     * infer the lower bound of `source` this way because shape types cannot subtype structs and shape types also aren't
     * good lower bounds when multiple properties are involved.
-    *
-    * TODO: Since we only check that the member actually exists during the checking phase, will that create problems
-    *       for the backtracking we will need to add to resolve multi-function calls? A branch which would have been
-    *       rejected MIGHT be valid because we are delaying membership checks, leading to incorrect inference of a
-    *       multi-function call. (For example, an invalid call might suddenly be valid, or an otherwise unique call
-    *       might become ambiguous.)
-    *         - On the other hand, the target inference variable won't receive any type if the source type doesn't
-    *           contain the member, so it would never be defined at all. So this might not be an issue at all, or only
-    *           in a few narrow edge cases.
     */
   case class MemberAccess(target: InferenceVariable, source: Type, name: String, position: Position) extends TypingJudgment
 
