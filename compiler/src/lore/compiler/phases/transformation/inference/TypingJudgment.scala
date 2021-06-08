@@ -16,18 +16,6 @@ sealed trait TypingJudgment extends Positioned {
 object TypingJudgment {
 
   /**
-    * Models an operation with a fixed `target` inference variable and a list of `operands`.
-    */
-  sealed trait Operation extends TypingJudgment {
-    def target: InferenceVariable
-
-    /**
-      * The list of operand types that need to be fully resolved before the operation can be resolved itself.
-      */
-    def operands: Vector[Type]
-  }
-
-  /**
     * Asserts that the given types must be equal to each other.
     */
   case class Equals(t1: Type, t2: Type, position: Position) extends TypingJudgment
@@ -112,17 +100,13 @@ object TypingJudgment {
   /**
     * Assigns the element type of `collection` to `target`.
     */
-  case class ElementType(target: InferenceVariable, collection: Type, position: Position) extends Operation {
-    override def operands: Vector[Type] = Vector(collection)
-  }
+  case class ElementType(target: InferenceVariable, collection: Type, position: Position) extends TypingJudgment
 
   /**
     * Simulates a multi-function call given the multi-function `mf` and the argument types `arguments`. The call's
     * return type is assigned to `target`.
     */
-  case class MultiFunctionCall(target: InferenceVariable, mf: MultiFunctionDefinition, arguments: Vector[Type], position: Position) extends Operation {
-    override def operands: Vector[Type] = arguments
-  }
+  case class MultiFunctionCall(target: InferenceVariable, mf: MultiFunctionDefinition, arguments: Vector[Type], position: Position) extends TypingJudgment
 
   /**
     * Types the given multi-function as a function, `target` containing the resulting type. Candidate types are

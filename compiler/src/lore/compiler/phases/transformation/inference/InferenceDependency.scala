@@ -18,7 +18,8 @@ object InferenceDependency {
     case TypingJudgment.Fits(t1, t2, _) => dependenciesOf(t1, t2)
     case TypingJudgment.LeastUpperBound(target, types, _) => biDependenciesOf(Vector(target), types)
     case TypingJudgment.MemberAccess(target, source, _, _) => biDependenciesOf(target, source)
-    case operation: TypingJudgment.Operation => dependenciesOf(operation.operands, Vector(operation.target))
+    case TypingJudgment.ElementType(target, collection, _) => dependenciesOf(collection, target)
+    case TypingJudgment.MultiFunctionCall(target, _, arguments, _) => dependenciesOf(arguments, Vector(target))
     case TypingJudgment.MultiFunctionValue(_, _, _) => Set.empty // TODO: Change this once MultiFunctionValues depend on the target.
     case hint@TypingJudgment.MultiFunctionHint(_, arguments, _) => dependenciesOf(Vector(hint.dependencyVariable), arguments)
   }
