@@ -29,8 +29,8 @@ object Unification {
     * Only considers bounds given in `boundTypes`.
     */
   private def unifyInferenceVariables(assignments: Assignments, iv1: InferenceVariable, iv2: InferenceVariable, boundTypes: Vector[BoundType], context: TypingJudgment): Compilation[Assignments] = {
-    val bounds1 = effectiveBounds(assignments, iv1)
-    val bounds2 = effectiveBounds(assignments, iv2)
+    val bounds1 = effectiveBounds(iv1, assignments)
+    val bounds2 = effectiveBounds(iv2, assignments)
 
     val compilationLower = if (boundTypes.contains(BoundType.Lower)) {
       val lower = Type.maxOrEqual(bounds1.lowerOrNothing, bounds2.lowerOrNothing) match {
@@ -75,7 +75,7 @@ object Unification {
     }
 
     narrowIvByBound(assignments, BoundType.Lower).flatMap(narrowIvByBound(_, BoundType.Upper)).flatMap { assignments2 =>
-      if (isDefined(assignments2, iv) && !isFullyInstantiated(tpe)) {
+      if (isDefined(iv, assignments2) && !isFullyInstantiated(tpe)) {
         narrowTpeByBound(assignments2, BoundType.Lower).flatMap(narrowTpeByBound(_, BoundType.Upper))
       } else Compilation.succeed(assignments2)
     }

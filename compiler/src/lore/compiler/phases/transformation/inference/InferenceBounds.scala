@@ -75,7 +75,7 @@ object InferenceBounds {
     * already has a lower bound, the new lower bound must supertype the existing bound.
     */
   def narrowLowerBound(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, context: TypingJudgment): Compilation[Assignments] = {
-    val bounds = effectiveBounds(assignments, inferenceVariable)
+    val bounds = effectiveBounds(inferenceVariable, assignments)
 
     if (bounds.lower.forall(_ <= lowerBound) && lowerBound <= bounds.upperOrAny) {
       Compilation.succeed(assignments.updated(inferenceVariable, InferenceBounds(inferenceVariable, Some(lowerBound), bounds.upper)))
@@ -89,7 +89,7 @@ object InferenceBounds {
     * already has an upper bound, the new upper bound must subtype the existing bound.
     */
   def narrowUpperBound(assignments: Assignments, inferenceVariable: InferenceVariable, upperBound: Type, context: TypingJudgment): Compilation[Assignments] = {
-    val bounds = effectiveBounds(assignments, inferenceVariable)
+    val bounds = effectiveBounds(inferenceVariable, assignments)
 
     if (bounds.upper.forall(upperBound <= _) && bounds.lowerOrNothing <= upperBound) {
       Compilation.succeed(assignments.updated(inferenceVariable, InferenceBounds(inferenceVariable, bounds.lower, Some(upperBound))))
@@ -106,7 +106,7 @@ object InferenceBounds {
     * it directly or by changing the bounds to "make it fit".
     */
   def ensureBoundSupertypes(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, context: TypingJudgment): Compilation[Assignments] = {
-    val bounds = effectiveBounds(assignments, inferenceVariable)
+    val bounds = effectiveBounds(inferenceVariable, assignments)
 
     if (assignments.isDefinedAt(inferenceVariable) && Subtyping.isSubtype(lowerBound, bounds.lowerOrNothing)) {
       Compilation.succeed(assignments)
@@ -123,7 +123,7 @@ object InferenceBounds {
     * it directly or by changing the bounds to "make it fit".
     */
   def ensureBoundSubtypes(assignments: Assignments, inferenceVariable: InferenceVariable, upperBound: Type, context: TypingJudgment): Compilation[Assignments] = {
-    val bounds = effectiveBounds(assignments, inferenceVariable)
+    val bounds = effectiveBounds(inferenceVariable, assignments)
 
     if (assignments.isDefinedAt(inferenceVariable) && Subtyping.isSubtype(bounds.upperOrAny, upperBound)) {
       Compilation.succeed(assignments)
