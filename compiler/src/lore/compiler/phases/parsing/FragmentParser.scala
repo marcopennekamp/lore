@@ -3,7 +3,8 @@ package lore.compiler.phases.parsing
 import fastparse.ScalaWhitespace._
 import fastparse._
 import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, Error, Fragment, Position}
+import lore.compiler.core.{Compilation, Fragment, Position}
+import lore.compiler.feedback.Feedback
 import lore.compiler.syntax._
 
 /**
@@ -20,7 +21,7 @@ class FragmentParser(implicit fragment: Fragment) {
   val expressionParser = new ExpressionParser(typeParser)
   import expressionParser.{block, expression}
 
-  case class ParsingError(fastparseError: String, pos: Position) extends Error(pos) {
+  case class ParsingError(fastparseError: String, pos: Position) extends Feedback.Error(pos) {
     override def message: String = s"The file had parsing errors: $fastparseError"
   }
 

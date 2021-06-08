@@ -1,7 +1,8 @@
 package lore.compiler.phases.constraints
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, Error}
+import lore.compiler.core.Compilation
+import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.types.ShapeType
@@ -21,7 +22,7 @@ object StructConstraints {
     ).simultaneous.verification
   }
 
-  case class DuplicateProperty(definition: StructDefinition, property: StructPropertyDefinition) extends Error(property) {
+  case class DuplicateProperty(definition: StructDefinition, property: StructPropertyDefinition) extends Feedback.Error(property) {
     override def message = s"The property ${property.name} is declared twice in the struct ${definition.name}."
   }
 
@@ -32,7 +33,7 @@ object StructConstraints {
     definition.properties.requireUnique(_.name, property => DuplicateProperty(definition, property)).verification
   }
 
-  case class ShapeMissingProperty(definition: StructDefinition, property: ShapeType.Property) extends Error(definition) {
+  case class ShapeMissingProperty(definition: StructDefinition, property: ShapeType.Property) extends Feedback.Error(definition) {
     override def message: String = s"The struct ${definition.name} should declare a property '${property.name}' of type " +
       s"${property.tpe} (or a subtype thereof) according to the struct's inherited shape type. Such a property is missing."
   }
@@ -41,7 +42,7 @@ object StructConstraints {
     definition: StructDefinition,
     structProperty: StructPropertyDefinition,
     shapeProperty: ShapeType.Property,
-  ) extends Error(structProperty) {
+  ) extends Feedback.Error(structProperty) {
     override def message: String = s"The property '${structProperty.name}' should have the type ${shapeProperty.tpe} " +
       s"(or a subtype thereof), but actually has the type ${structProperty.tpe}."
   }

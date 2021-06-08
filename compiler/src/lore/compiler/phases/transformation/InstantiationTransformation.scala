@@ -1,26 +1,27 @@
 package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, Error, Position}
+import lore.compiler.core.{Compilation, Position}
+import lore.compiler.feedback.Feedback
 import lore.compiler.inference.TypingJudgment
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 
 object InstantiationTransformation {
 
-  case class DuplicateProperty(name: String)(implicit position: Position) extends Error(position) {
+  case class DuplicateProperty(name: String)(implicit position: Position) extends Feedback.Error(position) {
     override def message: String = s"The property $name occurs more than once in the instantiation. Properties must be unique here."
   }
 
-  case class MissingProperty(name: String)(implicit position: Position) extends Error(position) {
+  case class MissingProperty(name: String)(implicit position: Position) extends Feedback.Error(position) {
     override def message: String = s"This map-style instantiation is missing a property $name."
   }
 
-  case class IllegalProperty(name: String)(implicit position: Position) extends Error(position) {
+  case class IllegalProperty(name: String)(implicit position: Position) extends Feedback.Error(position) {
     override def message: String = s"The struct to be instantiated does not have a property $name."
   }
 
-  case class IllegallyTypedProperty(property: StructPropertyDefinition, expression: Expression) extends Error(expression) {
+  case class IllegallyTypedProperty(property: StructPropertyDefinition, expression: Expression) extends Feedback.Error(expression) {
     override def message: String =
       s"The property ${property.name} is supposed to be assigned a value of type ${expression.tpe}. However," +
         s" the property itself has the type ${property.tpe}, which is not a subtype of ${expression.tpe}."

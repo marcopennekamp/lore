@@ -1,7 +1,8 @@
 package lore.compiler.inference.resolvers
 
-import lore.compiler.core.{Compilation, Error}
+import lore.compiler.core.Compilation
 import lore.compiler.feedback.DispatchFeedback.EmptyFit
+import lore.compiler.feedback.Feedback
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.inference._
@@ -10,7 +11,7 @@ import lore.compiler.types.{ProductType, Type}
 
 object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment.MultiFunctionHint] {
 
-  case class MultiFunctionHintMissingImplementation(judgment: TypingJudgment, successes: Int, compilations: Vector[Compilation[_]]) extends Error(judgment) {
+  case class MultiFunctionHintMissingImplementation(judgment: TypingJudgment, successes: Int, compilations: Vector[Compilation[_]]) extends Feedback.Error(judgment) {
     override def message: String = s"The MultiFunctionHint judgment $judgment cannot be resolved yet if there are $successes options. Sorry. Compilations:\n${compilations.mkString("\n")}."
   }
 
@@ -98,11 +99,11 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       )
 
       val supplementalJudgments = lowerBoundsJudgments ++ upperBoundsJudgments ++ argumentJudgments ++ resultJudgments
+      val allJudgments = supplementalJudgments ++ influencingJudgments
 
-      println("Hint judgments:")
-      println((supplementalJudgments ++ influencingJudgments).mkString("\n"))
+      Inference.logger.trace(s"Multi function hint judgments:${allJudgments.mkString("\n")}")
 
-      SimpleResolution.infer(assignments, supplementalJudgments ++ influencingJudgments).map {
+      SimpleResolution.infer(assignments, allJudgments).map {
         assignments2 =>
           // We have to throw away the inference variables that only encode the function's type variables again, as
           // noted above.
@@ -123,9 +124,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
         }
       }
     } else {
-      println(s"Empty fit of $judgment:")
-      println(compilations.mkString("\n"))
-      println()
+      Inference.logger.trace(s"Empty fit of `$judgment`:${compilations.mkString("\n")}")
       Compilation.fail(EmptyFit(mf, ProductType(argumentTypes), judgment.position))
     }
   }

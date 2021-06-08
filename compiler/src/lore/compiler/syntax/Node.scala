@@ -1,13 +1,8 @@
 package lore.compiler.syntax
 
-import lore.compiler.core.{Fragment, Position}
+import lore.compiler.core.{Fragment, Position, Positioned}
 
-trait Node {
-  /**
-    * The first position of the current node in the original source code.
-    */
-  def position: Position
-}
+trait Node extends Positioned
 
 object Node {
   type Index = Int

@@ -1,7 +1,8 @@
 package lore.compiler.phases.resolution
 
 import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, Error, Position}
+import lore.compiler.core.{Compilation, Position}
+import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.scopes.TypeScope
 import lore.compiler.syntax.{TypeDeclNode, TypeExprNode}
@@ -12,7 +13,7 @@ import lore.compiler.types._
   */
 object TypeResolver {
 
-  case class IllegalImplements(node: TypeDeclNode.StructNode) extends Error(node) {
+  case class IllegalImplements(node: TypeDeclNode.StructNode) extends Feedback.Error(node) {
     override def message = s"The struct ${node.name} does not implement a trait or shape but some other type."
   }
 
@@ -30,7 +31,7 @@ object TypeResolver {
     }
   }
 
-  case class IllegalExtends(node: TypeDeclNode.TraitNode) extends Error(node) {
+  case class IllegalExtends(node: TypeDeclNode.TraitNode) extends Feedback.Error(node) {
     override def message = s"The trait ${node.name} does not extend a trait or shape but some other type."
   }
 
@@ -51,7 +52,7 @@ object TypeResolver {
     *     language user to be able to use that type for inheritance.
     *   - All other types cannot be inherited from and result in an error.
     */
-  private def resolveInheritedTypes(error: => Error)(expr: TypeExprNode)(implicit registry: Registry, position: Position): Compilation[Vector[Type]] = {
+  private def resolveInheritedTypes(error: => Feedback.Error)(expr: TypeExprNode)(implicit registry: Registry, position: Position): Compilation[Vector[Type]] = {
     def extract(tpe: Type): Compilation[Vector[Type]] = tpe match {
       case supertrait: TraitType => Vector(supertrait).compiled
       case shape: ShapeType => Vector(shape).compiled

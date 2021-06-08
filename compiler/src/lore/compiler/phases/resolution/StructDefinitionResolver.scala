@@ -1,6 +1,7 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.core.{Compilation, CompilationException, Position, Error}
+import lore.compiler.core.{Compilation, CompilationException, Position}
+import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.scopes.TypeScope
@@ -21,7 +22,7 @@ object StructDefinitionResolver {
     }
   }
 
-  case class MutableOpenProperty(node: TypeDeclNode.PropertyNode) extends Error(node) {
+  case class MutableOpenProperty(node: TypeDeclNode.PropertyNode) extends Feedback.Error(node) {
     override def message = s"Open properties may not be mutable."
   }
 

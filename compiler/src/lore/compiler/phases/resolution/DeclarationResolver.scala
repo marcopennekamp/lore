@@ -1,7 +1,8 @@
 package lore.compiler.phases.resolution
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, CompilationException, Error, Position}
+import lore.compiler.core.{Compilation, CompilationException, Position}
+import lore.compiler.feedback.Feedback
 import lore.compiler.phases.resolution.DeclarationResolver.TypeAlreadyExists
 import lore.compiler.semantics.functions.FunctionDefinition
 import lore.compiler.semantics.scopes.TypeScope
@@ -173,11 +174,11 @@ class DeclarationResolver {
 }
 
 object DeclarationResolver {
-  case class TypeAlreadyExists(node: TypeDeclNode) extends Error(node) {
+  case class TypeAlreadyExists(node: TypeDeclNode) extends Feedback.Error(node) {
     override def message = s"The type ${node.name} is already declared somewhere else."
   }
 
-  case class FunctionAlreadyExists(definition: FunctionDefinition) extends Error(definition) {
+  case class FunctionAlreadyExists(definition: FunctionDefinition) extends Feedback.Error(definition) {
     override def message = s"The function ${definition.signature} is already declared somewhere else or has a type-theoretic duplicate."
   }
 }

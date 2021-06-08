@@ -1,7 +1,8 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.core.{Compilation, Error}
+import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.Verification
+import lore.compiler.feedback.Feedback
 import lore.compiler.phases.transformation.MutabilityVerifier.ImmutableAssignment
 import lore.compiler.semantics.expressions.{Expression, ExpressionVerificationVisitor}
 
@@ -23,7 +24,7 @@ class MutabilityVerifier extends ExpressionVerificationVisitor {
 
 object MutabilityVerifier {
 
-  case class ImmutableAssignment(access: Expression.Access) extends Error(access) {
+  case class ImmutableAssignment(access: Expression.Access) extends Feedback.Error(access) {
     override def message = s"The variable or member ${access.name} may not be mutated."
   }
 

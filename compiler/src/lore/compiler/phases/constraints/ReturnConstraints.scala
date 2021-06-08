@@ -1,7 +1,8 @@
 package lore.compiler.phases.constraints
 
 import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
-import lore.compiler.core.{Compilation, Error}
+import lore.compiler.core.Compilation
+import lore.compiler.feedback.Feedback
 import lore.compiler.phases.constraints.ReturnConstraints.{DeadCode, DefinitelyReturns, ImpossibleReturn, IsReturnAllowed}
 import lore.compiler.syntax.visitor.{CombiningTopLevelExprVisitor, TopLevelExprVisitor, VerificationTopLevelExprVisitor}
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
@@ -10,11 +11,11 @@ object ReturnConstraints {
   type DefinitelyReturns = Boolean
   type IsReturnAllowed = Boolean
 
-  case class DeadCode(node: TopLevelExprNode) extends Error(node) {
+  case class DeadCode(node: TopLevelExprNode) extends Feedback.Error(node) {
     override def message = s"This node represents dead code after a previous return."
   }
 
-  case class ImpossibleReturn(node: TopLevelExprNode.ReturnNode) extends Error(node) {
+  case class ImpossibleReturn(node: TopLevelExprNode.ReturnNode) extends Feedback.Error(node) {
     override def message = s"You cannot return inside this expression."
   }
 

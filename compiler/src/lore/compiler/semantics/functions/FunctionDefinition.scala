@@ -1,7 +1,8 @@
 package lore.compiler.semantics.functions
 
 import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, Error, Position, Positioned}
+import lore.compiler.core.{Compilation, Position, Positioned}
+import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionDefinition.CannotInstantiateFunction
 import lore.compiler.semantics.scopes.LocalTypeScope
@@ -53,7 +54,7 @@ class FunctionDefinition(
 }
 
 object FunctionDefinition {
-  case class CannotInstantiateFunction(definition: FunctionDefinition, argumentType: Type) extends Error(definition) {
+  case class CannotInstantiateFunction(definition: FunctionDefinition, argumentType: Type) extends Feedback.Error(definition) {
     override def message = s"The function definition $definition cannot be instantiated from argument type $argumentType."
   }
 }

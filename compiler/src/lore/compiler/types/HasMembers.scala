@@ -1,7 +1,8 @@
 package lore.compiler.types
 
 import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, Error, Position}
+import lore.compiler.core.{Compilation, Position}
+import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.members.{Member, MemberExplorer, MemberMap}
 import lore.compiler.types.HasMembers.MemberNotFound
 
@@ -27,7 +28,7 @@ trait HasMembers { self: Type =>
 }
 
 object HasMembers {
-  case class MemberNotFound(name: String, tpe: Type, pos: Position) extends Error(pos) {
+  case class MemberNotFound(name: String, tpe: Type, pos: Position) extends Feedback.Error(pos) {
     override def message: String = s"A member $name does not exist within the type $tpe."
   }
 }

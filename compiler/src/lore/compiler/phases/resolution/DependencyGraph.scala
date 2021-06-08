@@ -1,8 +1,9 @@
 package lore.compiler.phases.resolution
 
 import lore.compiler.syntax.TypeDeclNode
-import lore.compiler.core.{Compilation, CompilationException, Error}
+import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.core.Compilation.Verification
+import lore.compiler.feedback.Feedback
 import lore.compiler.phases.resolution.DependencyGraph.InheritanceCycle
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
@@ -140,7 +141,7 @@ object DependencyGraph {
   /**
     * @param occurrence One of the type declarations where the cycles occurs, so that we can report one error location.
     */
-  case class InheritanceCycle(cycle: Vector[String], occurrence: TypeDeclNode) extends Error(occurrence) {
+  case class InheritanceCycle(cycle: Vector[String], occurrence: TypeDeclNode) extends Feedback.Error(occurrence) {
     override def message: String =
       s"""An inheritance cycle between the following types has been detected: ${cycle.mkString(", ")}.
          |A trait A cannot inherit from another trait B if B also inherits from A directly or indirectly. The

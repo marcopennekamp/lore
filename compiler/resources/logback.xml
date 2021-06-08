@@ -1,0 +1,31 @@
+<configuration>
+    <!-- Allows printing log levels in lower case. -->
+    <conversionRule conversionWord="lowerlevel" converterClass="lore.compiler.utils.LowercaseLogLevel" />
+
+    <!-- Allows printing new lines at the appropriate log levels. -->
+    <appender name="minimal" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%m%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="standard" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>[%lowerlevel] %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="debug">
+        <appender-ref ref="standard" />
+    </root>
+
+    <logger name="lore.compiler.feedback.blank" additivity="false">
+        <appender-ref ref="minimal"/>
+    </logger>
+
+    <!-- Type inference logging should only be set to debug or trace if typing/inference errors need to be traced. -->
+    <logger name="lore.compiler.inference" level="info" />
+    <logger name="lore.compiler.inference.blank" additivity="false">
+        <appender-ref ref="minimal"/>
+    </logger>
+</configuration>

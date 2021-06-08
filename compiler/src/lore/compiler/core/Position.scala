@@ -52,4 +52,9 @@ object Position {
     * An "internal" position that signals compiler-generated code without any sensible anchor.
     */
   val internal: Position = Position(Fragment("internal (compiler-generated)", ""), 0)
+
+  /**
+    * A position referring to an unknown fragment, for example a file that wasn't found.
+    */
+  val unknown: Position = Position(Fragment("unknown", ""), 0)
 }

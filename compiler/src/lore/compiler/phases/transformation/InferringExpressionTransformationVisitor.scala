@@ -2,6 +2,7 @@ package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.core._
+import lore.compiler.feedback.Feedback
 import lore.compiler.phases.resolution.TypeExpressionEvaluator
 import lore.compiler.phases.transformation.InferringExpressionTransformationVisitor._
 import lore.compiler.inference.{InferenceVariable, TypingJudgment}
@@ -396,23 +397,23 @@ class InferringExpressionTransformationVisitor(
 
 object InferringExpressionTransformationVisitor {
 
-  case class UnsafeInteger(node: ExprNode.IntLiteralNode) extends Error(node) {
+  case class UnsafeInteger(node: ExprNode.IntLiteralNode) extends Feedback.Error(node) {
     override def message: String = s"The integer literal ${node.value} is outside the safe run-time range of" +
       s" ${BasicType.Int.minSafeInteger} and ${BasicType.Int.maxSafeInteger}. The Javascript runtime will not be able" +
       s" to properly store and process integers this large."
   }
 
-  case class DynamicFunctionNameExpected(node: ExprNode.DynamicCallNode) extends Error(node) {
+  case class DynamicFunctionNameExpected(node: ExprNode.DynamicCallNode) extends Feedback.Error(node) {
     override def message: String = "Dynamic calls require a string literal as their first argument, which represents the" +
       " name of the function. Since the name must be available at compile-time, it must be a constant."
   }
 
-  case class StructExpected(name: String)(implicit position: Position) extends Error(position) {
+  case class StructExpected(name: String)(implicit position: Position) extends Feedback.Error(position) {
     override def message: String = s"The name $name must refer to a struct."
   }
 
   // TODO: This should be the error message for the Assign judgment created in visitCall.
-  case class FunctionExpected(variable: TypedVariable, override val position: Position) extends Error(position) {
+  case class FunctionExpected(variable: TypedVariable, override val position: Position) extends Feedback.Error(position) {
     override def message: String = s"The variable ${variable.name} should be a function type, but is actually ${variable.tpe}."
   }
 

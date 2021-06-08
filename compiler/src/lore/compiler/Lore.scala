@@ -1,16 +1,15 @@
 package lore.compiler
 
-import java.io.{ByteArrayOutputStream, PrintStream}
+import com.typesafe.scalalogging.Logger
+
 import java.nio.file.{Files, Path}
-
 import lore.compiler.core._
+import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.Registry
-import lore.compiler.utils.CollectionExtensions.VectorExtension
-
-import scala.util.Using
 
 object Lore {
-  def pyramid(baseDirectory: Path): Vector[FragmentResolution] = Vector(
+
+  def pyramid(baseDirectory: Path): Vector[Compilation[Fragment]] = Vector(
     fragment("pyramid.collections", baseDirectory.resolve(Path.of("pyramid", "collections.lore"))),
     fragment("pyramid.core", baseDirectory.resolve(Path.of("pyramid", "core.lore"))),
     fragment("pyramid.introspection", baseDirectory.resolve(Path.of("pyramid", "introspection.lore"))),
@@ -19,20 +18,18 @@ object Lore {
     fragment("pyramid.string", baseDirectory.resolve(Path.of("pyramid", "string.lore"))),
   )
 
-  trait FragmentResolution
-  object FragmentResolution {
-    case class Success(fragment: Fragment) extends FragmentResolution
-    case class NotFound(path: Path) extends FragmentResolution
+  case class FragmentNotFound(path: Path) extends Feedback.Error(Position.unknown) {
+    override def message: String = s"The file '$path' does not exist."
   }
 
-  def fragment(name: String, path: Path): FragmentResolution = {
+  def fragment(name: String, path: Path): Compilation[Fragment] = {
     import scala.jdk.CollectionConverters._
 
     if (Files.notExists(path)) {
-      FragmentResolution.NotFound(path)
+      Compilation.fail(FragmentNotFound(path))
     } else {
       val source = Files.lines(path).iterator().asScala.mkString("\n") + "\n" // Ensure that the file ends in a newline.
-      FragmentResolution.Success(Fragment(name, source))
+      Compilation.succeed(Fragment(name, source))
     }
   }
 
@@ -51,43 +48,30 @@ object Lore {
     * Compiles a Lore program from the given base directory and relative fragment paths (including the file extension).
     */
   def fromSources(baseDirectory: Path, paths: Path*)(implicit options: CompilerOptions): Compilation[(Registry, String)] = {
-    val resolutions = paths.map { path => fragment(path.toString, baseDirectory.resolve(path)) }
-    val allResolutions = pyramid(baseDirectory) ++ resolutions
-    val failures = allResolutions.filterType[FragmentResolution.NotFound]
-    if (failures.nonEmpty) {
-      for (failure <- failures) {
-        println(s"${FeedbackPrinter.tagError} The file '${failure.path}' does not exist!")
-      }
-      throw new RuntimeException("Not all files to be compiled were found. Consult the console output above for a list of these files.")
-    } else {
-      val compiler = new LoreCompiler(allResolutions.filterType[FragmentResolution.Success].map(_.fragment), options)
+    val allFragments = pyramid(baseDirectory) ++ paths.map(path => fragment(path.toString, baseDirectory.resolve(path))).toVector
+    allFragments.simultaneous.flatMap { fragments =>
+      val compiler = new LoreCompiler(fragments, options)
       compiler.compile()
     }
   }
 
   /**
-    * Stringifies the compilation result in a user-palatable way, discussing errors or the successful result in
-    * text form.
+    * Logs the compilation result in a user-palatable way, reporting errors or the successful result in text form.
     */
-  def stringifyCompilationInfo(result: Compilation[Registry], compileTime: Double)(implicit options: CompilerOptions): String = {
-    val out = new ByteArrayOutputStream()
-    Using(new PrintStream(out, true, "utf-8")) { printer =>
-      // Print either errors or the compilation result to the output stream.
-      result match {
-        case Errors(errors, infos) =>
-          val feedback = errors ++ infos
-          printer.println()
-          printer.println(s"${FeedbackPrinter.tagError} Compilation failed with errors:")
-          if (feedback.nonEmpty) printer.println(FeedbackPrinter.print(feedback))
-        case Result(_, infos) =>
-          printer.println()
-          printer.println(s"${FeedbackPrinter.tagSuccess} Compilation was successful. (Total time: ${compileTime}ms)")
-          if (infos.nonEmpty) printer.println(FeedbackPrinter.print(infos))
-      }
+  def logCompilationResult(result: Compilation[Registry], compileTime: Double)(implicit options: CompilerOptions): Unit = {
+    result match {
+      case Errors(_, _) =>
+        Feedback.loggerBlank.info("")
+        Feedback.logger.error("Compilation failed with errors:")
+        Feedback.logAll(result.feedback, options.showFeedbackStackTraces)
+        Feedback.loggerBlank.error("")
 
-      // Finally, return the constructed string.
-      out.toString("utf-8")
-    }.get // There should be no exceptions here, as we are not trying to access any files.
+      case Result(_, _) =>
+        Feedback.loggerBlank.info("")
+        Feedback.logger.info(s"Compilation was successful. (Total time: ${compileTime}ms)")
+        Feedback.logAll(result.feedback, options.showFeedbackStackTraces)
+        Feedback.loggerBlank.info("")
+    }
   }
 
   /**
@@ -115,7 +99,8 @@ object Lore {
     val beforeCompile = System.nanoTime()
     val result = fromSources(baseDirectory, fragmentPaths: _*)
     val afterCompile = System.nanoTime()
-    println(stringifyCompilationInfo(result.map(_._1), ((afterCompile - beforeCompile) / 1000) / 1000.0))
+    logCompilationResult(result.map(_._1), ((afterCompile - beforeCompile) / 1000) / 1000.0)
     result.map(_._2).foreach(writeResult(Path.of(args(0))))
   }
+
 }

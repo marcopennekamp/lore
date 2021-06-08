@@ -1,7 +1,7 @@
 package lore.compiler.phases.constraints
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.Error
+import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.functions.FunctionSignature
 
 object SignatureConstraints {
@@ -14,7 +14,7 @@ object SignatureConstraints {
     verifyUnique(signature)
   }
 
-  case class NonUniqueParameterName(signature: FunctionSignature, name: String) extends Error(signature.position) {
+  case class NonUniqueParameterName(signature: FunctionSignature, name: String) extends Feedback.Error(signature.position) {
     override def message: String = s"This function ${signature.name} has two or more parameters named $name. Parameter names must be unique."
   }
 

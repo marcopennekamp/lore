@@ -1,7 +1,7 @@
 package lore.compiler.phases.constraints
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.Error
+import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.types.{Fit, ProductType, Type}
@@ -24,7 +24,7 @@ object MultiFunctionConstraints {
     ).simultaneous.verification
   }
 
-  case class FunctionIllegallyAbstract(function: FunctionDefinition) extends Error(function) {
+  case class FunctionIllegallyAbstract(function: FunctionDefinition) extends Feedback.Error(function) {
     override def message: String = s"The function ${function.signature} is declared abstract even though it doesn't have an" +
       s" abstract input type. Either implement the function or ensure the input type is abstract."
   }
@@ -38,7 +38,7 @@ object MultiFunctionConstraints {
     }
   }
 
-  case class AbstractFunctionNotTotal(function: FunctionDefinition, missing: Vector[Type]) extends Error(function) {
+  case class AbstractFunctionNotTotal(function: FunctionDefinition, missing: Vector[Type]) extends Feedback.Error(function) {
     override def message: String = s"The abstract function ${function.signature} is not fully implemented and thus doesn't" +
       s" satisfy the totality constraint. Please implement functions for the following input types: ${missing.mkString(", ")}."
   }
@@ -94,7 +94,7 @@ object MultiFunctionConstraints {
 
   case class IncompatibleOutputTypes(
     child: FunctionSignature, parent: FunctionSignature, parentInstance: FunctionSignature,
-  ) extends Error(child) {
+  ) extends Feedback.Error(child) {
     override def message: String = s"The functions $parent and $child are in a hierarchical relationship, but the latter's" +
       s" output type is not a subtype of the former's output type. Concretely, it should hold that ${child.outputType} <:" +
       s" ${parentInstance.outputType}, but this is not the case."

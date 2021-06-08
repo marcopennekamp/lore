@@ -1,7 +1,8 @@
 package lore.compiler.phases.resolution
 
 import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, Error, Position}
+import lore.compiler.core.{Compilation, Position}
+import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.scopes.TypeScope
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types._
@@ -9,7 +10,7 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object TypeExpressionEvaluator {
 
-  case class DuplicateProperty(property: TypeExprNode.ShapePropertyNode) extends Error(property) {
+  case class DuplicateProperty(property: TypeExprNode.ShapePropertyNode) extends Feedback.Error(property) {
     override def message = s"The property ${property.name} is declared twice in the shape type. Shape type properties must be unique."
   }
 

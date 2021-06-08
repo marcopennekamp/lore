@@ -1,7 +1,8 @@
 package lore.compiler.inference
 
-import lore.compiler.CompilerOptions
-import lore.compiler.core.{Compilation, Errors, FeedbackPrinter, Result}
+import com.typesafe.scalalogging.Logger
+import lore.compiler.core.{Compilation, Errors, Result}
+import lore.compiler.feedback.Feedback
 import lore.compiler.inference.InferenceBounds.BoundType
 import lore.compiler.semantics.Registry
 import lore.compiler.types._
@@ -18,25 +19,35 @@ object Inference {
     SimpleResolution.infer(Map.empty, judgments)
   }
 
-  def inferVerbose(judgments: Vector[TypingJudgment], label: String)(implicit registry: Registry): Compilation[Assignments] = {
-    println(s"Typing judgments for $label:")
-    judgments.foreach(println)
-    println()
+  /**
+    * This logger is used to log inference minutiae.
+    */
+  val logger: Logger = Logger("lore.compiler.inference")
+  val loggerBlank: Logger = Logger("lore.compiler.inference.blank")
 
-    timed(s"Inference for $label") {
+  def inferVerbose(judgments: Vector[TypingJudgment], label: String)(implicit registry: Registry): Compilation[Assignments] = {
+    if (judgments.isEmpty) {
+      return Compilation.succeed(Map.empty)
+    }
+
+    logger.debug(s"Typing judgments for $label:\n${judgments.mkString("\n")}")
+
+    val result = timed(s"Inference for $label", log = s => logger.debug(s)) {
       infer(judgments) match {
         case result@Result(_, _) =>
-          println("Inference was successful with the following inferred types:")
-          println(result.value.stringified)
-          println()
+          logger.debug(s"Inference for $label was successful with the following inferred types:\n${result.value.stringified}\n")
           result
         case errors@Errors(_, _) =>
-          println("Inference failed with the following feedback:")
-          println(FeedbackPrinter.printWithOptions(errors.feedback))
-          println()
+          logger.debug(s"Inference for $label failed with the following feedback:")
+          logger.whenDebugEnabled {
+            Feedback.logAll(errors.feedback)
+          }
           errors
       }
     }
+
+    loggerBlank.debug("")
+    result
   }
 
   /**

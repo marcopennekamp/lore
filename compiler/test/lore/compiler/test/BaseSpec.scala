@@ -1,6 +1,7 @@
 package lore.compiler.test
 
-import lore.compiler.core.{Error, Errors, Result}
+import lore.compiler.core.{Errors, Result}
+import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.types.ProductType
@@ -29,7 +30,7 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
     * Assert that the given named source's compilation results in a list of errors, as required by the assertion.
     * The list of errors is passed as sorted into the assertion function, in order of lines starting from line 1.
     */
-  def assertCompilationErrors(fragmentName: String)(assert: Vector[Error] => Assertion): Assertion = {
+  def assertCompilationErrors(fragmentName: String)(assert: Vector[Feedback.Error] => Assertion): Assertion = {
     Lore.fromSources(Path.of("."), testFragmentBase.resolve(fragmentName + ".lore")) match {
       case Result(_, _) => Assertions.fail(s"Compilation of $fragmentName should have failed with errors, but unexpectedly succeeded.")
       case Errors(errors, _) => assert(errors.sortWith { case (e1, e2) => e1.position < e2.position })
@@ -41,7 +42,7 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
     * match functionality.
     */
   case class ErrorSignature(errorClass: Class[_], expectedLine: Int) {
-    def assertMatches(error: Error): Assertion = {
+    def assertMatches(error: Feedback.Error): Assertion = {
       error.getClass shouldEqual errorClass
       error.position.line shouldEqual expectedLine
     }
@@ -50,7 +51,7 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
   /**
     * Matches error lists that match the given list of error signatures. Errors have to match in order.
     */
-  def assertErrorsMatchSignatures(errors: Vector[Error], signatures: Vector[ErrorSignature]): Assertion = {
+  def assertErrorsMatchSignatures(errors: Vector[Feedback.Error], signatures: Vector[ErrorSignature]): Assertion = {
     errors should have length signatures.length
     forAll(errors.zip(signatures)) { case (error, signature) =>
       signature.assertMatches(error)

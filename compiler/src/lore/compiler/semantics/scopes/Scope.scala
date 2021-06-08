@@ -1,7 +1,8 @@
 package lore.compiler.semantics.scopes
 
 import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
-import lore.compiler.core.{Compilation, CompilationException, Error, Position}
+import lore.compiler.core.{Compilation, CompilationException, Position}
+import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.scopes.Scope.{AlreadyDeclared, UnknownEntry}
 
 import scala.collection.mutable
@@ -58,12 +59,12 @@ trait Scope[A] {
   /**
     * Creates an "unknown entry" error. You may override this to provide better error messages.
     */
-  protected def unknownEntry(name: String)(implicit position: Position): Error = UnknownEntry(name)
+  protected def unknownEntry(name: String)(implicit position: Position): Feedback.Error = UnknownEntry(name)
 
   /**
     * Creates an "already declared" error. You may override this to provide better error messages.
     */
-  protected def alreadyDeclared(name: String)(implicit position: Position): Error = AlreadyDeclared(name)
+  protected def alreadyDeclared(name: String)(implicit position: Position): Feedback.Error = AlreadyDeclared(name)
 
 }
 
@@ -84,11 +85,11 @@ object Scope {
   // TODO: Specify what kind of entry is already declared/unknown. For example: "The current scope does not know a
   //       type X."
 
-  case class AlreadyDeclared(name: String)(implicit position: Position) extends Error(position) {
+  case class AlreadyDeclared(name: String)(implicit position: Position) extends Feedback.Error(position) {
     override def message = s"An entry '$name' has already been declared in the current scope."
   }
 
-  case class UnknownEntry(name: String)(implicit position: Position) extends Error(position) {
+  case class UnknownEntry(name: String)(implicit position: Position) extends Feedback.Error(position) {
     override def message = s"The current scope does not know an entry '$name'."
   }
 }

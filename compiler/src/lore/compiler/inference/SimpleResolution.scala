@@ -26,36 +26,38 @@ object SimpleResolution {
     var currentJudgments = judgments
 
     // This loop isn't quite idiomatic, but should keep the stack size manageable as opposed to a recursive approach.
+    var stepCounter = 1
     while (currentJudgments.nonEmpty) {
+      Inference.loggerBlank.trace("")
+      Inference.logger.trace(s"Step $stepCounter:")
+
       step(currentAssignments, currentJudgments) match {
         case Result((assignments2, judgments2), _) =>
           currentAssignments = assignments2
           currentJudgments = judgments2
         case compilation: Errors[Nothing] => return compilation
       }
+
+      Inference.logger.trace(s"New assignments:\n${currentAssignments.stringified}")
+
+      stepCounter += 1
     }
+
+    Inference.loggerBlank.trace("")
 
     Compilation.succeed(currentAssignments)
   }
 
   private def step(assignments: Assignments, judgments: Vector[TypingJudgment])(implicit registry: Registry): Compilation[JudgmentResolver.Result] = {
-    if (judgments.isEmpty) {
-      return Compilation.succeed((assignments, judgments))
-    }
-
     val influenceGraph = InferenceOrder.buildInfluenceGraph(judgments)
+    Inference.logger.trace(s"Influence graph:\n${influenceGraph.edges.mkString("\n")}")
 
-    println()
-    influenceGraph.edges.foreach(println)
-    println()
-
-    judgments.firstDefined(judgment => attempt(assignments, influenceGraph, judgment, judgments.filter(_ != judgment))) match {
-      case None =>
+    judgments
+      .firstDefined(judgment => attempt(assignments, influenceGraph, judgment, judgments.filter(_ != judgment)))
+      .getOrElse {
         // If no judgments have been resolved, simple resolution has failed. We need to fall back to cycle resolution.
         CycleResolution.infer(assignments, influenceGraph, judgments)
-
-      case Some(compilation) => compilation.map(logIterationResult)
-    }
+      }
   }
 
   /**
@@ -69,7 +71,7 @@ object SimpleResolution {
     remainingJudgments: Vector[TypingJudgment],
   )(implicit registry: Registry): Option[Compilation[JudgmentResolver.Result]] = {
     def resolveTowards(direction: ResolutionDirection) = {
-      println(s"Simple resolve $judgment")
+      Inference.logger.trace(s"Simple resolve `$judgment`.")
       Some(JudgmentResolver.resolve(judgment, direction, assignments, influenceGraph, remainingJudgments))
     }
 
@@ -150,9 +152,7 @@ object SimpleResolution {
   }
 
   def logIterationResult(result: JudgmentResolver.Result): JudgmentResolver.Result = {
-    println("Iteration result assignments:")
-    println(result._1.stringified)
-    println()
+
     result
   }
 

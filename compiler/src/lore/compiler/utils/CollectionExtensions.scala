@@ -1,6 +1,7 @@
 package lore.compiler.utils
 
-import lore.compiler.core.{ Compilation, Error }
+import lore.compiler.core.Compilation
+import lore.compiler.feedback.Feedback
 
 import scala.reflect.ClassTag
 
@@ -32,7 +33,7 @@ object CollectionExtensions {
       * than one element share a key, the `duplicate` function is consulted with any representative element of that
       * group to produce a compilation error.
       */
-    def requireUnique[K](key: A => K, duplicate: A => Error): Compilation[Vector[A]] = vector.groupBy(key).values.map {
+    def requireUnique[K](key: A => K, duplicate: A => Feedback.Error): Compilation[Vector[A]] = vector.groupBy(key).values.map {
       case Vector(a) => Compilation.succeed(a)
       case group if group.size > 1 => Compilation.fail(duplicate(group.head))
     }.toVector.simultaneous

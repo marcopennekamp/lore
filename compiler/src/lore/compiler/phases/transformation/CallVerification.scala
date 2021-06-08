@@ -1,13 +1,14 @@
 package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, Error}
+import lore.compiler.core.Compilation
+import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types.Type
 
 object CallVerification {
 
-  case class IllegalReturnType(call: Expression.Call, expectedTypes: Vector[Type]) extends Error(call) {
+  case class IllegalReturnType(call: Expression.Call, expectedTypes: Vector[Type]) extends Feedback.Error(call) {
     override def message = s"Calling ${call.target} returns the illegal type ${call.tpe}.$expected"
     private def expected: String = {
       if (expectedTypes.nonEmpty) {

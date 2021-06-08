@@ -1,6 +1,6 @@
 import sbt.Keys.{scalaSource, testOptions}
 
-organization := "com.marcopennekamp"
+organization := "run.lore"
 name := "lore"
 version := "0.1.0-SNAPSHOT"
 
@@ -22,6 +22,8 @@ libraryDependencies ++= Seq(
   "com.lihaoyi" %% "fastparse" % "2.1.3",
   "org.scalactic" %% "scalactic" % "3.1.0",
   "org.scalatest" %% "scalatest" % "3.1.0" % "test",
+  "ch.qos.logback" % "logback-classic" % "1.2.3",
+  "com.typesafe.scala-logging" %% "scala-logging" % "3.9.3",
 )
 
 // Sonatype repos.
@@ -36,8 +38,9 @@ addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.11.0" cross CrossVers
 // Show time measurements of individual tests.
 testOptions in Test += Tests.Argument("-oD")
 
-// Shorten names of default src and test directories.
+// Shorten names of default src, resources, and test directories.
 scalaSource in Compile := { (baseDirectory in Compile)(_ / "src") }.value
+resourceDirectory in Compile := { (baseDirectory in Compile)(_ / "resources") }.value
 scalaSource in Test := { (baseDirectory in Test)(_ / "test") }.value
 
 // Set lore.Lore as the main object. All other main functions are meant to be run via the IDE.
