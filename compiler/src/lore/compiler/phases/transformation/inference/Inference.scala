@@ -80,9 +80,6 @@ object Inference {
     val rec = (t: Type) => instantiate(assignments, t, get, undefined)
     tpe match {
       case iv: InferenceVariable => assignments.get(iv).map(get).getOrElse(undefined(iv))
-      case tv: TypeVariable =>
-        if (Inference.isFullyInstantiated(tv)) tv
-        else ??? // TODO: How can we instantiate the type variable without destroying its reference equality? Maybe a type variable requires a UUID instead?
       case SumType(types) => SumType.construct(types.map(rec))
       case IntersectionType(types) => IntersectionType.construct(types.map(rec))
       case ProductType(elements) => ProductType(elements.map(rec))
