@@ -1,15 +1,14 @@
 package lore.compiler.semantics.expressions
 
-import lore.compiler.core.{CompilationException, Position}
+import lore.compiler.core.{CompilationException, Position, Positioned}
 import lore.compiler.phases.transformation.inference.InferenceVariable
 import lore.compiler.semantics.functions.{CallTarget, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
-import lore.compiler.semantics.scopes.{LocalVariable, TypedVariable, Variable}
+import lore.compiler.semantics.scopes.{LocalVariable, TypedVariable}
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.types._
 
-sealed trait Expression {
-  def position: Position
+sealed trait Expression extends Positioned {
   def tpe: Type
 }
 

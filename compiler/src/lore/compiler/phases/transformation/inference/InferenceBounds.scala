@@ -1,7 +1,8 @@
 package lore.compiler.phases.transformation.inference
 
-import lore.compiler.core.{Compilation, Error}
+import lore.compiler.core.Compilation
 import lore.compiler.phases.transformation.inference.Inference.Assignments
+import lore.compiler.phases.transformation.inference.InferenceErrors.NarrowBoundFailed
 import lore.compiler.phases.transformation.inference.InferenceVariable.effectiveBounds
 import lore.compiler.types.{BasicType, Subtyping, Type}
 
@@ -22,8 +23,8 @@ case class InferenceBounds(variable: InferenceVariable, lower: Option[Type], upp
 
   /**
     * The candidate type is used as the effectively inferred type and thus the inference result. This will most likely
-    * be the upper bound of the inference variable, but may also be the lower bound if the variable `iv` can only be
-    * inferred from `t <= iv` Subtypes or least upper bound judgments.
+    * be the upper bound of the inference variable, but may also be the lower bound if the variable's upper bound
+    * cannot be inferred.
     */
   val candidateType: Type = upper.orElse(lower).getOrElse(BasicType.Any)
 
@@ -44,23 +45,25 @@ object InferenceBounds {
     */
   def areFixed(bounds: InferenceBounds): Boolean = bounds.lower.exists(l => bounds.upper.contains(l))
 
-  case class InvalidLowerBound(inferenceVariable: InferenceVariable, newLowerBound: Type, currentBounds: InferenceBounds, context: TypingJudgment) extends Error(context) {
-    override def message: String = s"Type error: $newLowerBound must be a supertype of lower bound ${currentBounds.lowerOrNothing} and a subtype of upper bound ${currentBounds.upperOrAny}."
-  }
-
-  case class InvalidUpperBound(inferenceVariable: InferenceVariable, newUpperBound: Type, currentBounds: InferenceBounds, context: TypingJudgment) extends Error(context) {
-    override def message: String = s"Type error: $newUpperBound must be a subtype of upper bound ${currentBounds.upperOrAny} and a supertype of lower bound ${currentBounds.lowerOrNothing}."
-  }
-
+  /**
+    * Narrow the inference variable's lower bound to the given new lower bound and its upper bound to the given new
+    * upper bound.
+    */
   def narrowBounds(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, upperBound: Type, context: TypingJudgment): Compilation[Assignments] = {
-    narrowBound(assignments, inferenceVariable, lowerBound, BoundType.Lower, context).flatMap(
-      narrowBound(_, inferenceVariable, upperBound, BoundType.Upper, context)
+    narrowBound(assignments, inferenceVariable, upperBound, BoundType.Upper, context).flatMap(
+      narrowBound(_, inferenceVariable, lowerBound, BoundType.Lower, context)
     )
   }
 
   /**
-    * Attempts to narrow the lower/upper bound of the inference variable to the given new lower/upper bound. If the
-    * variable already has a lower/upper bound, the new lower/upper bound must supertype/subtype the existing bound.
+    * Narrow the inference variable's lower and upper bounds to the given new bound.
+    */
+  def narrowBounds(assignments: Assignments, inferenceVariable: InferenceVariable, bound: Type, context: TypingJudgment): Compilation[Assignments] = {
+    narrowBounds(assignments, inferenceVariable, bound, bound, context)
+  }
+
+  /**
+    * Attempts to narrow the lower/upper bound of the inference variable to the given new lower/upper bound.
     */
   def narrowBound(assignments: Assignments, inferenceVariable: InferenceVariable, bound: Type, boundType: BoundType, context: TypingJudgment): Compilation[Assignments] = boundType match {
     case BoundType.Lower => narrowLowerBound(assignments, inferenceVariable, bound, context)
@@ -77,7 +80,7 @@ object InferenceBounds {
     if (bounds.lower.forall(_ <= lowerBound) && lowerBound <= bounds.upperOrAny) {
       Compilation.succeed(assignments.updated(inferenceVariable, InferenceBounds(inferenceVariable, Some(lowerBound), bounds.upper)))
     } else {
-      Compilation.fail(InvalidLowerBound(inferenceVariable, lowerBound, bounds, context))
+      Compilation.fail(NarrowBoundFailed(inferenceVariable, lowerBound, BoundType.Lower, assignments, context))
     }
   }
 
@@ -91,7 +94,7 @@ object InferenceBounds {
     if (bounds.upper.forall(upperBound <= _) && bounds.lowerOrNothing <= upperBound) {
       Compilation.succeed(assignments.updated(inferenceVariable, InferenceBounds(inferenceVariable, bounds.lower, Some(upperBound))))
     } else {
-      Compilation.fail(InvalidUpperBound(inferenceVariable, upperBound, bounds, context))
+      Compilation.fail(NarrowBoundFailed(inferenceVariable, upperBound, BoundType.Upper, assignments, context))
     }
   }
 

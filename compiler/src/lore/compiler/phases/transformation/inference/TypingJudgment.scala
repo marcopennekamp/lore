@@ -72,8 +72,7 @@ object TypingJudgment {
   case class Fits(t1: Type, t2: Type, position: Position) extends TypingJudgment
 
   /**
-    * Unifies the `target` inference variable with the least upper bound of all given `types`. The inference can happen
-    * in both directions:
+    * Ensures that `target` is the least upper bound of all `types`. The inference can happen in both directions:
     *
     *   1. If all inference variables in `types` are defined, the least upper bounds of the instantiated types (both
     *      lower bound and upper bound instantiation) are assigned to the lower and upper bound of `target`.
@@ -155,8 +154,6 @@ object TypingJudgment {
   /**
     * Types the given multi-function as a function, `target` containing the resulting type. Candidate types are
     * narrowed down first by taking the context surrounding `target` into account.
-    *
-    * TODO: Add an example.
     */
   case class MultiFunctionValue(target: InferenceVariable, mf: MultiFunctionDefinition, position: Position) extends TypingJudgment
 

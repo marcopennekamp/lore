@@ -1,15 +1,12 @@
 package lore.compiler.phases.transformation.inference.matchers
 
-import lore.compiler.core.{Compilation, CompilationException, Error}
+import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.phases.transformation.inference.Inference.{Assignments, isFullyInstantiated}
+import lore.compiler.phases.transformation.inference.InferenceErrors.EqualTypesExpected
 import lore.compiler.phases.transformation.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.types._
 
 object EqualityMatcher {
-
-  case class ExpectedTypeEquality(t1: Type, t2: Type, context: TypingJudgment) extends Error(context) {
-    override def message: String = s"The types $t1 and $t2 should be equal, but are not."
-  }
 
   /**
     * Ensures that `t1` and `t2` are equal:
@@ -25,7 +22,7 @@ object EqualityMatcher {
     processBoth: (InferenceVariable, InferenceVariable, Assignments, TypingJudgment) => Compilation[Assignments],
   )(t1: Type, t2: Type, assignments: Assignments, context: TypingJudgment): Compilation[Assignments] = {
     if (isFullyInstantiated(t1) && isFullyInstantiated(t2)) {
-      return if (t1 == t2) Compilation.succeed(assignments) else Compilation.fail(ExpectedTypeEquality(t1, t2, context))
+      return if (t1 == t2) Compilation.succeed(assignments) else Compilation.fail(EqualTypesExpected(t1, t2, context))
     }
 
     def unsupported: Nothing = {
@@ -33,7 +30,7 @@ object EqualityMatcher {
         s" Given types: $t1 and $t2.")
     }
 
-    def expectedTypeEquality = Compilation.fail(ExpectedTypeEquality(t1, t2, context))
+    def expectedTypeEquality = Compilation.fail(EqualTypesExpected(t1, t2, context))
 
     val rec = (assignments2: Assignments, u1: Type, u2: Type) => matchEquals(processIv1, processIv2, processBoth)(u1, u2, assignments2, context)
     (t1, t2) match {

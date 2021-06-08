@@ -15,7 +15,7 @@ object AssignJudgmentResolver extends JudgmentResolver[TypingJudgment.Assign] {
   )(implicit registry: Registry): Compilation[Assignments] = {
     EqualityMatcher.matchEquals(
       Matchers.unsupported,
-      (t1, iv2, assignments, context) => narrowBounds(assignments, iv2, t1, t1, context),
+      (t1, iv2, assignments, context) => narrowBounds(assignments, iv2, t1, context),
       Matchers.unsupported,
     )(instantiate(assignments, judgment.source, _.candidateType), judgment.target, assignments, judgment)
   }

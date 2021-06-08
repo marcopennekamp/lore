@@ -20,7 +20,7 @@ object ElementTypeJudgmentResolver extends JudgmentResolver[TypingJudgment.Eleme
       case MapType(key, value) => Compilation.succeed(ProductType(Vector(key, value)))
       case _ => Compilation.fail(CollectionExpected(instantiatedCollection, judgment.position))
     }
-    elementType.flatMap(tpe => narrowBounds(assignments, judgment.target, tpe, tpe, judgment))
+    elementType.flatMap(tpe => narrowBounds(assignments, judgment.target, tpe, judgment))
   }
 
 }

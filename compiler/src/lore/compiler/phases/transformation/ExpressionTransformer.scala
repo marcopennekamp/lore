@@ -1,8 +1,9 @@
 package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, Error, Errors, Result}
+import lore.compiler.core.{Compilation, Errors, Result}
 import lore.compiler.phases.transformation.inference.Inference
+import lore.compiler.phases.transformation.inference.InferenceErrors.SubtypeExpected
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.scopes.{TypeScope, VariableScope}
@@ -85,18 +86,6 @@ object ExpressionTransformer {
     }
   }
 
-  // TODO: Move this error somewhere else. This might also be a good candidate for being merged with other errors...
-
-  case class IllegallyTypedExpression(expression: Expression, expectedTypes: Vector[Type]) extends Error(expression) {
-    override def message = s"The expression $expression has the illegal type ${expression.tpe}.$expected"
-
-    private def expected: String = {
-      if (expectedTypes.nonEmpty) {
-        s" We expected one of the following types (or a subtype thereof): ${expectedTypes.mkString(",")}."
-      } else ""
-    }
-  }
-
   /**
     * Verifies that the expected result type is compatible with the type of the expression. If the actual type is not
     * compatible, it might be the case that all paths of the expression's last expression return a valid value. In such
@@ -107,7 +96,7 @@ object ExpressionTransformer {
     if (expression.tpe <= expectedType || allPathsReturn(expression)) {
       Verification.succeed
     } else {
-      Compilation.fail(IllegallyTypedExpression(expression, Vector(expectedType)))
+      Compilation.fail(SubtypeExpected(expression.tpe, expectedType, expression))
     }
   }
 

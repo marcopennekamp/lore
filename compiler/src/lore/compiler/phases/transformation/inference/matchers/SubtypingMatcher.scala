@@ -1,15 +1,12 @@
 package lore.compiler.phases.transformation.inference.matchers
 
-import lore.compiler.core.{Compilation, CompilationException, Error}
+import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.phases.transformation.inference.Inference.{Assignments, isFullyInstantiated}
+import lore.compiler.phases.transformation.inference.InferenceErrors.SubtypeExpected
 import lore.compiler.phases.transformation.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.types._
 
 object SubtypingMatcher {
-
-  case class ExpectedSubtype(t1: Type, t2: Type, context: TypingJudgment) extends Error(context) {
-    override def message: String = s"$t1 should be a subtype of $t2, but is not."
-  }
 
   /**
     * Ensures that `t1` is a subtype of `t2`:
@@ -25,7 +22,7 @@ object SubtypingMatcher {
     processBoth: (InferenceVariable, InferenceVariable, Assignments, TypingJudgment) => Compilation[Assignments],
   )(t1: Type, t2: Type, assignments: Assignments, context: TypingJudgment): Compilation[Assignments] = {
     if (isFullyInstantiated(t1) && isFullyInstantiated(t2)) {
-      return if (t1 <= t2) Compilation.succeed(assignments) else Compilation.fail(ExpectedSubtype(t1, t2, context))
+      return if (t1 <= t2) Compilation.succeed(assignments) else Compilation.fail(SubtypeExpected(t1, t2, context))
     }
 
     def unsupported: Nothing = {
@@ -33,7 +30,7 @@ object SubtypingMatcher {
         s" Given types: $t1 and $t2.")
     }
 
-    def expectedSubtype = Compilation.fail(ExpectedSubtype(t1, t2, context))
+    def expectedSubtype = Compilation.fail(SubtypeExpected(t1, t2, context))
 
     val rec = (newAssignments: Assignments, u1: Type, u2: Type) => matchSubtype(processIv1, processIv2, processBoth)(u1, u2, newAssignments, context)
     (t1, t2) match {

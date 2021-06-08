@@ -1,17 +1,14 @@
 package lore.compiler.phases.transformation.inference
 
-import lore.compiler.core.{Compilation, Error}
+import lore.compiler.core.Compilation
 import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiateByBound, isFullyInstantiated}
-import lore.compiler.phases.transformation.inference.InferenceBounds.{BoundType, narrowBound}
+import lore.compiler.phases.transformation.inference.InferenceBounds.{BoundType, narrowBound, narrowLowerBound, narrowUpperBound}
+import lore.compiler.phases.transformation.inference.InferenceErrors.EqualTypesExpected
 import lore.compiler.phases.transformation.inference.InferenceVariable.{effectiveBounds, isDefined}
 import lore.compiler.phases.transformation.inference.matchers.EqualityMatcher
 import lore.compiler.types._
 
 object Unification {
-
-  case class ExpectedTypeEquality(t1: Type, t2: Type, context: TypingJudgment) extends Error(context) {
-    override def message: String = s"The types $t1 and $t2 should be equal, but are not."
-  }
 
   def unify(t1: Type, t2: Type, assignments: Assignments, context: TypingJudgment): Compilation[Assignments] = {
     unify(t1, t2, assignments, Vector(BoundType.Lower, BoundType.Upper), context)
@@ -38,21 +35,19 @@ object Unification {
     val compilationLower = if (boundTypes.contains(BoundType.Lower)) {
       val lower = Type.maxOrEqual(bounds1.lowerOrNothing, bounds2.lowerOrNothing) match {
         case Some(t) => t
-        case None => return Compilation.fail(ExpectedTypeEquality(bounds1.lowerOrNothing, bounds2.lowerOrNothing, context))
+        case None => return Compilation.fail(EqualTypesExpected(bounds1.lowerOrNothing, bounds2.lowerOrNothing, context))
       }
 
-      narrowBound(assignments, iv1, lower, BoundType.Lower, context)
-        .flatMap(narrowBound(_, iv2, lower, BoundType.Lower, context))
+      narrowLowerBound(assignments, iv1, lower, context).flatMap(narrowLowerBound(_, iv2, lower, context))
     } else Compilation.succeed(assignments)
 
     compilationLower.flatMap { assignments2 =>
       val upper = Type.minOrEqual(bounds1.upperOrAny, bounds2.upperOrAny) match {
         case Some(t) => t
-        case None => return Compilation.fail(ExpectedTypeEquality(bounds1.lowerOrNothing, bounds2.lowerOrNothing, context))
+        case None => return Compilation.fail(EqualTypesExpected(bounds1.upperOrAny, bounds2.upperOrAny, context))
       }
 
-      narrowBound(assignments2, iv1, upper, BoundType.Upper, context)
-        .flatMap(narrowBound(_, iv2, upper, BoundType.Upper, context))
+      narrowUpperBound(assignments2, iv1, upper, context).flatMap(narrowUpperBound(_, iv2, upper, context))
     }
   }
 
