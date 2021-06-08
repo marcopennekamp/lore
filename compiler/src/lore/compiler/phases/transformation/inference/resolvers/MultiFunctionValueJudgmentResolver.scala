@@ -36,7 +36,6 @@ object MultiFunctionValueJudgmentResolver extends JudgmentResolver[TypingJudgmen
     //       there is only one root function, of course.
     instantiate(assignments, judgment.target, _.candidateType, _ => BasicType.Any) match {
       case expectedFunctionType: FunctionType =>
-        // TODO: Handle upper and lower bounds separately.
         MultiFunctionCallJudgmentResolver.resolveDispatch(judgment.mf, expectedFunctionType.inputTuple, judgment.position, assignments).flatMap { instance =>
           val actualFunctionType = instance.signature.functionType
           if (actualFunctionType.output <= expectedFunctionType.output) {

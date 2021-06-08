@@ -48,10 +48,11 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
     remainingJudgments: Vector[TypingJudgment],
   )(implicit registry: Registry): Compilation[(Assignments, Vector[TypingJudgment])] = {
     val TypingJudgment.MultiFunctionHint(mf, arguments, position) = judgment
+    val argumentTypes = judgment.argumentTypes
 
     // Performance shortcut: If all inference variables are inferred to a point that they cannot change further, we can
     // skip the MultiFunctionHint, because it will provide no useful information.
-    if (arguments.forall(argument => Inference.variables(argument).forall(v => assignments.get(v).exists(InferenceBounds.areFixed)))) {
+    if (arguments.forall(argument => Inference.variables(argument.tpe).forall(v => assignments.get(v).exists(InferenceBounds.areFixed)))) {
       return Compilation.succeed((assignments, remainingJudgments))
     }
 
@@ -59,7 +60,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
     // the given arguments.
     val functions = mf.functions.filter(_.signature.arity == arguments.length)
 
-    val influencingJudgments = findInfluencingJudgments(arguments, assignments, influenceGraph, remainingJudgments)
+    val influencingJudgments = findInfluencingJudgments(argumentTypes, assignments, influenceGraph, remainingJudgments)
     val resultArgumentType = new InferenceVariable
 
     val compilations = functions.map { function =>
@@ -83,17 +84,17 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       //  - The Fits judgment ensures that any type variables on the parameter side (represented by inference
       //    variables) are properly assigned their bounds.
       //  - The Subtypes judgment allows inference of an argument's type based on the parameter type.
-      val inputType = Type.substitute(function.signature.inputType, typeVariableAssignments).asInstanceOf[ProductType]
-      val argumentJudgments = inputType.elements.zip(arguments).flatMap {
-        case (parameterType, argument) => Vector(
-          // TODO: Can't we pass the argument's position here?
-          TypingJudgment.Fits(argument, parameterType, position),
-          TypingJudgment.Subtypes(argument, parameterType, position),
-        )
+      val argumentJudgments = function.signature.parameters.zip(arguments).flatMap {
+        case (parameter, argument) =>
+          val parameterType = Type.substitute(parameter.tpe, typeVariableAssignments)
+          Vector(
+            TypingJudgment.Fits(argument.tpe, parameterType, argument.position),
+            TypingJudgment.Subtypes(argument.tpe, parameterType, argument.position),
+          )
       }
 
       val resultJudgments = Vector(
-        TypingJudgment.Assign(resultArgumentType, ProductType(arguments), position)
+        TypingJudgment.Assign(resultArgumentType, ProductType(argumentTypes), position)
       )
 
       val supplementalJudgments = lowerBoundsJudgments ++ upperBoundsJudgments ++ argumentJudgments ++ resultJudgments
@@ -125,7 +126,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       println(s"Empty fit of $judgment:")
       println(compilations.mkString("\n"))
       println()
-      Compilation.fail(EmptyFit(mf, ProductType(arguments), judgment.position))
+      Compilation.fail(EmptyFit(mf, ProductType(argumentTypes), judgment.position))
     }
   }
 

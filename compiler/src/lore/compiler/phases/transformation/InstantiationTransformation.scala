@@ -30,7 +30,7 @@ object InstantiationTransformation {
     for {
       _ <- verifyNamesUnique(entries)
       pairs <- correlateEntries(struct, entries)
-      judgments = getEntryTypingJudgements(pairs)
+      judgments = getEntryTypingJudgments(pairs)
       arguments = pairs.map(Expression.Instantiation.Argument.tupled)
     } yield (Expression.Instantiation(struct, arguments, position), judgments)
   }
@@ -69,7 +69,7 @@ object InstantiationTransformation {
     }
   }
 
-  private def getEntryTypingJudgements(pairs: Vector[(StructPropertyDefinition, Expression)]): Vector[TypingJudgment] = {
+  private def getEntryTypingJudgments(pairs: Vector[(StructPropertyDefinition, Expression)]): Vector[TypingJudgment] = {
     pairs.map { case (property, expression) =>
       // TODO: Use proper error message: IllegallyTypedProperty(property, expression)
       TypingJudgment.Subtypes(expression.tpe, property.tpe, expression.position)

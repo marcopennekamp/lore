@@ -53,8 +53,6 @@ object EqualityMatcher {
           case _ => expectedTypeEquality
         }
 
-      // TODO: Can we even live with unsupported assignments here or do we have to bite the bullet? Sum and
-      //       intersection types need to also be part of type inference beyond the most basic aspects...
       case (_: IntersectionType, _) => unsupported
       case (_, _: IntersectionType) => unsupported
       case (_: SumType, _) => unsupported

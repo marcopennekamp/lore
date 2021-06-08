@@ -15,19 +15,12 @@ object MultiFunctionCallJudgmentResolver extends JudgmentResolver[TypingJudgment
     judgment: TypingJudgment.MultiFunctionCall,
     assignments: Assignments,
   )(implicit registry: Registry): Compilation[Assignments] = {
-    // TODO: Once we activate the "MostSpecific" typing judgment that will also be generated with each multi-function
-    //       call, we will already have performed the dispatch using the constraint solver. There might be no need to
-    //       instantiate the function, for example, if we take the bounds inferred for the type variables, instead.
-    // TODO: Handle upper and lower bounds separately.
     resolveDispatch(judgment.mf, ProductType(judgment.arguments), judgment.position, assignments).flatMap { instance =>
       val result = instance.signature.outputType
-      narrowBounds(assignments, judgment.target, result, result, judgment)
+      narrowBounds(assignments, judgment.target, result, judgment)
     }
   }
 
-  /**
-    * TODO: Handle both upper and lower bounds separately?
-    */
   def resolveDispatch(mf: MultiFunctionDefinition, uninstantiatedInputType: ProductType, position: Position, assignments: Inference.Assignments): Compilation[FunctionInstance] = {
     val inputType = instantiate(assignments, uninstantiatedInputType, _.candidateType).asInstanceOf[ProductType]
     mf.min(inputType) match {

@@ -20,7 +20,7 @@ object FunctionTyping {
     (
       Expression.Call(CallTarget.MultiFunction(mf), arguments, resultType, position),
       Vector(
-        TypingJudgment.MultiFunctionHint(mf, arguments.map(_.tpe), position),
+        TypingJudgment.MultiFunctionHint(mf, arguments, position),
         TypingJudgment.MultiFunctionCall(resultType, mf, arguments.map(_.tpe), position),
       )
     )

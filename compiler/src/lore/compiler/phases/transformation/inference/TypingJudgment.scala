@@ -1,6 +1,7 @@
 package lore.compiler.phases.transformation.inference
 
 import lore.compiler.core.{Position, Positioned}
+import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.types.Type
 
@@ -124,7 +125,9 @@ object TypingJudgment {
     * specific argument type as the path to follow. The MultiFunctionHint resolver might run into an empty fit or
     * ambiguity error, which are reported as a compilation errors to the user.
     */
-  case class MultiFunctionHint(mf: MultiFunctionDefinition, arguments: Vector[Type], position: Position) extends TypingJudgment {
+  case class MultiFunctionHint(mf: MultiFunctionDefinition, arguments: Vector[Expression], position: Position) extends TypingJudgment {
+    val argumentTypes: Vector[Type] = arguments.map(_.tpe)
+
     /**
       * This inference variable is used by [[InferenceOrder]] to set the MultiFunctionHint as a dependency of the
       * hint's arguments.
@@ -142,7 +145,7 @@ object TypingJudgment {
     case ElementType(target, collection, _) => s"$target <- $collection::elementType"
     case MultiFunctionCall(target, mf, arguments, _) => s"$target <- ${mf.name}(${arguments.mkString(", ")})"
     case MultiFunctionValue(function, mf, _) => s"$function <- ${mf.name} as function"
-    case hint@MultiFunctionHint(mf, arguments, _) => s"${mf.name}::hint(${arguments.mkString(", ")}) <dependency ${hint.dependencyVariable}>"
+    case hint@MultiFunctionHint(mf, _, _) => s"${mf.name}::hint(${hint.argumentTypes.mkString(", ")}) <dependency ${hint.dependencyVariable}>"
   }
 
 }

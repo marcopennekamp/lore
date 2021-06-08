@@ -21,7 +21,7 @@ object InferenceDependency {
     case TypingJudgment.ElementType(target, collection, _) => dependenciesOf(collection, target)
     case TypingJudgment.MultiFunctionCall(target, _, arguments, _) => dependenciesOf(arguments, Vector(target))
     case TypingJudgment.MultiFunctionValue(_, _, _) => Set.empty // TODO: Change this once MultiFunctionValues depend on the target.
-    case hint@TypingJudgment.MultiFunctionHint(_, arguments, _) => dependenciesOf(Vector(hint.dependencyVariable), arguments)
+    case hint@TypingJudgment.MultiFunctionHint(_, _, _) => dependenciesOf(Vector(hint.dependencyVariable), hint.argumentTypes)
   }
 
   private def dependenciesOf(sources: Set[Type], targets: Set[InferenceVariable]): Set[InferenceDependency] = {

@@ -34,8 +34,6 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
   override def visit(expression: MemberAccess)(instance: Expression): Expression = expression.copy(instance)
 
   override def visit(expression: UnresolvedMemberAccess)(instance: Expression): Expression = {
-    // TODO: Type inference should have already resolved the member. Can we avoid having to resolve the member again by
-    //       getting the information out of the type inference blackbox?
     implicit val position: Position = expression.position
     val member = instance.tpe.member(expression.name).getOrElse(
       throw CompilationException(s"The type ${instance.tpe} does not have a member ${expression.name}. Type inference should have caught this missing member!")
