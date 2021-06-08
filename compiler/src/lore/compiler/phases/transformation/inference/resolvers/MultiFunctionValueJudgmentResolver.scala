@@ -1,10 +1,10 @@
 package lore.compiler.phases.transformation.inference.resolvers
 
 import lore.compiler.core.Compilation
+import lore.compiler.feedback.TypingFeedback.{MultiFunctionCoercionContextExpected, MultiFunctionCoercionIllegalOutput}
 import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiate}
 import lore.compiler.phases.transformation.inference.InferenceBounds.narrowBounds
 import lore.compiler.phases.transformation.inference.TypingJudgment
-import lore.compiler.phases.transformation.inference.resolvers.JudgmentResolver.MultiFunctionCoercion
 import lore.compiler.semantics.Registry
 import lore.compiler.types.{BasicType, FunctionType}
 
@@ -42,11 +42,11 @@ object MultiFunctionValueJudgmentResolver extends JudgmentResolver[TypingJudgmen
           if (actualFunctionType.output <= expectedFunctionType.output) {
             narrowBounds(assignments, judgment.target, actualFunctionType, actualFunctionType, judgment)
           } else {
-            Compilation.fail(MultiFunctionCoercion.IllegalOutput(judgment.mf, expectedFunctionType, actualFunctionType, judgment.position))
+            Compilation.fail(MultiFunctionCoercionIllegalOutput(judgment.mf, expectedFunctionType, actualFunctionType, judgment))
           }
         }
 
-      case candidateType => Compilation.fail(MultiFunctionCoercion.FunctionContextExpected(judgment.mf, candidateType, judgment.position))
+      case candidateType => Compilation.fail(MultiFunctionCoercionContextExpected(judgment.mf, candidateType, judgment))
     }
   }
 

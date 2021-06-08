@@ -1,13 +1,11 @@
 package lore.compiler.phases.transformation.inference.resolvers
 
-import lore.compiler.core.{Compilation, CompilationException, Error, Position}
+import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.phases.transformation.inference.Inference.Assignments
 import lore.compiler.phases.transformation.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.phases.transformation.inference.resolvers.JudgmentResolver.{illegalBackwards, illegalForwards}
 import lore.compiler.phases.transformation.inference.{Inference, TypingJudgment}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.compiler.types.{FunctionType, Type}
 
 /**
   * A judgment resolver resolves a specific typing judgment in either the forwards or backwards directions, or both.
@@ -100,41 +98,6 @@ object JudgmentResolver {
     override final def forwards(judgment: A, assignments: Assignments)(implicit registry: Registry): Compilation[Assignments] = throw new UnsupportedOperationException
 
     override final def backwards(judgment: A, assignments: Assignments)(implicit registry: Registry): Compilation[Assignments] = throw new UnsupportedOperationException
-
-  }
-
-  // TODO: Move these errors somewhere else...
-
-  case class CollectionExpected(actualType: Type, pos: Position) extends Error(pos) {
-    override def message: String = s"Expected a collection at this position. Got a value of type $actualType."
-  }
-
-  case class EmptyFit(mf: MultiFunctionDefinition, inputType: Type)(implicit callPosition: Position) extends Error(callPosition) {
-    override def message: String = s"The multi-function call ${mf.name} at this site has an empty fit. We cannot" +
-      s" find a function of that name that would accept the given arguments with the type $inputType."
-  }
-
-  case class AmbiguousCall(
-    mf: MultiFunctionDefinition, inputType: Type, min: Vector[FunctionDefinition],
-  )(implicit callPosition: Position) extends Error(callPosition) {
-    override def message: String = s"The multi-function call ${mf.name} at this site is ambiguous." +
-      s" That is, we are finding too many functions that would accept the given arguments of type $inputType." +
-      s" These are: ${min.mkString(", ")}."
-  }
-
-  object MultiFunctionCoercion {
-
-    case class FunctionContextExpected(mf: MultiFunctionDefinition, targetType: Type, pos: Position) extends Error(pos) {
-      override def message: String = s"A multi-function can only be coerced to a function type. The target type is" +
-        s" currently inferred to be $targetType, which is not a function type. Most likely, the multi-function" +
-        s" ${mf.name} cannot be used as a value in this context."
-    }
-
-    case class IllegalOutput(mf: MultiFunctionDefinition, expectedFunction: FunctionType, actualFunction: FunctionType, pos: Position) extends Error(pos) {
-      override def message: String = s"While coercing the multi-function ${mf.name} to a function, the following function type" +
-        s" was expected: $expectedFunction. The actual function type inferred via dispatch is $actualFunction. The" +
-        s" multi-function cannot be coerced to the expected function type because the output types are incompatible."
-    }
 
   }
 

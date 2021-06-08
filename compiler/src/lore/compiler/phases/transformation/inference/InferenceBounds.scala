@@ -1,8 +1,8 @@
 package lore.compiler.phases.transformation.inference
 
 import lore.compiler.core.Compilation
+import lore.compiler.feedback.TypingFeedback.NarrowBoundFailed
 import lore.compiler.phases.transformation.inference.Inference.Assignments
-import lore.compiler.phases.transformation.inference.InferenceErrors.NarrowBoundFailed
 import lore.compiler.phases.transformation.inference.InferenceVariable.effectiveBounds
 import lore.compiler.types.{BasicType, Subtyping, Type}
 

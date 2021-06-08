@@ -1,9 +1,9 @@
 package lore.compiler.phases.transformation.inference.resolvers
 
 import lore.compiler.core.{Compilation, Position}
+import lore.compiler.feedback.DispatchFeedback.{AmbiguousCall, EmptyFit}
 import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiate}
 import lore.compiler.phases.transformation.inference.InferenceBounds.narrowBounds
-import lore.compiler.phases.transformation.inference.resolvers.JudgmentResolver.{AmbiguousCall, EmptyFit}
 import lore.compiler.phases.transformation.inference.{Inference, TypingJudgment}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionInstance, MultiFunctionDefinition}
@@ -26,13 +26,13 @@ object MultiFunctionCallJudgmentResolver extends JudgmentResolver[TypingJudgment
   }
 
   /**
-    * TODO: Handle both upper and lower bounds separately.
+    * TODO: Handle both upper and lower bounds separately?
     */
   def resolveDispatch(mf: MultiFunctionDefinition, uninstantiatedInputType: ProductType, position: Position, assignments: Inference.Assignments): Compilation[FunctionInstance] = {
     val inputType = instantiate(assignments, uninstantiatedInputType, _.candidateType).asInstanceOf[ProductType]
     mf.min(inputType) match {
-      case min if min.isEmpty => Compilation.fail(EmptyFit(mf, inputType)(position))
-      case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, inputType, min)(position))
+      case min if min.isEmpty => Compilation.fail(EmptyFit(mf, inputType, position))
+      case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, inputType, min, position))
       case functionDefinition +: _ => functionDefinition.instantiate(inputType)
     }
   }

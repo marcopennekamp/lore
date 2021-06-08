@@ -1,13 +1,15 @@
-package lore.compiler.phases.transformation.inference
+package lore.compiler.feedback
 
 import lore.compiler.core.{CompilationException, Error, Positioned}
 import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiateByBound}
 import lore.compiler.phases.transformation.inference.InferenceBounds.BoundType
-import lore.compiler.types.Type
+import lore.compiler.phases.transformation.inference.{Inference, InferenceVariable, TypingJudgment}
+import lore.compiler.semantics.functions.MultiFunctionDefinition
+import lore.compiler.types.{FunctionType, Type}
 
-object InferenceErrors {
+object TypingFeedback {
 
-  case class EqualTypesExpected(t1: Type, t2: Type, context: TypingJudgment) extends Error(context) {
+  case class EqualTypesExpected(t1: Type, t2: Type, context: Positioned) extends Error(context) {
     override def message: String = s"The types $t1 and $t2 must be equal."
   }
 
@@ -62,6 +64,22 @@ object InferenceErrors {
         case TypingJudgment.MultiFunctionValue(_, _, _) => s"The function type ${prepare(newBound)} must be a $relationshipName of ${prepare(iv)}."
       }
     }
+  }
+
+  case class CollectionExpected(actualType: Type, context: Positioned) extends Error(context) {
+    override def message: String = s"Expected a collection at this position, but instead got a value of type $actualType."
+  }
+
+  case class MultiFunctionCoercionContextExpected(mf: MultiFunctionDefinition, targetType: Type, context: Positioned) extends Error(context) {
+    override def message: String = s"A multi-function can only be coerced to a function type. The target type is" +
+      s" currently inferred to be $targetType, which is not a function type. Most likely, the multi-function" +
+      s" ${mf.name} cannot be used as a value in this context."
+  }
+
+  case class MultiFunctionCoercionIllegalOutput(mf: MultiFunctionDefinition, expectedFunction: FunctionType, actualFunction: FunctionType, context: Positioned) extends Error(context) {
+    override def message: String = s"While coercing the multi-function ${mf.name} to a function, the following function type" +
+      s" was expected: $expectedFunction. The actual function type inferred via dispatch is $actualFunction. The" +
+      s" multi-function cannot be coerced to the expected function type because the output types are incompatible."
   }
 
 }

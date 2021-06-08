@@ -1,8 +1,8 @@
 package lore.compiler.phases.transformation.inference.matchers
 
 import lore.compiler.core.{Compilation, CompilationException}
+import lore.compiler.feedback.TypingFeedback.SubtypeExpected
 import lore.compiler.phases.transformation.inference.Inference.{Assignments, isFullyInstantiated}
-import lore.compiler.phases.transformation.inference.InferenceErrors.SubtypeExpected
 import lore.compiler.phases.transformation.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.types._
 

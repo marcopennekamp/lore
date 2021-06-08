@@ -1,6 +1,7 @@
 package lore.compiler.phases.transformation.inference.resolvers
 
 import lore.compiler.core.{Compilation, Error}
+import lore.compiler.feedback.DispatchFeedback.EmptyFit
 import lore.compiler.phases.transformation.inference.Inference.Assignments
 import lore.compiler.phases.transformation.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.phases.transformation.inference._
@@ -124,7 +125,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       println(s"Empty fit of $judgment:")
       println(compilations.mkString("\n"))
       println()
-      Compilation.fail(JudgmentResolver.EmptyFit(mf, ProductType(arguments))(judgment.position))
+      Compilation.fail(EmptyFit(mf, ProductType(arguments), judgment.position))
     }
   }
 
