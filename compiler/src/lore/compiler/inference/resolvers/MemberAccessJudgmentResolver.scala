@@ -1,9 +1,9 @@
-package lore.compiler.phases.transformation.inference.resolvers
+package lore.compiler.inference.resolvers
 
 import lore.compiler.core.Compilation
-import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiate}
-import lore.compiler.phases.transformation.inference.InferenceBounds.narrowBounds
-import lore.compiler.phases.transformation.inference.TypingJudgment
+import lore.compiler.inference.Inference.{Assignments, instantiate}
+import lore.compiler.inference.InferenceBounds.narrowBounds
+import lore.compiler.inference.TypingJudgment
 import lore.compiler.semantics.Registry
 
 object MemberAccessJudgmentResolver extends JudgmentResolver[TypingJudgment.MemberAccess] {

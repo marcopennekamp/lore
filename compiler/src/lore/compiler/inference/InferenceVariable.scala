@@ -1,6 +1,6 @@
-package lore.compiler.phases.transformation.inference
+package lore.compiler.inference
 
-import lore.compiler.phases.transformation.inference.Inference.Assignments
+import lore.compiler.inference.Inference.Assignments
 import lore.compiler.types.{BasicType, Type}
 
 import java.util.concurrent.atomic.AtomicInteger

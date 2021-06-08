@@ -1,11 +1,11 @@
-package lore.compiler.phases.transformation.inference
+package lore.compiler.inference
 
 import lore.compiler.core.Compilation
 import lore.compiler.feedback.TypingFeedback.EqualTypesExpected
-import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiateByBound, isFullyInstantiated}
-import lore.compiler.phases.transformation.inference.InferenceBounds.{BoundType, narrowBound, narrowLowerBound, narrowUpperBound}
-import lore.compiler.phases.transformation.inference.InferenceVariable.{effectiveBounds, isDefined}
-import lore.compiler.phases.transformation.inference.matchers.EqualityMatcher
+import lore.compiler.inference.Inference.{Assignments, instantiateByBound, isFullyInstantiated}
+import lore.compiler.inference.InferenceBounds.{BoundType, narrowBound, narrowLowerBound, narrowUpperBound}
+import lore.compiler.inference.InferenceVariable.{effectiveBounds, isDefined}
+import lore.compiler.inference.matchers.EqualityMatcher
 import lore.compiler.types._
 
 object Unification {

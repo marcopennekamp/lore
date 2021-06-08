@@ -2,7 +2,7 @@ package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, Error, Position}
-import lore.compiler.phases.transformation.inference.TypingJudgment
+import lore.compiler.inference.TypingJudgment
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 

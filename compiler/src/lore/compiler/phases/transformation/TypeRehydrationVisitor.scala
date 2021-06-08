@@ -1,11 +1,11 @@
 package lore.compiler.phases.transformation
 
 import lore.compiler.core.{CompilationException, Position}
-import lore.compiler.phases.transformation.inference.Inference.{Assignments, AssignmentsExtension}
+import lore.compiler.inference.Inference.{Assignments, AssignmentsExtension}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression._
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
-import lore.compiler.semantics.scopes.{LocalVariable, TypedVariable, Variable}
+import lore.compiler.semantics.scopes.{LocalVariable, TypedVariable}
 import lore.compiler.types.{ListType, ProductType, Type}
 
 /**

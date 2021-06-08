@@ -1,7 +1,7 @@
-package lore.compiler.phases.transformation.inference.matchers
+package lore.compiler.inference.matchers
 
 import lore.compiler.core.Compilation
-import lore.compiler.phases.transformation.inference.Inference.Assignments
+import lore.compiler.inference.Inference.Assignments
 import lore.compiler.types.{ProductType, Type}
 
 object Matchers {

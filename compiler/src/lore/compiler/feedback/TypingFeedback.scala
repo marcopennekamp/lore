@@ -1,9 +1,9 @@
 package lore.compiler.feedback
 
 import lore.compiler.core.{CompilationException, Error, Positioned}
-import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiateByBound}
-import lore.compiler.phases.transformation.inference.InferenceBounds.BoundType
-import lore.compiler.phases.transformation.inference.{Inference, InferenceVariable, TypingJudgment}
+import lore.compiler.inference.Inference.{Assignments, instantiateByBound}
+import lore.compiler.inference.InferenceBounds.BoundType
+import lore.compiler.inference.{Inference, InferenceVariable, TypingJudgment}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.types.{FunctionType, Type}
 

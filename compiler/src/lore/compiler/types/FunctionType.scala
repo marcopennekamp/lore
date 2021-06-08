@@ -1,7 +1,7 @@
 package lore.compiler.types
 
 import lore.compiler.core.CompilationException
-import lore.compiler.phases.transformation.inference.InferenceVariable
+import lore.compiler.inference.InferenceVariable
 
 import scala.util.hashing.MurmurHash3
 

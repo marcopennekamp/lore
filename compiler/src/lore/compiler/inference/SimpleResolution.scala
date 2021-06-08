@@ -1,10 +1,10 @@
-package lore.compiler.phases.transformation.inference
+package lore.compiler.inference
 
 import lore.compiler.core.{Compilation, Errors, Result}
-import lore.compiler.phases.transformation.inference.Inference.{Assignments, AssignmentsExtension}
-import lore.compiler.phases.transformation.inference.InferenceOrder.InfluenceGraph
-import lore.compiler.phases.transformation.inference.resolvers.JudgmentResolver
-import lore.compiler.phases.transformation.inference.resolvers.JudgmentResolver.ResolutionDirection
+import lore.compiler.inference.Inference.{Assignments, AssignmentsExtension}
+import lore.compiler.inference.InferenceOrder.InfluenceGraph
+import lore.compiler.inference.resolvers.JudgmentResolver
+import lore.compiler.inference.resolvers.JudgmentResolver.ResolutionDirection
 import lore.compiler.semantics.Registry
 import lore.compiler.types.Type
 import lore.compiler.utils.CollectionExtensions.VectorExtension

@@ -1,8 +1,8 @@
-package lore.compiler.phases.transformation.inference
+package lore.compiler.inference
 
 import lore.compiler.CompilerOptions
 import lore.compiler.core.{Compilation, Errors, FeedbackPrinter, Result}
-import lore.compiler.phases.transformation.inference.InferenceBounds.BoundType
+import lore.compiler.inference.InferenceBounds.BoundType
 import lore.compiler.semantics.Registry
 import lore.compiler.types._
 import lore.compiler.utils.Timer.timed

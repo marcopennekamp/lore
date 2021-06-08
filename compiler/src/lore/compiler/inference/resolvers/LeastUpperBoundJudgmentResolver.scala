@@ -1,9 +1,9 @@
-package lore.compiler.phases.transformation.inference.resolvers
+package lore.compiler.inference.resolvers
 
 import lore.compiler.core.Compilation
-import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiateByBound}
-import lore.compiler.phases.transformation.inference.InferenceBounds.{BoundType, narrowBounds}
-import lore.compiler.phases.transformation.inference.TypingJudgment
+import lore.compiler.inference.Inference.{Assignments, instantiateByBound}
+import lore.compiler.inference.InferenceBounds.{BoundType, narrowBounds}
+import lore.compiler.inference.TypingJudgment
 import lore.compiler.semantics.Registry
 import lore.compiler.types.LeastUpperBound
 

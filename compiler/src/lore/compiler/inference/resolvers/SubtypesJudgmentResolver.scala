@@ -1,10 +1,10 @@
-package lore.compiler.phases.transformation.inference.resolvers
+package lore.compiler.inference.resolvers
 
 import lore.compiler.core.Compilation
-import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiateByBound}
-import lore.compiler.phases.transformation.inference.InferenceBounds.{BoundType, ensureBoundSubtypes, ensureBoundSupertypes}
-import lore.compiler.phases.transformation.inference.TypingJudgment
-import lore.compiler.phases.transformation.inference.matchers.{Matchers, SubtypingMatcher}
+import lore.compiler.inference.Inference.{Assignments, instantiateByBound}
+import lore.compiler.inference.InferenceBounds.{BoundType, ensureBoundSubtypes, ensureBoundSupertypes}
+import lore.compiler.inference.TypingJudgment
+import lore.compiler.inference.matchers.{Matchers, SubtypingMatcher}
 import lore.compiler.semantics.Registry
 
 object SubtypesJudgmentResolver extends JudgmentResolver[TypingJudgment.Subtypes] {

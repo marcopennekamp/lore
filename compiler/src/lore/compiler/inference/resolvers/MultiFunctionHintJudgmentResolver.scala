@@ -1,10 +1,10 @@
-package lore.compiler.phases.transformation.inference.resolvers
+package lore.compiler.inference.resolvers
 
 import lore.compiler.core.{Compilation, Error}
 import lore.compiler.feedback.DispatchFeedback.EmptyFit
-import lore.compiler.phases.transformation.inference.Inference.Assignments
-import lore.compiler.phases.transformation.inference.InferenceOrder.InfluenceGraph
-import lore.compiler.phases.transformation.inference._
+import lore.compiler.inference.Inference.Assignments
+import lore.compiler.inference.InferenceOrder.InfluenceGraph
+import lore.compiler.inference._
 import lore.compiler.semantics.Registry
 import lore.compiler.types.{ProductType, Type}
 

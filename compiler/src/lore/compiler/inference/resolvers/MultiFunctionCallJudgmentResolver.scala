@@ -1,10 +1,10 @@
-package lore.compiler.phases.transformation.inference.resolvers
+package lore.compiler.inference.resolvers
 
 import lore.compiler.core.{Compilation, Position}
 import lore.compiler.feedback.DispatchFeedback.{AmbiguousCall, EmptyFit}
-import lore.compiler.phases.transformation.inference.Inference.{Assignments, instantiate}
-import lore.compiler.phases.transformation.inference.InferenceBounds.narrowBounds
-import lore.compiler.phases.transformation.inference.{Inference, TypingJudgment}
+import lore.compiler.inference.Inference.{Assignments, instantiate}
+import lore.compiler.inference.InferenceBounds.narrowBounds
+import lore.compiler.inference.{Inference, TypingJudgment}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.types.ProductType

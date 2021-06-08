@@ -1,4 +1,4 @@
-package lore.compiler.phases.transformation.inference
+package lore.compiler.inference
 
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.expressions.Expression

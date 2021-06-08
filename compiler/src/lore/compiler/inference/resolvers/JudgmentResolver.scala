@@ -1,10 +1,10 @@
-package lore.compiler.phases.transformation.inference.resolvers
+package lore.compiler.inference.resolvers
 
 import lore.compiler.core.{Compilation, CompilationException}
-import lore.compiler.phases.transformation.inference.Inference.Assignments
-import lore.compiler.phases.transformation.inference.InferenceOrder.InfluenceGraph
-import lore.compiler.phases.transformation.inference.resolvers.JudgmentResolver.{illegalBackwards, illegalForwards}
-import lore.compiler.phases.transformation.inference.{Inference, TypingJudgment}
+import lore.compiler.inference.Inference.Assignments
+import lore.compiler.inference.InferenceOrder.InfluenceGraph
+import lore.compiler.inference.resolvers.JudgmentResolver.{illegalBackwards, illegalForwards}
+import lore.compiler.inference.{Inference, TypingJudgment}
 import lore.compiler.semantics.Registry
 
 /**

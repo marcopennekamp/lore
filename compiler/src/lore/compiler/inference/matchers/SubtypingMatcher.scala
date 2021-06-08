@@ -1,9 +1,9 @@
-package lore.compiler.phases.transformation.inference.matchers
+package lore.compiler.inference.matchers
 
 import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.feedback.TypingFeedback.SubtypeExpected
-import lore.compiler.phases.transformation.inference.Inference.{Assignments, isFullyInstantiated}
-import lore.compiler.phases.transformation.inference.{InferenceVariable, TypingJudgment}
+import lore.compiler.inference.Inference.{Assignments, isFullyInstantiated}
+import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.types._
 
 object SubtypingMatcher {

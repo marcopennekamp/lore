@@ -3,7 +3,7 @@ package lore.compiler.phases.transformation
 import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.feedback.TypingFeedback.SubtypeExpected
-import lore.compiler.phases.transformation.inference.Inference
+import lore.compiler.inference.Inference
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.scopes.{TypeScope, VariableScope}

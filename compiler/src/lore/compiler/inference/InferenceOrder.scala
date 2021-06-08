@@ -1,4 +1,4 @@
-package lore.compiler.phases.transformation.inference
+package lore.compiler.inference
 
 import lore.compiler.types.Type
 import lore.compiler.utils.CollectionExtensions.SetExtension

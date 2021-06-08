@@ -1,7 +1,7 @@
 package lore.compiler.phases.transformation
 
 import lore.compiler.core.Position
-import lore.compiler.phases.transformation.inference.{InferenceVariable, TypingJudgment}
+import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.{CallTarget, MultiFunctionDefinition}
