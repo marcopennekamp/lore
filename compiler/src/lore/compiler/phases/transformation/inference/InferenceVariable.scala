@@ -1,8 +1,7 @@
 package lore.compiler.phases.transformation.inference
 
 import lore.compiler.phases.transformation.inference.Inference.Assignments
-import lore.compiler.phases.transformation.inference.InferenceBounds.BoundType
-import lore.compiler.types.Type
+import lore.compiler.types.{BasicType, Type}
 
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -36,7 +35,7 @@ object InferenceVariable {
     * The bounds of the given inference variable, no matter if it's already defined or not.
     */
   def effectiveBounds(iv: InferenceVariable, assignments: Assignments): InferenceBounds = {
-    assignments.getOrElse(iv, InferenceBounds(iv, None, None))
+    assignments.getOrElse(iv, InferenceBounds(iv, BasicType.Nothing, BasicType.Any))
   }
 
 }

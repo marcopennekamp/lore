@@ -57,14 +57,7 @@ object Inference {
     * Instantiates all defined inference variables in `tpe` to the respective bound.
     */
   def instantiateByBound(assignments: Assignments, tpe: Type, boundType: BoundType): Type = {
-    instantiate(
-      assignments,
-      tpe,
-      bounds => boundType match {
-        case BoundType.Lower => bounds.lowerOrNothing
-        case BoundType.Upper => bounds.upperOrAny
-      }
-    )
+    instantiate(assignments, tpe, _.get(boundType))
   }
 
   /**

@@ -1,9 +1,5 @@
 package lore.compiler.types
 
-// TODO: Do we rather need to define type equality in terms of subtyping (t1 <= t2 && t2 <= t1)? I suspect
-//       new edge cases especially with the introduction of polymorphic types. Of course, this might severely
-//       affect performance and thus needs to be looked at first.
-
 object Subtyping {
 
   /**

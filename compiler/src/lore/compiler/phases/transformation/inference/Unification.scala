@@ -33,18 +33,18 @@ object Unification {
     val bounds2 = effectiveBounds(iv2, assignments)
 
     val compilationLower = if (boundTypes.contains(BoundType.Lower)) {
-      val lower = Type.maxOrEqual(bounds1.lowerOrNothing, bounds2.lowerOrNothing) match {
+      val lower = Type.maxOrEqual(bounds1.lower, bounds2.lower) match {
         case Some(t) => t
-        case None => return Compilation.fail(EqualTypesExpected(bounds1.lowerOrNothing, bounds2.lowerOrNothing, context))
+        case None => return Compilation.fail(EqualTypesExpected(bounds1.lower, bounds2.lower, context))
       }
 
       narrowLowerBound(assignments, iv1, lower, context).flatMap(narrowLowerBound(_, iv2, lower, context))
     } else Compilation.succeed(assignments)
 
     compilationLower.flatMap { assignments2 =>
-      val upper = Type.minOrEqual(bounds1.upperOrAny, bounds2.upperOrAny) match {
+      val upper = Type.minOrEqual(bounds1.upper, bounds2.upper) match {
         case Some(t) => t
-        case None => return Compilation.fail(EqualTypesExpected(bounds1.upperOrAny, bounds2.upperOrAny, context))
+        case None => return Compilation.fail(EqualTypesExpected(bounds1.upper, bounds2.upper, context))
       }
 
       narrowUpperBound(assignments2, iv1, upper, context).flatMap(narrowUpperBound(_, iv2, upper, context))
