@@ -1,9 +1,11 @@
 package lore.compiler.phases.transformation.inference
 
-import lore.compiler.core.Compilation
+import lore.compiler.CompilerOptions
+import lore.compiler.core.{Compilation, Errors, FeedbackPrinter, Result}
 import lore.compiler.phases.transformation.inference.InferenceBounds.BoundType
 import lore.compiler.semantics.Registry
 import lore.compiler.types._
+import lore.compiler.utils.Timer.timed
 
 object Inference {
 
@@ -14,6 +16,27 @@ object Inference {
     // their order of declaration. In addition, this will give the algorithm the best chance at resolving type
     // inference in one go, as the flow of typing most often follows the natural judgment order.
     SimpleResolution.infer(Map.empty, judgments)
+  }
+
+  def inferVerbose(judgments: Vector[TypingJudgment], label: String)(implicit registry: Registry): Compilation[Assignments] = {
+    println(s"Typing judgments for $label:")
+    judgments.foreach(println)
+    println()
+
+    timed(s"Inference for $label") {
+      infer(judgments) match {
+        case result@Result(_, _) =>
+          println("Inference was successful with the following inferred types:")
+          println(result.value.stringified)
+          println()
+          result
+        case errors@Errors(_, _) =>
+          println("Inference failed with the following feedback:")
+          println(FeedbackPrinter.printWithOptions(errors.feedback))
+          println()
+          errors
+      }
+    }
   }
 
   /**

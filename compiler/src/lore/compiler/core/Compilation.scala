@@ -19,6 +19,11 @@ sealed trait Compilation[+A] {
   def infos: Vector[InfoFeedback]
 
   /**
+    * A combined list of all error and info feedback.
+    */
+  def feedback: Vector[Feedback]
+
+  /**
     * Returns the result value or the alternative if this compilation is an error.
     */
   def getOrElse[B >: A](alternative: => B): B = this match {
@@ -106,9 +111,12 @@ sealed trait Compilation[+A] {
 }
 
 case class Result[+A](value: A, override val infos: Vector[InfoFeedback]) extends Compilation[A] {
+  override def feedback: Vector[Feedback] = infos
   override def isError = false
 }
+
 case class Errors[+A](errors: Vector[Error], override val infos: Vector[InfoFeedback]) extends Compilation[A] {
+  override def feedback: Vector[Feedback] = errors ++ infos
   override def isError = true
 }
 

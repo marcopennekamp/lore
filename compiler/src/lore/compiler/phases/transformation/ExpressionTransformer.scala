@@ -1,7 +1,7 @@
 package lore.compiler.phases.transformation
 
+import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, Errors, Result}
 import lore.compiler.feedback.TypingFeedback.SubtypeExpected
 import lore.compiler.phases.transformation.inference.Inference
 import lore.compiler.semantics.Registry
@@ -10,7 +10,6 @@ import lore.compiler.semantics.scopes.{TypeScope, VariableScope}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.types.{ProductType, Type}
-import lore.compiler.utils.Timer.timed
 
 object ExpressionTransformer {
 
@@ -30,27 +29,7 @@ object ExpressionTransformer {
     for {
       expression <- TopLevelExprVisitor.visitCompilation(visitor)(node)
 
-      _ = {
-        println(s"Typing judgments for $name:")
-        visitor.typingJudgments.foreach(println)
-        println()
-      }
-      inferredTypes <- timed(s"Inference for $name") {
-        Inference.infer(visitor.typingJudgments) match {
-          case result@Result(_, _) => result
-          case errors@Errors(_, _) =>
-            println("Inference failed!")
-            println()
-            println()
-            errors
-        }
-      }
-      _ = {
-        println("Inferred types:")
-        println(inferredTypes)
-        println()
-        println()
-      }
+      inferredTypes <- Inference.inferVerbose(visitor.typingJudgments, name)
 
       rehydrationVisitor = new TypeRehydrationVisitor(inferredTypes)
       typedExpression = ExpressionVisitor.visit(rehydrationVisitor)(expression)
