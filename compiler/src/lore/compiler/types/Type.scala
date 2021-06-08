@@ -222,7 +222,9 @@ object Type {
     t match {
       case SumType(types) => infix(" | ", TypePrecedence.Sum, types.toVector)
       case IntersectionType(types) => infix(" & ", TypePrecedence.Intersection, types.toVector)
-      case ProductType(elements) => s"(${elements.map(toString(_, verbose)).mkString(", ")})"
+      case ProductType(elements) =>
+        if (elements.isEmpty) "Unit"
+        else s"(${elements.map(toString(_, verbose)).mkString(", ")})"
       case FunctionType(input, output) => infix(" => ", TypePrecedence.Function, Vector(input, output))
       case ListType(element) => s"[${toString(element, verbose)}]"
       case MapType(key, value) => infix(" -> ", TypePrecedence.Map, Vector(key, value))
