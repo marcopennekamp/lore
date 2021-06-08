@@ -128,7 +128,7 @@ object MultiFunctionConstraints {
       successors.map { successor =>
         val child = successor.value
         parent.instantiate(child.signature.inputType).flatMap { parentInstance =>
-          val errors = if (!(child.signature.outputType <= parentInstance.signature.outputType)) {
+          val errors = if (child.signature.outputType </= parentInstance.signature.outputType) {
             Vector(IncompatibleOutputTypes(child.signature, parent.signature, parentInstance.signature))
           } else Vector.empty
           Verification.fromErrors(errors).flatMap(_ => successors.map(verifyHierarchyNode).simultaneous.verification)
