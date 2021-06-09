@@ -11,6 +11,20 @@
 function length(list: [A]): Int where A = dynamic[Int]('Lore.lists.length', list)
 function get(list: [A], index: Int): A where A = dynamic[A]('Lore.lists.get', list, index)
 
+function map(list: [A], f: B => C): [C] where A, B >: A, C = for (a <- list) f(a)
+
+function foreach(list: [A], f: B => Unit): Unit where A, B >: A = for (a <- list) f(a)
+
+function filter(list: [A], predicate: B => Boolean): [A] where A, B >: A = {
+  let mut result: [A] = []
+  for (a <- list) {
+    if (predicate(a)) {
+      result = result :+ a
+    }
+  }
+  result
+}
+
 function concat(as: [A], bs: [B]): [A | B] where A, B = {
   let mut result: [A | B] = as
   for (b <- bs) {
