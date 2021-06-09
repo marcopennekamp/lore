@@ -92,7 +92,7 @@ export class SubtypingEnvironment {
 
       case Kind.Sum:
         if (t2.kind === Kind.Sum) {
-          if (this.sumSubtypeSum(<SumType> t1, <SumType> t2)) return true
+          return this.sumSubtypeSum(<SumType> t1, <SumType> t2)
         } else {
           if (this.sumSubtypeType(<SumType> t1, t2)) return true
         }
@@ -100,47 +100,43 @@ export class SubtypingEnvironment {
 
       case Kind.Intersection:
         if (t2.kind === Kind.Intersection) {
-          if (this.intersectionSubtypeIntersection(<IntersectionType> t1, <IntersectionType> t2)) return true
+          return this.intersectionSubtypeIntersection(<IntersectionType> t1, <IntersectionType> t2)
         } else {
           if (this.intersectionSubtypeType(<IntersectionType> t1, t2)) return true
         }
         break
 
       case Kind.Product:
-        if (t2.kind === Kind.Product && this.productSubtypeProduct(<ProductType> t1, <ProductType> t2)) return true
+        if (t2.kind === Kind.Product) {
+          return this.productSubtypeProduct(<ProductType> t1, <ProductType> t2)
+        }
         break
 
       case Kind.Function:
         if (t2.kind === Kind.Function) {
           const f1 = <FunctionType> t1
           const f2 = <FunctionType> t2
-          if (this.isSubtype(f2.input, f1.input) && this.isSubtype(f1.output, f2.output)) return true
+          return this.isSubtype(f2.input, f1.input) && this.isSubtype(f1.output, f2.output)
         }
         break
 
       case Kind.List:
-        if (
-            t2.kind === Kind.List &&
-            this.isSubtype((<ListType> t1).element, (<ListType> t2).element)
-        ) {
-          return true
+        if (t2.kind === Kind.List) {
+          return this.isSubtype((<ListType> t1).element, (<ListType> t2).element)
         }
         break
 
       case Kind.Map:
-        if (
-            t2.kind === Kind.Map &&
-            areEqual((<MapType> t1).key, (<MapType> t2).key) &&
-            areEqual((<MapType> t1).value, (<MapType> t2).value)
-        ) {
-          return true
+        if (t2.kind === Kind.Map) {
+          const m1 = <MapType> t1
+          const m2 = <MapType> t2
+          return areEqual(m1.key, m2.key) && areEqual(m1.value, m2.value)
         }
         break
 
-      // This needs to be placed lower than the Kind.Struct case, because structs handle struct/shape subtyping.
       case Kind.Shape:
-        if (t2.kind === Kind.Shape && this.shapeSubtypeShape(<ShapeType> t1, <ShapeType> t2)) {
-          return true
+        if (t2.kind === Kind.Shape) {
+          return this.shapeSubtypeShape(<ShapeType> t1, <ShapeType> t2)
         }
         break
     }
