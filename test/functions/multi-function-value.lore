@@ -1,0 +1,19 @@
+trait Animal
+struct Cat implements Animal { fame: Real }
+struct Dog implements Animal { fame: Real }
+
+trait Vehicle
+struct Car implements Vehicle
+struct Bicycle implements Vehicle
+
+function coolness(real: Real): Real = 3.14
+
+function coolness(animal: Animal): Real
+function coolness(cat: Cat): Real = 5.0 * cat.fame
+function coolness(dog: Dog): Real = 3.0 * dog.fame
+
+function coolness(vehicle: Vehicle): Real
+function coolness(car: Car): Real = 2.7
+function coolness(bicycle: Bicycle): Real = 5.2
+
+function test(): [Real] = map([Cat(1.2), Dog(5), Dog(3.50), Cat(7.7)], coolness)

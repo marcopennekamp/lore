@@ -115,6 +115,8 @@ class InferringExpressionTransformationVisitor(
       typingJudgments = typingJudgments :+ TypingJudgment.MemberAccess(memberType, expression.tpe, name, position)
       Expression.UnresolvedMemberAccess(expression, name, memberType, position).compiled
 
+    // TODO: This just leads to a match error, because not all inference variables are getting assigned:
+    //          let f = x => x == 1
     case AnonymousFunctionNode(parameterNodes, _, position) =>
       val parameters = parameterNodes.map { case AnonymousFunctionParameterNode(name, _, position) =>
         // TODO: The fact that we have to resolve the variable again, despite it being declared within the before hook,

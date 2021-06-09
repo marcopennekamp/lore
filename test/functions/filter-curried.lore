@@ -1,0 +1,13 @@
+function filterCurried(f: A => Boolean): [A] => [A] where A = {
+  list => filter(list, f)
+}
+
+function test(): Any = {
+  let data = [
+    [1, 2, 3, 4, 5],
+    [4, 8, 11, 15, 6],
+    [],
+    [1, 1, 1, 1, 1]
+  ]
+  map(data, filterCurried(x => remainder(x, 2) == 0))
+}
