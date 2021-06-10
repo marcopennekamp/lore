@@ -1,9 +1,10 @@
 package lore.compiler.inference.matchers
 
+import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.feedback.TypingFeedback.SubtypeExpected
 import lore.compiler.inference.Inference.{Assignments, isFullyInstantiated}
-import lore.compiler.inference.{InferenceVariable, TypingJudgment}
+import lore.compiler.inference.{Inference, InferenceVariable, TypingJudgment}
 import lore.compiler.types._
 
 object SubtypingMatcher {
@@ -40,7 +41,7 @@ object SubtypingMatcher {
 
       case (p1: ProductType, p2: ProductType) => Matchers.matchTuple(p1, p2, assignments, rec, expectedSubtype)
 
-      case (f1: FunctionType, f2: FunctionType) => rec(assignments, f1.input, f2.input).flatMap(rec(_, f1.output, f2.output))
+      case (f1: FunctionType, f2: FunctionType) => rec(assignments, f2.input, f1.input).flatMap(rec(_, f1.output, f2.output))
 
       case (l1: ListType, l2: ListType) => rec(assignments, l1.element, l2.element)
 
@@ -57,6 +58,12 @@ object SubtypingMatcher {
       case (_, _: IntersectionType) => unsupported
       case (_: SumType, _) => unsupported
       case (_, _: SumType) => unsupported
+
+      // Decides subtype relationships such as `Nothing <:< [iv]`, where the Nothing cannot be matched directly to the
+      // type on the right-hand side. This would ordinarily be caught by the "fully instantiated" type check above when
+      // both t1 and t2 are fully instantiated, but not when t1 or t2 contain inference variables.
+      case (BasicType.Nothing, _) => assignments.compiled
+      case (_, BasicType.Any) => assignments.compiled
 
       case _ => expectedSubtype
     }

@@ -14,7 +14,8 @@ object FitsJudgmentResolver extends JudgmentResolver.Nondirectional[TypingJudgme
     assignments: Assignments,
   )(implicit registry: Registry): Compilation[Assignments] = {
     SubtypingMatcher.matchSubtype(
-      Matchers.unsupported,
+      // The first case is necessary for matching contravariant types such as function types.
+      (iv1, t2, assignments, context) => narrowBounds(assignments, iv1, t2, context),
       (t1, iv2, assignments, context) => narrowBounds(assignments, iv2, t1, context),
       Matchers.unsupported,
     )(instantiate(assignments, judgment.t1, _.candidateType), judgment.t2, assignments, judgment)

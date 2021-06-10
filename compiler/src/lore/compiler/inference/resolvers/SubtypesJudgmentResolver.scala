@@ -4,29 +4,42 @@ import lore.compiler.core.Compilation
 import lore.compiler.inference.Inference.{Assignments, instantiateByBound}
 import lore.compiler.inference.InferenceBounds.{BoundType, ensureBoundSubtypes, ensureBoundSupertypes}
 import lore.compiler.inference.TypingJudgment
-import lore.compiler.inference.matchers.{Matchers, SubtypingMatcher}
+import lore.compiler.inference.matchers.SubtypingMatcher
 import lore.compiler.semantics.Registry
+import lore.compiler.types.Type
 
 object SubtypesJudgmentResolver extends JudgmentResolver[TypingJudgment.Subtypes] {
+
+  // TODO: With the new ensureSubtypes, there's no need for direction anymore. That makes more sense, anyway. So turn
+  //       this into a nondirectional judgment resolver.
 
   override def forwards(
     judgment: TypingJudgment.Subtypes,
     assignments: Assignments,
   )(implicit registry: Registry): Compilation[Assignments] = {
-    ensureSubtypes(judgment.t1, instantiateByBound(assignments, judgment.t2, BoundType.Upper), assignments, judgment)
+    ensureSubtypes(judgment.t1, judgment.t2, assignments, judgment)
   }
 
   override def backwards(
     judgment: TypingJudgment.Subtypes,
     assignments: Assignments,
   )(implicit registry: Registry): Compilation[Assignments] = {
-    ensureSubtypes(instantiateByBound(assignments, judgment.t1, BoundType.Lower), judgment.t2, assignments, judgment)
+    ensureSubtypes(judgment.t1, judgment.t2, assignments, judgment)
   }
 
-  private val ensureSubtypes = SubtypingMatcher.matchSubtype(
-    (iv1, t2, assignments, context) => ensureBoundSubtypes(assignments, iv1, t2, context),
-    (t1, iv2, assignments, context) => ensureBoundSupertypes(assignments, iv2, t1, context),
-    Matchers.unsupported,
-  ) _
+  private val ensureSubtypes: (Type, Type, Assignments, TypingJudgment) => Compilation[Assignments] = SubtypingMatcher.matchSubtype(
+    (iv1, t2, assignments, context) =>
+      ensureBoundSubtypes(assignments, iv1, instantiateByBound(assignments, t2, BoundType.Upper), context).flatMap {
+        assignments2 => ensureSubtypes(instantiateByBound(assignments2, iv1, BoundType.Lower), t2, assignments2, context)
+      },
+    (t1, iv2, assignments, context) =>
+      ensureBoundSupertypes(assignments, iv2, instantiateByBound(assignments, t1, BoundType.Lower), context).flatMap {
+        assignments2 => ensureSubtypes(t1, instantiateByBound(assignments2, iv2, BoundType.Upper), assignments2, context)
+      },
+    (iv1, iv2, assignments, context) =>
+      ensureBoundSupertypes(assignments, iv2, instantiateByBound(assignments, iv1, BoundType.Lower), context).flatMap {
+        assignments2 => ensureBoundSubtypes(assignments2, iv1, instantiateByBound(assignments2, iv2, BoundType.Upper), context)
+      }
+  )
 
 }
