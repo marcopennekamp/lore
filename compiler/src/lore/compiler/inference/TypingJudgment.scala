@@ -90,7 +90,7 @@ object TypingJudgment {
     * The target type is taken from the candidate type of `source` in resolution (1) to produce stable assignments. The
     * member's type held in `target` must always be equal to `source`'s member type, so the bounds must be fixed right
     * away. (The bounds of `source` are already unchanging, because it's fully inferred.) For an example showing why
-    * this is important, see test:inference:0001.
+    * this is important, see test:inference:member:0001.
     *
     * Resolution (2) is used to infer the `source` type from the `target` member type (backwards inference). We cannot
     * infer the lower bound of `source` this way because shape types cannot subtype structs and shape types also aren't
