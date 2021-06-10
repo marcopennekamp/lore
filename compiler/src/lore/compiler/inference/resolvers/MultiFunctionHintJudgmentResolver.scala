@@ -101,7 +101,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       val supplementalJudgments = lowerBoundsJudgments ++ upperBoundsJudgments ++ argumentJudgments ++ resultJudgments
       val allJudgments = supplementalJudgments ++ influencingJudgments
 
-      Inference.logger.trace(s"Multi function hint judgments:${allJudgments.mkString("\n")}")
+      Inference.logger.trace(s"Multi-function hint judgments:\n${allJudgments.mkString("\n")}")
 
       SimpleResolution.infer(assignments, allJudgments).map {
         assignments2 =>
