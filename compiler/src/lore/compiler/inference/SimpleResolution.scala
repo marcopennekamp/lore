@@ -151,9 +151,4 @@ object SimpleResolution {
     types.forall(isFullyInferred(_, assignments, influenceGraph))
   }
 
-  def logIterationResult(result: JudgmentResolver.Result): JudgmentResolver.Result = {
-
-    result
-  }
-
 }
