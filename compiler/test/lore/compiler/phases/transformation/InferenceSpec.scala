@@ -1,27 +1,51 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.core.Position
-import lore.compiler.phases.transformation.inference.{Inference, InferenceVariable, TypingJudgment}
-import lore.compiler.types.{BasicType, ListType, ShapeType, TraitType, TypeSpec}
+import lore.compiler.core.{Compilation, Errors, Position}
+import lore.compiler.feedback.Feedback
+import lore.compiler.inference.Inference.Assignments
+import lore.compiler.inference.{Inference, InferenceBounds, InferenceVariable, TypingJudgment}
+import lore.compiler.types._
+import org.scalatest.Assertion
 
 class InferenceSpec extends TypeSpec {
 
-  // TODO: Turn these into real tests.
+  def assertSuccess(assignments: (InferenceVariable, InferenceBounds)*)(result: Compilation[Assignments]): Assertion = {
+    result shouldEqual Compilation.succeed(assignments.toMap)
+  }
 
-  "Inference" should "infer a super easy problem" in {
+  def assertFailure(error: Feedback.Error)(result: Compilation[Assignments]): Assertion = {
+    result shouldEqual Compilation.fail(error)
+  }
+
+  def assertFailureDisregardingErrors(result: Compilation[Assignments]): Assertion = {
+    result should matchPattern { case Errors(_, _) => }
+  }
+
+  object Assignment {
+    def lower(iv: InferenceVariable, lowerBound: Type): (InferenceVariable, InferenceBounds) = assignment(iv, lowerBound, any)
+    def upper(iv: InferenceVariable, upperBound: Type): (InferenceVariable, InferenceBounds) = assignment(iv, nothing, upperBound)
+    def fixed(iv: InferenceVariable, bound: Type): (InferenceVariable, InferenceBounds) = assignment(iv, bound, bound)
+    def assignment(iv: InferenceVariable, lowerBound: Type, upperBound: Type): (InferenceVariable, InferenceBounds) = iv -> InferenceBounds(iv, lowerBound, upperBound)
+  }
+
+  "Inference" should "infer the best assignments from relationship `a :=: b :=: c` and `a :=: real`" in {
     val a = new InferenceVariable(Some("a"))
     val b = new InferenceVariable(Some("b"))
     val c = new InferenceVariable(Some("c"))
 
     val result = Inference.infer(Vector(
-      TypingJudgment.Equals(a, BasicType.Real, Position.internal),
+      TypingJudgment.Equals(a, real, Position.internal),
       TypingJudgment.Equals(b, a, Position.internal),
       TypingJudgment.Equals(a, b, Position.internal),
       TypingJudgment.Equals(c, b, Position.internal),
       TypingJudgment.Equals(c, a, Position.internal),
     ))(null)
 
-    println(result)
+    assertSuccess(
+      Assignment.fixed(a, real),
+      Assignment.fixed(b, real),
+      Assignment.fixed(c, real),
+    )(result)
   }
 
   it should "infer the result type of an addition" in {
@@ -30,18 +54,22 @@ class InferenceSpec extends TypeSpec {
     val c = new InferenceVariable(Some("c"))
 
     val result = Inference.infer(Vector(
-      TypingJudgment.Subtypes(a, BasicType.Real, Position.internal),
-      TypingJudgment.Subtypes(b, BasicType.Real, Position.internal),
+      TypingJudgment.Subtypes(a, real, Position.internal),
+      TypingJudgment.Subtypes(b, real, Position.internal),
       TypingJudgment.LeastUpperBound(c, Vector(a, b), Position.internal),
     ))(null)
 
-    println(result)
+    assertSuccess(
+      Assignment.upper(a, real),
+      Assignment.upper(b, real),
+      Assignment.upper(c, real),
+    )(result)
   }
 
   it should "infer the result of an appends operation" in {
-    val list = ListType(BasicType.Int)
+    val list = ListType(int)
     val element = new InferenceVariable(Some("element"))
-    val newElement = BasicType.Real
+    val newElement = real
     val combined = new InferenceVariable(Some("combined"))
 
     val result = Inference.infer(Vector(
@@ -49,23 +77,59 @@ class InferenceSpec extends TypeSpec {
       TypingJudgment.LeastUpperBound(combined, Vector(element, newElement), Position.internal),
     ))(null)
 
-    println(result)
+    assertSuccess(
+      Assignment.fixed(element, int),
+      Assignment.fixed(combined, real),
+    )(result)
   }
 
-  it should "reject an incorrectly narrowed member type (test:inference:0001)" in {
+  // TODO: Add a test that ensures that Assign always produces fixed bounds.
+
+  it should "infer the best assignments from judgment (iv1, Int) :=: (Real, iv2)" in {
+    val iv1 = new InferenceVariable(Some("iv1"))
+    val iv2 = new InferenceVariable(Some("iv2"))
+
+    val result = Inference.infer(Vector(
+      TypingJudgment.Equals((iv1, int), (real, iv2), Position.internal)
+    ))(null)
+
+    assertSuccess(
+      Assignment.fixed(iv1, real),
+      Assignment.fixed(iv2, int),
+    )(result)
+  }
+
+  it should "infer the best assignments from judgment (iv1, Int) <:< (Real, iv2)" in {
+    val iv1 = new InferenceVariable(Some("iv1"))
+    val iv2 = new InferenceVariable(Some("iv2"))
+
+    val result = Inference.infer(Vector(
+      TypingJudgment.Subtypes((iv1, int), (real, iv2), Position.internal)
+    ))(null)
+
+    assertSuccess(
+      Assignment.upper(iv1, real),
+      Assignment.lower(iv2, int),
+    )(result)
+  }
+
+  it should "reject an incorrect subtyping relationship with a member type (test:inference:0001)" in {
     val C = new TraitType("C", Vector.empty)
     val B = new TraitType("B", Vector(C))
 
     val p = new InferenceVariable(Some("p"))
     val x = new InferenceVariable(Some("x"))
 
+    // This test case ensures that a member type cannot be narrowed further after it is decided. `x` should not be
+    // typed as `B`, because we don't know whether `p`'s member is just a `C` or may always be a `B`.
+    val memberAccess = TypingJudgment.MemberAccess(x, p, "m", Position.internal)
     val result = Inference.infer(Vector(
+      TypingJudgment.Subtypes(p, ShapeType("m" -> C), Position.internal),
+      memberAccess,
       TypingJudgment.Subtypes(x, B, Position.internal),
-      TypingJudgment.Equals(p, ShapeType("m" -> C), Position.internal),
-      TypingJudgment.MemberAccess(x, p, "m", Position.internal),
     ))(null)
 
-    println(result)
+    assertFailureDisregardingErrors(result)
   }
 
   it should "infer a prematurely narrowed member type correctly (test:inference:0002)" in {
@@ -89,18 +153,11 @@ class InferenceSpec extends TypeSpec {
       TypingJudgment.MemberAccess(x, p, "m", Position.internal),
     ))(null)
 
-    println(result)
-  }
-
-  it should "infer the result of a judgment (iv1, Int) :=: (Real, iv2)" in {
-    val iv1 = new InferenceVariable(Some("iv1"))
-    val iv2 = new InferenceVariable(Some("iv2"))
-
-    val result = Inference.infer(Vector(
-      TypingJudgment.Equals((iv1, BasicType.Int), (BasicType.Real, iv2), Position.internal)
-    ))(null)
-
-    println(result)
+    assertSuccess(
+      Assignment.upper(p, ShapeType("m" -> B)),
+      Assignment.fixed(x, B),
+      Assignment.fixed(z, B),
+    )(result)
   }
 
   it should "infer a complex list of functions" in {
