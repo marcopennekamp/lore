@@ -82,10 +82,8 @@ object SimpleResolution {
         } else None
 
       case TypingJudgment.Subtypes(t1, t2, _) =>
-        if (isFullyInferred(t2, assignments, influenceGraph)) {
+        if (isFullyInferred(t1, assignments, influenceGraph) || isFullyInferred(t2, assignments, influenceGraph)) {
           resolveTowards(ResolutionDirection.Forwards)
-        } else if (isFullyInferred(t1, assignments, influenceGraph)) {
-          resolveTowards(ResolutionDirection.Backwards)
         } else None
 
       case TypingJudgment.Assign(_, source, _) =>

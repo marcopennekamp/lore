@@ -8,19 +8,9 @@ import lore.compiler.inference.matchers.SubtypingMatcher
 import lore.compiler.semantics.Registry
 import lore.compiler.types.Type
 
-object SubtypesJudgmentResolver extends JudgmentResolver[TypingJudgment.Subtypes] {
+object SubtypesJudgmentResolver extends JudgmentResolver.Nondirectional[TypingJudgment.Subtypes] {
 
-  // TODO: With the new ensureSubtypes, there's no need for direction anymore. That makes more sense, anyway. So turn
-  //       this into a nondirectional judgment resolver.
-
-  override def forwards(
-    judgment: TypingJudgment.Subtypes,
-    assignments: Assignments,
-  )(implicit registry: Registry): Compilation[Assignments] = {
-    ensureSubtypes(judgment.t1, judgment.t2, assignments, judgment)
-  }
-
-  override def backwards(
+  override def nondirectional(
     judgment: TypingJudgment.Subtypes,
     assignments: Assignments,
   )(implicit registry: Registry): Compilation[Assignments] = {

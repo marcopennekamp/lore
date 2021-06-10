@@ -44,15 +44,13 @@ object CycleResolution {
 
   def isApplicable(judgment: TypingJudgment, influenceGraph: InfluenceGraph)(implicit registry: Registry): Option[ResolutionDirection] = judgment match {
     case TypingJudgment.Equals(t1, t2, _) =>
-      if (!hasExternalDependencies(t1, t2, influenceGraph) || !hasExternalDependencies(t2, t1, influenceGraph)) {
+      if (!bothHaveExternalDependencies(t1, t2, influenceGraph)) {
         Some(ResolutionDirection.Forwards)
       } else None
 
     case TypingJudgment.Subtypes(t1, t2, _) =>
-      if (!hasExternalDependencies(t2, t1, influenceGraph)) {
+      if (!bothHaveExternalDependencies(t1, t2, influenceGraph)) {
         Some(ResolutionDirection.Forwards)
-      } else if (!hasExternalDependencies(t1, t2, influenceGraph)) {
-        Some(ResolutionDirection.Backwards)
       } else None
 
     case TypingJudgment.LeastUpperBound(target, types, _) =>
@@ -87,6 +85,10 @@ object CycleResolution {
 
   def hasExternalDependencies(tpe: Type, internalType: Type, influenceGraph: InfluenceGraph): Boolean = {
     hasExternalDependencies(Inference.variables(tpe), Inference.variables(internalType), influenceGraph)
+  }
+
+  def bothHaveExternalDependencies(t1: Type, t2: Type, influenceGraph: InfluenceGraph): Boolean = {
+    hasExternalDependencies(t1, t2, influenceGraph) && hasExternalDependencies(t2, t1, influenceGraph)
   }
 
 }

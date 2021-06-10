@@ -27,12 +27,12 @@ object TypingJudgment {
     * A Subtypes judgment `t1 :<: t2` can inform both the upper bound of t1 as well as the lower bound of t2:
     *
     *   - In the upper-bound case, we instantiate t2's inference variables with their upper bounds. Consider the
-    *     following example: `iv1 :<: iv2[Int, Real]`. Because iv2 can at most be `Real`, iv1's domain must also be
-    *     restricted to be at most `Real`. If we gave iv1 the upper bound `Int`, we might later type iv2 as `Real` and
-    *     iv1 would have an upper bound that's too narrow.
-    *   - The lower-bound case is the dual to the upper-bound case. Given `iv2[Int, Real] :<: iv1`, we must assign to
-    *     iv1 the lower bound `Int`. If we gave iv1 the lower bound `Real`, we might later type iv2 as `Int` and iv1
-    *     would have a lower bound that's too narrow.
+    *     following example: `iv1 :<: iv2` with `iv2(Int, Real)`. Because iv2 can at most be `Real`, iv1's domain must
+    *     also be restricted to be at most `Real`. If we gave iv1 the upper bound `Int`, we might later type iv2 as
+    *     `Real` and iv1 would have an upper bound that's too narrow.
+    *   - The lower-bound case is the dual to the upper-bound case. Given `iv2 :<: iv1` with `iv2(Int, Real)`, we must
+    *     assign to iv1 the lower bound `Int`. If we gave iv1 the lower bound `Real`, we might later type iv2 as `Int`
+    *     and iv1 would have a lower bound that's too narrow.
     */
   case class Subtypes(t1: Type, t2: Type, position: Position) extends TypingJudgment
 
