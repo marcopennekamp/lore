@@ -148,4 +148,20 @@ object TypingJudgment {
     case hint@MultiFunctionHint(mf, _, _) => s"${mf.name}::hint(${hint.argumentTypes.mkString(", ")}) <dependency ${hint.dependencyVariable}>"
   }
 
+  /**
+    * Collects all inference variables contained in the given judgment.
+    */
+  def variables(judgment: TypingJudgment): Set[InferenceVariable] = judgment match {
+    case Equals(t1, t2, _) => Inference.variables(t1) ++ Inference.variables(t2)
+    case Subtypes(t1, t2, _) => Inference.variables(t1) ++ Inference.variables(t2)
+    case Assign(target, source, _) => Inference.variables(target) ++ Inference.variables(source)
+    case Fits(t1, t2, _) => Inference.variables(t1) ++ Inference.variables(t2)
+    case LeastUpperBound(target, types, _) => Set(target) ++ types.flatMap(Inference.variables)
+    case MemberAccess(target, source, _, _) => Set(target) ++ Inference.variables(source)
+    case ElementType(target, collection, _) => Set(target) ++ Inference.variables(collection)
+    case MultiFunctionCall(target, _, arguments, _) => Set(target) ++ arguments.flatMap(Inference.variables)
+    case MultiFunctionValue(target, _, _) => Set(target)
+    case hint@MultiFunctionHint(_, arguments, _) => Set(hint.dependencyVariable) ++ arguments.map(_.tpe).flatMap(Inference.variables)
+  }
+
 }

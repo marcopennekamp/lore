@@ -53,7 +53,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
 
     // Performance shortcut: If all inference variables are inferred to a point that they cannot change further, we can
     // skip the MultiFunctionHint, because it will provide no useful information.
-    if (arguments.forall(argument => Inference.variables(argument.tpe).forall(v => assignments.get(v).exists(InferenceBounds.areFixed)))) {
+    if (arguments.forall(argument => Inference.variables(argument.tpe).forall(iv => InferenceVariable.isFixed(iv, assignments)))) {
       return Compilation.succeed((assignments, remainingJudgments))
     }
 
@@ -103,7 +103,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
 
       Inference.logger.trace(s"Multi-function hint judgments:\n${allJudgments.mkString("\n")}")
 
-      SimpleResolution.infer(assignments, allJudgments).map {
+      SimpleResolution.infer(InferenceBounds.prefill(assignments, allJudgments), allJudgments).map {
         assignments2 =>
           // We have to throw away the inference variables that only encode the function's type variables again, as
           // noted above.
@@ -150,7 +150,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
   ): Vector[TypingJudgment] = {
     val argumentInferenceVariables = arguments.flatMap(Inference.variables).toSet
     val dependencies = InferenceOrder.findDependencies(influenceGraph, argumentInferenceVariables) ++ argumentInferenceVariables
-    val unfixedDependencies = dependencies.filterNot(iv => assignments.get(iv).exists(InferenceBounds.areFixed))
+    val unfixedDependencies = dependencies.filterNot(InferenceVariable.isFixed(_, assignments))
     InferenceOrder.findJudgmentsInfluencing(remainingJudgments, unfixedDependencies)
   }
 

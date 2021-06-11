@@ -1,7 +1,8 @@
 package lore.compiler.inference
 
+import lore.compiler.core.CompilationException
 import lore.compiler.inference.Inference.Assignments
-import lore.compiler.types.{BasicType, Type}
+import lore.compiler.types.Type
 
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -27,15 +28,16 @@ object InferenceVariable {
   private val nameCounter: AtomicInteger = new AtomicInteger()
 
   /**
-    * Whether the given inference variable is defined at all.
+    * Get the bounds of the given inference variable. If the inference variable isn't contained in `assignments`, a
+    * compilation exception is thrown.
     */
-  def isDefined(iv: InferenceVariable, assignments: Assignments): Boolean = assignments.contains(iv)
+  def bounds(iv: InferenceVariable, assignments: Assignments): InferenceBounds = {
+    assignments.getOrElse(iv, throw CompilationException(s"The bounds of inference variable $iv should have been defined by now."))
+  }
 
   /**
-    * The bounds of the given inference variable, no matter if it's already defined or not.
+    * Whether the given inference variable is fixed, which occurs when its bounds are fixed.
     */
-  def effectiveBounds(iv: InferenceVariable, assignments: Assignments): InferenceBounds = {
-    assignments.getOrElse(iv, InferenceBounds(iv, BasicType.Nothing, BasicType.Any))
-  }
+  def isFixed(iv: InferenceVariable, assignments: Assignments): Boolean = InferenceBounds.areFixed(bounds(iv, assignments))
 
 }

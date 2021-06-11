@@ -137,8 +137,7 @@ object SimpleResolution {
     *    change further, because it has no "influences" left.
     */
   private def isFullyInferred(iv: InferenceVariable, assignments: Assignments, influenceGraph: InfluenceGraph): Boolean = {
-    val bounds = InferenceVariable.effectiveBounds(iv, assignments)
-    InferenceBounds.areFixed(bounds) || !influenceGraph.find(iv).exists(_.hasPredecessors)
+    InferenceVariable.isFixed(iv, assignments) || !influenceGraph.find(iv).exists(_.hasPredecessors)
   }
 
   private def isFullyInferred(tpe: Type, assignments: Assignments, influenceGraph: InfluenceGraph): Boolean = {

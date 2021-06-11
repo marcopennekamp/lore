@@ -4,7 +4,6 @@ import lore.compiler.core.Compilation
 import lore.compiler.feedback.TypingFeedback.EqualTypesExpected
 import lore.compiler.inference.Inference.{Assignments, instantiateByBound, isFullyInstantiated}
 import lore.compiler.inference.InferenceBounds.{BoundType, narrowBound, narrowLowerBound, narrowUpperBound}
-import lore.compiler.inference.InferenceVariable.{effectiveBounds, isDefined}
 import lore.compiler.inference.matchers.EqualityMatcher
 import lore.compiler.types._
 
@@ -29,8 +28,8 @@ object Unification {
     * Only considers bounds given in `boundTypes`.
     */
   private def unifyInferenceVariables(assignments: Assignments, iv1: InferenceVariable, iv2: InferenceVariable, boundTypes: Vector[BoundType], context: TypingJudgment): Compilation[Assignments] = {
-    val bounds1 = effectiveBounds(iv1, assignments)
-    val bounds2 = effectiveBounds(iv2, assignments)
+    val bounds1 = InferenceVariable.bounds(iv1, assignments)
+    val bounds2 = InferenceVariable.bounds(iv2, assignments)
 
     val compilationLower = if (boundTypes.contains(BoundType.Lower)) {
       val lower = Type.maxOrEqual(bounds1.lower, bounds2.lower) match {

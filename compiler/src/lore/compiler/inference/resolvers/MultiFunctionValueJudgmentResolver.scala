@@ -6,7 +6,7 @@ import lore.compiler.inference.Inference.{Assignments, instantiate}
 import lore.compiler.inference.InferenceBounds.narrowBounds
 import lore.compiler.inference.TypingJudgment
 import lore.compiler.semantics.Registry
-import lore.compiler.types.{BasicType, FunctionType}
+import lore.compiler.types.FunctionType
 
 object MultiFunctionValueJudgmentResolver extends JudgmentResolver[TypingJudgment.MultiFunctionValue] {
 
@@ -29,12 +29,10 @@ object MultiFunctionValueJudgmentResolver extends JudgmentResolver[TypingJudgmen
     // The resolution of a MultiFunctionValue judgment mostly depends on `target` already having some sort of
     // context with which to extract the fitting function type from the multi-function. Some inference variables in the
     // context may still be without a definition, which is why we instantiate them as Any.
-    // TODO: Replacing undefined inference variables may be a band aid that hints at having to improve multi-function
-    //       hints.
     // TODO: Handle the case that `target` can't even be instantiated. The error should say something like "more
     //       context needed" OR we could attempt to type the multi-function as its root type. This only works if
     //       there is only one root function, of course.
-    instantiate(assignments, judgment.target, _.candidateType, _ => BasicType.Any) match {
+    instantiate(assignments, judgment.target, _.candidateType) match {
       case expectedFunctionType: FunctionType =>
         MultiFunctionCallJudgmentResolver.resolveDispatch(judgment.mf, expectedFunctionType.inputTuple, judgment.position, assignments).flatMap { instance =>
           val actualFunctionType = instance.signature.functionType

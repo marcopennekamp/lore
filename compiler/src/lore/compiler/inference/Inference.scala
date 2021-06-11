@@ -16,7 +16,7 @@ object Inference {
     // Note that the order of judgments is important for reproducibility: we should always process the judgments in
     // their order of declaration. In addition, this will give the algorithm the best chance at resolving type
     // inference in one go, as the flow of typing most often follows the natural judgment order.
-    SimpleResolution.infer(Map.empty, judgments)
+    SimpleResolution.infer(InferenceBounds.prefill(Map.empty, judgments), judgments)
   }
 
   /**
@@ -58,6 +58,9 @@ object Inference {
     def stringified: String = assignments.values.toVector.sortBy(_.variable.name).mkString("\n")
   }
 
+  /**
+    * Collects all inference variables contained in the given type.
+    */
   def variables(tpe: Type): Set[InferenceVariable] = tpe match {
     case iv: InferenceVariable => Set(iv)
     case tv: TypeVariable => variables(tv.lowerBound) ++ variables(tv.upperBound)
@@ -95,25 +98,20 @@ object Inference {
   }
 
   /**
-    * Instantiates all defined inference variables in `tpe` to a type given by `get`. Undefined inference variables are
-    * left as-is.
+    * Instantiates all defined inference variables in `tpe` to a type given by `get`. Undefined inference variables
+    * lead to a compilation exception, as all inference variables occurring in any of the judgments should at least
+    * have Nothing/Any as their bounds.
     */
-  def instantiate(assignments: Assignments, tpe: Type, get: InferenceBounds => Type): Type = instantiate(assignments, tpe, get, identity)
-
-  /**
-    * Instantiates all defined inference variables in `tpe` to a type given by `get`. Undefined inference variables are
-    * instantiated to a type given by `undefined`.
-    */
-  def instantiate(assignments: Assignments, tpe: Type, get: InferenceBounds => Type, undefined: InferenceVariable => Type): Type = {
+  def instantiate(assignments: Assignments, tpe: Type, get: InferenceBounds => Type): Type = {
     // `instantiate` may be called with simple types quite often. We want to avoid reconstructing types (with  all the
     // required allocations) in such cases.
     if (isFullyInstantiated(tpe)) {
       return tpe
     }
 
-    val rec = (t: Type) => instantiate(assignments, t, get, undefined)
+    val rec = (t: Type) => instantiate(assignments, t, get)
     tpe match {
-      case iv: InferenceVariable => assignments.get(iv).map(get).getOrElse(undefined(iv))
+      case iv: InferenceVariable => get(InferenceVariable.bounds(iv, assignments))
       case SumType(types) => SumType.construct(types.map(rec))
       case IntersectionType(types) => IntersectionType.construct(types.map(rec))
       case ProductType(elements) => ProductType(elements.map(rec))

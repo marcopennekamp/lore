@@ -4,7 +4,6 @@ import lore.compiler.core.Compilation
 import lore.compiler.feedback.TypingFeedback.NarrowBoundFailed
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.inference.InferenceBounds.BoundType
-import lore.compiler.inference.InferenceVariable.effectiveBounds
 import lore.compiler.types.{BasicType, Type}
 
 case class InferenceBounds(variable: InferenceVariable, lower: Type, upper: Type) {
@@ -40,17 +39,36 @@ object InferenceBounds {
   }
 
   /**
-    * Whether bounds are already fixed and cannot change further.
+    * Whether the given bounds are already fixed and cannot change further.
     */
   def areFixed(bounds: InferenceBounds): Boolean = bounds.lower == bounds.upper
+
+  /**
+    * Adds all inference variables found in the given judgments to the assignments with bounds Nothing and Any. This
+    * ensures that all inference variables contained in any of the judgments are defined.
+    */
+  def prefill(assignments: Assignments, judgments: Vector[TypingJudgment]): Assignments = {
+    judgments.flatMap(TypingJudgment.variables).foldLeft(assignments)(prefill)
+  }
+
+  /**
+    * Ensures that the given inference variable is defined in the given assignments with at least the default bounds
+    * Nothing and Any.
+    */
+  def prefill(assignments: Assignments, iv: InferenceVariable): Assignments = {
+    assignments.updatedWith(iv) {
+      case None => Some(InferenceBounds(iv, BasicType.Nothing, BasicType.Any))
+      case v => v
+    }
+  }
 
   /**
     * Narrow the inference variable's lower bound to the given new lower bound and its upper bound to the given new
     * upper bound.
     */
   def narrowBounds(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, upperBound: Type, context: TypingJudgment): Compilation[Assignments] = {
-    narrowBound(assignments, inferenceVariable, upperBound, BoundType.Upper, context).flatMap(
-      narrowBound(_, inferenceVariable, lowerBound, BoundType.Lower, context)
+    narrowUpperBound(assignments, inferenceVariable, upperBound, context).flatMap(
+      narrowLowerBound(_, inferenceVariable, lowerBound, context)
     )
   }
 
@@ -74,7 +92,7 @@ object InferenceBounds {
     * already has a lower bound, the new lower bound must supertype the existing bound.
     */
   def narrowLowerBound(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, context: TypingJudgment): Compilation[Assignments] = {
-    val bounds = effectiveBounds(inferenceVariable, assignments)
+    val bounds = InferenceVariable.bounds(inferenceVariable, assignments)
 
     if (bounds.lower <= lowerBound && lowerBound <= bounds.upper) {
       Compilation.succeed(assignments.updated(inferenceVariable, InferenceBounds(inferenceVariable, lowerBound, bounds.upper)))
@@ -88,7 +106,7 @@ object InferenceBounds {
     * already has an upper bound, the new upper bound must subtype the existing bound.
     */
   def narrowUpperBound(assignments: Assignments, inferenceVariable: InferenceVariable, upperBound: Type, context: TypingJudgment): Compilation[Assignments] = {
-    val bounds = effectiveBounds(inferenceVariable, assignments)
+    val bounds = InferenceVariable.bounds(inferenceVariable, assignments)
 
     if (bounds.lower <= upperBound && upperBound <= bounds.upper) {
       Compilation.succeed(assignments.updated(inferenceVariable, InferenceBounds(inferenceVariable, bounds.lower, upperBound)))
@@ -98,14 +116,25 @@ object InferenceBounds {
   }
 
   /**
+    * Ensures that the lower and upper bounds of the given inference variable are a supertype/subtype of the given
+    * lower and upper bounds. If this is not the case already, the function attempts to narrow the inference variable's
+    * bounds.
+    */
+  def ensureBounds(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, upperBound: Type, context: TypingJudgment): Compilation[Assignments] = {
+    ensureLowerBound(assignments, inferenceVariable, lowerBound, context).flatMap(
+      ensureUpperBound(_, inferenceVariable, upperBound, context)
+    )
+  }
+
+  /**
     * Ensures that the inference variable's lower bound is a supertype of the given lower bound. If this is not the
     * case already, the function will attempt to narrow the inference variable's lower bound.
     *
     * In practical terms, the function thus assures that a given supertyping relationship holds, either by validating
     * it directly or by changing the bounds to "make it fit".
     */
-  def ensureBoundSupertypes(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, context: TypingJudgment): Compilation[Assignments] = {
-    val bounds = effectiveBounds(inferenceVariable, assignments)
+  def ensureLowerBound(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, context: TypingJudgment): Compilation[Assignments] = {
+    val bounds = InferenceVariable.bounds(inferenceVariable, assignments)
 
     if (assignments.isDefinedAt(inferenceVariable) && lowerBound <= bounds.lower) {
       Compilation.succeed(assignments)
@@ -121,8 +150,8 @@ object InferenceBounds {
     * In practical terms, the function thus assures that a given subtyping relationship holds, either by validating
     * it directly or by changing the bounds to "make it fit".
     */
-  def ensureBoundSubtypes(assignments: Assignments, inferenceVariable: InferenceVariable, upperBound: Type, context: TypingJudgment): Compilation[Assignments] = {
-    val bounds = effectiveBounds(inferenceVariable, assignments)
+  def ensureUpperBound(assignments: Assignments, inferenceVariable: InferenceVariable, upperBound: Type, context: TypingJudgment): Compilation[Assignments] = {
+    val bounds = InferenceVariable.bounds(inferenceVariable, assignments)
 
     if (assignments.isDefinedAt(inferenceVariable) && bounds.upper <= upperBound) {
       Compilation.succeed(assignments)
