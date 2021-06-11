@@ -63,7 +63,6 @@ object Inference {
     */
   def variables(tpe: Type): Set[InferenceVariable] = tpe match {
     case iv: InferenceVariable => Set(iv)
-    case tv: TypeVariable => variables(tv.lowerBound) ++ variables(tv.upperBound)
     case SumType(types) => types.flatMap(variables)
     case IntersectionType(types) => types.flatMap(variables)
     case ProductType(elements) => elements.flatMap(variables).toSet
@@ -79,7 +78,6 @@ object Inference {
     */
   def isFullyInstantiated(tpe: Type): Boolean = tpe match {
     case _: InferenceVariable => false
-    case tv: TypeVariable => isFullyInstantiated(tv.lowerBound) && isFullyInstantiated(tv.upperBound)
     case SumType(types) => types.forall(isFullyInstantiated)
     case IntersectionType(types) => types.forall(isFullyInstantiated)
     case ProductType(elements) => elements.forall(isFullyInstantiated)
