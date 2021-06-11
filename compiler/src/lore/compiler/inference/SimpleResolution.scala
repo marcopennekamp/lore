@@ -119,9 +119,9 @@ object SimpleResolution {
         } else None
 
       case TypingJudgment.MultiFunctionValue(target, _, _) =>
-        if (isFullyInferred(target, assignments, influenceGraph)) {
-          resolveTowards(ResolutionDirection.Forwards)
-        } else None
+        // A MultiFunctionValue judgment can only be resolved cyclically, as it always adds a cyclical dependency
+        // between `target` and its dependency variable.
+        None
 
       case TypingJudgment.MultiFunctionHint(_, _, _) => resolveTowards(ResolutionDirection.Backwards)
     }

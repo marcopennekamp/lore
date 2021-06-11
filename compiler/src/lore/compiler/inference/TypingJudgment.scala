@@ -111,9 +111,21 @@ object TypingJudgment {
 
   /**
     * Types the given multi-function as a function, `target` containing the resulting type. Candidate types are
-    * narrowed down first by taking the context surrounding `target` into account.
+    * narrowed down first by taking the context surrounding `target` into account. To do so, the judgment must be
+    * resolved once all other options to type `target` have been exhausted. The judgment's dependency variable is used
+    * to accomplish this by forcing a cyclical dependency with `target`.
+    *
+    * TODO: I'm not sure if the cyclical dependency is sufficient, since there might be other cyclical judgments that
+    *       are erroneously resolved before (or even after?) the multi-function value judgment. Perhaps we need a way
+    *       to sort in which order judgments are resolved cyclically. (Hopefully not, though.)
     */
-  case class MultiFunctionValue(target: InferenceVariable, mf: MultiFunctionDefinition, position: Position) extends TypingJudgment
+  case class MultiFunctionValue(target: InferenceVariable, mf: MultiFunctionDefinition, position: Position) extends TypingJudgment {
+    /**
+      * This inference variable is used by [[InferenceOrder]] to set the MultiFunctionValue as a cyclical dependency of
+      * the target inference variable.
+      */
+    lazy val dependencyVariable: InferenceVariable = new InferenceVariable
+  }
 
   /**
     * A MultiFunctionHint provides typing information to multi-function arguments. Usually, all arguments will be fully
@@ -144,7 +156,7 @@ object TypingJudgment {
     case MemberAccess(target, source, name, _) => s"$target <- $source.$name"
     case ElementType(target, collection, _) => s"$target <- $collection::elementType"
     case MultiFunctionCall(target, mf, arguments, _) => s"$target <- ${mf.name}(${arguments.mkString(", ")})"
-    case MultiFunctionValue(function, mf, _) => s"$function <- ${mf.name} as function"
+    case value@MultiFunctionValue(function, mf, _) => s"$function <- ${mf.name} as function <dependency ${value.dependencyVariable}>"
     case hint@MultiFunctionHint(mf, _, _) => s"${mf.name}::hint(${hint.argumentTypes.mkString(", ")}) <dependency ${hint.dependencyVariable}>"
   }
 
@@ -160,7 +172,7 @@ object TypingJudgment {
     case MemberAccess(target, source, _, _) => Set(target) ++ Inference.variables(source)
     case ElementType(target, collection, _) => Set(target) ++ Inference.variables(collection)
     case MultiFunctionCall(target, _, arguments, _) => Set(target) ++ arguments.flatMap(Inference.variables)
-    case MultiFunctionValue(target, _, _) => Set(target)
+    case value@MultiFunctionValue(target, _, _) => Set(target, value.dependencyVariable)
     case hint@MultiFunctionHint(_, arguments, _) => Set(hint.dependencyVariable) ++ arguments.map(_.tpe).flatMap(Inference.variables)
   }
 

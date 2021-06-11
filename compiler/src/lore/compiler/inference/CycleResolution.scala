@@ -65,6 +65,11 @@ object CycleResolution {
         Some(ResolutionDirection.Forwards)
       } else None
 
+    case value@TypingJudgment.MultiFunctionValue(target, _, _) =>
+      if (!hasExternalDependencies(target, value.dependencyVariable, influenceGraph)) {
+        Some(ResolutionDirection.Forwards)
+      } else None
+
     case _ =>
       // Other judgments like Assign can't have a cycle, because only one resolution direction is allowed.
       None

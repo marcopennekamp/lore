@@ -20,7 +20,7 @@ object InferenceDependency {
     case TypingJudgment.MemberAccess(target, source, _, _) => biDependenciesOf(target, source)
     case TypingJudgment.ElementType(target, collection, _) => dependenciesOf(collection, target)
     case TypingJudgment.MultiFunctionCall(target, _, arguments, _) => dependenciesOf(arguments, Vector(target))
-    case TypingJudgment.MultiFunctionValue(_, _, _) => Set.empty // TODO: Change this once MultiFunctionValues depend on the target.
+    case value@TypingJudgment.MultiFunctionValue(target, _, _) => biDependenciesOf(value.dependencyVariable, target)
     case hint@TypingJudgment.MultiFunctionHint(_, _, _) => dependenciesOf(Vector(hint.dependencyVariable), hint.argumentTypes)
   }
 
