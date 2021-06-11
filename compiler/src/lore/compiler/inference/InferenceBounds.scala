@@ -9,12 +9,12 @@ import lore.compiler.types.{BasicType, Type}
 case class InferenceBounds(variable: InferenceVariable, lower: Type, upper: Type) {
   /**
     * The candidate type is used as the effectively inferred type and thus the inference result. This will most likely
-    * be the upper bound of the inference variable, but may also be the lower bound if the variable's upper bound
-    * cannot be inferred.
+    * be the lower bound of the inference variable (representing the narrowest possible type), but may also be the
+    * upper bound if the variable's lower bound cannot be inferred.
     */
   val candidateType: Type = {
-    if (upper != BasicType.Any) upper
-    else if (lower != BasicType.Nothing) lower
+    if (lower != BasicType.Nothing) lower
+    else if (upper != BasicType.Any) upper
     else BasicType.Any
   }
 
