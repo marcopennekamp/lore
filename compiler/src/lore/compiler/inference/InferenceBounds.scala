@@ -36,6 +36,11 @@ object InferenceBounds {
   object BoundType {
     case object Lower extends BoundType
     case object Upper extends BoundType
+
+    def flip(boundType: BoundType): BoundType = boundType match {
+      case BoundType.Lower => BoundType.Upper
+      case BoundType.Upper => BoundType.Lower
+    }
   }
 
   /**

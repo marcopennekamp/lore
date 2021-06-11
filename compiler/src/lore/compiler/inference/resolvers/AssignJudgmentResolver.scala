@@ -1,7 +1,7 @@
 package lore.compiler.inference.resolvers
 
 import lore.compiler.core.Compilation
-import lore.compiler.inference.Inference.{Assignments, instantiate}
+import lore.compiler.inference.Inference.{Assignments, instantiateCandidateType}
 import lore.compiler.inference.InferenceBounds.narrowBounds
 import lore.compiler.inference.TypingJudgment
 import lore.compiler.inference.matchers.{EqualityMatcher, Matchers}
@@ -17,7 +17,7 @@ object AssignJudgmentResolver extends JudgmentResolver[TypingJudgment.Assign] {
       Matchers.unsupported,
       (t1, iv2, assignments, context) => narrowBounds(assignments, iv2, t1, context),
       Matchers.unsupported,
-    )(instantiate(assignments, judgment.source, _.candidateType), judgment.target, assignments, judgment)
+    )(instantiateCandidateType(assignments, judgment.source), judgment.target, assignments, judgment)
   }
 
 }

@@ -2,7 +2,7 @@ package lore.compiler.inference.resolvers
 
 import lore.compiler.core.Compilation
 import lore.compiler.feedback.TypingFeedback.CollectionExpected
-import lore.compiler.inference.Inference.{Assignments, instantiate}
+import lore.compiler.inference.Inference.{Assignments, instantiateCandidateType}
 import lore.compiler.inference.InferenceBounds.narrowBounds
 import lore.compiler.inference.TypingJudgment
 import lore.compiler.semantics.Registry
@@ -14,7 +14,7 @@ object ElementTypeJudgmentResolver extends JudgmentResolver[TypingJudgment.Eleme
     judgment: TypingJudgment.ElementType,
     assignments: Assignments,
   )(implicit registry: Registry): Compilation[Assignments] = {
-    val instantiatedCollection = instantiate(assignments, judgment.collection, _.candidateType)
+    val instantiatedCollection = instantiateCandidateType(assignments, judgment.collection)
     val elementType = instantiatedCollection match {
       case ListType(element) => Compilation.succeed(element)
       case MapType(key, value) => Compilation.succeed(ProductType(Vector(key, value)))

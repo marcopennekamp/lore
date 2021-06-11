@@ -2,7 +2,7 @@ package lore.compiler.inference.resolvers
 
 import lore.compiler.core.{Compilation, Position}
 import lore.compiler.feedback.DispatchFeedback.{AmbiguousCall, EmptyFit}
-import lore.compiler.inference.Inference.{Assignments, instantiate}
+import lore.compiler.inference.Inference.{Assignments, instantiateCandidateType}
 import lore.compiler.inference.InferenceBounds.narrowBounds
 import lore.compiler.inference.{Inference, TypingJudgment}
 import lore.compiler.semantics.Registry
@@ -47,7 +47,7 @@ object MultiFunctionCallJudgmentResolver extends JudgmentResolver[TypingJudgment
   }
 
   def resolveDispatch(mf: MultiFunctionDefinition, uninstantiatedInputType: ProductType, position: Position, assignments: Inference.Assignments): Compilation[FunctionInstance] = {
-    val inputType = instantiate(assignments, uninstantiatedInputType, _.candidateType).asInstanceOf[ProductType]
+    val inputType = instantiateCandidateType(assignments, uninstantiatedInputType).asInstanceOf[ProductType]
     mf.min(inputType) match {
       case min if min.isEmpty => Compilation.fail(EmptyFit(mf, inputType, position))
       case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, inputType, min, position))

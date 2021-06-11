@@ -1,7 +1,7 @@
 package lore.compiler.inference.resolvers
 
 import lore.compiler.core.Compilation
-import lore.compiler.inference.Inference.{Assignments, instantiate}
+import lore.compiler.inference.Inference.{Assignments, instantiateCandidateType}
 import lore.compiler.inference.InferenceBounds.narrowBounds
 import lore.compiler.inference.TypingJudgment
 import lore.compiler.semantics.Registry
@@ -12,7 +12,7 @@ object MemberAccessJudgmentResolver extends JudgmentResolver[TypingJudgment.Memb
     judgment: TypingJudgment.MemberAccess,
     assignments: Assignments
   )(implicit registry: Registry): Compilation[Assignments] = {
-    instantiate(assignments, judgment.source, _.candidateType).member(judgment.name)(judgment.position).flatMap {
+    instantiateCandidateType(assignments, judgment.source).member(judgment.name)(judgment.position).flatMap {
       member => narrowBounds(assignments, judgment.target, member.tpe, judgment)
     }
   }

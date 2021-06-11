@@ -1,7 +1,7 @@
 package lore.compiler.inference.resolvers
 
 import lore.compiler.core.Compilation
-import lore.compiler.inference.Inference.{Assignments, instantiate}
+import lore.compiler.inference.Inference.{Assignments, instantiateCandidateType}
 import lore.compiler.inference.InferenceBounds.narrowBounds
 import lore.compiler.inference.TypingJudgment
 import lore.compiler.inference.matchers.{Matchers, SubtypingMatcher}
@@ -18,7 +18,7 @@ object FitsJudgmentResolver extends JudgmentResolver.Nondirectional[TypingJudgme
       (iv1, t2, assignments, context) => narrowBounds(assignments, iv1, t2, context),
       (t1, iv2, assignments, context) => narrowBounds(assignments, iv2, t1, context),
       Matchers.unsupported,
-    )(instantiate(assignments, judgment.t1, _.candidateType), judgment.t2, assignments, judgment)
+    )(instantiateCandidateType(assignments, judgment.t1), judgment.t2, assignments, judgment)
   }
 
 }

@@ -32,7 +32,7 @@ object MultiFunctionValueJudgmentResolver extends JudgmentResolver[TypingJudgmen
     // TODO: Handle the case that `target` can't even be instantiated. The error should say something like "more
     //       context needed" OR we could attempt to type the multi-function as its root type. This only works if
     //       there is only one root function, of course.
-    instantiate(assignments, judgment.target, _.candidateType) match {
+    instantiateCandidateType(assignments, judgment.target) match {
       case expectedFunctionType: FunctionType =>
         MultiFunctionCallJudgmentResolver.resolveDispatch(judgment.mf, expectedFunctionType.inputTuple, judgment.position, assignments).flatMap { instance =>
           val actualFunctionType = instance.signature.functionType

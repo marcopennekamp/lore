@@ -54,7 +54,7 @@ object Inference {
     * This class is intended as an API for other components such as the [[lore.compiler.phases.transformation.TypeRehydrationVisitor]].
     */
   implicit class AssignmentsExtension(assignments: Assignments) {
-    def instantiate(tpe: Type): Type = Inference.instantiate(assignments, tpe, _.candidateType)
+    def instantiate(tpe: Type): Type = Inference.instantiateCandidateType(assignments, tpe)
     def stringified: String = assignments.values.toVector.sortBy(_.variable.label).mkString("\n")
   }
 
@@ -89,31 +89,40 @@ object Inference {
   }
 
   /**
-    * Instantiates all defined inference variables in `tpe` to the respective bound.
+    * Instantiates all inference variables in `tpe` with the respective bound.
     */
   def instantiateByBound(assignments: Assignments, tpe: Type, boundType: BoundType): Type = {
-    instantiate(assignments, tpe, _.get(boundType))
+    instantiate(assignments, tpe, boundType, (bounds, boundType2) => bounds.get(boundType2))
   }
 
   /**
-    * Instantiates all defined inference variables in `tpe` to a type given by `get`. Undefined inference variables
-    * lead to a compilation exception, as all inference variables occurring in any of the judgments should at least
-    * have Nothing/Any as their bounds.
+    * Instantiates all inference variables in `tpe` with a type given by `get`.
     */
-  def instantiate(assignments: Assignments, tpe: Type, get: InferenceBounds => Type): Type = {
-    // `instantiate` may be called with simple types quite often. We want to avoid reconstructing types (with  all the
+  def instantiateCandidateType(assignments: Assignments, tpe: Type): Type = {
+    // Note that the bound type is unimportant and just a dummy value here.
+    instantiate(assignments, tpe, BoundType.Lower, (bounds, _) => bounds.candidateType)
+  }
+
+  /**
+    * Instantiates all inference variables in `tpe` with a type given by `get`, which should take the bound type into
+    * account. Contravariant types flip the bound type relationship, because their upper bounds effectively relate to
+    * the lower bound of inference variables and vice versa.
+    */
+  private def instantiate(assignments: Assignments, tpe: Type, boundType: BoundType, get: (InferenceBounds, BoundType) => Type): Type = {
+    // `instantiate` may be called with simple types quite often. We want to avoid reconstructing types (with all the
     // required allocations) in such cases.
     if (isFullyInstantiated(tpe)) {
       return tpe
     }
 
-    val rec = (t: Type) => instantiate(assignments, t, get)
+    val rec = (t: Type) => instantiate(assignments, t, boundType, get)
+    val recContravariant = (t: Type) => instantiate(assignments, t, BoundType.flip(boundType), get)
     tpe match {
-      case iv: InferenceVariable => get(InferenceVariable.bounds(iv, assignments))
+      case iv: InferenceVariable => get(InferenceVariable.bounds(iv, assignments), boundType)
       case SumType(types) => SumType.construct(types.map(rec))
       case IntersectionType(types) => IntersectionType.construct(types.map(rec))
       case ProductType(elements) => ProductType(elements.map(rec))
-      case FunctionType(input, output) => FunctionType(rec(input), rec(output))
+      case FunctionType(input, output) => FunctionType(recContravariant(input), rec(output))
       case ListType(element) => ListType(rec(element))
       case MapType(key, value) => MapType(rec(key), rec(value))
       case shapeType: ShapeType => shapeType.mapPropertyTypes(rec)
