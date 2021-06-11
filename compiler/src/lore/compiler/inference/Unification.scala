@@ -56,29 +56,38 @@ object Unification {
     * variable, but also instantiate the inference variable and assign bounds to any variables contained in `tpe`.
     *
     * Only considers bounds given in `boundTypes`.
+    *
+    * That the second case (iv --> tpe) is necessary can be illustrated with an example. Take for example the following
+    * judgments:
+    *   - iv1 :=: (A, B)
+    *   - iv1 :=: (iv2, iv3)
+    *
+    * The first judgment will be resolved first, producing the bounds `iv1((A, B), (A, B))`. Resolution of the second
+    * judgment will ultimately lead to this function being called with `iv = iv1` and `tpe = (iv2, iv3)`. Both `iv` and
+    * `tpe` will be instantiated at the requested bound types. If `instantiate(tpe) <= instantiate(iv)` (replace with
+    * `>=` for the upper bound), the algorithm opportunistically attempts to narrow all inference variables in `tpe`
+    * using the instantiated version of `iv`. If this is not the case, the algorithm attempts to narrow `iv` with the
+    * instantiated version of `tpe`. So in the given example, because `(Nothing, Nothing) <= (A, B)`, `iv2` and `iv3`
+    * will be narrowed to `A` and `B` respectively. The same applies to the upper bound given `(Any, Any) >= (A, B)`.
     */
   private def unifyInferenceVariableWithType(assignments: Assignments, iv: InferenceVariable, tpe: Type, boundTypes: Vector[BoundType], context: TypingJudgment): Compilation[Assignments] = {
-    // Narrows `iv` to an instantiated version of `tpe` on the given bound type.
-    def narrowIvByBound(assignments: Assignments, boundType: BoundType) = {
-      lazy val instantiatedType = instantiateByBound(assignments, tpe, boundType)
-      if (boundTypes.contains(boundType) && isFullyInstantiated(instantiatedType)) {
-        narrowBound(assignments, iv, instantiatedType, boundType, context)
+    def narrowByBound(assignments: Assignments, boundType: BoundType) = {
+      if (boundTypes.contains(boundType)) {
+        val instantiatedIv = instantiateByBound(assignments, iv, boundType)
+        val instantiatedTpe = instantiateByBound(assignments, tpe, boundType)
+        lazy val isTpeWider = boundType match {
+          case BoundType.Lower => instantiatedTpe <= instantiatedIv
+          case BoundType.Upper => instantiatedIv <= instantiatedTpe
+        }
+        if (!isFullyInstantiated(tpe) && isTpeWider) {
+          unify(instantiatedIv, tpe, assignments, Vector(boundType), context)
+        } else {
+          narrowBound(assignments, iv, instantiatedTpe, boundType, context)
+        }
       } else Compilation.succeed(assignments)
     }
 
-    // Narrows all inference variables in `tpe` to an instantiated version of `iv` on the given bound type.
-    def narrowTpeByBound(assignments: Assignments, boundType: BoundType) = {
-      lazy val instantiatedIv = instantiateByBound(assignments, iv, boundType)
-      if (boundTypes.contains(boundType) && isFullyInstantiated(instantiatedIv)) {
-        unify(instantiatedIv, tpe, assignments, Vector(boundType), context)
-      } else Compilation.succeed(assignments)
-    }
-
-    narrowIvByBound(assignments, BoundType.Lower).flatMap(narrowIvByBound(_, BoundType.Upper)).flatMap { assignments2 =>
-      if (isDefined(iv, assignments2) && !isFullyInstantiated(tpe)) {
-        narrowTpeByBound(assignments2, BoundType.Lower).flatMap(narrowTpeByBound(_, BoundType.Upper))
-      } else Compilation.succeed(assignments2)
-    }
+    narrowByBound(assignments, BoundType.Lower).flatMap(narrowByBound(_, BoundType.Upper))
   }
 
 }
