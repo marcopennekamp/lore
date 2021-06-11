@@ -16,11 +16,11 @@ class InferenceVariable(val name: Option[String] = None) extends Type {
     case _ => false
   }
 
-  private lazy val actualName: String = name.getOrElse {
+  lazy val label: String = name.getOrElse {
     s"iv${InferenceVariable.nameCounter.incrementAndGet()}"
   }
 
-  override def toString: String = actualName
+  override def toString: String = label
 }
 
 object InferenceVariable {
