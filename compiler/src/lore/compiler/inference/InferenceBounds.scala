@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation
 import lore.compiler.feedback.TypingFeedback.NarrowBoundFailed
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.inference.InferenceBounds.BoundType
-import lore.compiler.types.{BasicType, Type}
+import lore.compiler.types.{BasicType, IntersectionType, SumType, Type}
 
 case class InferenceBounds(variable: InferenceVariable, lower: Type, upper: Type) {
   /**
@@ -93,13 +93,14 @@ object InferenceBounds {
   }
 
   /**
-    * Attempts to narrow the lower bound of the inference variable to the given new lower bound. If the variable
-    * already has a lower bound, the new lower bound must supertype the existing bound.
+    * Attempts to narrow the lower bound of the inference variable to the given lower bound, or a sum of these two
+    * types. If the variable already has a lower bound, the new lower bound must supertype the existing bound.
     */
   def narrowLowerBound(assignments: Assignments, inferenceVariable: InferenceVariable, lowerBound: Type, context: TypingJudgment): Compilation[Assignments] = {
     val bounds = InferenceVariable.bounds(inferenceVariable, assignments)
 
-    if (bounds.lower <= lowerBound && lowerBound <= bounds.upper) {
+    val newBound = SumType.construct(Vector(lowerBound, bounds.lower))
+    if (bounds.lower <= newBound && newBound <= bounds.upper) {
       Compilation.succeed(assignments.updated(inferenceVariable, InferenceBounds(inferenceVariable, lowerBound, bounds.upper)))
     } else {
       Compilation.fail(NarrowBoundFailed(inferenceVariable, lowerBound, BoundType.Lower, assignments, context))
@@ -107,14 +108,15 @@ object InferenceBounds {
   }
 
   /**
-    * Attempts to narrow the upper bound of the inference variable to the given new upper bound. If the variable
-    * already has an upper bound, the new upper bound must subtype the existing bound.
+    * Attempts to narrow the upper bound of the inference variable to the given upper bound, or an intersection of
+    * these two types. If the variable already has an upper bound, the new upper bound must subtype the existing bound.
     */
   def narrowUpperBound(assignments: Assignments, inferenceVariable: InferenceVariable, upperBound: Type, context: TypingJudgment): Compilation[Assignments] = {
     val bounds = InferenceVariable.bounds(inferenceVariable, assignments)
 
-    if (bounds.lower <= upperBound && upperBound <= bounds.upper) {
-      Compilation.succeed(assignments.updated(inferenceVariable, InferenceBounds(inferenceVariable, bounds.lower, upperBound)))
+    val newBound = IntersectionType.construct(Vector(upperBound, bounds.upper))
+    if (bounds.lower <= newBound && newBound <= bounds.upper) {
+      Compilation.succeed(assignments.updated(inferenceVariable, InferenceBounds(inferenceVariable, bounds.lower, newBound)))
     } else {
       Compilation.fail(NarrowBoundFailed(inferenceVariable, upperBound, BoundType.Upper, assignments, context))
     }

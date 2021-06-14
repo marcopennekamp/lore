@@ -3,7 +3,7 @@ struct Cat implements Animal
 struct Dog implements Animal
 
 function test(): [Cat | Dog] = {
-  // TODO: This should compile, but the list is inferred as [Animal].
+  // TODO: This should compile, but the list is inferred as [Animal]. See TypingJudgment.LeastUpperBound.
   let result: [Cat | Dog] = [Cat(), Dog(), Cat()]
   result
 }
