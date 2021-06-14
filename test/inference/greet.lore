@@ -1,0 +1,9 @@
+function greet(name: String, title: String): String = 'Hello, $title $name.'
+
+function test(): [String] = {
+  let f = v => greet(v.name, v.title)
+  [
+    f(%{ name: 'Smith', title: 'Mr.' }),
+    f(%{ name: 'Chang', title: 'Ms.' })
+  ]
+}
