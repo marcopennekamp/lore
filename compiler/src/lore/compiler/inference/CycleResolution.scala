@@ -54,9 +54,11 @@ object CycleResolution {
       } else None
 
     case TypingJudgment.LeastUpperBound(target, types, _) =>
-      // TODO: Add backwards direction once it's implemented in the judgment resolver.
-      if (!hasExternalDependencies(types.flatMap(Inference.variables).toSet, Set(target), influenceGraph)) {
+      val typesIvs = types.flatMap(Inference.variables).toSet
+      if (!hasExternalDependencies(typesIvs, Set(target), influenceGraph)) {
         Some(ResolutionDirection.Forwards)
+      } else if (!hasExternalDependencies(Set(target), typesIvs, influenceGraph)) {
+        Some(ResolutionDirection.Backwards)
       } else None
 
     case TypingJudgment.MemberAccess(target, source, _, _) =>

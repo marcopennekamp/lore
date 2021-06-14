@@ -1,0 +1,7 @@
+function test(): [String] = {
+  // TODO: Make the one-liner work.
+  //map([(v: { foo: String }) => v.foo, (v: { bar: String }) => v.bar, (v: { foo: String }) => '!${v.foo}!'], f => f(%{ foo: 'foo', bar: 'bar' }))
+
+  let functions: [{ foo: String, bar: String } => String] = [v => v.foo, v => v.bar, v => '!${v.foo}${v.bar}!']
+  map(functions, f => f(%{ foo: 'foo', bar: 'bar' }))
+}
