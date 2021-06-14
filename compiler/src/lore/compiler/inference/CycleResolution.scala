@@ -60,9 +60,10 @@ object CycleResolution {
       } else None
 
     case TypingJudgment.MemberAccess(target, source, _, _) =>
-      // TODO: Add backwards direction once it's implemented in the judgment resolver.
       if (!hasExternalDependencies(source, target, influenceGraph)) {
         Some(ResolutionDirection.Forwards)
+      } else if (!hasExternalDependencies(target, source, influenceGraph)) {
+        Some(ResolutionDirection.Backwards)
       } else None
 
     case value@TypingJudgment.MultiFunctionValue(target, _, _) =>

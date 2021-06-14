@@ -1,7 +1,7 @@
 package lore.compiler.inference
 
 import lore.compiler.core.{Compilation, Errors, Result}
-import lore.compiler.inference.Inference.{Assignments, AssignmentsExtension}
+import lore.compiler.inference.Inference.{Assignments, AssignmentsExtension, isFullyInstantiated}
 import lore.compiler.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.inference.resolvers.JudgmentResolver
 import lore.compiler.inference.resolvers.JudgmentResolver.ResolutionDirection
@@ -102,10 +102,11 @@ object SimpleResolution {
           resolveTowards(ResolutionDirection.Forwards)
         } else None
 
-      case TypingJudgment.MemberAccess(_, source, _, _) =>
-        // TODO: Add backwards direction once it's implemented in the judgment resolver.
+      case TypingJudgment.MemberAccess(target, source, _, _) =>
         if (isFullyInferred(source, assignments, influenceGraph)) {
           resolveTowards(ResolutionDirection.Forwards)
+        } else if (isFullyInferred(target, assignments, influenceGraph)) {
+          resolveTowards(ResolutionDirection.Backwards)
         } else None
 
       case TypingJudgment.ElementType(_, collection, _) =>
