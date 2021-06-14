@@ -69,13 +69,28 @@ object TypingJudgment {
     *      `A_1 :<: T`, ..., `A_n :<: T`. These "virtual" judgments are resolved, allowing the upper bounds of all
     *      `A_x` to be defined through T.
     *
-    * Crucially, this judgment is necessary because `LUB(T, A, B)` cannot be fully modeled as `Subtypes(A, T)` and
-    * `Subtypes(B, T)`. The Subtypes judgments only specify the lower bound of T, but not the upper bound. Why we need
-    * the upper bound specified might become clearer with an example: Assume we have an If-Else expression with body
-    * types A and B. We assign `LUB(A, B)` to T as the result type of the If-Else expression. If we do not assign an
-    * upper bound to T, a judgment such as `C :<: T` will have no choice but to infer Any as the upper bound of C. But
-    * we already know that the value whose type is modeled by T can only be `a: A` or `b: B`. So there is an upper
-    * bound for T, namely the LUB of A and B. C, then, also has the same upper bound.
+    * Crucially, this judgment is necessary because `T <- LUB(A, B)` cannot be fully modeled as `A :<: T` and `B :<: T`.
+    * There are two reasons:
+    *
+    *   1. Subtypes judgments only specify the lower bound of T. This is technically correct even for the LUB, but
+    *      assigning an upper bound as well produces more stable bounds. For example, assume we have an If-Else
+    *      expression with body types A and B. If we assign `LUB(A, B)` only to the lower bound of T, a judgment such
+    *      as `C :<: T` will have no choice but to infer Any as the upper bound of C.
+    *   2. Let's say we model a LUB assignable to `T` as `Cat <: T` and `Dog <: T`. We want to infer `T :=: Animal`,
+    *      given `Dog < Animal` and `Cat < Animal`. We would have to bake in the LUB operation into `narrowBounds`,
+    *      which is possible, but the problem is that we sometimes want to take the joined supertype (Animal), and
+    *      other times we want to take the sum type (Cat | Dog). The LUB judgment gives a clear indication that we
+    *      prefer the former; all other times, `narrowBounds` should prefer the latter.
+    *
+    * TODO: Look at the test file `inference/least-upper-bound.lore`. The list assigned to `result` should be inferred
+    *       to be `[Cat | Dog]`, because the variable `result` expects this type. Instead, the function `test` doesn't
+    *       compile, because the list's type is widened too much.
+    *         - A possible solution might be to assign `Cat | Dog` as the lower bound and `Animal` as the upper bound.
+    *           But this is probably not what we want. The reason for joining `Cat` and `Dog` in the LUB is mostly
+    *           conciseness. We don't want to report a type such as `Cat | Dog | Horse | Goldfish | Bat` to the user.
+    *         - The solution to the problem in the first bullet point might be to allow choosing the candidate type
+    *           when an inference variable is created. The target variable of the LUB might be better served with the
+    *           upper bound as the candidate type.
     */
   case class LeastUpperBound(target: InferenceVariable, types: Vector[Type], position: Position) extends TypingJudgment
 

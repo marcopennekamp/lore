@@ -1,0 +1,9 @@
+trait Animal
+struct Cat implements Animal
+struct Dog implements Animal
+
+function test(): [Cat | Dog] = {
+  // TODO: This should compile, but the list is inferred as [Animal].
+  let result: [Cat | Dog] = [Cat(), Dog(), Cat()]
+  result
+}
