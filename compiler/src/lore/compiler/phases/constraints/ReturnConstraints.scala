@@ -1,7 +1,7 @@
 package lore.compiler.phases.constraints
 
-import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.core.Compilation
+import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.feedback.Feedback
 import lore.compiler.phases.constraints.ReturnConstraints.{DeadCode, DefinitelyReturns, ImpossibleReturn, IsReturnAllowed}
 import lore.compiler.syntax.visitor.{CombiningTopLevelExprVisitor, TopLevelExprVisitor, VerificationTopLevelExprVisitor}

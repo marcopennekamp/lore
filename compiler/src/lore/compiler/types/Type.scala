@@ -1,12 +1,13 @@
 package lore.compiler.types
 
-import java.io.ByteArrayOutputStream
-import java.util.Base64
 import lore.compiler.semantics.Registry
 import lore.compiler.types.TypeVariable.Assignments
 import lore.compiler.utils.CollectionExtensions._
 import scalaz.std.vector._
 import scalaz.syntax.traverse._
+
+import java.io.ByteArrayOutputStream
+import java.util.Base64
 
 /**
   * Any Lore type.

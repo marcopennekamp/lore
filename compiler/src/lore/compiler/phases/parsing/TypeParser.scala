@@ -2,13 +2,13 @@ package lore.compiler.phases.parsing
 
 import fastparse.ScalaWhitespace._
 import fastparse._
-import lore.compiler.syntax._
 import lore.compiler.core.{Fragment, Position}
 import lore.compiler.phases.parsing.LexicalParser.typeIdentifier
+import lore.compiler.syntax._
 
 class TypeParser(implicit fragment: Fragment) {
-  import Node._
   import LexicalParser.identifier
+  import Node._
 
   def typing[_: P]: P[TypeExprNode] = P(":" ~ typeExpression)
 

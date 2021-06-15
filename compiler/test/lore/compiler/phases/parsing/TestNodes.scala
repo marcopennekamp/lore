@@ -1,7 +1,7 @@
 package lore.compiler.phases.parsing
 
 import lore.compiler.core.Position
-import lore.compiler.syntax.{DeclNode, TypeDeclNode, TopLevelExprNode, ExprNode, TypeExprNode}
+import lore.compiler.syntax._
 
 object TestNodes {
   private def withWildcard[R](construct: Position => R) =
@@ -34,8 +34,8 @@ object TestNodes {
   }
 
   object Stmt {
-    import TopLevelExprNode._
     import ExprNode._
+    import TopLevelExprNode._
 
     val Return = withWildcard(ReturnNode)
     val VariableDeclaration = withWildcard(VariableDeclarationNode)

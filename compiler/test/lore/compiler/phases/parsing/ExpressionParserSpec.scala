@@ -1,8 +1,8 @@
 package lore.compiler.phases.parsing
 
 import fastparse._
-import lore.compiler.syntax._
 import lore.compiler.core.Fragment
+import lore.compiler.syntax._
 import lore.compiler.test.BaseSpec
 
 // TODO: Implement these tests using functional tests.

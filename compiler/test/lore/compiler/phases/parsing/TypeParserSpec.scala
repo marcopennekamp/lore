@@ -1,8 +1,8 @@
 package lore.compiler.phases.parsing
 
 import fastparse.P
-import lore.compiler.syntax.TypeExprNode
 import lore.compiler.core.Fragment
+import lore.compiler.syntax.TypeExprNode
 import lore.compiler.test.BaseSpec
 
 // TODO: Implement these tests using functional tests. We cannot check the produced AST directly, then, but we can

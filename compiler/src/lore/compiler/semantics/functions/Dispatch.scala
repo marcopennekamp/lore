@@ -1,6 +1,6 @@
 package lore.compiler.semantics.functions
 
-import lore.compiler.types.{Fit, TupleType, Type}
+import lore.compiler.types.{Fit, TupleType}
 
 import scala.collection.mutable
 

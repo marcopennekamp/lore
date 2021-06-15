@@ -1,5 +1,3 @@
-import sbt.Keys.{scalaSource, testOptions}
-
 organization := "run.lore"
 name := "lore"
 version := "0.1.0-SNAPSHOT"

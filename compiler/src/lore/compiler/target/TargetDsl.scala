@@ -1,6 +1,6 @@
 package lore.compiler.target
 
-import lore.compiler.target.Target.{Assignment, Call, New, Operation, Parameter, StringLiteral, TargetExpression, TargetName, TargetStatement, Variable, VariableDeclaration}
+import lore.compiler.target.Target._
 
 object TargetDsl {
 

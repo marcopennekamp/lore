@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.feedback.TypingFeedback.SubtypeExpected
 import lore.compiler.inference.Inference.{Assignments, isFullyInstantiated}
-import lore.compiler.inference.{Inference, InferenceVariable, TypingJudgment}
+import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.types._
 
 object SubtypingMatcher {

@@ -1,7 +1,6 @@
 package lore.compiler.types
 
 import lore.compiler.core.CompilationException
-import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
 

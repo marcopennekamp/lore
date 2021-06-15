@@ -1,7 +1,7 @@
 package lore.compiler.phases.transpilation.functions
 
 import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
-import lore.compiler.phases.transpilation.{RuntimeApi, TemporaryVariableProvider, RuntimeNames}
+import lore.compiler.phases.transpilation.{RuntimeApi, RuntimeNames, TemporaryVariableProvider}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl._

@@ -1,14 +1,13 @@
 package lore.compiler
 
-import com.typesafe.scalalogging.Logger
 import lore.compiler.core.{Compilation, Fragment}
 import lore.compiler.feedback.Feedback
 import lore.compiler.phases.constraints.ConstraintsPhase
 import lore.compiler.phases.generation.GenerationPhase
 import lore.compiler.phases.parsing.ParsingPhase
 import lore.compiler.phases.resolution.ResolutionPhase
-import lore.compiler.phases.transpilation.TranspilationPhase
 import lore.compiler.phases.transformation.TransformationPhase
+import lore.compiler.phases.transpilation.TranspilationPhase
 import lore.compiler.semantics.Registry
 import lore.compiler.utils.Timer.timed
 

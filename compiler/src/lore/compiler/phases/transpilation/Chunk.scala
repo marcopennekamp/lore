@@ -1,7 +1,7 @@
 package lore.compiler.phases.transpilation
 
-import lore.compiler.target.{Target, TargetOperator}
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
+import lore.compiler.target.{Target, TargetOperator}
 
 /**
   * A chunk is a unit of the target representation that requires a preamble in the form of statements and also results

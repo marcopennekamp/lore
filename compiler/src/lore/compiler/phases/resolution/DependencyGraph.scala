@@ -1,10 +1,10 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.syntax.TypeDeclNode
-import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.core.Compilation.Verification
+import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.feedback.Feedback
 import lore.compiler.phases.resolution.DependencyGraph.InheritanceCycle
+import lore.compiler.syntax.TypeDeclNode
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.mutable.Graph
 

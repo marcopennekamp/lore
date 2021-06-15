@@ -1,8 +1,8 @@
 package lore.compiler.phases.generation
 
 import lore.compiler.core.CompilationException
-import lore.compiler.target.{Target, TargetOperator}
 import lore.compiler.target.Target.TargetStatement
+import lore.compiler.target.{Target, TargetOperator}
 
 object JavascriptGenerator {
 

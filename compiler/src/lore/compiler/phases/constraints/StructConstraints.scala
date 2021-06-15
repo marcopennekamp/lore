@@ -1,7 +1,7 @@
 package lore.compiler.phases.constraints
 
-import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.Compilation
+import lore.compiler.core.Compilation.Verification
 import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}

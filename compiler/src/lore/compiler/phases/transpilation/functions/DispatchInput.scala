@@ -2,7 +2,7 @@ package lore.compiler.phases.transpilation.functions
 
 import lore.compiler.core.CompilationException
 import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
-import lore.compiler.phases.transpilation.{RuntimeApi, TypeTranspiler, TemporaryVariableProvider}
+import lore.compiler.phases.transpilation.{RuntimeApi, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.target.Target
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}

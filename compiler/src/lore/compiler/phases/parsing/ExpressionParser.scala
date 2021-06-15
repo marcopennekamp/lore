@@ -2,14 +2,14 @@ package lore.compiler.phases.parsing
 
 import fastparse.ScalaWhitespace._
 import fastparse._
-import lore.compiler.syntax._
 import lore.compiler.core.{Fragment, Position}
 import lore.compiler.phases.parsing.LexicalParser.structIdentifier
 import lore.compiler.syntax.ExprNode.StringLiteralNode
+import lore.compiler.syntax._
 
 class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
+  import LexicalParser.{hexDigit, identifier}
   import Node._
-  import LexicalParser.{identifier, hexDigit}
 
   // Parse a handful of top-level expressions before jumping into the deep end.
   def topLevelExpression[_: P]: P[TopLevelExprNode] = {

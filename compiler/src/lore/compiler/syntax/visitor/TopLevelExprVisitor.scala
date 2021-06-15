@@ -1,8 +1,8 @@
 package lore.compiler.syntax.visitor
 
-import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.Verification
+import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import scalaz.Id.Id
 
 /**
@@ -64,8 +64,8 @@ trait TopLevelExprVisitor[A, M[_]] {
 object TopLevelExprVisitor {
 
   def visit[A](visitor: TopLevelExprVisitor[A, Id])(node: TopLevelExprNode): A = {
-    import TopLevelExprNode._
     import ExprNode._
+    import TopLevelExprNode._
 
     val rec = visit(visitor) _
 
@@ -104,8 +104,8 @@ object TopLevelExprVisitor {
     }
 
     protected def handleMatch(node: TopLevelExprNode, props: Props): Compilation[A] = {
-      import TopLevelExprNode._
       import ExprNode._
+      import TopLevelExprNode._
 
       node match {
         case node: LeafNode => visitor.visitLeaf(node)

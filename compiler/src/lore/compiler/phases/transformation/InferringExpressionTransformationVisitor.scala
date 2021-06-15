@@ -3,9 +3,9 @@ package lore.compiler.phases.transformation
 import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.core._
 import lore.compiler.feedback.Feedback
+import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.phases.resolution.TypeExpressionEvaluator
 import lore.compiler.phases.transformation.InferringExpressionTransformationVisitor._
-import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}

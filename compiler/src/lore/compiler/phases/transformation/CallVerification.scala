@@ -1,7 +1,7 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.Compilation
+import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types.Type

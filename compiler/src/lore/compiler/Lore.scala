@@ -1,11 +1,10 @@
 package lore.compiler
 
-import com.typesafe.scalalogging.Logger
-
-import java.nio.file.{Files, Path}
 import lore.compiler.core._
 import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.Registry
+
+import java.nio.file.{Files, Path}
 
 object Lore {
 

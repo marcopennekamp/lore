@@ -2,9 +2,9 @@ package lore.compiler.phases.parsing
 
 import fastparse.ScalaWhitespace._
 import fastparse._
+import lore.compiler.core.{Fragment, Position}
 import lore.compiler.syntax.Node
 import lore.compiler.syntax.Node.Index
-import lore.compiler.core.{Fragment, Position}
 
 /**
   * Implements the shunting-yard algorithm for arbitrary operators with arbitrary precedence. Supports both binary

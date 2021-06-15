@@ -2,9 +2,9 @@ package lore.compiler.phases.resolution
 
 import lore.compiler.core.{Compilation, CompilationException, Position}
 import lore.compiler.feedback.Feedback
-import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.scopes.TypeScope
+import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.syntax.TypeDeclNode
 
 object StructDefinitionResolver {

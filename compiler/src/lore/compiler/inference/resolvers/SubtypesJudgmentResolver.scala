@@ -2,7 +2,7 @@ package lore.compiler.inference.resolvers
 
 import lore.compiler.core.Compilation
 import lore.compiler.inference.Inference.{Assignments, instantiateByBound}
-import lore.compiler.inference.InferenceBounds.{BoundType, ensureBounds, ensureLowerBound, ensureUpperBound}
+import lore.compiler.inference.InferenceBounds.{BoundType, ensureLowerBound, ensureUpperBound}
 import lore.compiler.inference.TypingJudgment
 import lore.compiler.inference.matchers.SubtypingMatcher
 import lore.compiler.semantics.Registry
