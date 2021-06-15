@@ -11,6 +11,7 @@ Here is a **list of features** that will make up the minimum viable language:
 - **Data Types:** Traits, structs, shapes, properties, constructors, mutability, trait polymorphism.
 - **Expressions:** Literals and value constructors (numbers, strings, booleans, tuples, anonymous functions, lists, maps, shapes, atoms, structs), basic operators, blocks, (multi-)function calls, multi-functions as function values, conditional expressions, loops, property access, variable declarations, assignments, and return.
   - TODO: Pipe operator?
+  - TODO: Trailing lambdas?
 - **Global Constants:** Declaration, usage.
 - **Modules:** Module declarations, exports and imports, access operation on modules.
 

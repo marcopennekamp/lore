@@ -19,7 +19,7 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
 
   private implicit val options: CompilerOptions = CompilerOptions(runtimeLogging = false)
 
-  def prepareRegistry(fragmentName: String): Registry = {
+  def compileFragment(fragmentName: String): Registry = {
     Lore.fromSources(Path.of("."), testFragmentBase.resolve(fragmentName + ".lore")).toOption match {
       case Some((registry, _)) => registry
       case None => throw new RuntimeException(s"Compilation of test fragment $fragmentName failed!")
