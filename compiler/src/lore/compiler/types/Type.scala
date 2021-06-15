@@ -55,7 +55,7 @@ object Type {
       // it is NOT an augmented type and thus abstract.
       val exceptTraits = types.toVector.filterNotType[TraitType]
       exceptTraits.isEmpty || exceptTraits.exists(isAbstract)
-    case ProductType(elements) => elements.exists(isAbstract)
+    case TupleType(elements) => elements.exists(isAbstract)
     case FunctionType(_, _) => false
     case ListType(_) => false
     case MapType(_, _) => false
@@ -76,7 +76,7 @@ object Type {
     case _: TypeVariable => true
     case SumType(types) => types.exists(isPolymorphic)
     case IntersectionType(types) => types.exists(isPolymorphic)
-    case ProductType(elements) => elements.exists(isPolymorphic)
+    case TupleType(elements) => elements.exists(isPolymorphic)
     case FunctionType(input, output) => isPolymorphic(input) || isPolymorphic(output)
     case ListType(element) => isPolymorphic(element)
     case MapType(key, value) => isPolymorphic(key) || isPolymorphic(value)
@@ -97,7 +97,7 @@ object Type {
     case tv: TypeVariable => Set(tv)
     case SumType(types) => types.flatMap(variables)
     case IntersectionType(types) => types.flatMap(variables)
-    case ProductType(elements) => elements.flatMap(variables).toSet
+    case TupleType(elements) => elements.flatMap(variables).toSet
     case FunctionType(input, output) => variables(input) ++ variables(output)
     case ListType(element) => variables(element)
     case MapType(key, value) => variables(key) ++ variables(value)
@@ -129,7 +129,7 @@ object Type {
       case tv: TypeVariable => f(tv)
       case SumType(types) => SumType(types.map(rec))
       case IntersectionType(types) => IntersectionType(types.map(rec))
-      case ProductType(elements) => ProductType(elements.map(rec))
+      case TupleType(elements) => TupleType(elements.map(rec))
       case FunctionType(input, output) => FunctionType(rec(input), rec(output))
       case ListType(element) => ListType(rec(element))
       case MapType(key, value) => MapType(rec(key), rec(value))
@@ -139,11 +139,11 @@ object Type {
   }
 
   /**
-    * Returns a singleton product type enclosing the given type or the type itself if it's already a product type.
+    * Returns a singleton tuple type enclosing the given type, or the type itself if it's already a tuple type.
     */
-  def tupled(tpe: Type): ProductType = tpe match {
-    case tpe: ProductType => tpe
-    case _ => ProductType(Vector(tpe))
+  def tupled(tpe: Type): TupleType = tpe match {
+    case tpe: TupleType => tpe
+    case _ => TupleType(Vector(tpe))
   }
 
   /**
@@ -194,7 +194,7 @@ object Type {
     t match {
       case _ if !Type.isAbstract(t) => Vector(t)
       case dt: DeclaredType => registry.declaredTypeHierarchy.getDirectSubtypes(dt)
-      case ProductType(elements) => elements.map(abstractResolvedDirectSubtypes).sequence.map(ProductType(_))
+      case TupleType(elements) => elements.map(abstractResolvedDirectSubtypes).sequence.map(TupleType(_))
       case IntersectionType(parts) => parts.toVector.map(abstractResolvedDirectSubtypes).sequence.map(IntersectionType.construct).distinct
       case SumType(parts) => parts.toVector.flatMap(abstractResolvedDirectSubtypes).distinct
     }
@@ -222,7 +222,7 @@ object Type {
     t match {
       case SumType(types) => infix(" | ", TypePrecedence.Sum, types.toVector)
       case IntersectionType(types) => infix(" & ", TypePrecedence.Intersection, types.toVector)
-      case ProductType(elements) =>
+      case TupleType(elements) =>
         if (elements.isEmpty) "Unit"
         else s"(${elements.map(toString(_, verbose)).mkString(", ")})"
       case FunctionType(input, output) => infix(" => ", TypePrecedence.Function, Vector(input, output))

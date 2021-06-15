@@ -6,7 +6,7 @@ import { ShapeType } from '../shapes.ts'
 import { Struct, StructType } from '../structs.ts'
 import { SumType } from '../sums.ts'
 import { TraitType } from '../traits.ts'
-import { ProductType } from '../tuples.ts'
+import { TupleType } from '../tuples.ts'
 import { areEqual } from './equality.ts'
 import { Kind } from './kinds.ts'
 import { DeclaredType, PropertyTypes, Type, TypeVariable } from './types.ts'
@@ -106,9 +106,9 @@ export class SubtypingEnvironment {
         }
         break
 
-      case Kind.Product:
-        if (t2.kind === Kind.Product) {
-          return this.productSubtypeProduct(<ProductType> t1, <ProductType> t2)
+      case Kind.Tuple:
+        if (t2.kind === Kind.Tuple) {
+          return this.tupleSubtypesTuple(<TupleType> t1, <TupleType> t2)
         }
         break
 
@@ -245,11 +245,11 @@ export class SubtypingEnvironment {
   }
 
   /**
-   * Whether product type p1 is a subtype of product type p2.
+   * Whether tuple type t1 is a subtype of product type t2.
    */
-  private productSubtypeProduct(p1: ProductType, p2: ProductType): boolean {
-    const types1 = p1.types
-    const types2 = p2.types
+  private tupleSubtypesTuple(t1: TupleType, t2: TupleType): boolean {
+    const types1 = t1.types
+    const types2 = t2.types
     if (types1.length !== types2.length) return false
 
     for (let i = 0; i < types1.length; i += 1) {

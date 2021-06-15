@@ -50,7 +50,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
   }
 
   override def visit(expression: Tuple)(values: Vector[Chunk]): Chunk = {
-    if (expression.tpe == ProductType.UnitType) {
+    if (expression.tpe == TupleType.UnitType) {
       Chunk.expression(RuntimeApi.tuples.unitValue)
     } else {
       Chunk.combine(values) { values =>
@@ -183,7 +183,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   override def visit(expression: IfElse)(condition: Chunk, onTrue: Chunk, onFalse: Chunk): Chunk = {
     // If the result type of the if-else is unit, we can ignore the results of the respective then and else blocks.
-    val varResult = if (expression.tpe != ProductType.UnitType) Some(variableProvider.createVariable()) else None
+    val varResult = if (expression.tpe != TupleType.UnitType) Some(variableProvider.createVariable()) else None
     val resultDeclaration = varResult.map(_.declareMutableAs(Target.Undefined))
 
     def asBlock(chunk: Chunk): Target.Block = {

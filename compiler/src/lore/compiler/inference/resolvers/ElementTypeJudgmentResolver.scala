@@ -6,7 +6,7 @@ import lore.compiler.inference.Inference.{Assignments, instantiateCandidateType}
 import lore.compiler.inference.InferenceBounds.narrowBounds
 import lore.compiler.inference.TypingJudgment
 import lore.compiler.semantics.Registry
-import lore.compiler.types.{ListType, MapType, ProductType}
+import lore.compiler.types.{ListType, MapType, TupleType}
 
 object ElementTypeJudgmentResolver extends JudgmentResolver[TypingJudgment.ElementType] {
 
@@ -17,7 +17,7 @@ object ElementTypeJudgmentResolver extends JudgmentResolver[TypingJudgment.Eleme
     val instantiatedCollection = instantiateCandidateType(assignments, judgment.collection)
     val elementType = instantiatedCollection match {
       case ListType(element) => Compilation.succeed(element)
-      case MapType(key, value) => Compilation.succeed(ProductType(Vector(key, value)))
+      case MapType(key, value) => Compilation.succeed(TupleType(Vector(key, value)))
       case _ => Compilation.fail(CollectionExpected(instantiatedCollection, judgment))
     }
     elementType.flatMap(tpe => narrowBounds(assignments, judgment.target, tpe, judgment))

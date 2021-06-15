@@ -7,7 +7,7 @@ import lore.compiler.semantics.expressions.Expression.{Extractor, ForLoop, Loop,
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl._
 import lore.compiler.target.{Target, TargetOperator}
-import lore.compiler.types.{ListType, MapType, ProductType}
+import lore.compiler.types.{ListType, MapType, TupleType}
 
 case class LoopTranspiler()(implicit variableProvider: TemporaryVariableProvider, typeVariables: TranspiledTypeVariables) {
 
@@ -69,7 +69,7 @@ case class LoopTranspiler()(implicit variableProvider: TemporaryVariableProvider
     */
   def transpile(loop: Loop, body: Chunk)(loopShell: Vector[TargetStatement] => Vector[TargetStatement]): Chunk = {
     // The loop's inferred type is Unit if its body type is Unit, so this checks out.
-    val ignoreResult = loop.tpe == ProductType.UnitType
+    val ignoreResult = loop.tpe == TupleType.UnitType
 
     def loopCode(result: Option[(Target.Variable, TargetExpression)]) = {
       loopShell(

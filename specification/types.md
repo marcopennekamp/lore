@@ -24,7 +24,7 @@ A **type expression** is a representation of a particular type, built with the t
 
 - `t1 & t2 & t3` — An **intersection type** is constructed using the `&` symbol.
 
-- `(t1, t2, t3)` — **Product types** describing tuple values.
+- `(t1, t2, t3)` — **Tuple types** describing tuple values.
 
 - `t1 => t2` — **Function types** describing function values.
 
@@ -46,7 +46,7 @@ Type constructors have the following **precedence** (lowest priority first):
 &                           // intersection types
 =>							// function types
 ->                          // map types
-() (,) [] { ... } (...) id  // unit, product, list, shape, enclosed, names
+() (,) [] { ... } (...) id  // unit, tuple, list, shape, enclosed, names
 ```
 
 
@@ -116,11 +116,9 @@ Any value that is *both* a `Fish` *and* a `Mammal` is typed by `Fish & Mammal`.
 
 
 
-### Product Types
+### Tuple Types
 
-**TODO:** Rename to Tuple Types.
-
-A **product type** describes tuples. A type at any position is called an element of the product type.
+A **tuple type** describes tuples. It consists of a list of types called its elements.
 
 ###### Syntax Example
 
@@ -205,12 +203,12 @@ Each type is either **abstract** or concrete. Functions may only be declared as 
 - A **sum type** is always abstract. (In their normal form.)
 - An **intersection type** is abstract if at least one of its parts is abstract.
   - Note that there are special rules concerning traits as **augmentations**, defined further below.
-- A **product type** is abstract if at least one of its elements is abstract.
+- A **tuple type** is abstract if at least one of its elements is abstract.
 - A **function type** is always concrete, as one can always define the constant function.
 - A **list type** is always concrete.
 - A **map type** is always concrete.
 - A **shape type** is always concrete.
-  - Shape types would behave like product types if we could guarantee that run-time property types are always taken into account for multiple dispatch. This would require all struct properties to be open, which I do not want to support. It remains to be seen whether this poses a problem for defining abstract functions for component shape types.
+  - Shape types would behave like tuple types if we could guarantee that run-time property types are always taken into account for multiple dispatch. This would require all struct properties to be open, which I do not want to support. It remains to be seen whether this poses a problem for defining abstract functions for component shape types.
 - A **trait** is always abstract on its own and as an augmentation only abstract if it's intersecting merely with abstract types.
   - An **augmentation** trait takes diminished preference compared to a struct or any other concrete type. This is to avoid the following scenario: Assume that augmentations *could* be abstract. Define an abstract function `f(v: Struct & Trait)` over a struct `Struct` that gets called with a dynamically specialized type. That is, we create an object of type `Struct`, attach the label `Trait`, and call the abstract function. It won't be able to dispatch to specializing functions, as the struct is quite literally the end of the line (assuming no other specializing functions), and there is no implementation to be found. So `Struct & Trait` obviously shouldn't be an abstract type.
   - The "special" case in which **multiple traits intersect** is simply handled by the fact that the resulting intersection type is abstract since it does not contain a concrete type.

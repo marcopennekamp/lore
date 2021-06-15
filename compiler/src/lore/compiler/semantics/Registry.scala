@@ -162,7 +162,7 @@ class Registry {
     */
   def resolveExactFunction(name: String, types: Vector[Type])(implicit position: Position): Compilation[FunctionDefinition] = {
     resolveMultiFunction(name).flatMap { mf =>
-      mf.exact(ProductType(types)) match {
+      mf.exact(TupleType(types)) match {
         case None => Compilation.fail(ExactFunctionNotFound(name, types))
         case Some(f) => f.compiled
       }

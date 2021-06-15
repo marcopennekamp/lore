@@ -7,7 +7,7 @@ import lore.compiler.inference.InferenceBounds.narrowBounds
 import lore.compiler.inference.{Inference, TypingJudgment}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionInstance, MultiFunctionDefinition}
-import lore.compiler.types.ProductType
+import lore.compiler.types.TupleType
 
 object MultiFunctionCallJudgmentResolver extends JudgmentResolver[TypingJudgment.MultiFunctionCall] {
 
@@ -40,14 +40,14 @@ object MultiFunctionCallJudgmentResolver extends JudgmentResolver[TypingJudgment
     judgment: TypingJudgment.MultiFunctionCall,
     assignments: Assignments,
   )(implicit registry: Registry): Compilation[Assignments] = {
-    resolveDispatch(judgment.mf, ProductType(judgment.arguments), judgment.position, assignments).flatMap { instance =>
+    resolveDispatch(judgment.mf, TupleType(judgment.arguments), judgment.position, assignments).flatMap { instance =>
       val result = instance.signature.outputType
       narrowBounds(assignments, judgment.target, result, judgment)
     }
   }
 
-  def resolveDispatch(mf: MultiFunctionDefinition, uninstantiatedInputType: ProductType, position: Position, assignments: Inference.Assignments): Compilation[FunctionInstance] = {
-    val inputType = instantiateCandidateType(assignments, uninstantiatedInputType).asInstanceOf[ProductType]
+  def resolveDispatch(mf: MultiFunctionDefinition, uninstantiatedInputType: TupleType, position: Position, assignments: Inference.Assignments): Compilation[FunctionInstance] = {
+    val inputType = instantiateCandidateType(assignments, uninstantiatedInputType).asInstanceOf[TupleType]
     mf.min(inputType) match {
       case min if min.isEmpty => Compilation.fail(EmptyFit(mf, inputType, position))
       case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, inputType, min, position))

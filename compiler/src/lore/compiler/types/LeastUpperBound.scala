@@ -96,8 +96,8 @@ object LeastUpperBound {
         ).fallbackIfAny
       case (_, t2: SumType) => lubPassOnSettings(t2, t1)
 
-      // In case of product types, we can decide the closest common supertype element by element.
-      case (ProductType(left), ProductType(right)) if left.size == right.size => ProductType(left.zip(right).map(lubPassOnSettings.tupled))
+      // In case of tuple types, we can decide the closest common supertype element by element.
+      case (TupleType(left), TupleType(right)) if left.size == right.size => TupleType(left.zip(right).map(lubPassOnSettings.tupled))
 
       // The function output types can be decided as a LUB, but the input types are contravariant. So they have to be
       // merged as the reverse of a sum type: an intersection type.
@@ -146,9 +146,9 @@ object LeastUpperBound {
       case (BasicType.Int, BasicType.Real) => BasicType.Real
       case (BasicType.Real, BasicType.Int) => BasicType.Real
 
-      // In any other case, we can say that t1 and t2 are inherently incompatible. For example, a product type and
-      // a struct type could never be unified in this sense, and neither could two product types with different
-      // lengths. Hence we return the default.
+      // In any other case, we can say that t1 and t2 are inherently incompatible. For example, a tuple type and a
+      // struct type could never be unified in this sense, and neither could two tuple types with different lengths.
+      // Hence we return the default.
       case _ => fallback
     }
   }

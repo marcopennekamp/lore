@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation.Verification
 import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
-import lore.compiler.types.{Fit, ProductType, Type}
+import lore.compiler.types.{Fit, TupleType, Type}
 
 object MultiFunctionConstraints {
 
@@ -74,8 +74,8 @@ object MultiFunctionConstraints {
     *   without having to declare a function `name(fish: Fish)`. We merely have to declare the function for all types
     *   that extend/implement `Fish`.
     */
-  private def verifyInputTypeTotality(mf: MultiFunctionDefinition, inputType: ProductType)(implicit registry: Registry): Vector[ProductType] = {
-    Type.abstractResolvedDirectSubtypes(inputType).map(_.asInstanceOf[ProductType]).flatMap { subtype =>
+  private def verifyInputTypeTotality(mf: MultiFunctionDefinition, inputType: TupleType)(implicit registry: Registry): Vector[TupleType] = {
+    Type.abstractResolvedDirectSubtypes(inputType).map(_.asInstanceOf[TupleType]).flatMap { subtype =>
       val isImplemented = mf.functions.exists { f2 =>
         Fit.isMoreSpecific(f2.signature.inputType, inputType) && mf.fit(subtype).contains(f2)
       }

@@ -64,10 +64,10 @@ object Subtyping {
         case _ => isAnyPartSubtypeOf(i1, t2)
       }
 
-      case t1: ProductType => t2 match {
-        // A product type p1 is the subtype of a product type p2 if both types have the same number of elements
-        // and each element of p1 is a subtype of the element in p2 that is at the same position.
-        case t2: ProductType => return isTupleSubtypeOfTuple(t1, t2)
+      case t1: TupleType => t2 match {
+        // A tuple type t1 is the subtype of a tuple type t2 if both types have the same number of elements and each
+        // element of t1 is a subtype of the element in t2 that is at the same position.
+        case t2: TupleType => return isTupleSubtypeOfTuple(t1, t2)
         case _ => false
       }
 
@@ -129,7 +129,7 @@ object Subtyping {
     intersectionType.parts.exists(t => isSubtype(t, candidateSupertype))
   }
 
-  private def isTupleSubtypeOfTuple(t1: ProductType, t2: ProductType): Boolean = {
+  private def isTupleSubtypeOfTuple(t1: TupleType, t2: TupleType): Boolean = {
     if (t1.elements.size != t2.elements.size) {
       return false
     }

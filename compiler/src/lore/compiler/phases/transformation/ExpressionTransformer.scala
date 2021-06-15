@@ -9,7 +9,7 @@ import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.scopes.{TypeScope, VariableScope}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
-import lore.compiler.types.{ProductType, Type}
+import lore.compiler.types.{TupleType, Type}
 
 object ExpressionTransformer {
 
@@ -59,7 +59,7 @@ object ExpressionTransformer {
     */
   private def withImplicitUnitValue(expectedType: Type)(expression: Expression): Expression = {
     expression match {
-      case Expression.Block(expressions, position) if expectedType == ProductType.UnitType && expression.tpe != ProductType.UnitType =>
+      case Expression.Block(expressions, position) if expectedType == TupleType.UnitType && expression.tpe != TupleType.UnitType =>
         Expression.Block(expressions :+ Expression.Tuple(Vector.empty, position), position)
       case _ => expression
     }

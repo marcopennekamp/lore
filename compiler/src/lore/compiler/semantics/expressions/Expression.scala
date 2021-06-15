@@ -22,17 +22,17 @@ object Expression {
 
   case class VariableDeclaration(
     variable: LocalVariable, value: Expression, position: Position,
-  ) extends Expression.Apply(ProductType.UnitType)
+  ) extends Expression.Apply(TupleType.UnitType)
 
   case class Assignment(
     target: Expression.Access, value: Expression, position: Position,
-  ) extends Expression.Apply(ProductType.UnitType)
+  ) extends Expression.Apply(TupleType.UnitType)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Block expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class Block(expressions: Vector[Expression], position: Position) extends Expression {
-    override val tpe: Type = expressions.lastOption.map(_.tpe).getOrElse(ProductType.UnitType)
+    override val tpe: Type = expressions.lastOption.map(_.tpe).getOrElse(TupleType.UnitType)
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,7 +70,7 @@ object Expression {
   case class Literal(value: Any, tpe: BasicType, position: Position) extends Expression
 
   case class Tuple(values: Vector[Expression], position: Position) extends Expression {
-    override val tpe: Type = if (values.isEmpty) ProductType.UnitType else ProductType(values.map(_.tpe))
+    override val tpe: Type = if (values.isEmpty) TupleType.UnitType else TupleType(values.map(_.tpe))
   }
 
   case class AnonymousFunction(
@@ -78,7 +78,7 @@ object Expression {
     body: Expression,
     position: Position,
   ) extends Expression {
-    override val tpe: Type = FunctionType(ProductType(parameters.map(_.tpe)), body.tpe)
+    override val tpe: Type = FunctionType(TupleType(parameters.map(_.tpe)), body.tpe)
   }
 
   case class AnonymousFunctionParameter(name: String, tpe: Type, position: Position) {

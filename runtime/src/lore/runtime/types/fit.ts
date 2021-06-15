@@ -3,7 +3,7 @@ import { ListType } from '../lists.ts'
 import { MapType } from '../maps.ts'
 import { ShapeType } from '../shapes.ts'
 import { Struct, StructType } from '../structs.ts'
-import { ProductType } from '../tuples.ts'
+import { TupleType } from '../tuples.ts'
 import { TinyMap } from '../utils/TinyMap.ts'
 import { areEqual } from './equality.ts'
 import { Kind } from './kinds.ts'
@@ -172,10 +172,10 @@ class TypeVariableAllocation {
       case Kind.Trait:
         break // TODO: Change this once we allow type parameters for classes and labels.
 
-      case Kind.Product:
-        if (t1.kind === Kind.Product) {
-          const types1 = (<ProductType> t1).types
-          const types2 = (<ProductType> t2).types
+      case Kind.Tuple:
+        if (t1.kind === Kind.Tuple) {
+          const types1 = (<TupleType> t1).types
+          const types2 = (<TupleType> t2).types
           if (types1.length === types2.length) {
             for (let i = 0; i < types1.length; i += 1) {
               TypeVariableAllocation.assign(types1[i], types2[i], allocation)

@@ -7,7 +7,7 @@ import { Kind } from '../runtime/src/lore/runtime/types/kinds.ts'
 import { Type } from '../runtime/src/lore/runtime/types/types.ts'
 
 export function assertIsTuple(actual: TupleValue, elementCount: Number) {
-  assertEquals(actual.lore$type.kind, Kind.Product)
+  assertEquals(actual.lore$type.kind, Kind.Tuple)
   assertEquals(actual.lore$type.types.length, elementCount)
 }
 

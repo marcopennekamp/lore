@@ -24,9 +24,9 @@ case class MultiFunctionProperties(mf: MultiFunctionDefinition) {
   lazy val uniqueArity: Option[Int] = if (arities.size == 1) arities.headOption else None
 
   /**
-    * Whether we can bypass creating product types around argument types on both the left and right side of
-    * fits. If there is only a single argument across the board, product types are useless overhead. We can
-    * easily optimize this overhead away.
+    * Whether we can bypass creating tuple types around argument types on both the left and right side of fits. If
+    * there is only a single argument across the board, tuple types are useless overhead. We can easily optimize this
+    * overhead away.
     */
   lazy val mayUnpackArgumentTuple: Boolean = uniqueArity.contains(1)
 
@@ -42,7 +42,7 @@ case class MultiFunctionProperties(mf: MultiFunctionDefinition) {
       case tv: TypeVariable => 10 + typeComplexity(tv.lowerBound) + typeComplexity(tv.upperBound)
       case SumType(parts) => 1 + parts.map(typeComplexity).sum
       case IntersectionType(parts) => 1 + parts.map(typeComplexity).sum
-      case ProductType(elements) => 1 + elements.map(typeComplexity).sum
+      case TupleType(elements) => 1 + elements.map(typeComplexity).sum
       case ListType(element) => 1 + typeComplexity(element)
       case MapType(key, value) => 1 + typeComplexity(key) + typeComplexity(value)
       case _: TraitType =>

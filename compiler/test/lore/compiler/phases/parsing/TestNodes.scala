@@ -83,7 +83,7 @@ object TestNodes {
     val Identifier = withWildcard(IdentifierNode)
     val Sum = withWildcard(SumNode)
     val Intersection = withWildcard(IntersectionNode)
-    val Product = withWildcard(ProductNode)
+    val Tuple = withWildcard(TupleNode)
     val Unit = withWildcard(UnitNode)
     val List = withWildcard(ListNode)
     val Map = withWildcard(MapNode)

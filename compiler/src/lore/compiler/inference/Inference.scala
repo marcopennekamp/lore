@@ -65,7 +65,7 @@ object Inference {
     case iv: InferenceVariable => Set(iv)
     case SumType(types) => types.flatMap(variables)
     case IntersectionType(types) => types.flatMap(variables)
-    case ProductType(elements) => elements.flatMap(variables).toSet
+    case TupleType(elements) => elements.flatMap(variables).toSet
     case FunctionType(input, output) => variables(input) ++ variables(output)
     case ListType(element) => variables(element)
     case MapType(key, value) => variables(key) ++ variables(value)
@@ -80,7 +80,7 @@ object Inference {
     case _: InferenceVariable => false
     case SumType(types) => types.forall(isFullyInstantiated)
     case IntersectionType(types) => types.forall(isFullyInstantiated)
-    case ProductType(elements) => elements.forall(isFullyInstantiated)
+    case TupleType(elements) => elements.forall(isFullyInstantiated)
     case FunctionType(input, output) => isFullyInstantiated(input) && isFullyInstantiated(output)
     case ListType(element) => isFullyInstantiated(element)
     case MapType(key, value) => isFullyInstantiated(key) && isFullyInstantiated(value)
@@ -121,7 +121,7 @@ object Inference {
       case iv: InferenceVariable => get(InferenceVariable.bounds(iv, assignments), boundType)
       case SumType(types) => SumType.construct(types.map(rec))
       case IntersectionType(types) => IntersectionType.construct(types.map(rec))
-      case ProductType(elements) => ProductType(elements.map(rec))
+      case TupleType(elements) => TupleType(elements.map(rec))
       case FunctionType(input, output) => FunctionType(recContravariant(input), rec(output))
       case ListType(element) => ListType(rec(element))
       case MapType(key, value) => MapType(rec(key), rec(value))

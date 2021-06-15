@@ -217,7 +217,7 @@ Two strings are equal if they have the same length and characters. Strings are o
 
 ### Tuples
 
-Lore supports **tuples**. As described by product types, tuples are fixed-size, heterogenous lists of values. Tuples are simply created by putting parentheses around comma-separated values: `(a, b, c)`. A tuple value's type is the product type of the respective element types.
+Lore supports **tuples**. As described by tuple types, tuples are fixed-size, heterogenous lists of values. Tuples are simply created by putting parentheses around comma-separated values: `(a, b, c)`. A tuple value's type is the tuple type of the respective element types.
 
 ###### Example
 
@@ -504,7 +504,7 @@ Note that we don't view assignments as operators. **Complex expressions** such a
 
 - **Tuples:**
 
-  - How can we define `get` such that it **supports tuples of arbitrary length**? Give every product type a supertype called `Product` and implement `get` via multiple dispatch?
+  - How can we define `get` such that it **supports tuples of arbitrary length**? Give every tuple type a supertype called `Tuple` and implement `get` via multiple dispatch?
   - Implement some default tuple **ordering**.
 
 - A feature such as Swift's **trailing closures**, maybe add some way to pass two or more closures. (Or just multiple parameter lists.)

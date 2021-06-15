@@ -34,7 +34,7 @@ class TypeEncoderSpec extends BaseSpec {
     new TypeVariable("C", BasicType.Boolean, BasicType.String, 0) --> Vector(0xc7, 0x01, 'C', 0xa4, 0xa5)
   }
 
-  it should "correctly encode sum, intersection, and product types with basic type children" in {
+  it should "correctly encode sum, intersection, and tuple types with basic type children" in {
     // TODO: Write this test.
   }
 

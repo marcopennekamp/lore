@@ -29,7 +29,7 @@ export function stringify(type: Type): string {
 
     case Kind.Sum: return stringifyXary(<XaryType> type, " | ")
     case Kind.Intersection: return stringifyXary(<XaryType> type, " & ")
-    case Kind.Product: return stringifyXary(<XaryType> type, ", ")
+    case Kind.Tuple: return stringifyXary(<XaryType> type, ", ")
 
     case Kind.Function: {
       const func = <FunctionType> type

@@ -75,7 +75,7 @@ object TypeTranspiler {
       case BasicType.Int => api.int
       case BasicType.Boolean => api.boolean
       case BasicType.String => api.string
-      case ProductType.UnitType => RuntimeApi.tuples.unitType
+      case TupleType.UnitType => RuntimeApi.tuples.unitType
       case declaredType: DeclaredType => RuntimeNames.declaredType(declaredType)
       case SumType(types) =>
         val args = types.map(rec).toVector
@@ -83,7 +83,7 @@ object TypeTranspiler {
       case IntersectionType(types) =>
         val args = types.map(rec).toVector
         if (simplifyAtRuntime) RuntimeApi.intersections.simplified(args) else RuntimeApi.intersections.tpe(args)
-      case ProductType(elements) => RuntimeApi.tuples.tpe(elements.map(rec))
+      case TupleType(elements) => RuntimeApi.tuples.tpe(elements.map(rec))
       case FunctionType(input, output) => RuntimeApi.functions.tpe(rec(input), rec(output))
       case ListType(element) => RuntimeApi.lists.tpe(rec(element))
       case MapType(key, value) => RuntimeApi.maps.tpe(rec(key), rec(value))

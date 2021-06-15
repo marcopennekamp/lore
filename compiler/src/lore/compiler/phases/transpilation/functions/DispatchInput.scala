@@ -56,7 +56,7 @@ class DispatchInput(mf: MultiFunctionDefinition, properties: MultiFunctionProper
   lazy val requiresRestParameters: Boolean = properties.uniqueArity.isEmpty
 
   /**
-    * Transpiles the code that gathers the argument types into a product type.
+    * Transpiles the code that gathers the argument types into a tuple type.
     */
   def gatherArgumentTypes(): Vector[TargetStatement] = {
     // If we can unpack the argument tuple, the generated code is very simple.

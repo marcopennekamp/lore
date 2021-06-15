@@ -7,7 +7,7 @@ import lore.compiler.inference.Inference.{Assignments, isFullyInstantiated}
 import lore.compiler.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.inference._
 import lore.compiler.semantics.Registry
-import lore.compiler.types.{BasicType, ProductType, Type}
+import lore.compiler.types.{BasicType, TupleType, Type}
 
 object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment.MultiFunctionHint] {
 
@@ -102,7 +102,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       }
 
       val resultJudgments = Vector(
-        TypingJudgment.Assign(resultArgumentType, ProductType(argumentTypes), position)
+        TypingJudgment.Assign(resultArgumentType, TupleType(argumentTypes), position)
       )
 
       val supplementalJudgments = boundsJudgments ++ argumentJudgments ++ resultJudgments
@@ -132,7 +132,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       }
     } else {
       Inference.logger.trace(s"Empty fit of `$judgment`:${compilations.mkString("\n")}")
-      Compilation.fail(EmptyFit(mf, ProductType(argumentTypes), judgment.position))
+      Compilation.fail(EmptyFit(mf, TupleType(argumentTypes), judgment.position))
     }
   }
 

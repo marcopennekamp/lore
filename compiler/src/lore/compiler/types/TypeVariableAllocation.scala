@@ -132,9 +132,9 @@ object TypeVariableAllocation {
     (t1, t2) match {
       case (_, tv2: TypeVariable) => allocation.addAssignment(tv2, t1)
 
-      case (p1: ProductType, p2: ProductType) =>
-        if (p1.elements.size == p2.elements.size) {
-          p1.elements.zip(p2.elements).foreach { case (e1, e2) => assign(e1, e2) }
+      case (t1: TupleType, t2: TupleType) =>
+        if (t1.elements.size == t2.elements.size) {
+          t1.elements.zip(t2.elements).foreach { case (e1, e2) => assign(e1, e2) }
         }
 
       case (f1: FunctionType, f2: FunctionType) =>

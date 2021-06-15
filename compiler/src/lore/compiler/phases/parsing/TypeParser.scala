@@ -27,18 +27,18 @@ class TypeParser(implicit fragment: Fragment) {
   }
 
   private def atom[_: P]: P[TypeExprNode] = {
-    P(unitType | productType | listType | shapeType | namedType | enclosedType)
+    P(unitType | tupleType | listType | shapeType | namedType | enclosedType)
   }
 
   private def unitType[_: P]: P[TypeExprNode] = P(Index ~ "(" ~ ")").map(index => TypeExprNode.UnitNode(Position(fragment, index)))
 
   /**
-    * The parser for product types doesn't support tuples of length 1 because of the ambiguity with the enclosedType
+    * The parser for tuple types doesn't support tuples of length 1 because of the ambiguity with the enclosedType
     * parser. Since length-1 tuple types are generally useless, we think this is fine as is.
     */
-  private def productType[_: P]: P[TypeExprNode.ProductNode] = {
+  private def tupleType[_: P]: P[TypeExprNode.TupleNode] = {
     P(Index ~ "(" ~ typeExpression ~ ("," ~ typeExpression).rep(1) ~ ")").map {
-      case (index, e, es) => TypeExprNode.ProductNode(e +: es.toVector, Position(fragment, index))
+      case (index, e, es) => TypeExprNode.TupleNode(e +: es.toVector, Position(fragment, index))
     }
   }
 

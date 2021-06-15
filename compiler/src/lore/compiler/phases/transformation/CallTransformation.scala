@@ -5,7 +5,7 @@ import lore.compiler.feedback.DispatchFeedback.{AmbiguousCall, EmptyFit}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.CallTarget
-import lore.compiler.types.ProductType
+import lore.compiler.types.TupleType
 
 object CallTransformation {
 
@@ -18,7 +18,7 @@ object CallTransformation {
     position: Position,
   )(implicit registry: Registry): Compilation[Expression.Call] = {
     registry.resolveMultiFunction(functionName)(position).flatMap { mf =>
-      val inputType = ProductType(arguments.map(_.tpe))
+      val inputType = TupleType(arguments.map(_.tpe))
       mf.min(inputType) match {
         case min if min.isEmpty => Compilation.fail(EmptyFit(mf, inputType, position))
         case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, inputType, min, position))

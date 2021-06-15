@@ -39,7 +39,7 @@ object SubtypingMatcher {
       case (iv1: InferenceVariable, t2) => processIv1(iv1, t2, assignments, context)
       case (t1, iv2: InferenceVariable) => processIv2(t1, iv2, assignments, context)
 
-      case (p1: ProductType, p2: ProductType) => Matchers.matchTuple(p1, p2, assignments, rec, expectedSubtype)
+      case (t1: TupleType, t2: TupleType) => Matchers.matchTuple(t1, t2, assignments, rec, expectedSubtype)
 
       case (f1: FunctionType, f2: FunctionType) => rec(assignments, f2.input, f1.input).flatMap(rec(_, f1.output, f2.output))
 

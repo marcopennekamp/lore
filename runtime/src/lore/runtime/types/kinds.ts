@@ -10,7 +10,7 @@ export enum Kind {
   Trait,
   Sum,
   Intersection,
-  Product,
+  Tuple,
   Function,
   List,
   Map,

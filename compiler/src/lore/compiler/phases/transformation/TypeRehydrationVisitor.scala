@@ -6,7 +6,7 @@ import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression._
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.scopes.{LocalVariable, TypedVariable}
-import lore.compiler.types.{ListType, ProductType, Type}
+import lore.compiler.types.{ListType, TupleType, Type}
 
 /**
   * Replaces all inference variables with inferred types.
@@ -122,7 +122,7 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
     * Instantiates the result type of the loop, simplifying [Unit] to Unit to cover "no result" loops.
     */
   private def instantiateLoopResultType(resultType: Type): Type = assignments.instantiate(resultType) match {
-    case ListType(ProductType.UnitType) => ProductType.UnitType
+    case ListType(TupleType.UnitType) => TupleType.UnitType
     case t => t
   }
 

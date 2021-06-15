@@ -6,7 +6,7 @@ import { ShapeType } from '../shapes.ts'
 import { Struct, StructType } from '../structs.ts'
 import { SumType } from '../sums.ts'
 import { TraitType } from '../traits.ts'
-import { ProductType } from '../tuples.ts'
+import { TupleType } from '../tuples.ts'
 import {
   AnyType, BooleanType, IntType, NothingType, PropertyTypes, RealType, StringType, Type, TypeVariable,
 } from './types.ts'
@@ -38,7 +38,7 @@ export function areEqual(t1: Type, t2: Type): boolean {
  * of cases, the two types will be equal. We just have to confirm that fact. So in the case of sum types, we could
  * for example check whether both types have the same number of parts. Only then can they be equal. This is not
  * needed to confirm equality, however, and as such shouldn't be part of these rules. In contrast, the check that
- * two product types have the same length is vital, because the verification wouldn't be complete without.
+ * two tuple types have the same length is vital, because the verification wouldn't be complete without.
  */
 const rules: Array<(t1: any, t2: any) => boolean> = [
   // It has already been established that t1 and t2 are not referentially equal. Type variable equality is
@@ -84,7 +84,7 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
   (t1: SumType, t2: SumType) => hasEqualIn(t1.types, t2.types) && hasEqualIn(t2.types, t1.types),
   (t1: IntersectionType, t2: IntersectionType) => hasEqualIn(t1.types, t2.types) && hasEqualIn(t2.types, t1.types),
 
-  (t1: ProductType, t2: ProductType) => {
+  (t1: TupleType, t2: TupleType) => {
     const types1 = t1.types
     const types2 = t2.types
     if (!(types1.length === types2.length)) return false

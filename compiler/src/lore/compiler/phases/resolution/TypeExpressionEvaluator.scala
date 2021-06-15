@@ -20,8 +20,8 @@ object TypeExpressionEvaluator {
       case TypeExprNode.IdentifierNode(name, _) => typeScope.resolve(name)
       case TypeExprNode.IntersectionNode(expressions, _) => expressions.map(evaluate).simultaneous.map(IntersectionType.construct)
       case TypeExprNode.SumNode(expressions, _) => expressions.map(evaluate).simultaneous.map(SumType.construct)
-      case TypeExprNode.ProductNode(expressions, _) => expressions.map(evaluate).simultaneous.map(ProductType(_))
-      case TypeExprNode.UnitNode(_) => ProductType.UnitType.compiled
+      case TypeExprNode.TupleNode(expressions, _) => expressions.map(evaluate).simultaneous.map(TupleType(_))
+      case TypeExprNode.UnitNode(_) => TupleType.UnitType.compiled
       case TypeExprNode.FunctionNode(input, output, _) => (evaluate(input).map(Type.tupled), evaluate(output)).simultaneous.map(FunctionType.tupled)
       case TypeExprNode.ListNode(element, _) => evaluate(element).map(ListType)
       case TypeExprNode.MapNode(key, value, _) => (evaluate(key), evaluate(value)).simultaneous.map(MapType.tupled)

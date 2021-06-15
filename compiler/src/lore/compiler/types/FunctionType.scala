@@ -16,14 +16,14 @@ import scala.util.hashing.MurmurHash3
 case class FunctionType(input: Type, output: Type) extends Type {
   // This seems like the best way to (softly) enforce the need for tuple types here. A sum type would be great, but
   // isn't very comfortable in Scala 2.
-  if (!input.isInstanceOf[ProductType] && !input.isInstanceOf[InferenceVariable]) {
+  if (!input.isInstanceOf[TupleType] && !input.isInstanceOf[InferenceVariable]) {
     throw CompilationException(s"A function type's input type must either be a tuple type or an inference variable. Actual type: $input.")
   }
 
-  lazy val inputTuple: ProductType = input.asInstanceOf[ProductType]
+  lazy val inputTuple: TupleType = input.asInstanceOf[TupleType]
 
   lazy val parameters: Vector[Type] = input match {
-    case ProductType(elements) => elements
+    case TupleType(elements) => elements
     case _ => throw CompilationException(s"Can't retrieve parameters from non-tuple input type. Input type: $input.")
   }
 

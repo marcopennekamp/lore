@@ -4,7 +4,7 @@ import lore.compiler.core.{Errors, Result}
 import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.compiler.types.ProductType
+import lore.compiler.types.TupleType
 import lore.compiler.{CompilerOptions, Lore}
 import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
@@ -59,7 +59,7 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
   }
 
   implicit class MultiFunctionExtension(multiFunction: MultiFunctionDefinition) {
-    def exactGet(inputType: ProductType): FunctionDefinition = multiFunction.exact(inputType).get
+    def exactGet(inputType: TupleType): FunctionDefinition = multiFunction.exact(inputType).get
   }
 
   val beAbstract: Matcher[FunctionDefinition] = (f: FunctionDefinition) => MatchResult(f.isAbstract, s"$f was not abstract", s"$f was abstract")

@@ -2,15 +2,15 @@ package lore.compiler.inference.matchers
 
 import lore.compiler.core.Compilation
 import lore.compiler.inference.Inference.Assignments
-import lore.compiler.types.{ProductType, Type}
+import lore.compiler.types.{TupleType, Type}
 
 object Matchers {
 
   val unsupported: (Any, Any, Any, Any) => Nothing = (_, _, _, _) => { throw new UnsupportedOperationException }
 
   def matchTuple(
-    t1: ProductType,
-    t2: ProductType,
+    t1: TupleType,
+    t2: TupleType,
     assignments: Assignments,
     rec: (Assignments, Type, Type) => Compilation[Assignments],
     failure: Compilation[Nothing],

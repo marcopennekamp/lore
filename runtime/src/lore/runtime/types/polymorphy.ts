@@ -22,7 +22,7 @@ export function isPolymorphic(type: Type): boolean {
 
     case Kind.Sum:
     case Kind.Intersection:
-    case Kind.Product: {
+    case Kind.Tuple: {
       const xary = <XaryType> type
       const types = xary.types
       for (let i = 0; i < types.length; i += 1) {
@@ -63,7 +63,7 @@ export function variables(type: Type): TinySet<TypeVariable> {
 
       case Kind.Intersection:
       case Kind.Sum:
-      case Kind.Product: {
+      case Kind.Tuple: {
         const xary = <XaryType> type
         const types = xary.types
         for (let i = 0; i < types.length; i += 1) {

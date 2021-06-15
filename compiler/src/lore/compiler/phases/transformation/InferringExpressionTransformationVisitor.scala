@@ -268,7 +268,7 @@ class InferringExpressionTransformationVisitor(
       /* for {
         types <- typeExpressions.map(TypeExpressionEvaluator.evaluate).simultaneous
         function <- registry.resolveExactFunction(name, types)(position)
-        instance <- function.instantiate(ProductType(types))
+        instance <- function.instantiate(TupleType(types))
       } yield Expression.Call(instance, expressions, position) */
       ???
 
@@ -324,7 +324,7 @@ class InferringExpressionTransformationVisitor(
         (inputType, outputType)
     }
 
-    typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(ProductType(arguments.map(_.tpe)), inputType, target.position)
+    typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(TupleType(arguments.map(_.tpe)), inputType, target.position)
 
     Expression.Call(CallTarget.Value(target), arguments, outputType, position)
   }

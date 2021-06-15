@@ -24,7 +24,7 @@ class LeastUpperBoundSpec extends TypeSpec {
     (Goldfish, ScottishFold) --> Animal
   }
 
-  it should "return the most specific supertype for product types" in {
+  it should "return the most specific supertype for tuple types" in {
     ((Bird, Goldfish): Type, (Raven, Chicken): Type) --> (Bird, Animal)
     ((Penguin, Chicken, Raven): Type, (Chicken, Raven, Penguin): Type) --> (Bird, Bird, Bird)
     ((Chicken & Penguin, Goldfish & Cat, Unicorn & Healthy): Type, (Raven & Sick, Fish & Sick, Human & Sick): Type) -->

@@ -10,7 +10,7 @@ import lore.compiler.core.CompilationException
   *     without using parentheses.
   *   - The first byte of a type's representation, the tag, determines the kind of the type and, possibly,
   *     its number of operands. Types are divided into variable-size types, fixed-size types and basic types:
-  *       - Variable size: Sum, Intersection, Product, Named
+  *       - Variable size: Sum, Intersection, Tuple, Named
   *         - Named has, for now, always zero operands, as we have not introduced parametric structs/traits yet.
   *         - Also note that Named excludes type variables!
   *       - Basic type: Any, Nothing, Real, Int, Boolean, String
@@ -18,13 +18,13 @@ import lore.compiler.core.CompilationException
   *     The first three bits determine the kind of the type:
   *       - 000: Sum
   *       - 001: Intersection
-  *       - 010: Product
+  *       - 010: Tuple
   *       - 011: Named
   *       - 100: Shape
   *       - 101: basic type
   *       - 110: fixed-size type
   *     The last five bits are determined as follows:
-  *       - Sum/Intersection/Product/Named: the number of operands (0 to 31)
+  *       - Sum/Intersection/Tuple/Named: the number of operands (0 to 31)
   *       - Shape: the number of properties (0 to 31)
   *       - basic type:
   *         - 00000: Any
@@ -42,7 +42,7 @@ import lore.compiler.core.CompilationException
   *         - 00110: Variable with custom upper bound (lower bound: Nothing)
   *         - 00111: Variable with custom bounds
   *   - Following the first byte are any operands. Concretely:
-  *     - Sum/Intersection/Product:
+  *     - Sum/Intersection/Tuple:
   *       - Any child types according to the encoded number of operands.
   *     - Named:
   *       - The name of the type, encoded as a UTF-8 string with a length.
@@ -64,7 +64,7 @@ object TypeEncoder {
   private object Kind {
     val sum: Byte = 0
     val intersection: Byte = 1
-    val product: Byte = 2
+    val tuple: Byte = 2
     val named: Byte = 3
     val shape: Byte = 4
     val basic: Byte = 5
@@ -108,7 +108,7 @@ object TypeEncoder {
     // TODO: Order intersection and sum parts to disambiguate sets.
     case SumType(types) => Tag.variableSize(Kind.sum, types.size) +: types.toVector.flatMap(writeType)
     case IntersectionType(types) => Tag.variableSize(Kind.intersection, types.size) +: types.toVector.flatMap(writeType)
-    case ProductType(elements) => Tag.variableSize(Kind.product, elements.size) +: elements.flatMap(writeType)
+    case TupleType(elements) => Tag.variableSize(Kind.tuple, elements.size) +: elements.flatMap(writeType)
     case FunctionType(input, output) => (Tag.function +: writeType(input)) ++ writeType(output)
     case ListType(element) => Tag.list +: writeType(element)
     case MapType(key, value) => (Tag.map +: writeType(key)) ++ writeType(value)

@@ -10,7 +10,7 @@ pub enum Type {
     Label { name: String },
     Sum { parts: Vec<Type> },
     Intersection { parts: Vec<Type> },
-    Product { elements: Vec<Type> },
+    Tuple { elements: Vec<Type> },
     Component { underlying: Box<Type> },
     List { element: Box<Type> },
     Map { key: Box<Type>, value: Box<Type> },
@@ -43,7 +43,7 @@ pub fn are_equal(t1: &Type, t2: &Type) -> bool {
             //has_equal_in(types1, types2) && has_equal_in(types2, types1)
             types_exactly_equal(types1, types2)
         }
-        (Type::Product { elements: types1 }, Type::Product { elements: types2 }) => {
+        (Type::Tuple { elements: types1 }, Type::Tuple { elements: types2 }) => {
             types_exactly_equal(types1, types2)
         },
         (Type::Component { underlying: u1 }, Type::Component { underlying: u2 }) => are_equal(u1, u2),

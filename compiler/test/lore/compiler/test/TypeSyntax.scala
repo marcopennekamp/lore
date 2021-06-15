@@ -17,13 +17,13 @@ trait TypeSyntax {
 
   implicit def toType(name: String)(implicit registry: Registry): Type = registry.getType(name).get
 
-  def tuple(elements: Type*): ProductType = ProductType(elements.toVector)
+  def tuple(elements: Type*): TupleType = TupleType(elements.toVector)
 
-  implicit def toProductTypeSS(tuple: (String, String))(implicit registry: Registry): ProductType = toProductTypeTT((toType(tuple._1), toType(tuple._2)))
-  implicit def toProductTypeTS(tuple: (Type, String))(implicit registry: Registry): ProductType = toProductTypeTT((tuple._1, toType(tuple._2)))
-  implicit def toProductTypeST(tuple: (String, Type))(implicit registry: Registry): ProductType = toProductTypeTT((toType(tuple._1), tuple._2))
-  implicit def toProductTypeTT(tuple: (Type, Type)): ProductType = ProductType(Vector(tuple._1, tuple._2))
-  implicit def toProductTypeTTT(tuple: (Type, Type, Type)): ProductType = ProductType(Vector(tuple._1, tuple._2, tuple._3))
+  implicit def toTupleTypeSS(tuple: (String, String))(implicit registry: Registry): TupleType = toTupleTypeTT((toType(tuple._1), toType(tuple._2)))
+  implicit def toTupleTypeTS(tuple: (Type, String))(implicit registry: Registry): TupleType = toTupleTypeTT((tuple._1, toType(tuple._2)))
+  implicit def toTupleTypeST(tuple: (String, Type))(implicit registry: Registry): TupleType = toTupleTypeTT((toType(tuple._1), tuple._2))
+  implicit def toTupleTypeTT(tuple: (Type, Type)): TupleType = TupleType(Vector(tuple._1, tuple._2))
+  implicit def toTupleTypeTTT(tuple: (Type, Type, Type)): TupleType = TupleType(Vector(tuple._1, tuple._2, tuple._3))
 
   def list(element: Type): ListType = ListType(element)
 

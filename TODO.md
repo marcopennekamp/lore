@@ -92,7 +92,6 @@
 
 ##### Terminology
 
-- Rename Product types to Tuple types across the board. (This is already partially the case in the runtime.)
 - "mutable" should actually be "writeable", since immutability implies that the whole data structure within a property or variable is unchangeable, while we are actually just gating the top-level write access to the property or variable. This is a subtle difference, but it should be considered. Perhaps we can later introduce a "deep" kind of immutability which doesn't just make a property readonly, but actually applies to the whole data structure. As for the keyword, we can just say: `let var x = 5`
 
 ##### Clean-Up

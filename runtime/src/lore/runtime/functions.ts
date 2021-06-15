@@ -1,11 +1,11 @@
-import { ProductType } from './tuples.ts'
+import { TupleType } from './tuples.ts'
 import { Kind } from './types/kinds.ts'
 import { Type } from './types/types.ts'
 import { pairHash } from './utils/hash.ts'
 import { Value } from './values.ts'
 
 export interface FunctionType extends Type {
-  input: ProductType
+  input: TupleType
   output: Type
 }
 
@@ -18,7 +18,7 @@ export interface FunctionValue<R> extends Value {
 }
 
 export const Function = {
-  type(input: ProductType, output: Type): FunctionType {
+  type(input: TupleType, output: Type): FunctionType {
     return { kind: Kind.Function, input, output, hash: pairHash(input, output, 0xf4527105) }
   },
 

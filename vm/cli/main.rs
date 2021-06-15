@@ -14,10 +14,10 @@ fn main() {
     const list2 = list(int)
     const list3 = list(map(string, int))
     const list4 = list(map(string, int))
-    const product1 = product([sum2, int1, list3])
-    const product2 = product([sum2, int1, list3])
-    const product3 = product([sum([string, int, boolean]), intersection([string, int, boolean]), list(map(string, int))])
-    const product4 = product([sum([string, int, boolean]), intersection([string, int, boolean]), list(map(string, int))]) */
+    const tuple1 = tuple([sum2, int1, list3])
+    const tuple2 = tuple([sum2, int1, list3])
+    const tuple3 = tuple([sum([string, int, boolean]), intersection([string, int, boolean]), list(map(string, int))])
+    const tuple4 = tuple([sum([string, int, boolean]), intersection([string, int, boolean]), list(map(string, int))]) */
 
     println!("Are equal? {}", are_equal(&sum2, &sum3));
 }

@@ -11,7 +11,7 @@ case class FunctionSignature(
   outputType: Type,
   override val position: Position
 ) extends Positioned {
-  val inputType: ProductType = ProductType(parameters.map(_.tpe))
+  val inputType: TupleType = TupleType(parameters.map(_.tpe))
   val isPolymorphic: Boolean = Type.isPolymorphic(inputType)
   val isMonomorphic: Boolean = !isPolymorphic
   val arity: Int = parameters.size
