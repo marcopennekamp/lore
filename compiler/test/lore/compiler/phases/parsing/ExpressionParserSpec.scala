@@ -311,7 +311,7 @@ class ExpressionParserSpec extends BaseSpec with ParserSpecExtensions[TopLevelEx
         decl.position.index shouldEqual 0
         decl.tpe.value.position.index shouldEqual 18
         inside(decl.value) {
-          case call: ExprNode.CallNode =>
+          case call: ExprNode.SimpleCallNode =>
             call.position.index shouldEqual 31
             inside(call.arguments) {
               case Seq(rl1: ExprNode.RealLiteralNode, rl2: ExprNode.RealLiteralNode) =>
