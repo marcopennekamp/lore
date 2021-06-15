@@ -6,13 +6,12 @@
   - Function types:
     - compiler: ~~type definition~~, ~~Type functions~~, ~~subtyping~~, ~~type encoding~~, ~~least upper bound~~, ~~type allocation~~, ~~parser~~, ~~evaluator~~, ~~transpiler~~
     - runtime: ~~type definition~~, ~~Type functions~~, ~~subtyping~~, ~~equality~~, ~~type allocation~~
-  - Constraint-based local type inference
+  - ~~Constraint-based local type inference~~
   - Anonymous functions:
-    - compiler: syntax, expression tree, parser, transformer, transpiling anonymous functions as immediately created function values, type inference of anonymous function parameters based on a multi-function call context
-    - runtime: function values
+    - compiler: ~~syntax~~, ~~expression tree~~, ~~parser~~, ~~transformer~~, ~~transpiling anonymous functions as immediately created function values~~, ~~type inference of anonymous function parameters based on a multi-function call context~~
+    - runtime: ~~function values~~
   - Multi-Functions as values:
-    - compiler: multi-functions as part of scopes, variable-based (multi-)function calls, multi-function types, `.fixed` functions returning function values
-    - runtime: multi-function types
+    - compiler: ~~multi-functions as part of scopes~~, ~~compile-time lambda wrapping of multi-function references~~, `.fixed` functions returning function values
 - Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.
 - Implement an append operation for maps. In general, we will need to apply the same run-time typing considerations to maps.
 - Implement a module system.

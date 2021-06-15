@@ -3,11 +3,11 @@ package lore.compiler.inference.resolvers
 import lore.compiler.core.Compilation
 import lore.compiler.feedback.DispatchFeedback.EmptyFit
 import lore.compiler.feedback.Feedback
-import lore.compiler.inference.Inference.Assignments
+import lore.compiler.inference.Inference.{Assignments, isFullyInstantiated}
 import lore.compiler.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.inference._
 import lore.compiler.semantics.Registry
-import lore.compiler.types.{ProductType, Type}
+import lore.compiler.types.{BasicType, ProductType, Type}
 
 object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment.MultiFunctionHint] {
 
@@ -71,14 +71,18 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       val typeVariables = function.typeScope.localTypeVariables
       val typeVariableAssignments = typeVariables.map(tv => (tv, new InferenceVariable)).toMap
 
-      // TODO: When the bounds are fully instantiated types, we can simply change the assignments instead of adding new judgments.
-      val lowerBoundsJudgments = typeVariables.flatMap { tv =>
-        Some(TypingJudgment.Subtypes(Type.substitute(tv.lowerBound, typeVariableAssignments), typeVariableAssignments(tv), position))
-      }
+      val boundsJudgments = typeVariables.flatMap { tv =>
+        var judgments = Vector.empty[TypingJudgment]
 
-      // TODO: When the bounds are fully instantiated types, we can simply change the assignments instead of adding new judgments.
-      val upperBoundsJudgments = typeVariables.flatMap { tv =>
-        Some(TypingJudgment.Subtypes(typeVariableAssignments(tv), Type.substitute(tv.upperBound, typeVariableAssignments), position))
+        if (tv.lowerBound != BasicType.Nothing) {
+          judgments = judgments :+ TypingJudgment.Subtypes(Type.substitute(tv.lowerBound, typeVariableAssignments), typeVariableAssignments(tv), position)
+        }
+
+        if (tv.upperBound != BasicType.Any) {
+          judgments = judgments :+ TypingJudgment.Subtypes(typeVariableAssignments(tv), Type.substitute(tv.upperBound, typeVariableAssignments), position)
+        }
+
+        judgments
       }
 
       // For each argument/parameter pair, we add two typing judgments:
@@ -88,17 +92,20 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       val argumentJudgments = function.signature.parameters.zip(arguments).flatMap {
         case (parameter, argument) =>
           val parameterType = Type.substitute(parameter.tpe, typeVariableAssignments)
-          Vector(
-            TypingJudgment.Fits(argument.tpe, parameterType, argument.position),
-            TypingJudgment.Subtypes(argument.tpe, parameterType, argument.position),
-          )
+          var judgments = Vector.empty[TypingJudgment]
+
+          if (!isFullyInstantiated(parameterType)) {
+            judgments = judgments :+ TypingJudgment.Fits(argument.tpe, parameterType, argument.position)
+          }
+
+          judgments :+ TypingJudgment.Subtypes(argument.tpe, parameterType, argument.position)
       }
 
       val resultJudgments = Vector(
         TypingJudgment.Assign(resultArgumentType, ProductType(argumentTypes), position)
       )
 
-      val supplementalJudgments = lowerBoundsJudgments ++ upperBoundsJudgments ++ argumentJudgments ++ resultJudgments
+      val supplementalJudgments = boundsJudgments ++ argumentJudgments ++ resultJudgments
       val allJudgments = supplementalJudgments ++ influencingJudgments
 
       Inference.logger.trace(s"Multi-function hint judgments:\n${allJudgments.mkString("\n")}")
