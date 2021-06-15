@@ -1,0 +1,14 @@
+struct Thing {
+  x: Real
+}
+
+// TODO: This currently doesn't compile, because at the first necessary cycle resolution, the judgment `iv1 <- iv2.x`
+//       with `iv2` representing `v` is preferred over `iv3 :=: LUB((iv2) => Boolean)`, with `iv3` representing the
+//       type of the list. However, both `iv1` and `iv2` are still without concrete bounds, while `iv3` already has
+//       the upper bound `(Thing) => Boolean`. Clearly, cycle resolution should prefer the judgment with the most
+//       available information
+function test(): [Thing => Boolean] = {
+  let a: [Thing => Boolean] = [v => v.x == 4]
+  let b = a :+ (v => v.x > 3.4)
+  b
+}

@@ -97,7 +97,6 @@ object SimpleResolution {
         } else None
 
       case TypingJudgment.LeastUpperBound(target, types, _) =>
-        // TODO: Add backwards direction once it's implemented in the judgment resolver.
         if (areFullyInferred(types, assignments, influenceGraph)) {
           resolveTowards(ResolutionDirection.Forwards)
         } else if (isFullyInferred(target, assignments, influenceGraph)) {
