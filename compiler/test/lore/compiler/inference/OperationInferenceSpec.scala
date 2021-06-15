@@ -9,7 +9,7 @@ import lore.compiler.types.ListType
   */
 class OperationInferenceSpec extends InferenceSpec {
 
-  it should "infer the result type of an addition" in {
+  "Inference" should "infer the result type of an addition" in {
     val a = new InferenceVariable(Some("a"))
     val b = new InferenceVariable(Some("b"))
     val c = new InferenceVariable(Some("c"))

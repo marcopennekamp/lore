@@ -1,13 +1,53 @@
 package lore.compiler.inference
 
 import lore.compiler.core.Position
+import lore.compiler.types.TraitType
 
 /**
   * Ensures basic properties of typing judgments and judgment resolvers.
   */
 class BasicInferenceSpec extends InferenceSpec {
 
-  // TODO: Add a test that ensures that Assign always produces fixed bounds.
+  "Inference" should "infer fixed bounds for Assign judgments" in {
+    val A = new TraitType("A", Vector.empty)
+    val B = new TraitType("B", Vector(A))
+    val C = new TraitType("C", Vector(B))
+
+    val lower = new InferenceVariable(Some("lower"))
+    val upper = new InferenceVariable(Some("upper"))
+    val both = new InferenceVariable(Some("both"))
+    val fixed = new InferenceVariable(Some("fixed"))
+
+    val target1 = new InferenceVariable(Some("target1"))
+    val target2 = new InferenceVariable(Some("target2"))
+    val target3 = new InferenceVariable(Some("target3"))
+    val target4 = new InferenceVariable(Some("target4"))
+
+    val result = Inference.infer(Vector(
+      TypingJudgment.Subtypes(C, lower, Position.internal),
+      TypingJudgment.Subtypes(upper, B, Position.internal),
+      TypingJudgment.Subtypes(B, both, Position.internal),
+      TypingJudgment.Subtypes(both, A, Position.internal),
+      TypingJudgment.Equals(fixed, B, Position.internal),
+
+      TypingJudgment.Assign(target1, lower, Position.internal),
+      TypingJudgment.Assign(target2, upper, Position.internal),
+      TypingJudgment.Assign(target3, both, Position.internal),
+      TypingJudgment.Assign(target4, fixed, Position.internal),
+    ))(null)
+
+    assertInferenceSuccess(
+      Assignment.lower(lower, C),
+      Assignment.upper(upper, B),
+      Assignment.assignment(both, B, A),
+      Assignment.fixed(fixed, B),
+
+      Assignment.fixed(target1, C),
+      Assignment.fixed(target2, B),
+      Assignment.fixed(target3, B),
+      Assignment.fixed(target4, B),
+    )(result)
+  }
 
   it should "infer the best assignments from judgment (iv1, Int) :=: (Real, iv2)" in {
     val iv1 = new InferenceVariable(Some("iv1"))
@@ -37,7 +77,7 @@ class BasicInferenceSpec extends InferenceSpec {
     )(result)
   }
 
-  "Inference" should "infer the best assignments from relationship `a :=: b :=: c` and `a :=: real`" in {
+  it should "infer the best assignments from relationship `a :=: b :=: c` and `a :=: real`" in {
     val a = new InferenceVariable(Some("a"))
     val b = new InferenceVariable(Some("b"))
     val c = new InferenceVariable(Some("c"))

@@ -5,7 +5,7 @@ import lore.compiler.types.{ShapeType, TraitType}
 
 class MemberInferenceSpec extends InferenceSpec {
 
-  it should "reject an incorrect subtyping relationship with a member type (test:inference:member:0001)" in {
+  "Inference" should "reject an incorrect subtyping relationship with a member type (test:inference:member:0001)" in {
     val C = new TraitType("C", Vector.empty)
     val B = new TraitType("B", Vector(C))
 
