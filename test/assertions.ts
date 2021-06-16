@@ -14,6 +14,14 @@ export function assertTypeEquals(actual: Type, expected: Type) {
   assert(areEqual(actual, expected), `The type ${Types.stringify(actual)} should be equal to the expected type ${Types.stringify(expected)}.`)
 }
 
+export function assertSumTypeParts(actual: Type, partPredicate: (part: Type) => Boolean) {
+  assertEquals(actual.kind, Kind.Sum)
+  const sumType = <SumType> actual
+  sumType.types.forEach((part) => {
+    assert(partPredicate(part), `The type ${part} may not be part of the sum type according to the given predicate.`)
+  })
+}
+
 export function assertIsTuple(actual: TupleValue, elements?: Array<Type>) {
   const actualType = actual.lore$type
   assertEquals(actualType.kind, Kind.Tuple)
@@ -37,20 +45,6 @@ export function assertIsFunction(actual: FunctionValue<any>, expected?: Function
   if (expected) {
     assertTypeEquals(actualType, expected)
   }
-}
-
-export function assertIsStruct(actual: StructValue, fullName: string) {
-  const actualType = actual.lore$type
-  assertEquals(actualType.kind, Kind.Struct)
-  assertEquals(actualType.schema.name, fullName)
-}
-
-export function assertStructHasValues(actual: StructValue, expectedFullStructName: string, expectedValues: object) {
-  assertIsStruct(actual, expectedFullStructName)
-  Object.entries(expectedValues).forEach(kv => {
-    const [key, value] = kv
-    assertEquals((actual as any)[key], value)
-  })
 }
 
 export function assertIsList(actual: ListValue<any>, element?: Type) {
@@ -143,10 +137,16 @@ export function assertShapeEquals(actual: ShapeValue, expected: object, property
   })
 }
 
-export function assertSumTypeParts(actual: Type, partPredicate: (part: Type) => Boolean) {
-  assertEquals(actual.kind, Kind.Sum)
-  const sumType = <SumType> actual
-  sumType.types.forEach((part) => {
-    assert(partPredicate(part), `The type ${part} may not be part of the sum type according to the given predicate.`)
+export function assertIsStruct(actual: StructValue, fullName: string) {
+  const actualType = actual.lore$type
+  assertEquals(actualType.kind, Kind.Struct)
+  assertEquals(actualType.schema.name, fullName)
+}
+
+export function assertStructHasValues(actual: StructValue, expectedFullStructName: string, expectedValues: object) {
+  assertIsStruct(actual, expectedFullStructName)
+  Object.entries(expectedValues).forEach(kv => {
+    const [key, value] = kv
+    assertEquals((actual as any)[key], value)
   })
 }
