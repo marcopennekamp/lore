@@ -12,40 +12,6 @@ class ExpressionParserSpec extends BaseSpec with ParserSpecExtensions[TopLevelEx
 
   import TestNodes._
 
-  "The expression parser" should "parse strings, escapes, and interpolations correctly" in {
-    "''" --> Stmt.StringLiteral("")
-    "'   '" --> Stmt.StringLiteral("   ")
-    "'\\n'" --> Stmt.StringLiteral("\n")
-    "'\\n\\t\\r\\'\\$\\\\'" --> Stmt.StringLiteral("\n\t\r'$\\")
-    "'test $x\\n\\t\\u0394'" --> Stmt.Concatenation(Vector(
-      Stmt.StringLiteral("test "),
-      vx,
-      Stmt.StringLiteral("\n\t\u0394"),
-    ))
-    "'$myLongVariable'" --> Stmt.Variable("myLongVariable")
-    "'${x}'" --> vx
-    "'\\${quite}$some\\$confusion in ${that} town'" --> Stmt.Concatenation(Vector(
-      Stmt.StringLiteral("${quite}"),
-      Stmt.Variable("some"),
-      Stmt.StringLiteral("$confusion in "),
-      Stmt.Variable("that"),
-      Stmt.StringLiteral(" town"),
-    ))
-    val apples = "'${p.name}, you have $k apples. Please claim your ${if (k < 10) 'free' else '1000\\$'} apple at the reception.'"
-    apples --> Stmt.Concatenation(Vector(
-      Stmt.PropertyAccess(Stmt.Variable("p"), "name"),
-      Stmt.StringLiteral(", you have "),
-      vk,
-      Stmt.StringLiteral(" apples. Please claim your "),
-      Stmt.IfElse(
-        Stmt.LessThan(vk, Stmt.IntLiteral(10)),
-        Stmt.StringLiteral("free"),
-        Stmt.StringLiteral("1000$"),
-      ),
-      Stmt.StringLiteral(" apple at the reception."),
-    ))
-  }
-
   it should "parse literals correctly" in {
     "0" --> Stmt.IntLiteral(0)
     "-15" --> Stmt.IntLiteral(-15)
