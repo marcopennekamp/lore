@@ -54,8 +54,11 @@ object JavascriptGenerator {
     case Target.RealLiteral(value) => value.toString
     case Target.IntLiteral(value) => value.toString
     case Target.BooleanLiteral(value) => value.toString
-    // TODO: Escaped characters need to be handled correctly, for example \'. We should use a proper Javascript/JSON stringifier.
-    case Target.StringLiteral(value) => s"'$value'"
+    case Target.StringLiteral(value) =>
+      // Escaped characters such as \` need to be handled correctly. This is why we're using a proper JSON library.
+      import org.json4s.JsonDSL._
+      import org.json4s.native.JsonMethods._
+      compact(render(value))
     case Target.Undefined => "undefined"
     case Target.Null => "null"
 

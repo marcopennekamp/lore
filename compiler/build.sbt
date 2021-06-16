@@ -22,6 +22,7 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.1.0" % "test",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.3",
+  "org.json4s" %% "json4s-native" % "4.0.0",
 )
 
 // Sonatype repos.
