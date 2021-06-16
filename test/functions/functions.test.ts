@@ -1,6 +1,7 @@
-import { ListValue } from '../../runtime/src/lore/runtime/lists.ts'
+import { List, ListValue } from '../../runtime/src/lore/runtime/lists.ts'
 import { StructValue } from '../../runtime/src/lore/runtime/structs.ts'
 import { TupleValue } from '../../runtime/src/lore/runtime/tuples.ts'
+import { Types } from '../../runtime/src/lore/runtime/types/types.ts'
 import {
   assertIsList, assertIsTuple, assertListEquals, assertListForall, assertStructHasValues,
 } from '../assertions.ts'
@@ -24,7 +25,7 @@ Deno.test('functions/filter-curried', async () => {
 
 Deno.test('functions/map', async () => {
   const result: TupleValue = await LoreTest.run('functions/map')
-  assertIsTuple(result, 2)
+  assertIsTuple(result, [List.type(Types.int), List.type(Types.string)])
 
   const numbers = result.elements[0]
   assertListEquals(numbers, [4, 5, 6, 7, 8])
