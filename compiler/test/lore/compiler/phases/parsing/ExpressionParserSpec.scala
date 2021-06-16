@@ -12,16 +12,11 @@ class ExpressionParserSpec extends BaseSpec with ParserSpecExtensions[TopLevelEx
 
   import TestNodes._
 
-  it should "parse literals correctly" in {
-    "0" --> Stmt.IntLiteral(0)
-    "-15" --> Stmt.IntLiteral(-15)
-    "0.0" --> Stmt.RealLiteral(0)
-    "1.5" --> Stmt.RealLiteral(1.5)
-    "-1.5" --> Stmt.RealLiteral(-1.5)
+  "The expression parser" should "reject incorrect literals" in {
     ".5".fails
     "1.".fails
-    "true" --> Stmt.BoolLiteral(true)
-    "false" --> Stmt.BoolLiteral(false)
+    "-.5".fails
+    "-1.".fails
   }
 
   it should "parse operators correctly" in {

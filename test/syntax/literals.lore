@@ -1,0 +1,15 @@
+function test(): [Any] = [
+  0,
+  -15,
+  0.0,
+  1.5,
+  -1.5,
+  true,
+  false,
+  (0, 'hello', true),
+  (x: Int) => x + 1,
+  [1, 2, 3],
+  #['john' -> 11, 'martin' -> 5],
+  %{ name: 'John', occupation: 'Salaryman' }
+  // TODO: Atoms such as :none.
+]
