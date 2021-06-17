@@ -12,6 +12,23 @@ import {
 } from '../assertions.ts'
 import { LoreTest } from '../base.ts'
 
+Deno.test('syntax/append', async () => {
+  const result: ListValue<any> = await LoreTest.run('syntax/append')
+  assertIsList(result)
+
+  const lists = result.array
+  assertListEquals(lists[0], [10], Types.int)
+  assertListEquals(lists[1], [5.5], Types.real)
+  assertListEquals(lists[2], ['hello'], Types.string)
+  assertListEquals(lists[3], [12, 14.5, 10], Types.real)
+  assertListEquals(lists[4], [12, 14.5, 5.5], Types.real)
+  assertListEquals(lists[5], [12, 14.5, 'hello'], Sum.type([Types.real, Types.string]))
+  assertListEquals(lists[6], [44, -5, 7, 10], Types.int)
+  assertListEquals(lists[7], [44, -5, 7, 5.5], Types.real)
+  assertListEquals(lists[8], [44, -5, 7, 'hello'], Sum.type([Types.int, Types.string]))
+  assertListEquals(lists[9], [44, -5, 7, 'hello', 'world'], Sum.type([Types.int, Types.string]))
+})
+
 Deno.test('syntax/call-line-stretching', async () => {
   const result: TupleValue = await LoreTest.run('syntax/call-line-stretching')
   assertEquals(result.lore$type, Tuple.unitType)
