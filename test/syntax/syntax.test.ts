@@ -75,6 +75,15 @@ Deno.test('syntax/literals', async () => {
   })
 })
 
+Deno.test('syntax/operators', async () => {
+  const result: ListValue<number | boolean> = await LoreTest.run('syntax/operators')
+  assertListEquals(result, [
+    15, 15, 5, 5, 67.5, 2,
+    false, true, true, true, false, true,
+    true, false, true, true,
+  ])
+})
+
 Deno.test('syntax/strings', async () => {
   const result: ListValue<string> = await LoreTest.run('syntax/strings')
   assertListEquals(result, [

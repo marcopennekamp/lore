@@ -37,44 +37,6 @@ class ExpressionParserSpec extends BaseSpec with ParserSpecExtensions[TopLevelEx
     "%{ a: a = 1 }".fails
   }
 
-  it should "parse operators correctly" in {
-    "a + b" --> Stmt.Addition(va, vb)
-    "a - b" --> Stmt.Subtraction(va, vb)
-    "a * b + b * a" --> Stmt.Addition(Stmt.Multiplication(va, vb), Stmt.Multiplication(vb, va))
-    "a / b" --> Stmt.Division(va, vb)
-    "a < b" --> Stmt.LessThan(va, vb)
-    "a <= b" --> Stmt.LessThanEquals(va, vb)
-    "a > b" --> Stmt.GreaterThan(va, vb)
-    "a >= b" --> Stmt.GreaterThanEquals(va, vb)
-    "a == b" --> Stmt.Equals(va, vb)
-    "a != b" --> Stmt.NotEquals(va, vb)
-    "a || b || c" --> Stmt.Disjunction(Vector(va, vb, vc))
-    "a && b && c" --> Stmt.Conjunction(Vector(va, vb, vc))
-  }
-
-  it should "parse complex operator expressions correctly" in {
-    "a + { b }" --> Stmt.Addition(va, Stmt.Block(Vector(vb)))
-    "a + -b" --> Stmt.Addition(va, Stmt.Negation(vb))
-    "!(a == b) || (a < !b) && (!a < c)" --> Stmt.Disjunction(Vector(
-      Stmt.LogicalNot(Stmt.Equals(va, vb)),
-      Stmt.Conjunction(Vector(
-        Stmt.LessThan(va, Stmt.LogicalNot(vb)),
-        Stmt.LessThan(Stmt.LogicalNot(va), vc),
-      )),
-    ))
-    "!a && !b && c + -a * -b" --> Stmt.Conjunction(Vector(
-      Stmt.LogicalNot(va),
-      Stmt.LogicalNot(vb),
-      Stmt.Addition(
-        vc,
-        Stmt.Multiplication(
-          Stmt.Negation(va),
-          Stmt.Negation(vb),
-        ),
-      ),
-    ))
-  }
-
   it should "parse conditionals and loops correctly" in {
     "if (true) false" --> Stmt.IfElse(Stmt.BoolLiteral(true), Stmt.BoolLiteral(false), Stmt.Unit())
     "if (i < 25) { i += 1 }" --> Stmt.IfElse(

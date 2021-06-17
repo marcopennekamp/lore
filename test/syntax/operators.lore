@@ -1,0 +1,29 @@
+function test(): [Real | Boolean] = {
+  let a = 10
+  let b = 5
+  let c = 40
+  let b1 = true
+  let b2 = false
+  let b3 = false
+
+  [
+    a + b,
+    a + { b },
+    a - b,
+    a + -b,
+    a * b + b * 3.5,
+    a / b,
+
+    a < b,
+    a <= 10,
+    a > b,
+    a >= b,
+    a == b,
+    a != b,
+
+    b1 || b2 || b3,
+    b1 && b2 && b3,
+    !(a == 10) || (-b < a) && (!b1 == b2),
+    b1 && !b2 && c < -a * -b
+  ]
+}
