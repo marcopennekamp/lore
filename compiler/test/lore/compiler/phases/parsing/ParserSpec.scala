@@ -20,16 +20,12 @@ trait ParserSpec[Result] extends BaseSpec {
       }
     }
 
-    def -->(expected: Result): Assertion = {
-      parse[Assertion](_ shouldEqual expected, message => fail(s"Couldn't parse $source. $message."))
+    def succeeds: Assertion = {
+      parse(_ => succeed, message => fail(s"Couldn't parse $source. $message."))
     }
 
     def fails: Assertion = {
-      parse[Assertion](result => fail(s"Parsing $source should have failed, but resulted in $result."), _ => succeed)
-    }
-
-    def parsed: Result = {
-      parse[Result](identity, message => fail(s"Couldn't parse $source. $message."))
+      parse(result => fail(s"Parsing $source should have failed, but resulted in $result."), _ => succeed)
     }
   }
 }
