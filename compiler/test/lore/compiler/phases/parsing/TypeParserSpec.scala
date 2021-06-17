@@ -3,12 +3,11 @@ package lore.compiler.phases.parsing
 import fastparse.P
 import lore.compiler.core.Fragment
 import lore.compiler.syntax.TypeExprNode
-import lore.compiler.test.BaseSpec
 
 // TODO: Implement these tests using functional tests. We cannot check the produced AST directly, then, but we can
 //       produce values that will only be assignable to a variable of a given type if the type is parsed correctly.
 
-class TypeParserSpec extends BaseSpec with ParserSpecExtensions[TypeExprNode] {
+class TypeParserSpec extends ParserSpec[TypeExprNode] {
   override def parser[_: P](implicit fragment: Fragment): P[TypeExprNode] = new TypeParser().typeExpression
 
   import TestNodes._

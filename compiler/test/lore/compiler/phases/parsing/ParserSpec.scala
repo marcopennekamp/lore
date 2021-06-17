@@ -6,7 +6,7 @@ import lore.compiler.core.Fragment
 import lore.compiler.test.BaseSpec
 import org.scalatest.Assertion
 
-trait ParserSpecExtensions[Result] { base: BaseSpec =>
+trait ParserSpec[Result] extends BaseSpec {
   def parser[_: P](implicit fragment: Fragment): P[Result]
 
   implicit class CheckParseExtension(source: String) {
