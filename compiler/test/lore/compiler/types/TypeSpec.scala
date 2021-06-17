@@ -8,7 +8,7 @@ trait TypeSpec extends BaseSpec with TypeSyntax {
   def havingStruct(name: String)(implicit registry: Registry): StructType = registry.getType(name).get.asInstanceOf[StructType]
 
   object TypesExample {
-    implicit val registry: Registry = compileFragment("types/types")
+    implicit val registry: Registry = compileFragment("types/types.lore")
 
     val Animal = havingTrait("Animal")
     val Bird = havingTrait("Bird")

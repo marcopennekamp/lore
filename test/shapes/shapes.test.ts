@@ -4,7 +4,7 @@ import { assertIsList, assertListEquals, assertListForall } from '../assertions.
 import { LoreTest } from '../base.ts'
 
 Deno.test('shapes/bunsnatcher', async () => {
-  const result: ListValue<number> = await LoreTest.run('shapes/bunsnatcher')
+  const result: ListValue<number> = await LoreTest.run('shapes/bunsnatcher.lore')
   assertIsList(result)
   assertEquals(
     result.array.map(x => Number.parseFloat(x.toFixed(3))),
@@ -13,12 +13,12 @@ Deno.test('shapes/bunsnatcher', async () => {
 })
 
 Deno.test('shapes/errors', async () => {
-  const result: ListValue<string> = await LoreTest.run('shapes/errors')
+  const result: ListValue<string> = await LoreTest.run('shapes/errors.lore')
   assertListEquals(result, ['I am a result!', 'I am another result!'])
 })
 
 Deno.test('shapes/listify', async () => {
-  const result: ListValue<ListValue<number>> = await LoreTest.run('shapes/listify')
+  const result: ListValue<ListValue<number>> = await LoreTest.run('shapes/listify.lore')
   const expected = [
     [1.2, 5], [0, 5.1, 4.8], [1.2, 5], [0, 5.1, 4.8],
     [1.2, 5], [0, 5.1, 4.8], [1.2, 5], [0, 5.1, 4.8]
@@ -29,6 +29,6 @@ Deno.test('shapes/listify', async () => {
 })
 
 Deno.test('shapes/options', async () => {
-  const result: string = await LoreTest.run('shapes/options')
+  const result: string = await LoreTest.run('shapes/options.lore')
   assertEquals(result, 'Your dog Robby barks at a MADNESS-INDUCING volume showing sharp teeth!')
 })

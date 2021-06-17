@@ -20,7 +20,7 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
   private implicit val options: CompilerOptions = CompilerOptions(runtimeLogging = false)
 
   def compileFragment(fragmentName: String): Registry = {
-    Lore.fromSources(Path.of("."), testFragmentBase.resolve(fragmentName + ".lore")).toOption match {
+    Lore.fromSources(Path.of("."), testFragmentBase.resolve(fragmentName)).toOption match {
       case Some((registry, _)) => registry
       case None => throw new RuntimeException(s"Compilation of test fragment $fragmentName failed!")
     }
@@ -31,7 +31,7 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
     * The list of errors is passed as sorted into the assertion function, in order of lines starting from line 1.
     */
   def assertCompilationErrors(fragmentName: String)(assert: Vector[Feedback.Error] => Assertion): Assertion = {
-    Lore.fromSources(Path.of("."), testFragmentBase.resolve(fragmentName + ".lore")) match {
+    Lore.fromSources(Path.of("."), testFragmentBase.resolve(fragmentName)) match {
       case Result(_, _) => Assertions.fail(s"Compilation of $fragmentName should have failed with errors, but unexpectedly succeeded.")
       case Errors(errors, _) => assert(errors.sortWith { case (e1, e2) => e1.position < e2.position })
     }

@@ -85,7 +85,7 @@ object Lore {
   /**
     * Invokes the compiler for any number of sources given the following arguments:
     *   - The base directory which is used as a resolution starting point for the fragment paths.
-    *   - One or more fragment paths specified without the .lore file extension.
+    *   - One or more fragment paths specified with the .lore file extension.
     */
   def main(args: Array[String]): Unit = {
     if (args.length < 2) {
@@ -94,7 +94,7 @@ object Lore {
 
     implicit val options: CompilerOptions = CompilerOptions(runtimeLogging = false)
     val baseDirectory = Path.of(args.head)
-    val fragmentPaths = args.tail.toVector.map(path => Path.of(s"$path.lore"))
+    val fragmentPaths = args.tail.toVector.map(Path.of(_))
     val beforeCompile = System.nanoTime()
     val result = fromSources(baseDirectory, fragmentPaths: _*)
     val afterCompile = System.nanoTime()

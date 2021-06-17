@@ -8,14 +8,14 @@ import {
 import { LoreTest } from '../base.ts'
 
 Deno.test('functions/constructor', async () => {
-  const result: ListValue<StructValue> = await LoreTest.run('functions/constructor')
+  const result: ListValue<StructValue> = await LoreTest.run('functions/constructor.lore')
   assertIsList(result)
   assertStructHasValues(result.array[0], 'Person', { name: 'Victor', age: 21 })
   assertStructHasValues(result.array[1], 'Company', { name: 'Victor', worth: 21 })
 })
 
 Deno.test('functions/filter-curried', async () => {
-  const result: ListValue<ListValue<number>> = await LoreTest.run('functions/filter-curried')
+  const result: ListValue<ListValue<number>> = await LoreTest.run('functions/filter-curried.lore')
   assertListForall(
     result,
     [[2, 4], [4, 8, 6], [], []],
@@ -24,7 +24,7 @@ Deno.test('functions/filter-curried', async () => {
 })
 
 Deno.test('functions/map', async () => {
-  const result: TupleValue = await LoreTest.run('functions/map')
+  const result: TupleValue = await LoreTest.run('functions/map.lore')
   assertIsTuple(result, [List.type(Types.int), List.type(Types.string)])
 
   const numbers = result.elements[0]
@@ -35,6 +35,6 @@ Deno.test('functions/map', async () => {
 })
 
 Deno.test('functions/multi-function-value', async () => {
-  const result: ListValue<number> = await LoreTest.run('functions/multi-function-value')
+  const result: ListValue<number> = await LoreTest.run('functions/multi-function-value.lore')
   assertListEquals(result, [6.0, 15.0, 10.5, 38.5])
 })

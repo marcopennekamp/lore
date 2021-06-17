@@ -39,7 +39,6 @@
 
 - Support compiling files using a pattern instead of just plain filenames.
 - Support an output file other than `lore-program.js`.
-- Maybe require file extensions after all. It feels weird to type "abc" into the CLI and it becomes "abc.lore".
 
 ##### Error Reporting
 

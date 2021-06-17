@@ -13,7 +13,7 @@ import {
 import { LoreTest } from '../base.ts'
 
 Deno.test('syntax/append', async () => {
-  const result: ListValue<any> = await LoreTest.run('syntax/append')
+  const result: ListValue<any> = await LoreTest.run('syntax/append.lore')
   assertIsList(result)
 
   const lists = result.array
@@ -30,12 +30,12 @@ Deno.test('syntax/append', async () => {
 })
 
 Deno.test('syntax/call-line-stretching', async () => {
-  const result: TupleValue = await LoreTest.run('syntax/call-line-stretching')
+  const result: TupleValue = await LoreTest.run('syntax/call-line-stretching.lore')
   assertEquals(result.lore$type, Tuple.unitType)
 })
 
 Deno.test('syntax/conditionals', async () => {
-  const result: ListValue<number | boolean> = await LoreTest.run('syntax/conditionals')
+  const result: ListValue<number | boolean> = await LoreTest.run('syntax/conditionals.lore')
   assertListEquals(result, [
     false, false, true,
     21, 25, 25, 24, 29,
@@ -44,12 +44,12 @@ Deno.test('syntax/conditionals', async () => {
 })
 
 Deno.test('syntax/implicit-unit', async () => {
-  const result: TupleValue = await LoreTest.run('syntax/implicit-unit')
+  const result: TupleValue = await LoreTest.run('syntax/implicit-unit.lore')
   assertEquals(result.lore$type, Tuple.unitType)
 })
 
 Deno.test('syntax/literals', async () => {
-  const result: ListValue<any> = await LoreTest.run('syntax/literals')
+  const result: ListValue<any> = await LoreTest.run('syntax/literals.lore')
   assertIsList(result)
 
   const elements = result.array
@@ -102,7 +102,7 @@ Deno.test('syntax/literals', async () => {
 })
 
 Deno.test('syntax/loops', async () => {
-  const result: ListValue<any> = await LoreTest.run('syntax/loops')
+  const result: ListValue<any> = await LoreTest.run('syntax/loops.lore')
   assertIsList(result)
 
   const lists = result.array
@@ -113,7 +113,7 @@ Deno.test('syntax/loops', async () => {
 })
 
 Deno.test('syntax/operators', async () => {
-  const result: ListValue<number | boolean> = await LoreTest.run('syntax/operators')
+  const result: ListValue<number | boolean> = await LoreTest.run('syntax/operators.lore')
   assertListEquals(result, [
     15, 15, 5, 5, 67.5, 2,
     false, true, true, true, false, true,
@@ -122,7 +122,7 @@ Deno.test('syntax/operators', async () => {
 })
 
 Deno.test('syntax/strings', async () => {
-  const result: ListValue<string> = await LoreTest.run('syntax/strings')
+  const result: ListValue<string> = await LoreTest.run('syntax/strings.lore')
   assertListEquals(result, [
     '',
     '   ',

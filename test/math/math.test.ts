@@ -5,7 +5,7 @@ import { assertListEquals, assertListForall, assertTupleEquals } from '../assert
 import { LoreTest } from '../base.ts'
 
 Deno.test('math/combinations', async () => {
-  const result: ListValue<TupleValue> = await LoreTest.run('math/combinations')
+  const result: ListValue<TupleValue> = await LoreTest.run('math/combinations.lore')
   const expected = [
     [1, 1], [1, 2], [1, 3], [1, 4],
     [2, 1], [2, 2], [2, 3], [2, 4],
@@ -18,21 +18,21 @@ Deno.test('math/combinations', async () => {
 })
 
 Deno.test('math/double', async () => {
-  const result: ListValue<number> = await LoreTest.run('math/double')
+  const result: ListValue<number> = await LoreTest.run('math/double.lore')
   assertListEquals(result, [0, -4, 5, 12, 44])
 })
 
 Deno.test('math/min-max', async () => {
-  const result: ListValue<number> = await LoreTest.run('math/min-max')
+  const result: ListValue<number> = await LoreTest.run('math/min-max.lore')
   assertListEquals(result, [-5, 0, 1.8, 1.2, 1])
 })
 
 Deno.test('math/naivemethic', async () => {
-  const result: number = await LoreTest.run('math/naivemethic')
+  const result: number = await LoreTest.run('math/naivemethic.lore')
   assertEquals(result, 60)
 })
 
 Deno.test('math/pow', async () => {
-  const result: ListValue<number> = await LoreTest.run('math/pow')
+  const result: ListValue<number> = await LoreTest.run('math/pow.lore')
   assertListEquals(result, [1, 0.25, 16, 9, 0, 16, 256])
 })

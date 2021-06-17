@@ -7,8 +7,8 @@ const base = 'combat'
 
 Deno.test(base, async () => {
   const result: ListValue<any> = await LoreTest.run(
-    `${base}/heroes`, `${base}/monsters`, `${base}/scenarios`, `${base}/simulation`, `${base}/stats`,
-    `${base}/status-effects`, `${base}/weapons`,
+    `${base}/heroes.lore`, `${base}/monsters.lore`, `${base}/scenarios.lore`, `${base}/simulation.lore`,
+    `${base}/stats.lore`, `${base}/status-effects.lore`, `${base}/weapons.lore`,
   )
 
   assertIsList(result)

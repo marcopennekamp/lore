@@ -3,7 +3,7 @@ import { assertListEquals } from '../assertions.ts'
 import { LoreTest } from '../base.ts'
 
 Deno.test('traits/airborne', async () => {
-  const result: ListValue<string> = await LoreTest.run('traits/airborne')
+  const result: ListValue<string> = await LoreTest.run('traits/airborne.lore')
   assertListEquals(result, [
     'Raven == Raven',
     'Raven == Model Plane',
