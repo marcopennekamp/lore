@@ -1,0 +1,30 @@
+function divideBy2(a: Real, b: Real): Real = {
+  let mut r = a
+  while (r > b) r /= 2
+  r
+}
+
+function repeat(v: Int, n: Int): [Int] = {
+  let mut i = 0
+  while (i < n) {
+    i += 1
+    v
+  }
+}
+
+function incrementAll(values: [Int]): [Int] = for (v <- values) v + 1
+
+function addPairs(as: [Int], bs: [Int]): [Int] = for (a <- as, b <- bs) a + b
+
+function test(): [[Real]] = {
+  [
+    [
+      divideBy2(10, 20),
+      divideBy2(40, 20),
+      divideBy2(234, 45)
+    ],
+    repeat(15, 3),
+    incrementAll([10, 3, 40, -2, 15]),
+    addPairs([1, 2], [3, 4])
+  ]
+}

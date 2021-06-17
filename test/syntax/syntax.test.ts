@@ -101,6 +101,17 @@ Deno.test('syntax/literals', async () => {
   })
 })
 
+Deno.test('syntax/loops', async () => {
+  const result: ListValue<any> = await LoreTest.run('syntax/loops')
+  assertIsList(result)
+
+  const lists = result.array
+  assertListEquals(lists[0], [10, 20, 29.25], Types.real)
+  assertListEquals(lists[1], [15, 15, 15], Types.int)
+  assertListEquals(lists[2], [11, 4, 41, -1, 16], Types.int)
+  assertListEquals(lists[3], [4, 5, 5, 6], Types.int)
+})
+
 Deno.test('syntax/operators', async () => {
   const result: ListValue<number | boolean> = await LoreTest.run('syntax/operators')
   assertListEquals(result, [

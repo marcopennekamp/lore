@@ -36,46 +36,6 @@ class ExpressionParserSpec extends ParserSpec[TopLevelExprNode] {
     "%{ a: a = 1 }".fails
   }
 
-  it should "parse loops correctly" in {
-    // While loops.
-    "while (a > b) a /= 2" --> Stmt.Repetition(
-      Stmt.GreaterThan(va, vb),
-      Stmt.Assignment(va, Stmt.Division(va, Stmt.IntLiteral(2))),
-    )
-    /* "while (sunRisesOn(earth)) { println('Morning, World') }" --> Stmt.Repetition(
-      Stmt.SimpleCall("sunRisesOn", Vector(Stmt.Variable("earth"))),
-      Stmt.Block(Vector(
-        Stmt.SimpleCall("println", Vector(Stmt.StringLiteral("Morning, World"))),
-      )),
-    ) */
-
-    // Iterations.
-    /* """
-    |{
-    |  let people: [String] = ['abra', 'betty', 'carl']
-    |  for (name <- people) println('Hey, $name!')
-    |}
-    |""".stripMargin --> Stmt.Block(Vector(
-      Stmt.VariableDeclaration(
-        "people", false,
-        Some(Type.List(tString)),
-        Stmt.List(Vector(
-          Stmt.StringLiteral("abra"), Stmt.StringLiteral("betty"), Stmt.StringLiteral("carl"),
-        )),
-      ),
-      Stmt.Iteration(
-        Vector(Stmt.Extractor("name", Stmt.Variable("people"))),
-        Stmt.SimpleCall("println", Vector(
-          Stmt.Concatenation(Vector(Stmt.StringLiteral("Hey, "), Stmt.Variable("name"), Stmt.StringLiteral("!")))
-        )),
-      ),
-    )) */
-    "for (a <- as, b <- bs) a + b" --> Stmt.Iteration(
-      Vector(Stmt.Extractor("a", Stmt.Variable("as")), Stmt.Extractor("b", Stmt.Variable("bs"))),
-      Stmt.Addition(va, vb),
-    )
-  }
-
   it should "parse instantiation, multi-function calls, fixed function calls, and dynamic calls correctly" in {
     /* "let point = Point(1, 5)" --> Stmt.VariableDeclaration(
       "point", false, None,
