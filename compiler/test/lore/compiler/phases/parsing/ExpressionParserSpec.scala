@@ -37,37 +37,7 @@ class ExpressionParserSpec extends BaseSpec with ParserSpecExtensions[TopLevelEx
     "%{ a: a = 1 }".fails
   }
 
-  it should "parse conditionals and loops correctly" in {
-    "if (true) false" --> Stmt.IfElse(Stmt.BoolLiteral(true), Stmt.BoolLiteral(false), Stmt.Unit())
-    "if (i < 25) { i += 1 }" --> Stmt.IfElse(
-      Stmt.LessThan(vi, Stmt.IntLiteral(25)),
-      Stmt.Block(Vector(
-        Stmt.Assignment(
-          vi,
-          Stmt.Addition(vi, Stmt.IntLiteral(1)),
-        ),
-      )),
-      Stmt.Unit()
-    )
-    "if (i <= 25) { i += 1 } else { i -= 1 }" --> Stmt.IfElse(
-      Stmt.LessThanEquals(vi, Stmt.IntLiteral(25)),
-      Stmt.Block(Vector(
-        Stmt.Assignment(
-          vi,
-          Stmt.Addition(vi, Stmt.IntLiteral(1)),
-        ),
-      )),
-      Stmt.Block(Vector(
-        Stmt.Assignment(
-          vi,
-          Stmt.Subtraction(vi, Stmt.IntLiteral(1)),
-        ),
-      )),
-    )
-    "if (b) return a else return c" --> Stmt.IfElse(vb, Stmt.Return(va), Stmt.Return(vc))
-    // Dangling else! What will the parser choose?
-    "if (x) if (b) a else c" --> Stmt.IfElse(vx, Stmt.IfElse(vb, va, vc), Stmt.Unit())
-
+  it should "parse loops correctly" in {
     // While loops.
     "while (a > b) a /= 2" --> Stmt.Repetition(
       Stmt.GreaterThan(va, vb),

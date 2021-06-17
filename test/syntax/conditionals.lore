@@ -1,0 +1,37 @@
+function lowIncrement(n: Int): Int = if (n < 25) n + 1 else n
+
+function towards25(n: Int): Int = {
+  if (n < 25)       n + 1
+  else if (n > 25)  n - 1
+  else              n
+}
+
+function abc(a: Boolean, b: Boolean, c: Boolean): Boolean = {
+  if (a) {
+    return b
+  } else {
+    return c
+  }
+}
+
+function dangle(flag: Boolean, flag2: Boolean): Int = {
+  if (flag) if (flag2) return 1 else return 2
+  3
+}
+
+function test(): [Boolean | Int] = [
+  if (true) false else true,
+  abc(true, false, true),
+  abc(false, false, true),
+
+  lowIncrement(20),
+  lowIncrement(25),
+  towards25(25),
+  towards25(23),
+  towards25(30),
+
+  dangle(true, true),
+  dangle(true, false),
+  dangle(false, true),
+  dangle(false, false)
+]

@@ -34,6 +34,15 @@ Deno.test('syntax/call-line-stretching', async () => {
   assertEquals(result.lore$type, Tuple.unitType)
 })
 
+Deno.test('syntax/conditionals', async () => {
+  const result: ListValue<number | boolean> = await LoreTest.run('syntax/conditionals')
+  assertListEquals(result, [
+    false, false, true,
+    21, 25, 25, 24, 29,
+    1, 2, 3, 3,
+  ])
+})
+
 Deno.test('syntax/implicit-unit', async () => {
   const result: TupleValue = await LoreTest.run('syntax/implicit-unit')
   assertEquals(result.lore$type, Tuple.unitType)
