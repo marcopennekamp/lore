@@ -2,13 +2,13 @@ trait A
 trait X
 trait Y extends X
 
-struct A1 implements A
-struct A2 implements A
-struct A3 implements A, Y
+struct A1 extends A
+struct A2 extends A
+struct A3 extends A, Y
 struct B
 struct C
-struct D implements Y
-struct E implements X
+struct D extends Y
+struct E extends X
 
 function f(t: A | B | C): Int
 function f(a: A): Int

@@ -13,7 +13,7 @@ object StructConstraints {
   /**
     * Verifies:
     *   1. Properties must be unique.
-    *   2. The properties of the struct's inherited shape type must all be implemented.
+    *   2. The properties of the struct's inherited shape type must all be defined.
     */
   def verify(definition: StructDefinition)(implicit registry: Registry): Verification = {
     (

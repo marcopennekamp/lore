@@ -4,7 +4,7 @@ function name(named: Named): String
 trait Airborne
 function wingspan(airborne: Airborne): Real
 
-struct Bird implements Named, Airborne {
+struct Bird extends Named, Airborne {
   species: String
   weight: Real
   wingspan: Real
@@ -12,7 +12,7 @@ struct Bird implements Named, Airborne {
 function name(bird: Bird): String = bird.species
 function wingspan(bird: Bird): Real = bird.wingspan
 
-struct Plane implements Named, Airborne {
+struct Plane extends Named, Airborne {
   model: String
   capacity: Int
   wingspan: Real

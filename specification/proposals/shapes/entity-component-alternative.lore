@@ -60,9 +60,9 @@ type +Position = { position: Position }
 
 // Struct Position remains unchanged.
 
-// The implements is technically redundant, but good form to avoid silent errors when the field name in +Position or
-// the struct is changed carelessly.
-struct Player implements +Position {
+// The `extends` is technically redundant, but good form to avoid silent errors when the field name in +Position or the
+// struct is changed carelessly.
+struct Player extends +Position {
   position: Position
 }
 
@@ -84,8 +84,8 @@ struct Stats { ... }
 
 trait Weapon
 trait RangedWeapon extends Weapon
-struct Sword implements Weapon
-struct Bow implements RangedWeapon
+struct Sword extends Weapon
+struct Bow extends RangedWeapon
 
 function weaponStrength(weapon: Weapon): Int
 function weaponStrength(sword: Sword): Int = 7
@@ -147,7 +147,7 @@ struct Player {
 
 // Alternative.
 
-struct Player implements +Position {
+struct Player extends +Position {
   position: Position
 }
 
@@ -162,8 +162,8 @@ struct Player {
 // Advantages:
 //    1. We not only solve the problem of concisely specifying a "component", but could also use this same syntax to
 //       "mix in" members required by traits.
-//    2. We don't have to allow "implements" to take any types but traits. Given the code above, we'd have to allow
-//       "implements +Position", because otherwise we lose the constraint that ensures that all necessary members
+//    2. We don't have to allow "extends" to take any types but traits. Given the code above, we'd have to allow
+//       "extends +Position", because otherwise we lose the constraint that ensures that all necessary members
 //       are part of the structure for it to be a subtype of +Position. But if we mix these members right in, the
 //       entity type and the struct will always be congruent.
 
@@ -200,7 +200,7 @@ action onUpdate(effect: +DurationLimit) {
   }
 }
 
-struct Infusion implements StatusEffect {
+struct Infusion extends StatusEffect {
   component DurationLimit
 }
 
@@ -226,7 +226,7 @@ action onUpdate(effect: +DurationLimit) {
   }
 }
 
-struct Infusion implements +DurationLimit {
+struct Infusion extends +DurationLimit {
   limit: DurationLimit
 }
 

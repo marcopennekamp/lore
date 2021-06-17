@@ -9,7 +9,7 @@ function area(shape: Shape): Real = width(shape) * height(shape)
 
 
 // TODO: We could really use mixins for the coordinates.
-struct BoundingBox implements Shape { x: Real, xEnd: Real, y: Real, yEnd: Real }
+struct BoundingBox extends Shape { x: Real, xEnd: Real, y: Real, yEnd: Real }
 
 // The same suggestions about a property syntax apply here. This is quite verbose, but alright for the MVL, since
 // we should focus on functionality/correctness first, not syntactic nicety.
@@ -17,7 +17,7 @@ function width(rect: Rectangle): Real = rect.width
 function height(rect: Rectangle): Real = rect.height
 
 
-struct Circle implements Shape { x: Real, y: Real, radius: Real }
+struct Circle extends Shape { x: Real, y: Real, radius: Real }
 
 function width(circle: Circle): Real = circle.radius
 function height(circle: Circle): Real = circle.radius
@@ -25,7 +25,7 @@ function height(circle: Circle): Real = circle.radius
 function area(circle: Circle): Real = circle.radius * circle.radius * pi()
 
 
-struct Rectangle implements Shape { x: Real, y: Real, width: Real, height: Real }
+struct Rectangle extends Shape { x: Real, y: Real, width: Real, height: Real }
 
 function width(box: BoundingBox): Real = box.xEnd - box.x
 function height(box: BoundingBox): Real = box.yEnd - box.y

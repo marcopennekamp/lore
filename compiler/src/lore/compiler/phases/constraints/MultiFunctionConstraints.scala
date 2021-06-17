@@ -72,7 +72,7 @@ object MultiFunctionConstraints {
     *   for a trait `Animal`, and another trait `Fish` without wishing to have to redeclare the function `name`. This
     *   special case in the algorithm makes it possible to check the totality of the `name(animal: Animal)` function
     *   without having to declare a function `name(fish: Fish)`. We merely have to declare the function for all types
-    *   that extend/implement `Fish`.
+    *   that extend `Fish`.
     */
   private def verifyInputTypeTotality(mf: MultiFunctionDefinition, inputType: TupleType)(implicit registry: Registry): Vector[TupleType] = {
     Type.abstractResolvedDirectSubtypes(inputType).map(_.asInstanceOf[TupleType]).flatMap { subtype =>

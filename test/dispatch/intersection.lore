@@ -6,13 +6,13 @@ trait L
 trait L1 extends L
 trait L2 extends L
 
-struct A implements X, W
-struct B implements Y, L2
-struct C implements Z, W, L1
-struct D implements X, Y
-struct E implements Y, L1, L2
-struct F implements Y, W, L1
-struct G implements Z
+struct A extends X, W
+struct B extends Y, L2
+struct C extends Z, W, L1
+struct D extends X, Y
+struct E extends Y, L1, L2
+struct F extends Y, W, L1
+struct G extends Z
 
 function f(v1: T1, v2: T2): String where T1, T2 = 'T1,T2'
 function f(x: X, y: Y): String = 'X,Y'

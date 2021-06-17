@@ -3,7 +3,7 @@ package lore.compiler.types
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 
 /**
-  * @param supertypes The list of supertypes of the struct, which include all traits the struct implements.
+  * @param supertypes The list of supertypes of the struct, which include all traits the struct extends.
   */
 class StructType(
   override val name: String,

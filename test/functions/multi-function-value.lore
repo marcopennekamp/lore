@@ -1,10 +1,10 @@
 trait Animal
-struct Cat implements Animal { fame: Real }
-struct Dog implements Animal { fame: Real }
+struct Cat extends Animal { fame: Real }
+struct Dog extends Animal { fame: Real }
 
 trait Vehicle
-struct Car implements Vehicle
-struct Bicycle implements Vehicle
+struct Car extends Vehicle
+struct Bicycle extends Vehicle
 
 function coolness(real: Real): Real = 3.14
 

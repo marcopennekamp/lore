@@ -13,7 +13,7 @@ import lore.compiler.types._
   */
 object TypeResolver {
 
-  case class IllegalImplements(node: TypeDeclNode.StructNode) extends Feedback.Error(node) {
+  case class StructIllegalExtends(node: TypeDeclNode.StructNode) extends Feedback.Error(node) {
     override def message = s"The struct ${node.name} does not implement a trait or shape but some other type."
   }
 
@@ -26,19 +26,19 @@ object TypeResolver {
     implicit val typeScope: TypeScope = registry.typeScope
     implicit val position: Position = node.position
 
-    node.implemented.map(resolveInheritedTypes(IllegalImplements(node))).simultaneous.map(_.flatten).map { supertypes =>
+    node.extended.map(resolveInheritedTypes(StructIllegalExtends(node))).simultaneous.map(_.flatten).map { supertypes =>
       new StructType(node.name, supertypes)
     }
   }
 
-  case class IllegalExtends(node: TypeDeclNode.TraitNode) extends Feedback.Error(node) {
+  case class TraitIllegalExtends(node: TypeDeclNode.TraitNode) extends Feedback.Error(node) {
     override def message = s"The trait ${node.name} does not extend a trait or shape but some other type."
   }
 
   def resolve(node: TypeDeclNode.TraitNode)(implicit registry: Registry): Compilation[TraitType] = {
     implicit val position: Position = node.position
 
-    node.extended.map(resolveInheritedTypes(IllegalExtends(node))).simultaneous.map(_.flatten).map { supertypes =>
+    node.extended.map(resolveInheritedTypes(TraitIllegalExtends(node))).simultaneous.map(_.flatten).map { supertypes =>
       new TraitType(node.name, supertypes)
     }
   }

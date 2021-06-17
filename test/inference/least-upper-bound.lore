@@ -1,6 +1,6 @@
 trait Animal
-struct Cat implements Animal
-struct Dog implements Animal
+struct Cat extends Animal
+struct Dog extends Animal
 
 function test(): [Cat | Dog] = {
   // TODO: This should compile, but the list is inferred as [Animal]. See TypingJudgment.LeastUpperBound.

@@ -64,12 +64,12 @@ trait StatLabel
 // TODO: This would be a case object in Scala. We could support this with the planned singleton types, which would be
 //       very appropriate here.
 //       type StatLabel = 'Regeneration | 'Defense | 'Dodge | 'Attack | 'Range | 'Speed
-struct StatRegeneration implements StatLabel
-struct StatDefense implements StatLabel
-struct StatDodge implements StatLabel
-struct StatAttack implements StatLabel
-struct StatRange implements StatLabel
-struct StatSpeed implements StatLabel
+struct StatRegeneration extends StatLabel
+struct StatDefense extends StatLabel
+struct StatDodge extends StatLabel
+struct StatAttack extends StatLabel
+struct StatRange extends StatLabel
+struct StatSpeed extends StatLabel
 
 // TODO: To make these functions more type-safe, we should require StatLabel to be parameterized over A. Then StatDefense
 //       would extend StatLabel[Int] and stat would only be definable over StatDefense if A is Int. The same applies

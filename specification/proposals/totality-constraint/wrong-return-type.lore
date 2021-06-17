@@ -1,8 +1,8 @@
 trait A
 trait Y
 
-struct A1 implements A
-struct A2 implements A, Y
+struct A1 extends A
+struct A2 extends A, Y
 
 function f(a: A): Int
 function f(a: A1): Int = 2

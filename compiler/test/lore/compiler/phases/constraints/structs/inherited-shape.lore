@@ -1,8 +1,8 @@
 struct Id { value: Int }
 
 trait Question
-struct RudeQuestion implements Question
-struct HonestQuestion implements Question
+struct RudeQuestion extends Question
+struct HonestQuestion extends Question
 
 type Named = { name: String }
 type +Question = { question: Question }
@@ -12,7 +12,7 @@ trait Person extends { id: Int }
 trait Questioner extends Person, Named, +Question
 trait AncientPhilosopher extends Questioner, Known
 
-struct Plato implements AncientPhilosopher {
+struct Plato extends AncientPhilosopher {
   id: Id
   knownBy: Real
   question: RudeQuestion

@@ -5,20 +5,20 @@ function name(animal: Animal): String
 
 trait Fish extends Animal
 
-struct Bass implements Fish {
+struct Bass extends Fish {
   name: String
 }
 function name(bass: Bass): String = bass.name
 
-struct Trout implements Fish
+struct Trout extends Fish
 function name(trout: Trout): String = 'Fred'
 
 trait Extremity
 trait Limb extends Extremity
 trait Armish extends Limb
 trait AlmostAnArm extends Armish
-struct Arm implements AlmostAnArm
-struct MANDIBLE implements AlmostAnArm
+struct Arm extends AlmostAnArm
+struct MANDIBLE extends AlmostAnArm
 struct Head
 struct Torso
 

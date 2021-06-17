@@ -2,7 +2,7 @@
 
 **Structs, traits and shapes** are the abstractions with which complex data types can be built in Lore. These three concepts can be roughly differentiated as such:
 
-- **Structs** are data type definitions that can stand on their own, possibly implementing some number of traits. A struct is always a subtype of all the traits that it implements and also carries this information at run-time. However, unless a trait is attached at run-time (which will be possible under certain circumstances), the traits that are attached to the instance of a struct are determined at compile-time.
+- **Structs** are data type definitions that can stand on their own, possibly extending some number of traits. A struct is always a subtype of all the traits that it extends and also carries this information at run-time. However, unless a trait is attached at run-time (which will be possible under certain circumstances), the traits that are attached to the instance of a struct are determined at compile-time.
 - **Traits** are abstractions of structure and behavior. They are Lore's solution to the questions of data type abstraction, inheritance, and interfaces. Traits cannot be instantiated directly: they have to be backed by a struct.
 - **Shapes** describe partial data structures. Shape types define a set of immutable properties which a struct must have (fitting in name and type) to be considered a subtype of the shape type. Apart from structs being viewed through the lens of shapes, Lore also offers shape values, which are unnamed, ad-hoc instances of a shape type. Shapes offer the power of structural typing at compile-time *and* run-time. They are an excellent abstraction for implementing entity-component systems.
 
@@ -10,7 +10,7 @@
 
 ### Structs
 
-A **struct** describes the type and representation of user-defined data. In concrete terms, a struct is a set of **properties** (immutable and, if you must, mutable) allowing optional default values. A struct can **implement** any number of traits, which together determine the functions that must be implemented for the struct and, together with shape types, the properties a struct must contain. An instance of a struct, also called a struct value or simply struct, can be **constructed** using one of two provided syntaxes. As structs describe actual instances, a struct type is **always concrete and never abstract**.
+A **struct** describes the type and representation of user-defined data. In concrete terms, a struct is a set of **properties** (immutable and, if you must, mutable) allowing optional default values. A struct can **extend** any number of traits, which together determine the functions that must be implemented for the struct and, together with shape types, the properties a struct must contain. An instance of a struct, also called a struct value or simply struct, can be **constructed** using one of two provided syntaxes. As structs describe actual instances, a struct type is **always concrete and never abstract**.
 
 Structs do not support **inheritance** in and of themselves. Traits are the mechanism to facilitate inheritance, which has the huge advantage of cleanly separating the concerns of data representation (structs) and abstract structure/behavior (traits, shapes).
 
@@ -55,11 +55,11 @@ action test2() {
 }
 ```
 
-##### Implementing Traits
+##### Extending Traits
 
-A struct can **implement** any number of traits. This will make the struct a **subtype** of each of its traits. Since a struct is always a concrete type, **all abstract functions** of the traits will have to be implemented for the struct. This is implicitly handled by the constraints governing abstract functions and doesn't need to be handled specially for structs.
+A struct can **extend** any number of traits. This will make the struct a **subtype** of each of its traits. Since a struct is always a concrete type, **all abstract functions** of the traits will have to be implemented for the struct. This is implicitly handled by the constraints governing abstract functions and doesn't need to be handled specially for structs.
 
-A struct can also implement **shape types**. This will require the struct to declare properties in such a way that the struct subtypes the given shape type(s).
+A struct can also extend **shape types**. This will require the struct to declare properties in such a way that the struct subtypes the given shape type(s).
 
 ###### Syntax Example
 
@@ -67,7 +67,7 @@ A struct can also implement **shape types**. This will require the struct to dec
 trait Hashable
 function hash(hashable: Hashable): Int
 
-struct Person implements Hashable { name: String }
+struct Person extends Hashable { name: String }
 function hash(person: Person): Int = /* Compute the hash... */
 ```
 
@@ -89,7 +89,7 @@ struct Soldier {
 
 A **trait** is a type that describes structure and behavior. In concrete terms, a trait is an abstract type that can be associated with functions defining both its **structure** and **behavior** (either abstract, concrete, or both). Since traits must be backed by a struct, meaning the trait itself cannot be instantiated, a trait is **abstract**.
 
-Traits can also **inherit** from (multiple) other traits and even extend shape types. A trait `A` inheriting from a trait `B` will make `A` a strict and direct subtype of `B` and give the programmer the opportunity to specialize any functions declared over `B` for the type `A`. When extending a shape type `S`, the trait effectively declares that any struct implementing the trait must contain all properties declared in `S`.
+Traits can also **inherit** from (multiple) other traits and even extend shape types. A trait `A` inheriting from a trait `B` will make `A` a strict and direct subtype of `B` and give the programmer the opportunity to specialize any functions declared over `B` for the type `A`. When extending a shape type `S`, the trait effectively declares that any struct extending the trait must contain all properties declared in `S`.
 
 ###### Syntax Example
 
@@ -108,18 +108,18 @@ function y(pos: Position): Real
 function z(pos: Position): Real
 ```
 
-This allows us to define various structs implementing the same `Position`, for example:
+This allows us to define various structs extending the same `Position`, for example:
 
 ```
-struct Point implements Position { x: Real, y: Real, z: Real }
-struct Box implements Position { 
+struct Point extends Position { x: Real, y: Real, z: Real }
+struct Box extends Position { 
   xStart: Real, xEnd: Real
   yStart: Real, yEnd: Real
   zStart: Real, zEnd: Real
 }
 ```
 
-Of course, we also have to implement the abstract functions declared by `Position` for each of the structs implementing the trait:
+Of course, we also have to implement the abstract functions declared by `Position` for each of the structs extending the trait:
 
 ```
 function x(point: Point): Real = point.x
@@ -162,7 +162,7 @@ trait Position3D extends Position2D
 function z(pos: Position3D): Real
 ```
 
-Any struct implementing `Position3D` will have to provide a definition for all three of these abstract functions.
+Any struct extending `Position3D` will have to provide a definition for all three of these abstract functions.
 
 In the future, we might introduce **syntactic sugar** for the simpler forms of data abstraction, especially so that implementing data-heavy traits with a struct isn't ultra tedious. For now, we want to keep it simple though, and the idea of multi-functions once again proves to be powerful enough to get there.
 
@@ -306,7 +306,7 @@ Taking the second point into account, assuming "open" properties not only seems 
 So in the end, the best option seems to be to make run-time variance of property types **explicit**. One must thus declare a *struct* property as `open` if it should be able to partake in run-time structural type dispatch. If a property is not marked as `open`, its type as known by the struct type is always the property's compile-time type.
 
 ```
-struct Position3D implements Position { x: Real, y: Real, z: Real }
+struct Position3D extends Position { x: Real, y: Real, z: Real }
 
 struct Hero {  
   health: Health
@@ -353,9 +353,9 @@ action render(entity: +Position & +Shape) {
   // use entity.position and entity.shape to render the entity...
 }
 
-// The `implements` is not strictly necessary, but provides additional compile-time safety should either
+// The `extends` is not strictly necessary, but provides additional compile-time safety should either
 // +Position/+Shape or the corresponding properties change unexpectedly.
-struct Hero implements +Position, +Shape {
+struct Hero extends +Position, +Shape {
   position: Position  // Note that position does not need to be open since structs can't have subtypes.
   shape: Shape
 }
@@ -407,8 +407,8 @@ action render(entity: +Position & +Shape & +Color) {
 
   ```
   // Direct mapping
-  struct Point implements Position {
-    x: Real implements Position.x
+  struct Point extends Position {
+    x: Real extends Position.x
   }
   
   // Indirect mapping
@@ -442,8 +442,8 @@ action render(entity: +Position & +Shape & +Color) {
     }
     
     // Direct mapping
-    struct Point implements Position {
-      x: Real implements Position.x
+    struct Point extends Position {
+      x: Real extends Position.x
     }
     
     // Indirect mapping
@@ -460,7 +460,7 @@ action render(entity: +Position & +Shape & +Color) {
 
 - One step further: Automatic, optional **memoization of properties**.
 
-- The lack of struct inheritance currently has the big disadvantage that one cannot **"mix in" property definitions**. If you have a trait `Entity` that requires all its implementors to specify `name: String` and `sprite: Sprite` properties, this has to be re-declared inside every struct that implements `Entity`. I can see two main ways to solve this problem: (1) add mixins as a language feature or (2) allow users to solve this problem with a macro system. **Mixins** would firmly concern themselves with the realm of data representation; they would not even define their own types. Hence, adding mixins would preserve our stated goal of separating data representation and abstract data structure and behavior. You could declare a mixin alongside a trait if close data coupling is desired, but each struct would at least have to declare that it's using the mixin. There would be no language-level coupling between mixins and traits.
+- The lack of struct inheritance currently has the big disadvantage that one cannot **"mix in" property definitions**. If you have a trait `Entity` that requires all its implementors to specify `name: String` and `sprite: Sprite` properties, this has to be re-declared inside every struct that extends `Entity`. I can see two main ways to solve this problem: (1) add mixins as a language feature or (2) allow users to solve this problem with a macro system. **Mixins** would firmly concern themselves with the realm of data representation; they would not even define their own types. Hence, adding mixins would preserve our stated goal of separating data representation and abstract data structure and behavior. You could declare a mixin alongside a trait if close data coupling is desired, but each struct would at least have to declare that it's using the mixin. There would be no language-level coupling between mixins and traits.
 
   - A way to implement mixins would be **mixing in shape types**.
 

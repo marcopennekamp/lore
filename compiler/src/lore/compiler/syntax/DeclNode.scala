@@ -47,11 +47,11 @@ object TypeDeclNode {
   case class AliasNode(override val name: String, tpe: TypeExprNode, position: Position) extends TypeDeclNode
 
   /**
-    * @param implemented The names of all traits that the struct implements.
+    * @param extended The names of all traits that the struct extends.
     */
   case class StructNode(
     override val name: String,
-    implemented: Vector[TypeExprNode],
+    extended: Vector[TypeExprNode],
     properties: Vector[PropertyNode],
     position: Position
   ) extends TypeDeclNode

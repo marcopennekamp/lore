@@ -1,7 +1,7 @@
 // TODO: This would become an atom type later.
 trait Status
-struct Ok implements Status
-struct Error implements Status
+struct Ok extends Status
+struct Error extends Status
 
 // TODO: We really need default struct equality...
 function areEqual(v1: Ok, v2: Ok): Boolean = true

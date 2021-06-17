@@ -75,9 +75,9 @@ Multiple dispatch is defined so that the most specific function gets to work wit
 trait Animal
 trait Mammal extends Animal
 trait Fish extends Animal
-struct Human implements Mammal
-struct Guppy implements Fish
-struct ManBearGuppy implements Mammal, Fish
+struct Human extends Mammal
+struct Guppy extends Fish
+struct ManBearGuppy extends Mammal, Fish
 
 function kind(animal: Animal): String
 function kind(mammal: Mammal): String = 'mammal'
@@ -162,9 +162,9 @@ To demonstrate what we discussed above, take the **following constellation of fu
 
 ```
 trait A
-struct AI implements A
+struct AI extends A
 trait B
-struct BI implements B
+struct BI extends B
 
 function f(a: A, b: B)   // f1
 function f(a: AI, b: B)  // f2
@@ -207,10 +207,10 @@ function name(animal: Animal): String
 
 trait Fish extends Animal
 
-struct Bass implements Fish
+struct Bass extends Fish
 function name(bass: Bass): String = 'Bass'
 
-struct Trout implements Fish
+struct Trout extends Fish
 function name(trout: Trout): String = 'Trout'
 ```
 
@@ -296,10 +296,10 @@ trait Train extends Vehicle
 action move(train: Train, target: Target)
 ```
 
-This is a fairly standard example of single dispatch. Note that all actions so far are declared abstract. We can **create a struct** that implements the `Car` trait:
+This is a fairly standard example of single dispatch. Note that all actions so far are declared abstract. We can **create a struct** that extends the `Car` trait:
 
 ```
-struct SmartCar implements Car
+struct SmartCar extends Car
 action move(car: SmartCar, target: Target) {
   // ...
 }

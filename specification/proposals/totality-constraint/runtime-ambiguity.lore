@@ -1,7 +1,7 @@
 trait A
 trait Y
 
-struct A1 implements A, Y
+struct A1 extends A, Y
 
 function f(a: A): String = 'Shoot!'
 function f(y: Y): Int = 15

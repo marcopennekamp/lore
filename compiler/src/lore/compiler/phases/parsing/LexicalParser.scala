@@ -33,8 +33,7 @@ object LexicalParser {
     * calling said function is impossible since `dynamic` gets parsed as a dynamic call.
     *
     * Some additional words may have special meaning to the parser, but aren't keywords, because the parser can resolve
-    * the ambiguity in all instances. These words are: action, extends, function, implements, mut, struct, trait, and
-    * type.
+    * the ambiguity in all instances. These words are: action, extends, function, mut, struct, trait, and type.
     */
   val keywords: Vector[String] = Vector(
     "dynamic", "else", "false", "for", "if", "let", "return", "super", "this", "true", "while",

@@ -6,15 +6,15 @@ Consider the following piece of code:
 trait A
 trait Y
 
-struct A1 implements A
-struct A2 implements A, Y
+struct A1 extends A
+struct A2 extends A, Y
 
 function f(a: A): Int
 function f(a: A1): Int = 2
 function f(y: Y): Int = 1
 ```
 
-Essentially, `f` needs to be defined for `A1` and `A2`. The former is covered by `f(a: A1)`, while `A2` should be covered by `f(y: Y)`, because `A2` implements the trait `Y`.
+Essentially, `f` needs to be defined for `A1` and `A2`. The former is covered by `f(a: A1)`, while `A2` should be covered by `f(y: Y)`, because `A2` extends the trait `Y`.
 
 Our current definition of the **totality constraint** does not allow this constellation, however. The constraint expects that there is a function *more specific* than `f(a: A)` that implements `f` for `A2`. `f(y: Y)` provides the correct implementation but loses with the "more specific" requirement.
 
@@ -29,7 +29,7 @@ We'd have to change the **totality constraint** itself, of course. This isn't tr
 ```
 trait P
 trait Q
-struct X implements P, Q
+struct X extends P, Q
 function f(p: P): Int
 function f(q: Q): Int
 ```

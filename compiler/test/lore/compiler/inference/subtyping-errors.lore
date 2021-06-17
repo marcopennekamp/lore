@@ -1,5 +1,5 @@
 trait A
-struct B implements A {
+struct B extends A {
   mut name: String
 }
 

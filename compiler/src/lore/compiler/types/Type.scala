@@ -234,16 +234,15 @@ object Type {
           s"${property.name}: ${toString(property.tpe, verbose)}"
         }
         s"{ ${propertyRepresentations.mkString(", ")} }"
-      case s: StructType =>
+      case d: DeclaredType =>
         if (verbose) {
-          val implements = if (s.supertypes.nonEmpty) s" implements ${s.supertypes.map(toString(_, verbose)).mkString(", ")}" else ""
-          s"struct ${s.name}$implements"
-        } else s.name
-      case t: TraitType =>
-        if (verbose) {
-          val extended = if (t.supertypes.nonEmpty) s" extends ${t.supertypes.map(toString(_, verbose)).mkString(", ")}" else ""
-          s"trait ${t.name}$extended"
-        } else t.name
+          val kind = d match {
+            case _: StructType => "struct"
+            case _: TraitType => "trait"
+          }
+          val extended = if (d.supertypes.nonEmpty) s" extends ${d.supertypes.map(toString(_, verbose)).mkString(", ")}" else ""
+          s"$kind ${d.name}$extended"
+        } else d.name
       case t: NamedType => t.name
       case _ => t.toString
     }

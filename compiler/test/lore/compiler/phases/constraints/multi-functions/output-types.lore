@@ -1,6 +1,6 @@
 trait A
-struct B1 implements A
-struct B2 implements A
+struct B1 extends A
+struct B2 extends A
 
 function f(value: A): Int = 0
 

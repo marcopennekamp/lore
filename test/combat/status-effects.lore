@@ -57,7 +57,7 @@ function isActive(effect: +HitLimit): Boolean = effect.limit.hits > 0
 /**
  * The entity is armored and has increased defense. The armor breaks after a set amount of hits.
  */
-struct Armored implements StatusEffect {
+struct Armored extends StatusEffect {
   armor: Int
   limit: HitLimit
 }
@@ -70,7 +70,7 @@ function affectStat(effect: Armored, statLabel: StatDefense, value: Int): Int = 
 /**
  * The entity is infused with Stormlight.
  */
-struct Infusion implements StatusEffect {
+struct Infusion extends StatusEffect {
   limit: DurationLimit
 }
 

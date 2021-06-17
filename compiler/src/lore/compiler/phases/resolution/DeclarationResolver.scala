@@ -52,7 +52,7 @@ class DeclarationResolver {
     // but do not need to take part in any declaration order.
     val dependencyNames = (declaration match {
       case TypeDeclNode.AliasNode(_, expr, _) => TypeExprNode.identifiers(expr)
-      case TypeDeclNode.StructNode(_, implemented, _, _) => implemented.flatMap(TypeExprNode.identifiers)
+      case TypeDeclNode.StructNode(_, extended, _, _) => extended.flatMap(TypeExprNode.identifiers)
       case TypeDeclNode.TraitNode(_, extended, _) => extended.flatMap(TypeExprNode.identifiers)
     }).filterNot(Type.predefinedTypes.contains)
 

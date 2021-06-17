@@ -128,7 +128,7 @@ object LeastUpperBound {
       // The LUB of two shape types or a struct type and a shape type are the properties common to the two types.
       // Note that we don't produce a shape type as the LUB of two structs because that case is correctly handled
       // by querying the declared type hierarchy.
-      // TODO: Big problem: Let's say we have a LUB of two structs s1, s2 and a shape type s3. s1 and s2 implement
+      // TODO: Big problem: Let's say we have a LUB of two structs s1, s2 and a shape type s3. s1 and s2 extend
       //       trait t1. If we LUB s1 and s2 first, we get t1. Then LUB(t1, s3) = Any, because traits don't have
       //       properties. Whereas if we first have LUB(s1, s3) = { a: A, b: B } = s4 and the LUB(s2, s4) = { a: A },
       //       we would get another result. The correct one.

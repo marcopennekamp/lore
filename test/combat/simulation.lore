@@ -31,8 +31,8 @@ function stat(combatant: Combatant, statLabel: StatDodge): Real = {
 
 
 trait SimulationResult
-struct SimulationVictory implements SimulationResult { winner: Combatant }
-struct SimulationStalemate implements SimulationResult
+struct SimulationVictory extends SimulationResult { winner: Combatant }
+struct SimulationStalemate extends SimulationResult
 
 action combatLog(message: String) {
   println(message)

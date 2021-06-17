@@ -88,16 +88,12 @@ class FragmentParser(implicit fragment: Fragment) {
     P(Index ~ "trait" ~/ typeIdentifier ~ `extends`).map(withPosition(TypeDeclNode.TraitNode))
   }
 
+  private def struct[_: P]: P[TypeDeclNode.StructNode] = {
+    P(Index ~ "struct" ~/ structIdentifier ~ `extends` ~ structBody).map(withPosition(TypeDeclNode.StructNode))
+  }
+
   private def `extends`[_: P]: P[Vector[TypeExprNode]] = {
     P(("extends" ~ inherits).?).map(_.getOrElse(Vector.empty))
-  }
-
-  private def struct[_: P]: P[TypeDeclNode.StructNode] = {
-    P(Index ~ "struct" ~/ structIdentifier ~ implements ~ structBody).map(withPosition(TypeDeclNode.StructNode))
-  }
-
-  private def implements[_: P]: P[Vector[TypeExprNode]] = {
-    P(("implements" ~ inherits).?).map(_.getOrElse(Vector.empty))
   }
 
   private def inherits[_: P]: P[Vector[TypeExprNode]] = P(typeExpression.rep(1, CharIn(","))).map(_.toVector)

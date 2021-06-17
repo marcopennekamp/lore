@@ -1,25 +1,25 @@
 trait Color
-struct Red implements Color
-struct Black implements Color
-struct Brown implements Color
-struct Yellow implements Color
-struct Blue implements Color
+struct Red extends Color
+struct Black extends Color
+struct Brown extends Color
+struct Yellow extends Color
+struct Blue extends Color
 
 
 trait Profession
-struct Tailor implements Profession
-struct Lawyer implements Profession
-struct Entrepreneur implements Profession
-struct Gardener implements Profession
-struct Assassin implements Profession
+struct Tailor extends Profession
+struct Lawyer extends Profession
+struct Entrepreneur extends Profession
+struct Gardener extends Profession
+struct Assassin extends Profession
 
 
 trait Tool
-struct Scissors implements Tool
-struct Suitcase implements Tool
-struct Paperknife implements Tool
-struct Spade implements Tool
-struct Dagger implements Tool
+struct Scissors extends Tool
+struct Suitcase extends Tool
+struct Paperknife extends Tool
+struct Spade extends Tool
+struct Dagger extends Tool
 
 function tool(profession: Profession): Tool
 function tool(tailor: Tailor): Tool = Scissors()
@@ -39,19 +39,19 @@ trait Relation
 trait Friendly extends Relation
 trait Neutral extends Relation
 trait Hostile extends Relation
-struct Professional implements Neutral
-struct Cordial implements Neutral
-struct Friends implements Friendly
-struct Lovers implements Friendly, Hostile
-struct Competing implements Hostile
-struct Shunned implements Hostile
+struct Professional extends Neutral
+struct Cordial extends Neutral
+struct Friends extends Friendly
+struct Lovers extends Friendly, Hostile
+struct Competing extends Hostile
+struct Shunned extends Hostile
 
 
 trait Approach
-struct Socialising implements Approach
-struct Calculating implements Approach
-struct Honest implements Approach
-struct Indifferent implements Approach
+struct Socialising extends Approach
+struct Calculating extends Approach
+struct Honest extends Approach
+struct Indifferent extends Approach
 
 
 struct Suspect {

@@ -32,7 +32,7 @@ action updateHealth(entity: +Regeneration) {
 }
 
 
-entity Skeleton implements Entity2D {
+entity Skeleton extends Entity2D {
   component Position
   component Sprite
   component HealthState

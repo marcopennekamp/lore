@@ -6,14 +6,14 @@ trait Animal
 trait Bird extends Animal
 trait Mammal extends Animal
 trait Fish extends Animal
-struct Chicken implements Bird
-struct Penguin implements Bird
-struct Raven implements Bird
-struct Human implements Mammal
+struct Chicken extends Bird
+struct Penguin extends Bird
+struct Raven extends Bird
+struct Human extends Mammal
 trait Cat extends Mammal
-struct ScottishFold implements Cat
-struct Unicorn implements Mammal
-struct Goldfish implements Fish {
+struct ScottishFold extends Cat
+struct Unicorn extends Mammal
+struct Goldfish extends Fish {
   name: String
   size: Real
 }
@@ -30,21 +30,21 @@ trait Sick extends Status
 trait Hashable
 
 trait Wheel extends Hashable
-struct CoolWheel implements Wheel
-struct CheapWheel implements Wheel
+struct CoolWheel extends Wheel
+struct CheapWheel extends Wheel
 /* trait Engine extends Hashable
-struct GasEngine implements Engine
-struct ElectricEngine implements Engine
+struct GasEngine extends Engine
+struct ElectricEngine extends Engine
 
 trait Car extends +Wheel, +Engine
 
 trait Cycle extends +Wheel
 
-struct Motorcycle implements Cycle {
+struct Motorcycle extends Cycle {
   component Wheel
   component Engine
 }
 
-struct Bicycle implements Cycle {
+struct Bicycle extends Cycle {
   component Wheel
 } */

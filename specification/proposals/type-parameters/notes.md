@@ -7,7 +7,7 @@ Outstanding questions:
       ```
       trait A
       trait B[T] extends A
-      struct C[T] implements B[T]
-      struct D[T] implements B[T]
+      struct C[T] extends B[T]
+      struct D[T] extends B[T]
       ```
       The LUB of `C[Int]` and `D[String]` should be `A`, but the algorithm as envisioned would return `Any`, because the declared type hierarchy returns only `B` as the most specific common schema. The way to fix this is to instantiate a subgraph of the declared type hierarchy with the given type arguments.

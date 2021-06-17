@@ -1,9 +1,9 @@
 trait Animal
-struct Ox implements Animal {
+struct Ox extends Animal {
   name: String
   weight: Real
 }
-struct Crane implements Animal {
+struct Crane extends Animal {
   name: String
   height: Real
 }

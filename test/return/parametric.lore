@@ -17,7 +17,7 @@ action move(movable: Movable, x: Real, y: Real, z: Real) {
 }
 
 
-struct Zombie implements Movable {
+struct Zombie extends Movable {
   name: String
   mut position: Position = Position { }
 }
