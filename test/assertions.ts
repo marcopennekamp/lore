@@ -95,20 +95,33 @@ export function assertIsMap(actual: MapValue<any, any>, key?: Type, value?: Type
   }
 }
 
-export function assertMapEquals(actual: MapValue<any, any>, expected: Array<Array<any>>, keyType?: Type, valueType?: Type) {
+export function assertMapEquals<K, V>(actual: MapValue<K, V>, expected: Array<[K, V]>, keyType?: Type, valueType?: Type) {
   assertIsMap(actual, keyType, valueType)
+  assertMapForall(actual, expected, (actual, expected) => assertEquals(actual, expected))
+}
 
-  // Note that the MapValue does not contain a store that is HashMap, because the map is merely read from JSON which
-  // lacks the prototype. We can instead read all the pairs from `_bins`.
-  // @ts-ignore
-  const actualEntries = actual.store._bins.filter(entry => !!entry)
+export function assertMapForall<K, V, A>(actual: MapValue<K, V>, expected: Array<[K, A]>, assertCondition: (actual: V, expected: A) => void) {
+  assertIsMap(actual)
+
+  const actualEntries = getMapEntries(actual)
   expected.forEach(([key, value]) => {
-    const actualEntry = actualEntries.find(entry => entry.key === key)
-    assertExists(actualEntry)
-    if (actualEntry) {
-      assertEquals(actualEntry.value, value)
-    }
+    assert(actualEntries.has(key), `The map must contain an entry with key ${key}.`)
+    // @ts-ignore
+    assertCondition(actualEntries.get(key), value)
   })
+}
+
+/**
+ * The MapValue does not contain a store that is a HashMap, because the map is merely read from JSON, which means that
+ * `store` lacks the HashMap prototype. We can instead read all the pairs from `_bins`.
+ */
+function getMapEntries<K, V>(actual: MapValue<K, V>): Map<K, V> {
+  return new Map(
+    // @ts-ignore
+    actual.store._bins
+      .filter(entry => !!entry)
+      .map(({ key, value }) => [key, value])
+  )
 }
 
 export function assertIsShape(actual: ShapeValue, properties?: PropertyTypes) {
@@ -128,12 +141,17 @@ export function assertIsShape(actual: ShapeValue, properties?: PropertyTypes) {
 
 export function assertShapeEquals(actual: ShapeValue, expected: object, propertyTypes?: PropertyTypes) {
   assertIsShape(actual, propertyTypes)
+  assertShapeForall(actual, expected, (actual, expected) => assertEquals(actual, expected))
+}
+
+export function assertShapeForall(actual: ShapeValue, expected: object, assertCondition: (actual: any, expected: any) => void) {
+  assertIsShape(actual)
 
   const keys = Object.keys(expected)
   assertEquals(Object.keys(actual).filter(name => name !== 'lore$type').length, keys.length)
   keys.forEach(name => {
     // @ts-ignore
-    assertEquals(actual[name], expected[name])
+    assertCondition(actual[name], expected[name])
   })
 }
 
