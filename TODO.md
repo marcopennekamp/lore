@@ -22,6 +22,8 @@
 
 ##### Syntax
 
+- Add the `%` to shape types to mirror the literal syntax `%{ ... }`. Consider using square brackets instead of curly braces.
+- Turn the map type syntax into `#[A -> B]` to mirror the literal syntax.
 - Allow question marks in identifiers. I like how Clojure approaches booleans and this would fit nicely into Lore, I hope. Example: `isSuccessful` would become `successful?`.
 - Allow trailing commas.
 - We should find a symmetric syntax for map types.
@@ -31,6 +33,7 @@
 - Investigate how type variables affect abstract functions and the ARDS function.
 - Support intersection and sum types in TypeVariableAllocation.
 - We could theoretically introduce a limited form of ambiguity analysis at compile-time: For each function `f(a: A, b: B, ...)`, get a list of possible subtypes (mostly trait subtypes) and simulate dispatch with these types. If any of the inputs result in an ambiguity, raise at least a warning.    
+- Merge Real and Int into a Number type (named Number or something similar). There is no advantage in keeping these two apart when the underlying runtime system has only one numeric type. The subtyping relationship `Int <: Real` is awkward as well.
 
 ##### CLI
 
