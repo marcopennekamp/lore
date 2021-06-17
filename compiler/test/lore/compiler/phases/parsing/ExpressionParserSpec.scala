@@ -57,48 +57,6 @@ class ExpressionParserSpec extends BaseSpec with ParserSpecExtensions[TopLevelEx
     ))
   }
 
-  it should "parse tuple, Vector, and map constructors correctly" in {
-    // Tuple constructors.
-    "()" --> Stmt.Unit()
-    "(a, b)" --> Stmt.Tuple(Vector(va, vb))
-    "(a + b, a * c, x < 5.3)" --> Stmt.Tuple(Vector(
-      Stmt.Addition(va, vb), Stmt.Multiplication(va, vc), Stmt.LessThan(vx, Stmt.RealLiteral(5.3)),
-    ))
-    "('Hello', 'World')" --> Stmt.Tuple(Vector(Stmt.StringLiteral("Hello"), Stmt.StringLiteral("World")))
-
-    // List constructors.
-    "[]" --> Stmt.List(Vector.empty)
-    "[a, b]" --> Stmt.List(Vector(va, vb))
-    "[(a, b), (c, c)]" --> Stmt.List(Vector(Stmt.Tuple(Vector(va, vb)), Stmt.Tuple(Vector(vc, vc))))
-    "[[a, b], ['test', 'me', 'well $c'], ['container']]" --> Stmt.List(Vector(
-      Stmt.List(Vector(va, vb)),
-      Stmt.List(Vector(
-        Stmt.StringLiteral("test"), Stmt.StringLiteral("me"), Stmt.Concatenation(Vector(Stmt.StringLiteral("well "), vc)),
-      )),
-      Stmt.List(Vector(Stmt.StringLiteral("container"))),
-    ))
-    "[a + b, a * c, x < 5.3]" --> Stmt.List(Vector(
-      Stmt.Addition(va, vb), Stmt.Multiplication(va, vc), Stmt.LessThan(vx, Stmt.RealLiteral(5.3)),
-    ))
-
-    // Map constructors.
-    "#[]" --> Stmt.Map(Vector.empty)
-    "#[a -> 5, b -> 10]" --> Stmt.Map(Vector(Stmt.KeyValue(va, Stmt.IntLiteral(5)), Stmt.KeyValue(vb, Stmt.IntLiteral(10))))
-    "#['foo' -> (a, b), 'bar' -> (c, c)]" --> Stmt.Map(Vector(
-      Stmt.KeyValue(Stmt.StringLiteral("foo"), Stmt.Tuple(Vector(va, vb))),
-      Stmt.KeyValue(Stmt.StringLiteral("bar"), Stmt.Tuple(Vector(vc, vc))),
-    ))
-    "#[a -> #['test' -> 'me'], b -> #['test' -> 'well $c']]" --> Stmt.Map(Vector(
-      Stmt.KeyValue(va, Stmt.Map(Vector(Stmt.KeyValue(Stmt.StringLiteral("test"), Stmt.StringLiteral("me"))))),
-      Stmt.KeyValue(vb, Stmt.Map(Vector(Stmt.KeyValue(Stmt.StringLiteral("test"), Stmt.Concatenation(Vector(Stmt.StringLiteral("well "), vc)))))),
-    ))
-    "#[1 -> a + b, 5 -> a * c, 10 -> x < 5.3]" --> Stmt.Map(Vector(
-      Stmt.KeyValue(Stmt.IntLiteral(1), Stmt.Addition(va, vb)),
-      Stmt.KeyValue(Stmt.IntLiteral(5), Stmt.Multiplication(va, vc)),
-      Stmt.KeyValue(Stmt.IntLiteral(10), Stmt.LessThan(vx, Stmt.RealLiteral(5.3))),
-    ))
-  }
-
   it should "parse conditionals and loops correctly" in {
     "if (true) false" --> Stmt.IfElse(Stmt.BoolLiteral(true), Stmt.BoolLiteral(false), Stmt.Unit())
     "if (i < 25) { i += 1 }" --> Stmt.IfElse(

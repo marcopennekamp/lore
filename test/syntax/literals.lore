@@ -1,3 +1,5 @@
+function c(): String = 'man'
+
 function test(): [Any] = [
   0,
   -15,
@@ -6,10 +8,35 @@ function test(): [Any] = [
   -1.5,
   true,
   false,
-  (0, 'hello', true),
+
+  [
+    (),
+    (0, 'hello', true),
+    (1 + 2, 2 * 3, 3 < 5.3)
+  ],
+
   (x: Int) => x + 1,
-  [1, 2, 3],
-  #['john' -> 11, 'martin' -> 5],
-  %{ name: 'John', occupation: 'Salaryman' }
+
+  [
+    [],
+    [1, 2, 3],
+    [(1, 2), (3, 4)],
+    [1 + 2, 2 * 3, 5.3 < 3],
+    [[1, 2], ['test', 'me', 'well ${c()}'], ['container']]
+  ],
+
+  [
+    #[],
+    #['john' -> 11, 'martin' -> 5],
+    #[1 -> #['test' -> 'me'], 2 -> #['test' -> 'well ${c()}', 'test2' -> 'abc']],
+    #[1 -> 1 + 2, 5 -> 2 * 3, 10 -> 5.3 <= 5.3]
+  ],
+
+  [
+    %{},
+    %{ name: 'John', occupation: 'Salaryman' },
+    %{ part1: %{ a: 1, b: 2 }, part2: %{ c: 3, a: 'hello' } }
+  ]
+
   // TODO: Atoms such as :none.
 ]

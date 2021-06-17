@@ -1,10 +1,14 @@
 import { assertEquals } from 'https://deno.land/std/testing/asserts.ts'
 import { Function } from '../../runtime/src/lore/runtime/functions.ts'
-import { ListValue } from '../../runtime/src/lore/runtime/lists.ts'
+import { List, ListValue } from '../../runtime/src/lore/runtime/lists.ts'
+import { Map, MapValue } from '../../runtime/src/lore/runtime/maps.ts'
+import { Shape, ShapeValue } from '../../runtime/src/lore/runtime/shapes.ts'
+import { Sum } from '../../runtime/src/lore/runtime/sums.ts'
 import { Tuple, TupleValue } from '../../runtime/src/lore/runtime/tuples.ts'
 import { Types } from '../../runtime/src/lore/runtime/types/types.ts'
 import {
-  assertIsFunction, assertIsList, assertListEquals, assertMapEquals, assertShapeEquals, assertTupleEquals,
+  assertIsFunction, assertIsList, assertIsMap, assertIsShape, assertListEquals, assertListForall, assertMapEquals,
+  assertMapForall, assertShapeEquals, assertShapeForall, assertTupleEquals,
 } from '../assertions.ts'
 import { LoreTest } from '../base.ts'
 
@@ -30,11 +34,45 @@ Deno.test('syntax/literals', async () => {
   assertEquals(elements[4], -1.5)
   assertEquals(elements[5], true)
   assertEquals(elements[6], false)
-  assertTupleEquals(elements[7], [0, 'hello', true], [Types.int, Types.string, Types.boolean])
+
+  const tuples = <ListValue<TupleValue>> elements[7]
+  assertIsList(tuples)
+  assertTupleEquals(tuples.array[0], [], [])
+  assertTupleEquals(tuples.array[1], [0, 'hello', true], [Types.int, Types.string, Types.boolean])
+  assertTupleEquals(tuples.array[2], [3, 6, true], [Types.int, Types.int, Types.boolean])
+
   assertIsFunction(elements[8], Function.type(Tuple.type([Types.int]), Types.int))
-  assertListEquals(elements[9], [1, 2, 3], Types.int)
-  assertMapEquals(elements[10], [['john', 11], ['martin', 5]], Types.string, Types.int)
-  assertShapeEquals(elements[11], { name: 'John', occupation: 'Salaryman' }, { name: Types.string, occupation: Types.string })
+
+  const lists = <ListValue<ListValue<any>>> elements[9]
+  assertIsList(lists)
+  assertListEquals(lists.array[0], [], Types.nothing)
+  assertListEquals(lists.array[1], [1, 2, 3], Types.int)
+  assertIsList(lists.array[2], Tuple.type([Types.int, Types.int]))
+  assertListForall(lists.array[2], [[1, 2], [3, 4]], (actual, expected) => assertTupleEquals(actual, expected))
+  assertListEquals(lists.array[3], [3, 6, false], Sum.type([Types.int, Types.boolean]))
+  assertIsList(lists.array[4], List.type(Sum.type([Types.int, Types.string])))
+  assertListForall(lists.array[4], [[1, 2], ['test', 'me', 'well man'], ['container']], (actual, expected: Array<number | string>) => {
+    assertListEquals(actual, expected)
+  })
+
+  const maps = <ListValue<MapValue<any, any>>> elements[10]
+  assertIsList(maps)
+  assertMapEquals(maps.array[0], [], Types.nothing, Types.nothing)
+  assertMapEquals(maps.array[1], [['john', 11], ['martin', 5]], Types.string, Types.int)
+  assertIsMap(maps.array[2], Types.int, Map.type(Types.string, Types.string))
+  assertMapForall(maps.array[2], [[1, [['test', 'me']]], [2, [['test', 'well man'], ['test2', 'abc']]]], (actual, expected: Array<[string, string]>) => {
+    assertMapEquals(actual, expected, Types.string, Types.string)
+  })
+  assertMapEquals(maps.array[3], [[1, 3], [5, 6], [10, true]], Types.int, Sum.type([Types.int, Types.boolean]))
+
+  const shapes = <ListValue<ShapeValue>> elements[11]
+  assertIsList(shapes)
+  assertShapeEquals(shapes.array[0], {}, {})
+  assertShapeEquals(shapes.array[1], { name: 'John', occupation: 'Salaryman' }, { name: Types.string, occupation: Types.string })
+  assertIsShape(shapes.array[2], { part1: Shape.type({ a: Types.int, b: Types.int }), part2: Shape.type({ c: Types.int, a: Types.string }) })
+  assertShapeForall(shapes.array[2], { part1: { a: 1, b: 2 }, part2: { c: 3, a: 'hello' } }, (actual, expected) => {
+    assertShapeEquals(actual, expected)
+  })
 })
 
 Deno.test('syntax/strings', async () => {
