@@ -19,6 +19,24 @@ class ExpressionParserSpec extends BaseSpec with ParserSpecExtensions[TopLevelEx
     "-1.".fails
   }
 
+  it should "reject top-level expressions in positions not permitting them" in {
+    "let x = a + return 0".fails
+    "if (return x) a else b".fails
+    "(return 0) || b || c".fails
+    "while (return x) { return b }".fails
+    "b + return 0".fails
+    "[return 2]".fails
+    "#[2 -> return 0]".fails
+    "%{ a: return 2 }".fails
+
+    "if (let a = false) { }".fails
+    "while (let a = false) { }".fails
+    "-(let a = 2)".fails
+    "[let a = 2]".fails
+    "#[2 -> a = 0]".fails
+    "%{ a: a = 1 }".fails
+  }
+
   it should "parse operators correctly" in {
     "a + b" --> Stmt.Addition(va, vb)
     "a - b" --> Stmt.Subtraction(va, vb)
@@ -172,126 +190,6 @@ class ExpressionParserSpec extends BaseSpec with ParserSpecExtensions[TopLevelEx
     )
   }
 
-  it should "assign the correct indices (tuple)" in {
-    inside("(a + b, a * c, x < 5.3)".parsed) {
-      case tuple: ExprNode.TupleNode =>
-        tuple.position.index shouldEqual 0
-        inside(tuple.expressions) {
-          case Seq(add: ExprNode.AdditionNode, mult: ExprNode.MultiplicationNode, comp: ExprNode.LessThanNode) =>
-            add.position.index shouldEqual 1
-            add.left.position.index shouldEqual 1
-            add.right.position.index shouldEqual 5
-            mult.position.index shouldEqual 8
-            mult.left.position.index shouldEqual 8
-            mult.right.position.index shouldEqual 12
-            comp.position.index shouldEqual 15
-            comp.left.position.index shouldEqual 15
-            comp.right.position.index shouldEqual 19
-        }
-    }
-  }
-
-  it should "assign the correct indices (if-else)" in {
-    inside("if (i <= 25) { i += 1 } else { i -= 1 }".parsed) {
-      case ifElse: ExprNode.IfElseNode =>
-        ifElse.position.index shouldEqual 0
-        inside(ifElse.condition) {
-          case lt: ExprNode.LessThanEqualsNode =>
-            lt.position.index shouldEqual 4
-            lt.left.position.index shouldEqual 4
-            lt.right.position.index shouldEqual 9
-        }
-        inside(ifElse.onTrue) {
-          case block: ExprNode.BlockNode =>
-            block.position.index shouldEqual 13
-            inside(block.expressions) {
-              case Seq(assign: TopLevelExprNode.AssignmentNode) =>
-                assign.position.index shouldEqual 15
-                assign.address.position.index shouldEqual 15
-                assign.value.position.index shouldEqual 20
-            }
-        }
-        inside(ifElse.onFalse) {
-          case block: ExprNode.BlockNode =>
-            block.position.index shouldEqual 29
-            inside(block.expressions) {
-              case Seq(assign: TopLevelExprNode.AssignmentNode) =>
-                assign.position.index shouldEqual 31
-                assign.address.position.index shouldEqual 31
-                assign.value.position.index shouldEqual 36
-            }
-        }
-    }
-  }
-
-  it should "assign the correct indices (variable declaration)" in {
-    inside("let mut position: Position3D = Position3D(5.5, 6.7)".parsed) {
-      case decl: TopLevelExprNode.VariableDeclarationNode =>
-        decl.position.index shouldEqual 0
-        decl.tpe.value.position.index shouldEqual 18
-        inside(decl.value) {
-          case call: ExprNode.SimpleCallNode =>
-            call.position.index shouldEqual 31
-            inside(call.arguments) {
-              case Seq(rl1: ExprNode.RealLiteralNode, rl2: ExprNode.RealLiteralNode) =>
-                rl1.position.index shouldEqual 42
-                rl2.position.index shouldEqual 47
-            }
-        }
-    }
-  }
-
-  it should "assign the correct indices (fixed function call)" in {
-    inside("applyDot.fixed[Dot, Health](dot, e)".parsed) {
-      case call: ExprNode.FixedFunctionCallNode =>
-        call.position.index shouldEqual 0
-        inside(call.types) {
-          case Seq(t1: TypeExprNode.IdentifierNode, t2: TypeExprNode.IdentifierNode) =>
-            t1.position.index shouldEqual 15
-            t2.position.index shouldEqual 20
-        }
-        inside(call.arguments) {
-          case Seq(dot: ExprNode.VariableNode, e: ExprNode.VariableNode) =>
-            dot.position.index shouldEqual 28
-            e.position.index shouldEqual 33
-        }
-    }
-  }
-
-  it should "assign the correct indices (map construction)" in {
-    inside("#[a -> #['test' -> 'me'], b -> #['test' -> 'well $c']]".parsed) {
-      case map: ExprNode.MapNode =>
-        map.position.index shouldEqual 0
-        inside(map.kvs) {
-          case Seq(a: ExprNode.KeyValueNode, b: ExprNode.KeyValueNode) =>
-            a.position.index shouldEqual 2
-            a.key.position.index shouldEqual 2
-            inside(a.value) {
-              case innerMap: ExprNode.MapNode =>
-                innerMap.position.index shouldEqual 7
-                inside(innerMap.kvs) {
-                  case Seq(test: ExprNode.KeyValueNode) =>
-                    test.position.index shouldEqual 9
-                    test.key.position.index shouldEqual 9
-                    test.value.position.index shouldEqual 19
-                }
-            }
-            b.position.index shouldEqual 26
-            b.key.position.index shouldEqual 26
-            inside(b.value) {
-              case innerMap: ExprNode.MapNode =>
-                innerMap.position.index shouldEqual 31
-                inside(innerMap.kvs) {
-                  case Seq(test: ExprNode.KeyValueNode) =>
-                    test.position.index shouldEqual 33
-                    test.key.position.index shouldEqual 33
-                    test.value.position.index shouldEqual 43
-                }
-            }
-        }
-    }
-  }
-
   it should "parse a block-rich expression within 50 milliseconds" in {
     timed(50) { () =>
       "{ a + { b } + { b }.x + b }" --> Stmt.Block(Vector(
@@ -325,46 +223,5 @@ class ExpressionParserSpec extends BaseSpec with ParserSpecExtensions[TopLevelEx
         ),
       )
     }
-  }
-
-  "Top-level expressions" should "only appear in blocks, conditionals, and repetitions" in {
-    "let x = a + return 0".fails
-    "if (return x) a else b".fails
-    "(return 0) || b || c".fails
-    "repeat while (return x) { return b }".fails
-    "b + return 0".fails
-    "if (let a = false) { }".fails
-    "repeat while (let a = false) { }".fails
-    "-(let a = 2)".fails
-
-    "b + { let a = 4 \n a * a }" --> Stmt.Addition(
-      vb,
-      Stmt.Block(Vector(
-        Stmt.VariableDeclaration("a", false, None, Stmt.IntLiteral(4)),
-        Stmt.Multiplication(va, va),
-      )),
-    )
-    "if (false) let a = 0" --> Stmt.IfElse(
-      Stmt.BoolLiteral(false),
-      Stmt.VariableDeclaration("a", false, None, Stmt.IntLiteral(0)),
-      Stmt.Unit(),
-    )
-    "for (e <- list) let a = e" --> Stmt.Iteration(
-      Vector(Stmt.Extractor("e", Stmt.Variable("list"))),
-      Stmt.VariableDeclaration("a", false, None, Stmt.Variable("e")),
-    )
-    "if (false) return 0 else 0" --> Stmt.IfElse(
-      Stmt.BoolLiteral(false),
-      Stmt.Return(Stmt.IntLiteral(0)),
-      Stmt.IntLiteral(0),
-    )
-    "for (e <- list) return e" --> Stmt.Iteration(
-      Vector(Stmt.Extractor("e", Stmt.Variable("list"))),
-      Stmt.Return(Stmt.Variable("e")),
-    )
-    "for (e <- list) e" --> Stmt.Iteration(
-      Vector(Stmt.Extractor("e", Stmt.Variable("list"))),
-      Stmt.Variable("e"),
-    )
   }
 }
