@@ -30,7 +30,6 @@
 
 ##### Type System
 
-- Investigate how type variables affect abstract functions and the ARDS function.
 - Support intersection and sum types in TypeVariableAllocation.
 - We could theoretically introduce a limited form of ambiguity analysis at compile-time: For each function `f(a: A, b: B, ...)`, get a list of possible subtypes (mostly trait subtypes) and simulate dispatch with these types. If any of the inputs result in an ambiguity, raise at least a warning.    
 - Merge Real and Int into a Number type (named Number or something similar). There is no advantage in keeping these two apart when the underlying runtime system has only one numeric type. The subtyping relationship `Int <: Real` is awkward as well.
