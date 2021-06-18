@@ -22,7 +22,7 @@ export const LoreTest = {
    */
   async compile(...paths: string[]): Promise<void> {
     const process = Deno.run({
-      cmd: ['java', '-jar', 'lore.jar', '..', ...paths.map(path => `test/${path}`)],
+      cmd: ['java', '-jar', 'lore.jar', '--base-directory', '..', ...paths.map(path => `test/${path}`)],
       stdout: 'piped',
     })
 
@@ -31,7 +31,7 @@ export const LoreTest = {
     process.close()
 
     // We judge the success of the compilation based on the following line prefix being included in the standard output:
-    //    [success] Compilation was successful.
+    //    [info] Compilation was successful.
     // This line is always and only posted by the Lore compiler when compilation is successful. It may contain
     // additional information such as the total time taken, so we are checking for the prefix.
     const isSuccessful = messages.some(message => message.startsWith('[info] Compilation was successful.'))
