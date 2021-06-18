@@ -7,9 +7,9 @@ object ParsingPhase {
   /**
     * Parses all fragments, resulting in declaration nodes or failing with parsing errors.
     */
-  def process(sources: Vector[Fragment]): Compilation[Vector[DeclNode]] = {
-    sources.map { source =>
-      val parser = new FragmentParser()(source)
+  def process(fragments: Vector[Fragment]): Compilation[Vector[DeclNode]] = {
+    fragments.map { fragment =>
+      val parser = new FragmentParser()(fragment)
       parser.parsed
     }.simultaneous.map(_.flatten)
   }

@@ -1,6 +1,6 @@
 package lore.compiler.phases.transpilation.functions
 
-import lore.compiler.CompilerOptions
+import lore.compiler.core.CompilerOptions
 import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
 import lore.compiler.phases.transpilation.{RuntimeApi, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.semantics.Registry
@@ -34,7 +34,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     // Phase 4: Transpile multi-function with dispatch logic.
     val dispatchBehavior = new DispatchBehavior(mf, properties, dispatchInput)
 
-    val loggingStatements = if (compilerOptions.runtimeLogging) {
+    val loggingStatements = if (compilerOptions.enableRuntimeLogging) {
       Vector(RuntimeApi.io.println(s"Called multi-function ${mf.name}.".asLiteral))
     } else Vector.empty
 

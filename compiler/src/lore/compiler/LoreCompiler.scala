@@ -1,6 +1,6 @@
 package lore.compiler
 
-import lore.compiler.core.{Compilation, Fragment}
+import lore.compiler.core.{Compilation, CompilerOptions, Fragment}
 import lore.compiler.feedback.Feedback
 import lore.compiler.phases.constraints.ConstraintsPhase
 import lore.compiler.phases.generation.GenerationPhase
@@ -11,22 +11,17 @@ import lore.compiler.phases.transpilation.TranspilationPhase
 import lore.compiler.semantics.Registry
 import lore.compiler.utils.Timer.timed
 
-/**
-  * The compiler instance orchestrates compilation through all phases.
-  */
-class LoreCompiler(val sources: Vector[Fragment], val options: CompilerOptions) {
+object LoreCompiler {
 
   /**
-    * Compiles the given sources, either resulting in a list of errors and warnings or a completed compilation.
+    * Compiles the given fragments, either resulting in a list of errors and warnings, or a completed compilation.
     */
-  def compile(): Compilation[(Registry, String)] = {
-    implicit val options: CompilerOptions = this.options
-
+  def compile(fragments: Vector[Fragment], options: CompilerOptions): Compilation[(Registry, String)] = {
     Feedback.loggerBlank.debug("")
 
     for {
       // Phase 1: Parse source files into a list of fragments.
-      fragmentsWithDeclarations <- timed("Parsing")(ParsingPhase.process(sources))
+      fragmentsWithDeclarations <- timed("Parsing")(ParsingPhase.process(fragments))
       // Phase 2: Resolve declarations using DeclarationResolver and build the Registry.
       registry <- timed("Resolution")(ResolutionPhase.process(fragmentsWithDeclarations))
       // Phase 3: Check pre-transformation constraints.

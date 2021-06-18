@@ -1,7 +1,6 @@
 package lore.compiler.phases.transpilation.functions
 
-import lore.compiler.CompilerOptions
-import lore.compiler.core.CompilationException
+import lore.compiler.core.{CompilationException, CompilerOptions}
 import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
 import lore.compiler.phases.transpilation._
 import lore.compiler.phases.transpilation.expressions.ExpressionTranspiler
@@ -31,7 +30,7 @@ object FunctionTranspiler {
 
     val chunk = ExpressionTranspiler.transpile(function.body.get)
 
-    val preamble = if (compilerOptions.runtimeLogging) {
+    val preamble = if (compilerOptions.enableRuntimeLogging) {
       val argumentValues = transpiledParameters.flatMap(parameter => Vector(parameter.asVariable, ", ".asLiteral))
       RuntimeApi.io.println(
         Target.Operation(

@@ -23,6 +23,7 @@ libraryDependencies ++= Seq(
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.3",
   "org.json4s" %% "json4s-native" % "4.0.0",
+  "com.github.scopt" %% "scopt" % "4.0.1",
 )
 
 // Sonatype repos.

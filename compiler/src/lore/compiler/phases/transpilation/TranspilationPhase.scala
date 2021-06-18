@@ -1,8 +1,7 @@
 package lore.compiler.phases.transpilation
 
-import lore.compiler.CompilerOptions
 import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, CompilationException}
+import lore.compiler.core.{Compilation, CompilationException, CompilerOptions}
 import lore.compiler.phases.transpilation.functions.MultiFunctionTranspiler
 import lore.compiler.phases.transpilation.structures.{DeclaredTypeTranspiler, TypeAliasTranspiler}
 import lore.compiler.semantics.{Introspection, Registry}

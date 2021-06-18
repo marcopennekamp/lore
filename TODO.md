@@ -37,8 +37,7 @@
 
 ##### CLI
 
-- Support compiling files using a pattern instead of just plain filenames.
-- Support an output file other than `lore-program.js`.
+- *Currently no TODOs.*
 
 ##### Error Reporting
 
