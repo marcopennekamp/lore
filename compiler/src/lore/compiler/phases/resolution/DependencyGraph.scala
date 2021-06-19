@@ -38,7 +38,9 @@ class DependencyGraph(owner: DependencyGraph.Owner) {
       // be the supertype of all declared types without a supertype, the graph should be connected. Note that we first
       // need to detect cycles, because if the graph has a dependency cycle, that component of the graph will not be
       // connected to Any, and thus the graph won't be connected.
-      _ = assert(graph.isConnected)
+      _ = if (!graph.isConnected) {
+        throw CompilationException(s"The dependency graph must be connected.")
+      }
 
       // At this point, we know our dependency graph is a directed, acyclic graph. We can start a topological sort.
       order = graph.topologicalSort.fold(
@@ -48,8 +50,9 @@ class DependencyGraph(owner: DependencyGraph.Owner) {
         order => order.toVector.map(_.value)
       )
 
-      // The first element in the type resolution order must be Any, as it's the ultimate root type.
-      _ = assert(order.head == "Any")
+      _ = if (order.head != "Any") {
+        throw CompilationException("The first element in the type resolution order must be the root type Any.")
+      }
     } yield order
   }
 
@@ -87,8 +90,11 @@ class DependencyGraph(owner: DependencyGraph.Owner) {
   private def verifyNotCyclical(): Verification = {
     if (graph.isCyclic) {
       val cycles = distinctCycles
-      assert(cycles.nonEmpty)
-      return Compilation.fail(
+      if (cycles.isEmpty) {
+        throw CompilationException(s"If the graph is cyclic, we must be able to find at least one distinct cycle.")
+      }
+
+      Compilation.fail(
         cycles.map { cycle =>
           val occurrence = owner.getTypeDeclaration(cycle.startNode).getOrElse(
             throw CompilationException("Type declarations didn't contain a declaration that was part of the dependency graph."),
@@ -96,8 +102,7 @@ class DependencyGraph(owner: DependencyGraph.Owner) {
           InheritanceCycle(cycle.nodes.map(_.value).toVector, occurrence)
         }: _*
       )
-    }
-    Verification.succeed
+    } else Verification.succeed
   }
 
   /**

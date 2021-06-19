@@ -46,8 +46,6 @@ private class ReturnDeadCodeVisitor() extends CombiningTopLevelExprVisitor.WithC
   override def visit(node: TopLevelExprNode, returns: Vector[DefinitelyReturns]): Compilation[DefinitelyReturns] = node match {
     case TopLevelExprNode.ReturnNode(_, _) => true.compiled
     case ExprNode.BlockNode(expressions, _) =>
-      assert(expressions.length == returns.length)
-
       // Check that a return statement isn't followed by any other code. If we have a "definitely returns" at any
       // point before the last element, this is such a point.
       if (returns.isEmpty) false.compiled

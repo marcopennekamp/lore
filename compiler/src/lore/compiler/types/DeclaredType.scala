@@ -1,5 +1,6 @@
 package lore.compiler.types
 
+import lore.compiler.core.CompilationException
 import lore.compiler.semantics.structures.DeclaredTypeDefinition
 import lore.compiler.utils.CollectionExtensions._
 
@@ -57,7 +58,10 @@ object DeclaredType {
       * Initializes the declared type with its associated declared type definition.
       */
     def initialize(definition: Def): Unit = {
-      assert(this._def == null)
+      if (this._def != null) {
+        throw CompilationException(s"Only declared types without an already attached definition may be initialized." +
+          s" Type name: ${self.name}. Definition name: ${definition.name}.")
+      }
       this._def = definition
     }
   }

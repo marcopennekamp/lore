@@ -40,7 +40,6 @@
 
 ##### Error Reporting
 
-- Replace assertions with proper CompilationExceptions.
 - Add positions to CompilationExceptions.
 - Add names to errors (similar to Typescript) so that programmers can quickly google/search for Lore errors.
 - Transformation phase: If the expression of a variable declaration is incorrect, the variable won't be registered and there will be follow-up errors that may be confusing for a user. There is already code to handle a similar case if the type required of the expression is false. However, the `visitUnary` of the visitor isn't even called when the subtree expression produces compilation errors, so we will have to introduce some other mechanism to the visitor.

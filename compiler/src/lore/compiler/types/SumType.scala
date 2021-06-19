@@ -1,9 +1,14 @@
 package lore.compiler.types
 
+import lore.compiler.core.CompilationException
+
 import scala.util.hashing.MurmurHash3
 
 case class SumType private (parts: Set[Type]) extends Type {
-  assert(parts.nonEmpty)
+  if (parts.isEmpty) {
+    throw CompilationException("You may not construct a sum type with an empty set of parts.")
+  }
+
   override val hashCode: Int = MurmurHash3.unorderedHash(parts, 0x85f5fe35)
 }
 

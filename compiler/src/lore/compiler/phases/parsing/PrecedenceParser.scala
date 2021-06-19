@@ -2,7 +2,7 @@ package lore.compiler.phases.parsing
 
 import fastparse.ScalaWhitespace._
 import fastparse._
-import lore.compiler.core.{Fragment, Position}
+import lore.compiler.core.{CompilationException, Fragment, Position}
 import lore.compiler.syntax.Node
 import lore.compiler.syntax.Node.Index
 
@@ -33,9 +33,9 @@ object PrecedenceParser {
     * Parses a complete sequence of operands and operations into a single "operand", for example an expression node.
     * Also easily handles the case where no operators even exist and there is only a single operand.
     *
-    * @param operator Although the operators are already define in `operatorMeta`, we need to supply a direct parser to
-    *                 fastparse, since it can't take the keys from the run-time map. This should use StringIn or similar
-    *                 parsers for performance reasons.
+    * @param operator Although the operators are already defined in `operatorMeta`, we need to supply a direct parser
+    *                 to fastparse, since it can't take the keys from the run-time map. This should use StringIn or
+    *                 similar parsers for the best performance.
     */
   def parser[Operand <: Node, _: P](
     operator: => P[Unit],
@@ -46,15 +46,22 @@ object PrecedenceParser {
     var operatorStack = List[Operator]()
 
     def handleOperator(): Unit = operatorStack.head match {
+      // We process N operators of the same precedence with N+1 operands.
       case topOp: XaryOperator[Operand] =>
-        // We process N operators of the same precedence with N+1 operands.
         val operators = operatorStack.span(_.precedence == topOp.precedence) match {
           case (operators, stack) => operatorStack = stack; operators
         }
-        // All operators have to be the same for the xary construction to be valid.
-        assert(operators.forall(_ == operators.head))
-        // At this point, we need to have at least one more operand on the stack to work with than operators.
-        assert(operandStack.length > operators.length)
+
+        if (operators.exists(_ != operators.head)) {
+          throw CompilationException(s"All operators have to be the same for the xary operation to be valid:" +
+            s" $operators.")
+        }
+
+        if (operandStack.length <= operators.length) {
+          throw CompilationException(s"There must be more operands on the operand stack than operators." +
+            s" Operators: $operators. Operand stack: $operandStack.")
+        }
+
         // Now construct the node and add it to the output.
         val operands = operandStack.splitAt(operators.length + 1) match {
           // We reverse the list, since the first stack element must be the last of the operand list.
@@ -62,11 +69,16 @@ object PrecedenceParser {
         }
         val index = operands.head.position.index
         operandStack = topOp.constructorWithPosition(index, operands.toVector) +: operandStack
+
+      // We process one operator with two operands.
       case topOp: BinaryOperator[Operand] =>
-        // We process one operator with two operands.
-        operatorStack = operatorStack.drop(1) // Actually drop the topOp from the stack.
-        // We need at least two operands on the stack to build the operation.
-        assert(operandStack.length >= 2)
+        operatorStack = operatorStack.drop(1)
+
+        if (operandStack.length < 2) {
+          throw CompilationException(s"The operand stack must contain at least two operands to process a binary" +
+            s" operation. Operand stack: $operandStack.")
+        }
+
         // Again, the order of operands needs to be reversed for the AST node.
         val (b, a) = (operandStack.head, operandStack.tail.head)
         operandStack = operandStack.drop(2)
@@ -97,15 +109,15 @@ object PrecedenceParser {
       operandStack = operand +: operandStack
     }
 
-    // Handle all operators that are left on the operator stack.
     while (operatorStack.nonEmpty) {
       handleOperator()
     }
 
-    // At this point, the operand stack should have exactly one node: the full expression.
-    assert(operandStack.length == 1)
+    if (operandStack.length != 1) {
+      throw CompilationException("At this point in the shunting-yard algorithm, the operand stuck must have exactly one" +
+        s" node: the full expression. Operand stack: $operandStack.")
+    }
 
-    // We simply have to return this node from the parser.
     operandStack.head
   }
 }

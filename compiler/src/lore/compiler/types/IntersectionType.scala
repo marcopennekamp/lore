@@ -1,11 +1,15 @@
 package lore.compiler.types
 
+import lore.compiler.core.CompilationException
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 import scala.util.hashing.MurmurHash3
 
 case class IntersectionType private (parts: Set[Type]) extends Type {
-  assert(parts.nonEmpty)
+  if (parts.isEmpty) {
+    throw CompilationException("You may not construct an intersection type with an empty set of parts.")
+  }
+
   override val hashCode: Int = MurmurHash3.unorderedHash(parts, 0x74a2317d)
 }
 
