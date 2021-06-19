@@ -9,5 +9,5 @@ import lore.compiler.types.Type
   *       GlobalVariable type because the local/global distinction is solely up to the scope a variable resides in.
   */
 case class LocalVariable(name: String, tpe: Type, override val isMutable: Boolean) extends TypedVariable {
-  override lazy val asTargetVariable: Target.Variable = RuntimeNames.localVariable(name)
+  override lazy val targetVariable: Target.Variable = RuntimeNames.localVariable(name)
 }

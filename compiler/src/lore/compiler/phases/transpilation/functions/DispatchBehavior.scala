@@ -1,7 +1,7 @@
 package lore.compiler.phases.transpilation.functions
 
 import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
-import lore.compiler.phases.transpilation.{RuntimeApi, RuntimeNames, TemporaryVariableProvider}
+import lore.compiler.phases.transpilation.{RuntimeApi, TemporaryVariableProvider}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl._
@@ -10,7 +10,7 @@ import lore.compiler.types.Type
 
 class DispatchBehavior(mf: MultiFunctionDefinition, properties: MultiFunctionProperties, dispatchInput: DispatchInput)(implicit variableProvider: TemporaryVariableProvider, typeVariables: TranspiledTypeVariables) {
 
-  private val varDispatchCache = s"${mf.runtimeName}__dispatchCache".asVariable
+  private val varDispatchCache = s"${mf.targetVariable.name}__dispatchCache".asVariable
 
   lazy val preamble: Vector[TargetStatement] = {
     // The cache is declared as a global constant so that it exists between multi-function calls.
@@ -123,7 +123,7 @@ class DispatchBehavior(mf: MultiFunctionDefinition, properties: MultiFunctionPro
 
     // Sets the function represented by this node as the target of the mutli-function call.
     val setAsTarget = if (!function.isAbstract) {
-      val actualFunction = RuntimeNames.functionDefinition(function)
+      val actualFunction = function.targetVariable
       val candidate = if (function.isPolymorphic) {
         // The first parameter of a polymorphic function is the map of type variable assignments passed to it at
         // run-time. Hence, we have to bind that map (saved in the fitsX variable after being returned by

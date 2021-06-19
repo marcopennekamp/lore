@@ -39,7 +39,7 @@ case class LoopTranspiler()(implicit variableProvider: TemporaryVariableProvider
       varList.declareAs(collection.expression),
       Target.Iteration(
         varList.prop("array"),
-        extractor.variable.asTargetVariable.name,
+        extractor.variable.targetVariable.name,
         Target.Block(inner),
       ),
     )
@@ -48,7 +48,7 @@ case class LoopTranspiler()(implicit variableProvider: TemporaryVariableProvider
   private def extractorMapShell(extractor: Extractor, collection: Chunk)(inner: Vector[TargetStatement]): Vector[TargetStatement] = {
     val varIterator = variableProvider.createVariable()
     val varNext = variableProvider.createVariable()
-    val varExtractor = extractor.variable.asTargetVariable
+    val varExtractor = extractor.variable.targetVariable
     val callNext = varIterator.prop("next").call()
     collection.statements ++ Vector(
       varIterator.declareAs(RuntimeApi.maps.entries(collection.expression)),

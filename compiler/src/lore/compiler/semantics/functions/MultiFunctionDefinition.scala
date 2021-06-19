@@ -1,5 +1,7 @@
 package lore.compiler.semantics.functions
 
+import lore.compiler.core.Compilation
+import lore.compiler.feedback.Feedback
 import lore.compiler.phases.transpilation.RuntimeNames
 import lore.compiler.semantics.scopes.Variable
 import lore.compiler.target.Target
@@ -9,8 +11,7 @@ case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefin
 
   val hierarchy: DispatchHierarchy = DispatchHierarchyBuilder.build(this)
 
-  override val asTargetVariable: Target.Variable = RuntimeNames.multiFunction(this) // TODO: Do we need this?
-  val runtimeName: Target.TargetName = asTargetVariable.name
+  override val targetVariable: Target.Variable = RuntimeNames.multiFunction(this)
 
   /**
     * Resolves a multiple dispatch application of the multi-function for the given type. The empty fit and ambiguous

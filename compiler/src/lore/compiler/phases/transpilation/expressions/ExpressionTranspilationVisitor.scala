@@ -23,7 +23,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   override def visit(expression: VariableDeclaration)(value: Chunk): Chunk = {
     value.flatMap { value =>
-      Chunk.unit(Target.VariableDeclaration(expression.variable.asTargetVariable.name, value, expression.variable.isMutable))
+      Chunk.unit(Target.VariableDeclaration(expression.variable.targetVariable.name, value, expression.variable.isMutable))
     }
   }
 
@@ -33,7 +33,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   override def visit(expression: Block)(expressions: Vector[Chunk]): Chunk = Chunk.sequence(expressions)
 
-  override def visit(expression: VariableAccess): Chunk = Chunk.expression(expression.variable.asTargetVariable)
+  override def visit(expression: VariableAccess): Chunk = Chunk.expression(expression.variable.targetVariable)
 
   override def visit(expression: MemberAccess)(instance: Chunk): Chunk = {
     instance.mapExpression(_.prop(expression.member.name))
@@ -78,7 +78,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
     //       recreated. (This only works for monomorphic functions.) Alternatively, at least pull the function value
     //       into the global scope as a constant for the given function, so that it doesn't have to be recreated every
     //       time the function is called. (Unless type variable substitutions are necessary.)
-    val target = expression.mf.runtimeName.asVariable
+    val target = expression.mf.targetVariable
     val tpe = TypeTranspiler.transpileSubstitute(expression.tpe)
     Chunk.expression(RuntimeApi.functions.value(target, tpe))
   }
@@ -176,7 +176,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
     expression.target match {
       case CallTarget.Value(_) => target.get.flatMap(functionValueCall)
-      case CallTarget.MultiFunction(mf) => directCall(mf.asTargetVariable)
+      case CallTarget.MultiFunction(mf) => directCall(mf.targetVariable)
       case CallTarget.Dynamic(name) => directCall(name.asVariable)
     }
   }
