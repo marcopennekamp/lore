@@ -13,6 +13,18 @@ case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefin
   val runtimeName: Target.TargetName = asTargetVariable.name
 
   /**
+    * Resolves a multiple dispatch application of the multi-function for the given type. The empty fit and ambiguous
+    * call errors must be customized.
+    */
+  def dispatch(
+    tpe: TupleType,
+    emptyFit: => Feedback.Error,
+    ambiguousCall: Vector[FunctionDefinition] => Feedback.Error,
+  ): Compilation[FunctionInstance] = {
+    Dispatch.resolve(hierarchy, tpe, emptyFit, ambiguousCall)
+  }
+
+  /**
     * Calculates the multi-function's fit set for the given type.
     */
   def fit(tpe: TupleType): Vector[FunctionDefinition] = Dispatch.fit(hierarchy, tpe)

@@ -48,11 +48,7 @@ object MultiFunctionCallJudgmentResolver extends JudgmentResolver[TypingJudgment
 
   def resolveDispatch(mf: MultiFunctionDefinition, uninstantiatedInputType: TupleType, position: Position, assignments: Inference.Assignments): Compilation[FunctionInstance] = {
     val inputType = instantiateCandidateType(assignments, uninstantiatedInputType).asInstanceOf[TupleType]
-    mf.min(inputType) match {
-      case min if min.isEmpty => Compilation.fail(EmptyFit(mf, inputType, position))
-      case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, inputType, min, position))
-      case functionDefinition +: _ => functionDefinition.instantiate(inputType)
-    }
+    mf.dispatch(inputType, EmptyFit(mf, inputType, position), min => AmbiguousCall(mf, inputType, min, position))
   }
 
 }

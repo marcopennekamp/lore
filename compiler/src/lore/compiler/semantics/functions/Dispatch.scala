@@ -1,10 +1,29 @@
 package lore.compiler.semantics.functions
 
+import lore.compiler.core.Compilation
+import lore.compiler.feedback.Feedback
 import lore.compiler.types.{Fit, TupleType}
 
 import scala.collection.mutable
 
 object Dispatch {
+
+  /**
+    * Resolves a multiple dispatch application for the given hierarchy and type. The empty fit and ambiguous call
+    * errors must be customized.
+    */
+  def resolve(
+    hierarchy: DispatchHierarchy,
+    tpe: TupleType,
+    emptyFit: => Feedback.Error,
+    ambiguousCall: Vector[FunctionDefinition] => Feedback.Error,
+  ): Compilation[FunctionInstance] = {
+    Dispatch.min(hierarchy, tpe) match {
+      case min if min.isEmpty => Compilation.fail(emptyFit)
+      case min if min.size > 1 => Compilation.fail(ambiguousCall(min))
+      case functionDefinition +: _ => functionDefinition.instantiate(tpe)
+    }
+  }
 
   /**
     * Calculates the given hierarchy's fit set for the given type.

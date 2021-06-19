@@ -19,13 +19,8 @@ object CallTransformation {
   )(implicit registry: Registry): Compilation[Expression.Call] = {
     registry.resolveMultiFunction(functionName)(position).flatMap { mf =>
       val inputType = TupleType(arguments.map(_.tpe))
-      mf.min(inputType) match {
-        case min if min.isEmpty => Compilation.fail(EmptyFit(mf, inputType, position))
-        case min if min.size > 1 => Compilation.fail(AmbiguousCall(mf, inputType, min, position))
-        case functionDefinition +: _ =>
-          functionDefinition.instantiate(inputType).map(
-            instance => Expression.Call(CallTarget.MultiFunction(mf), arguments, instance.signature.outputType, position)
-          )
+      mf.dispatch(inputType, EmptyFit(mf, inputType, position), min => AmbiguousCall(mf, inputType, min, position)).map {
+        instance => Expression.Call(CallTarget.MultiFunction(mf), arguments, instance.signature.outputType, position)
       }
     }
   }
