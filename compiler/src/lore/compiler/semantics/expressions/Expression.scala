@@ -175,7 +175,7 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class IfElse(condition: Expression, onTrue: Expression, onFalse: Expression, tpe: Type, position: Position) extends Expression
 
-  trait Loop extends Expression {
+  sealed trait Loop extends Expression {
     def body: Expression
   }
 

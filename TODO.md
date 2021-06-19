@@ -12,6 +12,7 @@
     - runtime: ~~function values~~
   - Multi-Functions as values:
     - compiler: ~~multi-functions as part of scopes~~, ~~compile-time lambda wrapping of multi-function references~~, `.fixed` functions returning function values
+- Implement atom types and values.
 - Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.
 - Implement an append operation for maps. In general, we will need to apply the same run-time typing considerations to maps.
 - Implement a module system.
@@ -65,7 +66,7 @@
 
 ##### Benchmarks
 
-- We should leverage the test suite to also run benchmarks to be able to record performance changes when we optimize the compiler. "Real" programs like `dispatch/hello-name.lore` would be especially suitable to benchmarking, but probably also artificial cases such as `dispatch/intersection.lore`.
+- We should leverage the test suite to also run benchmarks to be able to record performance changes when we optimize the compiler. "Real" programs like `dispatch/hello-name.lore` and `combat` would be especially suitable to benchmarking, but probably also artificial cases such as `dispatch/intersection.lore`.
 
 
 #### Specification
@@ -82,8 +83,6 @@
 ##### Architecture
 
 - Can we split the type inference phase from the transformation phase?
-- The Transformation phase is currently responsible for verifying constraints and for transforming AST nodes into typed expression nodes. We could potentially split this phase into a constraints phase and an expression phase.
-- The name of the Transpilation phase may not be appropriate anymore, since we now have a subsequent code generation phase. A more apt name may be Translation phase, as we are translating the Lore expression IR to the target IR.
 - Clean up ExpressionTransformationVisitor by moving more functionality to helper objects like ExpressionTransformationHelper.
   - Reconsider some names, as ExpressionTransformation and StatementTransformation aren't similar in functionality even though their names suggest so.
 - Move errors to a more central location. It should be easy to see which errors a given phase can produce. This may also allow us to merge some errors.

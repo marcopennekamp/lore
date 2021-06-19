@@ -40,11 +40,11 @@ class InferringExpressionTransformationVisitor(
   val scopeContext = new ScopeContext(variableScope)
   implicit val typeScopeImplicit: TypeScope = typeScope
 
-  // TODO: In general, typing judgments only have to be added if the expression's type is not yet fully inferred.
-  //       For example, when we add a typing judgment for a LogicalNot, if the child expression's type is already
-  //       known, we can evaluate the judgment immediately to avoid clogging the type inference algorithm.
-  //       The important idea here is that we can evaluate this when adding judgments, so that we don't have to rewrite
-  //       the code for each node. It can happen "automagically".
+  // These typing judgments should contain even trivial judgments that could be resolved now. If for example all types
+  // are available here to type an addition operation, we could avoid adding any typing judgments and just type the
+  // expression here. The problem is that we'd have to still report typing errors, and in a consistent manner with the
+  // way type inference reports errors. The amount of duplicated work required here makes this optimization not worth
+  // it.
   var typingJudgments: Vector[TypingJudgment] = Vector.empty
 
   override def visitLeaf(node: LeafNode): Compilation[Expression] = node match {
@@ -115,8 +115,6 @@ class InferringExpressionTransformationVisitor(
       typingJudgments = typingJudgments :+ TypingJudgment.MemberAccess(memberType, expression.tpe, name, position)
       Expression.UnresolvedMemberAccess(expression, name, memberType, position).compiled
 
-    // TODO: This just leads to a match error, because not all inference variables are getting assigned:
-    //          let f = x => x == 1
     case AnonymousFunctionNode(parameterNodes, _, position) =>
       val parameters = parameterNodes.map { case AnonymousFunctionParameterNode(name, _, position) =>
         // TODO: The fact that we have to resolve the variable again, despite it being declared within the before hook,
@@ -163,7 +161,7 @@ class InferringExpressionTransformationVisitor(
 
     // Collection operations.
     case AppendNode(_, _, position) =>
-      // TODO: If append also has to work for maps, we might have to rewrite these rules or even use alternative judgments.
+      // TODO: If append also has to work for maps, we might have to rewrite these rules or even use a special Append judgment.
       val elementType = new InferenceVariable
       val combinedType = new InferenceVariable
 
@@ -193,8 +191,6 @@ class InferringExpressionTransformationVisitor(
     right: Expression,
     position: Position,
   ): Expression.BinaryOperation = {
-    // TODO: If both types are already inferred, we don't need to add any typing judgments. (Similar to how members
-    //       only need to be inferred if their instance expression is not yet inferred.)
     typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(left.tpe, BasicType.Real, position)
     typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(right.tpe, BasicType.Real, position)
     val resultType = new InferenceVariable
@@ -362,7 +358,6 @@ class InferringExpressionTransformationVisitor(
     //    let things = [%{ x: 5 }, %{ x: -2 }, %{ x: 12 }]
     //    let functions: %{ n: Int } => Int = for (v <- things) { v2 => v2.n * v.x }
     // TODO: This also needs to work for map functions...
-    // TODO: Would Scala infer this with a for-yield and a map?
     typingJudgments = typingJudgments :+ TypingJudgment.Equals(resultType, ListType(body.tpe), position)
     resultType
   }
@@ -414,7 +409,6 @@ object InferringExpressionTransformationVisitor {
     override def message: String = s"The name $name must refer to a struct."
   }
 
-  // TODO: This should be the error message for the Assign judgment created in visitCall.
   case class FunctionExpected(variable: TypedVariable, override val position: Position) extends Feedback.Error(position) {
     override def message: String = s"The variable ${variable.name} should be a function type, but is actually ${variable.tpe}."
   }
