@@ -2,7 +2,7 @@ package lore.compiler.semantics.expressions
 
 import lore.compiler.core.{CompilationException, Position, Positioned}
 import lore.compiler.inference.InferenceVariable
-import lore.compiler.semantics.functions.{CallTarget, MultiFunctionDefinition}
+import lore.compiler.semantics.functions.{CallTarget, FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
 import lore.compiler.semantics.scopes.{LocalVariable, TypedVariable}
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
@@ -89,6 +89,13 @@ object Expression {
     * A multi-function typed as a function. It can be passed around like any other function value.
     */
   case class MultiFunctionValue(mf: MultiFunctionDefinition, tpe: Type, position: Position) extends Expression
+
+  /**
+    * A fixed function instance typed as a function. It can be passed around like any other function value.
+    */
+  case class FixedFunctionValue(instance: FunctionInstance, position: Position) extends Expression {
+    override def tpe: Type = instance.signature.functionType
+  }
 
   case class ListConstruction(values: Vector[Expression], tpe: Type, position: Position) extends Expression
 

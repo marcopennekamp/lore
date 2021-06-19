@@ -35,9 +35,4 @@ case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefin
     */
   def min(tpe: TupleType): Vector[FunctionDefinition] = Dispatch.min(hierarchy, tpe)
 
-  /**
-    * Returns the function with the exact given input type contained in this multi-function.
-    */
-  def exact(tpe: TupleType): Option[FunctionDefinition] = Dispatch.exact(hierarchy, tpe)
-
 }

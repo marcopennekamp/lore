@@ -152,18 +152,6 @@ object ExprNode {
   ) extends XaryNode(arguments) with ExprNode
 
   /**
-    * A fixed function call requires type arguments, which separates it from standard call nodes. Additionally, a fixed
-    * function call must always refer to a multi-function. The call target is thus specified as a string name instead
-    * of an expression node target.
-    */
-  case class FixedFunctionCallNode(
-    name: String,
-    types: Vector[TypeExprNode],
-    arguments: Vector[ExprNode],
-    position: Position,
-  ) extends XaryNode(arguments) with ExprNode
-
-  /**
     * The name of the dynamic function must be the first argument, as a string.
     */
   case class DynamicCallNode(
@@ -203,7 +191,7 @@ object ExprNode {
   ) extends Node
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Anonymous functions.
+  // Anonymous functions and function values.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class AnonymousFunctionNode(
     parameters: Vector[AnonymousFunctionParameterNode],
@@ -216,4 +204,10 @@ object ExprNode {
     tpe: Option[TypeExprNode],
     position: Position,
   ) extends Node
+
+  case class FixedFunctionNode(
+    name: String,
+    argumentTypes: Vector[TypeExprNode],
+    position: Position,
+  ) extends LeafNode with ExprNode
 }

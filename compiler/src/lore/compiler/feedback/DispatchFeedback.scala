@@ -17,4 +17,14 @@ object DispatchFeedback {
       s" These are:\n${min.map("  - " + _.toString).mkString("\n")}"
   }
 
+  case class FixedFunctionEmptyFit(mf: MultiFunctionDefinition, inputType: Type, override val position: Position) extends Feedback.Error(position) {
+    override def message: String = s"The multi-function ${mf.name} cannot be fixed with the argument types $inputType." +
+      s" We cannot find a function that would accept arguments of the given types."
+  }
+
+  case class FixedFunctionAmbiguousCall(mf: MultiFunctionDefinition, inputType: Type, min: Vector[FunctionDefinition], override val position: Position) extends Feedback.Error(position) {
+    override def message: String = s"The multi-function ${mf.name} cannot be fixed with the argument types $inputType." +
+      s" We are finding too many functions that would accept arguments of the given types:\n" + min.map("  - " + _.toString).mkString("\n")
+  }
+
 }

@@ -19,6 +19,7 @@ trait ExpressionVisitor[A, B] {
   def visit(expression: Expression.Tuple)(values: Vector[A]): B
   def visit(expression: Expression.AnonymousFunction)(body: A): B
   def visit(expression: Expression.MultiFunctionValue): B
+  def visit(expression: Expression.FixedFunctionValue): B
   def visit(expression: Expression.ListConstruction)(values: Vector[A]): B
   def visit(expression: Expression.MapConstruction)(entries: Vector[(A, A)]): B
   def visit(expression: Expression.ShapeValue)(properties: Vector[A]): B
@@ -59,6 +60,7 @@ object ExpressionVisitor {
       case node@Expression.Tuple(values, _) => visitor.visit(node)(values.map(rec))
       case node@Expression.AnonymousFunction(_, body, _) => visitor.visit(node)(rec(body))
       case node@Expression.MultiFunctionValue(_, _, _) => visitor.visit(node)
+      case node@Expression.FixedFunctionValue(_, _) => visitor.visit(node)
       case node@Expression.ListConstruction(values, _, _) => visitor.visit(node)(values.map(rec))
       case node@Expression.MapConstruction(entries, _, _) => visitor.visit(node)(entries.map(e => (rec(e.key), rec(e.value))))
       case node@Expression.Instantiation(_, arguments, _) => visitor.visit(node)(arguments.map(arg => rec(arg.value)))
@@ -94,6 +96,7 @@ object ExpressionVisitor {
       case node@Expression.Tuple(values, _) => values.map(rec).simultaneous.flatMap(visitor.visit(node))
       case node@Expression.AnonymousFunction(_, body, _) => rec(body).flatMap(visitor.visit(node))
       case node@Expression.MultiFunctionValue(_, _, _) => visitor.visit(node)
+      case node@Expression.FixedFunctionValue(_, _) => visitor.visit(node)
       case node@Expression.ListConstruction(values, _, _) => values.map(rec).simultaneous.flatMap(visitor.visit(node))
       case node@Expression.MapConstruction(entries, _, _) => entries.map(e => (rec(e.key), rec(e.value)).simultaneous).simultaneous.flatMap(visitor.visit(node))
       case node@Expression.ShapeValue(properties, _) => properties.map(p => rec(p.value)).simultaneous.flatMap(visitor.visit(node))

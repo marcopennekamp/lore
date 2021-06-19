@@ -83,6 +83,14 @@ private[transpilation] class ExpressionTranspilationVisitor()(
     Chunk.expression(RuntimeApi.functions.value(target, tpe))
   }
 
+  override def visit(expression: FixedFunctionValue): Chunk = {
+    // TODO: We could transpile one globally accessible function value representation for each function definition
+    //       so that we don't have to recreate it every time.
+    val target = expression.instance.definition.targetVariable
+    val tpe = TypeTranspiler.transpile(expression.tpe)
+    Chunk.expression(RuntimeApi.functions.value(target, tpe))
+  }
+
   override def visit(expression: ListConstruction)(values: Vector[Chunk]): Chunk = {
     val tpe = TypeTranspiler.transpileSubstitute(expression.tpe)
     Chunk.combine(values) { values =>

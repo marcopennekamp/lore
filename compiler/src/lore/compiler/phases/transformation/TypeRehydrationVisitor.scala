@@ -52,6 +52,8 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
 
   override def visit(expression: MultiFunctionValue): Expression = expression.copy(tpe = assignments.instantiate(expression.tpe))
 
+  override def visit(expression: FixedFunctionValue): Expression = expression
+
   override def visit(expression: ListConstruction)(values: Vector[Expression]): Expression = expression.copy(
     values = values,
     tpe = assignments.instantiate(expression.tpe)

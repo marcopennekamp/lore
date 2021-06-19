@@ -2,6 +2,7 @@ package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.core._
+import lore.compiler.feedback.DispatchFeedback.{AmbiguousCall, EmptyFit, FixedFunctionAmbiguousCall, FixedFunctionEmptyFit}
 import lore.compiler.feedback.Feedback
 import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.phases.resolution.TypeExpressionEvaluator
@@ -70,6 +71,17 @@ class InferringExpressionTransformationVisitor(
     case BoolLiteralNode(value, position) => Expression.Literal(value, BasicType.Boolean, position).compiled
     case StringLiteralNode(value, position) => Expression.Literal(value, BasicType.String, position).compiled
     case UnitNode(position) => Expression.Tuple(Vector.empty, position).compiled
+
+    case FixedFunctionNode(name, typeExpressions, position) =>
+      for {
+        inputType <- typeExpressions.map(TypeExpressionEvaluator.evaluate).simultaneous.map(TupleType(_))
+        mf <- registry.resolveMultiFunction(name)(position)
+        instance <- mf.dispatch(
+          inputType,
+          FixedFunctionEmptyFit(mf, inputType, position),
+          min => FixedFunctionAmbiguousCall(mf, inputType, min, position)
+        )
+      } yield Expression.FixedFunctionValue(instance, position)
   }
 
   override def visitUnary(node: UnaryNode)(expression: Expression): Compilation[Expression] = node match {
@@ -258,15 +270,6 @@ class InferringExpressionTransformationVisitor(
         case mf: MultiFunctionDefinition => addJudgmentsFrom(FunctionTyping.multiFunctionCall(mf, expressions, node.position))
         case variable: TypedVariable => transformValueCall(Expression.VariableAccess(variable, position), expressions, position)
       }
-
-    case FixedFunctionCallNode(name, typeExpressions, _, position) =>
-      // TODO: Implement later...
-      /* for {
-        types <- typeExpressions.map(TypeExpressionEvaluator.evaluate).simultaneous
-        function <- registry.resolveExactFunction(name, types)(position)
-        instance <- function.instantiate(TupleType(types))
-      } yield Expression.Call(instance, expressions, position) */
-      ???
 
     case node@DynamicCallNode(resultType, _, position) =>
       (

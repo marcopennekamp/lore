@@ -3,8 +3,8 @@ package lore.compiler.semantics
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException, Position}
 import lore.compiler.feedback.Feedback
-import lore.compiler.semantics.Registry.{ExactFunctionNotFound, MultiFunctionNotFound, RegistryVariableNotFound, TypeNotFound}
-import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.semantics.Registry.{MultiFunctionNotFound, RegistryVariableNotFound, TypeNotFound}
+import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.scopes.{TypeScope, Variable, VariableScope}
 import lore.compiler.semantics.structures._
 import lore.compiler.types._
@@ -156,19 +156,6 @@ class Registry {
     }
   }
 
-  /**
-    * Gets an exact function with the given name and parameter types. If it cannot be found, the operation fails
-    * with a compilation error.
-    */
-  def resolveExactFunction(name: String, types: Vector[Type])(implicit position: Position): Compilation[FunctionDefinition] = {
-    resolveMultiFunction(name).flatMap { mf =>
-      mf.exact(TupleType(types)) match {
-        case None => Compilation.fail(ExactFunctionNotFound(name, types))
-        case Some(f) => f.compiled
-      }
-    }
-  }
-
   def getStructConstructor(name: String): Option[StructConstructorDefinition] = getStructType(name).map(_.definition.constructor)
 
   /**
@@ -191,10 +178,6 @@ object Registry {
 
   case class MultiFunctionNotFound(name: String)(implicit position: Position) extends Feedback.Error(position) {
     override def message = s"The multi-function $name does not exist in the current scope."
-  }
-
-  case class ExactFunctionNotFound(name: String, types: Vector[Type])(implicit position: Position) extends Feedback.Error(position) {
-    override def message = s"The exact function $name[${types.mkString(", ")}] does not exist in the current scope."
   }
 
   case class RegistryVariableNotFound(name: String, override val position: Position) extends Feedback.Error(position) {

@@ -56,23 +56,6 @@ object Dispatch {
   }
 
   /**
-    * Returns the function with the exact given input type contained in the given hierarchy.
-    */
-  def exact(hierarchy: DispatchHierarchy, tpe: TupleType): Option[FunctionDefinition] = {
-    // TODO: We cannot get fixed functions with type arguments, because an actual type and a type variable could never
-    //       be equally specific... How can we deal with this? Obviously, we need to allow getting a fixed
-    //       function with type variables if we want a complete programming language. If we do so, we will also have
-    //       to ensure that we don't select more than one node, as this is suddenly possible if we do the fit shtick
-    //       first.
-
-    // Using traverseHierarchy ensures that we only visit subtrees that could contain the exact candidate.
-    traverse(hierarchy)(
-      visit  = predicateVisitFit(hierarchy, tpe),
-      select = node => Fit.isEquallySpecific(tpe, node.signature.inputType),
-    ).headOption
-  }
-
-  /**
     * When used as a visit-predicate for [[traverse]], all and only nodes that are part of the function
     * fit for a given input type are visited.
     */

@@ -1,0 +1,36 @@
+trait A
+trait B extends A
+struct C extends B
+trait D extends B
+struct E extends D
+
+function stringify(a: A): String = 'A'
+
+function stringify(b: B): String = {
+  let super = stringify.fixed[A](b)
+  concat(super, 'B')
+}
+
+function stringify(c: C): String = {
+  let super = stringify.fixed[B](c)
+  concat(super, 'C')
+}
+
+function stringify(d: D): String = {
+  let super = stringify.fixed[B](d)
+  concat(super, 'D')
+}
+
+function stringify(e: E): String = {
+  let super = stringify.fixed[D](e)
+  concat('E', super)
+}
+
+function test(): [String] = [
+  stringify(C()),
+  stringify(E()),
+  stringify.fixed[B](C()),
+  stringify.fixed[D](E()),
+  stringify.fixed[A](C()),
+  stringify.fixed[A](E())
+]

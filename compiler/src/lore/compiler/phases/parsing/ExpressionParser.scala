@@ -152,14 +152,14 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     * All expressions immediately accessible via postfix dot notation.
     */
   private def accessible[_: P]: P[ExprNode] = {
-    P(literal | fixedCall | dynamicCall | simpleCall | call | objectMap | variable | block | list | map | shape | enclosed)
+    P(literal | dynamicCall | simpleCall | call | fixedFunction | objectMap | variable | block | list | map | shape | enclosed)
   }
 
   /**
     * All expressions immediately accessible via postfix dot notation that can be used as call targets.
     */
   private def accessibleCallTarget[_: P]: P[ExprNode] = {
-    P(literal | objectMap | variable | block | list | map | shape | enclosed)
+    P(literal | fixedFunction | objectMap | variable | block | list | map | shape | enclosed)
   }
 
   private def literal[_: P]: P[ExprNode] = {
@@ -169,8 +169,6 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     // Reals have to be parsed before ints so that ints don't consume the portion of the real before the fraction.
     P(real | int | booleanLiteral | string)
   }
-
-  private def fixedCall[_: P]: P[ExprNode] = P(Index ~ identifier ~ ".fixed" ~~ Space.WS ~~ typeArguments ~~ Space.WS ~~ arguments).map(withPosition(ExprNode.FixedFunctionCallNode))
 
   private def dynamicCall[_: P]: P[ExprNode] = P(Index ~ "dynamic" ~~ Space.WS ~~ singleTypeArgument ~~ Space.WS ~~ arguments).map(withPosition(ExprNode.DynamicCallNode))
 
@@ -198,6 +196,8 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
   private def arguments[_: P]: P[Vector[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toVector)
   private def typeArguments[_: P]: P[Vector[TypeExprNode]] = P("[" ~ typeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toVector)
   private def singleTypeArgument[_: P]: P[TypeExprNode] = P("[" ~ typeParser.typeExpression ~ "]")
+
+  private def fixedFunction[_: P]: P[ExprNode] = P(Index ~ identifier ~ ".fixed" ~~ Space.WS ~~ typeArguments).map(withPosition(ExprNode.FixedFunctionNode))
 
   private def objectMap[_: P]: P[ExprNode.ObjectMapNode] = {
     def entry = P(Index ~ identifier ~ "=" ~ expression).map(withPosition(ExprNode.ObjectEntryNode))

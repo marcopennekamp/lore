@@ -220,19 +220,15 @@ Any errors will be reported for the most specific abstract function. If the `nam
 
 
 
-### Fixed Function Calls
+### Fixed Functions
 
-Sometimes, we want to bypass dispatch and ensure that we call a specific function regardless of the argument type at run-time. A **fixed function call** looks like this:
+Sometimes, we want to bypass run-time dispatch and ensure that we call a specific function regardless of the argument type at run-time. A **fixed function expression** looks like this:
 
 ```
-f.fixed[T1, T2, ...](a1, a2, ...)
+f.fixed[T1, T2, ...]
 ```
 
-`T1, T2, ...` represent the desired input type and `a1, a2, ...` the arguments. The compiler will choose the callee at compile-time and call it with the given arguments at run-time.
-
-The goal is, ultimately, to have `f.fixed[T1, T2, …]` return a **function value**. As we are not supporting anonymous functions *for now*, the `fixed` operation will require arguments to be passed. This restriction will be relaxed as soon as we support function values.
-
-**TODO:** How do type variables instantiated at run-time and fixed functions play together?
+`T1, T2, ...` represent the desired input type and `a1, a2, ...` the arguments. The compiler will choose the callee at compile-time using the standard dispatch mechanism and wrap it in a function value with the appropriate function type.
 
 ###### Example
 
@@ -244,11 +240,13 @@ The most obvious example is invoking a **"super"** function of some other, more 
 function f(a: A): R = {
   // ... some general implementation
 }
+
 function f(a: A1): R = {
   // ... some actions specific to A1
   // Then call the "super" function to handle the general case.
   f.fixed[A](a)
 }
+
 function f(a: A2): R = {
   // First call the "super" function to handle the general case.
   let result = f.fixed[A](a)
@@ -267,7 +265,7 @@ function f(a: A2): R = {
 
 ### Multi-Calls / Blanket Calls / cALLs
 
-**TODO:** Instead of calling exactly one function, we call *all* candidates selected by multiple dispatch.
+**TODO:** Instead of calling exactly one function, we call *all* candidates in the min set.
 
 
 
@@ -344,3 +342,4 @@ Of course, the question is always whether one should introduce a **label type** 
 ##### Extension Methods
 
 **TODO:** Write.
+

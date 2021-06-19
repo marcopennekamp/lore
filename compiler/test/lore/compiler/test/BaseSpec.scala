@@ -59,10 +59,6 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
     }
   }
 
-  implicit class MultiFunctionExtension(multiFunction: MultiFunctionDefinition) {
-    def exactGet(inputType: TupleType): FunctionDefinition = multiFunction.exact(inputType).get
-  }
-
   val beAbstract: Matcher[FunctionDefinition] = (f: FunctionDefinition) => MatchResult(f.isAbstract, s"$f was not abstract", s"$f was abstract")
 
   /**

@@ -19,6 +19,8 @@ function toString(list: [A]): String where A = {
 
 function toString(tuple: (A, B)): String where A, B = '(${first(tuple)}, ${second(tuple)})'
 
+function concat(a: String, b: String): String = '$a$b'
+
 // TODO: Find a way to stringify classes.
 
 // TODO: Define functions to concat strings so that we don't have to use '$a$b$c' and such for simple concatenations.

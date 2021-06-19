@@ -18,6 +18,11 @@ Deno.test('dispatch/abstract-sum-intersection', async () => {
   assertListEquals(result, ['(A|B)&T', '(A|B)&T', 'C&T'])
 })
 
+Deno.test('dispatch/fixed', async () => {
+  const result: ListValue<string> = await LoreTest.run('dispatch/fixed.lore')
+  assertListEquals(result, ['ABC', 'EABD', 'AB', 'ABD', 'A', 'A'])
+})
+
 Deno.test('dispatch/hello-name', async () => {
   const result: ListValue<string> = await LoreTest.run('dispatch/hello-name.lore')
   assertListEquals(result, [
