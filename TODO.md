@@ -4,7 +4,7 @@
 
 - Implement symbol types and values:
   - Specification: ~~Symbol types~~, ~~symbol literals~~.
-  - Compiler: ~~Symbol types~~, ~~symbol type functions~~, ~~subtyping~~, ~~parser~~, ~~transformer~~, ~~transpilation~~, equality, ~~interning~~.
+  - Compiler: ~~Symbol types~~, ~~symbol type functions~~, ~~subtyping~~, ~~parser~~, ~~transformer~~, ~~transpilation~~, ~~equality~~, ~~interning~~.
   - Runtime: Symbol types, symbol type functions, subtyping, type equality, symbol values.
 - Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.
 - Implement an append operation for maps. In general, we will need to apply the same run-time typing considerations to maps.
@@ -13,6 +13,12 @@
 - Rethink properties: I don't like how shape properties are orthogonal to multi-functions right now. To use a shape, one is forced to ultimately give a property to an implementing struct. It would be much superior if properties could be declared "virtually", allowing traits to implement properties via some sort of function (perhaps even with dispatch on the accessed type). This feature should also simultaneously solve the question of "virtual/computed properties" posed in the geometry.lore example.
   - This would effectively mean that property types are always changeable and would either bar these kinds of properties to be open or would mean that we'd have to (a) rebuild the type each time the struct is used in dispatch or (b) disable the dispatch cache for multi-functions with shape types. Disallowing "virtual" properties to be open seems like an acceptable compromise, as the other options are far too detrimental on performance.
 - A rudimentary form of tree shaking to avoid transpiling functions that aren't used by any other function. This unfortunately requires specifying an entry point. Maybe we could perform tree shaking if such entry points are specified at all.
+- Equality and ordering need some love:
+  - Well-defined equality and order semantics for all kinds of types.
+  - Default equality and order for structs, shapes, tuples, lists, maps, and so on.
+    - Shape equality either has to be defined within the compiler or we need a mechanism for iterating over shape properties (basically reflection).
+    - What about struct/shape equality? When should a struct be equal to a shape?
+    - Both structs and shapes should have no default ordering.
 
 ##### Syntax
 

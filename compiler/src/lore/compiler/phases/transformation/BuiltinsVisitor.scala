@@ -2,6 +2,7 @@ package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.ToCompilationExtension
+import lore.compiler.phases.transformation.BuiltinsTransformation.ComparisonFunction
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, XaryOperator}
 import lore.compiler.semantics.expressions.{Expression, ExpressionIdentityVisitor}
@@ -14,13 +15,13 @@ class BuiltinsVisitor(implicit registry: Registry) extends ExpressionIdentityVis
 
   override def visit(expression: Expression.BinaryOperation)(left: Expression, right: Expression): Compilation[Expression] = expression.operator match {
     case BinaryOperator.Equals =>
-      BuiltinsTransformation.transformComparison("areEqual", BinaryOperator.Equals, left, right, expression.position)
+      BuiltinsTransformation.transformComparison(ComparisonFunction.AreEqual, BinaryOperator.Equals, left, right, expression.position)
 
     case BinaryOperator.LessThan =>
-      BuiltinsTransformation.transformComparison("isLessThan", BinaryOperator.LessThan, left, right, expression.position)
+      BuiltinsTransformation.transformComparison(ComparisonFunction.IsLessThan, BinaryOperator.LessThan, left, right, expression.position)
 
     case BinaryOperator.LessThanEquals =>
-      BuiltinsTransformation.transformComparison("isLessThanOrEqual", BinaryOperator.LessThanEquals, left, right, expression.position)
+      BuiltinsTransformation.transformComparison(ComparisonFunction.IsLessThanOrEqual, BinaryOperator.LessThanEquals, left, right, expression.position)
 
     case _ => super.visit(expression)(left, right)
   }
