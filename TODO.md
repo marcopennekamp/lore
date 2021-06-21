@@ -4,8 +4,8 @@
 
 - Implement atom types and values:
   - Specification: ~~Atom types~~, ~~atom literals~~.
-  - Compiler: Atom types, atom type functions, parser, transformer, transpilation, equality.
-  - Runtime: Atom types, atom type functions, atom values.
+  - Compiler: ~~Atom types~~, ~~atom type functions~~, ~~subtyping~~, parser, transformer, transpilation, equality.
+  - Runtime: Atom types, atom type functions, subtyping, type equality, atom values.
 - Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.
 - Implement an append operation for maps. In general, we will need to apply the same run-time typing considerations to maps.
 - Implement a module system.

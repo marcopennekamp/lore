@@ -14,7 +14,7 @@ import lore.compiler.core.CompilationException
   *         - Named has, for now, always zero operands, as we have not introduced parametric structs/traits yet.
   *         - Also note that Named excludes type variables!
   *       - Basic type: Any, Nothing, Real, Int, Boolean, String
-  *       - Fixed size: Function, List, Map, Variable
+  *       - Fixed size: Function, List, Map, Variable, Atom
   *     The first three bits determine the kind of the type:
   *       - 000: Sum
   *       - 001: Intersection
@@ -41,6 +41,7 @@ import lore.compiler.core.CompilationException
   *         - 00101: Variable with custom lower bound (upper bound: Any)
   *         - 00110: Variable with custom upper bound (lower bound: Nothing)
   *         - 00111: Variable with custom bounds
+  *         - 01000: Atom
   *   - Following the first byte are any operands. Concretely:
   *     - Sum/Intersection/Tuple:
   *       - Any child types according to the encoded number of operands.
@@ -52,12 +53,13 @@ import lore.compiler.core.CompilationException
   *         - The property's name, encoded as a UTF-8 string with a length.
   *         - The property's type.
   *     - Basic types: No operands.
+  *     - Function: An input type and an output type.
   *     - List: A single element type.
   *     - Map: A key type and a value type.
-  *     - Function: An input type and an output type.
   *     - Variable:
   *       - The name of the variable, encoded as a UTF-8 string with a length.
   *       - The lower and/or upper bound based on the specific kind, as outlined above.
+  *     - Atom: The name of the atom, encoded as a UTF-8 string with a length.
   */
 object TypeEncoder {
 
@@ -100,6 +102,7 @@ object TypeEncoder {
     val variableAny: Byte = Tag(Kind.fixedSize, 5)
     val variableNothing: Byte = Tag(Kind.fixedSize, 6)
     val variable: Byte = Tag(Kind.fixedSize, 7)
+    val atom: Byte = Tag(Kind.fixedSize, 8)
   }
 
   def encode(tpe: Type): Vector[Byte] = writeType(tpe)
@@ -115,6 +118,7 @@ object TypeEncoder {
     case ShapeType(properties) =>
       val propertyBytes = properties.values.toVector.sortBy(_.name).flatMap(property => writeString(property.name) ++ writeType(property.tpe))
       Tag.variableSize(Kind.shape, properties.size) +: propertyBytes
+    case AtomType(name) => Tag.atom +: writeString(name)
     case tv: TypeVariable =>
       val (tag, bounds) = (tv.lowerBound, tv.upperBound) match {
         case (BasicType.Nothing, BasicType.Any) => (Tag.variableNothingAny, Vector.empty)

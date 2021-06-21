@@ -57,17 +57,13 @@ object Type {
       val exceptTraits = types.toVector.filterNotType[TraitType]
       exceptTraits.isEmpty || exceptTraits.exists(isAbstract)
     case TupleType(elements) => elements.exists(isAbstract)
-    case FunctionType(_, _) => false
-    case ListType(_) => false
-    case MapType(_, _) => false
-    case ShapeType(_) => false
-    case _: StructType => false
     case _: TraitType => true
     case _: BasicType =>
       // Any isn't abstract because declaring an abstract function over it is more than inadvisable. Effectively,
       // Nothing cannot be the supertype of anything, so declaring an abstract function over it will only result in
       // dead code. All other basic types clearly aren't abstract either.
       false
+    case _ => false
   }
 
   /**
@@ -82,7 +78,6 @@ object Type {
     case ListType(element) => isPolymorphic(element)
     case MapType(key, value) => isPolymorphic(key) || isPolymorphic(value)
     case ShapeType(properties) => properties.values.map(_.tpe).exists(isPolymorphic)
-    case _: DeclaredType => false // TODO: For now. This needs to be set to true for structs/traits with type parameters, of course.
     case _ => false
   }
 
@@ -103,7 +98,7 @@ object Type {
     case ListType(element) => variables(element)
     case MapType(key, value) => variables(key) ++ variables(value)
     case ShapeType(properties) => properties.values.map(_.tpe).flatMap(variables).toSet
-    case _: NamedType => Set.empty // TODO: Update when struct/trait types can have type parameters.
+    case _ => Set.empty
   }
 
   /**
@@ -234,6 +229,7 @@ object Type {
           s"${property.name}: ${toString(property.tpe, verbose)}"
         }
         s"{ ${propertyRepresentations.mkString(", ")} }"
+      case AtomType(name) => s":$name"
       case d: DeclaredType =>
         if (verbose) {
           val kind = d match {

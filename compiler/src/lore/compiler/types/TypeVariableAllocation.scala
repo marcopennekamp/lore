@@ -165,7 +165,6 @@ object TypeVariableAllocation {
       case (_, _: SumType) => unsupportedSubstitution
 
       // In all other cases, there is no need to assign anything.
-      // TODO: Declared types will be able to contain type variables when they become polymorphic.
       case _ =>
     }
   }
