@@ -70,7 +70,7 @@ object Inference {
     case ListType(element) => variables(element)
     case MapType(key, value) => variables(key) ++ variables(value)
     case ShapeType(properties) => properties.values.map(_.tpe).flatMap(variables).toSet
-    case _: NamedType => Set.empty
+    case _ => Set.empty
   }
 
   /**
@@ -85,7 +85,7 @@ object Inference {
     case ListType(element) => isFullyInstantiated(element)
     case MapType(key, value) => isFullyInstantiated(key) && isFullyInstantiated(value)
     case ShapeType(properties) => properties.values.map(_.tpe).forall(isFullyInstantiated)
-    case _: NamedType => true
+    case _ => true
   }
 
   /**
