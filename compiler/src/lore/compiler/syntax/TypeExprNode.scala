@@ -17,6 +17,7 @@ object TypeExprNode {
   case class MapNode(key: TypeExprNode, value: TypeExprNode, position: Position) extends TypeExprNode
   case class ShapeNode(properties: Vector[ShapePropertyNode], position: Position) extends TypeExprNode
   case class ShapePropertyNode(name: String, tpe: TypeExprNode, position: Position) extends Node
+  case class SymbolNode(name: String, position: Position) extends TypeExprNode
 
   /**
     * Finds all identifiers mentioned in the type expression.

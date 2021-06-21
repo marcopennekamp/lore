@@ -30,6 +30,7 @@ object TypeExpressionEvaluator {
           .requireUnique(_.name, DuplicateProperty)
           .flatMap(_.map(evaluateShapeProperty).simultaneous)
           .map(ShapeType.apply)
+      case TypeExprNode.SymbolNode(name, _) => SymbolType(name).compiled
     }
   }
 

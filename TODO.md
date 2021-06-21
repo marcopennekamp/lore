@@ -4,7 +4,7 @@
 
 - Implement symbol types and values:
   - Specification: ~~Symbol types~~, ~~symbol literals~~.
-  - Compiler: ~~Symbol types~~, ~~symbol type functions~~, ~~subtyping~~, parser, transformer, transpilation, equality.
+  - Compiler: ~~Symbol types~~, ~~symbol type functions~~, ~~subtyping~~, ~~parser~~, transformer, transpilation, equality.
   - Runtime: Symbol types, symbol type functions, subtyping, type equality, symbol values.
   - Should we *intern* symbol values and types? This is possible at compile-time, but would make interoperability with Javascript more difficult.
 - Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.

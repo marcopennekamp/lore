@@ -152,14 +152,14 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     * All expressions immediately accessible via postfix dot notation.
     */
   private def accessible[_: P]: P[ExprNode] = {
-    P(literal | dynamicCall | simpleCall | call | fixedFunction | objectMap | variable | block | list | map | shape | enclosed)
+    P(literal | dynamicCall | simpleCall | call | fixedFunction | objectMap | variable | block | list | map | shape | symbol | enclosed)
   }
 
   /**
     * All expressions immediately accessible via postfix dot notation that can be used as call targets.
     */
   private def accessibleCallTarget[_: P]: P[ExprNode] = {
-    P(literal | fixedFunction | objectMap | variable | block | list | map | shape | enclosed)
+    P(literal | fixedFunction | objectMap | variable | block | list | map | shape | symbol | enclosed)
   }
 
   private def literal[_: P]: P[ExprNode] = {
@@ -234,6 +234,8 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     def properties = P((property | shorthand).rep(sep = ",")).map(_.toVector)
     P(Index ~ "%{" ~ properties ~ "}").map(withPosition(ExprNode.ShapeValueNode))
   }
+
+  private def symbol[_: P]: P[ExprNode.SymbolValueNode] = P(Index ~ ":" ~ identifier).map(withPosition(ExprNode.SymbolValueNode))
 
   /**
     * Parses both enclosed expressions and tuples using the same parser. If the number of expressions is exactly one,

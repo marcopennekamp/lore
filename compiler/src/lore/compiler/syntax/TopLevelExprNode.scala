@@ -86,6 +86,27 @@ object ExprNode {
   case class UnitNode(position: Position) extends LeafNode with ExprNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Anonymous functions and function values.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  case class AnonymousFunctionNode(
+    parameters: Vector[AnonymousFunctionParameterNode],
+    body: ExprNode,
+    position: Position,
+  ) extends UnaryNode(body) with ExprNode
+
+  case class AnonymousFunctionParameterNode(
+    name: String,
+    tpe: Option[TypeExprNode],
+    position: Position,
+  ) extends Node
+
+  case class FixedFunctionNode(
+    name: String,
+    argumentTypes: Vector[TypeExprNode],
+    position: Position,
+  ) extends LeafNode with ExprNode
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Collection expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class ListNode(expressions: Vector[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
@@ -119,6 +140,11 @@ object ExprNode {
   ) extends XaryNode(properties.map(_.expression)) with ExprNode
 
   case class ShapeValuePropertyNode(name: String, expression: ExprNode, position: Position) extends Node
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Symbol expressions.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  case class SymbolValueNode(name: String, position: Position) extends LeafNode with ExprNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Block expressions. Note that blocks can hold statements.
@@ -189,25 +215,4 @@ object ExprNode {
   case class ExtractorNode(
     variableName: String, collection: ExprNode, position: Position,
   ) extends Node
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Anonymous functions and function values.
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class AnonymousFunctionNode(
-    parameters: Vector[AnonymousFunctionParameterNode],
-    body: ExprNode,
-    position: Position,
-  ) extends UnaryNode(body) with ExprNode
-
-  case class AnonymousFunctionParameterNode(
-    name: String,
-    tpe: Option[TypeExprNode],
-    position: Position,
-  ) extends Node
-
-  case class FixedFunctionNode(
-    name: String,
-    argumentTypes: Vector[TypeExprNode],
-    position: Position,
-  ) extends LeafNode with ExprNode
 }
