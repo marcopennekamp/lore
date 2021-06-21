@@ -205,7 +205,7 @@ let announcement = '${p.name}, you have $k apples. Please claim your ${if (k < 1
 
 ##### String Operators
 
-One might expect the plus operator to support **string concatenation**. This is not the case in Lore. In most cases, *interpolation* will be the preferable option compared to operative concatenation. In all other cases, most likely when you're working algorithmically with strings, concatenation is provided as a function.
+One might expect the plus operator to support **string concatenation**. This is not the case in Lore. In most cases, *interpolation* will be the preferable option compared to operative concatenation. In all other cases, most likely when you're working algorithmically with strings, concatenation is provided as a function `concat`.
 
 (**Note:** This will obviously change when we introduce user-defined operators.)
 
@@ -301,6 +301,28 @@ let barkOptions = %{ showTeeth: true, volume: 80 }
 ##### Equality and Order
 
 Two shapes are equal if their properties are equal. Shapes are unordered by default.
+
+
+
+### Atoms
+
+An **atom** is a value simply identified and typed by its name. An atom named `foo` is written `:foo` and its type is `:foo`.
+
+We suggest using a snake_case naming convention for atoms.
+
+###### Example
+
+```
+function process(query: Query): Result | :syntax_error = {
+  let parsed = parse(query)
+  if (isError(parsed)) :syntax_error
+  else getResult(parsed)
+}
+```
+
+##### Equality and Order
+
+Two atoms are equal if they have the same name.
 
 
 

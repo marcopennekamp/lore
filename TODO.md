@@ -2,7 +2,10 @@
 
 #### Features
 
-- Implement atom types and values.
+- Implement atom types and values:
+  - Specification: ~~Atom types~~, ~~atom literals~~.
+  - Compiler: Atom types, atom type functions, parser, transformer, transpilation, equality.
+  - Runtime: Atom types, atom type functions, atom values.
 - Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.
 - Implement an append operation for maps. In general, we will need to apply the same run-time typing considerations to maps.
 - Implement a module system.
@@ -18,6 +21,13 @@
 - Allow question marks in identifiers. I like how Clojure approaches booleans and this would fit nicely into Lore, I hope. Example: `isSuccessful` would become `successful?`.
 - Allow trailing commas.
 - We should find a symmetric syntax for map types.
+- Allow kebab case? This would be possible if we restrict subtraction to require proper spaces. The downside is that this is potentially very confusing.
+  - `hello-world` is an identifier "hello-world".
+  - `:syntax-error` is an atom "syntax-error".
+  - `syntax - error` is an arithmetic operation.
+  - `syntax -error` is the same arithmetic operation.
+  - `syntax- error` are two identifiers "syntax-" and "error".
+  - `syntax + -error` is an arithmetic operation, with `error` being negated.
 
 ##### Type System
 
