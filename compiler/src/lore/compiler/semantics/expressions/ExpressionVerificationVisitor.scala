@@ -1,6 +1,7 @@
 package lore.compiler.semantics.expressions
 
 import lore.compiler.core.Compilation.Verification
+import lore.compiler.semantics.expressions.Expression._
 
 trait ExpressionVerificationVisitor extends ExpressionVisitor[Unit, Verification] {
   /**
@@ -8,27 +9,28 @@ trait ExpressionVerificationVisitor extends ExpressionVisitor[Unit, Verification
     */
   def verify(expression: Expression): Verification = Verification.succeed
   
-  override def visit(expression: Expression.Return)(value: Unit): Result = verify(expression)
-  override def visit(expression: Expression.VariableDeclaration)(value: Unit): Result = verify(expression)
-  override def visit(expression: Expression.Assignment)(target: Unit, value: Unit): Result = verify(expression)
-  override def visit(expression: Expression.Block)(expressions: Vector[Unit]): Result = verify(expression)
-  override def visit(expression: Expression.VariableAccess): Result = verify(expression)
-  override def visit(expression: Expression.MemberAccess)(instance: Unit): Result = verify(expression)
-  override def visit(expression: Expression.UnresolvedMemberAccess)(instance: Unit): Result = verify(expression)
-  override def visit(expression: Expression.Literal): Result = verify(expression)
-  override def visit(expression: Expression.Tuple)(values: Vector[Unit]): Result = verify(expression)
-  override def visit(expression: Expression.AnonymousFunction)(body: Unit): Verification = verify(expression)
-  override def visit(expression: Expression.MultiFunctionValue): Verification = verify(expression)
-  override def visit(expression: Expression.FixedFunctionValue): Verification = verify(expression)
-  override def visit(expression: Expression.ListConstruction)(values: Vector[Unit]): Result = verify(expression)
-  override def visit(expression: Expression.MapConstruction)(entries: Vector[(Unit, Unit)]): Result = verify(expression)
-  override def visit(expression: Expression.Instantiation)(arguments: Vector[Unit]): Result = verify(expression)
-  override def visit(expression: Expression.ShapeValue)(arguments: Vector[Unit]): Result = verify(expression)
-  override def visit(expression: Expression.UnaryOperation)(value: Unit): Result = verify(expression)
-  override def visit(expression: Expression.BinaryOperation)(left: Unit, right: Unit): Result = verify(expression)
-  override def visit(expression: Expression.XaryOperation)(expressions: Vector[Unit]): Result = verify(expression)
-  override def visit(expression: Expression.Call)(target: Option[Unit], arguments: Vector[Unit]): Result = verify(expression)
-  override def visit(expression: Expression.IfElse)(condition: Unit, onTrue: Unit, onFalse: Unit): Result = verify(expression)
-  override def visit(expression: Expression.WhileLoop)(condition: Unit, body: Unit): Result = verify(expression)
-  override def visit(expression: Expression.ForLoop)(collections: Vector[Unit], body: Unit): Result = verify(expression)
+  override def visit(expression: Return)(value: Unit): Result = verify(expression)
+  override def visit(expression: VariableDeclaration)(value: Unit): Result = verify(expression)
+  override def visit(expression: Assignment)(target: Unit, value: Unit): Result = verify(expression)
+  override def visit(expression: Block)(expressions: Vector[Unit]): Result = verify(expression)
+  override def visit(expression: VariableAccess): Result = verify(expression)
+  override def visit(expression: MemberAccess)(instance: Unit): Result = verify(expression)
+  override def visit(expression: UnresolvedMemberAccess)(instance: Unit): Result = verify(expression)
+  override def visit(expression: Literal): Result = verify(expression)
+  override def visit(expression: Tuple)(values: Vector[Unit]): Result = verify(expression)
+  override def visit(expression: AnonymousFunction)(body: Unit): Verification = verify(expression)
+  override def visit(expression: MultiFunctionValue): Verification = verify(expression)
+  override def visit(expression: FixedFunctionValue): Verification = verify(expression)
+  override def visit(expression: ListConstruction)(values: Vector[Unit]): Result = verify(expression)
+  override def visit(expression: MapConstruction)(entries: Vector[(Unit, Unit)]): Result = verify(expression)
+  override def visit(expression: Instantiation)(arguments: Vector[Unit]): Result = verify(expression)
+  override def visit(expression: ShapeValue)(arguments: Vector[Unit]): Result = verify(expression)
+  override def visit(expression: Symbol): Result = verify(expression)
+  override def visit(expression: UnaryOperation)(value: Unit): Result = verify(expression)
+  override def visit(expression: BinaryOperation)(left: Unit, right: Unit): Result = verify(expression)
+  override def visit(expression: XaryOperation)(expressions: Vector[Unit]): Result = verify(expression)
+  override def visit(expression: Call)(target: Option[Unit], arguments: Vector[Unit]): Result = verify(expression)
+  override def visit(expression: IfElse)(condition: Unit, onTrue: Unit, onFalse: Unit): Result = verify(expression)
+  override def visit(expression: WhileLoop)(condition: Unit, body: Unit): Result = verify(expression)
+  override def visit(expression: ForLoop)(collections: Vector[Unit], body: Unit): Result = verify(expression)
 }

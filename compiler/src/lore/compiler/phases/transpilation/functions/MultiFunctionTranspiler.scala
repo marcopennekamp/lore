@@ -2,6 +2,7 @@ package lore.compiler.phases.transpilation.functions
 
 import lore.compiler.core.CompilerOptions
 import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
+import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.phases.transpilation.{RuntimeApi, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
@@ -10,7 +11,7 @@ import lore.compiler.target.Target.TargetStatement
 import lore.compiler.target.TargetDsl.StringExtension
 import lore.compiler.types._
 
-class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry) {
+class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry, symbolHistory: SymbolHistory) {
 
   private val properties = MultiFunctionProperties(mf)
 

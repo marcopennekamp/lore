@@ -82,6 +82,8 @@ class InferringExpressionTransformationVisitor(
           min => FixedFunctionAmbiguousCall(mf, inputType, min, position)
         )
       } yield Expression.FixedFunctionValue(instance, position)
+
+    case SymbolValueNode(name, position) => Expression.Symbol(name, position).compiled
   }
 
   override def visitUnary(node: UnaryNode)(expression: Expression): Compilation[Expression] = node match {

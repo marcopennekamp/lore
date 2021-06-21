@@ -3,6 +3,7 @@ package lore.compiler.phases.transpilation.expressions
 
 import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
 import lore.compiler.phases.transpilation._
+import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.functions.CallTarget
@@ -11,7 +12,9 @@ import lore.compiler.target.{Target, TargetOperator}
 import lore.compiler.types._
 
 private[transpilation] class ExpressionTranspilationVisitor()(
-  implicit registry: Registry, runtimeTypeVariables: TranspiledTypeVariables
+  implicit registry: Registry,
+  runtimeTypeVariables: TranspiledTypeVariables,
+  symbolHistory: SymbolHistory,
 ) extends ExpressionVisitor[Chunk, Chunk] {
   import Expression._
 
@@ -120,6 +123,8 @@ private[transpilation] class ExpressionTranspilationVisitor()(
       Chunk.expression(RuntimeApi.shapes.value(dictionary))
     }
   }
+
+  override def visit(symbol: Symbol): Chunk = Chunk.expression(symbolHistory.targetValue(symbol.name))
 
   override def visit(expression: Instantiation)(arguments: Vector[Chunk]): Chunk = {
     Chunk.combine(arguments) { values =>

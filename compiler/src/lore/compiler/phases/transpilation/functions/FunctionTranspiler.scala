@@ -4,6 +4,7 @@ import lore.compiler.core.{CompilationException, CompilerOptions}
 import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
 import lore.compiler.phases.transpilation._
 import lore.compiler.phases.transpilation.expressions.ExpressionTranspiler
+import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.FunctionDefinition
 import lore.compiler.target.Target.{TargetName, TargetStatement}
@@ -12,11 +13,20 @@ import lore.compiler.target.{Target, TargetOperator}
 
 object FunctionTranspiler {
 
-  def transpile(function: FunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry, typeVariables: TranspiledTypeVariables): Vector[TargetStatement] = {
+  def transpile(function: FunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry, typeVariables: TranspiledTypeVariables, symbolHistory: SymbolHistory): Vector[TargetStatement] = {
     transpile(function, function.targetVariable.name, shouldExport = false)
   }
 
-  def transpile(function: FunctionDefinition, name: TargetName, shouldExport: Boolean)(implicit compilerOptions: CompilerOptions, registry: Registry, typeVariables: TranspiledTypeVariables): Vector[TargetStatement] = {
+  def transpile(
+    function: FunctionDefinition,
+    name: TargetName,
+    shouldExport: Boolean,
+  )(
+    implicit compilerOptions: CompilerOptions,
+    registry: Registry,
+    typeVariables: TranspiledTypeVariables,
+    symbolHistory: SymbolHistory,
+  ): Vector[TargetStatement] = {
     if (function.isAbstract) {
       throw CompilationException(s"Cannot transpile abstract function $function.")
     }

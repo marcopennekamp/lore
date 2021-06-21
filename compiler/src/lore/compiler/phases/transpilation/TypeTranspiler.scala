@@ -1,5 +1,6 @@
 package lore.compiler.phases.transpilation
 
+import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.target.Target
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl.{StringExtension, VariableExtension}
@@ -13,7 +14,7 @@ object TypeTranspiler {
     * Transpiles type variables such that they are defined as constants in the returned target statement. The names of
     * these constants are defined in the returned map.
     */
-  def transpileTypeVariables(variables: Vector[TypeVariable])(implicit variableProvider: TemporaryVariableProvider): (Vector[TargetStatement], TranspiledTypeVariables) = {
+  def transpileTypeVariables(variables: Vector[TypeVariable])(implicit variableProvider: TemporaryVariableProvider, symbolHistory: SymbolHistory): (Vector[TargetStatement], TranspiledTypeVariables) = {
     val orderedVariables = variables.sortBy(_.declarationOrder)
     implicit val transpiledVariables: TranspiledTypeVariables = orderedVariables.map(tv => (tv, variableProvider.createVariable())).toMap
     val definitions = orderedVariables.map { tv =>
@@ -29,7 +30,7 @@ object TypeTranspiler {
     * Since type variables aren't instantiated at run-time with this method, we do not need to simplify sum and
     * intersection types at run-time.
     */
-  def transpile(tpe: Type)(implicit typeVariables: TranspiledTypeVariables): TargetExpression = {
+  def transpile(tpe: Type)(implicit typeVariables: TranspiledTypeVariables, symbolHistory: SymbolHistory): TargetExpression = {
     transpile(tpe, simplifyAtRuntime = false, tv => typeVariables(tv))
   }
 
@@ -40,7 +41,7 @@ object TypeTranspiler {
     * Since type variables are resolved at run-time, we also have to simplify sum and intersection types to their
     * normal forms at run-time.
     */
-  def transpileSubstitute(tpe: Type)(implicit typeVariables: TranspiledTypeVariables): TargetExpression = {
+  def transpileSubstitute(tpe: Type)(implicit typeVariables: TranspiledTypeVariables, symbolHistory: SymbolHistory): TargetExpression = {
     transpile(tpe, simplifyAtRuntime = true, tv => {
       RuntimeApi.utils.tinyMap.get(RuntimeNames.localTypeVariableAssignments, typeVariables(tv))
     })
@@ -50,7 +51,7 @@ object TypeTranspiler {
     * Runtime simplification should only be performed when absolutely necessary. Otherwise it will be a big draw on
     * performance.
     */
-  private def transpile(tpe: Type, simplifyAtRuntime: Boolean, transpileTypeVariable: TypeVariable => TargetExpression): TargetExpression = {
+  private def transpile(tpe: Type, simplifyAtRuntime: Boolean, transpileTypeVariable: TypeVariable => TargetExpression)(implicit symbolHistory: SymbolHistory): TargetExpression = {
     val rec: Type => TargetExpression = t => transpile(t, simplifyAtRuntime, transpileTypeVariable)
     val api = RuntimeApi.types
     tpe match {
@@ -91,6 +92,7 @@ object TypeTranspiler {
         RuntimeApi.shapes.tpe(Target.Dictionary(
           properties.values.toVector.map(property => Target.Property(property.name.asName, rec(property.tpe)))
         ))
+      case SymbolType(name) => symbolHistory.targetType(name)
     }
   }
 

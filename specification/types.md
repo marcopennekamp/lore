@@ -194,7 +194,7 @@ A shape or struct type A is the **subtype** of a shape type B if A contains all 
 
 ### Symbol Types
 
-A **symbol type** describes a specific symbol value. Only the symbol value called `name` can inhabit a symbol type `:name`.
+A **symbol type** describes a specific symbol value. Only the symbol value called `name` can inhabit a symbol type `:name`. Symbol types are compiled such that they are interned at run time.
 
 The **purpose** of a symbol is to represent enumerated values, an error or success code, or an alternative to a value or result. For example, we can represent option types as `A | :none` where `A` is the type of the present value and `:none` signifies the empty option.
 

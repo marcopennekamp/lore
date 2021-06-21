@@ -91,6 +91,13 @@ object RuntimeApi {
     def value(properties: Target.Dictionary) = named("value").call(properties)
   }
 
+  object symbols {
+    implicit val base = named("symbols")(RuntimeApi.base)
+
+    def tpe(name: String) = named("type").call(name.asLiteral)
+    def value(name: String) = named("value").call(name.asLiteral)
+  }
+
   object traits {
     implicit val base = named("traits")(RuntimeApi.base)
 

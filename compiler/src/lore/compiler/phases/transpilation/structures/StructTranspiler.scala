@@ -1,6 +1,7 @@
 package lore.compiler.phases.transpilation.structures
 
 import lore.compiler.phases.transpilation.expressions.ExpressionTranspiler
+import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.phases.transpilation.{RuntimeApi, RuntimeNames, TypeTranspiler}
 import lore.compiler.semantics.Registry
 import lore.compiler.target.Target
@@ -33,7 +34,7 @@ object StructTranspiler {
     * types have been transpiled. This is the only way to avoid having to lazily initialize the constructor's function
     * value.
     */
-  def transpile(tpe: StructType)(implicit registry: Registry): Vector[TargetStatement] = {
+  def transpile(tpe: StructType)(implicit registry: Registry, symbolHistory: SymbolHistory): Vector[TargetStatement] = {
     val schema = transpileSchema(tpe)
     val (varNewtype, varArchetype, definitions) = transpileTypeDefinitions(tpe)
     val instantiate = transpileInstantiate(tpe, varNewtype, varArchetype)
@@ -42,12 +43,12 @@ object StructTranspiler {
     Vector(schema) ++ definitions ++ Vector(instantiate) ++ defaultValueFunctions
   }
 
-  private def transpileSchema(tpe: StructType) = {
+  private def transpileSchema(tpe: StructType)(implicit symbolHistory: SymbolHistory) = {
     val varSchema = RuntimeNames.typeSchema(tpe)
     val propertyTypes = Target.Dictionary(tpe.definition.properties.map { property =>
       // As noted in the runtime's StructSchema definition, schema property types must be lazy to ensure that all
       // declared types are defined when the property type is initialized.
-      Target.Property(property.name.asName, RuntimeApi.utils.`lazy`.of(TypeTranspiler.transpile(property.tpe)(Map.empty)))
+      Target.Property(property.name.asName, RuntimeApi.utils.`lazy`.of(TypeTranspiler.transpile(property.tpe)(Map.empty, symbolHistory)))
     })
 
     varSchema.declareAs(
@@ -106,18 +107,18 @@ object StructTranspiler {
     ))
   }
 
-  private def transpileDefaultValues(tpe: StructType)(implicit registry: Registry) = {
+  private def transpileDefaultValues(tpe: StructType)(implicit registry: Registry, symbolHistory: SymbolHistory) = {
     tpe.definition.properties.flatMap { property =>
       property.defaultValue.map { defaultValue =>
         val varDefaultValue = RuntimeNames.defaultValue(tpe, property)
         // TODO: We need to supply runtime type variables here once structs can have type parameters.
-        val chunk = ExpressionTranspiler.transpile(defaultValue.expression)(registry, Map.empty)
+        val chunk = ExpressionTranspiler.transpile(defaultValue.expression)(registry, Map.empty, symbolHistory)
         Target.Function(varDefaultValue.name, Vector.empty, chunk.asBody)
       }
     }
   }
 
-  def transpileConstructor(tpe: StructType): TargetStatement = {
+  def transpileConstructor(tpe: StructType)(implicit symbolHistory: SymbolHistory): TargetStatement = {
     val varInstantiate = RuntimeNames.instantiate(tpe)
     val varConstructor = RuntimeNames.constructor(tpe)
 
@@ -136,7 +137,7 @@ object StructTranspiler {
       varConstructor.name,
       RuntimeApi.functions.value(
         Target.Lambda(parameters, Target.Call(varInstantiate, Vector(properties))),
-        TypeTranspiler.transpile(signature.functionType)(Map.empty),
+        TypeTranspiler.transpile(signature.functionType)(Map.empty, symbolHistory),
       ),
     )
   }

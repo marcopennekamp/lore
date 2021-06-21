@@ -2,6 +2,7 @@ package lore.compiler.phases.transpilation.functions
 
 import lore.compiler.core.CompilationException
 import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
+import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.phases.transpilation.{RuntimeApi, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.target.Target
@@ -13,7 +14,10 @@ import lore.compiler.types.Type
   * The dispatch input transpiler covers input and argument types. The [[DispatchBehavior]] relies on the types
   * provided by this transpiler.
   */
-class DispatchInput(mf: MultiFunctionDefinition, properties: MultiFunctionProperties)(implicit variableProvider: TemporaryVariableProvider, typeVariables: TranspiledTypeVariables) {
+class DispatchInput(
+  mf: MultiFunctionDefinition,
+  properties: MultiFunctionProperties,
+)(implicit variableProvider: TemporaryVariableProvider, typeVariables: TranspiledTypeVariables, symbolHistory: SymbolHistory) {
 
   val varArgumentType: Target.Variable = "argumentType".asVariable
 

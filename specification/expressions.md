@@ -306,7 +306,7 @@ Two shapes are equal if their properties are equal. Shapes are unordered by defa
 
 ### Symbols
 
-A **symbol** is a value simply identified and typed by its name. A symbol named `foo` is written `:foo` and its type is `:foo`.
+A **symbol** is a value simply identified and typed by its name. A symbol named `foo` is written `:foo` and its type is `:foo`. Symbols are compiled such that they are interned at run time.
 
 We suggest using a snake_case naming convention for symbols.
 

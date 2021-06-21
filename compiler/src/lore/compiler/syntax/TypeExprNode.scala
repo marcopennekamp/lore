@@ -1,6 +1,7 @@
 package lore.compiler.syntax
 
 import lore.compiler.core.Position
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 /**
   * All type expressions.
@@ -20,17 +21,21 @@ object TypeExprNode {
   case class SymbolNode(name: String, position: Position) extends TypeExprNode
 
   /**
+    * Collects all leaf nodes in a flattened list.
+    */
+  def leaves(node: TypeExprNode): Vector[TypeExprNode] = node match {
+    case SumNode(types, _) => types.flatMap(leaves)
+    case IntersectionNode(types, _) => types.flatMap(leaves)
+    case TupleNode(types, _) => types.flatMap(leaves)
+    case FunctionNode(input, output, _) => leaves(input) ++ leaves(output)
+    case ListNode(element, _) => leaves(element)
+    case MapNode(key, value, _) => leaves(key) ++ leaves(value)
+    case ShapeNode(properties, _) => properties.map(_.tpe).flatMap(leaves)
+    case _ => Vector(node)
+  }
+
+  /**
     * Finds all identifiers mentioned in the type expression.
     */
-  def identifiers(expr: TypeExprNode): Set[String] = expr match {
-    case IdentifierNode(name, _) => Set(name)
-    case SumNode(types, _) => types.flatMap(identifiers).toSet
-    case IntersectionNode(types, _) => types.flatMap(identifiers).toSet
-    case TupleNode(types, _) => types.flatMap(identifiers).toSet
-    case FunctionNode(input, output, _) => identifiers(input) ++ identifiers(output)
-    case ListNode(element, _) => identifiers(element)
-    case MapNode(key, value, _) => identifiers(key) ++ identifiers(value)
-    case ShapeNode(properties, _) => properties.map(_.tpe).flatMap(identifiers).toSet
-    case _ => Set.empty
-  }
+  def identifiers(node: TypeExprNode): Set[String] = leaves(node).filterType[IdentifierNode].map(_.name).toSet
 }

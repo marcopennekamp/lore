@@ -120,6 +120,10 @@ object Expression {
     def asShapeTypeProperty: ShapeType.Property = ShapeType.Property(name, value.tpe)
   }
 
+  case class Symbol(name: String, position: Position) extends Expression {
+    override def tpe: SymbolType = SymbolType(name)
+  }
+
   /**
     * Creates a new instance of a given struct. This expression represents both the call and map syntax. The arguments
     * are passed in their syntactic order to preserve the intended execution order of side effects and should thus be

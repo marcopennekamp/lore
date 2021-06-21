@@ -1,5 +1,6 @@
 package lore.compiler.phases.transpilation.structures
 
+import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.phases.transpilation.{RuntimeApi, RuntimeNames, TypeTranspiler}
 import lore.compiler.target.Target.TargetStatement
 import lore.compiler.target.TargetDsl._
@@ -10,12 +11,12 @@ object TraitTranspiler {
   /**
     * Transpiles a trait type to its target representation.
     */
-  def transpile(tpe: TraitType): Vector[TargetStatement] = {
+  def transpile(tpe: TraitType)(implicit symbolHistory: SymbolHistory): Vector[TargetStatement] = {
     val schema = RuntimeApi.traits.schema(
       tpe.name,
       DeclaredTypeTranspiler.transpileSupertraits(tpe),
       // The trait's inherited shape type needs to be supplied to the runtime to support trait/shape subtyping.
-      RuntimeApi.utils.`lazy`.of(TypeTranspiler.transpile(tpe.inheritedShapeType)(Map.empty)),
+      RuntimeApi.utils.`lazy`.of(TypeTranspiler.transpile(tpe.inheritedShapeType)(Map.empty, symbolHistory)),
     )
 
     val varSchema = RuntimeNames.typeSchema(tpe)

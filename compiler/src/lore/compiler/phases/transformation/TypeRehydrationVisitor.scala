@@ -67,6 +67,8 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
 
   override def visit(expression: ShapeValue)(properties: Vector[Expression]): Expression = expression.withPropertyValues(properties)
 
+  override def visit(expression: Symbol): Expression = expression
+
   override def visit(expression: Instantiation)(arguments: Vector[Expression]): Expression = expression.withArgumentValues(arguments)
 
   override def visit(expression: UnaryOperation)(value: Expression): Expression = expression.copy(
