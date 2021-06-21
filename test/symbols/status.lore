@@ -1,0 +1,19 @@
+type Status = :ok | :error
+
+function stringify(status: Status): String
+function stringify(status: :ok): String = 'Success!'
+function stringify(status: :error): String = 'Failure!'
+
+function process(value: Int): (Status, String) = {
+  if (value < 5) (:ok, 'Below five.')
+  else (:error, 'At or above five.')
+}
+
+function stringify(result: (Status, String)): String = stringify(first(result))
+
+function test(): [String] = [
+  stringify(process(3)),
+  stringify(process(5)),
+  stringify(process(2)),
+  stringify(process(10))
+]
