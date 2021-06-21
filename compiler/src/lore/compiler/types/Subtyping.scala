@@ -100,8 +100,8 @@ object Subtyping {
         case _ => false
       }
 
-      case a1: AtomType => t2 match {
-        case a2: AtomType => a1 == a2
+      case a1: SymbolType => t2 match {
+        case a2: SymbolType => a1 == a2
         case _ => false
       }
 

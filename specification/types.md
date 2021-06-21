@@ -34,7 +34,7 @@ A **type expression** is a representation of a particular type, built with the t
 
 - `{ a: A, b: B }` — **Shape types** describing structs (partially) and shape values.
 
-- `:name` — **Atom types** describing atom values.
+- `:name` — **Symboll types** describing symbol values.
 
 Note that the compiler immediately performs the following **simplifications** on sum and intersection types:
 
@@ -48,7 +48,7 @@ Type constructors have the following **precedence** (lowest priority first):
 &                               // intersection types
 =>							    // function types
 ->                              // map types
-() (,) [] { ... } :id (...) id  // unit, tuple, list, shape, atom, enclosed, names
+() (,) [] { ... } :id (...) id  // unit, tuple, list, shape, symbol, enclosed, names
 ```
 
 
@@ -192,11 +192,11 @@ A shape or struct type A is the **subtype** of a shape type B if A contains all 
 
 
 
-### Atom Types
+### Symbol Types
 
-An **atom type** describe a specific atom value. Only the atom value called `name` can inhabit an atom type `:name`.
+A **symbol type** describes a specific symbol value. Only the symbol value called `name` can inhabit a symbol type `:name`.
 
-The **purpose** of an atom type is to represent some kind of enumerated value, an error or success code, or an alternative to a value or result. For example, we can represent option types as sum types `A | :none` where `A` is the type of the present value.
+The **purpose** of a symbol is to represent enumerated values, an error or success code, or an alternative to a value or result. For example, we can represent option types as `A | :none` where `A` is the type of the present value and `:none` signifies the empty option.
 
 ###### Syntax Example
 
@@ -227,7 +227,7 @@ Each type is either **abstract** or concrete. Functions may only be declared as 
 - A **map type** is always concrete.
 - A **shape type** is always concrete.
   - Shape types would behave like tuple types if we could guarantee that run-time property types are always taken into account for multiple dispatch. This would require all struct properties to be open, which I do not want to support. It remains to be seen whether this poses a problem for defining abstract functions for component shape types.
-- An **atom type** is always concrete.
+- A **symbol type** is always concrete.
 - A **trait** is always abstract on its own and as an augmentation only abstract if it's intersecting merely with abstract types.
   - An **augmentation** trait takes diminished preference compared to a struct or any other concrete type. This is to avoid the following scenario: Assume that augmentations *could* be abstract. Define an abstract function `f(v: Struct & Trait)` over a struct `Struct` that gets called with a dynamically specialized type. That is, we create an object of type `Struct`, attach the label `Trait`, and call the abstract function. It won't be able to dispatch to specializing functions, as the struct is quite literally the end of the line (assuming no other specializing functions), and there is no implementation to be found. So `Struct & Trait` obviously shouldn't be an abstract type.
   - The "special" case in which **multiple traits intersect** is simply handled by the fact that the resulting intersection type is abstract since it does not contain a concrete type.

@@ -6,10 +6,10 @@ At this early stage of design and development, my goal is to create a **minimum 
 
 Here is a **list of features** that will make up the minimum viable language:
 
-- **Types:** Sum types, intersection types, tuple types, function types, list types, map types, shape types, atom types, trait and struct types, simple parametric types in functions, abstractness, type inference, type aliases.
+- **Types:** Sum types, intersection types, tuple types, function types, list types, map types, shape types, symbol types, trait and struct types, simple parametric types in functions, abstractness, type inference, type aliases.
 - **Functions:** Multi-functions, function declarations, multiple dispatch, abstract functions, compile-time constraints, fixed functions.
 - **Data Types:** Traits, structs, shapes, properties, constructors, mutability, trait polymorphism.
-- **Expressions:** Literals and value constructors (numbers, strings, booleans, tuples, anonymous functions, lists, maps, shapes, atoms, structs), basic operators, blocks, (multi-)function calls, multi-functions as function values, conditional expressions, loops, property access, variable declarations, assignments, and return.
+- **Expressions:** Literals and value constructors (numbers, strings, booleans, tuples, anonymous functions, lists, maps, shapes, symbols, structs), basic operators, blocks, (multi-)function calls, multi-functions as function values, conditional expressions, loops, property access, variable declarations, assignments, and return.
   - TODO: Pipe operator?
   - TODO: Trailing lambdas?
 - **Global Constants:** Declaration, usage.
@@ -20,7 +20,7 @@ The language will also be accompanied by a standard library called **Pyramid**, 
 - **Collections:** Important functional operations on lists and maps.
 - **IO:** *Basic* support for file system input/output.
 - **Math:** Important mathematical functions, types, and constants.
-- **Options:** Support for options via sum types and atom types, important functional operations on options.
+- **Options:** Support for options via sum types and symbol types, important functional operations on options.
 - **Strings:** Important string functions.
 
 

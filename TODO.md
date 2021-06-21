@@ -2,10 +2,11 @@
 
 #### Features
 
-- Implement atom types and values:
-  - Specification: ~~Atom types~~, ~~atom literals~~.
-  - Compiler: ~~Atom types~~, ~~atom type functions~~, ~~subtyping~~, parser, transformer, transpilation, equality.
-  - Runtime: Atom types, atom type functions, subtyping, type equality, atom values.
+- Implement symbol types and values:
+  - Specification: ~~Symbol types~~, ~~symbol literals~~.
+  - Compiler: ~~Symbol types~~, ~~symbol type functions~~, ~~subtyping~~, parser, transformer, transpilation, equality.
+  - Runtime: Symbol types, symbol type functions, subtyping, type equality, symbol values.
+  - Should we *intern* symbol values and types? This is possible at compile-time, but would make interoperability with Javascript more difficult.
 - Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.
 - Implement an append operation for maps. In general, we will need to apply the same run-time typing considerations to maps.
 - Implement a module system.
@@ -23,7 +24,7 @@
 - We should find a symmetric syntax for map types.
 - Allow kebab case? This would be possible if we restrict subtraction to require proper spaces. The downside is that this is potentially very confusing.
   - `hello-world` is an identifier "hello-world".
-  - `:syntax-error` is an atom "syntax-error".
+  - `:syntax-error` is a symbol "syntax-error".
   - `syntax - error` is an arithmetic operation.
   - `syntax -error` is the same arithmetic operation.
   - `syntax- error` are two identifiers "syntax-" and "error".

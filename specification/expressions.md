@@ -304,11 +304,11 @@ Two shapes are equal if their properties are equal. Shapes are unordered by defa
 
 
 
-### Atoms
+### Symbols
 
-An **atom** is a value simply identified and typed by its name. An atom named `foo` is written `:foo` and its type is `:foo`.
+A **symbol** is a value simply identified and typed by its name. A symbol named `foo` is written `:foo` and its type is `:foo`.
 
-We suggest using a snake_case naming convention for atoms.
+We suggest using a snake_case naming convention for symbols.
 
 ###### Example
 
@@ -322,7 +322,7 @@ function process(query: Query): Result | :syntax_error = {
 
 ##### Equality and Order
 
-Two atoms are equal if they have the same name.
+Two symbols are equal if they have the same name.
 
 
 
