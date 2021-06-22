@@ -5,7 +5,7 @@ import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
 import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.phases.transpilation.{Chunk, RuntimeApi, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.semantics.expressions.Expression.{Extractor, ForLoop, Loop, WhileLoop}
-import lore.compiler.target.Target.{TargetExpression, TargetStatement}
+import lore.compiler.target.Target.TargetStatement
 import lore.compiler.target.TargetDsl._
 import lore.compiler.target.{Target, TargetOperator}
 import lore.compiler.types.{ListType, MapType, TupleType}

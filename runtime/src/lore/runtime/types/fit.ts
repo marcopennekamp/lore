@@ -157,6 +157,9 @@ class TypeVariableAllocation {
     return allocation
   }
 
+  // TODO: Optimization idea: Map type variables to indices at compile time so that we don't need a map here at run
+  //       time. Also assign types to type variables in such a way that we test for equality right away. There is no
+  //       need to defer the equality check to later. This also means we can fail faster.
   private static assign(t1: Type, t2: Type, allocation: TypeVariableAllocation): void {
     if (t2.kind === Kind.TypeVariable) {
       allocation.addAssignment(<TypeVariable> t2, t1)
@@ -168,10 +171,6 @@ class TypeVariableAllocation {
     }
 
     switch (t2.kind) {
-      case Kind.Struct:
-      case Kind.Trait:
-        break // TODO: Change this once we allow type parameters for classes and labels.
-
       case Kind.Tuple:
         if (t1.kind === Kind.Tuple) {
           const types1 = (<TupleType> t1).types

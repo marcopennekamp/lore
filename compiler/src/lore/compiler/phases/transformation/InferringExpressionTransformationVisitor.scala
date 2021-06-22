@@ -2,7 +2,7 @@ package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.core._
-import lore.compiler.feedback.DispatchFeedback.{AmbiguousCall, EmptyFit, FixedFunctionAmbiguousCall, FixedFunctionEmptyFit}
+import lore.compiler.feedback.DispatchFeedback.{FixedFunctionAmbiguousCall, FixedFunctionEmptyFit}
 import lore.compiler.feedback.Feedback
 import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.phases.resolution.TypeExpressionEvaluator
