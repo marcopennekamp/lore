@@ -6,6 +6,7 @@ import { LoreMath } from './math.ts'
 import { Shape } from './shapes.ts'
 import { Struct } from './structs.ts'
 import { Sum } from './sums.ts'
+import { Symbol } from './symbols.ts'
 import { Trait } from './traits.ts'
 import { Tuple } from './tuples.ts'
 import { Types } from './types/types.ts'
@@ -24,6 +25,7 @@ export default {
   lists: List,
   maps: Map,
   shapes: Shape,
+  symbols: Symbol,
   traits: Trait,
   structs: Struct,
   utils,

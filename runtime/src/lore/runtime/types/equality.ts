@@ -5,6 +5,7 @@ import { MapType } from '../maps.ts'
 import { ShapeType } from '../shapes.ts'
 import { Struct, StructType } from '../structs.ts'
 import { SumType } from '../sums.ts'
+import { SymbolType } from '../symbols.ts'
 import { TraitType } from '../traits.ts'
 import { TupleType } from '../tuples.ts'
 import {
@@ -115,7 +116,11 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
       if (!p2Type || !areEqual(s1.propertyTypes[p1Name], p2Type)) return false
     }
     return true
-  }
+  },
+
+  // Since symbol types are interned and `s1 === s2` has already been checked, we can be sure that these two symbol
+  // types aren't equal.
+  (s1: SymbolType, s2: SymbolType) => false,
 ]
 
 /**

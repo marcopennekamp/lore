@@ -17,9 +17,6 @@ export function substitute(assignments: Assignments, type: Type): Type {
   switch (type.kind) {
     case Kind.TypeVariable:
       return TinyMap.get(assignments, <TypeVariable> type) ?? type
-    case Kind.Struct:
-    case Kind.Trait:
-      return type // TODO: Change this once we allow type parameters for classes and labels.
     case Kind.Sum:
       // TODO: We need to simplify here, like in SumType.construct.
       return Sum.type(substituteMany(assignments, (<SumType> type).types))

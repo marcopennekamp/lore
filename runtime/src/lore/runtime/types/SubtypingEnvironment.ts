@@ -139,6 +139,9 @@ export class SubtypingEnvironment {
           return this.shapeSubtypeShape(<ShapeType> t1, <ShapeType> t2)
         }
         break
+
+      // There is no need to handle symbol types here. s1 can only be a subtype of s2 if s1 === s2, because symbol
+      // types are interned.
     }
 
     // These rules match on the right type. They are also exclusive of each other.

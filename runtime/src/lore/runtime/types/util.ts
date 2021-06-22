@@ -35,7 +35,6 @@ function addUnique(types: Array<Type>, type: Type) {
   types.push(type)
 }
 
-
 /**
  * Filters the given array, returning a new array only with elements that have been included. Whether an
  * element is excluded depends on the predicate, which is applied to the element in question and all other

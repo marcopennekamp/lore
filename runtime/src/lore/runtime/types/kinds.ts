@@ -15,4 +15,5 @@ export enum Kind {
   List,
   Map,
   Shape,
+  Symbol,
 }

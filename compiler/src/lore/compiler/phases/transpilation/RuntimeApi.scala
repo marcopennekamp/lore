@@ -95,7 +95,7 @@ object RuntimeApi {
     implicit val base = named("symbols")(RuntimeApi.base)
 
     def tpe(name: String) = named("type").call(name.asLiteral)
-    def value(name: String) = named("value").call(name.asLiteral)
+    def value(tpe: Target.Variable) = named("value").call(tpe)
   }
 
   object traits {
