@@ -1,0 +1,18 @@
+function test(): [String] = {
+  let a = 'hello options'
+  let b = :none
+  let c: String | :none = 'test'
+  let d: String | :none = :none
+
+  [
+    toString(isEmpty(a)),
+    toString(isEmpty(b)),
+    toString(isEmpty(c)),
+    toString(isEmpty(d)),
+
+    getOrElse(a, 'fallback'),
+    getOrElse(b, 'fallback'),
+    getOrElse(c, 'fallback'),
+    getOrElse(d, 'fallback')
+  ]
+}
