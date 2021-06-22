@@ -123,8 +123,8 @@ object Type {
 
     tpe match {
       case tv: TypeVariable => f(tv)
-      case SumType(types) => SumType(types.map(rec))
-      case IntersectionType(types) => IntersectionType(types.map(rec))
+      case SumType(types) => SumType.construct(types.map(rec))
+      case IntersectionType(types) => IntersectionType.construct(types.map(rec))
       case TupleType(elements) => TupleType(elements.map(rec))
       case FunctionType(input, output) => FunctionType(rec(input), rec(output))
       case ListType(element) => ListType(rec(element))

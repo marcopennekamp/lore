@@ -18,11 +18,9 @@ export function substitute(assignments: Assignments, type: Type): Type {
     case Kind.TypeVariable:
       return TinyMap.get(assignments, <TypeVariable> type) ?? type
     case Kind.Sum:
-      // TODO: We need to simplify here, like in SumType.construct.
-      return Sum.type(substituteMany(assignments, (<SumType> type).types))
+      return Sum.simplified(substituteMany(assignments, (<SumType> type).types))
     case Kind.Intersection:
-      // TODO: We need to simplify here, like in IntersectionType.construct.
-      return Intersection.type(substituteMany(assignments, (<IntersectionType> type).types))
+      return Intersection.simplified(substituteMany(assignments, (<IntersectionType> type).types))
     case Kind.Tuple:
       return Tuple.type(substituteMany(assignments, (<TupleType> type).types))
     case Kind.Function: {

@@ -28,7 +28,7 @@ object SumType {
       case t => Vector(t)
     }
     val simplified = Type.mostGeneral(flattened).toSet
-    if (simplified.size == 1) simplified.head else new SumType(simplified)
+    if (simplified.size == 1) simplified.head else SumType(simplified)
   }
 
   def construct(parts: Set[Type]): Type = construct(parts.toVector)

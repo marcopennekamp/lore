@@ -40,7 +40,7 @@ object IntersectionType {
     } else flattened
 
     val simplified = Type.mostSpecific(shapesCombined).toSet
-    if (simplified.size == 1) simplified.head else new IntersectionType(simplified)
+    if (simplified.size == 1) simplified.head else IntersectionType(simplified)
   }
 
   def construct(parts: Set[Type]): Type = construct(parts.toVector)
