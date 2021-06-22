@@ -1,5 +1,6 @@
 package lore.compiler.phases.transpilation
 
+import lore.compiler.core.CompilationException
 import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.target.Target
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
@@ -40,11 +41,17 @@ object TypeTranspiler {
     *
     * Since type variables are resolved at run-time, we also have to simplify sum and intersection types to their
     * normal forms at run-time.
+    *
+    * If the given type contains no type variables, it is transpiled without run-time simplification.
     */
   def transpileSubstitute(tpe: Type)(implicit typeVariables: TranspiledTypeVariables, symbolHistory: SymbolHistory): TargetExpression = {
-    transpile(tpe, simplifyAtRuntime = true, tv => {
-      RuntimeApi.utils.tinyMap.get(RuntimeNames.localTypeVariableAssignments, typeVariables(tv))
-    })
+    if (Type.isPolymorphic(tpe)) {
+      transpile(tpe, simplifyAtRuntime = true, tv => {
+        RuntimeApi.utils.tinyMap.get(RuntimeNames.localTypeVariableAssignments, typeVariables(tv))
+      })
+    } else {
+      transpile(tpe, simplifyAtRuntime = false, _ => throw CompilationException(s"The given type $tpe was determined to be monomorphic."))
+    }
   }
 
   /**
