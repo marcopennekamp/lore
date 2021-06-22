@@ -168,7 +168,14 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   private def transpileListAppends(list: Chunk, element: Chunk, resultType: Type): Chunk = {
     val tpe = TypeTranspiler.transpileSubstitute(resultType)
-    Chunk.combine(list, element) { case Vector(list, element) => Chunk.expression(RuntimeApi.lists.append(list, element, tpe)) }
+    Chunk.combine(list, element) { case Vector(list, element) =>
+      // We might be tempted to use `appendUntyped` here if the element type is already a subtype of the list's element
+      // type, but that would be incorrect. Though we can be sure that the given list has AT MOST some type `[t1]` at
+      // run time, it might also be typed as a subtype `[t2]` of `[t1]`. If at run time the list is of type `[t2]` and
+      // the element has the type `t1`, the append should result in a list of type `[t1]`. appendUntyped would result
+      // in a list of type `[t2]`.
+      Chunk.expression(RuntimeApi.lists.append(list, element, tpe))
+    }
   }
 
   override def visit(expression: XaryOperation)(operands: Vector[Chunk]): Chunk = {

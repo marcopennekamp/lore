@@ -74,6 +74,7 @@ object RuntimeApi {
     def tpe(element: TargetExpression) = named("type").call(element)
     def value(values: Vector[TargetExpression], tpe: TargetExpression) = named("value").call(Target.List(values), tpe)
     def append(list: TargetExpression, element: TargetExpression, tpe: TargetExpression) = named("append").call(list, element, tpe)
+    def appendUntyped(list: TargetExpression, element: TargetExpression) = named("appendUntyped").call(list, element)
   }
 
   object maps {

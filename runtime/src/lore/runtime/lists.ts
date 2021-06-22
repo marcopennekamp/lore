@@ -41,9 +41,18 @@ export const List = {
     return { array: [...list.array, element], lore$type: type }
   },
 
+  /**
+   * Creates a new (immutable) list by appending the element to the given list. The new list is assigned the type from
+   * the old list, as this function is only invoked when the compiler is sure that the appends operation doesn't change
+   * the type of the list.
+   */
+  appendUntyped<A, B extends A>(list: ListValue<A>, element: B): ListValue<A> {
+    return { array: [...list.array, element], lore$type: list.lore$type }
+  },
+
   get<A>(list: ListValue<A>, index: number): A {
     // TODO: Bounds checking?
-    return list.array[index];
+    return list.array[index]
   },
 
   forEach<A, R>(list: ListValue<A>, f: (e: A) => R): void {
@@ -54,6 +63,6 @@ export const List = {
   },
 
   length<A>(list: ListValue<A>): number {
-    return list.array.length;
+    return list.array.length
   },
 }

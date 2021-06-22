@@ -72,12 +72,11 @@ case class LoopTranspiler()(implicit variableProvider: TemporaryVariableProvider
     // The loop's inferred type is Unit if its body type is Unit, so this checks out.
     val ignoreResult = loop.tpe == TupleType.UnitType
 
-    def loopCode(result: Option[(Target.Variable, TargetExpression)]) = {
+    def loopCode(result: Option[Target.Variable]) = {
       loopShell(
         body.statements ++ body.meaningfulExpression.map { e =>
-          result.map { case (varResult, resultType) =>
-            varResult.assign(RuntimeApi.lists.append(varResult, e, resultType))
-          }.getOrElse(e)
+          // Because varResult is already a new list initialized as `resultType`, we can use appendUntyped.
+          result.map(varResult => varResult.assign(RuntimeApi.lists.appendUntyped(varResult, e))).getOrElse(e)
         }.toVector,
       )
     }
@@ -88,7 +87,7 @@ case class LoopTranspiler()(implicit variableProvider: TemporaryVariableProvider
       val varResult = variableProvider.createVariable()
       val resultType = TypeTranspiler.transpileSubstitute(loop.tpe)
       val resultVarDeclaration = varResult.declareMutableAs(RuntimeApi.lists.value(Vector.empty, resultType))
-      Chunk(resultVarDeclaration +: loopCode(Some(varResult, resultType)), varResult)
+      Chunk(resultVarDeclaration +: loopCode(Some(varResult)), varResult)
     }
   }
 
