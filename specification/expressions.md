@@ -331,10 +331,21 @@ Two symbols are equal if they have the same name.
 Lore supports **struct instantiation**. There are two possible syntax flavors:
 
 ```
-// Assuming another value b: B
+struct A { b: B }
+
+let b = B()
 let a = A(b)        // Call syntax
 let a = A { b: b }  // Map syntax
-let a = A { b }     // Map syntax with shorthand
+let a = A { b }     // Map syntax using shorthand
+```
+
+The call-syntax constructor is an ordinary **function value** and can be used as such:
+
+```
+function construct(f: B => A, b: B): A = f(b)
+
+let b = B()
+let a = construct(A, b)
 ```
 
 ##### Equality and Order

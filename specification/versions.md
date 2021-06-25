@@ -38,3 +38,4 @@ Once we have formulated the MVL, we can deliver **themed updates** that focus on
 - The **Interoperability** Update (dynamic types, duck typing for dynamic types, or gradual typing)
   - This depends on the runtime. One question is whether we'll stick with Javascript as a transpilation target.
 - The **Macros** Update
+
