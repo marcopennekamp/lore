@@ -229,7 +229,7 @@ object Type {
           s"${property.name}: ${toString(property.tpe, verbose)}"
         }
         s"{ ${propertyRepresentations.mkString(", ")} }"
-      case SymbolType(name) => s":$name"
+      case SymbolType(name) => s"#$name"
       case d: DeclaredType =>
         if (verbose) {
           val kind = d match {
