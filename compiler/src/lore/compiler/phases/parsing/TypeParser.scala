@@ -49,7 +49,7 @@ class TypeParser(implicit fragment: Fragment) {
     P(Index ~ "{" ~ property.rep(0, ",").map(_.toVector) ~ "}").map(withPosition(TypeExprNode.ShapeNode))
   }
 
-  private def symbolType[_: P]: P[TypeExprNode.SymbolNode] = P(Index ~ ":" ~ identifier).map(withPosition(TypeExprNode.SymbolNode))
+  private def symbolType[_: P]: P[TypeExprNode.SymbolNode] = P(Index ~ "#" ~ identifier).map(withPosition(TypeExprNode.SymbolNode))
 
   private def namedType[_: P]: P[TypeExprNode.IdentifierNode] = P(Index ~ typeIdentifier).map(withPosition(TypeExprNode.IdentifierNode))
 

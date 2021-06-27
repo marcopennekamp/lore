@@ -1,20 +1,19 @@
 /**
  * Returns the given value if it is something, or otherwise the alternative.
  *
- * TODO: Possibly rename to just `get` to suggest that this is the default mode of getting a value from an option.
  * TODO: Compute the alternative lazily / via a function value.
  */
-function getOrElse(option: A | :none, alternative: B): B where A, B >: A
-function getOrElse(value: A, alternative: B): B where A, B >: A = value
-function getOrElse(none: :none, alternative: B): B where B = alternative
+//function get(option: A | #none, alternative: B): B where A, B >: A
+function get(value: A, alternative: B): B where A, B >: A = value
+function get(none: #none, alternative: B): B where B = alternative
 
 /**
  * Returns true if the given value is `:none`, and false otherwise.
  */
 function isEmpty(value: A): Boolean where A = false
-function isEmpty(none: :none): Boolean = true
+function isEmpty(none: #none): Boolean = true
 
 /**
  * Returns true if the given value is something, and false if the value is `:none`.
  */
-function isDefined(option: A | :none): Boolean where A = !isEmpty(option)
+function isDefined(option: A | #none): Boolean where A = !isEmpty(option)

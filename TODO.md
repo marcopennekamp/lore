@@ -29,7 +29,7 @@
 - We should find a symmetric syntax for map types.
 - Allow kebab case? This would be possible if we restrict subtraction to require proper spaces. The downside is that this is potentially very confusing.
   - `hello-world` is an identifier "hello-world".
-  - `:syntax-error` is a symbol "syntax-error".
+  - `#syntax-error` is a symbol "syntax-error".
   - `syntax - error` is an arithmetic operation.
   - `syntax -error` is the same arithmetic operation.
   - `syntax- error` are two identifiers "syntax-" and "error".

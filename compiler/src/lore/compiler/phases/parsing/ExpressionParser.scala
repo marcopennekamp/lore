@@ -235,7 +235,7 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     P(Index ~ "%{" ~ properties ~ "}").map(withPosition(ExprNode.ShapeValueNode))
   }
 
-  private def symbol[_: P]: P[ExprNode.SymbolValueNode] = P(Index ~ ":" ~ identifier).map(withPosition(ExprNode.SymbolValueNode))
+  private def symbol[_: P]: P[ExprNode.SymbolValueNode] = P(Index ~ "#" ~ identifier).map(withPosition(ExprNode.SymbolValueNode))
 
   /**
     * Parses both enclosed expressions and tuples using the same parser. If the number of expressions is exactly one,

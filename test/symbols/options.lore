@@ -1,8 +1,8 @@
 function test(): [String] = {
   let a = 'hello options'
-  let b = :none
-  let c: String | :none = 'test'
-  let d: String | :none = :none
+  let b = #none
+  let c: String | #none = 'test'
+  let d: String | #none = #none
 
   [
     toString(isEmpty(a)),

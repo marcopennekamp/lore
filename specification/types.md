@@ -34,7 +34,7 @@ A **type expression** is a representation of a particular type, built with the t
 
 - `{ a: A, b: B }` — **Shape types** describing structs (partially) and shape values.
 
-- `:name` — **Symboll types** describing symbol values.
+- `#name` — **Symbol types** describing symbol values.
 
 Note that the compiler immediately performs the following **simplifications** on sum and intersection types:
 
@@ -48,7 +48,7 @@ Type constructors have the following **precedence** (lowest priority first):
 &                               // intersection types
 =>							    // function types
 ->                              // map types
-() (,) [] { ... } :id (...) id  // unit, tuple, list, shape, symbol, enclosed, names
+() (,) [] { ... } #id (...) id  // unit, tuple, list, shape, symbol, enclosed, names
 ```
 
 
@@ -194,16 +194,16 @@ A shape or struct type A is the **subtype** of a shape type B if A contains all 
 
 ### Symbol Types
 
-A **symbol type** describes a specific symbol value. Only the symbol value called `name` can inhabit a symbol type `:name`. Symbol types are compiled such that they are interned at run time.
+A **symbol type** describes a specific symbol value. Only the symbol value `#name` can inhabit a symbol type `#name`. Symbol types are compiled such that they are interned at run time.
 
-The **purpose** of a symbol is to represent enumerated values, an error or success code, or an alternative to a value or result. For example, we can represent option types as `A | :none` where `A` is the type of the present value and `:none` signifies the empty option.
+The **purpose** of a symbol is to represent enumerated values, an error or success code, or an alternative to a value or result. For example, we can represent different color values as `#red | #green | #blue`.
 
 ###### Syntax Example
 
 ```
-:red | :green | :blue
-String | :none
-(String, Int) => (:ok | :error)
+#red | #green | #blue
+Real | #nan
+(String, Int) => (#ok | #error)
 ```
 
 
