@@ -1,0 +1,2 @@
+// TODO: This must not be Any, but rather any kind of symbol. We don't have a type for that yet, though.
+function symbolName(symbol: Any): String = dynamic[String]('Lore.symbols.name', symbol)
