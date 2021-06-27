@@ -1,0 +1,27 @@
+type DnaNucleotide = #a | #t | #g | #c
+type RnaNucleotide = #a | #u | #g | #c
+
+type Dna = [DnaNucleotide]
+type Rna = [RnaNucleotide]
+
+function transcribe(nucleotide: DnaNucleotide): RnaNucleotide
+function transcribe(n: #a): #u = #u
+function transcribe(n: #t): #a = #a
+function transcribe(n: #g): #c = #c
+function transcribe(n: #c): #g = #g
+
+function transcribe(dna: Dna): Rna = map(dna, transcribe)
+
+function toString(rna: Rna): String = flatten(map(rna, symbolName))
+
+function test(): [String] = {
+  let cases = [
+    [#a],
+    [#t],
+    [#g],
+    [#c],
+    [#a, #c, #g, #t, #g, #g, #t, #c, #t, #t, #a, #a]
+  ]
+
+  map(cases, dna => toString(transcribe(dna)))
+}
