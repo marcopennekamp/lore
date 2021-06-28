@@ -13,7 +13,7 @@ trait ExpressionVerificationVisitor extends ExpressionVisitor[Unit, Verification
   override def visit(expression: VariableDeclaration)(value: Unit): Result = verify(expression)
   override def visit(expression: Assignment)(target: Unit, value: Unit): Result = verify(expression)
   override def visit(expression: Block)(expressions: Vector[Unit]): Result = verify(expression)
-  override def visit(expression: VariableAccess): Result = verify(expression)
+  override def visit(expression: BindingAccess): Result = verify(expression)
   override def visit(expression: MemberAccess)(instance: Unit): Result = verify(expression)
   override def visit(expression: UnresolvedMemberAccess)(instance: Unit): Result = verify(expression)
   override def visit(expression: Literal): Result = verify(expression)

@@ -3,11 +3,11 @@ package lore.compiler.semantics.functions
 import lore.compiler.core.Compilation
 import lore.compiler.feedback.Feedback
 import lore.compiler.phases.transpilation.RuntimeNames
-import lore.compiler.semantics.scopes.Variable
+import lore.compiler.semantics.scopes.Binding
 import lore.compiler.target.Target
 import lore.compiler.types.TupleType
 
-case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefinition]) extends Variable {
+case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefinition]) extends Binding {
 
   val hierarchy: DispatchHierarchy = DispatchHierarchyBuilder.build(this)
 

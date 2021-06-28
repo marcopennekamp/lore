@@ -4,7 +4,7 @@ import lore.compiler.core.Compilation.Verification
 import lore.compiler.phases.constraints.SignatureConstraints
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.FunctionDefinition
-import lore.compiler.semantics.scopes.FunctionVariableScope
+import lore.compiler.semantics.scopes.FunctionBindingScope
 
 /**
   * For a given function, builds a semantic expression tree from the body's abstract syntax tree. It infers and checks
@@ -24,7 +24,7 @@ object FunctionTransformer {
           node,
           function.signature.outputType,
           function.typeScope,
-          new FunctionVariableScope(function.signature, registry.variableScope),
+          new FunctionBindingScope(function.signature, registry.bindingScope),
         )
       }.toCompiledOption
 

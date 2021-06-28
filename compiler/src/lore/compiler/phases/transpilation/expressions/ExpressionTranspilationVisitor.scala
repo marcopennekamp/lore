@@ -36,7 +36,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   override def visit(expression: Block)(expressions: Vector[Chunk]): Chunk = Chunk.sequence(expressions)
 
-  override def visit(expression: VariableAccess): Chunk = Chunk.expression(expression.variable.targetVariable)
+  override def visit(expression: BindingAccess): Chunk = Chunk.expression(expression.binding.targetVariable)
 
   override def visit(expression: MemberAccess)(instance: Chunk): Chunk = {
     instance.mapExpression(_.prop(expression.member.name))

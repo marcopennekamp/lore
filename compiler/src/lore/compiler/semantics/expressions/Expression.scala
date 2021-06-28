@@ -4,7 +4,7 @@ import lore.compiler.core.{CompilationException, Position, Positioned}
 import lore.compiler.inference.InferenceVariable
 import lore.compiler.semantics.functions.{CallTarget, FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
-import lore.compiler.semantics.scopes.{LocalVariable, TypedVariable}
+import lore.compiler.semantics.scopes.{Variable, TypedBinding}
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.types._
 
@@ -21,11 +21,15 @@ object Expression {
   case class Return(value: Expression, position: Position) extends Expression.Apply(BasicType.Nothing)
 
   case class VariableDeclaration(
-    variable: LocalVariable, value: Expression, position: Position,
+    variable: Variable,
+    value: Expression,
+    position: Position,
   ) extends Expression.Apply(TupleType.UnitType)
 
   case class Assignment(
-    target: Expression.Access, value: Expression, position: Position,
+    target: Expression.Access,
+    value: Expression,
+    position: Position,
   ) extends Expression.Apply(TupleType.UnitType)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -47,9 +51,9 @@ object Expression {
     def isMutable: Boolean
   }
 
-  case class VariableAccess(variable: TypedVariable, position: Position) extends Expression.Apply(variable.tpe) with Access {
-    override val name: String = variable.name
-    override val isMutable: Boolean = variable.isMutable
+  case class BindingAccess(binding: TypedBinding, position: Position) extends Expression.Apply(binding.tpe) with Access {
+    override val name: String = binding.name
+    override val isMutable: Boolean = binding.isMutable
   }
 
   case class MemberAccess(instance: Expression, member: Member, position: Position) extends Expression.Apply(member.tpe) with Access {
@@ -203,5 +207,5 @@ object Expression {
       this.copy(extractors.zip(collections).map { case (extractor, collection) => extractor.copy(collection = collection) })
     }
   }
-  case class Extractor(variable: LocalVariable, collection: Expression)
+  case class Extractor(variable: Variable, collection: Expression)
 }

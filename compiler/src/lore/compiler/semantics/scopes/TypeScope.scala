@@ -9,8 +9,9 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
   * A scope that provides access to types.
   */
 trait TypeScope extends Scope[Type] {
-  // TODO: If we were writing the compiler in Lore, this could be declared right in Scope with a receiving type of `A & { name: String }`.
   def register(entry: NamedType)(implicit position: Position): Verification = super.register(entry.name, entry)
+
+  override def entryLabel: String = "type"
 }
 
 /**

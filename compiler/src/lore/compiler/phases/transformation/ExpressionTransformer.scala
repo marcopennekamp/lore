@@ -6,7 +6,7 @@ import lore.compiler.feedback.TypingFeedback.SubtypeExpected
 import lore.compiler.inference.Inference
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
-import lore.compiler.semantics.scopes.{TypeScope, VariableScope}
+import lore.compiler.semantics.scopes.{TypeScope, BindingScope}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.types.{TupleType, Type}
@@ -22,9 +22,9 @@ object ExpressionTransformer {
     node: ExprNode,
     expectedType: Type,
     typeScope: TypeScope,
-    variableScope: VariableScope,
+    bindingScope: BindingScope,
   )(implicit registry: Registry): Compilation[Expression] = {
-    val visitor = new InferringExpressionTransformationVisitor(expectedType, typeScope, variableScope)
+    val visitor = new InferringExpressionTransformationVisitor(expectedType, typeScope, bindingScope)
 
     for {
       expression <- TopLevelExprVisitor.visitCompilation(visitor)(node)

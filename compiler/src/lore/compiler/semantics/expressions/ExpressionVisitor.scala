@@ -13,7 +13,7 @@ trait ExpressionVisitor[A, B] {
 
   // Expressions
   def visit(expression: Block)(expressions: Vector[A]): B
-  def visit(expression: VariableAccess): B
+  def visit(expression: BindingAccess): B
   def visit(expression: MemberAccess)(instance: A): B
   def visit(expression: UnresolvedMemberAccess)(instance: A): B = throw CompilationException("UnresolvedMemberAccess is not supported by this visitor.")
   def visit(expression: Literal): B
@@ -55,7 +55,7 @@ object ExpressionVisitor {
 
       // Expressions
       case node@Block(expressions, _) => visitor.visit(node)(expressions.map(rec))
-      case node@VariableAccess(_, _) => visitor.visit(node)
+      case node@BindingAccess(_, _) => visitor.visit(node)
       case node@MemberAccess(instance, _, _) => visitor.visit(node)(rec(instance))
       case node@UnresolvedMemberAccess(instance, _, _, _) => visitor.visit(node)(rec(instance))
       case node@Literal(_, _, _) => visitor.visit(node)
@@ -92,7 +92,7 @@ object ExpressionVisitor {
 
       // Expressions
       case node@Block(expressions, _) => expressions.map(rec).simultaneous.flatMap(visitor.visit(node))
-      case node@VariableAccess(_, _) => visitor.visit(node)
+      case node@BindingAccess(_, _) => visitor.visit(node)
       case node@MemberAccess(instance, _, _) => rec(instance).flatMap(visitor.visit(node))
       case node@UnresolvedMemberAccess(instance, _, _, _) => rec(instance).flatMap(visitor.visit(node))
       case node@Literal(_, _, _) => visitor.visit(node)

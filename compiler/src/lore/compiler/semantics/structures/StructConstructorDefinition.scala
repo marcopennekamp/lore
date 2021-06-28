@@ -3,14 +3,14 @@ package lore.compiler.semantics.structures
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.phases.transpilation.RuntimeNames
 import lore.compiler.semantics.functions.FunctionSignature
-import lore.compiler.semantics.scopes.TypedVariable
+import lore.compiler.semantics.scopes.TypedBinding
 import lore.compiler.target.Target
 import lore.compiler.types.FunctionType
 
 /**
   * Represents the call-style constructor of the given struct.
   */
-case class StructConstructorDefinition(struct: StructDefinition) extends Positioned with TypedVariable {
+case class StructConstructorDefinition(struct: StructDefinition) extends Positioned with TypedBinding {
   override val position: Position = struct.position
   override val name: String = struct.name
   override lazy val tpe: FunctionType = signature.functionType

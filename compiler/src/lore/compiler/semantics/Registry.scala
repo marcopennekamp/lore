@@ -3,9 +3,9 @@ package lore.compiler.semantics
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException, Position}
 import lore.compiler.feedback.Feedback
-import lore.compiler.semantics.Registry.{MultiFunctionNotFound, RegistryVariableNotFound, TypeNotFound}
+import lore.compiler.semantics.Registry.MultiFunctionNotFound
 import lore.compiler.semantics.functions.MultiFunctionDefinition
-import lore.compiler.semantics.scopes.{TypeScope, Variable, VariableScope}
+import lore.compiler.semantics.scopes.{TypeScope, Binding, BindingScope}
 import lore.compiler.semantics.structures._
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions._
@@ -100,7 +100,6 @@ class Registry {
     override protected def add(name: String, entry: Type): Unit = {
       throw new UnsupportedOperationException(s"You may not add types to the Registry via its TypeScope interface. Name: $name. Type: $entry.")
     }
-    override protected def unknownEntry(name: String)(implicit position: Position): Feedback.Error = TypeNotFound(name)
   }
 
   /**
@@ -159,14 +158,13 @@ class Registry {
   def getStructConstructor(name: String): Option[StructConstructorDefinition] = getStructType(name).map(_.definition.constructor)
 
   /**
-    * The global variable scope backed by the registry, containing multi-functions and struct constructors.
+    * The global binding scope backed by the registry, containing multi-functions and struct constructors.
     */
-  val variableScope: VariableScope = new VariableScope {
-    override protected def local(name: String): Option[Variable] = getMultiFunction(name).orElse(getStructConstructor(name))
-    override protected def add(name: String, entry: Variable): Unit = {
-      throw new UnsupportedOperationException(s"You may not add variables to the Registry via its VariableScope interface. Name: $name. Variable: $entry.")
+  val bindingScope: BindingScope = new BindingScope {
+    override protected def local(name: String): Option[Binding] = getMultiFunction(name).orElse(getStructConstructor(name))
+    override protected def add(name: String, entry: Binding): Unit = {
+      throw new UnsupportedOperationException(s"You may not add bindings to the Registry via its BindingScope interface. Name: $name. Binding: $entry.")
     }
-    override protected def unknownEntry(name: String)(implicit position: Position): Feedback.Error = RegistryVariableNotFound(name, position)
   }
 
 }
@@ -178,9 +176,5 @@ object Registry {
 
   case class MultiFunctionNotFound(name: String)(implicit position: Position) extends Feedback.Error(position) {
     override def message = s"The multi-function $name does not exist in the current scope."
-  }
-
-  case class RegistryVariableNotFound(name: String, override val position: Position) extends Feedback.Error(position) {
-    override def message = s"The multi-function or struct constructor $name does not exist in the current scope."
   }
 }

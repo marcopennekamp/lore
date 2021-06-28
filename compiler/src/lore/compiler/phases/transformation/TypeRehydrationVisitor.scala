@@ -5,7 +5,7 @@ import lore.compiler.inference.Inference.{Assignments, AssignmentsExtension}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression._
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
-import lore.compiler.semantics.scopes.{LocalVariable, TypedVariable}
+import lore.compiler.semantics.scopes.{Variable, TypedBinding}
 import lore.compiler.types.{ListType, TupleType, Type}
 
 /**
@@ -16,7 +16,7 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
   override def visit(expression: Return)(value: Expression): Expression = expression.copy(value)
 
   override def visit(expression: VariableDeclaration)(value: Expression): Expression = expression.copy(
-    variable = instantiateLocalVariable(expression.variable),
+    variable = instantiateVariable(expression.variable),
     value = value
   )
 
@@ -27,8 +27,8 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
 
   override def visit(expression: Block)(expressions: Vector[Expression]): Expression = expression.copy(expressions)
 
-  override def visit(expression: VariableAccess): Expression = expression.copy(
-    variable = instantiateVariable(expression.variable)
+  override def visit(expression: BindingAccess): Expression = expression.copy(
+    binding = instantiateBinding(expression.binding)
   )
 
   override def visit(expression: MemberAccess)(instance: Expression): Expression = expression.copy(instance)
@@ -109,18 +109,18 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
   override def visit(expression: ForLoop)(collections: Vector[Expression], body: Expression): Expression = {
     val newLoop = expression.withCollections(collections)
     newLoop.copy(
-      extractors = newLoop.extractors.map(extractor => extractor.copy(instantiateLocalVariable(extractor.variable))),
+      extractors = newLoop.extractors.map(extractor => extractor.copy(instantiateVariable(extractor.variable))),
       body = body,
       tpe = instantiateLoopResultType(expression.tpe)
     )
   }
 
-  private def instantiateVariable(variable: TypedVariable): TypedVariable = variable match {
-    case variable: LocalVariable => instantiateLocalVariable(variable)
+  private def instantiateBinding(binding: TypedBinding): TypedBinding = binding match {
+    case variable: Variable => instantiateVariable(variable)
     case v => v
   }
 
-  private def instantiateLocalVariable(variable: LocalVariable): LocalVariable = variable.copy(tpe = assignments.instantiate(variable.tpe))
+  private def instantiateVariable(variable: Variable): Variable = variable.copy(tpe = assignments.instantiate(variable.tpe))
 
   /**
     * Instantiates the result type of the loop, simplifying [Unit] to Unit to cover "no result" loops.

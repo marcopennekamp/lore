@@ -11,7 +11,7 @@ import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
-import lore.compiler.semantics.scopes.{LocalVariable, TypeScope, TypedVariable, VariableScope}
+import lore.compiler.semantics.scopes.{Variable, TypeScope, TypedBinding, BindingScope}
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.types._
@@ -30,15 +30,15 @@ class InferringExpressionTransformationVisitor(
   typeScope: TypeScope,
 
   /**
-    * The variable scope of the surrounding code, such as a function scope.
+    * The binding scope of the surrounding code, such as a function scope.
     */
-  variableScope: VariableScope,
+  bindingScope: BindingScope,
 )(implicit registry: Registry) extends TopLevelExprVisitor[Expression, Compilation] {
 
   import ExprNode._
   import TopLevelExprNode._
 
-  val scopeContext = new ScopeContext(variableScope)
+  val scopeContext = new ScopeContext(bindingScope)
   implicit val typeScopeImplicit: TypeScope = typeScope
 
   // These typing judgments should contain even trivial judgments that could be resolved now. If for example all types
@@ -58,7 +58,7 @@ class InferringExpressionTransformationVisitor(
           typingJudgments = typingJudgments :+ TypingJudgment.MultiFunctionValue(functionType, mf, position)
           Expression.MultiFunctionValue(mf, functionType, position)
 
-        case variable: TypedVariable => Expression.VariableAccess(variable, position)
+        case binding: TypedBinding => Expression.BindingAccess(binding, position)
       }
 
     case RealLiteralNode(value, position) => Expression.Literal(value, BasicType.Real, position).compiled
@@ -104,7 +104,7 @@ class InferringExpressionTransformationVisitor(
       }
 
       inferredType.map { tpe =>
-        val variable = LocalVariable(name, new InferenceVariable, isMutable)
+        val variable = Variable(name, new InferenceVariable, isMutable)
         scopeContext.currentScope.register(variable)
         typingJudgments = typingJudgments :+ TypingJudgment.Assign(variable.tpe, tpe, position)
         Expression.VariableDeclaration(variable, expression, position)
@@ -134,7 +134,7 @@ class InferringExpressionTransformationVisitor(
         //       is not optimal. Maybe we can come up with a better solution here.
         val variable = scopeContext.currentScope.get(name).getOrElse(
           throw CompilationException(s"The anonymous function parameter at $position should have a corresponding scope entry."),
-        ).asInstanceOf[TypedVariable]
+        ).asInstanceOf[TypedBinding]
         Expression.AnonymousFunctionParameter(name, variable.tpe, position)
       }
       scopeContext.closeScope()
@@ -267,7 +267,7 @@ class InferringExpressionTransformationVisitor(
     case SimpleCallNode(name, _, position) =>
       scopeContext.currentScope.resolve(name)(position).map {
         case mf: MultiFunctionDefinition => addJudgmentsFrom(FunctionTyping.multiFunctionCall(mf, expressions, node.position))
-        case variable: TypedVariable => transformValueCall(Expression.VariableAccess(variable, position), expressions, position)
+        case binding: TypedBinding => transformValueCall(Expression.BindingAccess(binding, position), expressions, position)
       }
 
     case node@DynamicCallNode(resultType, _, position) =>
@@ -338,7 +338,7 @@ class InferringExpressionTransformationVisitor(
       val elementType = new InferenceVariable
       typingJudgments = typingJudgments :+ TypingJudgment.ElementType(elementType, collection.tpe, position)
 
-      val localVariable = LocalVariable(variableName, elementType, isMutable = false)
+      val localVariable = Variable(variableName, elementType, isMutable = false)
       scopeContext.currentScope.register(localVariable)(position).map(_ => Expression.Extractor(localVariable, collection))
     }
 
@@ -382,7 +382,7 @@ class InferringExpressionTransformationVisitor(
           typeNode
             .map(TypeExpressionEvaluator.evaluate).toCompiledOption
             .map(_.getOrElse(new InferenceVariable))
-            .flatMap(tpe => scopeContext.currentScope.register(LocalVariable(name, tpe, isMutable = false))(position))
+            .flatMap(tpe => scopeContext.currentScope.register(Variable(name, tpe, isMutable = false))(position))
       }.simultaneous.verification
   }
 
@@ -408,11 +408,7 @@ object InferringExpressionTransformationVisitor {
   }
 
   case class StructExpected(name: String)(implicit position: Position) extends Feedback.Error(position) {
-    override def message: String = s"The name $name must refer to a struct."
-  }
-
-  case class FunctionExpected(variable: TypedVariable, override val position: Position) extends Feedback.Error(position) {
-    override def message: String = s"The variable ${variable.name} should be a function type, but is actually ${variable.tpe}."
+    override def message: String = s"The type $name must be a struct to be instantiated."
   }
 
 }

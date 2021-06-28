@@ -38,7 +38,7 @@ trait Scope[A] {
     */
   def resolve(name: String)(implicit position: Position): Compilation[A] = {
     get(name) match {
-      case None => Compilation.fail(unknownEntry(name))
+      case None => Compilation.fail(unknownEntry(name, position))
       case Some(entry) => entry.compiled
     }
   }
@@ -49,7 +49,7 @@ trait Scope[A] {
     */
   def register(name: String, entry: A)(implicit position: Position): Verification = {
     if (local(name).isDefined) {
-      Compilation.fail(alreadyDeclared(name))
+      Compilation.fail(alreadyDeclared(name, position))
     } else {
       add(name, entry)
       Verification.succeed
@@ -57,14 +57,20 @@ trait Scope[A] {
   }
 
   /**
-    * Creates an "unknown entry" error. You may override this to provide better error messages.
+    * The label of the entry this scope contains, such as a variable or a type. The label is used when "unknown entry"
+    * and "already declared" errors are created. You may override this to generate better error messages.
     */
-  protected def unknownEntry(name: String)(implicit position: Position): Feedback.Error = UnknownEntry(name)
+  protected def entryLabel: String = "entry"
 
   /**
-    * Creates an "already declared" error. You may override this to provide better error messages.
+    * Creates an "unknown entry" error.
     */
-  protected def alreadyDeclared(name: String)(implicit position: Position): Feedback.Error = AlreadyDeclared(name)
+  private def unknownEntry(name: String, position: Position): Feedback.Error = UnknownEntry(entryLabel, name, position)
+
+  /**
+    * Creates an "already declared" error.
+    */
+  private def alreadyDeclared(name: String, position: Position): Feedback.Error = AlreadyDeclared(entryLabel, name, position)
 
 }
 
@@ -75,21 +81,18 @@ abstract class BasicScope[A](override val parent: Option[Scope[A]]) extends Scop
 
   override protected def add(name: String, entry: A): Unit = {
     if (entries.contains(name)) {
-      throw CompilationException(s"An entry '$name' is already defined in the local scope and cannot be redefined.")
+      throw CompilationException(s"The $entryLabel $name is already defined in the local scope and cannot be redefined.")
     }
     entries.put(name, entry)
   }
 }
 
 object Scope {
-  // TODO: Specify what kind of entry is already declared/unknown. For example: "The current scope does not know a
-  //       type X."
-
-  case class AlreadyDeclared(name: String)(implicit position: Position) extends Feedback.Error(position) {
-    override def message = s"An entry '$name' has already been declared in the current scope."
+  case class AlreadyDeclared(label: String, name: String, override val position: Position) extends Feedback.Error(position) {
+    override def message = s"The $label $name has already been declared in the current scope."
   }
 
-  case class UnknownEntry(name: String)(implicit position: Position) extends Feedback.Error(position) {
-    override def message = s"The current scope does not know an entry '$name'."
+  case class UnknownEntry(label: String, name: String, override val position: Position) extends Feedback.Error(position) {
+    override def message = s"The $label $name does not exist in the current scope."
   }
 }
