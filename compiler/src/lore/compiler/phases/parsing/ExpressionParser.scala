@@ -56,7 +56,7 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
 
   private def ifElse[_: P]: P[ExprNode] = {
     P(Index ~ "if" ~ "(" ~ expression ~ ")" ~ topLevelExpression ~ ("else" ~ topLevelExpression).?)
-      .map { case (index, condition, onTrue, onFalse) => (index, condition, onTrue, onFalse.getOrElse(ExprNode.UnitNode(Position(fragment, index)))) }
+      .map { case (index, condition, onTrue, onFalse) => (index, condition, onTrue, onFalse.getOrElse(ExprNode.TupleNode(Vector.empty, Position(fragment, index)))) }
       .map(withPosition(ExprNode.IfElseNode))
   }
 
@@ -95,8 +95,8 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
         "!=" -> BinaryOperator[ExprNode](3, ExprNode.NotEqualsNode),
         "<" -> BinaryOperator[ExprNode](4, ExprNode.LessThanNode),
         "<=" -> BinaryOperator[ExprNode](4, ExprNode.LessThanEqualsNode),
-        ">" -> BinaryOperator[ExprNode](4, ExprNode.GreaterThanNode),
-        ">=" -> BinaryOperator[ExprNode](4, ExprNode.GreaterThanEqualsNode),
+        ">" -> BinaryOperator[ExprNode](4, ExprNode.greaterThan),
+        ">=" -> BinaryOperator[ExprNode](4, ExprNode.greaterThanEquals),
         ":+" -> BinaryOperator[ExprNode](5, ExprNode.AppendNode),
         "+" -> BinaryOperator[ExprNode](6, ExprNode.AdditionNode),
         "-" -> BinaryOperator[ExprNode](6, ExprNode.SubtractionNode),
@@ -242,10 +242,9 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     * it's simply an enclosed expression. Otherwise, it is a tuple.
     */
   private def enclosed[_: P]: P[ExprNode] = {
-    P(Index ~ "(" ~ (expression ~ ("," ~ expression).rep).? ~ ")").map {
-      case (index, None) => ExprNode.UnitNode(Position(fragment, index))
-      case (_, Some((expr, Seq()))) => expr
-      case (index, Some((left, expressions))) => ExprNode.TupleNode(left +: expressions.toVector, Position(fragment, index))
+    P(Index ~ "(" ~ expression.rep(sep = ",") ~ ")").map {
+      case (_, Seq(expr)) => expr
+      case (index, elements) => ExprNode.TupleNode(elements.toVector, Position(fragment, index))
     }
   }
 

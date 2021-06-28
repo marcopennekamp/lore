@@ -70,7 +70,6 @@ class InferringExpressionTransformationVisitor(
       }
     case BoolLiteralNode(value, position) => Expression.Literal(value, BasicType.Boolean, position).compiled
     case StringLiteralNode(value, position) => Expression.Literal(value, BasicType.String, position).compiled
-    case UnitNode(position) => Expression.Tuple(Vector.empty, position).compiled
 
     case FixedFunctionNode(name, typeExpressions, position) =>
       for {
@@ -170,8 +169,6 @@ class InferringExpressionTransformationVisitor(
       ).compiled
     case LessThanNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.LessThan, left, right, BasicType.Boolean, position).compiled
     case LessThanEqualsNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.LessThanEquals, left, right, BasicType.Boolean, position).compiled
-    case GreaterThanNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.LessThan, right, left, BasicType.Boolean, position).compiled
-    case GreaterThanEqualsNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.LessThanEquals, right, left, BasicType.Boolean, position).compiled
 
     // Collection operations.
     case AppendNode(_, _, position) =>

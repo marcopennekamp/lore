@@ -102,6 +102,7 @@ object Expression {
   case class MapConstruction(entries: Vector[MapEntry], tpe: Type, position: Position) extends Expression {
     def withEntries(entries: Vector[(Expression, Expression)]): MapConstruction = this.copy(entries.map(MapEntry.tupled))
   }
+
   case class MapEntry(key: Expression, value: Expression)
 
   case class ShapeValue(properties: Vector[ShapeProperty], position: Position) extends Expression {
@@ -140,6 +141,7 @@ object Expression {
       this.copy(arguments = arguments.zip(values).map { case (argument, value) => argument.copy(value = value) })
     }
   }
+
   object Instantiation {
     case class Argument(property: StructPropertyDefinition, value: Expression)
   }

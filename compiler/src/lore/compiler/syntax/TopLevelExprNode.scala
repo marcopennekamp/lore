@@ -30,9 +30,6 @@ object TopLevelExprNode {
 
 sealed trait ExprNode extends TopLevelExprNode
 object ExprNode {
-  // TODO: We could save a lot of nodes by turning Binary and Xary operations into their own node type (BinaryOperation,
-  //       XaryOperation) and giving them an Operator type instead of creating a bajillion case classes.
-
   /**
     * A cross-cutting node trait signifying the possible target of an assignment.
     */
@@ -65,9 +62,9 @@ object ExprNode {
   case class NotEqualsNode(left: ExprNode, right: ExprNode, position: Position) extends BinaryNode(left, right) with ExprNode
   case class LessThanNode(left: ExprNode, right: ExprNode, position: Position) extends BinaryNode(left, right) with ExprNode
   case class LessThanEqualsNode(left: ExprNode, right: ExprNode, position: Position) extends BinaryNode(left, right) with ExprNode
-  case class GreaterThanNode(left: ExprNode, right: ExprNode, position: Position) extends BinaryNode(left, right) with ExprNode
-  case class GreaterThanEqualsNode(left: ExprNode, right: ExprNode, position: Position) extends BinaryNode(left, right) with ExprNode
-  // TODO: We could save ourselves the greater than nodes.
+
+  def greaterThan(left: ExprNode, right: ExprNode, position: Position): LessThanNode = LessThanNode(right, left, position)
+  def greaterThanEquals(left: ExprNode, right: ExprNode, position: Position): LessThanEqualsNode = LessThanEqualsNode(right, left, position)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // String expressions.
@@ -79,11 +76,6 @@ object ExprNode {
   // Tuple expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class TupleNode(expressions: Vector[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
-
-  /**
-    * The unit tuple.
-    */
-  case class UnitNode(position: Position) extends LeafNode with ExprNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Anonymous functions and function values.
@@ -147,7 +139,7 @@ object ExprNode {
   case class SymbolValueNode(name: String, position: Position) extends LeafNode with ExprNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Block expressions. Note that blocks can hold statements.
+  // Block expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class BlockNode(expressions: Vector[TopLevelExprNode], position: Position) extends XaryNode(expressions) with ExprNode
 
