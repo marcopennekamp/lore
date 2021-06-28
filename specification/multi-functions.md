@@ -25,7 +25,7 @@ action bar(value: Real) {
 }
 ```
 
-This Lore code contains the functions `foo(Int)`, `foo(String)`, and `bar(Real)`. It contains two multi-functions `foo` and `bar`, the latter of which only has one function to invoke, making multiple dispatch for `bar` trivial. The `foo` multi-function is defined for `String` and `Int` single arguments.  The return types of the three functions are `Real`, `String`, and `Unit`. Their expression bodies are `number * 1.5`, `'$string ???'`, and `{ println(value) }`.
+This Lore code contains the functions `foo(Int)`, `foo(String)`, and `bar(Real)`. It contains two multi-functions `foo` and `bar`, the latter of which only has one function to invoke, making multiple dispatch for `bar` trivial. The `foo` multi-function is defined for `String` and `Int` single arguments. The return types of the three functions are `Real`, `String`, and `Unit`. Their expression bodies are `number * 1.5`, `'$string ???'`, and `{ println(value) }`.
 
 ##### Constraint on Return Types
 

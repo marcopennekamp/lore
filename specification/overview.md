@@ -21,3 +21,10 @@ To learn more about Lore, **take a look** at the following documents:
 - [**Versions:**](versions.md) Building a language is difficult, time-consuming, and also somewhat of a risk, especially considering the many experimental features that are at the core of Lore. Hence, I am implementing Lore with the approach of a minimum viable product, which I call minimum viable language. Instead of trying to get everything right at once, I am first building a core that can be slowly expanded. If you want to read about the features planned for the minimum viable language, as well as the features planned for updates *after* the initial stage, consult the linked document.
 
 You don't need to read these documents in **order**, but it would be beneficial to read up on types and multi-functions before you read about the other topics. There is simply no way around the very foundation of the language.
+
+Also consider taking a look at these **supplemental documents:**
+
+-  [**Scopes:**](scopes.md) A short overview of the different kinds of lexical scopes in Lore.
+
+
+
