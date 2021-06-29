@@ -25,15 +25,6 @@ object Subtyping {
         // A declared type d1 is a subtype of d2 if d1 and d2 are equal or any of d1's hierarchical supertypes equal
         // d2. It suffices to check for declared supertypes, since a shape supertype can never be a subtype of a
         // declared type.
-        // TODO: Once we have introduced covariant (and possibly contravariant) traits/structs, we will additionally have
-        //       to check whether d1's typeArguments are a subtype of d2's type arguments.
-        // TODO: Once we introduce parametric declared types, we might have to move this rule out of here.
-        // TODO: Now that we have "multiple inheritance", checking for a supertype has gone from being linear to possibly
-        //       a broad search up the hierarchy graph. There is a pretty simple way to make this more performant: Cache
-        //       all possible supertypes in each declared type, then use a hashed map to allow a quick lookup. Because
-        //       what we essentially have here is the question: Is d2 in the supertype map of d1? This optimization is
-        //       especially potent for the runtime, where we will have to figure out how to solve the subtyping question
-        //       for declared types in a performant manner!
         case d2: DeclaredType => return d1 == d2 || d1.declaredSupertypes.exists(isSubtype(_, d2))
 
         // Declared type/shape subtyping can be delegated to shape/shape subtyping by viewing the declared type as a shape
@@ -44,10 +35,6 @@ object Subtyping {
       }
 
       case s1: SumType => t2 match {
-        // TODO: The rule fails for nested sum types: (A | B) | C </= A | B | C. In general, it seems we have to look at
-        //       all possible subsets of s2 to generally decide this rule. This would be detrimental to run-time performance,
-        //       however, so we should see how this interacts with our sum type "normal form". I think if we keep sum types
-        //       in a flattened normal form, this sort of piece-by-piece comparison should yield the correct results.
         // A sum type s1 is the subtype of a sum type s2, if all types in s1 are also (possibly supertyped) in s2.
         case s2: SumType => return s1.parts.forall(sc1 => s2.parts.exists(sc2 => isSubtype(sc1, sc2)))
 

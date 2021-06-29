@@ -108,7 +108,6 @@ object TypeEncoder {
   def encode(tpe: Type): Vector[Byte] = writeType(tpe)
 
   private def writeType(t: Type): Vector[Byte] = t match {
-    // TODO: Order intersection and sum parts to disambiguate sets.
     case SumType(types) => Tag.variableSize(Kind.sum, types.size) +: types.toVector.flatMap(writeType)
     case IntersectionType(types) => Tag.variableSize(Kind.intersection, types.size) +: types.toVector.flatMap(writeType)
     case TupleType(elements) => Tag.variableSize(Kind.tuple, elements.size) +: elements.flatMap(writeType)

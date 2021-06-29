@@ -143,37 +143,19 @@ object Type {
   }
 
   /**
-    * Removes types from the list that are subtyped by other types in the list, essentially keeping the
-    * most specific types.
+    * Removes types from the list that are subtyped by other types in the list, essentially keeping the most specific
+    * types.
     */
   def mostSpecific(types: Vector[Type]): Vector[Type] = {
-    types.filterNot(t => types.exists(_ < t))
+    types.filterNot(t => types.exists(_ < t)).distinct
   }
 
   /**
-    * TODO: Doesn't feel quite right. Maybe `mostSpecific` should filter out duplicates.
-    */
-  def minOrEqual(t1: Type, t2: Type): Option[Type] = {
-    if (t1 <= t2) Some(t1)
-    else if (t2 <= t1) Some(t2)
-    else None
-  }
-
-  /**
-    * Removes types from the list that are supertyped by other types in the list, essentially keeping the
-    * most general types.
+    * Removes types from the list that are supertyped by other types in the list, essentially keeping the most general
+    * types.
     */
   def mostGeneral(types: Vector[Type]): Vector[Type] = {
-    types.filterNot(t => types.exists(t < _))
-  }
-
-  /**
-    * TODO: Doesn't feel quite right. Maybe `mostGeneral` should filter out duplicates.
-    */
-  def maxOrEqual(t1: Type, t2: Type): Option[Type] = {
-    if (t1 >= t2) Some(t1)
-    else if (t2 >= t1) Some(t2)
-    else None
+    types.filterNot(t => types.exists(t < _)).distinct
   }
 
   /**
@@ -184,9 +166,6 @@ object Type {
     * @return A list of distinct abstract-resolved direct subtypes.
     */
   def abstractResolvedDirectSubtypes(t: Type)(implicit registry: Registry): Vector[Type] = {
-    // TODO: ARDS is confusing terminology. "Abstract resolved" makes little sense. What we are actually doing is to
-    //       specialize a given type if it is abstract. So maybe "specializeAbstractTypes" would be better terminology?
-
     t match {
       case _ if !Type.isAbstract(t) => Vector(t)
       case dt: DeclaredType => registry.declaredTypeHierarchy.getDirectSubtypes(dt)

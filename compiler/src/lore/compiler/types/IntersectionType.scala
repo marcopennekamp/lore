@@ -30,10 +30,6 @@ object IntersectionType {
       case t => Vector(t)
     }
 
-    // TODO: Can't tuple types be combined, too?
-    //          (A, B) & (C, D) = (A & C, B & D)
-    //       In general, normalize covariant and contravariant types: https://dotty.epfl.ch/docs/reference/new-types/intersection-types-spec.html
-
     val (noShapes, shapes) = flattened.separateByType[ShapeType]
     val shapesCombined = if (shapes.length > 1) {
       noShapes :+ ShapeType.combine(shapes)

@@ -28,9 +28,12 @@
 
 ##### Type System
 
-- Support intersection and sum types in TypeVariableAllocation.
-- We could theoretically introduce a limited form of ambiguity analysis at compile-time: For each function `f(a: A, b: B, ...)`, get a list of possible subtypes (mostly trait subtypes) and simulate dispatch with these types. If any of the inputs result in an ambiguity, raise at least a warning.    
+- Intersection type construction: Tuple types can be combined: `(A, B) & (C, D) = (A & C, B & D)`. In general, we can normalize covariant and contravariant types: https://dotty.epfl.ch/docs/reference/new-types/intersection-types-spec.html.
+  - The `Type.tupled` in the LUB case for functions is a workaround for the lack of tuple combining when constructing intersection types.
 - Merge Real and Int into a Number type (named Number or something similar). There is no advantage in keeping these two apart when the underlying runtime system has only one numeric type. The subtyping relationship `Int <: Real` is awkward as well.
+- Turn map keys and values into covariant/contravariant type variables if possible.
+- Support intersection and sum types in TypeVariableAllocation.
+- We could theoretically introduce a limited form of ambiguity analysis at compile-time: For each function `f(a: A, b: B, ...)`, get a list of possible subtypes (mostly trait subtypes) and simulate dispatch with these types. If any of the inputs result in an ambiguity, raise at least a warning.
 
 ##### CLI
 
@@ -51,7 +54,7 @@
 
 #### Testing
 
-- We probably should remove the parser tests once we have automated Lore program testing. It neatly covers aspects of the parser. We might design some Lore test programs based on the current parser tests, to catch syntactical strangeness. (The biggest argument in favor of throwing out parser testing is that it slows down prototyping syntax heavily. A test that checks some Lore program's output is much easier to write than a unit test relying on the compiler's internal parsing representation.)
+- ConstructionSpec: Test SumType.construct.
 - Figure out which portions of the compiler and runtime to unit test.
 - We should ideally invest in a system that can test the parts that are replicated in both the compiler and the runtime with the same values. This system should read type relationships from text files and then execute tests. This is crucial because as we discover type system bugs, we should add test cases that cover those bugs. 
   - Idea: The system can be implemented on the compiler side. It would have two parts: (1) immediately executing the typing tests with the compiler subtyping, equality, and fit functions. (2) Compiling the typing tests to Javascript and using the runtime subtyping, equality, and fit functions. This would allow us to reuse the existing type parser even for the runtime tests and also allow us to parse the custom test format using fastparse. 
@@ -78,6 +81,7 @@
 
 ##### Architecture
 
+- Rewrite TypeVariableAllocation (compiler) with immutability.
 - Can we split the type inference phase from the transformation phase?
 - Clean up ExpressionTransformationVisitor by moving more functionality to helper objects like ExpressionTransformationHelper.
   - Reconsider some names, as ExpressionTransformation and StatementTransformation aren't similar in functionality even though their names suggest so.
@@ -85,7 +89,7 @@
 
 ##### Terminology
 
-- *Currently no TODOs.*
+- ARDS is confusing terminology. "Abstract resolved" makes little sense. What we are actually doing is to specialize a given type if it is abstract. So maybe "specializeAbstractTypes" would be better terminology? (See `Type.abstractResolvedDirectSubtypes`.)
 
 ##### Clean-Up
 

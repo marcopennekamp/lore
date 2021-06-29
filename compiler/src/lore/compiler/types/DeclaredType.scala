@@ -12,10 +12,6 @@ trait DeclaredType extends NamedType {
     */
   def supertypes: Vector[Type]
 
-  // TODO: A supertype list that contains ALL supertypes transitively without removing subsumed types, which could
-  //       then be used to very quickly look up whether this type is a subtype of a given type without having to
-  //       run up the supertype tree. This optimization is especially important for the runtime.
-
   /**
     * The definition associated with this type.
     */

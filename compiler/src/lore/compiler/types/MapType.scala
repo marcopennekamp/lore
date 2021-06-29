@@ -2,8 +2,6 @@ package lore.compiler.types
 
 import scala.util.hashing.MurmurHash3
 
-// TODO: Can we make maps covariant if they are immutable?
-
 /**
   * A type that describes immutable maps. Maps are invariant.
   */

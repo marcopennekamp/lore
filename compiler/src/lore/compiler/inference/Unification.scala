@@ -32,18 +32,18 @@ object Unification {
     val bounds2 = InferenceVariable.bounds(iv2, assignments)
 
     val compilationLower = if (boundTypes.contains(BoundType.Lower)) {
-      val lower = Type.maxOrEqual(bounds1.lower, bounds2.lower) match {
-        case Some(t) => t
-        case None => return Compilation.fail(EqualTypesExpected(bounds1.lower, bounds2.lower, context))
+      val lower = Type.mostGeneral(Vector(bounds1.lower, bounds2.lower)) match {
+        case Vector(t) => t
+        case _ => return Compilation.fail(EqualTypesExpected(bounds1.lower, bounds2.lower, context))
       }
 
       narrowLowerBound(assignments, iv1, lower, context).flatMap(narrowLowerBound(_, iv2, lower, context))
     } else Compilation.succeed(assignments)
 
     compilationLower.flatMap { assignments2 =>
-      val upper = Type.minOrEqual(bounds1.upper, bounds2.upper) match {
-        case Some(t) => t
-        case None => return Compilation.fail(EqualTypesExpected(bounds1.upper, bounds2.upper, context))
+      val upper = Type.mostSpecific(Vector(bounds1.upper, bounds2.upper)) match {
+        case Vector(t) => t
+        case _ => return Compilation.fail(EqualTypesExpected(bounds1.upper, bounds2.upper, context))
       }
 
       narrowUpperBound(assignments2, iv1, upper, context).flatMap(narrowUpperBound(_, iv2, upper, context))

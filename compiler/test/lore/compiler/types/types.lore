@@ -1,5 +1,5 @@
 /**
- * This file contains definitions for Least Upper Bound and Subtyping/Fit tests.
+ * This file contains definitions for type tests.
  */
 
 trait Animal
@@ -26,25 +26,29 @@ trait Status
 trait Healthy extends Status
 trait Sick extends Status
 
-// TODO: Port these traits/structs to use shape types once we've implemented them.
 trait Hashable
 
 trait Wheel extends Hashable
 struct CoolWheel extends Wheel
 struct CheapWheel extends Wheel
-/* trait Engine extends Hashable
+
+type +Wheel = { wheel: Wheel }
+
+trait Engine extends Hashable
 struct GasEngine extends Engine
 struct ElectricEngine extends Engine
+
+type +Engine = { engine: Engine }
 
 trait Car extends +Wheel, +Engine
 
 trait Cycle extends +Wheel
 
 struct Motorcycle extends Cycle {
-  component Wheel
-  component Engine
+  wheel: Wheel
+  engine: Engine
 }
 
 struct Bicycle extends Cycle {
-  component Wheel
-} */
+  wheel: Wheel
+}

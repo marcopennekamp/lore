@@ -71,12 +71,7 @@ object LeastUpperBound {
       // which is then irreducible and leads to weird types like `Animal & (Cat | Healthy) & (Sick | Penguin) & Status`.
       // Defaulting to Any immediately removes these parts from the intersection type, so we only include types in
       // the intersection which add useful information.
-      // TODO: Is this algorithm the same when applied via reduction (reducing to the LUB by pairs) and to a list
-      //       of intersection types? That is, does the following hold: LUB(LUB(A, B), C) = LUB(A, B, C)?
       case (t1: IntersectionType, t2: IntersectionType) =>
-        // TODO: When calling lubNoDefaultSum, should we pass the "no default to sum" setting down the call tree,
-        //       actually? Or should this be confined to the immediate concern of having a correct candidate algorithm?
-        //       We need to test this with more complex examples, though they should still make sense, of course.
         val candidates = for { c1 <- t1.parts; c2 <- t2.parts } yield lubNoDefaultSum(c1, c2)
         IntersectionType.construct(candidates)
       case (t1: IntersectionType, _) => lubPassOnSettings(t1, IntersectionType(Set(t2)))
@@ -103,7 +98,6 @@ object LeastUpperBound {
       // merged as the reverse of a sum type: an intersection type.
       case (f1: FunctionType, f2: FunctionType) =>
         FunctionType(
-          // TODO: Ensure that tuple types are combined. See the corresponding TODO in IntersectionType.construct. The Type.tupled is a workaround.
           Type.tupled(IntersectionType.construct(Vector(f1.input, f2.input))),
           lubPassOnSettings(f1.output, f2.output)
         )

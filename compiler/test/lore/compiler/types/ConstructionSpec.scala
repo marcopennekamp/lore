@@ -4,8 +4,6 @@ class ConstructionSpec extends TypeSpec {
 
   import TypesExample._
 
-  // TODO: Test SumType.construct.
-
   "IntersectionType.construct" should "handle shape types correctly" in {
     IntersectionType.construct(Vector(
       ShapeType("x" -> BasicType.Real),

@@ -5,8 +5,6 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 import scala.collection.mutable
 
-// TODO: Can we rewrite this with immutability?
-
 /**
   * Allows checking whether type variable assignments are consistent.
   *
