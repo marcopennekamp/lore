@@ -13,7 +13,7 @@ sealed trait Expression extends Positioned {
 }
 
 object Expression {
-  abstract class Apply(override val tpe: Type) extends Expression
+  sealed abstract class Apply(override val tpe: Type) extends Expression
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Top-level expressions.

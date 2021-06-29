@@ -111,11 +111,13 @@ sealed trait Compilation[+A] {
   def verification: Verification = map(_ => ())
 }
 
+// TODO: Rename Result to Compilation.Success and Errors to Compilation.Failure. Make sure to namespace correctly.
 case class Result[+A](value: A, override val warnings: Vector[Feedback.Warning]) extends Compilation[A] {
   override def feedback: Vector[Feedback] = warnings
   override def isError = false
 }
 
+// TODO: Do we need the A type variable here? Can't Errors simply be a Compilation[Nothing]?
 case class Errors[+A](errors: Vector[Feedback.Error], override val warnings: Vector[Feedback.Warning]) extends Compilation[A] {
   override def feedback: Vector[Feedback] = errors ++ warnings
   override def isError = true

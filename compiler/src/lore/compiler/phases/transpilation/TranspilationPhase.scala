@@ -38,5 +38,6 @@ object TranspilationPhase {
     (symbolDeclarations ++ typeDeclarations ++ typeDeclarationDeferredDefinitions ++ Vector(introspectionInitialization) ++ functions).compiled
   }
 
+  // TODO: Add dividers as special target nodes.
   //private val divider = s"\n\n/* ${"=".repeat(74)} */\n\n"
 }

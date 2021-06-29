@@ -2,9 +2,12 @@
 
 #### Features
 
+- Implement type parameters for declared types.
+- Implement a module system.
+- Implement a pipe operator.
+- Implement trailing lambdas.
 - Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.
 - Implement an append operation for maps. In general, we will need to apply the same run-time typing considerations to maps.
-- Implement a module system.
 - Implement ranges (see `for comprehensions` in the specification).
 - Rethink properties: I don't like how shape properties are orthogonal to multi-functions right now. To use a shape, one is forced to ultimately give a property to an implementing struct. It would be much superior if properties could be declared "virtually", allowing traits to implement properties via some sort of function (perhaps even with dispatch on the accessed type). This feature should also simultaneously solve the question of "virtual/computed properties" posed in the geometry.lore example.
   - This would effectively mean that property types are always changeable and would either bar these kinds of properties to be open or would mean that we'd have to (a) rebuild the type each time the struct is used in dispatch or (b) disable the dispatch cache for multi-functions with shape types. Disallowing "virtual" properties to be open seems like an acceptable compromise, as the other options are far too detrimental on performance.
@@ -22,7 +25,6 @@
 - Turn the map type syntax into `#[A -> B]` to mirror the literal syntax.
 - Allow question marks in identifiers. I like how Clojure approaches booleans and this would fit nicely into Lore, I hope. Example: `isSuccessful` would become `successful?`.
 - Allow trailing commas.
-- We should find a symmetric syntax for map types.
 - Allow kebab case? This would be possible if we restrict subtraction to require proper spaces. The downside is that this is potentially very confusing.
   - `hello-world` is an identifier "hello-world".
   - `#syntax-error` is a symbol "syntax-error".
@@ -96,7 +98,7 @@
 ##### Clean-Up
 
 - Remove all examples from `/examples/` or turn them into test cases.
-- Clean all TODOs within the source code or add them to this TODO list.
+- Clean most TODOs within the source code or add them to this TODO list.
 - We should reconsider whether positions should be implicit parameters. It's probably better to explicitly state which functions should receive which positions, so that there can be no ambiguity. Implicits are also hard to reason about when we get multiple implicits in nested scopes.
 
 

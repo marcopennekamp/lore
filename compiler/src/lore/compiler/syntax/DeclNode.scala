@@ -6,6 +6,7 @@ import lore.compiler.core.Position
   * All top-level declaration nodes.
   */
 sealed trait DeclNode extends Node
+
 object DeclNode {
   /**
     * Function declarations. These include action declarations, which are resolved as "syntactic sugar" by the parser.

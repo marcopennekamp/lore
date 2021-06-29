@@ -11,21 +11,23 @@ import lore.compiler.syntax.Node.Index
   * operators and xary operators.
   */
 object PrecedenceParser {
-  sealed trait Operator {
+  sealed trait Operator[Operand <: Node] {
     def precedence: Int
     def isXary: Boolean = false
   }
 
   case class XaryOperator[Operand <: Node](
-    precedence: Int, constructor: (Vector[Operand], Position) => Operand
-  )(implicit fragment: Fragment) extends Operator {
+    precedence: Int,
+    constructor: (Vector[Operand], Position) => Operand,
+  )(implicit fragment: Fragment) extends Operator[Operand] {
     override def isXary: Boolean = true
     val constructorWithPosition: (Index, Vector[Operand]) => Operand = Node.withPositionUntupled(constructor)
   }
 
   case class BinaryOperator[Operand <: Node](
-    precedence: Int, constructor: (Operand, Operand, Position) => Operand
-  )(implicit fragment: Fragment) extends Operator {
+    precedence: Int,
+    constructor: (Operand, Operand, Position) => Operand,
+  )(implicit fragment: Fragment) extends Operator[Operand] {
     val constructorWithPosition: (Index, Operand, Operand) => Operand = Node.withPositionUntupled(constructor)
   }
 
@@ -40,14 +42,14 @@ object PrecedenceParser {
   def parser[Operand <: Node, _: P](
     operator: => P[Unit],
     operand: => P[Operand],
-    operatorMeta: Map[String, Operator],
+    operatorMeta: Map[String, Operator[Operand]],
   ): P[Operand] = P(operand ~ (operator.! ~ operand).rep).map { case (left, ops) =>
     var operandStack = List[Operand](left)
-    var operatorStack = List[Operator]()
+    var operatorStack = List[Operator[Operand]]()
 
     def handleOperator(): Unit = operatorStack.head match {
       // We process N operators of the same precedence with N+1 operands.
-      case topOp: XaryOperator[Operand] =>
+      case topOp@XaryOperator(_, _) =>
         val operators = operatorStack.span(_.precedence == topOp.precedence) match {
           case (operators, stack) => operatorStack = stack; operators
         }
@@ -71,7 +73,7 @@ object PrecedenceParser {
         operandStack = topOp.constructorWithPosition(index, operands.toVector) +: operandStack
 
       // We process one operator with two operands.
-      case topOp: BinaryOperator[Operand] =>
+      case topOp@BinaryOperator(_, _) =>
         operatorStack = operatorStack.drop(1)
 
         if (operandStack.length < 2) {

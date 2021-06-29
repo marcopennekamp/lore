@@ -35,7 +35,7 @@ object SimpleResolution {
         case Result((assignments2, judgments2), _) =>
           currentAssignments = assignments2
           currentJudgments = judgments2
-        case compilation: Errors[Nothing] => return compilation
+        case compilation@Errors(_, _) => return compilation.asInstanceOf[Errors[Nothing]]
       }
 
       Inference.logger.trace(s"New assignments:\n${currentAssignments.stringified}")

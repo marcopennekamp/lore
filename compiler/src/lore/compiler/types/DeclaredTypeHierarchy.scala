@@ -8,8 +8,6 @@ import scala.collection.mutable
 
 /**
   * A hierarchy of declared types to provide quick access to supertype/subtype relationships between structs and traits.
-  *
-  * TODO (shape): Do we need to include shape types here?
   */
 class DeclaredTypeHierarchy {
 
@@ -83,7 +81,6 @@ class DeclaredTypeHierarchy {
     assertCanContain(t1)
     assertCanContain(t2)
 
-    // TODO: We probably don't need this marking scheme. Instead, we can add items to different sets.
     sealed trait Status
     case object Unseen extends Status    // A type not yet seen.
     case object Marked extends Status    // An ancestor of t1.
