@@ -32,8 +32,7 @@ class FragmentParser(implicit fragment: Fragment) {
     fastparse.parse(fragment.input, fullFragment(_)) match {
       case Parsed.Failure(_, _, extra) =>
         val message = s"Parsing failure: ${extra.trace().aggregateMsg}"
-        // TODO: Give the correct index to the parsing error.
-        Compilation.fail(ParsingError(message, Position(fragment, 0)))
+        Compilation.fail(ParsingError(message, Position(fragment, extra.index)))
       case Parsed.Success(result, _) => result.compiled
     }
   }
