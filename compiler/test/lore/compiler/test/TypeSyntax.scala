@@ -15,7 +15,7 @@ trait TypeSyntax {
   val boolean: BasicType = BasicType.Boolean
   val string: BasicType = BasicType.String
 
-  implicit def toType(name: String)(implicit registry: Registry): Type = registry.getType(name).get
+  implicit def toType(name: String)(implicit registry: Registry): Type = registry.typeScope.get(name).get
 
   def tuple(elements: Type*): TupleType = TupleType(elements.toVector)
 

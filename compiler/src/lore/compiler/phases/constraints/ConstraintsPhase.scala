@@ -6,8 +6,8 @@ import lore.compiler.semantics.Registry
 object ConstraintsPhase {
 
   def process(implicit registry: Registry): Verification = {
-    val typeDefinitions = registry.getTypeDefinitions.values.toVector
-    val multiFunctions = registry.getMultiFunctions.values.toVector
+    val typeDefinitions = registry.typeDefinitions.values.toVector
+    val multiFunctions = registry.multiFunctions.values.toVector
     (
       typeDefinitions.map(DeclaredTypeConstraints.verify).simultaneous,
       multiFunctions.map(MultiFunctionConstraints.verify).simultaneous,

@@ -15,9 +15,8 @@ object TypeExpressionEvaluator {
   }
 
   def evaluate(expression: TypeExprNode)(implicit typeScope: TypeScope): Compilation[Type] = {
-    implicit val position: Position = expression.position
     expression match {
-      case TypeExprNode.IdentifierNode(name, _) => typeScope.resolve(name)
+      case TypeExprNode.IdentifierNode(name, position) => typeScope.resolve(name, position)
       case TypeExprNode.IntersectionNode(expressions, _) => expressions.map(evaluate).simultaneous.map(IntersectionType.construct)
       case TypeExprNode.SumNode(expressions, _) => expressions.map(evaluate).simultaneous.map(SumType.construct)
       case TypeExprNode.TupleNode(expressions, _) => expressions.map(evaluate).simultaneous.map(TupleType(_))

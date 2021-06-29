@@ -17,7 +17,7 @@ object CallTransformation {
     arguments: Vector[Expression],
     position: Position,
   )(implicit registry: Registry): Compilation[Expression.Call] = {
-    registry.resolveMultiFunction(functionName)(position).flatMap { mf =>
+    registry.resolveMultiFunction(functionName, position).flatMap { mf =>
       val inputType = TupleType(arguments.map(_.tpe))
       mf.dispatch(inputType, EmptyFit(mf, inputType, position), min => AmbiguousCall(mf, inputType, min, position)).map {
         instance => Expression.Call(CallTarget.MultiFunction(mf), arguments, instance.signature.outputType, position)

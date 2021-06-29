@@ -36,7 +36,7 @@ trait Scope[A] {
     * Resolves an entry with the given name from the closest scope. If it cannot be found, we return a
     * compilation error.
     */
-  def resolve(name: String)(implicit position: Position): Compilation[A] = {
+  def resolve(name: String, position: Position): Compilation[A] = {
     get(name) match {
       case None => Compilation.fail(unknownEntry(name, position))
       case Some(entry) => entry.compiled

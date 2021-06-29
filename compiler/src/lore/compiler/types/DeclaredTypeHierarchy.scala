@@ -1,63 +1,45 @@
 package lore.compiler.types
 
 import lore.compiler.core.CompilationException
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalax.collection.GraphEdge.DiEdge
-import scalax.collection.mutable.Graph
+import scalax.collection.GraphPredef.EdgeAssoc
+import scalax.collection.config.CoreConfig
+import scalax.collection.immutable.Graph
 
 import scala.collection.mutable
 
 /**
   * A hierarchy of declared types to provide quick access to supertype/subtype relationships between structs and traits.
   */
-class DeclaredTypeHierarchy {
+class DeclaredTypeHierarchy(declaredTypes: Vector[DeclaredType]) {
 
   /**
-    * The graph that holds the subtyping relationship. We start with Any as the first node.
+    * The graph that holds the subtyping relationship. Any is the root node.
     */
-  private val subtypingGraph: Graph[Type, DiEdge] = Graph(BasicType.Any)
-  private implicit val edgeFactory = DiEdge
-
-  /**
-    * Adds the given type and potentially its supertypes, if they aren't part of the hierarchy already. If the type to
-    * add is already part of the hierarchy, this method does nothing.
-    */
-  def addType(tpe: DeclaredType): Unit = {
-    if (subtypingGraph.contains(tpe)) return
-
-    if (tpe.declaredSupertypes.nonEmpty) {
-      tpe.declaredSupertypes.foreach { supertype =>
-        addType(supertype)
-        subtypingGraph.addEdge(supertype, tpe)
-      }
-    } else {
-      subtypingGraph.addEdge(BasicType.Any, tpe)
+  private val subtypingGraph: Graph[NamedType, DiEdge] = {
+    val edges = declaredTypes.flatMap {
+      tpe =>
+        tpe.declaredSupertypes
+          .asInstanceOf[Vector[NamedType]]
+          .map(_ ~> tpe)
+          .withDefault(BasicType.Any ~> tpe)
     }
 
-    // We should make sure that the graph is still acyclic and connected.
-    if (!subtypingGraph.isAcyclic) throw CompilationException(s"The type hierarchy is not acyclic anymore after adding type: $tpe.")
-    if (!subtypingGraph.isConnected) throw CompilationException(s"The type hierarchy is not connected anymore after adding type: $tpe.")
+    implicit val config: Graph.Config = CoreConfig()
+    val graph = Graph.from(edges) + BasicType.Any
+
+    if (graph.isCyclic) throw CompilationException(s"The declared type hierarchy must be acyclic, but is not.")
+    if (!graph.isConnected) throw CompilationException(s"The declared type hierarchy must be connected, but is not.")
+
+    graph
   }
 
   /**
-    * Asserts that the given type can be contained within the hierarchy. Only declared types and Any can be contained
-    * in the hierarchy.
+    * Returns all direct subtypes of the given declared type. If the given type cannot be found in the hierarchy, it is
+    * assumed that it does not have any direct subtypes and the empty list is returned.
     */
-  private def assertCanContain(tpe: Type): Unit = {
-    if (tpe != BasicType.Any && !tpe.isInstanceOf[DeclaredType]) {
-      throw CompilationException(s"Only declared types are contained in the type hierarchy. Attempted to retrieve type: $tpe.")
-    }
-  }
-
-  /**
-    * Returns all direct subtypes of the given type. `tpe` may either be Any oe a declared type. If the given type
-    * cannot be found in the hierarchy, it is assumed that it does not have any direct subtypes and the empty list
-    * is returned.
-    *
-    * @param tpe Either Any or a declared type.
-    * @return A list of distinct declared types.
-    */
-  def getDirectSubtypes(tpe: Type): Vector[Type] = {
-    assertCanContain(tpe)
+  def getDirectSubtypes(tpe: NamedType): Vector[NamedType] = {
     if (subtypingGraph.contains(tpe)) {
       // The resulting vector should contain only distinct elements. This is already given by the structure of the
       // type hierarchy, however. The given type will never be connected to the same subtype twice.
@@ -65,7 +47,7 @@ class DeclaredTypeHierarchy {
         // Since only the root may be Any, any possible direct subtype should be a declared type.
         case subtype: DeclaredType => subtype
         case subtype =>
-          throw CompilationException(s"The type $subtype should be a declared type, as it's a subtype in a type hierarchy.")
+          throw CompilationException(s"The type $subtype should be a declared type, as it's a subtype in a declared type hierarchy.")
       }
     } else Vector.empty
   }
@@ -74,20 +56,17 @@ class DeclaredTypeHierarchy {
     * Returns the least common supertype of two types found in the type hierarchy. This result is used by the algorithm
     * that computes the least upper bound of two arbitrary types.
     *
-    * If these two types have multiple traits as their least common ancestor, we return an intersection type
-    * composed of all these ancestors.
+    * If these two types have multiple traits as their least common ancestor, we return an intersection type composed
+    * of all these ancestors.
     */
-  def leastCommonSupertype(t1: Type, t2: Type): Type = {
-    assertCanContain(t1)
-    assertCanContain(t2)
-
+  def leastCommonSupertype(t1: DeclaredType, t2: DeclaredType): Type = {
     sealed trait Status
     case object Unseen extends Status    // A type not yet seen.
     case object Marked extends Status    // An ancestor of t1.
     case object Found extends Status     // One of the least common ancestors.
     case object Excluded extends Status  // A common ancestor, but not one of the least common ancestors.
 
-    val status = mutable.HashMap[Type, Status]()
+    val status = mutable.HashMap[NamedType, Status]()
 
     // Set all ancestors of t1 to Marked.
     reverseBfs(subtypingGraph.get(t1), node => {
@@ -102,8 +81,9 @@ class DeclaredTypeHierarchy {
       }
     })
 
-    // Set all Found ancestors of any Found node to Excluded.
     def getFoundTypes = status.toVector.filter { case (_, status) => status == Found }.map(_._1)
+
+    // Set all Found ancestors of any Found node to Excluded.
     getFoundTypes.foreach { tpe =>
       val node = subtypingGraph.get(tpe)
       node.diPredecessors.foreach { predecessor =>

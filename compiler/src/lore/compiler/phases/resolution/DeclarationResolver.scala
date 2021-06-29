@@ -1,108 +1,41 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, CompilationException, Position}
+import lore.compiler.core.Compilation.{FoldCompilationsExtension, ToCompilationExtension}
+import lore.compiler.core.{Compilation, Position}
 import lore.compiler.feedback.Feedback
-import lore.compiler.phases.resolution.DeclarationResolver.TypeAlreadyExists
-import lore.compiler.semantics.functions.FunctionDefinition
-import lore.compiler.semantics.scopes.TypeScope
+import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
 import lore.compiler.semantics.{Introspection, Registry}
-import lore.compiler.syntax.{DeclNode, TypeDeclNode, TypeExprNode}
+import lore.compiler.syntax.{DeclNode, TypeDeclNode}
 import lore.compiler.types.Type
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
-import scala.collection.mutable
+object DeclarationResolver {
 
-/**
-  * Declarations can occur unordered. This is not only true within a file, but especially across multiple files. We
-  * can declare trait hierarchies across Lore files, define functions on their own, and so on. The way in which
-  * types and definitions are represented within the compiler requires us to find an order in which we can properly
-  * resolve these types, especially traits, structs, and type aliases.
-  *
-  * The DeclarationResolver holds all top-level declarations across all files parsed by the Lore compiler
-  * still in AST form. While files are being parsed, it builds a hierarchy of types, which gives us the correct order
-  * in which we should, for example, build struct types and definitions. Once all type declarations have been
-  * turned into definitions, the DeclarationResolver builds a Registry object.
-  */
-class DeclarationResolver {
-  // TODO: We could move all this state into the resolve function and make it implicit.
-
-  private val typeDeclarations: mutable.HashMap[String, TypeDeclNode] = mutable.HashMap()
-  private val multiFunctionDeclarations: mutable.HashMap[String, Vector[DeclNode.FunctionNode]] = mutable.HashMap()
-  private val dependencyGraph: DependencyGraph = new DependencyGraph(new DependencyGraph.Owner {
-    override def hasTypeDeclaration(name: String): Boolean = typeDeclarations.contains(name)
-    override def getTypeDeclaration(name: String): Option[TypeDeclNode] = typeDeclarations.get(name)
-  })
-
-  /**
-    * Register a type declaration and add its type to the dependency graph.
-    */
-  private def addTypeDeclaration(declaration: TypeDeclNode): Verification = {
-    // Immediately stop the processing of this type declaration if the name is already taken.
-    if (typeDeclarations.contains(declaration.name) || Type.predefinedTypes.contains(declaration.name)) {
-      return Compilation.fail(TypeAlreadyExists(declaration))
-    }
-
-    // We have to filter out predefined types, as they may be mentioned in alias types or extended shape types,
-    // but do not need to take part in any declaration order.
-    val dependencyNames = (declaration match {
-      case TypeDeclNode.AliasNode(_, expr, _) => TypeExprNode.identifiers(expr)
-      case TypeDeclNode.StructNode(_, extended, _, _) => extended.flatMap(TypeExprNode.identifiers)
-      case TypeDeclNode.TraitNode(_, extended, _) => extended.flatMap(TypeExprNode.identifiers)
-    }).filterNot(Type.predefinedTypes.contains)
-
-    if (dependencyNames.nonEmpty) {
-      dependencyNames.foreach(dependency => dependencyGraph.add(declaration.name, dependency))
-    } else {
-      dependencyGraph.add(declaration.name, "Any")
-    }
-
-    typeDeclarations.put(declaration.name, declaration)
-    Verification.succeed
-  }
-
-  /**
-    * Register a function declaration with the multi-function collection of the same name.
-    */
-  private def addFunctionDeclaration(declaration: DeclNode.FunctionNode): Verification = {
-    multiFunctionDeclarations.updateWith(declaration.name) {
-      case None => Some(Vector(declaration))
-      case Some(functions) => Some(functions :+ declaration)
-    }
-    Verification.succeed
-  }
+  type TypeDeclarations = Map[String, TypeDeclNode]
 
   /**
     * Builds the registry from all declarations.
+    *
+    * We perform two separate passes over type declarations: (1) Resolve types and (2) resolve type definitions. This
+    * has the distinct advantage that we don't need to defer typings of parameters and members when resolving
+    * definitions, as all declared types have been added to the registry by then.
     */
   def resolve(declarations: Vector[DeclNode]): Compilation[Registry] = {
-    // Declare the registry as implicit now so that we don't have to break up the for-comprehension,
-    // which sadly doesn't support implicit variable declarations.
-    implicit lazy val registry: Registry = new Registry()
-    implicit lazy val typeScope: TypeScope = registry.typeScope
+    val typeDeclNodes = introspectionTypeDeclarations ++ declarations.filterType[TypeDeclNode]
+    val multiFunctionDeclarations = declarations.filterType[DeclNode.FunctionNode].groupBy(_.name)
 
     for {
-      _ <- addDeclarations(declarations)
+      typeDeclarations <- typeDeclNodes.foldSimultaneous(Map.empty: TypeDeclarations) {
+        case (typeDeclarations, declaration) => processTypeDeclaration(declaration, typeDeclarations)
+      }
+      typeResolutionOrder <- TypeDependencies.resolve(typeDeclarations)
 
-      // We perform two separate passes over type declarations:
-      //  1. Resolve types.
-      //  2. Resolve struct/trait definitions.
-      // This has the distinct advantage that we don't need to defer typings of parameters and members, as all types
-      // have been added to the registry by then.
+      types <- resolveTypesInOrder(typeDeclarations, typeResolutionOrder)
+      typeScope = ImmutableTypeScope(types, None)
 
-      typeResolutionOrder <- computeTypeResolutionOrder()
-      _ <- resolveTypeDeclarationsInOrder(typeResolutionOrder)
-      _ <- resolveTypeDefinitionsInOrder(typeResolutionOrder)
-      _ <- resolveMultiFunctions()
-    } yield registry
-  }
-
-  private def addDeclarations(declarations: Vector[DeclNode]): Verification = {
-    addIntrospectionTypeDeclaration()
-
-    declarations.map {
-      case function: DeclNode.FunctionNode => addFunctionDeclaration(function)
-      case tpe: TypeDeclNode => addTypeDeclaration(tpe)
-    }.simultaneous.verification
+      typeDefinitions <- resolveTypeDefinitionsInOrder(typeDeclarations, typeResolutionOrder)(typeScope)
+      multiFunctions <- resolveMultiFunctions(multiFunctionDeclarations)(typeScope)
+    } yield Registry(types, typeResolutionOrder, typeDefinitions, multiFunctions)
   }
 
   /**
@@ -110,69 +43,73 @@ class DeclarationResolver {
     * Lore types. The trait cannot be defined in Pyramid because the compiler needs to call the initialization function
     * of the Introspection API with the actual type.
     *
-    * TODO: This feels a bit hacky. Maybe we can find a better solution.
+    * TODO: We should refrain from keeping Pyramid optional and just add the trait to the core definitions. Then the
+    *       compiler can just discover the trait and generate the correct API call.
     */
-  private def addIntrospectionTypeDeclaration(): Verification = {
-    addTypeDeclaration(TypeDeclNode.TraitNode(Introspection.typeName, Vector.empty, Position.internal))
-  }
+  private val introspectionTypeDeclarations: Vector[TypeDeclNode] = Vector(
+    TypeDeclNode.TraitNode(Introspection.typeName, Vector.empty, Position.internal)
+  )
 
-  /**
-    * Computes the correct order in which to resolve type declarations.
-    */
-  private def computeTypeResolutionOrder(): Compilation[Vector[TypeDeclNode]] = {
-    dependencyGraph.computeTypeResolutionOrder().map { names =>
-      if (names.head != "Any") {
-        throw CompilationException("Any should be the first type in the type resolution order.")
-      }
-
-      // With .tail we exclude Any.
-      names.tail.map(typeDeclarations(_))
-    }
-  }
-
-  /**
-    * Resolve all type declarations in the proper resolution order and register them with the Registry.
-    */
-  private def resolveTypeDeclarationsInOrder(typeResolutionOrder: Vector[TypeDeclNode])(implicit registry: Registry): Verification = {
-    typeResolutionOrder.map { node =>
-      (node match {
-        case aliasNode: TypeDeclNode.AliasNode => TypeResolver.resolve(aliasNode).map(tpe => (aliasNode.name, tpe))
-        case structNode: TypeDeclNode.StructNode => TypeResolver.resolve(structNode).map(tpe => (tpe.name, tpe))
-        case traitNode: TypeDeclNode.TraitNode => TypeResolver.resolve(traitNode).map(tpe => (tpe.name, tpe))
-      }).map { case (name, tpe) => registry.registerType(name, tpe) }
-    }.simultaneous.verification
-  }
-
-  /**
-    * Resolve all type definitions in the proper resolution order and register them with the Registry. This function
-    * guarantees that definitions are returned in the type resolution order.
-    */
-  private def resolveTypeDefinitionsInOrder(typeResolutionOrder: Vector[TypeDeclNode])(implicit registry: Registry): Verification = {
-    typeResolutionOrder.map { node =>
-      (node match {
-        case _: TypeDeclNode.AliasNode => None
-        case structNode: TypeDeclNode.StructNode => Some(StructDefinitionResolver.resolve(structNode))
-        case traitNode: TypeDeclNode.TraitNode => Some(TraitDefinitionResolver.resolve(traitNode))
-      }).map(_.map(registry.registerTypeDefinition)).toCompiledOption
-    }.simultaneous.verification
-  }
-
-  /**
-    * Resolves and registers all multi-functions.
-    */
-  private def resolveMultiFunctions()(implicit registry: Registry): Verification = {
-    multiFunctionDeclarations.map { case (_, nodes) =>
-      MultiFunctionDefinitionResolver.resolve(nodes).map(registry.registerMultiFunction)
-    }.toVector.simultaneous.verification
-  }
-}
-
-object DeclarationResolver {
   case class TypeAlreadyExists(node: TypeDeclNode) extends Feedback.Error(node) {
     override def message = s"The type ${node.name} is already declared somewhere else."
   }
 
-  case class FunctionAlreadyExists(definition: FunctionDefinition) extends Feedback.Error(definition) {
-    override def message = s"The function ${definition.signature} is already declared somewhere else or has a type-theoretic duplicate."
+  private def processTypeDeclaration(declaration: TypeDeclNode, declarations: TypeDeclarations): Compilation[TypeDeclarations] = {
+    if (isTypeNameTaken(declaration.name, declarations)) {
+      Compilation.fail(TypeAlreadyExists(declaration))
+    } else {
+      Compilation.succeed(declarations + (declaration.name -> declaration))
+    }
   }
+
+  private def isTypeNameTaken(name: String, typeDeclarations: TypeDeclarations): Boolean = {
+    typeDeclarations.contains(name) || Type.predefinedTypes.contains(name)
+  }
+
+  private def resolveTypesInOrder(typeDeclarations: TypeDeclarations, typeResolutionOrder: Registry.TypeResolutionOrder): Compilation[Registry.Types] = {
+    typeResolutionOrder.foldSimultaneous(Type.predefinedTypes: Registry.Types) {
+      case (types, name) =>
+        implicit val typeScope: TypeScope = ImmutableTypeScope(types, None)
+        val compilation = typeDeclarations(name) match {
+          case aliasNode: TypeDeclNode.AliasNode => AliasTypeResolver.resolve(aliasNode)
+          case traitNode: TypeDeclNode.TraitNode => TraitTypeResolver.resolve(traitNode)
+          case structNode: TypeDeclNode.StructNode => StructTypeResolver.resolve(structNode)
+        }
+        compilation.map(tpe => types + (name -> tpe))
+    }
+  }
+
+  /**
+    * This function guarantees that definitions are returned in the type resolution order.
+    */
+  private def resolveTypeDefinitionsInOrder(
+    typeDeclarations: TypeDeclarations,
+    typeResolutionOrder: Registry.TypeResolutionOrder,
+  )(implicit typeScope: TypeScope): Compilation[Registry.TypeDefinitions] = {
+    typeResolutionOrder.foldSimultaneous(Map.empty: Registry.TypeDefinitions) {
+      case (typeDefinitions, name) =>
+        typeDeclarations(name) match {
+          case _: TypeDeclNode.AliasNode => typeDefinitions.compiled
+
+          case traitNode: TypeDeclNode.TraitNode =>
+            TraitDefinitionResolver
+              .resolve(traitNode)
+              .map(definition => typeDefinitions + (name -> definition))
+
+          case structNode: TypeDeclNode.StructNode =>
+            StructDefinitionResolver
+              .resolve(structNode)
+              .map(definition => typeDefinitions + (name -> definition))
+        }
+    }
+  }
+
+  private def resolveMultiFunctions(
+    multiFunctionDeclarations: Map[String, Vector[DeclNode.FunctionNode]],
+  )(implicit typeScope: TypeScope): Compilation[Registry.MultiFunctions] = {
+    multiFunctionDeclarations.map {
+      case (name, nodes) => MultiFunctionDefinitionResolver.resolve(nodes).map(name -> _)
+    }.toVector.simultaneous.map(_.toMap)
+  }
+
 }

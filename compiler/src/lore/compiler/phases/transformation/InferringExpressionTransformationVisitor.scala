@@ -49,9 +49,8 @@ class InferringExpressionTransformationVisitor(
   var typingJudgments: Vector[TypingJudgment] = Vector.empty
 
   override def visitLeaf(node: LeafNode): Compilation[Expression] = node match {
-    case VariableNode(name, _) =>
-      implicit val position: Position = node.position
-      scopeContext.currentScope.resolve(name).map {
+    case VariableNode(name, position) =>
+      scopeContext.currentScope.resolve(name, position).map {
         case mf: MultiFunctionDefinition =>
           // Multi-functions which aren't used in a simple call must be converted to function values immediately.
           val functionType = new InferenceVariable
@@ -74,7 +73,7 @@ class InferringExpressionTransformationVisitor(
     case FixedFunctionNode(name, typeExpressions, position) =>
       for {
         inputType <- typeExpressions.map(TypeExpressionEvaluator.evaluate).simultaneous.map(TupleType(_))
-        mf <- registry.resolveMultiFunction(name)(position)
+        mf <- registry.resolveMultiFunction(name, position)
         instance <- mf.dispatch(
           inputType,
           FixedFunctionEmptyFit(mf, inputType, position),
@@ -241,12 +240,12 @@ class InferringExpressionTransformationVisitor(
       Expression.ListConstruction(expressions, ListType(elementType), position).compiled
 
     case ObjectMapNode(structName, entryNodes, position) =>
-      implicit val pos: Position = position
-      registry.resolveType(structName).flatMap {
+      typeScope.resolve(structName, position).flatMap {
         case structType: StructType =>
           val entries = entryNodes.zip(expressions).map { case (ObjectEntryNode(name, _, _), expression) => (name, expression) }
-          InstantiationTransformation.transformMapStyleInstantiation(structType.definition, entries).map(addJudgmentsFrom)
-        case _ => Compilation.fail(StructExpected(structName))
+          InstantiationTransformation.transformMapStyleInstantiation(structType.definition, entries, position).map(addJudgmentsFrom)
+
+        case _ => Compilation.fail(StructExpected(structName, position))
       }
 
     case ShapeValueNode(propertyNodes, position) =>
@@ -265,7 +264,7 @@ class InferringExpressionTransformationVisitor(
 
     // Xary function calls.
     case SimpleCallNode(name, _, position) =>
-      scopeContext.currentScope.resolve(name)(position).map {
+      scopeContext.currentScope.resolve(name, position).map {
         case mf: MultiFunctionDefinition => addJudgmentsFrom(FunctionTyping.multiFunctionCall(mf, expressions, node.position))
         case binding: TypedBinding => transformValueCall(Expression.BindingAccess(binding, position), expressions, position)
       }
@@ -407,7 +406,7 @@ object InferringExpressionTransformationVisitor {
       " name of the function. Since the name must be available at compile-time, it must be a constant."
   }
 
-  case class StructExpected(name: String)(implicit position: Position) extends Feedback.Error(position) {
+  case class StructExpected(name: String, override val position: Position) extends Feedback.Error(position) {
     override def message: String = s"The type $name must be a struct to be instantiated."
   }
 

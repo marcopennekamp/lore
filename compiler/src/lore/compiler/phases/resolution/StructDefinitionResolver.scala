@@ -1,17 +1,15 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.core.{Compilation, CompilationException, Position}
+import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.feedback.Feedback
-import lore.compiler.semantics.Registry
 import lore.compiler.semantics.scopes.TypeScope
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.syntax.TypeDeclNode
 
 object StructDefinitionResolver {
-  def resolve(node: TypeDeclNode.StructNode)(implicit registry: Registry): Compilation[StructDefinition] = {
-    implicit val position: Position = node.position
-    implicit val typeScope: TypeScope = registry.typeScope
-    val structType = registry.getStructType(node.name).getOrElse(
+
+  def resolve(node: TypeDeclNode.StructNode)(implicit typeScope: TypeScope): Compilation[StructDefinition] = {
+    val structType = typeScope.getStructType(node.name).getOrElse(
       throw CompilationException(s"The struct type for struct ${node.name} should be registered by now.")
     )
 
@@ -35,4 +33,5 @@ object StructDefinitionResolver {
       }
     }
   }
+
 }

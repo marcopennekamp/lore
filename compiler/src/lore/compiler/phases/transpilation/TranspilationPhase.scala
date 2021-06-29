@@ -14,24 +14,24 @@ object TranspilationPhase {
   def process(implicit compilerOptions: CompilerOptions, registry: Registry): Compilation[Vector[TargetStatement]] = {
     implicit val symbolHistory: SymbolHistory = new SymbolHistory
 
-    val typeDeclarations = registry.getTypeDeclarationsInOrder.flatMap {
+    val typeDeclarations = registry.typesInOrder.flatMap {
       case (_, declaredType: DeclaredType) => DeclaredTypeTranspiler.transpile(declaredType)
       case (name, tpe) => Vector(TypeAliasTranspiler.transpile(name, tpe))
     }.filterNot(_ == Target.Empty)
 
     // Transpile any additional parts of declared types that require all types to be initialized, regardless of type
     // order.
-    val typeDeclarationDeferredDefinitions = registry.getTypeDeclarationsInOrder.flatMap {
+    val typeDeclarationDeferredDefinitions = registry.typesInOrder.flatMap {
       case (_, declaredType: DeclaredType) => DeclaredTypeTranspiler.transpileDeferred(declaredType)
       case _ => Vector.empty
     }
 
-    val introspectionInitialization = registry.getTraitType(Introspection.typeName) match {
+    val introspectionInitialization = registry.typeScope.getTraitType(Introspection.typeName) match {
       case None => throw CompilationException(s"The compiler should generate a trait '${Introspection.typeName}' for the introspection API.")
       case Some(introspectionType) => RuntimeApi.types.introspection.initialize(TypeTranspiler.transpile(introspectionType)(Map.empty, symbolHistory))
     }
 
-    val functions = registry.getMultiFunctions.values.toVector.flatMap(new MultiFunctionTranspiler(_).transpile())
+    val functions = registry.multiFunctions.values.toVector.flatMap(new MultiFunctionTranspiler(_).transpile())
 
     val symbolDeclarations = SymbolTranspiler.transpile(symbolHistory)
 

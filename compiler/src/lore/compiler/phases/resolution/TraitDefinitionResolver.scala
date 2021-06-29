@@ -2,13 +2,14 @@ package lore.compiler.phases.resolution
 
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException}
-import lore.compiler.semantics.Registry
+import lore.compiler.semantics.scopes.TypeScope
 import lore.compiler.semantics.structures.TraitDefinition
 import lore.compiler.syntax.TypeDeclNode
 
 object TraitDefinitionResolver {
-  def resolve(node: TypeDeclNode.TraitNode)(implicit registry: Registry): Compilation[TraitDefinition] = {
-    val traitType = registry.getTraitType(node.name).getOrElse(
+
+  def resolve(node: TypeDeclNode.TraitNode)(implicit typeScope: TypeScope): Compilation[TraitDefinition] = {
+    val traitType = typeScope.getTraitType(node.name).getOrElse(
       throw CompilationException(s"The trait type for trait ${node.name} should be registered by now.")
     )
 
@@ -16,4 +17,5 @@ object TraitDefinitionResolver {
     traitType.initialize(definition)
     definition.compiled
   }
+
 }

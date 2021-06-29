@@ -4,8 +4,8 @@ import lore.compiler.semantics.Registry
 import lore.compiler.test.{BaseSpec, TypeSyntax}
 
 trait TypeSpec extends BaseSpec with TypeSyntax {
-  def havingTrait(name: String)(implicit registry: Registry): TraitType = registry.getType(name).get.asInstanceOf[TraitType]
-  def havingStruct(name: String)(implicit registry: Registry): StructType = registry.getType(name).get.asInstanceOf[StructType]
+  def havingTrait(name: String)(implicit registry: Registry): TraitType = registry.typeScope.getTraitType(name).get
+  def havingStruct(name: String)(implicit registry: Registry): StructType = registry.typeScope.getStructType(name).get
 
   object TypesExample {
     implicit val registry: Registry = compileFragment("types/types.lore")
