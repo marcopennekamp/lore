@@ -143,18 +143,13 @@ object Compilation {
     }
   }
 
-  implicit class CompilationIterableExtension[A](compilations: Vector[Compilation[A]]) {
+  implicit class CompilationVectorExtension[A](compilations: Vector[Compilation[A]]) {
     /**
       * Combines all the compilations from an iterable into a single compilation. If any of the compilations have
       * resulted in an error, the combined compilation results in an error. This operation collects all errors
       * in unspecified order.
       */
     def simultaneous: Compilation[Vector[A]] = {
-      // We could also implement this using foldRight, which would perhaps be more functional in style, but the
-      // present definition is actually easier to parse, as foldRight requires matching on two compilations for each
-      // iteration.
-      // This implementation, on the other hand, does not need to match on two compilations. We collect all values
-      // and errors independently.
       var results: Vector[A] = Vector.empty
       var errors: Vector[Feedback.Error] = Vector.empty
       var warnings: Vector[Feedback.Warning] = Vector.empty
@@ -237,5 +232,45 @@ object Compilation {
       * Creates a succeeding compilation with the given value.
       */
     def compiled: Compilation[A] = Compilation.succeed(value)
+  }
+
+  implicit class FoldCompilationsExtension[A](vector: Vector[A]) {
+    /**
+      * Lifts the vector's fold operation into a compilation context. Note that the operation is aborted when a single
+      * error has been found.
+      */
+    def foldCompiled[B](initial: B)(f: (B, A) => Compilation[B]): Compilation[B] = {
+      vector.foldLeft(Compilation.succeed(initial)) { case (compilation, element) => compilation.flatMap(f(_, element)) }
+    }
+
+    /**
+      * Lifts the vector's fold operation into a compilation context. In contrast to `foldCompiled`, this function
+      * continues with the last valid value of B if an error is encountered. Hence, `f` will be attempted for each
+      * element of the vector.
+      */
+    def foldSimultaneous[B](initial: B)(f: (B, A) => Compilation[B]): Compilation[B] = {
+      var b = initial
+      var successWarnings = Vector.empty[Feedback.Warning]
+      var failures = Vector.empty[Errors[B]]
+
+      for (a <- vector) {
+        f(b, a) match {
+          case Result(value, warnings) =>
+            b = value
+            successWarnings = successWarnings ++ warnings
+
+          case errors@Errors(_, _) =>
+            failures = failures :+ errors
+        }
+      }
+
+      if (failures.nonEmpty) {
+        val errors = failures.flatMap(_.errors)
+        val failureWarnings = failures.flatMap(_.warnings)
+        Errors(errors, successWarnings ++ failureWarnings)
+      } else {
+        Result(b, successWarnings)
+      }
+    }
   }
 }

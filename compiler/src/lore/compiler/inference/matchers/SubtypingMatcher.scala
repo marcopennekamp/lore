@@ -1,6 +1,6 @@
 package lore.compiler.inference.matchers
 
-import lore.compiler.core.Compilation.ToCompilationExtension
+import lore.compiler.core.Compilation.{ToCompilationExtension, FoldCompilationsExtension}
 import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.feedback.TypingFeedback.SubtypeExpected
 import lore.compiler.inference.Inference.{Assignments, isFullyInstantiated}
@@ -48,8 +48,8 @@ object SubtypingMatcher {
       case (m1: MapType, m2: MapType) => rec(assignments, m1.key, m2.key).flatMap(rec(_, m1.value, m2.value))
 
       case (s1: ShapeType, s2: ShapeType) =>
-        s2.correlate(s1).foldLeft(Compilation.succeed(assignments)) {
-          case (compilation, (p2, Some(p1))) => compilation.flatMap(rec(_, p1.tpe, p2.tpe))
+        s2.correlate(s1).foldCompiled(assignments) {
+          case (assignments2, (p2, Some(p1))) => rec(assignments2, p1.tpe, p2.tpe)
           case (_, (_, None)) => expectedSubtype
         }
       case (d1: DeclaredType, s2: ShapeType) => rec(assignments, d1.asShapeType, s2)

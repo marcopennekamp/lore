@@ -1,5 +1,6 @@
 package lore.compiler.inference.matchers
 
+import lore.compiler.core.Compilation.FoldCompilationsExtension
 import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.feedback.TypingFeedback.EqualTypesExpected
 import lore.compiler.inference.Inference.{Assignments, isFullyInstantiated}
@@ -48,8 +49,8 @@ object EqualityMatcher {
 
       case (s1: ShapeType, s2: ShapeType) =>
         // Shape types must share all properties to be equal.
-        ShapeType.bicorrelate(s1, s2).foldLeft(Compilation.succeed(assignments)) {
-          case (compilation, (Some(p1), Some(p2))) => compilation.flatMap(rec(_, p1.tpe, p2.tpe))
+        ShapeType.bicorrelate(s1, s2).foldCompiled(assignments) {
+          case (assignments2, (Some(p1), Some(p2))) => rec(assignments2, p1.tpe, p2.tpe)
           case _ => expectedTypeEquality
         }
 
