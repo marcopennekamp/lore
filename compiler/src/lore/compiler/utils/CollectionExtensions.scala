@@ -38,6 +38,17 @@ object CollectionExtensions {
       case group if group.size > 1 => Compilation.fail(duplicate(group.head))
     }.toVector.simultaneous
 
+    /**
+      * Returns distinct elements based on the comparison function `areEqual`. This is in contrast to the standard
+      * library functions `distinct` and `distinctBy`, which only operate using standard `==` equality.
+      */
+    def distinctUsing(areEqual: (A, A) => Boolean): Vector[A] = vector.foldLeft(Vector.empty[A]) {
+      (result, a) => if (!result.exists(areEqual(a, _))) result :+ a else result
+    }
+
+    /**
+      * Ensures that all elements in the vector are equal to each other.
+      */
     def allEqual[V](by: A => V): Boolean = {
       vector.length <= 1 || vector.sliding(2).forall { case Vector(left, right) => by(left) == by(right) }
     }
@@ -55,6 +66,11 @@ object CollectionExtensions {
       }
       None
     }
+
+    /**
+      * Returns this vector or, if this vector is empty, a vector containing the given element.
+      */
+    def withDefault[B >: A](default: B): Vector[B] = if (vector.nonEmpty) vector else Vector(default)
   }
 
   implicit class SetExtension[A](set: Set[A]) {
