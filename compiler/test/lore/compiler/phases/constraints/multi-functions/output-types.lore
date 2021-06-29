@@ -9,5 +9,3 @@ function f(value: B1): Real = 1.0
 
 // Illegal: () is not a subtype of Int.
 action f(value: B2) { }
-
-// TODO: Add some tests for type variables.

@@ -71,13 +71,11 @@ private class ReturnDeadCodeVisitor() extends CombiningTopLevelExprVisitor.WithC
 
 /**
   * Checks whether non-top-level expressions have a return. If that is the case, an error is returned.
-  *
-  * TODO: How should we handle returns in anonymous functions?
   */
 private class ReturnAllowedCompilationApplicator()
   extends TopLevelExprVisitor.CompilationApplicator[Unit, IsReturnAllowed](new VerificationTopLevelExprVisitor { })
 {
-  override def handleMatch(node: TopLevelExprNode, isReturnAllowed: IsReturnAllowed): Compilation[Unit] = node match {
+  override def handleMatch(node: TopLevelExprNode, isReturnAllowed: IsReturnAllowed): Verification = node match {
     case node@TopLevelExprNode.ReturnNode(expr, _) => visit(expr, false).flatMap { _ =>
       if (!isReturnAllowed) Compilation.fail(ImpossibleReturn(node)) else Verification.succeed
     }
