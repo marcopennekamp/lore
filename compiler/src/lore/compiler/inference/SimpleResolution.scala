@@ -1,6 +1,6 @@
 package lore.compiler.inference
 
-import lore.compiler.core.{Compilation, Errors, Result}
+import lore.compiler.core.Compilation
 import lore.compiler.inference.Inference.{Assignments, AssignmentsExtension}
 import lore.compiler.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.inference.resolvers.JudgmentResolver
@@ -32,10 +32,11 @@ object SimpleResolution {
       Inference.logger.trace(s"Step $stepCounter:")
 
       step(currentAssignments, currentJudgments) match {
-        case Result((assignments2, judgments2), _) =>
+        case Compilation.Success((assignments2, judgments2), _) =>
           currentAssignments = assignments2
           currentJudgments = judgments2
-        case compilation@Errors(_, _) => return compilation.asInstanceOf[Errors[Nothing]]
+
+        case failure@Compilation.Failure(_, _) => return failure
       }
 
       Inference.logger.trace(s"New assignments:\n${currentAssignments.stringified}")

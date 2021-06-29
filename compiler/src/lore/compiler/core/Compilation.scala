@@ -1,6 +1,6 @@
 package lore.compiler.core
 
-import lore.compiler.core.Compilation.Verification
+import lore.compiler.core.Compilation.{Failure, Success, Verification}
 import lore.compiler.feedback.Feedback
 import shapeless.ops.hlist.{RightFolder, Tupler}
 import shapeless.syntax.std.tuple._
@@ -14,6 +14,7 @@ import shapeless.{Generic, HList, HNil, LUBConstraint, Poly2}
   * bugs instead of user errors.
   */
 sealed trait Compilation[+A] {
+
   /**
     * A list of warnings that is always carried forward through operations such as flatMap and combine.
     */
@@ -28,8 +29,8 @@ sealed trait Compilation[+A] {
     * Returns the result value, or the alternative if this compilation is an error.
     */
   def getOrElse[B >: A](alternative: => B): B = this match {
-    case Result(a, _) => a
-    case Errors(_, _) => alternative
+    case Success(a, _) => a
+    case Failure(_, _) => alternative
   }
 
   /**
@@ -47,20 +48,20 @@ sealed trait Compilation[+A] {
     * to be understood as a "chain of computation" which is broken as soon as the first error appears.
     */
   def flatMap[B](f: A => Compilation[B]): Compilation[B] = this match {
-    case Result(a, warnings) => f(a).withWarnings(warnings)
+    case Success(a, warnings) => f(a).withWarnings(warnings)
     case _ => this.asInstanceOf[Compilation[B]]
   }
 
   /**
     * Maps the result value of type A to a new value of type B.
     */
-  def map[B](f: A => B): Compilation[B] = flatMap(a => Result(f(a), Vector.empty))
+  def map[B](f: A => B): Compilation[B] = flatMap(a => Success(f(a), Vector.empty))
 
   /**
     * Executes the function `f` with the contained value if the compilation is a result.
     */
   def foreach(f: A => Unit): Unit = this match {
-    case Result(a, _) => f(a)
+    case Success(a, _) => f(a)
     case _ => ()
   }
 
@@ -69,7 +70,7 @@ sealed trait Compilation[+A] {
     * the compilation results in the given errors.
     */
   def require(p: A => Boolean)(errors: Feedback.Error*): Compilation[A] = this match {
-    case r@Result(a, warnings) => if (p(a)) r else Errors(errors.toVector, warnings)
+    case success@Success(a, warnings) => if (p(a)) success else Failure(errors.toVector, warnings)
     case x => x
   }
 
@@ -77,55 +78,55 @@ sealed trait Compilation[+A] {
     * Creates a new compilation with the given list of warnings attached. Previously existing warnings are preserved.
     */
   def withWarnings(warnings1: Vector[Feedback.Warning]): Compilation[A] = this match {
-    case Result(a, warnings2) => Result(a, warnings1 ++ warnings2)
-    case Errors(errors, warnings2) => Errors(errors, warnings1 ++ warnings2)
+    case Success(a, warnings2) => Success(a, warnings1 ++ warnings2)
+    case Failure(errors, warnings2) => Failure(errors, warnings1 ++ warnings2)
   }
 
   /**
     * Applies f to all errors and warnings contained in this compilation.
     */
   def applyToFeedback(f: Feedback => Unit): Compilation[A] = this match {
-    case Result(_, warnings) => warnings.foreach(f); this
-    case Errors(errors, warnings) => errors.foreach(f); warnings.foreach(f); this
+    case Success(_, warnings) => warnings.foreach(f); this
+    case Failure(errors, warnings) => errors.foreach(f); warnings.foreach(f); this
   }
 
   /**
     * If this compilation has failed, try to recover from a given set of errors to a new compilation.
     */
   def recover[B >: A](f: PartialFunction[Vector[Feedback.Error], Compilation[B]]): Compilation[B] = this match {
-    case Result(_, _) => this
-    case Errors(errors, warnings) => if (f.isDefinedAt(errors)) f(errors).withWarnings(warnings) else this
+    case Success(_, _) => this
+    case Failure(errors, warnings) => if (f.isDefinedAt(errors)) f(errors).withWarnings(warnings) else this
   }
 
   /**
     * Converts the compilation to an option, discarding all feedback.
     */
   def toOption: Option[A] = this match {
-    case Result(a, _) => Some(a)
-    case Errors(_, _) => None
+    case Success(a, _) => Some(a)
+    case Failure(_, _) => None
   }
 
   /**
     * Converts the compilation into a verification, effectively discarding the result value.
     */
   def verification: Verification = map(_ => ())
-}
 
-// TODO: Rename Result to Compilation.Success and Errors to Compilation.Failure. Make sure to namespace correctly.
-case class Result[+A](value: A, override val warnings: Vector[Feedback.Warning]) extends Compilation[A] {
-  override def feedback: Vector[Feedback] = warnings
-  override def isError = false
-}
-
-// TODO: Do we need the A type variable here? Can't Errors simply be a Compilation[Nothing]?
-case class Errors[+A](errors: Vector[Feedback.Error], override val warnings: Vector[Feedback.Warning]) extends Compilation[A] {
-  override def feedback: Vector[Feedback] = errors ++ warnings
-  override def isError = true
 }
 
 object Compilation {
-  def fail(errors: Feedback.Error*): Compilation[Nothing] = Errors(errors.toVector, Vector.empty)
-  def succeed[A](a: A): Compilation[A] = Result(a, Vector.empty)
+
+  case class Success[+A](value: A, override val warnings: Vector[Feedback.Warning]) extends Compilation[A] {
+    override def feedback: Vector[Feedback] = warnings
+    override def isError = false
+  }
+
+  case class Failure(errors: Vector[Feedback.Error], override val warnings: Vector[Feedback.Warning]) extends Compilation[Nothing] {
+    override def feedback: Vector[Feedback] = errors ++ warnings
+    override def isError = true
+  }
+
+  def fail(errors: Feedback.Error*): Compilation[Nothing] = Failure(errors.toVector, Vector.empty)
+  def succeed[A](a: A): Compilation[A] = Success(a, Vector.empty)
 
   /**
     * An abbreviation for Compilation[Unit]. A verification is an operation that returns nothing of note when
@@ -141,7 +142,7 @@ object Compilation {
       * be successful. Otherwise, the verification fails with the given errors.
       */
     def fromErrors(errors: Vector[Feedback.Error]): Verification = {
-      if (errors.nonEmpty) Errors(errors, Vector.empty) else succeed
+      if (errors.nonEmpty) Failure(errors, Vector.empty) else succeed
     }
   }
 
@@ -157,17 +158,17 @@ object Compilation {
       var warnings: Vector[Feedback.Warning] = Vector.empty
       var hasFailed = false
       compilations.foreach {
-        case Result(value, warnings2) =>
+        case Success(value, warnings2) =>
           results = results :+ value
           warnings = warnings ++ warnings2
-        case Errors(errors2, warnings2) =>
+        case Failure(errors2, warnings2) =>
           hasFailed = true
           errors = errors ++ errors2
           warnings = warnings ++ warnings2
       }
       // There is a special case where we don't have any errors but the compilation still failed. Hence, we can't rely
       // on whether the error list is empty or not and have to check whether there is any failure.
-      if (hasFailed) Errors(errors, warnings) else Result(results, warnings)
+      if (hasFailed) Failure(errors, warnings) else Success(results, warnings)
     }
   }
 
@@ -179,7 +180,7 @@ object Compilation {
       */
     object simultaneous extends Poly2 {
       implicit def caseCompilation[A, B <: HList]: Case.Aux[Compilation[A], Compilation[B], Compilation[A :: B]] = at[Compilation[A], Compilation[B]] {
-        case (Result(a, warningsA), Result(b, warningsB)) => Result(a :: b, warningsA ++ warningsB)
+        case (Success(a, warningsA), Success(b, warningsB)) => Success(a :: b, warningsA ++ warningsB)
         case (ca, cb) =>
           // As either ca or cb is guaranteed to be a failed compilation, simultaneous will simply aggregate the errors
           // and hence also produce an Errors object. This makes the type cast valid.
@@ -253,26 +254,27 @@ object Compilation {
     def foldSimultaneous[B](initial: B)(f: (B, A) => Compilation[B]): Compilation[B] = {
       var b = initial
       var successWarnings = Vector.empty[Feedback.Warning]
-      var failures = Vector.empty[Errors[B]]
+      var failures = Vector.empty[Failure]
 
       for (a <- vector) {
         f(b, a) match {
-          case Result(value, warnings) =>
+          case Success(value, warnings) =>
             b = value
             successWarnings = successWarnings ++ warnings
 
-          case errors@Errors(_, _) =>
-            failures = failures :+ errors
+          case failure@Failure(_, _) =>
+            failures = failures :+ failure
         }
       }
 
       if (failures.nonEmpty) {
         val errors = failures.flatMap(_.errors)
         val failureWarnings = failures.flatMap(_.warnings)
-        Errors(errors, successWarnings ++ failureWarnings)
+        Failure(errors, successWarnings ++ failureWarnings)
       } else {
-        Result(b, successWarnings)
+        Success(b, successWarnings)
       }
     }
   }
+
 }

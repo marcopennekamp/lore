@@ -1,11 +1,11 @@
 package lore.compiler.test
 
-import lore.compiler.core.{Errors, Result}
 import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.types.TupleType
 import lore.compiler.cli.{CliApi, CliOptions}
+import lore.compiler.core.Compilation
 import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -33,8 +33,8 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
     */
   def assertCompilationErrors(fragmentPath: String)(assert: Vector[Feedback.Error] => Assertion): Assertion = {
     CliApi.compile(CliOptions().withSources(testFragmentBase.resolve(fragmentPath))) match {
-      case Result(_, _) => Assertions.fail(s"Compilation of $fragmentPath should have failed with errors, but unexpectedly succeeded.")
-      case Errors(errors, _) => assert(errors.sortWith { case (e1, e2) => e1.position < e2.position })
+      case Compilation.Success(_, _) => Assertions.fail(s"Compilation of $fragmentPath should have failed with errors, but unexpectedly succeeded.")
+      case Compilation.Failure(errors, _) => assert(errors.sortWith { case (e1, e2) => e1.position < e2.position })
     }
   }
 

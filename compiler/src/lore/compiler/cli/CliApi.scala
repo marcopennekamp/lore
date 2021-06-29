@@ -59,17 +59,17 @@ object CliApi {
   def logCompilationResult(result: Compilation[Any], compilationStartTime: Long, compilationEndTime: Long)(implicit options: CompilerOptions): Unit = {
     val compilationTime = ((compilationEndTime - compilationStartTime) / 1000) / 1000.0
     result match {
-      case Errors(_, _) =>
-        Feedback.loggerBlank.info("")
-        Feedback.logger.error("Compilation failed with errors:")
-        Feedback.logAll(result.feedback, options.showFeedbackStackTraces)
-        Feedback.loggerBlank.error("")
-
-      case Result(_, _) =>
+      case Compilation.Success(_, _) =>
         Feedback.loggerBlank.info("")
         Feedback.logger.info(s"Compilation was successful. (Total time: ${compilationTime}ms)")
         Feedback.logAll(result.feedback, options.showFeedbackStackTraces)
         Feedback.loggerBlank.info("")
+
+      case Compilation.Failure(_, _) =>
+        Feedback.loggerBlank.info("")
+        Feedback.logger.error("Compilation failed with errors:")
+        Feedback.logAll(result.feedback, options.showFeedbackStackTraces)
+        Feedback.loggerBlank.error("")
     }
   }
 

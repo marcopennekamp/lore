@@ -1,7 +1,7 @@
 package lore.compiler.inference
 
 import com.typesafe.scalalogging.Logger
-import lore.compiler.core.{Compilation, Errors, Result}
+import lore.compiler.core.Compilation
 import lore.compiler.feedback.Feedback
 import lore.compiler.inference.InferenceBounds.BoundType
 import lore.compiler.semantics.Registry
@@ -34,15 +34,16 @@ object Inference {
 
     val result = timed(s"Inference for $label", log = s => logger.debug(s)) {
       infer(judgments) match {
-        case result@Result(_, _) =>
-          logger.debug(s"Inference for $label was successful with the following inferred types:\n${result.value.stringified}\n")
-          result
-        case errors@Errors(_, _) =>
+        case success@Compilation.Success(_, _) =>
+          logger.debug(s"Inference for $label was successful with the following inferred types:\n${success.value.stringified}\n")
+          success
+
+        case failure@Compilation.Failure(_, _) =>
           logger.debug(s"Inference for $label failed with the following feedback:")
           logger.whenDebugEnabled {
-            Feedback.logAll(errors.feedback)
+            Feedback.logAll(failure.feedback)
           }
-          errors
+          failure
       }
     }
 

@@ -1,6 +1,6 @@
 package lore.compiler.inference
 
-import lore.compiler.core.{Compilation, Errors}
+import lore.compiler.core.Compilation
 import lore.compiler.feedback.Feedback
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.types._
@@ -17,7 +17,7 @@ trait InferenceSpec extends TypeSpec {
   }
 
   def assertInferenceFailureDisregardingErrors(result: Compilation[Assignments]): Assertion = {
-    result should matchPattern { case Errors(_, _) => }
+    result should matchPattern { case Compilation.Failure(_, _) => }
   }
 
   object Assignment {
