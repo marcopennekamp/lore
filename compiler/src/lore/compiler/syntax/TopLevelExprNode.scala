@@ -84,7 +84,7 @@ object ExprNode {
     parameters: Vector[AnonymousFunctionParameterNode],
     body: ExprNode,
     position: Position,
-  ) extends UnaryNode(body) with ExprNode
+  ) extends ExprNode
 
   case class AnonymousFunctionParameterNode(
     name: String,

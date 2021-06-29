@@ -38,6 +38,13 @@ trait TopLevelExprVisitor[A, M[_]] {
   def visitXary(node: TopLevelExprNode.XaryNode)(arguments: Vector[A]): M[A]
 
   /**
+    * Visits an anonymous function node with its body.
+    *
+    * Similar to [[visitIteration]] in that we're passing control to the visitor about when to visit the body.
+    */
+  def visitAnonymousFunction(node: ExprNode.AnonymousFunctionNode)(visitBody: () => M[A]): M[A]
+
+  /**
     * Visits a map node with its key/value entries.
     */
   def visitMap(node: ExprNode.MapNode)(entries: Vector[(A, A)]): M[A]
@@ -77,6 +84,8 @@ object TopLevelExprVisitor {
       case node: TernaryNode => visitor.visitTernary(node)(rec(node.child1), rec(node.child2), rec(node.child3))
       case node: XaryNode => visitor.visitXary(node)(node.children.map(rec))
 
+      case node@AnonymousFunctionNode(_, body, _) => visitor.visitAnonymousFunction(node)(() => rec(body))
+
       case node@MapNode(kvs, _) =>
         val entries = kvs.map {
           case KeyValueNode(key, value, _) => (rec(key), rec(value))
@@ -113,6 +122,8 @@ object TopLevelExprVisitor {
         case node: BinaryNode => (visit(node.child1, props), visit(node.child2, props)).simultaneous.flatMap((visitor.visitBinary(node) _).tupled)
         case node: TernaryNode => (visit(node.child1, props), visit(node.child2, props), visit(node.child3, props)).simultaneous.flatMap((visitor.visitTernary(node) _).tupled)
         case node: XaryNode => node.children.map(c => visit(c, props)).simultaneous.flatMap(visitor.visitXary(node))
+
+        case node@AnonymousFunctionNode(_, body, _) => visitor.visitAnonymousFunction(node)(() => visit(body, props))
 
         case node@MapNode(kvs, _) =>
           val entries = kvs.map {

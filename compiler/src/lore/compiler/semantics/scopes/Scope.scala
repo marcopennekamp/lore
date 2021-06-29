@@ -1,6 +1,6 @@
 package lore.compiler.semantics.scopes
 
-import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
+import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException, Position}
 import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.scopes.Scope.{AlreadyDeclared, UnknownEntry}
@@ -47,12 +47,12 @@ trait Scope[A] {
     * Registers the given entry with the scope. If it is already registered in the current scope, an
     * "already declared" error is returned instead.
     */
-  def register(name: String, entry: A, position: Position): Verification = {
+  def register[B <: A](name: String, entry: B, position: Position): Compilation[B] = {
     if (local(name).isDefined) {
       Compilation.fail(alreadyDeclared(name, position))
     } else {
       add(name, entry)
-      Verification.succeed
+      Compilation.succeed(entry)
     }
   }
 

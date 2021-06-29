@@ -100,11 +100,11 @@ class InferringExpressionTransformationVisitor(
         case None => expression.tpe
       }
 
-      inferredType.map { tpe =>
-        val variable = Variable(name, new InferenceVariable, isMutable)
-        scopeContext.currentScope.register(variable, position)
-        typingJudgments = typingJudgments :+ TypingJudgment.Assign(variable.tpe, tpe, position)
-        Expression.VariableDeclaration(variable, expression, position)
+      inferredType.flatMap { tpe =>
+        scopeContext.currentScope.register(Variable(name, new InferenceVariable, isMutable), position).map { variable =>
+          typingJudgments = typingJudgments :+ TypingJudgment.Assign(variable.tpe, tpe, position)
+          Expression.VariableDeclaration(variable, expression, position)
+        }
       }
 
     case NegationNode(_, position) =>
@@ -116,27 +116,11 @@ class InferringExpressionTransformationVisitor(
       Expression.UnaryOperation(UnaryOperator.LogicalNot, expression, BasicType.Boolean, position).compiled
 
     case MemberAccessNode(_, name, position) =>
-      // TODO: A member only needs to be resolved lazily if the expression's type is not yet inferred. The expression's
-      //       type will be clear in the majority of cases, so here is a chance to save on a lot of typing judgments
-      //       if we check whether the expression actually even needs to be inferred.
-
       // We cannot decide the member until the type has been inferred. Hence we first have to return an "unresolved
       // member access" expression node, which will be resolved later.
       val memberType = new InferenceVariable
       typingJudgments = typingJudgments :+ TypingJudgment.MemberAccess(memberType, expression.tpe, name, position)
       Expression.UnresolvedMemberAccess(expression, name, memberType, position).compiled
-
-    case AnonymousFunctionNode(parameterNodes, _, position) =>
-      val parameters = parameterNodes.map { case AnonymousFunctionParameterNode(name, _, position) =>
-        // TODO: The fact that we have to resolve the variable again, despite it being declared within the before hook,
-        //       is not optimal. Maybe we can come up with a better solution here.
-        val variable = scopeContext.currentScope.get(name).getOrElse(
-          throw CompilationException(s"The anonymous function parameter at $position should have a corresponding scope entry."),
-        ).asInstanceOf[TypedBinding]
-        Expression.AnonymousFunctionParameter(name, variable.tpe, position)
-      }
-      scopeContext.closeScope()
-      Expression.AnonymousFunction(parameters, expression, position).compiled
   }
 
   override def visitBinary(node: BinaryNode)(left: Expression, right: Expression): Compilation[Expression] = node match {
@@ -170,7 +154,6 @@ class InferringExpressionTransformationVisitor(
 
     // Collection operations.
     case AppendNode(_, _, position) =>
-      // TODO: If append also has to work for maps, we might have to rewrite these rules or even use a special Append judgment.
       val elementType = new InferenceVariable
       val combinedType = new InferenceVariable
 
@@ -286,6 +269,25 @@ class InferringExpressionTransformationVisitor(
     Expression.XaryOperation(operator, expressions, BasicType.Boolean, position).compiled
   }
 
+  override def visitAnonymousFunction(node: AnonymousFunctionNode)(visitBody: () => Compilation[Expression]): Compilation[Expression] = {
+    scopeContext.openScope()
+
+    for {
+      parameters <- node.parameters.map {
+        case AnonymousFunctionParameterNode(name, typeNode, position) =>
+          typeNode
+            .map(TypeExpressionEvaluator.evaluate).toCompiledOption
+            .map(_.getOrElse(new InferenceVariable))
+            .flatMap(tpe => scopeContext.currentScope.register(Variable(name, tpe, isMutable = false), position))
+            .map(variable => Expression.AnonymousFunctionParameter(name, variable.tpe, position))
+      }.simultaneous
+
+      body <- visitBody()
+
+      _ = scopeContext.closeScope()
+    } yield Expression.AnonymousFunction(parameters, body, node.position)
+  }
+
   override def visitMap(node: MapNode)(kvs: Vector[(Expression, Expression)]): Compilation[Expression] = {
     val entries = kvs.map(Expression.MapEntry.tupled)
 
@@ -357,7 +359,6 @@ class InferringExpressionTransformationVisitor(
     // For example:
     //    let things = [%{ x: 5 }, %{ x: -2 }, %{ x: 12 }]
     //    let functions: %{ n: Int } => Int = for (v <- things) { v2 => v2.n * v.x }
-    // TODO: This also needs to work for map functions...
     typingJudgments = typingJudgments :+ TypingJudgment.Equals(resultType, ListType(body.tpe), position)
     resultType
   }
@@ -372,16 +373,6 @@ class InferringExpressionTransformationVisitor(
       // which wouldn't get scoped by the block.
       scopeContext.openScope()
       Verification.succeed
-
-    case ExprNode.AnonymousFunctionNode(parameterNodes, _, _) =>
-      scopeContext.openScope()
-      parameterNodes.map {
-        case AnonymousFunctionParameterNode(name, typeNode, position) =>
-          typeNode
-            .map(TypeExpressionEvaluator.evaluate).toCompiledOption
-            .map(_.getOrElse(new InferenceVariable))
-            .flatMap(tpe => scopeContext.currentScope.register(Variable(name, tpe, isMutable = false), position))
-      }.simultaneous.verification
   }
 
   def addJudgmentsFrom[A]: ((A, Vector[TypingJudgment])) => A = {

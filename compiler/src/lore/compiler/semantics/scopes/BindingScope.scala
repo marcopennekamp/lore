@@ -1,7 +1,6 @@
 package lore.compiler.semantics.scopes
 
-import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.Position
+import lore.compiler.core.{Compilation, Position}
 import lore.compiler.semantics.functions.FunctionSignature
 
 /**
@@ -9,7 +8,7 @@ import lore.compiler.semantics.functions.FunctionSignature
   */
 trait BindingScope extends Scope[Binding] {
   def add(binding: Binding): Unit = add(binding.name, binding)
-  def register(binding: Binding, position: Position): Verification = register(binding.name, binding, position)
+  def register[A <: Binding](binding: A, position: Position): Compilation[A] = register(binding.name, binding, position)
 
   override def entryLabel: String = "variable, multi-function, or struct constructor"
 }

@@ -72,7 +72,6 @@ object InstantiationTransformation {
 
   private def getEntryTypingJudgments(pairs: Vector[(StructPropertyDefinition, Expression)]): Vector[TypingJudgment] = {
     pairs.map { case (property, expression) =>
-      // TODO: Use proper error message: IllegallyTypedProperty(property, expression)
       TypingJudgment.Subtypes(expression.tpe, property.tpe, expression.position)
     }
   }

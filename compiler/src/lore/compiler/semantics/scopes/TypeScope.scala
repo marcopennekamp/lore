@@ -1,7 +1,6 @@
 package lore.compiler.semantics.scopes
 
-import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.Position
+import lore.compiler.core.{Compilation, Position}
 import lore.compiler.types.{NamedType, StructType, TraitType, Type, TypeVariable}
 import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtension}
 
@@ -9,7 +8,7 @@ import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtensio
   * A scope that provides access to types.
   */
 trait TypeScope extends Scope[Type] {
-  def register(entry: NamedType, position: Position): Verification = super.register(entry.name, entry, position)
+  def register(entry: NamedType, position: Position): Compilation[Type] = super.register(entry.name, entry, position)
 
   /**
     * Fetches a struct type with the given name from the closest scope.
