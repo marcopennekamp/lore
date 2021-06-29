@@ -89,9 +89,7 @@ class InferringExpressionTransformationVisitor(
       typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(expression.tpe, expectedType, position)
       Expression.Return(expression, position).compiled
 
-    case VariableDeclarationNode(name, isMutable, maybeTypeExpr, _, _) =>
-      implicit val position: Position = node.position
-
+    case VariableDeclarationNode(name, isMutable, maybeTypeExpr, _, position) =>
       // Either infer the type from the value or, if a type has been explicitly declared, check that the value adheres
       // to the type bounds.
       val typeAnnotation = maybeTypeExpr.map(TypeExpressionEvaluator.evaluate).toCompiledOption
@@ -104,7 +102,7 @@ class InferringExpressionTransformationVisitor(
 
       inferredType.map { tpe =>
         val variable = Variable(name, new InferenceVariable, isMutable)
-        scopeContext.currentScope.register(variable)
+        scopeContext.currentScope.register(variable, position)
         typingJudgments = typingJudgments :+ TypingJudgment.Assign(variable.tpe, tpe, position)
         Expression.VariableDeclaration(variable, expression, position)
       }
@@ -112,6 +110,7 @@ class InferringExpressionTransformationVisitor(
     case NegationNode(_, position) =>
       typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(expression.tpe, BasicType.Real, position)
       Expression.UnaryOperation(UnaryOperator.Negation, expression, expression.tpe, position).compiled
+
     case LogicalNotNode(_, position) =>
       typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(expression.tpe, BasicType.Boolean, position)
       Expression.UnaryOperation(UnaryOperator.LogicalNot, expression, BasicType.Boolean, position).compiled
@@ -338,7 +337,7 @@ class InferringExpressionTransformationVisitor(
       typingJudgments = typingJudgments :+ TypingJudgment.ElementType(elementType, collection.tpe, position)
 
       val localVariable = Variable(variableName, elementType, isMutable = false)
-      scopeContext.currentScope.register(localVariable)(position).map(_ => Expression.Extractor(localVariable, collection))
+      scopeContext.currentScope.register(localVariable, position).map(_ => Expression.Extractor(localVariable, collection))
     }
 
     for {
@@ -381,7 +380,7 @@ class InferringExpressionTransformationVisitor(
           typeNode
             .map(TypeExpressionEvaluator.evaluate).toCompiledOption
             .map(_.getOrElse(new InferenceVariable))
-            .flatMap(tpe => scopeContext.currentScope.register(Variable(name, tpe, isMutable = false))(position))
+            .flatMap(tpe => scopeContext.currentScope.register(Variable(name, tpe, isMutable = false), position))
       }.simultaneous.verification
   }
 

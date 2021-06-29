@@ -47,7 +47,7 @@ trait Scope[A] {
     * Registers the given entry with the scope. If it is already registered in the current scope, an
     * "already declared" error is returned instead.
     */
-  def register(name: String, entry: A)(implicit position: Position): Verification = {
+  def register(name: String, entry: A, position: Position): Verification = {
     if (local(name).isDefined) {
       Compilation.fail(alreadyDeclared(name, position))
     } else {

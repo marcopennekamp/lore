@@ -9,7 +9,7 @@ import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtensio
   * A scope that provides access to types.
   */
 trait TypeScope extends Scope[Type] {
-  def register(entry: NamedType)(implicit position: Position): Verification = super.register(entry.name, entry)
+  def register(entry: NamedType, position: Position): Verification = super.register(entry.name, entry, position)
 
   /**
     * Fetches a struct type with the given name from the closest scope.

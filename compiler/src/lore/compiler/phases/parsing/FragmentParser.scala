@@ -21,7 +21,7 @@ class FragmentParser(implicit fragment: Fragment) {
   val expressionParser = new ExpressionParser(typeParser)
   import expressionParser.{block, expression}
 
-  case class ParsingError(fastparseError: String, pos: Position) extends Feedback.Error(pos) {
+  case class ParsingError(fastparseError: String, override val position: Position) extends Feedback.Error(position) {
     override def message: String = s"The file had parsing errors: $fastparseError"
   }
 

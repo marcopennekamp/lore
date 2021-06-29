@@ -17,10 +17,9 @@ object TypeVariableDeclarationResolver {
     // one can be used as a bound of the second one, and so on.
     val initial = (new LocalTypeScope(parentScope).compiled, 0)
     val (compilation, _) = nodes.foldLeft(initial) { case ((compilation, order), node) =>
-      implicit val position: Position = node.position
       val nextCompilation = compilation.flatMap { implicit typeScope =>
         TypeVariableDeclarationResolver.resolve(node, order).flatMap { variable =>
-          typeScope.register(variable).map(_ => typeScope)
+          typeScope.register(variable, node.position).map(_ => typeScope)
         }
       }
       (nextCompilation, order + 1)

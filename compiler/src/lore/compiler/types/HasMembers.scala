@@ -19,7 +19,7 @@ trait HasMembers { self: Type =>
   /**
     * Finds a member with the given name within the member map of this type.
     */
-  def member(name: String)(implicit accessPosition: Position): Compilation[Member] = {
+  def member(name: String, accessPosition: Position): Compilation[Member] = {
     members.get(name) match {
       case None => Compilation.fail(MemberNotFound(name, this, accessPosition))
       case Some(member) => member.compiled
@@ -28,7 +28,7 @@ trait HasMembers { self: Type =>
 }
 
 object HasMembers {
-  case class MemberNotFound(name: String, tpe: Type, pos: Position) extends Feedback.Error(pos) {
+  case class MemberNotFound(name: String, tpe: Type, override val position: Position) extends Feedback.Error(position) {
     override def message: String = s"A member $name does not exist within the type $tpe."
   }
 }

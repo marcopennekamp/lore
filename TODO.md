@@ -25,13 +25,6 @@
 - Turn the map type syntax into `#[A -> B]` to mirror the literal syntax.
 - Allow question marks in identifiers. I like how Clojure approaches booleans and this would fit nicely into Lore, I hope. Example: `isSuccessful` would become `successful?`.
 - Allow trailing commas.
-- Allow kebab case? This would be possible if we restrict subtraction to require proper spaces. The downside is that this is potentially very confusing.
-  - `hello-world` is an identifier "hello-world".
-  - `#syntax-error` is a symbol "syntax-error".
-  - `syntax - error` is an arithmetic operation.
-  - `syntax -error` is the same arithmetic operation.
-  - `syntax- error` are two identifiers "syntax-" and "error".
-  - `syntax + -error` is an arithmetic operation, with `error` being negated.
 
 ##### Type System
 
@@ -77,9 +70,8 @@
 
 - Add global constants to the specification.
 - Clear TODOs in documents: expressions, minimum-viable-language, multi-functions, types.
-- Possibly throw away the technical/compiler document, as it is probably massively outdated. Maybe write a shorter summary of the compiler architecture.
 - Decide what will happen with the technical/multi-functions document.
-- Finish writing the technical/runtime-types document.
+- Finish writing the technical/runtime-types document. Also move it to the specification folder directly. scopes.md sets a precedent for supplemental documents in the same folder.
 
 
 #### Code Quality
@@ -93,13 +85,12 @@
 
 ##### Terminology
 
-- "mutable" should actually be "writeable", since immutability implies that the whole data structure within a property or variable is unchangeable, while we are actually just gating the top-level write access to the property or variable. This is a subtle difference, but it should be considered. Perhaps we can later introduce a "deep" kind of immutability which doesn't just make a property readonly, but actually applies to the whole data structure. As for the keyword, we can just say: `let var x = 5`
+- *Currently no TODOs.*
 
 ##### Clean-Up
 
 - Remove all examples from `/examples/` or turn them into test cases.
 - Clean most TODOs within the source code or add them to this TODO list.
-- We should reconsider whether positions should be implicit parameters. It's probably better to explicitly state which functions should receive which positions, so that there can be no ambiguity. Implicits are also hard to reason about when we get multiple implicits in nested scopes.
 
 
 #### Performance

@@ -34,11 +34,10 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
   override def visit(expression: MemberAccess)(instance: Expression): Expression = expression.copy(instance)
 
   override def visit(expression: UnresolvedMemberAccess)(instance: Expression): Expression = {
-    implicit val position: Position = expression.position
-    val member = instance.tpe.member(expression.name).getOrElse(
+    val member = instance.tpe.member(expression.name, expression.position).getOrElse(
       throw CompilationException(s"The type ${instance.tpe} does not have a member ${expression.name}. Type inference should have caught this missing member!")
     )
-    MemberAccess(instance, member, position)
+    MemberAccess(instance, member, expression.position)
   }
 
   override def visit(expression: Literal): Expression = expression
