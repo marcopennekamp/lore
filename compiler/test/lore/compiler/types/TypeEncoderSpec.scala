@@ -34,24 +34,4 @@ class TypeEncoderSpec extends BaseSpec {
     new TypeVariable("C", BasicType.Boolean, BasicType.String, 0) --> Vector(0xc7, 0x01, 'C', 0xa4, 0xa5)
   }
 
-  it should "correctly encode sum, intersection, and tuple types with basic type children" in {
-    // TODO: Write this test.
-  }
-
-  it should "correctly encode named types" in {
-    // TODO: Write this test.
-  }
-
-  it should "correctly encode shape types" in {
-    // TODO: Write this test.
-  }
-
-  it should "correctly encode nested type constructors with basic type leaves" in {
-    // TODO: Write this test.
-  }
-
-  it should "correctly encode complex types with named type leaves" in {
-    // TODO: Write this test.
-  }
-
 }

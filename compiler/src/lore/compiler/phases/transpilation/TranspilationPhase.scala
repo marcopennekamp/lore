@@ -3,7 +3,7 @@ package lore.compiler.phases.transpilation
 import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.core.{Compilation, CompilationException, CompilerOptions}
 import lore.compiler.phases.transpilation.functions.MultiFunctionTranspiler
-import lore.compiler.phases.transpilation.structures.{DeclaredTypeTranspiler, TypeAliasTranspiler}
+import lore.compiler.phases.transpilation.structures.DeclaredTypeTranspiler
 import lore.compiler.phases.transpilation.values.{SymbolHistory, SymbolTranspiler}
 import lore.compiler.semantics.{Introspection, Registry}
 import lore.compiler.target.Target
@@ -16,7 +16,7 @@ object TranspilationPhase {
 
     val typeDeclarations = registry.typesInOrder.flatMap {
       case (_, declaredType: DeclaredType) => DeclaredTypeTranspiler.transpile(declaredType)
-      case (name, tpe) => Vector(TypeAliasTranspiler.transpile(name, tpe))
+      case _ => Vector(Target.Empty)
     }.filterNot(_ == Target.Empty)
 
     // Transpile any additional parts of declared types that require all types to be initialized, regardless of type

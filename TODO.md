@@ -51,22 +51,18 @@
 - Ensure that loops with a Unit expression body cannot be used as an expression, as Unit loops are optimized by the transpiler.
 - During loop transpilation, ignore the resulting list if it isn't used at all. This will require allowing expression visitors to query some state from the parent and is possibly complex to implement.
 
+##### Transpilation
 
-#### Testing
-
-- ConstructionSpec: Test SumType.construct.
-- Figure out which portions of the compiler and runtime to unit test.
-- We should ideally invest in a system that can test the parts that are replicated in both the compiler and the runtime with the same values. This system should read type relationships from text files and then execute tests. This is crucial because as we discover type system bugs, we should add test cases that cover those bugs. 
-  - Idea: The system can be implemented on the compiler side. It would have two parts: (1) immediately executing the typing tests with the compiler subtyping, equality, and fit functions. (2) Compiling the typing tests to Javascript and using the runtime subtyping, equality, and fit functions. This would allow us to reuse the existing type parser even for the runtime tests and also allow us to parse the custom test format using fastparse. 
-- Ultimately, we will have a two-layer testing approach:
-    1. Unit tests for the most critical components of the runtime and the compiler, especially the type system. Possibly unit tests that test both the compiler and the runtime with the same inputs.
-    2. Functional tests for complete Lore programs that test the compiler as a whole, the runtime as a whole, and Pyramid as a whole.
-- In the long run, we should build a simple testing framework written in Lore and use it to unit-test Pyramid.
-- Add multiple tests that verify that we correctly handle the negative side of totality constraint verification / abstract functions. This is especially important so that changes to the totality constraint checking algorithm don't accidentally lead to illegal programs not being detected anymore. Use the Scala testing environment for this, because the functional tests are not well suited to testing negative compilation outcomes.
-
-##### Benchmarks
-
-- We should leverage the test suite to also run benchmarks to be able to record performance changes when we optimize the compiler. "Real" programs like `dispatch/hello-name.lore` and `combat` would be especially suitable to benchmarking, but probably also artificial cases such as `dispatch/intersection.lore`.
+- MultiFunctionValue: Pull the function value that is created from the multi-function value into the global scope as a constant for the given function, so that it doesn't have to be recreated every time the function is called. (Unless run-time type variable substitutions are necessary.) Alternatively, cache this globally, similar to how we could cache monomorphic types globally.
+- FixedFunctionValue: We could transpile one globally accessible function value representation for each function definition so that we don't have to recreate it every time. Alternatively, we could also cache this globally, sort of a "fixed function cache".
+- Transpiling single functions (see MultiFunctionTranspiler): The point of transpiling single functions is to bypass multiple dispatch entirely. This is currently possible for a single monomorphic function, but there are ways to treat polymorphic functions in this way too. We just have to assure that a call that is valid at compile-time doesn't become invalid at run-time. This means that none of the variables may have a lower bound, as that might exclude a subtype at run-time only. In addition, type variables may not occur twice or more times in the input type so that missing type equality cannot rule out the validity of the call. Polymorphic functions may still require assigning an argument type to a type variable, but this could then be done ad-hoc in the generated single function. 
+- Type aliases could be transpiled such that they can be referred to by name at run time. Currently, type aliases are "thrown away" during scope type resolution. Their type definition gets transpiled as-is. There is a chance to save on type allocations at run time by transpiling type aliases to constants. However, this isn't as simple as it may seem.
+  - One idea for transpiling type aliases would be to keep a Type -> Alias map in the registry, which would list for every type with an alias the proper alias. This idea does not stand up to scrutiny. We could for example define two type aliases `A = { name: String }` and `B = { name: String }`. If we come upon a type `{ name: String }`, which may or may not be the result of evaluating an alias, we cannot decide whether to refer to the run-time alias type `A`, `B`, or neither in case no alias type was mentioned in the first place. Hence, we cannot just throw away the information that an evaluated type comes from an alias.
+  - Another idea is adding an `alias` property to every type. If that type is actually the definition of an alias, the outer-most type gets its alias property set. For example, if we define an alias `A = { name: String }`, the outer-most shape type gets `A` as its alias property. There are a few gotchas with this approach:
+    - Some types actually just refer to some global type instance at compile time. For example, both `String` and say a struct type `Struct` always refer to their unique respective type instance at compile time. So declaring `A = String` should NOT give `String` the alias property `A`. Only constructed types can get the alias property. (Incidentally, this is not so bad, as all types that cannot receive an alias property at compile time are unique variables at run time. The transpiled alias would not be beneficial there.)
+    - We will have to make sure that such a property doesn't affect compile-time type equality.
+    - In addition, sometimes types may be normalized, such as combined shapes in intersection types, or flattened sums. Such new types shouldn't ever refer to the alias.
+  - Yet another approach would be to have the compiler generate run-time constants for types in general, no matter whether they are defined in an alias or not. If the type `#red | #black | #white` occurs multiple times, it would be beneficial to have some constant available at run time that can be referenced, instead of recreating the sum type every time it's referenced. This is trivially possible with monomorphic types and sometimes with polymorphic types, depending on their deduced compile-time value. We already do this for the parameter types in multiple dispatch.
 
 
 #### Specification
@@ -75,6 +71,20 @@
 - Clear TODOs in documents: expressions, minimum-viable-language, multi-functions, types.
 - Decide what will happen with the technical/multi-functions document.
 - Finish writing the technical/runtime-types document. Also move it to the specification folder directly. scopes.md sets a precedent for supplemental documents in the same folder.
+
+
+#### Testing
+
+- ConstructionSpec: Test SumType.construct.
+- Write additional tests in TypeEncoderSpec: sum types, intersection types, tuple types, function types, shape types, symbol types, named types, complex/nested type combinations containing named types. 
+- Figure out which portions of the compiler and runtime to unit test.
+- We should ideally invest in a system that can test the parts that are replicated in both the compiler and the runtime with the same values. This system should read type relationships from text files and then execute tests. This is crucial because as we discover type system bugs, we should add test cases that cover those bugs. 
+  - Idea: The system can be implemented on the compiler side. It would have two parts: (1) immediately executing the typing tests with the compiler subtyping, equality, and fit functions. (2) Compiling the typing tests to Javascript and using the runtime subtyping, equality, and fit functions. This would allow us to reuse the existing type parser even for the runtime tests and also allow us to parse the custom test format using fastparse. 
+- Ultimately, we will have a two-layer testing approach:
+    1. Unit tests for the most critical components of the runtime and the compiler, especially the type system. Possibly unit tests that test both the compiler and the runtime with the same inputs.
+    2. Functional tests for complete Lore programs that test the compiler as a whole, the runtime as a whole, and Pyramid as a whole.
+- In the long run, we should build a simple testing framework written in Lore and use it to unit-test Pyramid.
+- Add multiple tests that verify that we correctly handle the negative side of totality constraint verification / abstract functions. This is especially important so that changes to the totality constraint checking algorithm don't accidentally lead to illegal programs not being detected anymore. Use the Scala testing environment for this, because the functional tests are not well suited to testing negative compilation outcomes.
 
 
 #### Code Quality
@@ -107,6 +117,10 @@
 - Runtime: Intern struct types and check performance with monster.lore.
 - Runtime: Turn declared type subtyping into a simple HashSet lookup so that we don't need to branch up the supertype tree to decide whether one declared type is the subtype of another. This would be possible by giving each type an exhaustive (transitive) list of supertypes. Downsides might become apparent especially once we introduce dynamic specialization.
   - This is probably not an optimization we want to implement as long as the language is still immature.
+
+##### Benchmarks
+
+- We should leverage the test suite to also run benchmarks to be able to record performance changes when we optimize the compiler. "Real" programs like `dispatch/hello-name.lore` and `combat` would be especially suitable to benchmarking, but probably also artificial cases such as `dispatch/intersection.lore`.
 
 
 #### Editor Support

@@ -53,18 +53,6 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   /**
     * If the multi-function consists of a single function that is not polymorphic, we can bypass all dispatch logic.
     * This requires that all function calls are legal at compile-time, but this is already guaranteed by the compiler.
-    *
-    * TODO: There are ways to treat polymorphic functions in this way too. We just have to assure that a call that
-    *       is valid at compile-time doesn't become invalid at run-time. This means that none of the variables may
-    *       have a lower bound, as that might exclude a subtype at run-time only. In addition, type variables may
-    *       not occur twice or more times in the input type so that missing type equality cannot rule out the validity
-    *       of the call.
-    *       Polymorphic functions may still require assigning an argument type to a type variable, but this could then
-    *       be done ad-hoc in the generated single function.
-    *
-    * TODO: This approach lacks correctness when Lore functions are called from Javascript. To improve interfacing
-    *       with native Javascript, we should transpile a second "external" function that actually does the type
-    *       checking. This would be the function that we export.
     */
   private def transpileSingleFunction(): Vector[TargetStatement] = {
     implicit val typeVariables: TranspiledTypeVariables = Map.empty

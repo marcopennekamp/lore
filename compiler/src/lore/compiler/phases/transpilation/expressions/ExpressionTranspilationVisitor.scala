@@ -77,18 +77,12 @@ private[transpilation] class ExpressionTranspilationVisitor()(
   }
 
   override def visit(expression: MultiFunctionValue): Chunk = {
-    // TODO: Transpile one such function value per function instance so that function values don't have to be
-    //       recreated. (This only works for monomorphic functions.) Alternatively, at least pull the function value
-    //       into the global scope as a constant for the given function, so that it doesn't have to be recreated every
-    //       time the function is called. (Unless type variable substitutions are necessary.)
     val target = expression.mf.targetVariable
     val tpe = TypeTranspiler.transpileSubstitute(expression.tpe)
     Chunk.expression(RuntimeApi.functions.value(target, tpe))
   }
 
   override def visit(expression: FixedFunctionValue): Chunk = {
-    // TODO: We could transpile one globally accessible function value representation for each function definition
-    //       so that we don't have to recreate it every time.
     val target = expression.instance.definition.targetVariable
     val tpe = TypeTranspiler.transpile(expression.tpe)
     Chunk.expression(RuntimeApi.functions.value(target, tpe))

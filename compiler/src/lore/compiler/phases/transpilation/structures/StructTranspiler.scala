@@ -111,7 +111,6 @@ object StructTranspiler {
     tpe.definition.properties.flatMap { property =>
       property.defaultValue.map { defaultValue =>
         val varDefaultValue = RuntimeNames.defaultValue(tpe, property)
-        // TODO: We need to supply runtime type variables here once structs can have type parameters.
         val chunk = ExpressionTranspiler.transpile(defaultValue.expression)(registry, Map.empty, symbolHistory)
         Target.Function(varDefaultValue.name, Vector.empty, chunk.asBody)
       }
