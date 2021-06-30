@@ -8,6 +8,7 @@ object JavascriptGenerator {
 
   def generate(statement: TargetStatement): String = statement match {
     case Target.Empty => ""
+    case Target.Divider => s"\n\n/* ${"=".repeat(74)} */\n\n"
 
     case Target.Block(statements) => s"{ ${statements.map(generate).mkString("\n")} }"
 

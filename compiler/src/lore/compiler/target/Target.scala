@@ -19,6 +19,7 @@ object Target {
   }
 
   case object Empty extends TargetStatement
+  case object Divider extends TargetStatement
 
   // Control Structures.
   case class Block(statements: Vector[TargetStatement]) extends TargetStatement

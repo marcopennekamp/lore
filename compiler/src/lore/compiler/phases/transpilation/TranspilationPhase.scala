@@ -15,29 +15,31 @@ object TranspilationPhase {
     implicit val symbolHistory: SymbolHistory = new SymbolHistory
 
     val typeDeclarations = registry.typesInOrder.flatMap {
-      case (_, declaredType: DeclaredType) => DeclaredTypeTranspiler.transpile(declaredType)
-      case _ => Vector(Target.Empty)
-    }.filterNot(_ == Target.Empty)
+      case (_, declaredType: DeclaredType) => DeclaredTypeTranspiler.transpile(declaredType) :+ Target.Divider
+      case _ => Vector.empty
+    }
 
     // Transpile any additional parts of declared types that require all types to be initialized, regardless of type
     // order.
     val typeDeclarationDeferredDefinitions = registry.typesInOrder.flatMap {
-      case (_, declaredType: DeclaredType) => DeclaredTypeTranspiler.transpileDeferred(declaredType)
+      case (_, declaredType: DeclaredType) =>
+        val result = DeclaredTypeTranspiler.transpileDeferred(declaredType)
+        if (result.nonEmpty) result :+ Target.Divider else result
       case _ => Vector.empty
     }
 
     val introspectionInitialization = registry.typeScope.getTraitType(Introspection.typeName) match {
       case None => throw CompilationException(s"The compiler should generate a trait '${Introspection.typeName}' for the introspection API.")
-      case Some(introspectionType) => RuntimeApi.types.introspection.initialize(TypeTranspiler.transpile(introspectionType)(Map.empty, symbolHistory))
+      case Some(introspectionType) => Vector(
+        RuntimeApi.types.introspection.initialize(TypeTranspiler.transpile(introspectionType)(Map.empty, symbolHistory)),
+        Target.Divider,
+      )
     }
 
-    val functions = registry.multiFunctions.values.toVector.flatMap(new MultiFunctionTranspiler(_).transpile())
+    val functions = registry.multiFunctions.values.toVector.flatMap(new MultiFunctionTranspiler(_).transpile() :+ Target.Divider)
 
-    val symbolDeclarations = SymbolTranspiler.transpile(symbolHistory)
+    val symbolDeclarations = SymbolTranspiler.transpile(symbolHistory) :+ Target.Divider
 
-    (symbolDeclarations ++ typeDeclarations ++ typeDeclarationDeferredDefinitions ++ Vector(introspectionInitialization) ++ functions).compiled
+    (symbolDeclarations ++ typeDeclarations ++ typeDeclarationDeferredDefinitions ++ introspectionInitialization ++ functions).compiled
   }
-
-  // TODO: Add dividers as special target nodes.
-  //private val divider = s"\n\n/* ${"=".repeat(74)} */\n\n"
 }
