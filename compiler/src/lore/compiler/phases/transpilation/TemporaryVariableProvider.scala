@@ -2,17 +2,13 @@ package lore.compiler.phases.transpilation
 
 import lore.compiler.target.Target
 
+import java.util.concurrent.atomic.AtomicInteger
+
 class TemporaryVariableProvider(namePrefix: String = "") {
-  private var counter = 0
+  private val nameCounter: AtomicInteger = new AtomicInteger()
 
   /**
     * Creates the next temporary variable.
-    *
-    * TODO: Needs to be thread-safe, probably.
     */
-  def createVariable(): Target.Variable = {
-    val variable = RuntimeNames.temporaryVariable(namePrefix + counter.toString)
-    counter += 1
-    variable
-  }
+  def createVariable(): Target.Variable = RuntimeNames.temporaryVariable(namePrefix + nameCounter.incrementAndGet().toString)
 }
