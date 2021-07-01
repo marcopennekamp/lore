@@ -1,5 +1,6 @@
-package lore.compiler.phases.constraints
+package lore.compiler.phases.constraints.structs
 
+import lore.compiler.phases.constraints.StructConstraints
 import lore.compiler.test.BaseSpec
 
 class StructConstraintsSpec extends BaseSpec {

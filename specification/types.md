@@ -218,7 +218,7 @@ A **declared type** is any type defined by a struct or trait and hence a type th
 
 Each type is either **abstract** or concrete. Functions may only be declared as abstract if their input type has at least one abstract parameter. Since this has important implications for the general use of abstraction patterns in Lore, it is important to understand when types are abstract. Here is a list:
 
-- A **sum type** is always abstract. (In their normal form.)
+- A **sum type** is always abstract. (In its normal form.)
 - An **intersection type** is abstract if at least one of its parts is abstract.
   - Note that there are special rules concerning traits as **augmentations**, defined further below.
 - A **tuple type** is abstract if at least one of its elements is abstract.

@@ -1,5 +1,3 @@
-// TODO: Turn this into a Scala test case.
-
 trait A
 struct AI extends A
 trait B
@@ -10,6 +8,12 @@ struct BI extends B
  * abstract functions which are specialized with one concrete type but never fully aren't magically valid.
  * This example is also mentioned in the spec.
  */
-action f(a: A, b: B)
-action f(a: AI, b: B)
-action f(a: A, b: BI)
+action f1(a: A, b: B)
+action f1(a: AI, b: B)
+action f1(a: A, b: BI)
+
+function f2(value: A | B): String
+function f2(value: AI): String = ''
+
+function f3(value: (A, String)): String
+function f3(value: (B, String)): String

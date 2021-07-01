@@ -38,7 +38,7 @@ object MultiFunctionConstraints {
     }
   }
 
-  case class AbstractFunctionNotTotal(function: FunctionDefinition, missing: Vector[Type]) extends Feedback.Error(function) {
+  case class AbstractFunctionNotImplemented(function: FunctionDefinition, missing: Vector[Type]) extends Feedback.Error(function) {
     override def message: String = s"The abstract function ${function.signature} is not fully implemented and thus doesn't" +
       s" satisfy the totality constraint. Please implement functions for the following input types: ${missing.mkString(", ")}."
   }
@@ -50,7 +50,7 @@ object MultiFunctionConstraints {
     Verification.fromErrors {
       mf.functions.filter(_.isAbstract).flatMap { function =>
         val missing = verifyInputTypeTotality(mf, function.signature.inputType)
-        if (missing.nonEmpty) Some(AbstractFunctionNotTotal(function, missing)) else None
+        if (missing.nonEmpty) Some(AbstractFunctionNotImplemented(function, missing)) else None
       }
     }
   }
