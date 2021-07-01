@@ -1,5 +1,6 @@
 package lore.compiler.phases.constraints
 
+import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.Registry
@@ -10,18 +11,27 @@ object MultiFunctionConstraints {
 
   /**
     * Verifies:
-    *   1. The input abstractness constraint.
-    *   2. The totality constraint.
-    *   3. A child function's output type is a subtype of its parent function's output type.
+    *   1. For each function, first the input abstractness constraint and then the totality constraint.
+    *   2. A child function's output type is a subtype of its parent function's output type.
     *
     * Note that uniqueness is already checked by the DeclarationResolver.
     */
   def verify(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
     (
-      verifyInputAbstractness(mf),
-      verifyTotalityConstraint(mf),
+      verifyAbstractness(mf),
       verifyOutputTypes(mf),
     ).simultaneous.verification
+  }
+
+  /**
+    * Verifies for each function in the multi-function first the input abstractness constraint and then the totality
+    * constraint.
+    */
+  private def verifyAbstractness(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
+    mf.functions.filter(_.isAbstract).map { function =>
+      verifyInputAbstractness(function)
+        .flatMap(_ => verifyTotalityConstraint(function, mf))
+    }.simultaneous.verification
   }
 
   case class FunctionIllegallyAbstract(function: FunctionDefinition) extends Feedback.Error(function) {
@@ -30,12 +40,12 @@ object MultiFunctionConstraints {
   }
 
   /**
-    * Checks whether the given multi-function satisfies the input abstractness constraint.
+    * Verifies that the given function satisfies the input abstractness constraint.
     */
-  def verifyInputAbstractness(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
-    Verification.fromErrors {
-      mf.functions.filter(_.isAbstract).filterNot(f => Type.isAbstract(f.signature.inputType)).map(FunctionIllegallyAbstract)
-    }
+  private def verifyInputAbstractness(function: FunctionDefinition)(implicit registry: Registry): Verification = {
+    if (!Type.isAbstract(function.signature.inputType)) {
+      Compilation.fail(FunctionIllegallyAbstract(function))
+    } else Verification.succeed
   }
 
   case class AbstractFunctionNotImplemented(function: FunctionDefinition, missing: Vector[Type]) extends Feedback.Error(function) {
@@ -44,15 +54,11 @@ object MultiFunctionConstraints {
   }
 
   /**
-    * Verifies the multi-function for the totality constraint.
+    * Verifies the totality constraint for the given function.
     */
-  def verifyTotalityConstraint(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
-    Verification.fromErrors {
-      mf.functions.filter(_.isAbstract).flatMap { function =>
-        val missing = verifyInputTypeTotality(mf, function.signature.inputType)
-        if (missing.nonEmpty) Some(AbstractFunctionNotImplemented(function, missing)) else None
-      }
-    }
+  private def verifyTotalityConstraint(function: FunctionDefinition, mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
+      val missing = verifyInputTypeTotality(mf, function.signature.inputType)
+      if (missing.nonEmpty) Compilation.fail(AbstractFunctionNotImplemented(function, missing)) else Verification.succeed
   }
 
   /**
@@ -121,7 +127,7 @@ object MultiFunctionConstraints {
     *       type variable allocation. See [[lore.compiler.types.TypeVariableAllocation.of]] with the genericListify
     *       example.
     */
-  def verifyOutputTypes(mf: MultiFunctionDefinition): Verification = {
+  private def verifyOutputTypes(mf: MultiFunctionDefinition): Verification = {
     def verifyHierarchyNode(node: mf.hierarchy.graph.NodeT): Verification = {
       val parent = node.value
       val successors = node.diSuccessors.toVector
