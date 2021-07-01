@@ -7,12 +7,15 @@ import scalax.collection.GraphPredef.EdgeAssoc
 import scalax.collection.config.CoreConfig
 import scalax.collection.immutable.Graph
 
+import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 
 /**
   * A hierarchy of declared types to provide quick access to supertype/subtype relationships between structs and traits.
   */
 class DeclaredTypeHierarchy(declaredTypes: Vector[DeclaredType]) {
+
+  private val concreteSubtypesCache = TrieMap[DeclaredType, Vector[DeclaredType]]()
 
   /**
     * The graph that holds the subtyping relationship. Any is the root node.
@@ -29,27 +32,35 @@ class DeclaredTypeHierarchy(declaredTypes: Vector[DeclaredType]) {
     implicit val config: Graph.Config = CoreConfig()
     val graph = Graph.from(edges) + BasicType.Any
 
-    if (graph.isCyclic) throw CompilationException(s"The declared type hierarchy must be acyclic, but is not.")
-    if (!graph.isConnected) throw CompilationException(s"The declared type hierarchy must be connected, but is not.")
+    if (graph.isCyclic) throw CompilationException(s"The declared type hierarchy is cyclic. It must be acyclic.")
+    if (!graph.isConnected) throw CompilationException(s"The declared type hierarchy is not connected. It must be connected.")
 
     graph
   }
 
   /**
-    * Returns all direct subtypes of the given declared type. If the given type cannot be found in the hierarchy, it is
-    * assumed that it does not have any direct subtypes and the empty list is returned.
+    * Returns all direct subtypes of the given declared type, excluding the type itself.
     */
   def getDirectSubtypes(tpe: NamedType): Vector[NamedType] = {
-    if (subtypingGraph.contains(tpe)) {
-      // The resulting vector should contain only distinct elements. This is already given by the structure of the
-      // type hierarchy, however. The given type will never be connected to the same subtype twice.
-      subtypingGraph.get(tpe).outgoing.toVector.map(_.to.value).map {
-        // Since only the root may be Any, any possible direct subtype should be a declared type.
-        case subtype: DeclaredType => subtype
-        case subtype =>
-          throw CompilationException(s"The type $subtype should be a declared type, as it's a subtype in a declared type hierarchy.")
-      }
-    } else Vector.empty
+    // The resulting vector will contain distinct types, as the graph also contains distinct nodes.
+    subtypingGraph.get(tpe).outgoing.toVector.map(_.to.value).filterType[DeclaredType]
+  }
+
+  /**
+    * Returns all concrete subtypes of the given declared type, excluding the type itself. These may be direct or
+    * indirect subtypes.
+    *
+    * The result of the operation is cached.
+    */
+  def getConcreteSubtypes(tpe: DeclaredType): Vector[DeclaredType] = {
+    concreteSubtypesCache.getOrElseUpdate(tpe, findConcreteSubtypes(tpe))
+  }
+
+  private def findConcreteSubtypes(tpe: DeclaredType): Vector[DeclaredType] = {
+    // The .tail removes the node related to `tpe` from the results. This node always comes first.
+    subtypingGraph.get(tpe)
+      .outerNodeTraverser.toVector.tail
+      .filterType[DeclaredType].filter(Type.isConcrete)
   }
 
   /**

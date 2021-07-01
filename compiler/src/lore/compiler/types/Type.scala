@@ -67,6 +67,11 @@ object Type {
   }
 
   /**
+    * Whether the given type is concrete.
+    */
+  def isConcrete(t: Type): Boolean = !isAbstract(t)
+
+  /**
     * Whether the given type contains a type variable.
     */
   def isPolymorphic(t: Type): Boolean = t match {
@@ -156,23 +161,6 @@ object Type {
     */
   def mostGeneral(types: Vector[Type]): Vector[Type] = {
     types.filterNot(t => types.exists(t < _)).distinct
-  }
-
-  /**
-    * Abstract-resolved direct subtypes: A set of direct subtypes that are resolved IF the given type is abstract.
-    *
-    * Note that type variables are always concrete and thus will never be specialized.
-    *
-    * @return A list of distinct abstract-resolved direct subtypes.
-    */
-  def abstractResolvedDirectSubtypes(t: Type)(implicit registry: Registry): Vector[Type] = {
-    t match {
-      case _ if !Type.isAbstract(t) => Vector(t)
-      case dt: DeclaredType => registry.declaredTypeHierarchy.getDirectSubtypes(dt)
-      case TupleType(elements) => elements.map(abstractResolvedDirectSubtypes).sequence.map(TupleType(_))
-      case IntersectionType(parts) => parts.toVector.map(abstractResolvedDirectSubtypes).sequence.map(IntersectionType.construct).distinct
-      case SumType(parts) => parts.toVector.flatMap(abstractResolvedDirectSubtypes).distinct
-    }
   }
 
   private sealed abstract class TypePrecedence(protected val value: Int) {
