@@ -1,0 +1,82 @@
+trait T1
+trait T2
+trait U
+trait U1 extends U
+trait U2 extends U
+trait V
+trait V1 extends V
+trait W
+trait W1 extends W
+
+struct A extends T1, V {
+  name: String
+}
+struct B extends T2, U1, V1, W1
+struct C extends T1, T2, U2 {
+  name: String
+}
+
+function f1(value: T1): String
+function f1(value: A): String = 'A'
+function f1(value: C): String = 'C'
+
+function f2(value: T2): String
+function f2(value: B): String = 'B'
+function f2(value: C): String = 'C'
+
+function f3(value: T1 & T2): String
+function f3(value: C): String = 'C'
+
+function f4(value: T2 & U): String
+function f4(value: B): String = 'B'
+function f4(value: C): String = 'C'
+
+function f5(value: U): String
+function f5(value: B): String = 'B'
+function f5(value: C): String = 'C'
+
+function f6(value: U & V): String
+function f6(value: B): String = 'B'
+
+/*
+function f7(value: V & { name: String }): String
+function f7(value: A): String = 'A'
+
+function f8(value: U & { name: String }): String
+function f8(value: C): String = 'C'
+
+// Note that `W1 & { name: String }` has no concrete subtypes and thus doesn't need to be implemented at all.
+function f9(value: W1 & { name: String }): String
+*/
+
+
+trait X
+trait Y
+struct X1 extends X, Y
+struct X2 extends X, Y
+struct X3 extends X, Y
+struct X4 extends X
+struct Y1 extends Y
+
+function f10(v: X & Y): String
+function f10(v: X1 | X2): String = 'X1|X2'
+function f10(v: X3): String = 'X3'
+
+
+function test(): [String] = {
+  let a = A('Ada')
+  let b = B()
+  let c = C('Cone')
+
+  [
+    f1(a), f1(c),
+    f2(b), f2(c),
+    f3(c),
+    f4(b), f4(c),
+    f5(b), f5(c),
+    f6(b),
+    //f7(a),
+    //f8(c),
+    f10(X1()), f10(X2()), f10(X3())
+  ]
+}
