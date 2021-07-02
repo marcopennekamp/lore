@@ -6,13 +6,13 @@
 # Compile and package the JAR.
 sbt assembly > /dev/null
 
-# If the `test/lore` executable doesn't exist or if the assembled jar's checksum is not the same as the checksum in
-# `test/lore.checksum`, compile the executable with native-image.
+# If the `test/target/lore` executable doesn't exist or if the assembled jar's checksum is not the same as the checksum
+# in `test/target/checksum`, compile the executable with native-image.
 checksum=$(shasum compiler/target/scala-2.13/lore-assembly-0.1.0-SNAPSHOT.jar)
-if [ ! -f "test/lore" ] || [ ! -f "test/lore.jar.checksum" ] || [[ $(head -1 test/lore.jar.checksum) != $checksum ]]; then
+if [ ! -f "test/target/lore" ] || [ ! -f "test/target/checksum" ] || [[ $(head -1 test/target/checksum) != $checksum ]]; then
   echo "Compiling Lore to an executable with GraalVM native-image..."
-  echo "$checksum" > test/lore.jar.checksum
-  native-image --no-fallback -H:ReflectionConfigurationFiles=compiler/native-image/reflection.json -H:+AllowIncompleteClasspath -H:IncludeResources='\Qlogback.xml\E' -jar compiler/target/scala-2.13/lore-assembly-0.1.0-SNAPSHOT.jar test/lore
+  echo "$checksum" > test/target/checksum
+  native-image --no-fallback -H:ReflectionConfigurationFiles=compiler/native-image/reflection.json -H:+AllowIncompleteClasspath -H:IncludeResources='\Qlogback.xml\E' -jar compiler/target/scala-2.13/lore-assembly-0.1.0-SNAPSHOT.jar test/target/lore
   printf "\n"
 fi
 

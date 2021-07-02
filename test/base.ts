@@ -24,7 +24,7 @@ export const LoreTest = {
    */
   async compile(paths: string[], outputFile: string): Promise<void> {
     const process = Deno.run({
-      cmd: ['./lore', '--base-directory', '..', '--out', 'test/' + outputFile, '--no-prettier', ...paths.map(path => `test/${path}`)],
+      cmd: ['./target/lore', '--base-directory', '..', '--out', 'test/' + outputFile, '--no-prettier', ...paths.map(path => `test/${path}`)],
       stdout: 'piped',
     })
     await process.status()
