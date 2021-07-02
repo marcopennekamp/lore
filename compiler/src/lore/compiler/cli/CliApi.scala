@@ -79,11 +79,14 @@ object CliApi {
   def writeResult(code: String)(implicit options: CliOptions): Unit = {
     val outputPath = options.baseDirectory.resolve(options.outputFile)
     val runtimePath = options.baseDirectory.resolve(Path.of("runtime", "src", "lore", "runtime", "Lore.ts"))
+
     // To create the preamble, the runtime must be imported from the output file's point of reference. Relative Deno
     // paths must start with ./ or ../, so we additionally resolve the path starting from ./.
     val runtimeFromOutputPath = outputPath.getParent.relativize(runtimePath)
     val preamble = s"import Lore from './${runtimeFromOutputPath.toString}';\n\n"
     val output = preamble + code
+
+    Files.createDirectories(outputPath.getParent)
     Files.writeString(outputPath, output)
     Runtime.getRuntime.exec(s"prettier --write ${outputPath.toString}")
   }
