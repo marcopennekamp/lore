@@ -1,0 +1,66 @@
+[
+  {
+    "name":"ch.qos.logback.classic.encoder.PatternLayoutEncoder",
+    "allPublicMethods":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"ch.qos.logback.classic.pattern.LineSeparatorConverter",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"ch.qos.logback.classic.pattern.MessageConverter",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"ch.qos.logback.core.ConsoleAppender",
+    "allPublicMethods":true,
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"com.sun.org.apache.xerces.internal.jaxp.SAXParserFactoryImpl",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"java.io.FilePermission"
+  },
+  {
+    "name":"java.lang.Object[][]"
+  },
+  {
+    "name":"java.lang.RuntimePermission"
+  },
+  {
+    "name":"java.lang.invoke.VarHandle",
+    "methods":[{"name":"releaseFence","parameterTypes":[] }]
+  },
+  {
+    "name":"java.net.NetPermission"
+  },
+  {
+    "name":"java.net.SocketPermission"
+  },
+  {
+    "name":"java.net.URLPermission",
+    "methods":[{"name":"<init>","parameterTypes":["java.lang.String","java.lang.String"] }]
+  },
+  {
+    "name":"java.security.AllPermission"
+  },
+  {
+    "name":"java.security.SecurityPermission"
+  },
+  {
+    "name":"java.util.PropertyPermission"
+  },
+  {
+    "name":"javax.management.ObjectName"
+  },
+  {
+    "name":"lore.compiler.utils.LowercaseLogLevel",
+    "methods":[{"name":"<init>","parameterTypes":[] }]
+  },
+  {
+    "name":"scalax.collection.State$Handle[]"
+  }
+]

@@ -3,18 +3,20 @@
 # If you pass a folder name as the first parameter, Deno will only execute tests contained in the folder. For example,
 # running `./test.sh dispatch` will only execute dispatch tests.
 
-echo "Running Lore functional tests..."
-
-# Remove the old lore.jar.
-rm test/lore.jar
-
 # Compile and package the JAR.
-sbt --error assembly
+sbt assembly > /dev/null
 
-# Copy the compiler JAR to the test folder.
-cp compiler/target/scala-2.13/lore-assembly-0.1.0-SNAPSHOT.jar test/lore.jar
+# If the `test/lore` executable doesn't exist or if the assembled jar's checksum is not the same as the checksum in
+# `test/lore.checksum`, compile the executable with native-image.
+checksum=$(shasum compiler/target/scala-2.13/lore-assembly-0.1.0-SNAPSHOT.jar)
+if [ ! -f "test/lore" ] || [ ! -f "test/lore.jar.checksum" ] || [[ $(head -1 test/lore.jar.checksum) != $checksum ]]; then
+  echo "Compiling Lore to an executable with GraalVM native-image..."
+  echo "$checksum" > test/lore.jar.checksum
+  native-image --no-fallback -H:ReflectionConfigurationFiles=compiler/native-image/reflection.json -H:+AllowIncompleteClasspath -H:IncludeResources='\Qlogback.xml\E' -jar compiler/target/scala-2.13/lore-assembly-0.1.0-SNAPSHOT.jar test/lore
+  printf "\n"
+fi
 
-printf "\n"
+printf "Running Lore functional tests...\n\n"
 
 # Run all functional tests.
 cd test
