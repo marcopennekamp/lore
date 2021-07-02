@@ -6,7 +6,7 @@ import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.Registry
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 
 /**
   * The CliApi takes care of parsing CLI options, file input/output, and standard command-line reporting of errors and
@@ -76,8 +76,14 @@ object CliApi {
   /**
     * Writes the result of the compilation to the file system.
     */
-  def writeResult(output: String)(implicit options: CliOptions): Unit = {
+  def writeResult(code: String)(implicit options: CliOptions): Unit = {
     val outputPath = options.baseDirectory.resolve(options.outputFile)
+    val runtimePath = options.baseDirectory.resolve(Path.of("runtime", "src", "lore", "runtime", "Lore.ts"))
+    // To create the preamble, the runtime must be imported from the output file's point of reference. Relative Deno
+    // paths must start with ./ or ../, so we additionally resolve the path starting from ./.
+    val runtimeFromOutputPath = outputPath.getParent.relativize(runtimePath)
+    val preamble = s"import Lore from './${runtimeFromOutputPath.toString}';\n\n"
+    val output = preamble + code
     Files.writeString(outputPath, output)
     Runtime.getRuntime.exec(s"prettier --write ${outputPath.toString}")
   }
