@@ -28,6 +28,9 @@ object CliOptionsParser {
         .valueName("<file>")
         .action((out, options) => options.copy(outputFile = out))
         .text("The file that the generated Javascript code is written to, the default being `lore-program.js`."),
+      opt[Unit]("no-prettier")
+        .action((_, options) => options.copy(enablePrettier = false))
+        .text("Disable beautification of the generated Javascript code with prettier. This avoids an additional compile-time cost of a few hundred milliseconds."),
       opt[Unit]("runtime-logging")
         .action((_, options) => options.copy(compilerOptions = options.compilerOptions.copy(enableRuntimeLogging = true)))
         .text("Run-time logging generates various logging statements in the target Javascript code, which can greatly affect performance."),

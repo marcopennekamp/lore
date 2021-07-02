@@ -88,7 +88,10 @@ object CliApi {
 
     Files.createDirectories(outputPath.getParent)
     Files.writeString(outputPath, output)
-    Runtime.getRuntime.exec(s"prettier --write ${outputPath.toString}")
+
+    if (options.enablePrettier) {
+      Runtime.getRuntime.exec(s"prettier --write ${outputPath.toString}").waitFor()
+    }
   }
 
 }

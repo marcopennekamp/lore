@@ -23,6 +23,12 @@ case class CliOptions(
   outputFile: Path = Path.of(CompilerOptions.defaultOutputFileName),
 
   /**
+    * Whether the generated Javascript code should be beautified with prettier. This incurs an additional compile-time
+    * cost of a few hundred milliseconds.
+    */
+  enablePrettier: Boolean = true,
+
+  /**
     * CompilerOptions are used in the internals of the compiler and .
     */
   compilerOptions: CompilerOptions = CompilerOptions(),

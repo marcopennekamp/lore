@@ -10,21 +10,24 @@ import { assert } from 'https://deno.land/std/testing/asserts.ts'
  */
 export const LoreTest = {
   async run(...paths: string[]): Promise<any> {
-    await LoreTest.compile(...paths)
-    return LoreTest.execute()
+    const outputFile = 'target/target.js'
+    await LoreTest.compile(paths, outputFile)
+    return LoreTest.execute(outputFile)
   },
 
   /**
    * Compiles a given test file to <lore root>/lore-program.js and asserts that the compilation was successful.
    *
-   * @param paths All paths to the test files, with <lore root>/test as the base directory and without a file extension.
-   *              For example, giving 'return/simple' as the test path would result in <lore root>/test/return/simple.lore.
+   * @param paths All paths to the test files or directories, with <lore root>/test as the base directory. For example,
+   *              giving 'return/simple.lore' as the test path would result in <lore root>/test/return/simple.lore.
+   * @param outputFile The unique Javascript file that the generated code is written to.
    */
-  async compile(...paths: string[]): Promise<void> {
+  async compile(paths: string[], outputFile: string): Promise<void> {
     const process = Deno.run({
-      cmd: ['java', '-jar', 'lore.jar', '--base-directory', '..', ...paths.map(path => `test/${path}`)],
+      cmd: ['./lore', '--base-directory', '..', '--out', 'test/' + outputFile, '--no-prettier', ...paths.map(path => `test/${path}`)],
       stdout: 'piped',
     })
+    await process.status()
 
     const messages = await stdoutMessages(process)
 
@@ -43,15 +46,13 @@ export const LoreTest = {
    * Execute the Lore program's test() function in a new process, returning the function's return value deserialized
    * from the process's JSON output.
    */
-  async execute(): Promise<any> {
-    // TODO: Deno currently outputs a "Check file:///.../execute.ts" for every test that is run. This is very messy,
-    //       but cannot be fixed easily. The culprit is an info! call with "Check" in tsc.rs in Deno's source. It is
-    //       annotated with a TODO ("TSC shouldn't print anything") and can thus be expected to be fixed at some point.
+  async execute(outputFile: string): Promise<any> {
     const process = Deno.run({
-      cmd: ['deno', 'run', 'execute.ts'],
+      cmd: ['deno', 'run', '--allow-read', 'execute.ts', outputFile],
       stdout: 'piped',
       stderr: 'piped',
     })
+    await process.status()
 
     let result: any = undefined
     const errors = await stderrMessages(process)
