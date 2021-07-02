@@ -45,6 +45,3 @@ scalaSource in Test := { (baseDirectory in Test)(_ / "test") }.value
 
 // Set lore.compiler.cli.CliApi as the main object. All other main functions are meant to be run via the IDE.
 mainClass := Some("lore.compiler.cli.CliApi")
-
-// Skip tests when using `sbt assembly`.
-test in assembly := {}
