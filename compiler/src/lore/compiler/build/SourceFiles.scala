@@ -1,10 +1,10 @@
-package lore.compiler.cli
+package lore.compiler.build
 
 import lore.compiler.core.{Compilation, Fragment, Position}
 import lore.compiler.feedback.Feedback
 
 import java.nio.file.{FileSystems, Files, Path, PathMatcher}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.IteratorHasAsScala
 import scala.util.{Failure, Success, Using}
 
 object SourceFiles {
@@ -29,12 +29,12 @@ object SourceFiles {
 
   /**
     * Returns all fragments described by the given path. This may either be a file ending in `.lore` or a directory
-    * containing `.lore files`.
+    * containing `.lore` files.
     *
     * We require all Lore sources to end in `.lore` for consistency with how Lore sources are found when directories
     * are specified.
     */
-  def of(path: Path)(implicit options: CliOptions): Compilation[Vector[Fragment]] = {
+  def of(path: Path): Compilation[Vector[Fragment]] = {
     if (lorePathMatcher.matches(path)) {
       if (Files.exists(path)) {
         ofFile(path).map(Vector(_))
@@ -52,7 +52,7 @@ object SourceFiles {
     }
   }
 
-  private def ofDirectory(directory: Path)(implicit options: CliOptions): Compilation[Vector[Fragment]] = {
+  private def ofDirectory(directory: Path): Compilation[Vector[Fragment]] = {
     Files.walk(directory)
       .filter(Files.isRegularFile(_))
       .filter(lorePathMatcher.matches(_))
@@ -60,11 +60,11 @@ object SourceFiles {
       .iterator().asScala.toVector.simultaneous
   }
 
-  private def ofFile(path: Path)(implicit options: CliOptions): Compilation[Fragment] = {
+  private def ofFile(path: Path): Compilation[Fragment] = {
     // The additional newline ensures that the file ends in a newline.
     Using(Files.lines(path))(_.iterator().asScala.mkString("\n") + "\n") match {
       case Success(source) =>
-        val name = options.baseDirectory.relativize(path).toString
+        val name = path.toString
         Compilation.succeed(Fragment(name, source))
       case Failure(exception) => Compilation.fail(FileAccessFailed(path, exception))
     }

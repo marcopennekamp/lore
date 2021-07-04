@@ -11,8 +11,3 @@ case class CompilerOptions(
     */
   showFeedbackStackTraces: Boolean = false,
 )
-
-object CompilerOptions {
-  val defaultBaseDirectory = "."
-  val defaultOutputFileName = "lore-program.js"
-}

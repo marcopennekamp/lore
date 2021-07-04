@@ -1,0 +1,10 @@
+{
+  "sdk": ".",
+  "target": "lore-program.js",
+  "sources": [],
+  "enablePrettier": true,
+  "compilerOptions": {
+    "enableRuntimeLogging": false,
+    "showFeedbackStackTraces": false
+  }
+}
