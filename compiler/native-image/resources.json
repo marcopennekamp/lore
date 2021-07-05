@@ -1,0 +1,10 @@
+{
+  "resources":{
+    "includes":[
+      {"pattern":"\\Qlogback.xml\\E"},
+      {"pattern":"\\Qlore/compiler/build/BuildOptions$.class\\E"},
+      {"pattern":"\\Qlore/compiler/build/BuildOptions.class\\E"},
+      {"pattern":"\\Qorg/slf4j/impl/StaticLoggerBinder.class\\E"}
+    ]},
+  "bundles":[]
+}

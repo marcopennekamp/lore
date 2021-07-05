@@ -12,7 +12,7 @@ checksum=$(shasum compiler/target/scala-2.13/lore-assembly-0.1.0-SNAPSHOT.jar)
 if [ ! -f "test/target/lore" ] || [ ! -f "test/target/checksum" ] || [[ $(head -1 test/target/checksum) != $checksum ]]; then
   echo "Compiling Lore to an executable with GraalVM native-image..."
   echo "$checksum" > test/target/checksum
-  native-image --no-fallback -H:ReflectionConfigurationFiles=compiler/native-image/reflection.json -H:+AllowIncompleteClasspath -H:IncludeResources='\Qlogback.xml\E' -jar compiler/target/scala-2.13/lore-assembly-0.1.0-SNAPSHOT.jar test/target/lore
+  native-image --no-fallback -H:ReflectionConfigurationFiles=compiler/native-image/reflection.json -H:ResourceConfigurationFiles=compiler/native-image/resources.json -H:+AllowIncompleteClasspath -jar compiler/target/scala-2.13/lore-assembly-0.1.0-SNAPSHOT.jar test/target/lore
   printf "\n"
 fi
 

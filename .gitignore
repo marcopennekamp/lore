@@ -19,9 +19,6 @@ project/project/target
 # IntelliJ Idea
 .idea
 
-# Old Specification
-main.pdf
-
 # Lore
 lore-program.js
 test/lore.jar
@@ -32,3 +29,6 @@ test/target
 # Rust (VM)
 vm/target
 vm/Cargo.lock
+
+# Miscellaneous
+scratch.txt
