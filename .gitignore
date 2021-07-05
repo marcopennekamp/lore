@@ -31,8 +31,8 @@ vm/target
 vm/Cargo.lock
 
 # Language Server
-lsp/vscode/node_modules
-lsp/vscode/out
+lsp/client/node_modules/
+lsp/client/out/
 
 # Miscellaneous
 scratch.txt
