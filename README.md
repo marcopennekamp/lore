@@ -31,3 +31,15 @@ One part of this project is Lore's functional testing solution. In the folder `t
 Each Lore program in this folder defines a function `test()`, which may return any kind of value. Additionally, we define Deno tests that compile the programs, execute the test functions, and verify the return values. When running `test.sh` (in the project root), the Lore compiler is freshly assembled into a JAR and subsequently all Deno tests in the `test` folder are executed.   
 
 This solution allows us to automate "real-world" testing of Lore programs. By adding such test programs, we can ensure that specific features of the language and compiler work as intended. It helps finding software regressions (as long as tests are added when fixing an issue) and helps keep the language stable. As each test requires the work of the compiler and runtime, our functional tests are whole-system tests.
+
+
+
+### Native Image
+
+A native executable version of the Lore compiler can be built from an assembled JAR using GraalVM native-image. See `test.sh` for a sample use of the command.
+
+To generate new versions of the `compiler/native-image/*` configuration files, execute the following command from a folder that contains a `lore.build.json` file:
+
+```shell
+java -agentlib:native-image-agent=config-output-dir=graal-config/ -jar compiler/target/scala-2.13/lore-assembly-0.1.0-SNAPSHOT.jar build
+```
