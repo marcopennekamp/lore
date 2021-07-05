@@ -1,0 +1,7 @@
+{
+  "sdk": "../..",
+  "target": "../../lore-program.js",
+  "sources": [
+    "."
+  ]
+}

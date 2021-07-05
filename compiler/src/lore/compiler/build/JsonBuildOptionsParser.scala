@@ -6,7 +6,7 @@ import org.json4s.native.JsonMethods
 import java.nio.file.Path
 
 /**
-  * Parses Lore build options from a JSON string. An example file with default values is located at `lore.json`.
+  * Parses Lore build options from a JSON string. An example file with default values is located at `lore.build.json`.
   */
 object JsonBuildOptionsParser {
 

@@ -45,13 +45,13 @@ object CliBuildOptionsParser {
         ),
       cmd("build")
         .action { (_, _) =>
-          val buildFile = Path.of("lore.json")
+          val buildFile = Path.of("lore.build.json")
           if (!Files.isRegularFile(buildFile)) {
-            failure("Cannot build a lore program from the current directory. There is no `lore.json` build file.")
+            failure("Cannot build a lore program from the current directory. There is no `lore.build.json` build file.")
           }
           JsonBuildOptionsParser.parse(Files.readString(buildFile))
         }
-        .text("Compile a lore program with compilation options taken from a `lore.json` build file in the current directory."),
+        .text("Compile a lore program with compilation options taken from a `lore.build.json` build file in the current directory."),
       help("help").text("Prints this help text."),
     )
   }
