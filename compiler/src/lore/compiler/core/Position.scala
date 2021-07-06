@@ -18,12 +18,13 @@ case class Position(fragment: Fragment, index: Index) {
   lazy val prettyIndex: String = fragment.input.prettyIndex(index)
 
   /**
-    * The line number of the position as a 1-based index.
+    * The line and column numbers of the position as 1-based indices.
     */
-  lazy val line: Int = {
-    // Not the prettiest way to implement this, but fastparse doesn't seem to expose a line number interface.
-    // This is the most convenient way to access line numbers, as far as I can see.
-    Integer.parseInt(prettyIndex.split(":").head)
+  lazy val (line, column): (Int, Int) = {
+    // Not the prettiest way to implement this, but fastparse doesn't seem to expose a line/column interface. This is
+    // the most convenient way to access line/column numbers, as far as I can see.
+    val Array(line, column) = prettyIndex.split(":").map(Integer.parseInt)
+    (line, column)
   }
 
   /**
