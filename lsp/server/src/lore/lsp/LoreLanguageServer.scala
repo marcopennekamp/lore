@@ -21,6 +21,8 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
   private var workspaceFolder: Path = _
   private var registry: Registry = _
 
+  private val feedbackPublisher: FeedbackPublisher = new FeedbackPublisher
+
   override def initialize(params: InitializeParams): CompletableFuture[InitializeResult] = {
     // Let's try to provide "go to definition" capabilities first.
     val capabilities = new ServerCapabilities
@@ -46,17 +48,7 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
 
   override def initialized(params: InitializedParams): Unit = {
     client.showMessage(new MessageParams(MessageType.Info, "Lore: Initializing workspace..."))
-
-    WorkspaceAnalyzer.analyze(workspaceFolder) match {
-      case success@Compilation.Success(value, _) =>
-        client.showMessage(new MessageParams(MessageType.Info, "Lore: Workspace compilation succeeded."))
-        registry = value
-        FeedbackPublisher.publish(success.feedback)
-
-      case failure@Compilation.Failure(_, _) =>
-        client.showMessage(new MessageParams(MessageType.Info, "Lore: Workspace compilation failed."))
-        FeedbackPublisher.publish(failure.feedback)
-    }
+    applyWorkspaceChanges()
   }
 
   override def shutdown(): CompletableFuture[AnyRef] = CompletableFuture.completedFuture(new Object)
@@ -68,21 +60,32 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
     override def didChange(params: DidChangeTextDocumentParams): Unit = { }
     override def didClose(params: DidCloseTextDocumentParams): Unit = { }
     override def didSave(params: DidSaveTextDocumentParams): Unit = { }
-  }
-
-  def getWorkspaceService: WorkspaceService = new WorkspaceService {
-    override def didChangeConfiguration(params: DidChangeConfigurationParams): Unit = { }
-    override def didChangeWatchedFiles(params: DidChangeWatchedFilesParams): Unit = { }
   } */
 
   override def getTextDocumentService: TextDocumentService = null
 
-  override def getWorkspaceService: WorkspaceService = null
+  override def getWorkspaceService: WorkspaceService = new WorkspaceService {
+    override def didChangeConfiguration(params: DidChangeConfigurationParams): Unit = ???
+    override def didChangeWatchedFiles(params: DidChangeWatchedFilesParams): Unit = applyWorkspaceChanges()
+  }
 
   override def cancelProgress(params: WorkDoneProgressCancelParams): Unit = super.cancelProgress(params)
 
   override def connect(client: LanguageClient): Unit = {
     this.client = client
+  }
+
+  private def applyWorkspaceChanges(): Unit = this.synchronized {
+    WorkspaceAnalyzer.analyze() match {
+      case success@Compilation.Success(value, _) =>
+        client.showMessage(new MessageParams(MessageType.Info, "Lore: Workspace compilation succeeded."))
+        registry = value
+        feedbackPublisher.publish(success.feedback)
+
+      case failure@Compilation.Failure(_, _) =>
+        client.showMessage(new MessageParams(MessageType.Info, "Lore: Workspace compilation failed."))
+        feedbackPublisher.publish(failure.feedback)
+    }
   }
 
 }

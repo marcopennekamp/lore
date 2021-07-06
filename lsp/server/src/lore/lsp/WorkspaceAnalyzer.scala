@@ -2,18 +2,17 @@ package lore.lsp
 
 import lore.compiler.build.{BuildApi, JsonBuildOptionsParser}
 import lore.compiler.core.Compilation
-import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.Registry
 import org.eclipse.lsp4j.services.LanguageClient
 
 import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.charset.StandardCharsets
-import java.nio.file.{Files, Path}
+import java.nio.file.Files
 import scala.util.{Failure, Success, Using}
 
 object WorkspaceAnalyzer {
 
-  def analyze(workspaceFolder: Path)(implicit client: LanguageClient): Compilation[Registry] = {
+  def analyze()(implicit client: LanguageClient): Compilation[Registry] = {
     val buildOptions = JsonBuildOptionsParser.parse(Files.readString(BuildApi.buildFile))
     MessageLogger.info(buildOptions.toString)
 

@@ -125,7 +125,10 @@
 
 #### Editor Support
 
-- Implement a Language Server:
-  - https://microsoft.github.io/language-server-protocol/
-  - https://code.visualstudio.com/api/language-extensions/overview
-  - There are plugins adding LSP support for IntelliJ, so creating a language server seems like the future-facing choice. See: https://github.com/gtache/intellij-lsp.
+##### Language Server
+
+- Make sure that multiple "applyWorkspaceChanges" calls are properly debounced. If the method is already being executed and more calls come in, we only need the last call to trigger another execution. Only one call may execute at the same time.
+
+##### IntelliJ
+
+- Add IntelliJ support via a plugin library like this: https://github.com/ballerina-platform/lsp4intellij.

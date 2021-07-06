@@ -1,6 +1,6 @@
 package lore.lsp
 
-import lore.compiler.core.Position
+import lore.compiler.core.{Fragment, Position}
 import lore.compiler.feedback.Feedback
 import org.eclipse.lsp4j.{Diagnostic, DiagnosticSeverity, PublishDiagnosticsParams, Range}
 import org.eclipse.lsp4j.services.LanguageClient
@@ -8,18 +8,33 @@ import org.eclipse.lsp4j
 
 import scala.jdk.CollectionConverters._
 
-object FeedbackPublisher {
+class FeedbackPublisher {
 
-  def publish(feedback: Vector[Feedback])(implicit client: LanguageClient): Unit = {
+  /**
+    * We need to remember the fragments that last received feedback so that we can clear diagnostics from the file if
+    * the fragment doesn't have feedback the next time.
+    */
+  var lastFeedbackFragments: Vector[Fragment] = Vector.empty
+
+  def publish(feedback: Vector[Feedback])(implicit client: LanguageClient): Unit = this.synchronized {
     val byFragment = feedback.groupBy(_.position.fragment)
-    byFragment.foreach { case (fragment, feedback) =>
-      // Only publish diagnostics for fragments that have a path!
-      fragment.path.foreach { path =>
-        val diagnostics = feedback.map(toDiagnostic).asJava
-        val uri = path.toUri.toString
-        MessageLogger.info(s"Fragment URI: $uri")
-        client.publishDiagnostics(new PublishDiagnosticsParams(uri, diagnostics))
-      }
+
+    // Make sure that fragment diagnostics are cleared for any fragments that don't have feedback.
+    lastFeedbackFragments
+      .filter(fragment => !byFragment.contains(fragment))
+      .foreach(fragment => publish(fragment, Vector.empty))
+
+    byFragment.foreach { case (fragment, feedback) => publish(fragment, feedback) }
+
+    lastFeedbackFragments = byFragment.keys.toVector
+  }
+
+  private def publish(fragment: Fragment, feedback: Vector[Feedback])(implicit client: LanguageClient): Unit = {
+    // Only publish diagnostics for fragments that have a path!
+    fragment.path.foreach { path =>
+      val diagnostics = feedback.map(toDiagnostic).asJava
+      val uri = path.toUri.toString
+      client.publishDiagnostics(new PublishDiagnosticsParams(uri, diagnostics))
     }
   }
 
