@@ -1,9 +1,12 @@
 package lore.lsp
 
+import lore.compiler.core.Compilation
+import lore.compiler.semantics.Registry
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures
 import org.eclipse.lsp4j.services._
 import org.eclipse.lsp4j._
 
+import java.nio.file.Path
 import java.util.concurrent.CompletableFuture
 
 /**
@@ -13,39 +16,47 @@ import java.util.concurrent.CompletableFuture
   */
 class LoreLanguageServer extends LanguageServer with LanguageClientAware {
 
-  private var client: LanguageClient = _
+  private implicit var client: LanguageClient = _
+
+  private var workspaceFolder: Path = _
+  private var registry: Registry = _
 
   override def initialize(params: InitializeParams): CompletableFuture[InitializeResult] = {
     // Let's try to provide "go to definition" capabilities first.
     val capabilities = new ServerCapabilities
     capabilities.setDefinitionProvider(new DefinitionOptions)
-    // TODO: Add semanticTokens support for LSP-implemented syntax highlighting.
+    // TODO: Add semanticTokens support for LSP-implemented syntax highlighting?
 
     val serverInfo = new ServerInfo("lore-language-server")
 
     CompletableFutures.computeAsync { cancelToken =>
-
-      // Initialize the given workspace as a
-
-
-
-      /* params.getWorkspaceFolders match {
+      params.getWorkspaceFolders match {
         case list if list.size() == 1 =>
           cancelToken.checkCanceled()
+          workspaceFolder = Path.of(list.get(0).getUri)
           new InitializeResult(capabilities, serverInfo)
 
         case _ =>
           cancelToken.checkCanceled()
+          MessageLogger.info("Please open a SINGLE workspace!")
           ??? //new InitializeError(false) // ?????
-      } */
-
-      cancelToken.checkCanceled()
-      new InitializeResult(capabilities, serverInfo)
+      }
     }
   }
 
   override def initialized(params: InitializedParams): Unit = {
-    client.showMessage(new MessageParams(MessageType.Info, "Hello, Visual Studio Code!\n- Lore language server"))
+    client.showMessage(new MessageParams(MessageType.Info, "Lore: Initializing workspace..."))
+
+    WorkspaceAnalyzer.analyze(workspaceFolder) match {
+      case success@Compilation.Success(value, _) =>
+        client.showMessage(new MessageParams(MessageType.Info, "Lore: Workspace compilation succeeded."))
+        registry = value
+        FeedbackPublisher.publish(success.feedback)
+
+      case failure@Compilation.Failure(_, _) =>
+        client.showMessage(new MessageParams(MessageType.Info, "Lore: Workspace compilation failed."))
+        FeedbackPublisher.publish(failure.feedback)
+    }
   }
 
   override def shutdown(): CompletableFuture[AnyRef] = CompletableFuture.completedFuture(new Object)
