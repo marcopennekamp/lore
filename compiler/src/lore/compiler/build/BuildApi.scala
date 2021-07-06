@@ -27,6 +27,24 @@ object BuildApi {
     }
   }
 
+  /**
+    * Compiles a Lore program from the given build options.
+    */
+  def compile(options: BuildOptions): Compilation[(Registry, String)] = {
+    getFragments(options).flatMap(
+      fragments => LoreCompiler.compile(fragments, options.compilerOptions)
+    )
+  }
+
+  /**
+    * Analyzes a Lore program from the given build options.
+    */
+  def analyze(options: BuildOptions): Compilation[Registry] = {
+    getFragments(options).flatMap(
+      fragments => LoreCompiler.analyze(fragments, options.compilerOptions)
+    )
+  }
+
   case class DuplicateFragmentName(fragment: Fragment) extends Feedback.Error(Position(fragment, 0)) {
     override def message: String = s"The fragment '${fragment.name}' is defined multiple times. Fragments may not " +
       s"share names. Most likely you have specified a source file which is also included via a directory source, or " +
@@ -34,9 +52,9 @@ object BuildApi {
   }
 
   /**
-    * Compiles a Lore program from the given CLI options.
+    * Gets all fragments that can be found given the build options.
     */
-  def compile(options: BuildOptions): Compilation[(Registry, String)] = {
+  def getFragments(options: BuildOptions): Compilation[Vector[Fragment]] = {
     SdkDirectory.verify(options.sdk).flatMap { _ =>
       val sources = options.sources :+ options.sdk.resolve("pyramid")
       sources
@@ -44,7 +62,6 @@ object BuildApi {
         .simultaneous
         .map(_.flatten)
         .flatMap(_.requireUnique(_.name, DuplicateFragmentName))
-        .flatMap(fragments => LoreCompiler.compile(fragments, options.compilerOptions))
     }
   }
 
