@@ -1,6 +1,6 @@
 package lore.compiler.cli
 
-import lore.compiler.build.{BuildOptions, JsonBuildOptionsParser}
+import lore.compiler.build.{BuildApi, BuildOptions, JsonBuildOptionsParser}
 import lore.compiler.feedback.Feedback
 import scopt.{OParser, Read}
 
@@ -45,13 +45,12 @@ object CliBuildOptionsParser {
         ),
       cmd("build")
         .action { (_, _) =>
-          val buildFile = Path.of("lore.build.json")
-          if (!Files.isRegularFile(buildFile)) {
-            failure("Cannot build a lore program from the current directory. There is no `lore.build.json` build file.")
+          if (!Files.isRegularFile(BuildApi.buildFile)) {
+            failure(s"Cannot build a lore program from the current directory. There is no `${BuildApi.buildFile}` build file.")
           }
-          JsonBuildOptionsParser.parse(Files.readString(buildFile))
+          JsonBuildOptionsParser.parse(Files.readString(BuildApi.buildFile))
         }
-        .text("Compile a lore program with compilation options taken from a `lore.build.json` build file in the current directory."),
+        .text(s"Compile a lore program with compilation options taken from a `${BuildApi.buildFile}` build file in the current directory."),
       help("help").text("Prints this help text."),
     )
   }

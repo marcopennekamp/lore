@@ -14,6 +14,8 @@ import java.nio.file.{Files, Path}
   */
 object BuildApi {
 
+  val buildFile: Path = Path.of("lore.build.json")
+
   def build(options: BuildOptions): Unit = {
     val compilationStartTime = System.nanoTime()
     val result = compile(options)
