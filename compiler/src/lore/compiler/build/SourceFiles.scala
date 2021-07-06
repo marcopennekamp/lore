@@ -63,9 +63,7 @@ object SourceFiles {
   private def ofFile(path: Path): Compilation[Fragment] = {
     // The additional newline ensures that the file ends in a newline.
     Using(Files.lines(path))(_.iterator().asScala.mkString("\n") + "\n") match {
-      case Success(source) =>
-        val name = path.toString
-        Compilation.succeed(Fragment(name, source))
+      case Success(source) => Compilation.succeed(Fragment(path.toString, Some(path), source))
       case Failure(exception) => Compilation.fail(FileAccessFailed(path, exception))
     }
   }
