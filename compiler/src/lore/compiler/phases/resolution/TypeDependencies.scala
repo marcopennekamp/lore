@@ -24,10 +24,10 @@ object TypeDependencies {
     *   2. There are no cyclic type dependencies.
     */
   def resolve(typeDeclarations: TypeDeclarations): Compilation[Registry.TypeResolutionOrder] = {
-    val infos = typeDeclarations.values.toVector.map(node => TypeDeclarationInfo(node, dependencies(node)))
+    val unfilteredInfos = typeDeclarations.values.toVector.map(node => TypeDeclarationInfo(node, dependencies(node)))
 
     for {
-      _ <- infos.map(verifyDependenciesExist(_, typeDeclarations)).simultaneous
+      infos <- unfilteredInfos.map(filterUndefinedDependencies(_, typeDeclarations)).simultaneous
 
       graph = buildDependencyGraph(infos)
       _ <- verifyAcyclic(graph, typeDeclarations)
@@ -61,13 +61,17 @@ object TypeDependencies {
   }
 
   /**
-    * Verifies that the given dependencies have a corresponding type declaration.
+    * Filters out any dependencies without a corresponding type declaration, producing an error for each undefined
+    * dependency. This ensures that the type resolution order contains only defined types, which is crucial for
+    * compiler operation since the compiler continues working with partially failed compilations.
     */
-  private def verifyDependenciesExist(info: TypeDeclarationInfo, typeDeclarations: TypeDeclarations): Verification = {
-    info.dependencies.map { dependency =>
-      if (typeDeclarations.contains(dependency)) Verification.succeed
-      else Compilation.fail(UndefinedDependency(info.node, dependency))
-    }.simultaneous.verification
+  private def filterUndefinedDependencies(info: TypeDeclarationInfo, typeDeclarations: TypeDeclarations): Compilation[TypeDeclarationInfo] = {
+    val (defined, undefined) = info.dependencies.partition(typeDeclarations.contains)
+    if (undefined.nonEmpty) {
+      val info2 = info.copy(dependencies = defined)
+      val errors = undefined.map(dependency => UndefinedDependency(info.node, dependency))
+      Compilation.fail(info2, errors)
+    } else Compilation.succeed(info)
   }
 
   private type DependencyGraph = Graph[String, DiEdge]
@@ -113,7 +117,7 @@ object TypeDependencies {
       }
 
       val errors = cycles.map(cycle => InheritanceCycle(cycle.nodes.map(_.value).toVector, typeDeclarations(cycle.startNode)))
-      Compilation.fail(errors: _*)
+      Compilation.fail(errors)
     } else Verification.succeed
   }
 
