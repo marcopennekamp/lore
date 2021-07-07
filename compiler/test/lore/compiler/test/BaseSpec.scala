@@ -1,12 +1,11 @@
 package lore.compiler.test
 
 import lore.compiler.build.{BuildApi, BuildOptions}
+import lore.compiler.core.Compilation
 import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.compiler.types.TupleType
-import lore.compiler.cli.CliApi
-import lore.compiler.core.Compilation
+import lore.compiler.semantics.functions.FunctionDefinition
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 import org.scalatest._
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -22,9 +21,9 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
     * Compiles the given fragment path with the default CLI options to a given Registry.
     */
   def compileFragment(fragmentPath: String): Registry = {
-    BuildApi.compile(BuildOptions().withSources(testFragmentBase.resolve(fragmentPath))).toOption match {
-      case Some((registry, _)) => registry
-      case None => throw new RuntimeException(s"Compilation of test fragment $fragmentPath failed!")
+    BuildApi.compile(BuildOptions().withSources(testFragmentBase.resolve(fragmentPath))) match {
+      case Compilation.Success((registry, _), _) => registry
+      case _ => throw new RuntimeException(s"Compilation of test fragment $fragmentPath failed!")
     }
   }
 
@@ -35,7 +34,7 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
   def assertCompilationErrors(fragmentPath: String)(assert: Vector[Feedback.Error] => Assertion): Assertion = {
     BuildApi.compile(BuildOptions().withSources(testFragmentBase.resolve(fragmentPath))) match {
       case Compilation.Success(_, _) => Assertions.fail(s"Compilation of $fragmentPath should have failed with errors, but unexpectedly succeeded.")
-      case Compilation.Failure(errors, _) => assert(errors.sortWith { case (e1, e2) => e1.position < e2.position })
+      case failure: Compilation.Failure[_] => assert(failure.feedback.filterType[Feedback.Error].sortWith { case (e1, e2) => e1.position < e2.position })
     }
   }
 

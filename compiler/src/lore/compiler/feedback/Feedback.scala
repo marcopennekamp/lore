@@ -2,6 +2,7 @@ package lore.compiler.feedback
 
 import com.typesafe.scalalogging.Logger
 import lore.compiler.core.{Position, Positioned}
+import lore.compiler.core.Compilation
 
 /**
   * Feedback is either an error or a warning.
@@ -16,6 +17,12 @@ sealed trait Feedback extends Positioned {
     * A stack trace of the instance where the feedback was initialized.
     */
   val stackTrace: Vector[StackTraceElement] = new Throwable().getStackTrace.toVector
+
+  /**
+    * Whether this feedback is an error. The presence of error feedback in a [[Compilation]] will stop the compilation
+    * after program analysis.
+    */
+  def isError: Boolean = false
 }
 
 object Feedback {
@@ -29,9 +36,8 @@ object Feedback {
     * The base class for compilation errors. Proper errors must extend this class.
     */
   abstract class Error(override val position: Position) extends Feedback {
-    def this(definition: Positioned) = {
-      this(definition.position)
-    }
+    def this(definition: Positioned) = this(definition.position)
+    override def isError = true
   }
 
   val tagError = s"${Console.RED}error${Console.RESET}"

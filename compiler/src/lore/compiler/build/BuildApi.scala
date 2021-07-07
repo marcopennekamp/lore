@@ -21,9 +21,10 @@ object BuildApi {
     val result = compile(options)
     val compilationEndTime = System.nanoTime()
 
-    logCompilationResult(result, compilationStartTime, compilationEndTime)(options.compilerOptions)
-    result.foreach {
-      case (_, code) => writeResult(code)(options)
+    logCompilationFeedback(result, compilationStartTime, compilationEndTime)(options.compilerOptions)
+    result match {
+      case Compilation.Success((_, code), _) => writeResult(code)(options)
+      case _ =>
     }
   }
 
@@ -41,7 +42,7 @@ object BuildApi {
     */
   def analyze(options: BuildOptions): Compilation[Registry] = {
     getFragments(options).flatMap(
-      fragments => LoreCompiler.analyze(fragments, options.compilerOptions)
+      fragments => LoreCompiler.analyze(fragments)
     )
   }
 
@@ -66,21 +67,21 @@ object BuildApi {
   }
 
   /**
-    * Logs the compilation result in a user-palatable way, reporting errors or the successful result in text form.
+    * Logs the compilation feedback in a user-palatable way.
     */
-  def logCompilationResult(result: Compilation[Any], compilationStartTime: Long, compilationEndTime: Long)(implicit options: CompilerOptions): Unit = {
+  def logCompilationFeedback(compilation: Compilation[Any], compilationStartTime: Long, compilationEndTime: Long)(implicit options: CompilerOptions): Unit = {
     val compilationTime = ((compilationEndTime - compilationStartTime) / 1000) / 1000.0
-    result match {
+    compilation match {
       case Compilation.Success(_, _) =>
         Feedback.loggerBlank.info("")
         Feedback.logger.info(s"Compilation was successful. (Total time: ${compilationTime}ms)")
-        Feedback.logAll(result.feedback, options.showFeedbackStackTraces)
+        Feedback.logAll(compilation.feedback, options.showFeedbackStackTraces)
         Feedback.loggerBlank.info("")
 
-      case Compilation.Failure(_, _) =>
+      case _ =>
         Feedback.loggerBlank.info("")
         Feedback.logger.error("Compilation failed with errors:")
-        Feedback.logAll(result.feedback, options.showFeedbackStackTraces)
+        Feedback.logAll(compilation.feedback, options.showFeedbackStackTraces)
         Feedback.loggerBlank.error("")
     }
   }

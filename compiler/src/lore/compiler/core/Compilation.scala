@@ -1,174 +1,211 @@
 package lore.compiler.core
 
-import lore.compiler.core.Compilation.{Failure, Success, Verification}
+import lore.compiler.core.Compilation.{EmptyFailure, Failure, Result, ResultFailure, SevereFailure, Success, Verification, fail}
 import lore.compiler.feedback.Feedback
 import shapeless.ops.hlist.{RightFolder, Tupler}
-import shapeless.syntax.std.tuple._
 import shapeless.{Generic, HList, HNil, LUBConstraint, Poly2}
 
 /**
-  * Represents a compilation to a value of type A. Either results in a Result[A] or an Errors object.
+  * Represents a compilation to a result of type A. Compilations are defined in two dimensions: (1) whether a result
+  * was produced, and (2) whether the compilation was successful, a failure, or a severe failure. Compilations without
+  * a result are called empty. Empty compilations are always failures. Compilations with a result may or may not be a
+  * failure. A severe failure is always an empty compilation.
   *
-  * This trait should be used to represent compilations that can result in a <b>user error</b>. Internal assertions
-  * don't need to be wrapped in a Compilation and should instead lead to runtime errors, as they uncover compiler
-  * bugs instead of user errors.
+  * The point of separating these two notions is simple to understand. When we come upon an error in a particular
+  * phase, say during resolution we find that a single struct definition extends a non-existent type, we don't want to
+  * abort compilation at this stage. We have a multitude of valid definitions already resolved that could be further
+  * verified and checked. There is a good chance that a Registry can be produced, with only the particular extended
+  * type erased from the incorrect struct definition. This is not very important when the code is compiled from the
+  * command line. The programmer simply fixes all errors phase-by-phase. But when providing language server support, we
+  * need as much of the valid information to end up in a valid Registry as possible, so that code completion, go to
+  * definition, find symbols, and many other features can still work even when the code has some errors.
+  *
+  * Compilations should be used to represent computation that can result in a <b>user error</b>. Internal assertions
+  * don't need to be wrapped in a Compilation and should instead lead to a [[CompilationException]], as they signal
+  * compiler bugs instead.
   */
 sealed trait Compilation[+A] {
 
   /**
-    * A list of warnings that is always carried forward through operations such as flatMap and combine.
-    */
-  def warnings: Vector[Feedback.Warning]
-
-  /**
-    * A combined list of all errors and warnings.
+    * All feedback carried forward by the compilation.
     */
   def feedback: Vector[Feedback]
 
   /**
-    * Returns the result value, or the alternative if this compilation is an error.
+    * Whether the compilation is successful.
     */
-  def getOrElse[B >: A](alternative: => B): B = this match {
-    case Success(a, _) => a
-    case Failure(_, _) => alternative
+  def isSuccess: Boolean
+
+  /**
+    * Creates a new compilation with the given list of feedback attached.
+    */
+  def withFeedback(feedback2: Vector[Feedback]): Compilation[A] = this match {
+    case Success(result, feedback) =>
+      if (feedback2.exists(_.isError)) {
+        ResultFailure(result, feedback ++ feedback2)
+      } else {
+        Success(result, feedback ++ feedback2)
+      }
+
+    case ResultFailure(result, feedback) => ResultFailure(result, feedback ++ feedback2)
+    case EmptyFailure(feedback) => EmptyFailure(feedback ++ feedback2)
+    case SevereFailure(feedback) => SevereFailure(feedback ++ feedback2)
   }
 
   /**
-    * Whether the current compilation resulted in an error.
-    */
-  def isError: Boolean
-
-  /**
-    * Whether the current compilation is successful.
-    */
-  def isSuccess: Boolean = !isError
-
-  /**
-    * Maps the result value of type A to a compilation resulting in B. In the context of compilations, flatMap is
-    * to be understood as a "chain of computation" which is broken as soon as the first error appears.
+    * Maps the result of the compilation to another compilation. In the context of compilations, flatMap is to be
+    * understood as a "chain of computation" which is broken as soon as the first empty compilation appears.
     */
   def flatMap[B](f: A => Compilation[B]): Compilation[B] = this match {
-    case Success(a, warnings) => f(a).withWarnings(warnings)
-    case _ => this.asInstanceOf[Compilation[B]]
+    case result: Result[A] => f(result.result).withFeedback(result.feedback)
+    case failure: Failure[B] => failure
   }
 
   /**
-    * Maps the result value of type A to a new value of type B.
+    * Maps the result of type A to a new result of type B.
     */
   def map[B](f: A => B): Compilation[B] = flatMap(a => Success(f(a), Vector.empty))
 
   /**
-    * Executes the function `f` with the contained value if the compilation is a result.
+    * Invokes the function `f` with the result of the compilation.
     */
-  def foreach(f: A => Unit): Unit = this match {
+  def foreach(f: A => Unit): Unit = map(f)
+
+  /**
+    * Converts the compilation into a verification, effectively discarding the result.
+    */
+  def verification: Verification = map(_ => ())
+
+  /**
+    * Maps the result of a successful compilation to a compilation resulting in B.
+    */
+  def flatMapSuccess[B](f: A => Compilation[B]): Compilation[B] = this match {
+    case Success(result, feedback) => f(result).withFeedback(feedback)
+    case failure: SevereFailure => failure
+    case failure: Failure[_] => EmptyFailure(failure.feedback)
+  }
+
+  /**
+    * Executes the function `f` with the result if the compilation is successful.
+    *
+    * TODO: Don't implement this, but rather let the clients pattern match on Success. This is only used once in the compiler.
+    */
+  def ifSuccess(f: A => Unit): Unit = this match {
     case Success(a, _) => f(a)
     case _ => ()
   }
 
   /**
-    * Filters the result value, provided this compilation has been successful so far. If the predicate is false,
-    * the compilation results in the given errors.
+    * Returns the successful result value, or throws the exception if this compilation is a failure.
+    *
+    * TODO: Don't implement this, but rather let the clients pattern match on Success. This is only used once in the compiler.
     */
-  def require(p: A => Boolean)(errors: Feedback.Error*): Compilation[A] = this match {
-    case success@Success(a, warnings) => if (p(a)) success else Failure(errors.toVector, warnings)
-    case x => x
+  def getSuccessfulResult(exception: => Throwable): A = this match {
+    case Success(value, _) => value
+    case _ => throw exception
   }
-
-  /**
-    * Creates a new compilation with the given list of warnings attached. Previously existing warnings are preserved.
-    */
-  def withWarnings(warnings1: Vector[Feedback.Warning]): Compilation[A] = this match {
-    case Success(a, warnings2) => Success(a, warnings1 ++ warnings2)
-    case Failure(errors, warnings2) => Failure(errors, warnings1 ++ warnings2)
-  }
-
-  /**
-    * Applies f to all errors and warnings contained in this compilation.
-    */
-  def applyToFeedback(f: Feedback => Unit): Compilation[A] = this match {
-    case Success(_, warnings) => warnings.foreach(f); this
-    case Failure(errors, warnings) => errors.foreach(f); warnings.foreach(f); this
-  }
-
-  /**
-    * If this compilation has failed, try to recover from a given set of errors to a new compilation.
-    */
-  def recover[B >: A](f: PartialFunction[Vector[Feedback.Error], Compilation[B]]): Compilation[B] = this match {
-    case Success(_, _) => this
-    case Failure(errors, warnings) => if (f.isDefinedAt(errors)) f(errors).withWarnings(warnings) else this
-  }
-
-  /**
-    * Converts the compilation to an option, discarding all feedback.
-    */
-  def toOption: Option[A] = this match {
-    case Success(a, _) => Some(a)
-    case Failure(_, _) => None
-  }
-
-  /**
-    * Converts the compilation into a verification, effectively discarding the result value.
-    */
-  def verification: Verification = map(_ => ())
 
 }
 
 object Compilation {
 
-  case class Success[+A](value: A, override val warnings: Vector[Feedback.Warning]) extends Compilation[A] {
-    override def feedback: Vector[Feedback] = warnings
-    override def isError = false
+  /**
+    * Signifies that the compilation produced a result of type A.
+    */
+  sealed trait Result[+A] { self: Compilation[A] =>
+    def result: A
   }
-
-  case class Failure(errors: Vector[Feedback.Error], override val warnings: Vector[Feedback.Warning]) extends Compilation[Nothing] {
-    override def feedback: Vector[Feedback] = errors ++ warnings
-    override def isError = true
-  }
-
-  def fail(errors: Feedback.Error*): Compilation[Nothing] = Failure(errors.toVector, Vector.empty)
-  def succeed[A](a: A): Compilation[A] = Success(a, Vector.empty)
 
   /**
-    * An abbreviation for Compilation[Unit]. A verification is an operation that returns nothing of note when
-    * it is successful and fails with a set of errors if it isn't.
+    * The compilation produced a result of type A and is a success.
+    */
+  case class Success[+A](result: A, feedback: Vector[Feedback]) extends Compilation[A] with Result[A] {
+    if (feedback.exists(_.isError)) {
+      throw CompilationException("Compilation.Successes may not contain errors.")
+    }
+
+    override def isSuccess = true
+  }
+
+  /**
+    * The compilation is a failure.
+    */
+  sealed trait Failure[+A] extends Compilation[A] {
+    override def isSuccess = false
+  }
+
+  /**
+    * The compilation produced a result of type A, but is also a failure due to at least one error.
+    */
+  case class ResultFailure[+A](result: A, feedback: Vector[Feedback]) extends Failure[A] with Result[A]
+
+  /**
+    * The compilation produced no result and is a failure due to at least one error.
+    */
+  case class EmptyFailure(feedback: Vector[Feedback]) extends Failure[Nothing]
+
+  /**
+    * The compilation produced no result and is a severe failure that will stop compilation at the next juncture.
+    *
+    * TODO: Do we need this?
+    */
+  case class SevereFailure(feedback: Vector[Feedback]) extends Failure[Nothing]
+
+  def succeed[A](result: A): Compilation[A] = Success(result, Vector.empty)
+  def fail[A](result: A, errors: Vector[Feedback.Error]): Compilation[A] = ResultFailure(result, errors)
+  def fail[A](result: A, error: Feedback.Error): Compilation[A] = fail(result, Vector(error))
+  def fail(errors: Vector[Feedback.Error]): Compilation[Nothing] = EmptyFailure(errors)
+  def fail(error: Feedback.Error): Compilation[Nothing] = fail(Vector(error))
+  def failSeverely(error: Feedback.Error): Compilation[Nothing] = SevereFailure(Vector(error))
+
+  /**
+    * An abbreviation for Compilation[Unit]. A verification is a compilation that returns nothing of note when it is
+    * successful.
     */
   type Verification = Compilation[Unit]
 
   object Verification {
     def succeed: Verification = Compilation.succeed(())
 
-    /**
-      * Creates a verification result from the given error list. If the list is empty, the verification is assumed to
-      * be successful. Otherwise, the verification fails with the given errors.
-      */
-    def fromErrors(errors: Vector[Feedback.Error]): Verification = {
-      if (errors.nonEmpty) Failure(errors, Vector.empty) else succeed
-    }
+    // TODO: fromErrors should be represented in terms of `Verification.succeed` and `simultaneous`.
   }
 
   implicit class CompilationVectorExtension[A](compilations: Vector[Compilation[A]]) {
     /**
-      * Combines all the compilations from an iterable into a single compilation. If any of the compilations have
-      * resulted in an error, the combined compilation results in an error. This operation collects all errors
-      * in unspecified order.
+      * Combines all compilations into a single compilation. All results are added to a result vector. Missing results
+      * from empty failures are skipped. All feedback is carried over to the combined compilation. If `compilations`
+      * contains at least one severe failure, the resulting compilation is also a severe failure.
+      *
+      * This function does not produce an [[EmptyFailure]]. An empty result list is treated as a [[ResultFailure]].
       */
     def simultaneous: Compilation[Vector[A]] = {
       var results: Vector[A] = Vector.empty
-      var errors: Vector[Feedback.Error] = Vector.empty
-      var warnings: Vector[Feedback.Warning] = Vector.empty
-      var hasFailed = false
-      compilations.foreach {
-        case Success(value, warnings2) =>
-          results = results :+ value
-          warnings = warnings ++ warnings2
-        case Failure(errors2, warnings2) =>
-          hasFailed = true
-          errors = errors ++ errors2
-          warnings = warnings ++ warnings2
-      }
+      var feedback: Vector[Feedback] = Vector.empty
+
       // There is a special case where we don't have any errors but the compilation still failed. Hence, we can't rely
-      // on whether the error list is empty or not and have to check whether there is any failure.
-      if (hasFailed) Failure(errors, warnings) else Success(results, warnings)
+      // on whether the error list is empty or not and have to manually remember whether there is any failure.
+      var hasFailed = false
+      var isSevere = false
+
+      compilations.foreach { compilation =>
+        feedback = feedback ++ compilation.feedback
+
+        compilation match {
+          case Success(value, _) => results = results :+ value
+
+          case failure: Failure[_] =>
+            hasFailed = true
+            failure match {
+              case ResultFailure(value, _) => results = results :+ value
+              case EmptyFailure(_) =>
+              case SevereFailure(_) => isSevere = true
+            }
+        }
+      }
+
+      if (isSevere) SevereFailure(feedback)
+      else if (hasFailed) ResultFailure(results, feedback)
+      else Success(results, feedback)
     }
   }
 
@@ -180,11 +217,13 @@ object Compilation {
       */
     object simultaneous extends Poly2 {
       implicit def caseCompilation[A, B <: HList]: Case.Aux[Compilation[A], Compilation[B], Compilation[A :: B]] = at[Compilation[A], Compilation[B]] {
-        case (Success(a, warningsA), Success(b, warningsB)) => Success(a :: b, warningsA ++ warningsB)
-        case (ca, cb) =>
-          // As either ca or cb is guaranteed to be a failed compilation, simultaneous will simply aggregate the errors
-          // and hence also produce an Errors object. This makes the type cast valid.
-          Vector(ca, cb).simultaneous.asInstanceOf[Compilation[A :: B]]
+        case (SevereFailure(feedback1), c2) => SevereFailure(feedback1 ++ c2.feedback)
+        case (c1, SevereFailure(feedback2)) => SevereFailure(c1.feedback ++ feedback2)
+
+        case (Success(result1, feedback1), Success(result2, feedback2)) => Success(result1 :: result2, feedback1 ++ feedback2)
+        case (c1: Result[A], c2: Result[B]) => ResultFailure(c1.result :: c2.result, c1.feedback ++ c2.feedback)
+
+        case (c1, c2) => EmptyFailure(c1.feedback ++ c2.feedback)
       }
     }
   }
@@ -211,18 +250,17 @@ object Compilation {
   /**
     * A type `Option[Compilation[A]]` models an optional compilation resulting in a value of type A. For example,
     * we might only want to compile something if some value of Option[T] exists, then map it to a compilation:
-    * `maybeT.map(t => compile(t)): Option[Compilation[A]]`.
+    * `option.map(compile): Option[Compilation[A]]`.
     */
   implicit class OptionalCompilationExtension[A](option: Option[Compilation[A]]) {
     /**
       * Turns the optional compilation "inside out", which means that:
-      *   - If the present value is None, we didn't actually compile anything, and so we claim that we have
-      *     succeeded in compiling to a None value: Compilation.succeed(None).
-      *   - If the present value is Some, we compiled something, and so we map the value of the compilation
-      *     to Some.
+      *   - If the present value is None, we didn't actually compile anything, and so we claim that we have succeeded
+      *     in compiling to a None value: Compilation.succeed(None).
+      *   - If the present value is Some, we compiled something, and so we map the value of the compilation to Some.
       *
-      * This is useful if we have a compilation that is optional, but then want to treat the case where no
-      * compilation happened as if the compilation resulted in a None value.
+      * This is useful if we have a compilation that is optional, but then want to treat the case where no compilation
+      * happened as if the compilation resulted in a None value.
       */
     def toCompiledOption: Compilation[Option[A]] = option match {
       case None => Compilation.succeed(None)
@@ -239,40 +277,30 @@ object Compilation {
 
   implicit class FoldCompilationsExtension[A](vector: Vector[A]) {
     /**
-      * Lifts the vector's fold operation into a compilation context. Note that the operation is aborted when a single
-      * error has been found.
+      * Lifts the vector's fold operation into a compilation context. The fold uses [[Compilation.flatMap]], so it
+      * continues until an empty compilation is encountered.
       */
     def foldCompiled[B](initial: B)(f: (B, A) => Compilation[B]): Compilation[B] = {
       vector.foldLeft(Compilation.succeed(initial)) { case (compilation, element) => compilation.flatMap(f(_, element)) }
     }
 
     /**
-      * Lifts the vector's fold operation into a compilation context. In contrast to `foldCompiled`, this function
-      * continues with the last valid value of B if an error is encountered. Hence, `f` will be attempted for each
-      * element of the vector.
+      * Lifts the vector's fold operation into a compilation context. The fold continues until a severe failure is
+      * encountered. If an empty failure is encountered, the fold continues with the last valid value of B.
       */
     def foldSimultaneous[B](initial: B)(f: (B, A) => Compilation[B]): Compilation[B] = {
-      var b = initial
-      var successWarnings = Vector.empty[Feedback.Warning]
-      var failures = Vector.empty[Failure]
+      vector.foldLeft(Compilation.succeed(initial)) { case (compilation, element) =>
+        compilation match {
+          case result: Result[B] =>
+            f(result.result, element) match {
+              case result2: Result[B] => result2.withFeedback(result.feedback)
+              case _: EmptyFailure => result
+              case failure2: SevereFailure => failure2.withFeedback(result.feedback)
+            }
 
-      for (a <- vector) {
-        f(b, a) match {
-          case Success(value, warnings) =>
-            b = value
-            successWarnings = successWarnings ++ warnings
-
-          case failure@Failure(_, _) =>
-            failures = failures :+ failure
+          case _: EmptyFailure => throw CompilationException("`foldCompiled` cannot result in a non-severe, empty failure.")
+          case failure: SevereFailure => failure
         }
-      }
-
-      if (failures.nonEmpty) {
-        val errors = failures.flatMap(_.errors)
-        val failureWarnings = failures.flatMap(_.warnings)
-        Failure(errors, successWarnings ++ failureWarnings)
-      } else {
-        Success(b, successWarnings)
       }
     }
   }

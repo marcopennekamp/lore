@@ -1,7 +1,6 @@
 package lore.compiler.phases.transpilation
 
-import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, CompilationException, CompilerOptions}
+import lore.compiler.core.{CompilationException, CompilerOptions}
 import lore.compiler.phases.transpilation.functions.MultiFunctionTranspiler
 import lore.compiler.phases.transpilation.structures.DeclaredTypeTranspiler
 import lore.compiler.phases.transpilation.values.{SymbolHistory, SymbolTranspiler}
@@ -11,7 +10,7 @@ import lore.compiler.target.Target.TargetStatement
 import lore.compiler.types.DeclaredType
 
 object TranspilationPhase {
-  def process(implicit compilerOptions: CompilerOptions, registry: Registry): Compilation[Vector[TargetStatement]] = {
+  def process(implicit compilerOptions: CompilerOptions, registry: Registry): Vector[TargetStatement] = {
     implicit val symbolHistory: SymbolHistory = new SymbolHistory
 
     val typeDeclarations = registry.typesInOrder.flatMap {
@@ -40,6 +39,6 @@ object TranspilationPhase {
 
     val symbolDeclarations = SymbolTranspiler.transpile(symbolHistory) :+ Target.Divider
 
-    (symbolDeclarations ++ typeDeclarations ++ typeDeclarationDeferredDefinitions ++ introspectionInitialization ++ functions).compiled
+    symbolDeclarations ++ typeDeclarations ++ typeDeclarationDeferredDefinitions ++ introspectionInitialization ++ functions
   }
 }

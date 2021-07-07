@@ -17,7 +17,7 @@ trait InferenceSpec extends TypeSpec {
   }
 
   def assertInferenceFailureDisregardingErrors(result: Compilation[Assignments]): Assertion = {
-    result should matchPattern { case Compilation.Failure(_, _) => }
+    result should matchPattern { case _: Compilation.Failure[_] => }
   }
 
   object Assignment {

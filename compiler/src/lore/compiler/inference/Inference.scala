@@ -35,10 +35,10 @@ object Inference {
     val result = timed(s"Inference for $label", log = s => logger.debug(s)) {
       infer(judgments) match {
         case success@Compilation.Success(_, _) =>
-          logger.debug(s"Inference for $label was successful with the following inferred types:\n${success.value.stringified}\n")
+          logger.debug(s"Inference for $label was successful with the following inferred types:\n${success.result.stringified}\n")
           success
 
-        case failure@Compilation.Failure(_, _) =>
+        case failure: Compilation.Failure[Assignments] =>
           logger.debug(s"Inference for $label failed with the following feedback:")
           logger.whenDebugEnabled {
             Feedback.logAll(failure.feedback)

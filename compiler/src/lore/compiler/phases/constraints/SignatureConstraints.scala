@@ -1,5 +1,6 @@
 package lore.compiler.phases.constraints
 
+import lore.compiler.core.Compilation
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.functions.FunctionSignature
@@ -19,11 +20,10 @@ object SignatureConstraints {
   }
 
   private def verifyUnique(signature: FunctionSignature): Verification = {
-    val errors = signature.parameters.map(_.name).groupBy(identity).flatMap {
-      case (_, Vector(_)) => None
-      case (name, _) => Some(NonUniqueParameterName(signature, name))
-    }.toVector
-    Verification.fromErrors(errors)
+    signature.parameters.map(_.name).groupBy(identity).map {
+      case (_, Vector(_)) => Verification.succeed
+      case (name, _) => Compilation.fail(NonUniqueParameterName(signature, name))
+    }.toVector.simultaneous.verification
   }
 
 }

@@ -66,7 +66,7 @@ object InstantiationTransformation {
     if (missing.isEmpty && illegal.isEmpty) {
       Compilation.succeed(pairs)
     } else {
-      Compilation.fail(missing.map(MissingProperty(_, position)) ++ illegal.map(IllegalProperty(_, position)): _*)
+      Compilation.fail(missing.map(MissingProperty(_, position)) ++ illegal.map(IllegalProperty(_, position)))
     }
   }
 

@@ -32,11 +32,12 @@ object SimpleResolution {
       Inference.logger.trace(s"Step $stepCounter:")
 
       step(currentAssignments, currentJudgments) match {
-        case Compilation.Success((assignments2, judgments2), _) =>
+        case compilation: Compilation.Result[JudgmentResolver.Result] =>
+          val (assignments2, judgments2) = compilation.result
           currentAssignments = assignments2
           currentJudgments = judgments2
 
-        case failure@Compilation.Failure(_, _) => return failure
+        case failure: Compilation.Failure[Nothing] => return failure
       }
 
       Inference.logger.trace(s"New assignments:\n${currentAssignments.stringified}")

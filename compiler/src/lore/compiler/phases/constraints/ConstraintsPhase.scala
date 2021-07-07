@@ -2,17 +2,13 @@ package lore.compiler.phases.constraints
 
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.semantics.Registry
+import lore.compiler.semantics.functions.MultiFunctionDefinition
+import lore.compiler.semantics.structures.DeclaredTypeDefinition
 
 object ConstraintsPhase {
 
-  def process(implicit registry: Registry): Verification = {
-    val typeDefinitions = registry.typeDefinitions.values.toVector
-    val multiFunctions = registry.multiFunctions.values.toVector
-    (
-      typeDefinitions.map(DeclaredTypeConstraints.verify).simultaneous,
-      multiFunctions.map(MultiFunctionConstraints.verify).simultaneous,
-      multiFunctions.flatMap(_.functions.flatMap(_.bodyNode)).map(ReturnConstraints.verify).simultaneous,
-    ).simultaneous.verification
-  }
+  def process(definition: DeclaredTypeDefinition)(implicit registry: Registry): Verification = DeclaredTypeConstraints.verify(definition)
+
+  def process(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = MultiFunctionConstraints.verify(mf)
 
 }

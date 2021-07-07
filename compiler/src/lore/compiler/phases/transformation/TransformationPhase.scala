@@ -2,18 +2,20 @@ package lore.compiler.phases.transformation
 
 import lore.compiler.core.Compilation.Verification
 import lore.compiler.semantics.Registry
-import lore.compiler.types.StructType
-import lore.compiler.utils.CollectionExtensions.VectorExtension
+import lore.compiler.semantics.functions.MultiFunctionDefinition
+import lore.compiler.semantics.structures.{DeclaredTypeDefinition, StructDefinition}
 
 object TransformationPhase {
 
-  def process(implicit registry: Registry): Verification = {
-    val structDefinitions = registry.typesInOrder.map(_._2).filterType[StructType].map(_.definition)
-    val functionDefinitions = registry.multiFunctions.values.toVector.flatMap(_.functions)
-    (
-      structDefinitions.map(StructTransformer.transform).simultaneous,
-      functionDefinitions.map(FunctionTransformer.transform).simultaneous,
-    ).simultaneous.verification
+  def process(definition: DeclaredTypeDefinition)(implicit registry: Registry): Verification = {
+    definition match {
+      case definition: StructDefinition => StructTransformer.transform(definition)
+      case _ => Verification.succeed
+    }
+  }
+
+  def process(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
+    mf.functions.map(FunctionTransformer.transform).simultaneous.verification
   }
 
 }

@@ -15,6 +15,7 @@ object MultiFunctionConstraints {
     * Verifies:
     *   1. For each function, first the input abstractness constraint and then the totality constraint.
     *   2. A child function's output type is a subtype of its parent function's output type.
+    *   3. Return constraints for each function.
     *
     * Note that uniqueness is already checked by the DeclarationResolver.
     */
@@ -22,6 +23,7 @@ object MultiFunctionConstraints {
     (
       verifyAbstractness(mf),
       verifyOutputTypes(mf),
+      verifyReturnConstraints(mf),
     ).simultaneous.verification
   }
 
@@ -181,15 +183,23 @@ object MultiFunctionConstraints {
       successors.map { successor =>
         val child = successor.value
         parent.instantiate(child.signature.inputType).flatMap { parentInstance =>
-          val errors = if (child.signature.outputType </= parentInstance.signature.outputType) {
-            Vector(IncompatibleOutputTypes(child.signature, parent.signature, parentInstance.signature))
-          } else Vector.empty
-          Verification.fromErrors(errors).flatMap(_ => successors.map(verifyHierarchyNode).simultaneous.verification)
+          if (child.signature.outputType <= parentInstance.signature.outputType) {
+            successors.map(verifyHierarchyNode).simultaneous.verification
+          } else {
+            Compilation.fail(IncompatibleOutputTypes(child.signature, parent.signature, parentInstance.signature))
+          }
         }
       }.simultaneous.verification
     }
 
     mf.hierarchy.roots.map(verifyHierarchyNode).simultaneous.verification
+  }
+
+  /**
+    * Verifies return constraints for all functions defined in the given multi-function.
+    */
+  private def verifyReturnConstraints(mf: MultiFunctionDefinition): Verification = {
+    mf.functions.flatMap(_.bodyNode).map(ReturnConstraints.verify).simultaneous.verification
   }
 
 }

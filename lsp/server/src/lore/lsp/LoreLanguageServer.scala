@@ -76,16 +76,14 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
   }
 
   private def applyWorkspaceChanges(): Unit = this.synchronized {
-    WorkspaceAnalyzer.analyze() match {
-      case success@Compilation.Success(value, _) =>
-        client.showMessage(new MessageParams(MessageType.Info, "Lore: Workspace compilation succeeded."))
-        registry = value
-        feedbackPublisher.publish(success.feedback)
-
-      case failure@Compilation.Failure(_, _) =>
-        client.showMessage(new MessageParams(MessageType.Info, "Lore: Workspace compilation failed."))
-        feedbackPublisher.publish(failure.feedback)
+    val compilation = WorkspaceAnalyzer.analyze()
+    compilation.foreach(result => registry = result)
+    val message = compilation match {
+      case Compilation.Success(_, _) => "Lore: Workspace compilation succeeded."
+      case _ => "Lore: Workspace compilation failed."
     }
+    client.showMessage(new MessageParams(MessageType.Info, message))
+    feedbackPublisher.publish(compilation.feedback)
   }
 
 }
