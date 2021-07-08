@@ -7,7 +7,7 @@ import lore.compiler.types._
 
 object AliasTypeResolver {
 
-  def resolve(node: TypeDeclNode.AliasNode)(implicit typeScope: TypeScope): Compilation[Type] = {
+  def resolve(node: TypeDeclNode.AliasNode)(implicit typeScope: TypeScope): Compilation.Result[Type] = {
     TypeExpressionEvaluator.evaluate(node.tpe)
   }
 

@@ -1,6 +1,5 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.core.Compilation.Verification
 import lore.compiler.core.{Compilation, CompilationException}
 import lore.compiler.feedback.Feedback
 import lore.compiler.phases.resolution.ParameterDefinitionResolver.resolveParameterNode
@@ -12,7 +11,7 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object MultiFunctionDefinitionResolver {
 
-  def resolve(functionNodes: Vector[DeclNode.FunctionNode])(implicit typeScope: TypeScope): Compilation[MultiFunctionDefinition] = {
+  def resolve(functionNodes: Vector[DeclNode.FunctionNode])(implicit typeScope: TypeScope): Compilation.Result[MultiFunctionDefinition] = {
     if (!functionNodes.allEqual(_.name)) {
       val uniqueNames = functionNodes.map(_.name).distinct
       throw CompilationException(s"The function nodes of a multi-function don't all have the same name. Names: ${uniqueNames.mkString(", ")}.")
@@ -21,7 +20,7 @@ object MultiFunctionDefinitionResolver {
     val name = functionNodes.head.name
     for {
       functions <- functionNodes.map(resolveFunction(_, typeScope)).simultaneous
-      _ <- verifyFunctionsUnique(functions)
+      functions <- filterDuplicateFunctions(functions)
     } yield MultiFunctionDefinition(name, functions)
   }
 
@@ -42,17 +41,19 @@ object MultiFunctionDefinitionResolver {
   }
 
   /**
-    * Verifies that all functions declared in the multi-function have a unique signature, which means that their input
-    * types aren't equally specific. If they are, multiple dispatch won't be able to differentiate between such two
-    * functions, and hence they can't be valid.
+    * Filters out all duplicate functions declared in the multi-function, producing an error for each such function. A
+    * duplicate function is a function f1 for which another function f2 exists that has an equally specific input type.
+    * Multiple dispatch is unable to differentiate between two functions with equally specific input types, which makes
+    * them invalid.
     *
-    * We find duplicates based on the Fit specificity of two functions.
+    * If two functions f1 and f2 are duplicates of each other, we have to filter out both because we don't know whether
+    * the programmer made their error with f1 or f2.
     */
-  private def verifyFunctionsUnique(functions: Vector[FunctionDefinition]): Verification = {
+  private def filterDuplicateFunctions(functions: Vector[FunctionDefinition]): Compilation.Result[Vector[FunctionDefinition]] = {
     functions.map { f1 =>
       val containsDuplicate = functions.filterNot(_ == f1).exists(f2 => Fit.isEquallySpecific(f2.signature.inputType, f1.signature.inputType))
-      if (containsDuplicate) Compilation.fail(FunctionAlreadyExists(f1)) else Verification.succeed
-    }.simultaneous.verification
+      if (containsDuplicate) Compilation.fail(FunctionAlreadyExists(f1)) else Compilation.succeed(f1)
+    }.simultaneous
   }
 
 }

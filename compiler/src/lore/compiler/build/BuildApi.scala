@@ -1,10 +1,10 @@
 package lore.compiler.build
 
 import lore.compiler.LoreCompiler
+import lore.compiler.core.Compilation.FilterCompilationExtension
 import lore.compiler.core.{Compilation, CompilerOptions, Fragment, Position}
 import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.Registry
-import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 import java.nio.file.{Files, Path}
 
@@ -62,7 +62,7 @@ object BuildApi {
         .map(SourceFiles.of)
         .simultaneous
         .map(_.flatten)
-        .flatMap(_.requireUnique(_.name, DuplicateFragmentName))
+        .flatMap(_.filterDuplicates(_.name, DuplicateFragmentName))
     }
   }
 

@@ -338,8 +338,9 @@ class InferringExpressionTransformationVisitor(
       val elementType = new InferenceVariable
       typingJudgments = typingJudgments :+ TypingJudgment.ElementType(elementType, collection.tpe, position)
 
-      val localVariable = Variable(variableName, elementType, isMutable = false)
-      scopeContext.currentScope.register(localVariable, position).map(_ => Expression.Extractor(localVariable, collection))
+      scopeContext.currentScope
+        .register(Variable(variableName, elementType, isMutable = false), position)
+        .map(localVariable => Expression.Extractor(localVariable, collection))
     }
 
     for {

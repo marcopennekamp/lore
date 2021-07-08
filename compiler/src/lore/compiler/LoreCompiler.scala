@@ -1,6 +1,6 @@
 package lore.compiler
 
-import lore.compiler.core.Compilation.{CompilationVectorExtension, SevereFailure, Verification}
+import lore.compiler.core.Compilation.{CompilationVectorExtension, EmptyFailure, Verification}
 import lore.compiler.core.{Compilation, CompilerOptions, Fragment}
 import lore.compiler.feedback.Feedback
 import lore.compiler.phases.constraints.ConstraintsPhase
@@ -32,7 +32,7 @@ object LoreCompiler {
         val code = generate(registry, options)
         (registry, code)
       }
-    } else SevereFailure(compilation.feedback)
+    } else EmptyFailure(compilation.feedback)
   }
 
   /**

@@ -90,7 +90,7 @@ private class ReturnAllowedCompilationApplicator()
           case ExprNode.ExtractorNode(_, collection, _) => visit(collection, false)
         }.simultaneous,
         visit(body, isReturnAllowed),
-        ).simultaneous.verification
+      ).simultaneous.verification
     case _ => super.handleMatch(node, false)
   }
 

@@ -8,7 +8,7 @@ import lore.compiler.syntax.TypeDeclNode
 
 object StructDefinitionResolver {
 
-  def resolve(node: TypeDeclNode.StructNode)(implicit typeScope: TypeScope): Compilation[StructDefinition] = {
+  def resolve(node: TypeDeclNode.StructNode)(implicit typeScope: TypeScope): Compilation.Result[StructDefinition] = {
     val structType = typeScope.getStructType(node.name).getOrElse(
       throw CompilationException(s"The struct type for struct ${node.name} should be registered by now.")
     )

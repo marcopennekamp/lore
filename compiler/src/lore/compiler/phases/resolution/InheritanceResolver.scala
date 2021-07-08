@@ -20,7 +20,7 @@ object InheritanceResolver {
     *     language user to be able to use that type for inheritance.
     *   - All other types cannot be inherited from and result in an error.
     */
-  def resolveInheritedTypes(nodes: Vector[TypeExprNode], error: => Feedback.Error)(implicit typeScope: TypeScope): Compilation[Vector[Type]] = {
+  def resolveInheritedTypes(nodes: Vector[TypeExprNode], error: => Feedback.Error)(implicit typeScope: TypeScope): Compilation.Result[Vector[Type]] = {
     def extract(tpe: Type): Compilation[Vector[Type]] = tpe match {
       case supertrait: TraitType => Vector(supertrait).compiled
       case shape: ShapeType => Vector(shape).compiled

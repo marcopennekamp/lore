@@ -1,12 +1,11 @@
 package lore.compiler.phases.constraints
 
 import lore.compiler.core.Compilation
-import lore.compiler.core.Compilation.Verification
+import lore.compiler.core.Compilation.{FilterCompilationExtension, Verification}
 import lore.compiler.feedback.Feedback
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.types.ShapeType
-import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object StructConstraints {
 
@@ -30,7 +29,7 @@ object StructConstraints {
     * Verifies that this struct's properties are unique.
     */
   private def verifyPropertiesUnique(definition: StructDefinition): Verification = {
-    definition.properties.requireUnique(_.name, property => DuplicateProperty(definition, property)).verification
+    definition.properties.filterDuplicates(_.name, property => DuplicateProperty(definition, property)).verification
   }
 
   case class ShapeMissingProperty(definition: StructDefinition, property: ShapeType.Property) extends Feedback.Error(definition) {

@@ -8,7 +8,7 @@ import lore.compiler.semantics.functions.FunctionSignature
   */
 trait BindingScope extends Scope[Binding] {
   def add(binding: Binding): Unit = add(binding.name, binding)
-  def register[A <: Binding](binding: A, position: Position): Compilation[A] = register(binding.name, binding, position)
+  def register[A <: Binding](binding: A, position: Position): Compilation.Result[A] = register(binding.name, binding, position)
 
   override def entryLabel: String = "variable, multi-function, or struct constructor"
 }

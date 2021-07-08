@@ -29,16 +29,6 @@ object CollectionExtensions {
     }
 
     /**
-      * Requires that the vector's elements are unique in respect to the key produced by the `key` function. If more
-      * than one element share a key, the `duplicate` function is consulted with any representative element of that
-      * group to produce a compilation error.
-      */
-    def requireUnique[K](key: A => K, duplicate: A => Feedback.Error): Compilation[Vector[A]] = vector.groupBy(key).values.map {
-      case Vector(a) => Compilation.succeed(a)
-      case group if group.size > 1 => Compilation.fail(duplicate(group.head))
-    }.toVector.simultaneous
-
-    /**
       * Returns distinct elements based on the comparison function `areEqual`. This is in contrast to the standard
       * library functions `distinct` and `distinctBy`, which only operate using standard `==` equality.
       */
@@ -70,7 +60,7 @@ object CollectionExtensions {
     /**
       * Returns this vector or, if this vector is empty, a vector containing the given element.
       */
-    def withDefault[B >: A](default: B): Vector[B] = if (vector.nonEmpty) vector else Vector(default)
+    def withDefault[B >: A](default: => B): Vector[B] = if (vector.nonEmpty) vector else Vector(default)
   }
 
   implicit class SetExtension[A](set: Set[A]) {

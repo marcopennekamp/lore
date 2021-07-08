@@ -29,7 +29,7 @@ object SdkDirectory {
       (
         if (!Files.isDirectory(pyramid)) Compilation.fail(PyramidNotFound(sdkDirectory)) else Verification.succeed,
         if (!Files.isDirectory(runtime)) Compilation.fail(RuntimeNotFound(sdkDirectory)) else Verification.succeed,
-        ).simultaneous.verification
+      ).simultaneous.verification
     }
   }
 

@@ -44,12 +44,12 @@ trait Scope[A] {
   }
 
   /**
-    * Registers the given entry with the scope. If it is already registered in the current scope, an
-    * "already declared" error is returned instead.
+    * Registers the given entry with the scope. If it is already registered in the current scope, an "already declared"
+    * error is produced.
     */
-  def register[B <: A](name: String, entry: B, position: Position): Compilation[B] = {
+  def register[B <: A](name: String, entry: B, position: Position): Compilation.Result[B] = {
     if (local(name).isDefined) {
-      Compilation.fail(alreadyDeclared(name, position))
+      Compilation.fail(entry, alreadyDeclared(name, position))
     } else {
       add(name, entry)
       Compilation.succeed(entry)

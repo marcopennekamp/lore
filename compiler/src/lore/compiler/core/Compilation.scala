@@ -1,15 +1,12 @@
 package lore.compiler.core
 
-import lore.compiler.core.Compilation.{EmptyFailure, Failure, Result, ResultFailure, SevereFailure, Success, Verification, fail}
+import lore.compiler.core.Compilation.{EmptyFailure, Failure, Result, ResultFailure, Success, Verification}
 import lore.compiler.feedback.Feedback
-import shapeless.ops.hlist.{RightFolder, Tupler}
-import shapeless.{Generic, HList, HNil, LUBConstraint, Poly2}
 
 /**
   * Represents a compilation to a result of type A. Compilations are defined in two dimensions: (1) whether a result
-  * was produced, and (2) whether the compilation was successful, a failure, or a severe failure. Compilations without
-  * a result are called empty. Empty compilations are always failures. Compilations with a result may or may not be a
-  * failure. A severe failure is always an empty compilation.
+  * was produced, and (2) whether the compilation was successful or a failure. Compilations without a result are called
+  * empty. Empty compilations are always failures.
   *
   * The point of separating these two notions is simple to understand. When we come upon an error in a particular
   * phase, say during resolution we find that a single struct definition extends a non-existent type, we don't want to
@@ -49,7 +46,6 @@ sealed trait Compilation[+A] {
 
     case ResultFailure(result, feedback) => ResultFailure(result, feedback ++ feedback2)
     case EmptyFailure(feedback) => EmptyFailure(feedback ++ feedback2)
-    case SevereFailure(feedback) => SevereFailure(feedback ++ feedback2)
   }
 
   /**
@@ -77,32 +73,19 @@ sealed trait Compilation[+A] {
   def verification: Verification = map(_ => ())
 
   /**
+    * Returns this compilation or, if it is empty, a [[ResultFailure]] with the given default result.
+    */
+  def withDefault[B >: A](default: => B): Result[B] = this match {
+    case result: Result[A] => result
+    case EmptyFailure(feedback) => ResultFailure(default, feedback)
+  }
+
+  /**
     * Maps the result of a successful compilation to a compilation resulting in B.
     */
   def flatMapSuccess[B](f: A => Compilation[B]): Compilation[B] = this match {
     case Success(result, feedback) => f(result).withFeedback(feedback)
-    case failure: SevereFailure => failure
     case failure: Failure[_] => EmptyFailure(failure.feedback)
-  }
-
-  /**
-    * Executes the function `f` with the result if the compilation is successful.
-    *
-    * TODO: Don't implement this, but rather let the clients pattern match on Success. This is only used once in the compiler.
-    */
-  def ifSuccess(f: A => Unit): Unit = this match {
-    case Success(a, _) => f(a)
-    case _ => ()
-  }
-
-  /**
-    * Returns the successful result value, or throws the exception if this compilation is a failure.
-    *
-    * TODO: Don't implement this, but rather let the clients pattern match on Success. This is only used once in the compiler.
-    */
-  def getSuccessfulResult(exception: => Throwable): A = this match {
-    case Success(value, _) => value
-    case _ => throw exception
   }
 
 }
@@ -111,15 +94,26 @@ object Compilation {
 
   /**
     * Signifies that the compilation produced a result of type A.
+    *
+    * Use this trait in type declarations if you are sure that the compilation must produce a result. This signals that
+    * there will always be some kind of result, which can be beneficial for understanding compiler correctness.
     */
-  sealed trait Result[+A] { self: Compilation[A] =>
+  sealed trait Result[+A] extends Compilation[A] {
     def result: A
+
+    override def withFeedback(feedback2: Vector[Feedback]): Result[A] = {
+      super.withFeedback(feedback2).asInstanceOf[Result[A]]
+    }
+
+    def flatMap[B](f: A => Result[B]): Result[B] = f(result).withFeedback(feedback)
+
+    override def map[B](f: A => B): Result[B] = super.map(f).asInstanceOf[Result[B]]
   }
 
   /**
     * The compilation produced a result of type A and is a success.
     */
-  case class Success[+A](result: A, feedback: Vector[Feedback]) extends Compilation[A] with Result[A] {
+  case class Success[+A](result: A, feedback: Vector[Feedback]) extends Result[A] {
     if (feedback.exists(_.isError)) {
       throw CompilationException("Compilation.Successes may not contain errors.")
     }
@@ -144,19 +138,11 @@ object Compilation {
     */
   case class EmptyFailure(feedback: Vector[Feedback]) extends Failure[Nothing]
 
-  /**
-    * The compilation produced no result and is a severe failure that will stop compilation at the next juncture.
-    *
-    * TODO: Do we need this?
-    */
-  case class SevereFailure(feedback: Vector[Feedback]) extends Failure[Nothing]
-
-  def succeed[A](result: A): Compilation[A] = Success(result, Vector.empty)
-  def fail[A](result: A, errors: Vector[Feedback.Error]): Compilation[A] = ResultFailure(result, errors)
-  def fail[A](result: A, error: Feedback.Error): Compilation[A] = fail(result, Vector(error))
-  def fail(errors: Vector[Feedback.Error]): Compilation[Nothing] = EmptyFailure(errors)
-  def fail(error: Feedback.Error): Compilation[Nothing] = fail(Vector(error))
-  def failSeverely(error: Feedback.Error): Compilation[Nothing] = SevereFailure(Vector(error))
+  def succeed[A](result: A): Success[A] = Success(result, Vector.empty)
+  def fail[A](result: A, errors: Vector[Feedback.Error]): ResultFailure[A] = ResultFailure(result, errors)
+  def fail[A](result: A, error: Feedback.Error): ResultFailure[A] = fail(result, Vector(error))
+  def fail(errors: Vector[Feedback.Error]): EmptyFailure = EmptyFailure(errors)
+  def fail(error: Feedback.Error): EmptyFailure = fail(Vector(error))
 
   /**
     * An abbreviation for Compilation[Unit]. A verification is a compilation that returns nothing of note when it is
@@ -173,19 +159,30 @@ object Compilation {
   implicit class CompilationVectorExtension[A](compilations: Vector[Compilation[A]]) {
     /**
       * Combines all compilations into a single compilation. All results are added to a result vector. Missing results
-      * from empty failures are skipped. All feedback is carried over to the combined compilation. If `compilations`
-      * contains at least one severe failure, the resulting compilation is also a severe failure.
+      * from empty failures are skipped. All feedback is carried over to the combined compilation.
       *
       * This function does not produce an [[EmptyFailure]]. An empty result list is treated as a [[ResultFailure]].
       */
-    def simultaneous: Compilation[Vector[A]] = {
+    def simultaneous: Result[Vector[A]] = simultaneous(ignoreResultFailures = false)
+
+    /**
+      * Combines all compilations into a single compilation. All successful results are added to a result vector.
+      * Empty failures and result failures are skipped. All feedback is carried over to the combined compilation.
+      *
+      * This function does not produce an [[EmptyFailure]]. An empty result list is treated as a [[ResultFailure]].
+      */
+    def simultaneousSuccesses: Result[Vector[A]] = simultaneous(ignoreResultFailures = true)
+
+    /**
+      * @param ignoreResultFailures Ignore results carried by [[ResultFailure]] elements.
+      */
+    private def simultaneous(ignoreResultFailures: Boolean): Result[Vector[A]] = {
       var results: Vector[A] = Vector.empty
       var feedback: Vector[Feedback] = Vector.empty
 
       // There is a special case where we don't have any errors but the compilation still failed. Hence, we can't rely
       // on whether the error list is empty or not and have to manually remember whether there is any failure.
       var hasFailed = false
-      var isSevere = false
 
       compilations.foreach { compilation =>
         feedback = feedback ++ compilation.feedback
@@ -196,55 +193,48 @@ object Compilation {
           case failure: Failure[_] =>
             hasFailed = true
             failure match {
-              case ResultFailure(value, _) => results = results :+ value
-              case EmptyFailure(_) =>
-              case SevereFailure(_) => isSevere = true
+              case ResultFailure(value, _) if !ignoreResultFailures => results = results :+ value
+              case _ =>
             }
         }
       }
 
-      if (isSevere) SevereFailure(feedback)
-      else if (hasFailed) ResultFailure(results, feedback)
+      if (hasFailed) ResultFailure(results, feedback)
       else Success(results, feedback)
     }
   }
 
-  object polyOp {
-    import shapeless.::
-
+  implicit class CompilationTuple2Extension[A, B](tuple: (Compilation[A], Compilation[B])) {
     /**
-      * A polymorphic function used for simultaneous reduction of HList compilations.
+      * Combines all compilations into a single compilation that yields the individual results in a tuple. Any empty
+      * failure results in an empty failure overall. All feedback is carried over to the combined compilation.
       */
-    object simultaneous extends Poly2 {
-      implicit def caseCompilation[A, B <: HList]: Case.Aux[Compilation[A], Compilation[B], Compilation[A :: B]] = at[Compilation[A], Compilation[B]] {
-        case (SevereFailure(feedback1), c2) => SevereFailure(feedback1 ++ c2.feedback)
-        case (c1, SevereFailure(feedback2)) => SevereFailure(c1.feedback ++ feedback2)
-
-        case (Success(result1, feedback1), Success(result2, feedback2)) => Success(result1 :: result2, feedback1 ++ feedback2)
-        case (c1: Result[A], c2: Result[B]) => ResultFailure(c1.result :: c2.result, c1.feedback ++ c2.feedback)
-
-        case (c1, c2) => EmptyFailure(c1.feedback ++ c2.feedback)
-      }
+    def simultaneous: Compilation[(A, B)] = tuple match {
+      case (Success(result1, feedback1), Success(result2, feedback2)) => Success((result1, result2), feedback1 ++ feedback2)
+      case (c1: Result[A], c2: Result[B]) => ResultFailure((c1.result, c2.result), c1.feedback ++ c2.feedback)
+      case (c1, c2) => EmptyFailure(c1.feedback ++ c2.feedback)
     }
   }
 
-  /**
-    * Models simultaneous compilation on shapeless HLists.
-    */
-  implicit class CompilationHListExtension[T, L <: HList, RL <: HList, RT](compilations: T)(
-    // Provides a means to convert the tuple T to the entry HList EL.
-    implicit val gen: Generic.Aux[T, L],
-    // Provides a means to fold the HList L to the result HList RL via the polyOp.simultaneous operator.
-    val folder: RightFolder.Aux[L, Compilation[HNil], polyOp.simultaneous.type, Compilation[RL]],
-    // Provides a means to convert the result HList to a result tuple.
-    val tupler: Tupler.Aux[RL, RT],
-    // Ensures that only Compilations are part of the input HList.
-    val lub: LUBConstraint[L, Compilation[_]],
-  ) {
-    def simultaneous: Compilation[RT] = {
-      // I can't believe this actually works. Many thanks to Travis Brown for his answers on StackOverflow.
-      gen.to(compilations).foldRight(succeed(HNil: HNil))(polyOp.simultaneous).map(tupler(_))
+  implicit class ResultTuple2Extension[A, B](tuple: (Result[A], Result[B])) {
+    def simultaneous: Result[(A, B)] = CompilationTuple2Extension(tuple).simultaneous.asInstanceOf[Result[(A, B)]]
+  }
+
+  implicit class CompilationTuple3Extension[A, B, C](tuple: (Compilation[A], Compilation[B], Compilation[C])) {
+    /**
+      * Combines all compilations into a single compilation that yields the individual results in a tuple. Any empty
+      * failure results in an empty failure overall. All feedback is carried over to the combined compilation.
+      */
+    def simultaneous: Compilation[(A, B, C)] = tuple match {
+      case (Success(result1, feedback1), Success(result2, feedback2), Success(result3, feedback3)) =>
+        Success((result1, result2, result3), feedback1 ++ feedback2 ++ feedback3)
+      case (c1: Result[A], c2: Result[B], c3: Result[C]) => ResultFailure((c1.result, c2.result, c3.result), c1.feedback ++ c2.feedback ++ c3.feedback)
+      case (c1, c2, c3) => EmptyFailure(c1.feedback ++ c2.feedback ++ c3.feedback)
     }
+  }
+
+  implicit class ResultTuple3Extension[A, B, C](tuple: (Result[A], Result[B], Result[C])) {
+    def simultaneous: Result[(A, B, C)] = CompilationTuple3Extension(tuple).simultaneous.asInstanceOf[Result[(A, B, C)]]
   }
 
   /**
@@ -268,11 +258,15 @@ object Compilation {
     }
   }
 
+  implicit class OptionalResultExtension[A](option: Option[Result[A]]) {
+    def toCompiledOption: Result[Option[A]] = OptionalCompilationExtension(option).toCompiledOption.asInstanceOf[Result[Option[A]]]
+  }
+
   implicit class ToCompilationExtension[A](value: A) {
     /**
       * Creates a succeeding compilation with the given value.
       */
-    def compiled: Compilation[A] = Compilation.succeed(value)
+    def compiled: Success[A] = Compilation.succeed(value)
   }
 
   implicit class FoldCompilationsExtension[A](vector: Vector[A]) {
@@ -281,27 +275,34 @@ object Compilation {
       * continues until an empty compilation is encountered.
       */
     def foldCompiled[B](initial: B)(f: (B, A) => Compilation[B]): Compilation[B] = {
-      vector.foldLeft(Compilation.succeed(initial)) { case (compilation, element) => compilation.flatMap(f(_, element)) }
+      vector.foldLeft(Compilation.succeed(initial): Compilation[B]) { case (compilation, element) => compilation.flatMap(f(_, element)) }
     }
 
     /**
-      * Lifts the vector's fold operation into a compilation context. The fold continues until a severe failure is
-      * encountered. If an empty failure is encountered, the fold continues with the last valid value of B.
+      * Lifts the vector's fold operation into a compilation context. The fold always consumes the whole list. If an
+      * empty failure is encountered, the fold continues with the last valid value of B.
       */
-    def foldSimultaneous[B](initial: B)(f: (B, A) => Compilation[B]): Compilation[B] = {
-      vector.foldLeft(Compilation.succeed(initial)) { case (compilation, element) =>
-        compilation match {
-          case result: Result[B] =>
-            f(result.result, element) match {
-              case result2: Result[B] => result2.withFeedback(result.feedback)
-              case _: EmptyFailure => result
-              case failure2: SevereFailure => failure2.withFeedback(result.feedback)
-            }
-
-          case _: EmptyFailure => throw CompilationException("`foldCompiled` cannot result in a non-severe, empty failure.")
-          case failure: SevereFailure => failure
+    def foldSimultaneous[B](initial: B)(f: (B, A) => Compilation[B]): Result[B] = {
+      vector.foldLeft(Compilation.succeed(initial): Result[B]) { case (result, element) =>
+        f(result.result, element) match {
+          case result2: Result[B] => result2.withFeedback(result.feedback)
+          case _: EmptyFailure => result
         }
       }
+    }
+  }
+
+  implicit class FilterCompilationExtension[A](vector: Vector[A]) {
+    /**
+      * Filters out duplicate elements in respect to the key produced by the `key` function. For any group of
+      * duplicates, the `duplicate` function is consulted with a representative element of that group to produce an
+      * error.
+      */
+    def filterDuplicates[K](key: A => K, duplicate: A => Feedback.Error): Result[Vector[A]] = {
+      vector.groupBy(key).values.map {
+        case Vector(a) => Compilation.succeed(a)
+        case group if group.size > 1 => Compilation.fail(duplicate(group.head))
+      }.toVector.simultaneous
     }
   }
 
