@@ -29,7 +29,9 @@ object InheritanceResolver {
     }
 
     for {
-      types <- nodes.map(TypeExpressionEvaluator.evaluate).simultaneous
+      // If a supertype expression cannot be evaluated, that supertype is simply not added to the list of inherited
+      // types.
+      types <- nodes.map(TypeExpressionEvaluator.evaluate).simultaneousSuccesses
       supertypeLists <- types.map(extract).simultaneous
       supertypes = supertypeLists.flatten.distinct
     } yield supertypes
