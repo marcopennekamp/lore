@@ -1,7 +1,7 @@
 package lore.compiler.core
 
 import lore.compiler.core.Compilation.{EmptyFailure, Failure, Result, ResultFailure, Success, Verification}
-import lore.compiler.feedback.Feedback
+import lore.compiler.feedback.{Feedback, Reporter}
 
 /**
   * Represents a compilation to a result of type A. Compilations are defined in two dimensions: (1) whether a result
@@ -289,20 +289,6 @@ object Compilation {
           case _: EmptyFailure => result
         }
       }
-    }
-  }
-
-  implicit class FilterCompilationExtension[A](vector: Vector[A]) {
-    /**
-      * Filters out duplicate elements in respect to the key produced by the `key` function. For any group of
-      * duplicates, the `duplicate` function is consulted with a representative element of that group to produce an
-      * error.
-      */
-    def filterDuplicates[K](key: A => K, duplicate: A => Feedback.Error): Result[Vector[A]] = {
-      vector.groupBy(key).values.map {
-        case Vector(a) => Compilation.succeed(a)
-        case group if group.size > 1 => Compilation.fail(duplicate(group.head))
-      }.toVector.simultaneous
     }
   }
 

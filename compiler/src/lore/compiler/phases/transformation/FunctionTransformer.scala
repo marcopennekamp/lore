@@ -1,24 +1,19 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.core.Compilation.Verification
-import lore.compiler.phases.constraints.SignatureConstraints
+import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.FunctionDefinition
 import lore.compiler.semantics.scopes.FunctionBindingScope
 
-/**
-  * For a given function, builds a semantic expression tree from the body's abstract syntax tree. It infers and checks
-  * expression types and checks all other constraints on expressions of that function's body.
-  */
 object FunctionTransformer {
 
   /**
-    * Compiles the function's body node and sets its 'body' field. Also ensures that the return type of the signature
+    * Compiles the function's body node and sets its `body` field. Also ensures that the return type of the signature
     * is sound compared to the result type of the body.
     */
-  def transform(function: FunctionDefinition)(implicit registry: Registry): Verification = {
-    SignatureConstraints.verify(function.signature).flatMap { _ =>
-      val compiledBody = function.bodyNode.map { node =>
+  def transform(function: FunctionDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
+    function.bodyNode.foreach { node =>
+      function.body = Some(
         ExpressionTransformer.transform(
           function.name,
           node,
@@ -26,11 +21,7 @@ object FunctionTransformer {
           function.typeScope,
           new FunctionBindingScope(function.signature, registry.bindingScope),
         )
-      }.toCompiledOption
-
-      compiledBody.map { body =>
-        function.body = body
-      }
+      )
     }
   }
 

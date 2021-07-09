@@ -1,6 +1,5 @@
 package lore.lsp
 
-import lore.compiler.core.Compilation
 import lore.compiler.semantics.Registry
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures
 import org.eclipse.lsp4j.services._
@@ -76,14 +75,12 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
   }
 
   private def applyWorkspaceChanges(): Unit = this.synchronized {
-    val compilation = WorkspaceAnalyzer.analyze()
-    compilation.foreach(result => registry = result)
-    val message = compilation match {
-      case Compilation.Success(_, _) => "Lore: Workspace compilation succeeded."
-      case _ => "Lore: Workspace compilation failed."
-    }
+    val (registry, reporter) = WorkspaceAnalyzer.analyze()
+    val message = if (reporter.hasErrors) "Lore: Workspace compilation failed." else "Lore: Workspace compilation succeeded."
+
+    this.registry = registry
     client.showMessage(new MessageParams(MessageType.Info, message))
-    feedbackPublisher.publish(compilation.feedback)
+    feedbackPublisher.publish(reporter.feedback)
   }
 
 }

@@ -2,9 +2,8 @@ package lore.compiler.phases.parsing
 
 import fastparse.ScalaWhitespace._
 import fastparse._
-import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, Fragment, Position}
-import lore.compiler.feedback.Feedback
+import lore.compiler.core.{Fragment, Position}
+import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.syntax._
 
 /**
@@ -28,12 +27,14 @@ class FragmentParser(implicit fragment: Fragment) {
   /**
     * Attempts to parse the fragment and returns the parsing result.
     */
-  lazy val parsed: Compilation[Vector[DeclNode]] = {
+  def parse()(implicit reporter: Reporter): Vector[DeclNode] = {
     fastparse.parse(fragment.input, fullFragment(_)) match {
       case Parsed.Failure(_, _, extra) =>
-        val message = s"Parsing failure: ${extra.trace().aggregateMsg}"
-        Compilation.fail(ParsingError(message, Position(fragment, extra.index)))
-      case Parsed.Success(result, _) => result.compiled
+        val error = ParsingError(s"Parsing failure: ${extra.trace().aggregateMsg}", Position(fragment, extra.index))
+        reporter.error(error)
+        Vector.empty
+
+      case Parsed.Success(result, _) => result
     }
   }
 

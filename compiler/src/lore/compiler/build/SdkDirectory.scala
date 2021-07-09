@@ -1,8 +1,7 @@
 package lore.compiler.build
 
-import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, Position}
-import lore.compiler.feedback.Feedback
+import lore.compiler.core.Position
+import lore.compiler.feedback.{Feedback, Reporter}
 
 import java.nio.file.{Files, Path}
 
@@ -20,16 +19,18 @@ object SdkDirectory {
     override def message: String = s"The SDK at `$path` does not contain the runtime in a sub-directory `runtime`."
   }
 
-  def verify(sdkDirectory: Path): Verification = {
+  def verify(sdkDirectory: Path)(implicit reporter: Reporter): Unit = {
     if (!Files.isDirectory(sdkDirectory)) {
-      Compilation.fail(SdkNotFound(sdkDirectory))
+      reporter.error(SdkNotFound(sdkDirectory))
     } else {
-      val pyramid = sdkDirectory.resolve("pyramid")
-      val runtime = sdkDirectory.resolve("runtime")
-      (
-        if (!Files.isDirectory(pyramid)) Compilation.fail(PyramidNotFound(sdkDirectory)) else Verification.succeed,
-        if (!Files.isDirectory(runtime)) Compilation.fail(RuntimeNotFound(sdkDirectory)) else Verification.succeed,
-      ).simultaneous.verification
+      def ensureDirectoryExists(directoryName: String, error: Path => Feedback.Error): Unit = {
+        if (!Files.isDirectory(sdkDirectory.resolve(directoryName))) {
+          reporter.error(error(sdkDirectory))
+        }
+      }
+
+      ensureDirectoryExists("pyramid", PyramidNotFound)
+      ensureDirectoryExists("runtime", RuntimeNotFound)
     }
   }
 

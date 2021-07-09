@@ -1,9 +1,9 @@
 package lore.compiler.build
 
 import lore.compiler.LoreCompiler
-import lore.compiler.core.Compilation.FilterCompilationExtension
-import lore.compiler.core.{Compilation, CompilerOptions, Fragment, Position}
-import lore.compiler.feedback.Feedback
+import lore.compiler.core.{CompilerOptions, Fragment, Position}
+import lore.compiler.feedback.FeedbackExtensions.FilterDuplicatesExtension
+import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
 import lore.compiler.semantics.Registry
 
 import java.nio.file.{Files, Path}
@@ -17,33 +17,30 @@ object BuildApi {
   val buildFile: Path = Path.of("lore.build.json")
 
   def build(options: BuildOptions): Unit = {
+    implicit val reporter: MemoReporter = MemoReporter(Vector.empty)
+
     val compilationStartTime = System.nanoTime()
-    val result = compile(options)
+    val (_, optionalCode) = compile(options)
     val compilationEndTime = System.nanoTime()
 
-    logCompilationFeedback(result, compilationStartTime, compilationEndTime)(options.compilerOptions)
-    result match {
-      case Compilation.Success((_, code), _) => writeResult(code)(options)
-      case _ =>
-    }
+    logCompilationFeedback(reporter, compilationStartTime, compilationEndTime)(options.compilerOptions)
+    optionalCode.foreach(writeResult(_)(options))
   }
 
   /**
     * Compiles a Lore program from the given build options.
     */
-  def compile(options: BuildOptions): Compilation[(Registry, String)] = {
-    getFragments(options).flatMap(
-      fragments => LoreCompiler.compile(fragments, options.compilerOptions)
-    )
+  def compile(options: BuildOptions)(implicit reporter: Reporter): (Registry, Option[String]) = {
+    val fragments = getFragments(options)
+    LoreCompiler.compile(fragments, options.compilerOptions)
   }
 
   /**
     * Analyzes a Lore program from the given build options.
     */
-  def analyze(options: BuildOptions): Compilation[Registry] = {
-    getFragments(options).flatMap(
-      fragments => LoreCompiler.analyze(fragments)
-    )
+  def analyze(options: BuildOptions)(implicit reporter: Reporter): Registry = {
+    val fragments = getFragments(options)
+    LoreCompiler.analyze(fragments)
   }
 
   case class DuplicateFragmentName(fragment: Fragment) extends Feedback.Error(Position(fragment, 0)) {
@@ -55,34 +52,31 @@ object BuildApi {
   /**
     * Gets all fragments that can be found given the build options.
     */
-  def getFragments(options: BuildOptions): Compilation[Vector[Fragment]] = {
-    SdkDirectory.verify(options.sdk).flatMap { _ =>
-      val sources = options.sources :+ options.sdk.resolve("pyramid")
-      sources
-        .map(SourceFiles.of)
-        .simultaneous
-        .map(_.flatten)
-        .flatMap(_.filterDuplicates(_.name, DuplicateFragmentName))
-    }
+  def getFragments(options: BuildOptions)(implicit reporter: Reporter): Vector[Fragment] = {
+    SdkDirectory.verify(options.sdk)
+
+    val sources = options.sources :+ options.sdk.resolve("pyramid")
+    sources
+      .flatMap(SourceFiles.of)
+      .filterDuplicates(_.name, DuplicateFragmentName)
   }
 
   /**
     * Logs the compilation feedback in a user-palatable way.
     */
-  def logCompilationFeedback(compilation: Compilation[Any], compilationStartTime: Long, compilationEndTime: Long)(implicit options: CompilerOptions): Unit = {
+  def logCompilationFeedback(reporter: MemoReporter, compilationStartTime: Long, compilationEndTime: Long)(implicit options: CompilerOptions): Unit = {
     val compilationTime = ((compilationEndTime - compilationStartTime) / 1000) / 1000.0
-    compilation match {
-      case Compilation.Success(_, _) =>
-        Feedback.loggerBlank.info("")
-        Feedback.logger.info(s"Compilation was successful. (Total time: ${compilationTime}ms)")
-        Feedback.logAll(compilation.feedback, options.showFeedbackStackTraces)
-        Feedback.loggerBlank.info("")
 
-      case _ =>
-        Feedback.loggerBlank.info("")
-        Feedback.logger.error("Compilation failed with errors:")
-        Feedback.logAll(compilation.feedback, options.showFeedbackStackTraces)
-        Feedback.loggerBlank.error("")
+    if (!reporter.hasErrors) {
+      Feedback.loggerBlank.info("")
+      Feedback.logger.info(s"Compilation was successful. (Total time: ${compilationTime}ms)")
+      Feedback.logAll(reporter.feedback, options.showFeedbackStackTraces)
+      Feedback.loggerBlank.info("")
+    } else {
+      Feedback.loggerBlank.info("")
+      Feedback.logger.error("Compilation failed with errors:")
+      Feedback.logAll(reporter.feedback, options.showFeedbackStackTraces)
+      Feedback.loggerBlank.error("")
     }
   }
 

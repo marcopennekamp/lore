@@ -1,7 +1,8 @@
 package lore.compiler.inference.resolvers
 
-import lore.compiler.core.{Compilation, Position}
+import lore.compiler.core.Position
 import lore.compiler.feedback.DispatchFeedback.{AmbiguousCall, EmptyFit}
+import lore.compiler.feedback.Reporter
 import lore.compiler.inference.Inference.{Assignments, instantiateCandidateType}
 import lore.compiler.inference.InferenceBounds.narrowBounds
 import lore.compiler.inference.{Inference, TypingJudgment}
@@ -39,14 +40,19 @@ object MultiFunctionCallJudgmentResolver extends JudgmentResolver[TypingJudgment
   override def forwards(
     judgment: TypingJudgment.MultiFunctionCall,
     assignments: Assignments,
-  )(implicit registry: Registry): Compilation[Assignments] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[Assignments] = {
     resolveDispatch(judgment.mf, TupleType(judgment.arguments), judgment.position, assignments).flatMap { instance =>
       val result = instance.signature.outputType
       narrowBounds(assignments, judgment.target, result, judgment)
     }
   }
 
-  def resolveDispatch(mf: MultiFunctionDefinition, uninstantiatedInputType: TupleType, position: Position, assignments: Inference.Assignments): Compilation[FunctionInstance] = {
+  def resolveDispatch(
+    mf: MultiFunctionDefinition,
+    uninstantiatedInputType: TupleType,
+    position: Position,
+    assignments: Inference.Assignments,
+  )(implicit reporter: Reporter): Option[FunctionInstance] = {
     val inputType = instantiateCandidateType(assignments, uninstantiatedInputType).asInstanceOf[TupleType]
     mf.dispatch(inputType, EmptyFit(mf, inputType, position), min => AmbiguousCall(mf, inputType, min, position))
   }

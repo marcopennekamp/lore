@@ -8,8 +8,8 @@ import org.scalatest.Assertion
 
 trait InferenceSpec extends TypeSpec {
 
-  def assertInferenceSuccess(assignments: (InferenceVariable, InferenceBounds)*)(result: Compilation[Assignments]): Assertion = {
-    result shouldEqual Compilation.succeed(assignments.toMap)
+  def assertInferenceSuccess(assignments: (InferenceVariable, InferenceBounds)*)(result: Option[Assignments]): Assertion = {
+    result shouldEqual Some(assignments.toMap)
   }
 
   def assertInferenceFailure(error: Feedback.Error)(result: Compilation[Assignments]): Assertion = {

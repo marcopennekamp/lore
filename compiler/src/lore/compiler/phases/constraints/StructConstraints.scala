@@ -1,8 +1,7 @@
 package lore.compiler.phases.constraints
 
-import lore.compiler.core.Compilation
-import lore.compiler.core.Compilation.{FilterCompilationExtension, Verification}
-import lore.compiler.feedback.Feedback
+import lore.compiler.feedback.FeedbackExtensions.FilterDuplicatesExtension
+import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.types.ShapeType
@@ -14,11 +13,9 @@ object StructConstraints {
     *   1. Properties must be unique.
     *   2. The properties of the struct's inherited shape type must all be defined.
     */
-  def verify(definition: StructDefinition)(implicit registry: Registry): Verification = {
-    (
-      verifyPropertiesUnique(definition),
-      verifyInheritedShapeProperties(definition),
-    ).simultaneous.verification
+  def verify(definition: StructDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
+    verifyPropertiesUnique(definition)
+    verifyInheritedShapeProperties(definition)
   }
 
   case class DuplicateProperty(definition: StructDefinition, property: StructPropertyDefinition) extends Feedback.Error(property) {
@@ -26,10 +23,10 @@ object StructConstraints {
   }
 
   /**
-    * Verifies that this struct's properties are unique.
+    * Verifies that the given struct's properties are unique.
     */
-  private def verifyPropertiesUnique(definition: StructDefinition): Verification = {
-    definition.properties.filterDuplicates(_.name, property => DuplicateProperty(definition, property)).verification
+  private def verifyPropertiesUnique(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
+    definition.properties.verifyUnique(_.name, property => DuplicateProperty(definition, property))
   }
 
   case class ShapeMissingProperty(definition: StructDefinition, property: ShapeType.Property) extends Feedback.Error(definition) {
@@ -47,17 +44,18 @@ object StructConstraints {
   }
 
   /**
-    * Verifies that the struct's inherited shape type is properly implemented.
+    * Verifies that the given struct's inherited shape type is properly implemented.
     */
-  private def verifyInheritedShapeProperties(definition: StructDefinition): Verification = {
-    definition.tpe.inheritedShapeType.properties.values.toVector.map { shapeProperty =>
+  private def verifyInheritedShapeProperties(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
+    definition.tpe.inheritedShapeType.properties.values.toVector.foreach { shapeProperty =>
       definition.propertyMap.get(shapeProperty.name) match {
         case Some(structProperty) =>
-          if (structProperty.tpe <= shapeProperty.tpe) Verification.succeed
-          else Compilation.fail(ShapeInvalidPropertyType(definition, structProperty, shapeProperty))
-        case None => Compilation.fail(ShapeMissingProperty(definition, shapeProperty))
+          if (structProperty.tpe </= shapeProperty.tpe) {
+            reporter.error(ShapeInvalidPropertyType(definition, structProperty, shapeProperty))
+          }
+        case None => reporter.error(ShapeMissingProperty(definition, shapeProperty))
       }
-    }.simultaneous.verification
+    }
   }
 
 }

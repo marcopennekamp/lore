@@ -1,9 +1,9 @@
 package lore.compiler.semantics.scopes
 
-import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, CompilationException, Position}
-import lore.compiler.feedback.Feedback
+import lore.compiler.core.{CompilationException, Position}
+import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.scopes.Scope.{AlreadyDeclared, UnknownEntry}
+import lore.compiler.utils.CollectionExtensions.OptionExtension
 
 import scala.collection.mutable
 
@@ -33,26 +33,22 @@ trait Scope[A] {
   def get(name: String): Option[A] = local(name).orElse(parent.flatMap(_.get(name)))
 
   /**
-    * Resolves an entry with the given name from the closest scope. If it cannot be found, we return a
-    * compilation error.
+    * Resolves an entry with the given name from the closest scope. If it cannot be found, an "unknown entry" error is
+    * reported.
     */
-  def resolve(name: String, position: Position): Compilation[A] = {
-    get(name) match {
-      case None => Compilation.fail(unknownEntry(name, position))
-      case Some(entry) => entry.compiled
-    }
+  def resolve(name: String, position: Position)(implicit reporter: Reporter): Option[A] = {
+    get(name).ifEmpty(reporter.error(unknownEntry(name, position)))
   }
 
   /**
     * Registers the given entry with the scope. If it is already registered in the current scope, an "already declared"
-    * error is produced.
+    * error is reported.
     */
-  def register[B <: A](name: String, entry: B, position: Position): Compilation.Result[B] = {
+  def register[B <: A](name: String, entry: B, position: Position)(implicit reporter: Reporter): Unit = {
     if (local(name).isDefined) {
-      Compilation.fail(entry, alreadyDeclared(name, position))
+      reporter.report(alreadyDeclared(name, position))
     } else {
       add(name, entry)
-      Compilation.succeed(entry)
     }
   }
 

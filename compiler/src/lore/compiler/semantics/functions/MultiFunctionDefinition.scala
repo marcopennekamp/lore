@@ -1,7 +1,6 @@
 package lore.compiler.semantics.functions
 
-import lore.compiler.core.Compilation
-import lore.compiler.feedback.Feedback
+import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.phases.transpilation.RuntimeNames
 import lore.compiler.semantics.scopes.Binding
 import lore.compiler.target.Target
@@ -21,7 +20,7 @@ case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefin
     tpe: TupleType,
     emptyFit: => Feedback.Error,
     ambiguousCall: Vector[FunctionDefinition] => Feedback.Error,
-  ): Compilation[FunctionInstance] = {
+  )(implicit reporter: Reporter): Option[FunctionInstance] = {
     Dispatch.resolve(hierarchy, tpe, emptyFit, ambiguousCall)
   }
 

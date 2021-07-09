@@ -34,7 +34,7 @@ object InferenceDependency {
     */
   private def dependenciesOf(source: Type, target: Type): Set[InferenceDependency] = {
     dependenciesOf(
-      Inference.variables(source).asInstanceOf[Set[Type]].ifEmptySingle(source),
+      Inference.variables(source).asInstanceOf[Set[Type]].withDefaultSingle(source),
       Inference.variables(target)
     )
   }
@@ -46,7 +46,7 @@ object InferenceDependency {
   private def dependenciesOf(sources: Vector[Type], targets: Vector[Type]): Set[InferenceDependency] = {
     val sourceVariables = sources.flatMap(Inference.variables).toSet
     val targetVariables = targets.flatMap(Inference.variables).toSet
-    dependenciesOf(sourceVariables.asInstanceOf[Set[Type]].ifEmpty(sources.toSet), targetVariables)
+    dependenciesOf(sourceVariables.asInstanceOf[Set[Type]].withDefault(sources.toSet), targetVariables)
   }
 
   private def biDependenciesOf(t1: Type, t2: Type): Set[InferenceDependency] = {

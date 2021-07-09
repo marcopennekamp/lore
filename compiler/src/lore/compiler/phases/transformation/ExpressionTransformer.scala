@@ -1,12 +1,11 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.core.Compilation
-import lore.compiler.core.Compilation.Verification
+import lore.compiler.feedback.Reporter
 import lore.compiler.feedback.TypingFeedback.SubtypeExpected
 import lore.compiler.inference.Inference
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
-import lore.compiler.semantics.scopes.{TypeScope, BindingScope}
+import lore.compiler.semantics.scopes.{BindingScope, TypeScope}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.types.{TupleType, Type}
@@ -23,27 +22,24 @@ object ExpressionTransformer {
     expectedType: Type,
     typeScope: TypeScope,
     bindingScope: BindingScope,
-  )(implicit registry: Registry): Compilation[Expression] = {
+  )(implicit registry: Registry, reporter: Reporter): Expression = {
     val visitor = new InferringExpressionTransformationVisitor(expectedType, typeScope, bindingScope)
 
-    for {
-      expression <- TopLevelExprVisitor.visitCompilation(visitor)(node)
+    val expression = TopLevelExprVisitor.visit(visitor)(node)
+    val inferredTypes = Inference.inferVerbose(visitor.typingJudgments, name, reporter)
 
-      inferredTypes <- Inference.inferVerbose(visitor.typingJudgments, name)
+    val rehydrationVisitor = new TypeRehydrationVisitor(inferredTypes)
+    val typedExpression = ExpressionVisitor.visit(rehydrationVisitor)(expression)
 
-      rehydrationVisitor = new TypeRehydrationVisitor(inferredTypes)
-      typedExpression = ExpressionVisitor.visit(rehydrationVisitor)(expression)
+    val mutabilityVerifier = new MutabilityVerifier
+    ExpressionVisitor.visit(mutabilityVerifier)(typedExpression)
 
-      mutabilityVerifier = new MutabilityVerifier
-      _ <- ExpressionVisitor.visitCompilation(mutabilityVerifier)(typedExpression)
+    val builtinsVisitor = new BuiltinsVisitor
+    val expressionWithBuiltins = ExpressionVisitor.visit(builtinsVisitor)(typedExpression)
 
-      builtinsVisitor = new BuiltinsVisitor
-      expressionWithBuiltins <- ExpressionVisitor.visitCompilation(builtinsVisitor)(typedExpression)
-
-      expressionWithImplicitUnit = withImplicitUnitValue(expectedType)(expressionWithBuiltins)
-
-      _ <- verifyExpectedType(expressionWithImplicitUnit, expectedType)
-    } yield expressionWithImplicitUnit
+    val expressionWithImplicitUnit = withImplicitUnitValue(expectedType)(expressionWithBuiltins)
+    verifyExpectedType(expressionWithImplicitUnit, expectedType)
+    expressionWithImplicitUnit
   }
 
   /**
@@ -71,11 +67,9 @@ object ExpressionTransformer {
     * a case, the expression is valid as well, because we can guarantee at compile-time that the right kind of value
     * is returned before the end of the expression is reached. This special case is also handled by this verification.
     */
-  private def verifyExpectedType(expression: Expression, expectedType: Type): Verification = {
-    if (expression.tpe <= expectedType || allPathsReturn(expression)) {
-      Verification.succeed
-    } else {
-      Compilation.fail(SubtypeExpected(expression.tpe, expectedType, expression))
+  private def verifyExpectedType(expression: Expression, expectedType: Type)(implicit reporter: Reporter): Unit = {
+    if ((expression.tpe </= expectedType) && !allPathsReturn(expression)) {
+      reporter.error(SubtypeExpected(expression.tpe, expectedType, expression))
     }
   }
 

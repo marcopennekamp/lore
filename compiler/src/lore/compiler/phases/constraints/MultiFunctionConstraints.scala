@@ -1,11 +1,10 @@
 package lore.compiler.phases.constraints
 
-import lore.compiler.core.Compilation
-import lore.compiler.core.Compilation.Verification
-import lore.compiler.feedback.Feedback
+import lore.compiler.feedback.FeedbackExtensions.FilterDuplicatesExtension
+import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
-import lore.compiler.types.{DeclaredType, Fit, IntersectionType, SumType, TupleType, Type}
+import lore.compiler.types._
 import scalaz.std.vector._
 import scalaz.syntax.traverse._
 
@@ -13,29 +12,46 @@ object MultiFunctionConstraints {
 
   /**
     * Verifies:
-    *   1. For each function, first the input abstractness constraint and then the totality constraint.
-    *   2. A child function's output type is a subtype of its parent function's output type.
+    *   1. Parameter uniqueness for each function.
+    *   2. Abstractness constraints for each function.
     *   3. Return constraints for each function.
+    *   4. A child function's output type is a subtype of its parent function's output type.
     *
-    * Note that uniqueness is already checked by the DeclarationResolver.
+    * Note that uniqueness of input types is already checked by the DeclarationResolver.
     */
-  def verify(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
-    (
-      verifyAbstractness(mf),
-      verifyOutputTypes(mf),
-      verifyReturnConstraints(mf),
-    ).simultaneous.verification
+  def verify(mf: MultiFunctionDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
+    verifyParameterUniqueness(mf)
+    verifyAbstractness(mf)
+    verifyOutputTypes(mf)
+    verifyReturnConstraints(mf)
+  }
+
+  /**
+    * Verifies for each function that parameter names are unique.
+    */
+  private def verifyParameterUniqueness(mf: MultiFunctionDefinition)(implicit reporter: Reporter): Unit = {
+    mf.functions.map(_.signature).foreach(verifyUniqueParameterNames)
+  }
+
+  case class DuplicateParameterName(signature: FunctionSignature, name: String) extends Feedback.Error(signature.position) {
+    override def message: String = s"The function ${signature.name} has two or more parameters named $name. Parameter names must be unique."
+  }
+
+  private def verifyUniqueParameterNames(signature: FunctionSignature)(implicit reporter: Reporter): Unit = {
+    signature.parameters.verifyUnique(_.name, parameter => DuplicateParameterName(signature, parameter.name))
   }
 
   /**
     * Verifies for each function in the multi-function first the input abstractness constraint and then the totality
     * constraint.
     */
-  private def verifyAbstractness(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
-    mf.functions.filter(_.isAbstract).map { function =>
-      verifyInputAbstractness(function)
-        .flatMap(_ => verifyTotalityConstraint(function, mf))
-    }.simultaneous.verification
+  private def verifyAbstractness(mf: MultiFunctionDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
+    mf.functions.filter(_.isAbstract).foreach { function =>
+      MemoReporter.chain(reporter)(
+        implicit reporter => verifyInputAbstractness(function),
+        implicit reporter => verifyTotalityConstraint(function, mf),
+      )
+    }
   }
 
   case class FunctionIllegallyAbstract(function: FunctionDefinition) extends Feedback.Error(function) {
@@ -46,10 +62,10 @@ object MultiFunctionConstraints {
   /**
     * Verifies that the given function satisfies the input abstractness constraint.
     */
-  private def verifyInputAbstractness(function: FunctionDefinition)(implicit registry: Registry): Verification = {
+  private def verifyInputAbstractness(function: FunctionDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
     if (Type.isConcrete(function.signature.inputType)) {
-      Compilation.fail(FunctionIllegallyAbstract(function))
-    } else Verification.succeed
+      reporter.error(FunctionIllegallyAbstract(function))
+    }
   }
 
   case class AbstractFunctionNotImplemented(function: FunctionDefinition, missing: Vector[Type]) extends Feedback.Error(function) {
@@ -60,9 +76,11 @@ object MultiFunctionConstraints {
   /**
     * Verifies the totality constraint for the given function.
     */
-  private def verifyTotalityConstraint(function: FunctionDefinition, mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
-      val missing = verifyInputTypeTotality(function.signature.inputType, mf)
-      if (missing.nonEmpty) Compilation.fail(AbstractFunctionNotImplemented(function, missing)) else Verification.succeed
+  private def verifyTotalityConstraint(function: FunctionDefinition, mf: MultiFunctionDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
+    val missing = verifyInputTypeTotality(function.signature.inputType, mf)
+    if (missing.nonEmpty) {
+      reporter.error(AbstractFunctionNotImplemented(function, missing))
+    }
   }
 
   /**
@@ -176,30 +194,30 @@ object MultiFunctionConstraints {
     *       type variable allocation. See [[lore.compiler.types.TypeVariableAllocation.of]] with the genericListify
     *       example.
     */
-  private def verifyOutputTypes(mf: MultiFunctionDefinition): Verification = {
-    def verifyHierarchyNode(node: mf.hierarchy.graph.NodeT): Verification = {
+  private def verifyOutputTypes(mf: MultiFunctionDefinition)(implicit reporter: Reporter): Unit = {
+    def verifyHierarchyNode(node: mf.hierarchy.graph.NodeT): Unit = {
       val parent = node.value
       val successors = node.diSuccessors.toVector
-      successors.map { successor =>
+      successors.foreach { successor =>
         val child = successor.value
-        parent.instantiate(child.signature.inputType).flatMap { parentInstance =>
+        parent.instantiate(child.signature.inputType).foreach { parentInstance =>
           if (child.signature.outputType <= parentInstance.signature.outputType) {
-            successors.map(verifyHierarchyNode).simultaneous.verification
+            successors.foreach(verifyHierarchyNode)
           } else {
-            Compilation.fail(IncompatibleOutputTypes(child.signature, parent.signature, parentInstance.signature))
+            reporter.error(IncompatibleOutputTypes(child.signature, parent.signature, parentInstance.signature))
           }
         }
-      }.simultaneous.verification
+      }
     }
 
-    mf.hierarchy.roots.map(verifyHierarchyNode).simultaneous.verification
+    mf.hierarchy.roots.foreach(verifyHierarchyNode)
   }
 
   /**
     * Verifies return constraints for all functions defined in the given multi-function.
     */
-  private def verifyReturnConstraints(mf: MultiFunctionDefinition): Verification = {
-    mf.functions.flatMap(_.bodyNode).map(ReturnConstraints.verify).simultaneous.verification
+  private def verifyReturnConstraints(mf: MultiFunctionDefinition)(implicit reporter: Reporter): Unit = {
+    mf.functions.flatMap(_.bodyNode).foreach(ReturnConstraints.verify)
   }
 
 }
