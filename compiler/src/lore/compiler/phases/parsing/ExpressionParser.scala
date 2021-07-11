@@ -138,7 +138,7 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     * @param minAccess The minimum number of times that the instance needs to be accessed.
     */
   private def propertyAccess[_: P](accessible: P[ExprNode], minAccess: Int): P[ExprNode] = {
-    def propertyAccess = P((Index ~ "." ~ identifier).rep(minAccess))
+    def propertyAccess = P(("." ~ Index ~ identifier).rep(minAccess))
     P(accessible ~ propertyAccess).map { case (expr, propertyAccesses) =>
       // Create a PropertyAccessNode for every property access or just return the expression if there is
       // no property access.
