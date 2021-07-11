@@ -1,7 +1,7 @@
 package lore.compiler.build
 
 import lore.compiler.LoreCompiler
-import lore.compiler.core.{CompilerOptions, Fragment, Position}
+import lore.compiler.core.{CompilationException, CompilerOptions, Fragment, Position}
 import lore.compiler.feedback.FeedbackExtensions.FilterDuplicatesExtension
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
 import lore.compiler.semantics.Registry
@@ -30,17 +30,21 @@ object BuildApi {
   /**
     * Compiles a Lore program from the given build options.
     */
-  def compile(options: BuildOptions)(implicit reporter: Reporter): (Registry, Option[String]) = {
+  def compile(options: BuildOptions)(implicit reporter: Reporter): (Option[Registry], Option[String]) = {
     val fragments = getFragments(options)
     LoreCompiler.compile(fragments, options.compilerOptions)
   }
 
   /**
     * Analyzes a Lore program from the given build options.
+    *
+    * This is used by the language server, so it never terminates compilation early.
     */
   def analyze(options: BuildOptions)(implicit reporter: Reporter): Registry = {
     val fragments = getFragments(options)
-    LoreCompiler.analyze(fragments)
+    LoreCompiler.analyze(fragments, exitEarly = false).getOrElse(
+      throw CompilationException("`LoreCompiler.analyze` called with `exitEarly = false` should always return a Registry.")
+    )
   }
 
   case class DuplicateFragmentName(fragment: Fragment) extends Feedback.Error(Position(fragment, 0)) {
