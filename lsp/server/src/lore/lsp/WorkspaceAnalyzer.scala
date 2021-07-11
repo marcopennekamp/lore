@@ -20,7 +20,7 @@ object WorkspaceAnalyzer {
     // stdout and we don't want the compiler to interfere with log messages.
     val stdout = System.out
     val stream = new ByteArrayOutputStream
-    implicit val reporter: MemoReporter = MemoReporter(Vector.empty)
+    implicit val reporter: MemoReporter = MemoReporter()
     val result = Using(new PrintStream(stream, true, StandardCharsets.UTF_8)) { printStream =>
       System.setOut(printStream)
       BuildApi.analyze(buildOptions)

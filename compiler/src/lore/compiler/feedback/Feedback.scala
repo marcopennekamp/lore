@@ -22,6 +22,8 @@ sealed trait Feedback extends Positioned {
     * analysis.
     */
   def isError: Boolean = false
+
+  override def toString: String = Feedback.stringify(this)
 }
 
 object Feedback {

@@ -17,7 +17,7 @@ object BuildApi {
   val buildFile: Path = Path.of("lore.build.json")
 
   def build(options: BuildOptions): Unit = {
-    implicit val reporter: MemoReporter = MemoReporter(Vector.empty)
+    implicit val reporter: MemoReporter = MemoReporter()
 
     val compilationStartTime = System.nanoTime()
     val (_, optionalCode) = compile(options)
@@ -38,11 +38,11 @@ object BuildApi {
   /**
     * Analyzes a Lore program from the given build options.
     *
-    * This is used by the language server, so it never terminates compilation early.
+    * This is used by the language server, so by default it never terminates compilation early.
     */
-  def analyze(options: BuildOptions)(implicit reporter: Reporter): Registry = {
+  def analyze(options: BuildOptions, exitEarly: Boolean = false)(implicit reporter: Reporter): Registry = {
     val fragments = getFragments(options)
-    LoreCompiler.analyze(fragments, exitEarly = false).getOrElse(
+    LoreCompiler.analyze(fragments, exitEarly).getOrElse(
       throw CompilationException("`LoreCompiler.analyze` called with `exitEarly = false` should always return a Registry.")
     )
   }

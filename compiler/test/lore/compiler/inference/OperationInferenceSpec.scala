@@ -14,11 +14,11 @@ class OperationInferenceSpec extends InferenceSpec {
     val b = new InferenceVariable(Some("b"))
     val c = new InferenceVariable(Some("c"))
 
-    val result = Inference.infer(Vector(
+    val result = infer(
       TypingJudgment.Subtypes(a, real, Position.internal),
       TypingJudgment.Subtypes(b, real, Position.internal),
       TypingJudgment.LeastUpperBound(c, Vector(a, b), Position.internal),
-    ))(null)
+    )
 
     assertInferenceSuccess(
       Assignment.upper(a, real),
@@ -33,10 +33,10 @@ class OperationInferenceSpec extends InferenceSpec {
     val newElement = real
     val combined = new InferenceVariable(Some("combined"))
 
-    val result = Inference.infer(Vector(
+    val result = infer(
       TypingJudgment.Equals(ListType(element), list, Position.internal),
       TypingJudgment.LeastUpperBound(combined, Vector(element, newElement), Position.internal),
-    ))(null)
+    )
 
     assertInferenceSuccess(
       Assignment.fixed(element, int),

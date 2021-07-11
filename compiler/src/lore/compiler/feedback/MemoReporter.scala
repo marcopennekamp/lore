@@ -28,12 +28,13 @@ object MemoReporter {
   }
 
   def apply(initialFeedback: Vector[Feedback]): MemoReporter = new MemoReporter(initialFeedback)
+  def apply(): MemoReporter = apply(Vector.empty)
 
   /**
     * Invokes `f` with a fresh MemoReporter, then adds the feedback to the given parent reporter.
     */
   def nested[A](parent: Reporter)(f: MemoReporter => A): A = {
-    val reporter = MemoReporter(Vector.empty)
+    val reporter = MemoReporter()
     val result = f(reporter)
     parent.report(reporter.feedback)
     result

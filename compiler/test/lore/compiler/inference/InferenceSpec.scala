@@ -1,23 +1,34 @@
 package lore.compiler.inference
 
-import lore.compiler.core.Compilation
-import lore.compiler.feedback.Feedback
+import lore.compiler.feedback.{Feedback, MemoReporter}
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.types._
 import org.scalatest.Assertion
 
 trait InferenceSpec extends TypeSpec {
 
-  def assertInferenceSuccess(assignments: (InferenceVariable, InferenceBounds)*)(result: Option[Assignments]): Assertion = {
-    result shouldEqual Some(assignments.toMap)
+  type InferenceResult = (Assignments, Vector[Feedback])
+
+  def infer(judgments: TypingJudgment*): InferenceResult = {
+    val reporter: MemoReporter = MemoReporter()
+    val assignments = Inference.infer(judgments.toVector)(null, reporter)
+    (assignments, reporter.feedback)
   }
 
-  def assertInferenceFailure(error: Feedback.Error)(result: Compilation[Assignments]): Assertion = {
-    result shouldEqual Compilation.fail(error)
+  def assertInferenceSuccess(expectedAssignments: (InferenceVariable, InferenceBounds)*)(result: InferenceResult): Assertion = {
+    val (assignments, feedback) = result
+    feedback.filter(_.isError) shouldBe empty
+    assignments shouldEqual expectedAssignments.toMap
   }
 
-  def assertInferenceFailureDisregardingErrors(result: Compilation[Assignments]): Assertion = {
-    result should matchPattern { case _: Compilation.Failure[_] => }
+  def assertInferenceFailure(error: Feedback.Error)(result: InferenceResult): Assertion = {
+    val (_, feedback) = result
+    feedback shouldEqual Vector(error)
+  }
+
+  def assertInferenceFailureDisregardingErrors(result: InferenceResult): Assertion = {
+    val (_, feedback) = result
+    feedback shouldNot be(empty)
   }
 
   object Assignment {

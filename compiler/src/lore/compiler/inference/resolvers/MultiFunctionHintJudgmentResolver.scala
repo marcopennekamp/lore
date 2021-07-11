@@ -109,7 +109,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
 
       Inference.logger.trace(s"Multi-function hint judgments:\n${allJudgments.mkString("\n")}")
 
-      val innerReporter: MemoReporter = MemoReporter(Vector.empty)
+      val innerReporter: MemoReporter = MemoReporter()
       val assignments2 = SimpleResolution.infer(InferenceBounds.prefill(assignments, allJudgments), allJudgments)(registry, innerReporter)
 
       // We have to throw away the inference variables that only encode the function's type variables again, as
