@@ -1,7 +1,5 @@
 package lore.compiler.utils
 
-import lore.compiler.core.Compilation
-
 import scala.reflect.ClassTag
 
 object CollectionExtensions {
