@@ -21,13 +21,9 @@ class FunctionBindingScope(val signature: FunctionSignature, parent: BindingScop
   // Register all parameters as immutable variables with the function scope. We bypass 'register' since this operation
   // should not fail at this stage.
   signature.parameters.map(_.asVariable).foreach(this.add)
-
-  override def entryLabel: String = "parameter"
 }
 
 /**
   * A scope opened by a block, containing local variable bindings.
   */
-class BlockBindingScope(parent: BindingScope) extends BasicScope[Binding](Some(parent)) with BindingScope {
-  override def entryLabel: String = "local variable"
-}
+class BlockBindingScope(parent: BindingScope) extends BasicScope[Binding](Some(parent)) with BindingScope
