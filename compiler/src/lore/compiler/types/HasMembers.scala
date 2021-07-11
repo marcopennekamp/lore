@@ -21,8 +21,14 @@ trait HasMembers { self: Type =>
     * be found.
     */
   def member(name: String, accessPosition: Position)(implicit reporter: Reporter): Option[Member] = {
-    members.get(name).ifEmpty(reporter.error(MemberNotFound(name, this, accessPosition)))
+    member(name).ifEmpty(reporter.error(MemberNotFound(name, this, accessPosition)))
   }
+
+  /**
+    * Finds a member with the given name within the member map of this type. Does not report an error if the member
+    * cannot be found.
+    */
+  def member(name: String): Option[Member] = members.get(name)
 }
 
 object HasMembers {
