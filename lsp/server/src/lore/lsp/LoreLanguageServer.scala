@@ -46,7 +46,7 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
   }
 
   override def initialized(params: InitializedParams): Unit = {
-    client.showMessage(new MessageParams(MessageType.Info, "Lore: Initializing workspace..."))
+    MessageToaster.info("Initializing workspace...")
     applyWorkspaceChanges()
   }
 
@@ -76,10 +76,11 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
 
   private def applyWorkspaceChanges(): Unit = this.synchronized {
     val (registry, reporter) = WorkspaceAnalyzer.analyze()
-    val message = if (reporter.hasErrors) "Lore: Workspace compilation failed." else "Lore: Workspace compilation succeeded."
-
     this.registry = registry
-    client.showMessage(new MessageParams(MessageType.Info, message))
+
+    val message = if (reporter.hasErrors) "Workspace compilation failed." else "Workspace compilation succeeded."
+    MessageToaster.info(message)
+
     feedbackPublisher.publish(reporter.feedback)
   }
 

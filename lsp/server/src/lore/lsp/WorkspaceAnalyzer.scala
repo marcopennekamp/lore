@@ -32,6 +32,7 @@ object WorkspaceAnalyzer {
     val registry = result match {
       case Failure(exception) =>
         MessageLogger.info(s"Compilation failed with an exception:\n$exception")
+        MessageToaster.info("Compilation failed with an exception. Please consult the log.")
         throw exception
 
       case Success(value) => value
