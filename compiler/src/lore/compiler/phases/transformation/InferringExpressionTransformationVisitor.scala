@@ -97,16 +97,19 @@ class InferringExpressionTransformationVisitor(
       // Either infer the type from the value or, if a type has been explicitly declared, check that the value adheres
       // to the type bounds. If the type annotation cannot be compiled, it is effectively treated as non-existing.
       val typeAnnotation = maybeTypeExpr.flatMap(TypeExpressionEvaluator.evaluate)
-      val inferredType = typeAnnotation match {
+      val tpe = typeAnnotation match {
         case Some(tpe) =>
           typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(expression.tpe, tpe, position)
           tpe
-        case None => expression.tpe
+
+        case None =>
+          val tpe = new InferenceVariable
+          typingJudgments = typingJudgments :+ TypingJudgment.Assign(tpe, expression.tpe, position)
+          tpe
       }
 
-      val variable = Variable(name, new InferenceVariable, isMutable)
+      val variable = Variable(name, tpe, isMutable)
       scopeContext.currentScope.register(variable, position)
-      typingJudgments = typingJudgments :+ TypingJudgment.Assign(variable.tpe, inferredType, position)
       Expression.VariableDeclaration(variable, expression, position)
 
     case NegationNode(_, position) =>
