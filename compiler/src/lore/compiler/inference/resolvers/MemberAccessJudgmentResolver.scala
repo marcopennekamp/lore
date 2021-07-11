@@ -1,7 +1,6 @@
 package lore.compiler.inference.resolvers
 
-import lore.compiler.core.Compilation
-import lore.compiler.core.Compilation.ToCompilationExtension
+import lore.compiler.feedback.Reporter
 import lore.compiler.inference.Inference.{Assignments, instantiateCandidateType}
 import lore.compiler.inference.InferenceBounds.narrowBounds
 import lore.compiler.inference.InferenceOrder.InfluenceGraph
@@ -14,7 +13,7 @@ object MemberAccessJudgmentResolver extends JudgmentResolver[TypingJudgment.Memb
   override def forwards(
     judgment: TypingJudgment.MemberAccess,
     assignments: Assignments,
-  )(implicit registry: Registry): Compilation[Assignments] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[Assignments] = {
     instantiateCandidateType(assignments, judgment.source).member(judgment.name, judgment.position).flatMap {
       member => narrowBounds(assignments, judgment.target, member.tpe, judgment)
     }
@@ -25,13 +24,13 @@ object MemberAccessJudgmentResolver extends JudgmentResolver[TypingJudgment.Memb
     assignments: Assignments,
     influenceGraph: InfluenceGraph,
     remainingJudgments: Vector[TypingJudgment],
-  )(implicit registry: Registry): Compilation[JudgmentResolver.Result] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[JudgmentResolver.Result] = {
     val TypingJudgment.MemberAccess(target, source, name, position) = judgment
     val subtypesJudgment = TypingJudgment.Subtypes(source, ShapeType(name -> target), position)
 
     Inference.logger.trace(s"Added typing judgment: $subtypesJudgment")
 
-    (assignments, remainingJudgments :+ subtypesJudgment).compiled
+    Some((assignments, remainingJudgments :+ subtypesJudgment))
   }
 
 }

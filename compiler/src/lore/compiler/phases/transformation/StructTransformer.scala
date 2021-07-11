@@ -1,6 +1,6 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.core.Compilation.Verification
+import lore.compiler.feedback.Reporter
 import lore.compiler.phases.transpilation.RuntimeNames
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.CallTarget
@@ -11,20 +11,22 @@ object StructTransformer {
   /**
     * Transforms the default value expressions of struct properties and assigns them to their 'defaultValue' fields.
     */
-  def transform(struct: StructDefinition)(implicit registry: Registry): Verification = {
-    struct.properties.map { property =>
-      val compiledExpression = property.defaultValueNode.map { node =>
-        // Note that we pass the global variable scope, since other properties of the struct should not be accessible in
+  def transform(struct: StructDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
+    struct.properties.foreach { property =>
+      property.defaultValue = property.defaultValueNode.map { node =>
+        // Note that we pass the registry binding scope, since other properties of the struct should not be accessible in
         // default value expressions.
-        ExpressionTransformer.transform(s"${struct.name}.${property.name}", node, property.tpe, registry.typeScope, registry.bindingScope)
-      }.toCompiledOption
-
-      compiledExpression.map { maybeExpression =>
-        property.defaultValue = maybeExpression.map { expression =>
-          StructPropertyDefinition.DefaultValue(expression, CallTarget.Dynamic(RuntimeNames.defaultValue(struct.tpe, property).name.name))
-        }
+        val expression = ExpressionTransformer.transform(
+          s"${struct.name}.${property.name}",
+          node,
+          property.tpe,
+          registry.typeScope,
+          registry.bindingScope
+        )
+        val callTarget = CallTarget.Dynamic(RuntimeNames.defaultValue(struct.tpe, property).name.name)
+        StructPropertyDefinition.DefaultValue(expression, callTarget)
       }
-    }.simultaneous.verification
+    }
   }
 
 }

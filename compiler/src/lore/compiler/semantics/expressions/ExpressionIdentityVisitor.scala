@@ -1,7 +1,5 @@
 package lore.compiler.semantics.expressions
 
-import lore.compiler.core.Compilation
-import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.semantics.expressions.Expression._
 
 /**
@@ -15,6 +13,7 @@ trait ExpressionIdentityVisitor[R] extends ExpressionVisitor[Expression, R] {
 
   protected def wrap(expression: Expression): R
 
+  override def visit(expression: Hole): R = wrap(expression)
   override def visit(expression: Return)(value: Expression): R = wrap(expression.copy(value))
   override def visit(expression: VariableDeclaration)(value: Expression): R = wrap(expression.copy(value = value))
   override def visit(expression: Assignment)(target: Expression, value: Expression): R = wrap(expression.copy(target.asInstanceOf[Access], value))
@@ -45,10 +44,6 @@ object ExpressionIdentityVisitor {
 
   trait Simple extends ExpressionIdentityVisitor[Expression] {
     override def wrap(expression: Expression): Expression = expression
-  }
-
-  trait Compiled extends ExpressionIdentityVisitor[Compilation[Expression]] {
-    override def wrap(expression: Expression): Compilation[Expression] = expression.compiled
   }
 
 }

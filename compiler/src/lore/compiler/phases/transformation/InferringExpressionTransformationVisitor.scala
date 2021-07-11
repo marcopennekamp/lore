@@ -1,9 +1,8 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.core.Compilation.{ToCompilationExtension, Verification}
 import lore.compiler.core._
 import lore.compiler.feedback.DispatchFeedback.{FixedFunctionAmbiguousCall, FixedFunctionEmptyFit}
-import lore.compiler.feedback.Feedback
+import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.phases.resolution.TypeExpressionEvaluator
 import lore.compiler.phases.transformation.InferringExpressionTransformationVisitor._
@@ -11,16 +10,19 @@ import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
-import lore.compiler.semantics.scopes.{Variable, TypeScope, TypedBinding, BindingScope}
+import lore.compiler.semantics.scopes.{BindingScope, TypeScope, TypedBinding, Variable}
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.types._
+import scalaz.Id.Id
 
 class InferringExpressionTransformationVisitor(
   /**
     * The expected result type of the transformed expression. Note that this is merely used to check the result
     * type of a return expression. It does not guarantee that the visitor returns an expression with the given
     * type. That needs to be checked separately.
+    *
+    * TODO: We should just add this to inference. No need to check separately.
     */
   expectedType: Type,
 
@@ -33,7 +35,7 @@ class InferringExpressionTransformationVisitor(
     * The binding scope of the surrounding code, such as a function scope.
     */
   bindingScope: BindingScope,
-)(implicit registry: Registry) extends TopLevelExprVisitor[Expression, Compilation] {
+)(implicit registry: Registry, reporter: Reporter) extends TopLevelExprVisitor[Expression, Id] {
 
   import ExprNode._
   import TopLevelExprNode._
@@ -48,7 +50,7 @@ class InferringExpressionTransformationVisitor(
   // it.
   var typingJudgments: Vector[TypingJudgment] = Vector.empty
 
-  override def visitLeaf(node: LeafNode): Compilation[Expression] = node match {
+  override def visitLeaf(node: LeafNode): Expression = node match {
     case VariableNode(name, position) =>
       scopeContext.currentScope.resolve(name, position).map {
         case mf: MultiFunctionDefinition =>
@@ -58,72 +60,74 @@ class InferringExpressionTransformationVisitor(
           Expression.MultiFunctionValue(mf, functionType, position)
 
         case binding: TypedBinding => Expression.BindingAccess(binding, position)
-      }
+      }.getOrElse(Expression.Hole(BasicType.Nothing, position))
 
-    case RealLiteralNode(value, position) => Expression.Literal(value, BasicType.Real, position).compiled
+    case RealLiteralNode(value, position) => Expression.Literal(value, BasicType.Real, position)
     case node@IntLiteralNode(value, position) =>
-      if (BasicType.Int.minSafeInteger <= value && value <= BasicType.Int.maxSafeInteger) {
-        Expression.Literal(value, BasicType.Int, position).compiled
-      } else {
-        Compilation.fail(UnsafeInteger(node))
+      if (value < BasicType.Int.minSafeInteger || BasicType.Int.maxSafeInteger < value) {
+        reporter.error(UnsafeInteger(node))
       }
-    case BoolLiteralNode(value, position) => Expression.Literal(value, BasicType.Boolean, position).compiled
-    case StringLiteralNode(value, position) => Expression.Literal(value, BasicType.String, position).compiled
+      Expression.Literal(value, BasicType.Int, position)
+    case BoolLiteralNode(value, position) => Expression.Literal(value, BasicType.Boolean, position)
+    case StringLiteralNode(value, position) => Expression.Literal(value, BasicType.String, position)
 
     case FixedFunctionNode(name, typeExpressions, position) =>
-      for {
-        inputType <- typeExpressions.map(TypeExpressionEvaluator.evaluate).simultaneous.map(TupleType(_))
-        mf <- registry.resolveMultiFunction(name, position)
-        instance <- mf.dispatch(
-          inputType,
-          FixedFunctionEmptyFit(mf, inputType, position),
-          min => FixedFunctionAmbiguousCall(mf, inputType, min, position)
-        )
-      } yield Expression.FixedFunctionValue(instance, position)
+      val inputType = TupleType(typeExpressions.map(TypeExpressionEvaluator.evaluate).map(_.getOrElse(BasicType.Nothing)))
+      def dispatch(mf: MultiFunctionDefinition) = mf.dispatch(
+        inputType,
+        FixedFunctionEmptyFit(mf, inputType, position),
+        min => FixedFunctionAmbiguousCall(mf, inputType, min, position)
+      )
+      registry
+        .resolveMultiFunction(name, position)
+        .flatMap(dispatch)
+        .map(instance => Expression.FixedFunctionValue(instance, position))
+        .getOrElse(Expression.Hole(BasicType.Nothing, position))
 
-    case SymbolValueNode(name, position) => Expression.Symbol(name, position).compiled
+    case SymbolValueNode(name, position) => Expression.Symbol(name, position)
   }
 
-  override def visitUnary(node: UnaryNode)(expression: Expression): Compilation[Expression] = node match {
+  override def visitUnary(node: UnaryNode)(expression: Expression): Expression = node match {
     case ReturnNode(_, position) =>
       typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(expression.tpe, expectedType, position)
-      Expression.Return(expression, position).compiled
+      Expression.Return(expression, position)
 
     case VariableDeclarationNode(name, isMutable, maybeTypeExpr, _, position) =>
       // Either infer the type from the value or, if a type has been explicitly declared, check that the value adheres
-      // to the type bounds.
-      val typeAnnotation = maybeTypeExpr.map(TypeExpressionEvaluator.evaluate).toCompiledOption
-      val inferredType = typeAnnotation.map {
+      // to the type bounds. If the type annotation cannot be compiled, it is effectively treated as non-existing.
+      val typeAnnotation = maybeTypeExpr.flatMap(TypeExpressionEvaluator.evaluate)
+      val tpe = typeAnnotation match {
         case Some(tpe) =>
           typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(expression.tpe, tpe, position)
           tpe
-        case None => expression.tpe
+
+        case None =>
+          val tpe = new InferenceVariable
+          typingJudgments = typingJudgments :+ TypingJudgment.Assign(tpe, expression.tpe, position)
+          tpe
       }
 
-      inferredType.flatMap { tpe =>
-        scopeContext.currentScope.register(Variable(name, new InferenceVariable, isMutable), position).map { variable =>
-          typingJudgments = typingJudgments :+ TypingJudgment.Assign(variable.tpe, tpe, position)
-          Expression.VariableDeclaration(variable, expression, position)
-        }
-      }
+      val variable = Variable(name, tpe, isMutable)
+      scopeContext.currentScope.register(variable, position)
+      Expression.VariableDeclaration(variable, expression, position)
 
     case NegationNode(_, position) =>
       typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(expression.tpe, BasicType.Real, position)
-      Expression.UnaryOperation(UnaryOperator.Negation, expression, expression.tpe, position).compiled
+      Expression.UnaryOperation(UnaryOperator.Negation, expression, expression.tpe, position)
 
     case LogicalNotNode(_, position) =>
       typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(expression.tpe, BasicType.Boolean, position)
-      Expression.UnaryOperation(UnaryOperator.LogicalNot, expression, BasicType.Boolean, position).compiled
+      Expression.UnaryOperation(UnaryOperator.LogicalNot, expression, BasicType.Boolean, position)
 
     case MemberAccessNode(_, name, position) =>
       // We cannot decide the member until the type has been inferred. Hence we first have to return an "unresolved
       // member access" expression node, which will be resolved later.
       val memberType = new InferenceVariable
       typingJudgments = typingJudgments :+ TypingJudgment.MemberAccess(memberType, expression.tpe, name, position)
-      Expression.UnresolvedMemberAccess(expression, name, memberType, position).compiled
+      Expression.UnresolvedMemberAccess(expression, name, memberType, position)
   }
 
-  override def visitBinary(node: BinaryNode)(left: Expression, right: Expression): Compilation[Expression] = node match {
+  override def visitBinary(node: BinaryNode)(left: Expression, right: Expression): Expression = node match {
     case AssignmentNode(_, _, position) =>
       // Ensure that the value on the right can be assigned to the variable or member on the left.
       typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(right.tpe, left.tpe, position)
@@ -132,25 +136,25 @@ class InferringExpressionTransformationVisitor(
         case access: Expression.Access => access
         case _ => throw CompilationException("The left-hand-side expression of an assignment must be a variable or a member.")
       }
-      Expression.Assignment(access, right, position).compiled
+      Expression.Assignment(access, right, position)
 
     // Arithmetic operations.
-    case AdditionNode(_, _, position) => transformNumericOperation(BinaryOperator.Addition, left, right, position).compiled
-    case SubtractionNode(_, _, position) => transformNumericOperation(BinaryOperator.Subtraction, left, right, position).compiled
-    case MultiplicationNode(_, _, position) => transformNumericOperation(BinaryOperator.Multiplication, left, right, position).compiled
-    case DivisionNode(_, _, position) => transformNumericOperation(BinaryOperator.Division, left, right, position).compiled
+    case AdditionNode(_, _, position) => transformNumericOperation(BinaryOperator.Addition, left, right, position)
+    case SubtractionNode(_, _, position) => transformNumericOperation(BinaryOperator.Subtraction, left, right, position)
+    case MultiplicationNode(_, _, position) => transformNumericOperation(BinaryOperator.Multiplication, left, right, position)
+    case DivisionNode(_, _, position) => transformNumericOperation(BinaryOperator.Division, left, right, position)
 
     // Boolean operations.
-    case EqualsNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.Equals, left, right, BasicType.Boolean, position).compiled
+    case EqualsNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.Equals, left, right, BasicType.Boolean, position)
     case NotEqualsNode(_, _, position) =>
       Expression.UnaryOperation(
         UnaryOperator.LogicalNot,
         Expression.BinaryOperation(BinaryOperator.Equals, left, right, BasicType.Boolean, position),
         BasicType.Boolean,
         position,
-      ).compiled
-    case LessThanNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.LessThan, left, right, BasicType.Boolean, position).compiled
-    case LessThanEqualsNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.LessThanEquals, left, right, BasicType.Boolean, position).compiled
+      )
+    case LessThanNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.LessThan, left, right, BasicType.Boolean, position)
+    case LessThanEqualsNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.LessThanEquals, left, right, BasicType.Boolean, position)
 
     // Collection operations.
     case AppendNode(_, _, position) =>
@@ -163,7 +167,7 @@ class InferringExpressionTransformationVisitor(
       typingJudgments = typingJudgments :+ TypingJudgment.Equals(ListType(elementType), left.tpe, position)
       typingJudgments = typingJudgments :+ TypingJudgment.LeastUpperBound(combinedType, Vector(elementType, right.tpe), position)
 
-      Expression.BinaryOperation(BinaryOperator.Append, left, right, ListType(combinedType), position).compiled
+      Expression.BinaryOperation(BinaryOperator.Append, left, right, ListType(combinedType), position)
 
     // Loops.
     case WhileNode(_, _, position) =>
@@ -174,7 +178,7 @@ class InferringExpressionTransformationVisitor(
 
       typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(condition.tpe, BasicType.Boolean, position)
 
-      Expression.WhileLoop(condition, body, inferLoopType(body, position), position).compiled
+      Expression.WhileLoop(condition, body, inferLoopType(body, position), position)
   }
 
   private def transformNumericOperation(
@@ -193,7 +197,7 @@ class InferringExpressionTransformationVisitor(
 
   override def visitTernary(node: TernaryNode)(
     argument1: Expression, argument2: Expression, argument3: Expression,
-  ): Compilation[Expression] = node match {
+  ): Expression = node match {
     case IfElseNode(_, _, _, position) =>
       val condition = argument1
       val onTrue = argument2
@@ -203,36 +207,42 @@ class InferringExpressionTransformationVisitor(
       typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(condition.tpe, BasicType.Boolean, position)
       typingJudgments = typingJudgments :+ TypingJudgment.LeastUpperBound(resultType, Vector(onTrue.tpe, onFalse.tpe), position)
 
-      Expression.IfElse(condition, onTrue, onFalse, resultType, position).compiled
+      Expression.IfElse(condition, onTrue, onFalse, resultType, position)
   }
 
-  override def visitXary(node: XaryNode)(expressions: Vector[Expression]): Compilation[Expression] = node match {
+  override def visitXary(node: XaryNode)(expressions: Vector[Expression]): Expression = node match {
     case BlockNode(_, position) =>
       // This is AFTER the block has been visited. The scope has already been opened and needs to be closed.
       scopeContext.closeScope()
-      Expression.Block(expressions, position).compiled
+      Expression.Block(expressions, position)
 
     // Value constructors.
     case TupleNode(_, position) =>
-      Expression.Tuple(expressions, position).compiled
+      Expression.Tuple(expressions, position)
 
     case ListNode(_, position) =>
       val elementType = new InferenceVariable
       typingJudgments = typingJudgments :+ TypingJudgment.LeastUpperBound(elementType, expressions.map(_.tpe), position)
-      Expression.ListConstruction(expressions, ListType(elementType), position).compiled
+      Expression.ListConstruction(expressions, ListType(elementType), position)
 
     case ObjectMapNode(structName, entryNodes, position) =>
-      typeScope.resolve(structName, position).flatMap {
-        case structType: StructType =>
-          val entries = entryNodes.zip(expressions).map { case (ObjectEntryNode(name, _, _), expression) => (name, expression) }
-          InstantiationTransformation.transformMapStyleInstantiation(structType.definition, entries, position).map(addJudgmentsFrom)
+      typeScope.resolve(structName, position) match {
+        case Some(structType: StructType) =>
+          val entries = entryNodes.zip(expressions).map { case (ObjectEntryNode(name, _, _), expression) => name -> expression }
+          addJudgmentsFrom(
+            InstantiationTransformation.transformMapStyleInstantiation(structType.definition, entries, position)
+          )
 
-        case _ => Compilation.fail(StructExpected(structName, position))
+        case Some(tpe) =>
+          reporter.error(StructExpected(structName, position))
+          Expression.Hole(tpe, position)
+
+        case None => Expression.Hole(BasicType.Nothing, position)
       }
 
     case ShapeValueNode(propertyNodes, position) =>
       val properties = propertyNodes.zip(expressions).map { case (propertyNode, value) => Expression.ShapeProperty(propertyNode.name, value) }
-      Expression.ShapeValue(properties, position).compiled
+      Expression.ShapeValue(properties, position)
 
     // Xary operations.
     case ConjunctionNode(_, position) =>
@@ -242,53 +252,53 @@ class InferringExpressionTransformationVisitor(
       transformBooleanOperation(XaryOperator.Disjunction, expressions, position)
 
     case ConcatenationNode(_, position) =>
-      Expression.XaryOperation(XaryOperator.Concatenation, expressions, BasicType.String, position).compiled
+      Expression.XaryOperation(XaryOperator.Concatenation, expressions, BasicType.String, position)
 
     // Xary function calls.
     case SimpleCallNode(name, _, position) =>
       scopeContext.currentScope.resolve(name, position).map {
         case mf: MultiFunctionDefinition => addJudgmentsFrom(FunctionTyping.multiFunctionCall(mf, expressions, node.position))
         case binding: TypedBinding => transformValueCall(Expression.BindingAccess(binding, position), expressions, position)
-      }
+      }.getOrElse(Expression.Hole(BasicType.Nothing, position))
 
-    case node@DynamicCallNode(resultType, _, position) =>
-      (
-        // The first argument to the dynamic call must be a constant function name.
-        expressions.headOption match {
-          case Some(Expression.Literal(name: String, BasicType.String, _)) => name.compiled
-          case _ => Compilation.fail(DynamicFunctionNameExpected(node))
-        },
-        TypeExpressionEvaluator.evaluate(resultType),
-      ).simultaneous.map { case (name, resultType) =>
-        Expression.Call(CallTarget.Dynamic(name), expressions.tail, resultType, position)
+    case node@DynamicCallNode(resultTypeNode, _, position) =>
+      // The first argument to the dynamic call must be a constant function name.
+      val name = expressions.headOption match {
+        case Some(Expression.Literal(name: String, BasicType.String, _)) => name
+        case _ =>
+          reporter.error(DynamicFunctionNameExpected(node))
+          "unknown"
       }
+      val resultType = TypeExpressionEvaluator.evaluate(resultTypeNode).getOrElse(BasicType.Nothing)
+      Expression.Call(CallTarget.Dynamic(name), expressions.tail, resultType, position)
   }
 
-  private def transformBooleanOperation(operator: XaryOperator, expressions: Vector[Expression], position: Position): Compilation[Expression.XaryOperation] = {
+  private def transformBooleanOperation(operator: XaryOperator, expressions: Vector[Expression], position: Position): Expression.XaryOperation = {
     typingJudgments = typingJudgments ++ expressions.map(e => TypingJudgment.Subtypes(e.tpe, BasicType.Boolean, e.position))
-    Expression.XaryOperation(operator, expressions, BasicType.Boolean, position).compiled
+    Expression.XaryOperation(operator, expressions, BasicType.Boolean, position)
   }
 
-  override def visitAnonymousFunction(node: AnonymousFunctionNode)(visitBody: () => Compilation[Expression]): Compilation[Expression] = {
+  override def visitAnonymousFunction(node: AnonymousFunctionNode)(visitBody: () => Expression): Expression = {
     scopeContext.openScope()
 
-    for {
-      parameters <- node.parameters.map {
-        case AnonymousFunctionParameterNode(name, typeNode, position) =>
-          typeNode
-            .map(TypeExpressionEvaluator.evaluate).toCompiledOption
-            .map(_.getOrElse(new InferenceVariable))
-            .flatMap(tpe => scopeContext.currentScope.register(Variable(name, tpe, isMutable = false), position))
-            .map(variable => Expression.AnonymousFunctionParameter(name, variable.tpe, position))
-      }.simultaneous
+    val parameters = node.parameters.map {
+      case AnonymousFunctionParameterNode(name, typeNode, position) =>
+        // If the type annotation isn't specified or cannot be compiled, we default to an inference variable.
+        val tpe = typeNode
+          .flatMap(TypeExpressionEvaluator.evaluate)
+          .getOrElse(new InferenceVariable)
+        val variable = Variable(name, tpe, isMutable = false)
+        scopeContext.currentScope.register(variable, position)
+        Expression.AnonymousFunctionParameter(name, variable.tpe, position)
+    }
 
-      body <- visitBody()
+    val body = visitBody()
+    scopeContext.closeScope()
 
-      _ = scopeContext.closeScope()
-    } yield Expression.AnonymousFunction(parameters, body, node.position)
+    Expression.AnonymousFunction(parameters, body, node.position)
   }
 
-  override def visitMap(node: MapNode)(kvs: Vector[(Expression, Expression)]): Compilation[Expression] = {
+  override def visitMap(node: MapNode)(kvs: Vector[(Expression, Expression)]): Expression = {
     val entries = kvs.map(Expression.MapEntry.tupled)
 
     val keyType = new InferenceVariable
@@ -297,11 +307,11 @@ class InferringExpressionTransformationVisitor(
     typingJudgments = typingJudgments :+ TypingJudgment.LeastUpperBound(keyType, entries.map(_.key.tpe), node.position)
     typingJudgments = typingJudgments :+ TypingJudgment.LeastUpperBound(valueType, entries.map(_.value.tpe), node.position)
 
-    Expression.MapConstruction(entries, MapType(keyType, valueType), node.position).compiled
+    Expression.MapConstruction(entries, MapType(keyType, valueType), node.position)
   }
 
-  override def visitCall(node: CallNode)(target: Expression, arguments: Vector[Expression]): Compilation[Expression] = {
-    transformValueCall(target, arguments, node.position).compiled
+  override def visitCall(node: CallNode)(target: Expression, arguments: Vector[Expression]): Expression = {
+    transformValueCall(target, arguments, node.position)
   }
 
   private def transformValueCall(target: Expression, arguments: Vector[Expression], position: Position): Expression.Call = {
@@ -328,29 +338,32 @@ class InferringExpressionTransformationVisitor(
   }
 
   override def visitIteration(node: ForNode)(
-    extractorTuples: Vector[(String, Expression)], visitBody: () => Compilation[Expression],
-  ): Compilation[Expression] = {
+    extractorTuples: Vector[(String, Expression)],
+    visitBody: () => Expression,
+  ): Expression = {
     // Before we visit the body, we have to push a new scope and later, once extractors have been evaluated, also
     // a new loop context.
     scopeContext.openScope()
 
-    def transformExtractor(variableName: String, collection: Expression, position: Position): Compilation[Expression.Extractor] = {
+    def transformExtractor(variableName: String, collection: Expression, position: Position) = {
       val elementType = new InferenceVariable
       typingJudgments = typingJudgments :+ TypingJudgment.ElementType(elementType, collection.tpe, position)
 
-      scopeContext.currentScope
-        .register(Variable(variableName, elementType, isMutable = false), position)
-        .map(localVariable => Expression.Extractor(localVariable, collection))
+      val variable = Variable(variableName, elementType, isMutable = false)
+      scopeContext.currentScope.register(variable, position)
+      Expression.Extractor(variable, collection)
     }
 
-    for {
-      extractors <- extractorTuples.zip(node.extractors.map(_.position)).map {
-        case ((variableName, collection), position) => transformExtractor(variableName, collection, position)
-      }.simultaneous
-      body <- visitBody()
-      _ = scopeContext.closeScope() // We have to close the scope that we opened for the extractors.
-      tpe = inferLoopType(body, node.position)
-    } yield Expression.ForLoop(extractors, body, tpe, node.position)
+    val extractors = extractorTuples.zip(node.extractors.map(_.position)).map {
+      case ((variableName, collection), position) => transformExtractor(variableName, collection, position)
+    }
+    val body = visitBody()
+    val tpe = inferLoopType(body, node.position)
+
+    // We have to close the scope that we opened for the extractors.
+    scopeContext.closeScope()
+
+    Expression.ForLoop(extractors, body, tpe, node.position)
   }
 
   private def inferLoopType(body: Expression, position: Position): InferenceVariable = {
@@ -364,16 +377,14 @@ class InferringExpressionTransformationVisitor(
     resultType
   }
 
-  override def before: PartialFunction[TopLevelExprNode, Verification] = {
+  override def before: PartialFunction[TopLevelExprNode, Unit] = {
     case ExprNode.BlockNode(_, _) =>
       scopeContext.openScope()
-      Verification.succeed
 
     case ExprNode.WhileNode(_, _, _) =>
       // A while loop needs to open its own scope in case there is exactly one variable declaration as the loop body,
       // which wouldn't get scoped by the block.
       scopeContext.openScope()
-      Verification.succeed
   }
 
   def addJudgmentsFrom[A]: ((A, Vector[TypingJudgment])) => A = {

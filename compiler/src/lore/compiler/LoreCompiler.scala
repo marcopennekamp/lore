@@ -1,8 +1,7 @@
 package lore.compiler
 
-import lore.compiler.core.Compilation.{CompilationVectorExtension, EmptyFailure, Verification}
-import lore.compiler.core.{Compilation, CompilerOptions, Fragment}
-import lore.compiler.feedback.Feedback
+import lore.compiler.core.{CompilerOptions, Fragment}
+import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
 import lore.compiler.phases.constraints.ConstraintsPhase
 import lore.compiler.phases.generation.GenerationPhase
 import lore.compiler.phases.parsing.ParsingPhase
@@ -19,20 +18,20 @@ import lore.compiler.utils.Timer.timed
 object LoreCompiler {
 
   /**
-    * Compiles the given fragments, either resulting in a list of errors and warnings, or a completed compilation.
+    * Compiles the given fragments, resulting in a registry, the generated code if no errors have been found, and a
+    * list of feedback.
     */
-  def compile(fragments: Vector[Fragment], options: CompilerOptions): Compilation[(Registry, String)] = {
+  def compile(fragments: Vector[Fragment], options: CompilerOptions)(implicit reporter: Reporter): (Option[Registry], Option[String]) = {
     Feedback.loggerBlank.debug("")
 
-    // Only continue the compilation if analysis is an explicit success. We don't want to generate code from a
-    // program that had compilation errors.
-    val compilation = analyze(fragments)
-    if (compilation.isSuccess) {
-      compilation.map { registry =>
-        val code = generate(registry, options)
-        (registry, code)
-      }
-    } else EmptyFailure(compilation.feedback)
+    // Only continue the compilation if analysis is an explicit success. We don't want to generate code from an
+    // erroneous program.
+    val registry = analyze(fragments, exitEarly = true)
+    val code = registry.flatMap {
+      registry => if (!reporter.hasErrors) Some(generate(registry, options)) else None
+    }
+
+    (registry, code)
   }
 
   /**
@@ -47,31 +46,43 @@ object LoreCompiler {
     * Phases 3 and 4 are handled simultaneously for each individual type declaration and multi-function. If there is an
     * error in phase 3, phase 4 won't be invoked for that particular entity. This leads to more fine-grained errors for
     * each individual entity.
+    *
+    * Compilation will only terminate in phase 1 or 2 if `exitEarly` is true. We can always try to produce a Registry
+    * from a subset of the program. This is beneficial for IDE support, but not much use if the compiler is run from
+    * the command line. In the latter case, a parsing error that renders a whole fragment unusable would be buried
+    * beneath a mountain of other errors.
     */
-  def analyze(fragments: Vector[Fragment]): Compilation[Registry] = {
-    for {
-      fragmentsWithDeclarations <- timed("Parsing")(ParsingPhase.process(fragments))
-      registry <- timed("Resolution")(ResolutionPhase.process(fragmentsWithDeclarations))
-      _ <- timed("Constraints & Transformation")(analyze(registry))
-    } yield registry
+  def analyze(fragments: Vector[Fragment], exitEarly: Boolean)(implicit reporter: Reporter): Option[Registry] = {
+    val declarations = timed("Parsing")(ParsingPhase.process(fragments))
+    if (exitEarly && reporter.hasErrors) return None
+
+    val registry = timed("Resolution")(ResolutionPhase.process(declarations))
+    if (exitEarly && reporter.hasErrors) return Some(registry)
+
+    timed("Constraints & Transformation")(analyze(registry, reporter))
+    Some(registry)
   }
 
-  private def analyze(implicit registry: Registry): Verification = {
+  private def analyze(implicit registry: Registry, reporter: Reporter): Unit = {
     val declaredTypeDefinitions = registry.typesInOrder.map(_._2).filterType[DeclaredType].map(_.definition)
     val multiFunctions = registry.multiFunctions.values.toVector
 
-    (
-      declaredTypeDefinitions.map(analyze).simultaneous,
-      multiFunctions.map(analyze).simultaneous,
-    ).simultaneous.verification
+    declaredTypeDefinitions.foreach(analyze(_, reporter))
+    multiFunctions.foreach(analyze(_, reporter))
   }
 
-  private def analyze(definition: DeclaredTypeDefinition)(implicit registry: Registry): Verification = {
-    ConstraintsPhase.process(definition).flatMapSuccess(_ => TransformationPhase.process(definition))
+  private def analyze(definition: DeclaredTypeDefinition, parentReporter: Reporter)(implicit registry: Registry): Unit = {
+    MemoReporter.chain(parentReporter)(
+      implicit reporter => ConstraintsPhase.process(definition),
+      implicit reporter => TransformationPhase.process(definition),
+    )
   }
 
-  private def analyze(mf: MultiFunctionDefinition)(implicit registry: Registry): Verification = {
-    ConstraintsPhase.process(mf).flatMapSuccess(_ => TransformationPhase.process(mf))
+  private def analyze(mf: MultiFunctionDefinition, parentReporter: Reporter)(implicit registry: Registry): Unit = {
+    MemoReporter.chain(parentReporter)(
+      implicit reporter => ConstraintsPhase.process(mf),
+      implicit reporter => TransformationPhase.process(mf),
+    )
   }
 
   /**

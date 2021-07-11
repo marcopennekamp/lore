@@ -1,6 +1,7 @@
 package lore.compiler.inference
 
-import lore.compiler.core.{Compilation, CompilationException}
+import lore.compiler.core.CompilationException
+import lore.compiler.feedback.Reporter
 import lore.compiler.inference.Inference.{Assignments, AssignmentsExtension}
 import lore.compiler.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.inference.resolvers.JudgmentResolver
@@ -23,7 +24,11 @@ object CycleResolution {
     * direction. The reason is simple: We cannot differentiate between a compilation failure due to a faulty program
     * and a compilation failure due to a bad pick.
     */
-  def infer(assignments: Assignments, influenceGraph: InfluenceGraph, judgments: Vector[TypingJudgment])(implicit registry: Registry): Compilation[JudgmentResolver.Result] = {
+  def infer(
+    assignments: Assignments,
+    influenceGraph: InfluenceGraph,
+    judgments: Vector[TypingJudgment],
+  )(implicit registry: Registry, reporter: Reporter): Option[JudgmentResolver.Result] = {
     judgments.firstDefined(judgment => isApplicable(judgment, influenceGraph).map((judgment, _))) match {
       case Some((judgment, direction)) =>
         Inference.logger.trace(s"Cycle resolve `$judgment`.")

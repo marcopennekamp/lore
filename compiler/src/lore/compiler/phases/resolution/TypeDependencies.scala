@@ -1,8 +1,7 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.core.Compilation.Verification
-import lore.compiler.core.{Compilation, CompilationException}
-import lore.compiler.feedback.Feedback
+import lore.compiler.core.CompilationException
+import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.phases.resolution.DeclarationResolver.TypeDeclarations
 import lore.compiler.semantics.Registry
 import lore.compiler.syntax.{TypeDeclNode, TypeExprNode}
@@ -23,23 +22,22 @@ object TypeDependencies {
     *   1. All type dependencies referred to by name have a corresponding type declaration.
     *   2. There are no cyclic type dependencies.
     */
-  def resolve(typeDeclarations: TypeDeclarations): Compilation[Registry.TypeResolutionOrder] = {
+  def resolve(typeDeclarations: TypeDeclarations)(implicit reporter: Reporter): Registry.TypeResolutionOrder = {
     val unfilteredInfos = typeDeclarations.values.toVector.map(node => TypeDeclarationInfo(node, dependencies(node)))
+    val infos = unfilteredInfos.map(filterUndefinedDependencies(_, typeDeclarations))
+    val graph = buildDependencyGraph(infos)
 
-    for {
-      infos <- unfilteredInfos.map(filterUndefinedDependencies(_, typeDeclarations)).simultaneous
+    verifyAcyclic(graph, typeDeclarations)
 
-      graph = buildDependencyGraph(infos)
-      _ <- verifyAcyclic(graph, typeDeclarations)
+    // Now that the graph has been shown to be acyclic, it should be connected, as Any should be the supertype of all
+    // declared types without a supertype. Note that we first need to detect cycles, because if the graph has a
+    // dependency cycle, that component of the graph will not be connected to Any, and thus the graph won't be
+    // connected.
+    if (!graph.isConnected) {
+      throw CompilationException(s"The type dependency graph must be connected.")
+    }
 
-      // Now that the graph has been shown to be acyclic, it should be connected, as Any should be the supertype of all
-      // declared types without a supertype. Note that we first need to detect cycles, because if the graph has a
-      // dependency cycle, that component of the graph will not be connected to Any, and thus the graph won't be
-      // connected.
-      _ = if (!graph.isConnected) {
-        throw CompilationException(s"The type dependency graph must be connected.")
-      }
-    } yield computeTypeResolutionOrder(graph)
+    computeTypeResolutionOrder(graph)
   }
 
   private case class TypeDeclarationInfo(node: TypeDeclNode, dependencies: Vector[String])
@@ -61,17 +59,13 @@ object TypeDependencies {
   }
 
   /**
-    * Filters out any dependencies without a corresponding type declaration, producing an error for each undefined
-    * dependency. This ensures that the type resolution order contains only defined types, which is crucial for
-    * compiler operation since the compiler continues working with partially failed compilations.
+    * Filters out any dependencies without a corresponding type declaration, reporting an error for each undefined
+    * dependency. This ensures that the type resolution order contains only defined types.
     */
-  private def filterUndefinedDependencies(info: TypeDeclarationInfo, typeDeclarations: TypeDeclarations): Compilation[TypeDeclarationInfo] = {
+  private def filterUndefinedDependencies(info: TypeDeclarationInfo, typeDeclarations: TypeDeclarations)(implicit reporter: Reporter): TypeDeclarationInfo = {
     val (defined, undefined) = info.dependencies.partition(typeDeclarations.contains)
-    if (undefined.nonEmpty) {
-      val info2 = info.copy(dependencies = defined)
-      val errors = undefined.map(dependency => UndefinedDependency(info.node, dependency))
-      Compilation.fail(info2, errors)
-    } else Compilation.succeed(info)
+    undefined.foreach(dependency => reporter.report(UndefinedDependency(info.node, dependency)))
+    info.copy(dependencies = defined)
   }
 
   private type DependencyGraph = Graph[String, DiEdge]
@@ -94,9 +88,9 @@ object TypeDependencies {
   /**
     * @param occurrence One of the type declarations where the cycles occurs, so that we can report one error location.
     */
-  case class InheritanceCycle(cycle: Vector[String], occurrence: TypeDeclNode) extends Feedback.Error(occurrence) {
+  case class InheritanceCycle(typeNames: Vector[String], occurrence: TypeDeclNode) extends Feedback.Error(occurrence) {
     override def message: String =
-      s"""An inheritance cycle between the following types has been detected: ${cycle.mkString(", ")}.
+      s"""An inheritance cycle between the following types has been detected: ${typeNames.mkString(", ")}.
          |A trait A cannot inherit from another trait B if B also inherits from A directly or indirectly. The
          |subtyping relationships of declared types must result in a directed, acyclic graph."""
         .stripMargin.replaceAll("\n", " ").trim
@@ -109,16 +103,19 @@ object TypeDependencies {
     * We attempt to report as many cycles as possible so the user doesn't have to run the compiler multiple times
     * just to find all dependency cycles. However, we cannot guarantee that all cycles are found in a single run.
     */
-  private def verifyAcyclic(graph: DependencyGraph, typeDeclarations: TypeDeclarations): Verification = {
+  private def verifyAcyclic(graph: DependencyGraph, typeDeclarations: TypeDeclarations)(implicit reporter: Reporter): Unit = {
     if (graph.isCyclic) {
       val cycles = distinctCycles(graph)
       if (cycles.isEmpty) {
         throw CompilationException(s"If the graph is cyclic, we must be able to find at least one distinct cycle.")
       }
 
-      val errors = cycles.map(cycle => InheritanceCycle(cycle.nodes.map(_.value).toVector, typeDeclarations(cycle.startNode)))
-      Compilation.fail(errors)
-    } else Verification.succeed
+      cycles.foreach { cycle =>
+        val typeNames = cycle.nodes.map(_.value).toVector
+        val occurrence = typeDeclarations(cycle.startNode)
+        reporter.report(InheritanceCycle(typeNames, occurrence))
+      }
+    }
   }
 
   /**

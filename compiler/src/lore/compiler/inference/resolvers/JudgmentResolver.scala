@@ -1,6 +1,7 @@
 package lore.compiler.inference.resolvers
 
-import lore.compiler.core.{Compilation, CompilationException}
+import lore.compiler.core.CompilationException
+import lore.compiler.feedback.Reporter
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.inference.resolvers.JudgmentResolver.{illegalBackwards, illegalForwards}
@@ -16,26 +17,32 @@ import lore.compiler.semantics.Registry
   *
   * For each direction, you should override either the flat or the regular resolution function, but not both. The flat
   * function won't be invoked when the regular function is overridden.
+  *
+  * All resolution functions evaluate to None if an error occurs.
   */
 trait JudgmentResolver[A <: TypingJudgment] {
 
-  def forwards(judgment: A, assignments: Assignments)(implicit registry: Registry): Compilation[Assignments] = illegalForwards(judgment)
+  def forwards(judgment: A, assignments: Assignments)(implicit registry: Registry, reporter: Reporter): Option[Assignments] = illegalForwards(judgment)
 
-  def backwards(judgment: A, assignments: Assignments)(implicit registry: Registry): Compilation[Assignments] = illegalBackwards(judgment)
+  def backwards(judgment: A, assignments: Assignments)(implicit registry: Registry, reporter: Reporter): Option[Assignments] = illegalBackwards(judgment)
 
   def forwards(
     judgment: A,
     assignments: Assignments,
     influenceGraph: InfluenceGraph,
     remainingJudgments: Vector[TypingJudgment],
-  )(implicit registry: Registry): Compilation[JudgmentResolver.Result] = JudgmentResolver.flat(remainingJudgments)(forwards(judgment, assignments))
+  )(implicit registry: Registry, reporter: Reporter): Option[JudgmentResolver.Result] = {
+    JudgmentResolver.flat(remainingJudgments)(forwards(judgment, assignments))
+  }
 
   def backwards(
     judgment: A,
     assignments: Assignments,
     influenceGraph: InfluenceGraph,
     remainingJudgments: Vector[TypingJudgment],
-  )(implicit registry: Registry): Compilation[JudgmentResolver.Result] = JudgmentResolver.flat(remainingJudgments)(backwards(judgment, assignments))
+  )(implicit registry: Registry, reporter: Reporter): Option[JudgmentResolver.Result] = {
+    JudgmentResolver.flat(remainingJudgments)(backwards(judgment, assignments))
+  }
 
 }
 
@@ -58,7 +65,7 @@ object JudgmentResolver {
   def illegalForwards(judgment: TypingJudgment) = throw CompilationException(s"The judgment `$judgment` cannot be resolved forwards.")
   def illegalBackwards(judgment: TypingJudgment) = throw CompilationException(s"The judgment `$judgment` cannot be resolved backwards.")
 
-  def flat(remainingJudgments: Vector[TypingJudgment])(result: Compilation[Assignments]): Compilation[JudgmentResolver.Result] = result.map((_, remainingJudgments))
+  def flat(remainingJudgments: Vector[TypingJudgment])(result: Option[Assignments]): Option[JudgmentResolver.Result] = result.map((_, remainingJudgments))
 
   /**
     * A nondirectional judgment resolver does not distinguish between forwards and backwards resolution. It will
@@ -72,36 +79,48 @@ object JudgmentResolver {
     def nondirectional(
       judgment: A,
       assignments: Assignments,
-    )(implicit registry: Registry): Compilation[Assignments] = throw new UnsupportedOperationException
+    )(implicit registry: Registry, reporter: Reporter): Option[Assignments] = throw new UnsupportedOperationException
 
     def nondirectional(
       judgment: A,
       assignments: Assignments,
       influenceGraph: InfluenceGraph,
       remainingJudgments: Vector[TypingJudgment],
-    )(implicit registry: Registry): Compilation[JudgmentResolver.Result] = JudgmentResolver.flat(remainingJudgments)(nondirectional(judgment, assignments))
+    )(implicit registry: Registry, reporter: Reporter): Option[JudgmentResolver.Result] = {
+      JudgmentResolver.flat(remainingJudgments)(nondirectional(judgment, assignments))
+    }
 
     override final def forwards(
       judgment: A,
       assignments: Assignments,
       influenceGraph: InfluenceGraph,
       remainingJudgments: Vector[TypingJudgment]
-    )(implicit registry: Registry): Compilation[JudgmentResolver.Result] = nondirectional(judgment, assignments, influenceGraph, remainingJudgments)
+    )(implicit registry: Registry, reporter: Reporter): Option[JudgmentResolver.Result] = {
+      nondirectional(judgment, assignments, influenceGraph, remainingJudgments)
+    }
 
     override final def backwards(
       judgment: A,
       assignments: Assignments,
       influenceGraph: InfluenceGraph,
       remainingJudgments: Vector[TypingJudgment]
-    )(implicit registry: Registry): Compilation[JudgmentResolver.Result] = nondirectional(judgment, assignments, influenceGraph, remainingJudgments)
+    )(implicit registry: Registry, reporter: Reporter): Option[JudgmentResolver.Result] = {
+      nondirectional(judgment, assignments, influenceGraph, remainingJudgments)
+    }
 
-    override final def forwards(judgment: A, assignments: Assignments)(implicit registry: Registry): Compilation[Assignments] = throw new UnsupportedOperationException
+    override final def forwards(judgment: A, assignments: Assignments)(implicit registry: Registry, reporter: Reporter): Option[Assignments] = {
+      throw new UnsupportedOperationException
+    }
 
-    override final def backwards(judgment: A, assignments: Assignments)(implicit registry: Registry): Compilation[Assignments] = throw new UnsupportedOperationException
+    override final def backwards(judgment: A, assignments: Assignments)(implicit registry: Registry, reporter: Reporter): Option[Assignments] = {
+      throw new UnsupportedOperationException
+    }
 
   }
 
   /**
+    * Resolves the judgment. Evaluates to None if an error occurs.
+    *
     * @param remainingJudgments The remaining judgments <b>excluding</b> the one being resolved with this function.
     */
   def resolve(
@@ -110,7 +129,7 @@ object JudgmentResolver {
     assignments: Inference.Assignments,
     influenceGraph: InfluenceGraph,
     remainingJudgments: Vector[TypingJudgment],
-  )(implicit registry: Registry): Compilation[JudgmentResolver.Result] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[JudgmentResolver.Result] = {
     // Casting to JudgmentResolver[TypingJudgment] is sadly necessary, because the type system doesn't see that the
     // resolver's type corresponds exactly to the typing judgment's type.
     val resolver = (judgment match {

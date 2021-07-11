@@ -1,8 +1,7 @@
 package lore.compiler.test
 
 import lore.compiler.build.{BuildApi, BuildOptions}
-import lore.compiler.core.Compilation
-import lore.compiler.feedback.Feedback
+import lore.compiler.feedback.{Feedback, MemoReporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.FunctionDefinition
 import lore.compiler.utils.CollectionExtensions.VectorExtension
@@ -18,13 +17,18 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
   private val testFragmentBase: Path = Path.of("compiler", "test", "lore", "compiler")
 
   /**
-    * Compiles the given fragment path with the default CLI options to a given Registry.
+    * Analyzes the given fragment path with the default build options, producing a Registry.
     */
-  def compileFragment(fragmentPath: String): Registry = {
-    BuildApi.compile(BuildOptions().withSources(testFragmentBase.resolve(fragmentPath))) match {
-      case Compilation.Success((registry, _), _) => registry
-      case _ => throw new RuntimeException(s"Compilation of test fragment $fragmentPath failed!")
+  def analyzeFragment(fragmentPath: String): Registry = {
+    implicit val reporter: MemoReporter = MemoReporter()
+    val registry = BuildApi.analyze(BuildOptions().withSources(testFragmentBase.resolve(fragmentPath)), exitEarly = true)
+
+    val errors = reporter.feedback.filter(_.isError)
+    if (errors.nonEmpty) {
+      Assertions.fail(s"Compilation of $fragmentPath should have succeeded, but unexpectedly failed with errors:\n${errors.mkString("\n")}")
     }
+
+    registry
   }
 
   /**
@@ -32,10 +36,15 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
     * The list of errors is passed as sorted into the assertion function, in order of lines starting from line 1.
     */
   def assertCompilationErrors(fragmentPath: String)(assert: Vector[Feedback.Error] => Assertion): Assertion = {
-    BuildApi.compile(BuildOptions().withSources(testFragmentBase.resolve(fragmentPath))) match {
-      case Compilation.Success(_, _) => Assertions.fail(s"Compilation of $fragmentPath should have failed with errors, but unexpectedly succeeded.")
-      case failure: Compilation.Failure[_] => assert(failure.feedback.filterType[Feedback.Error].sortWith { case (e1, e2) => e1.position < e2.position })
+    implicit val reporter: MemoReporter = MemoReporter()
+    BuildApi.analyze(BuildOptions().withSources(testFragmentBase.resolve(fragmentPath)), exitEarly = true)
+
+    if (!reporter.feedback.exists(_.isError)) {
+      Assertions.fail(s"Compilation of $fragmentPath should have failed with errors, but unexpectedly succeeded.")
     }
+
+    val errors = Feedback.sort(reporter.feedback).filterType[Feedback.Error]
+    assert(errors)
   }
 
   /**

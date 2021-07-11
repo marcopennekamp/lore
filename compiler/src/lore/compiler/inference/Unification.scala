@@ -1,24 +1,34 @@
 package lore.compiler.inference
 
-import lore.compiler.core.Compilation
+import lore.compiler.feedback.Reporter
 import lore.compiler.feedback.TypingFeedback.EqualTypesExpected
 import lore.compiler.inference.Inference.{Assignments, instantiateByBound, isFullyInstantiated}
 import lore.compiler.inference.InferenceBounds.{BoundType, narrowBound, narrowLowerBound, narrowUpperBound}
-import lore.compiler.inference.matchers.EqualityMatcher
+import lore.compiler.inference.matchers.{EqualityMatcher, Matchers}
 import lore.compiler.types._
 
 object Unification {
 
-  def unify(t1: Type, t2: Type, assignments: Assignments, context: TypingJudgment): Compilation[Assignments] = {
+  def unify(t1: Type, t2: Type, assignments: Assignments, context: TypingJudgment)(implicit reporter: Reporter): Option[Assignments] = {
     unify(t1, t2, assignments, Vector(BoundType.Lower, BoundType.Upper), context)
   }
 
-  def unify(t1: Type, t2: Type, assignments: Assignments, boundTypes: Vector[BoundType], context: TypingJudgment): Compilation[Assignments] = {
-    EqualityMatcher.matchEquals(
-      (iv1, t2, assignments, context) => unifyInferenceVariableWithType(assignments, iv1, t2, boundTypes, context),
-      (t1, iv2, assignments, context) => unifyInferenceVariableWithType(assignments, iv2, t1, boundTypes, context),
-      (iv1, iv2, assignments, context) => unifyInferenceVariables(assignments, iv1, iv2, boundTypes, context)
-    )(t1, t2, assignments, context)
+  def unify(t1: Type, t2: Type, assignments: Assignments, boundTypes: Vector[BoundType], context: TypingJudgment)(implicit reporter: Reporter): Option[Assignments] = {
+    EqualityMatcher.matchEquals(UnificationProcessor(boundTypes))(t1, t2, assignments, context)
+  }
+
+  private case class UnificationProcessor(boundTypes: Vector[BoundType]) extends Matchers.Processor {
+    override def processIv1(iv1: InferenceVariable, t2: Type, assignments: Assignments, context: TypingJudgment)(implicit reporter: Reporter): Option[Assignments] = {
+      unifyInferenceVariableWithType(assignments, iv1, t2, boundTypes, context)
+    }
+
+    override def processIv2(t1: Type, iv2: InferenceVariable, assignments: Assignments, context: TypingJudgment)(implicit reporter: Reporter): Option[Assignments] = {
+      unifyInferenceVariableWithType(assignments, iv2, t1, boundTypes, context)
+    }
+
+    override def processBoth(iv1: InferenceVariable, iv2: InferenceVariable, assignments: Assignments, context: TypingJudgment)(implicit reporter: Reporter): Option[Assignments] = {
+      unifyInferenceVariables(assignments, iv1, iv2, boundTypes, context)
+    }
   }
 
   /**
@@ -27,23 +37,33 @@ object Unification {
     *
     * Only considers bounds given in `boundTypes`.
     */
-  private def unifyInferenceVariables(assignments: Assignments, iv1: InferenceVariable, iv2: InferenceVariable, boundTypes: Vector[BoundType], context: TypingJudgment): Compilation[Assignments] = {
+  private def unifyInferenceVariables(
+    assignments: Assignments,
+    iv1: InferenceVariable,
+    iv2: InferenceVariable,
+    boundTypes: Vector[BoundType],
+    context: TypingJudgment,
+  )(implicit reporter: Reporter): Option[Assignments] = {
     val bounds1 = InferenceVariable.bounds(iv1, assignments)
     val bounds2 = InferenceVariable.bounds(iv2, assignments)
 
-    val compilationLower = if (boundTypes.contains(BoundType.Lower)) {
+    val assignmentsLower = if (boundTypes.contains(BoundType.Lower)) {
       val lower = Type.mostGeneral(Vector(bounds1.lower, bounds2.lower)) match {
         case Vector(t) => t
-        case _ => return Compilation.fail(EqualTypesExpected(bounds1.lower, bounds2.lower, context))
+        case _ =>
+          reporter.error(EqualTypesExpected(bounds1.lower, bounds2.lower, context))
+          return None
       }
 
       narrowLowerBound(assignments, iv1, lower, context).flatMap(narrowLowerBound(_, iv2, lower, context))
-    } else Compilation.succeed(assignments)
+    } else Some(assignments)
 
-    compilationLower.flatMap { assignments2 =>
+    assignmentsLower.flatMap { assignments2 =>
       val upper = Type.mostSpecific(Vector(bounds1.upper, bounds2.upper)) match {
         case Vector(t) => t
-        case _ => return Compilation.fail(EqualTypesExpected(bounds1.upper, bounds2.upper, context))
+        case _ =>
+          reporter.error(EqualTypesExpected(bounds1.upper, bounds2.upper, context))
+          return None
       }
 
       narrowUpperBound(assignments2, iv1, upper, context).flatMap(narrowUpperBound(_, iv2, upper, context))
@@ -69,7 +89,13 @@ object Unification {
     * instantiated version of `tpe`. So in the given example, because `(Nothing, Nothing) <= (A, B)`, `iv2` and `iv3`
     * will be narrowed to `A` and `B` respectively. The same applies to the upper bound given `(Any, Any) >= (A, B)`.
     */
-  private def unifyInferenceVariableWithType(assignments: Assignments, iv: InferenceVariable, tpe: Type, boundTypes: Vector[BoundType], context: TypingJudgment): Compilation[Assignments] = {
+  private def unifyInferenceVariableWithType(
+    assignments: Assignments,
+    iv: InferenceVariable,
+    tpe: Type,
+    boundTypes: Vector[BoundType],
+    context: TypingJudgment,
+  )(implicit reporter: Reporter): Option[Assignments] = {
     def narrowByBound(assignments: Assignments, boundType: BoundType) = {
       if (boundTypes.contains(boundType)) {
         val instantiatedIv = instantiateByBound(assignments, iv, boundType)
@@ -83,7 +109,7 @@ object Unification {
         } else {
           narrowBound(assignments, iv, instantiatedTpe, boundType, context)
         }
-      } else Compilation.succeed(assignments)
+      } else Some(assignments)
     }
 
     narrowByBound(assignments, BoundType.Lower).flatMap(narrowByBound(_, BoundType.Upper))

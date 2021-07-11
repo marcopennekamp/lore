@@ -1,7 +1,7 @@
 package lore.compiler.build
 
-import lore.compiler.core.{Compilation, Fragment, Position}
-import lore.compiler.feedback.Feedback
+import lore.compiler.core.{Fragment, Position}
+import lore.compiler.feedback.{Feedback, Reporter}
 
 import java.nio.file.{FileSystems, Files, Path, PathMatcher}
 import scala.jdk.CollectionConverters.IteratorHasAsScala
@@ -34,37 +34,42 @@ object SourceFiles {
     * We require all Lore sources to end in `.lore` for consistency with how Lore sources are found when directories
     * are specified.
     */
-  def of(path: Path): Compilation[Vector[Fragment]] = {
+  def of(path: Path)(implicit reporter: Reporter): Vector[Fragment] = {
     if (lorePathMatcher.matches(path)) {
       if (Files.exists(path)) {
-        ofFile(path).map(Vector(_))
+        ofFile(path).toVector
       } else {
-        Compilation.fail(FragmentNotFound(path))
+        reporter.error(FragmentNotFound(path))
+        Vector.empty
       }
     } else if (Files.isDirectory(path)) {
       ofDirectory(path)
     } else {
       if (path.getFileName.toString.contains('.')) {
-        Compilation.fail(IllegalFileExtension(path))
+        reporter.error(IllegalFileExtension(path))
+        Vector.empty
       } else {
-        Compilation.fail(DirectoryNotFound(path))
+        reporter.error(DirectoryNotFound(path))
+        Vector.empty
       }
     }
   }
 
-  private def ofDirectory(directory: Path): Compilation[Vector[Fragment]] = {
+  private def ofDirectory(directory: Path)(implicit reporter: Reporter): Vector[Fragment] = {
     Files.walk(directory)
       .filter(Files.isRegularFile(_))
       .filter(lorePathMatcher.matches(_))
-      .map(ofFile)
-      .iterator().asScala.toVector.simultaneous
+      .iterator().asScala.toVector
+      .flatMap(ofFile)
   }
 
-  private def ofFile(path: Path): Compilation[Fragment] = {
+  private def ofFile(path: Path)(implicit reporter: Reporter): Option[Fragment] = {
     // The additional newline ensures that the file ends in a newline.
     Using(Files.lines(path))(_.iterator().asScala.mkString("\n") + "\n") match {
-      case Success(source) => Compilation.succeed(Fragment(path.toString, Some(path), source))
-      case Failure(exception) => Compilation.fail(FileAccessFailed(path, exception))
+      case Success(source) => Some(Fragment(path.toString, Some(path), source))
+      case Failure(exception) =>
+        reporter.error(FileAccessFailed(path, exception))
+        None
     }
   }
 

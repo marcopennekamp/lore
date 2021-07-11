@@ -1,8 +1,6 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.core.Compilation
-import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.feedback.Feedback
+import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.scopes.TypeScope
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.{IntersectionType, ShapeType, TraitType, Type}
@@ -19,22 +17,24 @@ object InheritanceResolver {
     *     traits and shapes, for example to support a specific aspect of component-based programming, we want the
     *     language user to be able to use that type for inheritance.
     *   - All other types cannot be inherited from and result in an error.
+    *
+    * If a supertype expression cannot be evaluated, it is omitted from the list of inherited types and a proper error
+    * is reported.
     */
-  def resolveInheritedTypes(nodes: Vector[TypeExprNode], error: => Feedback.Error)(implicit typeScope: TypeScope): Compilation.Result[Vector[Type]] = {
-    def extract(tpe: Type): Compilation[Vector[Type]] = tpe match {
-      case supertrait: TraitType => Vector(supertrait).compiled
-      case shape: ShapeType => Vector(shape).compiled
-      case IntersectionType(parts) => parts.toVector.map(extract).simultaneous.map(_.flatten)
-      case _ => Compilation.fail(error)
+  def resolveInheritedTypes(nodes: Vector[TypeExprNode], error: => Feedback.Error)(implicit typeScope: TypeScope, reporter: Reporter): Vector[Type] = {
+    def extract(tpe: Type): Vector[Type] = tpe match {
+      case supertrait: TraitType => Vector(supertrait)
+      case shape: ShapeType => Vector(shape)
+      case IntersectionType(parts) => parts.toVector.flatMap(extract)
+      case _ =>
+        reporter.error(error)
+        Vector.empty
     }
 
-    for {
-      // If a supertype expression cannot be evaluated, that supertype is simply not added to the list of inherited
-      // types.
-      types <- nodes.map(TypeExpressionEvaluator.evaluate).simultaneousSuccesses
-      supertypeLists <- types.map(extract).simultaneous
-      supertypes = supertypeLists.flatten.distinct
-    } yield supertypes
+    nodes
+      .flatMap(TypeExpressionEvaluator.evaluate)
+      .flatMap(extract)
+      .distinct
   }
 
 }

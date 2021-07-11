@@ -1,14 +1,13 @@
 package lore.compiler.semantics
 
-import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, Position}
-import lore.compiler.feedback.Feedback
+import lore.compiler.core.Position
+import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.Registry.MultiFunctionNotFound
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.scopes.{Binding, BindingScope, ImmutableTypeScope, TypeScope}
 import lore.compiler.semantics.structures.{DeclaredTypeDefinition, StructConstructorDefinition}
 import lore.compiler.types.{DeclaredType, DeclaredTypeHierarchy, Type}
-import lore.compiler.utils.CollectionExtensions.VectorExtension
+import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtension}
 
 /**
   * The Registry represents the global scope of type and multi-function definitions.
@@ -43,13 +42,10 @@ case class Registry(
   }
 
   /**
-    * Gets a multi-function with the given name. If it cannot be found, the operation fails with a compilation error.
+    * Gets a multi-function with the given name. An appropriate error is reported if it cannot be found.
     */
-  def resolveMultiFunction(name: String, position: Position): Compilation[MultiFunctionDefinition] = {
-    multiFunctions.get(name) match {
-      case None => Compilation.fail(MultiFunctionNotFound(name, position))
-      case Some(mf) => mf.compiled
-    }
+  def resolveMultiFunction(name: String, position: Position)(implicit reporter: Reporter): Option[MultiFunctionDefinition] = {
+    multiFunctions.get(name).ifEmpty(reporter.error(MultiFunctionNotFound(name, position)))
   }
 
   /**

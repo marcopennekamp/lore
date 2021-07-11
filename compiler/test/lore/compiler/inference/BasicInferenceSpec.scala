@@ -23,7 +23,7 @@ class BasicInferenceSpec extends InferenceSpec {
     val target3 = new InferenceVariable(Some("target3"))
     val target4 = new InferenceVariable(Some("target4"))
 
-    val result = Inference.infer(Vector(
+    val result = infer(
       TypingJudgment.Subtypes(C, lower, Position.internal),
       TypingJudgment.Subtypes(upper, B, Position.internal),
       TypingJudgment.Subtypes(B, both, Position.internal),
@@ -34,7 +34,7 @@ class BasicInferenceSpec extends InferenceSpec {
       TypingJudgment.Assign(target2, upper, Position.internal),
       TypingJudgment.Assign(target3, both, Position.internal),
       TypingJudgment.Assign(target4, fixed, Position.internal),
-    ))(null)
+    )
 
     assertInferenceSuccess(
       Assignment.lower(lower, C),
@@ -53,9 +53,9 @@ class BasicInferenceSpec extends InferenceSpec {
     val iv1 = new InferenceVariable(Some("iv1"))
     val iv2 = new InferenceVariable(Some("iv2"))
 
-    val result = Inference.infer(Vector(
+    val result = infer(
       TypingJudgment.Equals((iv1, int), (real, iv2), Position.internal)
-    ))(null)
+    )
 
     assertInferenceSuccess(
       Assignment.fixed(iv1, real),
@@ -67,9 +67,9 @@ class BasicInferenceSpec extends InferenceSpec {
     val iv1 = new InferenceVariable(Some("iv1"))
     val iv2 = new InferenceVariable(Some("iv2"))
 
-    val result = Inference.infer(Vector(
+    val result = infer(
       TypingJudgment.Subtypes((iv1, int), (real, iv2), Position.internal)
-    ))(null)
+    )
 
     assertInferenceSuccess(
       Assignment.upper(iv1, real),
@@ -82,13 +82,13 @@ class BasicInferenceSpec extends InferenceSpec {
     val b = new InferenceVariable(Some("b"))
     val c = new InferenceVariable(Some("c"))
 
-    val result = Inference.infer(Vector(
+    val result = infer(
       TypingJudgment.Equals(a, real, Position.internal),
       TypingJudgment.Equals(b, a, Position.internal),
       TypingJudgment.Equals(a, b, Position.internal),
       TypingJudgment.Equals(c, b, Position.internal),
       TypingJudgment.Equals(c, a, Position.internal),
-    ))(null)
+    )
 
     assertInferenceSuccess(
       Assignment.fixed(a, real),

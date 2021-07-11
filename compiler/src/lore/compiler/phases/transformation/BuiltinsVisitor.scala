@@ -1,7 +1,6 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.core.Compilation
-import lore.compiler.core.Compilation.ToCompilationExtension
+import lore.compiler.feedback.Reporter
 import lore.compiler.phases.transformation.BuiltinsTransformation.ComparisonFunction
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, XaryOperator}
@@ -11,9 +10,9 @@ import lore.compiler.types.BasicType
 /**
   * Ensures that core functions such as areEqual/isLess/isLessThanOrEqual/toString are called at the appropriate times.
   */
-class BuiltinsVisitor(implicit registry: Registry) extends ExpressionIdentityVisitor.Compiled {
+class BuiltinsVisitor(implicit registry: Registry, reporter: Reporter) extends ExpressionIdentityVisitor.Simple {
 
-  override def visit(expression: Expression.BinaryOperation)(left: Expression, right: Expression): Compilation[Expression] = expression.operator match {
+  override def visit(expression: Expression.BinaryOperation)(left: Expression, right: Expression): Expression = expression.operator match {
     case BinaryOperator.Equals =>
       BuiltinsTransformation.transformComparison(ComparisonFunction.AreEqual, BinaryOperator.Equals, left, right, expression.position)
 
@@ -26,19 +25,14 @@ class BuiltinsVisitor(implicit registry: Registry) extends ExpressionIdentityVis
     case _ => super.visit(expression)(left, right)
   }
 
-  override def visit(expression: Expression.XaryOperation)(operands: Vector[Expression]): Compilation[Expression] = expression.operator match {
+  override def visit(expression: Expression.XaryOperation)(operands: Vector[Expression]): Expression = expression.operator match {
     case XaryOperator.Concatenation =>
-      def applyToString(operand: Expression) = {
+      def transformOperand(operand: Expression) = {
         if (operand.tpe != BasicType.String) {
-          CallTransformation
-            .multiFunctionCall("toString", Vector(operand), operand.position)
-            .flatMap(CallVerification.ensureOutputType(BasicType.String))
-        } else operand.compiled
+          CallTransformation.multiFunctionCall("toString", Vector(operand), BasicType.String, operand.position)
+        } else operand
       }
-
-      operands
-        .map(applyToString).simultaneous
-        .map(transformedOperands => Expression.XaryOperation(XaryOperator.Concatenation, transformedOperands, BasicType.String, expression.position))
+      Expression.XaryOperation(XaryOperator.Concatenation, operands.map(transformOperand), BasicType.String, expression.position)
 
     case _ => super.visit(expression)(operands)
   }

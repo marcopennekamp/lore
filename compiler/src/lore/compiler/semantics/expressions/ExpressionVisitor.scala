@@ -1,10 +1,13 @@
 package lore.compiler.semantics.expressions
 
-import lore.compiler.core.{Compilation, CompilationException}
+import lore.compiler.core.CompilationException
 import lore.compiler.semantics.expressions.Expression._
 
 trait ExpressionVisitor[A, B] {
   type Result = B
+
+  // Error Recovery
+  def visit(expression: Hole): B = throw CompilationException("Expression.Hole is not supported by this visitor.")
 
   // Top-Level Expressions
   def visit(expression: Return)(value: A): B
@@ -15,7 +18,7 @@ trait ExpressionVisitor[A, B] {
   def visit(expression: Block)(expressions: Vector[A]): B
   def visit(expression: BindingAccess): B
   def visit(expression: MemberAccess)(instance: A): B
-  def visit(expression: UnresolvedMemberAccess)(instance: A): B = throw CompilationException("UnresolvedMemberAccess is not supported by this visitor.")
+  def visit(expression: UnresolvedMemberAccess)(instance: A): B = throw CompilationException("Expression.UnresolvedMemberAccess is not supported by this visitor.")
   def visit(expression: Literal): B
   def visit(expression: Tuple)(values: Vector[A]): B
   def visit(expression: AnonymousFunction)(body: A): B
@@ -41,13 +44,17 @@ trait ExpressionVisitor[A, B] {
 }
 
 object ExpressionVisitor {
+
   /**
-    * Visits the whole tree invoking before and visit* functions for every expression. Does not handle Compilations.
+    * Visits the whole tree invoking before and visit* functions for every expression.
     */
   final def visit[A](visitor: ExpressionVisitor[A, A])(expression: Expression): A = {
     val rec = visit(visitor) _
     visitor.before.applyOrElse(expression, (_: Expression) => ())
     expression match {
+      // Error Recovery
+      case node@Hole(_, _) => visitor.visit(node)
+
       // Top-Level Expressions
       case node@Return(value, _) => visitor.visit(node)(rec(value))
       case node@VariableDeclaration(_, value, _) => visitor.visit(node)(rec(value))
@@ -78,42 +85,4 @@ object ExpressionVisitor {
     }
   }
 
-  /**
-    * Visits the whole tree invoking before and visit* functions for every expression. Handles Compilations natively.
-    */
-  final def visitCompilation[A](visitor: ExpressionVisitor[A, Compilation[A]])(expression: Expression): Compilation[A] = {
-    val rec = visitCompilation(visitor) _
-    visitor.before.applyOrElse(expression, (_: Expression) => ())
-    expression match {
-      // Top-Level Expressions
-      case node@Return(value, _) => rec(value).flatMap(visitor.visit(node))
-      case node@VariableDeclaration(_, value, _) => rec(value).flatMap(visitor.visit(node))
-      case node@Assignment(target, value, _) => (rec(target), rec(value)).simultaneous.flatMap((visitor.visit(node) _).tupled)
-
-      // Expressions
-      case node@Block(expressions, _) => expressions.map(rec).simultaneous.flatMap(visitor.visit(node))
-      case node@BindingAccess(_, _) => visitor.visit(node)
-      case node@MemberAccess(instance, _, _) => rec(instance).flatMap(visitor.visit(node))
-      case node@UnresolvedMemberAccess(instance, _, _, _) => rec(instance).flatMap(visitor.visit(node))
-      case node@Literal(_, _, _) => visitor.visit(node)
-      case node@Tuple(values, _) => values.map(rec).simultaneous.flatMap(visitor.visit(node))
-      case node@AnonymousFunction(_, body, _) => rec(body).flatMap(visitor.visit(node))
-      case node@MultiFunctionValue(_, _, _) => visitor.visit(node)
-      case node@FixedFunctionValue(_, _) => visitor.visit(node)
-      case node@ListConstruction(values, _, _) => values.map(rec).simultaneous.flatMap(visitor.visit(node))
-      case node@MapConstruction(entries, _, _) => entries.map(e => (rec(e.key), rec(e.value)).simultaneous).simultaneous.flatMap(visitor.visit(node))
-      case node@ShapeValue(properties, _) => properties.map(p => rec(p.value)).simultaneous.flatMap(visitor.visit(node))
-      case node@Symbol(_, _) => visitor.visit(node)
-      case node@Instantiation(_, arguments, _) => arguments.map(_.value).map(rec).simultaneous.flatMap(visitor.visit(node))
-      case node@UnaryOperation(_, value, _, _) => rec(value).flatMap(visitor.visit(node))
-      case node@BinaryOperation(_, left, right, _, _) => (rec(left), rec(right)).simultaneous.flatMap((visitor.visit(node) _).tupled)
-      case node@XaryOperation(_, expressions, _, _) => expressions.map(rec).simultaneous.flatMap(visitor.visit(node))
-      case node@Call(target, arguments, _, _) => (target.getExpression.map(rec).toCompiledOption, arguments.map(rec).simultaneous).simultaneous.flatMap((visitor.visit(node) _).tupled)
-      case node@IfElse(condition, onTrue, onFalse, _, _) =>
-        (rec(condition), rec(onTrue), rec(onFalse)).simultaneous.flatMap((visitor.visit(node) _).tupled)
-      case node@WhileLoop(condition, body, _, _) => (rec(condition), rec(body)).simultaneous.flatMap((visitor.visit(node) _).tupled)
-      case node@ForLoop(extractors, body, _, _) =>
-        (extractors.map(e => rec(e.collection)).simultaneous, rec(body)).simultaneous.flatMap((visitor.visit(node) _).tupled)
-    }
-  }
 }

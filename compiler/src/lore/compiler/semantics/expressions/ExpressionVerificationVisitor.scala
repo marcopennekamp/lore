@@ -1,14 +1,14 @@
 package lore.compiler.semantics.expressions
 
-import lore.compiler.core.Compilation.Verification
 import lore.compiler.semantics.expressions.Expression._
 
-trait ExpressionVerificationVisitor extends ExpressionVisitor[Unit, Verification] {
+trait ExpressionVerificationVisitor extends ExpressionVisitor[Unit, Unit] {
   /**
     * Verifies any given expression. The default implementation succeeds.
     */
-  def verify(expression: Expression): Verification = Verification.succeed
-  
+  def verify(expression: Expression): Result = ()
+
+  override def visit(expression: Hole): Result = verify(expression)
   override def visit(expression: Return)(value: Unit): Result = verify(expression)
   override def visit(expression: VariableDeclaration)(value: Unit): Result = verify(expression)
   override def visit(expression: Assignment)(target: Unit, value: Unit): Result = verify(expression)
@@ -18,9 +18,9 @@ trait ExpressionVerificationVisitor extends ExpressionVisitor[Unit, Verification
   override def visit(expression: UnresolvedMemberAccess)(instance: Unit): Result = verify(expression)
   override def visit(expression: Literal): Result = verify(expression)
   override def visit(expression: Tuple)(values: Vector[Unit]): Result = verify(expression)
-  override def visit(expression: AnonymousFunction)(body: Unit): Verification = verify(expression)
-  override def visit(expression: MultiFunctionValue): Verification = verify(expression)
-  override def visit(expression: FixedFunctionValue): Verification = verify(expression)
+  override def visit(expression: AnonymousFunction)(body: Unit): Result = verify(expression)
+  override def visit(expression: MultiFunctionValue): Result = verify(expression)
+  override def visit(expression: FixedFunctionValue): Result = verify(expression)
   override def visit(expression: ListConstruction)(values: Vector[Unit]): Result = verify(expression)
   override def visit(expression: MapConstruction)(entries: Vector[(Unit, Unit)]): Result = verify(expression)
   override def visit(expression: Instantiation)(arguments: Vector[Unit]): Result = verify(expression)

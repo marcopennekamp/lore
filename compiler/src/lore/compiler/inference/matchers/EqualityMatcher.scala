@@ -1,29 +1,34 @@
 package lore.compiler.inference.matchers
 
-import lore.compiler.core.Compilation.FoldCompilationsExtension
-import lore.compiler.core.{Compilation, CompilationException}
+import lore.compiler.core.CompilationException
+import lore.compiler.feedback.Reporter
 import lore.compiler.feedback.TypingFeedback.EqualTypesExpected
 import lore.compiler.inference.Inference.{Assignments, isFullyInstantiated}
 import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.types._
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object EqualityMatcher {
 
   /**
     * Ensures that `t1` and `t2` are equal:
     *
-    *   - If `t1` and `t2` are both fully instantiated, this resolution defers to a simple type equality check.
+    *   - If `t1` and `t2` are both fully instantiated, the matcher defers to a simple type equality check.
     *   - Otherwise, if `t1` or `t2` contain inference variables, types matching to an inference variable are processed
     *     with one of the three processing functions. The resulting assignments shall be built such that
     *     `instantiate(t1) == instantiate(t2)`.
     */
-  def matchEquals(
-    processIv1: (InferenceVariable, Type, Assignments, TypingJudgment) => Compilation[Assignments],
-    processIv2: (Type, InferenceVariable, Assignments, TypingJudgment) => Compilation[Assignments],
-    processBoth: (InferenceVariable, InferenceVariable, Assignments, TypingJudgment) => Compilation[Assignments],
-  )(t1: Type, t2: Type, assignments: Assignments, context: TypingJudgment): Compilation[Assignments] = {
+  def matchEquals(processor: Matchers.Processor)(
+    t1: Type,
+    t2: Type,
+    assignments: Assignments,
+    context: TypingJudgment,
+  )(implicit reporter: Reporter): Option[Assignments] = {
     if (isFullyInstantiated(t1) && isFullyInstantiated(t2)) {
-      return if (t1 == t2) Compilation.succeed(assignments) else Compilation.fail(EqualTypesExpected(t1, t2, context))
+      return if (t1 == t2) Some(assignments) else {
+        reporter.error(EqualTypesExpected(t1, t2, context))
+        None
+      }
     }
 
     def unsupported: Nothing = {
@@ -31,13 +36,16 @@ object EqualityMatcher {
         s" Given types: $t1 and $t2.")
     }
 
-    def expectedTypeEquality = Compilation.fail(EqualTypesExpected(t1, t2, context))
+    def expectedTypeEquality() = {
+      reporter.error(EqualTypesExpected(t1, t2, context))
+      None
+    }
 
-    val rec = (assignments2: Assignments, u1: Type, u2: Type) => matchEquals(processIv1, processIv2, processBoth)(u1, u2, assignments2, context)
+    val rec = (assignments2: Assignments, u1: Type, u2: Type) => matchEquals(processor)(u1, u2, assignments2, context)
     (t1, t2) match {
-      case (iv1: InferenceVariable, iv2: InferenceVariable) => processBoth(iv1, iv2, assignments, context)
-      case (iv1: InferenceVariable, t2) => processIv1(iv1, t2, assignments, context)
-      case (t1, iv2: InferenceVariable) => processIv2(t1, iv2, assignments, context)
+      case (iv1: InferenceVariable, iv2: InferenceVariable) => processor.processBoth(iv1, iv2, assignments, context)
+      case (iv1: InferenceVariable, t2) => processor.processIv1(iv1, t2, assignments, context)
+      case (t1, iv2: InferenceVariable) => processor.processIv2(t1, iv2, assignments, context)
 
       case (t1: TupleType, t2: TupleType) => Matchers.matchTuple(t1, t2, assignments, rec, expectedTypeEquality)
 
@@ -49,9 +57,9 @@ object EqualityMatcher {
 
       case (s1: ShapeType, s2: ShapeType) =>
         // Shape types must share all properties to be equal.
-        ShapeType.bicorrelate(s1, s2).foldCompiled(assignments) {
+        ShapeType.bicorrelate(s1, s2).foldSome(assignments) {
           case (assignments2, (Some(p1), Some(p2))) => rec(assignments2, p1.tpe, p2.tpe)
-          case _ => expectedTypeEquality
+          case _ => expectedTypeEquality()
         }
 
       case (_: IntersectionType, _) => unsupported
@@ -59,7 +67,7 @@ object EqualityMatcher {
       case (_: SumType, _) => unsupported
       case (_, _: SumType) => unsupported
 
-      case _ => expectedTypeEquality
+      case _ => expectedTypeEquality()
     }
   }
 

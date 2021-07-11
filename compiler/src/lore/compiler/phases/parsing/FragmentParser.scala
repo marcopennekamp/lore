@@ -2,9 +2,8 @@ package lore.compiler.phases.parsing
 
 import fastparse.ScalaWhitespace._
 import fastparse._
-import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, Fragment, Position}
-import lore.compiler.feedback.Feedback
+import lore.compiler.core.{Fragment, Position}
+import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.syntax._
 
 /**
@@ -28,12 +27,14 @@ class FragmentParser(implicit fragment: Fragment) {
   /**
     * Attempts to parse the fragment and returns the parsing result.
     */
-  lazy val parsed: Compilation[Vector[DeclNode]] = {
+  def parse()(implicit reporter: Reporter): Vector[DeclNode] = {
     fastparse.parse(fragment.input, fullFragment(_)) match {
       case Parsed.Failure(_, _, extra) =>
-        val message = s"Parsing failure: ${extra.trace().aggregateMsg}"
-        Compilation.fail(ParsingError(message, Position(fragment, extra.index)))
-      case Parsed.Success(result, _) => result.compiled
+        val error = ParsingError(s"Parsing failure: ${extra.trace().aggregateMsg}", Position(fragment, extra.index))
+        reporter.error(error)
+        Vector.empty
+
+      case Parsed.Success(result, _) => result
     }
   }
 
@@ -51,12 +52,12 @@ class FragmentParser(implicit fragment: Fragment) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def function[_: P]: P[DeclNode.FunctionNode] = {
     P(
-      Index ~ "function" ~/ identifier ~ parameters ~ typeParser.typing ~ functionTypeVariables ~ ("=" ~ expression).?
+      "function" ~/ Index ~ identifier ~ parameters ~ typeParser.typing ~ functionTypeVariables ~ ("=" ~ expression).?
     ).map(withPosition(DeclNode.FunctionNode(_, _, _, _, _, _)))
   }
 
   private def action[_: P]: P[DeclNode.FunctionNode] = {
-    P(Index ~ "action" ~/ identifier ~ parameters ~ functionTypeVariables ~ block.?).map(withPosition(DeclNode.FunctionNode.fromAction _))
+    P("action" ~/ Index ~ identifier ~ parameters ~ functionTypeVariables ~ block.?).map(withPosition(DeclNode.FunctionNode.fromAction _))
   }
 
   private def parameters[_: P]: P[Vector[DeclNode.ParameterNode]] = {
@@ -80,15 +81,15 @@ class FragmentParser(implicit fragment: Fragment) {
   private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`type` | `trait` | struct)
 
   private def `type`[_: P]: P[TypeDeclNode.AliasNode] = {
-    P(Index ~ "type" ~/ typeIdentifier ~ "=" ~ typeExpression).map(withPosition(TypeDeclNode.AliasNode))
+    P("type" ~/ Index ~ typeIdentifier ~ "=" ~ typeExpression).map(withPosition(TypeDeclNode.AliasNode))
   }
 
   private def `trait`[_: P]: P[TypeDeclNode.TraitNode] = {
-    P(Index ~ "trait" ~/ typeIdentifier ~ `extends`).map(withPosition(TypeDeclNode.TraitNode))
+    P("trait" ~/ Index ~ typeIdentifier ~ `extends`).map(withPosition(TypeDeclNode.TraitNode))
   }
 
   private def struct[_: P]: P[TypeDeclNode.StructNode] = {
-    P(Index ~ "struct" ~/ structIdentifier ~ `extends` ~ structBody).map(withPosition(TypeDeclNode.StructNode))
+    P("struct" ~/ Index ~ structIdentifier ~ `extends` ~ structBody).map(withPosition(TypeDeclNode.StructNode))
   }
 
   private def `extends`[_: P]: P[Vector[TypeExprNode]] = {
