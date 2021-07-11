@@ -231,13 +231,11 @@ class InferringExpressionTransformationVisitor(
             InstantiationTransformation.transformMapStyleInstantiation(structType.definition, entries, position)
           )
 
-        case Some(traitType: TraitType) =>
+        case Some(tpe) =>
           reporter.error(StructExpected(structName, position))
-          Expression.Hole(traitType, position)
+          Expression.Hole(tpe, position)
 
-        case _ =>
-          reporter.error(StructExpected(structName, position))
-          Expression.Hole(BasicType.Nothing, position)
+        case None => Expression.Hole(BasicType.Nothing, position)
       }
 
     case ShapeValueNode(propertyNodes, position) =>
