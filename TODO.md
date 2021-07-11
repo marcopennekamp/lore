@@ -127,7 +127,17 @@
 
 ##### Language Server
 
+- Implement the following features:
+  - Find usages.
+  - Highlight the correct bindings when the developer's cursor hovers over any named entity.
+  - Go to definition.
+  - Rename symbol.
+  - Show type of expression (or at least of a binding).
 - Make sure that multiple "applyWorkspaceChanges" calls are properly debounced. If the method is already being executed and more calls come in, we only need the last call to trigger another execution. Only one call may execute at the same time.
+
+##### Visual Studio Code
+
+- Implement syntax highlighting on the client side.
 
 ##### IntelliJ
 
