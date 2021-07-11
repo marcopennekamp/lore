@@ -3,12 +3,9 @@ package lore.compiler.feedback
 /**
   * A reporter that collects all feedback in a vector.
   */
-case class MemoReporter(initialFeedback: Vector[Feedback]) extends Reporter {
+class MemoReporter(initialFeedback: Vector[Feedback]) extends Reporter {
 
-  private object state {
-    var feedback: Vector[Feedback] = initialFeedback
-    var hasErrors: Boolean = initialFeedback.exists(_.isError)
-  }
+  private val state = new MemoReporter.State(initialFeedback)
 
   override def report(feedback: Feedback): Unit = this.synchronized {
     if (feedback.isError) {
@@ -17,13 +14,20 @@ case class MemoReporter(initialFeedback: Vector[Feedback]) extends Reporter {
     state.feedback = state.feedback :+ feedback
   }
 
-  override val hasErrors: Boolean = state.hasErrors
+  override def hasErrors: Boolean = state.hasErrors
 
   def feedback: Vector[Feedback] = state.feedback
 
 }
 
 object MemoReporter {
+
+  private class State(initialFeedback: Vector[Feedback]) {
+    var feedback: Vector[Feedback] = initialFeedback
+    var hasErrors: Boolean = initialFeedback.exists(_.isError)
+  }
+
+  def apply(initialFeedback: Vector[Feedback]): MemoReporter = new MemoReporter(initialFeedback)
 
   /**
     * Invokes `f` with a fresh MemoReporter, then adds the feedback to the given parent reporter.
