@@ -1,6 +1,6 @@
 package lore.compiler.inference
 
-import lore.compiler.core.Compilation
+import lore.compiler.feedback.Reporter
 import lore.compiler.inference.Inference.{Assignments, AssignmentsExtension}
 import lore.compiler.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.inference.resolvers.JudgmentResolver
@@ -21,7 +21,7 @@ object SimpleResolution {
     * The influence graph approach has the distinct advantage of being able to fail clearly and fast, compared to some
     * other methods such as fixed-point inference.
     */
-  def infer(assignments: Assignments, judgments: Vector[TypingJudgment])(implicit registry: Registry): Compilation[Assignments] = {
+  def infer(assignments: Assignments, judgments: Vector[TypingJudgment])(implicit registry: Registry, reporter: Reporter): Assignments = {
     var currentAssignments = assignments
     var currentJudgments = judgments
 
@@ -32,12 +32,11 @@ object SimpleResolution {
       Inference.logger.trace(s"Step $stepCounter:")
 
       step(currentAssignments, currentJudgments) match {
-        case compilation: Compilation.Result[JudgmentResolver.Result] =>
-          val (assignments2, judgments2) = compilation.result
+        case Some((assignments2, judgments2)) =>
           currentAssignments = assignments2
           currentJudgments = judgments2
 
-        case failure: Compilation.Failure[Nothing] => return failure
+        case None => return currentAssignments
       }
 
       Inference.logger.trace(s"New assignments:\n${currentAssignments.stringified}")
@@ -47,10 +46,10 @@ object SimpleResolution {
 
     Inference.loggerBlank.trace("")
 
-    Compilation.succeed(currentAssignments)
+    currentAssignments
   }
 
-  private def step(assignments: Assignments, judgments: Vector[TypingJudgment])(implicit registry: Registry): Compilation[JudgmentResolver.Result] = {
+  private def step(assignments: Assignments, judgments: Vector[TypingJudgment])(implicit registry: Registry, reporter: Reporter): Option[JudgmentResolver.Result] = {
     val influenceGraph = InferenceOrder.buildInfluenceGraph(judgments)
     Inference.logger.trace(s"Influence graph:\n${influenceGraph.edges.mkString("\n")}")
 
@@ -64,14 +63,17 @@ object SimpleResolution {
 
   /**
     * If the given judgment can be resolved (according to the assignments and influence graph), it is resolved,
-    * resulting in new assignments. If the judgment cannot be resolved, the function returns None.
+    * resulting in new assignments unless an error occurs. If the judgment cannot be resolved, the function returns
+    * None.
+    *
+    * A result `Some(None)` signifies that inference stopped with errors.
     */
   private def attempt(
     assignments: Inference.Assignments,
     influenceGraph: InfluenceGraph,
     judgment: TypingJudgment,
     remainingJudgments: Vector[TypingJudgment],
-  )(implicit registry: Registry): Option[Compilation[JudgmentResolver.Result]] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[Option[JudgmentResolver.Result]] = {
     def resolveTowards(direction: ResolutionDirection) = {
       Inference.logger.trace(s"Simple resolve `$judgment`.")
       Some(JudgmentResolver.resolve(judgment, direction, assignments, influenceGraph, remainingJudgments))

@@ -1,7 +1,5 @@
 package lore.compiler.syntax.visitor
 
-import lore.compiler.core.Compilation
-import lore.compiler.core.Compilation.ToCompilationExtension
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import scalaz.Id.Id
 
@@ -44,10 +42,5 @@ object CombiningTopLevelExprVisitor {
   trait Identity[A] extends CombiningTopLevelExprVisitor[A, Id] {
     override protected def wrap(a: A): A = a
     override protected def flatMap(b: A, f: A => A): A = f(b)
-  }
-
-  trait WithCompilation[A] extends CombiningTopLevelExprVisitor[A, Compilation] {
-    override protected def wrap(a: A): Compilation[A] = a.compiled
-    override protected def flatMap(b: Compilation[A], f: A => Compilation[A]): Compilation[A] = b.flatMap(f)
   }
 }

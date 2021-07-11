@@ -1,8 +1,7 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, Position}
-import lore.compiler.feedback.Feedback
+import lore.compiler.core.Position
+import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.BinaryOperator
@@ -33,11 +32,11 @@ object BuiltinsTransformation {
   }
 
   /**
-    * Transforms comparison operations (==, !=, <, <=, >, >=) of non-basic types into function calls, invoking the
-    * standard functions areEqual, isLessThan, and isLessThanOrEqual. If this comparison is comparing basic types,
-    * it instead applies the basic operator for comparison.
+    * Transforms comparison operations (==, !=, <, <=, >, >=) into the proper expressions, invoking the standard
+    * functions areEqual, isLessThan, and isLessThanOrEqual for complex comparisons. Results in an error if areEqual,
+    * isLessThan, or isLessThanOrEqual doesn't return a boolean value.
     *
-    * Results in a compilation error if areEqual, isLessThan, or isLessThanOrEqual doesn't return a boolean value.
+    * If an expression cannot be created, the function falls back to [[Expression.Hole]] with a Boolean type.
     */
   def transformComparison(
     comparisonFunction: ComparisonFunction,
@@ -45,22 +44,21 @@ object BuiltinsTransformation {
     left: Expression,
     right: Expression,
     position: Position,
-  )(implicit registry: Registry): Compilation[Expression] = {
+  )(implicit registry: Registry, reporter: Reporter): Expression = {
     (left.tpe, right.tpe) match {
-      case (_: BasicType, _: BasicType) => Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position).compiled
+      case (_: BasicType, _: BasicType) => Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position)
 
       case (_: SymbolType, _: SymbolType) => comparisonFunction match {
         case ComparisonFunction.AreEqual =>
           // Because symbol values are interned, they can be compared by reference, using the equality operator.
-          Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position).compiled
+          Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position)
 
-        case ComparisonFunction.IsLessThan | ComparisonFunction.IsLessThanOrEqual => Compilation.fail(IllegalSymbolComparison(position))
+        case ComparisonFunction.IsLessThan | ComparisonFunction.IsLessThanOrEqual =>
+          reporter.error(IllegalSymbolComparison(position))
+          Expression.Hole(BasicType.Boolean, position)
       }
 
-      case _ =>
-        CallTransformation
-          .multiFunctionCall(comparisonFunction.name, Vector(left, right), position)
-          .flatMap(CallVerification.ensureOutputType(BasicType.Boolean))
+      case _ => CallTransformation.multiFunctionCall(comparisonFunction.name, Vector(left, right), BasicType.Boolean, position)
     }
   }
 

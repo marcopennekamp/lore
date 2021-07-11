@@ -1,8 +1,7 @@
 package lore.compiler.semantics.functions
 
-import lore.compiler.core.Compilation.ToCompilationExtension
-import lore.compiler.core.{Compilation, Position, Positioned}
-import lore.compiler.feedback.Feedback
+import lore.compiler.core.{Position, Positioned}
+import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.phases.transpilation.RuntimeNames
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionDefinition.CannotInstantiateFunction
@@ -40,20 +39,18 @@ class FunctionDefinition(
   var body: Option[Expression] = _
 
   /**
-    * Attempts to instantiate the function definition with the given argument type.
+    * Attempts to instantiate the function definition with the given argument type. If this is not possible, reports a
+    * "cannot instantiate function" error.
     */
-  def instantiate(argumentType: Type): Compilation[FunctionInstance] = {
-    instantiateOption(argumentType) match {
-      case None => Compilation.fail(CannotInstantiateFunction(this, argumentType))
-      case Some(instance) => instance.compiled
-    }
-  }
+  def instantiate(argumentType: Type)(implicit reporter: Reporter): Option[FunctionInstance] = {
+    val option = Fit
+      .assignments(argumentType, signature.inputType)
+      .map(assignments => FunctionInstance(this, signature.substitute(assignments)))
 
-  /**
-    * Attempts to instantiate the function definition with the given argument type.
-    */
-  def instantiateOption(argumentType: Type): Option[FunctionInstance] = {
-    Fit.assignments(argumentType, signature.inputType).map(assignments => FunctionInstance(this, signature.substitute(assignments)))
+    if (option.isEmpty) {
+      reporter.error(CannotInstantiateFunction(this, argumentType))
+    }
+    option
   }
 }
 

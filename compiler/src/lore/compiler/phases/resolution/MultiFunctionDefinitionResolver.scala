@@ -1,39 +1,33 @@
 package lore.compiler.phases.resolution
 
-import lore.compiler.core.{Compilation, CompilationException}
-import lore.compiler.feedback.Feedback
-import lore.compiler.phases.resolution.ParameterDefinitionResolver.resolveParameterNode
+import lore.compiler.core.CompilationException
+import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
-import lore.compiler.semantics.scopes.TypeScope
+import lore.compiler.semantics.scopes.{LocalTypeScope, TypeScope}
 import lore.compiler.syntax.DeclNode
-import lore.compiler.types.Fit
+import lore.compiler.types.{BasicType, Fit}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object MultiFunctionDefinitionResolver {
 
-  def resolve(functionNodes: Vector[DeclNode.FunctionNode])(implicit typeScope: TypeScope): Compilation.Result[MultiFunctionDefinition] = {
+  def resolve(functionNodes: Vector[DeclNode.FunctionNode])(implicit typeScope: TypeScope, reporter: Reporter): MultiFunctionDefinition = {
     if (!functionNodes.allEqual(_.name)) {
       val uniqueNames = functionNodes.map(_.name).distinct
       throw CompilationException(s"The function nodes of a multi-function don't all have the same name. Names: ${uniqueNames.mkString(", ")}.")
     }
 
     val name = functionNodes.head.name
-    for {
-      functions <- functionNodes.map(resolveFunction(_, typeScope)).simultaneous
-      functions <- filterDuplicateFunctions(functions)
-    } yield MultiFunctionDefinition(name, functions)
+    val functions = functionNodes.map(resolveFunction(_, typeScope))
+    val uniqueFunctions = filterDuplicateFunctions(functions)
+    MultiFunctionDefinition(name, uniqueFunctions)
   }
 
-  private def resolveFunction(node: DeclNode.FunctionNode, registryTypeScope: TypeScope): Compilation[FunctionDefinition] = {
-    TypeVariableDeclarationResolver.resolve(node.typeVariables, registryTypeScope).flatMap { implicit typeScope =>
-      (
-        node.parameters.map(resolveParameterNode).simultaneous,
-        TypeExpressionEvaluator.evaluate(node.outputType),
-      ).simultaneous.map { case (parameters, outputType) =>
-        val signature = FunctionSignature(node.name, parameters, outputType, node.position)
-        new FunctionDefinition(signature, typeScope, node.body)
-      }
-    }
+  private def resolveFunction(node: DeclNode.FunctionNode, registryTypeScope: TypeScope)(implicit reporter: Reporter): FunctionDefinition = {
+    implicit val typeScope: LocalTypeScope = TypeVariableDeclarationResolver.resolve(node.typeVariables, registryTypeScope)
+    val parameters = node.parameters.map(ParameterDefinitionResolver.resolve)
+    val outputType = TypeExpressionEvaluator.evaluate(node.outputType).getOrElse(BasicType.Any)
+    val signature = FunctionSignature(node.name, parameters, outputType, node.position)
+    new FunctionDefinition(signature, typeScope, node.body)
   }
 
   case class FunctionAlreadyExists(definition: FunctionDefinition) extends Feedback.Error(definition) {
@@ -49,11 +43,16 @@ object MultiFunctionDefinitionResolver {
     * If two functions f1 and f2 are duplicates of each other, we have to filter out both because we don't know whether
     * the programmer made their error with f1 or f2.
     */
-  private def filterDuplicateFunctions(functions: Vector[FunctionDefinition]): Compilation.Result[Vector[FunctionDefinition]] = {
-    functions.map { f1 =>
-      val containsDuplicate = functions.filterNot(_ == f1).exists(f2 => Fit.isEquallySpecific(f2.signature.inputType, f1.signature.inputType))
-      if (containsDuplicate) Compilation.fail(FunctionAlreadyExists(f1)) else Compilation.succeed(f1)
-    }.simultaneous
+  private def filterDuplicateFunctions(functions: Vector[FunctionDefinition])(implicit reporter: Reporter): Vector[FunctionDefinition] = {
+    functions.flatMap { f1 =>
+      val hasDuplicate = functions.filterNot(_ == f1).exists(f2 => Fit.isEquallySpecific(f2.signature.inputType, f1.signature.inputType))
+      if (!hasDuplicate) {
+        Vector(f1)
+      } else {
+        reporter.error(FunctionAlreadyExists(f1))
+        Vector.empty
+      }
+    }
   }
 
 }

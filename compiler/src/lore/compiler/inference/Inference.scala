@@ -1,8 +1,7 @@
 package lore.compiler.inference
 
 import com.typesafe.scalalogging.Logger
-import lore.compiler.core.Compilation
-import lore.compiler.feedback.Feedback
+import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
 import lore.compiler.inference.InferenceBounds.BoundType
 import lore.compiler.semantics.Registry
 import lore.compiler.types._
@@ -12,7 +11,13 @@ object Inference {
 
   type Assignments = Map[InferenceVariable, InferenceBounds]
 
-  def infer(judgments: Vector[TypingJudgment])(implicit registry: Registry): Compilation[Assignments] = {
+  /**
+    * Infer a set of assignments from the given typing judgments.
+    *
+    * Inference currently operates conservatively, terminating after an error has been found. A partial assignment map
+    * will always be returned.
+    */
+  def infer(judgments: Vector[TypingJudgment])(implicit registry: Registry, reporter: Reporter): Assignments = {
     // Note that the order of judgments is important for reproducibility: we should always process the judgments in
     // their order of declaration. In addition, this will give the algorithm the best chance at resolving type
     // inference in one go, as the flow of typing most often follows the natural judgment order.
@@ -25,25 +30,27 @@ object Inference {
   val logger: Logger = Logger("lore.compiler.inference")
   val loggerBlank: Logger = Logger("lore.compiler.inference.blank")
 
-  def inferVerbose(judgments: Vector[TypingJudgment], label: String)(implicit registry: Registry): Compilation[Assignments] = {
+  def inferVerbose(judgments: Vector[TypingJudgment], label: String, parentReporter: Reporter)(implicit registry: Registry): Assignments = {
     if (judgments.isEmpty) {
-      return Compilation.succeed(Map.empty)
+      return Map.empty
     }
 
     logger.debug(s"Typing judgments for $label:\n${judgments.mkString("\n")}")
 
     val result = timed(s"Inference for $label", log = s => logger.debug(s)) {
-      infer(judgments) match {
-        case success@Compilation.Success(_, _) =>
-          logger.debug(s"Inference for $label was successful with the following inferred types:\n${success.result.stringified}\n")
-          success
+      MemoReporter.nested(parentReporter) { implicit reporter =>
+        val assignments = infer(judgments)
 
-        case failure: Compilation.Failure[Assignments] =>
+        if (!reporter.hasErrors) {
+          logger.debug(s"Inference for $label was successful with the following inferred types:\n${assignments.stringified}\n")
+        } else {
           logger.debug(s"Inference for $label failed with the following feedback:")
           logger.whenDebugEnabled {
-            Feedback.logAll(failure.feedback)
+            Feedback.logAll(reporter.feedback)
           }
-          failure
+        }
+
+        assignments
       }
     }
 

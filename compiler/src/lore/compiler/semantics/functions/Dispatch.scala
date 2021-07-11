@@ -1,7 +1,6 @@
 package lore.compiler.semantics.functions
 
-import lore.compiler.core.Compilation
-import lore.compiler.feedback.Feedback
+import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.types.{Fit, TupleType}
 
 import scala.collection.mutable
@@ -17,11 +16,13 @@ object Dispatch {
     tpe: TupleType,
     emptyFit: => Feedback.Error,
     ambiguousCall: Vector[FunctionDefinition] => Feedback.Error,
-  ): Compilation[FunctionInstance] = {
+  )(implicit reporter: Reporter): Option[FunctionInstance] = {
     Dispatch.min(hierarchy, tpe) match {
-      case min if min.isEmpty => Compilation.fail(emptyFit)
-      case min if min.size > 1 => Compilation.fail(ambiguousCall(min))
-      case functionDefinition +: _ => functionDefinition.instantiate(tpe)
+      case Vector(functionDefinition) => functionDefinition.instantiate(tpe)
+      case min =>
+        if (min.isEmpty) reporter.error(emptyFit)
+        else reporter.error(ambiguousCall(min))
+        None
     }
   }
 

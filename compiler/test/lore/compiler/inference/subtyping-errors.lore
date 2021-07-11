@@ -40,4 +40,5 @@ function increment(number: Int): Real = number + 1.5
 function test5(): { number: Int } = {
   // Illegal: `increment` returns a Real, but Int is expected.
   let abc: { number: Int } = %{ number: increment(2) }
+  abc
 }

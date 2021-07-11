@@ -1,18 +1,20 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.core.{Compilation, CompilationException, Position}
+import lore.compiler.feedback.Reporter
 import lore.compiler.inference.Inference.{Assignments, AssignmentsExtension}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression._
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.members.Member
 import lore.compiler.semantics.scopes.{TypedBinding, Variable}
-import lore.compiler.types.{ListType, TupleType, Type}
+import lore.compiler.types.{BasicType, ListType, TupleType, Type}
 
 /**
   * Replaces all inference variables with inferred types.
   */
-class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Registry) extends ExpressionVisitor[Expression, Expression] {
+class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Registry, reporter: Reporter) extends ExpressionVisitor[Expression, Expression] {
+
+  override def visit(expression: Hole): Expression = expression.copy(assignments.instantiate(expression.tpe))
 
   override def visit(expression: Return)(value: Expression): Expression = expression.copy(value)
 
@@ -35,9 +37,13 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
   override def visit(expression: MemberAccess)(instance: Expression): Expression = expression.copy(instance)
 
   override def visit(expression: UnresolvedMemberAccess)(instance: Expression): Expression = {
-    val member = instance.tpe.member(expression.name, expression.position) match {
-      case success: Compilation.Success[Member] => success.result
-      case _ => throw CompilationException(s"The type ${instance.tpe} does not have a member ${expression.name}. Type inference should have caught this missing member!")
+    val member = instance.tpe.member(expression.name) match {
+      case Some(member) => member
+      case None =>
+        // The instance does not have a member with the given name, but type inference already uncovered this and
+        // produced an appropriate error. We can simply return a dummy member as a default value so that the
+        // transformation phase can continue.
+        Member(expression.name, BasicType.Nothing, isAssignable = true, isMutable = true)
     }
     MemberAccess(instance, member, expression.position)
   }

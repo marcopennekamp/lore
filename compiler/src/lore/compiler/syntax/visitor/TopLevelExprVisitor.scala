@@ -1,7 +1,5 @@
 package lore.compiler.syntax.visitor
 
-import lore.compiler.core.Compilation
-import lore.compiler.core.Compilation.Verification
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import scalaz.Id.Id
 
@@ -70,80 +68,45 @@ trait TopLevelExprVisitor[A, M[_]] {
 
 object TopLevelExprVisitor {
 
-  def visit[A](visitor: TopLevelExprVisitor[A, Id])(node: TopLevelExprNode): A = {
-    import ExprNode._
-    import TopLevelExprNode._
+  def visit[A](visitor: TopLevelExprVisitor[A, Id])(node: TopLevelExprNode): A = new Applicator[A, Unit](visitor).visit(node, ())
 
-    val rec = visit(visitor) _
-
-    visitor.before.applyOrElse(node, (_: TopLevelExprNode) => ())
-    node match {
-      case node: LeafNode => visitor.visitLeaf(node)
-      case node: UnaryNode => visitor.visitUnary(node)(rec(node.child))
-      case node: BinaryNode => visitor.visitBinary(node)(rec(node.child1), rec(node.child2))
-      case node: TernaryNode => visitor.visitTernary(node)(rec(node.child1), rec(node.child2), rec(node.child3))
-      case node: XaryNode => visitor.visitXary(node)(node.children.map(rec))
-
-      case node@AnonymousFunctionNode(_, body, _) => visitor.visitAnonymousFunction(node)(() => rec(body))
-
-      case node@MapNode(kvs, _) =>
-        val entries = kvs.map {
-          case KeyValueNode(key, value, _) => (rec(key), rec(value))
-        }
-        visitor.visitMap(node)(entries)
-
-      case node@CallNode(target, arguments, _) => visitor.visitCall(node)(rec(target), arguments.map(rec))
-
-      case node@ForNode(extractors, body, _) =>
-        val extracts = extractors.map {
-          case ExtractorNode(name, collection, _) => (name, rec(collection))
-        }
-        visitor.visitIteration(node)(extracts, () => rec(body))
-    }
-  }
-
-  class CompilationApplicator[A, Props](visitor: TopLevelExprVisitor[A, Compilation]) {
+  class Applicator[A, Props](visitor: TopLevelExprVisitor[A, Id]) {
     /**
       * Visits the whole tree invoking begin* and visit* functions for every node.
       */
-    final def visit(node: TopLevelExprNode, props: Props): Compilation[A] = {
-      // Apply the before* callback before we visit the node's subtrees.
-      visitor.before.applyOrElse(node, (_: TopLevelExprNode) => Verification.succeed)
-        .flatMap(_ => handleMatch(node, props))
+    final def visit(node: TopLevelExprNode, props: Props): A = {
+      visitor.before.applyOrElse(node, (_: TopLevelExprNode) => ())
+      handleMatch(node, props)
     }
 
-    protected def handleMatch(node: TopLevelExprNode, props: Props): Compilation[A] = {
+    protected def handleMatch(node: TopLevelExprNode, props: Props): A = {
       import ExprNode._
       import TopLevelExprNode._
 
       node match {
         case node: LeafNode => visitor.visitLeaf(node)
-        case node: UnaryNode => visit(node.child, props).flatMap(visitor.visitUnary(node))
-        case node: BinaryNode => (visit(node.child1, props), visit(node.child2, props)).simultaneous.flatMap((visitor.visitBinary(node) _).tupled)
-        case node: TernaryNode => (visit(node.child1, props), visit(node.child2, props), visit(node.child3, props)).simultaneous.flatMap((visitor.visitTernary(node) _).tupled)
-        case node: XaryNode => node.children.map(c => visit(c, props)).simultaneous.flatMap(visitor.visitXary(node))
+        case node: UnaryNode => visitor.visitUnary(node)(visit(node.child, props))
+        case node: BinaryNode => visitor.visitBinary(node)(visit(node.child1, props), visit(node.child2, props))
+        case node: TernaryNode => visitor.visitTernary(node)(visit(node.child1, props), visit(node.child2, props), visit(node.child3, props))
+        case node: XaryNode => visitor.visitXary(node)(node.children.map(visit(_, props)))
 
         case node@AnonymousFunctionNode(_, body, _) => visitor.visitAnonymousFunction(node)(() => visit(body, props))
 
         case node@MapNode(kvs, _) =>
           val entries = kvs.map {
-            case KeyValueNode(key, value, _) => (visit(key, props), visit(value, props)).simultaneous
-          }.simultaneous
-          entries.flatMap(visitor.visitMap(node))
+            case KeyValueNode(key, value, _) => (visit(key, props), visit(value, props))
+          }
+          visitor.visitMap(node)(entries)
 
-        case node@CallNode(target, arguments, _) =>
-          val children = (visit(target, props), arguments.map(visit(_, props)).simultaneous).simultaneous
-          children.flatMap((visitor.visitCall(node) _).tupled)
+        case node@CallNode(target, arguments, _) => visitor.visitCall(node)(visit(target, props), arguments.map(visit(_, props)))
 
         case node@ForNode(extractors, body, _) =>
           val extracts = extractors.map {
-            case ExtractorNode(name, collection, _) => visit(collection, props).map((name, _))
-          }.simultaneous
-          extracts.flatMap(extractors => visitor.visitIteration(node)(extractors, () => visit(body, props)))
+            case ExtractorNode(name, collection, _) => (name, visit(collection, props))
+          }
+          visitor.visitIteration(node)(extracts, () => visit(body, props))
       }
     }
   }
-
-  def visitCompilation[A](visitor: TopLevelExprVisitor[A, Compilation])(node: TopLevelExprNode): Compilation[A] = new CompilationApplicator[A, Unit](visitor).visit(node, ())
 
 }

@@ -1,8 +1,5 @@
 package lore.compiler.utils
 
-import lore.compiler.core.Compilation
-import lore.compiler.feedback.Feedback
-
 import scala.reflect.ClassTag
 
 object CollectionExtensions {
@@ -61,6 +58,14 @@ object CollectionExtensions {
       * Returns this vector or, if this vector is empty, a vector containing the given element.
       */
     def withDefault[B >: A](default: => B): Vector[B] = if (vector.nonEmpty) vector else Vector(default)
+
+    /**
+      * Lifts the vector's fold operation into an Option context. The fold uses [[Option.flatMap]], so it continues
+      * until None is encountered.
+      */
+    def foldSome[B](initial: B)(f: (B, A) => Option[B]): Option[B] = {
+      vector.foldLeft(Some(initial): Option[B]) { case (option, element) => option.flatMap(f(_, element)) }
+    }
   }
 
   implicit class SetExtension[A](set: Set[A]) {
@@ -69,9 +74,15 @@ object CollectionExtensions {
       case _ => None
     }
 
-    def ifEmptySingle(v: => A): Set[A] = if (set.nonEmpty) set else Set(v)
+    /**
+      * Returns this set or, if this set is empty, a set containing the given element.
+      */
+    def withDefaultSingle(default: => A): Set[A] = if (set.nonEmpty) set else Set(default)
 
-    def ifEmpty(set2: => Set[A]): Set[A] = if (set.nonEmpty) set else set2
+    /**
+      * Returns this set or, if this set is empty, a default set.
+      */
+    def withDefault(default: => Set[A]): Set[A] = if (set.nonEmpty) set else default
   }
 
   implicit class OptionExtension[A](option: Option[A]) {
@@ -83,6 +94,35 @@ object CollectionExtensions {
     def filterNotType[T <: A](implicit tag: ClassTag[T]): Option[A] = option.flatMap {
       case _: T => None
       case value => Some(value)
+    }
+
+    /**
+      * Invokes `f` if the option is a None. Returns the option for chaining.
+      */
+    def ifEmpty(f: => Unit): Option[A] = {
+      if (option.isEmpty) f
+      option
+    }
+  }
+
+  implicit class OptionVectorExtension[A](vector: Vector[Option[A]]) {
+    /**
+      * If all options in this vector are defined, returns some vector containing all option values. Otherwise, if at
+      * least one option is None, returns None.
+      */
+    def sequence: Option[Vector[A]] = if (vector.exists(_.isEmpty)) None else Some(vector.map(_.get))
+  }
+
+  implicit class OptionTuple2Extension[A, B](tuple: (Option[A], Option[B])) {
+    /**
+      * If all options in this tuple are defined, returns some tuple containing all option values. Otherwise, if at
+      * least one option is None, returns None.
+      */
+    def sequence: Option[(A, B)] = {
+      val (a, b) = tuple
+      if (a.isEmpty) None
+      else if (b.isEmpty) None
+      else Some(a.get, b.get)
     }
   }
 

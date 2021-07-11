@@ -1,8 +1,7 @@
 package lore.compiler.inference.resolvers
 
-import lore.compiler.core.Compilation
 import lore.compiler.feedback.DispatchFeedback.EmptyFit
-import lore.compiler.feedback.Feedback
+import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
 import lore.compiler.inference.Inference.{Assignments, isFullyInstantiated}
 import lore.compiler.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.inference._
@@ -11,8 +10,8 @@ import lore.compiler.types.{BasicType, TupleType, Type}
 
 object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment.MultiFunctionHint] {
 
-  case class MultiFunctionHintMissingImplementation(judgment: TypingJudgment, successes: Int, compilations: Vector[Compilation[_]]) extends Feedback.Error(judgment) {
-    override def message: String = s"The MultiFunctionHint judgment $judgment cannot be resolved yet if there are $successes options. Sorry. Compilations:\n${compilations.mkString("\n")}."
+  case class MultiFunctionHintMissingImplementation(judgment: TypingJudgment, successes: Int, results: Vector[Option[Assignments]]) extends Feedback.Error(judgment) {
+    override def message: String = s"The MultiFunctionHint judgment $judgment cannot be resolved yet if there are $successes options. Sorry. Results:\n${results.mkString("\n")}."
   }
 
   /**
@@ -23,38 +22,38 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
     * additional judgments created from parameter types.
     *
     * Each such set of judgments (each belonging to a function definition) is resolved with the inference algorithm,
-    * resulting in a compilation. A successful compilation represents a possible set of assignments of the argument
-    * types, while a failed compilation means that for the specific function definition, the arguments don't fit
-    * because already existing argument types and supposed parameter types don't agree.
+    * resulting in a possible set of assignments of the argument types. If any error occurs, it means that for the
+    * specific function definition, the arguments don't fit because already existing argument types and supposed
+    * parameter types don't agree.
     *
-    * Failed compilations can be safely disregarded. However, if there are multiple different sets of assignments
-    * produced by multiple successful compilations, we will have to choose one set of assignments. This is where the
+    * Results with errors can be safely disregarded. However, if there are multiple different sets of assignments
+    * produced by multiple successful paths, we will have to choose one set of assignments. This is where the
     * `resultArgumentType` comes into play: it's used to choose the most specific argument type (parallel to the fit of
     * a multi-function call). If there is no such most specific type, we have an ambiguity error. If there are no
-    * successful compilations at all, we have an empty fit error.
+    * successful paths at all, we have an empty fit error.
     *
     * This resolver is not performing backtracking in the sense of building nested decision trees. Rather, the resolver
     * performs inference on a subset of judgments to produce a set of argument types which are then returned. The
     * resolution algorithm will simply continue to resolve judgments linearly. The advantage of the idea (as opposed to
-    * backtracking) is that we can concentrate on the compilation successes, as all compilation errors will occur due
-    * to argument typing errors. In a backtracking world, we would have had to decide between a compilation error that
-    * occurred due to a falsely typed argument and a compilation error that happened down the line. In the former case,
-    * we would have wanted to throw away the compilation, while the latter case must be reported to the user. A second
-    * advantage is definitely performance, because inference can continue linearly instead of branching.
+    * backtracking) is that we can concentrate on the successful paths, as all errors will occur due to argument typing
+    * errors. In a backtracking world, we would have had to decide between an error that occurred due to a falsely
+    * typed argument and an error that happened down the line. In the former case, we would have wanted to disregard
+    * the path, while the latter case must be reported to the user. A second advantage is definitely performance,
+    * because inference can continue linearly instead of branching.
     */
   override def backwards(
     judgment: TypingJudgment.MultiFunctionHint,
     assignments: Assignments,
     influenceGraph: InfluenceGraph,
     remainingJudgments: Vector[TypingJudgment],
-  )(implicit registry: Registry): Compilation[(Assignments, Vector[TypingJudgment])] = {
+  )(implicit registry: Registry, reporter: Reporter): Option[JudgmentResolver.Result] = {
     val TypingJudgment.MultiFunctionHint(mf, arguments, position) = judgment
     val argumentTypes = judgment.argumentTypes
 
     // Performance shortcut: If all inference variables are inferred to a point that they cannot change further, we can
     // skip the MultiFunctionHint, because it will provide no useful information.
     if (arguments.forall(argument => Inference.variables(argument.tpe).forall(iv => InferenceVariable.isFixed(iv, assignments)))) {
-      return Compilation.succeed((assignments, remainingJudgments))
+      return Some((assignments, remainingJudgments))
     }
 
     // We can filter by arity immediately, because a function with a different arity will never be callable with
@@ -64,7 +63,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
     val influencingJudgments = findInfluencingJudgments(argumentTypes, assignments, influenceGraph, remainingJudgments)
     val resultArgumentType = new InferenceVariable
 
-    val compilations = functions.map { function =>
+    val results = functions.map { function =>
       // Replace all type variables declared in the function with inference variables. The bounds relationships will
       // then be encoded as typing judgments between the arguments and the new inference variables. These inference
       // variables are only relevant for computing the argument types and need to be thrown away again afterwards.
@@ -110,29 +109,31 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
 
       Inference.logger.trace(s"Multi-function hint judgments:\n${allJudgments.mkString("\n")}")
 
-      SimpleResolution.infer(InferenceBounds.prefill(assignments, allJudgments), allJudgments).map {
-        assignments2 =>
-          // We have to throw away the inference variables that only encode the function's type variables again, as
-          // noted above.
-          assignments2.removedAll(typeVariableAssignments.values)
-      }
+      val innerReporter: MemoReporter = MemoReporter()
+      val assignments2 = SimpleResolution.infer(InferenceBounds.prefill(assignments, allJudgments), allJudgments)(registry, innerReporter)
+
+      // We have to throw away the inference variables that only encode the function's type variables again, as
+      // noted above.
+      if (!innerReporter.hasErrors) Some(assignments2.removedAll(typeVariableAssignments.values))
+      else None
     }
 
     // TODO: Take the assignments that result in the MOST SPECIFIC function being chosen. If there is no such most
-    //       specific function (either due to ambiguity or empty fit), return a compilation error.
+    //       specific function (either due to ambiguity or empty fit), report an error and return None.
 
-    val successes = compilations.filter(_.isSuccess)
+    val successes = results.flatten
     if (successes.nonEmpty) {
-      successes.simultaneous.map(_.distinct).flatMap { possibleAssignments =>
-        if (possibleAssignments.length == 1) {
-          Compilation.succeed((possibleAssignments.head, remainingJudgments.diff(influencingJudgments)))
-        } else {
-          Compilation.fail(MultiFunctionHintMissingImplementation(judgment, successes.length, compilations))
-        }
+      val possibleAssignments = successes.distinct
+      if (possibleAssignments.length == 1) {
+        Some((possibleAssignments.head, remainingJudgments.diff(influencingJudgments)))
+      } else {
+        reporter.error(MultiFunctionHintMissingImplementation(judgment, successes.length, results))
+        None
       }
     } else {
-      Inference.logger.trace(s"Empty fit of `$judgment`:${compilations.mkString("\n")}")
-      Compilation.fail(EmptyFit(mf, TupleType(argumentTypes), judgment.position))
+      Inference.logger.trace(s"Empty fit of `$judgment`:${results.mkString("\n")}")
+      reporter.error(EmptyFit(mf, TupleType(argumentTypes), judgment.position))
+      None
     }
   }
 
