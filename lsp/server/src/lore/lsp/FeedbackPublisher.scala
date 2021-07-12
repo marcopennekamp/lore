@@ -31,9 +31,8 @@ class FeedbackPublisher {
 
   private def publish(fragment: Fragment, feedback: Vector[Feedback])(implicit client: LanguageClient): Unit = {
     // Only publish diagnostics for fragments that have a path!
-    fragment.path.foreach { path =>
+    fragment.uri.foreach { uri =>
       val diagnostics = feedback.map(toDiagnostic).asJava
-      val uri = path.toUri.toString
       client.publishDiagnostics(new PublishDiagnosticsParams(uri, diagnostics))
     }
   }
