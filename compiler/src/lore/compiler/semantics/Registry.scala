@@ -5,7 +5,7 @@ import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.Registry.MultiFunctionNotFound
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.scopes.{Binding, BindingScope, ImmutableTypeScope, TypeScope}
-import lore.compiler.semantics.structures.{DeclaredTypeDefinition, StructConstructorDefinition}
+import lore.compiler.semantics.structures.{StructConstructorDefinition, TypeDefinition}
 import lore.compiler.types.{DeclaredType, DeclaredTypeHierarchy, Type}
 import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtension}
 
@@ -58,7 +58,7 @@ case class Registry(
 object Registry {
   type Types = Map[String, Type]
   type TypeResolutionOrder = Vector[String]
-  type TypeDefinitions = Map[String, DeclaredTypeDefinition]
+  type TypeDefinitions = Map[String, TypeDefinition]
   type MultiFunctions = Map[String, MultiFunctionDefinition]
 
   case class MultiFunctionNotFound(name: String, override val position: Position) extends Feedback.Error(position) {

@@ -83,7 +83,7 @@ object DeclarationResolver {
   }
 
   /**
-    * This function guarantees that definitions are returned in the type resolution order.
+    * This function guarantees that definitions are resolved in the type resolution order.
     */
   private def resolveTypeDefinitionsInOrder(
     typeDeclarations: TypeDeclarations,
@@ -91,11 +91,12 @@ object DeclarationResolver {
   )(implicit typeScope: TypeScope, reporter: Reporter): Registry.TypeDefinitions = {
     typeResolutionOrder.foldLeft(Map.empty: Registry.TypeDefinitions) {
       case (typeDefinitions, name) =>
-        typeDeclarations(name) match {
-          case _: TypeDeclNode.AliasNode => typeDefinitions
-          case traitNode: TypeDeclNode.TraitNode => typeDefinitions + (name -> TraitDefinitionResolver.resolve(traitNode))
-          case structNode: TypeDeclNode.StructNode => typeDefinitions + (name -> StructDefinitionResolver.resolve(structNode))
+        val definition = typeDeclarations(name) match {
+          case aliasNode: TypeDeclNode.AliasNode => AliasDefinitionResolver.resolve(aliasNode)
+          case traitNode: TypeDeclNode.TraitNode => TraitDefinitionResolver.resolve(traitNode)
+          case structNode: TypeDeclNode.StructNode => StructDefinitionResolver.resolve(structNode)
         }
+        typeDefinitions + (name -> definition)
     }
   }
 
