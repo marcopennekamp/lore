@@ -1,0 +1,16 @@
+trait A extends C, B
+trait B extends A, C
+trait C extends A
+trait D extends A
+
+trait U
+trait V extends U
+trait X extends U
+trait Y extends X, Z
+trait Z extends X, Y
+trait W extends X
+
+trait R extends R
+
+type K = L
+trait L extends K

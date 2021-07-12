@@ -25,9 +25,10 @@ object TypeDependencies {
   def resolve(typeDeclarations: TypeDeclarations)(implicit reporter: Reporter): Registry.TypeResolutionOrder = {
     val unfilteredInfos = typeDeclarations.values.toVector.map(node => TypeDeclarationInfo(node, dependencies(node)))
     val infos = unfilteredInfos.map(filterUndefinedDependencies(_, typeDeclarations))
-    val graph = buildDependencyGraph(infos)
+    var graph = buildDependencyGraph(infos)
 
-    verifyAcyclic(graph, typeDeclarations)
+    graph = filterCycles(graph, typeDeclarations)
+    graph = reconnectRoots(graph)
 
     // Now that the graph has been shown to be acyclic, it should be connected, as Any should be the supertype of all
     // declared types without a supertype. Note that we first need to detect cycles, because if the graph has a
@@ -91,31 +92,32 @@ object TypeDependencies {
   case class InheritanceCycle(typeNames: Vector[String], occurrence: TypeDeclNode) extends Feedback.Error(occurrence) {
     override def message: String =
       s"""An inheritance cycle between the following types has been detected: ${typeNames.mkString(", ")}.
-         |A trait A cannot inherit from another trait B if B also inherits from A directly or indirectly. The
-         |subtyping relationships of declared types must result in a directed, acyclic graph."""
+         |A declared type must not inherit from itself directly or indirectly. The subtyping relationships of declared
+         |types must result in a directed, acyclic graph."""
         .stripMargin.replaceAll("\n", " ").trim
   }
 
   /**
-    * Verifies that this dependency graph doesn't contain any cycles, which would mean that at least two declared types
-    * inherit from each other.
-    *
-    * We attempt to report as many cycles as possible so the user doesn't have to run the compiler multiple times
-    * just to find all dependency cycles. However, we cannot guarantee that all cycles are found in a single run.
+    * Removes all types contained in a cycle from the dependency graph, reporting an error for each such cycle. A cycle
+    * means that at least one declared type extends itself directly or indirectly.
     */
-  private def verifyAcyclic(graph: DependencyGraph, typeDeclarations: TypeDeclarations)(implicit reporter: Reporter): Unit = {
-    if (graph.isCyclic) {
-      val cycles = distinctCycles(graph)
+  private def filterCycles(graph: DependencyGraph, typeDeclarations: TypeDeclarations)(implicit reporter: Reporter): DependencyGraph = {
+    var result = graph
+    while (result.isCyclic) {
+      val cycles = distinctCycles(result)
       if (cycles.isEmpty) {
         throw CompilationException(s"If the graph is cyclic, we must be able to find at least one distinct cycle.")
       }
 
       cycles.foreach { cycle =>
-        val typeNames = cycle.nodes.map(_.value).toVector
-        val occurrence = typeDeclarations(cycle.startNode)
-        reporter.report(InheritanceCycle(typeNames, occurrence))
+        val typeNames = cycle.nodes.map(_.value).toVector.init
+        // Report the error at each occurrence so that IDEs can properly report them at each location.
+        reporter.report(typeNames.map(occurrence => InheritanceCycle(typeNames, typeDeclarations(occurrence))))
+        result = result -- typeNames
       }
     }
+
+    result
   }
 
   /**
@@ -133,6 +135,16 @@ object TypeDependencies {
     graph.nodes.toVector
       .flatMap(node => node.partOfCycle)
       .distinctUsing { case (c1, c2) => c1.sameAs(c2) }
+  }
+
+  /**
+    * Reconnects all declared types not connected to Any with Any. This operation might be necessary after removing
+    * nodes from the graph, e.g. when cycles are removed.
+    */
+  private def reconnectRoots(graph: DependencyGraph): DependencyGraph = {
+    graph.nodes.filter(_.inDegree == 0).toVector.map(_.value).filter(_ != BasicType.Any.name).foldLeft(graph) {
+      case (graph2, typeName) => graph2.incl(BasicType.Any.name ~> typeName)
+    }
   }
 
   /**
