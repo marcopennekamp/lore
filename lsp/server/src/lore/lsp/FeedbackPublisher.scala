@@ -1,10 +1,10 @@
 package lore.lsp
 
-import lore.compiler.core.{Fragment, Position}
+import lore.compiler.core.Fragment
 import lore.compiler.feedback.Feedback
-import org.eclipse.lsp4j.{Diagnostic, DiagnosticSeverity, PublishDiagnosticsParams, Range}
+import lore.lsp.utils.PositionUtil
 import org.eclipse.lsp4j.services.LanguageClient
-import org.eclipse.lsp4j
+import org.eclipse.lsp4j.{Diagnostic, DiagnosticSeverity, PublishDiagnosticsParams}
 
 import scala.jdk.CollectionConverters._
 
@@ -43,12 +43,7 @@ class FeedbackPublisher {
   }
 
   private def toDiagnostic(feedback: Feedback, severity: DiagnosticSeverity): Diagnostic = {
-    new Diagnostic(toRange(feedback.position), feedback.message, severity, "lore")
-  }
-
-  private def toRange(position: Position): Range = {
-    val lspPosition = new lsp4j.Position(position.line - 1, position.column - 1)
-    new Range(lspPosition, lspPosition)
+    new Diagnostic(PositionUtil.toRange(feedback.position), feedback.message, severity, "lore")
   }
 
 }
