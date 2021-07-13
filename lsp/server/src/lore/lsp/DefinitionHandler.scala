@@ -23,6 +23,9 @@ object DefinitionHandler {
   def definition(fragmentPath: Path, position: lsp4j.Position)(implicit globalIndex: GlobalIndex, client: LanguageClient): Option[Vector[Location]] = {
     implicit val reporter: Reporter = new LambdaReporter(feedback => MessageLogger.info(feedback.toString))
 
+    // We should keep an eye on the execution time of this command. Currently, it hovers in the range of 5-10ms, mostly
+    // due to how long the parser takes. This scales with file length, so large files might become very laggy.
+    // A simple optimization would be to only reparse this if the file has changed.
     timed("Finding definitions", log = MessageLogger.info) {
       SourceFiles.ofFile(fragmentPath).flatMap { fragment =>
         val nodes = ParsingPhase.process(Vector(fragment))

@@ -91,6 +91,8 @@
 
 ##### Architecture
 
+- NodeSeeker: We can outsource the `seek` functions to a generic NodeVisitor. This might be the time to start adding a visitor for declaration and type expression nodes.
+  - However, we should carry out additional work on the language server (where NodeSeeker is used) to see whether we will need it (or some other kind of NodeVisitor) down the line.
 - Rewrite TypeVariableAllocation (compiler) with immutability.
 - Can we split the type inference phase from the transformation phase?
 - Clean up ExpressionTransformationVisitor by moving more functionality to helper objects like ExpressionTransformationHelper.
@@ -128,11 +130,24 @@
 ##### Language Server
 
 - Implement the following features:
-  - Find usages.
-  - Highlight the correct bindings when the developer's cursor hovers over any named entity.
-  - Go to definition.
-  - Rename symbol.
-  - Show type of expression (or at least of a binding).
+  - Server-side syntax highlighting (LSP: semantic tokens).
+    - This won't perform very well, but will be especially useful as long as the syntax is still changing to have a single point of truth. At this stage, it would be problematic to have to maintain two different grammars (fastparse, and TextMate for VSCode).
+    - If the performance holds up (or if we can make incremental parsing work), this might actually be the preferred method of supporting syntax highlighting since we can change colors based on context information. For example, taking a SimpleCallNode, a multi-function name could be differently colored in comparison to a function value name.  
+  - Find usages (LSP: references).
+  - Rename symbol (LSP: rename, prepareRename).
+  - Highlight bindings and types at cursor position (document-wide highlighting of that exact entity).
+  - Show type of expression (or at least of a variable).
+- We need to synchronize opened text documents for three use cases:
+  - "Semantic tokens" support absolutely needs to use the current version of the document, because even one character difference will already break syntax highlighting.
+  - "Go to definition" has to parse the synchronized source, not the source read from disk. Otherwise, the target position and node positions might be incompatible.
+  - Low priority: We should process text document changes with the FragmentChangeHandler.
+    - I have already built the fragment change handler, but in hindsight it is not needed for now. The language server rebuilds the index every time a file gets saved, which is frequent enough.
+    - Using the FragmentChangeHandler might become more attractive once we need to track local scopes for "find usages" and "rename symbol".
+- Go to definition:
+  - The current implementation is very naive, as it can only list global definitions and disregards scopes and shadowing entirely. This is fine for now, but should be improved at some point.
+  - Support "go to definition" for members. Members require full knowledge of the instance's type to find all declarations, so we will have to use the compilation result from the registry. This will likely tie into a "usages" extension to the global index.
+  - For fixed functions, the feature just lists all functions of the multi-function. Obviously we can do better here and only show the functions that are in the min set of the fixed function dispatch by taking type information into account.
+- Note: Go to definition, rename symbol, and find usages rely on the same "find" capabilities. An index can be built with only lexical analysis for local variables, global variables, all named types, and multi-functions. *Members*, however, require a full knowledge of all types to find their points of use.
 - Make sure that multiple "applyWorkspaceChanges" calls are properly debounced. If the method is already being executed and more calls come in, we only need the last call to trigger another execution. Only one call may execute at the same time.
 
 ##### Visual Studio Code
