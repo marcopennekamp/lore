@@ -63,7 +63,7 @@ object SourceFiles {
       .flatMap(ofFile)
   }
 
-  private def ofFile(path: Path)(implicit reporter: Reporter): Option[Fragment] = {
+  def ofFile(path: Path)(implicit reporter: Reporter): Option[Fragment] = {
     // The additional newline ensures that the file ends in a newline.
     Using(Files.lines(path))(_.iterator().asScala.mkString("\n") + "\n") match {
       case Success(source) => Some(Fragment(path.toString, Some(path), source))
