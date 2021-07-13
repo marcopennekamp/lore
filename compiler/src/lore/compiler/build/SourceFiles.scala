@@ -5,7 +5,7 @@ import lore.compiler.feedback.{Feedback, Reporter}
 
 import java.nio.file.{FileSystems, Files, Path, PathMatcher}
 import scala.jdk.CollectionConverters.IteratorHasAsScala
-import scala.util.{Failure, Success, Using}
+import scala.util.{Failure, Success, Try}
 
 object SourceFiles {
 
@@ -65,7 +65,7 @@ object SourceFiles {
 
   def ofFile(path: Path)(implicit reporter: Reporter): Option[Fragment] = {
     // The additional newline ensures that the file ends in a newline.
-    Using(Files.lines(path))(_.iterator().asScala.mkString("\n") + "\n") match {
+    Try(Files.readString(path) + "\n") match {
       case Success(source) => Some(Fragment(path.toString, Some(path), source))
       case Failure(exception) =>
         reporter.error(FileAccessFailed(path, exception))
