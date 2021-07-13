@@ -54,7 +54,7 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
   case class ErrorSignature(errorClass: Class[_], expectedLine: Int) {
     def assertMatches(error: Feedback.Error): Assertion = {
       error.getClass shouldEqual errorClass
-      error.position.line shouldEqual expectedLine
+      error.position.startLine shouldEqual expectedLine
     }
   }
 

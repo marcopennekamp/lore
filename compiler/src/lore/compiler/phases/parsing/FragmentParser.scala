@@ -30,7 +30,7 @@ class FragmentParser(implicit fragment: Fragment) {
   def parse()(implicit reporter: Reporter): Vector[DeclNode] = {
     fastparse.parse(fragment.input, fullFragment(_)) match {
       case Parsed.Failure(_, _, extra) =>
-        val error = ParsingError(s"Parsing failure: ${extra.trace().aggregateMsg}", Position(fragment, extra.index))
+        val error = ParsingError(s"Parsing failure: ${extra.trace().aggregateMsg}", Position(fragment, extra.index, extra.index))
         reporter.error(error)
         Vector.empty
 
@@ -52,22 +52,22 @@ class FragmentParser(implicit fragment: Fragment) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def function[_: P]: P[DeclNode.FunctionNode] = {
     P(
-      "function" ~/ Index ~ identifier ~ parameters ~ typeParser.typing ~ functionTypeVariables ~ ("=" ~ expression).?
+      "function" ~/ Index ~ identifier ~ parameters ~ typeParser.typing ~ functionTypeVariables ~ ("=" ~ expression).? ~ Index
     ).map(withPosition(DeclNode.FunctionNode(_, _, _, _, _, _)))
   }
 
   private def action[_: P]: P[DeclNode.FunctionNode] = {
-    P("action" ~/ Index ~ identifier ~ parameters ~ functionTypeVariables ~ block.?).map(withPosition(DeclNode.FunctionNode.fromAction _))
+    P("action" ~/ Index ~ identifier ~ parameters ~ functionTypeVariables ~ block.? ~ Index).map(withPosition(DeclNode.FunctionNode.fromAction _))
   }
 
   private def parameters[_: P]: P[Vector[DeclNode.ParameterNode]] = {
-    def parameter = P(Index ~ identifier ~ typeParser.typing).map(withPosition(DeclNode.ParameterNode))
+    def parameter = P(Index ~ identifier ~ typeParser.typing ~ Index).map(withPosition(DeclNode.ParameterNode))
     P("(" ~ parameter.rep(sep = ",") ~ ")").map(_.toVector)
   }
 
   private def functionTypeVariables[_: P]: P[Vector[DeclNode.TypeVariableNode]] = {
     def typeVariable = {
-      P(Index ~ typeIdentifier ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).?).map(withPosition(DeclNode.TypeVariableNode))
+      P(Index ~ typeIdentifier ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).? ~ Index).map(withPosition(DeclNode.TypeVariableNode))
     }
     P(("where" ~ typeVariable.rep(1, CharIn(","))).?).map {
       case None => Vector.empty
@@ -81,15 +81,15 @@ class FragmentParser(implicit fragment: Fragment) {
   private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`type` | `trait` | struct)
 
   private def `type`[_: P]: P[TypeDeclNode.AliasNode] = {
-    P("type" ~/ Index ~ typeIdentifier ~ "=" ~ typeExpression).map(withPosition(TypeDeclNode.AliasNode))
+    P("type" ~/ Index ~ typeIdentifier ~ "=" ~ typeExpression ~ Index).map(withPosition(TypeDeclNode.AliasNode))
   }
 
   private def `trait`[_: P]: P[TypeDeclNode.TraitNode] = {
-    P("trait" ~/ Index ~ typeIdentifier ~ `extends`).map(withPosition(TypeDeclNode.TraitNode))
+    P("trait" ~/ Index ~ typeIdentifier ~ `extends` ~ Index).map(withPosition(TypeDeclNode.TraitNode))
   }
 
   private def struct[_: P]: P[TypeDeclNode.StructNode] = {
-    P("struct" ~/ Index ~ structIdentifier ~ `extends` ~ structBody).map(withPosition(TypeDeclNode.StructNode))
+    P("struct" ~/ Index ~ structIdentifier ~ `extends` ~ structBody ~ Index).map(withPosition(TypeDeclNode.StructNode))
   }
 
   private def `extends`[_: P]: P[Vector[TypeExprNode]] = {
@@ -108,8 +108,8 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def property[_: P]: P[TypeDeclNode.PropertyNode] = {
-    P(Index ~ "open".!.?.map(_.isDefined) ~ "mut".!.?.map(_.isDefined) ~ identifier ~ typeParser.typing ~ defaultValue.?)
-      .map { case (index, isOpen, isMutable, name, tpe, defaultValue) => (index, name, tpe, isOpen, isMutable, defaultValue) }
+    P(Index ~ "open".!.?.map(_.isDefined) ~ "mut".!.?.map(_.isDefined) ~ identifier ~ typeParser.typing ~ defaultValue.? ~ Index)
+      .map { case (startIndex, isOpen, isMutable, name, tpe, defaultValue, endIndex) => (startIndex, name, tpe, isOpen, isMutable, defaultValue, endIndex) }
       .map(withPosition(TypeDeclNode.PropertyNode))
   }
 

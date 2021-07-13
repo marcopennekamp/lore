@@ -47,7 +47,7 @@ object BuildApi {
     )
   }
 
-  case class DuplicateFragmentName(fragment: Fragment) extends Feedback.Error(Position(fragment, 0)) {
+  case class DuplicateFragmentName(fragment: Fragment) extends Feedback.Error(Position(fragment, 0, 0)) {
     override def message: String = s"The fragment '${fragment.name}' is defined multiple times. Fragments may not " +
       s"share names. Most likely you have specified a source file which is also included via a directory source, or " +
       s"multiple directory sources which point to the same file."

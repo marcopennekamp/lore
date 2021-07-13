@@ -21,14 +21,14 @@ object PrecedenceParser {
     constructor: (Vector[Operand], Position) => Operand,
   )(implicit fragment: Fragment) extends Operator[Operand] {
     override def isXary: Boolean = true
-    val constructorWithPosition: (Index, Vector[Operand]) => Operand = Node.withPositionUntupled(constructor)
+    val constructorWithPosition: (Index, Vector[Operand], Index) => Operand = Node.withPositionUntupled(constructor)
   }
 
   case class BinaryOperator[Operand <: Node](
     precedence: Int,
     constructor: (Operand, Operand, Position) => Operand,
   )(implicit fragment: Fragment) extends Operator[Operand] {
-    val constructorWithPosition: (Index, Operand, Operand) => Operand = Node.withPositionUntupled(constructor)
+    val constructorWithPosition: (Index, Operand, Operand, Index) => Operand = Node.withPositionUntupled(constructor)
   }
 
   /**
@@ -69,8 +69,9 @@ object PrecedenceParser {
           // We reverse the list, since the first stack element must be the last of the operand list.
           case (operands, stack) => operandStack = stack; operands.reverse
         }
-        val index = operands.head.position.index
-        operandStack = topOp.constructorWithPosition(index, operands.toVector) +: operandStack
+        val startIndex = operands.head.position.startIndex
+        val endIndex = operands.last.position.endIndex
+        operandStack = topOp.constructorWithPosition(startIndex, operands.toVector, endIndex) +: operandStack
 
       // We process one operator with two operands.
       case topOp@BinaryOperator(_, _) =>
@@ -84,7 +85,7 @@ object PrecedenceParser {
         // Again, the order of operands needs to be reversed for the AST node.
         val (b, a) = (operandStack.head, operandStack.tail.head)
         operandStack = operandStack.drop(2)
-        operandStack = topOp.constructorWithPosition(a.position.index, a, b) +: operandStack
+        operandStack = topOp.constructorWithPosition(a.position.startIndex, a, b, b.position.endIndex) +: operandStack
     }
 
     // Process the expression piece by piece. We handle two iterations of the standard shunting-yard algorithm in one.

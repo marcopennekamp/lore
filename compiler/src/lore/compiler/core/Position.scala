@@ -5,9 +5,9 @@ import lore.compiler.syntax.Node.Index
 /**
   * A position identifies a code location across a whole Lore project.
   */
-case class Position(fragment: Fragment, index: Index) {
+case class Position(fragment: Fragment, startIndex: Index, endIndex: Index) {
   def <(other: Position): Boolean = {
-    this.fragment.name < other.fragment.name || (this.fragment.name == other.fragment.name && this.index < other.index)
+    this.fragment.name < other.fragment.name || (this.fragment.name == other.fragment.name && this.startIndex < other.startIndex)
   }
 
   /**
@@ -15,16 +15,17 @@ case class Position(fragment: Fragment, index: Index) {
     *
     * This is a lazy value because it has heavy implications on parsing performance.
     */
-  lazy val prettyIndex: String = fragment.input.prettyIndex(index)
+  lazy val prettyIndex: String = fragment.input.prettyIndex(startIndex)
 
   /**
     * The line and column numbers of the position as 1-based indices.
     */
-  lazy val (line, column): (Int, Int) = {
+  lazy val (startLine, startColumn, endLine, endColumn): (Int, Int, Int, Int) = {
     // Not the prettiest way to implement this, but fastparse doesn't seem to expose a line/column interface. This is
     // the most convenient way to access line/column numbers, as far as I can see.
-    val Array(line, column) = prettyIndex.split(":").map(Integer.parseInt)
-    (line, column)
+    val Array(startLine, startColumn) = prettyIndex.split(":").map(Integer.parseInt)
+    val Array(endLine, endColumn) = fragment.input.prettyIndex(endIndex).split(":").map(Integer.parseInt)
+    (startLine, startColumn, endLine, endColumn)
   }
 
   /**
@@ -47,15 +48,15 @@ object Position {
     * A Position that is equal to any other position. This is used in tests to make nodes equal regardless of their
     * position. It should never be used by the compiler!
     */
-  val wildcard: Position = Position(Fragment("wildcard", ""), 0)
+  val wildcard: Position = Position(Fragment("wildcard", ""), 0, 0)
 
   /**
     * An "internal" position that signals compiler-generated code without any sensible anchor.
     */
-  val internal: Position = Position(Fragment("internal (compiler-generated)", ""), 0)
+  val internal: Position = Position(Fragment("internal (compiler-generated)", ""), 0, 0)
 
   /**
     * A position referring to an unknown fragment, for example a file that wasn't found.
     */
-  val unknown: Position = Position(Fragment("unknown", ""), 0)
+  val unknown: Position = Position(Fragment("unknown", ""), 0, 0)
 }

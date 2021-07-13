@@ -8,7 +8,7 @@ object PositionUtil {
     * Creates a one-line LSP range from the given starting position and the desired length of the range.
     */
   def toRange(position: lore.compiler.core.Position, length: Int): Range = {
-    val start = new Position(position.line - 1, position.column - 1)
+    val start = new Position(position.startLine - 1, position.startColumn - 1)
     val end = new Position(start.getLine, start.getCharacter + length)
     new Range(start, end)
   }

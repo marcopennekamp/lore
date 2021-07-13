@@ -4,7 +4,7 @@ class SubtypesInferenceSpec extends InferenceSpec {
 
   "Inference" should "reject `subtyping-errors.lore` with the correct errors" in {
     assertCompilationErrors("inference/subtyping-errors.lore") { errors =>
-      errors.map(e => (e.message, e.position.line)) shouldEqual Vector(
+      errors.map(e => (e.message, e.position.startLine)) shouldEqual Vector(
         ("This expression has the illegal type A. We expected the following type (or a subtype thereof): B.", 9),
         ("This expression has the illegal type Real. We expected the following type (or a subtype thereof): Int.", 16),
         // TODO: This error isn't very useful, but we will have to add the return type check to type inference for this
