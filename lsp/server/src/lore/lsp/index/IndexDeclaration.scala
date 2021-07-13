@@ -1,7 +1,7 @@
 package lore.lsp.index
 
 import lore.lsp.index.IndexTypeDeclaration.IndexMemberDeclaration
-import org.eclipse.lsp4j.{Location, Range}
+import org.eclipse.lsp4j.Location
 
 import scala.collection.mutable
 
@@ -68,10 +68,3 @@ object IndexTypeDeclaration {
 class IndexBindingDeclaration(override val name: String, initialLocations: Vector[Location]) extends IndexDeclaration with MultiLocation {
   addLocations(initialLocations)
 }
-
-
-
-
-
-
-

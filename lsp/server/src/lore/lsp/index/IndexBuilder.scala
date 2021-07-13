@@ -33,7 +33,8 @@ object IndexBuilder {
   def fromRegistry(registry: Registry): GlobalIndex = {
     implicit val globalIndex: GlobalIndex = new GlobalIndex
 
-    registry.typeDefinitions.values.foreach(addTypeDefinition)
+    // We have to filter out type definitions that are internally added by the compiler!
+    registry.typeDefinitions.values.filter(_.position != Position.internal).foreach(addTypeDefinition)
     registry.multiFunctions.values.foreach(addMultiFunctionDefinition)
 
     globalIndex

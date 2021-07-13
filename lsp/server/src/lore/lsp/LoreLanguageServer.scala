@@ -1,6 +1,7 @@
 package lore.lsp
 
 import lore.compiler.semantics.Registry
+import lore.lsp.index.{GlobalIndex, IndexBuilder}
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures
 import org.eclipse.lsp4j.services._
 import org.eclipse.lsp4j._
@@ -19,6 +20,7 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
 
   private var workspaceFolder: Path = _
   private var registry: Registry = _
+  private implicit var globalIndex: GlobalIndex = _
 
   private val feedbackPublisher: FeedbackPublisher = new FeedbackPublisher
 
@@ -77,6 +79,8 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
   private def applyWorkspaceChanges(): Unit = this.synchronized {
     val (registry, reporter) = WorkspaceAnalyzer.analyze()
     this.registry = registry
+
+    this.globalIndex = timed("Building the index", log = MessageLogger.info)(IndexBuilder.fromRegistry(registry))
 
     val message = if (reporter.hasErrors) "Workspace compilation failed." else "Workspace compilation succeeded."
     MessageToaster.info(message)
