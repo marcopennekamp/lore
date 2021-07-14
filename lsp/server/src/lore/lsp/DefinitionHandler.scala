@@ -32,7 +32,7 @@ object DefinitionHandler {
         val target = NodeSeeker.Target(position.getLine + 1, position.getCharacter + 1)
         val usageSeeker = UsageSeeker(target)
 
-        nodes.firstDefined(usageSeeker.seek(_, target)) match {
+        nodes.firstDefined(NodeSeeker.visit(usageSeeker)) match {
           case Some(usage) => usage.kind match {
             case UsageType => globalIndex.getTypeDeclaration(usage.name).map(_.locations)
             case UsageBinding => globalIndex.getBindingDeclaration(usage.name).map(_.locations)
@@ -49,7 +49,7 @@ object DefinitionHandler {
 
   private case class DefinitionUsage(name: String, kind: UsageKind)
 
-  private case class UsageSeeker(target: NodeSeeker.Target) extends NodeSeeker[DefinitionUsage] {
+  private case class UsageSeeker(target: NodeSeeker.Target) extends NodeSeeker[DefinitionUsage](target) {
 
     override protected def result(node: Node): Option[DefinitionUsage] = {
       node match {
