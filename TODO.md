@@ -130,9 +130,6 @@
 ##### Language Server
 
 - Implement the following features:
-  - Server-side syntax highlighting (LSP: semantic tokens).
-    - This won't perform very well, but will be especially useful as long as the syntax is still changing to have a single point of truth. At this stage, it would be problematic to have to maintain two different grammars (fastparse, and TextMate for VSCode).
-    - If the performance holds up (or if we can make incremental parsing work), this might actually be the preferred method of supporting syntax highlighting since we can change colors based on context information. For example, taking a SimpleCallNode, a multi-function name could be differently colored in comparison to a function value name.  
   - Find usages (LSP: references).
   - Rename symbol (LSP: rename, prepareRename).
   - Highlight bindings and types at cursor position (document-wide highlighting of that exact entity).
@@ -143,6 +140,8 @@
   - Low priority: We should process text document changes with the FragmentChangeHandler.
     - I have already built the fragment change handler, but in hindsight it is not needed for now. The language server rebuilds the index every time a file gets saved, which is frequent enough.
     - Using the FragmentChangeHandler might become more attractive once we need to track local scopes for "find usages" and "rename symbol".
+- Semantic tokens:
+  - Try to implement incremental parsing so that we don't have to parse the document fully every time a character changes. This could be accomplished by keeping all nodes for open documents in memory and locally updating nodes with every change.
 - Go to definition:
   - The current implementation is very naive, as it can only list global definitions and disregards scopes and shadowing entirely. This is fine for now, but should be improved at some point.
   - Support "go to definition" for members. Members require full knowledge of the instance's type to find all declarations, so we will have to use the compilation result from the registry. This will likely tie into a "usages" extension to the global index.

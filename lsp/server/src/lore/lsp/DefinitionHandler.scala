@@ -55,7 +55,7 @@ object DefinitionHandler {
       node match {
         // It's useful to be able to use "go to definition" on a function definition to get a list of all locations
         // where the multi-functions is defined.
-        case DeclNode.FunctionNode(nameNode, _, _, _, _, _) => result(node, nameNode.value, UsageBinding)
+        case DeclNode.FunctionNode(nameNode, _, _, _, _, _, _) => result(node, nameNode.value, UsageBinding)
 
         case TypeExprNode.TypeNameNode(name, _) => result(node, name, UsageType)
 

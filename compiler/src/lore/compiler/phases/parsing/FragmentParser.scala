@@ -56,7 +56,7 @@ class FragmentParser(implicit fragment: Fragment) {
   private def function[_: P]: P[DeclNode.FunctionNode] = {
     P(
       Index ~ "function" ~/ name ~ parameters ~ typeParser.typing ~ functionTypeVariables ~ ("=" ~ expression).? ~ Index
-    ).map(withPosition(DeclNode.FunctionNode(_, _, _, _, _, _)))
+    ).map(withPosition(DeclNode.FunctionNode.fromFunction _))
   }
 
   private def action[_: P]: P[DeclNode.FunctionNode] = {

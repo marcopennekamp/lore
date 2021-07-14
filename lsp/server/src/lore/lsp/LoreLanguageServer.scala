@@ -28,9 +28,11 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
   private val feedbackPublisher: FeedbackPublisher = new FeedbackPublisher
 
   override def initialize(params: InitializeParams): CompletableFuture[InitializeResult] = {
-    // Let's try to provide "go to definition" capabilities first.
     val capabilities = new ServerCapabilities
     capabilities.setDefinitionProvider(new DefinitionOptions)
+    capabilities.setSemanticTokensProvider(
+      new SemanticTokensWithRegistrationOptions(SemanticTokensHandler.legend, new SemanticTokensServerFull(false), false)
+    )
 
     val serverInfo = new ServerInfo("lore-language-server")
 
@@ -50,7 +52,6 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
   }
 
   override def initialized(params: InitializedParams): Unit = {
-    MessageToaster.info("Initializing workspace...")
     applyWorkspaceChanges()
   }
 
@@ -72,6 +73,17 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
         result match {
           case Some(locations) => Either.forLeft(locations.asJava)
           case None => null
+        }
+      }
+    }
+
+    override def semanticTokensFull(params: SemanticTokensParams) = {
+      CompletableFutures.computeAsync { cancelToken =>
+        val fragmentPath = workspaceFolder.relativize(Path.of(params.getTextDocument.getUri))
+        cancelToken.checkCanceled()
+        SemanticTokensHandler.semanticTokens(fragmentPath) match {
+          case Some(result) => new SemanticTokens(result.map(Integer.valueOf).asJava)
+          case None => throw new RuntimeException("Semantic tokens cannot be created: The file does not exist or cannot be parsed.")
         }
       }
     }
@@ -110,7 +122,6 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
     override def callHierarchyIncomingCalls(params: CallHierarchyIncomingCallsParams) = super.callHierarchyIncomingCalls(params)
     override def callHierarchyOutgoingCalls(params: CallHierarchyOutgoingCallsParams) = super.callHierarchyOutgoingCalls(params)
     override def selectionRange(params: SelectionRangeParams) = super.selectionRange(params)
-    override def semanticTokensFull(params: SemanticTokensParams) = super.semanticTokensFull(params)
     override def semanticTokensFullDelta(params: SemanticTokensDeltaParams) = super.semanticTokensFullDelta(params)
     override def semanticTokensRange(params: SemanticTokensRangeParams) = super.semanticTokensRange(params)
     override def moniker(params: MonikerParams) = super.moniker(params)
@@ -133,8 +144,9 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
 
     this.globalIndex = timed("Building the index", log = MessageLogger.info)(IndexBuilder.fromRegistry(registry))
 
-    val message = if (reporter.hasErrors) "Workspace compilation failed." else "Workspace compilation succeeded."
-    MessageToaster.info(message)
+    if (reporter.hasErrors) {
+      MessageToaster.info("Workspace compilation failed.")
+    }
 
     feedbackPublisher.publish(reporter.feedback)
   }

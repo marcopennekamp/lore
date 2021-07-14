@@ -29,6 +29,11 @@ case class Position(fragment: Fragment, startIndex: Index, endIndex: Index) {
   }
 
   /**
+    * The length of the position, possibly spanning multiple lines.
+    */
+  def length: Int = endIndex - startIndex
+
+  /**
     * A complete string representation of this position.
     */
   override def toString: String = s"${fragment.name} ($prettyIndex)"
