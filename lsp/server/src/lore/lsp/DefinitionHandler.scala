@@ -55,14 +55,14 @@ object DefinitionHandler {
       node match {
         // It's useful to be able to use "go to definition" on a function definition to get a list of all locations
         // where the multi-functions is defined.
-        case DeclNode.FunctionNode(name, _, _, _, _, _) => result(node, name, UsageBinding)
+        case DeclNode.FunctionNode(nameNode, _, _, _, _, _) => result(node, nameNode.value, UsageBinding)
 
-        case TypeExprNode.IdentifierNode(name, _) => result(node, name, UsageType)
+        case TypeExprNode.TypeNameNode(name, _) => result(node, name, UsageType)
 
         case ExprNode.VariableNode(name, _) => result(node, name, UsageBinding)
-        case ExprNode.FixedFunctionNode(name, _, _) => result(node, name, UsageBinding)
-        case ExprNode.ObjectMapNode(structName, _, _) => result(node, structName, UsageType)
-        case ExprNode.SimpleCallNode(name, _, _) => result(node, name, UsageBinding)
+        case ExprNode.FixedFunctionNode(nameNode, _, _) => result(node, nameNode.value, UsageBinding)
+        case ExprNode.ObjectMapNode(nameNode, _, _) => result(node, nameNode.value, UsageType)
+        case ExprNode.SimpleCallNode(nameNode, _, _) => result(node, nameNode.value, UsageBinding)
 
         case _ => None
       }

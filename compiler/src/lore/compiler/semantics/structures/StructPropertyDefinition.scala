@@ -7,6 +7,11 @@ import lore.compiler.semantics.members.Member
 import lore.compiler.syntax.ExprNode
 import lore.compiler.types.Type
 
+/**
+  * The property of a struct.
+  *
+  * The position is restricted to the property's name for better error highlighting and index building.
+  */
 class StructPropertyDefinition(
   val name: String,
   val tpe: Type,

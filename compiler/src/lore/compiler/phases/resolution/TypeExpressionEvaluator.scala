@@ -15,7 +15,7 @@ object TypeExpressionEvaluator {
 
   def evaluate(expression: TypeExprNode)(implicit typeScope: TypeScope, reporter: Reporter): Option[Type] = {
     expression match {
-      case TypeExprNode.IdentifierNode(name, position) => typeScope.resolve(name, position)
+      case TypeExprNode.TypeNameNode(name, position) => typeScope.resolve(name, position)
       case TypeExprNode.IntersectionNode(expressions, _) => expressions.map(evaluate).sequence.map(IntersectionType.construct)
       case TypeExprNode.SumNode(expressions, _) => expressions.map(evaluate).sequence.map(SumType.construct)
       case TypeExprNode.TupleNode(expressions, _) => expressions.map(evaluate).sequence.map(TupleType(_))

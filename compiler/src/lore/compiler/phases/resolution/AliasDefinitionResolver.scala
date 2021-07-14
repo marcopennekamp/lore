@@ -12,7 +12,7 @@ object AliasDefinitionResolver {
     val tpe = typeScope.get(node.name).getOrElse(
       throw CompilationException(s"The type for alias ${node.name} should be registered by now.")
     )
-    new AliasDefinition(node.name, tpe, node.position)
+    new AliasDefinition(node.name, tpe, node.nameNode.position)
   }
 
 }

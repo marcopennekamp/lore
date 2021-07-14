@@ -3,11 +3,10 @@ package lore.compiler.phases.parsing
 import fastparse.ScalaWhitespace._
 import fastparse._
 import lore.compiler.core.{Fragment, Position}
-import lore.compiler.phases.parsing.LexicalParser.typeIdentifier
+import lore.compiler.phases.parsing.LexicalParser.{identifier, typeIdentifier}
 import lore.compiler.syntax._
 
 class TypeParser(implicit fragment: Fragment) {
-  import LexicalParser.identifier
   import Node._
 
   def typing[_: P]: P[TypeExprNode] = P(":" ~ typeExpression)
@@ -53,7 +52,7 @@ class TypeParser(implicit fragment: Fragment) {
 
   private def symbolType[_: P]: P[TypeExprNode.SymbolNode] = P(Index ~ "#" ~ identifier ~ Index).map(withPosition(TypeExprNode.SymbolNode))
 
-  private def namedType[_: P]: P[TypeExprNode.IdentifierNode] = P(Index ~ typeIdentifier ~ Index).map(withPosition(TypeExprNode.IdentifierNode))
+  private def namedType[_: P]: P[TypeExprNode.TypeNameNode] = P(Index ~ typeIdentifier ~ Index).map(withPosition(TypeExprNode.TypeNameNode))
 
   private def enclosedType[_: P]: P[TypeExprNode] = P("(" ~ typeExpression ~ ")")
 }

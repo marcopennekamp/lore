@@ -26,7 +26,7 @@ object MultiFunctionDefinitionResolver {
     implicit val typeScope: LocalTypeScope = TypeVariableDeclarationResolver.resolve(node.typeVariables, registryTypeScope)
     val parameters = node.parameters.map(ParameterDefinitionResolver.resolve)
     val outputType = TypeExpressionEvaluator.evaluate(node.outputType).getOrElse(BasicType.Any)
-    val signature = FunctionSignature(node.name, parameters, outputType, node.position)
+    val signature = FunctionSignature(node.name, parameters, outputType, node.nameNode.position)
     new FunctionDefinition(signature, typeScope, node.body)
   }
 

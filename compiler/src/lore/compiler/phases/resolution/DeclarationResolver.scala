@@ -4,6 +4,7 @@ import lore.compiler.core.Position
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
 import lore.compiler.semantics.{Introspection, Registry}
+import lore.compiler.syntax.Node.NameNode
 import lore.compiler.syntax.{DeclNode, TypeDeclNode}
 import lore.compiler.types.Type
 import lore.compiler.utils.CollectionExtensions.VectorExtension
@@ -46,7 +47,7 @@ object DeclarationResolver {
     *       compiler can just discover the trait and generate the correct API call.
     */
   private val introspectionTypeDeclarations: Vector[TypeDeclNode] = Vector(
-    TypeDeclNode.TraitNode(Introspection.typeName, Vector.empty, Position.internal)
+    TypeDeclNode.TraitNode(NameNode(Introspection.typeName, Position.internal), Vector.empty, Position.internal)
   )
 
   case class TypeAlreadyExists(node: TypeDeclNode) extends Feedback.Error(node) {

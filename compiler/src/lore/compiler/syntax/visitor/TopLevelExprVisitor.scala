@@ -102,7 +102,7 @@ object TopLevelExprVisitor {
 
         case node@ForNode(extractors, body, _) =>
           val extracts = extractors.map {
-            case ExtractorNode(name, collection, _) => (name, visit(collection, props))
+            case ExtractorNode(nameNode, collection, _) => (nameNode.value, visit(collection, props))
           }
           visitor.visitIteration(node)(extracts, () => visit(body, props))
       }

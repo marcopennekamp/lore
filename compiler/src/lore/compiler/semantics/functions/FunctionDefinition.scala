@@ -16,6 +16,8 @@ import lore.compiler.types.{Fit, Type}
   * Function definition equality is always reference equality, as we create exactly one function definition
   * for every defined function.
   *
+  * The position is restricted to the function's name for better error highlighting and index building.
+  *
   * @param typeScope The scope that saves type variables declared with the function.
   */
 class FunctionDefinition(

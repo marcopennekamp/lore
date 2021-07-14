@@ -3,12 +3,12 @@ package lore.compiler.phases.parsing
 import fastparse.ScalaWhitespace._
 import fastparse._
 import lore.compiler.core.{Fragment, Position}
-import lore.compiler.phases.parsing.LexicalParser.structIdentifier
+import lore.compiler.phases.parsing.LexicalParser.{hexDigit, identifier, structIdentifier}
 import lore.compiler.syntax.ExprNode.StringLiteralNode
 import lore.compiler.syntax._
 
-class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
-  import LexicalParser.{hexDigit, identifier}
+class ExpressionParser(nameParser: NameParser, typeParser: TypeParser)(implicit fragment: Fragment) {
+  import nameParser._
   import Node._
 
   // Parse a handful of top-level expressions before jumping into the deep end.
@@ -19,7 +19,7 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
   private def `return`[_: P]: P[TopLevelExprNode] = P(Index ~ "return" ~ expression ~ Index).map(withPosition(TopLevelExprNode.ReturnNode))
 
   private def variableDeclaration[_: P]: P[TopLevelExprNode.VariableDeclarationNode] = {
-    P(Index ~ "let" ~ "mut".!.?.map(_.isDefined) ~ identifier ~ typeParser.typing.? ~ "=" ~ expression ~ Index)
+    P(Index ~ "let" ~ "mut".!.?.map(_.isDefined) ~ name ~ typeParser.typing.? ~ "=" ~ expression ~ Index)
       .map { case (startIndex, isMutable, name, tpe, value, endIndex) => (startIndex, name, isMutable, tpe, value, endIndex) }
       .map(withPosition(TopLevelExprNode.VariableDeclarationNode))
   }
@@ -68,7 +68,7 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
   }
 
   private def forLoop[_: P]: P[ExprNode.ForNode] = {
-    def extractor = P(Index ~ identifier ~ "<-" ~ expression ~ Index).map(withPosition(ExprNode.ExtractorNode))
+    def extractor = P(Index ~ name ~ "<-" ~ expression ~ Index).map(withPosition(ExprNode.ExtractorNode))
     P(Index ~ "for" ~ "(" ~ extractor.rep(1, sep = ",") ~ ")" ~ topLevelExpression ~ Index)
       .map { case (startIndex, extractors, expr, endIndex) => (startIndex, extractors.toVector, expr, endIndex) }
       .map(withPosition(ExprNode.ForNode))
@@ -79,10 +79,10 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
   }
 
   private def anonymousFunctionParameters[_: P]: P[Vector[ExprNode.AnonymousFunctionParameterNode]] = {
-    def simpleParameter = P(Index ~ identifier ~ Index).map {
+    def simpleParameter = P(Index ~ name ~ Index).map {
       case (startIndex, name, endIndex) => withPosition(ExprNode.AnonymousFunctionParameterNode)(startIndex, name, None, endIndex)
     }
-    def parameter = P(Index ~ identifier ~ typeParser.typing.? ~ Index).map(withPosition(ExprNode.AnonymousFunctionParameterNode))
+    def parameter = P(Index ~ name ~ typeParser.typing.? ~ Index).map(withPosition(ExprNode.AnonymousFunctionParameterNode))
     P(simpleParameter.map(Vector(_)) | "(" ~ parameter.rep(sep = ",").map(_.toVector) ~ ")")
   }
 
@@ -141,7 +141,7 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
     * @param minAccess The minimum number of times that the instance needs to be accessed.
     */
   private def propertyAccess[_: P](accessible: P[ExprNode], minAccess: Int): P[ExprNode] = {
-    def propertyAccess = P(("." ~ Index ~ identifier ~ Index).rep(minAccess))
+    def propertyAccess = P((Index ~ "." ~ name ~ Index).rep(minAccess))
     P(accessible ~ propertyAccess).map { case (expr, propertyAccesses) =>
       // Create a PropertyAccessNode for every property access or just return the expression if there is
       // no property access.
@@ -175,7 +175,7 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
 
   private def dynamicCall[_: P]: P[ExprNode] = P(Index ~ "dynamic" ~~ Space.WS ~~ singleTypeArgument ~~ Space.WS ~~ arguments ~ Index).map(withPosition(ExprNode.DynamicCallNode))
 
-  private def simpleCall[_: P]: P[ExprNode] = P(Index ~ identifier ~~ Space.WS ~~ arguments.rep(1) ~ Index).map {
+  private def simpleCall[_: P]: P[ExprNode] = P(Index ~ name ~~ Space.WS ~~ arguments.rep(1) ~ Index).map {
     case (startIndex, name, argumentLists, endIndex) =>
       val firstCall = withPosition(ExprNode.SimpleCallNode)(startIndex, name, argumentLists.head, endIndex)
       foldCalls(startIndex, firstCall, argumentLists.tail, endIndex)
@@ -200,16 +200,16 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
   private def typeArguments[_: P]: P[Vector[TypeExprNode]] = P("[" ~ typeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toVector)
   private def singleTypeArgument[_: P]: P[TypeExprNode] = P("[" ~ typeParser.typeExpression ~ "]")
 
-  private def fixedFunction[_: P]: P[ExprNode] = P(Index ~ identifier ~ ".fixed" ~~ Space.WS ~~ typeArguments ~ Index).map(withPosition(ExprNode.FixedFunctionNode))
+  private def fixedFunction[_: P]: P[ExprNode] = P(Index ~ name ~ ".fixed" ~~ Space.WS ~~ typeArguments ~ Index).map(withPosition(ExprNode.FixedFunctionNode))
 
   private def objectMap[_: P]: P[ExprNode.ObjectMapNode] = {
-    def entry = P(Index ~ identifier ~ "=" ~ expression ~ Index).map(withPosition(ExprNode.ObjectEntryNode))
-    def shorthand = P(Index ~ identifier ~ Index).map { case (startIndex, name, endIndex) =>
+    def entry = P(Index ~ name ~ "=" ~ expression ~ Index).map(withPosition(ExprNode.ObjectEntryNode))
+    def shorthand = P(Index ~ name ~ Index).map { case (startIndex, nameNode, endIndex) =>
       val position = Position(fragment, startIndex, endIndex)
-      ExprNode.ObjectEntryNode(name, ExprNode.VariableNode(name, position), position)
+      ExprNode.ObjectEntryNode(nameNode, ExprNode.VariableNode(nameNode.value, position), position)
     }
     def entries = P((entry | shorthand).rep(sep = ",")).map(_.toVector)
-    P(Index ~ structIdentifier ~ "{" ~ entries ~ "}" ~ Index).map(withPosition(ExprNode.ObjectMapNode))
+    P(Index ~ structName ~ "{" ~ entries ~ "}" ~ Index).map(withPosition(ExprNode.ObjectMapNode))
   }
 
   private def variable[_: P]: P[ExprNode.VariableNode] = P(Index ~ identifier ~ Index).map(withPosition(ExprNode.VariableNode))
@@ -229,10 +229,10 @@ class ExpressionParser(typeParser: TypeParser)(implicit fragment: Fragment) {
   }
 
   private def shape[_: P]: P[ExprNode.ShapeValueNode] = {
-    def property = P(Index ~ identifier ~ ":" ~ expression ~ Index).map(withPosition(ExprNode.ShapeValuePropertyNode))
-    def shorthand = P(Index ~ identifier ~ Index).map { case (startIndex, name, endIndex) =>
+    def property = P(Index ~ name ~ ":" ~ expression ~ Index).map(withPosition(ExprNode.ShapeValuePropertyNode))
+    def shorthand = P(Index ~ name ~ Index).map { case (startIndex, nameNode, endIndex) =>
       val position = Position(fragment, startIndex, endIndex)
-      ExprNode.ShapeValuePropertyNode(name, ExprNode.VariableNode(name, position), position)
+      ExprNode.ShapeValuePropertyNode(nameNode, ExprNode.VariableNode(nameNode.value, position), position)
     }
     def properties = P((property | shorthand).rep(sep = ",")).map(_.toVector)
     P(Index ~ "%{" ~ properties ~ "}" ~ Index).map(withPosition(ExprNode.ShapeValueNode))

@@ -12,7 +12,7 @@ object TraitDefinitionResolver {
       throw CompilationException(s"The trait type for trait ${node.name} should be registered by now.")
     )
 
-    val definition = new TraitDefinition(node.name, traitType, node.position)
+    val definition = new TraitDefinition(node.name, traitType, node.nameNode.position)
     traitType.initialize(definition)
     definition
   }

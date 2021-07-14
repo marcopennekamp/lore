@@ -101,7 +101,7 @@
 
 ##### Terminology
 
-- ARDS is confusing terminology. "Abstract resolved" makes little sense. What we are actually doing is to specialize a given type if it is abstract. So maybe "specializeAbstractTypes" would be better terminology? (See `Type.abstractResolvedDirectSubtypes`.)
+- Rename Node to SyntaxNode. DeclNode --> DeclarationSyntaxNode, TypeExprNode --> TypeSyntaxNode, etc.
 
 ##### Clean-Up
 

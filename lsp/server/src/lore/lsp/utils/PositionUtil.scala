@@ -5,32 +5,22 @@ import org.eclipse.lsp4j.{Location, Position, Range}
 object PositionUtil {
 
   /**
-    * Creates a one-line LSP range from the given starting position and the desired length of the range.
+    * Creates a point LSP range from the given position.
     */
-  def toRange(position: lore.compiler.core.Position, length: Int): Range = {
+  def toRange(position: lore.compiler.core.Position): Range = {
     val start = new Position(position.startLine - 1, position.startColumn - 1)
-    val end = new Position(start.getLine, start.getCharacter + length)
+    val end = new Position(position.endLine - 1, position.endColumn - 1)
     new Range(start, end)
   }
 
   /**
-    * Creates a point LSP range from the given starting position.
+    * Creates a point LSP location from the given position.
     */
-  def toRange(position: lore.compiler.core.Position): Range = toRange(position, 0)
-
-  /**
-    * Creates a one-line LSP location from the given starting position and the desired length of the range.
-    */
-  def toLocation(position: lore.compiler.core.Position, length: Int): Location = {
+  def toLocation(position: lore.compiler.core.Position): Location = {
     val uri = position.fragment.uri.getOrElse(
       throw new IllegalStateException(s"Cannot create an LSP Location from a position whose fragment doesn't have a path. Position: $position.")
     )
-    new Location(uri, toRange(position, length))
+    new Location(uri, toRange(position))
   }
-
-  /**
-    * Creates a point LSP location from the given starting position.
-    */
-  def toLocation(position: lore.compiler.core.Position): Location = toLocation(position, 0)
 
 }

@@ -1,6 +1,7 @@
 package lore.compiler.syntax
 
 import lore.compiler.core.Position
+import lore.compiler.syntax.Node.{NameNode, NamedNode}
 import lore.compiler.syntax.TopLevelExprNode._
 
 /**
@@ -20,11 +21,17 @@ object TopLevelExprNode {
   case class ReturnNode(expr: ExprNode, position: Position) extends UnaryNode(expr)
 
   case class VariableDeclarationNode(
-    name: String, isMutable: Boolean, tpe: Option[TypeExprNode], value: ExprNode, position: Position,
-  ) extends UnaryNode(value) with TopLevelExprNode
+    nameNode: NameNode,
+    isMutable: Boolean,
+    tpe: Option[TypeExprNode],
+    value: ExprNode,
+    position: Position,
+  ) extends UnaryNode(value) with TopLevelExprNode with NamedNode
 
   case class AssignmentNode(
-    address: ExprNode.AddressNode, value: ExprNode, position: Position,
+    address: ExprNode.AddressNode,
+    value: ExprNode,
+    position: Position,
   ) extends BinaryNode(address, value) with TopLevelExprNode
 }
 
@@ -87,16 +94,16 @@ object ExprNode {
   ) extends ExprNode
 
   case class AnonymousFunctionParameterNode(
-    name: String,
+    nameNode: NameNode,
     tpe: Option[TypeExprNode],
     position: Position,
-  ) extends Node
+  ) extends NamedNode
 
   case class FixedFunctionNode(
-    name: String,
+    nameNode: NameNode,
     argumentTypes: Vector[TypeExprNode],
     position: Position,
-  ) extends LeafNode with ExprNode
+  ) extends LeafNode with ExprNode with NamedNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Collection expressions.
@@ -111,17 +118,17 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class MemberAccessNode(
     instance: ExprNode,
-    name: String,
+    nameNode: NameNode,
     position: Position,
-  ) extends UnaryNode(instance) with ExprNode with AddressNode
+  ) extends UnaryNode(instance) with ExprNode with AddressNode with NamedNode
 
   case class ObjectMapNode(
-    structName: String,
+    nameNode: NameNode,
     entries: Vector[ObjectEntryNode],
     position: Position,
-  ) extends XaryNode(entries.map(_.expression)) with ExprNode
+  ) extends XaryNode(entries.map(_.expression)) with ExprNode with NamedNode
 
-  case class ObjectEntryNode(name: String, expression: ExprNode, position: Position) extends Node
+  case class ObjectEntryNode(nameNode: NameNode, expression: ExprNode, position: Position) extends NamedNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Shape expressions.
@@ -131,7 +138,7 @@ object ExprNode {
     position: Position
   ) extends XaryNode(properties.map(_.expression)) with ExprNode
 
-  case class ShapeValuePropertyNode(name: String, expression: ExprNode, position: Position) extends Node
+  case class ShapeValuePropertyNode(nameNode: NameNode, expression: ExprNode, position: Position) extends NamedNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Symbol expressions.
@@ -164,10 +171,10 @@ object ExprNode {
     * function type. Splitting these concerns at the syntax level leads to a simpler implementation down the pipeline.
     */
   case class SimpleCallNode(
-    name: String,
+    nameNode: NameNode,
     arguments: Vector[ExprNode],
     position: Position,
-  ) extends XaryNode(arguments) with ExprNode
+  ) extends XaryNode(arguments) with ExprNode with NamedNode
 
   /**
     * The name of the dynamic function must be the first argument, as a string.
@@ -197,14 +204,20 @@ object ExprNode {
   }
 
   case class WhileNode(
-    condition: ExprNode, body: TopLevelExprNode, position: Position,
+    condition: ExprNode,
+    body: TopLevelExprNode,
+    position: Position,
   ) extends BinaryNode(condition, body) with LoopNode
 
   case class ForNode(
-    extractors: Vector[ExtractorNode], body: TopLevelExprNode, position: Position,
+    extractors: Vector[ExtractorNode],
+    body: TopLevelExprNode,
+    position: Position,
   ) extends LoopNode
 
   case class ExtractorNode(
-    variableName: String, collection: ExprNode, position: Position,
-  ) extends Node
+    nameNode: NameNode,
+    collection: ExprNode,
+    position: Position,
+  ) extends NamedNode
 }

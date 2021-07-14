@@ -6,6 +6,11 @@ import lore.compiler.semantics.scopes.Variable
 import lore.compiler.target.Target
 import lore.compiler.types.Type
 
+/**
+  * A function parameter definition.
+  *
+  * The position is restricted to the parameter's name for better error highlighting and index building.
+  */
 case class ParameterDefinition(
   name: String,
   tpe: Type,

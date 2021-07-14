@@ -71,7 +71,7 @@ class InferringExpressionTransformationVisitor(
     case BoolLiteralNode(value, position) => Expression.Literal(value, BasicType.Boolean, position)
     case StringLiteralNode(value, position) => Expression.Literal(value, BasicType.String, position)
 
-    case FixedFunctionNode(name, typeExpressions, position) =>
+    case FixedFunctionNode(nameNode, typeExpressions, position) =>
       val inputType = TupleType(typeExpressions.map(TypeExpressionEvaluator.evaluate).map(_.getOrElse(BasicType.Nothing)))
       def dispatch(mf: MultiFunctionDefinition) = mf.dispatch(
         inputType,
@@ -79,7 +79,7 @@ class InferringExpressionTransformationVisitor(
         min => FixedFunctionAmbiguousCall(mf, inputType, min, position)
       )
       registry
-        .resolveMultiFunction(name, position)
+        .resolveMultiFunction(nameNode.value, nameNode.position)
         .flatMap(dispatch)
         .map(instance => Expression.FixedFunctionValue(instance, position))
         .getOrElse(Expression.Hole(BasicType.Nothing, position))
@@ -92,23 +92,23 @@ class InferringExpressionTransformationVisitor(
       typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(expression.tpe, expectedType, position)
       Expression.Return(expression, position)
 
-    case VariableDeclarationNode(name, isMutable, maybeTypeExpr, _, position) =>
+    case VariableDeclarationNode(nameNode, isMutable, maybeTypeExpr, _, position) =>
       // Either infer the type from the value or, if a type has been explicitly declared, check that the value adheres
       // to the type bounds. If the type annotation cannot be compiled, it is effectively treated as non-existing.
       val typeAnnotation = maybeTypeExpr.flatMap(TypeExpressionEvaluator.evaluate)
       val tpe = typeAnnotation match {
         case Some(tpe) =>
-          typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(expression.tpe, tpe, position)
+          typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(expression.tpe, tpe, expression.position)
           tpe
 
         case None =>
           val tpe = new InferenceVariable
-          typingJudgments = typingJudgments :+ TypingJudgment.Assign(tpe, expression.tpe, position)
+          typingJudgments = typingJudgments :+ TypingJudgment.Assign(tpe, expression.tpe, expression.position)
           tpe
       }
 
-      val variable = Variable(name, tpe, isMutable)
-      scopeContext.currentScope.register(variable, position)
+      val variable = Variable(nameNode.value, tpe, isMutable)
+      scopeContext.currentScope.register(variable, nameNode.position)
       Expression.VariableDeclaration(variable, expression, position)
 
     case NegationNode(_, position) =>
@@ -119,12 +119,12 @@ class InferringExpressionTransformationVisitor(
       typingJudgments = typingJudgments :+ TypingJudgment.Subtypes(expression.tpe, BasicType.Boolean, position)
       Expression.UnaryOperation(UnaryOperator.LogicalNot, expression, BasicType.Boolean, position)
 
-    case MemberAccessNode(_, name, position) =>
+    case MemberAccessNode(_, nameNode, position) =>
       // We cannot decide the member until the type has been inferred. Hence we first have to return an "unresolved
       // member access" expression node, which will be resolved later.
       val memberType = new InferenceVariable
-      typingJudgments = typingJudgments :+ TypingJudgment.MemberAccess(memberType, expression.tpe, name, position)
-      Expression.UnresolvedMemberAccess(expression, name, memberType, position)
+      typingJudgments = typingJudgments :+ TypingJudgment.MemberAccess(memberType, expression.tpe, nameNode.value, nameNode.position)
+      Expression.UnresolvedMemberAccess(expression, nameNode.value, memberType, position)
   }
 
   override def visitBinary(node: BinaryNode)(left: Expression, right: Expression): Expression = node match {
@@ -225,16 +225,16 @@ class InferringExpressionTransformationVisitor(
       typingJudgments = typingJudgments :+ TypingJudgment.LeastUpperBound(elementType, expressions.map(_.tpe), position)
       Expression.ListConstruction(expressions, ListType(elementType), position)
 
-    case ObjectMapNode(structName, entryNodes, position) =>
-      typeScope.resolve(structName, position) match {
+    case ObjectMapNode(nameNode, entryNodes, position) =>
+      typeScope.resolve(nameNode.value, nameNode.position) match {
         case Some(structType: StructType) =>
-          val entries = entryNodes.zip(expressions).map { case (ObjectEntryNode(name, _, _), expression) => name -> expression }
+          val entries = entryNodes.zip(expressions).map { case (ObjectEntryNode(nameNode, _, _), expression) => nameNode.value -> expression }
           addJudgmentsFrom(
             InstantiationTransformation.transformMapStyleInstantiation(structType.definition, entries, position)
           )
 
         case Some(tpe) =>
-          reporter.error(StructExpected(structName, position))
+          reporter.error(StructExpected(nameNode.value, nameNode.position))
           Expression.Hole(tpe, position)
 
         case None => Expression.Hole(BasicType.Nothing, position)
@@ -255,10 +255,10 @@ class InferringExpressionTransformationVisitor(
       Expression.XaryOperation(XaryOperator.Concatenation, expressions, BasicType.String, position)
 
     // Xary function calls.
-    case SimpleCallNode(name, _, position) =>
-      scopeContext.currentScope.resolve(name, position).map {
-        case mf: MultiFunctionDefinition => addJudgmentsFrom(FunctionTyping.multiFunctionCall(mf, expressions, node.position))
-        case binding: TypedBinding => transformValueCall(Expression.BindingAccess(binding, position), expressions, position)
+    case SimpleCallNode(nameNode, _, position) =>
+      scopeContext.currentScope.resolve(nameNode.value, nameNode.position).map {
+        case mf: MultiFunctionDefinition => addJudgmentsFrom(FunctionTyping.multiFunctionCall(mf, expressions, position))
+        case binding: TypedBinding => transformValueCall(Expression.BindingAccess(binding, nameNode.position), expressions, position)
       }.getOrElse(Expression.Hole(BasicType.Nothing, position))
 
     case node@DynamicCallNode(resultTypeNode, _, position) =>
@@ -282,14 +282,14 @@ class InferringExpressionTransformationVisitor(
     scopeContext.openScope()
 
     val parameters = node.parameters.map {
-      case AnonymousFunctionParameterNode(name, typeNode, position) =>
+      case AnonymousFunctionParameterNode(nameNode, typeNode, position) =>
         // If the type annotation isn't specified or cannot be compiled, we default to an inference variable.
         val tpe = typeNode
           .flatMap(TypeExpressionEvaluator.evaluate)
           .getOrElse(new InferenceVariable)
-        val variable = Variable(name, tpe, isMutable = false)
-        scopeContext.currentScope.register(variable, position)
-        Expression.AnonymousFunctionParameter(name, variable.tpe, position)
+        val variable = Variable(nameNode.value, tpe, isMutable = false)
+        scopeContext.currentScope.register(variable, nameNode.position)
+        Expression.AnonymousFunctionParameter(variable.name, variable.tpe, position)
     }
 
     val body = visitBody()
@@ -354,7 +354,7 @@ class InferringExpressionTransformationVisitor(
       Expression.Extractor(variable, collection)
     }
 
-    val extractors = extractorTuples.zip(node.extractors.map(_.position)).map {
+    val extractors = extractorTuples.zip(node.extractors.map(_.nameNode.position)).map {
       case ((variableName, collection), position) => transformExtractor(variableName, collection, position)
     }
     val body = visitBody()

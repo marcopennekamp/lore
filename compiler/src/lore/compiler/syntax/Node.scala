@@ -8,6 +8,18 @@ object Node {
   type Index = Int
 
   /**
+    * A node that represents some other node's name. Name nodes have their own position. This makes them useful in
+    * situations where we only want to consider a node's name, not the whole node. E.g. when reporting feedback for
+    * declared types, in syntax highlighting, or when going to a definition.
+    */
+  case class NameNode(value: String, position: Position) extends Node
+
+  trait NamedNode extends Node {
+    def nameNode: NameNode
+    def name: String = nameNode.value
+  }
+
+  /**
     * Construct a 1-element node with a position.
     */
   def withPosition[T1, R <: Node](construct: (T1, Position) => R)(args: (Index, T1, Index))(implicit fragment: Fragment): R = {

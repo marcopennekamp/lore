@@ -1,7 +1,7 @@
 package lore.compiler.phases.transformation
 
-import lore.compiler.feedback.Reporter
 import lore.compiler.feedback.TypingFeedback.SubtypeExpected
+import lore.compiler.feedback.{MemoReporter, Reporter}
 import lore.compiler.inference.Inference
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
@@ -23,23 +23,36 @@ object ExpressionTransformer {
     typeScope: TypeScope,
     bindingScope: BindingScope,
   )(implicit registry: Registry, reporter: Reporter): Expression = {
-    val visitor = new InferringExpressionTransformationVisitor(expectedType, typeScope, bindingScope)
+    MemoReporter.nested(reporter) { implicit reporter =>
+      val visitor = new InferringExpressionTransformationVisitor(expectedType, typeScope, bindingScope)
+      val expression = TopLevelExprVisitor.visit(visitor)(node)
 
-    val expression = TopLevelExprVisitor.visit(visitor)(node)
-    val inferredTypes = Inference.inferVerbose(visitor.typingJudgments, name, reporter)
+      // Only continue with the transformation if the visitor produced no errors. Otherwise, type inference might
+      // report a lot of useless errors.
+      if (!reporter.hasErrors) {
+        val inferredTypes = Inference.inferVerbose(visitor.typingJudgments, name, reporter)
+        val inferenceFailed = reporter.hasErrors
 
-    val rehydrationVisitor = new TypeRehydrationVisitor(inferredTypes)
-    val typedExpression = ExpressionVisitor.visit(rehydrationVisitor)(expression)
+        val rehydrationVisitor = new TypeRehydrationVisitor(inferredTypes)
+        val typedExpression = ExpressionVisitor.visit(rehydrationVisitor)(expression)
 
-    val mutabilityVerifier = new MutabilityVerifier
-    ExpressionVisitor.visit(mutabilityVerifier)(typedExpression)
+        val mutabilityVerifier = new MutabilityVerifier
+        ExpressionVisitor.visit(mutabilityVerifier)(typedExpression)
 
-    val builtinsVisitor = new BuiltinsVisitor
-    val expressionWithBuiltins = ExpressionVisitor.visit(builtinsVisitor)(typedExpression)
+        val builtinsVisitor = new BuiltinsVisitor
+        val expressionWithBuiltins = ExpressionVisitor.visit(builtinsVisitor)(typedExpression)
 
-    val expressionWithImplicitUnit = withImplicitUnitValue(expectedType)(expressionWithBuiltins)
-    verifyExpectedType(expressionWithImplicitUnit, expectedType)
-    expressionWithImplicitUnit
+        val expressionWithImplicitUnit = withImplicitUnitValue(expectedType)(expressionWithBuiltins)
+
+        // Only verify the expected type if type inference actually completed. Otherwise, the expression's type will
+        // likely be Any, which will always highlight the whole expression. This makes it almost impossible to see the
+        // actual error.
+        if (!inferenceFailed) {
+          verifyExpectedType(expressionWithImplicitUnit, expectedType)
+        }
+        expressionWithImplicitUnit
+      } else Expression.Hole(expectedType, node.position)
+    }
   }
 
   /**

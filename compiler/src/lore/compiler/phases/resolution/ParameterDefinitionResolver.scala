@@ -10,7 +10,7 @@ object ParameterDefinitionResolver {
 
   def resolve(node: DeclNode.ParameterNode)(implicit typeScope: TypeScope, reporter: Reporter): ParameterDefinition = {
     val tpe = TypeExpressionEvaluator.evaluate(node.tpe).getOrElse(BasicType.Any)
-    ParameterDefinition(node.name, tpe, node.position)
+    ParameterDefinition(node.name, tpe, node.nameNode.position)
   }
 
 }

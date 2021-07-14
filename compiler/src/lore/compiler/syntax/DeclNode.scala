@@ -1,11 +1,12 @@
 package lore.compiler.syntax
 
 import lore.compiler.core.Position
+import lore.compiler.syntax.Node.{NameNode, NamedNode}
 
 /**
   * All top-level declaration nodes.
   */
-sealed trait DeclNode extends Node
+sealed trait DeclNode extends NamedNode
 
 object DeclNode {
   /**
@@ -15,57 +16,77 @@ object DeclNode {
     *             represent TopLevelExprNode.
     */
   case class FunctionNode(
-    name: String, parameters: Vector[ParameterNode], outputType: TypeExprNode, typeVariables: Vector[TypeVariableNode],
-    body: Option[ExprNode], position: Position,
+    nameNode: NameNode,
+    parameters: Vector[ParameterNode],
+    outputType: TypeExprNode,
+    typeVariables: Vector[TypeVariableNode],
+    body: Option[ExprNode],
+    position: Position,
   ) extends DeclNode {
     def isAbstract: Boolean = body.isEmpty
   }
 
   object FunctionNode {
     def fromAction(
-      name: String, parameters: Vector[ParameterNode], typeVariables: Vector[TypeVariableNode],
-      body: Option[ExprNode], position: Position,
+      name: NameNode,
+      parameters: Vector[ParameterNode],
+      typeVariables: Vector[TypeVariableNode],
+      body: Option[ExprNode],
+      position: Position,
     ): FunctionNode = {
       DeclNode.FunctionNode(name, parameters, TypeExprNode.UnitNode(position), typeVariables, body, position)
     }
   }
 
-  case class ParameterNode(name: String, tpe: TypeExprNode, position: Position) extends Node
+  case class ParameterNode(
+    nameNode: NameNode,
+    tpe: TypeExprNode,
+    position: Position,
+  ) extends NamedNode
+
   case class TypeVariableNode(
-    name: String, lowerBound: Option[TypeExprNode], upperBound: Option[TypeExprNode], position: Position,
-  ) extends Node
+    nameNode: NameNode,
+    lowerBound: Option[TypeExprNode],
+    upperBound: Option[TypeExprNode],
+    position: Position,
+  ) extends NamedNode
 }
 
 /**
   * Top-level type declarations.
   */
-sealed trait TypeDeclNode extends DeclNode {
-  def name: String
-}
+sealed trait TypeDeclNode extends DeclNode
 
 object TypeDeclNode {
 
-  case class AliasNode(override val name: String, tpe: TypeExprNode, position: Position) extends TypeDeclNode
+  case class AliasNode(override val nameNode: NameNode, tpe: TypeExprNode, position: Position) extends TypeDeclNode
 
   /**
     * @param extended The names of all traits that the struct extends.
     */
   case class StructNode(
-    override val name: String,
+    nameNode: NameNode,
     extended: Vector[TypeExprNode],
     properties: Vector[PropertyNode],
-    position: Position
+    position: Position,
   ) extends TypeDeclNode
 
-  case class PropertyNode(name: String, tpe: TypeExprNode, isOpen: Boolean, isMutable: Boolean, defaultValue: Option[ExprNode], position: Position) extends Node
+  case class PropertyNode(
+    nameNode: NameNode,
+    tpe: TypeExprNode,
+    isOpen: Boolean,
+    isMutable: Boolean,
+    defaultValue: Option[ExprNode],
+    position: Position,
+  ) extends NamedNode
 
   /**
     * @param extended The names of all traits that the trait extends.
     */
   case class TraitNode(
-    override val name: String,
+    nameNode: NameNode,
     extended: Vector[TypeExprNode],
-    position: Position
+    position: Position,
   ) extends TypeDeclNode
 
 }

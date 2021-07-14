@@ -15,7 +15,7 @@ object TypeVariableDeclarationResolver {
     implicit val typeScope: LocalTypeScope = new LocalTypeScope(parentScope)
     nodes.foldLeft(0) { case (order, node) =>
       val variable = resolve(node, order)
-      typeScope.register(variable, node.position)
+      typeScope.register(variable, node.nameNode.position)
       order + 1
     }
     typeScope

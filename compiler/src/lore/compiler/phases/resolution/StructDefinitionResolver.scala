@@ -15,7 +15,7 @@ object StructDefinitionResolver {
     )
 
     val properties = node.properties.map(resolveProperty)
-    val definition = new StructDefinition(node.name, structType, properties, node.position)
+    val definition = new StructDefinition(node.name, structType, properties, node.nameNode.position)
     structType.initialize(definition)
     definition
   }
@@ -29,7 +29,7 @@ object StructDefinitionResolver {
     if (node.isOpen && node.isMutable) {
       reporter.error(MutableOpenProperty(node))
     }
-    new StructPropertyDefinition(node.name, tpe, node.isOpen, node.isMutable, node.defaultValue, node.position)
+    new StructPropertyDefinition(node.name, tpe, node.isOpen, node.isMutable, node.defaultValue, node.nameNode.position)
   }
 
 }

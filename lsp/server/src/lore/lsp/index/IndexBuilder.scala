@@ -9,13 +9,13 @@ import lore.lsp.utils.PositionUtil
 object IndexBuilder {
 
   def updateTypeDeclaration(name: String, properties: Vector[(String, Position)], position: Position)(implicit globalIndex: GlobalIndex): IndexTypeDeclaration = {
-    val location = PositionUtil.toLocation(position, name.length)
+    val location = PositionUtil.toLocation(position)
     val declaration = globalIndex.updateTypeDeclaration(name, location)
 
     declaration.removeMemberDeclarations()
     properties.foreach {
       case (name, position) =>
-        val propertyLocation = PositionUtil.toLocation(position, name.length)
+        val propertyLocation = PositionUtil.toLocation(position)
         declaration.updateMemberDeclaration(name, propertyLocation)
     }
 
@@ -23,7 +23,7 @@ object IndexBuilder {
   }
 
   def updateBindingDeclarationByFragments(name: String, positions: Vector[Position])(implicit globalIndex: GlobalIndex): IndexBindingDeclaration = {
-    val locations = positions.map(PositionUtil.toLocation(_, name.length))
+    val locations = positions.map(PositionUtil.toLocation)
     globalIndex.updateBindingDeclarationByFragments(name, locations)
   }
 
@@ -49,7 +49,7 @@ object IndexBuilder {
   }
 
   def addMultiFunctionDefinition(mf: MultiFunctionDefinition)(implicit globalIndex: GlobalIndex): Unit = {
-    val locations = mf.functions.map(f => PositionUtil.toLocation(f.position, f.name.length))
+    val locations = mf.functions.map(f => PositionUtil.toLocation(f.position))
     globalIndex.replaceBindingDeclaration(mf.name, locations)
   }
 

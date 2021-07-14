@@ -8,7 +8,7 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
   */
 sealed trait TypeExprNode extends Node
 object TypeExprNode {
-  case class IdentifierNode(name: String, position: Position) extends TypeExprNode
+  case class TypeNameNode(name: String, position: Position) extends TypeExprNode
   case class SumNode(types: Vector[TypeExprNode], position: Position) extends TypeExprNode
   case class IntersectionNode(types: Vector[TypeExprNode], position: Position) extends TypeExprNode
   case class TupleNode(types: Vector[TypeExprNode], position: Position) extends TypeExprNode
@@ -37,5 +37,5 @@ object TypeExprNode {
   /**
     * Finds all identifiers mentioned in the type expression.
     */
-  def identifiers(node: TypeExprNode): Set[String] = leaves(node).filterType[IdentifierNode].map(_.name).toSet
+  def identifiers(node: TypeExprNode): Set[String] = leaves(node).filterType[TypeNameNode].map(_.name).toSet
 }

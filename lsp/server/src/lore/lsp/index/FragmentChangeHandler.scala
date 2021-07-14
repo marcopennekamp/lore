@@ -25,14 +25,14 @@ object FragmentChangeHandler {
       }
 
       val typeDeclarations = nodes.filterType[TypeDeclNode].map {
-        case TypeDeclNode.AliasNode(name, _, position) =>
-          IndexBuilder.updateTypeDeclaration(name, Vector.empty, position)
+        case TypeDeclNode.AliasNode(nameNode, _, position) =>
+          IndexBuilder.updateTypeDeclaration(nameNode.value, Vector.empty, position)
 
-        case TypeDeclNode.StructNode(name, _, properties, position) =>
-          IndexBuilder.updateTypeDeclaration(name, properties.map(p => (p.name, p.position)), position)
+        case TypeDeclNode.StructNode(nameNode, _, properties, position) =>
+          IndexBuilder.updateTypeDeclaration(nameNode.value, properties.map(p => (p.name, p.nameNode.position)), position)
 
-        case TypeDeclNode.TraitNode(name, _, position) =>
-          IndexBuilder.updateTypeDeclaration(name, Vector.empty, position)
+        case TypeDeclNode.TraitNode(nameNode, _, position) =>
+          IndexBuilder.updateTypeDeclaration(nameNode.value, Vector.empty, position)
       }
 
       // Sometimes a declaration will be removed from a fragment.
