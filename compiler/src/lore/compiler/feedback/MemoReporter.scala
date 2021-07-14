@@ -14,9 +14,9 @@ class MemoReporter(initialFeedback: Vector[Feedback]) extends Reporter {
     state.feedback = state.feedback :+ feedback
   }
 
-  override def hasErrors: Boolean = state.hasErrors
+  override def hasErrors: Boolean = this.synchronized(state.hasErrors)
 
-  def feedback: Vector[Feedback] = state.feedback
+  def feedback: Vector[Feedback] = this.synchronized(state.feedback)
 
 }
 

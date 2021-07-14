@@ -28,7 +28,7 @@ object DefinitionHandler {
     // A simple optimization would be to only reparse this if the file has changed.
     timed("Finding definitions", log = MessageLogger.info) {
       SourceFiles.ofFile(fragmentPath).flatMap { fragment =>
-        val nodes = ParsingPhase.process(Vector(fragment))
+        val nodes = ParsingPhase.process(fragment)
         val target = NodeSeeker.Target(position.getLine + 1, position.getCharacter + 1)
         val usageSeeker = UsageSeeker(target)
 

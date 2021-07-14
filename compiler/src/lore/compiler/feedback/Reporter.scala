@@ -9,6 +9,8 @@ package lore.compiler.feedback
   *
   * Once compilation is complete, other reporters can be used to print out feedback, write it to a file, or do
   * something else entirely.
+  *
+  * Reporters must be thread-safe, as certain compilation operations are parallelized.
   */
 trait Reporter {
 

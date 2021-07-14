@@ -18,7 +18,7 @@ object FragmentChangeHandler {
   def process(fragment: Fragment)(implicit globalIndex: GlobalIndex): Unit = {
     fragment.uri.foreach { fragmentUri =>
       implicit val reporter: MemoReporter = MemoReporter()
-      val nodes = ParsingPhase.process(Vector(fragment))
+      val nodes = ParsingPhase.process(fragment)
 
       val multiFunctionDeclarations = nodes.filterType[DeclNode.FunctionNode].groupBy(_.name).map {
         case (name, functionNodes) => IndexBuilder.updateBindingDeclarationByFragments(name, functionNodes.map(_.position))
