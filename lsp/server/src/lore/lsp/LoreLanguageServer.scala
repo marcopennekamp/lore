@@ -1,8 +1,7 @@
 package lore.lsp
 
-import lore.compiler.semantics.Registry
 import lore.compiler.utils.Timer.timed
-import lore.lsp.index.{GlobalIndex, IndexBuilder}
+import lore.lsp.index.IndexBuilder
 import org.eclipse.lsp4j._
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures
 import org.eclipse.lsp4j.jsonrpc.messages.Either
@@ -19,16 +18,13 @@ import scala.jdk.CollectionConverters._
   */
 class LoreLanguageServer extends LanguageServer with LanguageClientAware {
 
-  private implicit var client: LanguageClient = _
-
-  private var workspaceFolder: Path = _
-  private var registry: Registry = _
-  private implicit var globalIndex: GlobalIndex = _
+  private implicit val context: LanguageServerContext = new LanguageServerContext
 
   private val feedbackPublisher: FeedbackPublisher = new FeedbackPublisher
 
   override def initialize(params: InitializeParams): CompletableFuture[InitializeResult] = {
     val capabilities = new ServerCapabilities
+    capabilities.setTextDocumentSync(TextDocumentSyncKind.Full)
     capabilities.setDefinitionProvider(new DefinitionOptions)
     capabilities.setSemanticTokensProvider(
       new SemanticTokensWithRegistrationOptions(SemanticTokensHandler.legend, new SemanticTokensServerFull(false), false)
@@ -40,7 +36,7 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
       params.getWorkspaceFolders match {
         case list if list.size() == 1 =>
           cancelToken.checkCanceled()
-          workspaceFolder = Path.of(list.get(0).getUri)
+          context.workspaceFolder = Path.of(list.get(0).getUri)
           new InitializeResult(capabilities, serverInfo)
 
         case _ =>
@@ -60,15 +56,14 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
   override def exit(): Unit = System.exit(0)
 
   override def getTextDocumentService: TextDocumentService = new TextDocumentService {
-    override def didOpen(params: DidOpenTextDocumentParams): Unit = ???
-    override def didChange(params: DidChangeTextDocumentParams): Unit = ???
-    override def didClose(params: DidCloseTextDocumentParams): Unit = ???
-    override def didSave(params: DidSaveTextDocumentParams): Unit = ???
+    override def didOpen(params: DidOpenTextDocumentParams): Unit = context.fragmentManager.openDocument(params.getTextDocument)
+    override def didChange(params: DidChangeTextDocumentParams): Unit = context.fragmentManager.updateDocument(params.getTextDocument, params.getContentChanges.asScala.toVector)
+    override def didClose(params: DidCloseTextDocumentParams): Unit = context.fragmentManager.closeDocument(params.getTextDocument)
+    override def didSave(params: DidSaveTextDocumentParams): Unit = ()
 
     override def definition(params: DefinitionParams) = {
       CompletableFutures.computeAsync { cancelToken =>
-        val fragmentPath = workspaceFolder.relativize(Path.of(params.getTextDocument.getUri))
-        val result = DefinitionHandler.definition(fragmentPath, params.getPosition)
+        val result = DefinitionHandler.definition(params.getTextDocument.getUri, params.getPosition)
         cancelToken.checkCanceled()
         result match {
           case Some(locations) => Either.forLeft(locations.asJava)
@@ -79,9 +74,9 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
 
     override def semanticTokensFull(params: SemanticTokensParams) = {
       CompletableFutures.computeAsync { cancelToken =>
-        val fragmentPath = workspaceFolder.relativize(Path.of(params.getTextDocument.getUri))
+        val result = SemanticTokensHandler.semanticTokens(params.getTextDocument.getUri)
         cancelToken.checkCanceled()
-        SemanticTokensHandler.semanticTokens(fragmentPath) match {
+        result match {
           case Some(result) => new SemanticTokens(result.map(Integer.valueOf).asJava)
           case None => throw new RuntimeException("Semantic tokens cannot be created: The file does not exist or cannot be parsed.")
         }
@@ -135,14 +130,13 @@ class LoreLanguageServer extends LanguageServer with LanguageClientAware {
   override def cancelProgress(params: WorkDoneProgressCancelParams): Unit = super.cancelProgress(params)
 
   override def connect(client: LanguageClient): Unit = {
-    this.client = client
+    context.client = client
   }
 
   private def applyWorkspaceChanges(): Unit = this.synchronized {
     val (registry, reporter) = WorkspaceAnalyzer.analyze()
-    this.registry = registry
-
-    this.globalIndex = timed("Building the index", log = MessageLogger.info)(IndexBuilder.fromRegistry(registry))
+    context.registry = registry
+    context.globalIndex = timed("Building the index", log = MessageLogger.info)(IndexBuilder.fromRegistry(registry))
 
     if (reporter.hasErrors) {
       MessageToaster.info("Workspace compilation failed.")

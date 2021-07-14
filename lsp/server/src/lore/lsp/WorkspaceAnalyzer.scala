@@ -3,7 +3,6 @@ package lore.lsp
 import lore.compiler.build.{BuildApi, JsonBuildOptionsParser}
 import lore.compiler.feedback.MemoReporter
 import lore.compiler.semantics.Registry
-import org.eclipse.lsp4j.services.LanguageClient
 
 import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.charset.StandardCharsets
@@ -12,7 +11,7 @@ import scala.util.{Failure, Success, Using}
 
 object WorkspaceAnalyzer {
 
-  def analyze()(implicit client: LanguageClient): (Registry, MemoReporter) = {
+  def analyze()(implicit context: LanguageServerContext): (Registry, MemoReporter) = {
     val buildOptions = JsonBuildOptionsParser.parse(Files.readString(BuildApi.buildFile))
     MessageLogger.info(buildOptions.toString)
 

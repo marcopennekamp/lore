@@ -1,7 +1,7 @@
 package lore.lsp
 
+import lore.compiler.feedback.{LambdaReporter, Reporter}
 import org.eclipse.lsp4j.{MessageParams, MessageType}
-import org.eclipse.lsp4j.services.LanguageClient
 
 /**
   * MessageLogger allows sending log messages to the client.
@@ -11,13 +11,15 @@ import org.eclipse.lsp4j.services.LanguageClient
   */
 object MessageLogger {
 
-  def log(message: String)(implicit client: LanguageClient): Unit = log(MessageType.Log, message)
-  def info(message: String)(implicit client: LanguageClient): Unit = log(MessageType.Info, message)
-  def warn(message: String)(implicit client: LanguageClient): Unit = log(MessageType.Warning, message)
-  def error(message: String)(implicit client: LanguageClient): Unit = log(MessageType.Error, message)
+  def log(message: String)(implicit context: LanguageServerContext): Unit = log(MessageType.Log, message)
+  def info(message: String)(implicit context: LanguageServerContext): Unit = log(MessageType.Info, message)
+  def warn(message: String)(implicit context: LanguageServerContext): Unit = log(MessageType.Warning, message)
+  def error(message: String)(implicit context: LanguageServerContext): Unit = log(MessageType.Error, message)
 
-  private def log(messageType: MessageType, message: String)(implicit client: LanguageClient): Unit = {
-    client.logMessage(new MessageParams(messageType, message))
+  def freshReporter(implicit context: LanguageServerContext): Reporter = new LambdaReporter(feedback => error(feedback.toString))
+
+  private def log(messageType: MessageType, message: String)(implicit context: LanguageServerContext): Unit = {
+    context.client.logMessage(new MessageParams(messageType, message))
   }
 
 }

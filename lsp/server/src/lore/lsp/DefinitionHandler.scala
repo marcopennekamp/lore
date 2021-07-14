@@ -1,18 +1,13 @@
 package lore.lsp
 
-import lore.compiler.build.SourceFiles
-import lore.compiler.feedback.{LambdaReporter, Reporter}
+import lore.compiler.feedback.Reporter
 import lore.compiler.phases.parsing.ParsingPhase
 import lore.compiler.syntax.visitor.NodeSeeker
 import lore.compiler.syntax.{DeclNode, ExprNode, Node, TypeExprNode}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import lore.compiler.utils.Timer.timed
-import lore.lsp.index.GlobalIndex
 import org.eclipse.lsp4j
 import org.eclipse.lsp4j.Location
-import org.eclipse.lsp4j.services.LanguageClient
-
-import java.nio.file.Path
 
 object DefinitionHandler {
 
@@ -20,22 +15,21 @@ object DefinitionHandler {
     * Finds all locations where the type or binding at the specific location in the source is defined. The current
     * implementation can only list global declarations and disregards local scopes and shadowing entirely.
     */
-  def definition(fragmentPath: Path, position: lsp4j.Position)(implicit globalIndex: GlobalIndex, client: LanguageClient): Option[Vector[Location]] = {
-    implicit val reporter: Reporter = new LambdaReporter(feedback => MessageLogger.info(feedback.toString))
-
+  def definition(fragmentUri: String, position: lsp4j.Position)(implicit context: LanguageServerContext): Option[Vector[Location]] = {
     // We should keep an eye on the execution time of this command. Currently, it hovers in the range of 5-10ms, mostly
     // due to how long the parser takes. This scales with file length, so large files might become very laggy.
     // A simple optimization would be to only reparse this if the file has changed.
     timed("Finding definitions", log = MessageLogger.info) {
-      SourceFiles.ofFile(fragmentPath).flatMap { fragment =>
+      context.fragmentManager.get(fragmentUri).flatMap { fragment =>
+        implicit val reporter: Reporter = MessageLogger.freshReporter
         val nodes = ParsingPhase.process(fragment)
         val target = NodeSeeker.Target(position.getLine + 1, position.getCharacter + 1)
         val usageSeeker = UsageSeeker(target)
 
         nodes.firstDefined(NodeSeeker.visit(usageSeeker)) match {
           case Some(usage) => usage.kind match {
-            case UsageType => globalIndex.getTypeDeclaration(usage.name).map(_.locations)
-            case UsageBinding => globalIndex.getBindingDeclaration(usage.name).map(_.locations)
+            case UsageType => context.globalIndex.getTypeDeclaration(usage.name).map(_.locations)
+            case UsageBinding => context.globalIndex.getBindingDeclaration(usage.name).map(_.locations)
           }
           case None => None
         }

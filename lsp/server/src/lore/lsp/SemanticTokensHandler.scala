@@ -1,20 +1,16 @@
 package lore.lsp
 
-import lore.compiler.build.SourceFiles
 import lore.compiler.core.Position
-import lore.compiler.feedback.{LambdaReporter, Reporter}
+import lore.compiler.feedback.Reporter
 import lore.compiler.phases.parsing.ParsingPhase
 import lore.compiler.syntax.visitor.CombiningNodeVisitor
 import lore.compiler.syntax.{DeclNode, Node}
 import lore.compiler.utils.Timer.timed
-import lore.lsp.index.GlobalIndex
 import lore.lsp.utils.PositionUtil
 import org.eclipse.lsp4j
-import org.eclipse.lsp4j.services.LanguageClient
 import org.eclipse.lsp4j.{SemanticTokenTypes, SemanticTokensLegend}
 import scalaz.Id.Id
 
-import java.nio.file.Path
 import scala.jdk.CollectionConverters._
 
 object SemanticTokensHandler {
@@ -39,14 +35,13 @@ object SemanticTokensHandler {
     * taking a SimpleCallNode, a multi-function name could be differently colored in comparison to a function value
     * name.
     */
-  def semanticTokens(fragmentPath: Path)(implicit globalIndex: GlobalIndex, client: LanguageClient): Option[Vector[Int]] = {
-    implicit val reporter: Reporter = new LambdaReporter(feedback => MessageLogger.info(feedback.toString))
-
+  def semanticTokens(fragmentUri: String)(implicit context: LanguageServerContext): Option[Vector[Int]] = {
     // We should keep an eye on the execution time of this command. Currently, it hovers in the range of 5-10ms, mostly
     // due to how long the parser takes. This scales with file length, so large files might become very laggy.
     // A simple optimization would be to only reparse this if the file has changed.
     timed("Creating semantic tokens", log = MessageLogger.info) {
-      SourceFiles.ofFile(fragmentPath).flatMap { fragment =>
+      context.fragmentManager.get(fragmentUri).flatMap { fragment =>
+        implicit val reporter: Reporter = MessageLogger.freshReporter
         val nodes = ParsingPhase.process(fragment)
 
         // Only send new highlights to the client if we can actually parse the file. Otherwise, all existing highlights
