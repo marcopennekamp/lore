@@ -1,4 +1,4 @@
-package lore.lsp
+package lore.lsp.capabilities
 
 import lore.compiler.feedback.Reporter
 import lore.compiler.phases.parsing.ParsingPhase
@@ -6,6 +6,8 @@ import lore.compiler.syntax.visitor.NodeSeeker
 import lore.compiler.syntax.{DeclNode, ExprNode, Node, TypeExprNode}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import lore.compiler.utils.Timer.timed
+import lore.lsp.LanguageServerContext
+import lore.lsp.utils.MessageLogger
 import org.eclipse.lsp4j
 import org.eclipse.lsp4j.Location
 
@@ -38,7 +40,9 @@ object DefinitionHandler {
   }
 
   private sealed trait UsageKind
+
   private case object UsageType extends UsageKind
+
   private case object UsageBinding extends UsageKind
 
   private case class DefinitionUsage(name: String, kind: UsageKind)

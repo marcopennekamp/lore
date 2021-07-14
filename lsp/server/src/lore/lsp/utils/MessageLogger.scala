@@ -1,6 +1,7 @@
-package lore.lsp
+package lore.lsp.utils
 
 import lore.compiler.feedback.{LambdaReporter, Reporter}
+import lore.lsp.LanguageServerContext
 import org.eclipse.lsp4j.{MessageParams, MessageType}
 
 /**
@@ -12,8 +13,11 @@ import org.eclipse.lsp4j.{MessageParams, MessageType}
 object MessageLogger {
 
   def log(message: String)(implicit context: LanguageServerContext): Unit = log(MessageType.Log, message)
+
   def info(message: String)(implicit context: LanguageServerContext): Unit = log(MessageType.Info, message)
+
   def warn(message: String)(implicit context: LanguageServerContext): Unit = log(MessageType.Warning, message)
+
   def error(message: String)(implicit context: LanguageServerContext): Unit = log(MessageType.Error, message)
 
   def freshReporter(implicit context: LanguageServerContext): Reporter = new LambdaReporter(feedback => error(feedback.toString))

@@ -3,6 +3,7 @@ package lore.lsp
 import lore.compiler.build.{BuildApi, JsonBuildOptionsParser}
 import lore.compiler.feedback.MemoReporter
 import lore.compiler.semantics.Registry
+import lore.lsp.utils.{MessageLogger, MessageToaster}
 
 import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.charset.StandardCharsets

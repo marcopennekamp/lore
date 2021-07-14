@@ -3,6 +3,7 @@ package lore.lsp
 import lore.compiler.build.SourceFiles
 import lore.compiler.core.Fragment
 import lore.compiler.feedback.Reporter
+import lore.lsp.utils.MessageLogger
 import org.eclipse.lsp4j.{TextDocumentContentChangeEvent, TextDocumentIdentifier, TextDocumentItem}
 
 import java.nio.file.Path

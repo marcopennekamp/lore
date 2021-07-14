@@ -1,7 +1,9 @@
 package lore.lsp
 
 import lore.compiler.utils.Timer.timed
+import lore.lsp.capabilities.{DefinitionHandler, FeedbackPublisher, SemanticTokensHandler}
 import lore.lsp.index.IndexBuilder
+import lore.lsp.utils.{MessageLogger, MessageToaster}
 import org.eclipse.lsp4j._
 import org.eclipse.lsp4j.jsonrpc.CompletableFutures
 import org.eclipse.lsp4j.jsonrpc.messages.Either

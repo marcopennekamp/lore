@@ -1,5 +1,6 @@
-package lore.lsp
+package lore.lsp.utils
 
+import lore.lsp.LanguageServerContext
 import org.eclipse.lsp4j.{MessageParams, MessageType}
 
 /**

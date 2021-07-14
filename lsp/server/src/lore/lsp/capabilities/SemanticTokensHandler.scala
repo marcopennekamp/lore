@@ -1,4 +1,4 @@
-package lore.lsp
+package lore.lsp.capabilities
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
@@ -6,7 +6,8 @@ import lore.compiler.phases.parsing.ParsingPhase
 import lore.compiler.syntax.visitor.CombiningNodeVisitor
 import lore.compiler.syntax.{DeclNode, Node}
 import lore.compiler.utils.Timer.timed
-import lore.lsp.utils.PositionUtil
+import lore.lsp.LanguageServerContext
+import lore.lsp.utils.{MessageLogger, PositionUtil}
 import org.eclipse.lsp4j
 import org.eclipse.lsp4j.{SemanticTokenTypes, SemanticTokensLegend}
 import scalaz.Id.Id
@@ -66,7 +67,7 @@ object SemanticTokensHandler {
         val keyword = if (isAction) "action" else "function"
         Vector(
           createHighlight(position, keyword.length, SemanticTokenTypes.Keyword),
-          createHighlight(nameNode, SemanticTokenTypes.Function)
+          createHighlight(nameNode, SemanticTokenTypes.Function),
         )
       case DeclNode.ParameterNode(nameNode, _, _) => Vector(createHighlight(nameNode, SemanticTokenTypes.Parameter))
       case _ => Vector.empty

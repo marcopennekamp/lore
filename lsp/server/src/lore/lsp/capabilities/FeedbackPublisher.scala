@@ -1,7 +1,8 @@
-package lore.lsp
+package lore.lsp.capabilities
 
 import lore.compiler.core.Fragment
 import lore.compiler.feedback.Feedback
+import lore.lsp.LanguageServerContext
 import lore.lsp.utils.PositionUtil
 import org.eclipse.lsp4j.{Diagnostic, DiagnosticSeverity, PublishDiagnosticsParams}
 
