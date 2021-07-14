@@ -3,8 +3,9 @@ package lore.lsp.capabilities
 import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
 import lore.compiler.phases.parsing.ParsingPhase
+import lore.compiler.syntax.Node.Index
 import lore.compiler.syntax.visitor.CombiningNodeVisitor
-import lore.compiler.syntax.{DeclNode, Node}
+import lore.compiler.syntax._
 import lore.compiler.utils.Timer.timed
 import lore.lsp.LanguageServerContext
 import lore.lsp.utils.{MessageLogger, PositionUtil}
@@ -19,7 +20,7 @@ object SemanticTokensHandler {
   val legend: SemanticTokensLegend = {
     import SemanticTokenTypes._
     new SemanticTokensLegend(
-      Vector(Type, Interface, Struct, TypeParameter, Parameter, Variable, Property, Function, Keyword, String, Number, Operator).asJava,
+      Vector(Type, Interface, Struct, TypeParameter, Parameter, Variable, Property, EnumMember, Function, Keyword, String, Number, Operator).asJava,
       Vector().asJava,
     )
   }
@@ -48,7 +49,7 @@ object SemanticTokensHandler {
         // Only send new highlights to the client if we can actually parse the file. Otherwise, all existing highlights
         // would get wiped.
         if (!reporter.hasErrors) {
-          val highlights = nodes.flatMap(CombiningNodeVisitor.VectorApplicator(SemanticTokensVisitor).visit(_))
+          val highlights = nodes.flatMap(CombiningNodeVisitor.VectorApplicator(new SemanticTokensVisitor).visit(_))
           Some(relativize(highlights))
         } else None
       }
@@ -57,28 +58,150 @@ object SemanticTokensHandler {
 
   private case class Highlight(position: lsp4j.Position, length: Int, tokenType: String)
 
-  private object SemanticTokensVisitor extends CombiningNodeVisitor[Vector[Highlight], Id] {
+  private class SemanticTokensVisitor(implicit context: LanguageServerContext) extends CombiningNodeVisitor[Vector[Highlight], Id] {
     override protected def visit(node: Node, children: Vector[Highlight]): Vector[Highlight] = {
       highlight(node) ++ children
     }
 
     private def highlight(node: Node): Vector[Highlight] = node match {
-      case DeclNode.FunctionNode(nameNode, _, _, _, _, isAction, position) =>
-        val keyword = if (isAction) "action" else "function"
+      case DeclNode.FunctionNode(nameNode, _, outputType, typeVariables, _, _, position) =>
+        val whereHighlight = typeVariables.headOption.map(
+          tv1 => createKeywordHighlight(outputType.position, tv1.position)
+        ).toVector
+
         Vector(
-          createHighlight(position, keyword.length, SemanticTokenTypes.Keyword),
+          createKeywordHighlight(position.startIndex, nameNode.position),
           createHighlight(nameNode, SemanticTokenTypes.Function),
+        ) ++ whereHighlight
+
+      case DeclNode.ParameterNode(nameNode, _, _) => singleHighlight(nameNode, SemanticTokenTypes.Parameter)
+      case DeclNode.TypeVariableNode(nameNode, _, _, _) => singleHighlight(nameNode, SemanticTokenTypes.TypeParameter)
+
+      case TypeDeclNode.AliasNode(nameNode, _, position) => Vector(
+        createKeywordHighlight(position.startIndex, nameNode.position),
+        createHighlight(nameNode, SemanticTokenTypes.Type),
+      )
+
+      case TypeDeclNode.TraitNode(nameNode, extended, position) =>
+        val extendedHighlight = extended.headOption.map(
+          tpe => createKeywordHighlight(nameNode.position, tpe.position)
+        ).toVector
+
+        Vector(
+          createKeywordHighlight(position.startIndex, nameNode.position),
+          createHighlight(nameNode, SemanticTokenTypes.Interface),
+        ) ++ extendedHighlight
+
+      case TypeDeclNode.StructNode(nameNode, extended, _, position) =>
+        val extendedHighlight = extended.headOption.map(
+          tpe => createKeywordHighlight(nameNode.position, tpe.position)
+        ).toVector
+
+        Vector(
+          createKeywordHighlight(position.startIndex, nameNode.position),
+          createHighlight(nameNode, SemanticTokenTypes.Struct),
+        ) ++ extendedHighlight
+
+      case TypeDeclNode.PropertyNode(nameNode, _, _, _, _, position) => Vector(
+        // This colors both `open` and `mut`, if applicable.
+        createKeywordHighlight(position.startIndex, nameNode.position),
+        createHighlight(nameNode, SemanticTokenTypes.Property),
+      )
+
+      case TypeExprNode.TypeNameNode(_, _) => singleHighlight(node, SemanticTokenTypes.Type)
+      case TypeExprNode.ShapePropertyNode(nameNode, _, _) => singleHighlight(nameNode, SemanticTokenTypes.Property)
+      case TypeExprNode.SymbolNode(_, _) => singleHighlight(node, SemanticTokenTypes.EnumMember)
+
+      case TopLevelExprNode.ReturnNode(expr, position) => Vector(createKeywordHighlight(position.startIndex, expr.position))
+      case TopLevelExprNode.VariableDeclarationNode(nameNode, _, _, _, position) => Vector(
+        createKeywordHighlight(position.startIndex, nameNode.position),
+        createHighlight(nameNode, SemanticTokenTypes.Variable),
+      )
+
+      case ExprNode.VariableNode(_, _) => singleHighlight(node, SemanticTokenTypes.Variable)
+
+      case ExprNode.RealLiteralNode(_, _) => singleHighlight(node, SemanticTokenTypes.Number)
+      case ExprNode.IntLiteralNode(_, _) => singleHighlight(node, SemanticTokenTypes.Number)
+      case ExprNode.BoolLiteralNode(_, _) => singleHighlight(node, SemanticTokenTypes.Keyword)
+
+      case ExprNode.StringLiteralNode(_, _) => singleHighlight(node, SemanticTokenTypes.String)
+      case ExprNode.ConcatenationNode(_, position) =>
+        // We have to highlight the single quotes!
+        val start = PositionUtil.fromStartPosition(position)
+        val end = PositionUtil.fromEndPosition(position)
+        end.setCharacter(end.getCharacter - 1)
+        Vector(
+          createHighlight(start, 1, SemanticTokenTypes.String),
+          createHighlight(end, 1, SemanticTokenTypes.String),
         )
-      case DeclNode.ParameterNode(nameNode, _, _) => Vector(createHighlight(nameNode, SemanticTokenTypes.Parameter))
+
+      case ExprNode.AnonymousFunctionParameterNode(nameNode, _, _) => singleHighlight(nameNode, SemanticTokenTypes.Variable)
+      case ExprNode.FixedFunctionNode(nameNode, _, _) => singleHighlight(nameNode, SemanticTokenTypes.Function)
+
+      case ExprNode.MemberAccessNode(_, nameNode, _) => singleHighlight(nameNode, SemanticTokenTypes.Property)
+      case ExprNode.ObjectMapNode(nameNode, _, _) => singleHighlight(nameNode, SemanticTokenTypes.Struct)
+      case ExprNode.ObjectEntryNode(nameNode, _, _) => singleHighlight(nameNode, SemanticTokenTypes.Property)
+
+      case ExprNode.ShapeValuePropertyNode(nameNode, _, _) => singleHighlight(nameNode, SemanticTokenTypes.Property)
+
+      case ExprNode.SymbolValueNode(_, _) => singleHighlight(node, SemanticTokenTypes.EnumMember)
+
+      case ExprNode.SimpleCallNode(nameNode, _, _) =>
+        context.globalIndex.getBindingDeclaration(nameNode.value) match {
+          case Some(_) => singleHighlight(nameNode, SemanticTokenTypes.Function)
+          case None => context.globalIndex.getTypeDeclaration(nameNode.value) match {
+            case Some(_) => singleHighlight(nameNode, SemanticTokenTypes.Struct)
+            case None => singleHighlight(nameNode, SemanticTokenTypes.Variable)
+          }
+        }
+      case ExprNode.DynamicCallNode(_, _, position) => Vector(createKeywordHighlight(position, "dynamic".length))
+
+      case ExprNode.IfElseNode(_, onTrue, onFalse, position) =>
+        val elseHighlight = onFalse.map(onFalse => createKeywordHighlight(onTrue.position, onFalse.position)).toVector
+        Vector(createKeywordHighlight(position, "if".length)) ++ elseHighlight
+
+      case ExprNode.WhileNode(_, _, position) => Vector(createKeywordHighlight(position, "while".length))
+      case ExprNode.ForNode(_, _, position) => Vector(createKeywordHighlight(position, "for".length))
+      case ExprNode.ExtractorNode(nameNode, _, _) => singleHighlight(nameNode, SemanticTokenTypes.Variable)
+
       case _ => Vector.empty
     }
 
     private def createHighlight(node: Node, tokenType: String): Highlight = {
-      Highlight(PositionUtil.toStartPosition(node.position), node.position.length, tokenType)
+      Highlight(PositionUtil.fromStartPosition(node.position), node.position.length, tokenType)
     }
 
-    private def createHighlight(startPosition: Position, length: Int, tokenType: String): Highlight = {
-      Highlight(PositionUtil.toStartPosition(startPosition), length, tokenType)
+    private def singleHighlight(node: Node, tokenType: String): Vector[Highlight] = Vector(createHighlight(node, tokenType))
+
+    private def createHighlight(startPosition: lsp4j.Position, length: Int, tokenType: String): Highlight = {
+      Highlight(startPosition, length, tokenType)
+    }
+
+    /**
+      * Creates a keyword highlight between the given positions, taking the end index of `previous` and the start index
+      * of `next`.
+      */
+    private def createKeywordHighlight(previous: Position, next: Position): Highlight = {
+      createKeywordHighlight(previous.endIndex, next)
+    }
+
+    /**
+      * Creates a keyword highlight from `startIndex` to the start index of `next`.
+      *
+      * In general, we can't be sure where keywords are placed exactly, because keyword positions aren't kept as nodes.
+      * However, we can guess the position from the given parameters. At worst we will then highlight a few spaces,
+      * which doesn't actually make a visual difference.
+      */
+    private def createKeywordHighlight(startIndex: Index, next: Position): Highlight = {
+      val position = Position(next.fragment, startIndex, next.startIndex)
+      createHighlight(PositionUtil.fromStartPosition(position), position.length, SemanticTokenTypes.Keyword)
+    }
+
+    /**
+      * Creates a keyword highlight from `startIndex` with the given length.
+      */
+    private def createKeywordHighlight(startPosition: Position, length: Int): Highlight = {
+      createHighlight(PositionUtil.fromStartPosition(startPosition), length, SemanticTokenTypes.Keyword)
     }
   }
 

@@ -188,13 +188,9 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and loop expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  /**
-    * @param onTrue Equals UnitNode if it doesn't exist.
-    * @param onFalse Equals UnitNode if it doesn't exist.
-    */
   case class IfElseNode(
-    condition: ExprNode, onTrue: TopLevelExprNode, onFalse: TopLevelExprNode, position: Position,
-  ) extends TernaryNode(condition, onTrue, onFalse) with ExprNode
+    condition: ExprNode, onTrue: TopLevelExprNode, onFalse: Option[TopLevelExprNode], position: Position,
+  ) extends TernaryNode(condition, onTrue, onFalse.getOrElse(ExprNode.TupleNode(Vector.empty, position))) with ExprNode
 
   /**
     * A cross-cutting node for loops.

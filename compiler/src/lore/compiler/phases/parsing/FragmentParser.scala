@@ -16,7 +16,7 @@ class FragmentParser(implicit fragment: Fragment) {
   val nameParser = new NameParser
   import nameParser._
 
-  val typeParser = new TypeParser
+  val typeParser = new TypeParser(nameParser)
   import typeParser.typeExpression
 
   val expressionParser = new ExpressionParser(nameParser, typeParser)

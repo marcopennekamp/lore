@@ -94,7 +94,7 @@ private class ReturnAllowedApplicator(implicit reporter: Reporter)
     case ExprNode.IfElseNode(condition, onTrue, onFalse, _) =>
       visit(condition, false)
       visit(onTrue, isReturnAllowed)
-      visit(onFalse, isReturnAllowed)
+      onFalse.foreach(visit(_, isReturnAllowed))
 
     case ExprNode.WhileNode(condition, body, _) =>
       visit(condition, false)

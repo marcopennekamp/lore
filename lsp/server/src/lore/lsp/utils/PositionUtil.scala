@@ -7,14 +7,14 @@ object PositionUtil {
   /**
     * Creates an LSP position from the start of the given Lore position.
     */
-  def toStartPosition(position: lore.compiler.core.Position): Position = {
+  def fromStartPosition(position: lore.compiler.core.Position): Position = {
     new Position(position.startLine - 1, position.startColumn - 1)
   }
 
   /**
     * Creates an LSP position from the end of the given Lore position.
     */
-  def toEndPosition(position: lore.compiler.core.Position): Position = {
+  def fromEndPosition(position: lore.compiler.core.Position): Position = {
     new Position(position.endLine - 1, position.endColumn - 1)
   }
 
@@ -22,8 +22,8 @@ object PositionUtil {
     * Creates an LSP range from the given position.
     */
   def toRange(position: lore.compiler.core.Position): Range = {
-    val start = toStartPosition(position)
-    val end = toEndPosition(position)
+    val start = fromStartPosition(position)
+    val end = fromEndPosition(position)
     new Range(start, end)
   }
 

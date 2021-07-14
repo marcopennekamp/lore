@@ -8,8 +8,8 @@ import lore.compiler.syntax.ExprNode.StringLiteralNode
 import lore.compiler.syntax._
 
 class ExpressionParser(nameParser: NameParser, typeParser: TypeParser)(implicit fragment: Fragment) {
-  import nameParser._
   import Node._
+  import nameParser._
 
   // Parse a handful of top-level expressions before jumping into the deep end.
   def topLevelExpression[_: P]: P[TopLevelExprNode] = {
@@ -55,12 +55,7 @@ class ExpressionParser(nameParser: NameParser, typeParser: TypeParser)(implicit 
   def expression[_: P]: P[ExprNode] = P(ifElse | whileLoop | forLoop | anonymousFunction | operatorExpression)
 
   private def ifElse[_: P]: P[ExprNode] = {
-    P(Index ~ "if" ~ "(" ~ expression ~ ")" ~ topLevelExpression ~ ("else" ~ topLevelExpression).? ~ Index)
-      .map { case (startIndex, condition, onTrue, onFalse, endIndex) =>
-        val falseNode = onFalse.getOrElse(ExprNode.TupleNode(Vector.empty, Position(fragment, startIndex, endIndex)))
-        (startIndex, condition, onTrue, falseNode, endIndex)
-      }
-      .map(withPosition(ExprNode.IfElseNode))
+    P(Index ~ "if" ~ "(" ~ expression ~ ")" ~ topLevelExpression ~ ("else" ~ topLevelExpression).? ~ Index).map(withPosition(ExprNode.IfElseNode))
   }
 
   private def whileLoop[_: P]: P[ExprNode.WhileNode] = {

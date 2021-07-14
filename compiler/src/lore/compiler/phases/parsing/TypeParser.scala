@@ -6,8 +6,9 @@ import lore.compiler.core.{Fragment, Position}
 import lore.compiler.phases.parsing.LexicalParser.{identifier, typeIdentifier}
 import lore.compiler.syntax._
 
-class TypeParser(implicit fragment: Fragment) {
+class TypeParser(nameParser: NameParser)(implicit fragment: Fragment) {
   import Node._
+  import nameParser.name
 
   def typing[_: P]: P[TypeExprNode] = P(":" ~ typeExpression)
 
@@ -46,7 +47,7 @@ class TypeParser(implicit fragment: Fragment) {
   private def listType[_: P]: P[TypeExprNode.ListNode] = P(Index ~ "[" ~ typeExpression ~ "]" ~ Index).map(withPosition(TypeExprNode.ListNode))
 
   private def shapeType[_: P]: P[TypeExprNode.ShapeNode] = {
-    def property = P(Index ~ identifier ~ typing ~ Index).map(withPosition(TypeExprNode.ShapePropertyNode))
+    def property = P(Index ~ name ~ typing ~ Index).map(withPosition(TypeExprNode.ShapePropertyNode))
     P(Index ~ "{" ~ property.rep(0, ",").map(_.toVector) ~ "}" ~ Index).map(withPosition(TypeExprNode.ShapeNode))
   }
 
