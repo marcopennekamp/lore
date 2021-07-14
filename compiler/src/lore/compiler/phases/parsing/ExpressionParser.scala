@@ -3,7 +3,7 @@ package lore.compiler.phases.parsing
 import fastparse.ScalaWhitespace._
 import fastparse._
 import lore.compiler.core.{Fragment, Position}
-import lore.compiler.phases.parsing.LexicalParser.{hexDigit, identifier, structIdentifier}
+import lore.compiler.phases.parsing.LexicalParser.{hexDigit, identifier}
 import lore.compiler.syntax.ExprNode.StringLiteralNode
 import lore.compiler.syntax._
 
@@ -19,7 +19,7 @@ class ExpressionParser(nameParser: NameParser, typeParser: TypeParser)(implicit 
   private def `return`[_: P]: P[TopLevelExprNode] = P(Index ~ "return" ~ expression ~ Index).map(withPosition(TopLevelExprNode.ReturnNode))
 
   private def variableDeclaration[_: P]: P[TopLevelExprNode.VariableDeclarationNode] = {
-    P(Index ~ "let" ~ "mut".!.?.map(_.isDefined) ~ name ~ typeParser.typing.? ~ "=" ~ expression ~ Index)
+    P(Index ~ "let" ~~ Space.WS1 ~ ("mut" ~~ Space.WS1).!.?.map(_.isDefined) ~ name ~ typeParser.typing.? ~ "=" ~ expression ~ Index)
       .map { case (startIndex, isMutable, name, tpe, value, endIndex) => (startIndex, name, isMutable, tpe, value, endIndex) }
       .map(withPosition(TopLevelExprNode.VariableDeclarationNode))
   }

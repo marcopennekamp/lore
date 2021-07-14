@@ -25,6 +25,7 @@ object Space {
     * Parses whitespace except for newlines.
     */
   def WS[_: P]: P[Unit] = P(NoTrace((whitespaces | comment).rep))
+  def WS1[_: P]: P[Unit] = P(NoTrace((whitespaces | comment).rep(1)))
 
   /**
     * Parses whitespace, including newlines. This is the default for most things.

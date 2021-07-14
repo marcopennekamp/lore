@@ -11,7 +11,6 @@ import lore.compiler.syntax._
   * fragment. These are those nodes declared in [[DeclNode]].
   */
 class FragmentParser(implicit fragment: Fragment) {
-  import LexicalParser.{identifier, structIdentifier, typeIdentifier}
   import Node._
 
   val nameParser = new NameParser
@@ -55,12 +54,12 @@ class FragmentParser(implicit fragment: Fragment) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def function[_: P]: P[DeclNode.FunctionNode] = {
     P(
-      Index ~ "function" ~/ name ~ parameters ~ typeParser.typing ~ functionTypeVariables ~ ("=" ~ expression).? ~ Index
+      Index ~ "function" ~~ Space.WS1 ~/ name ~ parameters ~ typeParser.typing ~ functionTypeVariables ~ ("=" ~ expression).? ~ Index
     ).map(withPosition(DeclNode.FunctionNode.fromFunction _))
   }
 
   private def action[_: P]: P[DeclNode.FunctionNode] = {
-    P(Index ~ "action" ~/ name ~ parameters ~ functionTypeVariables ~ block.? ~ Index).map(withPosition(DeclNode.FunctionNode.fromAction _))
+    P(Index ~ "action" ~~ Space.WS1 ~/ name ~ parameters ~ functionTypeVariables ~ block.? ~ Index).map(withPosition(DeclNode.FunctionNode.fromAction _))
   }
 
   private def parameters[_: P]: P[Vector[DeclNode.ParameterNode]] = {
@@ -72,7 +71,7 @@ class FragmentParser(implicit fragment: Fragment) {
     def typeVariable = {
       P(Index ~ typeName ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).? ~ Index).map(withPosition(DeclNode.TypeVariableNode))
     }
-    P(("where" ~ typeVariable.rep(1, CharIn(","))).?).map {
+    P(("where" ~~ Space.WS1 ~ typeVariable.rep(1, CharIn(","))).?).map {
       case None => Vector.empty
       case Some(seq) => seq.toVector
     }
@@ -84,19 +83,19 @@ class FragmentParser(implicit fragment: Fragment) {
   private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`type` | `trait` | struct)
 
   private def `type`[_: P]: P[TypeDeclNode.AliasNode] = {
-    P(Index ~ "type" ~/ typeName ~ "=" ~ typeExpression ~ Index).map(withPosition(TypeDeclNode.AliasNode))
+    P(Index ~ "type" ~~ Space.WS1 ~/ typeName ~ "=" ~ typeExpression ~ Index).map(withPosition(TypeDeclNode.AliasNode))
   }
 
   private def `trait`[_: P]: P[TypeDeclNode.TraitNode] = {
-    P(Index ~ "trait" ~/ typeName ~ `extends` ~ Index).map(withPosition(TypeDeclNode.TraitNode))
+    P(Index ~ "trait" ~~ Space.WS1 ~/ typeName ~ `extends` ~ Index).map(withPosition(TypeDeclNode.TraitNode))
   }
 
   private def struct[_: P]: P[TypeDeclNode.StructNode] = {
-    P(Index ~ "struct" ~/ structName ~ `extends` ~ structBody ~ Index).map(withPosition(TypeDeclNode.StructNode))
+    P(Index ~ "struct" ~~ Space.WS1 ~/ structName ~ `extends` ~ structBody ~ Index).map(withPosition(TypeDeclNode.StructNode))
   }
 
   private def `extends`[_: P]: P[Vector[TypeExprNode]] = {
-    P(("extends" ~ inherits).?).map(_.getOrElse(Vector.empty))
+    P(("extends" ~~ Space.WS1 ~ inherits).?).map(_.getOrElse(Vector.empty))
   }
 
   private def inherits[_: P]: P[Vector[TypeExprNode]] = P(typeExpression.rep(1, CharIn(","))).map(_.toVector)
@@ -111,7 +110,7 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def property[_: P]: P[TypeDeclNode.PropertyNode] = {
-    P(Index ~ "open".!.?.map(_.isDefined) ~ "mut".!.?.map(_.isDefined) ~ name ~ typeParser.typing ~ defaultValue.? ~ Index)
+    P(Index ~ ("open" ~~ Space.WS1).!.?.map(_.isDefined) ~ ("mut" ~~ Space.WS1).!.?.map(_.isDefined) ~ name ~ typeParser.typing ~ defaultValue.? ~ Index)
       .map { case (startIndex, isOpen, isMutable, name, tpe, defaultValue, endIndex) => (startIndex, name, tpe, isOpen, isMutable, defaultValue, endIndex) }
       .map(withPosition(TypeDeclNode.PropertyNode))
   }
