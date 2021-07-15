@@ -12,9 +12,6 @@ action onUpdate(effect: StatusEffect) { }
 
 /**
  * Called whenever the entity gets hit by an attack (after a potential dodge failed).
- *
- * TODO: Instead of following this callback approach, we could try to implement functional reactive programming
- *       at some point, maybe even support it natively in the language.
  */
 action onHit(effect: StatusEffect) { }
 
@@ -85,37 +82,21 @@ struct StatusEffects {
   mut effects: [StatusEffect]
 }
 
-// TODO: If we allow shape types to contain mutable properties, we don't need to define a separate struct at all.
-//       Now that "components" can have any type, we could have a shape type { mut statusEffects: [StatusEffect] }.
 type +StatusEffects = { statusEffects: StatusEffects }
 
 action buff(entity: +StatusEffects, effect: StatusEffect) {
   entity.statusEffects.effects = entity.statusEffects.effects :+ effect
 }
 
-// TODO: If we introduce a "call all fitting functions/call all min functions"-style call, we can implement this
-//       as an update or tick function that gets called implicitly with an entity's update function.
 /**
  * Updates status effects, removing those from the list that have expired.
  */
 action updateStatusEffects(entity: +StatusEffects) {
-  // TODO: Once we support anonymous functions, this can be solved with a forEach and a filter.
   let effects = entity.statusEffects.effects
-  for (effect <- effects) {
-    onUpdate(effect)
-  }
-
-  let mut actives: [StatusEffect] = []
-  for (effect <- effects) {
-    if (isActive(effect)) {
-      actives = actives :+ effect
-    }
-  }
-  entity.statusEffects.effects = actives
+  foreach(effects, onUpdate)
+  entity.statusEffects.effects = filter(effects, isActive)
 }
 
-// TODO: If we have a "call all leaves"-style call, we can simply call this onHit and wouldn't have to delegate
-//       from Combatant's onHit function.
 action onHitStatusEffects(entity: +StatusEffects) {
   for (effect <- entity.statusEffects.effects) onHit(effect)
 }

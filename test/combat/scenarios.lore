@@ -1,8 +1,3 @@
-// TODO: Running both scenarios at the same time is about 5% slower than running them in succession and then
-//       combining times. This is probably due to some hashing problem or dispatch cache weakness. We might
-//       want to investigate this in the long-term to clear any dispatch cache inefficiencies. Perhaps the
-//       hash map's rebalancing threshold is too conservative or the hashes for structs with open property
-//       types are not distributed well.
 function test(): [SimulationResult] = {
   let scenarios = [kaladinVoidbringer(), sadeasDalinar()]
   for (scenario <- scenarios) {

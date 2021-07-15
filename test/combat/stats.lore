@@ -3,9 +3,6 @@
  *
  * Note that you should use the accompanying baseStat function to access all stats except health, which may be accessed
  * directly. The reason is that select entities may want to overwrite the stats without changing the Stats object.
- *
- * TODO: We could implement some form of visibility for struct properties, likely in conjunction with the module
- *       system, to prevent third parties from accessing the stat values instead of using the designated functions.
  */
 struct Stats {
   // TODO: Does this really belong here?

@@ -1,6 +1,5 @@
 trait Monster extends Combatant
 
-// TODO: We could at some point differentiate between stats based on form.
 struct Voidbringer extends Monster {
   stats: Stats = Stats {
     health = 30,
