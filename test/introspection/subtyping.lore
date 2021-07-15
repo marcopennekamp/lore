@@ -1,8 +1,10 @@
 trait Animal
+
 struct Ox extends Animal {
   name: String
   weight: Real
 }
+
 struct Crane extends Animal {
   name: String
   height: Real
@@ -11,8 +13,7 @@ struct Crane extends Animal {
 function niuzao(): Ox = Ox('Niuzao', 387.23)
 function chiji(): Crane = Crane('Chi-Ji', 5.51)
 
-// TODO: Needs shape values first...
-//function shape(): { name: String, weight: Real } = %{ name: 'Peter', weight: 87.2 }
+function shape(): { name: String, weight: Real } = %{ name: 'Peter', weight: 87.2 }
 
 function test(): [Boolean] = [
   isSubtype(typeOf(1), typeOf(1.5)),               // --> true
@@ -22,8 +23,6 @@ function test(): [Boolean] = [
   true,
   isSubtype(typeOf(niuzao()), typeOf(chiji())),    // --> false
   isSubtype(typeOf(chiji()), typeOf(niuzao())),    // --> false
-  //isSubtype(typeOf(niuzao()), typeOf(shape())),  // --> true
-  true,
-  //isSubtype(typeOf(chiji()), typeOf(shape()))    // --> false
-  false
+  isSubtype(typeOf(niuzao()), typeOf(shape())),    // --> true
+  isSubtype(typeOf(chiji()), typeOf(shape()))    // --> false
 ]

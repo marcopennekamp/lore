@@ -96,8 +96,6 @@ function weaponFactor(suspect: Suspect): Real = 1 + bluntness(tool(suspect.profe
 /**
   * Bertram Bunsnatcher was an influential man. He crossed paths with many people throughout his life, and some of them
   * were blessed by his business, while others suffered from his influence.
-  *
-  * TODO: We could implement this using "call all" and then taking the maximum factor, which would allow us to deal with ambiguities.
   */
 function motiveFactor(suspect: { }): Real = 1.0
 

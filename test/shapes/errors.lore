@@ -1,23 +1,11 @@
-// TODO: This would become an atom type later.
-trait Status
-struct Ok extends Status
-struct Error extends Status
+type Status = #ok | #error
 
-// TODO: We really need default struct equality...
-function areEqual(v1: Ok, v2: Ok): Boolean = true
-function areEqual(v1: Error, v2: Error): Boolean = true
-
-function read1(): { status: Status, result: String } = %{ status: Ok(), result: 'I am a result!' }
-function read2(): { status: Status, result: String } = %{ status: Error(), result: '' }
-function read3(): { status: Status, result: String } = %{ status: Ok(), result: 'I am another result!' }
+function read1(): { status: Status, result: String } = %{ status: #ok, result: 'I am a result!' }
+function read2(): { status: Status, result: String } = %{ status: #error, result: '' }
+function read3(): { status: Status, result: String } = %{ status: #ok, result: 'I am another result!' }
 
 function test(): [String] = {
   let entries = [read1(), read2(), read3()]
-  let mut results: [String] = []
-  for (entry <- entries) {
-    if (entry.status == Ok()) {
-      results = results :+ entry.result
-    }
-  }
-  results
+  let successes = filter(entries, entry => entry.status == #ok)
+  map(successes, entry => entry.result)
 }
