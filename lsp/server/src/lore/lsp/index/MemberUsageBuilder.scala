@@ -21,14 +21,7 @@ object MemberUsageBuilder {
     */
   def getIndexMemberDeclarations(instanceType: Type, memberName: String)(implicit globalIndex: GlobalIndex): Vector[IndexMemberDeclaration] = {
     instanceType match {
-      case dt: DeclaredType =>
-        globalIndex.getTypeDeclaration(dt.name).flatMap(_.getMemberDeclaration(memberName)).toVector
-
-      case _: ShapeType =>
-        // TODO: Shape type properties currently don't carry any location information, so we have to return an empty
-        //       vector here.
-        Vector.empty
-
+      case dt: DeclaredType => globalIndex.getTypeDeclaration(dt.name).flatMap(_.getMemberDeclaration(memberName)).toVector
       case tv: TypeVariable => getIndexMemberDeclarations(tv.upperBound, memberName)
       case IntersectionType(types) => types.toVector.flatMap(getIndexMemberDeclarations(_, memberName))
       case _ => Vector.empty

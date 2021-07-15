@@ -18,8 +18,6 @@ object Expression {
   /**
     * This expression is used as a stand-in when a compilation error makes it impossible to create a valid expression.
     * The given type should be a best guess as to the actual type of a valid expression.
-    *
-    * TODO: Is this really a good idea?
     */
   case class Hole(tpe: Type, position: Position) extends Expression
 

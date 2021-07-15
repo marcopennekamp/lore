@@ -28,6 +28,7 @@
 
 ##### Type System
 
+- Add the `expectedType` checking for functions to the inference algorithm. There is no need to check separately, and it would allow the inference algorithm to infer certain types from a function's output type.
 - Intersection type construction: Tuple types can be combined: `(A, B) & (C, D) = (A & C, B & D)`. In general, we can normalize covariant and contravariant types: https://dotty.epfl.ch/docs/reference/new-types/intersection-types-spec.html.
   - The `Type.tupled` in the LUB case for functions is a workaround for the lack of tuple combining when constructing intersection types.
 - Merge Real and Int into a Number type (named Number or something similar). There is no advantage in keeping these two apart when the underlying runtime system has only one numeric type. The subtyping relationship `Int <: Real` is awkward as well.
@@ -91,8 +92,7 @@
 
 ##### Architecture
 
-- NodeSeeker: We can outsource the `seek` functions to a generic NodeVisitor. This might be the time to start adding a visitor for declaration and type expression nodes.
-  - However, we should carry out additional work on the language server (where NodeSeeker is used) to see whether we will need it (or some other kind of NodeVisitor) down the line.
+- `DeclarationResolver.introspectionTypeDeclarations`: We should refrain from keeping Pyramid optional and just add the Type trait to the core definitions. Then the compiler can just discover the trait and generate the correct API call.
 - Rewrite TypeVariableAllocation (compiler) with immutability.
 - Can we split the type inference phase from the transformation phase?
 - Clean up ExpressionTransformationVisitor by moving more functionality to helper objects like ExpressionTransformationHelper.

@@ -42,9 +42,6 @@ object DeclarationResolver {
     * The run-time Introspection API requires the compiler to generate a special "Type" trait that represents actual
     * Lore types. The trait cannot be defined in Pyramid because the compiler needs to call the initialization function
     * of the Introspection API with the actual type.
-    *
-    * TODO: We should refrain from keeping Pyramid optional and just add the trait to the core definitions. Then the
-    *       compiler can just discover the trait and generate the correct API call.
     */
   private val introspectionTypeDeclarations: Vector[TypeDeclNode] = Vector(
     TypeDeclNode.TraitNode(NameNode(Introspection.typeName, Position.internal), Vector.empty, Position.internal)

@@ -21,8 +21,6 @@ class InferringExpressionTransformationVisitor(
     * The expected result type of the transformed expression. Note that this is merely used to check the result
     * type of a return expression. It does not guarantee that the visitor returns an expression with the given
     * type. That needs to be checked separately.
-    *
-    * TODO: We should just add this to inference. No need to check separately.
     */
   expectedType: Type,
 
