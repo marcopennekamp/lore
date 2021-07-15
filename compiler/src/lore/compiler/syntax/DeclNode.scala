@@ -21,7 +21,6 @@ object DeclNode {
     outputType: TypeExprNode,
     typeVariables: Vector[TypeVariableNode],
     body: Option[ExprNode],
-    isAction: Boolean,
     position: Position,
   ) extends DeclNode {
     def isAbstract: Boolean = body.isEmpty
@@ -36,7 +35,7 @@ object DeclNode {
       body: Option[ExprNode],
       position: Position,
     ): FunctionNode = {
-      DeclNode.FunctionNode(nameNode, parameters, outputType, typeVariables, body, isAction = false, position)
+      DeclNode.FunctionNode(nameNode, parameters, outputType, typeVariables, body, position)
     }
 
     def fromAction(
@@ -46,7 +45,7 @@ object DeclNode {
       body: Option[ExprNode],
       position: Position,
     ): FunctionNode = {
-      DeclNode.FunctionNode(nameNode, parameters, TypeExprNode.UnitNode(position), typeVariables, body, isAction = true, position)
+      DeclNode.FunctionNode(nameNode, parameters, TypeExprNode.UnitNode(position), typeVariables, body, position)
     }
   }
 

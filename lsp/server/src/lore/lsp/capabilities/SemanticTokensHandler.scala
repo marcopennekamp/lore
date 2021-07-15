@@ -64,7 +64,7 @@ object SemanticTokensHandler {
     }
 
     private def highlight(node: Node): Vector[Highlight] = node match {
-      case DeclNode.FunctionNode(nameNode, _, outputType, typeVariables, _, _, position) =>
+      case DeclNode.FunctionNode(nameNode, _, outputType, typeVariables, _, position) =>
         val whereHighlight = typeVariables.headOption.map(
           tv1 => createKeywordHighlight(outputType.position, tv1.position)
         ).toVector
