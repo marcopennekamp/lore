@@ -1,0 +1,55 @@
+// From a syntactic perspective, we want to do our best to make monadic flatMaps/maps as easy to use as possible. Scala
+// has made headway into this with their for-yield construct. But I don't think it's quite good enough. I want these
+// monadic expressions to integrate seamlessly into the language. It should feel good to use these constructs and one
+// should never desire to go back to "the old way." It should be especially idiomatic for game development and
+// scripting applications.
+
+// Given this list:
+let list = [1, 2, 3]
+
+
+// Idea 1: Filter without and with default.
+n <- list if n > 1         // [2, 3]
+n <- list if n > 1 else 0  // [0, 2, 3]
+
+
+// Idea 2: Blockless flatMap.
+e1 <- list1
+// The rest of the current block executes for all e1 in list1. That is, the extraction wraps the rest of the block in a
+// sort of map/flatMap context. This is similar to Javascript's async/await.
+let x = something(e1)
+e2 <- list2
+// The rest executes for all e2 in list2.
+let maybeY = whatever(e2)  // Returns an optional value.
+y <- maybeY
+// Only executes for a given y in maybeY. Stops if the option is empty.
+foo(e1, e2, y)
+
+// This is essentially compiled to:
+flatMap(list1, e1 => {
+  let x = something(e1)
+  flatMap(list2, e2 => {
+    let maybeY = whatever(e2)
+    map(maybeY, y => foo(e1, e2, y))
+  })
+})
+
+
+// Idea 3: Blocks can still be used. They are just optional.
+function test(maybeX, maybeY, maybeZ, maybeW) {  // Types omitted purposefully.
+  x <- maybeX  // x is available in the whole function body.
+  // Four possible syntax choices:
+  {
+    y <- maybeY
+    // y is available only in this block.
+  }
+  for (z <- maybeZ) {
+    // z is available only in this block.
+  }
+  (w <- maybeW) {
+    // w is available only in this block.
+  }
+  (y <- maybeY) >> {
+    // y is available only in this block.
+  }
+}

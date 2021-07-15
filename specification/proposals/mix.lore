@@ -1,0 +1,29 @@
+// Goal: Declare structs to contain components.
+
+// Current implementation:
+
+struct Player extends +Position {
+  position: Position
+}
+
+// This is quite annoying, especially having to specify the name of `position` twice (once in +Position). So here is an
+// approach using "mix":
+
+// "mix" adds all the members declared in the given type as members of the struct. Must be a shape type.
+struct Player {
+  mix +Position
+}
+
+// Advantages:
+//    1. We solve the problem of concisely specifying a "component". The DRY principle is honored.
+//    2. We could also use this same syntax to solve the general problem of having to redefine properties when
+//       inheriting from traits.
+//    3. As properties are added in place, the positions of the mixed in properties are well defined. This is in
+//       contrast to usual object-oriented approaches where the position of supertype properties would either be fixed
+//       or undefined.
+
+// Disadvantages:
+//    1. What if the structural type is created by an intersection, which is commutative? Which member would be
+//       declared first?
+//    2. What if the structural type is in an intersection with a trait type? For example, when we simulate
+//       "ownership", we'd have a type such as +A = { b: B } & T. Why would this be a form we could use with mix?
