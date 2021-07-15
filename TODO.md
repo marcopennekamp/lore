@@ -137,13 +137,12 @@
 - Go to definition:
   - The current implementation is very naive, as it can only list global definitions and disregards scopes and shadowing entirely. This is fine for now, but should be improved at some point.
   - Support "go to definition" for members. Members require full knowledge of the instance's type to find all declarations, so we will have to use the compilation result from the registry. This will likely tie into a "usages" extension to the global index.
-  - For fixed functions, the feature just lists all functions of the multi-function. Obviously we can do better here and only show the functions that are in the min set of the fixed function dispatch by taking type information into account.
+  - Low priority: For fixed functions, the feature just lists all functions of the multi-function. Obviously we can do better here and only show the functions that are in the min set of the fixed function dispatch by taking type information into account.
 - Semantic tokens:
   - Low priority: Try to implement incremental parsing so that we don't have to parse the document fully every time a character changes. This could be accomplished by keeping all nodes for open documents in memory and locally updating nodes with every change.
 - Low priority: We should process text document changes with the FragmentChangeHandler.
   - I have already built the fragment change handler, but in hindsight it is not needed for now. The language server rebuilds the index every time a file gets saved, which is frequent enough.
   - Using the FragmentChangeHandler might become more attractive once we need to track local scopes for "find usages" and "rename symbol".
-- Make sure that multiple "applyWorkspaceChanges" calls are properly debounced. If the method is already being executed and more calls come in, we only need the last call to trigger another execution. Only one call may execute at the same time.
 
 ##### Visual Studio Code
 

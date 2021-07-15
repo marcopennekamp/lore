@@ -1,6 +1,6 @@
 package lore.compiler.syntax.visitor
 
-import lore.compiler.syntax.{DeclNode, ExprNode, Node, TopLevelExprNode, TypeDeclNode, TypeExprNode}
+import lore.compiler.syntax._
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalaz.Id.Id
 
@@ -80,7 +80,12 @@ object CombiningNodeVisitor {
       case node: TypeExprNode => visitTypeExprNode(node)
       case TypeExprNode.ShapePropertyNode(_, tpe, _) => visitor.visit(node, concat(visit(tpe)))
 
-      case node: ExprNode => visitExprNode(node)
+      case exprNode: TopLevelExprNode => visitExprNode(exprNode)
+      case ExprNode.AnonymousFunctionParameterNode(_, tpe, _) => visitor.visit(node, concat(visit(tpe)))
+      case ExprNode.KeyValueNode(key, value, _) => visitor.visit(node, concat(visit(key), visit(value)))
+      case ExprNode.ObjectEntryNode(_, expression, _) => visitor.visit(node, concat(visit(expression)))
+      case ExprNode.ShapeValuePropertyNode(_, expression, _) => visitor.visit(node, concat(visit(expression)))
+      case ExprNode.ExtractorNode(_, collection, _) => visitor.visit(node, concat(visit(collection)))
     }
 
     private def visitTypeExprNode(node: TypeExprNode): A = node match {
@@ -94,14 +99,26 @@ object CombiningNodeVisitor {
       case _ => visitor.visit(node, concat())
     }
 
-    private def visitExprNode(node: ExprNode): A = TopLevelExprVisitor.visit(ExprVisitor)(node)
+    /**
+      * We can't use a TopLevelExprVisitor, because it doesn't visit certain nodes such as TypeExprNodes.
+      */
+    private def visitExprNode(node: TopLevelExprNode): A = node match {
+      // These ExprNodes contain nodes that are not TopLevelExprNodes, so we have to handle them specially.
+      case TopLevelExprNode.VariableDeclarationNode(_, _, tpe, value, _) => visitor.visit(node, concat(visit(tpe), visit(value)))
+      case ExprNode.AnonymousFunctionNode(parameters, body, _) => visitor.visit(node, concat(visit(parameters), visit(body)))
+      case ExprNode.MapNode(kvs, _) => visitor.visit(node, concat(visit(kvs)))
+      case ExprNode.ObjectMapNode(_, entries, _) => visitor.visit(node, concat(visit(entries)))
+      case ExprNode.ShapeValueNode(properties, _) => visitor.visit(node, concat(visit(properties)))
+      case ExprNode.CallNode(target, arguments, _) => visitor.visit(node, concat(visit(target), visit(arguments)))
+      case ExprNode.DynamicCallNode(resultType, arguments, _) => visitor.visit(node, concat(visit(resultType), visit(arguments)))
+      case ExprNode.ForNode(extractors, body, _) => visitor.visit(node, concat(visit(extractors), visit(body)))
 
-    private object ExprVisitor extends CombiningTopLevelExprVisitor.Identity[A] {
-      override protected def combine(list: Vector[A]): A = Applicator.this.combine(list, (a: A) => a)
-
-      override protected def visit(node: TopLevelExprNode, results: Vector[A]): A = {
-        visitor.visit(node, asResult(results.map(wrapLazy)))
-      }
+      // These cases have to be specified last so that we can override these defaults for specific nodes above.
+      case node: TopLevelExprNode.LeafNode => visitor.visit(node, concat())
+      case node: TopLevelExprNode.UnaryNode => visitor.visit(node, concat(visit(node.child)))
+      case node: TopLevelExprNode.BinaryNode => visitor.visit(node, concat(visit(node.child1), visit(node.child2)))
+      case node: TopLevelExprNode.TernaryNode => visitor.visit(node, concat(visit(node.child1), visit(node.child2), visit(node.child3)))
+      case node: TopLevelExprNode.XaryNode => visitor.visit(node, asResult(node.children.map(visit(_))))
     }
 
   }
