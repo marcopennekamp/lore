@@ -105,7 +105,6 @@
 
 ##### Clean-Up
 
-- Remove all examples from `/examples/` or turn them into test cases.
 - Clean most TODOs within the source code or add them to this TODO list.
 
 
