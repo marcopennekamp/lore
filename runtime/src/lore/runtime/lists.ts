@@ -38,7 +38,7 @@ export const List = {
    * the point of construction, the collection's or struct's/trait's type is decided based on its type at compile-time.
    */
   append<A, B extends A>(list: ListValue<A>, element: B, type: ListType): ListValue<A> {
-    return { array: [...list.array, element], lore$type: type }
+    return List.value([...list.array, element], type)
   },
 
   /**
@@ -47,7 +47,7 @@ export const List = {
    * the type of the list.
    */
   appendUntyped<A, B extends A>(list: ListValue<A>, element: B): ListValue<A> {
-    return { array: [...list.array, element], lore$type: list.lore$type }
+    return List.value([...list.array, element], list.lore$type)
   },
 
   get<A>(list: ListValue<A>, index: number): A {
@@ -64,5 +64,9 @@ export const List = {
 
   length<A>(list: ListValue<A>): number {
     return list.array.length
+  },
+
+  slice<A>(list: ListValue<A>, startIndex: number, length: number): ListValue<A> {
+    return List.value(list.array.slice(startIndex, startIndex + length), list.lore$type)
   },
 }

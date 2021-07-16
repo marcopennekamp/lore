@@ -12,7 +12,7 @@ function transcribe(n: #c): #g = #g
 
 function transcribe(dna: Dna): Rna = map(dna, transcribe)
 
-function toString(rna: Rna): String = flatten(map(rna, symbolName))
+function toString(rna: Rna): String = concat(map(rna, symbolName))
 
 function test(): [String] = {
   let cases = [

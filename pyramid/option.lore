@@ -4,16 +4,16 @@
  * TODO: Compute the alternative lazily / via a function value.
  */
 //function get(option: A | #none, alternative: B): B where A, B >: A
-function get(value: A, alternative: B): B where A, B >: A = value
-function get(none: #none, alternative: B): B where B = alternative
+//function get(value: A, alternative: B): B where A, B >: A = value
+//function get(none: #none, alternative: B): B where B = alternative
 
 /**
  * Returns true if the given value is `:none`, and false otherwise.
  */
-function isEmpty(value: A): Boolean where A = false
-function isEmpty(none: #none): Boolean = true
+//function isEmpty(value: A): Boolean where A = false
+//function isEmpty(none: #none): Boolean = true
 
 /**
  * Returns true if the given value is something, and false if the value is `:none`.
  */
-function isDefined(option: A | #none): Boolean where A = !isEmpty(option)
+//function isDefined(option: A | #none): Boolean where A = !isEmpty(option)
