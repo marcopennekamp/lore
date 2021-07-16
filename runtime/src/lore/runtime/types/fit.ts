@@ -166,11 +166,19 @@ class TypeVariableAllocation {
       return
     }
 
-    if (t1.kind === Kind.Intersection || t2.kind === Kind.Intersection || t1.kind === Kind.Sum || t2.kind === Kind.Sum) {
-      throw Error("Intersection and sum type type variable allocations are not yet supported.")
-    }
-
     switch (t2.kind) {
+      case Kind.Sum:
+        if (isPolymorphic(t2)) {
+          throw Error('Type variable allocations for sum types are not yet supported.')
+        }
+        break
+
+      case Kind.Intersection:
+        if (isPolymorphic(t2)) {
+          throw Error('Type variable allocations for intersection types are not yet supported.')
+        }
+        break
+
       case Kind.Tuple:
         if (t1.kind === Kind.Tuple) {
           const types1 = (<TupleType> t1).types
