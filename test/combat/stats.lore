@@ -52,33 +52,21 @@ struct Stats {
 type +Stats = { stats: Stats }
 
 /**
- * A type used to create "labels" for various stats.
- *
- * TODO: Note that, for now, we don't support global constants (or atom/keyword types), which means that any Stat label
- *       object needs to be instantiated anew each time it is used.
- */
-trait StatLabel
-// TODO: This would be a case object in Scala. We could support this with the planned singleton types, which would be
-//       very appropriate here.
-//       type StatLabel = 'Regeneration | 'Defense | 'Dodge | 'Attack | 'Range | 'Speed
-struct StatRegeneration extends StatLabel
-struct StatDefense extends StatLabel
-struct StatDodge extends StatLabel
-struct StatAttack extends StatLabel
-struct StatRange extends StatLabel
-struct StatSpeed extends StatLabel
+  * A stat label uniquely names a specific stat in the Stats struct.
+  */
+type StatLabel = StatLabelInt | StatLabelReal
+type StatLabelInt = #regeneration | #defense | #attack | #range | #speed
+type StatLabelReal = #dodge
 
-// TODO: To make these functions more type-safe, we should require StatLabel to be parameterized over A. Then StatDefense
-//       would extend StatLabel[Int] and stat would only be definable over StatDefense if A is Int. The same applies
-//       to affectStat, where this would also provide additional type safety.
-//       Also, we wouldn't have to define functions over StatRegeneration | StatDefense | ... and so on.
 function baseStat(entity: +Stats, label: StatLabel): Int | Real
-function baseStat(entity: +Stats, label: StatRegeneration | StatDefense | StatAttack | StatRange | StatSpeed): Int
-function baseStat(entity: +Stats, label: StatRegeneration): Int = entity.stats.regeneration
-function baseStat(entity: +Stats, label: StatDefense): Int = entity.stats.defense
-function baseStat(entity: +Stats, label: StatDodge): Real = entity.stats.dodge
-function baseStat(entity: +Stats, label: StatAttack): Int = entity.stats.attack
-function baseStat(entity: +Stats, label: StatRange): Int = entity.stats.range
-function baseStat(entity: +Stats, label: StatSpeed): Int = entity.stats.speed
+
+function baseStat(entity: +Stats, label: StatLabelInt): Int
+function baseStat(entity: +Stats, label: #regeneration): Int = entity.stats.regeneration
+function baseStat(entity: +Stats, label: #defense): Int = entity.stats.defense
+function baseStat(entity: +Stats, label: #attack): Int = entity.stats.attack
+function baseStat(entity: +Stats, label: #range): Int = entity.stats.range
+function baseStat(entity: +Stats, label: #speed): Int = entity.stats.speed
+
+function baseStat(entity: +Stats, label: #dodge): Real = entity.stats.dodge
 
 function isAlive(entity: +Stats): Boolean = entity.stats.health > 0

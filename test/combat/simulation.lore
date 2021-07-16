@@ -11,22 +11,15 @@ action onHit(combatant: Combatant) {
   onHitStatusEffects(combatant)
 }
 
-// TODO: This wouldn't need two separate implementations if we'd have StatLabel[Int], StatLabel[Real] etc. stat labels.
-//       Also see the TODO above the declaration of baseStat in stats.lore.
-function stat(combatant: Combatant, statLabel: StatRegeneration | StatDefense | StatAttack | StatRange | StatSpeed): Int = {
-  let mut result = baseStat(combatant, statLabel)
-  for (effect <- combatant.statusEffects.effects) {
-    result = affectStat(effect, statLabel, result)
-  }
-  result
-}
+function stat(combatant: Combatant, statLabel: StatLabelInt): Int = statImpl(combatant, statLabel, baseStat(combatant, statLabel))
+function stat(combatant: Combatant, statLabel: StatLabelReal): Real = statImpl(combatant, statLabel, baseStat(combatant, statLabel))
 
-function stat(combatant: Combatant, statLabel: StatDodge): Real = {
-  let mut result = baseStat(combatant, statLabel)
-  for (effect <- combatant.statusEffects.effects) {
-    result = affectStat(effect, statLabel, result)
-  }
-  result
+function statImpl(combatant: Combatant, statLabel: StatLabel, base: A): A where A = {
+  fold(
+    combatant.statusEffects.effects,
+    base,
+    (result: A, effect) => affectStat(effect, statLabel, result)
+  )
 }
 
 
@@ -99,14 +92,14 @@ struct CombatantState {
 /**
  * Whether the combatant is in range to attack, based on the entity's range stat.
  */
-function isInRange(combatant: Combatant, distance: Int): Boolean = stat(combatant, StatRange()) >= distance
+function isInRange(combatant: Combatant, distance: Int): Boolean = stat(combatant, #range) >= distance
 
 /**
  * Closes the given distance to the other combatant, provided the given combatant isn't already in range.
  */
 function closeDistance(combatant: Combatant, distance: Int): Int = {
   if (distance > 0 && !isInRange(combatant, distance)) {
-    let new = max(distance - stat(combatant, StatSpeed()), 0)
+    let new = max(distance - stat(combatant, #speed), 0)
     combatLog('${name(combatant)} closes distance to $new.')
     new
   } else distance
@@ -117,7 +110,7 @@ function closeDistance(combatant: Combatant, distance: Int): Int = {
  * has side effects.
  */
 function attemptDodge(state: CombatantState): Boolean = {
-  state.dodge += stat(state.combatant, StatDodge())
+  state.dodge += stat(state.combatant, #dodge)
   if (state.dodge >= 1.0) {
     combatLog('${name(state.combatant)} dodges an attack.')
     state.dodge -= 1.0
@@ -129,7 +122,7 @@ action attemptAttack(attackerState: CombatantState, defenderState: CombatantStat
   if (isInRange(attackerState.combatant, distance)) {
     let dodgeSuccessful = attemptDodge(defenderState)
     if (!dodgeSuccessful) {
-      let attack = stat(attackerState.combatant, StatAttack())
+      let attack = stat(attackerState.combatant, #attack)
       hit(attackerState.combatant, defenderState.combatant, attack)
     }
   }
@@ -139,7 +132,7 @@ action attemptAttack(attackerState: CombatantState, defenderState: CombatantStat
  * Damages a target, taking into account defense but not dodge. Also triggers onHit calls.
  */
 action hit(source: Combatant, target: Combatant, damage: Int) {
-  let defense = stat(target, StatDefense())
+  let defense = stat(target, #defense)
   let damageAfterDefense = max(damage - defense, 0)
   combatLog('${name(source)} attacks ${name(target)} for $damageAfterDefense damage given a defense of $defense.')
   target.stats.health -= damageAfterDefense
@@ -151,7 +144,7 @@ action hit(source: Combatant, target: Combatant, damage: Int) {
  */
 action updateCombatantPostAttack(combatant: Combatant) {
   if (isAlive(combatant)) {
-    heal(combatant, stat(combatant, StatRegeneration()))
+    heal(combatant, stat(combatant, #regeneration))
     updateStatusEffects(combatant)
   }
 }

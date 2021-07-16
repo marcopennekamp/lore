@@ -23,7 +23,7 @@ function weaponRange(shardbow: Shardbow): Int = 20
 function weaponRange(bow: Bow): Int = 10
 
 
-function baseStat(entity: +Stats & +Weapon, label: StatAttack): Int = weaponStrength(entity.weapon)
+function baseStat(entity: +Stats & +Weapon, label: #attack): Int = weaponStrength(entity.weapon)
 
-function baseStat(entity: +Stats & +Weapon, label: StatRange): Int = 0
-function baseStat(entity: +Stats & +RangedWeapon, label: StatRange): Int = weaponRange(entity.weapon)
+function baseStat(entity: +Stats & +Weapon, label: #range): Int = 0
+function baseStat(entity: +Stats & +RangedWeapon, label: #range): Int = weaponRange(entity.weapon)

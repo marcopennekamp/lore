@@ -61,7 +61,7 @@ struct Armored extends StatusEffect {
 
 function createArmored(armor: Int, durability: Int): Armored = Armored(armor, HitLimit(durability))
 
-function affectStat(effect: Armored, statLabel: StatDefense, value: Int): Int = value + effect.armor
+function affectStat(effect: Armored, statLabel: #defense, value: Int): Int = value + effect.armor
 
 
 /**
@@ -73,9 +73,9 @@ struct Infusion extends StatusEffect {
 
 function createInfusion(duration: Int): Infusion = Infusion(DurationLimit(duration))
 
-function affectStat(effect: Infusion, statLabel: StatAttack | StatSpeed, value: Int): Int = floor(value * 1.5)
-function affectStat(effect: Infusion, statLabel: StatDodge, value: Real): Real = 1.0 // Dodge all attacks while infused.
-function affectStat(effect: Infusion, statLabel: StatRegeneration, value: Int): Int = 5
+function affectStat(effect: Infusion, statLabel: #attack | #speed, value: Int): Int = floor(value * 1.5)
+function affectStat(effect: Infusion, statLabel: #dodge, value: Real): Real = 1.0 // Dodge all attacks while infused.
+function affectStat(effect: Infusion, statLabel: #regeneration, value: Int): Int = 5
 
 
 struct StatusEffects {
