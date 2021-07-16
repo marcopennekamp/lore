@@ -28,6 +28,7 @@
 
 ##### Type System
 
+- Rethink whether multiple type variable mentions at run-time must really be equal, or whether we could go with a softer approach based on finding a "consensus" between occurrences using subtyping. The definition of `fold` for lists is seriously complex. This aspect of the runtime system is not friendly to the daily life of a programmer.
 - Add the `expectedType` checking for functions to the inference algorithm. There is no need to check separately, and it would allow the inference algorithm to infer certain types from a function's output type.
 - Intersection type construction: Tuple types can be combined: `(A, B) & (C, D) = (A & C, B & D)`. In general, we can normalize covariant and contravariant types: https://dotty.epfl.ch/docs/reference/new-types/intersection-types-spec.html.
   - The `Type.tupled` in the LUB case for functions is a workaround for the lack of tuple combining when constructing intersection types.

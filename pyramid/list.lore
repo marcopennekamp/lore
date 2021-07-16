@@ -56,8 +56,8 @@ function filter(list: [A], predicate: B => Boolean): [A] where A, B >: A = {
   result
 }
 
-function fold(list: [A], initial: B, f: (C, A) => C): C where A, B, C >: B = {
-  let mut result: C = initial
+function fold(list: [A], initial: I, f: (R, B) => R): R where A, B >: A, I, R >: I = {
+  let mut result: R = initial
   for (element <- list) {
     result = f(result, element)
   }
