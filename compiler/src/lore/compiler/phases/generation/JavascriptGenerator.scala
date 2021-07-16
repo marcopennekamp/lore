@@ -46,7 +46,7 @@ object JavascriptGenerator {
     case Target.Call(function, arguments, isRestCall) =>
       val rest = if (isRestCall) "..." else ""
       val args = arguments.map(generate).mkString(", ")
-      s"$rest${generate(function)}($args)"
+      s"${generate(function)}($rest$args)"
 
     case Target.New(constructor, arguments) =>
       val args = arguments.map(generate).mkString(",")
