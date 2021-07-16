@@ -3,24 +3,6 @@
  */
 function toString(value: String): String = value
 
-/**
- * Converts a Lore list to a string.
- */
-function toString(list: [A]): String where A = {
-  let strings = for (a <- list) {
-    toString(a)
-  }
-  stringJoin(strings, ', ')
-}
-
-// TODO: Stringify maps.
-
-// TODO: We need a way to work on tuples generically. (Like the Product trait in Scala.)
-
-function toString(tuple: (A, B)): String where A, B = '(${first(tuple)}, ${second(tuple)})'
-
-// TODO: Find a way to stringify classes.
-
 function concat(a: String, b: String): String = '$a$b'
 
 function concat(strings: [String]): String = fold(strings, '', concat)

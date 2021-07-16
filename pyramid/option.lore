@@ -1,7 +1,5 @@
 /**
  * Returns the given value if it is something, or otherwise the alternative.
- *
- * TODO: Compute the alternative lazily / via a function value.
  */
 //function get(option: A | #none, alternative: B): B where A, B >: A
 //function get(value: A, alternative: B): B where A, B >: A = value

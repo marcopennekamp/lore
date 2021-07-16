@@ -1,0 +1,9 @@
+// TODO: Tuples need a more generic solution.
+function first(tuple: (A, B)): A where A, B = dynamic[A]('Lore.tuples.get', tuple, 0)
+function second(tuple: (A, B)): B where A, B = dynamic[B]('Lore.tuples.get', tuple, 1)
+
+// TODO: Map function on tuples:
+// function map(tuple: (A, B), f: A | B => C): (C, C) where A, B, C = (f(first(tuple)), f(second(tuple)))
+// Pipes? (tuple |> first |> f, tuple |> second |> f)
+
+function toString(tuple: (A, B)): String where A, B = '(${first(tuple)}, ${second(tuple)})'

@@ -1,14 +1,5 @@
-//function append(list: [A], element: B): [A] where A, B <: A = dynamic[[A]]('Lore.values.list.append', list, element)
-//function prepend(list: [A], element: B): [B] where A, B >: A = dynamic[[B]]('Lore.values.list.prependWiden', list, element)
-
-// TODO: We'd have to somehow return a list of type LUB(A, B) and also propagate that type to the runtime function.
-//       It'd probably be easier to just define a construction operator for lists, such as +:.
-//function prepend(list: [A], element: B): [A | B] where A, B = dynamic[[A | B]]('Lore.values.list.prepend', list, element)
-
-// Note that the append operator is defined by the compiler and thus doesn't need to be defined here.
-
-// TODO: Rename to size to have a consistent approach to collection size? Map size should also be called size.
 function length(list: [A]): Int where A = dynamic[Int]('Lore.lists.length', list)
+function size(list: [A]): Int where A = length(list)
 function get(list: [A], index: Int): A where A = dynamic[A]('Lore.lists.get', list, index)
 
 /**
@@ -115,17 +106,12 @@ function symmetricPairs(list: [A]): [(A, A)] where A = {
   result
 }
 
-// TODO: If we change lists to our own custom implementation, it would still be useful to expose some kind of
-//       interface for Javascript arrays, just in case they are needed by the developer. This would be the place
-//       to do so. However, we would first need some way to define a class whose implementation is deferred to
-//       Javascript, much like dynamic calls do for functions.
-//       Arrays could be typed #[T] with a constructor #[t1, t2, t3].
-
-
-// TODO: Tuples need a more generic solution.
-function first(tuple: (A, B)): A where A, B = dynamic[A]('Lore.tuples.get', tuple, 0)
-function second(tuple: (A, B)): B where A, B = dynamic[B]('Lore.tuples.get', tuple, 1)
-
-// TODO: Map function on tuples:
-// function map(tuple: (A, B), f: A | B => C): (C, C) where A, B, C = (f(first(tuple)), f(second(tuple)))
-// Pipes? (tuple |> first |> f, tuple |> second |> f)
+/**
+ * Converts a Lore list to a string.
+ */
+function toString(list: [A]): String where A = {
+  let strings = for (a <- list) {
+    toString(a)
+  }
+  stringJoin(strings, ', ')
+}
