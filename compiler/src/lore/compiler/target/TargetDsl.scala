@@ -23,7 +23,7 @@ object TargetDsl {
     def iterateWithIndex(length: TargetExpression)(inner: (TargetExpression, TargetExpression) => TargetStatement): TargetStatement = {
       val varIndex = "i".asVariable
       Target.For(
-        varIndex.declareAs(Target.IntLiteral(0)),
+        varIndex.declareMutableAs(Target.IntLiteral(0)),
         TargetOperator.LessThan(varIndex, length),
         varIndex.assign(TargetOperator.Addition(varIndex, Target.IntLiteral(1))),
         inner(expression.element(varIndex), varIndex)
