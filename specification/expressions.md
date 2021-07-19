@@ -254,7 +254,7 @@ map([1, 2, 3, 4, 5], v => v + 3)
 
 ### Lists
 
-Lore supports **lists** as first-class constructs. A list is a homogenous, linear collection of an arbitrary number of elements. Lists are *immutable*. List types are denoted `[A]`. We will eventually differentiate between immutable lists and (mutable) arrays.
+Lore supports **lists** as first-class constructs. A list is a homogeneous, linear collection of an arbitrary number of elements. Lists are *immutable*. List types are denoted `[A]`. We will eventually differentiate between immutable lists and (mutable) arrays.
 
 You can **construct** a list by putting comma-separated elements inside square brackets: `[a, b, c]`. The empty list is denoted simply `[]`. You can **append** to a list with the `:+` operator, which is the native way to expand a list.
 
@@ -266,7 +266,7 @@ Two lists are equal if they have the same lengths and each of their elements, co
 
 ### Maps
 
-Lore supports **maps** as first-class constructs. A map is a homogenous, indexed collection of key/value pairs. Maps are *immutable*. Map types are denoted `A -> B`. We will eventually differentiate between immutable and mutable maps.
+Lore supports **maps** as first-class constructs. A map is a homogeneous, indexed collection of key/value pairs. Maps are *immutable*. Map types are denoted `A -> B`. We will eventually differentiate between immutable and mutable maps.
 
 You can **construct** a map with the following syntax: `#[k1 -> v1, k2 -> v2, k3 -> v3]`. The empty map is denoted `#[]`.
 
@@ -306,7 +306,7 @@ Two shapes are equal if their properties are equal. Shapes are unordered by defa
 
 ### Symbols
 
-A **symbol** is a value simply identified and typed by its name. A symbol named `foo` is written `#foo` and its type is `#foo`. Symbols are compiled such that they are interned at run time.
+A **symbol** is a value simply identified and typed by its name. A symbol named `foo` is written `#foo` and its type is `#foo`. Symbols are interned at run time.
 
 We suggest using a snake_case naming convention for symbols.
 
@@ -322,7 +322,7 @@ function process(query: Query): Result | #syntax_error = {
 
 ##### Equality and Order
 
-Two symbols are equal if they have the same name.
+Two symbols are equal if they have the same name. Symbols are unordered.
 
 
 
@@ -411,13 +411,13 @@ The expression evaluates to a **function value** which may be subsequently invok
 
 ### Function Calls
 
-**Function values** may be called with the same syntax as multi-functions. Because multiple dispatch is compiled on the implementing side, a function call may still lead to multiple dispatch and would thus be semantically equivalent to a regular multi-function call. The function value may also be an anonymous function, however, which doesn't engage in dispatch.
+**Function values** may be called with the same syntax as multi-functions. Because multiple dispatch is compiled on the implementing side, a function call may still lead to multiple dispatch and would thus be semantically equivalent to a regular multi-function call. The function value may also be an anonymous function, however, which doesn't engage in dynamic dispatch.
 
 
 
 ### Dynamic Function Calls
 
-Many functions in the Lore standard library, especially the most fundamental ones, defer their implementation to **dynamic function calls**. Since the underlying runtime environment is a Javascript environment, when defining a function implementation, we can also call functions defined in Javascript.
+Many functions in the Lore standard library, especially the most fundamental ones, defer their implementation to **dynamic function calls**. Since the underlying runtime is a Javascript environment, when defining a function implementation, we can also call functions defined in Javascript.
 
 The **syntax** of a dynamic function call is as follows:
 

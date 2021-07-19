@@ -10,7 +10,7 @@ Lore has various **type constructors** with which complex types can be built, as
 
 A **type expression** is a representation of a particular type, built with the toolbox of named types and type constructors. Their syntax can be described as such:
 
-- `id` — A **named type** (basic type, declared type, type variable) is accessible via its name. It has to be declared or bound in an outer or the current scope before it can be used in a type expression.
+- `id` — A **named type** (basic type, declared type, type variable, type alias) is accessible via its name. It has to be declared or bound in an outer or the current scope before it can be used in a type expression.
   
   - The name of a type may contain the following **special characters:**
   

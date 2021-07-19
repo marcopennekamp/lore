@@ -2,7 +2,7 @@
 
 **Multi-functions** are *the* core feature of Lore. From inheritance to behavioral abstraction to extendability and specialization of subtypes, implementation of functionality for shapes, dynamic specialization and generalization, everything hinges on the concept of multiple dispatch.
 
-A **multi-function** is a set of functions bearing the same name, embedded in a specificity hierarchy. When a multi-function is called, the actual function to be executed is decided at run-time based on the argument types passed during the call. In contrast to single dispatch, where such run-time function calls are decided over one argument (often the `this` value in object-oriented languages), **multiple dispatch** generalizes this notion to any number of arguments.
+A **multi-function** is a set of functions bearing the same name, embedded in a specificity hierarchy. When a multi-function is called, the actual function to be executed is decided at run-time based on the argument types passed during the call. In contrast to single dispatch, where such run-time function calls are decided over one argument (often called `this` in object-oriented languages), **multiple dispatch** generalizes this notion to any number of arguments.
 
 
 
@@ -259,7 +259,7 @@ function f(a: A2): R = {
 
 ### Multi-Function Values
 
-**TODO:** Making it possible to pass multi-functions around like "normal" functions. We absolutely need this feature as it would be killer.
+When a multi-function isn't immediately called, a **multi-function value** is created. This is a function value taken from the multi-function based on the given type context. For example, if we have an expression `map([1, 2, 3], foo)` and `foo` is a multi-function, the type inference algorithm will simulate multiple dispatch for the input type `(Int)`, because we're mapping over a list of integers. If exactly one function `foo: Int => String` is in the fit, the type of the resulting function value will also be `Int => String`. At run time, multiple dispatch is still performed every time the function value is called.
 
 
 
