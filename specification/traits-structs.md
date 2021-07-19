@@ -5,31 +5,29 @@
 - **Traits** are abstractions of hierarchy and behavior. They are Lore's solution to the questions of data type abstraction, inheritance, and interfaces. Traits cannot be instantiated directly: they have to be backed by a struct.
 - **Structs** are data type definitions that can stand on their own, possibly extending some number of traits. A struct is always a subtype of all the traits that it extends and also carries this information at run-time.
 
+Both traits and structs have a set of **common features**, including inheritance and type parameters.
+
 
 
 ### Traits
 
-A **trait** is a type that describes structure and behavior. In concrete terms, a trait is an abstract type that can be associated with functions defining both its **structure** and **behavior** (either abstract, concrete, or both). Since traits must be backed by a struct, meaning the trait itself cannot be instantiated, a trait is **abstract**.
-
-Traits can also **inherit** from (multiple) other traits and even extend shape types. A trait `A` inheriting from a trait `B` will make `A` a strict and direct subtype of `B` and give the programmer the opportunity to specialize any functions declared over `B` for the type `A`. When extending a shape type `S`, the trait effectively declares that any struct extending the trait must contain all properties declared in `S`.
+A **trait** is an abstract type that can be extended by other traits and structs, creating a subtyping hierarchy. Traits are used for the abstraction of structure and behavior. They can have **members** in the form of inherited shape properties.
 
 ###### Syntax Example
 
 ```
-trait T extends A, B, S
+trait T extends A, B, { property: C }
 ```
 
 
 
 ### Structs
 
-A **struct** describes the type and representation of user-defined data. In concrete terms, a struct is a set of **properties** (immutable and, if you must, mutable) allowing optional default values. A struct can **extend** any number of traits, which together determine the functions that must be implemented for the struct and, together with shape types, the properties a struct must contain. An instance of a struct, also called a struct value or simply struct, can be **constructed** using one of two provided syntaxes. As structs describe actual instances, a struct type is **always concrete and never abstract**.
+A **struct** is a set of **properties** with optional default values and optional mutability. As structs describe actual instances, a struct type is **always concrete and never abstract**. A struct may extend traits and shapes, which is elaborated on further below.
 
-Structs do not support **inheritance** in and of themselves. Traits are the mechanism to facilitate inheritance, which has the huge advantage of cleanly separating the concerns of data representation (structs) and abstract structure/behavior (traits, shapes).
+Properties can be **delimited** using commas and newlines. Both styles are permitted interchangeably, giving the ability to use both in the same struct definition, and should be chosen based on readability. Properties can be accessed using the member access notation `struct.property`.
 
-Properties can be **delimited** using commas and newlines. Both styles are permitted interchangeably, giving the ability to use both in the same struct definition, and should be chosen based on readability. Properties can be accessed using the dot notation `struct.property`.
-
-###### Syntax Example
+###### Example
 
 ```
 struct Point { x: Real = 0, y: Real = 0, z: Real = 0 }
@@ -49,55 +47,26 @@ Creating new struct instances is possible with two independent **constructor** s
 - The **call syntax** is a convenient way to create instances, but with the requirement that all properties need to be specified, including those that could have a default value. The call-syntax constructor is a **function value** that may be passed around.
 - In contrast, the **map syntax** is most convenient when default values should be applied to properties or when more self-evident code is desired. It is also useful when properties should be specified out of order. When using the map syntax, one may **omit some verbosity** in a definition like `property = value` if the value is a variable and named exactly like the property. An example of this is included below.
 
-Apart from these two constructor styles, all **derivative constructors** will have to be defined as ordinary (multi-)functions.
+Apart from these two constructor styles, all **derivative constructors** have to be defined as ordinary (multi-)functions. Lore doesn't support the kind of constructors that you might know from object-oriented languages.
 
-###### Syntax Example
-
-```
-action test() {
-  // Call syntax.
-  let point = Point(0.5, 1.5, 2.5)  // Constructor type: (Real, Real, Real) => Point
-  let position = Position(point)    // Constructor type: Point => Position
-  // Map syntax.
-  let person = Person { name = 'Mellow', position = position }
-}
-
-action test2() {
-  // If the variable name matches the property name, it's possible to omit the property name entirely.
-  let name = 'Shallow'
-  let person = Person { name, position = Position(Point { }) }
-}
-```
-
-**TODO:** Map syntax alternative:
+###### Example
 
 ```
-%{ name: 'Mellow', position } as Person
-Person(%{ name: 'Mellow', position })  // This clashes with the idea that Person is a unique function value.
-%Person{ name: 'Mellow', position }
-```
+// Call syntax.
+let point = Point(0.5, 1.5, 2.5)  // Constructor type: (Real, Real, Real) => Point
+let position = Position(point)    // Constructor type: Point => Position
 
-This allows us to work with the established shape syntax instead of having two parallel syntaxes.
+// Map syntax.
+let person = Person { name = 'Mellow', position = position }
 
-##### Extending Traits
-
-A struct can **extend** any number of traits. This will make the struct a **subtype** of each of its traits. Since a struct is always a concrete type, **all abstract functions** of the traits will have to be implemented for the struct. This is implicitly handled by the constraints governing abstract functions and doesn't need to be handled specially for structs.
-
-A struct can also extend **shape types**. This will require the struct to declare properties in such a way that the struct subtypes the given shape type(s).
-
-###### Syntax Example
-
-```
-trait Hashable
-function hash(hashable: Hashable): Int
-
-struct Person extends Hashable { name: String }
-function hash(person: Person): Int = /* Compute the hash... */
+// If the variable name matches the property name, it's possible to omit the property name entirely.
+let name = 'Shallow'
+let person2 = Person { name, position }
 ```
 
 ##### Open Properties
 
-Normally, the run-time type of a struct property is not part of the run-time type of the struct. The struct will simply assume its compile-time type at the point of construction. However, some properties may need to be typed at run-time to support structural subtyping. Such properties must be declared to be `open`. You can read more on the reasoning behind this in the document about [shapes](shapes.md).
+Normally, the **run-time type of a struct property** is not part of the run-time type of the struct. The struct will simply assume the property's compile-time type at the point of construction. However, some properties may need to be typed at run time to support structural subtyping. Such properties must be declared to be `open`. You can read more on the reasoning behind this in the document about [shapes](shapes.md).
 
 ###### Syntax Example
 
@@ -105,6 +74,28 @@ Normally, the run-time type of a struct property is not part of the run-time typ
 struct Soldier {
   open weapon: Weapon
 }
+```
+
+
+
+### Inheritance
+
+Traits and structs can **inherit** from any number of traits and shapes. A trait or struct `A` inheriting from a trait or shape `B` will induce the strict subtyping relationship `A < B`.
+
+**Structs cannot be extended**. Traits are the mechanism for building type hierarchies, which has the huge advantage of cleanly separating the concerns of data representation (structs) and abstract structure/behavior (traits, shapes).
+
+If a trait or struct inherits from a shape directly or indirectly, all properties declared in the shape will become members of the trait or struct. The combined properties of all extended shape types are called the **inherited shape type**. This type definitely specifies all properties of a trait. A struct, in contrast, treats the inherited shape type as a contract: it must specify all properties contained in the inherited shape type as struct properties, with compatible types.
+
+Since a struct is always a concrete type, **all abstract functions** of the traits a struct extends will have to be implemented for the struct. This is implicitly handled by the constraints governing abstract functions and doesn't need to be handled specially for structs.
+
+###### Example
+
+```
+trait Hashable
+function hash(hashable: Hashable): Int
+
+struct Person extends Hashable { name: String }
+function hash(person: Person): Int = /* Compute the hash... */
 ```
 
 
@@ -320,7 +311,17 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
 
 
 
-### Post-MVL Extensions (Ideas)
+### TODOs
+
+- **Map syntax alternative:**
+
+  ```
+  %{ name: 'Mellow', position } as Person
+  Person(%{ name: 'Mellow', position })  // This clashes with the idea that Person is a unique function value.
+  %Person{ name: 'Mellow', position }
+  ```
+
+  This allows us to work with the established shape syntax instead of having two parallel syntaxes.
 
 - Easy **getters and setters** for struct properties?
 
