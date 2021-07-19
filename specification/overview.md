@@ -19,6 +19,7 @@ To learn more about Lore, take a look at the following **core documents:**
 - [**Traits and Structs:**](traits-structs.md) Traits and structs are the central means to define and work with data in Lore.
 - [**Shapes:**](shapes.md) Shapes are the means to support multiple dispatch on properties. They are also used to create ad-hoc data structures.
 - [**Expressions:**](expressions.md) Lore is an expression-based language, which means that there are no statements, only expressions. This document presents the kinds of values and expressions available in Lore.
+- [**Modules:**](modules.md) The module system supports splitting Lore programs into many small parts.
 - [**Versions:**](versions.md) This document provides an overview of Lore's current and planned features.
 
 You don't need to read these documents in order, but it would be beneficial to read up on types and multi-functions before you read about the other topics. There is simply no way around the very foundation of the language.
