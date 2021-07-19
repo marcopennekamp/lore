@@ -1,7 +1,7 @@
 trait Weapon
 type +Weapon = { weapon: Weapon }
 
-// TODO: Ranged weapons should do half or a third of the damage in melee range.
+// Idea: Ranged weapons should do half or a third of the damage in melee range.
 trait RangedWeapon extends Weapon
 type +RangedWeapon = { weapon: RangedWeapon }
 

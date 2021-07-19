@@ -28,6 +28,11 @@ Deno.test('shapes/listify', async () => {
   })
 })
 
+Deno.test('shapes/mut', async () => {
+  const result: ListValue<number> = await LoreTest.run('shapes/mut.lore')
+  assertListEquals(result, [0, 1, 3])
+})
+
 Deno.test('shapes/options', async () => {
   const result: string = await LoreTest.run('shapes/options.lore')
   assertEquals(result, 'Your dog Robby barks at a MADNESS-INDUCING volume showing sharp teeth!')

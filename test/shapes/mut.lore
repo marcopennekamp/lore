@@ -1,0 +1,20 @@
+struct A {
+  mut counter: Int
+}
+
+function get(shape: { counter: Int }): Int = shape.counter
+
+function increment(instance: A): Unit = {
+  instance.counter += 1
+}
+
+function test(): [Int] = {
+  let instance = A(0)
+  let r1 = get(instance)
+  increment(instance)
+  let r2 = get(instance)
+  increment(instance)
+  increment(instance)
+  let r3 = get(instance)
+  [r1, r2, r3]
+}
