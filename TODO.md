@@ -50,6 +50,7 @@
 
 ##### Correctness
 
+- Disallow the `+` symbol in a type variable name, because `+` is also used to specify covariance.
 - Ensure that loops with a Unit expression body cannot be used as an expression, as Unit loops are optimized by the transpiler.
 - During loop transpilation, ignore the resulting list if it isn't used at all. This will require allowing expression visitors to query some state from the parent and is possibly complex to implement.
 

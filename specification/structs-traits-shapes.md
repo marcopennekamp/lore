@@ -109,11 +109,90 @@ struct Soldier {
 
 
 
+### Type Parameters
 
+A trait or struct may be parameterized over any number of **type variables**. The presence of a type variable effectively turns the trait or struct into a *family of types*, called a **schema**. This has additional implications, especially for run-time type semantics.
 
-
+Type parameters are **declared** as such, the syntax mirroring multi-function type parameter declarations:
 
 ```
+trait X[A, B <: A, C >: A]
+```
+
+At the point of **construction**, type parameters must be either inferred or manually specified. The **run-time instantiation** of a type parameter is determined at compile-time, unless the type parameter is **open**. Let's consider option types as a non-trivial example:
+
+```
+trait Option[A]
+struct Some[A] extends Option[A] { value: A }
+struct None extends Option[Nothing]
+
+let v1 = Some(32)        // --> Some[Int]
+let v2 = Some[Real](32)  // --> Some[Real]
+```
+
+The compiler will try its best to infer all type variables from the given properties, but this is not always possible. The same applies to **constructor function values**. Consider the following example:
+
+```
+map([1, 2, 3], Some[Int])  // --> [Some[Int]]
+map([1, 2, 3], Some)       // --> [Some[Int]]
+```
+
+Both of these variants should work, as the compiler has enough context to infer that `A = Int` for the second `Some`.
+
+##### Variance 
+
+Type parameters can be **covariant**, **contravariant**, or **invariant:**
+
+- A **covariant** type parameter `+A` induces the following subtyping relationship: `X[A] <: X[B]` if `A <: B`.
+- A **contravariant** type parameter `-A` induces the following subtyping relationship: `X[A] >: X[B]` if `A <: B`.
+- An **invariant** type parameter `A` induces the following subtyping relationship: `X[A] <: X[B]` if `A = B`.
+
+Covariant and contravariant type variables are subject to some **restrictions.** In general, covariant type variables may not appear in contravariant positions, and vice versa. A few consequences of this rule are, assuming that `A` and `B` are type variables:
+
+- A mutable property `mut a: A` requires that `A` is invariant.
+- A property `list: [A]` requires that `A` is *not* contravariant.
+- A property `f: A => B` requires that `A` is *not* covariant and `B` is *not* contravariant.
+
+For example, **options** can actually be *covariant:*
+
+```
+trait Option[+A]
+struct Some[+A] extends Option[A] { value: A }
+struct None extends Option[Nothing]
+
+let opt: Option[Real] = Some[Int](32)
+```
+
+##### Open Type Variables
+
+Type variable instantiations are **fixed at compile-time**. This is what we want most of the time. For example, a mutable array type `Array[A]` should not vary based on its run-time contents. Some structs may not associate a type variable with a property, either, so the type argument can only be inferred at compile-time.
+
+There are cases in which we want the type variable to be instantiated **based on the run-time type of a property**. `Option[A]` is such a case. We want to be able to specialize functions on options without unpacking the options. Consider the following code:
+
+```
+function process(option: Option[Animal]): String = 'Maybe Animal.'
+function process(option: Option[Fox]): String = 'Maybe Fox.'
+
+let animal: Animal = Fox()
+process(Some(animal))
+```
+
+If `A` is fixed at compile-time, `process(Some(animal))` will evaluate to "Maybe Animal." This goes against intuition. A Some contains a single, immutable value. By all accounts, it should be possible for multiple dispatch to take the run-time type of the value into account.
+
+**Open type variables** fill exactly this niche. In similar spirit to open properties, an open type variable is populated at run-time with the actual type of a given value. This feature is very powerful and like all good comic book heroes (and villains), it comes with a few limitations:
+
+- Open type variables can only be part of **structs**. They make no sense in traits, because traits aren't instantiated directly.
+- Open type variables must be **uniquely deducible**. This means that the type variable may only occur in one position of a single property.
+- Open type variables must be **covariant**. This is easy to see: if we have a type `Some[A]` with `A` being open, we could have a variable of type `Option[Animal]` at compile time, but a value of `Some[Fox]` at run time. If `A` was invariant, we could not put this value into the variable, because `Some[Fox]` would not be a subtype of `Option[Animal]`.
+- Open type variables **cannot be manually specified** in square brackets at the point of instantiation, and must be omitted if other static type variables should be manually specified.
+- Properties typed with an open type variable must be **immutable**.
+
+The option examples demonstrates how open type variables can be **declared:**
+
+```
+trait Option[+A]
+struct Some[open +A] extends Option[A] { value: A }
+struct None extends Option[Nothing]
 ```
 
 
@@ -380,4 +459,6 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
   The constructor takes the underlying values as arguments and doesn't require any envelope boilerplate.
   
 - **Attaching properties at run-time:** Adding properties to arbitrary structs and shapes could be very powerful combined with structural dispatch. (Especially to dynamically add components to a struct.)
+
+- **Named type parameters:** If a struct has multiple type parameters, but only one needs to be inferred, the user should be able to specify only that one type parameter manually. We can add named type parameters here.
 

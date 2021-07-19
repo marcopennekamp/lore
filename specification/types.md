@@ -18,7 +18,7 @@ A **type expression** is a representation of a particular type, built with the t
     +
     ```
   
-    **Struct names** cannot contain these special characters because a struct's name is also the name of its constructor.
+    **Struct names** cannot contain these special characters because a struct's name is also the name of its constructor. **Type variable names** may not contain a `+`, because this symbol is also used to declare covariant type parameters.
   
 - `t1 | t2 | t3` — A **sum type** is simply constructed by connecting different type expressions with `|`.
 
