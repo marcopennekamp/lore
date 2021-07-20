@@ -34,9 +34,46 @@ lore.String.concat(['Hello', ', ', 'world', '!'])  // --> 'Hello, world!'
 
 
 
-### Imports
+### Use Declarations
 
-**TODO**
+The `use` declaration can be used to **simplify member names** at their point of use. It has three flavors:
+
+1. **Simple:** Use a single member.
+
+   ```
+   use lore.Enum.map
+   ```
+
+2. **Multiple:** Use multiple members of the same module.
+
+   ```
+   use lore.Enum.[map, flatMap]
+   ```
+
+3. **Wildcard:** Use all members of a module.
+
+   ```
+   use lore.Enum._
+   ```
+
+The `use` declaration can only be placed at the top of a file, below the optional top module declaration.
+
+###### Example
+
+```
+// Simple:
+use lore.Enum.map
+use lore.Math.increment
+map([1, 2, 3], increment)
+
+// Multiple:
+use lore.[Enum, Math]
+Enum.map([1, 2, 3], Math.increment)
+
+// Wildcard:
+use lore.Math._
+let x1 = (-b + sqrt(pow(b, 2) - product([4, a, c]))) / (2 * a)
+```
 
 
 
@@ -95,3 +132,9 @@ Modules are essentially used in two ways, which determines their naming conventi
    - An exception to this convention is when functions or global variables are intended to be used without the qualifying module name. In such cases the module is best understood as a namespace.
 2. Modules that only contain types and other modules are also informally known as **namespaces**. They are written in snake case, such as the `lore` namespace defined by the Pyramid standard library.
 
+
+
+### TODOs
+
+- **Use anywhere:** The `use` declaration should be usable anywhere (within any kind of block) for more fine-grained control of names.
+- **Aliases:** The `use` declaration should allow the programmer to rename a given symbol.
