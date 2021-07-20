@@ -5,7 +5,10 @@ import lore.compiler.core.Fragment
 import lore.compiler.syntax._
 
 class ExpressionParserSpec extends ParserSpec[TopLevelExprNode] {
-  override def parser[_: P](implicit fragment: Fragment): P[TopLevelExprNode] = new ExpressionParser(new NameParser(), new TypeParser()).topLevelExpression
+  override def parser[_: P](implicit fragment: Fragment): P[TopLevelExprNode] = {
+    val nameParser = new NameParser()
+    new ExpressionParser(nameParser, new TypeParser(nameParser)).topLevelExpression
+  }
 
   "The expression parser" should "reject incorrect literals" in {
     ".5".fails
