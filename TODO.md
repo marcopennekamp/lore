@@ -5,6 +5,7 @@
 - Implement type parameters for declared types.
 - Implement a module system.
 - Implement a pipe operator.
+- Overhaul the syntax.
 - Implement trailing lambdas.
 - Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.
 - Implement an append operation for maps. In general, we will need to apply the same run-time typing considerations to maps.
@@ -21,8 +22,9 @@
 
 ##### Syntax
 
-- Add the `%` to shape types to mirror the literal syntax `%{ ... }`. Consider using square brackets instead of curly braces.
+- Add the `%` to shape types to mirror the literal syntax `%{ ... }`.
 - Turn the map type syntax into `#[A -> B]` to mirror the literal syntax.
+  - `#[A]` could actually be the syntax for (hash) sets. `#{A -> B}` would be a good syntax for maps. Then we also have square brackets (`[]`) for "element" collections (lists, sets) and curly braces (`{}`) for "associative" collections (maps, shapes).  
 - Allow question marks in identifiers. I like how Clojure approaches booleans and this would fit nicely into Lore, I hope. Example: `isSuccessful` would become `successful?`.
 - Allow trailing commas.
 

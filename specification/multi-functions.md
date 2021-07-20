@@ -342,4 +342,5 @@ Of course, the question is always whether one should introduce a **label type** 
 ### TODOs
 
 - **Multi-Calls:** A multi-function call that, Instead of calling exactly one function, calls *all* candidates in the min set.
+  - Alternative: Introduce a `min` function that returns a list of all functions that *would* be called! Then the user can decide to call them right away or work with them in some other way.
 
