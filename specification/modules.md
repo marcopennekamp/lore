@@ -44,6 +44,18 @@ lore.String.concat(['Hello', ', ', 'world', '!'])  // --> 'Hello, world!'
 
 A type and a module may share a name. A module that bears the same name as a type is called a **companion module**. This module is *expected*, by convention, to contain functions for working with the type. For example, the `Option` type has a companion module `Option` that contains functions for working with options, such as `Option.get`.
 
+###### Example
+
+```
+module animals
+
+trait Animal
+
+module Animal {
+  function breed(mother: Animal, father: Animal): Option[Animal] = None()
+}
+```
+
 
 
 ### Visibility
