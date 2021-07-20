@@ -18,8 +18,11 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   private implicit val variableProvider: TemporaryVariableProvider = new TemporaryVariableProvider(s"${mf.targetVariable.name}__")
 
   def transpile(): Vector[TargetStatement] = {
-    if (properties.isSingleFunction && mf.functions.forall(_.isMonomorphic)) {
-      return transpileSingleFunction()
+    if (properties.isSingleFunction) {
+      val function = mf.functions.head
+      if (function.isMonomorphic && !function.isAbstract) {
+        return transpileSingleFunction(function)
+      }
     }
 
     // Phase 1: Transpile type variables.
@@ -54,9 +57,9 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     * If the multi-function consists of a single function that is not polymorphic, we can bypass all dispatch logic.
     * This requires that all function calls are legal at compile-time, but this is already guaranteed by the compiler.
     */
-  private def transpileSingleFunction(): Vector[TargetStatement] = {
+  private def transpileSingleFunction(function: FunctionDefinition): Vector[TargetStatement] = {
     implicit val typeVariables: TranspiledTypeVariables = Map.empty
-    FunctionTranspiler.transpile(mf.functions.head, mf.targetVariable.name, shouldExport = true)
+    FunctionTranspiler.transpile(function, mf.targetVariable.name, shouldExport = true)
   }
 
   /**
