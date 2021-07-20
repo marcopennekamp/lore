@@ -3,21 +3,6 @@ import { Kind } from '../../runtime/src/lore/runtime/types/kinds.ts'
 import { assertListEquals, assertSumTypeParts } from '../assertions.ts'
 import { LoreTest } from '../base.ts'
 
-Deno.test('dispatch/abstract-intersection', async () => {
-  const result: ListValue<string> = await LoreTest.run('dispatch/abstract-intersection.lore')
-  assertListEquals(result, ['A', 'C', 'B', 'C', 'C', 'B', 'C', 'B', 'C', 'B', 'A', 'C', 'X1|X2', 'X1|X2', 'X3'])
-})
-
-Deno.test('dispatch/abstract-partial-specialization', async () => {
-  const result: ListValue<string> = await LoreTest.run('dispatch/abstract-partial-specialization.lore')
-  assertListEquals(result, ['A1,B', 'A1,B', 'A2,B', 'A2,B'])
-})
-
-Deno.test('dispatch/abstract-sum', async () => {
-  const result: ListValue<number> = await LoreTest.run('dispatch/abstract-sum.lore')
-  assertListEquals(result, [3, 4, 4, 5, 5, 1, 2])
-})
-
 Deno.test('dispatch/fixed', async () => {
   const result: ListValue<string> = await LoreTest.run('dispatch/fixed.lore')
   assertListEquals(result, ['ABC', 'EABD', 'AB', 'ABD', 'A', 'A'])
