@@ -97,27 +97,34 @@ module Animal {
 
 ### Visibility
 
-Module members have two modes of **visibility:** private and public. **Private** members may only be accessed from the same module. All types, functions, and global variables are private by default. **Public** members may be accessed anywhere. All modules are public by default.
+Module members have two modes of **visibility:**
 
-If a single function definition is public, all function definitions of the owning **multi-function** must be public as well. This has to be applied *explicitly* so that multi-functions cannot accidentally become public.
+- **Private** members may only be accessed from the same module.
+- **Public** members may be accessed anywhere. 
+
+All module members are **public by default**. Private members are declared by prefixing their declaration keywords with a `-` sign: `-trait`, `-function`, and so on. If a single function definition is private, all function definitions of the owning **multi-function** must be private as well. This has to be applied *explicitly* so that multi-functions cannot accidentally become private.
 
 ###### Example
 
 ```
 module my_project
 
-public trait Foo
+trait Foo
 
 module Foo {
-  struct Implementation extends Foo { mut counter: Int }
+  -struct Implementation extends Foo { mut counter: Int }
   
-  public function fresh(): Foo = Implementation(0)
+  function fresh(): Foo = Implementation(0)
   
-  public function getAndIncrement(foo: Foo): Int
-  public function getAndIncrement(foo: Implementation): Int = {
+  function getAndIncrement(foo: Foo): Int
+  function getAndIncrement(foo: Implementation): Int = {
     let result = foo.counter
-    foo.counter += 1
+    increment(foo)
     result
+  }
+  
+  -action increment(foo: Implementation) {
+    foo.counter += 1
   }
 }
 ```
@@ -138,3 +145,5 @@ Modules are essentially used in two ways, which determines their naming conventi
 
 - **Use anywhere:** The `use` declaration should be usable anywhere (within any kind of block) for more fine-grained control of names.
 - **Aliases:** The `use` declaration should allow the programmer to rename a given symbol.
+- **Private problems:** Let's say we declare a private function `f` in a module defined by Pyramid, for example `lore.Enum`. When the language user (idiomatically) extends the `Enum` module with additional functions, for example to implement `Enum.map`  for their custom collection type, they are able to see the private function `f` from within their extension of the Enum module. This is a problem, right? Shouldn't private functions and types thus only be visible inside the same fragment? Or do we need an additional mechanism, for example `private[module]` for module privacy and `private[fragment]` for fragment privacy?
+
