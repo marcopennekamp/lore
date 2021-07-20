@@ -1,10 +1,7 @@
 package lore.compiler.types
 
-import lore.compiler.semantics.Registry
 import lore.compiler.types.TypeVariable.Assignments
 import lore.compiler.utils.CollectionExtensions._
-import scalaz.std.vector._
-import scalaz.syntax.traverse._
 
 import java.io.ByteArrayOutputStream
 import java.util.Base64
@@ -51,11 +48,12 @@ object Type {
       false
     case SumType(_) => true
     case IntersectionType(types) =>
-      // Note that we consider the idea of augmenting trait types here. If the intersection type contains at least one
-      // non-trait type, we ignore trait types in the consideration. If the intersection type consists only of traits,
-      // it is NOT an augmented type and thus abstract.
-      val exceptTraits = types.toVector.filterNotType[TraitType]
-      exceptTraits.isEmpty || exceptTraits.exists(isAbstract)
+      // We consider augmentations here. Consult the specification for an explanation of this approach.
+      val exceptShapes = types.toVector.filterNotType[ShapeType]
+      exceptShapes.nonEmpty && {
+        val exceptTraits = exceptShapes.filterNotType[TraitType]
+        exceptTraits.isEmpty || exceptTraits.exists(isAbstract)
+      }
     case TupleType(elements) => elements.exists(isAbstract)
     case _: TraitType => true
     case _: BasicType =>

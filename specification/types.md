@@ -220,16 +220,33 @@ Each type is either **abstract** or concrete. Functions may only be declared as 
 
 - A **sum type** is always abstract. (In its normal form.)
 - An **intersection type** is abstract if at least one of its parts is abstract.
-  - Note that there are special rules concerning traits as **augmentations**, defined further below.
+  - Note that there are special rules concerning **augmentations**, defined further below.
 - A **tuple type** is abstract if at least one of its elements is abstract.
 - A **function type** is always concrete, as one can always define the constant function.
 - A **list type** is always concrete.
 - A **map type** is always concrete.
-- A **shape type** is always concrete.
-  - Shape types would behave like tuple types if we could guarantee that run-time property types are always taken into account for multiple dispatch. This would require all struct properties to be open, which I do not want to support. It remains to be seen whether this poses a problem for defining abstract functions for component shape types.
+- A **shape type** is always concrete on its own. It may stand as an augmentation.
+  - Shape types would behave like tuple types if we could guarantee that run-time property types are always taken into account for multiple dispatch. This would require all struct properties to be open, which we do not want to support.
 - A **symbol type** is always concrete.
-- A **trait** is always abstract on its own and as an augmentation only abstract if it's intersecting merely with abstract types.
-  - An **augmentation** trait takes diminished preference compared to a struct or any other concrete type. This is to avoid the following scenario: Assume that augmentations *could* be abstract. Define an abstract function `f(v: Struct & Trait)` over a struct `Struct` that gets called with a dynamically specialized type. That is, we create an object of type `Struct`, attach the label `Trait`, and call the abstract function. It won't be able to dispatch to specializing functions, as the struct is quite literally the end of the line (assuming no other specializing functions), and there is no implementation to be found. So `Struct & Trait` obviously shouldn't be an abstract type.
-  - The "special" case in which **multiple traits intersect** is simply handled by the fact that the resulting intersection type is abstract since it does not contain a concrete type.
+- A **trait** is always abstract on its own. It may stand as an augmentation.
 - A **struct** is always concrete.
 
+##### Augmentations
+
+An **augmentation** takes diminished preference in an intersection type compared to a non-augmenting type. Traits and shape types can stand as augmentations.
+
+If a **shape type** stands as an augmentation, its abstractness is based on whether it further describes a trait (making it abstract), or if it can describe shape values (making it concrete).
+
+Consider an intersection type `T = T_1 & T_2 & T_3 & ... & T_n`. The following **algorithm** is used to determine abstractness:
+
+1. If `T` contains **shape types:** Remove all parts from `T` that aren't shape types and call the resulting intersection type `U`. If `U` has at least one part, the abstractness of `T` reduces to the abstractness of `U` via step (2). Otherwise, `T` is concrete, as it only consists of shape types and thus describes shape values.
+2. If `T` contains **trait types:** Remove all parts from `T` that aren't trait types and call the resulting intersection type `U`.  If `U` has at least one part, the abstractness of `T` reduces to the abstractness of `U` via step (3). Otherwise, `T` is abstract.
+3. If `T` contains **neither shape types nor trait types:** The abstractness of `T`, which contains no augments, can be determined with the general definitions of abstractness.
+
+The **purpose** of augmentations is to avoid the following scenario: Assume that augmentations *could* be abstract. Define an abstract function `f(v: Struct & Trait)` over a struct `Struct` that gets called with a dynamically specialized type. That is, we create an object of type `Struct`, attach the label `Trait`, and call the abstract function. It won't be able to dispatch to specializing functions, as the struct is quite literally the end of the line (assuming no other specializing functions), and there is no implementation to be found. So `Struct & Trait` obviously shouldn't be an abstract type.
+
+
+
+### TODOs
+
+- **Naming of declared types:** The name "Declared Types" clashes with the fact that type aliases can also be "declared", globally, in a module, and so on. Maybe we should call these types "Data Types" or something else.

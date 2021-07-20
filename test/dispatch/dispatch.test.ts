@@ -5,7 +5,7 @@ import { LoreTest } from '../base.ts'
 
 Deno.test('dispatch/abstract-intersection', async () => {
   const result: ListValue<string> = await LoreTest.run('dispatch/abstract-intersection.lore')
-  assertListEquals(result, ['A', 'C', 'B', 'C', 'C', 'B', 'C', 'B', 'C', 'B', 'X1|X2', 'X1|X2', 'X3'])
+  assertListEquals(result, ['A', 'C', 'B', 'C', 'C', 'B', 'C', 'B', 'C', 'B', 'A', 'C', 'X1|X2', 'X1|X2', 'X3'])
 })
 
 Deno.test('dispatch/abstract-partial-specialization', async () => {
