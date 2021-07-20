@@ -263,12 +263,6 @@ When a multi-function isn't immediately called, a **multi-function value** is cr
 
 
 
-### Multi-Calls / Blanket Calls / cALLs
-
-**TODO:** Instead of calling exactly one function, we call *all* candidates in the min set.
-
-
-
 ### Practical Uses
 
 Multi-functions and multiple dispatch have a multitude of **practical uses**. Truly, they are *the* core of Lore, and thus at the center of many language features and best practices.
@@ -342,4 +336,10 @@ Of course, the question is always whether one should introduce a **label type** 
 ##### Extension Methods
 
 **TODO:** Write.
+
+
+
+### TODOs
+
+- **Multi-Calls:** A multi-function call that, Instead of calling exactly one function, calls *all* candidates in the min set.
 

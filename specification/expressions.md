@@ -529,7 +529,7 @@ Note that we don't view assignments as operators. **Complex expressions** such a
 
 - Consider introducing **Swift-style `guard` statements** with a twist: They operate within blocks. If the condition is false, continue the code, otherwise *return the value of the else part from the block*. I think this could be super useful in game development.
 
-- We could consider, once we have introduced nullable/optional values, to **turn the logical operators into operators that accept any argument types** and return "truthy" values. Compare to Clojure, Elixir, or Javascript.
+- We could consider, once we have introduced Options, to **turn the logical operators into operators that accept any argument types** and return "truthy" values. Compare to Clojure, Elixir, or Javascript.
 
 - **Lists:**
 
