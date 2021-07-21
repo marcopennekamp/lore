@@ -52,7 +52,7 @@ object CombiningNodeVisitor {
     private implicit def wrapLazy(a: A): () => A = () => a
 
     def visit(node: Node): A = node match {
-      case DeclNode.FunctionNode(_, parameters, outputType, typeVariables, body, _, _) =>
+      case DeclNode.FunctionNode(_, parameters, outputType, typeVariables, body, _) =>
         val result = concat(visit(parameters), visit(outputType), visit(typeVariables), visit(body))
         visitor.visit(node, result)
 
