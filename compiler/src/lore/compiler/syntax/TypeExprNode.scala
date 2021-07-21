@@ -10,6 +10,7 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
 sealed trait TypeExprNode extends Node
 object TypeExprNode {
   case class TypeNameNode(name: String, position: Position) extends TypeExprNode
+  case class InstantiationNode(nameNode: TypeNameNode, types: Vector[TypeExprNode], position: Position) extends TypeExprNode
   case class SumNode(types: Vector[TypeExprNode], position: Position) extends TypeExprNode
   case class IntersectionNode(types: Vector[TypeExprNode], position: Position) extends TypeExprNode
   case class TupleNode(types: Vector[TypeExprNode], position: Position) extends TypeExprNode
@@ -25,6 +26,7 @@ object TypeExprNode {
     * Collects all leaf nodes in a flattened list.
     */
   def leaves(node: TypeExprNode): Vector[TypeExprNode] = node match {
+    case InstantiationNode(nameNode, types, _) => leaves(nameNode) ++ types.flatMap(leaves)
     case SumNode(types, _) => types.flatMap(leaves)
     case IntersectionNode(types, _) => types.flatMap(leaves)
     case TupleNode(types, _) => types.flatMap(leaves)

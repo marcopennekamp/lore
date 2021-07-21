@@ -27,7 +27,7 @@ class TypeParser(nameParser: NameParser)(implicit fragment: Fragment) {
   }
 
   private def atom[_: P]: P[TypeExprNode] = {
-    P(unitType | tupleType | listType | shapeType | symbolType | namedType | enclosedType)
+    P(unitType | tupleType | listType | shapeType | symbolType | instantiation | namedType | enclosedType)
   }
 
   private def unitType[_: P]: P[TypeExprNode] = P(Index ~ "(" ~ ")" ~ Index).map {
@@ -52,6 +52,10 @@ class TypeParser(nameParser: NameParser)(implicit fragment: Fragment) {
   }
 
   private def symbolType[_: P]: P[TypeExprNode.SymbolNode] = P(Index ~ "#" ~ identifier ~ Index).map(withPosition(TypeExprNode.SymbolNode))
+
+  private def instantiation[_: P]: P[TypeExprNode.InstantiationNode] = {
+    P(Index ~ namedType ~ "[" ~ typeExpression.rep(1, ",").map(_.toVector) ~ "]" ~ Index).map(withPosition(TypeExprNode.InstantiationNode))
+  }
 
   private def namedType[_: P]: P[TypeExprNode.TypeNameNode] = P(Index ~ typeIdentifier ~ Index).map(withPosition(TypeExprNode.TypeNameNode))
 
