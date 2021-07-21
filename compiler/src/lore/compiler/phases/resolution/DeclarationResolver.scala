@@ -44,7 +44,7 @@ object DeclarationResolver {
     * of the Introspection API with the actual type.
     */
   private val introspectionTypeDeclarations: Vector[TypeDeclNode] = Vector(
-    TypeDeclNode.TraitNode(NameNode(Introspection.typeName, Position.internal), Vector.empty, Position.internal)
+    TypeDeclNode.TraitNode(NameNode(Introspection.typeName, Position.internal), Vector.empty, Vector.empty, Position.internal)
   )
 
   case class TypeAlreadyExists(node: TypeDeclNode) extends Feedback.Error(node) {

@@ -59,23 +59,25 @@ object CombiningNodeVisitor {
       case DeclNode.ParameterNode(_, tpe, _) =>
         visitor.visit(node, concat(visit(tpe)))
 
-      case DeclNode.TypeVariableNode(_, lowerBound, upperBound, _) =>
+      case DeclNode.TypeVariableNode(_, lowerBound, upperBound, _, _) =>
         val result = concat(visit(lowerBound), visit(upperBound))
         visitor.visit(node, result)
 
-      case TypeDeclNode.AliasNode(_, tpe, _) =>
-        visitor.visit(node, concat(visit(tpe)))
+      case TypeDeclNode.AliasNode(_, typeVariables, tpe, _) =>
+        val result = concat(visit(typeVariables), visit(tpe))
+        visitor.visit(node, result)
 
-      case TypeDeclNode.StructNode(_, extended, properties, _) =>
-        val result = concat(visit(extended), visit(properties))
+      case TypeDeclNode.StructNode(_, typeVariables, extended, properties, _) =>
+        val result = concat(visit(typeVariables), visit(extended), visit(properties))
         visitor.visit(node, result)
 
       case TypeDeclNode.PropertyNode(_, tpe, _, _, defaultValue, _) =>
         val result = concat(visit(tpe), visit(defaultValue))
         visitor.visit(node, result)
 
-      case TypeDeclNode.TraitNode(_, extended, _) =>
-        visitor.visit(node, concat(visit(extended)))
+      case TypeDeclNode.TraitNode(_, typeVariables, extended, _) =>
+        val result = concat(visit(typeVariables), visit(extended))
+        visitor.visit(node, result)
 
       case node: TypeExprNode => visitTypeExprNode(node)
       case TypeExprNode.ShapePropertyNode(_, tpe, _) => visitor.visit(node, concat(visit(tpe)))

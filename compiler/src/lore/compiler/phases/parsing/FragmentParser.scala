@@ -5,6 +5,7 @@ import fastparse._
 import lore.compiler.core.{Fragment, Position}
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.syntax._
+import lore.compiler.types.TypeVariable.Variance
 
 /**
   * The parsers contained in this parser collection all parse top-level declarations that can occur in a
@@ -68,13 +69,7 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def functionTypeVariables[_: P]: P[Vector[DeclNode.TypeVariableNode]] = {
-    def typeVariable = {
-      P(Index ~ typeName ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).? ~ Index).map(withPosition(DeclNode.TypeVariableNode))
-    }
-    P(("where" ~~ Space.WS1 ~ typeVariable.rep(1, CharIn(","))).?).map {
-      case None => Vector.empty
-      case Some(seq) => seq.toVector
-    }
+    P(("where" ~~ Space.WS1 ~ simpleTypeVariable.rep(1, CharIn(",")).map(_.toVector)).?).map(_.getOrElse(Vector.empty))
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -83,15 +78,16 @@ class FragmentParser(implicit fragment: Fragment) {
   private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`type` | `trait` | struct)
 
   private def `type`[_: P]: P[TypeDeclNode.AliasNode] = {
-    P(Index ~ "type" ~~ Space.WS1 ~/ typeName ~ "=" ~ typeExpression ~ Index).map(withPosition(TypeDeclNode.AliasNode))
+    def typeVariables = P(("[" ~ simpleTypeVariable.rep(1, CharIn(",")).map(_.toVector) ~ "]").?).map(_.getOrElse(Vector.empty))
+    P(Index ~ "type" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables ~ "=" ~ typeExpression ~ Index).map(withPosition(TypeDeclNode.AliasNode))
   }
 
   private def `trait`[_: P]: P[TypeDeclNode.TraitNode] = {
-    P(Index ~ "trait" ~~ Space.WS1 ~/ typeName ~ `extends` ~ Index).map(withPosition(TypeDeclNode.TraitNode))
+    P(Index ~ "trait" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ declaredTypeTypeVariables ~ `extends` ~ Index).map(withPosition(TypeDeclNode.TraitNode))
   }
 
   private def struct[_: P]: P[TypeDeclNode.StructNode] = {
-    P(Index ~ "struct" ~~ Space.WS1 ~/ structName ~ `extends` ~ structBody ~ Index).map(withPosition(TypeDeclNode.StructNode))
+    P(Index ~ "struct" ~~ Space.WS1 ~/ structName ~~ Space.WS ~~ declaredTypeTypeVariables ~ `extends` ~ structBody ~ Index).map(withPosition(TypeDeclNode.StructNode))
   }
 
   private def `extends`[_: P]: P[Vector[TypeExprNode]] = {
@@ -116,4 +112,24 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def defaultValue[_: P]: P[ExprNode] = P("=" ~ expressionParser.expression)
+
+  private def declaredTypeTypeVariables[_: P]: P[Vector[DeclNode.TypeVariableNode]] = {
+    P(("[" ~ variantTypeVariable.rep(1, CharIn(",")).map(_.toVector) ~ "]").?).map(_.getOrElse(Vector.empty))
+  }
+
+  private def simpleTypeVariable[_: P]: P[DeclNode.TypeVariableNode] = {
+    P(Index ~ typeVariableName ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).? ~ Index).map(withPosition(DeclNode.TypeVariableNode.from _))
+  }
+
+  private def variantTypeVariable[_: P]: P[DeclNode.TypeVariableNode] = {
+    def variance = P(("+".! | "-".!).?).map {
+      case Some("+") => Variance.Covariant
+      case Some("-") => Variance.Contravariant
+      case None => Variance.Invariant
+    }
+
+    P(Index ~ variance ~ typeVariableName ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).? ~ Index)
+      .map { case (index1, variance, name, lowerBound, upperBound, index2) => (index1, name, lowerBound, upperBound, variance, index2) }
+      .map(withPosition(DeclNode.TypeVariableNode.apply _))
+  }
 }

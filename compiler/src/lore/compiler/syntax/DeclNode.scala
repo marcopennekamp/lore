@@ -1,7 +1,9 @@
 package lore.compiler.syntax
 
 import lore.compiler.core.Position
+import lore.compiler.syntax.DeclNode.TypeVariableNode
 import lore.compiler.syntax.Node.{NameNode, NamedNode}
+import lore.compiler.types.TypeVariable.Variance
 
 /**
   * All top-level declaration nodes.
@@ -59,24 +61,44 @@ object DeclNode {
     nameNode: NameNode,
     lowerBound: Option[TypeExprNode],
     upperBound: Option[TypeExprNode],
+    variance: Variance,
     position: Position,
   ) extends NamedNode
+
+  object TypeVariableNode {
+    def from(
+      nameNode: NameNode,
+      lowerBound: Option[TypeExprNode],
+      upperBound: Option[TypeExprNode],
+      position: Position,
+    ): TypeVariableNode = {
+      TypeVariableNode(nameNode, lowerBound, upperBound, Variance.Invariant, position)
+    }
+  }
 }
 
 /**
   * Top-level type declarations.
   */
-sealed trait TypeDeclNode extends DeclNode
+sealed trait TypeDeclNode extends DeclNode {
+  def typeVariables: Vector[TypeVariableNode]
+}
 
 object TypeDeclNode {
 
-  case class AliasNode(override val nameNode: NameNode, tpe: TypeExprNode, position: Position) extends TypeDeclNode
+  case class AliasNode(
+    nameNode: NameNode,
+    typeVariables: Vector[TypeVariableNode],
+    tpe: TypeExprNode,
+    position: Position,
+  ) extends TypeDeclNode
 
   /**
     * @param extended The names of all traits that the struct extends.
     */
   case class StructNode(
     nameNode: NameNode,
+    typeVariables: Vector[TypeVariableNode],
     extended: Vector[TypeExprNode],
     properties: Vector[PropertyNode],
     position: Position,
@@ -96,6 +118,7 @@ object TypeDeclNode {
     */
   case class TraitNode(
     nameNode: NameNode,
+    typeVariables: Vector[TypeVariableNode],
     extended: Vector[TypeExprNode],
     position: Position,
   ) extends TypeDeclNode

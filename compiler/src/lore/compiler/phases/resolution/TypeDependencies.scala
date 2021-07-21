@@ -44,14 +44,16 @@ object TypeDependencies {
   private case class TypeDeclarationInfo(node: TypeDeclNode, dependencies: Vector[String])
 
   private def dependencies(node: TypeDeclNode): Vector[String] = {
-    val allNames = node match {
-      case TypeDeclNode.AliasNode(_, expr, _) => TypeExprNode.identifiers(expr)
-      case TypeDeclNode.StructNode(_, extended, _, _) => extended.flatMap(TypeExprNode.identifiers).toSet
-      case TypeDeclNode.TraitNode(_, extended, _) => extended.flatMap(TypeExprNode.identifiers).toSet
+    val boundNames = node.typeVariables.flatMap(tv => tv.lowerBound.toVector ++ tv.upperBound.toVector).flatMap(TypeExprNode.identifiers).toSet
+    val restNames = node match {
+      case TypeDeclNode.AliasNode(_, _, expr, _) => TypeExprNode.identifiers(expr)
+      case TypeDeclNode.StructNode(_, _, extended, _, _) => extended.flatMap(TypeExprNode.identifiers).toSet
+      case TypeDeclNode.TraitNode(_, _, extended, _) => extended.flatMap(TypeExprNode.identifiers).toSet
     }
+    val allNames = boundNames ++ restNames
 
-    // We have to filter out predefined types, as they may be mentioned in alias types or extended shape types,
-    // are not true dependencies.
+    // We have to filter out predefined types, as they may be mentioned in alias types, extended shape types, and type
+    // variable bounds. Predefined types are not true dependencies.
     allNames.filterNot(Type.predefinedTypes.contains).toVector
   }
 
