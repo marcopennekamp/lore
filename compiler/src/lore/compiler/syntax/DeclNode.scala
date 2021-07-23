@@ -62,17 +62,28 @@ object DeclNode {
     lowerBound: Option[TypeExprNode],
     upperBound: Option[TypeExprNode],
     variance: Variance,
+    isOpen: Boolean,
     position: Position,
   ) extends NamedNode
 
   object TypeVariableNode {
-    def from(
+    def variant(
+      nameNode: NameNode,
+      lowerBound: Option[TypeExprNode],
+      upperBound: Option[TypeExprNode],
+      variance: Variance,
+      position: Position,
+    ): TypeVariableNode = {
+      TypeVariableNode(nameNode, lowerBound, upperBound, variance, isOpen = false, position)
+    }
+
+    def simple(
       nameNode: NameNode,
       lowerBound: Option[TypeExprNode],
       upperBound: Option[TypeExprNode],
       position: Position,
     ): TypeVariableNode = {
-      TypeVariableNode(nameNode, lowerBound, upperBound, Variance.Invariant, position)
+      variant(nameNode, lowerBound, upperBound, Variance.Invariant, position)
     }
   }
 }

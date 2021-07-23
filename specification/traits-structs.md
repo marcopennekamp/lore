@@ -110,7 +110,7 @@ Type parameters are **declared** as such, the syntax mirroring multi-function ty
 trait X[A, B <: A, C >: A]
 ```
 
-At the point of **construction**, type parameters must be either inferred or manually specified. The **run-time instantiation** of a type parameter is determined at compile-time, unless the type parameter is **open**. Let's consider option types as a non-trivial example:
+At the point of **construction**, type parameters must be either inferred or manually specified. The **run-time instantiation** of a type parameter is determined at compile-time, unless the type parameter is **open**. Let's consider a naive version of option types as an example:
 
 ```
 trait Option[A]

@@ -78,16 +78,15 @@ class FragmentParser(implicit fragment: Fragment) {
   private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`type` | `trait` | struct)
 
   private def `type`[_: P]: P[TypeDeclNode.AliasNode] = {
-    def typeVariables = P(("[" ~ simpleTypeVariable.rep(1, CharIn(",")).map(_.toVector) ~ "]").?).map(_.getOrElse(Vector.empty))
-    P(Index ~ "type" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables ~ "=" ~ typeExpression ~ Index).map(withPosition(TypeDeclNode.AliasNode))
+    P(Index ~ "type" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(simpleTypeVariable) ~ "=" ~ typeExpression ~ Index).map(withPosition(TypeDeclNode.AliasNode))
   }
 
   private def `trait`[_: P]: P[TypeDeclNode.TraitNode] = {
-    P(Index ~ "trait" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ declaredTypeTypeVariables ~ `extends` ~ Index).map(withPosition(TypeDeclNode.TraitNode))
+    P(Index ~ "trait" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(traitTypeVariable) ~ `extends` ~ Index).map(withPosition(TypeDeclNode.TraitNode))
   }
 
   private def struct[_: P]: P[TypeDeclNode.StructNode] = {
-    P(Index ~ "struct" ~~ Space.WS1 ~/ structName ~~ Space.WS ~~ declaredTypeTypeVariables ~ `extends` ~ structBody ~ Index).map(withPosition(TypeDeclNode.StructNode))
+    P(Index ~ "struct" ~~ Space.WS1 ~/ structName ~~ Space.WS ~~ typeVariables(structTypeVariable) ~ `extends` ~ structBody ~ Index).map(withPosition(TypeDeclNode.StructNode))
   }
 
   private def `extends`[_: P]: P[Vector[TypeExprNode]] = {
@@ -113,23 +112,37 @@ class FragmentParser(implicit fragment: Fragment) {
 
   private def defaultValue[_: P]: P[ExprNode] = P("=" ~ expressionParser.expression)
 
-  private def declaredTypeTypeVariables[_: P]: P[Vector[DeclNode.TypeVariableNode]] = {
-    P(("[" ~ variantTypeVariable.rep(1, CharIn(",")).map(_.toVector) ~ "]").?).map(_.getOrElse(Vector.empty))
+  private def typeVariables[_: P](typeVariable: => P[DeclNode.TypeVariableNode]): P[Vector[DeclNode.TypeVariableNode]] = {
+    P(("[" ~ typeVariable.rep(1, CharIn(",")).map(_.toVector) ~ "]").?).map(_.getOrElse(Vector.empty))
   }
 
   private def simpleTypeVariable[_: P]: P[DeclNode.TypeVariableNode] = {
-    P(Index ~ typeVariableName ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).? ~ Index).map(withPosition(DeclNode.TypeVariableNode.from _))
+    P(Index ~ typeVariableCommons ~ Index)
+      .map { case (index1, (name, lowerBound, upperBound), index2) => (index1, name, lowerBound, upperBound, index2) }
+      .map(withPosition(DeclNode.TypeVariableNode.simple _))
   }
 
-  private def variantTypeVariable[_: P]: P[DeclNode.TypeVariableNode] = {
-    def variance = P(("+".! | "-".!).?).map {
-      case Some("+") => Variance.Covariant
-      case Some("-") => Variance.Contravariant
-      case None => Variance.Invariant
-    }
+  private def traitTypeVariable[_: P]: P[DeclNode.TypeVariableNode] = {
+    P(Index ~ variance ~ typeVariableCommons ~ Index)
+      .map { case (index1, variance, (name, lowerBound, upperBound), index2) => (index1, name, lowerBound, upperBound, variance, index2) }
+      .map(withPosition(DeclNode.TypeVariableNode.variant _))
+  }
 
-    P(Index ~ variance ~ typeVariableName ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).? ~ Index)
-      .map { case (index1, variance, name, lowerBound, upperBound, index2) => (index1, name, lowerBound, upperBound, variance, index2) }
+  private def structTypeVariable[_: P]: P[DeclNode.TypeVariableNode] = {
+    // We could require the variance to be "+" here, but parser error messages aren't very useful. Hence, it's better
+    // to explicitly check this in a later phase.
+    P(Index ~ "open".!.?.map(_.isDefined) ~ variance ~ typeVariableCommons ~ Index)
+      .map { case (index1, isOpen, variance, (name, lowerBound, upperBound), index2) => (index1, name, lowerBound, upperBound, variance, isOpen, index2) }
       .map(withPosition(DeclNode.TypeVariableNode.apply _))
+  }
+
+  private def typeVariableCommons[_: P]: P[(NameNode, Option[TypeExprNode], Option[TypeExprNode])] = {
+    P(typeVariableName ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).?)
+  }
+
+  private def variance[_: P]: P[Variance] = P(("+".! | "-".!).?).map {
+    case Some("+") => Variance.Covariant
+    case Some("-") => Variance.Contravariant
+    case None => Variance.Invariant
   }
 }
