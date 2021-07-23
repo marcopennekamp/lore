@@ -9,15 +9,40 @@ import lore.compiler.utils.CollectionExtensions.{OptionTuple2Extension, OptionVe
 
 object TypeExpressionEvaluator {
 
+  case class MissingTypeArguments(schema: NamedSchema, node: TypeExprNode) extends Feedback.Error(node) {
+    override def message: String = s"The type ${schema.name} expects ${schema.arity} type arguments. It cannot be used as is."
+  }
+
+  case class UnexpectedTypeArguments(tpe: Type, node: TypeExprNode) extends Feedback.Error(node) {
+    override def message: String = s"The type $tpe cannot be instantiated with type arguments. It must be used as a constant type."
+  }
+
   case class DuplicateProperty(property: TypeExprNode.ShapePropertyNode) extends Feedback.Error(property) {
     override def message = s"The property ${property.name} is declared twice in the shape type. Shape type properties must be unique."
   }
 
   def evaluate(expression: TypeExprNode)(implicit typeScope: TypeScope, reporter: Reporter): Option[Type] = {
     expression match {
-      case TypeExprNode.TypeNameNode(name, position) => typeScope.resolve(name, position)
-      case TypeExprNode.IntersectionNode(expressions, _) => expressions.map(evaluate).sequence.map(IntersectionType.construct)
+      case TypeExprNode.TypeNameNode(name, position) => typeScope.resolve(name, position).flatMap {
+        case tpe: NamedType => Some(tpe)
+        case schema: NamedSchema if schema.isConstant => schema.instantiate(Vector.empty, expression.position)
+        case schema: NamedSchema =>
+          reporter.error(MissingTypeArguments(schema, expression))
+          None
+      }
+
+      case TypeExprNode.InstantiationNode(nameNode, argumentNodes, _) => typeScope.resolve(nameNode.name, nameNode.position).flatMap {
+        case tpe: NamedType =>
+          reporter.error(UnexpectedTypeArguments(tpe, expression))
+          None
+        case schema: NamedSchema =>
+          argumentNodes.map(evaluate).sequence.flatMap {
+            arguments => schema.instantiate(arguments, expression.position)
+          }
+      }
+
       case TypeExprNode.SumNode(expressions, _) => expressions.map(evaluate).sequence.map(SumType.construct)
+      case TypeExprNode.IntersectionNode(expressions, _) => expressions.map(evaluate).sequence.map(IntersectionType.construct)
       case TypeExprNode.TupleNode(expressions, _) => expressions.map(evaluate).sequence.map(TupleType(_))
       case TypeExprNode.UnitNode(_) => Some(TupleType.UnitType)
       case TypeExprNode.FunctionNode(input, output, _) => (evaluate(input).map(Type.tupled), evaluate(output)).sequence.map(FunctionType.tupled)
