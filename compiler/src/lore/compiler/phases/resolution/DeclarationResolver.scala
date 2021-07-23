@@ -74,7 +74,7 @@ object DeclarationResolver {
         val tpe = typeDeclarations(name) match {
           case aliasNode: TypeDeclNode.AliasNode => AliasSchemaResolver.resolve(aliasNode, typeScope)
           case traitNode: TypeDeclNode.TraitNode => TraitSchemaResolver.resolve(traitNode, typeScope)
-          case structNode: TypeDeclNode.StructNode => StructTypeResolver.resolve(structNode, typeScope)
+          case structNode: TypeDeclNode.StructNode => StructSchemaResolver.resolve(structNode, typeScope)
         }
         types + (name -> tpe)
     }
@@ -90,9 +90,9 @@ object DeclarationResolver {
     typeResolutionOrder.foldLeft(Map.empty: Registry.TypeDefinitions) {
       case (typeDefinitions, name) =>
         val definition = typeDeclarations(name) match {
-          case aliasNode: TypeDeclNode.AliasNode => AliasDefinitionResolver.resolve(aliasNode)
-          case traitNode: TypeDeclNode.TraitNode => TraitDefinitionResolver.resolve(traitNode)
-          case structNode: TypeDeclNode.StructNode => StructDefinitionResolver.resolve(structNode)
+          case aliasNode: TypeDeclNode.AliasNode => AliasDefinitionResolver.resolve(aliasNode, typeScope)
+          case traitNode: TypeDeclNode.TraitNode => TraitDefinitionResolver.resolve(traitNode, typeScope)
+          case structNode: TypeDeclNode.StructNode => StructDefinitionResolver.resolve(structNode, typeScope)
         }
         typeDefinitions + (name -> definition)
     }

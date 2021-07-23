@@ -51,7 +51,7 @@ case class Registry(
   /**
     * Gets the constructor of the struct with the given name.
     */
-  def getStructConstructor(name: String): Option[StructConstructorDefinition] = typeScope.getStructType(name).map(_.definition.constructor)
+  def getStructConstructor(name: String): Option[StructConstructorDefinition] = typeScope.getStructSchema(name).map(_.definition.constructor)
 
 }
 

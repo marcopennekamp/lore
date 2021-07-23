@@ -8,8 +8,8 @@ import lore.compiler.syntax.TypeDeclNode
 
 object AliasDefinitionResolver {
 
-  def resolve(node: TypeDeclNode.AliasNode)(implicit typeScope: TypeScope, reporter: Reporter): AliasDefinition = {
-    val schema = typeScope.get(node.name).getOrElse(
+  def resolve(node: TypeDeclNode.AliasNode, parentScope: TypeScope)(implicit reporter: Reporter): AliasDefinition = {
+    val schema = parentScope.getAliasSchema(node.name).getOrElse(
       throw CompilationException(s"The type schema for alias ${node.name} should be registered by now.")
     )
     new AliasDefinition(node.name, schema, node.nameNode.position)

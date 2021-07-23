@@ -13,14 +13,19 @@ trait TypeScope extends Scope[NamedSchema] {
   def register(entry: NamedSchema, position: Position)(implicit reporter: Reporter): Unit = super.register(entry.name, entry, position)
 
   /**
-    * Fetches a struct schema with the given name from the closest scope.
+    * Fetches an alias schema with the given name from the closest scope.
     */
-  def getStructSchema(name: String): Option[StructSchema] = get(name).filterType[StructSchema]
+  def getAliasSchema(name: String): Option[AliasSchema] = get(name).filterType[AliasSchema]
 
   /**
     * Fetches a trait schema with the given name from the closest scope.
     */
   def getTraitSchema(name: String): Option[TraitSchema] = get(name).filterType[TraitSchema]
+
+  /**
+    * Fetches a struct schema with the given name from the closest scope.
+    */
+  def getStructSchema(name: String): Option[StructSchema] = get(name).filterType[StructSchema]
 
   override def entryLabel: String = "type"
 }
