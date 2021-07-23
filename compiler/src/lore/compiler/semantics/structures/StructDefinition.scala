@@ -1,14 +1,14 @@
 package lore.compiler.semantics.structures
 
 import lore.compiler.core.Position
-import lore.compiler.types.StructType
+import lore.compiler.types.StructSchema
 
 class StructDefinition(
   override val name: String,
-  override val tpe: StructType,
+  override val schema: StructSchema,
   val properties: Vector[StructPropertyDefinition],
   override val position: Position,
-) extends DeclaredTypeDefinition {
+) extends DeclaredSchemaDefinition {
 
   lazy val propertyMap: Map[String, StructPropertyDefinition] = properties.map(p => (p.name, p)).toMap
 

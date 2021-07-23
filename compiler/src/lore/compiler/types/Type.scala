@@ -1,6 +1,5 @@
 package lore.compiler.types
 
-import lore.compiler.types.TypeVariable.Assignments
 import lore.compiler.utils.CollectionExtensions._
 
 import java.io.ByteArrayOutputStream
@@ -9,10 +8,15 @@ import java.util.Base64
 /**
   * Any Lore type.
   *
+  * A type is also a 0-arity (constant) [[TypeSchema]].
+  *
   * Note: hashCode should be defined as a val or lazy val to avoid recomputing hashes during the runtime of the
   * compiler. At times, we will hash types heavily, and so fast hash access is important.
   */
-trait Type extends HasMembers {
+trait Type extends TypeSchema with HasMembers {
+  override def parameters: Vector[TypeVariable] = Vector.empty
+  override protected def instantiate(assignments: TypeVariable.Assignments): Type = this
+
   def <=(rhs: Type): Boolean = Subtyping.isSubtype(this, rhs)
   def </=(rhs: Type): Boolean = !(this <= rhs)
   def <(rhs: Type): Boolean = Subtyping.isStrictSubtype(this, rhs)
@@ -108,7 +112,7 @@ object Type {
     * Substitute occurrences of variables in the given type with values from the given assignments. Variables that
     * do not occur in the assignments are not substituted.
     */
-  def substitute(tpe: Type, assignments: Assignments): Type = {
+  def substitute(tpe: Type, assignments: TypeVariable.Assignments): Type = {
     substitute(
       tpe,
       tv => assignments.get(tv) match {

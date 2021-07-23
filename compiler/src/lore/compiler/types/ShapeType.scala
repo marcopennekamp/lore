@@ -51,7 +51,7 @@ object ShapeType {
   }
 
   object Property {
-    def apply(definition: StructPropertyDefinition): Property = Property(definition.name, definition.tpe)
+    def apply(property: StructPropertyDefinition.Instance): Property = Property(property.definition.name, property.tpe)
   }
 
   /**

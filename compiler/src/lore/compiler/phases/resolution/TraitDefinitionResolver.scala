@@ -8,7 +8,7 @@ import lore.compiler.syntax.TypeDeclNode
 object TraitDefinitionResolver {
 
   def resolve(node: TypeDeclNode.TraitNode)(implicit typeScope: TypeScope): TraitDefinition = {
-    val traitType = typeScope.getTraitType(node.name).getOrElse(
+    val traitType = typeScope.getTraitSchema(node.name).getOrElse(
       throw CompilationException(s"The trait type for trait ${node.name} should be registered by now.")
     )
 

@@ -70,11 +70,11 @@ object DeclarationResolver {
   )(implicit reporter: Reporter): Registry.Types = {
     typeResolutionOrder.foldLeft(Type.predefinedTypes: Registry.Types) {
       case (types, name) =>
-        implicit val typeScope: TypeScope = ImmutableTypeScope(types, None)
+        val typeScope: TypeScope = ImmutableTypeScope(types, None)
         val tpe = typeDeclarations(name) match {
-          case aliasNode: TypeDeclNode.AliasNode => AliasTypeResolver.resolve(aliasNode)
-          case traitNode: TypeDeclNode.TraitNode => TraitTypeResolver.resolve(traitNode)
-          case structNode: TypeDeclNode.StructNode => StructTypeResolver.resolve(structNode)
+          case aliasNode: TypeDeclNode.AliasNode => AliasSchemaResolver.resolve(aliasNode, typeScope)
+          case traitNode: TypeDeclNode.TraitNode => TraitSchemaResolver.resolve(traitNode, typeScope)
+          case structNode: TypeDeclNode.StructNode => StructTypeResolver.resolve(structNode, typeScope)
         }
         types + (name -> tpe)
     }

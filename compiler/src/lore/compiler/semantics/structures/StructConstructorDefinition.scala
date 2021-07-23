@@ -14,7 +14,7 @@ case class StructConstructorDefinition(struct: StructDefinition) extends Positio
   override val position: Position = struct.position
   override val name: String = struct.name
   override lazy val tpe: FunctionType = signature.functionType
-  override lazy val targetVariable: Target.Variable = RuntimeNames.constructor(struct.tpe)
+  override lazy val targetVariable: Target.Variable = RuntimeNames.constructor(struct.schema)
 
-  lazy val signature: FunctionSignature = FunctionSignature(struct.name, struct.properties.map(_.asParameter), struct.tpe, position)
+  lazy val signature: FunctionSignature = FunctionSignature(struct.name, struct.properties.map(_.asParameter), struct.schema, position)
 }

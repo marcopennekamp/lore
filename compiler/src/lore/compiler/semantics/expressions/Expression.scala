@@ -141,7 +141,7 @@ object Expression {
     * transpiled such that their evaluation results in the same order.
     */
   case class Instantiation(struct: StructDefinition, arguments: Vector[Instantiation.Argument], position: Position) extends Expression {
-    override def tpe: Type = struct.tpe
+    override def tpe: Type = struct.schema
 
     /**
       * Creates a new instantiation expression with the given argument values. The order of arguments and values must

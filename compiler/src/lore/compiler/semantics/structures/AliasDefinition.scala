@@ -1,10 +1,10 @@
 package lore.compiler.semantics.structures
 
 import lore.compiler.core.Position
-import lore.compiler.types.Type
+import lore.compiler.types.AliasSchema
 
 class AliasDefinition(
   override val name: String,
-  override val tpe: Type,
-  override val position: Position
-) extends TypeDefinition
+  override val schema: AliasSchema,
+  override val position: Position,
+) extends SchemaDefinition

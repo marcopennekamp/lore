@@ -5,7 +5,7 @@ import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.{CallTarget, ParameterDefinition}
 import lore.compiler.semantics.members.Member
 import lore.compiler.syntax.ExprNode
-import lore.compiler.types.Type
+import lore.compiler.types.{Type, TypeVariable}
 
 /**
   * The property of a struct.
@@ -28,13 +28,22 @@ class StructPropertyDefinition(
 
   def hasDefault: Boolean = defaultValueNode.nonEmpty
 
-  def asParameter: ParameterDefinition = ParameterDefinition(name, tpe, position)
-  def asMember: Member = Member(name, tpe, isAssignable = isMutable, isMutable)
+  /**
+    * Instantiates the property definition with type variables substituted using the given assignments.
+    */
+  def instantiate(assignments: TypeVariable.Assignments): StructPropertyDefinition.Instance = {
+    StructPropertyDefinition.Instance(this, Type.substitute(tpe, assignments))
+  }
 
 }
 
 object StructPropertyDefinition {
   case class DefaultValue(expression: Expression, callTarget: CallTarget.Dynamic) {
     val tpe: Type = expression.tpe
+  }
+
+  case class Instance(definition: StructPropertyDefinition, tpe: Type) {
+    def asParameter: ParameterDefinition = ParameterDefinition(definition.name, tpe, definition.position)
+    def asMember: Member = Member(definition.name, tpe, isAssignable = definition.isMutable, definition.isMutable)
   }
 }

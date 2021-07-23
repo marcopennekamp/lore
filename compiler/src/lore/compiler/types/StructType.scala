@@ -1,21 +1,22 @@
 package lore.compiler.types
 
-import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
+import lore.compiler.semantics.structures.StructPropertyDefinition
 
-/**
-  * @param supertypes The list of supertypes of the struct, which include all traits the struct extends.
-  */
-class StructType(
-  override val name: String,
-  override val supertypes: Vector[Type],
-) extends DeclaredType with DeclaredType.DefinitionProperty[StructDefinition] {
 
-  def openProperties: Vector[StructPropertyDefinition] = definition.openProperties
+case class StructType(
+  schema: StructSchema,
+  typeArguments: TypeVariable.Assignments,
+) extends DeclaredType {
+
+  /**
+    * The struct's properties, their types instantiated with the type arguments.
+    */
+  lazy val properties: Vector[StructPropertyDefinition.Instance] = schema.definition.properties.map(_.instantiate(typeArguments))
 
   /**
     * The struct viewed as a compile-time shape type. Whether the struct's properties are open has no bearing on
     * this representation.
     */
-  override lazy val asShapeType: ShapeType = ShapeType(definition.properties.map(ShapeType.Property.apply))
+  override lazy val asShapeType: ShapeType = ShapeType(properties.map(ShapeType.Property.apply))
 
 }
