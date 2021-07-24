@@ -2,16 +2,15 @@ package lore.compiler.types
 
 import lore.compiler.semantics.structures.StructPropertyDefinition
 
-
 case class StructType(
   schema: StructSchema,
-  typeArguments: TypeVariable.Assignments,
+  assignments: TypeVariable.Assignments,
 ) extends DeclaredType {
 
   /**
     * The struct's properties, their types instantiated with the type arguments.
     */
-  lazy val properties: Vector[StructPropertyDefinition.Instance] = schema.definition.properties.map(_.instantiate(typeArguments))
+  lazy val properties: Vector[StructPropertyDefinition.Instance] = schema.definition.properties.map(_.instantiate(assignments))
 
   /**
     * The struct viewed as a compile-time shape type. Whether the struct's properties are open has no bearing on

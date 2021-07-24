@@ -1,5 +1,5 @@
 package lore.compiler.types
-import lore.compiler.feedback.Reporter
+
 import lore.compiler.semantics.scopes.LocalTypeScope
 import lore.compiler.types.TypeVariable.Assignments
 

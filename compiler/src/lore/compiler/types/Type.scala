@@ -85,6 +85,7 @@ object Type {
     case ListType(element) => isPolymorphic(element)
     case MapType(key, value) => isPolymorphic(key) || isPolymorphic(value)
     case ShapeType(properties) => properties.values.map(_.tpe).exists(isPolymorphic)
+    case dt: DeclaredType => dt.typeArguments.exists(isPolymorphic)
     case _ => false
   }
 
@@ -105,6 +106,7 @@ object Type {
     case ListType(element) => variables(element)
     case MapType(key, value) => variables(key) ++ variables(value)
     case ShapeType(properties) => properties.values.map(_.tpe).flatMap(variables).toSet
+    case dt: DeclaredType => dt.typeArguments.flatMap(variables).toSet
     case _ => Set.empty
   }
 
@@ -137,6 +139,7 @@ object Type {
       case ListType(element) => ListType(rec(element))
       case MapType(key, value) => MapType(rec(key), rec(value))
       case shapeType: ShapeType => shapeType.mapPropertyTypes(rec)
+      case dt: DeclaredType => dt.schema.instantiate(dt.assignments.map { case (tv, tpe) => (tv, rec(tpe)) })
       case t => t
     }
   }
@@ -199,15 +202,16 @@ object Type {
         }
         s"{ ${propertyRepresentations.mkString(", ")} }"
       case SymbolType(name) => s"#$name"
-      case d: DeclaredType =>
+      case dt: DeclaredType =>
         if (verbose) {
-          val kind = d match {
+          val kind = dt match {
             case _: StructType => "struct"
             case _: TraitType => "trait"
           }
-          val extended = if (d.supertypes.nonEmpty) s" extends ${d.supertypes.map(toString(_, verbose)).mkString(", ")}" else ""
-          s"$kind ${d.name}$extended"
-        } else d.name
+          val typeArguments = if (dt.typeArguments.nonEmpty) s"[${dt.typeArguments.map(toString(_, verbose)).mkString(", ")}]" else ""
+          val extended = if (dt.schema.supertypes.nonEmpty) s" extends ${dt.schema.supertypes.map(toString(_, verbose)).mkString(", ")}" else ""
+          s"$kind ${dt.name}$typeArguments$extended"
+        } else dt.name
       case t: NamedType => t.name
       case _ => t.toString
     }

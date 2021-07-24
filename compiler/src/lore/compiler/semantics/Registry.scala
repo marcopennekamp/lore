@@ -22,9 +22,9 @@ case class Registry(
   val declaredTypeHierarchy = new DeclaredTypeHierarchy(types.values.toVector.filterType[DeclaredType])
 
   /**
-    * All types in their proper order of resolution. Excludes predefined types.
+    * All schemas in their proper order of resolution. Excludes predefined types.
     */
-  val typesInOrder: Vector[(String, Type)] = typeResolutionOrder.map(name => (name, types(name)))
+  val schemasInOrder: Vector[(String, NamedSchema)] = typeResolutionOrder.map(name => (name, types(name)))
 
   /**
     * The global type scope backed by the registry.

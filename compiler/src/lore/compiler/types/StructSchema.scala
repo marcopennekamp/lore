@@ -9,8 +9,6 @@ class StructSchema(
   override val supertypes: Vector[Type],
 ) extends DeclaredSchema with DeclaredSchema.DefinitionProperty[StructDefinition] {
 
-  override protected def instantiate(assignments: TypeVariable.Assignments): StructType = {
-    StructType(this, assignments)
-  }
+  override protected def instantiate(assignments: TypeVariable.Assignments): StructType = StructType(this, assignments)
 
 }

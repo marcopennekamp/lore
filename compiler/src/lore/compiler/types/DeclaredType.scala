@@ -1,7 +1,5 @@
 package lore.compiler.types
 
-import scala.util.hashing.MurmurHash3
-
 trait DeclaredType extends NamedType {
 
   /**
@@ -14,13 +12,15 @@ trait DeclaredType extends NamedType {
   /**
     * The type arguments this declared type has been instantiated with.
     */
-  def typeArguments: TypeVariable.Assignments
+  def assignments: TypeVariable.Assignments
+
+  lazy val typeArguments: Vector[Type] = schema.parameters.map(Type.substitute(_, assignments))
 
   /**
     * The inherited shape type of the declared type is derived from the schema's inherited shape type, but with all
     * type parameters instantiated given the current type arguments.
     */
-  lazy val inheritedShapeType: ShapeType = Type.substitute(schema.inheritedShapeType, typeArguments).asInstanceOf[ShapeType]
+  lazy val inheritedShapeType: ShapeType = Type.substitute(schema.inheritedShapeType, assignments).asInstanceOf[ShapeType]
 
   /**
     * The declared type viewed as a compile-time shape type. By default, this is equal to the [[inheritedShapeType]].
