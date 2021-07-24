@@ -17,6 +17,12 @@ trait DeclaredType extends NamedType {
   lazy val typeArguments: Vector[Type] = schema.parameters.map(Type.substitute(_, assignments))
 
   /**
+    * All direct declared supertypes of the declared type. Any type arguments of the declared type are found in their
+    * instantiated versions.
+    */
+  lazy val declaredSupertypes: Vector[DeclaredType] = schema.declaredSupertypes.map(Type.substitute(_, assignments).asInstanceOf[DeclaredType])
+
+  /**
     * The inherited shape type of the declared type is derived from the schema's inherited shape type, but with all
     * type parameters instantiated given the current type arguments.
     */

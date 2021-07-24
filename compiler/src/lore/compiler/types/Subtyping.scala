@@ -1,5 +1,7 @@
 package lore.compiler.types
 
+import lore.compiler.types.TypeVariable.Variance
+
 object Subtyping {
 
   /**
@@ -23,12 +25,17 @@ object Subtyping {
 
       case d1: DeclaredType => t2 match {
         // A declared type d1 is a subtype of d2 if d1 and d2 are equal or any of d1's hierarchical supertypes equal
-        // d2. It suffices to check for declared supertypes, since a shape supertype can never be a subtype of a
-        // declared type.
-        case d2: DeclaredType => return d1 == d2 || d1.declaredSupertypes.exists(isSubtype(_, d2))
+        // d2. If the declared types contain type arguments, we additionally have to take variance into account and
+        // check all type arguments against each other. Because a shape supertype can never be a subtype of a declared
+        // type, we do not have to check shape supertypes.
+        case d2: DeclaredType =>
+          return d1 == d2 || (
+            if (d1.schema == d2.schema) checkTypeArguments(d1, d2)
+            else d1.declaredSupertypes.exists(isSubtype(_, d2))
+          )
 
-        // Declared type/shape subtyping can be delegated to shape/shape subtyping by viewing the declared type as a shape
-        // type.
+        // Declared type/shape subtyping can be delegated to shape/shape subtyping by viewing the declared type as a
+        // shape type.
         case s2: ShapeType => isSubtype(d1.asShapeType, s2)
 
         case _ => false
@@ -114,6 +121,19 @@ object Subtyping {
       case i2: IntersectionType => i2.parts.forall(ic2 => isSubtype(t1, ic2))
 
       case _ => false
+    }
+  }
+
+  private def checkTypeArguments(d1: DeclaredType, d2: DeclaredType): Boolean = {
+    d1.assignments.forall { case (tv, argument1) =>
+      d2.assignments.get(tv) match {
+        case Some(argument2) => tv.variance match {
+          case Variance.Invariant => argument1 == argument2
+          case Variance.Covariant => argument1 <= argument2
+          case Variance.Contravariant => argument1 >= argument2
+        }
+        case None => false
+      }
     }
   }
 
