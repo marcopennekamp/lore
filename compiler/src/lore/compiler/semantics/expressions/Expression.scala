@@ -140,9 +140,7 @@ object Expression {
     * are passed in their syntactic order to preserve the intended execution order of side effects and should thus be
     * transpiled such that their evaluation results in the same order.
     */
-  case class Instantiation(struct: StructDefinition, arguments: Vector[Instantiation.Argument], position: Position) extends Expression {
-    override def tpe: Type = struct.schema
-
+  case class Instantiation(tpe: StructType, arguments: Vector[Instantiation.Argument], position: Position) extends Expression {
     /**
       * Creates a new instantiation expression with the given argument values. The order of arguments and values must
       * be compatible!
