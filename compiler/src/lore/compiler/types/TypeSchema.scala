@@ -46,10 +46,14 @@ trait TypeSchema {
   }
 
   /**
-    * Instantiates the schema with the given type variable assignments, which are already fully checked by the public
-    * variant of the `instantiate` method.
+    * Instantiates the schema with the given type variable assignments, which are already fully checked by the above
+    * variant of the `instantiate` method, or otherwise deemed to be legal.
+    *
+    * For example, when a schema is instantiated for type inference, we do not necessarily know all types at the point
+    * of instantiation. Instead of checking bounds like the `instantiate` method above, the schema's type variable
+    * bounds are taken into account as typing judgments.
     */
-  protected def instantiate(assignments: TypeVariable.Assignments): Type
+  def instantiate(assignments: TypeVariable.Assignments): Type
 }
 
 object TypeSchema {
