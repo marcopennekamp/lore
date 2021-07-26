@@ -22,7 +22,7 @@ case class FunctionType(input: Type, output: Type) extends Type {
 
   lazy val inputTuple: TupleType = input.asInstanceOf[TupleType]
 
-  lazy val parameters: Vector[Type] = input match {
+  lazy val inputParameters: Vector[Type] = input match {
     case TupleType(elements) => elements
     case _ => throw CompilationException(s"Can't retrieve parameters from non-tuple input type. Input type: $input.")
   }

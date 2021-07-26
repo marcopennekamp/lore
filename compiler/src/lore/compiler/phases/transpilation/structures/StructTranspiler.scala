@@ -44,8 +44,8 @@ object StructTranspiler {
   }
 
   private def transpileSchema(tpe: StructType)(implicit symbolHistory: SymbolHistory) = {
-    val varSchema = RuntimeNames.typeSchema(tpe)
-    val propertyTypes = Target.Dictionary(tpe.definition.properties.map { property =>
+    val varSchema = RuntimeNames.declaredSchema(tpe.schema)
+    val propertyTypes = Target.Dictionary(tpe.schema.definition.properties.map { property =>
       // As noted in the runtime's StructSchema definition, schema property types must be lazy to ensure that all
       // declared types are defined when the property type is initialized.
       Target.Property(property.name.asName, RuntimeApi.utils.`lazy`.of(TypeTranspiler.transpile(property.tpe)(Map.empty, symbolHistory)))
@@ -61,10 +61,10 @@ object StructTranspiler {
   }
 
   private def transpileTypeDefinitions(tpe: StructType) = {
-    val varSchema = RuntimeNames.typeSchema(tpe)
+    val varSchema = RuntimeNames.declaredSchema(tpe.schema)
     val varNewtype = RuntimeNames.newType(tpe)
     val varArchetype = RuntimeNames.declaredType(tpe)
-    val definitions = if (tpe.openProperties.nonEmpty) {
+    val definitions = if (tpe.schema.definition.openProperties.nonEmpty) {
       // The type-specific property types are undefined when creating the archetype so that we don't have to evaluate
       // these lazily. (Archetypes are created right away, eagerly, and may then run into type ordering issues since
       // declared types are referenced by Javascript variable.)
@@ -88,12 +88,12 @@ object StructTranspiler {
   }
 
   private def transpileInstantiate(tpe: StructType, varNewtype: Target.Variable, varArchetype: Target.Variable) = {
-    val varInstantiate = RuntimeNames.instantiate(tpe)
+    val varInstantiate = RuntimeNames.instantiate(tpe.schema)
     val paramProperties = "properties".asParameter
-    val instantiatedType = if (tpe.openProperties.nonEmpty) {
+    val instantiatedType = if (tpe.schema.definition.openProperties.nonEmpty) {
       // Instantiates the struct with the actual run-time property types, which are retrieved using typeOf. This
       // overrides the property types defined in the schema.
-      val openPropertyTypes = Target.Dictionary(tpe.openProperties.map { property =>
+      val openPropertyTypes = Target.Dictionary(tpe.schema.definition.openProperties.map { property =>
         Target.Property(
           property.name.asName,
           RuntimeApi.types.typeOf(paramProperties.asVariable.prop(property.name)),
@@ -108,9 +108,9 @@ object StructTranspiler {
   }
 
   private def transpileDefaultValues(tpe: StructType)(implicit registry: Registry, symbolHistory: SymbolHistory) = {
-    tpe.definition.properties.flatMap { property =>
+    tpe.schema.definition.properties.flatMap { property =>
       property.defaultValue.map { defaultValue =>
-        val varDefaultValue = RuntimeNames.defaultValue(tpe, property)
+        val varDefaultValue = RuntimeNames.defaultValue(tpe.schema, property)
         val chunk = ExpressionTranspiler.transpile(defaultValue.expression)(registry, Map.empty, symbolHistory)
         Target.Function(varDefaultValue.name, Vector.empty, chunk.asBody)
       }
@@ -118,8 +118,8 @@ object StructTranspiler {
   }
 
   def transpileConstructor(tpe: StructType)(implicit symbolHistory: SymbolHistory): TargetStatement = {
-    val varInstantiate = RuntimeNames.instantiate(tpe)
-    val varConstructor = RuntimeNames.constructor(tpe)
+    val varInstantiate = RuntimeNames.instantiate(tpe.schema)
+    val varConstructor = RuntimeNames.constructor(tpe.schema)
 
     // We use the actual parameter names here so that we can construct the properties object using shorthand syntax.
     // For example:
@@ -127,7 +127,7 @@ object StructTranspiler {
     //      (name, age) => ABC__instantiate({ name, age }),
     //      /* function type */,
     //    );
-    val signature = tpe.definition.constructor.signature
+    val signature = tpe.schema.definition.constructor.signature
     val parameterNames = signature.parameters.map(_.name.asName)
     val parameters = parameterNames.map(Target.Parameter(_))
     val properties = Target.Dictionary(parameterNames.map(name => Target.Property(name, name.asVariable)))

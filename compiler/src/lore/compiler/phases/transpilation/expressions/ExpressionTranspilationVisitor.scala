@@ -129,7 +129,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
           Target.Property(property.name.asName, value)
         }
       )
-      Chunk.expression(RuntimeNames.instantiate(expression.struct.tpe).call(properties))
+      Chunk.expression(RuntimeNames.instantiate(expression.tpe.schema).call(properties))
     }
   }
 

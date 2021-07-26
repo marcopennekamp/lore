@@ -225,14 +225,19 @@ class InferringExpressionTransformationVisitor(
 
     case ObjectMapNode(nameNode, entryNodes, position) =>
       typeScope.resolve(nameNode.value, nameNode.position) match {
+        // Note that via alias types, the type scope can also contain struct types with their type arguments already
+        // set, not only struct schemas. Hence we have to handle both cases here.
         case Some(structType: StructType) =>
           val entries = entryNodes.zip(expressions).map { case (ObjectEntryNode(nameNode, _, _), expression) => nameNode.value -> expression }
           addJudgmentsFrom(
-            InstantiationTransformation.transformMapStyleInstantiation(structType.definition, entries, position)
+            InstantiationTransformation.transformMapStyleInstantiation(structType, entries, position)
           )
 
-        case Some(tpe) =>
+        case Some(structSchema: StructSchema) => ??? // TODO (schemas): Implement.
+
+        case Some(schema) =>
           reporter.error(StructExpected(nameNode.value, nameNode.position))
+          val tpe = if (schema.isConstant) schema.instantiateConstant() else BasicType.Nothing
           Expression.Hole(tpe, position)
 
         case None => Expression.Hole(BasicType.Nothing, position)

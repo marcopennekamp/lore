@@ -1,6 +1,6 @@
 package lore.compiler.types
 
-import lore.compiler.core.Position
+import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
 
@@ -36,6 +36,10 @@ trait TypeSchema {
       return None
     }
 
+    if (isConstant) {
+      return Some(instantiateConstant())
+    }
+
     val assignments = parameters.zip(arguments).toMap
 
     var boundsKept = true
@@ -48,6 +52,16 @@ trait TypeSchema {
 
     if (boundsKept) Some(instantiate(assignments))
     else None
+  }
+
+  /**
+    * Instantiates the schema as a constant type, but only if the schema takes no parameters.
+    */
+  def instantiateConstant(): Type = {
+    if (!isConstant) {
+      throw CompilationException(s"Cannot instantiate a non-constant schema $this as constant.")
+    }
+    instantiate(Map.empty)
   }
 
   /**

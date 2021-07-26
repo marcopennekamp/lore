@@ -59,7 +59,7 @@ object CombiningNodeVisitor {
       case DeclNode.ParameterNode(_, tpe, _) =>
         visitor.visit(node, concat(visit(tpe)))
 
-      case DeclNode.TypeVariableNode(_, lowerBound, upperBound, _, _) =>
+      case DeclNode.TypeVariableNode(_, lowerBound, upperBound, _, _, _) =>
         val result = concat(visit(lowerBound), visit(upperBound))
         visitor.visit(node, result)
 

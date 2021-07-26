@@ -60,6 +60,8 @@ import lore.compiler.core.CompilationException
   *       - The name of the variable, encoded as a UTF-8 string with a length.
   *       - The lower and/or upper bound based on the specific kind, as outlined above.
   *     - Symbol: The name of the symbol, encoded as a UTF-8 string with a length.
+  *
+  * TODO (schemas): Take type arguments into account.
   */
 object TypeEncoder {
 

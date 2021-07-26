@@ -5,6 +5,7 @@ import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.inference.TypingJudgment
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
+import lore.compiler.types.StructType
 
 object InstantiationTransformation {
 
@@ -26,11 +27,11 @@ object InstantiationTransformation {
         s" the property itself has the type ${property.tpe}, which is not a subtype of ${expression.tpe}."
   }
 
-  def transformMapStyleInstantiation(struct: StructDefinition, entries: Vector[(String, Expression)], position: Position)(implicit reporter: Reporter): (Expression, Vector[TypingJudgment]) = {
+  def transformMapStyleInstantiation(structType: StructType, entries: Vector[(String, Expression)], position: Position)(implicit reporter: Reporter): (Expression, Vector[TypingJudgment]) = {
     verifyNamesUnique(entries, position)
-    val arguments = correlateEntries(struct, entries.toMap, position)
+    val arguments = correlateEntries(structType.schema.definition, entries.toMap, position)
     val judgments = getEntryTypingJudgments(arguments)
-    (Expression.Instantiation(struct, arguments, position), judgments)
+    (Expression.Instantiation(structType, arguments, position), judgments)
   }
 
   private def verifyNamesUnique(entries: Vector[(String, Expression)], position: Position)(implicit reporter: Reporter): Unit = {

@@ -47,7 +47,7 @@ object StructConstraints {
     * Verifies that the given struct's inherited shape type is properly implemented.
     */
   private def verifyInheritedShapeProperties(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
-    definition.tpe.inheritedShapeType.properties.values.toVector.foreach { shapeProperty =>
+    definition.schema.inheritedShapeType.properties.values.toVector.foreach { shapeProperty =>
       definition.propertyMap.get(shapeProperty.name) match {
         case Some(structProperty) =>
           if (structProperty.tpe </= shapeProperty.tpe) {

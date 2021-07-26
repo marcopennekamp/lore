@@ -114,6 +114,7 @@ object TypeVariableAllocation {
     allocation
   }
 
+  // TODO (schemas): Take type arguments into account.
   private def assign(t1: Type, t2: Type)(implicit allocation: TypeVariableAllocation): Unit = {
     // If the right-hand type contains no variables, there is no way we could assign anything, and thus the assignment
     // can be skipped. This check is currently important for correct compiler operation, as we only want to raise an

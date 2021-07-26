@@ -111,6 +111,7 @@ object LeastUpperBound {
       // We specifically don't default to a shape type (which would be possible if we LUB two structs) because we only
       // want to produce shape types if a shape type is already part of the types to LUB. This "disables" structural
       // typing until the programmer explicitly says that they want it.
+      // TODO (schemas): Take type arguments into account.
       case (d1: DeclaredType, d2: DeclaredType) => registry.declaredTypeHierarchy.leastCommonSupertype(d1, d2).fallbackIfAny
 
       // Lists simply wrap the lubbed types.

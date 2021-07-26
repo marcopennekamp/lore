@@ -56,9 +56,9 @@ case class Registry(
 }
 
 object Registry {
-  type Types = Map[String, NamedSchema]
-  type TypeResolutionOrder = Vector[String]
-  type TypeDefinitions = Map[String, SchemaDefinition]
+  type Types = Map[String, NamedSchema] // TODO (schemas): Rename to `Schemas`?
+  type TypeResolutionOrder = Vector[String] // TODO (schemas): Rename to `SchemaResolutionOrder`?
+  type TypeDefinitions = Map[String, SchemaDefinition] // TODO (schemas): Rename to `SchemaDefinitions`?
   type MultiFunctions = Map[String, MultiFunctionDefinition]
 
   case class MultiFunctionNotFound(name: String, override val position: Position) extends Feedback.Error(position) {

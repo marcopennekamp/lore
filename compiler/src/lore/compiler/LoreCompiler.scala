@@ -10,8 +10,8 @@ import lore.compiler.phases.transformation.TransformationPhase
 import lore.compiler.phases.transpilation.TranspilationPhase
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.MultiFunctionDefinition
-import lore.compiler.semantics.structures.DeclaredTypeDefinition
-import lore.compiler.types.DeclaredType
+import lore.compiler.semantics.structures.DeclaredSchemaDefinition
+import lore.compiler.types.{DeclaredSchema, DeclaredType}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import lore.compiler.utils.Timer.timed
 
@@ -64,14 +64,14 @@ object LoreCompiler {
   }
 
   private def analyze(implicit registry: Registry, reporter: Reporter): Unit = {
-    val declaredTypeDefinitions = registry.typesInOrder.map(_._2).filterType[DeclaredType].map(_.definition)
+    val declaredSchemaDefinitions = registry.schemasInOrder.map(_._2).filterType[DeclaredSchema].map(_.definition)
     val multiFunctions = registry.multiFunctions.values.toVector
 
-    declaredTypeDefinitions.foreach(analyze(_, reporter))
+    declaredSchemaDefinitions.foreach(analyze(_, reporter))
     multiFunctions.foreach(analyze(_, reporter))
   }
 
-  private def analyze(definition: DeclaredTypeDefinition, parentReporter: Reporter)(implicit registry: Registry): Unit = {
+  private def analyze(definition: DeclaredSchemaDefinition, parentReporter: Reporter)(implicit registry: Registry): Unit = {
     MemoReporter.chain(parentReporter)(
       implicit reporter => ConstraintsPhase.process(definition),
       implicit reporter => TransformationPhase.process(definition),

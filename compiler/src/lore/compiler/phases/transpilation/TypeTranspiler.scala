@@ -71,7 +71,7 @@ object TypeTranspiler {
       case BasicType.Boolean => api.boolean
       case BasicType.String => api.string
       case TupleType.UnitType => RuntimeApi.tuples.unitType
-      case declaredType: DeclaredType => RuntimeNames.declaredType(declaredType)
+      case declaredType: DeclaredType => RuntimeNames.declaredType(declaredType) // TODO (schemas): Access interned types if the declared schema is not constant.
       case SumType(types) =>
         val args = types.map(rec).toVector
         if (simplifyAtRuntime) RuntimeApi.sums.simplified(args) else RuntimeApi.sums.tpe(args)

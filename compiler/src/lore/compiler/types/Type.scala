@@ -15,7 +15,7 @@ import java.util.Base64
   */
 trait Type extends TypeSchema with HasMembers {
   override def parameters: Vector[TypeVariable] = Vector.empty
-  override protected def instantiate(assignments: TypeVariable.Assignments): Type = this
+  override def instantiate(assignments: TypeVariable.Assignments): Type = this
 
   def <=(rhs: Type): Boolean = Subtyping.isSubtype(this, rhs)
   def </=(rhs: Type): Boolean = !(this <= rhs)
