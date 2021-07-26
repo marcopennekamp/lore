@@ -87,9 +87,13 @@ class SubtypingSpec extends TypeSpec {
     fishAquarium <:< fishCage
     fishCage </< fishAquarium
 
-    goldfishCage <:< fishAquarium
+    goldfishCage </< fishAquarium
+    fishAquarium </< goldfishCage
+
     goldfishAquarium <:< fishAquarium
     fishAquarium </< goldfishAquarium
+    goldfishAquarium <:< goldfishCage
+
     koiAquarium <:< fishAquarium
     fishAquarium </< koiAquarium
     goldfishAquarium </< koiAquarium
