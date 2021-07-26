@@ -9,7 +9,7 @@ case class FunctionSignature(
   name: String,
   parameters: Vector[ParameterDefinition],
   outputType: Type,
-  override val position: Position
+  position: Position,
 ) extends Positioned {
   val inputType: TupleType = TupleType(parameters.map(_.tpe))
   val isPolymorphic: Boolean = Type.isPolymorphic(inputType)

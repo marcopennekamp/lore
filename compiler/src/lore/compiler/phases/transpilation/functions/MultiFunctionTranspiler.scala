@@ -69,7 +69,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   private lazy val transpiledInputTypeVariables: (Vector[TargetStatement], TranspiledTypeVariables) = {
     def handleFunction(function: FunctionDefinition) = {
       if (function.isPolymorphic) {
-        TypeTranspiler.transpileTypeVariables(Type.variables(function.signature.inputType).toVector)
+        TypeTranspiler.transpileTypeVariables(function.typeParameters)
       } else (Vector.empty, Map.empty: TranspiledTypeVariables)
     }
     mf.functions.map(handleFunction).foldLeft((Vector.empty[TargetStatement], Map.empty: TranspiledTypeVariables)) {

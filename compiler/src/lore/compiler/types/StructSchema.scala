@@ -1,11 +1,10 @@
 package lore.compiler.types
 
-import lore.compiler.semantics.scopes.LocalTypeScope
 import lore.compiler.semantics.structures.StructDefinition
 
 class StructSchema(
   override val name: String,
-  override val typeScope: LocalTypeScope,
+  override val parameters: Vector[TypeVariable],
   override val supertypes: Vector[Type],
 ) extends DeclaredSchema with DeclaredSchema.DefinitionProperty[StructDefinition] {
 

@@ -18,7 +18,7 @@ object FunctionTransformer {
           function.name,
           node,
           function.signature.outputType,
-          function.typeScope,
+          function.getTypeScope(registry.typeScope),
           new FunctionBindingScope(function.signature, registry.bindingScope),
         )
       )

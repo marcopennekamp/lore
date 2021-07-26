@@ -1,7 +1,7 @@
 package lore.compiler.phases.resolution
 
 import lore.compiler.feedback.{Feedback, Reporter}
-import lore.compiler.semantics.scopes.{LocalTypeScope, TypeScope}
+import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
 import lore.compiler.syntax.TypeDeclNode
 import lore.compiler.types.TraitSchema
 
@@ -12,9 +12,10 @@ object TraitSchemaResolver {
   }
 
   def resolve(node: TypeDeclNode.TraitNode, parentScope: TypeScope)(implicit reporter: Reporter): TraitSchema = {
-    implicit val typeScope: LocalTypeScope = TypeVariableDeclarationResolver.resolve(node.typeVariables, parentScope)
+    val typeParameters = TypeVariableDeclarationResolver.resolve(node.typeVariables, parentScope)
+    implicit val typeScope: TypeScope = ImmutableTypeScope.from(typeParameters, parentScope)
     val supertypes = InheritanceResolver.resolveInheritedTypes(node.extended, TraitIllegalExtends(node))
-    new TraitSchema(node.name, typeScope, supertypes)
+    new TraitSchema(node.name, typeParameters, supertypes)
   }
 
 }

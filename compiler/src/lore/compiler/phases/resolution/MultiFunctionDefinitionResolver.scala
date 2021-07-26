@@ -3,7 +3,7 @@ package lore.compiler.phases.resolution
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
-import lore.compiler.semantics.scopes.{LocalTypeScope, TypeScope}
+import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
 import lore.compiler.syntax.DeclNode
 import lore.compiler.types.{BasicType, Fit}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
@@ -23,11 +23,12 @@ object MultiFunctionDefinitionResolver {
   }
 
   private def resolveFunction(node: DeclNode.FunctionNode, registryTypeScope: TypeScope)(implicit reporter: Reporter): FunctionDefinition = {
-    implicit val typeScope: LocalTypeScope = TypeVariableDeclarationResolver.resolve(node.typeVariables, registryTypeScope)
+    val typeParameters = TypeVariableDeclarationResolver.resolve(node.typeVariables, registryTypeScope)
+    implicit val typeScope: TypeScope = ImmutableTypeScope.from(typeParameters, registryTypeScope)
     val parameters = node.parameters.map(ParameterDefinitionResolver.resolve)
     val outputType = TypeExpressionEvaluator.evaluate(node.outputType).getOrElse(BasicType.Any)
     val signature = FunctionSignature(node.name, parameters, outputType, node.nameNode.position)
-    new FunctionDefinition(signature, typeScope, node.body)
+    new FunctionDefinition(signature, typeParameters, node.body)
   }
 
   case class FunctionAlreadyExists(definition: FunctionDefinition) extends Feedback.Error(definition) {

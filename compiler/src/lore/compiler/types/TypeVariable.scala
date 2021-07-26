@@ -14,7 +14,6 @@ class TypeVariable(
   val lowerBound: Type,
   val upperBound: Type,
   val variance: Variance,
-  val declarationOrder: Int,
 ) extends NamedType {
   override def equals(obj: Any): Boolean = obj match {
     case var2: TypeVariable => this eq var2

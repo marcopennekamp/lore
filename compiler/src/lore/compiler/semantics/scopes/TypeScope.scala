@@ -4,7 +4,7 @@ import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.Registry
 import lore.compiler.types._
-import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtension}
+import lore.compiler.utils.CollectionExtensions.OptionExtension
 
 /**
   * A scope that provides access to type schemas.
@@ -31,24 +31,15 @@ trait TypeScope extends Scope[NamedSchema] {
 }
 
 /**
-  * A scope that provides access to locally declared type schemas, such as type variables. The parent MUST be defined,
-  * either as another local type scope or the registry.
-  *
-  * This scope is currently used to make type variables available to a function's scope.
-  */
-class LocalTypeScope(parent: TypeScope) extends BasicScope[NamedSchema](Some(parent)) with TypeScope {
-
-  /**
-    * All type variables declared in the local scope.
-    */
-  def localTypeVariables: Vector[TypeVariable] = entries.values.toVector.filterType[TypeVariable]
-
-}
-
-/**
   * A type scope that is backed by an existing schema map. New schemas cannot be registered.
   */
 case class ImmutableTypeScope(schemas: Registry.Types, override val parent: Option[TypeScope]) extends TypeScope {
   override protected def local(name: String): Option[NamedSchema] = schemas.get(name)
   override protected def add(name: String, entry: NamedSchema): Unit = throw new UnsupportedOperationException
+}
+
+object ImmutableTypeScope {
+  def from(schemas: Vector[NamedSchema], parent: TypeScope): ImmutableTypeScope = {
+    ImmutableTypeScope(schemas.map(tpe => (tpe.name, tpe)).toMap, Some(parent))
+  }
 }

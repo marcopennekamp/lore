@@ -2,7 +2,7 @@ package lore.compiler.types
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.{Feedback, Reporter}
-import lore.compiler.semantics.scopes.LocalTypeScope
+import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
 
 /**
   * A type schema is a type constructor, taking any number of type parameters. Type schemas without any parameters are
@@ -19,6 +19,11 @@ trait TypeSchema {
     * A constant schema has no type parameters (arity 0) and is thus effectively equal to a single type.
     */
   def isConstant: Boolean = arity == 0
+
+  /**
+    * Creates an immutable type scope that allows access to the type schema's type parameters.
+    */
+  def getTypeScope(parentScope: TypeScope): TypeScope = ImmutableTypeScope.from(parameters, parentScope)
 
   /**
     * Instantiates the schema with the given type argument list, which must be in the order of declaration of the
@@ -57,14 +62,6 @@ trait TypeSchema {
 }
 
 object TypeSchema {
-
-  /**
-    * Models a schema that defines its type parameters through a local type scope.
-    */
-  trait TypeScoped extends TypeSchema {
-    def typeScope: LocalTypeScope
-    override def parameters: Vector[TypeVariable] = typeScope.localTypeVariables
-  }
 
   case class IllegalArity(schema: TypeSchema, arity: Int, override val position: Position) extends Feedback.Error(position) {
     override def message: String = s"The type $schema expects ${schema.arity} type arguments, but $arity type" +

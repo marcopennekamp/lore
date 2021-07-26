@@ -5,10 +5,10 @@ import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.phases.transpilation.RuntimeNames
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionDefinition.CannotInstantiateFunction
-import lore.compiler.semantics.scopes.LocalTypeScope
+import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.target.{Target, TargetIdentifiable}
-import lore.compiler.types.{Fit, Type}
+import lore.compiler.types.{Fit, Type, TypeVariable}
 
 /**
   * A definition of a single function as part of a larger multi-function.
@@ -17,12 +17,10 @@ import lore.compiler.types.{Fit, Type}
   * for every defined function.
   *
   * The position is restricted to the function's name for better error highlighting and index building.
-  *
-  * @param typeScope The scope that saves type variables declared with the function.
   */
 class FunctionDefinition(
   val signature: FunctionSignature,
-  val typeScope: LocalTypeScope,
+  val typeParameters: Vector[TypeVariable],
   val bodyNode: Option[ExprNode],
 ) extends Positioned with TargetIdentifiable {
   override val position: Position = signature.position
@@ -32,6 +30,11 @@ class FunctionDefinition(
   val isAbstract: Boolean = bodyNode.isEmpty
   val isPolymorphic: Boolean = signature.isPolymorphic
   val isMonomorphic: Boolean = signature.isMonomorphic
+
+  /**
+    * Creates an immutable type scope that allows access to the function's type parameters.
+    */
+  def getTypeScope(parentScope: TypeScope): TypeScope = ImmutableTypeScope.from(typeParameters, parentScope)
 
   override val targetVariable: Target.Variable = RuntimeNames.functionDefinition(this)
 

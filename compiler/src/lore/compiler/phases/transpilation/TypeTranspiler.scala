@@ -14,11 +14,12 @@ object TypeTranspiler {
   /**
     * Transpiles type variables such that they are defined as constants in the returned target statement. The names of
     * these constants are defined in the returned map.
+    *
+    * The variable list must be ordered in the declaration order of the variables.
     */
-  def transpileTypeVariables(variables: Vector[TypeVariable])(implicit variableProvider: TemporaryVariableProvider, symbolHistory: SymbolHistory): (Vector[TargetStatement], TranspiledTypeVariables) = {
-    val orderedVariables = variables.sortBy(_.declarationOrder)
-    implicit val transpiledVariables: TranspiledTypeVariables = orderedVariables.map(tv => (tv, variableProvider.createVariable())).toMap
-    val definitions = orderedVariables.map { tv =>
+  def transpileTypeVariables(typeVariables: Vector[TypeVariable])(implicit variableProvider: TemporaryVariableProvider, symbolHistory: SymbolHistory): (Vector[TargetStatement], TranspiledTypeVariables) = {
+    implicit val transpiledVariables: TranspiledTypeVariables = typeVariables.map(tv => (tv, variableProvider.createVariable())).toMap
+    val definitions = typeVariables.map { tv =>
       transpiledVariables(tv).declareAs(RuntimeApi.types.variable(tv.name, transpile(tv.lowerBound), transpile(tv.upperBound)))
     }
     (definitions, transpiledVariables)

@@ -67,7 +67,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       // Replace all type variables declared in the function with inference variables. The bounds relationships will
       // then be encoded as typing judgments between the arguments and the new inference variables. These inference
       // variables are only relevant for computing the argument types and need to be thrown away again afterwards.
-      val typeVariables = function.typeScope.localTypeVariables
+      val typeVariables = function.typeParameters
       val typeVariableAssignments = typeVariables.map(tv => (tv, new InferenceVariable)).toMap
 
       val boundsJudgments = typeVariables.flatMap { tv =>

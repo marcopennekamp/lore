@@ -2,10 +2,9 @@ package lore.compiler.types
 
 import lore.compiler.core.CompilationException
 import lore.compiler.semantics.structures.DeclaredSchemaDefinition
-import lore.compiler.types.TypeSchema.TypeScoped
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
-trait DeclaredSchema extends NamedSchema with TypeScoped {
+trait DeclaredSchema extends NamedSchema {
 
   /**
     * The definition associated with this schema.

@@ -13,7 +13,7 @@ object StructDefinitionResolver {
     val schema = parentScope.getStructSchema(node.name).getOrElse(
       throw CompilationException(s"The type schema for struct ${node.name} should be registered by now.")
     )
-    implicit val typeScope: TypeScope = schema.typeScope
+    implicit val typeScope: TypeScope = schema.getTypeScope(parentScope)
 
     val properties = node.properties.map(resolveProperty)
     val definition = new StructDefinition(node.name, schema, properties, node.nameNode.position)
