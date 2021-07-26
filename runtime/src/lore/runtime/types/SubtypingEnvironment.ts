@@ -44,6 +44,7 @@ export class SubtypingEnvironment {
         if (t2.kind === Kind.Real) return true
         break
 
+      // TODO (schemas): Remember to honor the flag `hasMultipleParameterizedInheritance`.
       case Kind.Struct:
       case Kind.Trait:
         if (t2.kind === Kind.Shape) {

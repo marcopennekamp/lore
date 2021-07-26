@@ -166,10 +166,8 @@ object TypeVariableAllocation {
       case (_, _: SumType) => unsupportedSubstitution
 
       // If a declared type dt2 contains type variables in its type arguments, we have to assign them from the type
-      // arguments of either dt1 itself or the supertypes of dt1. Crucially, to assign anything, dt1 and dt2 must have
-      // the same schema, because type parameters have no direct relationship across different declared types.
-      // This allocation is complicated by the fact that dt1 may contain multiple supertypes that directly or
-      // indirectly lead to supertypes that have dt2's schema. For example:
+      // arguments of either dt1 itself or the supertypes of dt1. See `findSupertype` on how multiple parameterized
+      // inheritance is handled. An example:
       //    trait A[+X]
       //    trait B extends A[Animal]
       //    trait C extends A[Fish]
@@ -178,27 +176,9 @@ object TypeVariableAllocation {
       // covariant, we take the intersection type of these instances, namely `Animal & Fish = Fish`. If X wasn't
       // covariant, the allocation would be ambiguous and thus invalid.
       case (dt1: DeclaredType, dt2: DeclaredType) if dt2.schema.arity > 0 =>
-        def collect(dt: DeclaredType): Vector[DeclaredType] = {
-          if (dt.schema == dt2.schema) Vector(dt)
-          else dt.declaredSupertypes.flatMap(collect)
-        }
-
-        val candidates = collect(dt1)
-        if (candidates.nonEmpty) {
-          for (i <- 0 until dt2.schema.arity) {
-            val argument2 = dt2.typeArguments(i)
-            if (candidates.length == 1) {
-              assign(candidates.head.typeArguments(i), argument2)
-            } else {
-              val arguments1 = candidates.map(_.typeArguments(i))
-              val parameter = dt2.schema.parameters(i)
-              parameter.variance match {
-                case Variance.Invariant => arguments1.foreach(assign(_, argument2))
-                case Variance.Covariant => assign(IntersectionType.construct(arguments1), argument2)
-                case Variance.Contravariant => assign(SumType.construct(arguments1), argument2)
-              }
-            }
-          }
+        dt1.findSupertype(dt2.schema) match {
+          case Some(result) => result.typeArguments.zip(dt2.typeArguments).foreach { case (t1, t2) => assign(t1, t2) }
+          case None => // TODO (schemas): Do we need to do anything here?
         }
 
       // In all other cases, there is no need to assign anything.

@@ -32,6 +32,21 @@ trait DeclaredSchema extends NamedSchema {
     */
   lazy val inheritedShapeType: ShapeType = ShapeType.combine(supertypes.filterType[ShapeType] ++ declaredSupertypes.map(_.inheritedShapeType))
 
+  /**
+    * If a declared type inherits from the same parameterized declared type `T[A]` multiple times, but not all
+    * occurrences of `T[A]` are equal, the algorithms for subtyping and type variable allocation have to fall back to a
+    * more complicated version. That approach collects candidates `T[X]`, `T[Y]`, `T[Z]` across the subtyping hierarchy
+    * and then combines the type arguments `X`, `Y`, and `Z` depending on whether `A` is covariant (intersection type)
+    * or contravariant (sum type). `A` being invariant constitutes illegal inheritance, which is an error caught by a
+    * constraint check.
+    *
+    * This flag allows us to use the faster algorithms at compile time <i>and</i> run time when no multiple
+    * parameterized inheritance is detected.
+    *
+    * TODO (schemas): Actually compute this flag.
+    */
+  lazy val hasMultipleParameterizedInheritance: Boolean = true // declaredSupertypes.exists(_.schema.hasMultipleParameterizedInheritance) || ???
+
 }
 
 object DeclaredSchema {

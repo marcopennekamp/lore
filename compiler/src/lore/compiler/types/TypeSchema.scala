@@ -31,8 +31,23 @@ trait TypeSchema {
     * corresponding assignment. It also ensures that type variable bounds are kept.
     */
   def instantiate(arguments: Vector[Type], position: Position)(implicit reporter: Reporter): Option[Type] = {
+    instantiate(
+      arguments,
+      () => reporter.error(TypeSchema.IllegalArity(this, arguments.length, position)),
+      (tv, argument) => reporter.error(TypeSchema.IllegalBounds(tv, argument, position)),
+    )
+  }
+
+  /**
+    * Like `instantiate` above, but without reporting any errors.
+    */
+  def instantiate(arguments: Vector[Type]): Option[Type] = {
+    instantiate(arguments, () => (), (_, _) => ())
+  }
+
+  private def instantiate(arguments: Vector[Type], illegalArity: () => Unit, illegalBounds: (TypeVariable, Type) => Unit): Option[Type] = {
     if (arguments.length != arity) {
-      reporter.error(TypeSchema.IllegalArity(this, arguments.length, position))
+      illegalArity()
       return None
     }
 
@@ -45,7 +60,7 @@ trait TypeSchema {
     var boundsKept = true
     for ((tv, argument) <- assignments) {
       if ((tv.lowerBound </= argument) || (argument </= tv.upperBound)) {
-        reporter.error(TypeSchema.IllegalBounds(tv, argument, position))
+        illegalBounds(tv, argument)
         boundsKept = false
       }
     }
