@@ -1,6 +1,7 @@
 package lore.compiler.types
 
 import lore.compiler.test.BaseSpec
+import lore.compiler.types.TypeVariable.Variance
 import org.scalatest.Assertion
 
 class TypeEncoderSpec extends BaseSpec {
@@ -28,10 +29,10 @@ class TypeEncoderSpec extends BaseSpec {
   }
 
   it should "correctly encode type variables with basic type bounds" in {
-    new TypeVariable("A", BasicType.Nothing, BasicType.Any, 0) --> Vector(0xc4, 0x01, 'A')
-    new TypeVariable("Num", BasicType.Int, BasicType.Any, 0) --> Vector(0xc5, 0x03, 'N', 'u', 'm', 0xa3)
-    new TypeVariable("π", BasicType.Nothing, BasicType.Real, 0) --> Vector(0xc6, 0x02, 0xCF, 0x80, 0xa2)
-    new TypeVariable("C", BasicType.Boolean, BasicType.String, 0) --> Vector(0xc7, 0x01, 'C', 0xa4, 0xa5)
+    new TypeVariable("A", BasicType.Nothing, BasicType.Any, Variance.Invariant) --> Vector(0xc4, 0x01, 'A')
+    new TypeVariable("Num", BasicType.Int, BasicType.Any, Variance.Invariant) --> Vector(0xc5, 0x03, 'N', 'u', 'm', 0xa3)
+    new TypeVariable("π", BasicType.Nothing, BasicType.Real, Variance.Invariant) --> Vector(0xc6, 0x02, 0xCF, 0x80, 0xa2)
+    new TypeVariable("C", BasicType.Boolean, BasicType.String, Variance.Invariant) --> Vector(0xc7, 0x01, 'C', 0xa4, 0xa5)
   }
 
 }

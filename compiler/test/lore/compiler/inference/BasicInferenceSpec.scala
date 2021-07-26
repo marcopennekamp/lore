@@ -9,9 +9,9 @@ import lore.compiler.types.TraitType
 class BasicInferenceSpec extends InferenceSpec {
 
   "Inference" should "infer fixed bounds for Assign judgments" in {
-    val A = new TraitType("A", Vector.empty)
-    val B = new TraitType("B", Vector(A))
-    val C = new TraitType("C", Vector(B))
+    val A = constantTrait("A", Vector.empty)
+    val B = constantTrait("B", Vector(A))
+    val C = constantTrait("C", Vector(B))
 
     val lower = new InferenceVariable(Some("lower"))
     val upper = new InferenceVariable(Some("upper"))

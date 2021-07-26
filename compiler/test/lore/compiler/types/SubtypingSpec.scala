@@ -1,5 +1,6 @@
 package lore.compiler.types
 
+import lore.compiler.types.TypeVariable.Variance
 import org.scalatest.Assertion
 
 class SubtypingSpec extends TypeSpec {
@@ -48,17 +49,17 @@ class SubtypingSpec extends TypeSpec {
 
   it should "handle type variables correctly" in {
     { // An excerpt of Example 1 from the spec's type allocation examples.
-      val C = new TypeVariable("C", BasicType.Nothing, BasicType.Any, 0)
+      val C = new TypeVariable("C", BasicType.Nothing, BasicType.Any, Variance.Invariant)
       BasicType.Int </< C
     }
     { // An excerpt of Example 2 from the spec's type allocation examples.
-      val C = new TypeVariable("C", BasicType.Nothing, BasicType.Any, 0)
+      val C = new TypeVariable("C", BasicType.Nothing, BasicType.Any, Variance.Invariant)
       Cat </< C
       C </< Animal
     }
     { // An excerpt of Example 3 from the spec's type allocation examples.
-      val C = new TypeVariable("C", Goldfish, Fish, 0)
-      val D = new TypeVariable("D", Goldfish, C, 1)
+      val C = new TypeVariable("C", Goldfish, Fish, Variance.Invariant)
+      val D = new TypeVariable("D", Goldfish, C, Variance.Invariant)
       Goldfish <:< C
       C <:< Animal
       BasicType.Nothing <:< D

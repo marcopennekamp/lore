@@ -1,5 +1,6 @@
 package lore.compiler.types
 
+import lore.compiler.types.TypeVariable.Variance
 import org.scalatest.Assertion
 
 class LeastUpperBoundSpec extends TypeSpec {
@@ -22,6 +23,10 @@ class LeastUpperBoundSpec extends TypeSpec {
     (ScottishFold, Unicorn) --> Mammal
     (Raven, Chicken) --> Bird
     (Goldfish, ScottishFold) --> Animal
+  }
+
+  it should "return the most specific supertype for traits and structs with type arguments" in {
+    // TODO (schemas): Write test.
   }
 
   it should "return the most specific supertype for tuple types" in {
@@ -67,9 +72,9 @@ class LeastUpperBoundSpec extends TypeSpec {
   }
 
   it should "return the correct least upper bounds for type variables" in {
-    val A = new TypeVariable("A", BasicType.Nothing, Bird, 0)
-    val B = new TypeVariable("B", BasicType.Nothing, Mammal, 1)
-    val C = new TypeVariable("C", BasicType.Nothing, Wheel, 2)
+    val A = new TypeVariable("A", BasicType.Nothing, Bird, Variance.Invariant)
+    val B = new TypeVariable("B", BasicType.Nothing, Mammal, Variance.Invariant)
+    val C = new TypeVariable("C", BasicType.Nothing, Wheel, Variance.Invariant)
     (A, Chicken) --> Bird
     (Chicken, A) --> Bird
     (B, Human) --> Mammal
