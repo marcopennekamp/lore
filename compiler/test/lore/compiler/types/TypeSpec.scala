@@ -37,6 +37,10 @@ trait TypeSpec extends BaseSpec with TypeSyntax {
     val Aquarium = havingStructSchema("Aquarium")
     val UnicornPen = havingStruct("UnicornPen")
 
+    val ConfusedCage1 = havingTrait("ConfusedCage1")
+    val ConfusedCage2 = havingTrait("ConfusedCage2")
+    val ConfusedCage3 = havingTrait("ConfusedCage3")
+
     val Status = havingTrait("Status")
     val Healthy = havingTrait("Healthy")
     val Sick = havingTrait("Sick")

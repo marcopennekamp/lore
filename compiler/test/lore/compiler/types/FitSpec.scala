@@ -83,7 +83,58 @@ class FitSpec extends TypeSpec {
   }
 
   it should "handle traits and structs with type parameters correctly" in {
-    // TODO (schemas): Write test.
+    val A = new TypeVariable("A", BasicType.Nothing, Animal, Variance.Invariant)
+    val B = new TypeVariable("B", BasicType.Nothing, Fish, Variance.Invariant)
+    val C = new TypeVariable("C", BasicType.Nothing, Fish, Variance.Invariant)
+
+    val cage = instantiateSchema(Cage, Vector(A))
+    val fishCage = instantiateSchema(Cage, Vector(B))
+    val aquarium = instantiateSchema(Aquarium, Vector(C))
+
+    val fishAquarium = instantiateSchema(Aquarium, Vector(Fish))
+    val goldfishCage = instantiateSchema(Cage, Vector(Goldfish))
+    val goldfishAquarium = instantiateSchema(Aquarium, Vector(Goldfish))
+    val koiAquarium = instantiateSchema(Aquarium, Vector(Koi))
+    val catCage = instantiateSchema(Cage, Vector(Cat))
+
+    fishCage fitsInto cage
+    fishCage fitsNotInto aquarium
+    aquarium fitsInto cage
+    aquarium fitsInto fishCage
+
+    fishAquarium fitsInto cage
+    fishAquarium fitsInto fishCage
+    fishAquarium fitsInto aquarium
+    goldfishCage fitsInto cage
+    goldfishCage fitsInto fishCage
+    goldfishCage fitsNotInto aquarium
+    goldfishAquarium fitsInto cage
+    goldfishAquarium fitsInto fishCage
+    goldfishAquarium fitsInto aquarium
+    koiAquarium fitsInto cage
+    koiAquarium fitsInto fishCage
+    koiAquarium fitsInto aquarium
+
+    catCage fitsInto cage
+    catCage fitsNotInto fishCage
+    catCage fitsNotInto aquarium
+
+    UnicornPen fitsInto cage
+    UnicornPen fitsNotInto fishCage
+    UnicornPen fitsNotInto aquarium
+
+    ConfusedCage1 fitsInto cage
+    ConfusedCage1 fitsInto fishCage
+    ConfusedCage1 fitsNotInto aquarium
+    ConfusedCage2 fitsInto cage
+    ConfusedCage2 fitsInto fishCage
+    ConfusedCage2 fitsNotInto aquarium
+    // TODO (schemas): The following two checks come down to the subtyping `ConfusedCage3 <= Cage[Fish & Unicorn]`,
+    //                 which is currently resolved incorrectly because we're checking the supertypes `Cage[Fish]` and
+    //                 `Cage[Unicorn]` of ConfusedCage3 separately.
+    //ConfusedCage3 fitsInto cage
+    //ConfusedCage3 fitsInto fishCage
+    ConfusedCage3 fitsNotInto aquarium
   }
 
 }

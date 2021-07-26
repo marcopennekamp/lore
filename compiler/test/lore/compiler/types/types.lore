@@ -19,11 +19,15 @@ struct Goldfish extends Fish {
 }
 struct Koi extends Fish
 
+trait Status
+trait Healthy extends Status
+trait Sick extends Status
+
 struct Zoo {
   animals: [Animal]
 }
 
-trait Cage[+A] extends { animal: A }
+trait Cage[+A <: Animal] extends { animal: A }
 struct Aquarium[+A <: Fish] extends Cage[A] {
   animal: A
 }
@@ -31,9 +35,9 @@ struct UnicornPen extends Cage[Unicorn] {
   animal: Unicorn
 }
 
-trait Status
-trait Healthy extends Status
-trait Sick extends Status
+trait ConfusedCage1 extends Cage[Fish]
+trait ConfusedCage2 extends Cage[Animal], ConfusedCage1
+trait ConfusedCage3 extends ConfusedCage2, Cage[Unicorn]
 
 trait Hashable
 
