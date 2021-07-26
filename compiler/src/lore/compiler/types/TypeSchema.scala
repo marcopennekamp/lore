@@ -73,6 +73,8 @@ trait TypeSchema {
     * bounds are taken into account as typing judgments.
     */
   def instantiate(assignments: TypeVariable.Assignments): Type
+
+  override def toString: String = SchemaStringifier.toString(this)
 }
 
 object TypeSchema {
