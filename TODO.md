@@ -5,8 +5,8 @@
 - Implement type parameters for declared types:
   - Compiler:
     - Structures: ~~Type schemas~~, ~~type variable variance~~.
-    - Type functions: ~~Subtyping~~, ~~substitution~~, type variable allocation, least upper bound, type encoder. 
-    - Parsing: ~~Type parameters for traits, structs, and alias types~~; ~~variance~~; ~~open type parameters~~.
+    - Type functions: ~~Subtyping~~, ~~substitution~~, type variable allocation, least upper bound, ~~members~~, type encoder. 
+    - Parsing: ~~Type parameters for traits, structs, and alias types~~; ~~variance~~; ~~open type parameters~~; type arguments for constructor function values; type arguments in map-style instantiation.
     - Resolution: ~~Schema instantiation~~, ~~alias/trait/struct schema resolution~~.
     - Constraints: Co-/Contravariant type parameters must be used in appropriate positions (property types with covariant and contravariant positions, mutable properties, type arguments with variance); open type parameter constraints (uniquely deducible, covariant, used with immutable property). 
     - Transformation: Construction (manual specification of type arguments, inference of type arguments, mandatory inference for open type parameters).
@@ -16,6 +16,7 @@
   - Runtime:
     - Structures: Type variable variance, trait and struct schema type parameters, trait and struct type instantiation, interning trait/struct types (possibly with weak references so that unused types can be reclaimed).
     - Type functions: Subtyping, equality, type variable allocations, substitution.
+  - Clear all `TODO (schemas)` entries.
 - Implement a module system.
 - Implement a pipe operator.
 - Overhaul the syntax.

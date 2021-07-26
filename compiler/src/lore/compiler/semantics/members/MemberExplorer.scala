@@ -41,7 +41,7 @@ object MemberExplorer {
       case structType: StructType =>
         // Note that we cannot implement this via .asShapeType, since we need the members to be initialized with
         // mutability. The shape view loses mutability.
-        HashMap(structType.definition.properties.map(property => property.name -> property.asMember): _*)
+        HashMap(structType.properties.map(instance => instance.definition.name -> instance.asMember): _*)
 
       case traitType: TraitType => members(traitType.asShapeType)
 
