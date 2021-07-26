@@ -29,8 +29,13 @@ trait TypeSpec extends BaseSpec with TypeSyntax {
     val ScottishFold = havingStruct("ScottishFold")
     val Unicorn = havingStruct("Unicorn")
     val Goldfish = havingStruct("Goldfish")
+    val Koi = havingStruct("Koi")
 
     val Zoo = havingStruct("Zoo")
+
+    val Cage = havingTraitSchema("Cage")
+    val Aquarium = havingStructSchema("Aquarium")
+    val UnicornPen = havingStruct("UnicornPen")
 
     val Status = havingTrait("Status")
     val Healthy = havingTrait("Healthy")

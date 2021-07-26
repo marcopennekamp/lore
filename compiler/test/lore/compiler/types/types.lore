@@ -17,9 +17,18 @@ struct Goldfish extends Fish {
   name: String
   size: Real
 }
+struct Koi extends Fish
 
 struct Zoo {
   animals: [Animal]
+}
+
+trait Cage[+A] extends { animal: A }
+struct Aquarium[+A <: Fish] extends Cage[A] {
+  animal: A
+}
+struct UnicornPen extends Cage[Unicorn] {
+  animal: Unicorn
 }
 
 trait Status
