@@ -44,17 +44,24 @@ object TypeDependencies {
   private case class TypeDeclarationInfo(node: TypeDeclNode, dependencies: Vector[String])
 
   private def dependencies(node: TypeDeclNode): Vector[String] = {
-    val boundNames = node.typeVariables.flatMap(tv => tv.lowerBound.toVector ++ tv.upperBound.toVector).flatMap(TypeExprNode.identifiers).toSet
+    val boundNames = node.typeVariables
+      .flatMap(tv => tv.lowerBound.toVector ++ tv.upperBound.toVector)
+      .flatMap(TypeExprNode.identifiers)
+      .toSet
+
     val restNames = node match {
       case TypeDeclNode.AliasNode(_, _, expr, _) => TypeExprNode.identifiers(expr)
       case TypeDeclNode.StructNode(_, _, extended, _, _) => extended.flatMap(TypeExprNode.identifiers).toSet
       case TypeDeclNode.TraitNode(_, _, extended, _) => extended.flatMap(TypeExprNode.identifiers).toSet
     }
-    val allNames = boundNames ++ restNames
 
-    // We have to filter out predefined types, as they may be mentioned in alias types, extended shape types, and type
-    // variable bounds. Predefined types are not true dependencies.
-    allNames.filterNot(Type.predefinedTypes.contains).toVector
+    // We have to remove all type variable names from the result names, because they are declared locally and thus
+    // cannot be depended on. The same goes for predefined types.
+    (
+      (boundNames ++ restNames)
+        -- node.typeVariables.map(_.name)
+        -- Type.predefinedTypes.keys
+    ).toVector
   }
 
   case class UndefinedDependency(node: TypeDeclNode, dependency: String) extends Feedback.Error(node) {
