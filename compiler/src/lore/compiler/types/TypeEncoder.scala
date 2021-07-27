@@ -11,8 +11,6 @@ import lore.compiler.core.CompilationException
   *   - The first byte of a type's representation, the tag, determines the kind of the type and, possibly,
   *     its number of operands. Types are divided into variable-size types, fixed-size types and basic types:
   *       - Variable size: Sum, Intersection, Tuple, Named
-  *         - Named has, for now, always zero operands, as we have not introduced parametric structs/traits yet.
-  *         - Also note that Named excludes type variables!
   *       - Basic type: Any, Nothing, Real, Int, Boolean, String
   *       - Fixed size: Function, List, Map, Variable, Symbol
   *     The first three bits determine the kind of the type:
@@ -60,8 +58,6 @@ import lore.compiler.core.CompilationException
   *       - The name of the variable, encoded as a UTF-8 string with a length.
   *       - The lower and/or upper bound based on the specific kind, as outlined above.
   *     - Symbol: The name of the symbol, encoded as a UTF-8 string with a length.
-  *
-  * TODO (schemas): Take type arguments into account.
   */
 object TypeEncoder {
 
@@ -129,7 +125,7 @@ object TypeEncoder {
       }
       (tag +: writeString(tv.name)) ++ bounds
     case t: BasicType => Vector(Tag.basic(t))
-    case t: NamedType => Tag(Kind.named) +: writeString(t.name)
+    case dt: DeclaredType => (Tag.variableSize(Kind.named, dt.typeArguments.length) +: writeString(dt.name)) ++ dt.typeArguments.flatMap(writeType)
   }
 
   /**
