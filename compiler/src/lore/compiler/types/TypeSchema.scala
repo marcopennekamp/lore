@@ -1,6 +1,6 @@
 package lore.compiler.types
 
-import lore.compiler.core.{CompilationException, Position}
+import lore.compiler.core.Position
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
 
@@ -9,6 +9,7 @@ import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
   * called "types".
   */
 trait TypeSchema {
+
   /**
     * The schema's type parameters in their order of declaration.
     */
@@ -19,6 +20,14 @@ trait TypeSchema {
     * A constant schema has no type parameters (arity 0) and is thus effectively equal to a single type.
     */
   def isConstant: Boolean = arity == 0
+
+  /**
+    * The representative of a type schema is the type that contains the schema's type parameters as type arguments.
+    *
+    * If the type schema is constant, the representative is equal to the constant type.
+    */
+  def representative: Type = _representative
+  private lazy val _representative: Type = instantiate(parameters.map(tv => (tv, tv)).toMap)
 
   /**
     * Creates an immutable type scope that allows access to the type schema's type parameters.
@@ -52,7 +61,7 @@ trait TypeSchema {
     }
 
     if (isConstant) {
-      return Some(instantiateConstant())
+      return Some(representative)
     }
 
     val assignments = parameters.zip(arguments).toMap
@@ -70,16 +79,6 @@ trait TypeSchema {
   }
 
   /**
-    * Instantiates the schema as a constant type, but only if the schema takes no parameters.
-    */
-  def instantiateConstant(): Type = {
-    if (!isConstant) {
-      throw CompilationException(s"Cannot instantiate a non-constant schema $this as constant.")
-    }
-    instantiate(Map.empty)
-  }
-
-  /**
     * Instantiates the schema with the given type variable assignments, which are already fully checked by the above
     * variant of the `instantiate` method, or otherwise deemed to be legal.
     *
@@ -90,6 +89,7 @@ trait TypeSchema {
   def instantiate(assignments: TypeVariable.Assignments): Type
 
   override def toString: String = SchemaStringifier.toString(this)
+
 }
 
 object TypeSchema {

@@ -9,8 +9,8 @@ trait TypeSpec extends BaseSpec with TypeSyntax {
 
   def instantiateSchema(schema: TypeSchema, arguments: Vector[Type]): Type = schema.instantiate(arguments).get
 
-  def havingTrait(name: String)(implicit registry: Registry): TraitType = havingTraitSchema(name).instantiateConstant()
-  def havingStruct(name: String)(implicit registry: Registry): StructType = havingStructSchema(name).instantiateConstant()
+  def havingTrait(name: String)(implicit registry: Registry): TraitType = havingTraitSchema(name).representative
+  def havingStruct(name: String)(implicit registry: Registry): StructType = havingStructSchema(name).representative
 
   object TypesExample {
     implicit val registry: Registry = analyzeFragment("types/types.lore")

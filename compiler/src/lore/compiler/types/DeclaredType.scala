@@ -38,6 +38,14 @@ trait DeclaredType extends NamedType {
   def asShapeType: ShapeType = inheritedShapeType
 
   /**
+    * A set of <i>all</i> the type's direct and indirect supertypes. Does not contain duplicates, but may contain
+    * multiple types of the same schema with different type arguments.
+    */
+  lazy val indirectDeclaredSupertypes: Set[DeclaredType] = {
+    declaredSupertypes.toSet.flatMap((supertype: DeclaredType) => Set(supertype) ++ supertype.indirectDeclaredSupertypes)
+  }
+
+  /**
     * Finds a supertype of this type (or this type itself) that has the given schema.
     *
     * If this type's schema has multiple parameterized inheritance, the result's type arguments are each a combination

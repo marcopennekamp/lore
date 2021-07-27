@@ -237,7 +237,7 @@ class InferringExpressionTransformationVisitor(
 
         case Some(schema) =>
           reporter.error(StructExpected(nameNode.value, nameNode.position))
-          val tpe = if (schema.isConstant) schema.instantiateConstant() else BasicType.Nothing
+          val tpe = if (schema.isConstant) schema.representative else BasicType.Nothing
           Expression.Hole(tpe, position)
 
         case None => Expression.Hole(BasicType.Nothing, position)

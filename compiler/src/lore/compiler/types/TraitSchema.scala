@@ -7,6 +7,6 @@ class TraitSchema(
   override val parameters: Vector[TypeVariable],
   override val supertypes: Vector[Type],
 ) extends DeclaredSchema with DeclaredSchema.DefinitionProperty[TraitDefinition] {
-  override def instantiateConstant(): TraitType = super.instantiateConstant().asInstanceOf[TraitType]
+  override def representative: TraitType = super.representative.asInstanceOf[TraitType]
   override def instantiate(assignments: TypeVariable.Assignments): TraitType = TraitType(this, assignments)
 }

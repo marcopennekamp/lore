@@ -1,6 +1,6 @@
 package lore.compiler.semantics.structures
 
-import lore.compiler.core.{Position, Positioned}
+import lore.compiler.core.{CompilationException, Position, Positioned}
 import lore.compiler.phases.transpilation.RuntimeNames
 import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.semantics.scopes.TypedBinding
@@ -20,7 +20,8 @@ case class StructConstructorDefinition(struct: StructDefinition) extends Positio
 
   lazy val signature: FunctionSignature = {
     // TODO (schemas): This is only a temporary fix. We will have to refactor struct constructors completely.
-    val tpe = struct.schema.instantiateConstant()
+    if (!struct.schema.isConstant) throw CompilationException("Cannot create a struct constructor for parameterized structs for now.")
+    val tpe = struct.schema.representative
     FunctionSignature(struct.name, tpe.properties.map(_.asParameter), tpe, position)
   }
 }

@@ -38,7 +38,7 @@ trait InferenceSpec extends TypeSpec {
     def assignment(iv: InferenceVariable, lowerBound: Type, upperBound: Type): (InferenceVariable, InferenceBounds) = iv -> InferenceBounds(iv, lowerBound, upperBound)
   }
 
-  def constantTrait(name: String, supertypes: Vector[Type]): TraitType = new TraitSchema(name, Vector.empty, supertypes).instantiateConstant()
-  def constantStruct(name: String, supertypes: Vector[Type]): StructType = new StructSchema(name, Vector.empty, supertypes).instantiateConstant()
+  def constantTrait(name: String, supertypes: Vector[Type]): TraitType = new TraitSchema(name, Vector.empty, supertypes).representative
+  def constantStruct(name: String, supertypes: Vector[Type]): StructType = new StructSchema(name, Vector.empty, supertypes).representative
 
 }

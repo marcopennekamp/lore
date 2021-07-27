@@ -30,7 +30,7 @@ object TranspilationPhase {
     val introspectionInitialization = registry.typeScope.getTraitSchema(Introspection.typeName) match {
       case None => throw CompilationException(s"The compiler should generate a trait '${Introspection.typeName}' for the introspection API.")
       case Some(introspectionType) => Vector(
-        RuntimeApi.types.introspection.initialize(TypeTranspiler.transpile(introspectionType.instantiateConstant())(Map.empty, symbolHistory)),
+        RuntimeApi.types.introspection.initialize(TypeTranspiler.transpile(introspectionType.representative)(Map.empty, symbolHistory)),
         Target.Divider,
       )
     }

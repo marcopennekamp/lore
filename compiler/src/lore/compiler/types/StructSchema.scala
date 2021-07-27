@@ -7,6 +7,6 @@ class StructSchema(
   override val parameters: Vector[TypeVariable],
   override val supertypes: Vector[Type],
 ) extends DeclaredSchema with DeclaredSchema.DefinitionProperty[StructDefinition] {
-  override def instantiateConstant(): StructType = super.instantiateConstant().asInstanceOf[StructType]
+  override def representative: StructType = super.representative.asInstanceOf[StructType]
   override def instantiate(assignments: TypeVariable.Assignments): StructType = StructType(this, assignments)
 }
