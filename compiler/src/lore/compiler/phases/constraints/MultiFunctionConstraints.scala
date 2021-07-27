@@ -120,7 +120,7 @@ object MultiFunctionConstraints {
     * user code.) Then we'd have to check 250*250*250 = 15625000 combinations. Suddenly, the compiler will choke when
     * the user defines an abstract function `foobar(iterable: Iterable, key: Hashable, savable: Savable)`.
     *
-    * When dealing with intersection types, we cannot simpy consider direct subtypes because structs can have complex,
+    * When dealing with intersection types, we cannot simply consider direct subtypes because structs can have complex,
     * multi-layered trait inheritance relationships. Take the following example into account:
     *
     * {{{

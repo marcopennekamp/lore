@@ -40,6 +40,39 @@ class DeclaredTypeHierarchy(declaredTypes: Vector[DeclaredType]) {
 
   /**
     * Returns all direct subtypes of the given declared type, excluding the type itself.
+    *
+    * If the declared type `D` with schema `D*` has type arguments, each direct subtype `S` will be instantiated with
+    * the most general type arguments. That is, for each type parameter `T` of `S`:
+    *
+    *   - If `T` occurs in `U` given the clause `extends D*[..., U, ...]`, we can find T's candidate type `C` based on
+    *     a reverse substitution of `U`.
+    *     - If `T` occurs multiple times in the type constructor `D[...]`, we have to combine each distinct occurrence
+    *       based on T's variance to compute `C`:
+    *       - Covariant: Take the intersection type of all candidates.
+    *       - Contravariant: Take the sum type of all candidates.
+    *       - Invariant: `S` cannot be a subtype of `D`, because `S` is invariant in `T` and cannot be instantiated
+    *                    with two or more distinct types.
+    *     - If T's bounds are narrower than `C`, we have three options based on T's variance:
+    *       - Covariant: The most general type argument is T's upper bound.
+    *         - Example: `Cage[Animal]` has the direct subtype `Aquarium[Fish]` (see `types.lore` test definitions).
+    *       - Contravariant: The most general type argument is T's lower bound.
+    *       - Invariant: `S` cannot be a subtype of `D`, because `S` is invariant in `T` and cannot be instantiated
+    *                    with an assignment `T = C`.
+    *   - Otherwise, we decide the most general instance of `T` based on its variance:
+    *     - Covariant: The upper bound of `T`.
+    *     - Contravariant: The lower bound of `T`.
+    *     - Invariant: `T` itself, because the most general type argument must represent all possible type arguments,
+    *                  and only a type variable can do that if `T` is invariant.
+    *
+    * Example: Consider types `trait A[X <: Animal, +Z <: Animal]` and `trait B[X, Y <: Animal, +Z <: Mammal] extends
+    * A[X, Z]`. Assume we want to find the direct declared subtypes of `A[Bird, Animal]`. We can directly match `Bird`
+    * to B's `X` and `Animal` to B's `Z`. However, because B's upper bound of `Z` is covariant and narrower than
+    * `Animal`, we have `Z = Mammal`. `Y` cannot be derived from `A` and so we have to instantiate it based on variance
+    * alone. As `Y` is invariant, we have no choice but to set `Y = Y`. Ultimately, the direct subtype this function
+    * returns will be `B[Bird, Y, Mammal]`. This is the type that will be used to check whether the totality constraint
+    * is satisfied for an abstract function.
+    *
+    * TODO (schemas): Actually implement type argument handling.
     */
   def getDirectSubtypes(tpe: NamedType): Vector[NamedType] = {
     // The resulting vector will contain distinct types, as the graph also contains distinct nodes.

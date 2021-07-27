@@ -5,10 +5,10 @@
 - Implement type parameters for declared types:
   - Compiler:
     - Structures: ~~Type schemas~~, ~~type variable variance~~.
-    - Type functions: ~~Subtyping~~, ~~substitution~~, ~~type variable allocation~~, least upper bound, ~~members~~, ~~type encoder~~.
+    - Type functions: ~~Subtyping~~, ~~substitution~~, ~~type variable allocation~~, declared type hierarchy, least upper bound, ~~members~~, ~~type encoder~~.
     - Parsing: ~~Type parameters for traits, structs, and alias types~~; ~~variance~~; ~~open type parameters~~; type arguments for constructor function values; type arguments in map-style instantiation.
     - Resolution: ~~Schema instantiation~~, ~~alias/trait/struct schema resolution~~.
-    - Constraints: Co-/Contravariant type parameters must be used in appropriate positions (property types with covariant and contravariant positions, mutable properties, type arguments with variance); open type parameter constraints (uniquely deducible, covariant, used with immutable property); disallow impossible inheritance (invariant type parameters being multi-instantiated with different types, for example `struct ImpossibleArray extends Array[Animal], Array[Fish]`).
+    - Constraints: Totality constraint checking for parameterized declared types; co-/contravariant type parameters must be used in appropriate positions (property types with covariant and contravariant positions, mutable properties, type arguments with variance); open type parameter constraints (uniquely deducible, covariant, used with immutable property); disallow impossible inheritance (invariant type parameters being multi-instantiated with different types, for example `struct ImpossibleArray extends Array[Animal], Array[Fish]`).
     - Transformation: Construction (manual specification of type arguments, inference of type arguments, mandatory inference for open type parameters).
     - Transpilation: Referring to the correct interned type (either through compile-time or run-time means), instantiation function (passing compile-time type arguments, resolving open type parameters from the given argument at run time), construction (passing compile-time type parameters to the instantiation function).
       - If a type has no open type parameters AND the instantiation of the type does not rely on a function's type parameters, we should generally be able to refer to a trait/struct type that is interned at compile time.
