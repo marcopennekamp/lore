@@ -38,6 +38,7 @@ struct UnicornPen extends Cage[Unicorn] {
 trait ConfusedCage1 extends Cage[Fish]
 trait ConfusedCage2 extends Cage[Animal], ConfusedCage1
 trait ConfusedCage3 extends ConfusedCage2, Cage[Unicorn]
+trait ConfusedCage4 extends Cage[Fish], ConfusedCage1
 
 trait Hashable
 
