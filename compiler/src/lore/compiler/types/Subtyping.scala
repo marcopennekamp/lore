@@ -31,7 +31,7 @@ object Subtyping {
         case d2: DeclaredType =>
           return d1 == d2 || (
             if (d1.schema == d2.schema) checkTypeArguments(d1, d2)
-            else d1.declaredSupertypes.exists(isSubtype(_, d2))
+            else d1.findSupertype(d2.schema).exists(isSubtype(_, d2))
           )
 
         // Declared type/shape subtyping can be delegated to shape/shape subtyping by viewing the declared type as a

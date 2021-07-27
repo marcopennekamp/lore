@@ -129,11 +129,8 @@ class FitSpec extends TypeSpec {
     ConfusedCage2 fitsInto cage
     ConfusedCage2 fitsInto fishCage
     ConfusedCage2 fitsNotInto aquarium
-    // TODO (schemas): The following two checks come down to the subtyping `ConfusedCage3 <= Cage[Fish & Unicorn]`,
-    //                 which is currently resolved incorrectly because we're checking the supertypes `Cage[Fish]` and
-    //                 `Cage[Unicorn]` of ConfusedCage3 separately.
-    //ConfusedCage3 fitsInto cage
-    //ConfusedCage3 fitsInto fishCage
+    ConfusedCage3 fitsInto cage
+    ConfusedCage3 fitsInto fishCage
     ConfusedCage3 fitsNotInto aquarium
   }
 
