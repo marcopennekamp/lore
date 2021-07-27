@@ -39,6 +39,11 @@ class TypeVariableAllocation(variables: Set[TypeVariable]) {
   }
 
   /**
+    * Returns all assignments contained in the current allocation without checking for consistency.
+    */
+  def allAssignments: Map[TypeVariable, Vector[Type]] = allocation.toMap
+
+  /**
     * Whether these allocations are consistent. We essentially check these properties:
     *   1. All type variables are assigned a type.
     *   2. All types assigned to the same variable are equal.

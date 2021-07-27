@@ -7,5 +7,8 @@ List functions:
 - default/ifEmpty: Evaluates to the given list or, if it is empty, to a default list or element.
 - distinct/unique elements
 
+Map functions:
+- Merge two maps that contain lists such that the lists are merged when keys exist in both maps.
+
 Math functions:
 - increment
