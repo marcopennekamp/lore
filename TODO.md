@@ -52,6 +52,7 @@
 - Turn map keys and values into covariant/contravariant type variables if possible.
 - Support intersection and sum types in TypeVariableAllocation.
 - We could theoretically introduce a limited form of ambiguity analysis at compile-time: For each function `f(a: A, b: B, ...)`, get a list of possible subtypes (mostly trait subtypes) and simulate dispatch with these types. If any of the inputs result in an ambiguity, raise at least a warning.
+- Abstractness of parameterized structs: A struct with an open type argument such as `Some[Animal]` given a *trait* `Animal` is technically abstract, because an instance of such a struct can never be created. The type argument will always be some subtype of `Animal`, so one could imagine the programmer wanting to implement various specialized functions without specifying a function for `Some[Animal]`.
 
 ##### CLI
 
@@ -128,6 +129,7 @@
 
 #### Performance
 
+- Compile-time: There might come a time when the **totality constraint** cannot be fully verified for a particularly complex multi-function. For example, when we have to cycle through an exponentially growing number of concrete subtype combinations, the compiler might choke, making the program virtually uncompilable. A solution to this would be degrading the totality constraint to a warning-producing constraint or alternatively to still produce errors, but without guarantee that all needed functions are implemented at run-time. We could then explore subtype combinations that take too long to check with random samples.
 - Compile-time: We can easily implement the following optimization: If the function to be called is a leaf in the hierarchy, i.e. it isn't specialized further, we can call that function directly, because no other functions exist that could specialize the one function contained in the fit. This of course requires whole-program compilation, which is our current approach.
   - Problem: Let's say we have a concrete function `f(a: A)` with `A` being a trait. We also have a trait `Y` and a concrete function `f(y: Y)`. We have a struct `A1 extends A, Y`. The optimization above leads us to call function `f(a: A)` directly at compile-time, given a value of type `A`. However, at run-time, this value is actually an `A1`. Calling `f` directly with it should result in an ambiguity error, since both functions are equally specific and in the fit of the given input, but because at compile-time we applied the optimization, `f(a: A)` is incorrectly called.
     - To solve this issue, we have to add additional conditions to the optimization. We could, for example, analyze the trait `A` and only apply the optimization if none of `A`'s implementations extend other traits (conservative) or other traits that are also found in the multiple dispatch hierarchy of the multi-function (opportunistic). Such an optimization seems too complicated for the MVL, though, especially considering that the language might still change quite a bit.
