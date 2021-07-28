@@ -1,0 +1,35 @@
+trait Element
+trait Fire extends Element
+trait Ice extends Element
+trait Earth extends Element
+
+trait Cost
+trait Mana extends Cost
+trait Stamina extends Cost
+trait Health extends Cost
+
+trait Specialty
+trait Freezing extends Specialty
+trait Penetrating extends Specialty
+
+
+trait Spell[+E <: Element, +C <: Cost]
+
+function rawDamage(spell: Spell[Element, Cost]): Int
+function damageOf(spell: Spell[Element, Cost], defense: Int): Int
+
+
+trait Spike[+E <: Ice | Earth, +S <: Specialty, +Id] extends Spell[E, Mana]
+struct IceSpike extends Spike[Ice, Freezing, #ice_spike]
+struct NeedleIceSpike extends Spike[Ice, Penetrating, #needle_ice_spike]
+struct EarthSpike extends Spike[Earth, Penetrating, #earth_spike]
+
+function rawDamage(spell: Spike[Ice, Specialty, #ice_spike]): Int = 10
+function rawDamage(spell: Spike[Ice, Specialty, #needle_ice_spike]): Int = 12
+function rawDamage(spell: Spike[Earth, Specialty, Any]): Int = 8
+
+function damageOf(spell: Spike[Ice | Earth, Freezing, Any], defense: Int): Int = max(rawDamage(spell) - defense, 0)
+function damageOf(spell: Spike[Ice | Earth, Penetrating, Any], defense: Int): Int = rawDamage(spell) // `Penetrating` ignores defense.
+
+
+// TODO (schemas): Include this in `abstract.test.ts`.
