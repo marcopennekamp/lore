@@ -60,10 +60,9 @@ class DeclaredTypeHierarchy(schemas: Vector[DeclaredSchema]) {
   }
 
   private def findConcreteSubtypes(tpe: DeclaredType): Vector[DeclaredType] = {
-    // The .tail removes the node related to `tpe` from the results. This node always comes first.
-    subtypingGraph.get(tpe)
-      .outerNodeTraverser.toVector.tail
-      .filterType[DeclaredType].filter(Type.isConcrete)
+    getDirectSubtypes(tpe).flatMap {
+      subtype => if (Type.isConcrete(subtype)) Vector(subtype) else findConcreteSubtypes(subtype)
+    }
   }
 
   /**
