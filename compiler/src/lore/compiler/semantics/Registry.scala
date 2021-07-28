@@ -5,8 +5,8 @@ import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.Registry.MultiFunctionNotFound
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.scopes.{Binding, BindingScope, ImmutableTypeScope, TypeScope}
-import lore.compiler.semantics.structures.{StructConstructorDefinition, SchemaDefinition}
-import lore.compiler.types.{DeclaredType, DeclaredTypeHierarchy, NamedSchema}
+import lore.compiler.semantics.structures.{SchemaDefinition, StructConstructorDefinition}
+import lore.compiler.types.{DeclaredSchema, DeclaredTypeHierarchy, NamedSchema}
 import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtension}
 
 /**
@@ -19,7 +19,7 @@ case class Registry(
   multiFunctions: Registry.MultiFunctions,
 ) {
 
-  val declaredTypeHierarchy = new DeclaredTypeHierarchy(types.values.toVector.filterType[DeclaredType])
+  val declaredTypeHierarchy = new DeclaredTypeHierarchy(types.values.toVector.filterType[DeclaredSchema])
 
   /**
     * All schemas in their proper order of resolution. Excludes predefined types.

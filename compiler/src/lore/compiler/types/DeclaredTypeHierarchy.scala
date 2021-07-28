@@ -40,7 +40,7 @@ class DeclaredTypeHierarchy(schemas: Vector[DeclaredSchema]) {
     */
   def getDirectSubtypes(tpe: DeclaredType): Vector[DeclaredType] = {
     // The resulting vector will contain distinct types, as the graph also contains distinct nodes.
-    subtypingGraph.get(tpe).outgoing.toVector
+    subtypingGraph.get(tpe.schema).outgoing.toVector
       .map(_.to.value)
       .filterType[DeclaredSchema]
       .flatMap(tpe.specialize)
@@ -52,7 +52,7 @@ class DeclaredTypeHierarchy(schemas: Vector[DeclaredSchema]) {
     * Returns all concrete subtypes of the given declared type, excluding the type itself. These may be direct or
     * indirect subtypes.
     *
-    * The result of the operation is cached for declared schemas without type parameters.
+    * The result of the operation is cached for constant declared schemas.
     */
   def getConcreteSubtypes(tpe: DeclaredType): Vector[DeclaredType] = {
     if (tpe.schema.isConstant) concreteSubtypesCache.getOrElseUpdate(tpe, findConcreteSubtypes(tpe))
