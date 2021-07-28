@@ -12,6 +12,11 @@ Deno.test('abstract/partial-specialization', async () => {
   assertListEquals(result, ['A1,B', 'A1,B', 'A2,B', 'A2,B'])
 })
 
+Deno.test('abstract/spell', async () => {
+  const result: ListValue<number> = await LoreTest.run('abstract/spell.lore')
+  assertListEquals(result, [10, 12, 8, 5, 10, 6, 0, 6, 2])
+})
+
 Deno.test('abstract/sum', async () => {
   const result: ListValue<number> = await LoreTest.run('abstract/sum.lore')
   assertListEquals(result, [3, 4, 4, 5, 5, 1, 2])
