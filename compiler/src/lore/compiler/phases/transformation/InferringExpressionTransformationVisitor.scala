@@ -225,21 +225,25 @@ class InferringExpressionTransformationVisitor(
 
     case ObjectMapNode(nameNode, entryNodes, position) =>
       typeScope.resolve(nameNode.value, nameNode.position) match {
-        // Note that via alias types, the type scope can also contain struct types with their type arguments already
-        // set, not only struct schemas. Hence we have to handle both cases here.
-        case Some(structType: StructType) =>
+        // Note that via constant type aliases, the type scope can also indirectly contain struct types with their type
+        // arguments already set.
+        // TODO (schemas): Perhaps we should add the types of constant alias schemas directly to the type scope instead
+        //                 of the alias schema itself. This would allow us to simply match on a StructType here.
+        // TODO (schemas): This doesn't yet cover the case where a parameterized alias is used to construct a struct.
+        case Some(schema: AliasSchema) if schema.isConstant && schema.representative.isInstanceOf[StructType] =>
           val entries = entryNodes.zip(expressions).map { case (ObjectEntryNode(nameNode, _, _), expression) => nameNode.value -> expression }
           addJudgmentsFrom(
-            InstantiationTransformation.transformMapStyleInstantiation(structType, entries, position)
+            InstantiationTransformation.transformMapStyleInstantiation(schema.representative.asInstanceOf[StructType], entries, position)
           )
 
-        case Some(structSchema: StructSchema) => ??? // TODO (schemas): Implement.
+        case Some(schema: StructSchema) => ??? // TODO (schemas): Implement.
 
         case Some(schema) =>
           reporter.error(StructExpected(nameNode.value, nameNode.position))
           val tpe = if (schema.isConstant) schema.representative else BasicType.Nothing
           Expression.Hole(tpe, position)
 
+        // A "type not found" error has already been reported, so there is no need to report an additional error.
         case None => Expression.Hole(BasicType.Nothing, position)
       }
 

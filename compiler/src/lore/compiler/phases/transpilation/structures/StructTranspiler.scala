@@ -127,7 +127,7 @@ object StructTranspiler {
     //      (name, age) => ABC__instantiate({ name, age }),
     //      /* function type */,
     //    );
-    val signature = tpe.schema.definition.constructor.signature
+    val signature = tpe.constructor.signature
     val parameterNames = signature.parameters.map(_.name.asName)
     val parameters = parameterNames.map(Target.Parameter(_))
     val properties = Target.Dictionary(parameterNames.map(name => Target.Property(name, name.asVariable)))

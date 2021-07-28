@@ -348,6 +348,15 @@ let b = B()
 let a = construct(A, b)
 ```
 
+A **type alias** also defines a corresponding constructor function value:
+
+```
+struct Box[+A] { value: A }
+type StringBox = Box[String]
+
+let box = StringBox('I am in a box.')
+```
+
 ##### Equality and Order
 
 Struct equality is defined as **referential equality** by default. (**TODO:** Really? Not very useful. Structs should have some default notion of equality.)

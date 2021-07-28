@@ -5,8 +5,8 @@ import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.Registry.MultiFunctionNotFound
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.scopes.{Binding, BindingScope, ImmutableTypeScope, TypeScope}
-import lore.compiler.semantics.structures.{SchemaDefinition, StructConstructorDefinition}
-import lore.compiler.types.{DeclaredSchema, DeclaredTypeHierarchy, NamedSchema}
+import lore.compiler.semantics.structures.{SchemaDefinition, StructConstructor}
+import lore.compiler.types.{DeclaredSchema, DeclaredTypeHierarchy, NamedSchema, StructType}
 import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtension}
 
 /**
@@ -49,9 +49,20 @@ case class Registry(
   }
 
   /**
-    * Gets the constructor of the struct with the given name.
+    * Gets the constructor of the struct with the given name. Type aliases are also supported directly.
     */
-  def getStructConstructor(name: String): Option[StructConstructorDefinition] = typeScope.getStructSchema(name).map(_.definition.constructor)
+  def getStructConstructor(name: String): Option[StructConstructor] = {
+    // TODO (schemas): Using `representative` on the struct schema is a temporary fix that only works for struct types
+    //                 without type parameters.
+    // TODO (schemas): This doesn't yet cover the case where a parameterized alias is used to construct a struct.
+    typeScope.getStructSchema(name).map(_.representative.constructor).orElse {
+      typeScope.getAliasSchema(name)
+        .filter(_.isConstant)
+        .map(_.representative)
+        .filterType[StructType]
+        .map(_.constructor)
+    }
+  }
 
 }
 

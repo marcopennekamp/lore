@@ -14,6 +14,4 @@ class StructDefinition(
 
   lazy val openProperties: Vector[StructPropertyDefinition] = properties.filter(_.isOpen)
 
-  lazy val constructor: StructConstructorDefinition = StructConstructorDefinition(this)
-
 }
