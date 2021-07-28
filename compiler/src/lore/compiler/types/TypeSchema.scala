@@ -3,6 +3,7 @@ package lore.compiler.types
 import lore.compiler.core.Position
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
+import lore.compiler.types.TypeVariable.Variance
 
 /**
   * A type schema is a type constructor, taking any number of type parameters. Type schemas without any parameters are
@@ -34,12 +35,29 @@ trait TypeSchema {
     */
   def getTypeScope(parentScope: TypeScope): TypeScope = ImmutableTypeScope.from(parameters, parentScope)
 
+
+
   /**
     * Instantiates the schema with the given type argument list, which must be in the order of declaration of the
     * schema's type parameters. This implementation guarantees that all and only type parameters of the schema have a
     * corresponding assignment. It also ensures that type variable bounds are kept.
+    *
+    * If any of the constraints fail, None is returned.
     */
-  def instantiate(arguments: Vector[Type], position: Position)(implicit reporter: Reporter): Option[Type] = {
+  def instantiate(arguments: Vector[Type]): Option[Type] = {
+    var isValid = true
+    val result = instantiate(arguments, () => isValid = false, (_, _) => isValid = false)
+    if (isValid) Some(result) else None
+  }
+
+  /**
+    * Implements the `instantiate` method above with the following additions:
+    *   - If the arity of the type arguments is incorrect or type variable bounds are not kept, appropriate errors are
+    *     reported.
+    *   - Even if the `instantiate` operation above would fail, this implementation produces a best-guess type instance
+    *     so that follow-up type errors are kept at a minimum when the compiler continues compilation.
+    */
+  def instantiate(arguments: Vector[Type], position: Position)(implicit reporter: Reporter): Type = {
     instantiate(
       arguments,
       () => reporter.error(TypeSchema.IllegalArity(this, arguments.length, position)),
@@ -47,35 +65,41 @@ trait TypeSchema {
     )
   }
 
-  /**
-    * Like `instantiate` above, but without reporting any errors.
-    */
-  def instantiate(arguments: Vector[Type]): Option[Type] = {
-    instantiate(arguments, () => (), (_, _) => ())
-  }
-
-  private def instantiate(arguments: Vector[Type], illegalArity: () => Unit, illegalBounds: (TypeVariable, Type) => Unit): Option[Type] = {
+  private def instantiate(
+    arguments: Vector[Type],
+    illegalArity: () => Unit,
+    illegalBounds: (TypeVariable, Type) => Unit,
+  ): Type = {
     if (arguments.length != arity) {
       illegalArity()
-      return None
     }
 
     if (isConstant) {
-      return Some(representative)
+      return representative
     }
 
-    val assignments = parameters.zip(arguments).toMap
+    val assignments = parameters.zipWithIndex.foldLeft(Map.empty: TypeVariable.Assignments) { case (assignments, (parameter, index)) =>
+      val lowerBound = Type.substitute(parameter.lowerBound, assignments)
+      val upperBound = Type.substitute(parameter.upperBound, assignments)
 
-    var boundsKept = true
-    for ((tv, argument) <- assignments) {
-      if ((tv.lowerBound </= argument) || (argument </= tv.upperBound)) {
-        illegalBounds(tv, argument)
-        boundsKept = false
+      val argument = arguments.lift(index) match {
+        case Some(argument) => argument
+
+        // If the parameter has no corresponding argument, we take a type variable bounds guess at the actual type.
+        case None => parameter.variance match {
+          case Variance.Covariant | Variance.Invariant => upperBound
+          case Variance.Contravariant => lowerBound
+        }
       }
+
+      if ((lowerBound </= argument) || (argument </= upperBound)) {
+        illegalBounds(parameter, argument)
+      }
+
+      assignments + (parameter -> argument)
     }
 
-    if (boundsKept) Some(instantiate(assignments))
-    else None
+    instantiate(assignments)
   }
 
   /**

@@ -178,7 +178,7 @@ trait DeclaredType extends NamedType {
       assignments + (parameter -> argument)
     }
 
-    subtypeSchema.instantiate(assignments).asInstanceOf[Option[DeclaredType]]
+    Some(subtypeSchema.instantiate(assignments).asInstanceOf[DeclaredType])
   }
 
 }

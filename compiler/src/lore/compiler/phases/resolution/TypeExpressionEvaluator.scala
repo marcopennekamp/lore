@@ -23,20 +23,22 @@ object TypeExpressionEvaluator {
 
   def evaluate(expression: TypeExprNode)(implicit typeScope: TypeScope, reporter: Reporter): Option[Type] = {
     expression match {
-      case TypeExprNode.TypeNameNode(name, position) => typeScope.resolve(name, position).flatMap {
-        case tpe: NamedType => Some(tpe)
-        case schema: NamedSchema if schema.isConstant => schema.instantiate(Vector.empty, expression.position)
+      case TypeExprNode.TypeNameNode(name, position) => typeScope.resolve(name, position).map {
+        case tpe: NamedType => tpe
         case schema: NamedSchema =>
-          reporter.error(MissingTypeArguments(schema, expression))
-          None
+          if (!schema.isConstant) {
+            reporter.error(MissingTypeArguments(schema, expression))
+          }
+          // Even if the schema isn't constant, the schema will still be instantiated with best-guess type arguments.
+          schema.instantiate(Vector.empty, expression.position)
       }
 
       case TypeExprNode.InstantiationNode(nameNode, argumentNodes, _) => typeScope.resolve(nameNode.name, nameNode.position).flatMap {
         case tpe: NamedType =>
           reporter.error(UnexpectedTypeArguments(tpe, expression))
-          None
+          Some(tpe)
         case schema: NamedSchema =>
-          argumentNodes.map(evaluate).sequence.flatMap {
+          argumentNodes.map(evaluate).sequence.map {
             arguments => schema.instantiate(arguments, expression.position)
           }
       }
