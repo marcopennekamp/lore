@@ -29,7 +29,7 @@ object InstantiationTransformation {
 
   def transformMapStyleInstantiation(structType: StructType, entries: Vector[(String, Expression)], position: Position)(implicit reporter: Reporter): (Expression, Vector[TypingJudgment]) = {
     verifyNamesUnique(entries, position)
-    val arguments = correlateEntries(structType.schema.definition, entries.toMap, position)
+    val arguments = correlateEntries(structType, entries.toMap, position)
     val judgments = getEntryTypingJudgments(arguments)
     (Expression.Instantiation(structType, arguments, position), judgments)
   }
@@ -47,27 +47,27 @@ object InstantiationTransformation {
     * Missing properties without a default value and illegal properties are reported as errors.
     */
   private def correlateEntries(
-    struct: StructDefinition,
+    structType: StructType,
     entries: Map[String, Expression],
     position: Position,
   )(implicit reporter: Reporter): Vector[Expression.Instantiation.Argument] = {
     var arguments = Vector.empty[Expression.Instantiation.Argument]
     var missing = Vector.empty[String]
-    val illegal = entries.keys.toVector.diff(struct.properties.map(_.name))
+    val illegal = entries.keys.toVector.diff(structType.properties.map(_.definition.name))
 
-    struct.properties.foreach { property =>
-      entries.get(property.name) match {
+    structType.properties.foreach { property =>
+      entries.get(property.definition.name) match {
         case Some(expression) =>
           arguments = arguments :+ Expression.Instantiation.Argument(property, expression)
 
         case None =>
-          property.defaultValue match {
+          property.definition.defaultValue match {
             case Some(defaultValue) =>
               val call = Expression.Call(defaultValue.callTarget, Vector.empty, defaultValue.tpe, position)
               val argument = Expression.Instantiation.Argument(property, call)
               arguments = arguments :+ argument
 
-            case None => missing = missing :+ property.name
+            case None => missing = missing :+ property.definition.name
           }
       }
     }

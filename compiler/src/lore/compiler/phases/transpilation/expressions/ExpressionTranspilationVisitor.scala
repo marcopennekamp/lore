@@ -126,7 +126,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
       // already set. We're building this object here.
       val properties = Target.Dictionary(
         expression.arguments.map(_.property).zip(values).map { case (property, value) =>
-          Target.Property(property.name.asName, value)
+          Target.Property(property.definition.name.asName, value)
         }
       )
       Chunk.expression(RuntimeNames.instantiate(expression.tpe.schema).call(properties))

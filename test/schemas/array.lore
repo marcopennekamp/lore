@@ -33,7 +33,7 @@ type NaiveIntArray = NaiveArray[Int]
 
 // TODO (schemas): Add a Deno test case for this file.
 function test(): [Int] = {
-  let array = NaiveIntArray { underlying = [1, 2] }
+  let array = NaiveIntArray([1, 2])
   append(array, 3)
   append(array, 4)
   append(array, 5)

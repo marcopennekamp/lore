@@ -151,7 +151,7 @@ object Expression {
   }
 
   object Instantiation {
-    case class Argument(property: StructPropertyDefinition, value: Expression)
+    case class Argument(property: StructPropertyDefinition.Instance, value: Expression)
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
