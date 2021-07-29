@@ -1,0 +1,45 @@
+trait Array[+E]
+
+function prepend(array: Array[A], element: E): Unit where A, E <: A
+function append(array: Array[A], element: E): Unit where A, E <: A
+function removeFirst(array: Array[E]): Unit where E
+function removeLast(array: Array[E]): Unit where E
+
+
+// TODO (schemas): Using invariant E in a covariant position should not be possible here.
+struct NaiveArray[E] extends Array[E] {
+  mut underlying: [E]
+}
+
+function prepend(array: NaiveArray[A], element: E): Unit where A, E <: A = {
+  array.underlying = concat([element], array.underlying)
+}
+
+function append(array: NaiveArray[A], element: E): Unit where A, E <: A = {
+  array.underlying = array.underlying :+ element
+}
+
+function removeFirst(array: NaiveArray[E]): Unit where E = {
+  array.underlying = tail(array.underlying)
+}
+
+function removeLast(array: NaiveArray[E]): Unit where E = {
+  array.underlying = init(array.underlying)
+}
+
+
+// TODO (schemas): This is a workaround until we add manual type specification to struct instantiation.
+type NaiveIntArray = NaiveArray[Int]
+
+// TODO (schemas): Add a Deno test case for this file.
+function test(): [Int] = {
+  let array = NaiveIntArray { underlying = [1, 2] }
+  append(array, 3)
+  append(array, 4)
+  append(array, 5)
+  prepend(array, 0)
+  removeLast(array)
+  removeFirst(array)
+  removeFirst(array)
+  array.underlying
+}
