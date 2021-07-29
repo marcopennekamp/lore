@@ -68,14 +68,14 @@ class SubtypingSpec extends TypeSpec {
   }
 
   it should "handle traits and structs with type arguments correctly" in {
-    val animalCage = instantiateSchema(Cage, Vector(Animal))
-    val birdCage = instantiateSchema(Cage, Vector(Bird))
-    val mammalCage = instantiateSchema(Cage, Vector(Mammal))
-    val fishCage = instantiateSchema(Cage, Vector(Fish))
-    val fishAquarium = instantiateSchema(Aquarium, Vector(Fish))
-    val goldfishCage = instantiateSchema(Cage, Vector(Goldfish))
-    val goldfishAquarium = instantiateSchema(Aquarium, Vector(Goldfish))
-    val koiAquarium = instantiateSchema(Aquarium, Vector(Koi))
+    val animalCage = Cage(Animal)
+    val birdCage = Cage(Bird)
+    val mammalCage = Cage(Mammal)
+    val fishCage = Cage(Fish)
+    val fishAquarium = Aquarium(Fish)
+    val goldfishCage = Cage(Goldfish)
+    val goldfishAquarium = Aquarium(Goldfish)
+    val koiAquarium = Aquarium(Koi)
 
     fishCage <:< animalCage
     animalCage </< fishCage

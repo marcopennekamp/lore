@@ -39,4 +39,8 @@ trait TypeSyntax {
     def &(t2: Type)(implicit registry: Registry): Type = toType(s1) & t2
     def |(t2: Type)(implicit registry: Registry): Type = toType(s1) | t2
   }
+
+  implicit class DeclaredSchemaExtension(schema: DeclaredSchema) {
+    implicit def apply(arguments: Type*): DeclaredType = schema.instantiate(arguments.toVector).get.asInstanceOf[DeclaredType]
+  }
 }

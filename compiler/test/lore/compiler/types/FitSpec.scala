@@ -87,15 +87,15 @@ class FitSpec extends TypeSpec {
     val B = new TypeVariable("B", BasicType.Nothing, Fish, Variance.Invariant)
     val C = new TypeVariable("C", BasicType.Nothing, Fish, Variance.Invariant)
 
-    val cage = instantiateSchema(Cage, Vector(A))
-    val fishCage = instantiateSchema(Cage, Vector(B))
-    val aquarium = instantiateSchema(Aquarium, Vector(C))
+    val cage = Cage(A)
+    val fishCage = Cage(B)
+    val aquarium = Aquarium(C)
 
-    val fishAquarium = instantiateSchema(Aquarium, Vector(Fish))
-    val goldfishCage = instantiateSchema(Cage, Vector(Goldfish))
-    val goldfishAquarium = instantiateSchema(Aquarium, Vector(Goldfish))
-    val koiAquarium = instantiateSchema(Aquarium, Vector(Koi))
-    val catCage = instantiateSchema(Cage, Vector(Cat))
+    val fishAquarium = Aquarium(Fish)
+    val goldfishCage = Cage(Goldfish)
+    val goldfishAquarium = Aquarium(Goldfish)
+    val koiAquarium = Aquarium(Koi)
+    val catCage = Cage(Cat)
 
     fishCage fitsInto cage
     fishCage fitsNotInto aquarium
