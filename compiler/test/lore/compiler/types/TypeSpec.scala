@@ -46,6 +46,19 @@ trait TypeSpec extends BaseSpec with TypeSyntax {
     val Function = havingTraitSchema("Function")
     val BoxFunction = havingStructSchema("BoxFunction")
 
+    val Sauce = havingTrait("Sauce")
+    val Ketchup = havingTrait("Ketchup")
+    val Mayo = havingTrait("Mayo")
+
+    val Steak = havingTrait("Steak")
+    val Tofu = havingTrait("Tofu")
+
+    val Meal = havingTraitSchema("Meal")
+    val SurpriseMeal = havingStructSchema("SurpriseMeal")
+    val MeatLoversMeal = havingStructSchema("MeatLoversMeal")
+    val VeggieMeal = havingStructSchema("VeggieMeal")
+    val VeganMeal = havingStruct("VeganMeal")
+
     val Wheel = havingTrait("Wheel")
     val CoolWheel = havingStruct("CoolWheel")
     val CheapWheel = havingStruct("CheapWheel")
