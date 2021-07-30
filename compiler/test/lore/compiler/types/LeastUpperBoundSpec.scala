@@ -26,7 +26,19 @@ class LeastUpperBoundSpec extends TypeSpec {
   }
 
   it should "return the most specific supertype for traits and structs with type arguments" in {
-    // TODO (schemas): Write test.
+    (Cage(Goldfish), Cage(Unicorn)) --> Cage(Animal)
+    (Cage(Unicorn), Cage(ScottishFold)) --> Cage(Mammal)
+    (Aquarium(Fish), Cage(Goldfish)) --> Cage(Fish)
+    (Aquarium(Fish), UnicornPen) --> Cage(Animal)
+    (Cage(Unicorn), UnicornPen) --> Cage(Unicorn)
+
+    (ConfusedCage1, ConfusedCage2) --> ConfusedCage1
+    (ConfusedCage2, ConfusedCage4) --> ConfusedCage1
+    (ConfusedCage3, ConfusedCage4) --> ConfusedCage1
+
+    (Function(Fish, Fish), Function(Mammal, Cat)) --> Function(Fish & Mammal, Animal)
+    (BoxFunction(string), BoxFunction(int)) --> (BoxFunction(string) | BoxFunction(int))
+    // TODO (schemas): Make this work: (BoxFunction(Fish), BoxFunction(Goldfish)) --> Function(Int, Fish)
   }
 
   it should "return the most specific supertype for tuple types" in {
