@@ -1,5 +1,6 @@
 package lore.compiler.types
 
+import com.typesafe.scalalogging.Logger
 import lore.compiler.utils.CollectionExtensions._
 
 import java.io.ByteArrayOutputStream
@@ -25,6 +26,9 @@ trait Type extends TypeSchema with HasMembers {
 }
 
 object Type {
+
+  val logger: Logger = Logger("lore.compiler.types")
+  val loggerBlank: Logger = Logger("lore.compiler.types.blank")
 
   val predefinedTypes: Map[String, NamedType] = Vector(
     BasicType.Any,

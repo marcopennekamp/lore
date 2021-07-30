@@ -23,7 +23,12 @@
         <appender-ref ref="minimal"/>
     </logger>
 
-    <!-- Type inference logging should only be set to debug or trace if typing/inference errors need to be traced. -->
+    <!-- Type and inference logging should only be set to debug or trace if typing/inference bugs need to be traced. -->
+    <logger name="lore.compiler.types" level="info" />
+    <logger name="lore.compiler.types.blank" additivity="false">
+        <appender-ref ref="minimal"/>
+    </logger>
+
     <logger name="lore.compiler.inference" level="info" />
     <logger name="lore.compiler.inference.blank" additivity="false">
         <appender-ref ref="minimal"/>

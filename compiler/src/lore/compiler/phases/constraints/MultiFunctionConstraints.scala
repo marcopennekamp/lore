@@ -99,7 +99,7 @@ object MultiFunctionConstraints {
     */
   private def verifyInputTypeTotality(inputType: Type, mf: MultiFunctionDefinition)(implicit registry: Registry): Vector[TupleType] = {
     val subtypes = relevantSubtypes(inputType).map(_.asInstanceOf[TupleType])
-    Feedback.logger.trace(s"Totality constraint: Checking ${subtypes.size} relevant subtypes for input type $inputType.")
+    Type.logger.trace(s"Totality constraint: Checking ${subtypes.size} relevant subtypes for input type $inputType.")
     subtypes.flatMap { subtype =>
       if (mf.fit(subtype).exists(f2 => Fit.isMoreSpecific(f2.signature.inputType, inputType))) {
         Vector.empty

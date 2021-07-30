@@ -1,5 +1,6 @@
 package lore.compiler.types
 
+import lore.compiler.inference.Inference
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.utils.CollectionExtensions.{MapVectorExtension, VectorExtension}
 
@@ -100,14 +101,14 @@ trait DeclaredType extends NamedType {
     * is satisfied for an abstract function.
     */
   def specialize(subtypeSchema: DeclaredSchema): Option[DeclaredType] = {
-    println(s"Specializing $this to $subtypeSchema.")
+    Type.logger.trace(s"Specializing $this to $subtypeSchema.")
 
     val result = specializationAssignments(subtypeSchema)
       .flatMap(assignments => checkSpecializationParameters(subtypeSchema, assignments))
       .map(subtypeSchema.instantiate(_).asInstanceOf[DeclaredType])
 
-    println(s"Specialization result: $result.")
-    println()
+    Type.logger.trace(s"Specialization result: $result.")
+    Type.loggerBlank.trace("")
 
     result
   }
@@ -149,10 +150,12 @@ trait DeclaredType extends NamedType {
           parameter -> argument
       }
 
-      println(s"Extends clause: ${Type.substitute(extendsClause, assignments)} <= $this is ${Type.substitute(extendsClause, assignments) <= this}.")
-      if (Type.substitute(extendsClause, assignments) <= this) {
+      val instantiatedClause = Type.substitute(extendsClause, assignments)
+      if (instantiatedClause <= this) {
+        Type.logger.trace(s"Extends clause: $instantiatedClause <= $this.")
         Some(assignments)
       } else {
+        Type.logger.trace(s"Extends clause: $instantiatedClause </= $this.")
         None
       }
     }
