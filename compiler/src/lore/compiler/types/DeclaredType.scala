@@ -1,8 +1,7 @@
 package lore.compiler.types
 
-import lore.compiler.core.CompilationException
 import lore.compiler.types.TypeVariable.Variance
-import lore.compiler.utils.CollectionExtensions.{MapExtension, VectorExtension}
+import lore.compiler.utils.CollectionExtensions.{MapVectorExtension, VectorExtension}
 
 trait DeclaredType extends NamedType {
 
@@ -89,16 +88,8 @@ trait DeclaredType extends NamedType {
 
   /**
     * Specializes this declared type to a <b>direct subtype</b> specified by the given subtype schema, choosing the
-    * most general type arguments.
-    *
-    * The general approach here is to consider the actual type arguments of this declared type. We substitute them into
-    * all of its occurrences in the `extends` clause of the subtype schema, which then allows us to deduce all or part
-    * of the type arguments with which the subtype schema should be instantiated. The type arguments that cannot be
-    * deduced are filled with the most general possible type. In some cases, the type cannot be specialized to the
-    * given schema, in which case None is returned.
-    *
-    * This type <b>must</b> occur at least once in the `extends` clause of the subtype schema. If that is not the case,
-    * a compilation exception is thrown.
+    * most general type arguments. In some cases, the type cannot be specialized to the given schema, in which case
+    * None is returned.
     *
     * Example: Consider types `trait A[X <: Animal, +Z <: Animal]` and `trait B[X, Y <: Animal, +Z <: Mammal] extends
     * A[X, Z]`. Assume we want to find the direct declared subtypes of `A[Bird, Animal]`. We can directly match `Bird`
@@ -109,76 +100,141 @@ trait DeclaredType extends NamedType {
     * is satisfied for an abstract function.
     */
   def specialize(subtypeSchema: DeclaredSchema): Option[DeclaredType] = {
-    val extendClauses = subtypeSchema.declaredSupertypes.filter(_.schema == this.schema)
-    if (extendClauses.isEmpty) {
-      throw CompilationException(s"The declared type $this cannot be specified to the following schema: $subtypeSchema." +
-        s" The schema does not directly extend $name.")
+    println(s"Specializing $this to $subtypeSchema.")
+
+    val result = specializationAssignments(subtypeSchema)
+      .flatMap(assignments => checkSpecializationParameters(subtypeSchema, assignments))
+      .map(subtypeSchema.instantiate(_).asInstanceOf[DeclaredType])
+
+    println(s"Specialization result: $result.")
+    println()
+
+    result
+  }
+
+  /**
+    * For each extends clause in the subtype schema that extends this type's schema, we build a type variable
+    * allocation that assigns types from this type's type arguments to the parameters of the subtype schema. If the
+    * type parameter occurs multiple times in the extends clause, the candidate types are merged based on variance.
+    * Each set of resulting assignments is valid if the instantiated extends clause is a subtype of this type.
+    *
+    * Once possible assignments have been determined, we combine them again by taking the variance of each type
+    * parameter into account. The result is a type variable assignments map.
+    *
+    * If none of the extends clauses are valid, the function returns None. Such a result is different from an empty
+    * assignments map: None signifies that there can be no subtype with the given schema because type arguments do not
+    * agree, while an empty assignments map signifies that there can be a subtype, but none of its type parameters can
+    * be derived from this type's arguments.
+    *
+    * Example: If we have a declared type `Cage[Fish]` and a subtype with extends clause `Cage[Unicorn]`, the extends
+    * clause is not applicable, because `Unicorn </= Fish`. This restriction becomes very relevant when multiple type
+    * arguments are involved. For example, consider a type `Function[String, Int]` and a subtype schema with extends
+    * clauses `Function[String, T1]` and `Function[Real, T2]`. We can deduce `T1 = Int`, but <i>not</i> `T2 = Int`,
+    * because the second extends clause has an incompatible type argument.
+    */
+  private def specializationAssignments(subtypeSchema: DeclaredSchema): Option[TypeVariable.Assignments] = {
+    val extendsClauses = subtypeSchema.declaredSupertypes.filter(_.schema == this.schema)
+    if (extendsClauses.isEmpty) {
+      return None
     }
 
-    if (subtypeSchema.isConstant) {
-      return Some(subtypeSchema.representative)
+    def processClause(extendsClause: DeclaredType): Option[TypeVariable.Assignments] = {
+      val candidates = TypeVariableAllocation.of(TupleType(this.typeArguments), TupleType(extendsClause.typeArguments)).allAssignments
+      val assignments = candidates.map {
+        case (parameter, types) =>
+          val argument = combineCandidates(parameter, types.toSet).getOrElse {
+            // If the candidates cannot be combined, this extends clause is not a relevant clause.
+            return None
+          }
+          parameter -> argument
+      }
+
+      println(s"Extends clause: ${Type.substitute(extendsClause, assignments)} <= $this is ${Type.substitute(extendsClause, assignments) <= this}.")
+      if (Type.substitute(extendsClause, assignments) <= this) {
+        Some(assignments)
+      } else {
+        None
+      }
     }
 
-    // Find all instantiations of the subtype schema's type parameters by substituting this type's actual type
-    // arguments into the type parameters of the subtype schema.
-    val occurrences = extendClauses.foldLeft(Map.empty[TypeVariable, Vector[Type]]) {
-      case (existingOccurrences, extendedType) =>
-        val candidates = TypeVariableAllocation.of(TupleType(this.typeArguments), TupleType(extendedType.typeArguments)).allAssignments
-        existingOccurrences.mergeWith(candidates)
-    }.distinct
+    val possibleAssignments = extendsClauses.flatMap(processClause)
+    if (possibleAssignments.isEmpty) {
+      return None
+    }
 
+    val assignments = possibleAssignments.merged.map {
+      case (parameter, candidates) =>
+        val argument = combineCandidates(parameter, candidates.toSet).getOrElse(
+          // If candidates cannot be combined, we have a typing conflict and the subtype cannot be a subtype of this
+          // declared type.
+          return None
+        )
+        parameter -> argument
+    }
+
+    Some(assignments)
+  }
+
+  /**
+    * Ensures that all parameters of the subtype schema have correctly assigned types:
+    *   - If the schema's parameter does not exist in the assignments (i.e. it cannot be inferred from one of the
+    *     extends clauses), we have to guess the most general type argument.
+    *   - If the bounds of the parameter are narrower than the assignment candidate, we have to fall back to the lower
+    *     or upper bound, as long as the parameter's variance allows it. If the parameter is invariant, the function
+    *     returns None, as we cannot fall back to a bound and the subtyping relationship is impossible.
+    *
+    * Example: `Cage[Animal]` has the direct subtype `Aquarium[Fish]` (see `types.lore` test definitions), because
+    * `Aquarium` can only contain Fish.
+    */
+  private def checkSpecializationParameters(subtypeSchema: DeclaredSchema, assignments: TypeVariable.Assignments): Option[TypeVariable.Assignments] = {
     // We have to keep track of the actual assignments from left to right so that we can instantiate a parameter's
     // lower and upper bound with the correct type arguments (if a bound depends on an earlier type parameter).
-    val assignments = subtypeSchema.parameters.foldLeft(Map.empty: TypeVariable.Assignments) { case (assignments, parameter) =>
+    val newAssignments = subtypeSchema.parameters.foldLeft(assignments) { (assignments, parameter) =>
       val lowerBound = Type.substitute(parameter.lowerBound, assignments)
       val upperBound = Type.substitute(parameter.upperBound, assignments)
 
-      val argument = occurrences.get(parameter) match {
-        // Case 1: The subtype schema's type parameter occurs in at least one position and has received an assignment
-        //         from one of this type's type arguments.
-        case Some(candidates) =>
-          val candidate = if (candidates.length == 1) candidates.head else {
-            // If there are multiple candidates, we have to combine them into a single assignment.
-            parameter.variance match {
-              case Variance.Covariant => IntersectionType.construct(candidates)
-              case Variance.Contravariant => SumType.construct(candidates)
-              case Variance.Invariant =>
-                // Any type `S` instantiated via the subtype schema cannot be a subtype of this type, because `S` is
-                // invariant in the type parameter and cannot be instantiated with two or more distinct types.
-                return None
-            }
-          }
-
-          // If the parameter's bounds are narrower than the candidate, we have to fall back to one of the bounds, as
-          // long as the type parameter's variance allows it.
-          // Example: `Cage[Animal]` has the direct subtype `Aquarium[Fish]` (see `types.lore` test definitions),
-          //          because `Aquarium` can only contain Fish.
-          if (lowerBound </= candidate) {
-            if (parameter.variance == Variance.Contravariant) lowerBound
-            else return None
-          } else if (candidate </= upperBound) {
-            if (parameter.variance == Variance.Covariant) upperBound
-            else return None
-          } else {
-            candidate
-          }
-
-        // Case 2: The subtype schema's type parameter does not occur in any of the relevant `extends` clauses. We have
-        //         to guess the most general type argument.
-        case None => parameter.variance match {
-          case Variance.Covariant => upperBound
-          case Variance.Contravariant => lowerBound
+      val argument = assignments.getOrElse(
+        parameter,
+        parameter.variance match {
+          case Variance.Covariant => Type.substitute(parameter.upperBound, assignments)
+          case Variance.Contravariant => Type.substitute(parameter.lowerBound, assignments)
           case Variance.Invariant =>
             // This must be the type parameter itself, because the most general type argument must represent all
             // possible type arguments, and only a type variable can do that if the parameter is invariant.
             parameter
         }
+      )
+
+      val boundedArgument = if (lowerBound </= argument) {
+        if (parameter.variance == Variance.Contravariant) lowerBound
+        else return None
+      } else if (argument </= upperBound) {
+        if (parameter.variance == Variance.Covariant) upperBound
+        else return None
+      } else {
+        argument
       }
 
-      assignments + (parameter -> argument)
+      assignments.updated(parameter, boundedArgument)
     }
 
-    Some(subtypeSchema.instantiate(assignments).asInstanceOf[DeclaredType])
+    Some(newAssignments)
+  }
+
+  /**
+    * Combine the given candidate types, which should be assigned to the given parameter, such that there is a single
+    * type assignment.
+    */
+  private def combineCandidates(parameter: TypeVariable, candidates: Set[Type]): Option[Type] = {
+    if (candidates.size == 1) {
+      return candidates.headOption
+    }
+
+    parameter.variance match {
+      case Variance.Covariant => Some(IntersectionType.construct(candidates))
+      case Variance.Contravariant => Some(SumType.construct(candidates))
+      case Variance.Invariant => None
+    }
   }
 
 }

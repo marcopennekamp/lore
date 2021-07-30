@@ -1,7 +1,6 @@
 package lore.compiler.types
 
 import lore.compiler.core.CompilationException
-import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 import scala.collection.mutable

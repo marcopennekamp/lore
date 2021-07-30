@@ -85,20 +85,20 @@ object CollectionExtensions {
     def withDefault(default: => Set[A]): Set[A] = if (set.nonEmpty) set else default
   }
 
-  implicit class MapExtension[K, V](map: Map[K, Vector[V]]) {
+  implicit class MapVectorExtension[K, V](vector: Vector[Map[K, V]]) {
     /**
-      * Merges `map` and `map2` such that vectors are concatenated when they exist in both maps.
+      * Merges all maps in `vector` such that map values occurring at same key are merged into a vector.
       */
-    def mergeWith(map2: Map[K, Vector[V]]): Map[K, Vector[V]] = {
-      map2.foldLeft(map) {
-        case (result, (key, values)) => result.updatedWith(key)(_.map(_ ++ values).orElse(Some(values)))
+    def merged: Map[K, Vector[V]] = {
+      vector.foldLeft(Map.empty[K, Vector[V]]) { case (result, map) =>
+        map.foldLeft(result) { case (result, (key, value)) =>
+          result.updatedWith(key) {
+            case Some(values) => Some(values :+ value)
+            case None => Some(Vector(value))
+          }
+        }
       }
     }
-
-    /**
-      * Ensures for each vector that its elements are distinct.
-      */
-    def distinct: Map[K, Vector[V]] = map.map { case (tv, candidates) => (tv, candidates.distinct) }
   }
 
   implicit class OptionExtension[A](option: Option[A]) {
