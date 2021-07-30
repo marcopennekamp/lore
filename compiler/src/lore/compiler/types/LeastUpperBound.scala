@@ -108,7 +108,9 @@ object LeastUpperBound {
       // want to produce shape types if a shape type is already part of the types to LUB. This "disables" structural
       // typing until the programmer explicitly says that they want it.
       // TODO (schemas): Take type arguments into account.
-      case (d1: DeclaredType, d2: DeclaredType) => registry.declaredTypeHierarchy.leastCommonSupertype(d1, d2).fallbackIfAny
+      case (d1: DeclaredType, d2: DeclaredType) =>
+        //registry.declaredTypeHierarchy.leastCommonSuperschemas(d1.schema, d2.schema).fallbackIfAny
+        ???
 
       // Lists simply wrap the lubbed types.
       case (ListType(e1), ListType(e2)) => ListType(lubPassOnSettings(e1, e2))

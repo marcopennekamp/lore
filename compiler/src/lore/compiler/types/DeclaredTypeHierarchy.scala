@@ -66,39 +66,35 @@ class DeclaredTypeHierarchy(schemas: Vector[DeclaredSchema]) {
   }
 
   /**
-    * Returns the least common supertype of two types found in the type hierarchy. This result is used by the algorithm
-    * that computes the least upper bound of two arbitrary types.
-    *
-    * If these two types have multiple traits as their least common ancestor, we return an intersection type composed
-    * of all these ancestors.
+    * Returns the least common superschemas of two schemas found in the type hierarchy.
     */
-  def leastCommonSupertype(t1: DeclaredType, t2: DeclaredType): Type = {
+  def leastCommonSuperschemas(s1: DeclaredSchema, s2: DeclaredSchema): Vector[NamedSchema] = {
     sealed trait Status
-    case object Unseen extends Status    // A type not yet seen.
-    case object Marked extends Status    // An ancestor of t1.
+    case object Unseen extends Status    // A schema not yet seen.
+    case object Marked extends Status    // An ancestor of s1.
     case object Found extends Status     // One of the least common ancestors.
     case object Excluded extends Status  // A common ancestor, but not one of the least common ancestors.
 
-    val status = mutable.HashMap[NamedType, Status]()
+    val status = mutable.HashMap[NamedSchema, Status]()
 
-    // Set all ancestors of t1 to Marked.
-    reverseBfs(subtypingGraph.get(t1), node => {
+    // Set all ancestors of s1 to Marked.
+    reverseBfs(subtypingGraph.get(s1), node => {
       status.put(node.value, Marked)
     })
 
-    // Set all Marked ancestors of t2 to Found.
-    reverseBfs(subtypingGraph.get(t2), node => {
-      val tpe = node.value
-      if (status.getOrElse(tpe, Unseen) == Marked) {
-        status.put(tpe, Found)
+    // Set all Marked ancestors of s2 to Found.
+    reverseBfs(subtypingGraph.get(s2), node => {
+      val schema = node.value
+      if (status.getOrElse(schema, Unseen) == Marked) {
+        status.put(schema, Found)
       }
     })
 
-    def getFoundTypes = status.toVector.filter { case (_, status) => status == Found }.map(_._1)
+    def getFoundSchemas = status.toVector.filter { case (_, status) => status == Found }.map(_._1)
 
     // Set all Found ancestors of any Found node to Excluded.
-    getFoundTypes.foreach { tpe =>
-      val node = subtypingGraph.get(tpe)
+    getFoundSchemas.foreach { schema =>
+      val node = subtypingGraph.get(schema)
       node.diPredecessors.foreach { predecessor =>
         if (status.contains(predecessor.value)) {
           status.put(predecessor.value, Excluded)
@@ -106,8 +102,7 @@ class DeclaredTypeHierarchy(schemas: Vector[DeclaredSchema]) {
       }
     }
 
-    // The result is an intersection type of all found types.
-    IntersectionType.construct(getFoundTypes)
+    getFoundSchemas
   }
 
   /**
