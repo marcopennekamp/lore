@@ -44,6 +44,7 @@
 
 ##### Type System
 
+- The implementation of the Least Upper Bound does some things that intersection/sum type construction should do, too, especially when it comes to combining type arguments. We should investigate whether we should rather implement the LUB in terms of a sum type join (i.e. the reverse to the current situation), with the usual case just being to build a sum type, and joins are applied if necessary/useful.
 - Rethink whether multiple type variable mentions at run-time must really be equal, or whether we could go with a softer approach based on finding a "consensus" between occurrences using subtyping. The definition of `fold` for lists is seriously complex. This aspect of the runtime system is not friendly to the daily life of a programmer.
 - Add the `expectedType` checking for functions to the inference algorithm. There is no need to check separately, and it would allow the inference algorithm to infer certain types from a function's output type.
 - Intersection type construction: Tuple types can be combined: `(A, B) & (C, D) = (A & C, B & D)`. In general, we can normalize covariant and contravariant types: https://dotty.epfl.ch/docs/reference/new-types/intersection-types-spec.html.
