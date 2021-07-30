@@ -27,6 +27,10 @@ trait TypeSpec extends BaseSpec with TypeSyntax {
     val Goldfish = havingStruct("Goldfish")
     val Koi = havingStruct("Koi")
 
+    val Status = havingTrait("Status")
+    val Healthy = havingTrait("Healthy")
+    val Sick = havingTrait("Sick")
+
     val Zoo = havingStruct("Zoo")
 
     val Cage = havingTraitSchema("Cage")
@@ -38,9 +42,9 @@ trait TypeSpec extends BaseSpec with TypeSyntax {
     val ConfusedCage3 = havingTrait("ConfusedCage3")
     val ConfusedCage4 = havingTrait("ConfusedCage4")
 
-    val Status = havingTrait("Status")
-    val Healthy = havingTrait("Healthy")
-    val Sick = havingTrait("Sick")
+    val Box = havingStructSchema("Box")
+    val Function = havingTraitSchema("Function")
+    val BoxFunction = havingStructSchema("BoxFunction")
 
     val Wheel = havingTrait("Wheel")
     val CoolWheel = havingStruct("CoolWheel")

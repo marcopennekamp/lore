@@ -27,6 +27,7 @@ struct Zoo {
   animals: [Animal]
 }
 
+
 trait Cage[+A <: Animal] extends { animal: A }
 struct Aquarium[+A <: Fish] extends Cage[A] {
   animal: A
@@ -39,6 +40,12 @@ trait ConfusedCage1 extends Cage[Fish]
 trait ConfusedCage2 extends Cage[Animal], ConfusedCage1
 trait ConfusedCage3 extends ConfusedCage2, Cage[Unicorn]
 trait ConfusedCage4 extends Cage[Fish], ConfusedCage1
+
+
+struct Box[+A] { value: A }
+trait Function[-A, +R]
+struct BoxFunction[T] extends Function[T, Box[T]], Function[Int, T]
+
 
 trait Hashable
 
