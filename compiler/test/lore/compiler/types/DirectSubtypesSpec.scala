@@ -21,6 +21,9 @@ class DirectSubtypesSpec extends TypeSpec {
     assertDirectSubtypes(Cage(Fish))(
       Aquarium(Fish), ConfusedCage1, ConfusedCage4
     )
+    assertDirectSubtypes(Cage(Unicorn))(
+      UnicornPen, ConfusedCage2, ConfusedCage3
+    )
   }
 
   "DeclaredTypeHierarchy.getConcreteSubtypes" should "compute the correct concrete subtypes for parameterized traits" in {

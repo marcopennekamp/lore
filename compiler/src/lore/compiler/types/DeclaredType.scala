@@ -205,12 +205,12 @@ trait DeclaredType extends NamedType {
         }
       )
 
-      val boundedArgument = if (lowerBound </= argument) {
-        if (parameter.variance == Variance.Contravariant) lowerBound
-        else return None
-      } else if (argument </= upperBound) {
-        if (parameter.variance == Variance.Covariant) upperBound
-        else return None
+      val boundedArgument = if (argument <= lowerBound && parameter.variance == Variance.Contravariant) {
+        lowerBound
+      } else if (upperBound <= argument && parameter.variance == Variance.Covariant) {
+        upperBound
+      } else if ((lowerBound </= argument) || (argument </= upperBound)) {
+        return None
       } else {
         argument
       }
