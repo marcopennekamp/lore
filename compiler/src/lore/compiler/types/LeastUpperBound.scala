@@ -2,6 +2,7 @@ package lore.compiler.types
 
 import lore.compiler.semantics.Registry
 import lore.compiler.types.TypeExtensions._
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object LeastUpperBound {
 
@@ -102,15 +103,26 @@ object LeastUpperBound {
           lubPassOnSettings(f1.output, f2.output)
         )
 
-      // For declared types, the LUB is calculated by the type hierarchy. If the result would be Any, we return
+      // For declared types, the LUB's possible supertype schemas are calculated by the declared type hierarchy. Then
+      // we instantiate these schemas according to `findSupertype` for both d1 and d2. The result is an intersection of
+      // all instantiated schemas, with d1/d2 pairs each put into a sum type. If the supertype schema is Any, we return
       // the fallback type instead.
       // We specifically don't default to a shape type (which would be possible if we LUB two structs) because we only
       // want to produce shape types if a shape type is already part of the types to LUB. This "disables" structural
       // typing until the programmer explicitly says that they want it.
-      // TODO (schemas): Take type arguments into account.
       case (d1: DeclaredType, d2: DeclaredType) =>
-        //registry.declaredTypeHierarchy.leastCommonSuperschemas(d1.schema, d2.schema).fallbackIfAny
-        ???
+        val supertypeSchemas = registry.declaredTypeHierarchy.leastCommonSuperschemas(d1.schema, d2.schema)
+        if (supertypeSchemas == Vector(BasicType.Any)) {
+          fallback
+        } else {
+          val parts = supertypeSchemas.filterType[DeclaredSchema].flatMap {
+            supertypeSchema =>
+              d1.findSupertype(supertypeSchema)
+                .flatMap(s1 => d2.findSupertype(supertypeSchema).map(s2 => Vector(s1, s2)))
+                .map(SumType.construct)
+          }
+          IntersectionType.construct(parts)
+        }
 
       // Lists simply wrap the lubbed types.
       case (ListType(e1), ListType(e2)) => ListType(lubPassOnSettings(e1, e2))
