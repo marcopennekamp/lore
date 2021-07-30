@@ -22,7 +22,7 @@ class DirectSubtypesSpec extends TypeSpec {
       Aquarium(Fish), ConfusedCage1, ConfusedCage4
     )
     assertDirectSubtypes(Cage(Unicorn))(
-      UnicornPen, ConfusedCage2, ConfusedCage3
+      UnicornPen, ConfusedCage3
     )
   }
 
