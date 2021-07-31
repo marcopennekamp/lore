@@ -46,6 +46,7 @@ struct Box[+A] { value: A }
 trait Function[-A, +R]
 struct BoxFunction[T] extends Function[T, Box[T]], Function[Int, T]
 
+
 trait Sauce
 trait Ketchup extends Sauce
 trait Mayo extends Sauce

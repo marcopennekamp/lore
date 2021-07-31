@@ -38,7 +38,8 @@ class LeastUpperBoundSpec extends TypeSpec {
 
     (Function(Fish, Fish), Function(Mammal, Cat)) --> Function(Fish & Mammal, Animal)
     (BoxFunction(string), BoxFunction(int)) --> (BoxFunction(string) | BoxFunction(int))
-    // TODO (schemas): Make this work: (BoxFunction(Fish), BoxFunction(Goldfish)) --> Function(Int, Fish)
+    // TODO (schemas): Make the following test case work.
+    (BoxFunction(Fish), BoxFunction(Goldfish)) --> Function(int, Fish)
   }
 
   it should "return the most specific supertype for tuple types" in {
