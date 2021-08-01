@@ -26,9 +26,9 @@ class DirectSubtypesSpec extends TypeSpec {
     )
 
     assertDirectSubtypes(Function(string, Box(string)))(BoxFunction(string))
-    assertDirectSubtypes(Function(int, int))(BoxFunction(int))
-    assertDirectSubtypes(Function(int, string))(BoxFunction(string))
-    assertDirectSubtypes(Function(string, string))()
+    assertDirectSubtypes(Function(int, int))(IdentityFunction(int), IndexFunction(int))
+    assertDirectSubtypes(Function(int, string))(IndexFunction(string))
+    assertDirectSubtypes(Function(string, string))(IdentityFunction(string))
     assertDirectSubtypes(Function(Fish, Box(Fish)))(BoxFunction(Fish))
     assertDirectSubtypes(Function(Animal, Box(Fish)))()
 

@@ -42,8 +42,10 @@ trait TypeSpec extends BaseSpec with TypeSyntax {
     val ConfusedCage3 = havingTrait("ConfusedCage3")
     val ConfusedCage4 = havingTrait("ConfusedCage4")
 
-    val Box = havingStructSchema("Box")
     val Function = havingTraitSchema("Function")
+    val IdentityFunction = havingStructSchema("IdentityFunction")
+    val IndexFunction = havingStructSchema("IndexFunction")
+    val Box = havingStructSchema("Box")
     val BoxFunction = havingStructSchema("BoxFunction")
 
     val Sauce = havingTrait("Sauce")

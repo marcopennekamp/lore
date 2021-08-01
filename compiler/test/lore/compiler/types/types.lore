@@ -42,9 +42,11 @@ trait ConfusedCage3 extends ConfusedCage2, Cage[Unicorn]
 trait ConfusedCage4 extends Cage[Fish], ConfusedCage1
 
 
-struct Box[+A] { value: A }
 trait Function[-A, +R]
-struct BoxFunction[T] extends Function[T, Box[T]], Function[Int, T]
+struct IdentityFunction[T] extends Function[T, T]
+struct IndexFunction[+T] extends Function[Int, T]
+struct Box[+A] { value: A }
+struct BoxFunction[T] extends Function[T, Box[T]], Function[Int, Box[T]]
 
 
 trait Sauce
