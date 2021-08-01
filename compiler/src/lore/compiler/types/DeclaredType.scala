@@ -56,8 +56,8 @@ trait DeclaredType extends NamedType {
     *   - If a type parameter is contravariant, the resulting type argument is the sum type of all candidates.
     *   - If a type parameter is invariant, all candidates must be equal. Otherwise, `findSupertype` results in None.
     *
-    * For example, if we have a type `Cage[+A]` with the candidates `Cage[Animal]`, `Cage[Fish]`, and `Cage[Unicorn]`,
-    * the resulting declared type will be `Cage[Fish & Unicorn]`.
+    * For example, if we have a type with extends clauses `Cage[Animal]`, `Cage[Fish]`, and `Cage[Unicorn]`, the
+    * resulting declared supertype will be `Cage[Fish & Unicorn]`.
     */
   def findSupertype(supertypeSchema: DeclaredSchema): Option[DeclaredType] = {
     if (!schema.hasMultipleParameterizedInheritance) {

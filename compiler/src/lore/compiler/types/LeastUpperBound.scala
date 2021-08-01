@@ -1,5 +1,6 @@
 package lore.compiler.types
 
+import lore.compiler.core.CompilationException
 import lore.compiler.semantics.Registry
 import lore.compiler.types.TypeExtensions._
 import lore.compiler.types.TypeVariable.Variance
@@ -142,39 +143,53 @@ object LeastUpperBound {
       * We specifically don't default to a shape type (which would be possible if we LUB two structs) because we only
       * want to produce shape types if a shape type is already part of the types to LUB. This "disables" structural
       * typing until the programmer explicitly says that they want it.
-      *
-      * TODO (schemas): This doesn't quite work yet. If two declared types d1 and d2 have equal schemas, but for
-      *                 example a single INVARIANT type parameter with different type arguments, they'll be lubbed to
-      *                 the fallback type. However, d1 and d2 might still have common supertypes. Take BoxFunction for
-      *                 example: If we lub two BoxFunctions, they might still have a Function[Int, ...] as their
-      *                 common supertype, even if their invariant type arguments don't agree.
-      *                   - Possible solution: When a schema is filtered out due to incompatible type arguments, look
-      *                     at the supertypes of this schema.
       */
     private def handleDeclaredTypes(d1: DeclaredType, d2: DeclaredType): Type = {
-      def handleSupertypeSchema(supertypeSchema: DeclaredSchema): Option[Type] = {
-        (d1.findSupertype(supertypeSchema), d2.findSupertype(supertypeSchema)).sequence
-          .flatMap {
-            case (s1, s2) => s1.typeArguments.zip(s2.typeArguments).zip(supertypeSchema.parameters).map {
-              case ((a1, a2), parameter) => combineTypeArguments(parameter, a1, a2)
-            }.sequence
-          }
-          .flatMap(supertypeSchema.instantiate)
+      val result = if (d1.schema == d2.schema) {
+        // If the schemas of the two types are the same, we try to combine the type arguments to get a common supertype
+        // with the same schema.
+        declaredTypeHandleCandidate(d1, d2)
+      } else {
+        val supertypeSchemas = registry.declaredTypeHierarchy.leastCommonSuperschemas(d1.schema, d2.schema).filterType[DeclaredSchema]
+        declaredTypeHandleSupertypeSchemas(supertypeSchemas, d1, d2)
+      }
+      result.getOrElse(fallback(d1, d2))
+    }
+
+    private def declaredTypeHandleCandidate(c1: DeclaredType, c2: DeclaredType): Option[Type] = {
+      if (c1.schema != c2.schema) {
+        throw CompilationException(s"The candidates $c1 and $c2 must have the same schema.")
       }
 
-      def combineTypeArguments(parameter: TypeVariable, a1: Type, a2: Type): Option[Type] = {
-        parameter.variance match {
-          case Variance.Covariant => Some(apply(a1, a2))
-          case Variance.Contravariant => Some(IntersectionType.construct(Vector(a1, a2)))
-          case Variance.Invariant => if (a1 == a2) Some(a1) else None
+      c1.typeArguments.zip(c2.typeArguments).zip(c1.schema.parameters)
+        .map { case ((a1, a2), parameter) => val result = combineTypeArguments(parameter, a1, a2); println(s"combine $a1 and $a2 into $result"); combineTypeArguments(parameter, a1, a2) }
+        .sequence
+        .flatMap(c1.schema.instantiate)
+        .orElse {
+          // If the two candidates c1 and c2 have incompatible type arguments, they cannot be a common supertype.
+          // However, c1 and c2 might instead have a common supertype that does not suffer from the incompatible type
+          // arguments.
+          declaredTypeHandleSupertypeSchemas(c1.schema.declaredSuperschemas, c1, c2)
         }
-      }
+    }
 
-      val supertypeSchemas = registry.declaredTypeHierarchy.leastCommonSuperschemas(d1.schema, d2.schema).filterType[DeclaredSchema]
-      val instances = supertypeSchemas.flatMap(handleSupertypeSchema)
-      if (instances.nonEmpty) {
-        IntersectionType.construct(instances)
-      } else fallback(d1, d2)
+    private def declaredTypeHandleSupertypeSchemas(schemas: Vector[DeclaredSchema], d1: DeclaredType, d2: DeclaredType): Option[Type] = {
+      val supertypes = schemas.flatMap(declaredTypeHandleSupertypeSchema(_, d1, d2))
+      if (supertypes.nonEmpty) Some(IntersectionType.construct(supertypes)) else None
+    }
+
+    private def declaredTypeHandleSupertypeSchema(supertypeSchema: DeclaredSchema, d1: DeclaredType, d2: DeclaredType): Option[Type] = {
+      (d1.findSupertype(supertypeSchema), d2.findSupertype(supertypeSchema))
+        .sequence
+        .flatMap { case (s1, s2) => declaredTypeHandleCandidate(s1, s2) }
+    }
+
+    private def combineTypeArguments(parameter: TypeVariable, a1: Type, a2: Type): Option[Type] = {
+      parameter.variance match {
+        case Variance.Covariant => Some(lubDefaultToSum(a1, a2))
+        case Variance.Contravariant => Some(IntersectionType.construct(Vector(a1, a2)))
+        case Variance.Invariant => if (a1 == a2) Some(a1) else None
+      }
     }
 
     /**
