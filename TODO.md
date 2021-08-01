@@ -5,7 +5,7 @@
 - Implement type parameters for declared types:
   - Compiler:
     - Structures: ~~Type schemas~~, ~~type variable variance~~.
-    - Type functions: ~~Subtyping~~, ~~substitution~~, ~~type variable allocation~~, ~~declared type hierarchy~~, least upper bound, ~~members~~, ~~type encoder~~.
+    - Type functions: ~~Subtyping~~, ~~substitution~~, ~~type variable allocation~~, ~~declared type hierarchy~~, ~~least upper bound~~, ~~members~~, ~~type encoder~~.
     - Parsing: ~~Type parameters for traits, structs, and alias types~~; ~~variance~~; ~~open type parameters~~; type arguments for constructor function values; type arguments in map-style instantiation.
     - Resolution: ~~Schema instantiation~~, ~~alias/trait/struct schema resolution~~.
     - Constraints: Totality constraint checking for parameterized declared types; co-/contravariant type parameters must be used in appropriate positions (property types with covariant and contravariant positions, mutable properties, type arguments with variance); open type parameter constraints (uniquely deducible, covariant, used with immutable property); disallow impossible inheritance (invariant type parameters being multi-instantiated with different types, for example `struct ImpossibleArray extends Array[Animal], Array[Fish]`).
