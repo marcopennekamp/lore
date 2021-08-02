@@ -8,8 +8,9 @@ import { SumType } from '../sums.ts'
 import { SymbolType } from '../symbols.ts'
 import { TraitType } from '../traits.ts'
 import { TupleType } from '../tuples.ts'
+import { TypeVariable } from './type-variables.ts'
 import {
-  AnyType, BooleanType, IntType, NothingType, PropertyTypes, RealType, StringType, Type, TypeVariable,
+  AnyType, BooleanType, IntType, NothingType, PropertyTypes, RealType, StringType, Type,
 } from './types.ts'
 
 /**

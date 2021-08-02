@@ -1,7 +1,7 @@
 package lore.compiler.phases.transpilation.functions
 
 import lore.compiler.core.CompilerOptions
-import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
+import lore.compiler.phases.transpilation.TypeTranspiler.RuntimeTypeVariables
 import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.phases.transpilation.{RuntimeApi, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.semantics.Registry
@@ -26,8 +26,8 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     }
 
     // Phase 1: Transpile type variables.
-    val (typeVariableStatements, typeVariables) = transpiledInputTypeVariables
-    implicit val implicitTypeVariables: TranspiledTypeVariables = typeVariables
+    val (typeVariableStatements, typeVariables) = transpiledInputTypeParameters
+    implicit val runtimeTypeVariables: RuntimeTypeVariables = typeVariables
 
     // Phase 2: Transpile functions.
     val functionStatements = mf.functions.filterNot(_.isAbstract).flatMap(FunctionTranspiler.transpile)
@@ -58,21 +58,21 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     * This requires that all function calls are legal at compile-time, but this is already guaranteed by the compiler.
     */
   private def transpileSingleFunction(function: FunctionDefinition): Vector[TargetStatement] = {
-    implicit val typeVariables: TranspiledTypeVariables = Map.empty
+    implicit val runtimeTypeVariables: RuntimeTypeVariables = Map.empty
     FunctionTranspiler.transpile(function, mf.targetVariable.name, shouldExport = true)
   }
 
   /**
-    * All type variables are transpiled in bulk before functions are defined because a function also might need to have
-    * access to its own type variables.
+    * All type parameters are transpiled in bulk before functions are defined because a function also might need to
+    * have access to its own type parameters.
     */
-  private lazy val transpiledInputTypeVariables: (Vector[TargetStatement], TranspiledTypeVariables) = {
+  private lazy val transpiledInputTypeParameters: (Vector[TargetStatement], RuntimeTypeVariables) = {
     def handleFunction(function: FunctionDefinition) = {
       if (function.isPolymorphic) {
         TypeTranspiler.transpileTypeVariables(function.typeParameters)
-      } else (Vector.empty, Map.empty: TranspiledTypeVariables)
+      } else (Vector.empty, Map.empty: RuntimeTypeVariables)
     }
-    mf.functions.map(handleFunction).foldLeft((Vector.empty[TargetStatement], Map.empty: TranspiledTypeVariables)) {
+    mf.functions.map(handleFunction).foldLeft((Vector.empty[TargetStatement], Map.empty: RuntimeTypeVariables)) {
       case ((d1, v1), (d2, v2)) => (d1 ++ d2, v1 ++ v2)
     }
   }

@@ -5,7 +5,8 @@ import { ShapeType } from '../shapes.ts'
 import { StructType } from '../structs.ts'
 import { TraitType } from '../traits.ts'
 import { Kind } from './kinds.ts'
-import { PropertyTypes, Type, TypeVariable, XaryType } from './types.ts'
+import { TypeVariable } from './type-variables.ts'
+import { PropertyTypes, Type, XaryType } from './types.ts'
 
 export function stringify(type: Type): string {
   switch (type.kind) {

@@ -8,8 +8,7 @@ export type TinyMap<A, B> = Array<MapEntry<A, B>>
 
 export const TinyMap = {
   get<A, B>(array: TinyMap<A, B>, key: A): B | undefined {
-    for (let i = 0; i < array.length; i += 1) {
-      const entry = array[i]
+    for (const entry of array) {
       if (entry.key === key) {
         return entry.value
       }

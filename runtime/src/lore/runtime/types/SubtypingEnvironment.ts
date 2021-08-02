@@ -9,7 +9,8 @@ import { TraitType } from '../traits.ts'
 import { TupleType } from '../tuples.ts'
 import { areEqual } from './equality.ts'
 import { Kind } from './kinds.ts'
-import { DeclaredType, PropertyTypes, Type, TypeVariable } from './types.ts'
+import { TypeVariable } from './type-variables.ts'
+import { DeclaredType, PropertyTypes, Type } from './types.ts'
 
 /**
  * A subtyping environment provides a specific implementation of the isSubtype function given a configuration.

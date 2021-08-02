@@ -1,7 +1,7 @@
 package lore.compiler.phases.transpilation.expressions
 
 import lore.compiler.core.CompilationException
-import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
+import lore.compiler.phases.transpilation.TypeTranspiler.RuntimeTypeVariables
 import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.phases.transpilation.{Chunk, RuntimeApi, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.semantics.expressions.Expression.{Extractor, ForLoop, Loop, WhileLoop}
@@ -10,7 +10,7 @@ import lore.compiler.target.TargetDsl._
 import lore.compiler.target.{Target, TargetOperator}
 import lore.compiler.types.{ListType, MapType, TupleType}
 
-case class LoopTranspiler()(implicit variableProvider: TemporaryVariableProvider, typeVariables: TranspiledTypeVariables, symbolHistory: SymbolHistory) {
+case class LoopTranspiler()(implicit variableProvider: TemporaryVariableProvider, runtimeTypeVariables: RuntimeTypeVariables, symbolHistory: SymbolHistory) {
 
   def transpile(loop: WhileLoop, condition: Chunk, body: Chunk): Chunk = {
     transpile(loop, body) { body: Vector[TargetStatement] =>

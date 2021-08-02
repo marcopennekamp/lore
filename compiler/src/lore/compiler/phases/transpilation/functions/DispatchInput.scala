@@ -1,7 +1,7 @@
 package lore.compiler.phases.transpilation.functions
 
 import lore.compiler.core.CompilationException
-import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
+import lore.compiler.phases.transpilation.TypeTranspiler.RuntimeTypeVariables
 import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.phases.transpilation.{RuntimeApi, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
@@ -17,7 +17,7 @@ import lore.compiler.types.Type
 class DispatchInput(
   mf: MultiFunctionDefinition,
   properties: MultiFunctionProperties,
-)(implicit variableProvider: TemporaryVariableProvider, typeVariables: TranspiledTypeVariables, symbolHistory: SymbolHistory) {
+)(implicit variableProvider: TemporaryVariableProvider, runtimeTypeVariables: RuntimeTypeVariables, symbolHistory: SymbolHistory) {
 
   val varArgumentType: Target.Variable = "argumentType".asVariable
 

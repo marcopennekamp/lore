@@ -1,7 +1,7 @@
 
 package lore.compiler.phases.transpilation.expressions
 
-import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
+import lore.compiler.phases.transpilation.TypeTranspiler.RuntimeTypeVariables
 import lore.compiler.phases.transpilation._
 import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.semantics.Registry
@@ -13,7 +13,7 @@ import lore.compiler.types._
 
 private[transpilation] class ExpressionTranspilationVisitor()(
   implicit registry: Registry,
-  runtimeTypeVariables: TranspiledTypeVariables,
+  runtimeTypeVariables: RuntimeTypeVariables,
   symbolHistory: SymbolHistory,
 ) extends ExpressionVisitor[Chunk, Chunk] {
   import Expression._

@@ -20,12 +20,12 @@ object RuntimeApi {
     val boolean = named("boolean")
     val string = named("string")
 
-    def variable(name: String, lowerBound: TargetExpression, upperBound: TargetExpression, variance: Variance) = {
-      named("variable").call(name.asLiteral, lowerBound, upperBound, named("variance").prop(variance.toString))
+    def variable(name: String, index: Int, lowerBound: TargetExpression, upperBound: TargetExpression, variance: Variance) = {
+      named("variable").call(name.asLiteral, Target.IntLiteral(index), lowerBound, upperBound, named("variance").prop(variance.toString))
     }
 
     def fitsMonomorphic(t1: TargetExpression, t2: TargetExpression) = named("fitsMonomorphic").call(t1, t2)
-    def fitsPolymorphic(t1: TargetExpression, t2: TargetExpression, variables: TargetExpression = Target.Undefined) = named("fitsPolymorphic").call(t1, t2, variables)
+    def fitsPolymorphic(t1: TargetExpression, t2: TargetExpression, variables: TargetExpression) = named("fitsPolymorphic").call(t1, t2, variables)
     def typeOf(value: TargetExpression) = named("typeOf").call(value)
 
     object introspection {

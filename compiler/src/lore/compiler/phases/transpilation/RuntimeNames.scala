@@ -22,9 +22,9 @@ object RuntimeNames {
   def symbolValue(name: String): Target.Variable = s"lore_symbol_value_$name".asVariable
 
   /**
-    * The name of a polymorphic function's type variable assignments map. These assignments contain, for each type
-    * variable defined in the signature of the polymorphic function, the run-time type assigned to the type variable
-    * for the current call.
+    * The name of a polymorphic function's type variable assignments. These assignments contain, for each type variable
+    * defined in the signature of the polymorphic function, the run-time type assigned to the type variable for the
+    * current call.
     */
   def localTypeVariableAssignments: Target.Variable = "lore_type_assignments".asVariable
 

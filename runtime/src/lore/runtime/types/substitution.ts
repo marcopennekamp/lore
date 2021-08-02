@@ -5,10 +5,9 @@ import { Shape, ShapeType } from '../shapes.ts'
 import { Sum, SumType } from '../sums.ts'
 import { Function, FunctionType } from '../functions.ts'
 import { TupleType, Tuple } from '../tuples.ts'
-import { TinyMap } from '../utils/TinyMap.ts'
-import { Assignments } from './fit.ts'
 import { Kind } from './kinds.ts'
-import { Type, TypeVariable } from './types.ts'
+import { Assignments, TypeVariable } from './type-variables.ts'
+import { Type } from './types.ts'
 
 /**
  * Substitutes the given assignments into the type, leaving the type as is and returning a new type.
@@ -16,7 +15,7 @@ import { Type, TypeVariable } from './types.ts'
 export function substitute(assignments: Assignments, type: Type): Type {
   switch (type.kind) {
     case Kind.TypeVariable:
-      return TinyMap.get(assignments, <TypeVariable> type) ?? type
+      return assignments[(<TypeVariable> type).index] ?? type
     case Kind.Sum:
       return Sum.simplified(substituteMany(assignments, (<SumType> type).types))
     case Kind.Intersection:

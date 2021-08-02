@@ -4,36 +4,44 @@ import lore.compiler.core.CompilationException
 import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.target.Target
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
-import lore.compiler.target.TargetDsl.{StringExtension, VariableExtension}
+import lore.compiler.target.TargetDsl.{ExpressionExtension, StringExtension, VariableExtension}
 import lore.compiler.types._
 
 object TypeTranspiler {
 
-  type TranspiledTypeVariables = Map[TypeVariable, Target.Variable]
+  case class RuntimeTypeVariable(tv: TypeVariable, index: Int, expression: Target.Variable)
+
+  type RuntimeTypeVariables = Map[TypeVariable, RuntimeTypeVariable]
 
   /**
-    * Transpiles type variables such that they are defined as constants in the returned target statement. The names of
-    * these constants are defined in the returned map.
+    * Transpiles type variables such that they are defined as constants in the returned target statement. The access
+    * expressions of these constants are defined in the returned runtime type variable map.
     *
-    * The variable list must be ordered in the declaration order of the variables.
+    * The variable list must be ordered in the declaration order of the variables. At run time, the order of the type
+    * variables will determine at which index their instantiations will be placed in an assignments array.
     */
-  def transpileTypeVariables(typeVariables: Vector[TypeVariable])(implicit variableProvider: TemporaryVariableProvider, symbolHistory: SymbolHistory): (Vector[TargetStatement], TranspiledTypeVariables) = {
-    implicit val transpiledVariables: TranspiledTypeVariables = typeVariables.map(tv => (tv, variableProvider.createVariable())).toMap
+  def transpileTypeVariables(typeVariables: Vector[TypeVariable])(implicit variableProvider: TemporaryVariableProvider, symbolHistory: SymbolHistory): (Vector[TargetStatement], RuntimeTypeVariables) = {
+    implicit val runtimeTypeVariables: RuntimeTypeVariables = typeVariables.zipWithIndex.map {
+      case (tv, index) => (tv, RuntimeTypeVariable(tv, index, variableProvider.createVariable()))
+    }.toMap
+
     val definitions = typeVariables.map { tv =>
-      transpiledVariables(tv).declareAs(RuntimeApi.types.variable(tv.name, transpile(tv.lowerBound), transpile(tv.upperBound), tv.variance))
+      val rtv = runtimeTypeVariables(tv)
+      rtv.expression.declareAs(RuntimeApi.types.variable(tv.name, rtv.index, transpile(tv.lowerBound), transpile(tv.upperBound), tv.variance))
     }
-    (definitions, transpiledVariables)
+
+    (definitions, runtimeTypeVariables)
   }
 
   /**
     * Transpiles the given type to its runtime representation. Any type variables need to be transpiled first using
-    * [[transpileTypeVariables]], references to them being included in the implicit typeVariables map.
+    * [[transpileTypeVariables]], references to them being included in the implicit runtimeTypeVariables map.
     *
     * Since type variables aren't instantiated at run-time with this method, we do not need to simplify sum and
     * intersection types at run-time.
     */
-  def transpile(tpe: Type)(implicit typeVariables: TranspiledTypeVariables, symbolHistory: SymbolHistory): TargetExpression = {
-    transpile(tpe, simplifyAtRuntime = false, tv => typeVariables(tv))
+  def transpile(tpe: Type)(implicit runtimeTypeVariables: RuntimeTypeVariables, symbolHistory: SymbolHistory): TargetExpression = {
+    transpile(tpe, simplifyAtRuntime = false, tv => runtimeTypeVariables(tv).expression)
   }
 
   /**
@@ -45,10 +53,11 @@ object TypeTranspiler {
     *
     * If the given type contains no type variables, it is transpiled without run-time simplification.
     */
-  def transpileSubstitute(tpe: Type)(implicit typeVariables: TranspiledTypeVariables, symbolHistory: SymbolHistory): TargetExpression = {
+  def transpileSubstitute(tpe: Type)(implicit runtimeTypeVariables: RuntimeTypeVariables, symbolHistory: SymbolHistory): TargetExpression = {
     if (Type.isPolymorphic(tpe)) {
       transpile(tpe, simplifyAtRuntime = true, tv => {
-        RuntimeApi.utils.tinyMap.get(RuntimeNames.localTypeVariableAssignments, typeVariables(tv))
+        val rtv = runtimeTypeVariables(tv)
+        RuntimeNames.localTypeVariableAssignments.element(Target.IntLiteral(rtv.index))
       })
     } else {
       transpile(tpe, simplifyAtRuntime = false, _ => throw CompilationException(s"The given type $tpe was determined to be monomorphic."))

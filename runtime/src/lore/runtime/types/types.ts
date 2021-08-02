@@ -1,6 +1,5 @@
-import { StructSchema } from '../structs.ts'
 import { TraitType } from '../traits.ts'
-import { finalize, Hashed, mix, mixLast, pairHashRaw, stringHash, stringHashWithSeed } from '../utils/hash.ts'
+import { finalize, Hashed, mix, mixLast, stringHash, stringHashWithSeed } from '../utils/hash.ts'
 import { LazyValue } from '../utils/LazyValue.ts'
 import { areEqual } from './equality.ts'
 import { fits, fitsMonomorphic, fitsPolymorphic } from './fit.ts'
@@ -9,6 +8,7 @@ import { Kind } from './kinds.ts'
 import { isPolymorphic, variables } from './polymorphy.ts'
 import { stringify } from './stringify.ts'
 import { isSubtype } from './subtyping.ts'
+import { TypeVariable, Variance } from './type-variables.ts'
 import { typeOf } from './typeof.ts'
 
 // TODO: Create a toString function for types.
@@ -38,20 +38,6 @@ const boolean: BooleanType = { kind: Kind.Boolean, hash: stringHash("boolean") }
 
 export interface StringType extends Type { }
 const string: StringType = { kind: Kind.String, hash: stringHash("string") }
-
-
-export enum Variance {
-  Covariant,
-  Contravariant,
-  Invariant,
-}
-
-export interface TypeVariable extends Type {
-  name: string
-  lowerBound: Type
-  upperBound: Type
-  variance: Variance
-}
 
 
 export type PropertyTypes = { [key: string]: Type }
@@ -105,8 +91,8 @@ export const Types = {
   string,
 
   // Type variables.
-  variable(name: string, lowerBound: Type, upperBound: Type, variance: Variance): TypeVariable {
-    return { kind: Kind.TypeVariable, name, lowerBound, upperBound, variance, hash: stringHashWithSeed(name, 0x7ff08f15) }
+  variable(name: string, index: number, lowerBound: Type, upperBound: Type, variance: Variance): TypeVariable {
+    return { kind: Kind.TypeVariable, name, index, lowerBound, upperBound, variance, hash: stringHashWithSeed(name, 0x7ff08f15) }
   },
   variance: Variance,
 

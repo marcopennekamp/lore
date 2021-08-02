@@ -1,14 +1,18 @@
 package lore.compiler.phases.transpilation.functions
 
-import lore.compiler.phases.transpilation.TypeTranspiler.TranspiledTypeVariables
 import lore.compiler.phases.transpilation.{RuntimeApi, TemporaryVariableProvider}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
+import lore.compiler.phases.transpilation.TypeTranspiler.RuntimeTypeVariables
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl._
 import lore.compiler.target.{Target, TargetOperator}
 import lore.compiler.types.Type
 
-class DispatchBehavior(mf: MultiFunctionDefinition, properties: MultiFunctionProperties, dispatchInput: DispatchInput)(implicit variableProvider: TemporaryVariableProvider, typeVariables: TranspiledTypeVariables) {
+class DispatchBehavior(
+  mf: MultiFunctionDefinition,
+  properties: MultiFunctionProperties,
+  dispatchInput: DispatchInput,
+)(implicit variableProvider: TemporaryVariableProvider, runtimeTypeVariables: RuntimeTypeVariables) {
 
   private val varDispatchCache = s"${mf.targetVariable.name}__dispatchCache".asVariable
 
@@ -106,7 +110,7 @@ class DispatchBehavior(mf: MultiFunctionDefinition, properties: MultiFunctionPro
       RuntimeApi.types.fitsMonomorphic(dispatchInput.varArgumentType, varRightType)
     }
 
-    // If we invoke the fitsPolymorphic function and the type fits, an Assignments map is returned rather than a boolean.
+    // If we invoke the fitsPolymorphic function and the type fits, assignments are returned rather than a boolean.
     varFitsX.declareAs(fitsCall)
   }
 

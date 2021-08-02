@@ -10,9 +10,8 @@ import { Kind } from './kinds.ts'
 import { isPolymorphic, variables } from './polymorphy.ts'
 import { substitute } from './substitution.ts'
 import { isSubtype } from './subtyping.ts'
-import { Type, TypeVariable } from './types.ts'
-
-export type Assignments = TinyMap<TypeVariable, Type>
+import { Assignments, TypeVariable } from './type-variables.ts'
+import { Type } from './types.ts'
 
 /**
  * Whether t1 fits into t2.
@@ -36,11 +35,14 @@ export function fitsMonomorphic(t1: Type, t2: Type): boolean {
 
 /**
  * Returns a set of type variable assignments if t1 fits into (polymorphic) t2. Otherwise returns false to
- * signal that t1 does not fit into t2. The assignments map is used during multiple dispatch to pass type context
- * to the called polymorphic function, which can then be used to construct new types such as lists, maps, and later
- * type-parametric declared types.
+ * signal that t1 does not fit into t2. The assignments are used during multiple dispatch to pass type context to the
+ * called polymorphic function, which can then be used to construct new types such as lists, maps, and parametric
+ * declared types.
+ *
+ * @param variables A transpiled list of variables contained in `t2`. This list is precompiled so that we don't have to
+ *                  calculate it at run time.
  */
-export function fitsPolymorphic(t1: Type, t2: Type, variables: Array<TypeVariable>): Assignments | boolean {
+export function fitsPolymorphic(t1: Type, t2: Type, variables: Array<TypeVariable>): Assignments | false {
   const allocation = TypeVariableAllocation.of(t1, t2)
   if (!allocation.isConsistent(variables)) {
     return false
@@ -57,8 +59,8 @@ export function fitsPolymorphic(t1: Type, t2: Type, variables: Array<TypeVariabl
 
 class TypeVariableAllocation {
   /**
-   * Note: We have to be careful here. JS maps use object references as the hash key. This is fine in the case of
-   * type variables, but wouldn't be fine in other cases. Watch out if this ever changes.
+   * Note: We have to be careful here. JS maps use object references as the hash key. This is fine in the case of type
+   * variables, but wouldn't be fine in other cases.
    */
   private allocation: TinyMap<TypeVariable, Array<Type>> = []
 
@@ -81,7 +83,7 @@ class TypeVariableAllocation {
     const assignments = this.assignments_
     for (let i = 0; i < allocation.length; i += 1) {
       const entry = allocation[i]
-      TinyMap.set(assignments, entry.key, entry.value[0])
+      assignments[entry.key.index] = entry.value[0]
     }
     return assignments
   }
@@ -90,21 +92,13 @@ class TypeVariableAllocation {
    * Whether the type variable allocation is consistent in respect to the given expected variables.
    */
   isConsistent(variables: Array<TypeVariable>): boolean {
-    return this.allVariablesAssigned(variables) && this.areAssignmentsUnique() && this.areBoundsKept()
+    return this.allVariablesAssigned(variables) && this.areAssignmentsUnique() && this.areBoundsKept(variables)
   }
 
   private allVariablesAssigned(variables: Array<TypeVariable>): boolean {
     const allocation = this.allocation
-    for (let i = 0; i < variables.length; i += 1) {
-      const variable = variables[i]
-      let found = false
-      for (let j = 0; j < allocation.length; j += 1) {
-        if (allocation[j].key === variable) {
-          found = true
-          break
-        }
-      }
-      if (!found) return false
+    for (const variable of variables) {
+      if (!TinyMap.get(allocation, variable)) return false
     }
     return true
   }
@@ -123,27 +117,16 @@ class TypeVariableAllocation {
     return true
   }
 
-  private areBoundsKept(): boolean {
+  private areBoundsKept(variables: Array<TypeVariable>): boolean {
     const assignments = this.assignments()
-    for (let i = 0; i < assignments.length; i += 1) {
-      const entry = assignments[i]
-      const variable = entry.key
-      const type = entry.value
 
-      if (variable.upperBound.kind !== Kind.Any) {
-        const actualUpperBound = substitute(assignments, variable.upperBound)
-        if (!isSubtype(type, actualUpperBound)) {
-          return false
-        }
-      }
-
-      if (variable.lowerBound.kind !== Kind.Nothing) {
-        const actualLowerBound = substitute(assignments, variable.lowerBound)
-        if (!isSubtype(actualLowerBound, type)) {
-          return false
-        }
+    for (const variable of variables) {
+      const type = assignments[variable.index]
+      if (!TypeVariable.boundsContain(variable, type, assignments)) {
+        return false
       }
     }
+
     return true
   }
 
