@@ -26,8 +26,8 @@ object TypeVariable {
 
   sealed trait Variance
   object Variance {
-    case object Invariant extends Variance
     case object Covariant extends Variance
     case object Contravariant extends Variance
+    case object Invariant extends Variance
   }
 }

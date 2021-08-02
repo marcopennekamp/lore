@@ -40,10 +40,17 @@ export interface StringType extends Type { }
 const string: StringType = { kind: Kind.String, hash: stringHash("string") }
 
 
+export enum Variance {
+  Covariant,
+  Contravariant,
+  Invariant,
+}
+
 export interface TypeVariable extends Type {
   name: string
   lowerBound: Type
   upperBound: Type
+  variance: Variance
 }
 
 
@@ -59,8 +66,8 @@ export interface DeclaredType extends Type {
   schema: DeclaredTypeSchema
 
   /**
-   * Whether this declared type is the one that represents the compile-time type, i.e. its open property types are
-   * exactly equal to the compile-time property types.
+   * Whether this declared type is the one that represents the compile-time type, i.e. its open property types and type
+   * variables are exactly equal to the compile-time property types.
    */
   isArchetype: boolean
 }
@@ -98,10 +105,10 @@ export const Types = {
   string,
 
   // Type variables.
-  variable(name: string, lowerBound: Type, upperBound: Type): TypeVariable {
-    // TODO: Can we make the hash not only dependent on the variable name?
-    return { kind: Kind.TypeVariable, name, lowerBound, upperBound, hash: stringHashWithSeed(name, 0x7ff08f15) }
+  variable(name: string, lowerBound: Type, upperBound: Type, variance: Variance): TypeVariable {
+    return { kind: Kind.TypeVariable, name, lowerBound, upperBound, variance, hash: stringHashWithSeed(name, 0x7ff08f15) }
   },
+  variance: Variance,
 
   // Generally applicable type operations.
   isSubtype,

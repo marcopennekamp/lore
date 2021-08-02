@@ -3,6 +3,7 @@ package lore.compiler.phases.transpilation
 import lore.compiler.target.Target
 import lore.compiler.target.Target.TargetExpression
 import lore.compiler.target.TargetDsl._
+import lore.compiler.types.TypeVariable.Variance
 
 //noinspection TypeAnnotation
 object RuntimeApi {
@@ -19,8 +20,8 @@ object RuntimeApi {
     val boolean = named("boolean")
     val string = named("string")
 
-    def variable(name: String, lowerBound: TargetExpression, upperBound: TargetExpression) = {
-      named("variable").call(name.asLiteral, lowerBound, upperBound)
+    def variable(name: String, lowerBound: TargetExpression, upperBound: TargetExpression, variance: Variance) = {
+      named("variable").call(name.asLiteral, lowerBound, upperBound, named("variance").prop(variance.toString))
     }
 
     def fitsMonomorphic(t1: TargetExpression, t2: TargetExpression) = named("fitsMonomorphic").call(t1, t2)

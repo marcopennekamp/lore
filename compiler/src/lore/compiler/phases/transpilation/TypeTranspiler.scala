@@ -20,7 +20,7 @@ object TypeTranspiler {
   def transpileTypeVariables(typeVariables: Vector[TypeVariable])(implicit variableProvider: TemporaryVariableProvider, symbolHistory: SymbolHistory): (Vector[TargetStatement], TranspiledTypeVariables) = {
     implicit val transpiledVariables: TranspiledTypeVariables = typeVariables.map(tv => (tv, variableProvider.createVariable())).toMap
     val definitions = typeVariables.map { tv =>
-      transpiledVariables(tv).declareAs(RuntimeApi.types.variable(tv.name, transpile(tv.lowerBound), transpile(tv.upperBound)))
+      transpiledVariables(tv).declareAs(RuntimeApi.types.variable(tv.name, transpile(tv.lowerBound), transpile(tv.upperBound), tv.variance))
     }
     (definitions, transpiledVariables)
   }

@@ -1,6 +1,5 @@
 package lore.compiler.types
 
-import lore.compiler.inference.Inference
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.utils.CollectionExtensions.{MapVectorExtension, VectorExtension}
 

@@ -35,8 +35,6 @@ trait TypeSchema {
     */
   def getTypeScope(parentScope: TypeScope): TypeScope = ImmutableTypeScope.from(parameters, parentScope)
 
-
-
   /**
     * Instantiates the schema with the given type argument list, which must be in the order of declaration of the
     * schema's type parameters. This implementation guarantees that all and only type parameters of the schema have a

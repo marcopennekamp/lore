@@ -128,9 +128,9 @@ object Subtyping {
     d1.assignments.forall { case (tv, argument1) =>
       d2.assignments.get(tv) match {
         case Some(argument2) => tv.variance match {
-          case Variance.Invariant => argument1 == argument2
           case Variance.Covariant => argument1 <= argument2
           case Variance.Contravariant => argument1 >= argument2
+          case Variance.Invariant => argument1 == argument2
         }
         case None => false
       }
