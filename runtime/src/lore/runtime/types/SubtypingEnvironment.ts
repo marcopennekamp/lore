@@ -7,10 +7,11 @@ import { Struct, StructType } from '../structs.ts'
 import { SumType } from '../sums.ts'
 import { TraitType } from '../traits.ts'
 import { TupleType } from '../tuples.ts'
+import { DeclaredType, PropertyTypes } from './declared-types.ts'
 import { areEqual } from './equality.ts'
 import { Kind } from './kinds.ts'
 import { TypeVariable } from './type-variables.ts'
-import { DeclaredType, PropertyTypes, Type } from './types.ts'
+import { Type } from './types.ts'
 
 /**
  * A subtyping environment provides a specific implementation of the isSubtype function given a configuration.

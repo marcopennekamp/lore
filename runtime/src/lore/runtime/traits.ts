@@ -1,6 +1,6 @@
 import { ShapeType } from './shapes.ts'
+import { DeclaredType, DeclaredTypeSchema } from './types/declared-types.ts'
 import { Kind } from './types/kinds.ts'
-import { DeclaredType, DeclaredTypeSchema } from './types/types.ts'
 import { stringHashWithSeed } from './utils/hash.ts'
 import { LazyValue } from './utils/LazyValue.ts'
 

@@ -4,9 +4,10 @@ import { MapType } from '../maps.ts'
 import { ShapeType } from '../shapes.ts'
 import { StructType } from '../structs.ts'
 import { TraitType } from '../traits.ts'
+import { PropertyTypes } from './declared-types.ts'
 import { Kind } from './kinds.ts'
 import { TypeVariable } from './type-variables.ts'
-import { PropertyTypes, Type, XaryType } from './types.ts'
+import { Type, XaryType } from './types.ts'
 
 export function stringify(type: Type): string {
   switch (type.kind) {

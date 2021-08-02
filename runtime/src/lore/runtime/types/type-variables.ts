@@ -3,12 +3,6 @@ import { substitute } from './substitution.ts'
 import { isSubtype } from './subtyping.ts'
 import { Type } from './types.ts'
 
-export enum Variance {
-  Covariant,
-  Contravariant,
-  Invariant,
-}
-
 /**
  * A run-time type variable is identified by its index in the type argument array of the schema or function call.
  */
@@ -18,6 +12,12 @@ export interface TypeVariable extends Type {
   lowerBound: Type
   upperBound: Type
   variance: Variance
+}
+
+export enum Variance {
+  Covariant,
+  Contravariant,
+  Invariant,
 }
 
 /**

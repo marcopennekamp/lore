@@ -1,6 +1,5 @@
-import { TraitType } from '../traits.ts'
-import { finalize, Hashed, mix, mixLast, stringHash, stringHashWithSeed } from '../utils/hash.ts'
-import { LazyValue } from '../utils/LazyValue.ts'
+import { Hashed, stringHashWithSeed } from '../utils/hash.ts'
+import { BasicType } from './basic-types.ts'
 import { areEqual } from './equality.ts'
 import { fits, fitsMonomorphic, fitsPolymorphic } from './fit.ts'
 import { Introspection } from './introspection.ts'
@@ -20,75 +19,14 @@ export interface XaryType extends Type {
   types: Array<Type>
 }
 
-
-export interface AnyType extends Type { }
-const any: AnyType = { kind: Kind.Any, hash: stringHash("any") }
-
-export interface NothingType extends Type { }
-const nothing: NothingType = { kind: Kind.Nothing, hash: stringHash("nothing") }
-
-export interface RealType extends Type { }
-const real: RealType = { kind: Kind.Real, hash: stringHash("real") }
-
-export interface IntType extends Type { }
-const int: IntType = { kind: Kind.Int, hash: stringHash("int") }
-
-export interface BooleanType extends Type { }
-const boolean: BooleanType = { kind: Kind.Boolean, hash: stringHash("boolean") }
-
-export interface StringType extends Type { }
-const string: StringType = { kind: Kind.String, hash: stringHash("string") }
-
-
-export type PropertyTypes = { [key: string]: Type }
-export type LazyPropertyTypes = { [key: string]: LazyValue<Type> }
-
-export interface DeclaredTypeSchema {
-  name: string
-  supertraits: Array<TraitType>
-}
-
-export interface DeclaredType extends Type {
-  schema: DeclaredTypeSchema
-
-  /**
-   * Whether this declared type is the one that represents the compile-time type, i.e. its open property types and type
-   * variables are exactly equal to the compile-time property types.
-   */
-  isArchetype: boolean
-}
-
-/**
- * This has the same implementation as `unorderedHashWithSeed` mainly for performance reasons.
- */
-export function hashPropertyTypes(propertyTypes: PropertyTypes, seed: number): number {
-  let a = 0, b = 0, i = 0, c = 1
-  for (const name of Object.keys(propertyTypes)) {
-    let h = 0x4cb3052e
-    h = mix(h, stringHash(name))
-    h = mixLast(h, propertyTypes[name].hash)
-    h = finalize(h, 1)
-    a += h
-    b ^= h
-    if (h != 0) c *= h
-  }
-
-  let h = seed
-  h = mix(h, a)
-  h = mix(h, b)
-  h = mixLast(h, c)
-  return finalize(h, i)
-}
-
-
 export const Types = {
   // Basic types.
-  any,
-  nothing,
-  real,
-  int,
-  boolean,
-  string,
+  any: BasicType.any,
+  nothing: BasicType.nothing,
+  real: BasicType.real,
+  int: BasicType.int,
+  boolean: BasicType.boolean,
+  string: BasicType.string,
 
   // Type variables.
   variable(name: string, index: number, lowerBound: Type, upperBound: Type, variance: Variance): TypeVariable {

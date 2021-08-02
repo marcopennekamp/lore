@@ -1,7 +1,8 @@
 import { Intersection } from './intersections.ts'
+import { hashPropertyTypes, PropertyTypes } from './types/declared-types.ts'
 import { Kind } from './types/kinds.ts'
 import { typeOf } from './types/typeof.ts'
-import { hashPropertyTypes, PropertyTypes, Type } from './types/types.ts'
+import { Type } from './types/types.ts'
 import { Value } from './values.ts'
 
 export interface ShapeType extends Type {

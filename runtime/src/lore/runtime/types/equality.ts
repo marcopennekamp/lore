@@ -8,10 +8,10 @@ import { SumType } from '../sums.ts'
 import { SymbolType } from '../symbols.ts'
 import { TraitType } from '../traits.ts'
 import { TupleType } from '../tuples.ts'
+import { AnyType, BooleanType, IntType, NothingType, RealType, StringType } from './basic-types.ts'
+import { PropertyTypes } from './declared-types.ts'
 import { TypeVariable } from './type-variables.ts'
-import {
-  AnyType, BooleanType, IntType, NothingType, PropertyTypes, RealType, StringType, Type,
-} from './types.ts'
+import { Type } from './types.ts'
 
 /**
  * Checks whether the two types are equal.

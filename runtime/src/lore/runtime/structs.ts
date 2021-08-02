@@ -1,8 +1,9 @@
 import { TraitType } from './traits.ts'
-import { Kind } from './types/kinds.ts'
 import {
-  DeclaredType, DeclaredTypeSchema, hashPropertyTypes, LazyPropertyTypes, PropertyTypes, Type,
-} from './types/types.ts'
+  DeclaredType, DeclaredTypeSchema, hashPropertyTypes, LazyPropertyTypes, PropertyTypes,
+} from './types/declared-types.ts'
+import { Kind } from './types/kinds.ts'
+import { Type } from './types/types.ts'
 import { pairHashRaw, stringHash, stringHashWithSeed } from './utils/hash.ts'
 import { Value } from './values.ts'
 
