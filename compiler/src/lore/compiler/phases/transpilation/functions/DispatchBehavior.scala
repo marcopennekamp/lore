@@ -1,12 +1,11 @@
 package lore.compiler.phases.transpilation.functions
 
-import lore.compiler.phases.transpilation.{RuntimeApi, TemporaryVariableProvider}
-import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.phases.transpilation.TypeTranspiler.RuntimeTypeVariables
+import lore.compiler.phases.transpilation.{RuntimeApi, RuntimeNames, TemporaryVariableProvider}
+import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl._
 import lore.compiler.target.{Target, TargetOperator}
-import lore.compiler.types.Type
 
 class DispatchBehavior(
   mf: MultiFunctionDefinition,
@@ -94,18 +93,14 @@ class DispatchBehavior(
   /**
     * Transpiles a singular fits decision and keeps it in a constant identified by the given `fitsX` variable.
     */
-  private def transpileFitsCall(node: mf.hierarchy.graph.NodeT, varFitsX: Target.Variable): TargetStatement = {
-    val varRightType = dispatchInput.inputTypes(node.signature.inputType)
+  private def transpileFitsCall(function: FunctionDefinition, varFitsX: Target.Variable): TargetStatement = {
+    val varRightType = dispatchInput.inputTypes(function.signature.inputType)
 
-    // We can decide at compile-time which version of the fit should be used, because the type on the right side
-    // is constant. If the parameter type isn't polymorphic now, it won't ever be, so we can skip all that testing
-    // for polymorphy at run-time.
-    val fitsCall = if (node.isPolymorphic) {
-      // We transpile a list of variables of the input type so that this list can be used at run-time to check
-      // whether all variables have been assigned. The advantage of doing this at compile-time is that we don't
-      // have to expend the effort of extracting the variable list from the type at run-time.
-      val rightTypeVariables = Type.variables(node.signature.inputType).toVector.map(typeVariables)
-      RuntimeApi.types.fitsPolymorphic(dispatchInput.varArgumentType, varRightType, Target.List(rightTypeVariables))
+    // We can decide at compile-time which version of the fit should be used, because the type on the right side is
+    // constant. If the parameter type isn't polymorphic now, it won't ever be, so we can skip all that run-time
+    // testing.
+    val fitsCall = if (function.isPolymorphic) {
+      RuntimeApi.types.fitsPolymorphic(dispatchInput.varArgumentType, varRightType, RuntimeNames.functionTypeParameters(function))
     } else {
       RuntimeApi.types.fitsMonomorphic(dispatchInput.varArgumentType, varRightType)
     }

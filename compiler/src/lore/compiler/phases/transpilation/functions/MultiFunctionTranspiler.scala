@@ -3,13 +3,13 @@ package lore.compiler.phases.transpilation.functions
 import lore.compiler.core.CompilerOptions
 import lore.compiler.phases.transpilation.TypeTranspiler.RuntimeTypeVariables
 import lore.compiler.phases.transpilation.values.SymbolHistory
-import lore.compiler.phases.transpilation.{RuntimeApi, TemporaryVariableProvider, TypeTranspiler}
+import lore.compiler.phases.transpilation.{RuntimeApi, RuntimeNames, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.target.Target
 import lore.compiler.target.Target.TargetStatement
-import lore.compiler.target.TargetDsl.StringExtension
-import lore.compiler.types._
+import lore.compiler.target.TargetDsl.{StringExtension, VariableExtension}
+import lore.compiler.types.Type
 
 class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry, symbolHistory: SymbolHistory) {
 
@@ -65,13 +65,21 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   /**
     * All type parameters are transpiled in bulk before functions are defined because a function also might need to
     * have access to its own type parameters.
+    *
+    * The type variables of a function definition are additionally compiled in an array named via
+    * [[lore.compiler.phases.transpilation.RuntimeNames.functionTypeParameters]], later used by `fitsPolymorphic`.
     */
   private lazy val transpiledInputTypeParameters: (Vector[TargetStatement], RuntimeTypeVariables) = {
     def handleFunction(function: FunctionDefinition) = {
       if (function.isPolymorphic) {
-        TypeTranspiler.transpileTypeVariables(function.typeParameters)
+        val (statements, runtimeTypeVariables) = TypeTranspiler.transpileTypeVariables(function.typeParameters)
+        val typeParameterDeclaration = RuntimeNames.functionTypeParameters(function).declareAs(
+          Target.List(function.typeParameters.map(runtimeTypeVariables).map(_.expression))
+        )
+        (statements :+ typeParameterDeclaration, runtimeTypeVariables)
       } else (Vector.empty, Map.empty: RuntimeTypeVariables)
     }
+
     mf.functions.map(handleFunction).foldLeft((Vector.empty[TargetStatement], Map.empty: RuntimeTypeVariables)) {
       case ((d1, v1), (d2, v2)) => (d1 ++ d2, v1 ++ v2)
     }

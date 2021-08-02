@@ -43,6 +43,8 @@ object RuntimeNames {
     s"${function.name}$$$id".asVariable
   }
 
+  def functionTypeParameters(function: FunctionDefinition): Target.Variable = s"${functionDefinition(function).name}__type_parameters".asVariable
+
   /**
     * Run-time multi-function names are unqualified for now. However, this function should be used so that we can
     * change this later more easily.
