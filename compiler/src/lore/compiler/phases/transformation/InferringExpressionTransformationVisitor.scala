@@ -224,6 +224,13 @@ class InferringExpressionTransformationVisitor(
       Expression.ListConstruction(expressions, ListType(elementType), position)
 
     case ObjectMapNode(nameNode, entryNodes, position) =>
+      def handleConstantStruct(structType: StructType) = {
+        val entries = entryNodes.zip(expressions).map { case (ObjectEntryNode(nameNode, _, _), expression) => nameNode.value -> expression }
+        addJudgmentsFrom(
+          InstantiationTransformation.transformMapStyleInstantiation(structType, entries, position)
+        )
+      }
+
       typeScope.resolve(nameNode.value, nameNode.position) match {
         // Note that via constant type aliases, the type scope can also indirectly contain struct types with their type
         // arguments already set.
@@ -231,12 +238,14 @@ class InferringExpressionTransformationVisitor(
         //                 of the alias schema itself. This would allow us to simply match on a StructType here.
         // TODO (schemas): This doesn't yet cover the case where a parameterized alias is used to construct a struct.
         case Some(schema: AliasSchema) if schema.isConstant && schema.representative.isInstanceOf[StructType] =>
-          val entries = entryNodes.zip(expressions).map { case (ObjectEntryNode(nameNode, _, _), expression) => nameNode.value -> expression }
-          addJudgmentsFrom(
-            InstantiationTransformation.transformMapStyleInstantiation(schema.representative.asInstanceOf[StructType], entries, position)
-          )
+          handleConstantStruct(schema.representative.asInstanceOf[StructType])
 
-        case Some(schema: StructSchema) => ??? // TODO (schemas): Implement.
+        case Some(schema: StructSchema) =>
+          if (!schema.isConstant) {
+            // TODO (schemas): Implement.
+            ???
+          }
+          handleConstantStruct(schema.representative)
 
         case Some(schema) =>
           reporter.error(StructExpected(nameNode.value, nameNode.position))

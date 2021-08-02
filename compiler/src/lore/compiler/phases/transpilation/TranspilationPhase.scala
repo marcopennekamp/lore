@@ -7,22 +7,24 @@ import lore.compiler.phases.transpilation.values.{SymbolHistory, SymbolTranspile
 import lore.compiler.semantics.{Introspection, Registry}
 import lore.compiler.target.Target
 import lore.compiler.target.Target.TargetStatement
-import lore.compiler.types.DeclaredType
+import lore.compiler.types.DeclaredSchema
 
 object TranspilationPhase {
   def process(implicit compilerOptions: CompilerOptions, registry: Registry): Vector[TargetStatement] = {
     implicit val symbolHistory: SymbolHistory = new SymbolHistory
 
-    val typeDeclarations = registry.schemasInOrder.flatMap {
-      case (_, declaredType: DeclaredType) => DeclaredTypeTranspiler.transpile(declaredType) :+ Target.Divider
+    val schemaDeclarations = registry.schemasInOrder.flatMap {
+      // TODO (schemas): Also transpile schemas with type parameters.
+      case (_, schema: DeclaredSchema) if schema.isConstant => DeclaredTypeTranspiler.transpile(schema.representative) :+ Target.Divider
       case _ => Vector.empty
     }
 
-    // Transpile any additional parts of declared types that require all types to be initialized, regardless of type
-    // order.
-    val typeDeclarationDeferredDefinitions = registry.schemasInOrder.flatMap {
-      case (_, declaredType: DeclaredType) =>
-        val result = DeclaredTypeTranspiler.transpileDeferred(declaredType)
+    // Transpile any additional parts of declared schemas that require all schemas to be initialized, regardless of
+    // schema order.
+    val schemaDeclarationDeferredDefinitions = registry.schemasInOrder.flatMap {
+      // TODO (schemas): Also transpile schemas with type parameters.
+      case (_, schema: DeclaredSchema) if schema.isConstant =>
+        val result = DeclaredTypeTranspiler.transpileDeferred(schema.representative)
         if (result.nonEmpty) result :+ Target.Divider else result
       case _ => Vector.empty
     }
@@ -39,6 +41,6 @@ object TranspilationPhase {
 
     val symbolDeclarations = SymbolTranspiler.transpile(symbolHistory) :+ Target.Divider
 
-    symbolDeclarations ++ typeDeclarations ++ typeDeclarationDeferredDefinitions ++ introspectionInitialization ++ functions
+    symbolDeclarations ++ schemaDeclarations ++ schemaDeclarationDeferredDefinitions ++ introspectionInitialization ++ functions
   }
 }
