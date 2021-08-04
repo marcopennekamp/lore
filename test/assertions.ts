@@ -6,9 +6,9 @@ import { ShapeValue } from '../runtime/src/lore/runtime/shapes.ts'
 import { StructValue } from '../runtime/src/lore/runtime/structs.ts'
 import { SumType } from '../runtime/src/lore/runtime/sums.ts'
 import { TupleValue } from '../runtime/src/lore/runtime/tuples.ts'
-import { PropertyTypes } from '../runtime/src/lore/runtime/types/declared-types.ts'
 import { areEqual } from '../runtime/src/lore/runtime/types/equality.ts'
 import { Kind } from '../runtime/src/lore/runtime/types/kinds.ts'
+import { PropertyTypes } from '../runtime/src/lore/runtime/types/property-types.ts'
 import { Type, Types } from '../runtime/src/lore/runtime/types/types.ts'
 
 export function assertTypeEquals(actual: Type, expected: Type) {
