@@ -10,7 +10,7 @@ import { Kind } from './kinds.ts'
 import { isPolymorphic, variables } from './polymorphy.ts'
 import { substitute } from './substitution.ts'
 import { isSubtype } from './subtyping.ts'
-import { Assignments, TypeVariable } from './type-variables.ts'
+import { Assignments, TypeVariable, TypeVariables } from './type-variables.ts'
 import { Type } from './types.ts'
 
 /**
@@ -122,7 +122,7 @@ class TypeVariableAllocation {
 
     for (const variable of variables) {
       const type = assignments[variable.index]
-      if (!TypeVariable.boundsContain(variable, type, assignments)) {
+      if (!TypeVariables.boundsContain(variable, type, assignments)) {
         return false
       }
     }

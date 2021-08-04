@@ -14,7 +14,7 @@
       - If a type has no open type parameters AND the instantiation of the type does not rely on a function's type parameters, we should generally be able to refer to a trait/struct type that is interned at compile time.
       - In other cases, we will have to intern the type at run time by using a type map approach. This type map can be prefilled with all compile-time interned types.
   - Runtime:
-    - Structures: ~~Type variable variance~~, trait and struct schema type parameters, trait and struct type instantiation, interning trait/struct types (possibly with weak references so that unused types can be reclaimed).
+    - Structures: ~~Type variable variance~~, ~~trait and struct schema type parameters~~, ~~trait and struct type instantiation~~, interning trait/struct types (possibly with weak references so that unused types can be reclaimed).
     - Type functions: Subtyping, equality, type variable allocations, substitution.
   - Clear all `TODO (schemas)` entries.
 - Implement a module system.

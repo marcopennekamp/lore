@@ -7,9 +7,10 @@ import { Struct, StructType } from '../structs.ts'
 import { SumType } from '../sums.ts'
 import { TraitType } from '../traits.ts'
 import { TupleType } from '../tuples.ts'
-import { DeclaredType, PropertyTypes } from './declared-types.ts'
+import { DeclaredType } from './declared-types.ts'
 import { areEqual } from './equality.ts'
 import { Kind } from './kinds.ts'
+import { PropertyTypes } from './property-types.ts'
 import { TypeVariable } from './type-variables.ts'
 import { Type } from './types.ts'
 
@@ -63,12 +64,13 @@ export class SubtypingEnvironment {
             const s1 = <StructType> t1
             const s2 = <StructType> t2
             if (s1.schema === s2.schema) {
-              // The archetype is always a supertype of all the structs that could possibly be instantiated, because
-              // each property type of the archetype is the property's upper bound.
-              // Note that we can't trivially assume the reverse and return false if s1 is an archetype. Struct type s2
-              // might not be the archetype, but its open property types might still be equal to the property types of
-              // the archetype.
-              if (s2.isArchetype) {
+              // The representative is always a supertype of all the structs that could possibly be instantiated,
+              // because each property type of the representative is the property's upper bound.
+              // Note that we can't trivially assume the reverse and return false if s1 is a representative. Struct
+              // type s2 might not be the representative, but its open property types might still be equal to the
+              // property types of the representative.
+              // TODO (schemas): This is only valid if s2's schema is constant.
+              if (s2 === s2.schema.representative) {
                 return true
               }
 

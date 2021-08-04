@@ -29,10 +29,10 @@ export enum Variance {
  */
 export type Assignments = Array<Type>
 
-export const TypeVariable = {
+export const TypeVariables = {
   boundsContain(variable: TypeVariable, type: Type, assignments: Assignments): Boolean {
-    return TypeVariable.upperBoundContains(variable, type, assignments) &&
-      TypeVariable.lowerBoundContains(variable, type, assignments)
+    return TypeVariables.upperBoundContains(variable, type, assignments) &&
+      TypeVariables.lowerBoundContains(variable, type, assignments)
   },
 
   /**

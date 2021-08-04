@@ -1,10 +1,14 @@
+import { Function, FunctionValue } from './functions.ts'
 import { TraitType } from './traits.ts'
-import {
-  DeclaredType, DeclaredTypeSchema, hashPropertyTypes, LazyPropertyTypes, PropertyTypes,
-} from './types/declared-types.ts'
+import { Tuple } from './tuples.ts'
+import { DeclaredType, DeclaredTypes } from './types/declared-types.ts'
 import { Kind } from './types/kinds.ts'
+import { DeclaredSchemas, DeclaredTypeSchema } from './types/declared-schemas.ts'
+import { hashPropertyTypes, LazyPropertyTypes, PropertyTypes } from './types/property-types.ts'
+import { substitute } from './types/substitution.ts'
+import { Assignments, TypeVariable } from './types/type-variables.ts'
 import { Type } from './types/types.ts'
-import { pairHashRaw, stringHash, stringHashWithSeed } from './utils/hash.ts'
+import { finalize, mix, mixLast, pairHashRaw, stringHash } from './utils/hash.ts'
 import { Value } from './values.ts'
 
 export interface StructSchema extends DeclaredTypeSchema {
@@ -12,15 +16,21 @@ export interface StructSchema extends DeclaredTypeSchema {
    * The struct's properties, with each name as the key, and their respective compile-time types.
    *
    * Since open property types are handled by the struct's transpiled instantiation function, we do not need to
-   * label properties as open at run-time. The specific type instance's property types will simply override the
+   * label properties as open at run-time. The specific struct type's open property types will simply override the
    * property types found in the schema's map.
    *
-   * The property type map must contain lazy types, because schemas are created at the start of the program with no
+   * The property type map must contain lazy types, because schemas are initialized at the start of the program with no
    * respect to property type order. Property types can easily reference declared types, which would lead to undefined
-   * types if types are loaded in the wrong order. Since schema property types will be infrequently accessed, likely
-   * only for structural typing, making the type lazy is acceptable.
+   * types if types are initialized in the wrong order. Since schema property types will be infrequently accessed,
+   * likely only for structural subtyping, making the type lazy is acceptable.
    */
   propertyTypes: LazyPropertyTypes
+
+  /**
+   * The struct's property names in their order of declaration. We keep this extra bit of information because
+   * `propertyTypes` does not remember the order of properties.
+   */
+  propertyOrder: Array<string>
 }
 
 // TODO: Interning struct types might bring big performance gains for multiple dispatch, because the more open properties a
@@ -37,10 +47,27 @@ export interface StructType extends DeclaredType {
   schema: StructSchema
 
   /**
-   * The actual run-time types of the struct's properties IF they deviate from their compile-time type. The map may be
-   * empty or undefined.
+   * The actual run-time types of the struct's open properties IF they deviate from their compile-time type. If there
+   * are no such deviations, the map **must** be `undefined`.
+   *
+   * This map does not contain instantiated versions of the schema's non-open properties.
+   *
+   * TODO (schemas): Rename to `openPropertyTypes` so that it's impossible to associate this map with property types
+   *                 that have their type parameters instantiated.
    */
   propertyTypes?: PropertyTypes
+
+  /**
+   * Caches the result of `getConstructor`.
+   *
+   * TODO (schemas): This will only become useful if we intern struct types.
+   */
+  constructorCache?: FunctionValue<StructValue>
+
+  /**
+   * Caches the result of `getPropertyType` for non-open properties of parameterized structs.
+   */
+  propertyTypeCache?: PropertyTypes
 }
 
 /**
@@ -52,25 +79,28 @@ export interface StructValue extends Value {
 }
 
 export const Struct = {
-  schema(name: string, supertraits: Array<TraitType>, propertyTypes: LazyPropertyTypes): StructSchema {
-    return { name, supertraits, propertyTypes }
+  schema(name: string, typeParameters: Array<TypeVariable>, supertraits: Array<TraitType>, propertyTypes: LazyPropertyTypes, propertyOrder: Array<string>): StructSchema {
+    return DeclaredSchemas.schema<StructSchema>(
+      name,
+      typeParameters,
+      supertraits,
+      (schema, typeArguments) => Struct.type(schema, typeArguments, undefined),
+      { propertyTypes, propertyOrder },
+    )
   },
 
-  type(schema: StructSchema, isArchetype: boolean, propertyTypes?: PropertyTypes): StructType {
-    return {
-      kind: Kind.Struct,
-      schema,
-      isArchetype,
-      propertyTypes,
-      hash: this.hash(schema, propertyTypes),
-    }
+  /**
+   * Instantiates a new struct type from the given type arguments and open property types.
+   */
+  type(schema: StructSchema, typeArguments?: Assignments, propertyTypes?: PropertyTypes): StructType {
+    return DeclaredTypes.type<StructType>(Kind.Struct, schema, typeArguments, { propertyTypes }, Struct.hash(schema, typeArguments, propertyTypes))
   },
 
-  hash(schema: StructSchema, propertyTypes?: PropertyTypes): number {
+  hash(schema: StructSchema, typeArguments?: Assignments, propertyTypes?: PropertyTypes): number {
     if (!propertyTypes) {
-      return stringHashWithSeed(schema.name, 0x38ba128e)
+      return DeclaredTypes.hash(schema, typeArguments)
     }
-    return pairHashRaw(stringHash(schema.name), hashPropertyTypes(propertyTypes, 0x281eba38), 0x38ba128e)
+    return pairHashRaw(DeclaredTypes.hash(schema, typeArguments), hashPropertyTypes(propertyTypes, 0x281eba38), 0x38ba128e)
   },
 
   /**
@@ -83,7 +113,74 @@ export const Struct = {
     return value
   },
 
-  getPropertyType(type: StructType, name: string): Type {
-    return (type.propertyTypes && type.propertyTypes[name]) ?? type.schema.propertyTypes[name]?.value()
+  /**
+   * Gets the constructor function for the given schema and type arguments.
+   *
+   * The compiler will only utilize this function if the struct has type parameters. Otherwise, a constant constructor
+   * will be generated for the whole schema. It is also only used in places where the function value is further passed
+   * around. Immediate invocation of a call-style constructor is optimized by the compiler to a simple `instantiate`
+   * call. These considerations combined, there should be no large performance hit considering that the function is
+   * called infrequently. The constructor is cached for memory footprint reasons, similar to why struct types are
+   * interned.
+   *
+   * @param instantiate The `instantiate` function as generated by the compiler. Note that the second argument of
+   *                    `instantiate` for parameterized structs is the list of type arguments.
+   */
+  getConstructor(
+    schema: StructSchema,
+    typeArguments: Assignments,
+    instantiate: (properties: object, typeArguments: Assignments) => StructValue,
+  ): FunctionValue<StructValue> {
+    const structType = Struct.type(schema, typeArguments)
+    if (structType.constructorCache) {
+      return structType.constructorCache
+    }
+
+    const parameterTypes = []
+    for (const name of schema.propertyOrder) {
+      const propertyType = schema.propertyTypes[name]?.value()
+      parameterTypes.push(substitute(typeArguments, propertyType))
+    }
+
+    // TODO (schemas): We need to build a bridge between the parameters of the constructor and the properties object passed to `instantiate`.
+
+    return Function.value(
+      (properties: object) => instantiate(properties, typeArguments),
+      Function.type(Tuple.type(parameterTypes), structType)
+    )
+  },
+
+  /**
+   * Get the struct type's property type, which is either an open property type, or the schema's property type
+   * instantiated with the struct's type arguments. This result is cached for non-open properties of parametric structs
+   * to avoid having to substitute type arguments into the schema's property types.
+   */
+  getPropertyType(type: StructType, name: string): Type | undefined {
+    const openCandidate = type.propertyTypes && type.propertyTypes[name]
+    if (openCandidate) {
+      return openCandidate
+    }
+
+    const schemaPropertyType = type.schema.propertyTypes[name]?.value()
+    if (!schemaPropertyType) {
+      return undefined
+    }
+
+    if (!type.typeArguments) {
+      return schemaPropertyType
+    }
+
+    if (!type.propertyTypeCache) {
+      type.propertyTypeCache = { }
+    }
+
+    const cachedCandidate = type.propertyTypeCache[name]
+    if (cachedCandidate) {
+      return cachedCandidate
+    }
+
+    const propertyType = substitute(type.typeArguments, schemaPropertyType)
+    type.propertyTypeCache[name] = propertyType
+    return propertyType
   },
 }

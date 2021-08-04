@@ -1,7 +1,8 @@
 import { ShapeType } from './shapes.ts'
-import { DeclaredType, DeclaredTypeSchema } from './types/declared-types.ts'
+import { DeclaredType, DeclaredTypes } from './types/declared-types.ts'
 import { Kind } from './types/kinds.ts'
-import { stringHashWithSeed } from './utils/hash.ts'
+import { DeclaredSchemas, DeclaredTypeSchema } from './types/declared-schemas.ts'
+import { Assignments, TypeVariable } from './types/type-variables.ts'
 import { LazyValue } from './utils/LazyValue.ts'
 
 export interface TraitSchema extends DeclaredTypeSchema {
@@ -22,11 +23,11 @@ export interface TraitType extends DeclaredType {
 }
 
 export const Trait = {
-  schema(name: string, supertraits: Array<TraitType>, inheritedShapeType: LazyValue<ShapeType>): TraitSchema {
-    return { name, supertraits, inheritedShapeType }
+  schema(name: string, typeParameters: Array<TypeVariable>, supertraits: Array<TraitType>, inheritedShapeType: LazyValue<ShapeType>): TraitSchema {
+    return DeclaredSchemas.schema<TraitSchema>(name, typeParameters, supertraits, Trait.type, { inheritedShapeType })
   },
 
-  type(schema: TraitSchema): TraitType {
-    return { kind: Kind.Trait, schema, isArchetype: true, hash: stringHashWithSeed(schema.name, 0x38ba128e) }
+  type(schema: TraitSchema, typeArguments?: Assignments): TraitType {
+    return DeclaredTypes.type<TraitType>(Kind.Trait, schema, typeArguments, { }, DeclaredTypes.hash(schema, typeArguments))
   },
 }

@@ -56,7 +56,7 @@ export function variables(type: Type): TinySet<TypeVariable> {
 
       case Kind.Struct:
       case Kind.Trait:
-        break // TODO: Change this once we allow type parameters for structs and traits.
+        break // TODO (schemas): Implement.
 
       case Kind.Intersection:
       case Kind.Sum:

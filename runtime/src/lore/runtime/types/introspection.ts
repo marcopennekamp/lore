@@ -21,8 +21,8 @@ export const Introspection = {
    * the compiler. (Seriously, don't call into this with a dynamic call!!)
    */
   initialize(typeTrait: TraitType) {
-    introspectionTypeSchema = Struct.schema("lore$introspectionType", [typeTrait], { })
-    introspectionTypeType = Struct.type(introspectionTypeSchema, true)
+    introspectionTypeSchema = Struct.schema("lore$introspectionType", [], [typeTrait], { }, [])
+    introspectionTypeType = Struct.type(introspectionTypeSchema)
   },
 
   typeOf(value: any): IntrospectionType {
