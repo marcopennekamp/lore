@@ -1,7 +1,8 @@
 package lore.compiler.phases.transpilation.functions
 
 import lore.compiler.phases.transpilation.TypeTranspiler.RuntimeTypeVariables
-import lore.compiler.phases.transpilation.{RuntimeApi, RuntimeNames, TemporaryVariableProvider}
+import lore.compiler.phases.transpilation.values.SymbolHistory
+import lore.compiler.phases.transpilation.{RuntimeApi, RuntimeNames, TargetRepresentableTranspiler, TemporaryVariableProvider}
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl._
@@ -11,9 +12,13 @@ class DispatchBehavior(
   mf: MultiFunctionDefinition,
   properties: MultiFunctionProperties,
   dispatchInput: DispatchInput,
-)(implicit variableProvider: TemporaryVariableProvider, runtimeTypeVariables: RuntimeTypeVariables) {
+)(
+  implicit variableProvider: TemporaryVariableProvider,
+  runtimeTypeVariables: RuntimeTypeVariables,
+  symbolHistory: SymbolHistory,
+) {
 
-  private val varDispatchCache = s"${mf.targetVariable.name}__dispatchCache".asVariable
+  private val varDispatchCache = s"${RuntimeNames.multiFunction(mf).name}__dispatchCache".asVariable
 
   lazy val preamble: Vector[TargetStatement] = {
     // The cache is declared as a global constant so that it exists between multi-function calls.
@@ -120,9 +125,9 @@ class DispatchBehavior(
     val successors = withFitsVariables(node.diSuccessors.toVector)
     val function = node.value
 
-    // Sets the function represented by this node as the target of the mutli-function call.
+    // Sets the function represented by this node as the target of the multi-function call.
     val setAsTarget = if (!function.isAbstract) {
-      val actualFunction = function.targetVariable
+      val actualFunction = TargetRepresentableTranspiler.transpile(function)
       val candidate = if (function.isPolymorphic) {
         // The first parameter of a polymorphic function is the map of type variable assignments passed to it at
         // run-time. Hence, we have to bind that map (saved in the fitsX variable after being returned by

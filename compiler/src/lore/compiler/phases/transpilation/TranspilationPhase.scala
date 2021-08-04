@@ -2,7 +2,7 @@ package lore.compiler.phases.transpilation
 
 import lore.compiler.core.{CompilationException, CompilerOptions}
 import lore.compiler.phases.transpilation.functions.MultiFunctionTranspiler
-import lore.compiler.phases.transpilation.structures.DeclaredTypeTranspiler
+import lore.compiler.phases.transpilation.structures.DeclaredSchemaTranspiler
 import lore.compiler.phases.transpilation.values.{SymbolHistory, SymbolTranspiler}
 import lore.compiler.semantics.{Introspection, Registry}
 import lore.compiler.target.Target
@@ -14,17 +14,15 @@ object TranspilationPhase {
     implicit val symbolHistory: SymbolHistory = new SymbolHistory
 
     val schemaDeclarations = registry.schemasInOrder.flatMap {
-      // TODO (schemas): Also transpile schemas with type parameters.
-      case (_, schema: DeclaredSchema) if schema.isConstant => DeclaredTypeTranspiler.transpile(schema.representative) :+ Target.Divider
+      case (_, schema: DeclaredSchema) => DeclaredSchemaTranspiler.transpile(schema) :+ Target.Divider
       case _ => Vector.empty
     }
 
-    // Transpile any additional parts of declared schemas that require all schemas to be initialized, regardless of
-    // schema order.
-    val schemaDeclarationDeferredDefinitions = registry.schemasInOrder.flatMap {
-      // TODO (schemas): Also transpile schemas with type parameters.
-      case (_, schema: DeclaredSchema) if schema.isConstant =>
-        val result = DeclaredTypeTranspiler.transpileDeferred(schema.representative)
+    // Transpile any additional declarations of declared schemas that require all schemas to be initialized, regardless
+    // of schema order.
+    val schemaDeclarationDeferredDeclarations = registry.schemasInOrder.flatMap {
+      case (_, schema: DeclaredSchema) =>
+        val result = DeclaredSchemaTranspiler.transpileDeferred(schema)
         if (result.nonEmpty) result :+ Target.Divider else result
       case _ => Vector.empty
     }
@@ -41,6 +39,6 @@ object TranspilationPhase {
 
     val symbolDeclarations = SymbolTranspiler.transpile(symbolHistory) :+ Target.Divider
 
-    symbolDeclarations ++ schemaDeclarations ++ schemaDeclarationDeferredDefinitions ++ introspectionInitialization ++ functions
+    symbolDeclarations ++ schemaDeclarations ++ schemaDeclarationDeferredDeclarations ++ introspectionInitialization ++ functions
   }
 }

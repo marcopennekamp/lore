@@ -7,13 +7,24 @@ import lore.compiler.target.TargetDsl.StringExtension
 import lore.compiler.types.{DeclaredSchema, DeclaredType, StructSchema, Type}
 
 object RuntimeNames {
-  def declaredType(tpe: DeclaredType): Target.Variable = s"lore_type_${tpe.name}".asVariable // TODO (schemas): This essentially has to go for parameterized types, in favor of a sort of interning mechanism.
-  def declaredSchema(schema: DeclaredSchema): Target.Variable = s"lore_schema_${schema.name}".asVariable
-  def typeSchema(tpe: DeclaredType): Target.Variable = s"lore_schema_${tpe.name}".asVariable
+  object schema {
+    def apply(schema: DeclaredSchema): Target.Variable = s"lore_schema_${schema.name}".asVariable
+    def typeParameters(schema: DeclaredSchema): Target.Variable = s"${apply(schema).name}__type_parameters".asVariable
+    def representative(schema: DeclaredSchema): Target.Variable = s"${apply(schema).name}__representative".asVariable
+  }
+
+  object struct {
+    def defaultValue(struct: StructSchema, property: StructPropertyDefinition): Target.Variable = s"${schema(struct).name}__default_${property.name}".asVariable
+    def instantiate(struct: StructSchema): Target.Variable = s"${schema(struct).name}__instantiate".asVariable
+
+    /**
+      * The constructor of a <b>constant</b> struct schema. This does not get generated for parameterized structs. Use
+      * [[RuntimeApi.structs.getConstructor]] instead.
+      */
+    def constructor(struct: StructSchema): Target.Variable = s"${schema(struct).name}__constructor".asVariable
+  }
+
   def newType(tpe: DeclaredType): Target.Variable = s"lore_newtype_${tpe.name}".asVariable
-  def instantiate(struct: StructSchema): Target.Variable = s"${declaredSchema(struct).name}__instantiate".asVariable
-  def constructor(struct: StructSchema): Target.Variable = s"${declaredSchema(struct).name}__constructor".asVariable // TODO (schemas): One constructor per schema? Shouldn't this be one constructor per type?
-  def defaultValue(struct: StructSchema, property: StructPropertyDefinition): Target.Variable = s"${declaredSchema(struct).name}__default_${property.name}".asVariable
 
   def temporaryVariable(name: String): Target.Variable = s"lore_tmp_$name".asVariable
   def localVariable(loreName: String): Target.Variable = s"lore_lv_$loreName".asVariable

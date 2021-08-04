@@ -3,10 +3,12 @@ package lore.compiler.phases.transpilation.expressions
 
 import lore.compiler.phases.transpilation.TypeTranspiler.RuntimeTypeVariables
 import lore.compiler.phases.transpilation._
+import lore.compiler.phases.transpilation.structures.InstantiationTranspiler
 import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.functions.CallTarget
+import lore.compiler.semantics.structures.StructConstructor
 import lore.compiler.target.TargetDsl._
 import lore.compiler.target.{Target, TargetOperator}
 import lore.compiler.types._
@@ -36,7 +38,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   override def visit(expression: Block)(expressions: Vector[Chunk]): Chunk = Chunk.sequence(expressions)
 
-  override def visit(expression: BindingAccess): Chunk = Chunk.expression(expression.binding.targetVariable)
+  override def visit(expression: BindingAccess): Chunk = Chunk.expression(TargetRepresentableTranspiler.transpile(expression.binding))
 
   override def visit(expression: MemberAccess)(instance: Chunk): Chunk = {
     instance.mapExpression(_.prop(expression.member.name))
@@ -77,13 +79,13 @@ private[transpilation] class ExpressionTranspilationVisitor()(
   }
 
   override def visit(expression: MultiFunctionValue): Chunk = {
-    val target = expression.mf.targetVariable
+    val target = TargetRepresentableTranspiler.transpile(expression.mf)
     val tpe = TypeTranspiler.transpileSubstitute(expression.tpe)
     Chunk.expression(RuntimeApi.functions.value(target, tpe))
   }
 
   override def visit(expression: FixedFunctionValue): Chunk = {
-    val target = expression.instance.definition.targetVariable
+    val target = TargetRepresentableTranspiler.transpile(expression.instance.definition)
     val tpe = TypeTranspiler.transpile(expression.tpe)
     Chunk.expression(RuntimeApi.functions.value(target, tpe))
   }
@@ -122,14 +124,8 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   override def visit(expression: Instantiation)(arguments: Vector[Chunk]): Chunk = {
     Chunk.combine(arguments) { values =>
-      // The argument passed to the instantiation function at run-time is an object with the required properties
-      // already set. We're building this object here.
-      val properties = Target.Dictionary(
-        expression.arguments.map(_.property).zip(values).map { case (property, value) =>
-          Target.Property(property.definition.name.asName, value)
-        }
-      )
-      Chunk.expression(RuntimeNames.instantiate(expression.tpe.schema).call(properties))
+      val propertyAssignments = expression.arguments.map(_.property.definition.name.asName).zip(values)
+      Chunk.expression(InstantiationTranspiler.transpileStructInstantiation(expression.tpe, propertyAssignments))
     }
   }
 
@@ -189,8 +185,19 @@ private[transpilation] class ExpressionTranspilationVisitor()(
     def directCall(expression: Target.TargetExpression) = withArguments(Target.Call(expression, _))
 
     expression.target match {
+      case CallTarget.Value(BindingAccess(constructor: StructConstructor, _)) =>
+        // Optimization: If we're directly calling a struct constructor, the function call boils down to calling the
+        // instantiation function. This allows us to bypass a run-time call to `getConstructor` for structs with type
+        // parameters.
+        val structType = constructor.structType
+        println(s"Optimizing constructor call of $structType at ${expression.position}.")
+        withArguments { arguments =>
+          val propertyAssignments = structType.properties.map(_.definition.name.asName).zip(arguments)
+          InstantiationTranspiler.transpileStructInstantiation(structType, propertyAssignments)
+        }
+
       case CallTarget.Value(_) => target.get.flatMap(functionValueCall)
-      case CallTarget.MultiFunction(mf) => directCall(mf.targetVariable)
+      case CallTarget.MultiFunction(mf) => directCall(TargetRepresentableTranspiler.transpile(mf))
       case CallTarget.Dynamic(name) => directCall(name.asVariable)
     }
   }

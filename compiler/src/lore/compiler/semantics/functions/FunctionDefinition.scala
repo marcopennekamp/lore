@@ -2,12 +2,11 @@ package lore.compiler.semantics.functions
 
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.feedback.{Feedback, Reporter}
-import lore.compiler.phases.transpilation.RuntimeNames
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionDefinition.CannotInstantiateFunction
 import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
 import lore.compiler.syntax.ExprNode
-import lore.compiler.target.{Target, TargetIdentifiable}
+import lore.compiler.target.TargetRepresentable
 import lore.compiler.types.{Fit, Type, TypeVariable}
 
 /**
@@ -22,7 +21,7 @@ class FunctionDefinition(
   val signature: FunctionSignature,
   val typeParameters: Vector[TypeVariable],
   val bodyNode: Option[ExprNode],
-) extends Positioned with TargetIdentifiable {
+) extends Positioned with TargetRepresentable {
   override val position: Position = signature.position
   override def toString = s"${if (isAbstract) "abstract " else ""}$name(${signature.parameters.mkString(", ")})"
 
@@ -35,8 +34,6 @@ class FunctionDefinition(
     * Creates an immutable type scope that allows access to the function's type parameters.
     */
   def getTypeScope(parentScope: TypeScope): TypeScope = ImmutableTypeScope.from(typeParameters, parentScope)
-
-  override val targetVariable: Target.Variable = RuntimeNames.functionDefinition(this)
 
   /**
     * This is a variable because it may be transformed during the course of the compilation.

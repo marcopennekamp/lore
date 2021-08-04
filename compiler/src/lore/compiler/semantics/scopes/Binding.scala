@@ -1,12 +1,12 @@
 package lore.compiler.semantics.scopes
 
-import lore.compiler.target.TargetIdentifiable
+import lore.compiler.target.TargetRepresentable
 
 /**
   * A binding is any named entity used in an expression context. For example, variables and multi-functions are both
   * bindings.
   */
-trait Binding extends TargetIdentifiable {
+trait Binding extends TargetRepresentable {
   def name: String
   def isMutable: Boolean = false
 }

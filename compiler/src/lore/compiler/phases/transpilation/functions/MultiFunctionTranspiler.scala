@@ -9,13 +9,13 @@ import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefin
 import lore.compiler.target.Target
 import lore.compiler.target.Target.TargetStatement
 import lore.compiler.target.TargetDsl.{StringExtension, VariableExtension}
-import lore.compiler.types.Type
 
 class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry, symbolHistory: SymbolHistory) {
 
+  private val targetName = RuntimeNames.multiFunction(mf).name
   private val properties = MultiFunctionProperties(mf)
 
-  private implicit val variableProvider: TemporaryVariableProvider = new TemporaryVariableProvider(s"${mf.targetVariable.name}__")
+  private implicit val variableProvider: TemporaryVariableProvider = new TemporaryVariableProvider(s"${targetName}__")
 
   def transpile(): Vector[TargetStatement] = {
     if (properties.isSingleFunction) {
@@ -26,8 +26,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     }
 
     // Phase 1: Transpile type variables.
-    val (typeVariableStatements, typeVariables) = transpiledInputTypeParameters
-    implicit val runtimeTypeVariables: RuntimeTypeVariables = typeVariables
+    implicit val (typeVariableStatements, runtimeTypeVariables) = transpiledInputTypeParameters
 
     // Phase 2: Transpile functions.
     val functionStatements = mf.functions.filterNot(_.isAbstract).flatMap(FunctionTranspiler.transpile)
@@ -44,7 +43,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
 
     val body = Target.Block(loggingStatements ++ dispatchInput.gatherArgumentTypes() ++ dispatchBehavior.transpileDispatchCall())
     val multiFunctionDeclaration = Target.Function(
-      mf.targetVariable.name,
+      targetName,
       dispatchInput.parameters,
       body,
       shouldExport = true
@@ -59,7 +58,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
     */
   private def transpileSingleFunction(function: FunctionDefinition): Vector[TargetStatement] = {
     implicit val runtimeTypeVariables: RuntimeTypeVariables = Map.empty
-    FunctionTranspiler.transpile(function, mf.targetVariable.name, shouldExport = true)
+    FunctionTranspiler.transpile(function, targetName, shouldExport = true)
   }
 
   /**

@@ -8,5 +8,5 @@ import lore.compiler.types.Type
   * A local or global variable.
   */
 case class Variable(name: String, tpe: Type, override val isMutable: Boolean) extends TypedBinding {
-  override lazy val targetVariable: Target.Variable = RuntimeNames.localVariable(name)
+  lazy val targetVariable: Target.Variable = RuntimeNames.localVariable(name)
 }

@@ -1,6 +1,7 @@
 package lore.compiler.phases.transpilation
 
 import lore.compiler.core.CompilationException
+import lore.compiler.phases.transpilation.structures.DeclaredSchemaTranspiler
 import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.target.Target
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
@@ -80,7 +81,7 @@ object TypeTranspiler {
       case BasicType.Boolean => api.boolean
       case BasicType.String => api.string
       case TupleType.UnitType => RuntimeApi.tuples.unitType
-      case declaredType: DeclaredType => RuntimeNames.declaredType(declaredType) // TODO (schemas): Access interned types if the declared schema is not constant.
+      case dt: DeclaredType => transpileSchemaInstantiation(rec)(dt.schema, dt.typeArguments)
       case SumType(types) =>
         val args = types.map(rec).toVector
         if (simplifyAtRuntime) RuntimeApi.sums.simplified(args) else RuntimeApi.sums.tpe(args)
@@ -97,6 +98,25 @@ object TypeTranspiler {
         ))
       case SymbolType(name) => symbolHistory.targetType(name)
     }
+  }
+
+  /**
+    * Transpiles an instantiation of the given declared schema with the given type arguments. This is used to
+    * transpile declared types known at compile time. If the schema is constant, the representative of the type is
+    * returned.
+    *
+    * Note that even though struct types can also contain open property types, this function will never be able to
+    * know about any of them, because it transpiles declared types known at compile time. Hence, a struct type without
+    * type arguments but with potential open properties will still compile down to its representative.
+    */
+  private def transpileSchemaInstantiation(rec: Type => TargetExpression)(
+    schema: DeclaredSchema,
+    typeArguments: Vector[Type],
+  )(implicit symbolHistory: SymbolHistory): TargetExpression = {
+    if (schema.isConstant) {
+      return RuntimeNames.schema.representative(schema)
+    }
+    DeclaredSchemaTranspiler.getSchemaTranspiler(schema).transpileSchemaInstantiation(Target.List(typeArguments.map(rec)))
   }
 
 }

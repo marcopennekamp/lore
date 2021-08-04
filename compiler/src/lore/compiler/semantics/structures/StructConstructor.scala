@@ -1,10 +1,8 @@
 package lore.compiler.semantics.structures
 
 import lore.compiler.core.{Position, Positioned}
-import lore.compiler.phases.transpilation.RuntimeNames
 import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.semantics.scopes.TypedBinding
-import lore.compiler.target.Target
 import lore.compiler.types.{FunctionType, StructType}
 
 /**
@@ -22,5 +20,4 @@ case class StructConstructor(structType: StructType) extends Positioned with Typ
   )
 
   override val tpe: FunctionType = signature.functionType
-  override val targetVariable: Target.Variable = RuntimeNames.constructor(structType.schema)
 }

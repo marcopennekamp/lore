@@ -103,16 +103,25 @@ object RuntimeApi {
   object traits {
     implicit val base = named("traits")(RuntimeApi.base)
 
-    def schema(name: String, supertraits: Vector[TargetExpression], inheritedShapeType: TargetExpression) = named("schema").call(name.asLiteral, Target.List(supertraits), inheritedShapeType)
-    def tpe(schema: TargetExpression) = named("type").call(schema)
+    def schema(name: String, typeParameters: Vector[TargetExpression], supertraits: Vector[TargetExpression], inheritedShapeType: TargetExpression) = {
+      named("schema").call(name.asLiteral, Target.List(typeParameters), Target.List(supertraits), inheritedShapeType)
+    }
+    def tpe(schema: TargetExpression, typeArguments: TargetExpression) = named("type").call(schema, typeArguments)
   }
 
   object structs {
     implicit val base = named("structs")(RuntimeApi.base)
 
-    def schema(name: String, supertraits: Vector[TargetExpression], propertyTypes: TargetExpression) = named("schema").call(name.asLiteral, Target.List(supertraits), propertyTypes)
-    def tpe(schema: TargetExpression, isArchetype: TargetExpression, propertyTypes: TargetExpression) = named("type").call(schema, isArchetype, propertyTypes)
+    def schema(name: String, typeParameters: Vector[TargetExpression], supertraits: Vector[TargetExpression], propertyTypes: TargetExpression, propertyOrder: Vector[String]) = {
+      named("schema").call(name.asLiteral, Target.List(typeParameters), Target.List(supertraits), propertyTypes, Target.List(propertyOrder.map(_.asLiteral)))
+    }
+    def tpe(schema: TargetExpression, typeArguments: TargetExpression, propertyTypes: TargetExpression) = {
+      named("type").call(schema, typeArguments, propertyTypes)
+    }
     def value(properties: TargetExpression, tpe: TargetExpression) = named("value").call(properties, tpe)
+    def getConstructor(schema: TargetExpression, typeArguments: TargetExpression, instantiate: TargetExpression) = {
+      named("getConstructor").call(schema, typeArguments, instantiate)
+    }
   }
 
   object utils {

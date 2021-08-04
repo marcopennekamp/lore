@@ -1,16 +1,12 @@
 package lore.compiler.semantics.functions
 
 import lore.compiler.feedback.{Feedback, Reporter}
-import lore.compiler.phases.transpilation.RuntimeNames
 import lore.compiler.semantics.scopes.Binding
-import lore.compiler.target.Target
 import lore.compiler.types.TupleType
 
 case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefinition]) extends Binding {
 
   val hierarchy: DispatchHierarchy = DispatchHierarchyBuilder.build(this)
-
-  override val targetVariable: Target.Variable = RuntimeNames.multiFunction(this)
 
   /**
     * Resolves a multiple dispatch application of the multi-function for the given type. The empty fit and ambiguous

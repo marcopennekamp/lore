@@ -1,30 +1,31 @@
 package lore.compiler.phases.transpilation.structures
 
+import lore.compiler.phases.transpilation.TypeTranspiler.RuntimeTypeVariables
 import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.phases.transpilation.{RuntimeApi, RuntimeNames, TypeTranspiler}
-import lore.compiler.target.Target.TargetStatement
-import lore.compiler.target.TargetDsl._
-import lore.compiler.types.TraitType
+import lore.compiler.semantics.Registry
+import lore.compiler.target.Target.TargetExpression
+import lore.compiler.types.TraitSchema
 
-object TraitTranspiler {
+case class TraitTranspiler(schema: TraitSchema)(
+  implicit symbolHistory: SymbolHistory,
+) extends DeclaredSchemaTranspiler.SchemaTranspiler[TraitSchema] {
 
   /**
-    * Transpiles a trait type to its target representation.
+    * Transpiles a trait schema to its target representation.
+    *
+    * The trait's inherited shape type is also supplied to the runtime to support trait/shape subtyping.
     */
-  def transpile(tpe: TraitType)(implicit symbolHistory: SymbolHistory): Vector[TargetStatement] = {
-    val schema = RuntimeApi.traits.schema(
-      tpe.name,
-      DeclaredTypeTranspiler.transpileSupertraits(tpe),
-      // The trait's inherited shape type needs to be supplied to the runtime to support trait/shape subtyping.
-      RuntimeApi.utils.`lazy`.of(TypeTranspiler.transpile(tpe.inheritedShapeType)(Map.empty, symbolHistory)),
-    )
+  override def transpileSchemaExpression(
+    typeParameters: Vector[TargetExpression],
+    supertraits: Vector[TargetExpression],
+  )(implicit runtimeTypeVariables: RuntimeTypeVariables): TargetExpression = {
+    val inheritedShapeTypeExpression = RuntimeApi.utils.`lazy`.of(TypeTranspiler.transpile(schema.inheritedShapeType))
+    RuntimeApi.traits.schema(schema.name, typeParameters, supertraits, inheritedShapeTypeExpression)
+  }
 
-    val varSchema = RuntimeNames.declaredSchema(tpe.schema)
-    val varType = RuntimeNames.declaredType(tpe)
-    Vector(
-      varSchema.declareAs(schema),
-      varType.declareAs(RuntimeApi.traits.tpe(varSchema)),
-    )
+  override def transpileSchemaInstantiation(typeArguments: TargetExpression): TargetExpression = {
+    RuntimeApi.traits.tpe(RuntimeNames.schema(schema), typeArguments)
   }
 
 }

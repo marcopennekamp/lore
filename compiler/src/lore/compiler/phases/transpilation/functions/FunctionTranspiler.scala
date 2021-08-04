@@ -14,7 +14,7 @@ import lore.compiler.target.{Target, TargetOperator}
 object FunctionTranspiler {
 
   def transpile(function: FunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry, runtimeTypeVariables: RuntimeTypeVariables, symbolHistory: SymbolHistory): Vector[TargetStatement] = {
-    transpile(function, function.targetVariable.name, shouldExport = false)
+    transpile(function, RuntimeNames.functionDefinition(function).name, shouldExport = false)
   }
 
   def transpile(
