@@ -27,7 +27,7 @@ case class StructTranspiler(schema: StructSchema)(
     val propertyTypes = Target.Dictionary(schema.definition.properties.map { property =>
       // As noted in the runtime's StructSchema definition, schema property types must be lazy to ensure that all
       // types are already initialized when the property type is initialized.
-      Target.Property(property.name.asName, RuntimeApi.utils.`lazy`.of(TypeTranspiler.transpile(property.tpe)(Map.empty, symbolHistory)))
+      Target.Property(property.name.asName, RuntimeApi.utils.`lazy`.of(TypeTranspiler.transpile(property.tpe)))
     })
     val propertyOrder = schema.definition.properties.map(_.name)
     RuntimeApi.structs.schema(schema.name, typeParameters, supertraits, propertyTypes, propertyOrder)
