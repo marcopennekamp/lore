@@ -44,18 +44,22 @@ trait TypeSchema {
     */
   def instantiate(arguments: Vector[Type]): Option[Type] = {
     var isValid = true
-    val result = instantiate(arguments, () => isValid = false, (_, _) => isValid = false)
+    val result = instantiate(arguments.map(Some(_)), () => isValid = false, (_, _) => isValid = false)
     if (isValid) Some(result) else None
   }
 
   /**
     * Implements the `instantiate` method above with the following additions:
+    *
     *   - If the arity of the type arguments is incorrect or type variable bounds are not kept, appropriate errors are
     *     reported.
+    *   - Missing type arguments default to the most general bound. Type arguments may be partially specified, for
+    *     example when the type expression evaluator couldn't resolve the first type argument, but it could resolve the
+    *     second type argument.
     *   - Even if the `instantiate` operation above would fail, this implementation produces a best-guess type instance
     *     so that follow-up type errors are kept at a minimum when the compiler continues compilation.
     */
-  def instantiate(arguments: Vector[Type], position: Position)(implicit reporter: Reporter): Type = {
+  def instantiate(arguments: Vector[Option[Type]], position: Position)(implicit reporter: Reporter): Type = {
     instantiate(
       arguments,
       () => reporter.error(TypeSchema.IllegalArity(this, arguments.length, position)),
@@ -64,7 +68,7 @@ trait TypeSchema {
   }
 
   private def instantiate(
-    arguments: Vector[Type],
+    arguments: Vector[Option[Type]],
     illegalArity: () => Unit,
     illegalBounds: (TypeVariable, Type) => Unit,
   ): Type = {
@@ -80,7 +84,7 @@ trait TypeSchema {
       val lowerBound = Type.substitute(parameter.lowerBound, assignments)
       val upperBound = Type.substitute(parameter.upperBound, assignments)
 
-      val argument = arguments.lift(index) match {
+      val argument = arguments.lift(index).flatten match {
         case Some(argument) => argument
 
         // If the parameter has no corresponding argument, we take a type variable bounds guess at the actual type.

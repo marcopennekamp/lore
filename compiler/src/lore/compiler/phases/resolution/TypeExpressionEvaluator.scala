@@ -33,14 +33,12 @@ object TypeExpressionEvaluator {
           schema.instantiate(Vector.empty, expression.position)
       }
 
-      case TypeExprNode.InstantiationNode(nameNode, argumentNodes, _) => typeScope.resolve(nameNode.name, nameNode.position).flatMap {
+      case TypeExprNode.InstantiationNode(nameNode, argumentNodes, _) => typeScope.resolve(nameNode.name, nameNode.position).map {
         case tpe: NamedType =>
           reporter.error(UnexpectedTypeArguments(tpe, expression))
-          Some(tpe)
+          tpe
         case schema: NamedSchema =>
-          argumentNodes.map(evaluate).sequence.map {
-            arguments => schema.instantiate(arguments, expression.position)
-          }
+          schema.instantiate(argumentNodes.map(evaluate), expression.position)
       }
 
       case TypeExprNode.SumNode(expressions, _) => expressions.map(evaluate).sequence.map(SumType.construct)
