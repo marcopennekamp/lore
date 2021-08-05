@@ -105,6 +105,16 @@ object ExprNode {
     position: Position,
   ) extends LeafNode with ExprNode with NamedNode
 
+  /**
+    * A constructor instantiation with manual assignment of type arguments. A constructor call with inferred type
+    * arguments is instead represented by [[SimpleCallNode]].
+    */
+  case class ConstructorNode(
+    nameNode: NameNode,
+    typeArguments: Vector[TypeExprNode],
+    position: Position,
+  ) extends LeafNode with ExprNode with NamedNode
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Collection expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

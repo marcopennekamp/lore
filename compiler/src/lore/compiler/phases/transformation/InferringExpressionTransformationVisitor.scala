@@ -90,6 +90,18 @@ class InferringExpressionTransformationVisitor(
         .map(instance => Expression.FixedFunctionValue(instance, position))
         .getOrElse(Expression.Hole(BasicType.Nothing, position))
 
+    case ConstructorNode(nameNode, typeExpressions, position) =>
+      scopeContext.currentScope.resolve(nameNode.value, position).map {
+        case structBinding: StructBinding =>
+          val typeArguments = typeExpressions.map(TypeExpressionEvaluator.evaluate)
+          val structType = structBinding.instantiate(typeArguments, position)
+          Expression.BindingAccess(structType.constructor, position)
+
+        case _ =>
+          reporter.error(StructExpected(nameNode.value, nameNode.position))
+          Expression.Hole(BasicType.Nothing, position)
+      }.getOrElse(Expression.Hole(BasicType.Nothing, position))
+
     case SymbolValueNode(name, position) => Expression.Symbol(name, position)
   }
 
@@ -441,7 +453,7 @@ object InferringExpressionTransformationVisitor {
   }
 
   case class StructExpected(name: String, override val position: Position) extends Feedback.Error(position) {
-    override def message: String = s"The type $name must be a struct to be instantiated."
+    override def message: String = s"The type $name doesn't have an associated constructor. It must be a struct."
   }
 
 }

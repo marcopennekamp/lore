@@ -150,14 +150,14 @@ class ExpressionParser(nameParser: NameParser, typeParser: TypeParser)(implicit 
     * All expressions immediately accessible via postfix dot notation.
     */
   private def accessible[_: P]: P[ExprNode] = {
-    P(literal | dynamicCall | simpleCall | call | fixedFunction | objectMap | variable | block | list | map | shape | symbol | enclosed)
+    P(literal | dynamicCall | simpleCall | call | constructor | fixedFunction | objectMap | variable | block | list | map | shape | symbol | enclosed)
   }
 
   /**
     * All expressions immediately accessible via postfix dot notation that can be used as call targets.
     */
   private def accessibleCallTarget[_: P]: P[ExprNode] = {
-    P(literal | fixedFunction | objectMap | variable | block | list | map | shape | symbol | enclosed)
+    P(literal | constructor | fixedFunction | objectMap | variable | block | list | map | shape | symbol | enclosed)
   }
 
   private def literal[_: P]: P[ExprNode] = {
@@ -169,6 +169,8 @@ class ExpressionParser(nameParser: NameParser, typeParser: TypeParser)(implicit 
   }
 
   private def dynamicCall[_: P]: P[ExprNode] = P(Index ~ "dynamic" ~~ Space.WS ~~ singleTypeArgument ~~ Space.WS ~~ arguments ~ Index).map(withPosition(ExprNode.DynamicCallNode))
+
+  private def constructor[_: P]: P[ExprNode] = P(Index ~ name ~ Space.WS ~~ typeArguments ~~ Index).map(withPosition(ExprNode.ConstructorNode))
 
   private def simpleCall[_: P]: P[ExprNode] = P(Index ~ name ~~ Space.WS ~~ arguments.rep(1) ~ Index).map {
     case (startIndex, name, argumentLists, endIndex) =>
