@@ -17,4 +17,8 @@ case class StructBinding(name: String, parameters: Vector[TypeVariable], tpe: St
     super.instantiate(arguments, position).asInstanceOf[StructType]
   }
   override def instantiate(assignments: Assignments): Type = Type.substitute(tpe, assignments)
+  override def toString: String = {
+    val parameterString = if (parameters.nonEmpty) s"[${parameters.mkString(", ")}]" else ""
+    s"$name$parameterString"
+  }
 }

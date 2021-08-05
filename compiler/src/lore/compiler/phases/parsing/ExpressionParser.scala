@@ -150,14 +150,14 @@ class ExpressionParser(nameParser: NameParser, typeParser: TypeParser)(implicit 
     * All expressions immediately accessible via postfix dot notation.
     */
   private def accessible[_: P]: P[ExprNode] = {
-    P(literal | dynamicCall | simpleCall | call | constructor | fixedFunction | objectMap | variable | block | list | map | shape | symbol | enclosed)
+    P(literal | dynamicCall | simpleCall | call | objectMap | constructor | fixedFunction | variable | block | list | map | shape | symbol | enclosed)
   }
 
   /**
     * All expressions immediately accessible via postfix dot notation that can be used as call targets.
     */
   private def accessibleCallTarget[_: P]: P[ExprNode] = {
-    P(literal | constructor | fixedFunction | objectMap | variable | block | list | map | shape | symbol | enclosed)
+    P(literal | objectMap | constructor | fixedFunction | variable | block | list | map | shape | symbol | enclosed)
   }
 
   private def literal[_: P]: P[ExprNode] = {
@@ -206,7 +206,7 @@ class ExpressionParser(nameParser: NameParser, typeParser: TypeParser)(implicit 
       ExprNode.ObjectEntryNode(nameNode, ExprNode.VariableNode(nameNode.value, position), position)
     }
     def entries = P((entry | shorthand).rep(sep = ",")).map(_.toVector)
-    P(Index ~ structName ~ "{" ~ entries ~ "}" ~ Index).map(withPosition(ExprNode.ObjectMapNode))
+    P(Index ~ structName ~~ Space.WS ~~ typeArguments.? ~ "{" ~ entries ~ "}" ~ Index).map(withPosition(ExprNode.ObjectMapNode))
   }
 
   private def variable[_: P]: P[ExprNode.VariableNode] = P(Index ~ identifier ~ Index).map(withPosition(ExprNode.VariableNode))

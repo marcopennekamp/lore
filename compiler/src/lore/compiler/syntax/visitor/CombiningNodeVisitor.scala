@@ -108,8 +108,10 @@ object CombiningNodeVisitor {
       // These ExprNodes contain nodes that are not TopLevelExprNodes, so we have to handle them specially.
       case TopLevelExprNode.VariableDeclarationNode(_, _, tpe, value, _) => visitor.visit(node, concat(visit(tpe), visit(value)))
       case ExprNode.AnonymousFunctionNode(parameters, body, _) => visitor.visit(node, concat(visit(parameters), visit(body)))
+      case ExprNode.FixedFunctionNode(_, argumentTypes, _) => visitor.visit(node, concat(visit(argumentTypes)))
+      case ExprNode.ConstructorNode(_, typeArguments, _) => visitor.visit(node, concat(visit(typeArguments)))
       case ExprNode.MapNode(kvs, _) => visitor.visit(node, concat(visit(kvs)))
-      case ExprNode.ObjectMapNode(_, entries, _) => visitor.visit(node, concat(visit(entries)))
+      case ExprNode.ObjectMapNode(_, typeArguments, entries, _) => visitor.visit(node, concat(visit(typeArguments.toVector.flatten), visit(entries)))
       case ExprNode.ShapeValueNode(properties, _) => visitor.visit(node, concat(visit(properties)))
       case ExprNode.CallNode(target, arguments, _) => visitor.visit(node, concat(visit(target), visit(arguments)))
       case ExprNode.DynamicCallNode(resultType, arguments, _) => visitor.visit(node, concat(visit(resultType), visit(arguments)))

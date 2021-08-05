@@ -10,6 +10,7 @@ function toString(none: None): String = 'None'
 struct Dragon
 
 function toString(some: Some[Dragon]): String = 'Oh shit, it\'s a dragon!'
+function toString(some: Some[[Dragon]]): String = 'They\'re everywhere!'
 
 
 function test(): [String] = {
@@ -17,5 +18,6 @@ function test(): [String] = {
   let stringOption = Some[String]('Hello, world!')
   let listOption = Some[[Int]]([1, 2, 3])
   let birdPlane = Some[Dragon](Dragon())
-  [toString(none), toString(stringOption), toString(listOption), toString(birdPlane)]
+  let dragons = Some[[Dragon]] { value = [Dragon(), Dragon(), Dragon()] }
+  [toString(none), toString(stringOption), toString(listOption), toString(birdPlane), toString(dragons)]
 }

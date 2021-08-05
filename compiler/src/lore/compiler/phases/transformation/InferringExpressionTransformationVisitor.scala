@@ -90,17 +90,11 @@ class InferringExpressionTransformationVisitor(
         .map(instance => Expression.FixedFunctionValue(instance, position))
         .getOrElse(Expression.Hole(BasicType.Nothing, position))
 
-    case ConstructorNode(nameNode, typeExpressions, position) =>
-      scopeContext.currentScope.resolve(nameNode.value, position).map {
-        case structBinding: StructBinding =>
-          val typeArguments = typeExpressions.map(TypeExpressionEvaluator.evaluate)
-          val structType = structBinding.instantiate(typeArguments, position)
-          Expression.BindingAccess(structType.constructor, position)
-
-        case _ =>
-          reporter.error(StructExpected(nameNode.value, nameNode.position))
-          Expression.Hole(BasicType.Nothing, position)
-      }.getOrElse(Expression.Hole(BasicType.Nothing, position))
+    case ConstructorNode(nameNode, typeArgumentNodes, position) =>
+      ConstructorTransformation.getConstructor(scopeContext.currentScope, nameNode.value, Some(typeArgumentNodes), nameNode.position) match {
+        case Some(constructor) => Expression.BindingAccess(constructor, position)
+        case None => Expression.Hole(BasicType.Nothing, position)
+      }
 
     case SymbolValueNode(name, position) => Expression.Symbol(name, position)
   }
@@ -243,36 +237,14 @@ class InferringExpressionTransformationVisitor(
       typingJudgments = typingJudgments :+ TypingJudgment.LeastUpperBound(elementType, expressions.map(_.tpe), position)
       Expression.ListConstruction(expressions, ListType(elementType), position)
 
-    case ObjectMapNode(nameNode, entryNodes, position) =>
-      def handleConstantStruct(structType: StructType) = {
-        val entries = entryNodes.zip(expressions).map { case (ObjectEntryNode(nameNode, _, _), expression) => nameNode.value -> expression }
-        addJudgmentsFrom(
-          InstantiationTransformation.transformMapStyleInstantiation(structType, entries, position)
-        )
-      }
+    case ObjectMapNode(nameNode, typeArgumentNodes, entryNodes, position) =>
+      ConstructorTransformation.getConstructor(scopeContext.currentScope, nameNode.value, typeArgumentNodes, nameNode.position) match {
+        case Some(constructor) =>
+          val entries = entryNodes.zip(expressions).map { case (ObjectEntryNode(nameNode, _, _), expression) => nameNode.value -> expression }
+          addJudgmentsFrom(
+            ConstructorTransformation.transformMapStyleInstantiation(constructor.structType, entries, position)
+          )
 
-      typeScope.resolve(nameNode.value, nameNode.position) match {
-        // Note that via constant type aliases, the type scope can also indirectly contain struct types with their type
-        // arguments already set.
-        // TODO (schemas): Perhaps we should add the types of constant alias schemas directly to the type scope instead
-        //                 of the alias schema itself. This would allow us to simply match on a StructType here.
-        // TODO (schemas): This doesn't yet cover the case where a parameterized alias is used to construct a struct.
-        case Some(schema: AliasSchema) if schema.isConstant && schema.representative.isInstanceOf[StructType] =>
-          handleConstantStruct(schema.representative.asInstanceOf[StructType])
-
-        case Some(schema: StructSchema) =>
-          if (!schema.isConstant) {
-            // TODO (schemas): Implement.
-            ???
-          }
-          handleConstantStruct(schema.representative)
-
-        case Some(schema) =>
-          reporter.error(StructExpected(nameNode.value, nameNode.position))
-          val tpe = if (schema.isConstant) schema.representative else BasicType.Nothing
-          Expression.Hole(tpe, position)
-
-        // A "type not found" error has already been reported, so there is no need to report an additional error.
         case None => Expression.Hole(BasicType.Nothing, position)
       }
 
@@ -450,10 +422,6 @@ object InferringExpressionTransformationVisitor {
   case class DynamicFunctionNameExpected(node: ExprNode.DynamicCallNode) extends Feedback.Error(node) {
     override def message: String = "Dynamic calls require a string literal as their first argument, which represents the" +
       " name of the function. Since the name must be available at compile-time, it must be a constant."
-  }
-
-  case class StructExpected(name: String, override val position: Position) extends Feedback.Error(position) {
-    override def message: String = s"The type $name doesn't have an associated constructor. It must be a struct."
   }
 
 }

@@ -134,6 +134,7 @@ object ExprNode {
 
   case class ObjectMapNode(
     nameNode: NameNode,
+    typeArguments: Option[Vector[TypeExprNode]],
     entries: Vector[ObjectEntryNode],
     position: Position,
   ) extends XaryNode(entries.map(_.expression)) with ExprNode with NamedNode

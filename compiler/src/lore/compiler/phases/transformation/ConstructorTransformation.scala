@@ -3,11 +3,53 @@ package lore.compiler.phases.transformation
 import lore.compiler.core.Position
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.inference.TypingJudgment
+import lore.compiler.phases.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
+import lore.compiler.semantics.scopes.{BindingScope, StructBinding, TypeScope}
+import lore.compiler.semantics.structures.{StructConstructor, StructPropertyDefinition}
+import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.StructType
 
-object InstantiationTransformation {
+object ConstructorTransformation {
+
+  case class StructExpected(name: String, override val position: Position) extends Feedback.Error(position) {
+    override def message: String = s"The type $name doesn't have an associated constructor. It must be a struct."
+  }
+
+  /**
+    * Gets a constructor of the struct type identified by `name`, optionally instantiating the struct schema with the
+    * given type arguments. If the struct's schema has type parameters and no type arguments are supplied, they will be
+    * inferred.
+    */
+  def getConstructor(
+    scope: BindingScope,
+    name: String,
+    typeArgumentNodes: Option[Vector[TypeExprNode]],
+    position: Position,
+  )(implicit typeScope: TypeScope, reporter: Reporter): Option[StructConstructor] = {
+    scope.resolve(name, position).flatMap {
+      case structBinding: StructBinding =>
+        val structType = typeArgumentNodes match {
+          case Some(nodes) =>
+            val typeArguments = nodes.map(TypeExpressionEvaluator.evaluate)
+            structBinding.instantiate(typeArguments, position)
+
+          case None =>
+            println(structBinding)
+            if (structBinding.isConstant) structBinding.representative
+            else {
+              // TODO (schemas): This is where we have to basically translate all type checks that `instantiate` does on
+              //                 the fly to typing judgments.
+              ???
+            }
+        }
+        Some(structType.constructor)
+
+      case _ =>
+        reporter.error(StructExpected(name, position))
+        None
+    }
+  }
 
   case class DuplicateProperty(name: String, override val position: Position) extends Feedback.Error(position) {
     override def message: String = s"The property $name occurs more than once in the instantiation. Properties must be unique here."
