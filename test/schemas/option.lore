@@ -1,0 +1,21 @@
+trait Option[+A]
+struct Some[+A] extends Option[A] { value: A }
+struct None extends Option[Nothing]
+
+function toString(option: Option[A]): String where A
+function toString(some: Some[A]): String where A = 'Some(${some.value})'
+function toString(none: None): String = 'None'
+
+
+struct Dragon
+
+function toString(some: Some[Dragon]): String = 'Oh shit, it\'s a dragon!'
+
+
+function test(): [String] = {
+  let none = None()
+  let stringOption = Some('Hello, world!')
+  let listOption = Some([1, 2, 3])
+  let birdPlane = Some(Dragon())
+  [toString(none), toString(stringOption), toString(listOption), toString(birdPlane)]
+}

@@ -31,7 +31,6 @@ function removeLast(array: NaiveArray[E]): Unit where E = {
 // TODO (schemas): This is a workaround until we add manual type specification to struct instantiation.
 type NaiveIntArray = NaiveArray[Int]
 
-// TODO (schemas): Add a Deno test case for this file.
 function test(): [Int] = {
   let array = NaiveIntArray([1, 2])
   append(array, 3)

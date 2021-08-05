@@ -1,3 +1,0 @@
-trait Option[+A]
-struct Some[open +A] extends Option[A] { value: A }
-struct None extends Option[Nothing]
