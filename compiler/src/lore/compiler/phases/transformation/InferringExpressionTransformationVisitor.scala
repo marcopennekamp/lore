@@ -10,7 +10,7 @@ import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
-import lore.compiler.semantics.scopes.{BindingScope, StructBinding, TypeScope, TypedBinding, Variable}
+import lore.compiler.semantics.scopes.{Binding, BindingScope, StructBinding, TypeScope, TypedBinding, Variable}
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.types._
@@ -280,11 +280,18 @@ class InferringExpressionTransformationVisitor(
 
     // Xary function calls.
     case SimpleCallNode(nameNode, _, position) =>
-      scopeContext.currentScope.resolve(nameNode.value, nameNode.position).map {
+      def handleBinding(binding: Binding): Expression.Call = binding match {
         case mf: MultiFunctionDefinition => addJudgmentsFrom(FunctionTyping.multiFunctionCall(mf, expressions, position))
-        case structBinding: StructBinding => ??? // TODO (schemas): Implement.
+        case structBinding: StructBinding =>
+          if (structBinding.isConstant) handleBinding(structBinding.representative.constructor)
+          else ??? // TODO (schemas): Implement.
         case binding: TypedBinding => transformValueCall(Expression.BindingAccess(binding, nameNode.position), expressions, position)
-      }.getOrElse(Expression.Hole(BasicType.Nothing, position))
+      }
+
+      scopeContext.currentScope
+        .resolve(nameNode.value, nameNode.position)
+        .map(handleBinding)
+        .getOrElse(Expression.Hole(BasicType.Nothing, position))
 
     case node@DynamicCallNode(resultTypeNode, _, position) =>
       // The first argument to the dynamic call must be a constant function name.
