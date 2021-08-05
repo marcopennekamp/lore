@@ -10,7 +10,7 @@ import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
-import lore.compiler.semantics.scopes.{BindingScope, TypeScope, TypedBinding, Variable}
+import lore.compiler.semantics.scopes.{BindingScope, StructBinding, TypeScope, TypedBinding, Variable}
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.types._
@@ -56,6 +56,14 @@ class InferringExpressionTransformationVisitor(
           val functionType = new InferenceVariable
           typingJudgments = typingJudgments :+ TypingJudgment.MultiFunctionValue(functionType, mf, position)
           Expression.MultiFunctionValue(mf, functionType, position)
+
+        case structBinding: StructBinding =>
+          // TODO (schemas): Convert struct bindings to constructors immediately. Possibly needs to infer type
+          //                 arguments, either with built-in judgments or a new specialized judgment. The former should
+          //                 be possible because there is only one constructor candidate, in contrast to many
+          //                 candidates for multi-function values.
+          if (structBinding.isConstant) Expression.BindingAccess(structBinding.representative.constructor, position)
+          else ???
 
         case binding: TypedBinding => Expression.BindingAccess(binding, position)
       }.getOrElse(Expression.Hole(BasicType.Nothing, position))
@@ -274,6 +282,7 @@ class InferringExpressionTransformationVisitor(
     case SimpleCallNode(nameNode, _, position) =>
       scopeContext.currentScope.resolve(nameNode.value, nameNode.position).map {
         case mf: MultiFunctionDefinition => addJudgmentsFrom(FunctionTyping.multiFunctionCall(mf, expressions, position))
+        case structBinding: StructBinding => ??? // TODO (schemas): Implement.
         case binding: TypedBinding => transformValueCall(Expression.BindingAccess(binding, nameNode.position), expressions, position)
       }.getOrElse(Expression.Hole(BasicType.Nothing, position))
 

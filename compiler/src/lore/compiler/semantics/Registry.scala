@@ -4,8 +4,8 @@ import lore.compiler.core.Position
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.Registry.MultiFunctionNotFound
 import lore.compiler.semantics.functions.MultiFunctionDefinition
-import lore.compiler.semantics.scopes.{Binding, BindingScope, ImmutableTypeScope, TypeScope}
-import lore.compiler.semantics.structures.{SchemaDefinition, StructConstructor}
+import lore.compiler.semantics.scopes.{Binding, BindingScope, ImmutableTypeScope, StructBinding, TypeScope}
+import lore.compiler.semantics.structures.SchemaDefinition
 import lore.compiler.types.{DeclaredSchema, DeclaredTypeHierarchy, NamedSchema, StructType}
 import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtension}
 
@@ -32,10 +32,13 @@ case class Registry(
   val typeScope: TypeScope = ImmutableTypeScope(types, None)
 
   /**
-    * The global binding scope backed by the registry, containing multi-functions and struct constructors.
+    * The global binding scope backed by the registry, containing multi-functions and struct bindings.
+    *
+    * The binding scope does not contain plain struct constructors, even for constant schemas. A [[StructBinding]] is
+    * used in all cases.
     */
   val bindingScope: BindingScope = new BindingScope {
-    override protected def local(name: String): Option[Binding] = multiFunctions.get(name).orElse(getStructConstructor(name))
+    override protected def local(name: String): Option[Binding] = multiFunctions.get(name).orElse(getStructBinding(name))
     override protected def add(name: String, entry: Binding): Unit = {
       throw new UnsupportedOperationException(s"You may not add bindings to the Registry via its BindingScope interface. Name: $name. Binding: $entry.")
     }
@@ -49,18 +52,17 @@ case class Registry(
   }
 
   /**
-    * Gets the constructor of the struct with the given name. Type aliases are also supported directly.
+    * Gets a struct binding from a struct schema with the given name. If the name refers to a type alias that
+    * represents a struct type, the struct binding will be able to instantiate the correct struct type given the type
+    * alias's type parameters.
     */
-  def getStructConstructor(name: String): Option[StructConstructor] = {
-    // TODO (schemas): Using `representative` on the struct schema is a temporary fix that only works for struct types
-    //                 without type parameters.
-    // TODO (schemas): This doesn't yet cover the case where a parameterized alias is used to construct a struct.
-    typeScope.getStructSchema(name).map(_.representative.constructor).orElse {
-      typeScope.getAliasSchema(name)
-        .filter(_.isConstant)
-        .map(_.representative)
-        .filterType[StructType]
-        .map(_.constructor)
+  def getStructBinding(name: String): Option[StructBinding] = {
+    typeScope.getStructSchema(name).map(schema => StructBinding(name, schema.parameters, schema.representative)).orElse {
+      typeScope.getAliasSchema(name).flatMap { aliasSchema =>
+        Some(aliasSchema.representative)
+          .filterType[StructType]
+          .map(StructBinding(name, aliasSchema.parameters, _))
+      }
     }
   }
 
