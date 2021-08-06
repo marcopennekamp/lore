@@ -1,0 +1,34 @@
+@where A
+domain list: [A]
+
+  @where B >: A, I, R >: I
+  func fold(initial: I, f: (R, B) => R): R = do
+    let mut result: R = initial
+    for element <- list
+      result = f(result, element)
+    end
+    result
+  end
+
+  func symmetricPairs(): [(A, A)] = do
+    let mut result: [(A, A)] = []
+    let length = length(list)
+    let mut i = 0
+    while i < length
+      let mut j = i
+      while j < length
+        result = result :+ (list |> get(i), list |> get(j))
+        j += 1
+      end
+      i += 1
+    end
+    result
+  end
+
+  func toString(): String = do
+    // This could be solved with a `map`, but illustrates the single-line `for` syntax.
+    let strings = for a <- list yield toString(a)
+    strings |> stringJoin(', ')
+  end
+
+end
