@@ -1,8 +1,9 @@
 type Status = #ok | #error
+type Result[A] = { status: Status, result: A }
 
-function read1(): { status: Status, result: String } = %{ status: #ok, result: 'I am a result!' }
-function read2(): { status: Status, result: String } = %{ status: #error, result: '' }
-function read3(): { status: Status, result: String } = %{ status: #ok, result: 'I am another result!' }
+function read1(): Result[String] = %{ status: #ok, result: 'I am a result!' }
+function read2(): Result[String] = %{ status: #error, result: '' }
+function read3(): Result[String] = %{ status: #ok, result: 'I am another result!' }
 
 function test(): [String] = {
   let entries = [read1(), read2(), read3()]
