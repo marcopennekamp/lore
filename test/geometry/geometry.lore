@@ -10,10 +10,8 @@ function area(shape: Shape): Real = width(shape) * height(shape)
 
 struct BoundingBox extends Shape { x: Real, xEnd: Real, y: Real, yEnd: Real }
 
-// The same suggestions about a property syntax apply here. This is quite verbose, but alright for the MVL, since
-// we should focus on functionality/correctness first, not syntactic nicety.
-function width(rect: Rectangle): Real = rect.width
-function height(rect: Rectangle): Real = rect.height
+function width(box: BoundingBox): Real = box.xEnd - box.x
+function height(box: BoundingBox): Real = box.yEnd - box.y
 
 
 struct Circle extends Shape { x: Real, y: Real, radius: Real }
@@ -26,8 +24,10 @@ function area(circle: Circle): Real = circle.radius * circle.radius * pi()
 
 struct Rectangle extends Shape { x: Real, y: Real, width: Real, height: Real }
 
-function width(box: BoundingBox): Real = box.xEnd - box.x
-function height(box: BoundingBox): Real = box.yEnd - box.y
+// The same suggestions about a property syntax apply here. This is quite verbose, but alright for the MVL, since
+// we should focus on functionality/correctness first, not syntactic nicety.
+function width(rect: Rectangle): Real = rect.width
+function height(rect: Rectangle): Real = rect.height
 
 
 // It could be quite elegant, once we allow pattern matching, to specify parameters as name(_: Circle) if the name is
