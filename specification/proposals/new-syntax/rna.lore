@@ -1,0 +1,27 @@
+type DnaNucleotide = #a | #t | #g | #c
+type RnaNucleotide = #a | #u | #g | #c
+
+type Dna = [DnaNucleotide]
+type Rna = [RnaNucleotide]
+
+func transcribe(nucleotide: DnaNucleotide): RnaNucleotide
+func transcribe(n: #a): #u = #u
+func transcribe(n: #t): #a = #a
+func transcribe(n: #g): #c = #c
+func transcribe(n: #c): #g = #g
+
+func transcribe(dna: Dna): Rna = map(dna, transcribe)
+
+func toString(rna: Rna): String = rna |> map(symbolName) |> concat
+
+func test(): [String] = do
+  let cases = [
+    [#a],
+    [#t],
+    [#g],
+    [#c],
+    [#a, #c, #g, #t, #g, #g, #t, #c, #t, #t, #a, #a]
+  ]
+
+  map(cases, dna => dna |> transcribe |> toString)
+end

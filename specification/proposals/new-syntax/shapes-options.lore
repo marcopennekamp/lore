@@ -1,0 +1,23 @@
+type Animal = %{ name: String, breed: String }
+type Options = %{ showTeeth: Boolean, volume: Real }
+
+func bark(animal: Animal, options: Options): String = 'Your ${animal.breed} ${animal.name} barks at a ${volumeMeaning(options.volume)} volume${showingTeeth(options.showTeeth)}!'
+
+// Note: Each case of the `cond` expects a single expression, not a block. If a block is desired, `do-end` needs to be used.
+func volumeMeaning(volume: Real): String = cond
+  volume < 50 => 'real quiet'
+  volume < 60 => 'pretty normal'
+  volume < 70 => 'quite loud'
+  volume < 80 => 'wall-banging'
+  true => 'MADNESS-INDUCING'
+end
+
+func showingTeeth(showTeeth: Boolean): String = do
+  if showTeeth then ' showing sharp teeth' else ''
+end
+
+func test(): String = do
+  let dog = %{ name: 'Robby', breed: 'dog' }
+  let options = %{ showTeeth: true, volume: 80 }
+  bark(dog, options)
+end

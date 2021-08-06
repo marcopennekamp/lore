@@ -1,0 +1,60 @@
+trait Shape
+
+func width(shape: Shape): Real
+func height(shape: Shape): Real
+
+func area(shape: Shape): Real = width(shape) * height(shape)
+
+
+struct BoundingBox extends Shape
+  x: Real, xEnd: Real
+  y: Real, yEnd: Real
+end
+
+// Note: `domain` is a syntactic trick that prepends the specified parameters to each function's parameters. `domain`
+//       may also receive `@where` and `@given` annotations, which are also applied to all functions. `domain` may only
+//       contain function declarations.
+domain box: BoundingBox
+  func width(): Real = box.xEnd - box.x
+  func height(): Real = box.yEnd - box.y
+end
+
+
+// Note: This is an alternative struct syntax that doesn't require a newline.
+struct Circle(x: Real, y: Real, radius: Real) extends Shape
+
+domain circle: Circle
+  func width(): Real = circle.radius
+  func height(): Real = circle.radius
+  func area(): Real = circle.radius * circle.radius * pi
+end
+
+
+struct Rectangle extends Shape
+  x: Real, y: Real
+  width: Real, height: Real
+end
+
+domain rectangle: Rectangle
+  func width(): Real = rectangle.width
+  func height(): Real = rectangle.height
+end
+
+
+func name(shape: Shape): String
+func name(rectangle: Rectangle): String = 'rect'
+func name(box: BoundingBox): String = 'box'
+func name(circle: Circle): String = 'circle'
+
+
+let pi: Real = 3.14159265359
+
+
+func test(): [Real] = do
+  let shapes = [
+    BoundingBox(0, 10, -5, 20),
+    Circle(0, 5, 2.7),
+    Rectangle(-5, -5, 20, 77)
+  ]
+  shapes |> map(area)
+end
