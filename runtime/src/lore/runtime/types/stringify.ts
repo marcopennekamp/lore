@@ -20,6 +20,7 @@ export function stringify(type: Type): string {
     case Kind.Boolean: return 'Boolean'
     case Kind.String: return 'String'
 
+    case Kind.Trait: return (<TraitType> type).schema.name
     case Kind.Struct: {
       const struct = <StructType> type
       if (struct.propertyTypes) {
@@ -27,7 +28,6 @@ export function stringify(type: Type): string {
       }
       return struct.schema.name
     }
-    case Kind.Trait: return (<TraitType> type).schema.name
 
     case Kind.Sum: return stringifyXary(<XaryType> type, " | ")
     case Kind.Intersection: return stringifyXary(<XaryType> type, " & ")

@@ -48,8 +48,8 @@ export class SubtypingEnvironment {
         break
 
       // TODO (schemas): Remember to honor the flag `hasMultipleParameterizedInheritance`.
-      case Kind.Struct:
       case Kind.Trait:
+      case Kind.Struct:
         if (t2.kind === Kind.Shape) {
           if (t1.kind === Kind.Struct && this.structSubtypeShape(<StructType> t1, <ShapeType> t2)) {
             return true

@@ -57,6 +57,7 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
   (t1: BooleanType, t2: BooleanType) => true,
   (t1: StringType, t2: StringType) => true,
 
+  (t1: TraitType, t2: TraitType) => areDeclaredTypesEqual(t1, t2),
   (t1: StructType, t2: StructType) => {
     if (!areDeclaredTypesEqual(t1, t2)) {
       return false
@@ -75,7 +76,6 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
     }
     return true
   },
-  (t1: TraitType, t2: TraitType) => areDeclaredTypesEqual(t1, t2),
 
   // To prove that two sum or intersection types are equal, we find for each part in t1 an equal part in t2
   // and vice versa.

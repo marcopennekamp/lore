@@ -54,8 +54,8 @@ export function variables(type: Type): TinySet<TypeVariable> {
         TinySet.add(result, <TypeVariable> t)
         break
 
-      case Kind.Struct:
       case Kind.Trait:
+      case Kind.Struct:
         break // TODO (schemas): Implement.
 
       case Kind.Intersection:
