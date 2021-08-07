@@ -9,8 +9,9 @@ import { SymbolType } from '../symbols.ts'
 import { TraitType } from '../traits.ts'
 import { TupleType } from '../tuples.ts'
 import { AnyType, BooleanType, IntType, NothingType, RealType, StringType } from './basic-types.ts'
+import { DeclaredType } from './declared-types.ts'
 import { PropertyTypes } from './property-types.ts'
-import { TypeVariable } from './type-variables.ts'
+import { Assignments, TypeVariable } from './type-variables.ts'
 import { Type } from './types.ts'
 
 /**
@@ -57,23 +58,24 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
   (t1: StringType, t2: StringType) => true,
 
   (t1: StructType, t2: StructType) => {
-    if (t1.schema === t2.schema) {
-      // Structs are only equal if all of their open properties agree as well. This is especially crucial for the
-      // dispatch cache, where a single different open property type may change the target function.
-      // The equality check assumes that a struct's open property types are either undefined or fully defined, i.e.
-      // contain all possible keys. That invariant allows us to iterate through one struct's propertyTypes object and
-      // still make sure that all keys are covered. There cannot be an open property type in the other struct that we
-      // missed.
-      if (t1.propertyTypes) {
-        return arePropertyTypesEqualTo(t1.propertyTypes, t2)
-      } else if (t2.propertyTypes) {
-        return arePropertyTypesEqualTo(t2.propertyTypes, t1)
-      }
-      return true
+    if (!areDeclaredTypesEqual(t1, t2)) {
+      return false
     }
-    return false
+
+    // Structs are only equal if all of their open properties agree as well. This is especially crucial for the
+    // dispatch cache, where a single different open property type may change the target function.
+    // The equality check assumes that a struct's open property types are either undefined or fully defined, i.e.
+    // contain all possible keys. That invariant allows us to iterate through one struct's propertyTypes object and
+    // still make sure that all keys are covered. There cannot be an open property type in the other struct that we
+    // missed.
+    if (t1.propertyTypes) {
+      return arePropertyTypesEqualTo(t1.propertyTypes, t2)
+    } else if (t2.propertyTypes) {
+      return arePropertyTypesEqualTo(t2.propertyTypes, t1)
+    }
+    return true
   },
-  (t1: TraitType, t2: TraitType) => false, // If the traits are not referentially equal, they cannot be equal.
+  (t1: TraitType, t2: TraitType) => areDeclaredTypesEqual(t1, t2),
 
   // To prove that two sum or intersection types are equal, we find for each part in t1 an equal part in t2
   // and vice versa.
@@ -123,6 +125,34 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
   // types aren't equal.
   (s1: SymbolType, s2: SymbolType) => false,
 ]
+
+/**
+ * Checks whether the given declared types have an equal schema and equal argument types. This does **not** check the
+ * open properties of a struct.
+ */
+function areDeclaredTypesEqual(d1: DeclaredType, d2: DeclaredType): boolean {
+  if (d1.schema !== d2.schema) {
+    return false
+  }
+
+  const arguments1 = d1.typeArguments
+  if (!arguments1) {
+    // The common schema is constant and thus the two types are equal.
+    return true
+  }
+
+  // Having the same schema, the two types must have the same number of type arguments. The cast gets rid of the
+  // `undefined`, which we don't need to check explicitly as `arguments1` is already determined to be defined. Since
+  // the two types have the same schema, `arguments2` being `undefined` would be a bug.
+  const arguments2 = <Assignments> d2.typeArguments
+  for (let i = 0; i < arguments1.length; i += 1) {
+    const t1 = arguments1[i]
+    const t2 = arguments2[i]
+    if (!areEqual(t1, t2)) return false
+  }
+
+  return true
+}
 
 /**
  * Checks that the given property types are exactly equal to the property types found in the given struct type.

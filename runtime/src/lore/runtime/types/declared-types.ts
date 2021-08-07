@@ -9,7 +9,7 @@ export interface DeclaredType extends Type {
   schema: DeclaredTypeSchema
 
   /**
-   * The declared type's type argument. This field must be `undefined` if the schema is constant.
+   * The declared type's type argument. This field must and may only be `undefined` if the schema is constant.
    */
   typeArguments?: Assignments
 
