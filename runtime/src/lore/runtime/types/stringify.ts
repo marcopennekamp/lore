@@ -3,7 +3,7 @@ import { ListType } from '../lists.ts'
 import { MapType } from '../maps.ts'
 import { ShapeType } from '../shapes.ts'
 import { StructType } from '../structs.ts'
-import { TraitType } from '../traits.ts'
+import { DeclaredType } from './declared-types.ts'
 import { Kind } from './kinds.ts'
 import { PropertyTypes } from './property-types.ts'
 import { TypeVariable } from './type-variables.ts'
@@ -20,13 +20,14 @@ export function stringify(type: Type): string {
     case Kind.Boolean: return 'Boolean'
     case Kind.String: return 'String'
 
-    case Kind.Trait: return (<TraitType> type).schema.name
+    case Kind.Trait: return stringifyDeclaredType(<DeclaredType> type)
     case Kind.Struct: {
       const struct = <StructType> type
+      const declaredTypeString = stringifyDeclaredType(struct)
       if (struct.propertyTypes) {
-        return `${struct.schema.name}(${stringifyPropertyTypes(struct.propertyTypes).join(', ')})`
+        return `${declaredTypeString}(${stringifyPropertyTypes(struct.propertyTypes).join(', ')})`
       }
-      return struct.schema.name
+      return declaredTypeString
     }
 
     case Kind.Sum: return stringifyXary(<XaryType> type, " | ")
@@ -50,6 +51,14 @@ export function stringify(type: Type): string {
   }
 
   return ''
+}
+
+function stringifyDeclaredType(dt: DeclaredType): string {
+  const name = dt.schema.name
+  if (dt.typeArguments) {
+    return `${name}[${dt.typeArguments.map(stringify).join(', ')}]`
+  }
+  return name
 }
 
 function stringifyXary(type: XaryType, separator: string): string {
