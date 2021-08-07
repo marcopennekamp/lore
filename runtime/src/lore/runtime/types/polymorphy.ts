@@ -3,6 +3,7 @@ import { ListType } from '../lists.ts'
 import { MapType } from '../maps.ts'
 import { ShapeType } from '../shapes.ts'
 import { TinySet } from '../utils/TinySet.ts'
+import { DeclaredType } from './declared-types.ts'
 import { Kind } from './kinds.ts'
 import { TypeVariable } from './type-variables.ts'
 import { Type, XaryType } from './types.ts'
@@ -17,11 +18,21 @@ export function isPolymorphic(type: Type): boolean {
     case Kind.TypeVariable:
       return true
 
+    case Kind.Trait:
+    case Kind.Struct: {
+      const typeArguments = (<DeclaredType> type).typeArguments
+      if (typeArguments) {
+        for (let i = 0; i < typeArguments.length; i += 1) {
+          if (isPolymorphic(typeArguments[i])) return true
+        }
+      }
+      return false
+    }
+
     case Kind.Sum:
     case Kind.Intersection:
     case Kind.Tuple: {
-      const xary = <XaryType> type
-      const types = xary.types
+      const types = (<XaryType> type).types
       for (let i = 0; i < types.length; i += 1) {
         if (isPolymorphic(types[i])) return true
       }
@@ -55,14 +66,20 @@ export function variables(type: Type): TinySet<TypeVariable> {
         break
 
       case Kind.Trait:
-      case Kind.Struct:
-        break // TODO (schemas): Implement.
+      case Kind.Struct: {
+        const typeArguments = (<DeclaredType> type).typeArguments
+        if (typeArguments) {
+          for (let i = 0; i < typeArguments.length; i += 1) {
+            traverse(typeArguments[i])
+          }
+        }
+        break
+      }
 
       case Kind.Intersection:
       case Kind.Sum:
       case Kind.Tuple: {
-        const xary = <XaryType> type
-        const types = xary.types
+        const types = (<XaryType> type).types
         for (let i = 0; i < types.length; i += 1) {
           traverse(types[i])
         }

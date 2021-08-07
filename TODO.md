@@ -13,7 +13,7 @@
     - Transpilation: Referring to the correct interned type (either through compile-time or run-time means), instantiation function (~~passing type arguments~~, resolving open type parameters from the given argument at run time), construction (~~passing type arguments to the instantiation function~~).
   - Runtime:
     - Structures: ~~Type variable variance~~, ~~trait and struct schema type parameters~~, ~~trait and struct type instantiation~~, interning trait/struct types (possibly with weak references so that unused types can be reclaimed).
-    - Type functions: Subtyping, ~~equality~~, type variable allocations, ~~substitution~~, polymorphy, variables, stringify.
+    - Type functions: Subtyping, ~~equality~~, type variable allocations, ~~substitution~~, ~~polymorphy~~, ~~variables~~, stringify.
   - Clear all `TODO (schemas)` entries.
 - Implement a module system.
 - Implement a pipe operator.
