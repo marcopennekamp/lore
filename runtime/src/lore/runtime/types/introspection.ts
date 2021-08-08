@@ -4,12 +4,12 @@ import { isSubtype } from './subtyping.ts'
 import { typeOf } from './typeof.ts'
 import { Type } from './types.ts'
 
-interface IntrospectionType extends StructValue {
+interface IntrospectionWrapper extends StructValue {
   type: Type
 }
 
-let introspectionTypeSchema: StructSchema;
-let introspectionTypeType: StructType;
+let wrapperSchema: StructSchema;
+let wrapperType: StructType;
 
 /**
  * The Introspection API allows Lore code to investigate its own types. The separate API (from the types API) is
@@ -21,15 +21,15 @@ export const Introspection = {
    * the compiler. (Seriously, don't call into this with a dynamic call!!)
    */
   initialize(typeTrait: TraitType) {
-    introspectionTypeSchema = Struct.schema("lore$introspectionType", [], [typeTrait], { }, [])
-    introspectionTypeType = Struct.type(introspectionTypeSchema)
+    wrapperSchema = Struct.schema("lore$IntrospectionWrapper", [], [typeTrait], false, { }, [])
+    wrapperType = Struct.type(wrapperSchema)
   },
 
-  typeOf(value: any): IntrospectionType {
-    return Struct.value({ type: typeOf(value) }, introspectionTypeType) as IntrospectionType;
+  typeOf(value: any): IntrospectionWrapper {
+    return Struct.value({ type: typeOf(value) }, wrapperType) as IntrospectionWrapper
   },
 
-  isSubtype(t1: IntrospectionType, t2: IntrospectionType): boolean {
-    return isSubtype(t1.type, t2.type);
+  isSubtype(t1: IntrospectionWrapper, t2: IntrospectionWrapper): boolean {
+    return isSubtype(t1.type, t2.type)
   }
 }

@@ -21,7 +21,7 @@ case class TraitTranspiler(schema: TraitSchema)(
     supertraits: Vector[TargetExpression],
   )(implicit runtimeTypeVariables: RuntimeTypeVariables): TargetExpression = {
     val inheritedShapeTypeExpression = RuntimeApi.utils.`lazy`.of(TypeTranspiler.transpile(schema.inheritedShapeType))
-    RuntimeApi.traits.schema(schema.name, typeParameters, supertraits, inheritedShapeTypeExpression)
+    RuntimeApi.traits.schema(schema.name, typeParameters, supertraits, schema.hasMultipleParameterizedInheritance, inheritedShapeTypeExpression)
   }
 
   override def transpileSchemaInstantiation(typeArguments: TargetExpression): TargetExpression = {

@@ -14,6 +14,12 @@ export interface DeclaredTypeSchema {
   supertraits: Array<TraitType>
 
   /**
+   * Whether the declared type inherits multiple times from the same supertype with differing type arguments. This is
+   * determined at compile time.
+   */
+  hasMultipleParameterizedInheritance: boolean
+
+  /**
    * The representative type of this schema, without instantiated type parameters.
    */
   representative: DeclaredType
@@ -29,10 +35,11 @@ export const DeclaredSchemas = {
     name: string,
     typeParameters: Array<TypeVariable>,
     supertraits: Array<TraitType>,
+    hasMultipleParameterizedInheritance: boolean,
     getRepresentative: (schema: S, typeArguments: Array<TypeVariable> | undefined) => DeclaredType,
     extras: object,
   ): S {
-    const schema = { name, typeParameters, supertraits, representative: undefined, ...extras } as unknown as S
+    const schema = { name, typeParameters, supertraits, hasMultipleParameterizedInheritance, representative: undefined, ...extras } as unknown as S
     schema.representative = getRepresentative(schema, typeParameters.length > 0 ? typeParameters : undefined)
     return schema
   },

@@ -30,7 +30,7 @@ case class StructTranspiler(schema: StructSchema)(
       Target.Property(property.name.asName, RuntimeApi.utils.`lazy`.of(TypeTranspiler.transpile(property.tpe)))
     })
     val propertyOrder = schema.definition.properties.map(_.name)
-    RuntimeApi.structs.schema(schema.name, typeParameters, supertraits, propertyTypes, propertyOrder)
+    RuntimeApi.structs.schema(schema.name, typeParameters, supertraits, schema.hasMultipleParameterizedInheritance, propertyTypes, propertyOrder)
   }
 
   override def transpileSchemaInstantiation(typeArguments: TargetExpression): TargetExpression = {

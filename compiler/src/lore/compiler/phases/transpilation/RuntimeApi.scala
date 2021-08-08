@@ -103,8 +103,20 @@ object RuntimeApi {
   object traits {
     implicit val base = named("traits")(RuntimeApi.base)
 
-    def schema(name: String, typeParameters: Vector[TargetExpression], supertraits: Vector[TargetExpression], inheritedShapeType: TargetExpression) = {
-      named("schema").call(name.asLiteral, Target.List(typeParameters), Target.List(supertraits), inheritedShapeType)
+    def schema(
+      name: String,
+      typeParameters: Vector[TargetExpression],
+      supertraits: Vector[TargetExpression],
+      hasMultipleParameterizedInheritance: Boolean,
+      inheritedShapeType: TargetExpression,
+    ) = {
+      named("schema").call(
+        name.asLiteral,
+        Target.List(typeParameters),
+        Target.List(supertraits),
+        Target.BooleanLiteral(hasMultipleParameterizedInheritance),
+        inheritedShapeType
+      )
     }
     def tpe(schema: TargetExpression, typeArguments: TargetExpression) = named("type").call(schema, typeArguments)
   }
@@ -112,8 +124,22 @@ object RuntimeApi {
   object structs {
     implicit val base = named("structs")(RuntimeApi.base)
 
-    def schema(name: String, typeParameters: Vector[TargetExpression], supertraits: Vector[TargetExpression], propertyTypes: TargetExpression, propertyOrder: Vector[String]) = {
-      named("schema").call(name.asLiteral, Target.List(typeParameters), Target.List(supertraits), propertyTypes, Target.List(propertyOrder.map(_.asLiteral)))
+    def schema(
+      name: String,
+      typeParameters: Vector[TargetExpression],
+      supertraits: Vector[TargetExpression],
+      hasMultipleParameterizedInheritance: Boolean,
+      propertyTypes: TargetExpression,
+      propertyOrder: Vector[String],
+    ) = {
+      named("schema").call(
+        name.asLiteral,
+        Target.List(typeParameters),
+        Target.List(supertraits),
+        Target.BooleanLiteral(hasMultipleParameterizedInheritance),
+        propertyTypes,
+        Target.List(propertyOrder.map(_.asLiteral))
+      )
     }
     def tpe(schema: TargetExpression, typeArguments: TargetExpression, propertyTypes: TargetExpression) = {
       named("type").call(schema, typeArguments, propertyTypes)

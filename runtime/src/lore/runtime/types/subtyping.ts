@@ -224,9 +224,8 @@ function declaredTypeSubtypeTrait(d1: DeclaredType, t2: TraitType): boolean {
     return checkSubtypeTypeArguments(d1, t2)
   }
 
-  // TODO (schemas): Remember to add the flag `hasMultipleParameterizedInheritance`.
   let supertrait
-  if (/* !schema1.hasMultipleParameterizedInheritance || */ DeclaredSchemas.isConstant(schema2)) {
+  if (!schema1.hasMultipleParameterizedInheritance || DeclaredSchemas.isConstant(schema2)) {
     supertrait = findFirstSupertrait(d1, schema2)
   } else {
     supertrait = getCombinedSupertrait(d1, schema2)

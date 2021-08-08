@@ -79,11 +79,19 @@ export interface StructValue extends Value {
 }
 
 export const Struct = {
-  schema(name: string, typeParameters: Array<TypeVariable>, supertraits: Array<TraitType>, propertyTypes: LazyPropertyTypes, propertyOrder: Array<string>): StructSchema {
+  schema(
+    name: string,
+    typeParameters: Array<TypeVariable>,
+    supertraits: Array<TraitType>,
+    hasMultipleParameterizedInheritance: boolean,
+    propertyTypes: LazyPropertyTypes,
+    propertyOrder: Array<string>,
+  ): StructSchema {
     return DeclaredSchemas.schema<StructSchema>(
       name,
       typeParameters,
       supertraits,
+      hasMultipleParameterizedInheritance,
       (schema, typeArguments) => Struct.type(schema, typeArguments, undefined),
       { propertyTypes, propertyOrder },
     )

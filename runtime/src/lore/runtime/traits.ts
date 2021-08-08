@@ -30,8 +30,14 @@ export interface TraitType extends DeclaredType {
 }
 
 export const Trait = {
-  schema(name: string, typeParameters: Array<TypeVariable>, supertraits: Array<TraitType>, inheritedShapeType: LazyValue<ShapeType>): TraitSchema {
-    return DeclaredSchemas.schema<TraitSchema>(name, typeParameters, supertraits, Trait.type, { inheritedShapeType })
+  schema(
+    name: string,
+    typeParameters: Array<TypeVariable>,
+    supertraits: Array<TraitType>,
+    hasMultipleParameterizedInheritance: boolean,
+    inheritedShapeType: LazyValue<ShapeType>,
+  ): TraitSchema {
+    return DeclaredSchemas.schema<TraitSchema>(name, typeParameters, supertraits, hasMultipleParameterizedInheritance, Trait.type, { inheritedShapeType })
   },
 
   type(schema: TraitSchema, typeArguments?: Assignments): TraitType {
