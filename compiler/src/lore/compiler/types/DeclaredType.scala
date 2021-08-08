@@ -48,8 +48,8 @@ trait DeclaredType extends NamedType {
   /**
     * Finds a supertype of this type (or this type itself) that has the given schema.
     *
-    * If this type's schema has multiple parameterized inheritance, the result's type arguments are each a combination
-    * of all occurring type argument candidates according to variance:
+    * If this type's schema has multiple parameterized inheritance and the supertype schema has type parameters, the
+    * result's type arguments are each a combination of all occurring type argument candidates according to variance:
     *
     *   - If a type parameter is covariant, the resulting type argument is the intersection type of all candidates.
     *   - If a type parameter is contravariant, the resulting type argument is the sum type of all candidates.
@@ -59,7 +59,7 @@ trait DeclaredType extends NamedType {
     * resulting declared supertype will be `Cage[Fish & Unicorn]`.
     */
   def findSupertype(supertypeSchema: DeclaredSchema): Option[DeclaredType] = {
-    if (!schema.hasMultipleParameterizedInheritance) {
+    if (!schema.hasMultipleParameterizedInheritance || supertypeSchema.isConstant) {
       if (this.schema == supertypeSchema) Some(this)
       else declaredSupertypes.firstDefined(_.findSupertype(supertypeSchema))
     } else {
