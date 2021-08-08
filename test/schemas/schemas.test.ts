@@ -14,5 +14,5 @@ Deno.test('schemas/goods', async () => {
 
 Deno.test('schemas/option', async () => {
   const result: ListValue<string> = await LoreTest.run('schemas/option.lore')
-  assertListEquals(result, ['None', 'Some(Hello, world!)', 'Some([1, 2, 3])', 'Oh shit, it\'s a dragon!'])
+  assertListEquals(result, ['None', 'Some(Hello, world!)', 'Some([1, 2, 3])', 'Oh shit, it\'s a dragon!', 'They\'re everywhere!'])
 })
