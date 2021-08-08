@@ -3,8 +3,10 @@ import { ListType } from '../lists.ts'
 import { MapType } from '../maps.ts'
 import { ShapeType } from '../shapes.ts'
 import { Struct, StructType } from '../structs.ts'
+import { TraitSchema } from '../traits.ts'
 import { TupleType } from '../tuples.ts'
 import { TinyMap } from '../utils/TinyMap.ts'
+import { DeclaredType, DeclaredTypes } from './declared-types.ts'
 import { areEqual } from './equality.ts'
 import { Kind } from './kinds.ts'
 import { isPolymorphic, variables } from './polymorphy.ts'
@@ -144,12 +146,38 @@ class TypeVariableAllocation {
   //       time. Also assign types to type variables in such a way that we test for equality right away. There is no
   //       need to defer the equality check to later. This also means we can fail faster.
   private static assign(t1: Type, t2: Type, allocation: TypeVariableAllocation): void {
-    if (t2.kind === Kind.TypeVariable) {
-      allocation.addAssignment(<TypeVariable> t2, t1)
-      return
-    }
-
     switch (t2.kind) {
+      case Kind.TypeVariable:
+        allocation.addAssignment(<TypeVariable> t2, t1)
+        return
+
+      case Kind.Trait:
+      case Kind.Struct:
+        if (t1.kind === Kind.Trait || t1.kind === Kind.Struct) {
+          const d1 = <DeclaredType> t1
+          const d2 = <DeclaredType> t2
+
+          // We can only assign types from type arguments if the declared type is parametric.
+          if (d2.typeArguments) {
+            let s1: DeclaredType | undefined
+            if (d2.kind === Kind.Trait) {
+              s1 = DeclaredTypes.findSupertrait(d1, <TraitSchema> d2.schema)
+            } else if (d1.schema === d2.schema) {
+              s1 = d1
+            }
+
+            if (s1) {
+              for (let i = 0; i < d2.typeArguments.length; i += 1) {
+                // @ts-ignore
+                const a1 = s1.typeArguments[i]
+                const a2 = d2.typeArguments[i]
+                this.assign(a1, a2, allocation)
+              }
+            }
+          }
+        }
+        break
+
       case Kind.Sum:
         if (isPolymorphic(t2)) {
           throw Error('Type variable allocations for sum types are not yet supported.')

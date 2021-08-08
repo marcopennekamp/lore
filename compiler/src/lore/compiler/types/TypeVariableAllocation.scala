@@ -182,7 +182,7 @@ object TypeVariableAllocation {
       case (dt1: DeclaredType, dt2: DeclaredType) if dt2.schema.arity > 0 =>
         dt1.findSupertype(dt2.schema) match {
           case Some(result) => result.typeArguments.zip(dt2.typeArguments).foreach { case (t1, t2) => assign(t1, t2) }
-          case None => // TODO (schemas): Do we need to do anything here?
+          case None =>
         }
 
       // In all other cases, there is no need to assign anything.
