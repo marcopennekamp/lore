@@ -1,20 +1,18 @@
 import { FunctionType } from '../functions.ts'
-import { Intersection, IntersectionType } from '../intersections.ts'
+import { IntersectionType } from '../intersections.ts'
 import { ListType } from '../lists.ts'
 import { MapType } from '../maps.ts'
 import { ShapeType } from '../shapes.ts'
 import { Struct, StructType } from '../structs.ts'
-import { Sum, SumType } from '../sums.ts'
-import { Trait, TraitSchema, TraitType } from '../traits.ts'
+import { SumType } from '../sums.ts'
+import { Trait, TraitType } from '../traits.ts'
 import { TupleType } from '../tuples.ts'
-import { DeclaredSchemas } from './declared-schemas.ts'
-import { DeclaredType } from './declared-types.ts'
+import { DeclaredType, DeclaredTypes } from './declared-types.ts'
 import { areEqual } from './equality.ts'
 import { Kind } from './kinds.ts'
 import { PropertyTypes } from './property-types.ts'
 import { Assignments, TypeVariable, Variance } from './type-variables.ts'
 import { Type } from './types.ts'
-import { unique } from './util.ts'
 
 /**
  * Checks whether t1 is a subtype of t2.
@@ -195,112 +193,15 @@ function checkSubtypeTypeArguments(d1: DeclaredType, d2: DeclaredType): boolean 
 
 /**
  * Whether d1 is a subtype of t2.
- *
- * TODO (schemas): The current implementation essentially scans the whole supertrait hierarchy. Is there any way in
- *                 which we could improve performance? Probably at the sacrifice of some memory.
- *                    - Idea 1: Keep a flat hash map of Schema -> Type in d1's schema, with uninstantiated type
- *                              arguments. It contains a transitive closure of all supertypes. We can then quickly get
- *                              the correct type with the given schema, and instantiate it as i1, then check if i1 is
- *                              a subtype of t2. (The advantage is further that we probably don't need the more
- *                              complicated algorithm for when `hasMultipleParameterizedInheritance` is true. We can
- *                              combine these types at compile time when the Schema -> Type map is generated.)
- *                                - The reverse (having a subtype map in the supertrait) would not work because there
- *                                  is no straight-forward way to handle type arguments directly.
- *                    - Idea 2: Idea 1, but build the hash map slowly as a cache. This would require us to implement
- *                              all relevant algorithms (including the one for `hasMultipleParameterizedInheritance`),
- *                              but might save memory since not all subtype/supertype combinations will likely be
- *                              checked. For example, it is unlikely, albeit possible, that d1 is even a trait. So most
- *                              of the caching will happen in structs. If we have a struct Fox <: (Mammal <: (Animal
- *                              <: Hashable)) but we never check Fox <: Mammal and neither Fox <: Hashable, the cache
- *                              of Fox will only have one entry `Animal<schema> -> Animal<representative>`.
- *                 The big downside here is memory. Suppose we have a type hierarchy where T1 has 10 map entries and T2
- *                 has 12 map entries. A type T3 that extends both T1 and T2 will have 10 + 12 + 2 = 24 map entries,
- *                 unless T1 and T2 share common supertraits.
  */
 function declaredTypeSubtypeTrait(d1: DeclaredType, t2: TraitType): boolean {
-  const schema1 = d1.schema
   const schema2 = t2.schema
-  if (schema1 === schema2) {
+  if (d1.schema === schema2) {
     return checkSubtypeTypeArguments(d1, t2)
   }
 
-  let supertrait
-  if (!schema1.hasMultipleParameterizedInheritance || DeclaredSchemas.isConstant(schema2)) {
-    supertrait = findFirstSupertrait(d1, schema2)
-  } else {
-    supertrait = getCombinedSupertrait(d1, schema2)
-  }
-
+  const supertrait = DeclaredTypes.findSupertrait(d1, schema2)
   return !!supertrait && isSubtype(supertrait, t2)
-}
-
-/**
- * Finds the first occurrence of schema2 in d1's supertraits. This operation is only applicable if the d1's schema's
- * `hasMultipleParameterizedInheritance` flag is set to `false` or if schema2 is constant.
- */
-function findFirstSupertrait(d1: DeclaredType, schema2: TraitSchema): TraitType | undefined {
-  const queue = d1.supertraits.slice()
-  while (queue.length > 0) {
-    const candidate = <TraitType> queue.pop()
-    if (candidate.schema === schema2) {
-      return candidate
-    }
-    queue.push(...candidate.supertraits)
-  }
-  return undefined
-}
-
-/**
- * Finds all occurrences of schema2 in d1's supertraits. This function is only used when schema2 has type parameters.
- *
- * TODO (schemas): This is a very heavy algorithm. We definitely have to cache this according to the ideas mentioned in
- *                 `declaredTypeSubtypeTrait`.
- */
-function getCombinedSupertrait(d1: DeclaredType, schema2: TraitSchema): TraitType | undefined {
-  const candidates: Array<TraitType> = []
-  const collect = (dt: DeclaredType) => {
-    if (dt.schema === schema2) {
-      candidates.push(<TraitType> dt)
-    } else {
-      for (const supertype of dt.supertraits) {
-        collect(supertype)
-      }
-    }
-  }
-  collect(d1)
-
-  if (candidates.length <= 1) {
-    return candidates[0]
-  }
-
-  const parameters = schema2.typeParameters
-  const combinedArguments = new Array(parameters.length)
-  for (let i = 0; i < parameters.length; i += 1) {
-    const parameter = parameters[i]
-    // @ts-ignore
-    const argumentCandidates = candidates.map(c => c.typeArguments[i])
-    switch (parameter.variance) {
-      case Variance.Covariant:
-        combinedArguments[i] = Intersection.simplified(argumentCandidates)
-        break
-
-      case Variance.Contravariant:
-        combinedArguments[i] = Sum.simplified(argumentCandidates)
-        break
-
-      case Variance.Invariant: {
-        const uniqueArguments = unique(argumentCandidates)
-        if (uniqueArguments.length == 1) {
-          combinedArguments[i] = uniqueArguments[0]
-        } else {
-          return undefined
-        }
-        break
-      }
-    }
-  }
-
-  return Trait.type(schema2, combinedArguments)
 }
 
 /**
