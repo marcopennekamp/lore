@@ -2,6 +2,7 @@ import { ShapeType } from './shapes.ts'
 import { DeclaredType, DeclaredTypes } from './types/declared-types.ts'
 import { Kind } from './types/kinds.ts'
 import { DeclaredSchemas, DeclaredTypeSchema } from './types/declared-schemas.ts'
+import { substitute } from './types/substitution.ts'
 import { Assignments, TypeVariable } from './types/type-variables.ts'
 import { LazyValue } from './utils/LazyValue.ts'
 
@@ -20,6 +21,12 @@ export interface TraitSchema extends DeclaredTypeSchema {
  */
 export interface TraitType extends DeclaredType {
   schema: TraitSchema
+
+  /**
+   * The schema's inherited shape type instantiated with the trait's type arguments. This is only populated on demand
+   * and only when the trait actually has type arguments.
+   */
+  inheritedShapeTypeCache?: ShapeType
 }
 
 export const Trait = {
@@ -29,5 +36,19 @@ export const Trait = {
 
   type(schema: TraitSchema, typeArguments?: Assignments): TraitType {
     return DeclaredTypes.type<TraitType>(Kind.Trait, schema, typeArguments, { }, DeclaredTypes.hash(schema, typeArguments))
+  },
+
+  getInheritedShapeType(type: TraitType): ShapeType {
+    if (!type.typeArguments) {
+      return type.schema.inheritedShapeType.value()
+    }
+
+    if (type.inheritedShapeTypeCache) {
+      return type.inheritedShapeTypeCache
+    }
+
+    const shapeType = <ShapeType> substitute(type.typeArguments, type.schema.inheritedShapeType.value())
+    type.inheritedShapeTypeCache = shapeType
+    return shapeType
   },
 }

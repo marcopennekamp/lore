@@ -5,7 +5,7 @@ import { MapType } from '../maps.ts'
 import { ShapeType } from '../shapes.ts'
 import { Struct, StructType } from '../structs.ts'
 import { SumType } from '../sums.ts'
-import { TraitType } from '../traits.ts'
+import { Trait, TraitSchema, TraitType } from '../traits.ts'
 import { TupleType } from '../tuples.ts'
 import { DeclaredType } from './declared-types.ts'
 import { areEqual } from './equality.ts'
@@ -44,7 +44,7 @@ export function isSubtype(t1: Type, t2: Type): boolean {
       if (t2.kind === Kind.Shape) {
         if (t1.kind === Kind.Struct && structSubtypeShape(<StructType> t1, <ShapeType> t2)) {
           return true
-        } else if (t1.kind === Kind.Trait && isSubtype((<TraitType> t1).schema.inheritedShapeType.value(), t2)) {
+        } else if (t1.kind === Kind.Trait && isSubtype(Trait.getInheritedShapeType(<TraitType> t1), t2)) {
           return true
         }
       } else if (t2.kind === Kind.Struct) {
