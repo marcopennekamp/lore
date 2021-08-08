@@ -115,7 +115,7 @@ function substituteDeclaredType(
     return undefined
   }
 
-  instantiate(typeArguments)
+  return instantiate(typeArguments)
 }
 
 function substituteMultiplePolymorphic(types: Array<Type>, assignments: Assignments): Array<Type> | undefined {
