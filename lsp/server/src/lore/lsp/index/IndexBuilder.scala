@@ -3,7 +3,7 @@ package lore.lsp.index
 import lore.compiler.core.Position
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.MultiFunctionDefinition
-import lore.compiler.semantics.structures.{StructDefinition, TypeDefinition}
+import lore.compiler.semantics.structures.{StructDefinition, SchemaDefinition}
 import lore.lsp.utils.PositionUtil
 
 object IndexBuilder {
@@ -40,7 +40,7 @@ object IndexBuilder {
     globalIndex
   }
 
-  def addTypeDefinition(definition: TypeDefinition)(implicit globalIndex: GlobalIndex): Unit = {
+  def addTypeDefinition(definition: SchemaDefinition)(implicit globalIndex: GlobalIndex): Unit = {
     val properties = definition match {
       case struct: StructDefinition => struct.properties.map(p => (p.name, p.position))
       case _ => Vector.empty

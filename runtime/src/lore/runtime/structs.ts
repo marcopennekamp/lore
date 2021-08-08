@@ -146,6 +146,8 @@ export const Struct = {
 
     const parameterTypes = []
     for (const name of schema.propertyOrder) {
+      // TODO (schemas): Can't we just take the struct type's property types here? The struct type will have no open
+      //                 properties set, so the result should be effectively the same.
       const propertyType = schema.propertyTypes[name]?.value()
       parameterTypes.push(substitute(typeArguments, propertyType))
     }
