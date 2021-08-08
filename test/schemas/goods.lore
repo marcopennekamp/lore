@@ -1,0 +1,24 @@
+struct Box[+A] { content: A }
+
+trait Price
+struct HighPrice extends Price
+struct MediumPrice extends Price
+struct LowPrice extends Price
+
+trait Metal[+P <: Price]
+struct Gold extends Metal[HighPrice]
+struct Silver extends Metal[MediumPrice]
+struct Iron extends Metal[LowPrice]
+
+// TODO (schemas): This first function should be abstract, but the input abstractness constraint isn't up to it yet. See MultiFunctionConstraints.
+function price(box: Box[Metal[Price]]): Real = 0
+function price(box: Box[Metal[HighPrice]]): Real = 48.5
+function price(box: Box[Metal[MediumPrice]]): Real = 17.2
+function price(box: Box[Metal[LowPrice]]): Real = 1.6
+
+
+function test(): [Real] = [
+  price(Box[Gold](Gold())),
+  price(Box[Silver](Silver())),
+  price(Box[Iron](Iron()))
+]
