@@ -13,7 +13,7 @@
     - Transpilation: Referring to the correct interned type (either through compile-time or run-time means), instantiation function (~~passing type arguments~~, resolving open type parameters from the given argument at run time), construction (~~passing type arguments to the instantiation function~~).
   - Runtime:
     - Structures: ~~Type variable variance~~, ~~trait and struct schema type parameters~~, ~~trait and struct type instantiation~~, interning trait/struct types (possibly with weak references so that unused types can be reclaimed).
-    - Type functions: Subtyping, ~~equality~~, type variable allocations, ~~substitution~~, ~~polymorphy~~, ~~variables~~, ~~stringify~~.
+    - Type functions: ~~Subtyping~~, ~~equality~~, type variable allocations, ~~substitution~~, ~~polymorphy~~, ~~variables~~, ~~stringify~~.
   - Clear all `TODO (schemas)` entries.
 - Implement a module system.
 - Implement a pipe operator.
@@ -51,7 +51,6 @@
 - Turn map keys and values into covariant/contravariant type variables if possible.
 - Support intersection and sum types in TypeVariableAllocation.
 - We could theoretically introduce a limited form of ambiguity analysis at compile-time: For each function `f(a: A, b: B, ...)`, get a list of possible subtypes (mostly trait subtypes) and simulate dispatch with these types. If any of the inputs result in an ambiguity, raise at least a warning.
-- Abstractness of parameterized structs: A struct with an open type argument such as `Some[Animal]` given a *trait* `Animal` is technically abstract, because an instance of such a struct can never be created. The type argument will always be some subtype of `Animal`, so one could imagine the programmer wanting to implement various specialized functions without specifying a function for `Some[Animal]`.
 
 ##### CLI
 

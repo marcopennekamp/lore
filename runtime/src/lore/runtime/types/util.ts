@@ -16,23 +16,34 @@ export function flattenedUnique(kind: Kind, types: Array<Type>): Array<Type> {
     if (part.kind === kind) {
       const xaryPart = <XaryType> part
       for (let j = 0; j < xaryPart.types.length; j += 1) {
-        addUnique(flattened, xaryPart.types[j])
+        addUnique(xaryPart.types[j], flattened)
       }
     } else {
-      addUnique(flattened, part)
+      addUnique(part, flattened)
     }
   }
   return flattened
 }
 
-function addUnique(types: Array<Type>, type: Type) {
-  for (let i = 0; i < types.length; i += 1) {
-    // Don't add a candidate that is already part of the type list. We have to use areEqual for correctness here,
-    // but most comparisons should be caught either by the reference check (signifying equality) or by the kind
-    // check (signifying inequality).
-    if (areEqual(type, types[i])) return
+/**
+ * Ensures that each element of the resulting type list is unique in respect to areEqual.
+ */
+export function unique(types: Array<Type>): Array<Type> {
+  const result: Array<Type> = []
+  for (const type of types) {
+    addUnique(type, result)
   }
-  types.push(type)
+  return result
+}
+
+function addUnique(candidate: Type, types: Array<Type>) {
+  for (const type of types) {
+    // Don't add a candidate that is already part of the type list. We have to use areEqual for correctness here, but
+    // most comparisons should be caught either by the reference check (signifying equality) or by the hash and kind
+    // checks (signifying inequality).
+    if (areEqual(candidate, type)) return
+  }
+  types.push(candidate)
 }
 
 /**
