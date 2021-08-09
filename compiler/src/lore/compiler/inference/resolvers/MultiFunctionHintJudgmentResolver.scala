@@ -91,7 +91,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       )
 
       val supplementalJudgments = boundsJudgments ++ argumentJudgments ++ resultJudgments
-      val allJudgments = supplementalJudgments ++ influencingJudgments
+      val allJudgments = influencingJudgments ++ supplementalJudgments
 
       Inference.logger.trace(s"Multi-function hint judgments:\n${allJudgments.mkString("\n")}")
 
