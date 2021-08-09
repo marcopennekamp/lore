@@ -62,6 +62,8 @@ object SubtypingMatcher {
         }
       case (d1: DeclaredType, s2: ShapeType) => rec(assignments, d1.asShapeType, s2)
 
+      case (d1: DeclaredType, d2: DeclaredType) => Matchers.matchDeclaredType(d1, d2, assignments, rec, expectedSubtype)
+
       case (_: IntersectionType, _) => unsupported
       case (_, _: IntersectionType) => unsupported
       case (_: SumType, _) => unsupported

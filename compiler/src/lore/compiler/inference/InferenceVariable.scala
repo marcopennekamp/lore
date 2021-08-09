@@ -1,8 +1,8 @@
 package lore.compiler.inference
 
-import lore.compiler.core.CompilationException
+import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.inference.Inference.Assignments
-import lore.compiler.types.Type
+import lore.compiler.types.{BasicType, Type, TypeVariable}
 
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -39,5 +39,27 @@ object InferenceVariable {
     * Whether the given inference variable is fixed, which occurs when its bounds are fixed.
     */
   def isFixed(iv: InferenceVariable, assignments: Assignments): Boolean = InferenceBounds.areFixed(bounds(iv, assignments))
+
+  /**
+    * Represents the given type variables as inference variables in the returned assignments map, and builds the typing
+    * judgments required to represent type variable bounds.
+    */
+  def fromTypeVariables(typeVariables: Vector[TypeVariable], position: Position): (Map[TypeVariable, InferenceVariable], Vector[TypingJudgment]) = {
+    val assignments = typeVariables.map(tv => (tv, new InferenceVariable)).toMap
+    val judgments = typeVariables.flatMap { tv =>
+      var judgments = Vector.empty[TypingJudgment]
+
+      if (tv.lowerBound != BasicType.Nothing) {
+        judgments = judgments :+ TypingJudgment.Subtypes(Type.substitute(tv.lowerBound, assignments), assignments(tv), position)
+      }
+
+      if (tv.upperBound != BasicType.Any) {
+        judgments = judgments :+ TypingJudgment.Subtypes(assignments(tv), Type.substitute(tv.upperBound, assignments), position)
+      }
+
+      judgments
+    }
+    (assignments, judgments)
+  }
 
 }

@@ -78,6 +78,7 @@ object Inference {
     case ListType(element) => variables(element)
     case MapType(key, value) => variables(key) ++ variables(value)
     case ShapeType(properties) => properties.values.map(_.tpe).flatMap(variables).toSet
+    case dt: DeclaredType if !dt.schema.isConstant => dt.typeArguments.flatMap(variables).toSet
     case _ => Set.empty
   }
 
@@ -93,6 +94,7 @@ object Inference {
     case ListType(element) => isFullyInstantiated(element)
     case MapType(key, value) => isFullyInstantiated(key) && isFullyInstantiated(value)
     case ShapeType(properties) => properties.values.map(_.tpe).forall(isFullyInstantiated)
+    case dt: DeclaredType if !dt.schema.isConstant => dt.typeArguments.forall(isFullyInstantiated)
     case _ => true
   }
 
@@ -134,6 +136,7 @@ object Inference {
       case ListType(element) => ListType(rec(element))
       case MapType(key, value) => MapType(rec(key), rec(value))
       case shapeType: ShapeType => shapeType.mapPropertyTypes(rec)
+      case dt: DeclaredType if !dt.schema.isConstant => dt.schema.instantiate(dt.assignments.map { case (tv, tpe) => (tv, rec(tpe)) })
       case tpe => tpe
     }
   }

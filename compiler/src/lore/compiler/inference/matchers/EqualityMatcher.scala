@@ -62,6 +62,8 @@ object EqualityMatcher {
           case _ => expectedTypeEquality()
         }
 
+      case (d1: DeclaredType, d2: DeclaredType) => Matchers.matchDeclaredType(d1, d2, assignments, rec, expectedTypeEquality)
+
       case (_: IntersectionType, _) => unsupported
       case (_, _: IntersectionType) => unsupported
       case (_: SumType, _) => unsupported

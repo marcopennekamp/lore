@@ -68,21 +68,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       // then be encoded as typing judgments between the arguments and the new inference variables. These inference
       // variables are only relevant for computing the argument types and need to be thrown away again afterwards.
       val typeVariables = function.typeParameters
-      val typeVariableAssignments = typeVariables.map(tv => (tv, new InferenceVariable)).toMap
-
-      val boundsJudgments = typeVariables.flatMap { tv =>
-        var judgments = Vector.empty[TypingJudgment]
-
-        if (tv.lowerBound != BasicType.Nothing) {
-          judgments = judgments :+ TypingJudgment.Subtypes(Type.substitute(tv.lowerBound, typeVariableAssignments), typeVariableAssignments(tv), position)
-        }
-
-        if (tv.upperBound != BasicType.Any) {
-          judgments = judgments :+ TypingJudgment.Subtypes(typeVariableAssignments(tv), Type.substitute(tv.upperBound, typeVariableAssignments), position)
-        }
-
-        judgments
-      }
+      val (typeVariableAssignments, boundsJudgments) = InferenceVariable.fromTypeVariables(typeVariables, position)
 
       // For each argument/parameter pair, we add two typing judgments:
       //  - The Fits judgment ensures that any type variables on the parameter side (represented by inference
@@ -132,7 +118,7 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       }
     } else {
       Inference.logger.trace(s"Empty fit of `$judgment`:${results.mkString("\n")}")
-      reporter.error(EmptyFit(mf, TupleType(argumentTypes), judgment.position))
+      reporter.error(EmptyFit(mf, Inference.instantiateCandidateType(assignments, TupleType(argumentTypes)), judgment.position))
       None
     }
   }

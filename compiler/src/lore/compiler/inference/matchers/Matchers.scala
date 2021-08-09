@@ -3,7 +3,7 @@ package lore.compiler.inference.matchers
 import lore.compiler.feedback.Reporter
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.inference.{InferenceVariable, TypingJudgment}
-import lore.compiler.types.{TupleType, Type}
+import lore.compiler.types.{DeclaredType, TupleType, Type}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object Matchers {
@@ -41,6 +41,20 @@ object Matchers {
     if (t1.elements.size == t2.elements.size) {
       t1.elements.zip(t2.elements).foldSome(assignments) {
         case (assignments2, (e1, e2)) => rec(assignments2, e1, e2)
+      }
+    } else fail()
+  }
+
+  def matchDeclaredType(
+    d1: DeclaredType,
+    d2: DeclaredType,
+    assignments: Assignments,
+    rec: (Assignments, Type, Type) => Option[Assignments],
+    fail: () => Option[Nothing],
+  ): Option[Assignments] = {
+    if (d1.schema == d2.schema) {
+      d1.typeArguments.zip(d2.typeArguments).foldSome(assignments) {
+        case (assignments2, (a1, a2)) => rec(assignments2, a1, a2)
       }
     } else fail()
   }
