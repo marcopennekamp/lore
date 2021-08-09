@@ -28,11 +28,8 @@ function removeLast(array: NaiveArray[E]): Unit where E = {
 }
 
 
-// TODO (schemas): This is a workaround until we add manual type specification to struct instantiation.
-type NaiveIntArray = NaiveArray[Int]
-
 function test(): [Int] = {
-  let array = NaiveIntArray([1, 2])
+  let array = NaiveArray([1, 2])
   append(array, 3)
   append(array, 4)
   append(array, 5)

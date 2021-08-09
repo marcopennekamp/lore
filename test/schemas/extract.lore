@@ -13,6 +13,6 @@ function extract(crate: TobyCrate): String = 'I am a crate and my name is Toby!'
 
 function test(): [String] = [
   toString(extract(IntCrate(5))),
-  toString(extract(ListCrate[Int]([1, 2, 3]))),
+  toString(extract(ListCrate([1, 2, 3]))),
   extract(TobyCrate())
 ]

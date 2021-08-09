@@ -15,9 +15,9 @@ function toString(some: Some[[Dragon]]): String = 'They\'re everywhere!'
 
 function test(): [String] = {
   let none = None()
-  let stringOption = Some[String]('Hello, world!')
-  let listOption = Some[[Int]]([1, 2, 3])
-  let birdPlane = Some[Dragon](Dragon())
-  let dragons = Some[[Dragon]] { value = [Dragon(), Dragon(), Dragon()] }
+  let stringOption = Some('Hello, world!')
+  let listOption = Some([1, 2, 3])
+  let birdPlane = Some(Dragon())
+  let dragons = Some { value = [Dragon(), Dragon(), Dragon()] }
   [toString(none), toString(stringOption), toString(listOption), toString(birdPlane), toString(dragons)]
 }
