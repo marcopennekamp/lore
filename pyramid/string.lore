@@ -10,11 +10,10 @@ function concat(strings: [String]): String = fold(strings, '', concat)
 function concatMap(strings: [A], f: B => String): String where A, B >: A = concat(map(strings, f))
 
 function stringJoin(list: [A], separator: String): String where A = {
-  let result = if (!isEmpty(list)) {
+  if (!isEmpty(list)) {
     concat(
       concatMap(init(list), a => '$a$separator'),
       toString(last(list))
     )
   } else ''
-  '[$result]'
 }

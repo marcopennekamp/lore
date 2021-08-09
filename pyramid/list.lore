@@ -113,5 +113,6 @@ function toString(list: [A]): String where A = {
   let strings = for (a <- list) {
     toString(a)
   }
-  stringJoin(strings, ', ')
+  let joined = stringJoin(strings, ', ')
+  '[$joined]'
 }

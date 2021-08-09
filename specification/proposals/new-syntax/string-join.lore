@@ -2,11 +2,10 @@
 // bit messy as so much information is condensed in a single line.
 @where A
 func stringJoin(list: [A], separator: String): String = do
-  let result = if !isEmpty(list) do
+  if !isEmpty(list)
     concat(
       init(list) |> concatMap(a => '$a$separator'),
       last(list) |> toString
     )
   end else ''
-  '[$result]'
 end

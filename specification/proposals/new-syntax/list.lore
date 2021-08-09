@@ -28,7 +28,8 @@ domain list: [A]
   func toString(): String = do
     // This could be solved with a `map`, but illustrates the single-line `for` syntax.
     let strings = for a <- list yield toString(a)
-    strings |> stringJoin(', ')
+    let joined = strings |> stringJoin(', ')
+    '[$joined]'
   end
 
 end
