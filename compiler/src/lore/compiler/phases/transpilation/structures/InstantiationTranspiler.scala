@@ -5,7 +5,6 @@ import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.phases.transpilation.{RuntimeNames, TypeTranspiler}
 import lore.compiler.target.Target
 import lore.compiler.target.Target.{TargetExpression, TargetName}
-import lore.compiler.target.TargetDsl.StringExtension
 import lore.compiler.types.StructType
 
 object InstantiationTranspiler {

@@ -28,7 +28,6 @@ trait ExpressionVisitor[A, B] {
   def visit(expression: MapConstruction)(entries: Vector[(A, A)]): B
   def visit(expression: ShapeValue)(properties: Vector[A]): B
   def visit(expression: Symbol): B
-  def visit(expression: Instantiation)(arguments: Vector[A]): B
   def visit(expression: UnaryOperation)(value: A): B
   def visit(expression: BinaryOperation)(left: A, right: A): B
   def visit(expression: XaryOperation)(operands: Vector[A]): B
@@ -72,7 +71,6 @@ object ExpressionVisitor {
       case node@FixedFunctionValue(_, _) => visitor.visit(node)
       case node@ListConstruction(values, _, _) => visitor.visit(node)(values.map(rec))
       case node@MapConstruction(entries, _, _) => visitor.visit(node)(entries.map(e => (rec(e.key), rec(e.value))))
-      case node@Instantiation(_, arguments, _) => visitor.visit(node)(arguments.map(arg => rec(arg.value)))
       case node@ShapeValue(properties, _) => visitor.visit(node)(properties.map(p => rec(p.value)))
       case node@Symbol(_, _) => visitor.visit(node)
       case node@UnaryOperation(_, value, _, _) => visitor.visit(node)(rec(value))

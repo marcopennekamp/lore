@@ -141,7 +141,7 @@ object Type {
       case ListType(element) => ListType(rec(element))
       case MapType(key, value) => MapType(rec(key), rec(value))
       case shapeType: ShapeType => shapeType.mapPropertyTypes(rec)
-      case dt: DeclaredType => dt.schema.instantiate(dt.assignments.map { case (tv, tpe) => (tv, rec(tpe)) })
+      case dt: DeclaredType if !dt.schema.isConstant => dt.schema.instantiate(dt.assignments.map { case (tv, tpe) => (tv, rec(tpe)) })
       case t => t
     }
   }

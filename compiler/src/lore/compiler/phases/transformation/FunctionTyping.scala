@@ -15,15 +15,13 @@ object FunctionTyping {
     mf: MultiFunctionDefinition,
     arguments: Vector[Expression],
     position: Position,
-  )(implicit registry: Registry): (Expression.Call, Vector[TypingJudgment]) = {
+  )(implicit registry: Registry, judgmentCollector: JudgmentCollector): Expression.Call = {
     val resultType = new InferenceVariable
-    (
-      Expression.Call(CallTarget.MultiFunction(mf), arguments, resultType, position),
-      Vector(
-        TypingJudgment.MultiFunctionHint(mf, arguments, position),
-        TypingJudgment.MultiFunctionCall(resultType, mf, arguments.map(_.tpe), position),
-      )
+    judgmentCollector.add(
+      TypingJudgment.MultiFunctionHint(mf, arguments, position),
+      TypingJudgment.MultiFunctionCall(resultType, mf, arguments.map(_.tpe), position),
     )
+    Expression.Call(CallTarget.MultiFunction(mf), arguments, resultType, position)
   }
 
 }

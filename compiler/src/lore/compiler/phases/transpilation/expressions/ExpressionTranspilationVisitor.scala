@@ -122,13 +122,6 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   override def visit(symbol: Symbol): Chunk = Chunk.expression(symbolHistory.targetValue(symbol.name))
 
-  override def visit(expression: Instantiation)(arguments: Vector[Chunk]): Chunk = {
-    Chunk.combine(arguments) { values =>
-      val propertyAssignments = expression.arguments.map(_.property.definition.name.asName).zip(values)
-      Chunk.expression(InstantiationTranspiler.transpileStructInstantiation(expression.tpe, propertyAssignments))
-    }
-  }
-
   override def visit(expression: UnaryOperation)(value: Chunk): Chunk = {
     val operator = expression.operator match {
       case UnaryOperator.Negation => TargetOperator.Negation
@@ -190,7 +183,6 @@ private[transpilation] class ExpressionTranspilationVisitor()(
         // instantiation function. This allows us to bypass a run-time call to `getConstructor` for structs with type
         // parameters.
         val structType = constructor.structType
-        println(s"Optimizing constructor call of $structType at ${expression.position}.")
         withArguments { arguments =>
           val propertyAssignments = structType.properties.map(_.definition.name.asName).zip(arguments)
           InstantiationTranspiler.transpileStructInstantiation(structType, propertyAssignments)
