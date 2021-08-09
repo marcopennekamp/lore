@@ -7,7 +7,8 @@ import lore.compiler.semantics.expressions.Expression._
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.members.Member
 import lore.compiler.semantics.scopes.{TypedBinding, Variable}
-import lore.compiler.types.{BasicType, ListType, TupleType, Type}
+import lore.compiler.semantics.structures.StructConstructor
+import lore.compiler.types.{BasicType, ListType, StructType, TupleType, Type}
 
 /**
   * Replaces all inference variables with inferred types.
@@ -122,6 +123,7 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
 
   private def instantiateBinding(binding: TypedBinding): TypedBinding = binding match {
     case variable: Variable => instantiateVariable(variable)
+    case constructor: StructConstructor => StructConstructor(assignments.instantiate(constructor.structType).asInstanceOf[StructType])
     case v => v
   }
 
