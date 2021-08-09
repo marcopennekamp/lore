@@ -51,6 +51,8 @@
 - Turn map keys and values into covariant/contravariant type variables if possible.
 - Support intersection and sum types in TypeVariableAllocation.
 - We could theoretically introduce a limited form of ambiguity analysis at compile-time: For each function `f(a: A, b: B, ...)`, get a list of possible subtypes (mostly trait subtypes) and simulate dispatch with these types. If any of the inputs result in an ambiguity, raise at least a warning.
+- Inference:
+  - Introduce rewrite rules which come into effect before cycle resolution. One such rewrite rule would be to rewrite judgments such as `(a, b) :<: (c, d)` to `a :<: c` and `b :<: d`. Perhaps this will give the algorithm additional options to continue the inference rather than having to fall back to cycle resolution.
 
 ##### CLI
 

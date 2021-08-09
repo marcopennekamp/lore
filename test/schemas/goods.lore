@@ -18,7 +18,7 @@ function price(box: Box[Metal[LowPrice]]): Real = 1.6
 
 
 function test(): [Real] = [
-  price(Box[Gold](Gold())),
-  price(Box[Silver](Silver())),
-  price(Box[Iron](Iron()))
+  price(Box(Gold())),
+  price(Box(Silver())),
+  price(Box(Iron()))
 ]
