@@ -116,3 +116,13 @@ function toString(list: [A]): String where A = {
   let joined = stringJoin(strings, ', ')
   '[$joined]'
 }
+
+function repeat(times: Int, element: A): [A] where A = {
+  let mut result: [A] = []
+  let mut i = 0
+  while (i < times) {
+    result = result :+ element
+    i += 1
+  }
+  result
+}

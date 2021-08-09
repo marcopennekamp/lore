@@ -11,3 +11,8 @@ Deno.test('inference/greet', async () => {
   const result: ListValue<string> = await LoreTest.run('inference/greet.lore')
   assertListEquals(result, ['Hello, Mr. Smith.', 'Hello, Ms. Chang.'])
 })
+
+Deno.test('inference/wrapper', async () => {
+  const result: ListValue<string> = await LoreTest.run('inference/wrapper.lore')
+  assertListEquals(result, ['Hey!', 'Hey! Hey!', 'Hey! Hey! Hey!'])
+})
