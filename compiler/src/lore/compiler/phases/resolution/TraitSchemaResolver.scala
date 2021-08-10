@@ -12,7 +12,7 @@ object TraitSchemaResolver {
   }
 
   def resolve(node: TypeDeclNode.TraitNode, parentScope: TypeScope)(implicit reporter: Reporter): TraitSchema = {
-    val typeParameters = TypeVariableDeclarationResolver.resolve(node.typeVariables, parentScope)
+    val typeParameters = TypeVariableResolver.resolve(node.typeVariables, parentScope)
     implicit val typeScope: TypeScope = ImmutableTypeScope.from(typeParameters, parentScope)
     val supertypes = InheritanceResolver.resolveInheritedTypes(node.extended, TraitIllegalExtends(node))
     new TraitSchema(node.name, typeParameters, supertypes)

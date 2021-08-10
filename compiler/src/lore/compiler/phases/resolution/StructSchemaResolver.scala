@@ -12,7 +12,7 @@ object StructSchemaResolver {
   }
 
   def resolve(node: TypeDeclNode.StructNode, parentScope: TypeScope)(implicit reporter: Reporter): StructSchema = {
-    val typeParameters = TypeVariableDeclarationResolver.resolve(node.typeVariables, parentScope)
+    val typeParameters = TypeVariableResolver.resolve(node.typeVariables, parentScope)
     implicit val typeScope: TypeScope = ImmutableTypeScope.from(typeParameters, parentScope)
     val supertypes = InheritanceResolver.resolveInheritedTypes(node.extended, StructIllegalExtends(node))
     new StructSchema(node.name, typeParameters, supertypes)

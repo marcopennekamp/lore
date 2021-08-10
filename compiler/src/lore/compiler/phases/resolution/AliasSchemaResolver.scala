@@ -8,7 +8,7 @@ import lore.compiler.types._
 object AliasSchemaResolver {
 
   def resolve(node: TypeDeclNode.AliasNode, parentTypeScope: TypeScope)(implicit reporter: Reporter): AliasSchema = {
-    val typeParameters = TypeVariableDeclarationResolver.resolve(node.typeVariables, parentTypeScope)
+    val typeParameters = TypeVariableResolver.resolve(node.typeVariables, parentTypeScope)
     implicit val typeScope: TypeScope = ImmutableTypeScope.from(typeParameters, parentTypeScope)
     val originalType = TypeExpressionEvaluator.evaluate(node.tpe).getOrElse(BasicType.Any)
     new AliasSchema(node.name, typeParameters, originalType)

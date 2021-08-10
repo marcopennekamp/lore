@@ -5,8 +5,7 @@ import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
 import lore.compiler.syntax.DeclNode
 import lore.compiler.types.{BasicType, TypeVariable}
 
-// TODO (schemas): Simply rename to TypeVariableResolver.
-object TypeVariableDeclarationResolver {
+object TypeVariableResolver {
 
   /**
     * Resolves a type variable declaration list in order.

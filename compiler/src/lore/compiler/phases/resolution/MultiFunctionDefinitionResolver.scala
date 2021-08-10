@@ -23,7 +23,7 @@ object MultiFunctionDefinitionResolver {
   }
 
   private def resolveFunction(node: DeclNode.FunctionNode, registryTypeScope: TypeScope)(implicit reporter: Reporter): FunctionDefinition = {
-    val typeParameters = TypeVariableDeclarationResolver.resolve(node.typeVariables, registryTypeScope)
+    val typeParameters = TypeVariableResolver.resolve(node.typeVariables, registryTypeScope)
     implicit val typeScope: TypeScope = ImmutableTypeScope.from(typeParameters, registryTypeScope)
     val parameters = node.parameters.map(ParameterDefinitionResolver.resolve)
     val outputType = TypeExpressionEvaluator.evaluate(node.outputType).getOrElse(BasicType.Any)
