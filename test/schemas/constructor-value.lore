@@ -1,0 +1,34 @@
+trait Content
+struct Cereal extends Content
+struct Blood extends Content
+struct Pudding extends Content
+
+function toString(cereal: Cereal): String = 'cereal'
+function toString(blood: Blood): String = 'blood'
+function toString(pudding: Pudding): String = 'pudding'
+
+
+trait Container[+C]
+struct Bowl[+C <: Content] extends Container[C] { content: C, taste: Int }
+struct Cup[+C <: Content] extends Container[C] { content: C, exclusivity: Int }
+
+function toString(bowl: Bowl[Content]): String = '${bowl.content} bowl'
+function toString(cup: Cup[Content]): String = '${cup.content} cup'
+
+
+function cereal(container: (Cereal, Int) => A): A where A = container(Cereal(), 4)
+function blood(container: (Blood, Int) => A): A where A = container(Blood(), 1)
+function pudding(container: (Pudding, Int) => A): A where A = container(Pudding(), 9)
+
+
+// TODO (schemas): Add this as a test case to `schemas.test.ts`.
+// TODO (schemas): This doesn't yet work fully because `getConstructor` in `structs.ts` needs to build a bridge between
+//                 constructor parameters and the properties object passed to `instantiate`.
+function test(): [String] = {
+  let containers = [
+    cereal(Bowl), cereal(Cup),
+    blood(Bowl), blood(Cup),
+    pudding(Bowl), pudding(Cup)
+  ]
+  map(containers, toString)
+}
