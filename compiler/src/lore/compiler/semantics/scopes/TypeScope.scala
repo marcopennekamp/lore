@@ -33,7 +33,7 @@ trait TypeScope extends Scope[NamedSchema] {
 /**
   * A type scope that is backed by an existing schema map. New schemas cannot be registered.
   */
-case class ImmutableTypeScope(schemas: Registry.Types, override val parent: Option[TypeScope]) extends TypeScope {
+case class ImmutableTypeScope(schemas: Registry.Schemas, override val parent: Option[TypeScope]) extends TypeScope {
   override protected def local(name: String): Option[NamedSchema] = schemas.get(name)
   override protected def add(name: String, entry: NamedSchema): Unit = throw new UnsupportedOperationException
 }

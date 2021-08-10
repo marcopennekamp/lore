@@ -27,15 +27,15 @@ object DeclarationResolver {
     val typeDeclarations = typeDeclNodes.foldLeft(Map.empty: TypeDeclarations) {
       case (typeDeclarations, declaration) => processTypeDeclaration(declaration, typeDeclarations)
     }
-    val typeResolutionOrder = TypeDependencies.resolve(typeDeclarations)
+    val schemaResolutionOrder = TypeDependencies.resolve(typeDeclarations)
 
-    val types = resolveTypesInOrder(typeDeclarations, typeResolutionOrder)
+    val types = resolveSchemasInOrder(typeDeclarations, schemaResolutionOrder)
     implicit val typeScope: TypeScope = ImmutableTypeScope(types, None)
 
-    val typeDefinitions = resolveTypeDefinitionsInOrder(typeDeclarations, typeResolutionOrder)
+    val schemaDefinitions = resolveSchemaDefinitionsInOrder(typeDeclarations, schemaResolutionOrder)
     val multiFunctions = resolveMultiFunctions(multiFunctionDeclarations)
 
-    Registry(types, typeResolutionOrder, typeDefinitions, multiFunctions)
+    Registry(types, schemaResolutionOrder, schemaDefinitions, multiFunctions)
   }
 
   /**
@@ -64,11 +64,11 @@ object DeclarationResolver {
     typeDeclarations.contains(name) || Type.predefinedTypes.contains(name)
   }
 
-  private def resolveTypesInOrder(
+  private def resolveSchemasInOrder(
     typeDeclarations: TypeDeclarations,
-    typeResolutionOrder: Registry.TypeResolutionOrder,
-  )(implicit reporter: Reporter): Registry.Types = {
-    typeResolutionOrder.foldLeft(Type.predefinedTypes: Registry.Types) {
+    schemaResolutionOrder: Registry.SchemaResolutionOrder,
+  )(implicit reporter: Reporter): Registry.Schemas = {
+    schemaResolutionOrder.foldLeft(Type.predefinedTypes: Registry.Schemas) {
       case (types, name) =>
         val typeScope: TypeScope = ImmutableTypeScope(types, None)
         val tpe = typeDeclarations(name) match {
@@ -83,18 +83,18 @@ object DeclarationResolver {
   /**
     * This function guarantees that definitions are resolved in the type resolution order.
     */
-  private def resolveTypeDefinitionsInOrder(
+  private def resolveSchemaDefinitionsInOrder(
     typeDeclarations: TypeDeclarations,
-    typeResolutionOrder: Registry.TypeResolutionOrder,
-  )(implicit typeScope: TypeScope, reporter: Reporter): Registry.TypeDefinitions = {
-    typeResolutionOrder.foldLeft(Map.empty: Registry.TypeDefinitions) {
-      case (typeDefinitions, name) =>
+    schemaResolutionOrder: Registry.SchemaResolutionOrder,
+  )(implicit typeScope: TypeScope, reporter: Reporter): Registry.SchemaDefinitions = {
+    schemaResolutionOrder.foldLeft(Map.empty: Registry.SchemaDefinitions) {
+      case (schemaDefinitions, name) =>
         val definition = typeDeclarations(name) match {
           case aliasNode: TypeDeclNode.AliasNode => AliasDefinitionResolver.resolve(aliasNode, typeScope)
           case traitNode: TypeDeclNode.TraitNode => TraitDefinitionResolver.resolve(traitNode, typeScope)
           case structNode: TypeDeclNode.StructNode => StructDefinitionResolver.resolve(structNode, typeScope)
         }
-        typeDefinitions + (name -> definition)
+        schemaDefinitions + (name -> definition)
     }
   }
 

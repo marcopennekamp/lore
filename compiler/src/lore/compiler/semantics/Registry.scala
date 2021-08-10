@@ -13,23 +13,23 @@ import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtensio
   * The Registry represents the global scope of type and multi-function definitions.
   */
 case class Registry(
-  types: Registry.Types,
-  typeResolutionOrder: Registry.TypeResolutionOrder,
-  typeDefinitions: Registry.TypeDefinitions,
+  schemas: Registry.Schemas,
+  schemaResolutionOrder: Registry.SchemaResolutionOrder,
+  schemaDefinitions: Registry.SchemaDefinitions,
   multiFunctions: Registry.MultiFunctions,
 ) {
 
-  val declaredTypeHierarchy = new DeclaredTypeHierarchy(types.values.toVector.filterType[DeclaredSchema])
+  val declaredTypeHierarchy = new DeclaredTypeHierarchy(schemas.values.toVector.filterType[DeclaredSchema])
 
   /**
     * All schemas in their proper order of resolution. Excludes predefined types.
     */
-  val schemasInOrder: Vector[(String, NamedSchema)] = typeResolutionOrder.map(name => (name, types(name)))
+  val schemasInOrder: Vector[(String, NamedSchema)] = schemaResolutionOrder.map(name => (name, schemas(name)))
 
   /**
     * The global type scope backed by the registry.
     */
-  val typeScope: TypeScope = ImmutableTypeScope(types, None)
+  val typeScope: TypeScope = ImmutableTypeScope(schemas, None)
 
   /**
     * The global binding scope backed by the registry, containing multi-functions and struct bindings.
@@ -69,9 +69,9 @@ case class Registry(
 }
 
 object Registry {
-  type Types = Map[String, NamedSchema] // TODO (schemas): Rename to `Schemas`?
-  type TypeResolutionOrder = Vector[String] // TODO (schemas): Rename to `SchemaResolutionOrder`?
-  type TypeDefinitions = Map[String, SchemaDefinition] // TODO (schemas): Rename to `SchemaDefinitions`?
+  type Schemas = Map[String, NamedSchema]
+  type SchemaResolutionOrder = Vector[String]
+  type SchemaDefinitions = Map[String, SchemaDefinition]
   type MultiFunctions = Map[String, MultiFunctionDefinition]
 
   case class MultiFunctionNotFound(name: String, override val position: Position) extends Feedback.Error(position) {

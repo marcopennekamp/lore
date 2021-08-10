@@ -15,14 +15,14 @@ import scalax.collection.immutable.Graph
 object TypeDependencies {
 
   /**
-    * Verifies that the dependencies between the given types are correct and computes an order in which types need to
+    * Verifies that the dependencies between the given types are correct and computes an order in which schemas need to
     * be resolved.
     *
     * Type dependencies are correct when:
     *   1. All type dependencies referred to by name have a corresponding type declaration.
     *   2. There are no cyclic type dependencies.
     */
-  def resolve(typeDeclarations: TypeDeclarations)(implicit reporter: Reporter): Registry.TypeResolutionOrder = {
+  def resolve(typeDeclarations: TypeDeclarations)(implicit reporter: Reporter): Registry.SchemaResolutionOrder = {
     val unfilteredInfos = typeDeclarations.values.toVector.map(node => TypeDeclarationInfo(node, dependencies(node)))
     val infos = unfilteredInfos.map(filterUndefinedDependencies(_, typeDeclarations))
     var graph = buildDependencyGraph(infos)
@@ -38,7 +38,7 @@ object TypeDependencies {
       throw CompilationException(s"The type dependency graph must be connected.")
     }
 
-    computeTypeResolutionOrder(graph)
+    computeSchemaResolutionOrder(graph)
   }
 
   private case class TypeDeclarationInfo(node: TypeDeclNode, dependencies: Vector[String])
@@ -157,9 +157,9 @@ object TypeDependencies {
   }
 
   /**
-    * Computes the order in which types need to be resolved.
+    * Computes the order in which schemas need to be resolved.
     */
-  private def computeTypeResolutionOrder(graph: DependencyGraph): Vector[String] = {
+  private def computeSchemaResolutionOrder(graph: DependencyGraph): Vector[String] = {
     val order = graph.topologicalSort.fold(
       _ => throw CompilationException(
         "Topological sort on the type dependency graph found a cycle, even though we verified earlier that there was no such cycle."

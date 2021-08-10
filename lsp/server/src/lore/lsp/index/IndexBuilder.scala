@@ -34,13 +34,13 @@ object IndexBuilder {
     implicit val globalIndex: GlobalIndex = new GlobalIndex
 
     // We have to filter out type definitions that are internally added by the compiler!
-    registry.typeDefinitions.values.filter(_.position != Position.internal).foreach(addTypeDefinition)
+    registry.schemaDefinitions.values.filter(_.position != Position.internal).foreach(addSchemaDefinition)
     registry.multiFunctions.values.foreach(addMultiFunctionDefinition)
 
     globalIndex
   }
 
-  def addTypeDefinition(definition: SchemaDefinition)(implicit globalIndex: GlobalIndex): Unit = {
+  def addSchemaDefinition(definition: SchemaDefinition)(implicit globalIndex: GlobalIndex): Unit = {
     val properties = definition match {
       case struct: StructDefinition => struct.properties.map(p => (p.name, p.position))
       case _ => Vector.empty
