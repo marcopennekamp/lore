@@ -104,7 +104,7 @@ object JavascriptGenerator {
     s"$rest${parameter.name}$default"
   }
 
-  private def generateProperty(property: Target.Property): String = s"${property.name}: ${generate(property.value)}"
+  private def generateProperty(property: Target.Property): String = s"${generate(Target.StringLiteral(property.name))}: ${generate(property.value)}"
 
   /**
     * Connects the strings with the given connector. If a string already ends with the connector, the connector is not
