@@ -7,6 +7,11 @@ Deno.test('schemas/array', async () => {
   assertListEquals(result, [2, 3, 4])
 })
 
+Deno.test('schemas/constructor', async () => {
+  const result: ListValue<string> = await LoreTest.run('schemas/constructor.lore')
+  assertListEquals(result, ['cereal bowl', 'cereal cup', 'blood bowl', 'blood cup', 'pudding bowl', 'pudding cup'])
+})
+
 Deno.test('schemas/extract', async () => {
   const result: ListValue<string> = await LoreTest.run('schemas/extract.lore')
   assertListEquals(result, ['5', '[1, 2, 3]', 'I am a crate and my name is Toby!'])
