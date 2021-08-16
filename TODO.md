@@ -53,6 +53,8 @@
 - We could theoretically introduce a limited form of ambiguity analysis at compile-time: For each function `f(a: A, b: B, ...)`, get a list of possible subtypes (mostly trait subtypes) and simulate dispatch with these types. If any of the inputs result in an ambiguity, raise at least a warning.
 - Inference:
   - Introduce rewrite rules which come into effect before cycle resolution. One such rewrite rule would be to rewrite judgments such as `(a, b) :<: (c, d)` to `a :<: c` and `b :<: d`. Perhaps this will give the algorithm additional options to continue the inference rather than having to fall back to cycle resolution.
+  - `CallTransformation.valueCall` should produce a Fits judgment in one direction (if the right-hand type is not fully instantiated) and a single-direction Subtypes judgment exclusively in the other. The same goes for arguments in MultiFunctionHints.
+    - Additionally, the Fits/Subtypes judgments should be added for each argument individually, because this gives the inference algorithm more leeway. This would also allow us to type the input type of a FunctionType as a TupleType.
 
 ##### CLI
 

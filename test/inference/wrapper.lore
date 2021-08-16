@@ -12,30 +12,3 @@ function test(): [String] = {
     })
   )
 }
-
-/* TODO (schemas):
-
-  [trace] Multi-function hint judgments:
-  iv40 <- repeat(iv38, String)
-  iv41 <- iv40
-  iv43 <- stringJoin(iv41, String)
-  ((iv38) => iv43) :<: ((iv44) => iv45)
-  iv38 :<: Int
-  iv41 fits [iv50]
-  iv41 :<: [iv50]
-  iv52 :<: iv53
-  iv37 fits [iv52]
-  iv37 :<: [iv52]
-  Wrapper[iv44, iv45] fits Wrapper[iv53, iv54]
-  Wrapper[iv44, iv45] :<: Wrapper[iv53, iv54]
-  iv55 <- (iv37, Wrapper[iv44, iv45])
-
-  The problem is that `((iv38) => iv43) :<: ((iv44) => iv45)` is cycle-resolved before `iv40 <- repeat(iv38, String)`
-  which results in `iv45` getting no type assigned (ultimately the output type of the wrapped lambda). We've actually
-  had this problem before with type arguments in multi-functions, which is why we added the "fits" judgment.
-
-  Adding a "fits" judgment for all value calls is a solution, because the "fits" judgment is now resolved after `iv43`
-  gets a proper bound, which allows inference to correctly assign `iv45`. However, I always found this approach kind of
-  messy, and perhaps this is a good opportunity to reevaluate the approach here (both for multi-function calls and
-  value calls with type parameters).
-*/
