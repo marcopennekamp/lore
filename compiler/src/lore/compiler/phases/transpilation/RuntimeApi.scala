@@ -145,8 +145,8 @@ object RuntimeApi {
       named("type").call(schema, typeArguments, propertyTypes)
     }
     def value(properties: TargetExpression, tpe: TargetExpression) = named("value").call(properties, tpe)
-    def getConstructor(schema: TargetExpression, typeArguments: TargetExpression, instantiate: TargetExpression) = {
-      named("getConstructor").call(schema, typeArguments, instantiate)
+    def getConstructor(schema: TargetExpression, typeArguments: TargetExpression, construct: TargetExpression) = {
+      named("getConstructor").call(schema, typeArguments, construct)
     }
   }
 

@@ -3,7 +3,6 @@ package lore.compiler.phases.transpilation.structures
 import lore.compiler.phases.transpilation.TypeTranspiler.RuntimeTypeVariables
 import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.phases.transpilation.{RuntimeApi, RuntimeNames, TypeTranspiler}
-import lore.compiler.semantics.Registry
 import lore.compiler.target.Target.TargetExpression
 import lore.compiler.types.TraitSchema
 

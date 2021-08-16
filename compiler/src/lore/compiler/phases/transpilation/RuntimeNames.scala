@@ -16,6 +16,7 @@ object RuntimeNames {
   object struct {
     def defaultValue(struct: StructSchema, property: StructPropertyDefinition): Target.Variable = s"${schema(struct).name}__default_${property.name}".asVariable
     def instantiate(struct: StructSchema): Target.Variable = s"${schema(struct).name}__instantiate".asVariable
+    def construct(struct: StructSchema): Target.Variable = s"${schema(struct).name}__construct".asVariable
 
     /**
       * The constructor of a <b>constant</b> struct schema. This does not get generated for parameterized structs. Use

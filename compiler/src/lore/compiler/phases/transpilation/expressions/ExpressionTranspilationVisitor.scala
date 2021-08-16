@@ -113,7 +113,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
     Chunk.combine(propertyChunks) { values =>
       val dictionary = Target.Dictionary(
         expression.properties.zip(values).map { case (property, value) =>
-          Target.Property(property.name.asName, value)
+          Target.Property(property.name, value)
         }
       )
       Chunk.expression(RuntimeApi.shapes.value(dictionary))
@@ -180,13 +180,9 @@ private[transpilation] class ExpressionTranspilationVisitor()(
     expression.target match {
       case CallTarget.Value(BindingAccess(constructor: StructConstructor, _)) =>
         // Optimization: If we're directly calling a struct constructor, the function call boils down to calling the
-        // instantiation function. This allows us to bypass a run-time call to `getConstructor` for structs with type
+        // `construct` function. This allows us to bypass a run-time call to `getConstructor` for structs with type
         // parameters.
-        val structType = constructor.structType
-        withArguments { arguments =>
-          val propertyAssignments = structType.properties.map(_.definition.name.asName).zip(arguments)
-          InstantiationTranspiler.transpileStructInstantiation(structType, propertyAssignments)
-        }
+        withArguments(arguments => InstantiationTranspiler.transpileStructInstantiation(constructor.structType, arguments))
 
       case CallTarget.Value(_) => target.get.flatMap(functionValueCall)
       case CallTarget.MultiFunction(mf) => directCall(TargetRepresentableTranspiler.transpile(mf))

@@ -7,7 +7,7 @@ import lore.compiler.phases.transpilation.{RuntimeApi, RuntimeNames, TypeTranspi
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.target.Target
-import lore.compiler.target.Target.{TargetExpression, TargetStatement}
+import lore.compiler.target.Target.{TargetExpression, TargetName, TargetStatement}
 import lore.compiler.target.TargetDsl._
 import lore.compiler.types.StructSchema
 
@@ -27,7 +27,7 @@ case class StructTranspiler(schema: StructSchema)(
     val propertyTypes = Target.Dictionary(schema.definition.properties.map { property =>
       // As noted in the runtime's StructSchema definition, schema property types must be lazy to ensure that all
       // types are already initialized when the property type is initialized.
-      Target.Property(property.name.asName, RuntimeApi.utils.`lazy`.of(TypeTranspiler.transpile(property.tpe)))
+      Target.Property(property.name, RuntimeApi.utils.`lazy`.of(TypeTranspiler.transpile(property.tpe)))
     })
     val propertyOrder = schema.definition.properties.map(_.name)
     RuntimeApi.structs.schema(schema.name, typeParameters, supertraits, schema.hasMultipleParameterizedInheritance, propertyTypes, propertyOrder)
@@ -55,11 +55,14 @@ case class StructTranspiler(schema: StructSchema)(
     *
     *   1. A struct instantiation function which takes a properties object, and type arguments unless the schema is
     *      constant, computes the correct run-time type, and instantiates a value of the struct.
-    *   2. A function for each property's default value. This function is invoked to generate another default values
+    *   2. A `construct` function which is a more convenient interface to the instantiation function. It takes the
+    *      struct's type arguments (if parametric) as the first argument and all other constructor arguments in order.
+    *      This function is used by all constructors.
+    *   3. A function for each property's default value. This function is invoked to generate another default values
     *      during instantiation.
     */
   override def transpileAdditionalDeclarations()(implicit runtimeTypeVariables: RuntimeTypeVariables, registry: Registry): Vector[TargetStatement] = {
-    transpileStructInstantiate() ++ transpileDefaultValues()
+    transpileStructInstantiate() ++ transpileStructConstruct() ++ transpileDefaultValues()
   }
 
   private def transpileStructInstantiate(): Vector[TargetStatement] = {
@@ -82,11 +85,31 @@ case class StructTranspiler(schema: StructSchema)(
     * To instantiate a struct with the right type, the actual property types of the struct are retrieved using typeOf.
     */
   private def getPropertyTypesDictionary(paramProperties: Target.Parameter): Target.Dictionary = {
-    def handleProperty(property: StructPropertyDefinition) = {
-      val tpe = RuntimeApi.types.typeOf(paramProperties.asVariable.prop(property.name))
-      Target.Property(property.name.asName, tpe)
+    getPropertyDictionary(schema.definition.openProperties, property => RuntimeApi.types.typeOf(paramProperties.asVariable.prop(property.name)))
+  }
+
+  private def transpileStructConstruct(): Vector[TargetStatement] = {
+    val varInstantiate = RuntimeNames.struct.instantiate(schema)
+    val varConstruct = RuntimeNames.struct.construct(schema)
+    val paramTypeArguments = "typeArguments".asParameter
+
+    val typeArgumentParameters = if (!schema.isConstant) Vector(paramTypeArguments) else Vector.empty
+    val propertyParameters = schema.definition.properties.map(property => RuntimeNames.localVariable(property.name).asParameter)
+    val parameters = typeArgumentParameters ++ propertyParameters
+    val properties = getPropertyDictionary(schema.definition.properties, property => RuntimeNames.localVariable(property.name))
+
+    Vector(
+      Target.Function(varConstruct.name, parameters, Target.block(
+        Target.Return(Target.Call(varInstantiate, Vector(properties) ++ typeArgumentParameters.map(_.asVariable)))
+      ))
+    )
+  }
+
+  private def getPropertyDictionary(properties: Vector[StructPropertyDefinition], getPropertyExpression: StructPropertyDefinition => TargetExpression): Target.Dictionary = {
+    val entries = properties.map {
+      property => Target.Property(property.name, getPropertyExpression(property))
     }
-    Target.Dictionary(schema.definition.openProperties.map(handleProperty))
+    Target.Dictionary(entries)
   }
 
   private def transpileDefaultValues()(implicit runtimeTypeVariables: RuntimeTypeVariables, registry: Registry): Vector[TargetStatement] = {
@@ -118,7 +141,7 @@ case class StructTranspiler(schema: StructSchema)(
     * Example:
     * {{{
     * const ABC__constructor = Lore.functions.value(
-    *   (name, age) => ABC__instantiate({ name, age }),
+    *   ABC_construct,
     *   /* function type */,
     * );
     * }}}
@@ -131,20 +154,14 @@ case class StructTranspiler(schema: StructSchema)(
     // As the schema is constant, we can provide the empty map as runtime type variables.
     implicit val runtimeTypeVariables: RuntimeTypeVariables = Map.empty
 
+    val varConstruct = RuntimeNames.struct.construct(schema)
     val varConstructor = RuntimeNames.struct.constructor(schema)
     val functionType = schema.representative.constructor.signature.functionType
-    val parameterNames = schema.definition.properties.map(_.name.asName)
-    val parameters = parameterNames.map(Target.Parameter(_))
-    val propertyAssignments = parameterNames.map(name => (name, name.asVariable))
-    val instantiateCall = InstantiationTranspiler.transpileStructInstantiation(schema.representative, propertyAssignments)
 
     Vector(
       Target.VariableDeclaration(
         varConstructor.name,
-        RuntimeApi.functions.value(
-          Target.Lambda(parameters, instantiateCall),
-          TypeTranspiler.transpile(functionType),
-        )
+        RuntimeApi.functions.value(varConstruct, TypeTranspiler.transpile(functionType))
       )
     )
   }

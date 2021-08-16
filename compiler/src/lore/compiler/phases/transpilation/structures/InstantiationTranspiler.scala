@@ -12,25 +12,21 @@ object InstantiationTranspiler {
   type PropertyAssignment = (TargetName, TargetExpression)
 
   /**
-    * Creates a struct instantiation, using the generated [[RuntimeNames.struct.instantiate]] function. The
-    * `instantiate` function expects a properties object and a type arguments list (if the schema isn't constant) as
-    * parameters.
+    * Creates a struct instantiation, using the generated [[RuntimeNames.struct.construct]] function. The `construct`
+    * function expects a type arguments list (if the schema is parametric) and the property arguments as parameters.
     */
   def transpileStructInstantiation(
     structType: StructType,
-    propertyAssignments: Vector[PropertyAssignment],
+    arguments: Vector[TargetExpression],
   )(implicit runtimeTypeVariables: RuntimeTypeVariables, symbolHistory: SymbolHistory): TargetExpression = {
-    println(s"Direct `instantiate` call of $structType!")
+    println(s"Direct `construct` call of $structType!")
 
-    val properties = Target.Dictionary(
-      propertyAssignments.map { case (name, value) => Target.Property(name, value) }
-    )
     val typeArguments = if (!structType.schema.isConstant) {
-      Some(Target.List(structType.typeArguments.map(TypeTranspiler.transpile)))
-    } else None
+      Vector(Target.List(structType.typeArguments.map(TypeTranspiler.transpile)))
+    } else Vector.empty
 
-    val varInstantiate = RuntimeNames.struct.instantiate(structType.schema)
-    Target.Call(varInstantiate, Vector(properties) ++ typeArguments.toVector)
+    val varConstruct = RuntimeNames.struct.construct(structType.schema)
+    Target.Call(varConstruct, typeArguments ++ arguments)
   }
 
 }

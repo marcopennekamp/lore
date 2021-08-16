@@ -26,8 +26,8 @@ object TargetRepresentableTranspiler {
         } else {
           val varSchema = RuntimeNames.schema(schema)
           val typeArguments = constructor.structType.typeArguments.map(TypeTranspiler.transpile)
-          val varInstantiate = RuntimeNames.struct.instantiate(schema)
-          RuntimeApi.structs.getConstructor(varSchema, Target.List(typeArguments), varInstantiate)
+          val varConstruct = RuntimeNames.struct.construct(schema)
+          RuntimeApi.structs.getConstructor(varSchema, Target.List(typeArguments), varConstruct)
         }
     }
   }

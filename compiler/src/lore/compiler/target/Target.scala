@@ -60,7 +60,7 @@ object Target {
   case object Null extends TargetExpression
 
   case class Dictionary(properties: Vector[Property]) extends TargetExpression
-  case class Property(name: TargetName, value: TargetExpression)
+  case class Property(name: String, value: TargetExpression)
 
   case class List(elements: Vector[TargetExpression]) extends TargetExpression
 

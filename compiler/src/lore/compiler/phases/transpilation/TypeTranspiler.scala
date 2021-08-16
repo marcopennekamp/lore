@@ -94,7 +94,7 @@ object TypeTranspiler {
       case MapType(key, value) => RuntimeApi.maps.tpe(rec(key), rec(value))
       case ShapeType(properties) =>
         RuntimeApi.shapes.tpe(Target.Dictionary(
-          properties.values.toVector.map(property => Target.Property(property.name.asName, rec(property.tpe)))
+          properties.values.toVector.map(property => Target.Property(property.name, rec(property.tpe)))
         ))
       case SymbolType(name) => symbolHistory.targetType(name)
     }
