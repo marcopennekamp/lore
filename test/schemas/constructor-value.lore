@@ -22,8 +22,6 @@ function pudding(container: (Pudding, Int) => A): A where A = container(Pudding(
 
 
 // TODO (schemas): Add this as a test case to `schemas.test.ts`.
-// TODO (schemas): This doesn't yet work fully because `getConstructor` in `structs.ts` needs to build a bridge between
-//                 constructor parameters and the properties object passed to `instantiate`.
 function test(): [String] = {
   let containers = [
     cereal(Bowl), cereal(Cup),

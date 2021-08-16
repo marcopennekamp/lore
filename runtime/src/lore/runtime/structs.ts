@@ -149,12 +149,19 @@ export const Struct = {
       parameterTypes.push(<Type> Struct.getPropertyType(structType, name))
     }
 
-    // TODO (schemas): We need to build a bridge between the parameters of the constructor and the properties object passed to `instantiate`.
+    // The constructor must convert the arguments passed to it into a properties object that is familiar to
+    // `instantiate`.
+    const callable = (...args: any) => {
+      const properties: { [key: string]: any } = { }
+      let index = 0
+      for (const parameterName of schema.propertyOrder) {
+        properties[parameterName] = args[index]
+        index += 1
+      }
+      return instantiate(properties, typeArguments)
+    }
 
-    return Function.value(
-      (properties: object) => instantiate(properties, typeArguments),
-      Function.type(Tuple.type(parameterTypes), structType)
-    )
+    return Function.value(callable, Function.type(Tuple.type(parameterTypes), structType))
   },
 
   /**
