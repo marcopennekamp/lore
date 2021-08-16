@@ -8,7 +8,7 @@ import { hashPropertyTypes, LazyPropertyTypes, PropertyTypes } from './types/pro
 import { substitute } from './types/substitution.ts'
 import { Assignments, TypeVariable } from './types/type-variables.ts'
 import { Type } from './types/types.ts'
-import { finalize, mix, mixLast, pairHashRaw, stringHash } from './utils/hash.ts'
+import { pairHashRaw } from './utils/hash.ts'
 import { Value } from './values.ts'
 
 export interface StructSchema extends DeclaredTypeSchema {
@@ -144,12 +144,9 @@ export const Struct = {
       return structType.constructorCache
     }
 
-    const parameterTypes = []
+    const parameterTypes: Array<Type> = []
     for (const name of schema.propertyOrder) {
-      // TODO (schemas): Can't we just take the struct type's property types here? The struct type will have no open
-      //                 properties set, so the result should be effectively the same.
-      const propertyType = schema.propertyTypes[name]?.value()
-      parameterTypes.push(substitute(typeArguments, propertyType))
+      parameterTypes.push(<Type> Struct.getPropertyType(structType, name))
     }
 
     // TODO (schemas): We need to build a bridge between the parameters of the constructor and the properties object passed to `instantiate`.
