@@ -3,8 +3,7 @@ package lore.compiler.phases.transformation
 import lore.compiler.core.Position
 import lore.compiler.feedback.DispatchFeedback.{AmbiguousCall, EmptyFit}
 import lore.compiler.feedback.{Feedback, Reporter}
-import lore.compiler.inference.Inference.isFullyInstantiated
-import lore.compiler.inference.{InferenceVariable, TypingJudgment}
+import lore.compiler.inference.{FunctionInference, InferenceVariable, TypingJudgment}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.CallTarget
@@ -22,10 +21,10 @@ object CallTransformation {
       case FunctionType(input, output) => (input, output)
 
       // May or may not be a function type, so we have to make sure that the type is even a function. The Assign
-      // judgment ensures that the target's type is even a function type. For now, we don't want to infer the type of
+      // judgments ensure that the target's type is even a function type. For now, we don't want to infer the type of
       // the target based on the provided arguments, so we're relying on one-way type inference.
       case _ =>
-        val inputType = new InferenceVariable
+        val inputType = TupleType(arguments.map(_ => new InferenceVariable))
         val outputType = new InferenceVariable
 
         judgmentCollector.add(TypingJudgment.Assign(FunctionType(inputType, outputType), target.tpe, target.position))
@@ -33,16 +32,9 @@ object CallTransformation {
         (inputType, outputType)
     }
 
-    val argumentTypes = TupleType(arguments.map(_.tpe))
-
-    // If the input type of the function isn't fully instantiated, the arguments should determine its inference
-    // variables (especially type parameters) conclusively with a Fits judgment, which assigns the inference variables'
-    // upper and lower bounds.
-    if (!isFullyInstantiated(inputType)) {
-      judgmentCollector.add(TypingJudgment.Fits(argumentTypes, inputType, target.position))
-    }
-
-    judgmentCollector.add(TypingJudgment.Subtypes(argumentTypes, inputType, target.position))
+    judgmentCollector.add(
+      FunctionInference.argumentJudgments(arguments, inputType.elements)
+    )
 
     Expression.Call(CallTarget.Value(target), arguments, outputType, position)
   }

@@ -70,21 +70,8 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       val typeVariables = function.typeParameters
       val (typeVariableAssignments, boundsJudgments) = InferenceVariable.fromTypeVariables(typeVariables, position)
 
-      // For each argument/parameter pair, we add two typing judgments:
-      //  - The Fits judgment ensures that any type variables on the parameter side (represented by inference
-      //    variables) are properly assigned their bounds.
-      //  - The Subtypes judgment allows inference of an argument's type based on the parameter type.
-      val argumentJudgments = function.signature.parameters.zip(arguments).flatMap {
-        case (parameter, argument) =>
-          val parameterType = Type.substitute(parameter.tpe, typeVariableAssignments)
-          var judgments = Vector.empty[TypingJudgment]
-
-          if (!isFullyInstantiated(parameterType)) {
-            judgments = judgments :+ TypingJudgment.Fits(argument.tpe, parameterType, argument.position)
-          }
-
-          judgments :+ TypingJudgment.Subtypes(argument.tpe, parameterType, argument.position)
-      }
+      val parameterTypes = function.signature.parameters.map(parameter => Type.substitute(parameter.tpe, typeVariableAssignments))
+      val argumentJudgments = FunctionInference.argumentJudgments(arguments, parameterTypes)
 
       val resultJudgments = Vector(
         TypingJudgment.Assign(resultArgumentType, TupleType(argumentTypes), position)

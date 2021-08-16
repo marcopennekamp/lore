@@ -19,7 +19,7 @@ object MultiFunctionValueJudgmentResolver extends JudgmentResolver[TypingJudgmen
     // may still be without a definition, which is why we instantiate them as Any.
     instantiateCandidateType(assignments, judgment.target) match {
       case expectedFunctionType: FunctionType =>
-        MultiFunctionCallJudgmentResolver.resolveDispatch(judgment.mf, expectedFunctionType.inputTuple, judgment.position, assignments).flatMap { instance =>
+        MultiFunctionCallJudgmentResolver.resolveDispatch(judgment.mf, expectedFunctionType.input, judgment.position, assignments).flatMap { instance =>
           val actualFunctionType = instance.signature.functionType
           if (actualFunctionType.output <= expectedFunctionType.output) {
             narrowBounds(assignments, judgment.target, actualFunctionType, actualFunctionType, judgment)
