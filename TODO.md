@@ -15,11 +15,10 @@
     - Structures: ~~Type variable variance~~, ~~trait and struct schema type parameters~~, ~~trait and struct type instantiation~~, interning trait/struct types (possibly with weak references so that unused types can be reclaimed).
     - Type functions: ~~Subtyping~~, ~~equality~~, ~~type variable allocations~~, ~~substitution~~, ~~polymorphy~~, ~~variables~~, ~~stringify~~.
   - Clear all `TODO (schemas)` entries.
+- Implement the new syntax.
+  - Add new features: Pipe operator, `cond` operator, `@where` annotation, `domain` blocks, trailing lambdas, global constants.
+  - Unsupported for now: Implicit underscore sections (e.g. `map(things, _.name)`).
 - Implement a module system.
-- Implement a pipe operator.
-- Overhaul the syntax.
-- Implement trailing lambdas.
-- Implement global constants. Mutable values might follow later, but we absolutely need constants so that certain objects aren't constantly reallocated.
 - Implement an append operation for maps. In general, we will need to apply the same run-time typing considerations to maps.
 - Implement ranges (see `for comprehensions` in the specification).
 - Rethink properties: I don't like how shape properties are orthogonal to multi-functions right now. To use a shape, one is forced to ultimately give a property to an implementing struct. It would be much superior if properties could be declared "virtually", allowing traits to implement properties via some sort of function (perhaps even with dispatch on the accessed type). This feature should also simultaneously solve the question of "virtual/computed properties" posed in the geometry.lore example.

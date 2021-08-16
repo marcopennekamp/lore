@@ -1,6 +1,9 @@
 @where A
 domain list: [A]
 
+  // TODO: Allow omission of `= do`? Meaning, no equals sign and a newline is a function with a block that must be closed with an `end`.
+  //       Alternative: Allow omission of `do`, meaning that an `=` before the newline opens an implicit block.
+  //       Only the alternative might work considering that a function without an equals sign is an abstract function.
   @where B >: A, I, R >: I
   func fold(initial: I, f: (R, B) => R): R = do
     let mut result: R = initial
