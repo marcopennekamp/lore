@@ -27,7 +27,7 @@ object RuntimeNames {
 
   def newType(tpe: DeclaredType): Target.Variable = s"lore_newtype_${tpe.name}".asVariable
 
-  def temporaryVariable(name: String): Target.Variable = s"lore_tmp_$name".asVariable
+  def temporaryVariable(prefix: String, name: String): Target.Variable = s"${prefix}tmp_$name".asVariable
   def localVariable(loreName: String): Target.Variable = s"lore_lv_$loreName".asVariable
 
   def symbolType(name: String): Target.Variable = s"lore_symbol_type_$name".asVariable
