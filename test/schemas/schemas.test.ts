@@ -22,6 +22,11 @@ Deno.test('schemas/goods', async () => {
   assertListEquals(result, [48.5, 17.2, 1.6])
 })
 
+Deno.test('schemas/open-properties', async () => {
+  const result: ListValue<string> = await LoreTest.run('schemas/open-properties.lore')
+  assertListEquals(result, ['thing with content', 'thing with content', 'thing with hammer'])
+})
+
 Deno.test('schemas/option', async () => {
   const result: ListValue<string> = await LoreTest.run('schemas/option.lore')
   assertListEquals(result, ['None', 'Some(Hello, world!)', 'Some([1, 2, 3])', 'Oh shit, it\'s a dragon!', 'They\'re everywhere!'])
