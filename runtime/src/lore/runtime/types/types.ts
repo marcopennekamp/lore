@@ -29,8 +29,8 @@ export const Types = {
   string: BasicType.string,
 
   // Type variables.
-  variable(name: string, index: number, lowerBound: Type, upperBound: Type, variance: Variance): TypeVariable {
-    return { kind: Kind.TypeVariable, name, index, lowerBound, upperBound, variance, hash: stringHashWithSeed(name, 0x7ff08f15) }
+  variable(index: number, lowerBound: Type, upperBound: Type, variance: Variance, fullName: string): TypeVariable {
+    return { kind: Kind.TypeVariable, fullName, index, lowerBound, upperBound, variance, hash: stringHashWithSeed(fullName, 0x7ff08f15) }
   },
   variance: Variance,
 

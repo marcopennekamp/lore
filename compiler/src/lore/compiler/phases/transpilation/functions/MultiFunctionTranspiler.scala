@@ -71,7 +71,7 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   private lazy val transpiledInputTypeParameters: (Vector[TargetStatement], RuntimeTypeVariables) = {
     def handleFunction(function: FunctionDefinition) = {
       if (function.isPolymorphic) {
-        val (statements, runtimeTypeVariables) = TypeTranspiler.transpileTypeVariables(function.typeParameters)
+        val (statements, runtimeTypeVariables) = TypeTranspiler.transpileTypeVariables(function.typeParameters, function.runtimeName)
         val typeParameterDeclaration = RuntimeNames.functionTypeParameters(function).declareAs(
           Target.List(function.typeParameters.map(runtimeTypeVariables).map(_.expression))
         )

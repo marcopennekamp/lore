@@ -5,7 +5,7 @@ import lore.compiler.phases.transpilation.structures.DeclaredSchemaTranspiler
 import lore.compiler.phases.transpilation.values.SymbolHistory
 import lore.compiler.target.Target
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
-import lore.compiler.target.TargetDsl.{ExpressionExtension, StringExtension, VariableExtension}
+import lore.compiler.target.TargetDsl.{ExpressionExtension, VariableExtension}
 import lore.compiler.types._
 
 object TypeTranspiler {
@@ -20,15 +20,18 @@ object TypeTranspiler {
     *
     * The variable list must be ordered in the declaration order of the variables. At run time, the order of the type
     * variables will determine at which index their instantiations will be placed in an assignments array.
+    *
+    * @param ownerName The owner's name, which is used to generate the type variable's full name, required by the runtime.
     */
-  def transpileTypeVariables(typeVariables: Vector[TypeVariable])(implicit variableProvider: TemporaryVariableProvider, symbolHistory: SymbolHistory): (Vector[TargetStatement], RuntimeTypeVariables) = {
+  def transpileTypeVariables(typeVariables: Vector[TypeVariable], ownerName: String)(implicit variableProvider: TemporaryVariableProvider, symbolHistory: SymbolHistory): (Vector[TargetStatement], RuntimeTypeVariables) = {
     implicit val runtimeTypeVariables: RuntimeTypeVariables = typeVariables.zipWithIndex.map {
       case (tv, index) => (tv, RuntimeTypeVariable(tv, index, variableProvider.createVariable()))
     }.toMap
 
     val definitions = typeVariables.map { tv =>
       val rtv = runtimeTypeVariables(tv)
-      rtv.expression.declareAs(RuntimeApi.types.variable(tv.name, rtv.index, transpile(tv.lowerBound), transpile(tv.upperBound), tv.variance))
+      val fullName = s"$ownerName.${tv.name}"
+      rtv.expression.declareAs(RuntimeApi.types.variable(rtv.index, transpile(tv.lowerBound), transpile(tv.upperBound), tv.variance, fullName))
     }
 
     (definitions, runtimeTypeVariables)

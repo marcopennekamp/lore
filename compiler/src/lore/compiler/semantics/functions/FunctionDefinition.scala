@@ -54,6 +54,20 @@ class FunctionDefinition(
     }
     option
   }
+
+  /**
+    * The run-time name of a function incorporates the function's input type, which makes it unique for each function
+    * definition. This is similar to C++'s name mangling. It is also preferable to just giving the function an index or
+    * a UUID, because apart from removing the potential for collisions, we can also reconstruct the function's name,
+    * which will be especially useful between compilation passes.
+    *
+    * The input type's outer tuple is omitted from the identifier, as it solely represents redundant information.
+    * Unit functions thus are represented by the simple name `function$`.
+    */
+  lazy val runtimeName: String = {
+    val id = Type.uniqueIdentifier(signature.inputType.elements)
+    s"$name$$$id"
+  }
 }
 
 object FunctionDefinition {

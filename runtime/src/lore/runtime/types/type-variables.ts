@@ -7,11 +7,20 @@ import { Type } from './types.ts'
  * A run-time type variable is identified by its index in the type argument array of the schema or function call.
  */
 export interface TypeVariable extends Type {
-  name: string
   index: number
   lowerBound: Type
   upperBound: Type
   variance: Variance
+
+  /**
+   * The variable's full name is used when it is stringified and to generate its hash code. The full name is composed
+   * of an owner name such as a function name or a class name, and the variable's name itself.
+   *
+   * The point of a *full* name as opposed to a simple name is the need to generate unique hash codes for unique type
+   * variables. A lot of type variables across many contexts may be named "A" (and have index 0). Qualifying that name
+   * with an owner prefix (e.g. `create.A`, `Container.A`, `find.A`) produces better hash codes.
+   */
+  fullName: string
 }
 
 export enum Variance {

@@ -20,8 +20,8 @@ object RuntimeApi {
     val boolean = named("boolean")
     val string = named("string")
 
-    def variable(name: String, index: Int, lowerBound: TargetExpression, upperBound: TargetExpression, variance: Variance) = {
-      named("variable").call(name.asLiteral, Target.IntLiteral(index), lowerBound, upperBound, named("variance").prop(variance.toString))
+    def variable(index: Int, lowerBound: TargetExpression, upperBound: TargetExpression, variance: Variance, fullName: String) = {
+      named("variable").call(Target.IntLiteral(index), lowerBound, upperBound, named("variance").prop(variance.toString), fullName.asLiteral)
     }
 
     def fitsMonomorphic(t1: TargetExpression, t2: TargetExpression) = named("fitsMonomorphic").call(t1, t2)

@@ -11,7 +11,7 @@ import { Type, XaryType } from './types.ts'
 
 export function stringify(type: Type): string {
   switch (type.kind) {
-    case Kind.TypeVariable: return (<TypeVariable> type).name
+    case Kind.TypeVariable: return (<TypeVariable> type).fullName
 
     case Kind.Any: return 'Any'
     case Kind.Nothing: return 'Nothing'
