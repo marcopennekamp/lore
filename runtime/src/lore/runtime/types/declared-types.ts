@@ -1,11 +1,10 @@
 import { Intersection } from '../intersections.ts'
 import { Sum } from '../sums.ts'
 import { Trait, TraitSchema, TraitType } from '../traits.ts'
-import { Tuple } from '../tuples.ts'
-import { orderedHash, pairHashRaw, stringHash, stringHashWithSeed } from '../utils/hash.ts'
+import { TupleType } from '../tuples.ts'
+import { pairHashRaw, stringHash, stringHashWithSeed } from '../utils/hash.ts'
 import { DeclaredSchemas, DeclaredTypeSchema } from './declared-schemas.ts'
 import { Kind } from './kinds.ts'
-import { stringify } from './stringify.ts'
 import { substitute } from './substitution.ts'
 import { Assignments, TypeVariables, Variance } from './type-variables.ts'
 import { Type } from './types.ts'
@@ -28,45 +27,50 @@ export interface DeclaredType extends Type {
 export const DeclaredTypes = {
   /**
    * Creates a declared type from the given arguments. If the schema is parametric, types are interned. If for the
-   * given type arguments a type already exists in the type cache, the cached type is returned. Otherwise, a new type
-   * is created and added to the cache.
+   * given unique key a type already exists in the type cache, the cached type is returned. Otherwise, a new type is
+   * created and added to the cache.
    *
-   * `typeArguments` must and may only be `undefined` if the schema is constant.
+   * @param typeArguments Type arguments must be `undefined` if the schema is constant and must be defined if the
+   *                      schema is parametric.
+   * @param uniqueKey A tuple type which contains all type arguments and open property types of the declared type in
+   *                  order. This makes it a key that is unique per type instance of the schema. It is used to generate
+   *                  a hash code for a type instance and to identify a type in the schema's type cache. If the tuple
+   *                  type would be empty, the key must be `undefined`.
    */
   type<T extends DeclaredType>(
     kind: Kind.Trait | Kind.Struct,
     schema: DeclaredTypeSchema,
     typeArguments: Assignments | undefined,
     extras: object,
-    hash: number,
+    uniqueKey: TupleType | undefined,
   ): T {
-    const newType = (supertraits: Array<Type>) => ({ kind, schema, typeArguments, supertraits, ...extras, hash } as unknown as T)
+    const newType = (supertraits: Array<Type>) => {
+      const hash = generateHash(schema, uniqueKey)
+      return { kind, schema, typeArguments, supertraits, ...extras, hash } as unknown as T
+    }
 
-    if (typeArguments) {
-      const cacheKey = Tuple.type(typeArguments)
-      const internedType = schema.typeCache?.get(cacheKey)
+    if (uniqueKey) {
+      const internedType = schema.typeCache?.get(uniqueKey)
       if (internedType) {
         return <T> internedType
       }
 
-      if (!boundsContain(schema, typeArguments)) {
-        throw Error(`Cannot instantiate schema ${schema} with type arguments ${typeArguments}.`)
+      let supertraits
+      if (typeArguments) {
+        if (!boundsContain(schema, typeArguments)) {
+          throw Error(`Cannot instantiate schema ${schema} with type arguments ${typeArguments}.`)
+        }
+        supertraits = instantiateSupertraits(schema, typeArguments)
+      } else {
+        supertraits = schema.supertraits
       }
-      const supertraits = instantiateSupertraits(schema, typeArguments)
 
       const type = newType(supertraits)
-      schema.typeCache?.set(cacheKey, type)
+      schema.typeCache?.set(uniqueKey, type)
       return type
     }
 
     return newType(schema.supertraits)
-  },
-
-  hash(schema: DeclaredTypeSchema, typeArguments: Assignments | undefined): number {
-    if (!typeArguments) {
-      return stringHashWithSeed(schema.name, 0x38ba128e)
-    }
-    return pairHashRaw(stringHash(schema.name), orderedHash(typeArguments), 0x38ba128e)
   },
 
   /**
@@ -108,6 +112,13 @@ export const DeclaredTypes = {
       return getCombinedSupertrait(type, supertypeSchema)
     }
   },
+}
+
+function generateHash(schema: DeclaredTypeSchema, uniqueKey: TupleType | undefined): number {
+  if (!uniqueKey) {
+    return stringHashWithSeed(schema.name, 0x38ba128e)
+  }
+  return pairHashRaw(stringHash(schema.name), uniqueKey.hash, 0x38ba128e)
 }
 
 /**

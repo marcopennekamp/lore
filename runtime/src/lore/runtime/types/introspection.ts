@@ -21,7 +21,7 @@ export const Introspection = {
    * the compiler. (Seriously, don't call into this with a dynamic call!!)
    */
   initialize(typeTrait: TraitType) {
-    wrapperSchema = Struct.schema("lore$IntrospectionWrapper", [], [typeTrait], false, { }, [])
+    wrapperSchema = Struct.schema("lore$IntrospectionWrapper", [], [typeTrait], false, { }, [], [])
     wrapperType = Struct.type(wrapperSchema)
   },
 

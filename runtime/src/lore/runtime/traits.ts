@@ -1,4 +1,5 @@
 import { ShapeType } from './shapes.ts'
+import { Tuple } from './tuples.ts'
 import { DeclaredType, DeclaredTypes } from './types/declared-types.ts'
 import { Kind } from './types/kinds.ts'
 import { DeclaredSchemas, DeclaredTypeSchema } from './types/declared-schemas.ts'
@@ -41,7 +42,7 @@ export const Trait = {
   },
 
   type(schema: TraitSchema, typeArguments?: Assignments): TraitType {
-    return DeclaredTypes.type<TraitType>(Kind.Trait, schema, typeArguments, { }, DeclaredTypes.hash(schema, typeArguments))
+    return DeclaredTypes.type<TraitType>(Kind.Trait, schema, typeArguments, { }, typeArguments ? Tuple.type(typeArguments) : undefined)
   },
 
   getInheritedShapeType(type: TraitType): ShapeType {

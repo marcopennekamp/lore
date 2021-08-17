@@ -131,6 +131,7 @@ object RuntimeApi {
       hasMultipleParameterizedInheritance: Boolean,
       propertyTypes: TargetExpression,
       propertyOrder: Vector[String],
+      openPropertyOrder: Vector[String],
     ) = {
       named("schema").call(
         name.asLiteral,
@@ -138,7 +139,8 @@ object RuntimeApi {
         Target.List(supertraits),
         Target.BooleanLiteral(hasMultipleParameterizedInheritance),
         propertyTypes,
-        Target.List(propertyOrder.map(_.asLiteral))
+        Target.List(propertyOrder.map(_.asLiteral)),
+        Target.List(openPropertyOrder.map(_.asLiteral)),
       )
     }
     def tpe(schema: TargetExpression, typeArguments: TargetExpression, propertyTypes: TargetExpression) = {

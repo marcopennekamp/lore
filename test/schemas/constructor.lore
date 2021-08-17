@@ -21,8 +21,6 @@ function blood(container: (Blood, Int) => A): A where A = container(Blood(), 1)
 function pudding(container: (Pudding, Int) => A): A where A = container(Pudding(), 9)
 
 
-// TODO (schemas): One iteration of this currently takes about 12µs, which is quite heavy. We should test the
-//                 performance again once types are interned and see whether performance can be further improved.
 function test(): [String] = {
   let containers = [
     cereal(Bowl), cereal(Cup),

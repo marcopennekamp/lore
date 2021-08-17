@@ -1,14 +1,14 @@
 import { Function, FunctionValue } from './functions.ts'
 import { TraitType } from './traits.ts'
-import { Tuple } from './tuples.ts'
+import { Tuple, TupleType } from './tuples.ts'
 import { DeclaredType, DeclaredTypes } from './types/declared-types.ts'
 import { Kind } from './types/kinds.ts'
 import { DeclaredSchemas, DeclaredTypeSchema } from './types/declared-schemas.ts'
-import { hashPropertyTypes, LazyPropertyTypes, PropertyTypes } from './types/property-types.ts'
+import { LazyPropertyTypes, PropertyTypes } from './types/property-types.ts'
 import { substitute } from './types/substitution.ts'
 import { Assignments, TypeVariable } from './types/type-variables.ts'
 import { Type } from './types/types.ts'
-import { pairHashRaw } from './utils/hash.ts'
+import { unique } from './types/util.ts'
 import { Value } from './values.ts'
 
 export interface StructSchema extends DeclaredTypeSchema {
@@ -31,6 +31,12 @@ export interface StructSchema extends DeclaredTypeSchema {
    * `propertyTypes` does not remember the order of properties.
    */
   propertyOrder: Array<string>
+
+  /**
+   * The struct's open property names in their order of declaration. This is used to create a type's unique key with
+   * open properties in the correct order.
+   */
+  openPropertyOrder: Array<string>
 }
 
 // TODO: Interning struct types might bring big performance gains for multiple dispatch, because the more open properties a
@@ -86,6 +92,7 @@ export const Struct = {
     hasMultipleParameterizedInheritance: boolean,
     propertyTypes: LazyPropertyTypes,
     propertyOrder: Array<string>,
+    openPropertyOrder: Array<string>,
   ): StructSchema {
     return DeclaredSchemas.schema<StructSchema>(
       name,
@@ -93,7 +100,7 @@ export const Struct = {
       supertraits,
       hasMultipleParameterizedInheritance,
       (schema, typeArguments) => Struct.type(schema, typeArguments, undefined),
-      { propertyTypes, propertyOrder },
+      { propertyTypes, propertyOrder, openPropertyOrder },
     )
   },
 
@@ -101,14 +108,19 @@ export const Struct = {
    * Instantiates a new struct type from the given type arguments and open property types.
    */
   type(schema: StructSchema, typeArguments?: Assignments, propertyTypes?: PropertyTypes): StructType {
-    return DeclaredTypes.type<StructType>(Kind.Struct, schema, typeArguments, { propertyTypes }, Struct.hash(schema, typeArguments, propertyTypes))
-  },
-
-  hash(schema: StructSchema, typeArguments?: Assignments, propertyTypes?: PropertyTypes): number {
-    if (!propertyTypes) {
-      return DeclaredTypes.hash(schema, typeArguments)
+    let uniqueKey: TupleType | undefined = undefined
+    if (propertyTypes) {
+      // To generate the struct type's unique key, we must add open properties in their order of declaration.
+      const uniqueKeyTypes = typeArguments ? typeArguments.slice() : []
+      for (const propertyName of schema.openPropertyOrder) {
+        uniqueKeyTypes.push(propertyTypes[propertyName])
+      }
+      uniqueKey = Tuple.type(uniqueKeyTypes)
+    } else if (typeArguments) {
+      uniqueKey = Tuple.type(typeArguments)
     }
-    return pairHashRaw(DeclaredTypes.hash(schema, typeArguments), hashPropertyTypes(propertyTypes, 0x281eba38), 0x38ba128e)
+
+    return DeclaredTypes.type<StructType>(Kind.Struct, schema, typeArguments, { propertyTypes }, uniqueKey)
   },
 
   /**

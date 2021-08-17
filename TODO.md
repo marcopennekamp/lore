@@ -10,14 +10,15 @@
     - Resolution: ~~Schema instantiation~~, ~~alias/trait/struct schema resolution~~.
     - Constraints: ~~Totality constraint checking for parameterized declared types~~; co-/contravariant type parameters must be used in appropriate positions (property types with covariant and contravariant positions, mutable properties, type arguments with variance); open type parameter constraints (uniquely deducible, covariant, used with immutable property); disallow impossible inheritance (invariant type parameters being multi-instantiated with different types, for example `struct ImpossibleArray extends Array[Animal], Array[Fish]`).
     - Transformation: Construction (~~manual specification of type arguments~~, ~~inference of type arguments~~, mandatory inference for open type parameters).
-    - Transpilation: Referring to the correct interned type (either through compile-time or run-time means), instantiation function (~~passing type arguments~~, resolving open type parameters from the given argument at run time), ~~construction~~ (~~passing type arguments to the instantiation function~~).
+    - Transpilation: Instantiation function (~~passing type arguments~~, resolving open type parameters from the given argument at run time), ~~construction~~ (~~passing type arguments to the instantiation function~~).
   - Runtime:
-    - Structures: ~~Type variable variance~~, ~~trait and struct schema type parameters~~, ~~trait and struct type instantiation~~, interning trait/struct types (possibly with weak references so that unused types can be reclaimed).
+    - Structures: ~~Type variable variance~~, ~~trait and struct schema type parameters~~, ~~trait and struct type instantiation~~, ~~interning declared types~~ (possibly with weak references so that unused types can be reclaimed).
     - Type functions: ~~Subtyping~~, ~~equality~~, ~~type variable allocations~~, ~~substitution~~, ~~polymorphy~~, ~~variables~~, ~~stringify~~.
   - Clear all `TODO (schemas)` entries.
 - Implement the new syntax.
-  - Add new features: Pipe operator, `cond` operator, `@where` annotation, `domain` blocks, trailing lambdas, global constants.
+  - Add new features: Pipe operator, `cond` operator, `@where` annotation, `domain` blocks, trailing lambdas, question marks in identifiers.
   - Unsupported for now: Implicit underscore sections (e.g. `map(things, _.name)`).
+- Implement global constants.
 - Implement a module system.
 - Implement an append operation for maps. In general, we will need to apply the same run-time typing considerations to maps.
 - Implement ranges (see `for comprehensions` in the specification).

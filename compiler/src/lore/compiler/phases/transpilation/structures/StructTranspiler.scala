@@ -7,7 +7,7 @@ import lore.compiler.phases.transpilation.{RuntimeApi, RuntimeNames, TypeTranspi
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.target.Target
-import lore.compiler.target.Target.{TargetExpression, TargetName, TargetStatement}
+import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl._
 import lore.compiler.types.StructSchema
 
@@ -30,7 +30,8 @@ case class StructTranspiler(schema: StructSchema)(
       Target.Property(property.name, RuntimeApi.utils.`lazy`.of(TypeTranspiler.transpile(property.tpe)))
     })
     val propertyOrder = schema.definition.properties.map(_.name)
-    RuntimeApi.structs.schema(schema.name, typeParameters, supertraits, schema.hasMultipleParameterizedInheritance, propertyTypes, propertyOrder)
+    val openPropertyOrder = schema.definition.openProperties.map(_.name)
+    RuntimeApi.structs.schema(schema.name, typeParameters, supertraits, schema.hasMultipleParameterizedInheritance, propertyTypes, propertyOrder, openPropertyOrder)
   }
 
   override def transpileSchemaInstantiation(typeArguments: TargetExpression): TargetExpression = {
