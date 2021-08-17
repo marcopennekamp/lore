@@ -1,10 +1,13 @@
 import { Intersection } from '../intersections.ts'
 import { Sum } from '../sums.ts'
 import { Trait, TraitSchema, TraitType } from '../traits.ts'
+import { Tuple } from '../tuples.ts'
 import { orderedHash, pairHashRaw, stringHash, stringHashWithSeed } from '../utils/hash.ts'
 import { DeclaredSchemas, DeclaredTypeSchema } from './declared-schemas.ts'
 import { Kind } from './kinds.ts'
-import { Assignments, Variance } from './type-variables.ts'
+import { stringify } from './stringify.ts'
+import { substitute } from './substitution.ts'
+import { Assignments, TypeVariables, Variance } from './type-variables.ts'
 import { Type } from './types.ts'
 import { unique } from './util.ts'
 
@@ -24,24 +27,39 @@ export interface DeclaredType extends Type {
 
 export const DeclaredTypes = {
   /**
-   * Creates a declared type from the given arguments.
+   * Creates a declared type from the given arguments. If the schema is parametric, types are interned. If for the
+   * given type arguments a type already exists in the type cache, the cached type is returned. Otherwise, a new type
+   * is created and added to the cache.
    *
    * `typeArguments` must and may only be `undefined` if the schema is constant.
-   *
-   * TODO (schemas): Interning: Get an existing declared type if it exists in the type cache.
    */
-  type<T extends DeclaredType>(kind: Kind.Trait | Kind.Struct, schema: DeclaredTypeSchema, typeArguments: Assignments | undefined, extras: object, hash: number): T {
-    let supertraits
+  type<T extends DeclaredType>(
+    kind: Kind.Trait | Kind.Struct,
+    schema: DeclaredTypeSchema,
+    typeArguments: Assignments | undefined,
+    extras: object,
+    hash: number,
+  ): T {
+    const newType = (supertraits: Array<Type>) => ({ kind, schema, typeArguments, supertraits, ...extras, hash } as unknown as T)
+
     if (typeArguments) {
-      if (!DeclaredSchemas.boundsContain(schema, typeArguments)) {
+      const cacheKey = Tuple.type(typeArguments)
+      const internedType = schema.typeCache?.get(cacheKey)
+      if (internedType) {
+        return <T> internedType
+      }
+
+      if (!boundsContain(schema, typeArguments)) {
         throw Error(`Cannot instantiate schema ${schema} with type arguments ${typeArguments}.`)
       }
-      supertraits = DeclaredSchemas.instantiateSupertraits(schema, typeArguments)
-    } else {
-      supertraits = schema.supertraits
+      const supertraits = instantiateSupertraits(schema, typeArguments)
+
+      const type = newType(supertraits)
+      schema.typeCache?.set(cacheKey, type)
+      return type
     }
 
-    return { kind, schema, typeArguments, supertraits, ...extras, hash } as unknown as T
+    return newType(schema.supertraits)
   },
 
   hash(schema: DeclaredTypeSchema, typeArguments: Assignments | undefined): number {
@@ -90,6 +108,45 @@ export const DeclaredTypes = {
       return getCombinedSupertrait(type, supertypeSchema)
     }
   },
+}
+
+/**
+ * Checks whether the given type arguments fit into the schema's parameter bounds. Upper bounds for covariance and
+ * lower bounds for contravariance are guaranteed by the compiler, but we need to check lower/upper bounds for
+ * covariant/contravariant type parameters.
+ *
+ * We don't check arity for performance reasons. The compiler should always transpile an instantiation with the
+ * correct number of type arguments.
+ */
+function boundsContain(schema: DeclaredTypeSchema, typeArguments: Assignments): boolean {
+  const parameters = schema.typeParameters
+  for (let i = 0; i < parameters.length; i += 1) {
+    const parameter = parameters[i]
+    const argument = typeArguments[i]
+    if (parameter.variance === Variance.Covariant) {
+      if (!TypeVariables.lowerBoundContains(parameter, argument, typeArguments)) return false
+    } else if (parameter.variance === Variance.Contravariant) {
+      if (!TypeVariables.upperBoundContains(parameter, argument, typeArguments)) return false
+    }
+  }
+  return true
+}
+
+/**
+ * Instantiates the schema's supertraits with the given type arguments. If the schema is constant, no substitutions
+ * are required.
+ */
+function instantiateSupertraits(schema: DeclaredTypeSchema, typeArguments: Assignments): Array<TraitType> {
+  const supertraits = schema.supertraits
+  if (DeclaredSchemas.isConstant(schema) || supertraits.length === 0) {
+    return supertraits
+  }
+
+  const result = new Array(supertraits.length)
+  for (let i = 0; i < supertraits.length; i += 1) {
+    result[i] = substitute(typeArguments, supertraits[i])
+  }
+  return result
 }
 
 /**

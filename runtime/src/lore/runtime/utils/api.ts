@@ -4,8 +4,8 @@ import { TinySet } from './TinySet.ts'
 import { HashMap } from './HashMap.ts'
 import { EqualsFunction, HashFunction } from './definitions.ts'
 import { Type } from '../types/types.ts'
-import { areEqual } from '../types/equality.ts'
 import { LazyValue } from './LazyValue.ts'
+import { TypeMaps } from './TypeMap.ts'
 
 export default {
   tinyMap: {
@@ -21,14 +21,7 @@ export default {
       return new HashMap<K, V>(hash, equals)
     },
   },
-  typeMap: {
-    create<K extends Type, V>(): HashMap<K, V> {
-      return new HashMap<K, V>(
-        (type) => type.hash,
-        areEqual,
-      )
-    },
-  },
+  typeMap: TypeMaps,
   lazy: {
     /**
      * Creates a lazy value from the given generator function.
