@@ -19,4 +19,16 @@ class StructConstraintsSpec extends BaseSpec {
       (classOf[StructConstraints.ShapeInvalidPropertyType], 17),
     )
   }
+
+  "constraints/structs/variance" should "be compiled with various variance errors" in {
+    assertCompilationErrorMessages(s"$fragmentBase/variance.lore")(
+      ("The covariant type variable B is in an illegal contravariant position.", 5),
+      ("The contravariant type variable A is in an illegal covariant position.", 5),
+      ("The covariant type variable B is in an illegal contravariant position.", 10),
+      ("The contravariant type variable A is in an illegal covariant position.", 10),
+      ("The type variable A must be invariant.", 13),
+      ("The type variable B must be invariant.", 15),
+      ("The type variable A must be invariant.", 19),
+    )
+  }
 }

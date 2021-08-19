@@ -1,0 +1,20 @@
+trait X[-A, +B]
+
+// Error: B is covariant but stands in a contravariant position.
+// Error: A is contravariant but stands in a covariant position.
+struct Y[-A, +B] extends X[B, A]
+
+struct Z[-A, +B, C] {
+  // Error: B is covariant but stands in a contravariant position.
+  // Error: A is contravariant but stands in a covariant position.
+  callable: B => A
+
+  // Error: A must be invariant.
+  mut a: A
+  // Error: B must be invariant.
+  mut b: B
+  mut c: C
+
+  // Error: A must be invariant.
+  mut callable2: C => Y[Int, A]
+}
