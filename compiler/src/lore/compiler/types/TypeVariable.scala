@@ -29,5 +29,11 @@ object TypeVariable {
     case object Covariant extends Variance
     case object Contravariant extends Variance
     case object Invariant extends Variance
+
+    def flip(variance: Variance): Variance = variance match {
+      case Covariant => Contravariant
+      case Contravariant => Covariant
+      case Invariant => Invariant
+    }
   }
 }

@@ -5,6 +5,7 @@ import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.types.ShapeType
+import lore.compiler.types.TypeVariable.Variance
 
 object StructConstraints {
 
@@ -12,10 +13,12 @@ object StructConstraints {
     * Verifies:
     *   1. Properties must be unique.
     *   2. The properties of the struct's inherited shape type must all be defined.
+    *   3. Co-/contravariant type parameters must be used in appropriate positions in property types.
     */
   def verify(definition: StructDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
     verifyPropertiesUnique(definition)
     verifyInheritedShapeProperties(definition)
+    verifyVariancePositions(definition)
   }
 
   case class DuplicateProperty(definition: StructDefinition, property: StructPropertyDefinition) extends Feedback.Error(property) {
@@ -55,6 +58,16 @@ object StructConstraints {
           }
         case None => reporter.error(ShapeMissingProperty(definition, shapeProperty))
       }
+    }
+  }
+
+  /**
+    * Verifies that co-/contravariant type parameters are used in appropriate positions in property types.
+    */
+  private def verifyVariancePositions(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
+    definition.properties.foreach { property =>
+      val origin = if (property.isMutable) Variance.Invariant else Variance.Covariant
+      VarianceConstraints.verifyVariance(property.tpe, origin, property.position)
     }
   }
 

@@ -7,7 +7,7 @@ import lore.compiler.semantics.structures.DeclaredSchemaDefinition
 
 object ConstraintsPhase {
 
-  def process(definition: DeclaredSchemaDefinition)(implicit registry: Registry, reporter: Reporter): Unit = DeclaredTypeConstraints.verify(definition)
+  def process(definition: DeclaredSchemaDefinition)(implicit registry: Registry, reporter: Reporter): Unit = DeclaredSchemaConstraints.verify(definition)
 
   def process(mf: MultiFunctionDefinition)(implicit registry: Registry, reporter: Reporter): Unit = MultiFunctionConstraints.verify(mf)
 
