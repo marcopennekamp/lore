@@ -32,8 +32,8 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
   }
 
   /**
-    * Assert that the given named source's compilation results in a list of errors, as required by the assertion.
-    * The list of errors is passed as sorted into the assertion function, in order of lines starting from line 1.
+    * Assert that the given fragment's compilation results in a list of errors, as required by the assertion. The list
+    * of errors is passed as sorted into the assertion function, in order of lines starting from line 1.
     */
   def assertCompilationErrors(fragmentPath: String)(assert: Vector[Feedback.Error] => Assertion): Assertion = {
     implicit val reporter: MemoReporter = MemoReporter()
@@ -48,6 +48,15 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
   }
 
   /**
+    * Assert that the given fragment's compilation results in the given error messages at each specified start line.
+    */
+  def assertCompilationErrorMessages(fragmentPath: String)(messages: (String, Int)*): Assertion = {
+    assertCompilationErrors(fragmentPath) {
+      errors => errors.map(e => (e.message, e.position.startLine)) shouldEqual messages.toVector
+    }
+  }
+
+  /**
     * A signature class that allows matching errors declaratively. You can extend this class to implement custom
     * match functionality.
     */
@@ -59,12 +68,14 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
   }
 
   /**
-    * Matches error lists that match the given list of error signatures. Errors have to match in order.
+    * Assert that the given fragment's compilation results in the given error signatures.
     */
-  def assertErrorsMatchSignatures(errors: Vector[Feedback.Error], signatures: Vector[ErrorSignature]): Assertion = {
-    errors should have length signatures.length
-    forAll(errors.zip(signatures)) { case (error, signature) =>
-      signature.assertMatches(error)
+  def assertCompilationErrorSignatures(fragmentPath: String)(signatures: (Class[_], Int)*): Assertion = {
+    assertCompilationErrors(fragmentPath) { errors =>
+      errors should have length signatures.length
+      forAll(errors.zip(signatures)) { case (error, (errorClass, line)) =>
+        ErrorSignature(errorClass, line).assertMatches(error)
+      }
     }
   }
 

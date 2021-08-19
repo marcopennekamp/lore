@@ -8,21 +8,19 @@ class TypeDependencySpec extends BaseSpec {
   private val fragmentBase = "phases/resolution"
 
   "resolution/dependency-cycles" should "be compiled with 'inheritance cycle' errors" in {
-    assertCompilationErrors(s"$fragmentBase/dependency-cycles.lore") { errors =>
-      assertErrorsMatchSignatures(errors, Vector(
-        ErrorSignature(classOf[TypeDependencies.InheritanceCycle], 1),
-        ErrorSignature(classOf[TypeDependencies.InheritanceCycle], 1),
-        ErrorSignature(classOf[TypeDependencies.InheritanceCycle], 2),
-        ErrorSignature(classOf[TypeDependencies.InheritanceCycle], 2),
-        ErrorSignature(classOf[TypeDependencies.InheritanceCycle], 3),
-        ErrorSignature(classOf[Scope.UnknownEntry], 4),
-        ErrorSignature(classOf[TypeDependencies.InheritanceCycle], 9),
-        ErrorSignature(classOf[TypeDependencies.InheritanceCycle], 10),
-        ErrorSignature(classOf[TypeDependencies.InheritanceCycle], 13),
-        ErrorSignature(classOf[TypeDependencies.InheritanceCycle], 15),
-        ErrorSignature(classOf[TypeDependencies.InheritanceCycle], 16),
-      ))
-    }
+    assertCompilationErrorSignatures(s"$fragmentBase/dependency-cycles.lore")(
+      (classOf[TypeDependencies.InheritanceCycle], 1),
+      (classOf[TypeDependencies.InheritanceCycle], 1),
+      (classOf[TypeDependencies.InheritanceCycle], 2),
+      (classOf[TypeDependencies.InheritanceCycle], 2),
+      (classOf[TypeDependencies.InheritanceCycle], 3),
+      (classOf[Scope.UnknownEntry], 4),
+      (classOf[TypeDependencies.InheritanceCycle], 9),
+      (classOf[TypeDependencies.InheritanceCycle], 10),
+      (classOf[TypeDependencies.InheritanceCycle], 13),
+      (classOf[TypeDependencies.InheritanceCycle], 15),
+      (classOf[TypeDependencies.InheritanceCycle], 16),
+    )
   }
 
 }
