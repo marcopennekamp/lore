@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.Logger
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
 import lore.compiler.inference.InferenceBounds.BoundType
 import lore.compiler.semantics.Registry
+import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
 import lore.compiler.utils.Timer.timed
 
@@ -136,7 +137,15 @@ object Inference {
       case ListType(element) => ListType(rec(element))
       case MapType(key, value) => MapType(rec(key), rec(value))
       case shapeType: ShapeType => shapeType.mapPropertyTypes(rec)
-      case dt: DeclaredType if !dt.schema.isConstant => dt.schema.instantiate(dt.assignments.map { case (tv, tpe) => (tv, rec(tpe)) })
+      case dt: DeclaredType if !dt.schema.isConstant =>
+        val newAssignments = dt.assignments.map { case (typeParameter, typeArgument) =>
+          val typeArgument2 = typeParameter.variance match {
+            case Variance.Covariant | Variance.Invariant => rec(typeArgument)
+            case Variance.Contravariant => recContravariant(typeArgument)
+          }
+          (typeParameter, typeArgument2)
+        }
+        dt.schema.instantiate(newAssignments)
       case tpe => tpe
     }
   }
