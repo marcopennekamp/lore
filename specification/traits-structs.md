@@ -168,14 +168,13 @@ let animal: Animal = Fox()
 process(Some(animal))
 ```
 
-If `A` is fixed at compile-time, `process(Some(animal))` will evaluate to "Maybe Animal." This goes against intuition. A Some contains a single, immutable value. By all accounts, it should be possible for multiple dispatch to take the run-time type of the value into account.
+If `A` is fixed at compile-time, `process(Some(animal))` will evaluate to "Maybe Animal." This goes against intuition. A Some contains a single, immutable value. By all accounts, it should be possible for multiple dispatch to take the value's run-time type into account.
 
-**Open type variables** fill exactly this niche. In similar spirit to open properties, an open type variable is populated at run-time with the actual type of a given value. This feature is very powerful and like all good comic book heroes (and villains), it comes with a few limitations:
+**Open type variables** fill exactly this niche. In similar spirit to open properties, an open type variable is populated at run-time with the actual type of a given value. This feature is very powerful and, like all good comic book heroes (and villains), it comes with a few limitations:
 
 - Open type variables can only be part of **structs**. They make no sense in traits, because traits aren't instantiated directly.
-- Open type variables must be **uniquely deducible**. This means that the type variable may only occur in one position of a single property.
 - Open type variables must be **covariant**. This is easy to see: if we have a type `Some[A]` with `A` being open, we could have a variable of type `Option[Animal]` at compile time, but a value of `Some[Fox]` at run time. If `A` was invariant, we could not put this value into the variable, because `Some[Fox]` would not be a subtype of `Option[Animal]`.
-- Open type variables **cannot be manually specified** in square brackets at the point of instantiation, and must be omitted if other static type variables should be manually specified.
+- Open type variables must be **uniquely deducible**. This means that the type variable may only occur in one position of a single property.
 - Properties typed with an open type variable must be **immutable**.
 
 The option examples demonstrates how open type variables can be **declared:**
@@ -185,6 +184,14 @@ trait Option[+A]
 struct Some[open +A] extends Option[A] { value: A }
 struct None extends Option[Nothing]
 ```
+
+Open type variables may still be **manually specified**, but their run-time type will not adhere to the specified type. For example:
+
+```
+let option = Some[Animal](Fox())  // option: Some[Animal]
+```
+
+The variable `option` will have the type `Some[Animal]` at compile time, even though inference would usually have given it the type `Some[Fox]`. However, at run-time, since the type parameter is open, `option` will still contain a value of type `Some[Fox]`.
 
 
 
