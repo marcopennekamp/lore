@@ -1,6 +1,6 @@
 package lore.compiler.types
 
-import lore.compiler.semantics.structures.StructDefinition
+import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 
 class StructSchema(
   override val name: String,
@@ -8,6 +8,21 @@ class StructSchema(
   override val supertypes: Vector[Type],
 ) extends DeclaredSchema with DeclaredSchema.DefinitionProperty[StructDefinition] {
   val openParameters: Vector[TypeVariable] = parameters.filter(_.isOpen)
+
+  /**
+    * The map contains the properties from which each open type parameter must be derived.
+    *
+    * If the type parameter is contained in none or multiple property types, there will be no entry in this map. The
+    * struct constraints will properly report this before any exceptions are raised.
+    */
+  lazy val derivingProperties: Map[TypeVariable, StructPropertyDefinition] = {
+    openParameters.flatMap { typeParameter =>
+      definition.properties.filter(property => Type.contains(property.tpe, typeParameter)) match {
+        case Vector(property) => Vector((typeParameter, property))
+        case _ => Vector.empty
+      }
+    }.toMap
+  }
 
   override def representative: StructType = super.representative.asInstanceOf[StructType]
   override def instantiate(assignments: TypeVariable.Assignments): StructType = StructType(this, assignments)

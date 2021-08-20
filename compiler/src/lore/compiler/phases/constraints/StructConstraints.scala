@@ -65,20 +65,15 @@ object StructConstraints {
         reporter.error(StructFeedback.OpenTypeParameter.CovarianceRequired(typeParameter, definition.position))
       }
 
-      // Relevant properties are all properties which contain the type variable. An open type variable must only be
-      // contained in a single property.
-      val relevantProperties = definition.properties.filter(property => Type.contains(property.tpe, typeParameter))
-      relevantProperties match {
-        case Vector(property) =>
+      definition.schema.derivingProperties.get(typeParameter) match {
+        case None => reporter.error(StructFeedback.OpenTypeParameter.NotUniquelyDeducible(typeParameter, definition.position))
+        case Some(property) =>
           if (property.isMutable) {
             reporter.error(StructFeedback.OpenTypeParameter.MutableProperty(typeParameter, property))
           }
           if (!isUniquelyDeducible(typeParameter, property.tpe)) {
             reporter.error(StructFeedback.OpenTypeParameter.NotUniquelyDeducible(typeParameter, property.position))
           }
-
-        case _ =>
-          reporter.error(StructFeedback.OpenTypeParameter.NotUniquelyDeducible(typeParameter, definition.position))
       }
     }
   }
