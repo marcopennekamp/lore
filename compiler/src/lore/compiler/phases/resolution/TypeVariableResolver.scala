@@ -23,7 +23,7 @@ object TypeVariableResolver {
   private def resolve(node: DeclNode.TypeVariableNode)(implicit typeScope: TypeScope, reporter: Reporter): TypeVariable = {
     val lowerBound = node.lowerBound.flatMap(TypeExpressionEvaluator.evaluate).getOrElse(BasicType.Nothing)
     val upperBound = node.upperBound.flatMap(TypeExpressionEvaluator.evaluate).getOrElse(BasicType.Any)
-    new TypeVariable(node.name, lowerBound, upperBound, node.variance)
+    new TypeVariable(node.name, lowerBound, upperBound, node.variance, node.isOpen)
   }
 
 }

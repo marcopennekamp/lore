@@ -35,6 +35,8 @@ class StructPropertyDefinition(
     StructPropertyDefinition.Instance(this, Type.substitute(tpe, assignments))
   }
 
+  override def toString: String = name
+
 }
 
 object StructPropertyDefinition {
