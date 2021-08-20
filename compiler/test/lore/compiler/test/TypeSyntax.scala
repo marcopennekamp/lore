@@ -1,6 +1,7 @@
 package lore.compiler.test
 
 import lore.compiler.semantics.Registry
+import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
 
 /**
@@ -14,6 +15,10 @@ trait TypeSyntax {
   val int: BasicType = BasicType.Int
   val boolean: BasicType = BasicType.Boolean
   val string: BasicType = BasicType.String
+
+  def typeVariable(name: String, lowerBound: Type = BasicType.Nothing, upperBound: Type = BasicType.Any): TypeVariable = {
+    new TypeVariable(name, lowerBound, upperBound, Variance.Invariant, false)
+  }
 
   implicit def toType(name: String)(implicit registry: Registry): Type = registry.typeScope.get(name).get.representative
 

@@ -13,41 +13,41 @@ class FitSpec extends TypeSpec {
   }
 
   "Fit" should "handle type variables correctly" in {
-    { val A = new TypeVariable("A", BasicType.Nothing, BasicType.Any, Variance.Invariant)
+    { val A = typeVariable("A")
       ((ListType(BasicType.String), BasicType.String): TupleType) fitsInto (ListType(A), A)
       ((ListType(BasicType.Real), BasicType.String): TupleType) fitsNotInto (ListType(A), A)
       ((ListType(BasicType.Real), BasicType.Int): TupleType) fitsNotInto (ListType(A), A)
     }
-    { val X = new TypeVariable("X", BasicType.Nothing, BasicType.Any, Variance.Invariant)
-      val Y = new TypeVariable("Y", BasicType.Nothing, BasicType.Real, Variance.Invariant)
+    { val X = typeVariable("X")
+      val Y = typeVariable("Y")
       ((BasicType.Real, Y): TupleType) fitsInto (X, BasicType.Any)
     }
-    { val A = new TypeVariable("A", BasicType.Nothing, BasicType.Any, Variance.Invariant)
-      val B = new TypeVariable("B", BasicType.Nothing, A, Variance.Invariant)
+    { val A = typeVariable("A")
+      val B = typeVariable("B")
       ((ListType(BasicType.Real), BasicType.Int): TupleType) fitsInto (ListType(A), B)
       ((ListType(Bird), Mammal): TupleType) fitsNotInto (ListType(A), B)
     }
     { // Example 1 from the spec's type allocation examples.
-      val A = new TypeVariable("A", BasicType.Nothing, BasicType.Any, Variance.Invariant)
-      val B = new TypeVariable("B", BasicType.Nothing, A, Variance.Invariant)
-      val C = new TypeVariable("C", BasicType.Nothing, BasicType.Any, Variance.Invariant)
+      val A = typeVariable("A")
+      val B = typeVariable("B")
+      val C = typeVariable("C")
       ((C, BasicType.Int): TupleType) fitsNotInto (A, B)
     }
     { // Example 2 from the spec's type allocation examples.
-      val A = new TypeVariable("A", Cat, Animal, Variance.Invariant)
-      val B = new TypeVariable("B", BasicType.Nothing, A, Variance.Invariant)
-      val C = new TypeVariable("C", BasicType.Nothing, BasicType.Any, Variance.Invariant)
+      val A = typeVariable("A", Cat, Animal)
+      val B = typeVariable("B", upperBound = A)
+      val C = typeVariable("C")
       ((C, Cat): TupleType) fitsNotInto (A, B)
     }
     { // Example 3 from the spec's type allocation examples.
-      val A = new TypeVariable("A", Cat, Animal, Variance.Invariant)
-      val B = new TypeVariable("B", BasicType.Nothing, A, Variance.Invariant)
-      val C = new TypeVariable("C", Cat, Mammal, Variance.Invariant)
-      val D = new TypeVariable("D", ScottishFold, C, Variance.Invariant)
+      val A = typeVariable("A", Cat, Animal)
+      val B = typeVariable("B", upperBound = A)
+      val C = typeVariable("C", Cat, Mammal)
+      val D = typeVariable("D", ScottishFold, C)
       ((C, D): TupleType) fitsInto (A, B)
     }
-    { val A = new TypeVariable("A", BasicType.Nothing, BasicType.Any, Variance.Invariant)
-      val B = new TypeVariable("B", A, BasicType.Any, Variance.Invariant)
+    { val A = typeVariable("A")
+      val B = typeVariable("B", lowerBound = A)
       ((ListType(BasicType.String | BasicType.Int), BasicType.Int): TupleType) fitsInto (ListType(B), A)
     }
   }
@@ -55,15 +55,15 @@ class FitSpec extends TypeSpec {
   it should "handle shape types and structs correctly" in {
     import ShapeTypes._
 
-    { val A = new TypeVariable("A", BasicType.Nothing, BasicType.Any, Variance.Invariant)
+    { val A = typeVariable("A")
       Goldfish fitsInto ShapeType("name" -> A)
       Goldfish fitsInto ShapeType("name" -> A, "size" -> BasicType.Real)
       Goldfish fitsInto ShapeType("name" -> BasicType.String, "size" -> A)
       Goldfish fitsNotInto ShapeType("name" -> A, "size" -> A)
     }
-    { val X = new TypeVariable("X", BasicType.Nothing, BasicType.Real, Variance.Invariant)
-      val Y = new TypeVariable("Y", BasicType.Nothing, BasicType.Real, Variance.Invariant)
-      val Z = new TypeVariable("Z", BasicType.Nothing, BasicType.Real, Variance.Invariant)
+    { val X = typeVariable("X", upperBound = BasicType.Real)
+      val Y = typeVariable("Y", upperBound = BasicType.Real)
+      val Z = typeVariable("Z", upperBound = BasicType.Real)
       val T2D = ShapeType("x" -> X, "y" -> Y)
       val T3D = T2D & ShapeType("z" -> Z)
       Position2D fitsInto T2D
@@ -73,9 +73,9 @@ class FitSpec extends TypeSpec {
       Box2D fitsInto T2D
       Box2D fitsNotInto T3D
     }
-    { val A = new TypeVariable("A", BasicType.Nothing, BasicType.Any, Variance.Invariant)
+    { val A = typeVariable("A")
       // TODO: The test with B currently does not work. See the TODO in TypeVariableAllocation.of.
-      //val B = new TypeVariable("B", BasicType.Nothing, ListType(A), 1)
+      //val B = typeVariable("B", upperBound = ListType(A))
       //Zoo fitsInto ShapeType("animals" -> B)
 
       Zoo fitsInto ShapeType("animals" -> ListType(A))
@@ -83,9 +83,9 @@ class FitSpec extends TypeSpec {
   }
 
   it should "handle traits and structs with type parameters correctly" in {
-    val A = new TypeVariable("A", BasicType.Nothing, Animal, Variance.Invariant)
-    val B = new TypeVariable("B", BasicType.Nothing, Fish, Variance.Invariant)
-    val C = new TypeVariable("C", BasicType.Nothing, Fish, Variance.Invariant)
+    val A = typeVariable("A", upperBound = Animal)
+    val B = typeVariable("B", upperBound = Fish)
+    val C = typeVariable("C", upperBound = Fish)
 
     val cage = Cage(A)
     val fishCage = Cage(B)

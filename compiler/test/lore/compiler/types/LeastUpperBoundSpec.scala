@@ -84,9 +84,9 @@ class LeastUpperBoundSpec extends TypeSpec {
   }
 
   it should "return the correct least upper bounds for type variables" in {
-    val A = new TypeVariable("A", BasicType.Nothing, Bird, Variance.Invariant)
-    val B = new TypeVariable("B", BasicType.Nothing, Mammal, Variance.Invariant)
-    val C = new TypeVariable("C", BasicType.Nothing, Wheel, Variance.Invariant)
+    val A = typeVariable("A", upperBound = Bird)
+    val B = typeVariable("B", upperBound = Mammal)
+    val C = typeVariable("C", upperBound = Wheel)
     (A, Chicken) --> Bird
     (Chicken, A) --> Bird
     (B, Human) --> Mammal

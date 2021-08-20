@@ -49,17 +49,17 @@ class SubtypingSpec extends TypeSpec {
 
   it should "handle type variables correctly" in {
     { // An excerpt of Example 1 from the spec's type allocation examples.
-      val C = new TypeVariable("C", BasicType.Nothing, BasicType.Any, Variance.Invariant)
+      val C = typeVariable("C")
       BasicType.Int </< C
     }
     { // An excerpt of Example 2 from the spec's type allocation examples.
-      val C = new TypeVariable("C", BasicType.Nothing, BasicType.Any, Variance.Invariant)
+      val C = typeVariable("C")
       Cat </< C
       C </< Animal
     }
     { // An excerpt of Example 3 from the spec's type allocation examples.
-      val C = new TypeVariable("C", Goldfish, Fish, Variance.Invariant)
-      val D = new TypeVariable("D", Goldfish, C, Variance.Invariant)
+      val C = typeVariable("C", Goldfish, Fish)
+      val D = typeVariable("D", Goldfish, C)
       Goldfish <:< C
       C <:< Animal
       BasicType.Nothing <:< D
