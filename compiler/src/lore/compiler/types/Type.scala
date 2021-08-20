@@ -171,6 +171,28 @@ object Type {
   }
 
   /**
+    * Whether `tpe` is equal to `term` or contains a subterm which is equal to `term`.
+    */
+  def contains(tpe: Type, term: Type): Boolean = {
+    if (tpe == term) {
+      return true
+    }
+
+    val rec = subterm => contains(subterm, term)
+    tpe match {
+      case SumType(types) => types.exists(rec)
+      case IntersectionType(types) => types.exists(rec)
+      case TupleType(elements) => elements.exists(rec)
+      case FunctionType(input, output) => rec(input) || rec(output)
+      case ListType(element) => rec(element)
+      case MapType(key, value) => rec(key) || rec(value)
+      case ShapeType(properties) => properties.values.map(_.tpe).exists(rec)
+      case dt: DeclaredType => dt.typeArguments.exists(rec)
+      case _ => false
+    }
+  }
+
+  /**
     * Creates a unique, Javascript-friendly identifier of the given type.
     */
   def uniqueIdentifier(tpe: Type): String = uniqueIdentifier(Vector(tpe))
