@@ -1,6 +1,7 @@
 package lore.compiler.phases.constraints.structs
 
-import lore.compiler.phases.constraints.StructConstraints
+import lore.compiler.feedback.StructFeedback
+import lore.compiler.phases.constraints.VarianceConstraints
 import lore.compiler.test.BaseSpec
 
 class StructConstraintsSpec extends BaseSpec {
@@ -8,15 +9,25 @@ class StructConstraintsSpec extends BaseSpec {
 
   "constraints/structs/duplicate-property" should "be compiled with a 'duplicate property' error" in {
     assertCompilationErrorSignatures(s"$fragmentBase/duplicate-property.lore")(
-      (classOf[StructConstraints.DuplicateProperty], 2),
+      (classOf[StructFeedback.DuplicateProperty], 2),
     )
   }
 
   "constraints/structs/inherited-shape" should "be compiled with various shape inheritance errors" in {
     assertCompilationErrorSignatures(s"$fragmentBase/inherited-shape.lore")(
-      (classOf[StructConstraints.ShapeMissingProperty], 15),
-      (classOf[StructConstraints.ShapeInvalidPropertyType], 16),
-      (classOf[StructConstraints.ShapeInvalidPropertyType], 17),
+      (classOf[StructFeedback.Shape.MissingProperty], 15),
+      (classOf[StructFeedback.Shape.InvalidPropertyType], 16),
+      (classOf[StructFeedback.Shape.InvalidPropertyType], 17),
+    )
+  }
+
+  "constraints/structs/open-type-parameters" should "be compiled with various open type parameter errors" in {
+    assertCompilationErrorSignatures(s"$fragmentBase/open-type-parameters.lore")(
+      (classOf[StructFeedback.OpenTypeParameter.CovarianceRequired], 2),
+      (classOf[StructFeedback.OpenTypeParameter.NotUniquelyDeducible], 7),
+      (classOf[StructFeedback.OpenTypeParameter.NotUniquelyDeducible], 14),
+      (classOf[VarianceConstraints.InvalidVariance], 19),
+      (classOf[StructFeedback.OpenTypeParameter.MutableProperty], 19),
     )
   }
 
