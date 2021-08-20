@@ -1,15 +1,16 @@
 package lore.compiler.phases.transpilation.structures
 
+import lore.compiler.core.CompilationException
 import lore.compiler.phases.transpilation.TypeTranspiler.RuntimeTypeVariables
 import lore.compiler.phases.transpilation.expressions.ExpressionTranspiler
 import lore.compiler.phases.transpilation.values.SymbolHistory
-import lore.compiler.phases.transpilation.{RuntimeApi, RuntimeNames, TypeTranspiler}
+import lore.compiler.phases.transpilation.{RuntimeApi, RuntimeNames, TypePathTranspiler, TypeTranspiler}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.target.Target
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl._
-import lore.compiler.types.StructSchema
+import lore.compiler.types.{StructSchema, TypePath, TypeVariable}
 
 case class StructTranspiler(schema: StructSchema)(
   implicit symbolHistory: SymbolHistory,
@@ -69,15 +70,25 @@ case class StructTranspiler(schema: StructSchema)(
   private def transpileStructInstantiate(): Vector[TargetStatement] = {
     val varInstantiate = RuntimeNames.struct.instantiate(schema)
     val paramProperties = "properties".asParameter
+    val varProperties = paramProperties.asVariable
     val paramTypeArguments = "typeArguments".asParameter
+    val varTypeArguments = paramTypeArguments.asVariable
 
-    val openPropertyTypes = if (schema.hasOpenProperties) Some(getPropertyTypesDictionary(paramProperties)) else None
-    val typeArguments = if (!schema.isConstant) Some(paramTypeArguments.asVariable) else None
+    val openPropertyTypes = if (schema.hasOpenProperties) Some(getPropertyTypesDictionary(varProperties)) else None
+    val typeArguments = if (!schema.isConstant) Some(varTypeArguments) else None
     val tpe = transpileSchemaInstantiation(typeArguments, openPropertyTypes)
     val parameters = if (schema.isConstant) Vector(paramProperties) else Vector(paramProperties, paramTypeArguments)
+
+    // We need to override any type arguments for open type parameters with a run-time type argument.
+    val openTypeArgumentAssignments = if (schema.openParameters.nonEmpty) {
+      schema.parameters.zipWithIndex.filter(_._1.isOpen).map((getOpenTypeArgumentAssignment(varProperties, varTypeArguments) _).tupled)
+    } else Vector.empty
+
     Vector(
-      Target.Function(varInstantiate.name, parameters, Target.block(
-        Target.Return(RuntimeApi.structs.value(paramProperties.asVariable, tpe)),
+      Target.Function(varInstantiate.name, parameters, Target.Block(
+        openTypeArgumentAssignments ++ Vector(
+          Target.Return(RuntimeApi.structs.value(paramProperties.asVariable, tpe)),
+        ),
       ))
     )
   }
@@ -85,8 +96,29 @@ case class StructTranspiler(schema: StructSchema)(
   /**
     * To instantiate a struct with the right type, the actual property types of the struct are retrieved using typeOf.
     */
-  private def getPropertyTypesDictionary(paramProperties: Target.Parameter): Target.Dictionary = {
-    getPropertyDictionary(schema.definition.openProperties, property => RuntimeApi.types.typeOf(paramProperties.asVariable.prop(property.name)))
+  private def getPropertyTypesDictionary(varProperties: Target.Variable): Target.Dictionary = {
+    getPropertyDictionary(schema.definition.openProperties, property => RuntimeApi.types.typeOf(varProperties.prop(property.name)))
+  }
+
+  /**
+    * Transpiles the type argument deduction for open type parameters. We utilize [[TypePath]] to access the relevant
+    * type directly.
+    */
+  private def getOpenTypeArgumentAssignment(
+    varProperties: Target.Variable,
+    varTypeArguments: Target.Variable,
+  )(typeParameter: TypeVariable, index: Int): TargetStatement = {
+    val property = schema.derivingProperties(typeParameter)
+    val typePath = TypePath.of(property.tpe, typeParameter) match {
+      case Vector(path) => path
+      case _ => throw CompilationException(s"The type path to the open type parameter $typeParameter must exist and be unique. This is not the case. Schema: $schema.")
+    }
+
+    val target = varTypeArguments.element(Target.IntLiteral(index))
+    val propertyType = RuntimeApi.types.typeOf(varProperties.prop(property.name))
+    val tpe = TypePathTranspiler.transpileAccess(propertyType, typePath)
+
+    Target.Assignment(target, tpe)
   }
 
   private def transpileStructConstruct(): Vector[TargetStatement] = {

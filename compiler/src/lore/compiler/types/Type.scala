@@ -172,6 +172,8 @@ object Type {
 
   /**
     * Whether `tpe` is equal to `term` or contains a subterm which is equal to `term`.
+    *
+    * `contains` is a faster but less feature-rich version of [[TypePath]].
     */
   def contains(tpe: Type, term: Type): Boolean = {
     if (tpe == term) {

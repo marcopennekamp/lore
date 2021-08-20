@@ -22,7 +22,14 @@ object InstantiationTranspiler {
     println(s"Direct `construct` call of $structType!")
 
     val typeArguments = if (!structType.schema.isConstant) {
-      Vector(Target.List(structType.typeArguments.map(TypeTranspiler.transpile)))
+      // We can pass `undefined` for any open type arguments because they will be overridden in the instantiation
+      // function anyway.
+      val transpiledTypeArguments = structType.assignments.map {
+        case (typeParameter, typeArgument) =>
+          if (typeParameter.isOpen) Target.Undefined
+          else TypeTranspiler.transpile(typeArgument)
+      }
+      Vector(Target.List(transpiledTypeArguments.toVector))
     } else Vector.empty
 
     val varConstruct = RuntimeNames.struct.construct(structType.schema)

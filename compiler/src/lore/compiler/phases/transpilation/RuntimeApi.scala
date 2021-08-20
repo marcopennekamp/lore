@@ -152,6 +152,20 @@ object RuntimeApi {
     }
   }
 
+  /**
+    * Accesses run-time type attributes directly to avoid a litany of function calls when accessing type paths.
+    */
+  object typePaths {
+    def tupleElement(tpe: TargetExpression, index: Int) = tpe.prop("types").element(Target.IntLiteral(index))
+    def functionInput(tpe: TargetExpression) = tpe.prop("input")
+    def functionOutput(tpe: TargetExpression) = tpe.prop("output")
+    def listElement(tpe: TargetExpression) = tpe.prop("element")
+    def mapKey(tpe: TargetExpression) = tpe.prop("key")
+    def mapValue(tpe: TargetExpression) = tpe.prop("value")
+    def shapeProperty(tpe: TargetExpression, name: String) = tpe.prop("propertyTypes").element(Target.StringLiteral(name))
+    def structTypeArgument(tpe: TargetExpression, index: Int) = tpe.prop("typeArguments").element(Target.IntLiteral(index))
+  }
+
   object utils {
     implicit val base = named("utils")(RuntimeApi.base)
 
