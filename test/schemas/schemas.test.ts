@@ -29,5 +29,11 @@ Deno.test('schemas/open-properties', async () => {
 
 Deno.test('schemas/option', async () => {
   const result: ListValue<string> = await LoreTest.run('schemas/option.lore')
-  assertListEquals(result, ['None', 'Some(Hello, world!)', 'Some([1, 2, 3])', 'Oh shit, it\'s a dragon!', 'They\'re everywhere!'])
+  assertListEquals(result, [
+    'None',
+    'Some(Hello, world!)',
+    'Some([1, 2, 3])',
+    '[It\'s just a bird., My gosh, the pollution up there!, Oh shit, it\'s a dragon!]',
+    'They\'re everywhere!',
+  ])
 })

@@ -1,5 +1,5 @@
 trait Option[+A]
-struct Some[+A] extends Option[A] { value: A }
+struct Some[open +A] extends Option[A] { value: A }
 struct None extends Option[Nothing]
 
 function toString(option: Option[A]): String where A
@@ -7,17 +7,22 @@ function toString(some: Some[A]): String where A = 'Some(${some.value})'
 function toString(none: None): String = 'None'
 
 
-struct Dragon
+trait AerialPhenomenon
+struct Bird extends AerialPhenomenon
+struct Plane extends AerialPhenomenon
+struct Dragon extends AerialPhenomenon
 
+function toString(some: Some[Bird]): String = 'It\'s just a bird.'
+function toString(some: Some[Plane]): String = 'My gosh, the pollution up there!'
 function toString(some: Some[Dragon]): String = 'Oh shit, it\'s a dragon!'
 function toString(some: Some[[Dragon]]): String = 'They\'re everywhere!'
 
 
 function test(): [String] = {
   let none = None()
-  let stringOption = Some('Hello, world!')
-  let listOption = Some([1, 2, 3])
-  let birdPlane = Some(Dragon())
+  let string = Some('Hello, world!')
+  let list = Some([1, 2, 3])
+  let aerials = [Some(Bird()), Some(Plane()), Some(Dragon())]
   let dragons = Some { value = [Dragon(), Dragon(), Dragon()] }
-  [toString(none), toString(stringOption), toString(listOption), toString(birdPlane), toString(dragons)]
+  [toString(none), toString(string), toString(list), toString(aerials), toString(dragons)]
 }
