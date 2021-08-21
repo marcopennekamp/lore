@@ -17,6 +17,11 @@ Deno.test('schemas/extract', async () => {
   assertListEquals(result, ['5', '[1, 2, 3]', 'I am a crate and my name is Toby!'])
 })
 
+Deno.test('schemas/fluxify', async () => {
+  const result: ListValue<number> = await LoreTest.run('schemas/fluxify.lore')
+  assertListEquals(result, [13, 8, 19])
+})
+
 Deno.test('schemas/goods', async () => {
   const result: ListValue<number> = await LoreTest.run('schemas/goods.lore')
   assertListEquals(result, [48.5, 17.2, 1.6])

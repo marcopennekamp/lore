@@ -1,0 +1,42 @@
+trait Option[+A]
+struct Some[open +A] extends Option[A] { value: A }
+struct None extends Option[Nothing]
+
+
+struct Box[open +A, open +B] {
+  a: (Int, A, Real)
+  b: Option[B]
+}
+
+
+trait Counter
+struct Little extends Counter
+struct Several extends Counter
+struct Many extends Counter
+
+type CounterBox = Box[Counter, Int]
+
+
+// These functions are convoluted on purpose to test open type arguments.
+function fluxify(box: CounterBox): Int = first(box.a) + perexonate(box.b)
+function fluxify(box: Box[Little, Int]): Int = 2 + fluxify.fixed[CounterBox](box)
+function fluxify(box: Box[Several, Int]): Int = 7 + fluxify.fixed[CounterBox](box)
+function fluxify(box: Box[Many, Int]): Int = 17 + fluxify.fixed[CounterBox](box)
+
+function perexonate(option: Option[Int]): Int
+function perexonate(option: Some[Int]): Int = option.value
+function perexonate(option: None): Int = 0
+
+
+function test(): [Int] = {
+  let boxes: [CounterBox] = [
+    // TODO (schemas): The type arguments of Some should be inferred. This is currently not possible, because
+    //                 `Matchers.matchDeclaredTypes` doesn't take subtypes into account correctly. `Some` and `Option`
+    //                 have different schemas and are then completely disregarded. We also shouldn't have to specify
+    //                 `CounterBox` here. `Box` should be enough.
+    CounterBox((3, Little(), 0.2), Some[Int](8)),
+    CounterBox((1, Several(), 0.5), None()),
+    CounterBox((0, Many(), 0.1), Some[Int](2))
+  ]
+  map(boxes, fluxify)
+}
