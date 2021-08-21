@@ -28,6 +28,24 @@ object RuntimeApi {
     def fitsPolymorphic(t1: TargetExpression, t2: TargetExpression, variables: TargetExpression) = named("fitsPolymorphic").call(t1, t2, variables)
     def typeOf(value: TargetExpression) = named("typeOf").call(value)
 
+    /**
+      * Accesses run-time type attributes directly to avoid a litany of function calls when accessing type paths,
+      * unless run-time support is required (which is the case for shapes and trait type arguments).
+      */
+    object typePaths {
+      implicit val base = named("typePaths")(RuntimeApi.types.base)
+
+      def tupleElement(tpe: TargetExpression, index: Int) = tpe.prop("types").element(Target.IntLiteral(index))
+      def functionInput(tpe: TargetExpression) = tpe.prop("input")
+      def functionOutput(tpe: TargetExpression) = tpe.prop("output")
+      def listElement(tpe: TargetExpression) = tpe.prop("element")
+      def mapKey(tpe: TargetExpression) = tpe.prop("key")
+      def mapValue(tpe: TargetExpression) = tpe.prop("value")
+      def shapeProperty(tpe: TargetExpression, name: String) = named("shapeProperty").call(tpe, Target.StringLiteral(name))
+      def structTypeArgument(tpe: TargetExpression, index: Int) = tpe.prop("typeArguments").element(Target.IntLiteral(index))
+      def typeArgument(tpe: TargetExpression, schema: TargetExpression, index: Int) = named("typeArgument").call(tpe, schema, Target.IntLiteral(index))
+    }
+
     object introspection {
       implicit val base = named("introspection")(RuntimeApi.types.base)
 
@@ -150,20 +168,6 @@ object RuntimeApi {
     def getConstructor(schema: TargetExpression, typeArguments: TargetExpression, construct: TargetExpression) = {
       named("getConstructor").call(schema, typeArguments, construct)
     }
-  }
-
-  /**
-    * Accesses run-time type attributes directly to avoid a litany of function calls when accessing type paths.
-    */
-  object typePaths {
-    def tupleElement(tpe: TargetExpression, index: Int) = tpe.prop("types").element(Target.IntLiteral(index))
-    def functionInput(tpe: TargetExpression) = tpe.prop("input")
-    def functionOutput(tpe: TargetExpression) = tpe.prop("output")
-    def listElement(tpe: TargetExpression) = tpe.prop("element")
-    def mapKey(tpe: TargetExpression) = tpe.prop("key")
-    def mapValue(tpe: TargetExpression) = tpe.prop("value")
-    def shapeProperty(tpe: TargetExpression, name: String) = tpe.prop("propertyTypes").element(Target.StringLiteral(name))
-    def structTypeArgument(tpe: TargetExpression, index: Int) = tpe.prop("typeArguments").element(Target.IntLiteral(index))
   }
 
   object utils {

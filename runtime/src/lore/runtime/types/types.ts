@@ -7,6 +7,7 @@ import { Kind } from './kinds.ts'
 import { isPolymorphic, variables } from './polymorphy.ts'
 import { stringify } from './stringify.ts'
 import { isSubtype } from './subtyping.ts'
+import { TypePaths } from './type-paths.ts'
 import { TypeVariable, Variance } from './type-variables.ts'
 import { typeOf } from './typeof.ts'
 
@@ -44,6 +45,7 @@ export const Types = {
   isPolymorphic,
   variables,
   stringify,
+  typePaths: TypePaths,
 
   // The type introspection API.
   introspection: Introspection,
