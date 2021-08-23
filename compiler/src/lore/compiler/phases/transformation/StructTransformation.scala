@@ -37,13 +37,9 @@ object StructTransformation {
     if (structBinding.isConstant) {
       structBinding.representative.constructor
     } else {
-      // TODO (schemas): Handle covariance/contravariance/invariance in respect to the bounds.
       val (assignments, judgments) = InferenceVariable.fromTypeVariables(structBinding.parameters, position)
-      val structType = structBinding.instantiate(assignments)
       judgmentCollector.add(judgments)
-      val constructor = structType.constructor
-
-      constructor
+      structBinding.instantiate(assignments).constructor
     }
   }
 
