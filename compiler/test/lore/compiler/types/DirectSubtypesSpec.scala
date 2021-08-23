@@ -10,10 +10,6 @@ class DirectSubtypesSpec extends TypeSpec {
     registry.declaredTypeHierarchy.getDirectSubtypes(dt).toSet shouldEqual expected.toSet
   }
 
-  private def assertConcreteSubtypes(dt: DeclaredType)(expected: DeclaredType*): Assertion = {
-    registry.declaredTypeHierarchy.getConcreteSubtypes(dt).toSet shouldEqual expected.toSet
-  }
-
   "DeclaredTypeHierarchy.getDirectSubtypes" should "compute the correct subtypes for parameterized traits" in {
     assertDirectSubtypes(Cage(Animal))(
       Aquarium(Fish), UnicornPen, ConfusedCage1, ConfusedCage2, ConfusedCage3, ConfusedCage4
@@ -50,10 +46,6 @@ class DirectSubtypesSpec extends TypeSpec {
     assertDirectSubtypes(Meal(Mayo, Tofu))(
       SurpriseMeal(Mayo, Tofu), VeggieMeal(Mayo)
     )
-  }
-
-  "DeclaredTypeHierarchy.getConcreteSubtypes" should "compute the correct concrete subtypes for parameterized traits" in {
-    // TODO (schemas): Write some tests for DeclaredTypeHierarchy.getConcreteSubtypes.
   }
 
 }
