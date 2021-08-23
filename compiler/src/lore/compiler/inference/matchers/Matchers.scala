@@ -45,18 +45,12 @@ object Matchers {
     } else fail()
   }
 
-  def matchDeclaredType(
-    d1: DeclaredType,
-    d2: DeclaredType,
+  def matchMultiple(
+    types: Vector[(Type, Type)],
     assignments: Assignments,
     rec: (Assignments, Type, Type) => Option[Assignments],
-    fail: () => Option[Nothing],
   ): Option[Assignments] = {
-    if (d1.schema == d2.schema) {
-      d1.typeArguments.zip(d2.typeArguments).foldSome(assignments) {
-        case (assignments2, (a1, a2)) => rec(assignments2, a1, a2)
-      }
-    } else fail()
+    types.foldSome(assignments) { case (assignments2, (t1, t2)) => rec(assignments2, t1, t2) }
   }
 
 }

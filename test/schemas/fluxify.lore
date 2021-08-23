@@ -30,13 +30,9 @@ function perexonate(option: None): Int = 0
 
 function test(): [Int] = {
   let boxes: [CounterBox] = [
-    // TODO (schemas): The type arguments of Some should be inferred. This is currently not possible, because
-    //                 `Matchers.matchDeclaredTypes` doesn't take subtypes into account correctly. `Some` and `Option`
-    //                 have different schemas and are then completely disregarded. We also shouldn't have to specify
-    //                 `CounterBox` here. `Box` should be enough.
-    CounterBox((3, Little(), 0.2), Some[Int](8)),
-    CounterBox((1, Several(), 0.5), None()),
-    CounterBox((0, Many(), 0.1), Some[Int](2))
+    Box((3, Little(), 0.2), Some(8)),
+    Box((1, Several(), 0.5), None()),
+    Box((0, Many(), 0.1), Some(2))
   ]
   map(boxes, fluxify)
 }

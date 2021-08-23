@@ -62,7 +62,8 @@ object EqualityMatcher {
           case _ => expectedTypeEquality()
         }
 
-      case (d1: DeclaredType, d2: DeclaredType) => Matchers.matchDeclaredType(d1, d2, assignments, rec, expectedTypeEquality)
+      case (d1: DeclaredType, d2: DeclaredType) if d1.schema == d2.schema =>
+        Matchers.matchMultiple(d1.typeArguments.zip(d2.typeArguments), assignments, rec)
 
       case (_: IntersectionType, _) => unsupported
       case (_, _: IntersectionType) => unsupported
