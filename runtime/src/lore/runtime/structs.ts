@@ -3,15 +3,14 @@ import { TraitType } from './traits.ts'
 import { Tuple, TupleType } from './tuples.ts'
 import { DeclaredType, DeclaredTypes } from './types/declared-types.ts'
 import { Kind } from './types/kinds.ts'
-import { DeclaredSchemas, DeclaredTypeSchema } from './types/declared-schemas.ts'
+import { DeclaredSchemas, DeclaredSchema } from './types/declared-schemas.ts'
 import { LazyPropertyTypes, PropertyTypes } from './types/property-types.ts'
 import { substitute } from './types/substitution.ts'
 import { Assignments, TypeVariable } from './types/type-variables.ts'
 import { Type } from './types/types.ts'
-import { unique } from './types/util.ts'
 import { Value } from './values.ts'
 
-export interface StructSchema extends DeclaredTypeSchema {
+export interface StructSchema extends DeclaredSchema {
   /**
    * The struct's properties, with each name as the key, and their respective compile-time types.
    *
@@ -57,16 +56,11 @@ export interface StructType extends DeclaredType {
    * are no such deviations, the map **must** be `undefined`.
    *
    * This map does not contain instantiated versions of the schema's non-open properties.
-   *
-   * TODO (schemas): Rename to `openPropertyTypes` so that it's impossible to associate this map with property types
-   *                 that have their type parameters instantiated.
    */
-  propertyTypes?: PropertyTypes
+  openPropertyTypes?: PropertyTypes
 
   /**
    * Caches the result of `getConstructor`.
-   *
-   * TODO (schemas): This will only become useful if we intern struct types.
    */
   constructorCache?: FunctionValue<StructValue>
 
@@ -107,20 +101,20 @@ export const Struct = {
   /**
    * Instantiates a new struct type from the given type arguments and open property types.
    */
-  type(schema: StructSchema, typeArguments?: Assignments, propertyTypes?: PropertyTypes): StructType {
+  type(schema: StructSchema, typeArguments?: Assignments, openPropertyTypes?: PropertyTypes): StructType {
     let uniqueKey: TupleType | undefined = undefined
-    if (propertyTypes) {
+    if (openPropertyTypes) {
       // To generate the struct type's unique key, we must add open properties in their order of declaration.
       const uniqueKeyTypes = typeArguments ? typeArguments.slice() : []
       for (const propertyName of schema.openPropertyOrder) {
-        uniqueKeyTypes.push(propertyTypes[propertyName])
+        uniqueKeyTypes.push(openPropertyTypes[propertyName])
       }
       uniqueKey = Tuple.type(uniqueKeyTypes)
     } else if (typeArguments) {
       uniqueKey = Tuple.type(typeArguments)
     }
 
-    return DeclaredTypes.type<StructType>(Kind.Struct, schema, typeArguments, { propertyTypes }, uniqueKey)
+    return DeclaredTypes.type<StructType>(Kind.Struct, schema, typeArguments, { openPropertyTypes }, uniqueKey)
   },
 
   /**
@@ -173,7 +167,7 @@ export const Struct = {
    * to avoid having to substitute type arguments into the schema's property types.
    */
   getPropertyType(type: StructType, name: string): Type | undefined {
-    const openCandidate = type.propertyTypes && type.propertyTypes[name]
+    const openCandidate = type.openPropertyTypes && type.openPropertyTypes[name]
     if (openCandidate) {
       return openCandidate
     }

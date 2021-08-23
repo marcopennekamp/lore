@@ -37,7 +37,7 @@ function substitutePolymorphic(type: Type, assignments: Assignments): Type | und
     }
     case Kind.Struct: {
       const struct = <StructType> type
-      return substituteDeclaredType(struct, assignments, typeArguments => Struct.type(struct.schema, typeArguments, struct.propertyTypes))
+      return substituteDeclaredType(struct, assignments, typeArguments => Struct.type(struct.schema, typeArguments, struct.openPropertyTypes))
     }
 
     case Kind.Sum: {

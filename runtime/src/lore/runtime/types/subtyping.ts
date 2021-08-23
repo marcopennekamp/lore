@@ -58,13 +58,13 @@ export function isSubtype(t1: Type, t2: Type): boolean {
           if (s1.schema === s2.schema && checkSubtypeTypeArguments(s1, s2)) {
             // If the open property types of s2 are empty, and s1 and s2 agree in their type arguments, s2 will always
             // be a supertype of s1. Each property type of s2 is as general as possible.
-            if (!s2.propertyTypes) {
+            if (!s2.openPropertyTypes) {
               return true
             }
 
             // This subtyping check assumes that open property types are either undefined or fully defined. This
             // allows us to check keys in only one direction.
-            return structSubtypePropertyTypes(s1, s2.propertyTypes)
+            return structSubtypePropertyTypes(s1, s2.openPropertyTypes)
           }
         }
         return false

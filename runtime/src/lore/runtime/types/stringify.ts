@@ -24,8 +24,8 @@ export function stringify(type: Type): string {
     case Kind.Struct: {
       const struct = <StructType> type
       const declaredTypeString = stringifyDeclaredType(struct)
-      if (struct.propertyTypes) {
-        return `${declaredTypeString}(${stringifyPropertyTypes(struct.propertyTypes).join(', ')})`
+      if (struct.openPropertyTypes) {
+        return `${declaredTypeString}(${stringifyPropertyTypes(struct.openPropertyTypes).join(', ')})`
       }
       return declaredTypeString
     }

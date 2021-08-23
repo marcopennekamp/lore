@@ -2,12 +2,12 @@ import { ShapeType } from './shapes.ts'
 import { Tuple } from './tuples.ts'
 import { DeclaredType, DeclaredTypes } from './types/declared-types.ts'
 import { Kind } from './types/kinds.ts'
-import { DeclaredSchemas, DeclaredTypeSchema } from './types/declared-schemas.ts'
+import { DeclaredSchemas, DeclaredSchema } from './types/declared-schemas.ts'
 import { substitute } from './types/substitution.ts'
 import { Assignments, TypeVariable } from './types/type-variables.ts'
 import { LazyValue } from './utils/LazyValue.ts'
 
-export interface TraitSchema extends DeclaredTypeSchema {
+export interface TraitSchema extends DeclaredSchema {
   /**
    * As a trait may inherit directly and indirectly from shapes, each trait has an inherited shape type. This shape
    * type can be used to decide trait/shape subtyping at run-time. Since most values on the left side of subtyping

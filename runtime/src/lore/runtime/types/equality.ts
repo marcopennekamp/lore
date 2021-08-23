@@ -66,13 +66,13 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
     // Structs are only equal if all of their open properties agree as well. This is especially crucial for the
     // dispatch cache, where a single different open property type may change the target function.
     // The equality check assumes that a struct's open property types are either undefined or fully defined, i.e.
-    // contain all possible keys. That invariant allows us to iterate through one struct's propertyTypes object and
+    // contain all possible keys. That invariant allows us to iterate through one struct's openPropertyTypes object and
     // still make sure that all keys are covered. There cannot be an open property type in the other struct that we
     // missed.
-    if (t1.propertyTypes) {
-      return arePropertyTypesEqualTo(t1.propertyTypes, t2)
-    } else if (t2.propertyTypes) {
-      return arePropertyTypesEqualTo(t2.propertyTypes, t1)
+    if (t1.openPropertyTypes) {
+      return arePropertyTypesEqualTo(t1.openPropertyTypes, t2)
+    } else if (t2.openPropertyTypes) {
+      return arePropertyTypesEqualTo(t2.openPropertyTypes, t1)
     }
     return true
   },
