@@ -2,16 +2,18 @@ package lore.compiler.inference.resolvers
 
 import lore.compiler.feedback.DispatchFeedback.EmptyFit
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
-import lore.compiler.inference.Inference.{Assignments, isFullyInstantiated}
+import lore.compiler.inference.Inference.Assignments
 import lore.compiler.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.inference._
 import lore.compiler.semantics.Registry
+import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.types.{TupleType, Type}
 
 object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment.MultiFunctionHint] {
 
-  case class MultiFunctionHintMissingImplementation(judgment: TypingJudgment, successes: Int, results: Vector[Option[Assignments]]) extends Feedback.Error(judgment) {
-    override def message: String = s"The MultiFunctionHint judgment $judgment cannot be resolved yet if there are $successes options. Sorry. Results:\n${results.mkString("\n")}."
+  case class AmbiguousArgumentTypes(mf: MultiFunctionDefinition, candidates: Vector[Type], judgment: TypingJudgment) extends Feedback.Error(judgment) {
+    override def message: String = s"In this call of multi-function $mf, the argument types cannot be inferred. There" +
+      s" are multiple equally specific candidates. These are: ${candidates.mkString(", ")}."
   }
 
   /**
@@ -29,8 +31,8 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
     * Results with errors can be safely disregarded. However, if there are multiple different sets of assignments
     * produced by multiple successful paths, we will have to choose one set of assignments. This is where the
     * `resultArgumentType` comes into play: it's used to choose the most specific argument type (parallel to the fit of
-    * a multi-function call). If there is no such most specific type, we have an ambiguity error. If there are no
-    * successful paths at all, we have an empty fit error.
+    * a multi-function call). If there is no such most specific type, we have an argument type ambiguity error. If
+    * there are no successful paths at all, we have an empty fit error.
     *
     * This resolver is not performing backtracking in the sense of building nested decision trees. Rather, the resolver
     * performs inference on a subset of judgments to produce a set of argument types which are then returned. The
@@ -91,20 +93,26 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       else None
     }
 
-    // TODO: Take the assignments that result in the MOST SPECIFIC function being chosen. If there is no such most
-    //       specific function (either due to ambiguity or empty fit), report an error and return None.
-
     val successes = results.flatten
     if (successes.nonEmpty) {
-      val possibleAssignments = successes.distinct
-      if (possibleAssignments.length == 1) {
-        Some((possibleAssignments.head, remainingJudgments.diff(influencingJudgments)))
-      } else {
-        reporter.error(MultiFunctionHintMissingImplementation(judgment, successes.length, results))
-        None
+      case class Candidate(argumentType: Type, assignments: Assignments)
+      val candidates = successes.map { assignments =>
+        val result = Inference.instantiateCandidateType(assignments, resultArgumentType)
+        Candidate(result, assignments)
+      }
+      val mostSpecific = candidates
+        .filterNot(candidate => candidates.exists(_.argumentType < candidate.argumentType))
+        .distinctBy(_.argumentType)
+
+      mostSpecific match {
+        case Vector(candidate) => Some((candidate.assignments, remainingJudgments.diff(influencingJudgments)))
+        case _ =>
+          Inference.logger.trace(s"Ambiguous argument types of `$judgment`:\n${successes.mkString("\n")}")
+          reporter.error(AmbiguousArgumentTypes(mf, mostSpecific.map(_.argumentType), judgment))
+          None
       }
     } else {
-      Inference.logger.trace(s"Empty fit of `$judgment`:${results.mkString("\n")}")
+      Inference.logger.trace(s"Empty fit of `$judgment`:\n${results.mkString("\n")}")
       reporter.error(EmptyFit(mf, Inference.instantiateCandidateType(assignments, TupleType(argumentTypes)), judgment.position))
       None
     }
