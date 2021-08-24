@@ -164,10 +164,19 @@ object TypeVariableAllocation {
       // try to assign a type C. Should A or B become C? Surely not both A and B can be C (unless the sum type
       // is trivial). And even if we have a structurally similar type C | D, should A = C and B = D or A = D and
       // B = C? There are multiple possibilities.
-      case (_: IntersectionType, _) => unsupportedSubstitution
-      case (_, _: IntersectionType) => unsupportedSubstitution
-      case (_: SumType, _) => unsupportedSubstitution
+      // We abort compilation in cases where `t2` is a sum or intersection type. This means that the user wants to
+      // assign types to a type variable embedded in a sum or intersection, which we cannot decide yet. When the
+      // left-hand type is a sum or an intersection and the right-hand type isn't, we can assume that t1 cannot be a
+      // subtype of t2 in any case, because t1 should be simplified. Hence, we don't need to assign anything.
+      // TODO: This hinges on additional simplification for sum and intersection types: we need to ensure that
+      //       covariant and contravariant positions are properly simplified. For example, if we have a type
+      //       `[X] & [Y]`, we want it to be combined to `[X & Y]` before we ask whether `[X] & [Y]` fits into `[A]`.
+      //       If we don't do the simplification, the type variable allocation will just silently avoid assigning
+      //       anything to A.
       case (_, _: SumType) => unsupportedSubstitution
+      case (_: SumType, _) =>
+      case (_, _: IntersectionType) => unsupportedSubstitution
+      case (_: IntersectionType, _) =>
 
       // If a declared type dt2 contains type variables in its type arguments, we have to assign them from the type
       // arguments of either dt1 itself or the supertypes of dt1. See `findSupertype` on how multiple parameterized
