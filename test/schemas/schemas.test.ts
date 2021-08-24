@@ -2,6 +2,20 @@ import { ListValue } from '../../runtime/src/lore/runtime/lists.ts'
 import { assertListEquals } from '../assertions.ts'
 import { LoreTest } from '../base.ts'
 
+Deno.test('schemas/alias', async () => {
+  const result: ListValue<string> = await LoreTest.run('schemas/alias.lore')
+  assertListEquals(result, [
+    'hey int 5',
+    'hey int 2',
+    '',
+    'hey int 1, hey int 2, hey int 3',
+    '2',
+    '0.8',
+    '4',
+    '1',
+  ])
+})
+
 Deno.test('schemas/array', async () => {
   const result: ListValue<number> = await LoreTest.run('schemas/array.lore')
   assertListEquals(result, [2, 3, 4])

@@ -1,1 +1,25 @@
-// TODO (schemas): Write a test that instantiates various structs via type aliases.
+struct Function[-A, +B] {
+  f: A => B
+}
+
+function apply(fun: Function[A, B], v: V): B where A, B, V <: A = fun.f(v)
+
+type StringFunction[A] = Function[A, String]
+type IntConsumer[B] = Function[Int, B]
+type Int2IntFunction = Function[Int, Int]
+
+
+function test(): [String] = {
+  let f1 = StringFunction((x: Int) => 'hey int $x')
+  let f2 = StringFunction((list: [Int]) => stringJoin(map(list, f1.f), ', '))
+  let f3 = IntConsumer(x => x * 0.4)
+  let f4 = Int2IntFunction(x => x + 2)
+
+  let data = [
+    apply(f1, 5), apply(f1, 2),
+    apply(f2, []), apply(f2, [1, 2, 3]),
+    apply(f3, 5), apply(f3, 2),
+    apply(f4, 2), apply(f4, -1)
+  ]
+  map(data, toString)
+}
