@@ -51,12 +51,9 @@ object TypingJudgment {
   case class Assign(target: Type, source: Type, position: Position) extends TypingJudgment
 
   /**
-    * Asserts that `t1` must fit into `t2`, with inference variables in `t2` representing type variables.
-    *
-    * The judgment is unidirectional (t1 --> t2) and will only be processed when `t1` can be instantiated. Because
-    * inference variables in `t2` represent type variables, any types from `t1` matching with an inference variable
-    * `iv2` will be <b>assigned</b> to `iv2` in both bounds. This is consistent with how type variable allocations are
-    * built.
+    * Asserts that `t1` must fit into `t2`. The judgment is unidirectional (t1 --> t2) and will only be processed when
+    * `t1` can be instantiated. It is resolved like a [[Subtypes]] judgment in a single direction with `t1` being
+    * instantiated as a <b>candidate type</b>.
     */
   case class Fits(t1: Type, t2: Type, position: Position) extends TypingJudgment
 

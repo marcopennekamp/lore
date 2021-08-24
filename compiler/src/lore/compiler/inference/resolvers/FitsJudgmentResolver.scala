@@ -2,7 +2,7 @@ package lore.compiler.inference.resolvers
 
 import lore.compiler.feedback.Reporter
 import lore.compiler.inference.Inference.{Assignments, instantiateCandidateType}
-import lore.compiler.inference.InferenceBounds.narrowBounds
+import lore.compiler.inference.InferenceBounds.{ensureLowerBound, ensureUpperBound}
 import lore.compiler.inference.matchers.{Matchers, SubtypingMatcher}
 import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.semantics.Registry
@@ -20,11 +20,11 @@ object FitsJudgmentResolver extends JudgmentResolver.Nondirectional[TypingJudgme
   private object FitsProcessor extends Matchers.Processor {
     override def processIv1(iv1: InferenceVariable, t2: Type, assignments: Assignments, context: TypingJudgment)(implicit reporter: Reporter): Option[Assignments] = {
       // This case is necessary for matching contravariant types such as function types.
-      narrowBounds(assignments, iv1, t2, context)
+      ensureUpperBound(assignments, iv1, t2, context)
     }
 
     override def processIv2(t1: Type, iv2: InferenceVariable, assignments: Assignments, context: TypingJudgment)(implicit reporter: Reporter): Option[Assignments] = {
-      narrowBounds(assignments, iv2, t1, context)
+      ensureLowerBound(assignments, iv2, t1, context)
     }
   }
 

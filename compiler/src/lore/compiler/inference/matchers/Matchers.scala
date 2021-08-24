@@ -3,7 +3,7 @@ package lore.compiler.inference.matchers
 import lore.compiler.feedback.Reporter
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.inference.{InferenceVariable, TypingJudgment}
-import lore.compiler.types.{DeclaredType, TupleType, Type}
+import lore.compiler.types.{TupleType, Type}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object Matchers {
