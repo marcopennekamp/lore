@@ -10,9 +10,9 @@
     - Resolution: ~~Schema instantiation~~, ~~alias/trait/struct schema resolution~~.
     - Constraints: ~~Totality constraint checking for parameterized declared types~~; ~~co-/contravariant type parameters must be used in appropriate positions (property types with covariant and contravariant positions, mutable properties, type arguments with variance)~~; ~~open type parameter constraints (uniquely deducible, covariant, used with immutable properties)~~.
     - Transformation: ~~Construction~~ (~~manual specification of type arguments~~, ~~inference of type arguments~~).
-    - Transpilation: Instantiation function (~~passing type arguments~~, resolving open type parameters from the given argument at run time), ~~construction~~ (~~passing type arguments to the instantiation function~~).
+    - Transpilation: ~~Instantiation function~~ (~~passing type arguments~~, ~~resolving open type parameters from the given argument at run time~~), ~~construction~~ (~~passing type arguments to the instantiation function~~).
   - Runtime:
-    - Structures: ~~Type variable variance~~, ~~trait and struct schema type parameters~~, ~~trait and struct type instantiation~~, ~~interning declared types~~ (possibly with weak references so that unused types can be reclaimed).
+    - Structures: ~~Type variable variance~~, ~~trait and struct schema type parameters~~, ~~trait and struct type instantiation~~, ~~interning declared types~~.
     - Type functions: ~~Subtyping~~, ~~equality~~, ~~type variable allocations~~, ~~substitution~~, ~~polymorphy~~, ~~variables~~, ~~stringify~~.
   - Clear all `TODO (schemas)` entries.
 - Implement the new syntax.
@@ -118,6 +118,7 @@
 - Clean up ExpressionTransformationVisitor by moving more functionality to helper objects like ExpressionTransformationHelper.
   - Reconsider some names, as ExpressionTransformation and StatementTransformation aren't similar in functionality even though their names suggest so.
 - Move errors to a more central location. It should be easy to see which errors a given phase can produce. This may also allow us to merge some errors.
+- Intern declared types as weak references so that they can be reclaimed if no values use the types.
 
 ##### Terminology
 
