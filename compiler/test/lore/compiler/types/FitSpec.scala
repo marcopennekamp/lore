@@ -23,13 +23,13 @@ class FitSpec extends TypeSpec {
       ((BasicType.Real, Y): TupleType) fitsInto (X, BasicType.Any)
     }
     { val A = typeVariable("A")
-      val B = typeVariable("B")
+      val B = typeVariable("B", upperBound = A)
       ((ListType(BasicType.Real), BasicType.Int): TupleType) fitsInto (ListType(A), B)
       ((ListType(Bird), Mammal): TupleType) fitsNotInto (ListType(A), B)
     }
     { // Example 1 from the spec's type allocation examples.
       val A = typeVariable("A")
-      val B = typeVariable("B")
+      val B = typeVariable("B", upperBound = A)
       val C = typeVariable("C")
       ((C, BasicType.Int): TupleType) fitsNotInto (A, B)
     }
