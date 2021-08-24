@@ -14,7 +14,7 @@ object StructConstraints {
     * Verifies:
     *   1. Properties must be unique.
     *   2. The properties of the struct's inherited shape type must all be defined.
-    *   3. Co-/contravariant type parameters must be used in appropriate positions in property types.
+    *   3. Co-/contra-/invariant type parameters must be used in appropriate positions in property types.
     *   4. Open type parameters must be covariant, uniquely deducible, and used in immutable properties.
     */
   def verify(definition: StructDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
@@ -47,7 +47,7 @@ object StructConstraints {
   }
 
   /**
-    * Verifies that co-/contravariant type parameters are used in appropriate positions in property types.
+    * Verifies that co-/contra-/invariant type parameters are used in appropriate positions in property types.
     */
   private def verifyVariancePositions(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
     definition.properties.foreach { property =>

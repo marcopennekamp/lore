@@ -9,7 +9,7 @@ object DeclaredSchemaConstraints {
 
   /**
     * Verifies:
-    *   1. Co-/contravariant type parameters must be used in appropriate positions in extended types.
+    *   1. Co-/contra-/invariant type parameters must be used in appropriate positions in extended types.
     *   2. All struct constraints if the given definition is a struct.
     */
   def verify(definition: DeclaredSchemaDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
@@ -21,7 +21,7 @@ object DeclaredSchemaConstraints {
   }
 
   /**
-    * Verifies that co-/contravariant type parameters are used in appropriate positions in extended types.
+    * Verifies that co-/contra-/invariant type parameters are used in appropriate positions in extended types.
     */
   private def verifyVariancePositions(definition: DeclaredSchemaDefinition)(implicit reporter: Reporter): Unit = {
     definition.schema.supertypes.foreach {

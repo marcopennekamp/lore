@@ -8,28 +8,21 @@ import lore.compiler.types.{DeclaredType, FunctionType, IntersectionType, ListTy
 object VarianceConstraints {
 
   case class InvalidVariance(typeVariable: TypeVariable, origin: Variance, override val position: Position) extends Feedback.Error(position) {
-    override val message: String = origin match {
-      case Variance.Covariant => s"The contravariant type variable $typeVariable is in an illegal covariant position."
-      case Variance.Contravariant => s"The covariant type variable $typeVariable is in an illegal contravariant position."
-      case Variance.Invariant => s"The type variable $typeVariable must be invariant."
-      case _ => throw new IllegalArgumentException
-    }
+    override val message: String = s"The ${typeVariable.variance.humanReadable} type variable $typeVariable is in an" +
+      s" illegal ${origin.humanReadable} position."
   }
 
   /**
-    * Verifies that the given type contains only invariant type variables and those with the given origin variance.
-    * Certain type positions such as function input types and type arguments of contravariant type parameters may flip
-    * the origin variance.
+    * Verifies that the given type contains only type variables with the given origin variance or invariance. Certain
+    * type positions such as function input types and type arguments of contravariant type parameters may flip some
+    * origin variances.
     */
   def verifyVariance(tpe: Type, origin: Variance, position: Position)(implicit reporter: Reporter): Unit = {
     def rec = t => verifyVariance(t, origin, position)
     def recFlipped = t => verifyVariance(t, Variance.flip(origin), position)
 
     tpe match {
-      case tv: TypeVariable =>
-        if (tv.variance != origin && tv.variance != Variance.Invariant) {
-          reporter.error(InvalidVariance(tv, origin, position))
-        }
+      case tv: TypeVariable if tv.variance != origin && tv.variance != Variance.Invariant => reporter.error(InvalidVariance(tv, origin, position))
       case SumType(types) => types.foreach(rec)
       case IntersectionType(types) => types.foreach(rec)
       case TupleType(elements) => elements.foreach(rec)
@@ -44,8 +37,9 @@ object VarianceConstraints {
       case dt: DeclaredType =>
         dt.assignments.foreach {
           case (typeParameter, typeArgument) => typeParameter.variance match {
-            case Variance.Covariant | Variance.Invariant => rec(typeArgument)
+            case Variance.Covariant => rec(typeArgument)
             case Variance.Contravariant => recFlipped(typeArgument)
+            case Variance.Invariant => verifyVariance(typeArgument, Variance.Invariant, position)
           }
         }
       case _ =>
