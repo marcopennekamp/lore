@@ -68,7 +68,7 @@
 
 ##### Correctness
 
-- Disallow the `+` symbol in a type variable name, because `+` is also used to specify covariance.
+- We might want to "degrade" the abstractness and totality constraints to warnings. The type system is so complex that the compiler cannot understand all occurrences of abstract types. Sometimes types are not really abstract, but practically/pragmatically abstract through convention. (Such as `Metal[Price]` in `schemas/goods.lore`.) In these cases, we shouldn't force the programmer to define a function that they want to keep abstract. This is rather in the spirit of dynamic languages, but would enrich Lore, I think.
 - Ensure that loops with a Unit expression body cannot be used as an expression, as Unit loops are optimized by the transpiler.
 - During loop transpilation, ignore the resulting list if it isn't used at all. This will require allowing expression visitors to query some state from the parent and is possibly complex to implement.
 
