@@ -11,3 +11,7 @@ trait Y[A, +B] extends X[B, A]
 trait Z[-A] extends {
   stringifier: X[A, Int] => String
 }
+
+trait Array[A]
+// Error: A is covariant but stands in an invariant position.
+struct NaiveArray[+A] extends Array[A]

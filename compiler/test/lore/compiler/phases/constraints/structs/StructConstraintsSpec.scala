@@ -25,6 +25,7 @@ class StructConstraintsSpec extends BaseSpec {
     assertCompilationErrorSignatures(s"$fragmentBase/open-type-parameters.lore")(
       (classOf[StructFeedback.OpenTypeParameter.CovarianceRequired], 2),
       (classOf[StructFeedback.OpenTypeParameter.NotUniquelyDeducible], 7),
+      (classOf[VarianceConstraints.InvalidVariance], 14),
       (classOf[StructFeedback.OpenTypeParameter.NotUniquelyDeducible], 14),
       (classOf[VarianceConstraints.InvalidVariance], 19),
       (classOf[StructFeedback.OpenTypeParameter.MutableProperty], 19),
@@ -37,9 +38,11 @@ class StructConstraintsSpec extends BaseSpec {
       ("The contravariant type variable A is in an illegal covariant position.", 5),
       ("The covariant type variable B is in an illegal contravariant position.", 10),
       ("The contravariant type variable A is in an illegal covariant position.", 10),
-      ("The type variable A must be invariant.", 13),
-      ("The type variable B must be invariant.", 15),
-      ("The type variable A must be invariant.", 19),
+      ("The contravariant type variable A is in an illegal invariant position.", 13),
+      ("The covariant type variable B is in an illegal invariant position.", 15),
+      ("The contravariant type variable A is in an illegal invariant position.", 19),
+      ("The contravariant type variable A is in an illegal invariant position.", 21),
+      ("The covariant type variable A is in an illegal invariant position.", 27),
     )
   }
 }

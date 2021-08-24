@@ -9,12 +9,20 @@ struct Z[-A, +B, C] {
   // Error: A is contravariant but stands in a covariant position.
   callable: B => A
 
-  // Error: A must be invariant.
+ // Error: A is contravariant but stands in an invariant position.
   mut a: A
-  // Error: B must be invariant.
+  // Error: B is covariant but stands in an invariant position.
   mut b: B
   mut c: C
 
-  // Error: A must be invariant.
+  // Error: A is contravariant but stands in an invariant position.
   mut callable2: C => Y[Int, A]
+  // Error: A is contravariant but stands in an invariant position.
+  mut callable3: Y[Int, A] => C
+}
+
+trait Array[A]
+struct Collection[+A] {
+  // Error: A is covariant but stands in an invariant position.
+  array: Array[A]
 }

@@ -11,6 +11,7 @@ class TraitConstraintsSpec extends BaseSpec {
       ("The contravariant type variable A is in an illegal covariant position.", 3),
       ("The covariant type variable B is in an illegal contravariant position.", 8),
       ("The contravariant type variable A is in an illegal covariant position.", 11),
+      ("The covariant type variable A is in an illegal invariant position.", 17),
     )
   }
 }
