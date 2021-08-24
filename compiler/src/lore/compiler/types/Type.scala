@@ -62,6 +62,7 @@ object Type {
       }
     case TupleType(elements) => elements.exists(isAbstract)
     case _: TraitType => true
+    case struct: StructType => struct.openTypeArguments.exists(isAbstract)
     case _: BasicType =>
       // Any isn't abstract because declaring an abstract function over it is more than inadvisable. Effectively,
       // Nothing cannot be the supertype of anything, so declaring an abstract function over it will only result in

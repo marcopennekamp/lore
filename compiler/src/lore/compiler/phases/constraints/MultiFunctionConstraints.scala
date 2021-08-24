@@ -61,12 +61,6 @@ object MultiFunctionConstraints {
 
   /**
     * Verifies that the given function satisfies the input abstractness constraint.
-    *
-    * TODO (schemas): Abstractness of parameterized structs: A struct with an open type argument such as `Some[Animal]`
-    *                 given a *trait* `Animal` is technically abstract, because an instance of such a struct can never
-    *                 be created. The type argument will always be some subtype of `Animal`, so one could imagine the
-    *                 programmer wanting to implement various specialized functions without specifying a function for
-    *                 `Some[Animal]`. See also the test case `schemas/goods.lore`,
     */
   private def verifyInputAbstractness(function: FunctionDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
     if (Type.isConcrete(function.signature.inputType)) {

@@ -10,7 +10,6 @@ struct Gold extends Metal[HighPrice]
 struct Silver extends Metal[MediumPrice]
 struct Iron extends Metal[LowPrice]
 
-// TODO (schemas): This first function should be abstract, but the input abstractness constraint isn't up to it yet. See MultiFunctionConstraints.
 function price(box: Box[Metal[Price]]): Real = 0
 function price(box: Box[Metal[HighPrice]]): Real = 48.5
 function price(box: Box[Metal[MediumPrice]]): Real = 17.2

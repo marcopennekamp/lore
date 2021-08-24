@@ -37,6 +37,10 @@ class DeclaredTypeHierarchy(schemas: Vector[DeclaredSchema]) {
   /**
     * Returns all direct subtypes of the given declared type, excluding the type itself. If a subtype schema has type
     * parameters, this function delegates to [[DeclaredType.specialize]] to instantiate a proper direct subtype.
+    *
+    * TODO: Abstract struct types can have different direct subtypes. A type `Some[A]` with some abstract `A` for
+    *       example is abstract itself, because A is an open type argument. In such a case, given direct subtyping
+    *       relationships `X < A` and `Y < A`, we should specialize `Some[A]` to `Some[X]` and `Some[Y]`.
     */
   def getDirectSubtypes(tpe: DeclaredType): Vector[DeclaredType] = {
     // The resulting vector will contain distinct types, as the graph also contains distinct nodes.

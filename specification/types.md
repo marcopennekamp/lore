@@ -229,7 +229,8 @@ Each type is either **abstract** or concrete. Functions may only be declared as 
   - Shape types would behave like tuple types if we could guarantee that run-time property types are always taken into account for multiple dispatch. This would require all struct properties to be open, which we do not want to support.
 - A **symbol type** is always concrete.
 - A **trait** is always abstract on its own. It may stand as an augmentation.
-- A **struct** is always concrete.
+- A **struct** is usually concrete. 
+  - A parameterized struct with an **open type argument** is abstract if the type argument is abstract.
 
 ##### Augmentations
 
