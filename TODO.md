@@ -2,19 +2,6 @@
 
 #### Features
 
-- Implement type parameters for declared types:
-  - Compiler:
-    - Structures: ~~Type schemas~~, ~~type variable variance~~.
-    - Type functions: ~~Subtyping~~, ~~substitution~~, ~~type variable allocation~~, ~~declared type hierarchy~~, ~~least upper bound~~, ~~members~~, ~~type encoder~~.
-    - Parsing: ~~Type parameters for traits, structs, and alias types~~; ~~variance~~; ~~open type parameters~~; ~~type arguments for constructor function values~~; ~~type arguments in map-style instantiation~~.
-    - Resolution: ~~Schema instantiation~~, ~~alias/trait/struct schema resolution~~.
-    - Constraints: ~~Totality constraint checking for parameterized declared types~~; ~~co-/contravariant type parameters must be used in appropriate positions (property types with covariant and contravariant positions, mutable properties, type arguments with variance)~~; ~~open type parameter constraints (uniquely deducible, covariant, used with immutable properties)~~.
-    - Transformation: ~~Construction~~ (~~manual specification of type arguments~~, ~~inference of type arguments~~).
-    - Transpilation: ~~Instantiation function~~ (~~passing type arguments~~, ~~resolving open type parameters from the given argument at run time~~), ~~construction~~ (~~passing type arguments to the instantiation function~~).
-  - Runtime:
-    - Structures: ~~Type variable variance~~, ~~trait and struct schema type parameters~~, ~~trait and struct type instantiation~~, ~~interning declared types~~.
-    - Type functions: ~~Subtyping~~, ~~equality~~, ~~type variable allocations~~, ~~substitution~~, ~~polymorphy~~, ~~variables~~, ~~stringify~~.
-  - Clear all `TODO (schemas)` entries.
 - Implement the new syntax.
   - Add new features: Pipe operator, `cond` operator, `@where` annotation, `domain` blocks, trailing lambdas, question marks in identifiers.
   - Unsupported for now: Implicit underscore sections (e.g. `map(things, _.name)`).

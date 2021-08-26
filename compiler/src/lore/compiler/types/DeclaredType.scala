@@ -138,43 +138,41 @@ trait DeclaredType extends NamedType {
       return None
     }
 
-    def processClause(extendsClause: DeclaredType): Option[TypeVariable.Assignments] = {
-      val candidates = TypeVariableAllocation.of(TupleType(this.typeArguments), TupleType(extendsClause.typeArguments)).allAssignments
-      val assignments = candidates.map {
+    def processCandidates(candidates: Map[TypeVariable, Vector[Type]]): Option[Map[TypeVariable, Type]] = {
+      val result = candidates.map {
         case (parameter, types) =>
           val argument = combineCandidates(parameter, types.toSet).getOrElse {
-            // If the candidates cannot be combined, this extends clause is not a relevant clause.
+            // If candidates cannot be combined, we have a typing conflict and the extends clause is invalid, or a
+            // subtype cannot be a subtype of this declared type.
+            Type.logger.trace(s"Candidates cannot be combined: ${candidates.toSet}")
             return None
           }
           parameter -> argument
       }
+      Some(result)
+    }
 
-      val instantiatedClause = Type.substitute(extendsClause, assignments)
-      if (instantiatedClause <= this) {
-        Type.logger.trace(s"Extends clause: $instantiatedClause <= $this.")
-        Some(assignments)
-      } else {
-        Type.logger.trace(s"Extends clause: $instantiatedClause </= $this.")
-        None
+    def processClause(extendsClause: DeclaredType): Option[TypeVariable.Assignments] = {
+      val candidates = TypeVariableAllocation.of(TupleType(this.typeArguments), TupleType(extendsClause.typeArguments)).allAssignments
+      processCandidates(candidates).flatMap { assignments =>
+        val instantiatedClause = Type.substitute(extendsClause, assignments)
+        if (Fit.fits(instantiatedClause, this)) {
+          Type.logger.trace(s"Extends clause: $instantiatedClause fits $this.")
+          Some(assignments)
+        } else {
+          Type.logger.trace(s"Extends clause: $instantiatedClause does not fit $this.")
+          None
+        }
       }
     }
 
     val possibleAssignments = extendsClauses.flatMap(processClause)
+    Type.logger.trace(s"Possible assignments: $possibleAssignments")
     if (possibleAssignments.isEmpty) {
       return None
     }
 
-    val assignments = possibleAssignments.merged.map {
-      case (parameter, candidates) =>
-        val argument = combineCandidates(parameter, candidates.toSet).getOrElse(
-          // If candidates cannot be combined, we have a typing conflict and the subtype cannot be a subtype of this
-          // declared type.
-          return None
-        )
-        parameter -> argument
-    }
-
-    Some(assignments)
+    processCandidates(possibleAssignments.merged)
   }
 
   /**
@@ -207,11 +205,17 @@ trait DeclaredType extends NamedType {
         }
       )
 
+      // TODO: I don't like that `argument <= lowerBound` and `upperBound fits argument` are inherently asymmetric. We
+      //       definitely need to apply Fit here, as checking for subtyping doesn't lead to the correct results for
+      //       source types with type arguments themselves. It seems like we'd need a Fit implementation that assigns
+      //       types from `lowerBound` to variables in `argument`, but also checks `argument <= lowerBound` instead of
+      //       the usual `lowerBound <= argument`.
       val boundedArgument = if (argument <= lowerBound && parameter.variance == Variance.Contravariant) {
         lowerBound
-      } else if (upperBound <= argument && parameter.variance == Variance.Covariant) {
+      } else if (Fit.fits(upperBound, argument) && parameter.variance == Variance.Covariant) {
         upperBound
       } else if ((lowerBound </= argument) || (argument </= upperBound)) {
+        Type.logger.trace(s"Lower bound $lowerBound or upper bound $upperBound don't agree with type argument $argument.")
         return None
       } else {
         argument

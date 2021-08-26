@@ -5,9 +5,7 @@ struct IntCrate extends Crate[Int] { value: Int }
 function extract(crate: IntCrate): Int = crate.value
 
 struct ListCrate[+A] extends Crate[[A]] { list: [A] }
-// TODO (schemas): `extract` isn't defined for e.g. ListCrate[String], is it? The totality constraint should definitely
-//                 catch this error.
-function extract(crate: ListCrate[Int]): [Int] = crate.list
+function extract(crate: ListCrate[A]): [A] where A = crate.list
 
 struct TobyCrate extends Crate[String]
 function extract(crate: TobyCrate): String = 'I am a crate and my name is Toby!'
