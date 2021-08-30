@@ -3,10 +3,30 @@
 #### Features
 
 - Implement the new syntax.
-  - Add new features: Pipe operator, `cond` operator, `@where` annotation, `domain` blocks, trailing lambdas, question marks in identifiers.
-  - Unsupported for now: Implicit underscore sections (e.g. `map(things, _.name)`).
+  - Add the `%` to shape types to mirror the literal syntax `%{ ... }`.
+  - Turn the map type and value syntax into `#{A -> B}`. We could use `#[A]` for hash sets. Then we'd have square brackets for "element" collections (lists, sets) and curly braces for "associative" collections (maps, shapes).
+  - Change keywords: `function` --> `func`.
+  - Add alternative struct syntax `struct Circle(x: Real, y: Real, radius: Real) extends Shape` that doesn't use a block.
+  - Change block syntax from curly braces to `do...end`.
+    - Allow omitting parentheses in all control structures.
+  - Change `if` syntax to `if cond then A else B`. `then` may be omitted if A is a block.
+  - Change `for` syntax to `for extractors yield E`. `yield` may be omitted if A is a block. 
+  - Start treating newlines in specific contexts (such as after `if condition\n` or `struct X extends A\n`) as `do` portions of a `do...end` block.
+  - Allow omitting parameter names in function declarations if the parameter isn't used in a function's body.
+  - Pipe operator. 
+  - `cond` operator. 
+  - `@where` "annotation". 
+  - `domain` blocks.
+  - Trailing commas.
+  - Trailing lambdas.
+  - Apply snake_case across the board for variable and function names.
+  - Possibly rename `to_string` to `stringify` or something similar to make it a single word.
+  - Unsupported for now: 
+    - Implicit underscore sections (e.g. `map(things, _.name)`).
+    - `@given` parameters.
 - Implement global constants.
 - Implement a module system.
+- Implement pattern matching.
 - Implement an append operation for maps. In general, we will need to apply the same run-time typing considerations to maps.
 - Implement ranges (see `for comprehensions` in the specification).
 - Rethink properties: I don't like how shape properties are orthogonal to multi-functions right now. To use a shape, one is forced to ultimately give a property to an implementing struct. It would be much superior if properties could be declared "virtually", allowing traits to implement properties via some sort of function (perhaps even with dispatch on the accessed type). This feature should also simultaneously solve the question of "virtual/computed properties" posed in the geometry.lore example.
@@ -21,11 +41,9 @@
 
 ##### Syntax
 
-- Add the `%` to shape types to mirror the literal syntax `%{ ... }`.
-- Turn the map type syntax into `#[A -> B]` to mirror the literal syntax.
-  - `#[A]` could actually be the syntax for (hash) sets. `#{A -> B}` would be a good syntax for maps. Then we also have square brackets (`[]`) for "element" collections (lists, sets) and curly braces (`{}`) for "associative" collections (maps, shapes).  
-- Allow question marks in identifiers. I like how Clojure approaches booleans and this would fit nicely into Lore, I hope. Example: `isSuccessful` would become `successful?`.
-- Allow trailing commas.
+- Allow question marks in identifiers. Example: `is_empty(list)` would become `empty?(list)`.
+  - I'm holding out on this regarding the new syntax to see whether the question mark would be better placed with special option handling. I want to make options first-class with if/cond evaluating to an Option if there is no else path, so there might be value in also adding operators that make option handling easier.
+  - In addition to this, the question mark before the parentheses in the call above at least *looks* strange. So I need additional time to consider this before I implement it.
 
 ##### Type System
 

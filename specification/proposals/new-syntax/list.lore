@@ -1,9 +1,6 @@
 @where A
 domain list: [A]
 
-  // TODO: Allow omission of `= do`? Meaning, no equals sign and a newline is a function with a block that must be closed with an `end`.
-  //       Alternative: Allow omission of `do`, meaning that an `=` before the newline opens an implicit block.
-  //       Only the alternative might work considering that a function without an equals sign is an abstract function.
   @where B >: A, I, R >: I
   func fold(initial: I, f: (R, B) => R): R = do
     let mut result: R = initial
@@ -13,13 +10,13 @@ domain list: [A]
     result
   end
 
-  func symmetricPairs(): [(A, A)] = do
+  func symmetric_pairs(): [(A, A)] = do
     let mut result: [(A, A)] = []
-    let length = length(list)
+    let len = length(list)
     let mut i = 0
-    while i < length
+    while i < len
       let mut j = i
-      while j < length
+      while j < len
         result = result :+ (list |> get(i), list |> get(j))
         j += 1
       end
@@ -28,10 +25,10 @@ domain list: [A]
     result
   end
 
-  func toString(): String = do
+  func to_string(): String = do
     // This could be solved with a `map`, but illustrates the single-line `for` syntax.
-    let strings = for a <- list yield toString(a)
-    let joined = strings |> stringJoin(', ')
+    let strings = for a <- list yield to_string(a)
+    let joined = strings |> string_join(', ')
     '[$joined]'
   end
 

@@ -4,7 +4,9 @@ type RnaNucleotide = #a | #u | #g | #c
 type Dna = [DnaNucleotide]
 type Rna = [RnaNucleotide]
 
-func transcribe(nucleotide: DnaNucleotide): RnaNucleotide
+// Note: Parameter names may be omitted if the name isn't used in the function. This is especially useful for abstract
+// functions.
+func transcribe(DnaNucleotide): RnaNucleotide
 func transcribe(n: #a): #u = #u
 func transcribe(n: #t): #a = #a
 func transcribe(n: #g): #c = #c
@@ -12,7 +14,7 @@ func transcribe(n: #c): #g = #g
 
 func transcribe(dna: Dna): Rna = map(dna, transcribe)
 
-func toString(rna: Rna): String = rna |> map(symbolName) |> concat
+func to_string(rna: Rna): String = rna |> map(symbol_name) |> concat
 
 func test(): [String] = do
   let cases = [
@@ -23,5 +25,5 @@ func test(): [String] = do
     [#a, #c, #g, #t, #g, #g, #t, #c, #t, #t, #a, #a]
   ]
 
-  map(cases, dna => dna |> transcribe |> toString)
+  map(cases, dna => dna |> transcribe |> to_string)
 end

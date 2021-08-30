@@ -1,22 +1,23 @@
 trait Shape
 
-func width(shape: Shape): Real
-func height(shape: Shape): Real
-
-func area(shape: Shape): Real = width(shape) * height(shape)
-
-
-struct BoundingBox extends Shape
-  x: Real, xEnd: Real
-  y: Real, yEnd: Real
-end
-
 // Note: `domain` is a syntactic trick that prepends the specified parameters to each function's parameters. `domain`
 //       may also receive `@where` and `@given` annotations, which are also applied to all functions. `domain` may only
 //       contain function declarations.
+domain shape: Shape
+  func width(): Real
+  func height(): Real
+  func area(): Real = width(shape) * height(shape)
+end
+
+
+struct BoundingBox extends Shape
+  x: Real, x_end: Real
+  y: Real, y_end: Real
+end
+
 domain box: BoundingBox
-  func width(): Real = box.xEnd - box.x
-  func height(): Real = box.yEnd - box.y
+  func width(): Real = box.x_end - box.x
+  func height(): Real = box.y_end - box.y
 end
 
 
@@ -54,7 +55,7 @@ func test(): [Real] = do
   let shapes = [
     BoundingBox(0, 10, -5, 20),
     Circle(0, 5, 2.7),
-    Rectangle(-5, -5, 20, 77)
+    Rectangle(-5, -5, 20, 77),
   ]
   shapes |> map(area)
 end
