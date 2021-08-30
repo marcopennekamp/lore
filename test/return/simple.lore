@@ -1,12 +1,12 @@
-function f1(): Int = {
+func f1(): Int = {
   if ('x' == 'y') return 5 else return 10
 }
 
-function f2(): Int = {
+func f2(): Int = {
   return if (true) 1 else 2
 }
 
-function f3(): Int = {
+func f3(): Int = {
   let list = [1, 2, 3]
   for (x <- list) {
     if (x == 2) {
@@ -16,4 +16,4 @@ function f3(): Int = {
   0
 }
 
-function test(): (Int, Int, Int) = (f1(), f2(), f3())
+func test(): (Int, Int, Int) = (f1(), f2(), f3())

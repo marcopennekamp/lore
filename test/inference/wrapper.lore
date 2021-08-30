@@ -1,8 +1,8 @@
 struct Wrapper[-A, +B] { function: A => B }
 
-function mapWrapper(list: [A], wrapper: Wrapper[B, C]): [C] where A, B >: A, C = map(list, wrapper.function)
+func mapWrapper(list: [A], wrapper: Wrapper[B, C]): [C] where A, B >: A, C = map(list, wrapper.function)
 
-function test(): [String] = {
+func test(): [String] = {
   let numbers = [1, 2, 3]
   mapWrapper(
     numbers,

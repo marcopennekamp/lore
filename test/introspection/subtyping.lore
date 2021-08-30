@@ -10,12 +10,12 @@ struct Crane extends Animal {
   height: Real
 }
 
-function niuzao(): Ox = Ox('Niuzao', 387.23)
-function chiji(): Crane = Crane('Chi-Ji', 5.51)
+func niuzao(): Ox = Ox('Niuzao', 387.23)
+func chiji(): Crane = Crane('Chi-Ji', 5.51)
 
-function shape(): %{ name: String, weight: Real } = %{ name: 'Peter', weight: 87.2 }
+func shape(): %{ name: String, weight: Real } = %{ name: 'Peter', weight: 87.2 }
 
-function test(): [Boolean] = [
+func test(): [Boolean] = [
   isSubtype(typeOf(1), typeOf(1.5)),               // --> true
   isSubtype(typeOf(1.5), typeOf(1)),               // --> false
   // TODO: How to get the Animal trait type for introspection? We would have to add compiler support.

@@ -3,25 +3,25 @@ struct Cereal extends Content
 struct Blood extends Content
 struct Pudding extends Content
 
-function toString(cereal: Cereal): String = 'cereal'
-function toString(blood: Blood): String = 'blood'
-function toString(pudding: Pudding): String = 'pudding'
+func toString(cereal: Cereal): String = 'cereal'
+func toString(blood: Blood): String = 'blood'
+func toString(pudding: Pudding): String = 'pudding'
 
 
 trait Container[+C]
 struct Bowl[+C <: Content] extends Container[C] { content: C, taste: Int }
 struct Cup[+C <: Content] extends Container[C] { content: C, exclusivity: Int }
 
-function toString(bowl: Bowl[Content]): String = '${bowl.content} bowl'
-function toString(cup: Cup[Content]): String = '${cup.content} cup'
+func toString(bowl: Bowl[Content]): String = '${bowl.content} bowl'
+func toString(cup: Cup[Content]): String = '${cup.content} cup'
 
 
-function cereal(container: (Cereal, Int) => A): A where A = container(Cereal(), 4)
-function blood(container: (Blood, Int) => A): A where A = container(Blood(), 1)
-function pudding(container: (Pudding, Int) => A): A where A = container(Pudding(), 9)
+func cereal(container: (Cereal, Int) => A): A where A = container(Cereal(), 4)
+func blood(container: (Blood, Int) => A): A where A = container(Blood(), 1)
+func pudding(container: (Pudding, Int) => A): A where A = container(Pudding(), 9)
 
 
-function test(): [String] = {
+func test(): [String] = {
   let containers = [
     cereal(Bowl), cereal(Cup),
     blood(Bowl), blood(Cup),

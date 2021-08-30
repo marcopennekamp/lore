@@ -67,14 +67,14 @@ This is a partly organized list of mostly loose ideas which may find their way i
 struct Counter { mut value: Int }
 
 <given counter: Counter>
-function more(): Unit = counter.value += 1
+func more(): Unit = counter.value += 1
 // or
 @given(counter: Counter)
-function more(): Unit = counter.value += 1
+func more(): Unit = counter.value += 1
 
 // The variable name can be omitted if the implicit parameter is simply passed on.
 @given(Counter)
-function evenMore(): Unit = {
+func evenMore(): Unit = {
   more()
   more()
 }

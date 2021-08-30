@@ -92,10 +92,10 @@ Since a struct is always a concrete type, **all abstract functions** of the trai
 
 ```
 trait Hashable
-function hash(hashable: Hashable): Int
+func hash(hashable: Hashable): Int
 
 struct Person extends Hashable { name: String }
-function hash(person: Person): Int = /* Compute the hash... */
+func hash(person: Person): Int = /* Compute the hash... */
 ```
 
 
@@ -161,8 +161,8 @@ Type variable instantiations are **fixed at compile-time**. This is what we want
 There are cases in which we want the type variable to be instantiated **based on the run-time type of a property**. `Option[A]` is such a case. We want to be able to specialize functions on options without unpacking the options. Consider the following code:
 
 ```
-function process(option: Option[Animal]): String = 'Maybe Animal.'
-function process(option: Option[Fox]): String = 'Maybe Fox.'
+func process(option: Option[Animal]): String = 'Maybe Animal.'
+func process(option: Option[Fox]): String = 'Maybe Fox.'
 
 let animal: Animal = Fox()
 process(Some(animal))
@@ -205,9 +205,9 @@ Using a trait to create **data abstractions** is as simple as defining the right
 
 ```
 trait Position
-function x(pos: Position): Real
-function y(pos: Position): Real
-function z(pos: Position): Real
+func x(pos: Position): Real
+func y(pos: Position): Real
+func z(pos: Position): Real
 ```
 
 This allows us to define various structs extending the same `Position`, for example:
@@ -225,20 +225,20 @@ struct Box extends Position {
 Of course, we also have to implement the abstract functions declared by `Position` for each of the structs extending the trait:
 
 ```
-function x(point: Point): Real = point.x
-function y(point: Point): Real = point.y
-function z(point: Point): Real = point.z
+func x(point: Point): Real = point.x
+func y(point: Point): Real = point.y
+func z(point: Point): Real = point.z
 
 // The position of a box is its center!
-function x(box: Box): Real = box.xStart + width(box) / 2
-function y(box: Box): Real = box.yStart + height(box) / 2
-function z(box: Box): Real = box.zStart + depth(box) / 2
+func x(box: Box): Real = box.xStart + width(box) / 2
+func y(box: Box): Real = box.yStart + height(box) / 2
+func z(box: Box): Real = box.zStart + depth(box) / 2
 ```
 
 Finally, we could declare a function that just works with the data provided by `Position`: 
 
 ```
-function distance(pos1: Position, pos2: Position): Real = {
+func distance(pos1: Position, pos2: Position): Real = {
   let dx = x(pos2) - x(pos1)
   let dy = y(pos2) - y(pos1)
   let dz = z(pos2) - z(pos1)
@@ -256,11 +256,11 @@ Adding inheritance to this example would allow us to model positions of differen
 
 ```
 trait Position2D
-function x(pos: Position2D): Real
-function y(pos: Position2D): Real
+func x(pos: Position2D): Real
+func y(pos: Position2D): Real
 
 trait Position3D extends Position2D
-function z(pos: Position3D): Real
+func z(pos: Position3D): Real
 ```
 
 Any struct extending `Position3D` will have to provide a definition for all three of these abstract functions.
@@ -275,20 +275,20 @@ As a simple example of behavior abstractions, consider a trait `Hashable` that r
 
 ```
 trait Hashable
-function hash(value: Hashable): Int
+func hash(value: Hashable): Int
 ```
 
 Consider we have a trait `Statistic` that should be hashable, so that we can use stats as keys in a map:
 
 ```
 trait Statistic extends Hashable
-function uniqueName(statistic: Statistic): String
+func uniqueName(statistic: Statistic): String
 ```
 
 Instead of implementing the hash function for every statistic individually, we can implement it just for the trait, relying on the unique name supplied by concrete statistics:
 
 ```
-function hash(statistic: Statistic): Int = hash(uniqueName(statistic))
+func hash(statistic: Statistic): Int = hash(uniqueName(statistic))
 ```
 
 Note that `Statistic` wouldn't need to extend the `Hashable` trait just to provide an implementation for the `hash` function. The value of having `Statistic` implement `Hashable` is chiefly twofold:
@@ -351,11 +351,11 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
 
   ```
   property name: Type of Trait
-  --> function name(self: Trait): Type
+  --> func name(self: Trait): Type
   
   property mut name: Type of Trait
-  --> function name(self: Trait): Type
-  --> function setName(self: Trait, value: Type): ()
+  --> func name(self: Trait): Type
+  --> func setName(self: Trait, value: Type): ()
   ```
 
   And then implement it like this:
@@ -404,7 +404,7 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
     // Indirect mapping
     property x: Real of box: Box = box.xStart + width(box) / 2
     // or:
-    function x(box: Box): Real = box.xStart + width(box) / 2
+    func x(box: Box): Real = box.xStart + width(box) / 2
     // or:
     property x(box: Box): Real = box.xStart + width(box) / 2
     ```

@@ -1,5 +1,4 @@
-function double(v: Real): Real = v * 2
+func double(v: Real): Real = v * 2
+func double(list: [Real]): [Real] = for (v <- list) double(v)
 
-function double(list: [Real]): [Real] = for (v <- list) double(v)
-
-function test(): [Real] = double([0, -2, 2.5, 6, 22])
+func test(): [Real] = double([0, -2, 2.5, 6, 22])

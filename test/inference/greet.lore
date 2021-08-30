@@ -1,6 +1,6 @@
-function greet(name: String, title: String): String = 'Hello, $title $name.'
+func greet(name: String, title: String): String = 'Hello, $title $name.'
 
-function test(): [String] = {
+func test(): [String] = {
   let f = v => greet(v.name, v.title)
   [
     f(%{ name: 'Smith', title: 'Mr.' }),

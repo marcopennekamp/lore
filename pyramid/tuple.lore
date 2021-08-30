@@ -1,13 +1,13 @@
 // TODO: Tuples need a more generic solution.
-function first(tuple: (A, B)): A where A, B = dynamic[A]('Lore.tuples.get', tuple, 0)
-function second(tuple: (A, B)): B where A, B = dynamic[B]('Lore.tuples.get', tuple, 1)
+func first(tuple: (A, B)): A where A, B = dynamic[A]('Lore.tuples.get', tuple, 0)
+func second(tuple: (A, B)): B where A, B = dynamic[B]('Lore.tuples.get', tuple, 1)
 
-function first(tuple: (A, B, C)): A where A, B, C = dynamic[A]('Lore.tuples.get', tuple, 0)
-function second(tuple: (A, B, C)): B where A, B, C = dynamic[B]('Lore.tuples.get', tuple, 1)
-function third(tuple: (A, B, C)): C where A, B, C = dynamic[C]('Lore.tuples.get', tuple, 2)
+func first(tuple: (A, B, C)): A where A, B, C = dynamic[A]('Lore.tuples.get', tuple, 0)
+func second(tuple: (A, B, C)): B where A, B, C = dynamic[B]('Lore.tuples.get', tuple, 1)
+func third(tuple: (A, B, C)): C where A, B, C = dynamic[C]('Lore.tuples.get', tuple, 2)
 
 // TODO: Map function on tuples:
-// function map(tuple: (A, B), f: A | B => C): (C, C) where A, B, C = (f(first(tuple)), f(second(tuple)))
+// func map(tuple: (A, B), f: A | B => C): (C, C) where A, B, C = (f(first(tuple)), f(second(tuple)))
 // Pipes? (tuple |> first |> f, tuple |> second |> f)
 
-function toString(tuple: (A, B)): String where A, B = '(${first(tuple)}, ${second(tuple)})'
+func toString(tuple: (A, B)): String where A, B = '(${first(tuple)}, ${second(tuple)})'

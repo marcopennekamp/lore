@@ -1,10 +1,10 @@
-function floor(x: Real): Int = dynamic[Int]('Lore.math.floor', x)
-function round(x: Real): Int = dynamic[Int]('Lore.math.round', x)
-function ceil(x: Real): Int = dynamic[Int]('Lore.math.ceil', x)
+func floor(x: Real): Int = dynamic[Int]('Lore.math.floor', x)
+func round(x: Real): Int = dynamic[Int]('Lore.math.round', x)
+func ceil(x: Real): Int = dynamic[Int]('Lore.math.ceil', x)
 
-function remainder(a: Int, b: Int): Int = dynamic[Int]('Lore.math.remainder', a, b)
+func remainder(a: Int, b: Int): Int = dynamic[Int]('Lore.math.remainder', a, b)
 
-function min(x: Real, y: Real): Real = if (x < y) x else y
-function min(x: Int, y: Int): Int = if (x < y) x else y
-function max(x: Real, y: Real): Real = if (x > y) x else y
-function max(x: Int, y: Int): Int = if (x > y) x else y
+func min(x: Real, y: Real): Real = if (x < y) x else y
+func min(x: Int, y: Int): Int = if (x < y) x else y
+func max(x: Real, y: Real): Real = if (x > y) x else y
+func max(x: Int, y: Int): Int = if (x > y) x else y

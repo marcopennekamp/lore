@@ -1,14 +1,14 @@
 // Illegal: Impossible return.
-function impossibleReturn(): Int = {
+func impossibleReturn(): Int = {
   if ({ return 0 }) return 5
 }
 
-function validReturn(): Int = {
+func validReturn(): Int = {
   if (1 == 2) return 5 else return 10
 }
 
 // Illegal: Dead code.
-function deadCode(): Int = {
+func deadCode(): Int = {
   if (1 == 2) return 5 else return 10
   let x = 5 + 5
 }

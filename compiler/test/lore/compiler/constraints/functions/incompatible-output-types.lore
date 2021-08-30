@@ -2,10 +2,10 @@ trait A
 struct B1 extends A
 struct B2 extends A
 
-function f(value: A): Int = 0
+func f(value: A): Int = 0
 
 // Illegal: Real is not a subtype of Int.
-function f(value: B1): Real = 1.0
+func f(value: B1): Real = 1.0
 
 // Illegal: () is not a subtype of Int.
 action f(value: B2) { }

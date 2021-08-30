@@ -1,6 +1,6 @@
 struct Person { name: String, age: Int }
 struct Company { name: String, worth: Int }
 
-function apply(create: (String, Int) => A): A where A = create('Victor', 21)
+func apply(create: (String, Int) => A): A where A = create('Victor', 21)
 
-function test(): [Person | Company] = [apply(Person), apply(Company)]
+func test(): [Person | Company] = [apply(Person), apply(Company)]

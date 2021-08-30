@@ -8,20 +8,20 @@ type Unit = ()
   * The default "equals" function used by the compiler for comparing complex types. This function is invoked
   * when using the == and != operators.
   */
-function areEqual(a: Any, b: Any): Boolean = dynamic[Boolean]('Lore.values.areEqual', a, b)
+func areEqual(a: Any, b: Any): Boolean = dynamic[Boolean]('Lore.values.areEqual', a, b)
 
 /**
  * The default "less than" function used by the compiler for comparing complex types. This function is invoked
  * when using the < and > operators.
  */
-function isLessThan(a: Any, b: Any): Boolean = dynamic[Boolean]('Lore.values.isLessThan', a, b)
+func isLessThan(a: Any, b: Any): Boolean = dynamic[Boolean]('Lore.values.isLessThan', a, b)
 
 /**
  * The default "less than or equal" function used by the compiler for comparing complex types. This function is invoked
  * when using the <= and >= operators. By default, isLessThan and areEqual are used to test the values, but this
  * behavior can be implemented more efficiently for specialized types.
  */
-function isLessThanOrEqual(a: Any, b: Any): Boolean = isLessThan(a, b) || areEqual(a, b)
+func isLessThanOrEqual(a: Any, b: Any): Boolean = isLessThan(a, b) || areEqual(a, b)
 
 // TODO: Restrict hashes to a Hashable label type. This would provide better safety when using maps. More often than
 //       not, especially when maps are easy to create, proper hash-ability of a type gets overlooked and keys are
@@ -30,10 +30,10 @@ function isLessThanOrEqual(a: Any, b: Any): Boolean = isLessThan(a, b) || areEqu
  * Computes a hash from any given value. This is used by the compiler to implement maps. The standard implementation
  * defers the computation to the Javascript runtime and works for any sort of value.
  */
-function hash(value: Any): Int = dynamic[Int]('Lore.values.hash', value)
+func hash(value: Any): Int = dynamic[Int]('Lore.values.hash', value)
 
 /**
  * Converts any Lore value to a string using Javascripts's native stringifier. You can specialize this function to
  * stringify your own custom types. This function is used by library functions such as io.println.
  */
-function toString(value: Any): String = dynamic[String]('Lore.values.toString', value)
+func toString(value: Any): String = dynamic[String]('Lore.values.toString', value)

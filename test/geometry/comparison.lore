@@ -1,7 +1,7 @@
-function isLessThan(s1: Shape, s2: Shape): Boolean = area(s1) < area(s2)
-function isLessThanOrEqual(s1: Shape, s2: Shape): Boolean = area(s1) <= area(s2)
+func isLessThan(s1: Shape, s2: Shape): Boolean = area(s1) < area(s2)
+func isLessThanOrEqual(s1: Shape, s2: Shape): Boolean = area(s1) <= area(s2)
 
-function check(s1: Shape, s2: Shape): [String] = {
+func check(s1: Shape, s2: Shape): [String] = {
   let mut result: [String] = []
 
   if (s1 < s2) {
@@ -20,7 +20,7 @@ function check(s1: Shape, s2: Shape): [String] = {
   result
 }
 
-function test(): [String] = {
+func test(): [String] = {
   let rect = Rectangle(0, 0, 6, 8)
   let box = BoundingBox(2, 10, 8, 14)
   let circle = Circle(0, 0, 5)

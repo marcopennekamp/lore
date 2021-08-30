@@ -1,10 +1,10 @@
 trait Array[+A]
 
-function at(array: Array[A], index: Int): A where A
-function prepend(array: Array[A], element: E): Unit where A, E <: A
-function append(array: Array[A], element: E): Unit where A, E <: A
-function removeFirst(array: Array[A]): Unit where A
-function removeLast(array: Array[A]): Unit where A
+func at(array: Array[A], index: Int): A where A
+func prepend(array: Array[A], element: E): Unit where A, E <: A
+func append(array: Array[A], element: E): Unit where A, E <: A
+func removeFirst(array: Array[A]): Unit where A
+func removeLast(array: Array[A]): Unit where A
 
 
 struct NaiveArray[A] extends Array[A] {
@@ -14,26 +14,26 @@ struct NaiveArray[A] extends Array[A] {
 // TODO: Given these functions, the compiler should not allow `NaiveArray` to extend a covariant `Array[A]`. But can we
 //       deduce this? Right now, trying to add a Real to a NaiveArray[Int] via an Array[Real] interface leads to a
 //       run-time error. This is acceptable, but might not be good enough.
-function at(array: NaiveArray[A], index: Int): A where A = get(array.underlying, index)
+func at(array: NaiveArray[A], index: Int): A where A = get(array.underlying, index)
 
-function prepend(array: NaiveArray[A], element: E): Unit where A, E <: A = {
+func prepend(array: NaiveArray[A], element: E): Unit where A, E <: A = {
   array.underlying = concat([element], array.underlying)
 }
 
-function append(array: NaiveArray[A], element: E): Unit where A, E <: A = {
+func append(array: NaiveArray[A], element: E): Unit where A, E <: A = {
   array.underlying = array.underlying :+ element
 }
 
-function removeFirst(array: NaiveArray[A]): Unit where A = {
+func removeFirst(array: NaiveArray[A]): Unit where A = {
   array.underlying = tail(array.underlying)
 }
 
-function removeLast(array: NaiveArray[A]): Unit where A = {
+func removeLast(array: NaiveArray[A]): Unit where A = {
   array.underlying = init(array.underlying)
 }
 
 
-function test(): [Int] = {
+func test(): [Int] = {
   let array = NaiveArray([1, 2])
   append(array, 3)
   append(array, 4)

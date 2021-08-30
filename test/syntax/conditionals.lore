@@ -1,12 +1,12 @@
-function lowIncrement(n: Int): Int = if (n < 25) n + 1 else n
+func lowIncrement(n: Int): Int = if (n < 25) n + 1 else n
 
-function towards25(n: Int): Int = {
+func towards25(n: Int): Int = {
   if (n < 25)       n + 1
   else if (n > 25)  n - 1
   else              n
 }
 
-function abc(a: Boolean, b: Boolean, c: Boolean): Boolean = {
+func abc(a: Boolean, b: Boolean, c: Boolean): Boolean = {
   if (a) {
     return b
   } else {
@@ -14,12 +14,12 @@ function abc(a: Boolean, b: Boolean, c: Boolean): Boolean = {
   }
 }
 
-function dangle(flag: Boolean, flag2: Boolean): Int = {
+func dangle(flag: Boolean, flag2: Boolean): Int = {
   if (flag) if (flag2) return 1 else return 2
   3
 }
 
-function test(): [Boolean | Int] = [
+func test(): [Boolean | Int] = [
   if (true) false else true,
   abc(true, false, true),
   abc(false, false, true),

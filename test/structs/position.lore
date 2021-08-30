@@ -1,15 +1,15 @@
 struct Position { x: Real = 0.0, y: Real = 0.0, z: Real = 0.0 }
 
-function from2D(x: Real, y: Real): Position = {
+func from2D(x: Real, y: Real): Position = {
   Position { x, y }
 }
 
-function from1D(x: Real): Position = {
+func from1D(x: Real): Position = {
   from2D(x, 0.0)
 }
 
 
-function test(): [Position] = [
+func test(): [Position] = [
   Position(1, 2, 3),
   Position { y = 5 },
   from2D(20, 10),

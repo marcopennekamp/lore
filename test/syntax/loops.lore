@@ -1,10 +1,10 @@
-function divideBy2(a: Real, b: Real): Real = {
+func divideBy2(a: Real, b: Real): Real = {
   let mut r = a
   while (r > b) r /= 2
   r
 }
 
-function repeat(v: Int, n: Int): [Int] = {
+func repeat(v: Int, n: Int): [Int] = {
   let mut i = 0
   while (i < n) {
     i += 1
@@ -12,11 +12,11 @@ function repeat(v: Int, n: Int): [Int] = {
   }
 }
 
-function incrementAll(values: [Int]): [Int] = for (v <- values) v + 1
+func incrementAll(values: [Int]): [Int] = for (v <- values) v + 1
 
-function addPairs(as: [Int], bs: [Int]): [Int] = for (a <- as, b <- bs) a + b
+func addPairs(as: [Int], bs: [Int]): [Int] = for (a <- as, b <- bs) a + b
 
-function test(): [[Real]] = {
+func test(): [[Real]] = {
   [
     [
       divideBy2(10, 20),

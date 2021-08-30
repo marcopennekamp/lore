@@ -1,4 +1,4 @@
-function add(a: Int, b: Int): Int = {
+func add(a: Int, b: Int): Int = {
   let mut result = a
   let mut remaining = b
   while (remaining > 0) {
@@ -12,7 +12,7 @@ function add(a: Int, b: Int): Int = {
   result
 }
 
-function mul(a: Int, b: Int): Int = {
+func mul(a: Int, b: Int): Int = {
   let mut remaining = a
   let isNegative = remaining < 0
   if (isNegative) remaining = -remaining
@@ -25,4 +25,4 @@ function mul(a: Int, b: Int): Int = {
   result
 }
 
-function test(): Int = mul(12, 5)
+func test(): Int = mul(12, 5)

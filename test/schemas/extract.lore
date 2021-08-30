@@ -1,17 +1,17 @@
 trait Crate[+A]
-function extract(crate: Crate[A]): A where A
+func extract(crate: Crate[A]): A where A
 
 struct IntCrate extends Crate[Int] { value: Int }
-function extract(crate: IntCrate): Int = crate.value
+func extract(crate: IntCrate): Int = crate.value
 
 struct ListCrate[+A] extends Crate[[A]] { list: [A] }
-function extract(crate: ListCrate[A]): [A] where A = crate.list
+func extract(crate: ListCrate[A]): [A] where A = crate.list
 
 struct TobyCrate extends Crate[String]
-function extract(crate: TobyCrate): String = 'I am a crate and my name is Toby!'
+func extract(crate: TobyCrate): String = 'I am a crate and my name is Toby!'
 
 
-function test(): [String] = [
+func test(): [String] = [
   toString(extract(IntCrate(5))),
   toString(extract(ListCrate([1, 2, 3]))),
   extract(TobyCrate())

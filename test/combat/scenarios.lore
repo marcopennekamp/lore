@@ -1,11 +1,11 @@
-function test(): [SimulationResult] = {
+func test(): [SimulationResult] = {
   let scenarios = [kaladinVoidbringer(), sadeasDalinar()]
   for (scenario <- scenarios) {
     simulateCombat(first(scenario), second(scenario))
   }
 }
 
-function kaladinVoidbringer(): (Combatant, Combatant) = {
+func kaladinVoidbringer(): (Combatant, Combatant) = {
   let kaladin = Radiant {
     name = 'Kaladin',
     stats = Stats {
@@ -23,7 +23,7 @@ function kaladinVoidbringer(): (Combatant, Combatant) = {
   (kaladin, voidbringer)
 }
 
-function sadeasDalinar(): (Combatant, Combatant) = {
+func sadeasDalinar(): (Combatant, Combatant) = {
   let sadeas = Shardbearer {
     name = 'Sadeas',
     stats = Stats {

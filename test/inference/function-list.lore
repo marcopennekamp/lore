@@ -1,4 +1,4 @@
-function test(): [String] = {
+func test(): [String] = {
   // TODO: Make the one-liner work. This requires us to combine tuple types in intersection types, as currently the
   //       function type is inferred to be: `(({ foo: String }) & ({ bar: String })) & ({ foo: String })) => String`.
   //map([(v: { foo: String }) => v.foo, (v: { bar: String }) => v.bar, (v: { foo: String }) => '!${v.foo}!'], f => f(%{ foo: 'foo', bar: 'bar' }))

@@ -4,6 +4,6 @@ trait Y
 struct A1 extends A
 struct A2 extends A, Y
 
-function f(a: A): Int
-function f(a: A1): Int = 2
-function f(y: Y): String = '1'
+func f(a: A): Int
+func f(a: A1): Int = 2
+func f(y: Y): String = '1'

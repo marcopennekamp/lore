@@ -8,7 +8,7 @@ struct Shardbearer extends Hero {
   open weapon: Weapon
 }
 
-function name(shardbearer: Shardbearer): String = shardbearer.name
+func name(shardbearer: Shardbearer): String = shardbearer.name
 
 action enterCombat(shardbearer: Shardbearer) {
   buff(shardbearer, createArmored(15, 3))
@@ -29,7 +29,7 @@ struct Radiant extends Hero {
   weapon: Weapon
 }
 
-function name(radiant: Radiant): String = radiant.name
+func name(radiant: Radiant): String = radiant.name
 
 action enterCombat(radiant: Radiant) {
   buff(radiant, createInfusion(radiant.infusion))

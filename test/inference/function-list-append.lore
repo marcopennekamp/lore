@@ -7,7 +7,7 @@ struct Thing {
 //       type of the list. However, both `iv1` and `iv2` are still without concrete bounds, while `iv3` already has
 //       the upper bound `(Thing) => Boolean`. Clearly, cycle resolution should prefer the judgment with the most
 //       available information
-function test(): [Thing => Boolean] = {
+func test(): [Thing => Boolean] = {
   let a: [Thing => Boolean] = [v => v.x == 4]
   let b = a :+ (v => v.x > 3.4)
   b

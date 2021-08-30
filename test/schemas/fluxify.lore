@@ -18,17 +18,17 @@ type CounterBox = Box[Counter, Int]
 
 
 // These functions are convoluted on purpose to test open type arguments.
-function fluxify(box: CounterBox): Int = first(box.a) + perexonate(box.b)
-function fluxify(box: Box[Little, Int]): Int = 2 + fluxify.fixed[CounterBox](box)
-function fluxify(box: Box[Several, Int]): Int = 7 + fluxify.fixed[CounterBox](box)
-function fluxify(box: Box[Many, Int]): Int = 17 + fluxify.fixed[CounterBox](box)
+func fluxify(box: CounterBox): Int = first(box.a) + perexonate(box.b)
+func fluxify(box: Box[Little, Int]): Int = 2 + fluxify.fixed[CounterBox](box)
+func fluxify(box: Box[Several, Int]): Int = 7 + fluxify.fixed[CounterBox](box)
+func fluxify(box: Box[Many, Int]): Int = 17 + fluxify.fixed[CounterBox](box)
 
-function perexonate(option: Option[Int]): Int
-function perexonate(option: Some[Int]): Int = option.value
-function perexonate(option: None): Int = 0
+func perexonate(option: Option[Int]): Int
+func perexonate(option: Some[Int]): Int = option.value
+func perexonate(option: None): Int = 0
 
 
-function test(): [Int] = {
+func test(): [Int] = {
   let boxes = [
     Box((3, Little(), 0.2), Some(8)),
     Box((1, Several(), 0.5), None()),

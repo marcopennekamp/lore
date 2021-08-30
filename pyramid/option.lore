@@ -1,17 +1,17 @@
 /**
  * Returns the given value if it is something, or otherwise the alternative.
  */
-//function get(option: A | #none, alternative: B): B where A, B >: A
-//function get(value: A, alternative: B): B where A, B >: A = value
-//function get(none: #none, alternative: B): B where B = alternative
+//func get(option: A | #none, alternative: B): B where A, B >: A
+//func get(value: A, alternative: B): B where A, B >: A = value
+//func get(none: #none, alternative: B): B where B = alternative
 
 /**
  * Returns true if the given value is `:none`, and false otherwise.
  */
-//function isEmpty(value: A): Boolean where A = false
-//function isEmpty(none: #none): Boolean = true
+//func isEmpty(value: A): Boolean where A = false
+//func isEmpty(none: #none): Boolean = true
 
 /**
  * Returns true if the given value is something, and false if the value is `:none`.
  */
-//function isDefined(option: A | #none): Boolean where A = !isEmpty(option)
+//func isDefined(option: A | #none): Boolean where A = !isEmpty(option)

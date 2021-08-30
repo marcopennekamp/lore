@@ -1,9 +1,9 @@
-function printList(list: [A]): String where A = 'Generic list: $list'
-function printList(list: [Int]): String = 'Int list: $list'
-function printList(list: [String | Int]): String = 'String/Int list: $list'
-function printList(list: [String | Int | Boolean]): String = 'String/Int/Boolean list: $list'
+func printList(list: [A]): String where A = 'Generic list: $list'
+func printList(list: [Int]): String = 'Int list: $list'
+func printList(list: [String | Int]): String = 'String/Int list: $list'
+func printList(list: [String | Int | Boolean]): String = 'String/Int/Boolean list: $list'
 
-function test(): [String] = {
+func test(): [String] = {
   let mut results: [String] = []
 
   let list = [10]

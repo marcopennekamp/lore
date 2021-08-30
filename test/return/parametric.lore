@@ -1,13 +1,13 @@
 struct Position { x: Real = 0, y: Real = 0, z: Real = 0 }
 
-function toString(position: Position): String = '{ x = ${position.x}, y = ${position.y}, z = ${position.z} }'
+func toString(position: Position): String = '{ x = ${position.x}, y = ${position.y}, z = ${position.z} }'
 
 
 // TODO: Make it so that we can work directly on +Position instead of having to declare a Movable trait. This
 //       would require shape types to support mutable properties, though.
 trait Movable
 
-function position(movable: Movable): Position
+func position(movable: Movable): Position
 action setPosition(movable: Movable, position: Position)
 
 action move(movable: Movable, x: Real, y: Real, z: Real) {
@@ -22,24 +22,24 @@ struct Zombie extends Movable {
   mut position: Position = Position { }
 }
 
-function position(zombie: Zombie): Position = zombie.position
+func position(zombie: Zombie): Position = zombie.position
 action setPosition(zombie: Zombie, position: Position) {
   zombie.position = position
 }
 
-function toString(zombie: Zombie): String = '${zombie.name} is at position ${zombie.position}'
+func toString(zombie: Zombie): String = '${zombie.name} is at position ${zombie.position}'
 
 
-function update(a: A): A where A = a
+func update(a: A): A where A = a
 
 // This is essentially a way to test that the compiler and runtime correctly handle returning an argument that
 // doesn't have a concrete type at compile-time.
-function update(a: A): A where A <: Movable = {
+func update(a: A): A where A <: Movable = {
   move(a, 1.7, 1.5, 0)
   a
 }
 
-function test(): Zombie = {
+func test(): Zombie = {
   let zombie = Zombie { name = 'Fred', position = Position(0, 1.0, 0.5) }
   let updatedZombie: Zombie = update(zombie)
   updatedZombie

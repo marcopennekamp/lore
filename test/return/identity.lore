@@ -1,5 +1,5 @@
-function identity(x: A): A where A = x
-function identity(x: Int): Int = x
-function identity(str: String): String = str
+func identity(x: A): A where A = x
+func identity(x: Int): Int = x
+func identity(str: String): String = str
 
-function test(): [Real | String | Boolean] = [identity(0), identity(1.2), identity('Hello'), identity(true)]
+func test(): [Real | String | Boolean] = [identity(0), identity(1.2), identity('Hello'), identity(true)]

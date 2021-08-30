@@ -9,9 +9,9 @@ trait Y
 struct A1 extends A
 struct A2 extends A, Y
 
-function f(a: A): Int
-function f(a: A1): Int = 2
-function f(y: Y): Int = 1
+func f(a: A): Int
+func f(a: A1): Int = 2
+func f(y: Y): Int = 1
 ```
 
 Essentially, `f` needs to be defined for `A1` and `A2`. The former is covered by `f(a: A1)`, while `A2` should be covered by `f(y: Y)`, because `A2` extends the trait `Y`.
@@ -30,8 +30,8 @@ We'd have to change the **totality constraint** itself, of course. This isn't tr
 trait P
 trait Q
 struct X extends P, Q
-function f(p: P): Int
-function f(q: Q): Int
+func f(p: P): Int
+func f(q: Q): Int
 ```
 
 This program compiles because `f(p: P)` and `f(q: Q)` cover each other. So to implement a proper check, we would have to implement an algorithm that can detect these cycles, which is not trivial.

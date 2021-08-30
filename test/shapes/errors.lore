@@ -1,11 +1,11 @@
 type Status = #ok | #error
 type Result[A] = %{ status: Status, result: A }
 
-function read1(): Result[String] = %{ status: #ok, result: 'I am a result!' }
-function read2(): Result[String] = %{ status: #error, result: '' }
-function read3(): Result[String] = %{ status: #ok, result: 'I am another result!' }
+func read1(): Result[String] = %{ status: #ok, result: 'I am a result!' }
+func read2(): Result[String] = %{ status: #error, result: '' }
+func read3(): Result[String] = %{ status: #ok, result: 'I am another result!' }
 
-function test(): [String] = {
+func test(): [String] = {
   let entries = [read1(), read2(), read3()]
   let successes = filter(entries, entry => entry.status == #ok)
   map(successes, entry => entry.result)

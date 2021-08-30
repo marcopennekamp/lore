@@ -1,6 +1,6 @@
 trait Combatant extends +Stats, +StatusEffects
 
-function name(combatant: Combatant): String
+func name(combatant: Combatant): String
 
 /**
  * This is called once at the beginning of combat to give each combatant a chance to prepare.
@@ -11,10 +11,10 @@ action onHit(combatant: Combatant) {
   onHitStatusEffects(combatant)
 }
 
-function stat(combatant: Combatant, statLabel: StatLabelInt): Int = statImpl(combatant, statLabel, baseStat(combatant, statLabel))
-function stat(combatant: Combatant, statLabel: StatLabelReal): Real = statImpl(combatant, statLabel, baseStat(combatant, statLabel))
+func stat(combatant: Combatant, statLabel: StatLabelInt): Int = statImpl(combatant, statLabel, baseStat(combatant, statLabel))
+func stat(combatant: Combatant, statLabel: StatLabelReal): Real = statImpl(combatant, statLabel, baseStat(combatant, statLabel))
 
-function statImpl(combatant: Combatant, statLabel: StatLabel, base: A): A where A = {
+func statImpl(combatant: Combatant, statLabel: StatLabel, base: A): A where A = {
   fold(
     combatant.statusEffects.effects,
     base,
@@ -37,7 +37,7 @@ action combatLog(message: String) {
  *
  * Returns the winner of the engagement.
  */
-function simulateCombat(left: Combatant, right: Combatant): SimulationResult = {
+func simulateCombat(left: Combatant, right: Combatant): SimulationResult = {
   let mut turn = 1
   let mut distance = 8
 
@@ -92,12 +92,12 @@ struct CombatantState {
 /**
  * Whether the combatant is in range to attack, based on the entity's range stat.
  */
-function isInRange(combatant: Combatant, distance: Int): Boolean = stat(combatant, #range) >= distance
+func isInRange(combatant: Combatant, distance: Int): Boolean = stat(combatant, #range) >= distance
 
 /**
  * Closes the given distance to the other combatant, provided the given combatant isn't already in range.
  */
-function closeDistance(combatant: Combatant, distance: Int): Int = {
+func closeDistance(combatant: Combatant, distance: Int): Int = {
   if (distance > 0 && !isInRange(combatant, distance)) {
     let new = max(distance - stat(combatant, #speed), 0)
     combatLog('${name(combatant)} closes distance to $new.')
@@ -109,7 +109,7 @@ function closeDistance(combatant: Combatant, distance: Int): Int = {
  * Performs dodge calculations for the given state and returns whether the current attempt succeeded. This function
  * has side effects.
  */
-function attemptDodge(state: CombatantState): Boolean = {
+func attemptDodge(state: CombatantState): Boolean = {
   state.dodge += stat(state.combatant, #dodge)
   if (state.dodge >= 1.0) {
     combatLog('${name(state.combatant)} dodges an attack.')

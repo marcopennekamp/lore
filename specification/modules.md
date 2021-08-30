@@ -16,10 +16,10 @@ A module path can also be used as the name in a module declaration, which effect
 ```
 module Name
 
-function foo(): String = 'Foo'
+func foo(): String = 'Foo'
 
 module Name2 {
-  function foo(): Int = 17
+  func foo(): Int = 17
 }
 ```
 
@@ -89,7 +89,7 @@ module animals
 trait Animal
 
 module Animal {
-  function breed(mother: Animal, father: Animal): Option[Animal] = None()
+  func breed(mother: Animal, father: Animal): Option[Animal] = None()
 }
 ```
 
@@ -114,10 +114,10 @@ trait Foo
 module Foo {
   -struct Implementation extends Foo { mut counter: Int }
   
-  function fresh(): Foo = Implementation(0)
+  func fresh(): Foo = Implementation(0)
   
-  function getAndIncrement(foo: Foo): Int
-  function getAndIncrement(foo: Implementation): Int = {
+  func getAndIncrement(foo: Foo): Int
+  func getAndIncrement(foo: Implementation): Int = {
     let result = foo.counter
     increment(foo)
     result

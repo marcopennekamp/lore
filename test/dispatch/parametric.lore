@@ -1,11 +1,11 @@
-function foo(a: X, b: Y): Int where X, Y = 1
-function foo(a: A, b: A): Int where A = 2
-function foo(a: String, b: A): Int where A = 3
-function foo(a: String, b: String): Int = 4
+func foo(a: X, b: Y): Int where X, Y = 1
+func foo(a: A, b: A): Int where A = 2
+func foo(a: String, b: A): Int where A = 3
+func foo(a: String, b: String): Int = 4
 
 struct Block
 
-function test(): [Int] = [
+func test(): [Int] = [
   foo(Block(), 'Code'),
   foo('Art', 5),
   foo(5, 5),

@@ -6,5 +6,5 @@ trait B
 
 struct X extends A, B
 
-function f(a: A): Int
-function f(b: B): Int
+func f(a: A): Int
+func f(b: B): Int

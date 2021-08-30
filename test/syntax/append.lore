@@ -1,4 +1,4 @@
-function test(): [[Real | String]] = {
+func test(): [[Real | String]] = {
   let a = []
   let b = [12, 14.5]
   let c = [44, -5, 7]

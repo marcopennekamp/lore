@@ -2,9 +2,9 @@ trait Option[+A]
 struct Some[open +A] extends Option[A] { value: A }
 struct None extends Option[Nothing]
 
-function toString(option: Option[A]): String where A
-function toString(some: Some[A]): String where A = 'Some(${some.value})'
-function toString(none: None): String = 'None'
+func toString(option: Option[A]): String where A
+func toString(some: Some[A]): String where A = 'Some(${some.value})'
+func toString(none: None): String = 'None'
 
 
 trait AerialPhenomenon
@@ -12,13 +12,13 @@ struct Bird extends AerialPhenomenon
 struct Plane extends AerialPhenomenon
 struct Dragon extends AerialPhenomenon
 
-function toString(some: Some[Bird]): String = 'It\'s just a bird.'
-function toString(some: Some[Plane]): String = 'My gosh, the pollution up there!'
-function toString(some: Some[Dragon]): String = 'Oh shit, it\'s a dragon!'
-function toString(some: Some[[Dragon]]): String = 'They\'re everywhere!'
+func toString(some: Some[Bird]): String = 'It\'s just a bird.'
+func toString(some: Some[Plane]): String = 'My gosh, the pollution up there!'
+func toString(some: Some[Dragon]): String = 'Oh shit, it\'s a dragon!'
+func toString(some: Some[[Dragon]]): String = 'They\'re everywhere!'
 
 
-function test(): [String] = {
+func test(): [String] = {
   let none = None()
   let string = Some('Hello, world!')
   let list = Some([1, 2, 3])

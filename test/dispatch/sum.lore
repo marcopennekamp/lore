@@ -1,12 +1,12 @@
 struct Bar
 
-function foo(value: String): Int = 0
-function foo(value: Int): Int = 1
-function foo(value: Boolean): Int = 2
+func foo(value: String): Int = 0
+func foo(value: Int): Int = 1
+func foo(value: Boolean): Int = 2
 
 // TODO: Test this in dispatch.test.ts.
 
-function test(): [Int] = {
+func test(): [Int] = {
   let a: String | Int = 2
   let b: Boolean | Int = 3
   let c: String | Boolean = 'Boom'

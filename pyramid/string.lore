@@ -1,15 +1,15 @@
 /**
  * The string value of a string is simply its identity.
  */
-function toString(value: String): String = value
+func toString(value: String): String = value
 
-function concat(a: String, b: String): String = '$a$b'
+func concat(a: String, b: String): String = '$a$b'
 
-function concat(strings: [String]): String = fold(strings, '', concat)
+func concat(strings: [String]): String = fold(strings, '', concat)
 
-function concatMap(strings: [A], f: B => String): String where A, B >: A = concat(map(strings, f))
+func concatMap(strings: [A], f: B => String): String where A, B >: A = concat(map(strings, f))
 
-function stringJoin(list: [A], separator: String): String where A = {
+func stringJoin(list: [A], separator: String): String where A = {
   if (!isEmpty(list)) {
     concat(
       concatMap(init(list), a => '$a$separator'),

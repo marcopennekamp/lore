@@ -12,8 +12,8 @@ action f1(a: A, b: B)
 action f1(a: AI, b: B)
 action f1(a: A, b: BI)
 
-function f2(value: A | B): String
-function f2(value: AI): String = ''
+func f2(value: A | B): String
+func f2(value: AI): String = ''
 
-function f3(value: (A, String)): String
-function f3(value: (B, String)): String
+func f3(value: (A, String)): String
+func f3(value: (B, String)): String

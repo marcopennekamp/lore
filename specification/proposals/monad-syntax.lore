@@ -36,7 +36,7 @@ flatMap(list1, e1 => {
 
 
 // Idea 3: Blocks can still be used. They are just optional.
-function test(maybeX, maybeY, maybeZ, maybeW) {  // Types omitted purposefully.
+func test(maybeX, maybeY, maybeZ, maybeW) {  // Types omitted purposefully.
   x <- maybeX  // x is available in the whole function body.
   // Four possible syntax choices:
   {

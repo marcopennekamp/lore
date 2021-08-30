@@ -1,28 +1,28 @@
 trait Named
-function name(named: Named): String
+func name(named: Named): String
 
 trait Airborne
-function wingspan(airborne: Airborne): Real
+func wingspan(airborne: Airborne): Real
 
 struct Bird extends Named, Airborne {
   species: String
   weight: Real
   wingspan: Real
 }
-function name(bird: Bird): String = bird.species
-function wingspan(bird: Bird): Real = bird.wingspan
+func name(bird: Bird): String = bird.species
+func wingspan(bird: Bird): Real = bird.wingspan
 
 struct Plane extends Named, Airborne {
   model: String
   capacity: Int
   wingspan: Real
 }
-function name(plane: Plane): String = plane.model
-function wingspan(plane: Plane): Real = plane.wingspan
+func name(plane: Plane): String = plane.model
+func wingspan(plane: Plane): Real = plane.wingspan
 
-function areEqual(a1: Airborne, a2: Airborne): Boolean = wingspan(a1) == wingspan(a2)
-function areEqual(b1: Bird, b2: Bird): Boolean = b1.species == b2.species && b1.weight == b2.weight && b1.wingspan == b2.wingspan
-function areEqual(p1: Plane, p2: Plane): Boolean = p1.model == p2.model && p1.capacity == p2.capacity && p1.wingspan == p2.wingspan
+func areEqual(a1: Airborne, a2: Airborne): Boolean = wingspan(a1) == wingspan(a2)
+func areEqual(b1: Bird, b2: Bird): Boolean = b1.species == b2.species && b1.weight == b2.weight && b1.wingspan == b2.wingspan
+func areEqual(p1: Plane, p2: Plane): Boolean = p1.model == p2.model && p1.capacity == p2.capacity && p1.wingspan == p2.wingspan
 
 // TODO: This actually presents an interesting dilemma: The equals operation is symmetric, but multiple dispatch needs
 //       two function definitions to model this binary symmetry. The problem here is that the average programmer would
@@ -32,12 +32,12 @@ function areEqual(p1: Plane, p2: Plane): Boolean = p1.model == p2.model && p1.ca
 // Idea: This could maybe be solved once we have a macro system. We could allow creating arbitrary keywords for
 //       functions and such and then implement a "symmetric" keyword that declares for a function over (a, b) another
 //       function over (b, a).
-//function areEqual(bird: Bird, plane: Plane): Boolean = bird.wingspan == plane.wingspan
-//function areEqual(plane: Plane, bird: Bird): Boolean = bird == plane
+//func areEqual(bird: Bird, plane: Plane): Boolean = bird.wingspan == plane.wingspan
+//func areEqual(plane: Plane, bird: Bird): Boolean = bird == plane
 
-function check(v1: Named, v2: Named): [String] = if (v1 == v2) ['${name(v1)} == ${name(v2)}'] else []
+func check(v1: Named, v2: Named): [String] = if (v1 == v2) ['${name(v1)} == ${name(v2)}'] else []
 
-function test(): [String] = {
+func test(): [String] = {
   let airbornes = [
     Bird('Raven', 1.5, 1.2),
     Bird('Dragon', 6000.0, 12),

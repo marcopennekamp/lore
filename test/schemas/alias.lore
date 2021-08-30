@@ -2,14 +2,14 @@ struct Function[-A, +B] {
   f: A => B
 }
 
-function apply(fun: Function[A, B], v: V): B where A, B, V <: A = fun.f(v)
+func apply(fun: Function[A, B], v: V): B where A, B, V <: A = fun.f(v)
 
 type StringFunction[A] = Function[A, String]
 type IntConsumer[B] = Function[Int, B]
 type Int2IntFunction = Function[Int, Int]
 
 
-function test(): [String] = {
+func test(): [String] = {
   let f1 = StringFunction((x: Int) => 'hey int $x')
   let f2 = StringFunction((list: [Int]) => stringJoin(map(list, f1.f), ', '))
   let f3 = IntConsumer(x => x * 0.4)

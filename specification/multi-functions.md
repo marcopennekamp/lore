@@ -17,8 +17,8 @@ A **multi-function** is a set of functions with the same full name. Each multi-f
 ###### Syntax Example
 
 ```
-function foo(number: Int): Real = number * 1.5
-function foo(string: String): String = '$string ???'
+func foo(number: Int): Real = number * 1.5
+func foo(string: String): String = '$string ???'
 
 action bar(value: Real) {
   println(value)
@@ -36,7 +36,7 @@ Take two functions *f1* and *f2* from a multi-function with *f2* specializing *f
 A function can additionally declare **type variables:**
 
 ```
-function foo(a: A, b: B, c: C): Boolean where A, B, C >: A <: B = true
+func foo(a: A, b: B, c: C): Boolean where A, B, C >: A <: B = true
 ```
 
 This is not a property of multi-functions but **individual functions**. As subtyping and fit have been extended for type variables, Lore can decide the specificity of two functions even if one of them is parametric and also do so at run-time during multiple dispatch. More on that later.
@@ -56,7 +56,7 @@ In the context of multiple dispatch, **fit** is *almost* defined as subtyping. T
 ###### Example
 
 ```
-function append(list: [A], element: B): [A] where A, B <: A
+func append(list: [A], element: B): [A] where A, B <: A
 ```
 
 This is not the signature of the actual appends operator in Lore, but this function will help us demonstrate polymorphic fit. The function `append` has the input type `([A], B)` for the type variables as defined. If we want to call the function, we will have to ensure that the argument types fit into the input type. Say we have an argument type `([Real], Int)`. Lore will know to assign `Real` to `A`  and `Int` to `B`. Since `Int <: Real`, the variable assignment is legal and the function can be called with the given arguments. This is subtly different to subtyping, because `Real` is not a subtype of `A`: it would have to be a subtype of *all possible instances* of `A`. `Real` can merely be assigned to `A`, making the given arguments fit.
@@ -79,10 +79,10 @@ struct Human extends Mammal
 struct Guppy extends Fish
 struct ManBearGuppy extends Mammal, Fish
 
-function kind(animal: Animal): String
-function kind(mammal: Mammal): String = 'mammal'
-function kind(human: Human): String = 'idiotic'
-function kind(fish: Fish): String = 'fish'
+func kind(animal: Animal): String
+func kind(mammal: Mammal): String = 'mammal'
+func kind(human: Human): String = 'idiotic'
+func kind(fish: Fish): String = 'fish'
 ```
 
 What's the **fit and min set** of a call `kind(human)` given `human: Human`? The fit contains `kind(Animal)`, `kind(Mammal)`, and `kind(Human)`, while the min set contains only `kind(Human)`, because `Human` is more specific than both `Animal` and `Mammal`. This is good news!
@@ -105,7 +105,7 @@ In general, the compiler will do its best to catch these errors at **compile-tim
 In our `ManBearGuppy` example above, we got an ambiguous-call error when calling `kind` with a `ManBearGuppy` argument. We can resolve this problem with the following additional function:
 
 ```
-function kind(hybrid: ManBearGuppy): String = 'unidentified hybrid'
+func kind(hybrid: ManBearGuppy): String = 'unidentified hybrid'
 ```
 
 The cool thing about Lore is that we can place that function (and struct definition) anywhere. `Animal`, `Mammal`, `Fish`, and `kind` might be defined in a library, while we might want to add `ManBearGuppy` as an additional hybrid. Instead of having to extend the library, we can simply define the struct and function anywhere and the power of multiple dispatch glues everything together neatly.
@@ -117,13 +117,13 @@ As seen above, Lore functions can declare type variables. **Parametric multiple 
 Take the following function **example:**
 
 ```
-function append(list: [A], element: A): [A] where A
+func append(list: [A], element: A): [A] where A
 ```
 
 When `append` is called via multiple dispatch, the unbounded type variable `A` is assigned some type based on the actual argument types. The arguments must agree *at run-time* such that `A` is consistently assigned the same type. If, given traits `X` and `Y extends X`, we called the function with an input type `([X], Y)`, this (naively defined) append function **would not be dispatched to**, because `X` and `Y` are not the same type, even though they agree in principle (and the function would be callable like that outside a multiple-dispatch universe). Rather, we have to define the following function:
 
 ```
-function append(list: [A], element: B): [A] where A, B <: A
+func append(list: [A], element: B): [A] where A, B <: A
 ```
 
 This function does not assume the list and element to agree. Rather, it expects the **element to be some subtype of the list's element type**, which still allows us to append the element to the list as lists are covariant and immutable. If the data structure was invariant, however, we would have to write a function like the first one, where the list and element have to agree. In this example you have also seen usage of an upper bound. Type variables that are declared before the current type variable (such as `A` being declared before `B`) can be used in the current type variable's bound.
@@ -166,15 +166,15 @@ struct AI extends A
 trait B
 struct BI extends B
 
-function f(a: A, b: B)   // f1
-function f(a: AI, b: B)  // f2
-function f(a: A, b: BI)  // f3
+func f(a: A, b: B)   // f1
+func f(a: AI, b: B)  // f2
+func f(a: A, b: BI)  // f3
 ```
 
 This code would not compile. While `f1` is fully covered, neither `f2` nor `f3` are covered themselves and thus don't satisfy the totality constraint. Let's add another function `f4`:
 
 ```
-function f(a: AI, b: BI) // f4
+func f(a: AI, b: BI) // f4
 ```
 
 Now, the totality constraint is satisfied for all functions. But then the code compiles, which it shouldn't, right? *Wrong.* The *input abstractness constraint* makes `f4` invalid. The idea that functions need to be implemented for concrete values might not be encoded in the totality constraint, but it is still checked within the system.
@@ -185,8 +185,8 @@ Now, the totality constraint is satisfied for all functions. But then the code c
 struct A
 struct B
 
-function f(a: A): A = ...
-function f(b: B): B = ...
+func f(a: A): A = ...
+func f(b: B): B = ...
 ```
 
 Suppose we have a value `v` of type `A | B`. If we try to call `f(v)`, we will get an **empty-fit error at compile time**, because both functions are too specific for the more general type `A | B`. At run-time, of course, *we* are certain that one of the functions must be called, because `v` must either have type `A` or `B`. But of course the compiler doesn't know.
@@ -194,7 +194,7 @@ Suppose we have a value `v` of type `A | B`. If we try to call `f(v)`, we will g
 This demonstrates the **usefulness of abstract functions**. We define the following additional function to fix our issue:
 
 ```
-function f(v: A | B): A | B
+func f(v: A | B): A | B
 ```
 
 This function is abstract because it has no definition. It satisfies the totality constraint because the concrete subtypes `A` and `B` each have an associated concrete function. The input abstractness constraint is also satisfied as sum types are abstract by definition. We can now call `f(v)` without getting a compilation error.
@@ -203,15 +203,15 @@ This function is abstract because it has no definition. It satisfies the totalit
 
 ```
 trait Animal
-function name(animal: Animal): String
+func name(animal: Animal): String
 
 trait Fish extends Animal
 
 struct Bass extends Fish
-function name(bass: Bass): String = 'Bass'
+func name(bass: Bass): String = 'Bass'
 
 struct Trout extends Fish
-function name(trout: Trout): String = 'Trout'
+func name(trout: Trout): String = 'Trout'
 ```
 
 Abstract functions do not need to be **redeclared** for subtypes. The example above demonstrates this by having the trait `Fish` omit a declaration of the multi-function `name`. The constraint's checking algorithm for `name(Animal)` will try to find a function `name(Fish)` and upon failure, assume that it is implicitly abstract. The totality constraint will then be checked given the input type `Fish`. 
@@ -237,17 +237,17 @@ The most obvious example is invoking a **"super"** function of some other, more 
 ```
 // Assume types A, A1 <: A, A2 <: A, and some type R.
 
-function f(a: A): R = {
+func f(a: A): R = {
   // ... some general implementation
 }
 
-function f(a: A1): R = {
+func f(a: A1): R = {
   // ... some actions specific to A1
   // Then call the "super" function to handle the general case.
   f.fixed[A](a)
 }
 
-function f(a: A2): R = {
+func f(a: A2): R = {
   // First call the "super" function to handle the general case.
   let result = f.fixed[A](a)
   // ... some actions specific to A2

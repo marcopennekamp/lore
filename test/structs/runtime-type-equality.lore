@@ -13,13 +13,13 @@ struct Bag {
   open material: Material
 }
 
-function equalTypes(a1: A, a2: B): Boolean where A, B = false
-function equalTypes(a1: A, a2: A): Boolean where A = true
+func equalTypes(a1: A, a2: B): Boolean where A, B = false
+func equalTypes(a1: A, a2: A): Boolean where A = true
 
-function subtype(a: A, b: B): Boolean where A, B = false
-function subtype(a: A, b: B): Boolean where A, B <: A = true
+func subtype(a: A, b: B): Boolean where A, B = false
+func subtype(a: A, b: B): Boolean where A, B <: A = true
 
-function test(): [Boolean] = {
+func test(): [Boolean] = {
   let leatherBag = Bag(Leather())
   let clothBag = Bag(Cloth())
 

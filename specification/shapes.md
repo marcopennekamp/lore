@@ -23,7 +23,7 @@ Shapes can be directly constructed as **values**. This comes in handy for ad-hoc
 ```
 type Options = %{ show_teeth: Boolean, volume: Real  }
 
-function bark(options: Options): String = { ... }
+func bark(options: Options): String = { ... }
 
 action test() {
   bark(%{ show_teeth: true, volume: 80 })
@@ -57,8 +57,8 @@ Open properties are generally slower, because they lead to more difficult run-ti
 ###### Example
 
 ```
-function free(cage: %{ content: Animal }): Animal = cage.content
-function free(cage: %{ content: Tiger }): Nothing = error('Are you insane?')
+func free(cage: %{ content: Animal }): Animal = cage.content
+fun free(cage: %{ content: Tiger }): Nothing = error('Are you insane?')
 
 struct Blackbox { content: Animal }
 struct Whitebox { open content: Animal }
@@ -128,8 +128,8 @@ The ability to dispatch on property types effectively turns a struct type into a
    Take the following example. If we assume that `Coffin`'s type takes into account the run-time property type of `nail`, we have it quite trivially and on good account that the two coffins compared in the last line don't have equal types. Even worse, they are not even subtypes of one another. Since the programmer probably doesn't expect two types of the same name (in a mostly nominal typing context) to *not* be equal, this might lead to a lot of confusion. Unless the programmer specifically *states* that "yes, I want run-time struct types of the same name to vary," it's probably not a good idea to trip her up like this.
 
    ```
-   function equalTypes(a: A, b: B): Boolean where A, B = false
-   function equalTypes(a: A, b: A): Boolean where A = true
+   func equalTypes(a: A, b: B): Boolean where A, B = false
+   func equalTypes(a: A, b: A): Boolean where A = true
    
    trait Nail
    struct FancyNail

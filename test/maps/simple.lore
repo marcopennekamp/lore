@@ -1,6 +1,6 @@
-function dummy_map(): #[String -> Int] = #['a' -> 0, 'b' -> 1, 'c' -> 2]
+func dummy_map(): #[String -> Int] = #['a' -> 0, 'b' -> 1, 'c' -> 2]
 
-function test(): [String] = {
+func test(): [String] = {
   // TODO: This is, understandably, not valid and needs a different kind of runtime type handling as outlined in runtime-types.
   //let empty: String -> Int = #[]
 

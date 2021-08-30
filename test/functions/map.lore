@@ -1,6 +1,6 @@
-function numbers(): [Int] = map([1, 2, 3, 4, 5], v => v + 3)
+func numbers(): [Int] = map([1, 2, 3, 4, 5], v => v + 3)
 
-function names(): [String] = map(
+func names(): [String] = map(
   [
     %{ name: 'Alpha', foo: 23, baz: 10 },
     %{ name: 'Beta', foo: 5, bar: 34 },
@@ -9,4 +9,4 @@ function names(): [String] = map(
   thing => thing.name
 )
 
-function test(): ([Int], [String]) = (numbers(), names())
+func test(): ([Int], [String]) = (numbers(), names())

@@ -5,7 +5,7 @@
 - Implement the new syntax.
   - ~~Add the `%` to shape types to mirror the literal syntax `%{ ... }`.~~
   - ~~Turn the map type syntax into `#[A -> B]`.~~
-  - Change keywords: `function` --> `func`.
+  - ~~Change keywords: `function` --> `func`.~~
   - Remove `action` functions.
   - Add alternative struct syntax `struct Circle(x: Real, y: Real, radius: Real) extends Shape` that doesn't use a block.
   - Change block syntax from curly braces to `do...end`.

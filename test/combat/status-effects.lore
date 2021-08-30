@@ -3,7 +3,7 @@ trait StatusEffect
 /**
  * Applies the given status effect to the stat identified with the given label.
  */
-function affectStat(effect: StatusEffect, statLabel: StatLabel, value: A): A where A = value
+func affectStat(effect: StatusEffect, statLabel: StatLabel, value: A): A where A = value
 
 /**
  * Called during the end-of-turn status effect update.
@@ -18,7 +18,7 @@ action onHit(effect: StatusEffect) { }
 /**
  * Whether the given status effect is active.
  */
-function isActive(effect: StatusEffect): Boolean = true
+func isActive(effect: StatusEffect): Boolean = true
 
 
 struct DurationLimit {
@@ -33,7 +33,7 @@ action onUpdate(effect: +DurationLimit) {
   }
 }
 
-function isActive(effect: +DurationLimit): Boolean = effect.limit.duration > 0
+func isActive(effect: +DurationLimit): Boolean = effect.limit.duration > 0
 
 
 struct HitLimit {
@@ -48,7 +48,7 @@ action onHit(effect: +HitLimit) {
   }
 }
 
-function isActive(effect: +HitLimit): Boolean = effect.limit.hits > 0
+func isActive(effect: +HitLimit): Boolean = effect.limit.hits > 0
 
 
 /**
@@ -59,9 +59,9 @@ struct Armored extends StatusEffect {
   limit: HitLimit
 }
 
-function createArmored(armor: Int, durability: Int): Armored = Armored(armor, HitLimit(durability))
+func createArmored(armor: Int, durability: Int): Armored = Armored(armor, HitLimit(durability))
 
-function affectStat(effect: Armored, statLabel: #defense, value: Int): Int = value + effect.armor
+func affectStat(effect: Armored, statLabel: #defense, value: Int): Int = value + effect.armor
 
 
 /**
@@ -71,11 +71,11 @@ struct Infusion extends StatusEffect {
   limit: DurationLimit
 }
 
-function createInfusion(duration: Int): Infusion = Infusion(DurationLimit(duration))
+func createInfusion(duration: Int): Infusion = Infusion(DurationLimit(duration))
 
-function affectStat(effect: Infusion, statLabel: #attack | #speed, value: Int): Int = floor(value * 1.5)
-function affectStat(effect: Infusion, statLabel: #dodge, value: Real): Real = 1.0 // Dodge all attacks while infused.
-function affectStat(effect: Infusion, statLabel: #regeneration, value: Int): Int = 5
+func affectStat(effect: Infusion, statLabel: #attack | #speed, value: Int): Int = floor(value * 1.5)
+func affectStat(effect: Infusion, statLabel: #dodge, value: Real): Real = 1.0 // Dodge all attacks while infused.
+func affectStat(effect: Infusion, statLabel: #regeneration, value: Int): Int = 5
 
 
 struct StatusEffects {

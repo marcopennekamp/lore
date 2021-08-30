@@ -78,7 +78,7 @@ The **return** top-level expression returns a value from a function. The syntax 
 **Early returns** are a useful way to achieve cleaner code:
 
 ```
-function foo(x: Int): String = {
+func foo(x: Int): String = {
   if (bar(x)) return 'cool'
   if (baz(x + 2)) return 'cruel'
   'ouch!'
@@ -90,7 +90,7 @@ function foo(x: Int): String = {
 Returns cannot be nested in top-level expressions that are not at the **top-level of a function**. For example, the following code is *illegal*:
 
 ```
-function foo(): String = {
+fu foo(): String = {
   if ({ return false }) 'hello' else 'world'
 }
 ```
@@ -313,7 +313,7 @@ We suggest using a snake_case naming convention for symbols.
 ###### Example
 
 ```
-function process(query: Query): Result | #syntax_error = {
+func process(query: Query): Result | #syntax_error = {
   let parsed = parse(query)
   if (isError(parsed)) #syntax_error
   else getResult(parsed)
@@ -342,7 +342,7 @@ let a = A { b }     // Map syntax using shorthand
 The call-syntax constructor is an ordinary **function value** and can be used as such:
 
 ```
-function construct(f: B => A, b: B): A = f(b)
+func construct(f: B => A, b: B): A = f(b)
 
 let b = B()
 let a = construct(A, b)
@@ -385,9 +385,9 @@ a >= b   // Greater than or equal
 To **define equality** for a given type, you can specialize the function `isEqual(a, b)`. Inequality is strictly defined as `!isEqual(a, b)`.
 
 ```
-function isEqual(c1: Car, c2: Car): Boolean = ...
-function isEqual(c1: SportsCar, c2: CheapCar): Boolean = false
-function isEqual(c1: CheapCar, c2: SportsCar): Boolean = false // Don't forget to be symmetric!
+func isEqual(c1: Car, c2: Car): Boolean = ...
+func isEqual(c1: SportsCar, c2: CheapCar): Boolean = false
+func isEqual(c1: CheapCar, c2: SportsCar): Boolean = false // Don't forget to be symmetric!
 ```
 
 To **define order** for a given type, specialize the function `isLessThan(a, b)`. The *greater than* operator is strictly defined as `!(a < b) && a != b`.

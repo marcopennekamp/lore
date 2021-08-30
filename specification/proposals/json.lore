@@ -3,14 +3,14 @@ trait JsValue
 trait JsObject extends JsValue
 trait JsArray extends JsValue
 
-function toJson(value: Any): JsValue = {
+func toJson(value: Any): JsValue = {
   let type = typeOf(value)
   error('Cannot convert a value of type $type to a JsValue: `toJson(Any)` is not implemented.')
 }
 
 // This function handles ALL shapes abd structs by converting them to JsValues. No macros needed!
 // Usually, this will return a JsObject, but we don't want more specific functions to HAVE to adhere to that!
-function toJson(shape: %{ }): JsValue = {
+func toJson(shape: %{ }): JsValue = {
   let rec: Any => JsValue = toJson
   // Pass toJson to fromShape so that it can be called recursively from the runtime without the need to hardcode any
   // function name into the runtime.
@@ -23,4 +23,4 @@ function toJson(shape: %{ }): JsValue = {
 
 // The user can then add specific functions for their custom types:
 
-function toJson(sky: Sky): JsValue = toJson('Der Himmel ist blau!')
+func toJson(sky: Sky): JsValue = toJson('Der Himmel ist blau!')

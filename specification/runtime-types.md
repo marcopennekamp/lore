@@ -24,7 +24,7 @@ Hence, we define, for *values*, the types they have at run-time:
     - Simple example:
       ```
       class C[A] { x: A }
-      function create(x: A): C[A] where A = C[A](x)
+      func create(x: A): C[A] where A = C[A](x)
       create('hello') --> C[String] at run-time
       create(15)      --> C[Int] at run-time
       ```

@@ -1,6 +1,6 @@
-function c(): String = 'man'
+func c(): String = 'man'
 
-function test(): [Any] = [
+func test(): [Any] = [
   0,
   -15,
   0.0,

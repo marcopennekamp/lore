@@ -3,8 +3,8 @@ trait Y
 
 struct A1 extends A, Y
 
-function f(a: A): String = 'Shoot!'
-function f(y: Y): Int = 15
+func f(a: A): String = 'Shoot!'
+func f(y: Y): Int = 15
 
 action test() {
   let a1 = A1()

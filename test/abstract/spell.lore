@@ -18,8 +18,8 @@ type Damage = Int
 
 trait Spell[+E <: Element, +C <: Cost]
 
-function rawDamage(spell: Spell[Element, Cost]): Damage
-function damageOf(spell: Spell[Element, Cost], defense: Defense): Damage
+func rawDamage(spell: Spell[Element, Cost]): Damage
+func damageOf(spell: Spell[Element, Cost], defense: Defense): Damage
 
 
 trait Spike[+E <: Ice | Earth, +S <: Specialty, +Id] extends Spell[E, Mana]
@@ -27,22 +27,22 @@ struct IceSpike extends Spike[Ice, Freezing, #ice_spike]
 struct NeedleIceSpike extends Spike[Ice, Penetrating, #needle_ice_spike]
 struct EarthSpike extends Spike[Earth, Penetrating, #earth_spike]
 
-function rawDamage(spell: Spike[Ice, Specialty, #ice_spike]): Damage = 10
-function rawDamage(spell: Spike[Ice, Specialty, #needle_ice_spike]): Damage = 12
-function rawDamage(spell: Spike[Earth, Specialty, Any]): Damage = 8
+func rawDamage(spell: Spike[Ice, Specialty, #ice_spike]): Damage = 10
+func rawDamage(spell: Spike[Ice, Specialty, #needle_ice_spike]): Damage = 12
+func rawDamage(spell: Spike[Earth, Specialty, Any]): Damage = 8
 
 // We would usually define this for any Specialty and then override only Penetrating, but the point here is testing
 // that the totality constraint sees that all possibilities have been covered.
-function damageOf(spell: Spike[Ice | Earth, Freezing, Any], defense: Defense): Damage = calculateDamage(rawDamage(spell), defense)
-function damageOf(spell: Spike[Ice | Earth, Penetrating, Any], defense: Defense): Damage = {
+func damageOf(spell: Spike[Ice | Earth, Freezing, Any], defense: Defense): Damage = calculateDamage(rawDamage(spell), defense)
+func damageOf(spell: Spike[Ice | Earth, Penetrating, Any], defense: Defense): Damage = {
   // `Penetrating` ignores 50% of defense.
   calculateDamage(rawDamage(spell), floor(defense / 2))
 }
 
-function calculateDamage(rawDamage: Damage, defense: Defense): Damage = max(rawDamage - defense, 0)
+func calculateDamage(rawDamage: Damage, defense: Defense): Damage = max(rawDamage - defense, 0)
 
 
-function test(): [Damage] = {
+func test(): [Damage] = {
   let iceSpike = IceSpike()
   let needleIceSpike = NeedleIceSpike()
   let earthSpike = EarthSpike()

@@ -2,41 +2,41 @@
 trait Shape
 
 // "Computed"/"Virtual" properties. Could be improved with the property syntax for types/traits suggested in the spec.
-function width(shape: Shape): Real
-function height(shape: Shape): Real
+func width(shape: Shape): Real
+func height(shape: Shape): Real
 
-function area(shape: Shape): Real = width(shape) * height(shape)
+func area(shape: Shape): Real = width(shape) * height(shape)
 
 
 struct BoundingBox extends Shape { x: Real, xEnd: Real, y: Real, yEnd: Real }
 
-function width(box: BoundingBox): Real = box.xEnd - box.x
-function height(box: BoundingBox): Real = box.yEnd - box.y
+func width(box: BoundingBox): Real = box.xEnd - box.x
+func height(box: BoundingBox): Real = box.yEnd - box.y
 
 
 struct Circle extends Shape { x: Real, y: Real, radius: Real }
 
-function width(circle: Circle): Real = circle.radius
-function height(circle: Circle): Real = circle.radius
+func width(circle: Circle): Real = circle.radius
+func height(circle: Circle): Real = circle.radius
 
-function area(circle: Circle): Real = circle.radius * circle.radius * pi()
+func area(circle: Circle): Real = circle.radius * circle.radius * pi()
 
 
 struct Rectangle extends Shape { x: Real, y: Real, width: Real, height: Real }
 
 // The same suggestions about a property syntax apply here. This is quite verbose, but alright for the MVL, since
 // we should focus on functionality/correctness first, not syntactic nicety.
-function width(rect: Rectangle): Real = rect.width
-function height(rect: Rectangle): Real = rect.height
+func width(rect: Rectangle): Real = rect.width
+func height(rect: Rectangle): Real = rect.height
 
 
 // It could be quite elegant, once we allow pattern matching, to specify parameters as name(_: Circle) if the name is
 // not important for the current implementation of the function.
-function name(shape: Shape): String
-function name(rectangle: Rectangle): String = 'rect'
-function name(box: BoundingBox): String = 'box'
-function name(circle: Circle): String = 'circle'
+func name(shape: Shape): String
+func name(rectangle: Rectangle): String = 'rect'
+func name(box: BoundingBox): String = 'box'
+func name(circle: Circle): String = 'circle'
 
 
 // Yeah, I know. We don't have global constants yet.
-function pi(): Real = 3.14159265359
+func pi(): Real = 3.14159265359

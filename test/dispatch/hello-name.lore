@@ -1,8 +1,8 @@
-function hello(value: String | Int): String
-function hello(name: String): String = 'Hello, $name.'
-function hello(id: Int): String = 'Hello, anonymous #$id.'
+func hello(value: String | Int): String
+func hello(name: String): String = 'Hello, $name.'
+func hello(id: Int): String = 'Hello, anonymous #$id.'
 
-function greetings(): [String] = {
+func greetings(): [String] = {
   let mut names: [String | Int] = []
   names = names :+ 'world'
   names = names :+ 5
@@ -12,4 +12,4 @@ function greetings(): [String] = {
   for (name <- names) { hello(name) }
 }
 
-function test(): [String] = greetings()
+func test(): [String] = greetings()
