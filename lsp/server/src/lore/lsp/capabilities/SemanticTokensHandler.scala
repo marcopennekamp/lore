@@ -75,14 +75,14 @@ object SemanticTokensHandler {
         ) ++ whereHighlight
 
       case DeclNode.ParameterNode(nameNode, _, _) => singleHighlight(nameNode, SemanticTokenTypes.Parameter)
-      case DeclNode.TypeVariableNode(nameNode, _, _, _) => singleHighlight(nameNode, SemanticTokenTypes.TypeParameter)
+      case DeclNode.TypeVariableNode(nameNode, _, _, _, _, _) => singleHighlight(nameNode, SemanticTokenTypes.TypeParameter)
 
-      case TypeDeclNode.AliasNode(nameNode, _, position) => Vector(
+      case TypeDeclNode.AliasNode(nameNode, _, _, position) => Vector(
         createKeywordHighlight(position.startIndex, nameNode.position),
         createHighlight(nameNode, SemanticTokenTypes.Type),
       )
 
-      case TypeDeclNode.TraitNode(nameNode, extended, position) =>
+      case TypeDeclNode.TraitNode(nameNode, _, extended, position) =>
         val extendedHighlight = extended.headOption.map(
           tpe => createKeywordHighlight(nameNode.position, tpe.position)
         ).toVector
@@ -92,7 +92,7 @@ object SemanticTokensHandler {
           createHighlight(nameNode, SemanticTokenTypes.Interface),
         ) ++ extendedHighlight
 
-      case TypeDeclNode.StructNode(nameNode, extended, _, position) =>
+      case TypeDeclNode.StructNode(nameNode, _, extended, _, position) =>
         val extendedHighlight = extended.headOption.map(
           tpe => createKeywordHighlight(nameNode.position, tpe.position)
         ).toVector
@@ -139,7 +139,7 @@ object SemanticTokensHandler {
       case ExprNode.FixedFunctionNode(nameNode, _, _) => singleHighlight(nameNode, SemanticTokenTypes.Function)
 
       case ExprNode.MemberAccessNode(_, nameNode, _) => singleHighlight(nameNode, SemanticTokenTypes.Property)
-      case ExprNode.ObjectMapNode(nameNode, _, _) => singleHighlight(nameNode, SemanticTokenTypes.Struct)
+      case ExprNode.ObjectMapNode(nameNode, _, _, _) => singleHighlight(nameNode, SemanticTokenTypes.Struct)
       case ExprNode.ObjectEntryNode(nameNode, _, _) => singleHighlight(nameNode, SemanticTokenTypes.Property)
 
       case ExprNode.ShapeValuePropertyNode(nameNode, _, _) => singleHighlight(nameNode, SemanticTokenTypes.Property)

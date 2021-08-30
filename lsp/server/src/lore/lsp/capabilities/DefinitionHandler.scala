@@ -59,7 +59,7 @@ object DefinitionHandler {
 
         case ExprNode.VariableNode(name, _) => result(node, name, UsageBinding)
         case ExprNode.FixedFunctionNode(nameNode, _, _) => result(node, nameNode.value, UsageBinding)
-        case ExprNode.ObjectMapNode(nameNode, _, _) => result(node, nameNode.value, UsageType)
+        case ExprNode.ObjectMapNode(nameNode, _, _, _) => result(node, nameNode.value, UsageType)
         case ExprNode.SimpleCallNode(nameNode, _, _) => result(node, nameNode.value, UsageBinding)
 
         case _ => None
