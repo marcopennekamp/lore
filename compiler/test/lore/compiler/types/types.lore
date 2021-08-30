@@ -23,18 +23,14 @@ trait Status
 trait Healthy extends Status
 trait Sick extends Status
 
-struct Zoo {
-  animals: [Animal]
-}
+struct Zoo(animals: [Animal])
 
 
 trait Cage[+A <: Animal] extends %{ animal: A }
 struct Aquarium[+A <: Fish] extends Cage[A] {
   animal: A
 }
-struct UnicornPen extends Cage[Unicorn] {
-  animal: Unicorn
-}
+struct UnicornPen(animal: Unicorn) extends Cage[Unicorn]
 
 trait ConfusedCage1 extends Cage[Fish]
 trait ConfusedCage2 extends Cage[Animal], ConfusedCage1
@@ -45,7 +41,7 @@ trait ConfusedCage4 extends Cage[Fish], ConfusedCage1
 trait Function[-A, +R]
 struct IdentityFunction[T] extends Function[T, T]
 struct IndexFunction[+T] extends Function[Int, T]
-struct Box[+A] { value: A }
+struct Box[+A](value: A)
 struct BoxFunction[T] extends Function[T, Box[T]], Function[Int, Box[T]]
 
 

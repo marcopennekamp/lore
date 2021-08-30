@@ -25,13 +25,19 @@ trait T extends A, B, %{ property: C }
 
 A **struct** is a set of **properties** with optional default values and optional mutability. As structs describe actual instances, a struct type is **always concrete and never abstract**. A struct may extend traits and shapes, which is elaborated on further below.
 
-Properties can be **delimited** using commas and newlines. Both styles are permitted interchangeably, giving the ability to use both in the same struct definition, and should be chosen based on readability. Properties can be accessed using the member access notation `struct.property`.
+Structs can be defined using two **syntax styles**, either with properties in parentheses directly after the name, or with properties in a block, which offers more flexibility. In the block style, properties can be delimited using commas and newlines. Both approaches are permitted interchangeably, giving the ability to use both commas and newlines in the same struct definition. All styles and approaches should be chosen based on readability. 
+
+Properties can be **accessed** using the member access notation `struct.property`.
 
 ###### Example
 
 ```
+struct Point(x: Real = 0, y: Real = 0, z: Real = 0)
 struct Point { x: Real = 0, y: Real = 0, z: Real = 0 }
+
+struct Position(mut point: Point)
 struct Position { mut point: Point }
+
 struct Person {
   name: String
   age: Int = 20
@@ -94,7 +100,9 @@ Since a struct is always a concrete type, **all abstract functions** of the trai
 trait Hashable
 func hash(hashable: Hashable): Int
 
-struct Person extends Hashable { name: String }
+struct Person extends Hashable { 
+  name: String 
+}
 func hash(person: Person): Int = /* Compute the hash... */
 ```
 
@@ -114,7 +122,7 @@ At the point of **construction**, type parameters must be either inferred or man
 
 ```
 trait Option[A]
-struct Some[A] extends Option[A] { value: A }
+struct Some[A](value: A) extends Option[A]
 struct None extends Option[Nothing]
 
 let v1 = Some(32)        // --> Some[Int]
@@ -148,7 +156,7 @@ For example, **options** can actually be *covariant:*
 
 ```
 trait Option[+A]
-struct Some[+A] extends Option[A] { value: A }
+struct Some[+A](value: A) extends Option[A]
 struct None extends Option[Nothing]
 
 let opt: Option[Real] = Some[Int](32)
@@ -181,7 +189,7 @@ The option examples demonstrates how open type variables can be **declared:**
 
 ```
 trait Option[+A]
-struct Some[open +A] extends Option[A] { value: A }
+struct Some[open +A](value: A) extends Option[A]
 struct None extends Option[Nothing]
 ```
 
@@ -213,7 +221,7 @@ func z(pos: Position): Real
 This allows us to define various structs extending the same `Position`, for example:
 
 ```
-struct Point extends Position { x: Real, y: Real, z: Real }
+struct Point(x: Real, y: Real, z: Real) extends Position
 
 struct Box extends Position { 
   xStart: Real, xEnd: Real
@@ -420,7 +428,9 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
   - A way to implement mixins would be **mixing in shape types**.
 
     ```
-    struct Position { mut x: Real, mut y: Real }
+    struct Position {
+      mut x: Real, mut y: Real
+    }
     type +Position = %{ position: Position }
     
     struct Player {

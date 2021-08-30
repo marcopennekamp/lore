@@ -1,4 +1,4 @@
-struct Box[+A] { content: A }
+struct Box[+A](content: A)
 
 trait Price
 struct HighPrice extends Price

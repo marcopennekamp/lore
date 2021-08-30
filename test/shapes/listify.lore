@@ -1,5 +1,5 @@
-struct Position2D { x: Real, y: Real }
-struct Position3D { x: Real, y: Real, z: Real }
+struct Position2D(x: Real, y: Real)
+struct Position3D(x: Real, y: Real, z: Real)
 
 func listify(shape: %{ }): [Real] = []
 func listify(shape: %{ x: Real, y: Real }): [Real] = [shape.x, shape.y]

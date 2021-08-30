@@ -9,8 +9,14 @@ func toString(pudding: Pudding): String = 'pudding'
 
 
 trait Container[+C]
-struct Bowl[+C <: Content] extends Container[C] { content: C, taste: Int }
-struct Cup[+C <: Content] extends Container[C] { content: C, exclusivity: Int }
+struct Bowl[+C <: Content] extends Container[C] {
+  content: C
+  taste: Int
+}
+struct Cup[+C <: Content] extends Container[C] {
+  content: C
+  exclusivity: Int
+}
 
 func toString(bowl: Bowl[Content]): String = '${bowl.content} bowl'
 func toString(cup: Cup[Content]): String = '${cup.content} cup'

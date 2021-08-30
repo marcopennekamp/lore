@@ -1,10 +1,10 @@
 trait Crate[+A]
 func extract(crate: Crate[A]): A where A
 
-struct IntCrate extends Crate[Int] { value: Int }
+struct IntCrate(value: Int) extends Crate[Int]
 func extract(crate: IntCrate): Int = crate.value
 
-struct ListCrate[+A] extends Crate[[A]] { list: [A] }
+struct ListCrate[+A](list: [A]) extends Crate[[A]]
 func extract(crate: ListCrate[A]): [A] where A = crate.list
 
 struct TobyCrate extends Crate[String]

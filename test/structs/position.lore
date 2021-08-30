@@ -1,4 +1,4 @@
-struct Position { x: Real = 0.0, y: Real = 0.0, z: Real = 0.0 }
+struct Position(x: Real = 0.0, y: Real = 0.0, z: Real = 0.0)
 
 func from2D(x: Real, y: Real): Position = {
   Position { x, y }

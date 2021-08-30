@@ -86,14 +86,16 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def struct[_: P]: P[TypeDeclNode.StructNode] = {
-    P(Index ~ "struct" ~~ Space.WS1 ~/ structName ~~ Space.WS ~~ typeVariables(structTypeVariable) ~ `extends` ~ structBody ~ Index).map(withPosition(TypeDeclNode.StructNode))
+    def conciseForm = P("(" ~ property.rep(sep = CharIn(",")).map(_.toVector) ~ ")" ~ `extends`).map { case (properties, extended) => (extended, properties) }
+    def bodyForm = P(`extends` ~ structBody)
+    P(Index ~ "struct" ~~ Space.WS1 ~/ structName ~~ Space.WS ~~ typeVariables(structTypeVariable) ~ (conciseForm | bodyForm) ~ Index)
+      .map { case (startIndex, nameNode, typeVariables, (extended, properties), endIndex) => (startIndex, nameNode, typeVariables, extended, properties, endIndex) }
+      .map(withPosition(TypeDeclNode.StructNode))
   }
 
   private def `extends`[_: P]: P[Vector[TypeExprNode]] = {
-    P(("extends" ~~ Space.WS1 ~ inherits).?).map(_.getOrElse(Vector.empty))
+    P(("extends" ~~ Space.WS1 ~ typeExpression.rep(1, CharIn(",")).map(_.toVector)).?).map(_.getOrElse(Vector.empty))
   }
-
-  private def inherits[_: P]: P[Vector[TypeExprNode]] = P(typeExpression.rep(1, CharIn(","))).map(_.toVector)
 
   private def structBody[_: P]: P[Vector[TypeDeclNode.PropertyNode]] = {
     // We have to parse the properties in a tiered structure because newline separators may only be used with repX,

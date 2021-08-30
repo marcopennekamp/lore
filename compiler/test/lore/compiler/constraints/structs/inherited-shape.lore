@@ -1,4 +1,4 @@
-struct Id { value: Int }
+struct Id(value: Int)
 
 trait Question
 struct RudeQuestion extends Question

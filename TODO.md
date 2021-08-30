@@ -6,7 +6,7 @@
   - ~~Add the `%` to shape types to mirror the literal syntax `%{ ... }`.~~
   - ~~Turn the map type syntax into `#[A -> B]`.~~
   - ~~Change keywords: `function` --> `func`, `action` --> `act`.~~
-  - Add alternative struct syntax `struct Circle(x: Real, y: Real, radius: Real) extends Shape` that doesn't use a block.
+  - ~~Add alternative struct syntax `struct Circle(x: Real, y: Real, radius: Real) extends Shape` that doesn't use a block.~~
   - Allow omitting parameter names in function declarations if the parameter isn't used in a function's body.
   - Apply snake_case across the board for variable and function names.
   - Change block syntax from curly braces to `do...end`.

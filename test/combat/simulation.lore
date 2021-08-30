@@ -24,7 +24,7 @@ func statImpl(combatant: Combatant, statLabel: StatLabel, base: A): A where A = 
 
 
 trait SimulationResult
-struct SimulationVictory extends SimulationResult { winner: Combatant }
+struct SimulationVictory(winner: Combatant) extends SimulationResult
 struct SimulationStalemate extends SimulationResult
 
 act combatLog(message: String) {

@@ -1,4 +1,4 @@
-struct Position { x: Real = 0, y: Real = 0, z: Real = 0 }
+struct Position(x: Real = 0, y: Real = 0, z: Real = 0)
 
 func toString(position: Position): String = '{ x = ${position.x}, y = ${position.y}, z = ${position.z} }'
 

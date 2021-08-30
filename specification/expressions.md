@@ -331,7 +331,7 @@ Two symbols are equal if they have the same name. Symbols are unordered.
 Lore supports **struct instantiation**. There are two possible syntax flavors:
 
 ```
-struct A { b: B }
+struct A(b: B)
 
 let b = B()
 let a = A(b)        // Call syntax

@@ -1,5 +1,5 @@
 trait Option[+A]
-struct Some[open +A] extends Option[A] { value: A }
+struct Some[open +A](value: A) extends Option[A]
 struct None extends Option[Nothing]
 
 func toString(option: Option[A]): String where A

@@ -1,4 +1,4 @@
-struct Wrapper[-A, +B] { function: A => B }
+struct Wrapper[-A, +B](function: A => B)
 
 func mapWrapper(list: [A], wrapper: Wrapper[B, C]): [C] where A, B >: A, C = map(list, wrapper.function)
 

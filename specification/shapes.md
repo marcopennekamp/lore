@@ -60,8 +60,10 @@ Open properties are generally slower, because they lead to more difficult run-ti
 func free(cage: %{ content: Animal }): Animal = cage.content
 fun free(cage: %{ content: Tiger }): Nothing = error('Are you insane?')
 
-struct Blackbox { content: Animal }
-struct Whitebox { open content: Animal }
+struct Blackbox(content: Animal)
+struct Whitebox { 
+  open content: Animal
+}
 
 free(%{ content: fish })   // --> returns the fish
 free(%{ content: tiger })  // --> throws the error
@@ -80,7 +82,9 @@ One way to build programs with a healthy level of abstraction is **component-bas
 We can support such **entity-component systems** natively (and especially with type safety) in Lore using structural typing. The following code implements the constellation of Hero, Position and Shape:
 
 ```
-struct Position { mut x: Real, mut y: Real, mut z: Real }
+struct Position { 
+  mut x: Real, mut y: Real, mut z: Real 
+}
 type +Position = %{ position: Position }
 
 act move(entity: +Position, distance: Real, direction: Vector3) {
@@ -90,7 +94,10 @@ act move(entity: +Position, distance: Real, direction: Vector3) {
   entity.position.z = z
 }
 
-struct Shape { width: Real, height: Real, depth: Real, model: Model }
+struct Shape { 
+  width: Real, height: Real, depth: Real 
+  model: Model 
+}
 type +Shape = %{ shape: Shape }
 
 act render(entity: +Position & +Shape) {
@@ -135,7 +142,7 @@ The ability to dispatch on property types effectively turns a struct type into a
    struct FancyNail
    struct BloodyNail
    
-   struct Coffin { nail: Nail }
+   struct Coffin(nail: Nail)
    
    act main() {
      let fancy = FancyNail()
@@ -154,7 +161,7 @@ Taking the second point into account, assuming "open" properties to be the defau
 So in the end, the best option is to make run-time variance of property types **explicit**. One must thus declare a *struct* property as `open` if it should be able to partake in run-time structural type dispatch. If a property is not marked as `open`, its type as known by the struct type is always the property's compile-time type.
 
 ```
-struct Position3D extends Position { x: Real, y: Real, z: Real }
+struct Position3D(x: Real, y: Real, z: Real) extends Position
 
 struct Hero {
   health: Health

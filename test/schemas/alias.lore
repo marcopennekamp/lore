@@ -1,6 +1,4 @@
-struct Function[-A, +B] {
-  f: A => B
-}
+struct Function[-A, +B](f: A => B)
 
 func apply(fun: Function[A, B], v: V): B where A, B, V <: A = fun.f(v)
 
