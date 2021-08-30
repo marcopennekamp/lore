@@ -10,11 +10,11 @@ To learn more about the language, read the [**overview**](specification/overview
 
 This repository is divided into the following **parts:**
 
-- **Spec:** The Lore specification. We have taken care not to make the specification overly technical. It is, mostly, a user-facing description of the language and can be read as a guide to the language. The `technical` subfolder goes into more detail that might not be useful to average language users.
-- **Examples:** Examples of Lore code, some of which can be compiled (or even run) today. Others are in a conceptual state. This directory also contains Lore test sources.
+- **Specification:** The Lore specification. We have taken care not to make the specification overly technical. It is, mostly, a user-facing description of the language and can be read as a guide to the language. The `technical` subfolder goes into more detail that might not be useful to average language users.
 - **Compiler:** The compiler, written in Scala, translates a Lore program to a Javascript file.
 - **Runtime:** The runtime, written in Typescript, contains utilities that are required to run compiled Lore code. These utilities include run-time value representation and manipulation, data structures, and crucially our type system, which is needed at run-time for multiple dispatch.
 - **Pyramid:** This is the Lore standard library, which defines functions to work with Lore values, such as lists, maps and strings. Some core functions declared by Pyramid are used by the compiler, but you can omit using Pyramid and roll your own standard library. The name refers to the Pyramid Texts, which are one of the oldest extant bodies of (religious) lore in the world.
+- **Test:** Functional tests, which are comprised of many smaller Lore programs. This is the de-facto place to look at existing Lore code.
 
 
 

@@ -15,19 +15,18 @@ class TypeParser(nameParser: NameParser)(implicit fragment: Fragment) {
   def typeExpression[_: P]: P[TypeExprNode] = {
     import PrecedenceParser._
     PrecedenceParser.parser(
-      operator = StringIn("|", "&", "=>", "->"),
+      operator = StringIn("|", "&", "=>"),
       operand = atom,
       operatorMeta = Map(
         "|" -> XaryOperator[TypeExprNode](1, TypeExprNode.SumNode),
         "&" -> XaryOperator[TypeExprNode](2, TypeExprNode.IntersectionNode),
         "=>" -> BinaryOperator[TypeExprNode](3, TypeExprNode.FunctionNode),
-        "->" -> BinaryOperator[TypeExprNode](4, TypeExprNode.MapNode),
       ),
     )
   }
 
   private def atom[_: P]: P[TypeExprNode] = {
-    P(unitType | tupleType | listType | shapeType | symbolType | instantiation | namedType | enclosedType)
+    P(unitType | tupleType | listType | mapType | shapeType | symbolType | instantiation | namedType | enclosedType)
   }
 
   private def unitType[_: P]: P[TypeExprNode] = P(Index ~ "(" ~ ")" ~ Index).map {
@@ -45,6 +44,8 @@ class TypeParser(nameParser: NameParser)(implicit fragment: Fragment) {
   }
 
   private def listType[_: P]: P[TypeExprNode.ListNode] = P(Index ~ "[" ~ typeExpression ~ "]" ~ Index).map(withPosition(TypeExprNode.ListNode))
+
+  private def mapType[_: P]: P[TypeExprNode.MapNode] = P(Index ~ "#[" ~ typeExpression ~ "->" ~ typeExpression ~ "]" ~ Index).map(withPosition(TypeExprNode.MapNode))
 
   private def shapeType[_: P]: P[TypeExprNode.ShapeNode] = {
     def property = P(Index ~ name ~ typing ~ Index).map(withPosition(TypeExprNode.ShapePropertyNode))

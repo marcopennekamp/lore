@@ -266,7 +266,7 @@ Two lists are equal if they have the same lengths and each of their elements, co
 
 ### Maps
 
-Lore supports **maps** as first-class constructs. A map is a homogeneous, indexed collection of key/value pairs. Maps are *immutable*. Map types are denoted `A -> B`. We will eventually differentiate between immutable and mutable maps.
+Lore supports **maps** as first-class constructs. A map is a homogeneous, indexed collection of key/value pairs. Maps are *immutable*. Map types are denoted `#[A -> B]`. We will eventually differentiate between immutable and mutable maps.
 
 You can **construct** a map with the following syntax: `#[k1 -> v1, k2 -> v2, k3 -> v3]`. The empty map is denoted `#[]`.
 
@@ -278,7 +278,7 @@ We can define a map from strings to integers:
 
 ```
 let points = #['Ameela' -> 120, 'Bart' -> 14, 'Morrigan' -> 50]
-// points: String -> Int
+// points: #[String -> Int]
 ```
 
 ##### Equality and Order

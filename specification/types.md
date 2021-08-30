@@ -28,11 +28,11 @@ A **type expression** is a representation of a particular type, built with the t
 
 - `t1 => t2` — **Function types** describing function values.
 
-- `t1 -> t2` — **Map types** describing *immutable* maps.
-
 - `[t]` — **List types** describing *immutable* lists.
 
-- `{ a: A, b: B }` — **Shape types** describing structs (partially) and shape values.
+- `#[t1 -> t2]` — **Map types** describing *immutable* maps.
+
+- `%{ a: A, b: B }` — **Shape types** describing structs (partially) and shape values.
 
 - `#name` — **Symbol types** describing symbol values.
 
@@ -44,11 +44,10 @@ Note that the compiler immediately performs the following **simplifications** on
 Type constructors have the following **precedence** (lowest priority first):
 
 ```
-|                                // sum types
-&                                // intersection types
-=>                               // function types
-->                               // map types
-() (,) [] %{ ... } #id (...) id  // unit, tuple, list, shape, symbol, enclosed, names
+|                                  // sum types
+&                                  // intersection types
+=>                                 // function types
+() (,) [] #[->] %{} #id (...) id   // unit, tuple, list, map, shape, symbol, enclosed, names
 ```
 
 
@@ -169,9 +168,9 @@ A **map type** describes immutable maps.
 ###### Syntax Example
 
 ```
-String -> Int
-A -> (B, C)
-String -> (Fish & Mammal)
+#[String -> Int]
+#[A -> (B, C)]
+#[String -> (Fish & Mammal)]
 ```
 
 

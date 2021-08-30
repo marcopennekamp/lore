@@ -4,7 +4,7 @@
 
 - Implement the new syntax.
   - ~~Add the `%` to shape types to mirror the literal syntax `%{ ... }`.~~
-  - Turn the map type and value syntax into `#{A -> B}`. We could use `#[A]` for hash sets. Then we'd have square brackets for "element" collections (lists, sets) and curly braces for "associative" collections (maps, shapes).
+  - ~~Turn the map type syntax into `#[A -> B]`.~~
   - Change keywords: `function` --> `func`.
   - Remove `action` functions.
   - Add alternative struct syntax `struct Circle(x: Real, y: Real, radius: Real) extends Shape` that doesn't use a block.
@@ -25,10 +25,15 @@
   - Unsupported for now: 
     - Implicit underscore sections (e.g. `map(things, _.name)`).
     - `@given` parameters.
+- Fix map types and values:
+  - Add clear covariance/contravariance type semantics.
+  - Make maps immutable and support this in the runtime.
+  - Implement a clear appends operation for maps and make them generally usable.
+- Implement a vector backend for lists.
+- Add immutable (hash) sets with a syntax `#[A]`.
 - Implement global constants.
 - Implement a module system.
 - Implement pattern matching.
-- Implement an append operation for maps. In general, we will need to apply the same run-time typing considerations to maps.
 - Implement ranges (see `for comprehensions` in the specification).
 - Rethink properties: I don't like how shape properties are orthogonal to multi-functions right now. To use a shape, one is forced to ultimately give a property to an implementing struct. It would be much superior if properties could be declared "virtually", allowing traits to implement properties via some sort of function (perhaps even with dispatch on the accessed type). This feature should also simultaneously solve the question of "virtual/computed properties" posed in the geometry.lore example.
   - This would effectively mean that property types are always changeable and would either bar these kinds of properties to be open or would mean that we'd have to (a) rebuild the type each time the struct is used in dispatch or (b) disable the dispatch cache for multi-functions with shape types. Disallowing "virtual" properties to be open seems like an acceptable compromise, as the other options are far too detrimental on performance.
