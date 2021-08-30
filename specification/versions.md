@@ -9,28 +9,28 @@ Here is a **list of features** that will make up the minimum viable language:
 - **Types:** Sum types, intersection types, tuple types, function types, list types, map types, shape types, symbol types, trait and struct types, parametric types in functions and declared types, abstractness, type inference, type aliases.
 - **Functions:** Multi-functions, function declarations, multiple dispatch, abstract functions, compile-time constraints, fixed functions.
 - **Data Types:** Traits, structs, shapes, properties, constructors, mutability, trait polymorphism.
-- **Expressions:** Literals and value constructors (numbers, strings, booleans, tuples, anonymous functions, lists, maps, shapes, symbols, structs), basic operators, append for lists and maps, pipe operator, blocks, (multi-)function calls, trailing lambdas, multi-functions as function values, conditional expressions, loops, property access, variable declarations, assignments, and return.
-- **Global Constants:** Declaration, usage.
+- **Expressions:** Literals and value constructors (numbers, strings, booleans, tuples, anonymous functions, lists, maps, shapes, symbols, structs), basic operators, append for lists and maps, pipe operator, pattern matching (`case` expression with guards, and in parameters), blocks, (multi-)function calls, trailing lambdas, multi-functions as function values, conditional expressions (`if` and `cond`), loops (`for` and `while`), property access, variable declarations, assignments, return.
 - **Modules:** Module declarations, exports and imports, access operation on modules, companion modules.
+- **Miscellaneous:** Global constants, `domain` blocks.
 
 The language will also be accompanied by a standard library called **Pyramid**, which will have the following features:
 
 - **Collections:** Important functional operations on lists and maps.
 - **IO:** *Basic* support for file system input/output.
 - **Math:** Important mathematical functions, types, and constants.
-- **Options:** Support for options via sum types and symbol types, important functional operations on options.
+- **Options:** Support for options, important functional operations on options.
 - **Strings:** Important string functions.
+
+The minimum viable language will ultimately be used to **write the compiler in Lore**.
 
 
 ### Going Beyond the MVL
 
-Once we have formulated the MVL, we can deliver **themed updates** that focus on a specific cross-cutting feature. For example, we could update with the following themes:
+Once we have formulated the MVL, we can deliver **themed updates** that focus on a specific cross-cutting feature:
 
-- The **Higher Data Types** Update (parametric types in structs and traits)
-- The **Matchbox** Update (pattern matching, pattern matching in trailing lambdas, guards, pattern matching for function parameters)
 - The **Specialization** Update (dynamic specialization, dynamic generalization, attaching and removing properties at run-time)
 - The **Monads** Update (monadic collections, monadic options, generalized `for` or `do`)
-- The **Refined Dispatch** Update (differentiating between dispatchable and static parameters?, multiple parameter lists?, dot notation for multi-function calls?, multi-functions as operators, preferred functions or other means of disambiguation)
+- The **Refined Dispatch** Update (differentiating between dispatchable and static parameters?, multi-functions as operators, preferred functions or other means of disambiguation)
 - The **Structs and Traits** Update (syntactic sugar for common patterns, mixins?)
 - The **Useful Types** Update (envelope types, ad-hoc envelope types, ...)
 - The **Interoperability** Update (dynamic types, duck typing for dynamic types, or gradual typing)

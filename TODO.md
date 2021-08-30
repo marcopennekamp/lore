@@ -6,6 +6,7 @@
   - Add the `%` to shape types to mirror the literal syntax `%{ ... }`.
   - Turn the map type and value syntax into `#{A -> B}`. We could use `#[A]` for hash sets. Then we'd have square brackets for "element" collections (lists, sets) and curly braces for "associative" collections (maps, shapes).
   - Change keywords: `function` --> `func`.
+  - Remove `action` functions.
   - Add alternative struct syntax `struct Circle(x: Real, y: Real, radius: Real) extends Shape` that doesn't use a block.
   - Change block syntax from curly braces to `do...end`.
     - Allow omitting parentheses in all control structures.
