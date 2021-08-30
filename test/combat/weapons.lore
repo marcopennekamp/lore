@@ -1,9 +1,9 @@
 trait Weapon
-type +Weapon = { weapon: Weapon }
+type +Weapon = %{ weapon: Weapon }
 
 // Idea: Ranged weapons should do half or a third of the damage in melee range.
 trait RangedWeapon extends Weapon
-type +RangedWeapon = { weapon: RangedWeapon }
+type +RangedWeapon = %{ weapon: RangedWeapon }
 
 struct Sword extends Weapon
 struct Shardblade extends Weapon

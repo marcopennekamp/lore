@@ -38,14 +38,14 @@ function f5(value: C): String = 'C'
 function f6(value: U & V): String
 function f6(value: B): String = 'B'
 
-function f7(value: V & { name: String }): String
+function f7(value: V & %{ name: String }): String
 function f7(value: A): String = 'A'
 
-function f8(value: U & { name: String }): String
+function f8(value: U & %{ name: String }): String
 function f8(value: C): String = 'C'
 
-// Note that `W1 & { name: String }` has no concrete subtypes and thus doesn't need to be implemented at all.
-function f9(value: W1 & { name: String }): String
+// Note that `W1 & %{ name: String }` has no concrete subtypes and thus doesn't need to be implemented at all.
+function f9(value: W1 & %{ name: String }): String
 
 
 trait X

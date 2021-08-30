@@ -2,7 +2,7 @@ struct A {
   mut counter: Int
 }
 
-function get(shape: { counter: Int }): Int = shape.counter
+function get(shape: %{ counter: Int }): Int = shape.counter
 
 function increment(instance: A): Unit = {
   instance.counter += 1

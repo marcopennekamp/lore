@@ -3,7 +3,7 @@
 #### Features
 
 - Implement the new syntax.
-  - Add the `%` to shape types to mirror the literal syntax `%{ ... }`.
+  - ~~Add the `%` to shape types to mirror the literal syntax `%{ ... }`.~~
   - Turn the map type and value syntax into `#{A -> B}`. We could use `#[A]` for hash sets. Then we'd have square brackets for "element" collections (lists, sets) and curly braces for "associative" collections (maps, shapes).
   - Change keywords: `function` --> `func`.
   - Remove `action` functions.

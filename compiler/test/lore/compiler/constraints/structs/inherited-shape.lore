@@ -4,11 +4,11 @@ trait Question
 struct RudeQuestion extends Question
 struct HonestQuestion extends Question
 
-type Named = { name: String }
-type +Question = { question: Question }
-type Known = { knownBy: Int }
+type Named = %{ name: String }
+type +Question = %{ question: Question }
+type Known = %{ knownBy: Int }
 
-trait Person extends { id: Int }
+trait Person extends %{ id: Int }
 trait Questioner extends Person, Named, +Question
 trait AncientPhilosopher extends Questioner, Known
 

@@ -25,7 +25,7 @@ struct DurationLimit {
   mut duration: Int
 }
 
-type +DurationLimit = StatusEffect & { limit: DurationLimit }
+type +DurationLimit = StatusEffect & %{ limit: DurationLimit }
 
 action onUpdate(effect: +DurationLimit) {
   if (isActive(effect)) {
@@ -40,7 +40,7 @@ struct HitLimit {
   mut hits: Int
 }
 
-type +HitLimit = StatusEffect & { limit: HitLimit }
+type +HitLimit = StatusEffect & %{ limit: HitLimit }
 
 action onHit(effect: +HitLimit) {
   if (isActive(effect)) {
@@ -82,7 +82,7 @@ struct StatusEffects {
   mut effects: [StatusEffect]
 }
 
-type +StatusEffects = { statusEffects: StatusEffects }
+type +StatusEffects = %{ statusEffects: StatusEffects }
 
 action buff(entity: +StatusEffects, effect: StatusEffect) {
   entity.statusEffects.effects = entity.statusEffects.effects :+ effect

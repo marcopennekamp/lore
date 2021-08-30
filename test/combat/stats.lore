@@ -49,7 +49,7 @@ struct Stats {
   speed: Int = 1
 }
 
-type +Stats = { stats: Stats }
+type +Stats = %{ stats: Stats }
 
 /**
   * A stat label uniquely names a specific stat in the Stats struct.

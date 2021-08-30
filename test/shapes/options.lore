@@ -1,5 +1,5 @@
-type Animal = { name: String, breed: String }
-type Options = { showTeeth: Boolean, volume: Real }
+type Animal = %{ name: String, breed: String }
+type Options = %{ showTeeth: Boolean, volume: Real }
 
 function bark(animal: Animal, options: Options): String = 'Your ${animal.breed} ${animal.name} barks at a ${volumeMeaning(options.volume)} volume${showingTeeth(options.showTeeth)}!'
 

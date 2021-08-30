@@ -1,5 +1,5 @@
 type Status = #ok | #error
-type Result[A] = { status: Status, result: A }
+type Result[A] = %{ status: Status, result: A }
 
 function read1(): Result[String] = %{ status: #ok, result: 'I am a result!' }
 function read2(): Result[String] = %{ status: #error, result: '' }

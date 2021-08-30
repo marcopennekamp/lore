@@ -1,27 +1,27 @@
 struct Position2D { x: Real, y: Real }
 struct Position3D { x: Real, y: Real, z: Real }
 
-function listify(shape: { }): [Real] = []
-function listify(shape: { x: Real, y: Real }): [Real] = [shape.x, shape.y]
-function listify(shape: { x: Real, y: Real, z: Real }): [Real] = [shape.x, shape.y, shape.z]
+function listify(shape: %{ }): [Real] = []
+function listify(shape: %{ x: Real, y: Real }): [Real] = [shape.x, shape.y]
+function listify(shape: %{ x: Real, y: Real, z: Real }): [Real] = [shape.x, shape.y, shape.z]
 
 // TODO: Big problem: Let's say we define this function and pass a shape value %{ x: 1.2, y: 1.3, z: 4 }. This function
 //       won't be called at run-time because 4 is an Int, so the three types aren't equal. This is wholly unexpected and
 //       not at all intuitive... Quite dangerous, in fact. How can we improve this situation?
-//function genericListify(shape: { x: A, y: A }): [A] where A = [shape.x, shape.y]
-//function genericListify(shape: { x: A, y: A, z: A }): [A] where A = [shape.x, shape.y, shape.z]
+//function genericListify(shape: %{ x: A, y: A }): [A] where A = [shape.x, shape.y]
+//function genericListify(shape: %{ x: A, y: A, z: A }): [A] where A = [shape.x, shape.y, shape.z]
 
 // Given the note above, one might write the following code. This is, however, incorrect. R won't be inferred, but
 // that is OK, because these two functions hide a much bigger problem: Let's say we pass a value with type
 // { x: Real, y: Real } at compile-time, but at run-time, we pass { x: Real, y: Real, z: String }. Then our compile-time
 // checks will have inferred: "all good, the result is a [Real]". But at run-time, we suddenly get a [Real | String]
 // list! So this cannot be valid.
-//function genericListify(shape: { x: X, y: Y }): [R] where R, X <: R, Y <: R = [shape.x, shape.y]
-//function genericListify(shape: { x: X, y: Y, z: Z }): [R] where R, X <: R, Y <: R, Z <: R = [shape.x, shape.y, shape.z]
+//function genericListify(shape: %{ x: X, y: Y }): [R] where R, X <: R, Y <: R = [shape.x, shape.y]
+//function genericListify(shape: %{ x: X, y: Y, z: Z }): [R] where R, X <: R, Y <: R, Z <: R = [shape.x, shape.y, shape.z]
 
 // Ultimately, we have to separate the generic functions so that we cannot trip up with run-time dispatch.
-function genericListify2D(shape: { x: X, y: Y }): [X | Y] where X, Y = [shape.x, shape.y]
-function genericListify3D(shape: { x: X, y: Y, z: Z }): [X | Y | Z] where X, Y, Z = [shape.x, shape.y, shape.z]
+function genericListify2D(shape: %{ x: X, y: Y }): [X | Y] where X, Y = [shape.x, shape.y]
+function genericListify3D(shape: %{ x: X, y: Y, z: Z }): [X | Y | Z] where X, Y, Z = [shape.x, shape.y, shape.z]
 
 
 function test(): [[Real]] = {

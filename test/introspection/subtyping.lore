@@ -13,7 +13,7 @@ struct Crane extends Animal {
 function niuzao(): Ox = Ox('Niuzao', 387.23)
 function chiji(): Crane = Crane('Chi-Ji', 5.51)
 
-function shape(): { name: String, weight: Real } = %{ name: 'Peter', weight: 87.2 }
+function shape(): %{ name: String, weight: Real } = %{ name: 'Peter', weight: 87.2 }
 
 function test(): [Boolean] = [
   isSubtype(typeOf(1), typeOf(1.5)),               // --> true

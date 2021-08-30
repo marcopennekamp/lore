@@ -28,7 +28,7 @@ struct Zoo {
 }
 
 
-trait Cage[+A <: Animal] extends { animal: A }
+trait Cage[+A <: Animal] extends %{ animal: A }
 struct Aquarium[+A <: Fish] extends Cage[A] {
   animal: A
 }
@@ -69,13 +69,13 @@ trait Wheel extends Hashable
 struct CoolWheel extends Wheel
 struct CheapWheel extends Wheel
 
-type +Wheel = { wheel: Wheel }
+type +Wheel = %{ wheel: Wheel }
 
 trait Engine extends Hashable
 struct GasEngine extends Engine
 struct ElectricEngine extends Engine
 
-type +Engine = { engine: Engine }
+type +Engine = %{ engine: Engine }
 
 trait Car extends +Wheel, +Engine
 

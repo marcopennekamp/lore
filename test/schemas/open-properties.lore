@@ -9,8 +9,8 @@ struct Hammer extends Content
 
 function toString(box: Box[Juice]): String = 'juice box'
 function toString(box: Box[Berry]): String = 'berry box'
-function toString(thing: { value: Content }): String = 'thing with content'
-function toString(thing: { value: Hammer }): String = 'thing with hammer'
+function toString(thing: %{ value: Content }): String = 'thing with content'
+function toString(thing: %{ value: Hammer }): String = 'thing with hammer'
 
 // This verifies that struct types with open properties are correctly interned. Open property types should be taken
 // into account.

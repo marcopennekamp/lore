@@ -48,7 +48,7 @@ class TypeParser(nameParser: NameParser)(implicit fragment: Fragment) {
 
   private def shapeType[_: P]: P[TypeExprNode.ShapeNode] = {
     def property = P(Index ~ name ~ typing ~ Index).map(withPosition(TypeExprNode.ShapePropertyNode))
-    P(Index ~ "{" ~ property.rep(0, ",").map(_.toVector) ~ "}" ~ Index).map(withPosition(TypeExprNode.ShapeNode))
+    P(Index ~ "%{" ~ property.rep(0, ",").map(_.toVector) ~ "}" ~ Index).map(withPosition(TypeExprNode.ShapeNode))
   }
 
   private def symbolType[_: P]: P[TypeExprNode.SymbolNode] = P(Index ~ "#" ~ identifier ~ Index).map(withPosition(TypeExprNode.SymbolNode))
