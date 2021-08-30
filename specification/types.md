@@ -44,24 +44,25 @@ Note that the compiler immediately performs the following **simplifications** on
 Type constructors have the following **precedence** (lowest priority first):
 
 ```
-|                               // sum types
-&                               // intersection types
-=>							    // function types
-->                              // map types
-() (,) [] { ... } #id (...) id  // unit, tuple, list, shape, symbol, enclosed, names
+|                                // sum types
+&                                // intersection types
+=>                               // function types
+->                               // map types
+() (,) [] %{ ... } #id (...) id  // unit, tuple, list, shape, symbol, enclosed, names
 ```
 
 
 
 ### Type Aliases
 
-A **type alias** turns any type into a named type available in the global scope. Type aliases don't carry additional semantics, which makes them **referentially transparent**.
+A **type alias** turns any type into a named type available in the global scope. They may have any number of **type parameters**. Type aliases don't carry additional semantics, which makes them **referentially transparent**.
 
 ###### Syntax Example
 
 ```
 type Unit = ()
-type +Position = { position: Position }
+type +Position = %{ position: Position }
+type Dictionary[V] = String -> V
 ```
 
 
@@ -184,10 +185,10 @@ A shape or struct type A is the **subtype** of a shape type B if A contains all 
 ###### Syntax Example
 
 ```
-{ }                            // the empty shape type matches all shape and struct values
-{ x: Real, y: Real, z: Real }  
-{ position: Position }
-{ grotesque: Fish & Mammal }
+%{ }                            // the empty shape type matches all shape and struct values
+%{ x: Real, y: Real, z: Real }  
+%{ position: Position }
+%{ grotesque: Fish & Mammal }
 ```
 
 

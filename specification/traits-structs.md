@@ -16,7 +16,7 @@ A **trait** is an abstract type that can be extended by other traits and structs
 ###### Syntax Example
 
 ```
-trait T extends A, B, { property: C }
+trait T extends A, B, %{ property: C }
 ```
 
 
@@ -421,7 +421,7 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
 
     ```
     struct Position { mut x: Real, mut y: Real }
-    type +Position = { position: Position }
+    type +Position = %{ position: Position }
     
     struct Player {
       mix +Position

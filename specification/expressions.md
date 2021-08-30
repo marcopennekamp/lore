@@ -294,8 +294,8 @@ Two maps are equal if for each key/value pair in the first map, there is a key/v
 ###### Example
 
 ```
-let barkOptions = %{ showTeeth: true, volume: 80 }
-// barkOptions: { showTeeth: Boolean, volume: Int }
+let bark_options = %{ show_teeth: true, volume: 80 }
+// bark_options: %{ show_teeth: Boolean, volume: Int }
 ```
 
 ##### Equality and Order

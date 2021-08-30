@@ -2,13 +2,13 @@
 
 A **shape** is a partial view on structured data, with the option for ad-hoc representation. A shape consists of a set of **immutable properties**, much like a struct. However, a shape does not define a constructor of any kind and, crucially, has **no name**. If properties agree, a shape type can describe a struct, making the struct a **subtype** of the shape. **Shape values** can also be created in place, without specifying a type. Such an ad-hoc representation is similar (especially in convenience) to maps, dictionaries, or objects from dynamically typed languages. Shapes offer the power of structural typing.
 
-At run-time, multi-function calls are **dispatched** based on the actual property types contained in the shape value or struct (if the property is open). This allows a Lore programmer to specialize functions based on actual property types, effectively enabling styles such as **component-based programming**.
+At run time, multi-function calls are **dispatched** based on the actual property types contained in the shape value, or struct if the property is open. This allows a Lore programmer to specialize functions based on actual property types, effectively enabling styles such as **component-based programming**.
 
 ###### Syntax Example
 
 ```
-type Positioned = { x: Real, y: Real, z: Real }
-type Dimensioned = { width: Real, height: Real, depth: Real }
+type Positioned = %{ x: Real, y: Real, z: Real }
+type Dimensioned = %{ width: Real, height: Real, depth: Real }
 type Spaced = Positioned & Dimensioned
 ```
 
@@ -21,12 +21,12 @@ Shapes can be directly constructed as **values**. This comes in handy for ad-hoc
 ###### Syntax Example
 
 ```
-type Options = { showTeeth: Boolean, volume: Real  }
+type Options = %{ show_teeth: Boolean, volume: Real  }
 
 function bark(options: Options): String = { ... }
 
 action test() {
-  bark(%{ showTeeth: true, volume: 80 })
+  bark(%{ show_teeth: true, volume: 80 })
 }
 ```
 
@@ -39,9 +39,9 @@ Shape types are *structural types*. A struct or shape type A is a **subtype** of
 ###### Example
 
 ```
-type Positioned2D = { x: Real, y: Real }
-type Positioned3D = { x: Real, y: Real, z: Real }
-// Positioned3D is a subtype of Positioned2D, but not vice versa
+type Positioned2D = %{ x: Real, y: Real }
+type Positioned3D = %{ x: Real, y: Real, z: Real }
+// Positioned3D is a subtype of Positioned2D, but not vice versa.
 ```
 
 
@@ -57,8 +57,8 @@ Open properties are generally slower, because they lead to more difficult run-ti
 ###### Example
 
 ```
-function free(cage: { content: Animal }): Animal = cage.content
-function free(cage: { content: Tiger }): Nothing = error('Are you insane?')
+function free(cage: %{ content: Animal }): Animal = cage.content
+function free(cage: %{ content: Tiger }): Nothing = error('Are you insane?')
 
 struct Blackbox { content: Animal }
 struct Whitebox { open content: Animal }
@@ -81,7 +81,7 @@ We can support such **entity-component systems** natively (and especially with t
 
 ```
 struct Position { mut x: Real, mut y: Real, mut z: Real }
-type +Position = { position: Position }
+type +Position = %{ position: Position }
 
 action move(entity: +Position, distance: Real, direction: Vector3) {
   // calculate new x, y and z coordinates...
@@ -91,7 +91,7 @@ action move(entity: +Position, distance: Real, direction: Vector3) {
 }
 
 struct Shape { width: Real, height: Real, depth: Real, model: Model }
-type +Shape = { shape: Shape }
+type +Shape = %{ shape: Shape }
 
 action render(entity: +Position & +Shape) {
   // use entity.position and entity.shape to render the entity...
@@ -161,8 +161,8 @@ struct Hero {
   open position: Position
 }
 
-type +Position = { position: Position }
-type +Position3D = { position: Position3D }
+type +Position = %{ position: Position }
+type +Position3D = %{ position: Position3D }
 
 action move(entity: +Position) { ... }
 action move(entity: +Position3D) { ... }
