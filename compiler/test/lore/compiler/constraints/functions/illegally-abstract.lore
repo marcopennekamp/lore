@@ -14,7 +14,7 @@ function f4(value: Tree => Wood): Wood
 
 function f5(value: [Tree]): [Wood]
 
-function f6(value: Wood -> Tree): String
+function f6(value: #[Wood -> Tree]): String
 
 function f7(value: %{ label: String }): Tree
 
