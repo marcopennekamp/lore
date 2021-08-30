@@ -8,7 +8,7 @@ import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.members.Member
 import lore.compiler.semantics.scopes.{TypedBinding, Variable}
 import lore.compiler.semantics.structures.StructConstructor
-import lore.compiler.types.{BasicType, ListType, StructType, TupleType, Type}
+import lore.compiler.types._
 
 /**
   * Replaces all inference variables with inferred types.

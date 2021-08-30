@@ -4,7 +4,7 @@ import lore.compiler.core.Position
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.Registry.MultiFunctionNotFound
 import lore.compiler.semantics.functions.MultiFunctionDefinition
-import lore.compiler.semantics.scopes.{Binding, BindingScope, ImmutableTypeScope, StructBinding, TypeScope}
+import lore.compiler.semantics.scopes._
 import lore.compiler.semantics.structures.SchemaDefinition
 import lore.compiler.types.{DeclaredSchema, DeclaredTypeHierarchy, NamedSchema, StructType}
 import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtension}

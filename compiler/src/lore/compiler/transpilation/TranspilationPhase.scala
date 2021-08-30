@@ -1,12 +1,12 @@
 package lore.compiler.transpilation
 
 import lore.compiler.core.{CompilationException, CompilerOptions}
-import lore.compiler.transpilation.functions.MultiFunctionTranspiler
-import lore.compiler.transpilation.structures.DeclaredSchemaTranspiler
-import lore.compiler.transpilation.values.{SymbolHistory, SymbolTranspiler}
 import lore.compiler.semantics.{Introspection, Registry}
 import lore.compiler.target.Target
 import lore.compiler.target.Target.TargetStatement
+import lore.compiler.transpilation.functions.MultiFunctionTranspiler
+import lore.compiler.transpilation.structures.DeclaredSchemaTranspiler
+import lore.compiler.transpilation.values.{SymbolHistory, SymbolTranspiler}
 import lore.compiler.types.DeclaredSchema
 
 object TranspilationPhase {

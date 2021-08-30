@@ -1,7 +1,6 @@
 package lore.compiler.inference
 
 import lore.compiler.core.Position
-import lore.compiler.types.TraitType
 
 /**
   * Ensures basic properties of typing judgments and judgment resolvers.

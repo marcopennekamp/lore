@@ -1,15 +1,15 @@
 package lore.compiler.transpilation.structures
 
 import lore.compiler.core.CompilationException
-import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
-import lore.compiler.transpilation.expressions.ExpressionTranspiler
-import lore.compiler.transpilation.values.SymbolHistory
-import lore.compiler.transpilation.{RuntimeApi, RuntimeNames, TypePathTranspiler, TypeTranspiler}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.target.Target
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl._
+import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
+import lore.compiler.transpilation.expressions.ExpressionTranspiler
+import lore.compiler.transpilation.values.SymbolHistory
+import lore.compiler.transpilation.{RuntimeApi, RuntimeNames, TypePathTranspiler, TypeTranspiler}
 import lore.compiler.types.{StructSchema, TypePath, TypeVariable}
 
 case class StructTranspiler(schema: StructSchema)(

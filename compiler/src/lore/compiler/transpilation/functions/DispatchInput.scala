@@ -1,13 +1,13 @@
 package lore.compiler.transpilation.functions
 
 import lore.compiler.core.CompilationException
-import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
-import lore.compiler.transpilation.values.SymbolHistory
-import lore.compiler.transpilation.{RuntimeApi, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.target.Target
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl._
+import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
+import lore.compiler.transpilation.values.SymbolHistory
+import lore.compiler.transpilation.{RuntimeApi, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.types.Type
 
 /**

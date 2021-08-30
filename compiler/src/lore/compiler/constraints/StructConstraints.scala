@@ -4,8 +4,8 @@ import lore.compiler.feedback.FeedbackExtensions.FilterDuplicatesExtension
 import lore.compiler.feedback.{Reporter, StructFeedback}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.structures.StructDefinition
-import lore.compiler.types.{DeclaredType, FunctionType, IntersectionType, ListType, MapType, ShapeType, SumType, TupleType, Type, TypeVariable}
 import lore.compiler.types.TypeVariable.Variance
+import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions.OptionVectorExtension
 
 object StructConstraints {

@@ -1,12 +1,12 @@
 package lore.compiler.transpilation.structures
 
 import lore.compiler.core.CompilationException
-import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
-import lore.compiler.transpilation.values.SymbolHistory
-import lore.compiler.transpilation.{RuntimeNames, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.semantics.Registry
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl.{ExpressionExtension, VariableExtension}
+import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
+import lore.compiler.transpilation.values.SymbolHistory
+import lore.compiler.transpilation.{RuntimeNames, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.types.{DeclaredSchema, StructSchema, TraitSchema}
 
 object DeclaredSchemaTranspiler {

@@ -1,8 +1,8 @@
 package lore.compiler.transformation
 
 import lore.compiler.feedback.{Feedback, Reporter}
-import lore.compiler.transformation.MutabilityVerifier.ImmutableAssignment
 import lore.compiler.semantics.expressions.{Expression, ExpressionVerificationVisitor}
+import lore.compiler.transformation.MutabilityVerifier.ImmutableAssignment
 
 /**
   * Verifies that mutable actions (such as assignments) may be performed.

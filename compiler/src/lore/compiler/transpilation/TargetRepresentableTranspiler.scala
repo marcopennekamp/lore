@@ -1,12 +1,12 @@
 package lore.compiler.transpilation
 
-import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
-import lore.compiler.transpilation.values.SymbolHistory
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.semantics.scopes.Variable
 import lore.compiler.semantics.structures.StructConstructor
 import lore.compiler.target.Target.TargetExpression
 import lore.compiler.target.{Target, TargetRepresentable}
+import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
+import lore.compiler.transpilation.values.SymbolHistory
 
 object TargetRepresentableTranspiler {
 

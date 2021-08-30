@@ -1,7 +1,7 @@
 package lore.compiler.semantics.scopes
 
-import lore.compiler.transpilation.RuntimeNames
 import lore.compiler.target.Target
+import lore.compiler.transpilation.RuntimeNames
 import lore.compiler.types.Type
 
 /**

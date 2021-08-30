@@ -1,12 +1,12 @@
 package lore.compiler.transpilation.functions
 
-import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
-import lore.compiler.transpilation.values.SymbolHistory
-import lore.compiler.transpilation.{RuntimeApi, RuntimeNames, TargetRepresentableTranspiler, TemporaryVariableProvider}
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl._
 import lore.compiler.target.{Target, TargetOperator}
+import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
+import lore.compiler.transpilation.values.SymbolHistory
+import lore.compiler.transpilation.{RuntimeApi, RuntimeNames, TargetRepresentableTranspiler, TemporaryVariableProvider}
 
 class DispatchBehavior(
   mf: MultiFunctionDefinition,

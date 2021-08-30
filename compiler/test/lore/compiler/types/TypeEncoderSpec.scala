@@ -1,7 +1,6 @@
 package lore.compiler.types
 
 import lore.compiler.test.{BaseSpec, TypeSyntax}
-import lore.compiler.types.TypeVariable.Variance
 import org.scalatest.Assertion
 
 class TypeEncoderSpec extends BaseSpec with TypeSyntax {

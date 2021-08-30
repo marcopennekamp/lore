@@ -1,9 +1,9 @@
 package lore.compiler.transpilation.structures
 
+import lore.compiler.target.Target.TargetExpression
 import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
 import lore.compiler.transpilation.values.SymbolHistory
 import lore.compiler.transpilation.{RuntimeApi, RuntimeNames, TypeTranspiler}
-import lore.compiler.target.Target.TargetExpression
 import lore.compiler.types.TraitSchema
 
 case class TraitTranspiler(schema: TraitSchema)(

@@ -1,11 +1,11 @@
 package lore.compiler.transpilation
 
 import lore.compiler.core.CompilationException
-import lore.compiler.transpilation.structures.DeclaredSchemaTranspiler
-import lore.compiler.transpilation.values.SymbolHistory
 import lore.compiler.target.Target
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
 import lore.compiler.target.TargetDsl.{ExpressionExtension, VariableExtension}
+import lore.compiler.transpilation.structures.DeclaredSchemaTranspiler
+import lore.compiler.transpilation.values.SymbolHistory
 import lore.compiler.types._
 
 object TypeTranspiler {

@@ -4,7 +4,7 @@ import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefin
 import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.target.Target
 import lore.compiler.target.TargetDsl.StringExtension
-import lore.compiler.types.{DeclaredSchema, DeclaredType, StructSchema, Type}
+import lore.compiler.types.{DeclaredSchema, DeclaredType, StructSchema}
 
 object RuntimeNames {
   object schema {

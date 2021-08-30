@@ -1,16 +1,16 @@
 
 package lore.compiler.transpilation.expressions
 
-import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
-import lore.compiler.transpilation._
-import lore.compiler.transpilation.structures.InstantiationTranspiler
-import lore.compiler.transpilation.values.SymbolHistory
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.semantics.structures.StructConstructor
 import lore.compiler.target.TargetDsl._
 import lore.compiler.target.{Target, TargetOperator}
+import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
+import lore.compiler.transpilation._
+import lore.compiler.transpilation.structures.InstantiationTranspiler
+import lore.compiler.transpilation.values.SymbolHistory
 import lore.compiler.types._
 
 private[transpilation] class ExpressionTranspilationVisitor()(

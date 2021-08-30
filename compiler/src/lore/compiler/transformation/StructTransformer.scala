@@ -1,10 +1,10 @@
 package lore.compiler.transformation
 
 import lore.compiler.feedback.Reporter
-import lore.compiler.transpilation.RuntimeNames
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
+import lore.compiler.transpilation.RuntimeNames
 
 object StructTransformer {
 

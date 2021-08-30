@@ -1,7 +1,7 @@
 package lore.compiler.transformation
 
 import lore.compiler.core.CompilationException
-import lore.compiler.semantics.scopes.{BlockBindingScope, BindingScope}
+import lore.compiler.semantics.scopes.{BindingScope, BlockBindingScope}
 
 /**
   * A local variable scope context for expression transformation passes.

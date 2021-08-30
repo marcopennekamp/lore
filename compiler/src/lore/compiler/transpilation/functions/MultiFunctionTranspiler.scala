@@ -1,14 +1,14 @@
 package lore.compiler.transpilation.functions
 
 import lore.compiler.core.CompilerOptions
-import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
-import lore.compiler.transpilation.values.SymbolHistory
-import lore.compiler.transpilation.{RuntimeApi, RuntimeNames, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.target.Target
 import lore.compiler.target.Target.TargetStatement
 import lore.compiler.target.TargetDsl.{StringExtension, VariableExtension}
+import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
+import lore.compiler.transpilation.values.SymbolHistory
+import lore.compiler.transpilation.{RuntimeApi, RuntimeNames, TemporaryVariableProvider, TypeTranspiler}
 
 class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry, symbolHistory: SymbolHistory) {
 

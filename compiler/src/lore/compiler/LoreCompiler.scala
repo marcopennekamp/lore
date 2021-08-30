@@ -1,17 +1,17 @@
 package lore.compiler
 
+import lore.compiler.constraints.ConstraintsPhase
 import lore.compiler.core.{CompilerOptions, Fragment}
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
-import lore.compiler.constraints.ConstraintsPhase
 import lore.compiler.generation.GenerationPhase
 import lore.compiler.parsing.ParsingPhase
 import lore.compiler.resolution.ResolutionPhase
-import lore.compiler.transformation.TransformationPhase
-import lore.compiler.transpilation.TranspilationPhase
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.structures.DeclaredSchemaDefinition
-import lore.compiler.types.{DeclaredSchema, DeclaredType}
+import lore.compiler.transformation.TransformationPhase
+import lore.compiler.transpilation.TranspilationPhase
+import lore.compiler.types.DeclaredSchema
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import lore.compiler.utils.Timer.timed
 

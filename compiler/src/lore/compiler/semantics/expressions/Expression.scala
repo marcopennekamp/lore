@@ -4,8 +4,7 @@ import lore.compiler.core.{CompilationException, Position, Positioned}
 import lore.compiler.inference.InferenceVariable
 import lore.compiler.semantics.functions.{CallTarget, FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
-import lore.compiler.semantics.scopes.{Variable, TypedBinding}
-import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
+import lore.compiler.semantics.scopes.{TypedBinding, Variable}
 import lore.compiler.types._
 
 sealed trait Expression extends Positioned {

@@ -1,10 +1,10 @@
 package lore.compiler.transformation
 
 import lore.compiler.feedback.Reporter
-import lore.compiler.transformation.BuiltinsTransformation.ComparisonFunction
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, XaryOperator}
 import lore.compiler.semantics.expressions.{Expression, ExpressionIdentityVisitor}
+import lore.compiler.transformation.BuiltinsTransformation.ComparisonFunction
 import lore.compiler.types.BasicType
 
 /**

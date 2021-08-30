@@ -1,7 +1,7 @@
 package lore.compiler.constraints.structs
 
-import lore.compiler.feedback.StructFeedback
 import lore.compiler.constraints.VarianceConstraints
+import lore.compiler.feedback.StructFeedback
 import lore.compiler.test.BaseSpec
 
 class StructConstraintsSpec extends BaseSpec {

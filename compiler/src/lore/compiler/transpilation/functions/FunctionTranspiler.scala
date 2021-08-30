@@ -1,15 +1,15 @@
 package lore.compiler.transpilation.functions
 
 import lore.compiler.core.{CompilationException, CompilerOptions}
-import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
-import lore.compiler.transpilation._
-import lore.compiler.transpilation.expressions.ExpressionTranspiler
-import lore.compiler.transpilation.values.SymbolHistory
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.FunctionDefinition
 import lore.compiler.target.Target.{TargetName, TargetStatement}
 import lore.compiler.target.TargetDsl._
 import lore.compiler.target.{Target, TargetOperator}
+import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
+import lore.compiler.transpilation._
+import lore.compiler.transpilation.expressions.ExpressionTranspiler
+import lore.compiler.transpilation.values.SymbolHistory
 
 object FunctionTranspiler {
 

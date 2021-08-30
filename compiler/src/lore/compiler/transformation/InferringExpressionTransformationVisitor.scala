@@ -5,14 +5,14 @@ import lore.compiler.feedback.DispatchFeedback.{FixedFunctionAmbiguousCall, Fixe
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.resolution.TypeExpressionEvaluator
-import lore.compiler.transformation.InferringExpressionTransformationVisitor._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
-import lore.compiler.semantics.scopes.{Binding, BindingScope, StructBinding, TypeScope, TypedBinding, Variable}
+import lore.compiler.semantics.scopes._
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
+import lore.compiler.transformation.InferringExpressionTransformationVisitor._
 import lore.compiler.types._
 import scalaz.Id.Id
 

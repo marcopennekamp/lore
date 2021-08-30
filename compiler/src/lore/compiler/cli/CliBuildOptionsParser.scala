@@ -1,7 +1,6 @@
 package lore.compiler.cli
 
 import lore.compiler.build.{BuildApi, BuildOptions, JsonBuildOptionsParser}
-import lore.compiler.feedback.Feedback
 import scopt.{OParser, Read}
 
 import java.nio.file.{Files, Path}

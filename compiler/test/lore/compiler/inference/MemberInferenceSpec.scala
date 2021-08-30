@@ -1,7 +1,7 @@
 package lore.compiler.inference
 
 import lore.compiler.core.Position
-import lore.compiler.types.{ShapeType, TraitType}
+import lore.compiler.types.ShapeType
 
 class MemberInferenceSpec extends InferenceSpec {
 

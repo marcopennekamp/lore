@@ -1,13 +1,13 @@
 package lore.compiler.transpilation.expressions
 
 import lore.compiler.core.CompilationException
-import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
-import lore.compiler.transpilation.values.SymbolHistory
-import lore.compiler.transpilation.{Chunk, RuntimeApi, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.semantics.expressions.Expression.{Extractor, ForLoop, Loop, WhileLoop}
 import lore.compiler.target.Target.TargetStatement
 import lore.compiler.target.TargetDsl._
 import lore.compiler.target.{Target, TargetOperator}
+import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
+import lore.compiler.transpilation.values.SymbolHistory
+import lore.compiler.transpilation.{Chunk, RuntimeApi, TemporaryVariableProvider, TypeTranspiler}
 import lore.compiler.types.{ListType, MapType, TupleType}
 
 case class LoopTranspiler()(implicit variableProvider: TemporaryVariableProvider, runtimeTypeVariables: RuntimeTypeVariables, symbolHistory: SymbolHistory) {

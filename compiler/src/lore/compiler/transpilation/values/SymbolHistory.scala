@@ -1,7 +1,7 @@
 package lore.compiler.transpilation.values
 
-import lore.compiler.transpilation.RuntimeNames
 import lore.compiler.target.Target
+import lore.compiler.transpilation.RuntimeNames
 
 import scala.collection.immutable.HashSet
 

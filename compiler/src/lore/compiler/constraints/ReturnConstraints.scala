@@ -1,7 +1,7 @@
 package lore.compiler.constraints
 
-import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.constraints.ReturnConstraints.{DeadCode, DefinitelyReturns, ImpossibleReturn, IsReturnAllowed}
+import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.syntax.visitor.{CombiningTopLevelExprVisitor, TopLevelExprVisitor, VerificationTopLevelExprVisitor}
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 

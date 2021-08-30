@@ -3,7 +3,7 @@ package lore.compiler.constraints
 import lore.compiler.core.Position
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.types.TypeVariable.Variance
-import lore.compiler.types.{DeclaredType, FunctionType, IntersectionType, ListType, MapType, ShapeType, SumType, TupleType, Type, TypeVariable}
+import lore.compiler.types._
 
 object VarianceConstraints {
 

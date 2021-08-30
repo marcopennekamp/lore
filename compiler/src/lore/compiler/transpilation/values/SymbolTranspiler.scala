@@ -1,8 +1,8 @@
 package lore.compiler.transpilation.values
 
-import lore.compiler.transpilation.{RuntimeApi, RuntimeNames}
 import lore.compiler.target.Target.TargetStatement
 import lore.compiler.target.TargetDsl.VariableExtension
+import lore.compiler.transpilation.{RuntimeApi, RuntimeNames}
 
 object SymbolTranspiler {
 
