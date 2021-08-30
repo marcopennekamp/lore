@@ -5,9 +5,9 @@ func name(combatant: Combatant): String
 /**
  * This is called once at the beginning of combat to give each combatant a chance to prepare.
  */
-action enterCombat(combatant: Combatant) { }
+act enterCombat(combatant: Combatant) { }
 
-action onHit(combatant: Combatant) {
+act onHit(combatant: Combatant) {
   onHitStatusEffects(combatant)
 }
 
@@ -27,7 +27,7 @@ trait SimulationResult
 struct SimulationVictory extends SimulationResult { winner: Combatant }
 struct SimulationStalemate extends SimulationResult
 
-action combatLog(message: String) {
+act combatLog(message: String) {
   println(message)
 }
 
@@ -118,7 +118,7 @@ func attemptDodge(state: CombatantState): Boolean = {
   } else false
 }
 
-action attemptAttack(attackerState: CombatantState, defenderState: CombatantState, distance: Int) {
+act attemptAttack(attackerState: CombatantState, defenderState: CombatantState, distance: Int) {
   if (isInRange(attackerState.combatant, distance)) {
     let dodgeSuccessful = attemptDodge(defenderState)
     if (!dodgeSuccessful) {
@@ -131,7 +131,7 @@ action attemptAttack(attackerState: CombatantState, defenderState: CombatantStat
 /**
  * Damages a target, taking into account defense but not dodge. Also triggers onHit calls.
  */
-action hit(source: Combatant, target: Combatant, damage: Int) {
+act hit(source: Combatant, target: Combatant, damage: Int) {
   let defense = stat(target, #defense)
   let damageAfterDefense = max(damage - defense, 0)
   combatLog('${name(source)} attacks ${name(target)} for $damageAfterDefense damage given a defense of $defense.')
@@ -142,14 +142,14 @@ action hit(source: Combatant, target: Combatant, damage: Int) {
 /**
  * Performs post-attack regeneration and status effect updates provided the combatant is still alive.
  */
-action updateCombatantPostAttack(combatant: Combatant) {
+act updateCombatantPostAttack(combatant: Combatant) {
   if (isAlive(combatant)) {
     heal(combatant, stat(combatant, #regeneration))
     updateStatusEffects(combatant)
   }
 }
 
-action heal(target: Combatant, amount: Int) {
+act heal(target: Combatant, amount: Int) {
   let stats = target.stats
   let oldHealth = stats.health
   stats.health = min(stats.health + amount, stats.maximumHealth)

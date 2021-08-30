@@ -6,7 +6,7 @@ struct A1 extends A, Y
 func f(a: A): String = 'Shoot!'
 func f(y: Y): Int = 15
 
-action test() {
+act test() {
   let a1 = A1()
   let a: A = a1
   let y: Y = a1

@@ -15,6 +15,6 @@ struct Voidbringer extends Monster {
 
 func name(voidbringer: Voidbringer): String = 'Voidbringer'
 
-action enterCombat(voidbringer: Voidbringer) {
+act enterCombat(voidbringer: Voidbringer) {
   buff(voidbringer, createArmored(2, 3))
 }

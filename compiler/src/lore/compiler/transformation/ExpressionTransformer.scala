@@ -61,7 +61,7 @@ object ExpressionTransformer {
     *
     * Example:
     * {{{
-    * action test() {
+    * act test() {
     *   concat([12], [15]) // Should compile even though it returns a list.
     * }
     * }}}

@@ -25,7 +25,7 @@ type Options = %{ show_teeth: Boolean, volume: Real  }
 
 func bark(options: Options): String = { ... }
 
-action test() {
+act test() {
   bark(%{ show_teeth: true, volume: 80 })
 }
 ```
@@ -83,7 +83,7 @@ We can support such **entity-component systems** natively (and especially with t
 struct Position { mut x: Real, mut y: Real, mut z: Real }
 type +Position = %{ position: Position }
 
-action move(entity: +Position, distance: Real, direction: Vector3) {
+act move(entity: +Position, distance: Real, direction: Vector3) {
   // calculate new x, y and z coordinates...
   entity.position.x = x
   entity.position.y = y
@@ -93,7 +93,7 @@ action move(entity: +Position, distance: Real, direction: Vector3) {
 struct Shape { width: Real, height: Real, depth: Real, model: Model }
 type +Shape = %{ shape: Shape }
 
-action render(entity: +Position & +Shape) {
+act render(entity: +Position & +Shape) {
   // use entity.position and entity.shape to render the entity...
 }
 
@@ -110,7 +110,7 @@ The remarkable benefit of this approach: any struct or shape that contains a pro
 **Specialization** is another great aspect of this programming model. Imagine we want to implement an additional `render` function for those entities that not only have `Position` and `Shape`, but also `Color`. We can simply write a second function:
 
 ```
-action render(entity: +Position & +Shape & +Color) {
+act render(entity: +Position & +Shape & +Color) {
   // use position, shape AND color to render the entity...
 }
 ```
@@ -137,7 +137,7 @@ The ability to dispatch on property types effectively turns a struct type into a
    
    struct Coffin { nail: Nail }
    
-   action main() {
+   act main() {
      let fancy = FancyNail()
      let bloody = BloodyNail()
      let coffinFancy = Coffin(fancy)
@@ -164,10 +164,10 @@ struct Hero {
 type +Position = %{ position: Position }
 type +Position3D = %{ position: Position3D }
 
-action move(entity: +Position) { ... }
-action move(entity: +Position3D) { ... }
+act move(entity: +Position) { ... }
+act move(entity: +Position3D) { ... }
 
-action test() {
+act test() {
   let hero = Hero(Health(), Position3D(0, 0, 0))
   
   // Dispatches to the second move function, since position is an open property.

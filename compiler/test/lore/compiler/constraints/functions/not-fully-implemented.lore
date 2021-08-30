@@ -8,9 +8,9 @@ struct BI extends B
  * abstract functions which are specialized with one concrete type but never fully aren't magically valid.
  * This example is also mentioned in the spec.
  */
-action f1(a: A, b: B)
-action f1(a: AI, b: B)
-action f1(a: A, b: BI)
+act f1(a: A, b: B)
+act f1(a: AI, b: B)
+act f1(a: A, b: BI)
 
 func f2(value: A | B): String
 func f2(value: AI): String = ''

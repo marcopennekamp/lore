@@ -10,7 +10,7 @@ struct Shardbearer extends Hero {
 
 func name(shardbearer: Shardbearer): String = shardbearer.name
 
-action enterCombat(shardbearer: Shardbearer) {
+act enterCombat(shardbearer: Shardbearer) {
   buff(shardbearer, createArmored(15, 3))
 }
 
@@ -31,7 +31,7 @@ struct Radiant extends Hero {
 
 func name(radiant: Radiant): String = radiant.name
 
-action enterCombat(radiant: Radiant) {
+act enterCombat(radiant: Radiant) {
   buff(radiant, createInfusion(radiant.infusion))
   buff(radiant, createArmored(3, 5))
 }

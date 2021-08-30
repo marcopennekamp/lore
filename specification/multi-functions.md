@@ -10,7 +10,7 @@ A **multi-function** is a set of functions bearing the same name, embedded in a 
 
 A **function** in Lore has a full name, a list of parameters, an input type, a return type (also called output type), and potentially an expression body. The full name might include the module or package name in a future version of Lore. The input type is defined as the tuple type of all parameter types in order of their declaration. The type of the result of the expression body, as well as the types of all values returned using `return`, must be subtypes of the function's return type. If the body expression is omitted, a function is considered **abstract** and may not be called at run-time. A function that is not abstract is also called *concrete*.
 
-An **action** is a function whose return type is always `Unit`. If concrete, an action must define a block as an expression body, rather than any kind of expression.
+An **action** is a function whose return type is `Unit`. Unless abstract, an action must have a block as its body, rather than any kind of expression. Conceptually, an action achieves results via side effects rather than a returned value.
 
 A **multi-function** is a set of functions with the same full name. Each multi-function exhibits its own specificity hierarchy, which is used to choose the correct function to invoke during multiple dispatch.
 
@@ -20,7 +20,7 @@ A **multi-function** is a set of functions with the same full name. Each multi-f
 func foo(number: Int): Real = number * 1.5
 func foo(string: String): String = '$string ???'
 
-action bar(value: Real) {
+act bar(value: Real) {
   println(value)
 }
 ```
@@ -279,20 +279,20 @@ In Lore, you can define a type hierarchy with behavior such as presented in this
 trait Target
 
 trait Vehicle
-action move(vehicle: Vehicle, target: Target)
+act move(vehicle: Vehicle, target: Target)
 
 trait Car extends Vehicle
-action move(car: Car, target: Target)
+act move(car: Car, target: Target)
 
 trait Train extends Vehicle
-action move(train: Train, target: Target)
+act move(train: Train, target: Target)
 ```
 
 This is a fairly standard example of single dispatch. Note that all actions so far are declared abstract. We can **create a struct** that extends the `Car` trait:
 
 ```
 struct SmartCar extends Car
-action move(car: SmartCar, target: Target) {
+act move(car: SmartCar, target: Target) {
   // ...
 }
 ```
@@ -302,11 +302,11 @@ Now, data (types) and behavior are **completely orthogonal**. You can define the
 So let's assume that we have two kinds of targets: `GpsCoordinates` and `Directions`. Our smart car can deal with both (either taking GPS coordinates or directions through verbal input). Instead of pattern-matching the `target` argument (as one might approach it in a language like Scala, since we cannot go beyond single dispatch), we can simply **specialize** the `move` function:
 
 ```
-action move(car: SmartCar, target: Target) { /* fallback behavior */ }
-action move(car: SmartCar, target: GpsCoordinates) {
+act move(car: SmartCar, target: Target) { /* fallback behavior */ }
+act move(car: SmartCar, target: GpsCoordinates) {
   // ... use GPS and self-driving capability to move to the coordinates.
 }
-action move(car: SmartCar, target: Directions) {
+act move(car: SmartCar, target: Directions) {
   // ... understand and execute the driver's verbal directions.
 }
 ```
@@ -316,7 +316,7 @@ Even though, when `Vehicle` and Co. were declared, it might never have been anti
 Of course, we don't have to dispatch on named types only. Maybe our car has crashed and instead of moving needs to start some sort of recovery procedure:
 
 ```
-action move(car: Car & Crashed, target: Target) {
+act move(car: Car & Crashed, target: Target) {
   // ... initiate recovery procedures.
 }
 ```

@@ -60,7 +60,7 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def action[_: P]: P[DeclNode.FunctionNode] = {
-    P(Index ~ "action" ~~ Space.WS1 ~/ name ~ parameters ~ functionTypeVariables ~ block.? ~ Index).map(withPosition(DeclNode.FunctionNode.fromAction _))
+    P(Index ~ "act" ~~ Space.WS1 ~/ name ~ parameters ~ functionTypeVariables ~ block.? ~ Index).map(withPosition(DeclNode.FunctionNode.fromAction _))
   }
 
   private def parameters[_: P]: P[Vector[DeclNode.ParameterNode]] = {

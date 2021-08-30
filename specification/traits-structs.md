@@ -245,7 +245,7 @@ func distance(pos1: Position, pos2: Position): Real = {
   sqrt(dx * dx + dy * dy + dz * dz)
 }
 
-action test() {
+act test() {
   let box = Box(0, 10, 0, 10, 0, 10)
   let point = Point(3, 7, 9)
   println(distance(box, point)) // --> 3.4641...
@@ -308,8 +308,8 @@ trait Dead
 The core usefulness of a label type comes from the idea that we can **specialize functions** when the label is present:
 
 ```
-action hit(monster: Monster) { ... }
-action hit(monster: Monster & Dead) {
+act hit(monster: Monster) { ... }
+act hit(monster: Monster & Dead) {
   // Do something else if the monster is dead.
 }
 ```
@@ -342,7 +342,7 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
   trait Position
   property x: Real of Position
   
-  action test(pos: Position) {
+  act test(pos: Position) {
     println(pos.x)
   }
   ```
@@ -392,7 +392,7 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
       x: Real
     }
     
-    action test(pos: Position) {
+    act test(pos: Position) {
       println(pos.x)
     }
     

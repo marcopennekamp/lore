@@ -8,9 +8,9 @@ func toString(position: Position): String = '{ x = ${position.x}, y = ${position
 trait Movable
 
 func position(movable: Movable): Position
-action setPosition(movable: Movable, position: Position)
+act setPosition(movable: Movable, position: Position)
 
-action move(movable: Movable, x: Real, y: Real, z: Real) {
+act move(movable: Movable, x: Real, y: Real, z: Real) {
   let old = position(movable)
   let position = Position(old.x + x, old.y + y, old.z + z)
   setPosition(movable, position)
@@ -23,7 +23,7 @@ struct Zombie extends Movable {
 }
 
 func position(zombie: Zombie): Position = zombie.position
-action setPosition(zombie: Zombie, position: Position) {
+act setPosition(zombie: Zombie, position: Position) {
   zombie.position = position
 }
 

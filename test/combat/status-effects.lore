@@ -8,12 +8,12 @@ func affectStat(effect: StatusEffect, statLabel: StatLabel, value: A): A where A
 /**
  * Called during the end-of-turn status effect update.
  */
-action onUpdate(effect: StatusEffect) { }
+act onUpdate(effect: StatusEffect) { }
 
 /**
  * Called whenever the entity gets hit by an attack (after a potential dodge failed).
  */
-action onHit(effect: StatusEffect) { }
+act onHit(effect: StatusEffect) { }
 
 /**
  * Whether the given status effect is active.
@@ -27,7 +27,7 @@ struct DurationLimit {
 
 type +DurationLimit = StatusEffect & %{ limit: DurationLimit }
 
-action onUpdate(effect: +DurationLimit) {
+act onUpdate(effect: +DurationLimit) {
   if (isActive(effect)) {
     effect.limit.duration -= 1
   }
@@ -42,7 +42,7 @@ struct HitLimit {
 
 type +HitLimit = StatusEffect & %{ limit: HitLimit }
 
-action onHit(effect: +HitLimit) {
+act onHit(effect: +HitLimit) {
   if (isActive(effect)) {
     effect.limit.hits -= 1
   }
@@ -84,19 +84,19 @@ struct StatusEffects {
 
 type +StatusEffects = %{ statusEffects: StatusEffects }
 
-action buff(entity: +StatusEffects, effect: StatusEffect) {
+act buff(entity: +StatusEffects, effect: StatusEffect) {
   entity.statusEffects.effects = entity.statusEffects.effects :+ effect
 }
 
 /**
  * Updates status effects, removing those from the list that have expired.
  */
-action updateStatusEffects(entity: +StatusEffects) {
+act updateStatusEffects(entity: +StatusEffects) {
   let effects = entity.statusEffects.effects
   foreach(effects, onUpdate)
   entity.statusEffects.effects = filter(effects, isActive)
 }
 
-action onHitStatusEffects(entity: +StatusEffects) {
+act onHitStatusEffects(entity: +StatusEffects) {
   for (effect <- entity.statusEffects.effects) onHit(effect)
 }

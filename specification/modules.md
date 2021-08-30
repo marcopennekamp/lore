@@ -123,7 +123,7 @@ module Foo {
     result
   }
   
-  -action increment(foo: Implementation) {
+  -act increment(foo: Implementation) {
     foo.counter += 1
   }
 }
