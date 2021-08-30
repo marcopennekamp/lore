@@ -2,7 +2,7 @@ package lore.lsp.index
 
 import lore.compiler.core.Fragment
 import lore.compiler.feedback.MemoReporter
-import lore.compiler.phases.parsing.ParsingPhase
+import lore.compiler.parsing.ParsingPhase
 import lore.compiler.syntax.{DeclNode, TypeDeclNode}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 

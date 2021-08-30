@@ -2,7 +2,7 @@ package lore.lsp.capabilities
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
-import lore.compiler.phases.parsing.ParsingPhase
+import lore.compiler.parsing.ParsingPhase
 import lore.compiler.syntax.Node.Index
 import lore.compiler.syntax.visitor.CombiningNodeVisitor
 import lore.compiler.syntax._

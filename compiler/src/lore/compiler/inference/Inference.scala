@@ -60,7 +60,7 @@ object Inference {
   }
 
   /**
-    * This class is intended as an API for other components such as the [[lore.compiler.phases.transformation.TypeRehydrationVisitor]].
+    * This class is intended as an API for other components such as the [[lore.compiler.transformation.TypeRehydrationVisitor]].
     */
   implicit class AssignmentsExtension(assignments: Assignments) {
     def instantiate(tpe: Type): Type = Inference.instantiateCandidateType(assignments, tpe)

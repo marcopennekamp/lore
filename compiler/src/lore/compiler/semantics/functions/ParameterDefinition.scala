@@ -1,7 +1,7 @@
 package lore.compiler.semantics.functions
 
 import lore.compiler.core.{Position, Positioned}
-import lore.compiler.phases.transpilation.RuntimeNames
+import lore.compiler.transpilation.RuntimeNames
 import lore.compiler.semantics.scopes.Variable
 import lore.compiler.target.Target
 import lore.compiler.types.Type

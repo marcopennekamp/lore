@@ -1,7 +1,7 @@
 package lore.lsp.capabilities
 
 import lore.compiler.feedback.Reporter
-import lore.compiler.phases.parsing.ParsingPhase
+import lore.compiler.parsing.ParsingPhase
 import lore.compiler.syntax.visitor.NodeSeeker
 import lore.compiler.syntax.{DeclNode, ExprNode, Node, TypeExprNode}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
