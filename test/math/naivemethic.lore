@@ -1,28 +1,35 @@
-func add(a: Int, b: Int): Int = {
+func add(a: Int, b: Int): Int = do
   let mut result = a
   let mut remaining = b
-  while (remaining > 0) {
+
+  while remaining > 0
     result += 1
     remaining -= 1
-  }
-  while (remaining < 0) {
+  end
+
+  while remaining < 0
     result -= 1
     remaining += 1
-  }
-  result
-}
+  end
 
-func mul(a: Int, b: Int): Int = {
+  result
+end
+
+func mul(a: Int, b: Int): Int = do
   let mut remaining = a
   let isNegative = remaining < 0
-  if (isNegative) remaining = -remaining
+
+  if isNegative
+    remaining = -remaining
+  end
+
   let mut result = 0
-  while (remaining > 0) {
+  while remaining > 0
     result = add(result, b)
     remaining = add(remaining, -1)
-  }
-  if (isNegative) result = -result
-  result
-}
+  end
+
+  if isNegative then -result else result
+end
 
 func test(): Int = mul(12, 5)

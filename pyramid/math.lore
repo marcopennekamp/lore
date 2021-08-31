@@ -4,7 +4,7 @@ func ceil(x: Real): Int = dynamic[Int]('Lore.math.ceil', x)
 
 func remainder(a: Int, b: Int): Int = dynamic[Int]('Lore.math.remainder', a, b)
 
-func min(x: Real, y: Real): Real = if (x < y) x else y
-func min(x: Int, y: Int): Int = if (x < y) x else y
-func max(x: Real, y: Real): Real = if (x > y) x else y
-func max(x: Int, y: Int): Int = if (x > y) x else y
+func min(x: Real, y: Real): Real = if x < y then x else y
+func min(x: Int, y: Int): Int = if x < y then x else y
+func max(x: Real, y: Real): Real = if x > y then x else y
+func max(x: Int, y: Int): Int = if x > y then x else y

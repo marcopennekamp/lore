@@ -20,8 +20,7 @@ class FragmentParser(implicit fragment: Fragment) {
   val typeParser = new TypeParser(nameParser)
   import typeParser.typeExpression
 
-  val expressionParser = new ExpressionParser(nameParser, typeParser)
-  import expressionParser.{block, expression}
+  val expressionParser = new ExpressionParser(nameParser)
 
   case class ParsingError(fastparseError: String, override val position: Position) extends Feedback.Error(position) {
     override def message: String = s"The file had parsing errors: $fastparseError"
@@ -55,17 +54,18 @@ class FragmentParser(implicit fragment: Fragment) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def function[_: P]: P[DeclNode.FunctionNode] = {
     P(
-      Index ~ "func" ~~ Space.WS1 ~/ name ~ parameters ~ typeParser.typing ~ functionTypeVariables ~ ("=" ~ expression).? ~ Index
+      Index ~ "func" ~~ Space.WS1 ~/ name ~ parameters ~ typeParser.typing ~ functionTypeVariables ~ ("=" ~ expressionParser.expression).? ~ Index
     ).map(withPosition(DeclNode.FunctionNode.fromFunction _))
   }
 
   private def action[_: P]: P[DeclNode.FunctionNode] = {
-    P(Index ~ "act" ~~ Space.WS1 ~/ name ~ parameters ~ functionTypeVariables ~ block.? ~ Index).map(withPosition(DeclNode.FunctionNode.fromAction _))
+    P(Index ~ "act" ~~ Space.WS1 ~/ name ~ parameters ~ functionTypeVariables ~~ expressionParser.implicitBlock.? ~ Index)
+      .map(withPosition(DeclNode.FunctionNode.fromAction _))
   }
 
   private def parameters[_: P]: P[Vector[DeclNode.ParameterNode]] = {
     def named = P(name ~ typeParser.typing).map { case (name, tpe) => (Option(name), tpe) }
-    def unnamed = P(typeParser.typeExpression).map(tpe => (Option.empty, tpe))
+    def unnamed = P(typeExpression).map(tpe => (Option.empty, tpe))
     def parameter = P(Index ~ (named | unnamed) ~ Index)
       .map { case (startIndex, (name, tpe), endIndex) => (startIndex, name, tpe, endIndex) }
       .map(withPosition(DeclNode.ParameterNode))

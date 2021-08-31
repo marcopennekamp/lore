@@ -1,5 +1,5 @@
-act println(value: Any) {
+act println(value: Any)
   dynamic[()]('Lore.io.println', toString(value))
-}
+end
 
 func now(): Int = dynamic[Int]('performance.now')

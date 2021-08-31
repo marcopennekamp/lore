@@ -41,38 +41,38 @@ func init(list: [A]): [A] where A = slice(list, 0, length(list) - 1)
   */
 func tail(list: [A]): [A] where A = slice(list, 1)
 
-func map(list: [A], f: B => C): [C] where A, B >: A, C = for (a <- list) f(a)
+func map(list: [A], f: B => C): [C] where A, B >: A, C = for a <- list yield f(a)
 func flatMap(list: [A], f: B => [C]): [C] where A, B >: A, C = flatten(map(list, f))
 
-func foreach(list: [A], f: B => Unit): Unit where A, B >: A = for (a <- list) f(a)
+func foreach(list: [A], f: B => Unit): Unit where A, B >: A = for a <- list yield f(a)
 
-func filter(list: [A], predicate: B => Boolean): [A] where A, B >: A = {
+func filter(list: [A], predicate: B => Boolean): [A] where A, B >: A = do
   let mut result: [A] = []
-  for (a <- list) {
-    if (predicate(a)) {
+  for a <- list
+    if predicate(a)
       result = result :+ a
-    }
-  }
+    end
+  end
   result
-}
+end
 
-func fold(list: [A], initial: I, f: (R, B) => R): R where A, B >: A, I, R >: I = {
+func fold(list: [A], initial: I, f: (R, B) => R): R where A, B >: A, I, R >: I = do
   let mut result: R = initial
-  for (element <- list) {
+  for element <- list
     result = f(result, element)
-  }
+  end
   result
-}
+end
 
-func concat(as: [A], bs: [B]): [A | B] where A, B = {
+func concat(as: [A], bs: [B]): [A | B] where A, B = do
   let mut result: [A | B] = as
-  for (b <- bs) {
+  for b <- bs
     result = result :+ b
-  }
+  end
   result
-}
+end
 
-func flatten(lists: [[A]]): [A] where A = {
+func flatten(lists: [[A]]): [A] where A = do
   // TODO: Typing `initial` as `[A]` explicitly is currently required for this to compile. If we don't, the type of the
   //       third argument is narrowed down to ([Nothing], [A]) => [A] in both bounds. Type inference then tries to
   //       resolve the following judgment: `([Nothing], [A]) => [A] fits (iv15, iv16) => iv15` with
@@ -84,45 +84,43 @@ func flatten(lists: [[A]]): [A] where A = {
   //       result type [A] is taken into account such that fold's C is immediately set (upper bounded) to [A].
   let initial: [A] = []
   fold(lists, initial, concat)
-}
+end
 
 /**
   * Creates pairs with elements from the given list of <i>distinct</i> elements. The function assumes that pairs are
   * symmetric: if the list contains two elements A and B, only one pair (A, B) or (B, A) will be included in the
   * result.
   */
-func symmetricPairs(list: [A]): [(A, A)] where A = {
+func symmetricPairs(list: [A]): [(A, A)] where A = do
   let mut result: [(A, A)] = []
-  let length = length(list)
+  let len = length(list)
   let mut i = 0
-  while (i < length) {
+  while i < len
     let mut j = i
-    while (j < length) {
+    while j < len
       result = result :+ (get(list, i), get(list, j))
       j += 1
-    }
+    end
     i += 1
-  }
+  end
   result
-}
+end
 
 /**
  * Converts a Lore list to a string.
  */
-func toString(list: [A]): String where A = {
-  let strings = for (a <- list) {
-    toString(a)
-  }
+func toString(list: [A]): String where A = do
+  let strings = map(list, toString)
   let joined = stringJoin(strings, ', ')
   '[$joined]'
-}
+end
 
-func repeat(times: Int, element: A): [A] where A = {
+func repeat(times: Int, element: A): [A] where A = do
   let mut result: [A] = []
   let mut i = 0
-  while (i < times) {
+  while i < times
     result = result :+ element
     i += 1
-  }
+  end
   result
-}
+end

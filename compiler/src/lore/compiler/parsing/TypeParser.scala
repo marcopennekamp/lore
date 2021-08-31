@@ -1,14 +1,21 @@
 package lore.compiler.parsing
 
-import fastparse.ScalaWhitespace._
 import fastparse._
 import lore.compiler.core.{Fragment, Position}
 import lore.compiler.parsing.LexicalParser.{identifier, typeIdentifier}
 import lore.compiler.syntax._
 
-class TypeParser(nameParser: NameParser)(implicit fragment: Fragment) {
+/**
+  * @param whitespaceParser This can be manually specified to disable newlines in whitespace.
+  */
+class TypeParser(
+  nameParser: NameParser,
+  whitespaceParser: P[Any] => P[Unit] = ScalaWhitespace.whitespace,
+)(implicit fragment: Fragment) {
   import Node._
   import nameParser.name
+
+  private implicit val whitespace: P[Any] => P[Unit] = whitespaceParser
 
   def typing[_: P]: P[TypeExprNode] = P(":" ~ typeExpression)
 

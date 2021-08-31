@@ -36,7 +36,7 @@ object LexicalParser {
     * the ambiguity in all instances. These words are: act, extends, func, mut, struct, trait, and type.
     */
   val keywords: Vector[String] = Vector(
-    "dynamic", "else", "false", "fixed", "for", "if", "let", "return", "true", "while",
+    "do", "dynamic", "else", "end", "false", "fixed", "for", "if", "let", "return", "then", "true", "while", "yield",
   )
 
   def identifier[_: P]: P[String] = P((letter | "_") ~ (letter | digit | "_").rep).!.filter(!keywords.contains(_))

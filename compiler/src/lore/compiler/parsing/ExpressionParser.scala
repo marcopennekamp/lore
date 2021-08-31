@@ -1,15 +1,26 @@
 package lore.compiler.parsing
 
-import fastparse.ScalaWhitespace._
 import fastparse._
 import lore.compiler.core.{Fragment, Position}
 import lore.compiler.parsing.LexicalParser.{hexDigit, identifier}
 import lore.compiler.syntax.ExprNode.StringLiteralNode
 import lore.compiler.syntax._
 
-class ExpressionParser(nameParser: NameParser, typeParser: TypeParser)(implicit fragment: Fragment) {
+/**
+  * @param whitespaceParser This can be manually specified to disable newlines in whitespace.
+  */
+class ExpressionParser(
+  nameParser: NameParser,
+  whitespaceParser: P[Any] => P[Unit] = ScalaWhitespace.whitespace,
+)(implicit fragment: Fragment) {
   import Node._
   import nameParser._
+
+  private val typeParser = new TypeParser(nameParser, whitespaceParser)
+  private lazy val singleLineParser = new ExpressionParser(nameParser, Space.WS(_))
+  private lazy val multiLineParser = new ExpressionParser(nameParser, ScalaWhitespace.whitespace)
+
+  private implicit val whitespace: P[Any] => P[Unit] = whitespaceParser
 
   // Parse a handful of top-level expressions before jumping into the deep end.
   def topLevelExpression[_: P]: P[TopLevelExprNode] = {
@@ -53,20 +64,49 @@ class ExpressionParser(nameParser: NameParser, typeParser: TypeParser)(implicit 
   }
 
   def expression[_: P]: P[ExprNode] = P(ifElse | whileLoop | forLoop | anonymousFunction | operatorExpression)
+  def singleLineExpression[_: P]: P[ExprNode] = singleLineParser.expression
 
   private def ifElse[_: P]: P[ExprNode] = {
-    P(Index ~ "if" ~ "(" ~ expression ~ ")" ~ topLevelExpression ~ ("else" ~ topLevelExpression).? ~ Index).map(withPosition(ExprNode.IfElseNode))
+    def elsePart = P("else" ~~ Space.WS ~~ (implicitBlock | topLevelExpression))
+    def thenStyle = P(expression ~ "then" ~ topLevelExpression ~ elsePart.?)
+
+    // `empty` is needed so that we don't require a second `Space.terminators` if the block is empty.
+    def endOrElse = P("end".!.map(_ => None) | elsePart.map(Some(_)))
+    def empty = P(Index ~~ endOrElse).map { case (endIndex, onFalse) => (Vector.empty, endIndex, onFalse) }
+    def nonEmpty = P(blockExpressions ~~ Space.terminators ~~ Index ~~ endOrElse)
+    def emptyOrBlock = P(Index ~~ (empty | nonEmpty)).map {
+      case (startIndex, (blockStatements, endIndex, onFalse)) =>
+        val block = withPosition(ExprNode.BlockNode)(startIndex, blockStatements, endIndex)
+        (block, onFalse)
+    }
+    def blockStyle = P(singleLineExpression ~~ Space.terminators ~~ emptyOrBlock).map {
+      case (condition, (onTrue, onFalse)) => (condition, onTrue, onFalse)
+    }
+
+    P(Index ~~ "if" ~~ Space.WS1 ~~ (thenStyle | blockStyle) ~~ Index)
+      .map { case (startIndex, (condition, onTrue, onFalse), endIndex) => (startIndex, condition, onTrue, onFalse, endIndex) }
+      .map(withPosition(ExprNode.IfElseNode))
   }
 
   private def whileLoop[_: P]: P[ExprNode.WhileNode] = {
-    P(Index ~ "while" ~ "(" ~ expression ~ ")" ~ topLevelExpression ~ Index).map(withPosition(ExprNode.WhileNode))
+    def yieldStyle = P(expression ~ "yield" ~ topLevelExpression)
+    def blockStyle = P(singleLineExpression ~~ implicitBlock)
+    P(Index ~~ "while" ~~ Space.WS1 ~~ (yieldStyle | blockStyle) ~~ Index)
+      .map { case (startIndex, (condition, body), endIndex) => (startIndex, condition, body, endIndex) }
+      .map(withPosition(ExprNode.WhileNode))
   }
 
   private def forLoop[_: P]: P[ExprNode.ForNode] = {
-    def extractor = P(Index ~ name ~ "<-" ~ expression ~ Index).map(withPosition(ExprNode.ExtractorNode))
-    P(Index ~ "for" ~ "(" ~ extractor.rep(1, sep = ",") ~ ")" ~ topLevelExpression ~ Index)
-      .map { case (startIndex, extractors, expr, endIndex) => (startIndex, extractors.toVector, expr, endIndex) }
+    def yieldStyle = P(extractors ~ "yield" ~ topLevelExpression)
+    def blockStyle = P(singleLineParser.extractors ~~ implicitBlock)
+    P(Index ~~ "for" ~~ Space.WS1 ~~ (yieldStyle | blockStyle) ~~ Index)
+      .map { case (startIndex, (extractors, body), endIndex) => (startIndex, extractors, body, endIndex) }
       .map(withPosition(ExprNode.ForNode))
+  }
+
+  private def extractors[_: P]: P[Vector[ExprNode.ExtractorNode]] = {
+    def extractor = P(Index ~~ name ~ "<-" ~ expression ~~ Index).map(withPosition(ExprNode.ExtractorNode))
+    P(extractor.rep(1, sep = ",")).map(_.toVector)
   }
 
   private def anonymousFunction[_: P]: P[ExprNode.AnonymousFunctionNode] = {
@@ -212,8 +252,15 @@ class ExpressionParser(nameParser: NameParser, typeParser: TypeParser)(implicit 
   private def variable[_: P]: P[ExprNode.VariableNode] = P(Index ~ identifier ~ Index).map(withPosition(ExprNode.VariableNode))
 
   def block[_: P]: P[ExprNode.BlockNode] = {
-    def expressions = P(topLevelExpression.repX(0, Space.terminators).map(_.toVector))
-    P(Index ~ "{" ~ expressions ~ "}" ~ Index).map(withPosition(ExprNode.BlockNode))
+    P(Index ~ "do" ~~ (Space.WS1 | Space.terminator) ~ blockExpressions ~ "end" ~ Index).map(withPosition(ExprNode.BlockNode))
+  }
+
+  def implicitBlock[_: P]: P[ExprNode.BlockNode] = {
+    P(Index ~~ Space.terminators ~~ blockExpressions ~ "end" ~~ Index).map(withPosition(ExprNode.BlockNode))
+  }
+
+  def blockExpressions[_: P]: P[Vector[TopLevelExprNode]] = {
+    P(topLevelExpression.repX(0, Space.terminators).map(_.toVector))
   }
 
   private def list[_: P]: P[ExprNode] = {
@@ -240,9 +287,11 @@ class ExpressionParser(nameParser: NameParser, typeParser: TypeParser)(implicit 
   /**
     * Parses both enclosed expressions and tuples using the same parser. If the number of expressions is exactly one,
     * it's simply an enclosed expression. Otherwise, it is a tuple.
+    *
+    * Note that the inner expressions are always parsed with full whitespace, including newlines.
     */
   private def enclosed[_: P]: P[ExprNode] = {
-    P(Index ~ "(" ~ expression.rep(sep = ",") ~ ")" ~ Index).map {
+    P(Index ~ "(" ~ multiLineParser.expression.rep(sep = ",") ~ ")" ~ Index).map {
       case (_, Seq(expr), _) => expr
       case (startIndex, elements, endIndex) => ExprNode.TupleNode(elements.toVector, Position(fragment, startIndex, endIndex))
     }

@@ -4,22 +4,22 @@ struct B extends A {
 }
 
 // Illegal: `shape.prop` has the type A, not B.
-func test(): Unit = {
+func test(): Unit = do
   let shape: %{ prop: A } = %{ prop: B('') }
   let result: B = shape.prop
-}
+end
 
 func pi(): Real = 3.14
 
 // Illegal: 5.5 is a Real, not an Int.
-func test2(): Unit = {
+act test2()
   let number: Int = 5.5
-}
+end
 
 // Illegal: `test()` evaluates to Unit, not a Real.
-func test3(): Real = {
+func test3(): Real = do
   15 + test()
-}
+end
 
 // TODO: This error is reported as "This expression has the illegal type String. We expected the following type (or a
 //       supertype thereof): Real." The error is reported the wrong way, as we expect Real to be a subtype of String.
@@ -29,16 +29,16 @@ func test3(): Real = {
 //       The universal solution is likely adding custom errors to typing judgments in general. This should allow us to
 //       further improve error reporting.
 // Illegal: `b.name` must be a String.
-/* func test4(): A = {
+/* func test4(): A = do
   let b = B('')
   b.name = pi()
   b
-} */
+end */
 
 func increment(number: Int): Real = number + 1.5
 
-func test5(): %{ number: Int } = {
+func test5(): %{ number: Int } = do
   // Illegal: `increment` returns a Real, but Int is expected.
   let abc: %{ number: Int } = %{ number: increment(2) }
   abc
-}
+end

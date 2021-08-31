@@ -9,10 +9,11 @@
   - ~~Add alternative struct syntax `struct Circle(x: Real, y: Real, radius: Real) extends Shape` that doesn't use a block.~~
   - ~~Allow omitting parameter names in function declarations if the parameter isn't used in a function's body.~~
   - Change block syntax from curly braces to `do...end`.
-    - Allow omitting parentheses in all control structures.
-    - Change `if` syntax to `if cond then A else B`. `then` may be omitted if A is a block.
-    - Change `for` syntax to `for extractors yield E`. `yield` may be omitted if A is a block. 
-    - Start treating newlines in specific contexts (such as after `if condition\n` or `struct X extends A\n`) as `do` portions of a `do...end` block.
+    - ~~Allow omitting parentheses in all control structures.~~
+    - ~~Change `if` syntax to `if cond then A else B`. `then` may be omitted if A is an implicit block.~~
+    - ~~Change `for` syntax to `for extractors yield E`. `yield` may be omitted if A is an implicit block.~~
+    - ~~Change `while` syntax accordingly.~~
+    - Start treating newlines in specific contexts (such as ~~after `if condition\n`s~~ or `struct X extends A\n`) as `do` portions of a `do...end` block.
   - Apply snake_case across the board for variable and function names.
   - `@where` "annotation".
   - Pipe operator.

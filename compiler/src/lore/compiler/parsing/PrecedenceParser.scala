@@ -1,6 +1,5 @@
 package lore.compiler.parsing
 
-import fastparse.ScalaWhitespace._
 import fastparse._
 import lore.compiler.core.{CompilationException, Fragment, Position}
 import lore.compiler.syntax.Node
@@ -43,7 +42,7 @@ object PrecedenceParser {
     operator: => P[Unit],
     operand: => P[Operand],
     operatorMeta: Map[String, Operator[Operand]],
-  ): P[Operand] = P(operand ~ (operator.! ~ operand).rep).map { case (left, ops) =>
+  )(implicit whitespace: P[Any] => P[Unit]): P[Operand] = P(operand ~ (operator.! ~ operand).rep).map { case (left, ops) =>
     var operandStack = List[Operand](left)
     var operatorStack = List[Operator[Operand]]()
 
