@@ -1,6 +1,7 @@
 package lore.compiler.semantics.functions
 
 import lore.compiler.core.{Position, Positioned}
+import lore.compiler.semantics.functions.ParameterDefinition.NamedParameterDefinition
 import lore.compiler.types._
 
 import scala.util.hashing.MurmurHash3
@@ -11,6 +12,7 @@ case class FunctionSignature(
   outputType: Type,
   position: Position,
 ) extends Positioned {
+  val namedParameters: Vector[NamedParameterDefinition] = parameters.filter(_.name.isDefined).map(NamedParameterDefinition)
   val inputType: TupleType = TupleType(parameters.map(_.tpe))
   val isPolymorphic: Boolean = Type.isPolymorphic(inputType)
   val isMonomorphic: Boolean = !isPolymorphic

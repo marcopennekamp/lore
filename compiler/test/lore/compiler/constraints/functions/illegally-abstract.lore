@@ -4,22 +4,22 @@ trait Wood
 trait Augmentation
 struct Struct
 
-func f1(value: Any): Any
+func f1(Any): Any
 
-func f2(value: String): String
+func f2(String): String
 
-func f3(value: (String, Int)): Real
+func f3((String, Int)): Real
 
-func f4(value: Tree => Wood): Wood
+func f4(Tree => Wood): Wood
 
-func f5(value: [Tree]): [Wood]
+func f5([Tree]): [Wood]
 
-func f6(value: #[Wood -> Tree]): String
+func f6(#[Wood -> Tree]): String
 
-func f7(value: %{ label: String }): Tree
+func f7(%{ label: String }): Tree
 
-func f8(value: #designation123): Wood
+func f8(#designation123): Wood
 
-func f9(value: Struct): String
+func f9(Struct): String
 
-func f10(value: Struct & Augmentation): Any
+func f10(Struct & Augmentation): Any

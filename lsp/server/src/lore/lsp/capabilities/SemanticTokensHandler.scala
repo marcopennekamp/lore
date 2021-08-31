@@ -172,6 +172,7 @@ object SemanticTokensHandler {
     }
 
     private def singleHighlight(node: Node, tokenType: String): Vector[Highlight] = Vector(createHighlight(node, tokenType))
+    private def singleHighlight(node: Option[Node], tokenType: String): Vector[Highlight] = node.map(singleHighlight(_, tokenType)).getOrElse(Vector.empty)
 
     private def createHighlight(startPosition: lsp4j.Position, length: Int, tokenType: String): Highlight = {
       Highlight(startPosition, length, tokenType)

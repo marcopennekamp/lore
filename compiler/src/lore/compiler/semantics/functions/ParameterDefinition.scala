@@ -9,14 +9,27 @@ import lore.compiler.types.Type
 /**
   * A function parameter definition.
   *
-  * The position is restricted to the parameter's name for better error highlighting and index building.
+  * The position is restricted to the parameter's name for better error highlighting and index building, as long as the
+  * name exists.
   */
 case class ParameterDefinition(
-  name: String,
+  name: Option[String],
   tpe: Type,
   override val position: Position,
 ) extends Positioned {
-  override def toString = s"$name: $tpe"
-  def asVariable: Variable = Variable(name, tpe, isMutable = false)
-  lazy val asTargetParameter: Target.Parameter = RuntimeNames.localVariable(name).asParameter
+  override def toString: String = name match {
+    case Some(name) => s"$name: $tpe"
+    case None => tpe.toString
+  }
+}
+
+object ParameterDefinition {
+  /**
+    * A parameter definition that is definitely named.
+    */
+  case class NamedParameterDefinition(underlying: ParameterDefinition) {
+    val name: String = underlying.name.get
+    val tpe: Type = underlying.tpe
+    def asVariable: Variable = Variable(name, tpe, isMutable = false)
+  }
 }

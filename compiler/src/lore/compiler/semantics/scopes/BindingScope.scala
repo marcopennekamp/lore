@@ -18,9 +18,9 @@ trait BindingScope extends Scope[Binding] {
   * The root binding scope of a function, containing parameter bindings.
   */
 class FunctionBindingScope(val signature: FunctionSignature, parent: BindingScope) extends BasicScope[Binding](Some(parent)) with BindingScope {
-  // Register all parameters as immutable variables with the function scope. We bypass 'register' since this operation
-  // should not fail at this stage.
-  signature.parameters.map(_.asVariable).foreach(this.add)
+  // Register all named parameters as immutable variables with the function scope. We bypass 'register' since this
+  // operation should not fail at this stage.
+  signature.namedParameters.map(_.asVariable).foreach(this.add)
 }
 
 /**

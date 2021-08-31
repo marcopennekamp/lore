@@ -45,7 +45,7 @@ object StructPropertyDefinition {
   }
 
   case class Instance(definition: StructPropertyDefinition, tpe: Type) {
-    def asParameter: ParameterDefinition = ParameterDefinition(definition.name, tpe, definition.position)
+    def asParameter: ParameterDefinition = ParameterDefinition(Some(definition.name), tpe, definition.position)
     def asMember: Member = Member(definition.name, tpe, isAssignable = definition.isMutable, definition.isMutable)
   }
 }

@@ -13,7 +13,13 @@ import lore.compiler.transpilation.values.SymbolHistory
 
 object FunctionTranspiler {
 
-  def transpile(function: FunctionDefinition)(implicit compilerOptions: CompilerOptions, registry: Registry, runtimeTypeVariables: RuntimeTypeVariables, symbolHistory: SymbolHistory): Vector[TargetStatement] = {
+  def transpile(function: FunctionDefinition)(
+    implicit compilerOptions: CompilerOptions,
+    registry: Registry,
+    runtimeTypeVariables: RuntimeTypeVariables,
+    symbolHistory: SymbolHistory,
+    variableProvider: TemporaryVariableProvider,
+  ): Vector[TargetStatement] = {
     transpile(function, RuntimeNames.functionDefinition(function).name, shouldExport = false)
   }
 
@@ -26,14 +32,22 @@ object FunctionTranspiler {
     registry: Registry,
     runtimeTypeVariables: RuntimeTypeVariables,
     symbolHistory: SymbolHistory,
+    variableProvider: TemporaryVariableProvider,
   ): Vector[TargetStatement] = {
     if (function.isAbstract) {
       throw CompilationException(s"Cannot transpile abstract function $function.")
     }
 
+    // We have to give unnamed parameters temporary variable names to preserve the function's arity.
+    var transpiledParameters = function.signature.parameters.map { parameter =>
+      parameter.name match {
+        case Some(name) => RuntimeNames.localVariable(name).asParameter
+        case None => variableProvider.createVariable().asParameter
+      }
+    }
+
     // Parameters aren't necessarily only those declared for the function but also the local type variable
     // assignments in case of polymorphic functions.
-    var transpiledParameters = function.signature.parameters.map(_.asTargetParameter)
     if (function.isPolymorphic) {
       transpiledParameters = RuntimeNames.localTypeVariableAssignments.asParameter +: transpiledParameters
     }

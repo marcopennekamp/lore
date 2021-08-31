@@ -38,7 +38,7 @@ object MultiFunctionConstraints {
   }
 
   private def verifyUniqueParameterNames(signature: FunctionSignature)(implicit reporter: Reporter): Unit = {
-    signature.parameters.verifyUnique(_.name, parameter => DuplicateParameterName(signature, parameter.name))
+    signature.namedParameters.verifyUnique(_.name, parameter => DuplicateParameterName(signature, parameter.name))
   }
 
   /**

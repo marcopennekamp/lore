@@ -52,10 +52,12 @@ object DeclNode {
   }
 
   case class ParameterNode(
-    nameNode: NameNode,
+    nameNode: Option[NameNode],
     tpe: TypeExprNode,
     position: Position,
-  ) extends NamedNode
+  ) extends Node {
+    def name: Option[String] = nameNode.map(_.value)
+  }
 
   case class TypeVariableNode(
     nameNode: NameNode,

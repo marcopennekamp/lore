@@ -64,7 +64,11 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def parameters[_: P]: P[Vector[DeclNode.ParameterNode]] = {
-    def parameter = P(Index ~ name ~ typeParser.typing ~ Index).map(withPosition(DeclNode.ParameterNode))
+    def named = P(name ~ typeParser.typing).map { case (name, tpe) => (Option(name), tpe) }
+    def unnamed = P(typeParser.typeExpression).map(tpe => (Option.empty, tpe))
+    def parameter = P(Index ~ (named | unnamed) ~ Index)
+      .map { case (startIndex, (name, tpe), endIndex) => (startIndex, name, tpe, endIndex) }
+      .map(withPosition(DeclNode.ParameterNode))
     P("(" ~ parameter.rep(sep = ",") ~ ")").map(_.toVector)
   }
 
