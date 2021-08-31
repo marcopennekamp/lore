@@ -18,9 +18,9 @@ module Name
 
 func foo(): String = 'Foo'
 
-module Name2 {
+module Name2
   func foo(): Int = 17
-}
+end
 ```
 
 The module `Name2` is located inside the surrounding module `Name`. Without any `use` qualifiers, the functions can be accessed using `Name.foo` and `Name.Name2.foo`. Both `foo` multi-functions are completely distinct, as their full names are different. Hence we each have a multi-function that contains only one function instance.
@@ -88,9 +88,9 @@ module animals
 
 trait Animal
 
-module Animal {
+module Animal
   func breed(mother: Animal, father: Animal): Option[Animal] = None()
-}
+end
 ```
 
 
@@ -111,22 +111,24 @@ module my_project
 
 trait Foo
 
-module Foo {
-  -struct Implementation extends Foo { mut counter: Int }
+module Foo
+  -struct Implementation extends Foo
+    mut counter: Int
+  end
   
   func fresh(): Foo = Implementation(0)
   
   func getAndIncrement(Foo): Int
-  func getAndIncrement(foo: Implementation): Int = {
+  func getAndIncrement(foo: Implementation): Int = do
     let result = foo.counter
     increment(foo)
     result
-  }
+  end
   
-  -act increment(foo: Implementation) {
+  -act increment(foo: Implementation)
     foo.counter += 1
-  }
-}
+  end
+end
 ```
 
 

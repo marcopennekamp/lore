@@ -14,12 +14,12 @@ Lore is an expression-based language, which means that there are no statements, 
 
 ```
 // They are legal at the top level of blocks.
-{ let x = 0 }
+do let x = 0 end
 
 // They are legal as the body of conditionals and loops.
-if (y == 0) x = 0 else x = 5
-while (i < 10) i += 1
-for (entity <- entities) count += 1
+if y == 0 then x = 0 else x = 5
+while i < 10 yield i += 1
+for entity <- entities yield count += 1
 ```
 
 Top-level expressions are currently **variable declarations**, **assignments**, and **returns**.
@@ -28,7 +28,7 @@ Top-level expressions are currently **variable declarations**, **assignments**, 
 
 ### Variable Declarations and Expressions
 
-A **variable declaration** is a top-level expression that lets you define a new variable. The type of the variable will be inferred from the assignment, but you can specify the type manually. Values need to be explicitly assigned to declared variables, even if they are desired to be `0`, `''`, `[]`, etc. We believe in the value of explicitness.
+A **variable declaration** is a top-level expression that lets you define a new variable. The type of the variable will be inferred from the assignment, but you can specify the type manually. Values need to be explicitly assigned to declared variables, even if they are desired to be `0`, `''`, `[]`, etc. We believe in the value of explicitness when it comes to "default" values.
 
 Variables can be **immutable or mutable**. Only mutable variables can be changed after their initial declaration. We recommend to declare all variables as immutable unless mutability is specifically needed. This is also one reason why the mutability syntax is relatively verbose.
 
@@ -38,7 +38,9 @@ A **variable expression** is an expression that evaluates to the value of its na
 
 ```
 let x: T = v1      // immutable variable declaration
+let x = v1         // inferred immutable variable declaration
 let mut x: T = v1  // mutable variable declaration
+let mut x = v1     // inferred mutable variable declaration
 x				   // variable expression
 ```
 
@@ -51,9 +53,9 @@ An **assignment** lets you assign a new value to a mutable variable or property.
 ###### Syntax Example
 
 ```
-x = 5                        // variable assignment, only valid if x is mutable
-character.name = 'Weislaus'  // property assignment, name must be mutable
-character.position.x = x     // deep property assignment, only x must be mutable
+x = 5                        // variable assignment, only valid if `x` is mutable
+character.name = 'Weislaus'  // property assignment, `name` must be mutable
+character.position.x = x     // deep property assignment, only `x` must be mutable
 ```
 
 ##### Shorthands
@@ -78,11 +80,11 @@ The **return** top-level expression returns a value from a function. The syntax 
 **Early returns** are a useful way to achieve cleaner code:
 
 ```
-func foo(x: Int): String = {
-  if (bar(x)) return 'cool'
-  if (baz(x + 2)) return 'cruel'
+func foo(x: Int): String = do
+  if bar(x) then return 'cool'
+  if baz(x + 2) then return 'cruel'
   'ouch!'
-}
+end
 ```
 
 ##### Nesting Returns
@@ -90,9 +92,9 @@ func foo(x: Int): String = {
 Returns cannot be nested in top-level expressions that are not at the **top-level of a function**. For example, the following code is *illegal*:
 
 ```
-fu foo(): String = {
-  if ({ return false }) 'hello' else 'world'
-}
+func foo(): String = do
+  if (do return false end) then 'hello' else 'world'
+end
 ```
 
 Lore's semantics would not be well defined if we allowed such constellations.
@@ -104,12 +106,12 @@ Lore's semantics would not be well defined if we allowed such constellations.
 A **block** is a sequence of expressions, the last of which is what the block evaluates to. *Blocks are expressions*. You can write code like this:
 
 ```
-let result = {
+let result = do
   let a = 5
   let b = 10.0
   let c = getReason()
-  if (c == 'business') a * b else a / b
-}
+  if c == 'business' then a * b else a / b
+end
 ```
 
 Blocks also give you the luxury of **lexical scoping**, so make sure you declare variables exactly where you need them. In the example above, neither a, b, nor c are visible outside the block.
@@ -313,11 +315,11 @@ We suggest using a snake_case naming convention for symbols.
 ###### Example
 
 ```
-func process(query: Query): Result | #syntax_error = {
+func process(query: Query): Result | #syntax_error = do
   let parsed = parse(query)
-  if (isError(parsed)) #syntax_error
+  if isError(parsed) then #syntax_error
   else getResult(parsed)
-}
+end
 ```
 
 ##### Equality and Order
@@ -351,7 +353,7 @@ let a = construct(A, b)
 A **type alias** also defines a corresponding constructor function value:
 
 ```
-struct Box[+A] { value: A }
+struct Box[+A](value: A)
 type StringBox = Box[String]
 
 let box = StringBox('I am in a box.')
@@ -445,10 +447,22 @@ In the long term, we want to be able to use, for example, TypeScript declaration
 Lore will support a variety of **conditional expressions** (especially pattern matching, guards, and so on). For now, we will have to make do with If:
 
 ```
-if (cond) tle1 else tle2
+if cond then tle1 else tle2
+
+if cond
+  tles1
+end
+
+if cond
+  tles1
+else
+  tles2
+end
 ```
 
 Note that either top-level expression (TLE) (or even `cond`) may be a block. The else part is, of course, optional. The so-called **dangling else** is always parsed as belonging to the `if` closest to it.
+
+The if-expressions without a `then` require the top-level expression(s) to be placed on the next line. This also implicitly opens a block, which must be closed with an `end`, or an `else` on a new line. An `else` with an implicit block must also be closed with an `end`.
 
 
 
@@ -461,17 +475,25 @@ Note that either top-level expression (TLE) (or even `cond`) may be a block. The
 In Lore, a **while loop** repeats some piece of code as long as a given boolean expression is true:
 
 ```
-while (cond) tle
+while cond yield tle
+
+while cond
+  tles
+end
 ```
 
-We have decided to provide **no support for do-while loops**, because we feel that these kinds of loops are very rarely used, but add noise to the language in the form of an additional keyword being reserved (such as `do` or `repeat`). You should instead work with a function and a while or recursion. This will only become easier once we introduce anonymous functions.
+We have decided to provide **no support for do-while loops**, because we feel that these kinds of loops are very rarely used, but add noise to the language in the form of an additional keyword being reserved (such as `repeat`). You should instead work with a function and a while or recursion. This will only become easier once we introduce anonymous functions.
 
 ##### For Comprehension
 
 A **for comprehension** iterates over some kind of collection:
 
 ```
-for (e1 <- col1, e2 <- col2, ...) tle
+for e1 <- col1, e2 <- col2, ... yield tle
+
+for e1 <- col1, e2 <- col2
+  tles
+end
 ```
 
 In the syntax above, `col2` is fully iterated for each `e1` and so on, so supplying multiple extractors effectively turns the comprehension into **nested iteration**.
@@ -481,18 +503,10 @@ For now, we only define iteration for **lists and maps**. Ultimately, we want an
 As we don't support pattern matching yet, **map iteration** looks like this:
 
 ```
-for (kv <- m) {  // kv is a tuple
+for kv <- m              // kv is a tuple
   let key = first(kv)
   let value = second(kv)
-}
-```
-
-To iterate over a list of indices, you can use a **range** function. Conceptually, it creates a *lazily* evaluated list of indices. We might ultimately support ranges with prettier operators. (**Note:** This is not implemented yet.)
-
-```
-for (i <- range(0, 10)) { // 0 inclusive, 10 exclusive
-  println(i)
-}
+end
 ```
 
 ##### Loop Expressions
@@ -502,7 +516,7 @@ Loops are expressions, too. Similar to if-expressions and blocks, the loop body 
 Take the following **example:**
 
 ```
-let names = for (animal <- animals) animal.name
+let names = for animal <- animals yield animal.name
 ```
 
 The for comprehension **aggregates the names** of all animals in a list of type `[String]`. 
@@ -529,7 +543,7 @@ atoms (including function application)
 Note that we don't view assignments as operators. **Complex expressions** such as conditionals cannot stand as an operand; you will have to enclose them in parentheses to use them with addition, for example:
 
 ```
-5 + { 10 } + (if (a == b) 5 else 15)
+5 + (do 10 end) + (if a == b then 5 else 15)
 ```
 
 
@@ -554,12 +568,12 @@ Note that we don't view assignments as operators. **Complex expressions** such a
 - Add a match-like expression that executes the **first case where a boolean expression is true:**
 
   ```
-  ??? {
+  cond
     foo(x, y) => 'hello'
     bar(x, y) => 'world'
     baz(x, y) && baz(y, x) && baz(z, z) => 'hello darkness'
     _ => 'default'
-  }
+  end
   ```
 
 - **If-else:**

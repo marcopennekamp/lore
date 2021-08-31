@@ -64,20 +64,22 @@ This is a partly organized list of mostly loose ideas which may find their way i
 ### Implicit Parameters with Annotations
 
 ```
-struct Counter { mut value: Int }
+struct Counter
+  mut value: Int
+end
 
 <given counter: Counter>
 func more(): Unit = counter.value += 1
 // or
-@given(counter: Counter)
+@given counter: Counter
 func more(): Unit = counter.value += 1
 
 // The variable name can be omitted if the implicit parameter is simply passed on.
-@given(Counter)
-func evenMore(): Unit = {
+@given Counter
+func evenMore(): Unit = do
   more()
   more()
-}
+end
 ```
 
 Inspiration: Java annotations, Nim pragmas.

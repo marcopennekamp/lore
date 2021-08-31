@@ -8,20 +8,23 @@
   - ~~Change keywords: `function` --> `func`, `action` --> `act`.~~
   - ~~Add alternative struct syntax `struct Circle(x: Real, y: Real, radius: Real) extends Shape` that doesn't use a block.~~
   - ~~Allow omitting parameter names in function declarations if the parameter isn't used in a function's body.~~
-  - Apply snake_case across the board for variable and function names.
   - Change block syntax from curly braces to `do...end`.
     - Allow omitting parentheses in all control structures.
     - Change `if` syntax to `if cond then A else B`. `then` may be omitted if A is a block.
     - Change `for` syntax to `for extractors yield E`. `yield` may be omitted if A is a block. 
     - Start treating newlines in specific contexts (such as after `if condition\n` or `struct X extends A\n`) as `do` portions of a `do...end` block.
+  - Apply snake_case across the board for variable and function names.
   - `@where` "annotation".
-  - Pipe operator. 
+  - Pipe operator.
   - `cond` operator.
   - `domain` blocks.
   - Trailing commas.
   - Trailing lambdas.
+  - Implement `object` struct-like singletons.
+    - This would allow us to write `obj None extends Option[Nothing]` instead of `struct None() extends Option[Nothing]` AND it would remove the need to constantly instantiate Nones: `None` instead of `None()`.
+    - Alternative keywords: `instance`/`inst`, `singleton`/`sing`.
   - Possibly rename `to_string` to `stringify` or something similar to make it a single word.
-  - Unsupported for now: 
+  - Unsupported for now:
     - Implicit underscore sections (e.g. `map(things, _.name)`).
     - `@given` parameters.
 - Fix map types and values:
@@ -33,7 +36,7 @@
 - Implement global constants.
 - Implement a module system.
 - Implement pattern matching.
-- Implement ranges (see `for comprehensions` in the specification).
+- Implement some form of ranges for index iteration using `for`.
 - Rethink properties: I don't like how shape properties are orthogonal to multi-functions right now. To use a shape, one is forced to ultimately give a property to an implementing struct. It would be much superior if properties could be declared "virtually", allowing traits to implement properties via some sort of function (perhaps even with dispatch on the accessed type). This feature should also simultaneously solve the question of "virtual/computed properties" posed in the geometry.lore example.
   - This would effectively mean that property types are always changeable and would either bar these kinds of properties to be open or would mean that we'd have to (a) rebuild the type each time the struct is used in dispatch or (b) disable the dispatch cache for multi-functions with shape types. Disallowing "virtual" properties to be open seems like an acceptable compromise, as the other options are far too detrimental on performance.
 - A rudimentary form of tree shaking to avoid transpiling functions that aren't used by any other function. This unfortunately requires specifying an entry point. Maybe we could perform tree shaking if such entry points are specified at all.

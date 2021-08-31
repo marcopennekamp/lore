@@ -23,11 +23,11 @@ Shapes can be directly constructed as **values**. This comes in handy for ad-hoc
 ```
 type Options = %{ show_teeth: Boolean, volume: Real  }
 
-func bark(options: Options): String = { ... }
+func bark(options: Options): String = ...
 
-act test() {
+act test()
   bark(%{ show_teeth: true, volume: 80 })
-}
+end
 ```
 
 
@@ -61,9 +61,9 @@ func free(cage: %{ content: Animal }): Animal = cage.content
 fun free(cage: %{ content: Tiger }): Nothing = error('Are you insane?')
 
 struct Blackbox(content: Animal)
-struct Whitebox { 
+struct Whitebox
   open content: Animal
-}
+end
 
 free(%{ content: fish })   // --> returns the fish
 free(%{ content: tiger })  // --> throws the error
@@ -82,34 +82,34 @@ One way to build programs with a healthy level of abstraction is **component-bas
 We can support such **entity-component systems** natively (and especially with type safety) in Lore using structural typing. The following code implements the constellation of Hero, Position and Shape:
 
 ```
-struct Position { 
+struct Position
   mut x: Real, mut y: Real, mut z: Real 
-}
+end
 type +Position = %{ position: Position }
 
-act move(entity: +Position, distance: Real, direction: Vector3) {
+act move(entity: +Position, distance: Real, direction: Vector3)
   // calculate new x, y and z coordinates...
   entity.position.x = x
   entity.position.y = y
   entity.position.z = z
-}
+end
 
-struct Shape { 
+struct Shape
   width: Real, height: Real, depth: Real 
   model: Model 
-}
+end
 type +Shape = %{ shape: Shape }
 
-act render(entity: +Position & +Shape) {
+act render(entity: +Position & +Shape)
   // use entity.position and entity.shape to render the entity...
-}
+end
 
 // The `extends` is not strictly necessary, but provides additional compile-time safety should either
 // +Position/+Shape or the corresponding properties change unexpectedly.
-struct Hero extends +Position, +Shape {
+struct Hero extends +Position, +Shape
   position: Position  // Note that position does not need to be open since structs can't have subtypes.
   shape: Shape
-}
+end
 ```
 
 The remarkable benefit of this approach: any struct or shape that contains a property `position: Position` and `shape: Shape` can be used as an entity for the  `move` and `render` functions. We can conceive any number of additional entities that can just as much use these already existing functions. This enables **generic programming over partial structures**, i.e. entities and components.
@@ -117,9 +117,9 @@ The remarkable benefit of this approach: any struct or shape that contains a pro
 **Specialization** is another great aspect of this programming model. Imagine we want to implement an additional `render` function for those entities that not only have `Position` and `Shape`, but also `Color`. We can simply write a second function:
 
 ```
-act render(entity: +Position & +Shape & +Color) {
+act render(entity: +Position & +Shape & +Color)
   // use position, shape AND color to render the entity...
-}
+end
 ```
 
 
@@ -144,14 +144,14 @@ The ability to dispatch on property types effectively turns a struct type into a
    
    struct Coffin(nail: Nail)
    
-   act main() {
+   act main()
      let fancy = FancyNail()
      let bloody = BloodyNail()
      let coffinFancy = Coffin(fancy)
      let coffinBloody = Coffin(bloody)
      
      equalTypes(coffinFancy, coffinBloody) // --> false
-   }
+   end
    ```
 
 From the first point, it is clear that we cannot just have all properties marked as "dispatchable". There is the opportunity for different **optimizations**, but none of them are straight-forward. If the compiler could analyze this problem perfectly, it would only mark the properties as dispatchable that are actually involved in structural dispatch. But deciding whether a run-time property type is used for run-time dispatch is impossible. It likely reduces to the halting problem.
@@ -163,23 +163,27 @@ So in the end, the best option is to make run-time variance of property types **
 ```
 struct Position3D(x: Real, y: Real, z: Real) extends Position
 
-struct Hero {
+struct Hero
   health: Health
   open position: Position
-}
+end
 
 type +Position = %{ position: Position }
 type +Position3D = %{ position: Position3D }
 
-act move(entity: +Position) { ... }
-act move(entity: +Position3D) { ... }
+act move(entity: +Position)
+  ...
+end
+act move(entity: +Position3D)
+  ...
+end
 
-act test() {
+act test()
   let hero = Hero(Health(), Position3D(0, 0, 0))
   
   // Dispatches to the second move function, since position is an open property.
   // If position wasn't open, the call would dispatch to the first move function.
   move(hero)
-}
+end
 ```
 

@@ -33,17 +33,21 @@ Properties can be **accessed** using the member access notation `struct.property
 
 ```
 struct Point(x: Real = 0, y: Real = 0, z: Real = 0)
-struct Point { x: Real = 0, y: Real = 0, z: Real = 0 }
+struct Point
+  x: Real = 0, y: Real = 0, z: Real = 0
+end
 
 struct Position(mut point: Point)
-struct Position { mut point: Point }
+struct Position
+  mut point: Point
+end
 
-struct Person {
+struct Person
   name: String
   age: Int = 20
   calling: String = 'Arts and Science'
   position: Position
-}
+end
 ```
 
 ##### Construction
@@ -77,9 +81,9 @@ Normally, the **run-time type of a struct property** is not part of the run-time
 ###### Syntax Example
 
 ```
-struct Soldier {
+struct Soldier
   open weapon: Weapon
-}
+end
 ```
 
 
@@ -100,9 +104,9 @@ Since a struct is always a concrete type, **all abstract functions** of the trai
 trait Hashable
 func hash(Hashable): Int
 
-struct Person extends Hashable { 
+struct Person extends Hashable
   name: String 
-}
+end
 func hash(person: Person): Int = /* Compute the hash... */
 ```
 
@@ -223,11 +227,11 @@ This allows us to define various structs extending the same `Position`, for exam
 ```
 struct Point(x: Real, y: Real, z: Real) extends Position
 
-struct Box extends Position { 
+struct Box extends Position
   xStart: Real, xEnd: Real
   yStart: Real, yEnd: Real
   zStart: Real, zEnd: Real
-}
+end
 ```
 
 Of course, we also have to implement the abstract functions declared by `Position` for each of the structs extending the trait:
@@ -246,18 +250,18 @@ func z(box: Box): Real = box.zStart + depth(box) / 2
 Finally, we could declare a function that just works with the data provided by `Position`: 
 
 ```
-func distance(pos1: Position, pos2: Position): Real = {
+func distance(pos1: Position, pos2: Position): Real = do
   let dx = x(pos2) - x(pos1)
   let dy = y(pos2) - y(pos1)
   let dz = z(pos2) - z(pos1)
   sqrt(dx * dx + dy * dy + dz * dz)
-}
+end
 
-act test() {
+act test()
   let box = Box(0, 10, 0, 10, 0, 10)
   let point = Point(3, 7, 9)
   println(distance(box, point)) // --> 3.4641...
-}
+end
 ```
 
 Adding inheritance to this example would allow us to model positions of different dimensions:
@@ -316,10 +320,13 @@ trait Dead
 The core usefulness of a label type comes from the idea that we can **specialize functions** when the label is present:
 
 ```
-act hit(monster: Monster) { ... }
-act hit(monster: Monster & Dead) {
+act hit(monster: Monster)
+  ...
+end
+
+act hit(monster: Monster & Dead)
   // Do something else if the monster is dead.
-}
+end
 ```
 
 Right now, it is not possible to attach a label type to a value at run-time, so label types can only be "attached" by having a struct extend the label type. But once we introduce **dynamic specialization and generalization**, label types will be attachable to and removable from existing values, provided their compile-time types still agree. Then it becomes a matter of moving labels traditionally handled as object properties to the type space and harnessing the power of multiple dispatch. For example, one could attach their own label type to values that are declared in a library, then specialize some library functions for types that also have the label.
@@ -350,9 +357,9 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
   trait Position
   property x: Real of Position
   
-  act test(pos: Position) {
+  act test(pos: Position)
     println(pos.x)
-  }
+  end
   ```
 
   This is internally still a multi-function definition. Here is the general syntax:
@@ -370,9 +377,9 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
 
   ```
   // Direct mapping
-  struct Point extends Position {
-    x: Real extends Position.x
-  }
+  struct Point extends Position
+    x: Real implements Position.x
+  end
   
   // Indirect mapping
   property x: Real of box: Box = box.xStart + width(box) / 2
@@ -396,18 +403,18 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
   - **Alternative:**
 
     ```
-    trait Position {
+    trait Position
       x: Real
-    }
+    end
     
-    act test(pos: Position) {
+    act test(pos: Position)
       println(pos.x)
-    }
+    end
     
     // Direct mapping
-    struct Point extends Position {
-      x: Real extends Position.x
-    }
+    struct Point extends Position
+      x: Real implements Position.x
+    end
     
     // Indirect mapping
     property x: Real of box: Box = box.xStart + width(box) / 2
@@ -428,14 +435,15 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
   - A way to implement mixins would be **mixing in shape types**.
 
     ```
-    struct Position {
+    struct Position
       mut x: Real, mut y: Real
-    }
+    end
+    
     type +Position = %{ position: Position }
     
-    struct Player {
+    struct Player
       mix +Position
-    }
+    end
     ```
 
 - **Companion namespaces** for any declared type. (See also the next proposal in this list.)
@@ -443,37 +451,38 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
 - **Ad-hoc envelope types:** Lore will support envelope types. To make "type all the things!" particularly easy, Lore allows you to **create ad-hoc open envelope types when defining structs:**
 
   ```
-  struct Position {
+  struct Position
     x: Real as X
     y: Real as Y
     z: Real as Z
-  }
+  end
   ```
 
-  Each envelope type becomes part of the (companion) namespace of the struct , so the code above implicitly declares the following:
+  Each envelope type becomes part of the (companion) module of the struct , so the code above implicitly declares the following:
 
   ```
-  namespace Position {
+  module Position
     envelope X(Real)
     envelope Y(Real)
     envelope Z(Real)
-  }
+  end
   ```
 
   However, the ad-hoc definition has the additional advantage that **envelope types are constructed internally**. Take the following example:
 
   ```
-  struct Account {
+  struct Account
     id: Int as Id
     name: String as Name
     score: Real as Score
-  }
+  end
+  
   let jeremy = Account(1, "Jeremy", 15.37)
   > jeremy.id : Account.Id
   > jeremy.name : Account.Name
   > jeremy.score : Account.Score
   ```
-
+  
   The constructor takes the underlying values as arguments and doesn't require any envelope boilerplate.
   
 - **Attaching properties at run-time:** Adding properties to arbitrary structs and shapes could be very powerful combined with structural dispatch. (Especially to dynamically add components to a struct.)

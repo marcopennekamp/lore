@@ -20,9 +20,9 @@ A **multi-function** is a set of functions with the same full name. Each multi-f
 func foo(number: Int): Real = number * 1.5
 func foo(string: String): String = '$string ???'
 
-act bar(value: Real) {
+act bar(value: Real)
   println(value)
-}
+end
 ```
 
 This Lore code contains the functions `foo(Int)`, `foo(String)`, and `bar(Real)`. It contains two multi-functions `foo` and `bar`, the latter of which only has one function to invoke, making multiple dispatch for `bar` trivial. The `foo` multi-function is defined for `String` and `Int` single arguments. The return types of the three functions are `Real`, `String`, and `Unit`. Their expression bodies are `number * 1.5`, `'$string ???'`, and `{ println(value) }`.
@@ -255,22 +255,22 @@ The most obvious example is invoking a **"super"** function of some other, more 
 ```
 // Assume types A, A1 <: A, A2 <: A, and some type R.
 
-func f(a: A): R = {
+func f(a: A): R = do
   // ... some general implementation
-}
+end
 
-func f(a: A1): R = {
+func f(a: A1): R = do
   // ... some actions specific to A1
   // Then call the "super" function to handle the general case.
   f.fixed[A](a)
-}
+end
 
-func f(a: A2): R = {
+func f(a: A2): R = do
   // First call the "super" function to handle the general case.
   let result = f.fixed[A](a)
   // ... some actions specific to A2
   result
-}
+end
 ```
 
 
@@ -310,9 +310,9 @@ This is a fairly standard example of single dispatch. Note that all actions so f
 
 ```
 struct SmartCar extends Car
-act move(car: SmartCar, target: Target) {
+act move(car: SmartCar, target: Target)
   // ...
-}
+end
 ```
 
 Now, data (types) and behavior are **completely orthogonal**. You can define them separately from each other and only marry them when it's needed. Even if you only or mostly use Lore's multiple dispatch on one argument, you will find that this style of writing functions is far more flexible than the object-oriented class/method approach.
@@ -320,13 +320,17 @@ Now, data (types) and behavior are **completely orthogonal**. You can define the
 So let's assume that we have two kinds of targets: `GpsCoordinates` and `Directions`. Our smart car can deal with both (either taking GPS coordinates or directions through verbal input). Instead of pattern-matching the `target` argument (as one might approach it in a language like Scala, since we cannot go beyond single dispatch), we can simply **specialize** the `move` function:
 
 ```
-act move(car: SmartCar, target: Target) { /* fallback behavior */ }
-act move(car: SmartCar, target: GpsCoordinates) {
+act move(car: SmartCar, target: Target) 
+  /* fallback behavior */
+end
+
+act move(car: SmartCar, target: GpsCoordinates)
   // ... use GPS and self-driving capability to move to the coordinates.
-}
-act move(car: SmartCar, target: Directions) {
+end
+
+act move(car: SmartCar, target: Directions)
   // ... understand and execute the driver's verbal directions.
-}
+end
 ```
 
 Even though, when `Vehicle` and Co. were declared, it might never have been anticipated that we'd need to dispatch on the `Target` argument, too, we can do so at any time. Perhaps the `Directions` type was even introduced later (as a new feature for the self-driving software) and software engineers were lucky enough to be using a language with multiple dispatch: **Lore allows you to build on top of existing concerns in a natural manner**, and you end up being not *as* constrained by the expression problem.
@@ -334,9 +338,9 @@ Even though, when `Vehicle` and Co. were declared, it might never have been anti
 Of course, we don't have to dispatch on named types only. Maybe our car has crashed and instead of moving needs to start some sort of recovery procedure:
 
 ```
-act move(car: Car & Crashed, target: Target) {
+act move(car: Car & Crashed, target: Target)
   // ... initiate recovery procedures.
-}
+end
 ```
 
 Of course, the question is always whether one should introduce a **label type** for a specific concern or whether it's better to use a boolean and write some ifs and matches. This question is, however, specific to each use case and cannot be answered by the language designer. Of course, as long as Lore doesn't support attaching label types at run-time, the point is moot anyway.
