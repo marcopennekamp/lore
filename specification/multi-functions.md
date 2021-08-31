@@ -43,6 +43,24 @@ This is not a property of multi-functions but **individual functions**. As subty
 
 Note that type variables can only be used in bounds if they are declared **preceding** the bound. So in the example above, `A` and `B` must be declared before `C`.
 
+##### Optional Parameter Names
+
+A **parameter name** may be omitted if it's not used within the function's body. Only the parameter type has to be specified. This is especially useful for abstract functions, where parameter names are often redundant.
+
+###### Example
+
+```
+func transcribe(DnaNucleotide): RnaNucleotide
+func transcribe(#a): #u = #u
+func transcribe(#t): #a = #a
+func transcribe(#g): #c = #c
+func transcribe(#c): #g = #g
+```
+
+The first function is abstract. A parameter name for `DnaNucleotide` would only add verbosity, e.g. `dna_nucleotide`, `nucleotide`, or just `n`. None of these candidates would add any additional information.
+
+The last four functions only need to match on the type of the argument, instead of the argument itself (this is trivial for symbol types, of course). Hence, parameter names can also be safely omitted here.
+
 
 
 ### Multiple Dispatch
