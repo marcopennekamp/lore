@@ -6,8 +6,8 @@ trait B
 struct B1 extends B
 struct B2 extends B
 
-func f(a: A, b: B): String
-func f(a: A1, b: B): String = 'A1,B'
-func f(a: A2, b: B): String = 'A2,B'
+func f(A, B): String
+func f(A1, B): String = 'A1,B'
+func f(A2, B): String = 'A2,B'
 
 func test(): [String] = [f(A1(), B1()), f(A1(), B2()), f(A2(), B1()), f(A2(), B2())]

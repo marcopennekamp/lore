@@ -26,7 +26,7 @@ struct ExternalPhysics
 
 // The result of the save is currently a list of things. Obviously this would be more sensible in the "real world".
 trait Savable
-func save(value: Savable): [Any]
+func save(Savable): [Any]
 func save(value: Real): [Any] = [value]
 
 
@@ -39,7 +39,7 @@ func save(pos: Position): [Any] = flatten([['Position'], save(pos.x), save(pos.y
 
 
 // Assuming that ExternalPhysics isn't Savable, we define the following action.
-func save(object: ExternalPhysics): [Any] = ['ExternalPhysics', 42]
+func save(ExternalPhysics): [Any] = ['ExternalPhysics', 42]
 
 
 struct Character extends Savable {

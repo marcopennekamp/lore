@@ -16,36 +16,36 @@ struct C extends T1, T2, U2 {
   name: String
 }
 
-func f1(value: T1): String
-func f1(value: A): String = 'A'
-func f1(value: C): String = 'C'
+func f1(T1): String
+func f1(A): String = 'A'
+func f1(C): String = 'C'
 
-func f2(value: T2): String
-func f2(value: B): String = 'B'
-func f2(value: C): String = 'C'
+func f2(T2): String
+func f2(B): String = 'B'
+func f2(C): String = 'C'
 
-func f3(value: T1 & T2): String
-func f3(value: C): String = 'C'
+func f3(T1 & T2): String
+func f3(C): String = 'C'
 
-func f4(value: T2 & U): String
-func f4(value: B): String = 'B'
-func f4(value: C): String = 'C'
+func f4(T2 & U): String
+func f4(B): String = 'B'
+func f4(C): String = 'C'
 
-func f5(value: U): String
-func f5(value: B): String = 'B'
-func f5(value: C): String = 'C'
+func f5(U): String
+func f5(B): String = 'B'
+func f5(C): String = 'C'
 
-func f6(value: U & V): String
-func f6(value: B): String = 'B'
+func f6(U & V): String
+func f6(B): String = 'B'
 
-func f7(value: V & %{ name: String }): String
-func f7(value: A): String = 'A'
+func f7(V & %{ name: String }): String
+func f7(A): String = 'A'
 
-func f8(value: U & %{ name: String }): String
-func f8(value: C): String = 'C'
+func f8(U & %{ name: String }): String
+func f8(C): String = 'C'
 
 // Note that `W1 & %{ name: String }` has no concrete subtypes and thus doesn't need to be implemented at all.
-func f9(value: W1 & %{ name: String }): String
+func f9(W1 & %{ name: String }): String
 
 
 trait X
@@ -56,9 +56,9 @@ struct X3 extends X, Y
 struct X4 extends X
 struct Y1 extends Y
 
-func f10(v: X & Y): String
-func f10(v: X1 | X2): String = 'X1|X2'
-func f10(v: X3): String = 'X3'
+func f10(X & Y): String
+func f10(X1 | X2): String = 'X1|X2'
+func f10(X3): String = 'X3'
 
 
 func test(): [String] = {

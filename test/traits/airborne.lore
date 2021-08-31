@@ -1,8 +1,8 @@
 trait Named
-func name(named: Named): String
+func name(Named): String
 
 trait Airborne
-func wingspan(airborne: Airborne): Real
+func wingspan(Airborne): Real
 
 struct Bird extends Named, Airborne {
   species: String

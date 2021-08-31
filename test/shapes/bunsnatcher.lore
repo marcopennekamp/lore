@@ -21,14 +21,14 @@ struct Paperknife extends Tool
 struct Spade extends Tool
 struct Dagger extends Tool
 
-func tool(profession: Profession): Tool
-func tool(tailor: Tailor): Tool = Scissors()
-func tool(lawyer: Lawyer): Tool = Suitcase()
-func tool(entrepreneur: Entrepreneur): Tool = Paperknife()
-func tool(gardener: Gardener): Tool = Spade()
-func tool(assassin: Assassin): Tool = Dagger()
+func tool(Profession): Tool
+func tool(Tailor): Tool = Scissors()
+func tool(Lawyer): Tool = Suitcase()
+func tool(Entrepreneur): Tool = Paperknife()
+func tool(Gardener): Tool = Spade()
+func tool(Assassin): Tool = Dagger()
 
-func sharpness(tool: Tool): Real
+func sharpness(Tool): Real
 func sharpness(sharpTool: Scissors | Paperknife | Dagger): Real = 1
 func sharpness(bluntTool: Suitcase | Spade): Real = 0
 

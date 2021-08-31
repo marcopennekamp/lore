@@ -116,7 +116,7 @@ module Foo {
   
   func fresh(): Foo = Implementation(0)
   
-  func getAndIncrement(foo: Foo): Int
+  func getAndIncrement(Foo): Int
   func getAndIncrement(foo: Implementation): Int = {
     let result = foo.counter
     increment(foo)

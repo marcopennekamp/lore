@@ -1,8 +1,8 @@
 struct Bar
 
-func foo(value: String): Int = 0
-func foo(value: Int): Int = 1
-func foo(value: Boolean): Int = 2
+func foo(String): Int = 0
+func foo(Int): Int = 1
+func foo(Boolean): Int = 2
 
 // TODO: Test this in dispatch.test.ts.
 

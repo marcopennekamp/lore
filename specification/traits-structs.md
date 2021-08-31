@@ -98,7 +98,7 @@ Since a struct is always a concrete type, **all abstract functions** of the trai
 
 ```
 trait Hashable
-func hash(hashable: Hashable): Int
+func hash(Hashable): Int
 
 struct Person extends Hashable { 
   name: String 
@@ -169,8 +169,8 @@ Type variable instantiations are **fixed at compile-time**. This is what we want
 There are cases in which we want the type variable to be instantiated **based on the run-time type of a property**. `Option[A]` is such a case. We want to be able to specialize functions on options without unpacking the options. Consider the following code:
 
 ```
-func process(option: Option[Animal]): String = 'Maybe Animal.'
-func process(option: Option[Fox]): String = 'Maybe Fox.'
+func process(Option[Animal]): String = 'Maybe Animal.'
+func process(Option[Fox]): String = 'Maybe Fox.'
 
 let animal: Animal = Fox()
 process(Some(animal))
@@ -213,9 +213,9 @@ Using a trait to create **data abstractions** is as simple as defining the right
 
 ```
 trait Position
-func x(pos: Position): Real
-func y(pos: Position): Real
-func z(pos: Position): Real
+func x(Position): Real
+func y(Position): Real
+func z(Position): Real
 ```
 
 This allows us to define various structs extending the same `Position`, for example:
@@ -264,11 +264,11 @@ Adding inheritance to this example would allow us to model positions of differen
 
 ```
 trait Position2D
-func x(pos: Position2D): Real
-func y(pos: Position2D): Real
+func x(Position2D): Real
+func y(Position2D): Real
 
 trait Position3D extends Position2D
-func z(pos: Position3D): Real
+func z(Position3D): Real
 ```
 
 Any struct extending `Position3D` will have to provide a definition for all three of these abstract functions.
@@ -283,14 +283,14 @@ As a simple example of behavior abstractions, consider a trait `Hashable` that r
 
 ```
 trait Hashable
-func hash(value: Hashable): Int
+func hash(Hashable): Int
 ```
 
 Consider we have a trait `Statistic` that should be hashable, so that we can use stats as keys in a map:
 
 ```
 trait Statistic extends Hashable
-func uniqueName(statistic: Statistic): String
+func uniqueName(Statistic): String
 ```
 
 Instead of implementing the hash function for every statistic individually, we can implement it just for the trait, relying on the unique name supplied by concrete statistics:

@@ -10,10 +10,10 @@ struct Gold extends Metal[HighPrice]
 struct Silver extends Metal[MediumPrice]
 struct Iron extends Metal[LowPrice]
 
-func price(box: Box[Metal[Price]]): Real = 0
-func price(box: Box[Metal[HighPrice]]): Real = 48.5
-func price(box: Box[Metal[MediumPrice]]): Real = 17.2
-func price(box: Box[Metal[LowPrice]]): Real = 1.6
+func price(Box[Metal[Price]]): Real = 0
+func price(Box[Metal[HighPrice]]): Real = 48.5
+func price(Box[Metal[MediumPrice]]): Real = 17.2
+func price(Box[Metal[LowPrice]]): Real = 1.6
 
 
 func test(): [Real] = [

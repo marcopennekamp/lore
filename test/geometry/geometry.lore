@@ -2,8 +2,8 @@
 trait Shape
 
 // "Computed"/"Virtual" properties. Could be improved with the property syntax for types/traits suggested in the spec.
-func width(shape: Shape): Real
-func height(shape: Shape): Real
+func width(Shape): Real
+func height(Shape): Real
 
 func area(shape: Shape): Real = width(shape) * height(shape)
 
@@ -39,12 +39,10 @@ func width(rect: Rectangle): Real = rect.width
 func height(rect: Rectangle): Real = rect.height
 
 
-// It could be quite elegant, once we allow pattern matching, to specify parameters as name(_: Circle) if the name is
-// not important for the current implementation of the function.
-func name(shape: Shape): String
-func name(rectangle: Rectangle): String = 'rect'
-func name(box: BoundingBox): String = 'box'
-func name(circle: Circle): String = 'circle'
+func name(Shape): String
+func name(Rectangle): String = 'rect'
+func name(BoundingBox): String = 'box'
+func name(Circle): String = 'circle'
 
 
 // Yeah, I know. We don't have global constants yet.

@@ -1,5 +1,5 @@
 trait Crate[+A]
-func extract(crate: Crate[A]): A where A
+func extract(Crate[A]): A where A
 
 struct IntCrate(value: Int) extends Crate[Int]
 func extract(crate: IntCrate): Int = crate.value
@@ -8,7 +8,7 @@ struct ListCrate[+A](list: [A]) extends Crate[[A]]
 func extract(crate: ListCrate[A]): [A] where A = crate.list
 
 struct TobyCrate extends Crate[String]
-func extract(crate: TobyCrate): String = 'I am a crate and my name is Toby!'
+func extract(TobyCrate): String = 'I am a crate and my name is Toby!'
 
 
 func test(): [String] = [

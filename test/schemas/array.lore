@@ -1,10 +1,10 @@
 trait Array[+A]
 
-func at(array: Array[A], index: Int): A where A
-func prepend(array: Array[A], element: E): Unit where A, E <: A
-func append(array: Array[A], element: E): Unit where A, E <: A
-func removeFirst(array: Array[A]): Unit where A
-func removeLast(array: Array[A]): Unit where A
+func at(Array[A], index: Int): A where A
+func prepend(Array[A], element: E): Unit where A, E <: A
+func append(Array[A], element: E): Unit where A, E <: A
+func removeFirst(Array[A]): Unit where A
+func removeLast(Array[A]): Unit where A
 
 
 struct NaiveArray[A] extends Array[A] {

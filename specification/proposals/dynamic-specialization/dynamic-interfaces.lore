@@ -15,6 +15,6 @@ func h(a: A & L): Real = 1.2
 
 struct B
 func g(b: B & L): Real = 4.20
-func h(a: B & L): Real = 81423.17
+func h(b: B & L): Real = 81423.17
 
 // We can then call f with A or B if they also subtype L: f(a) and f(b).

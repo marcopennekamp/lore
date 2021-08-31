@@ -42,10 +42,10 @@ domain rectangle: Rectangle
 end
 
 
-func name(shape: Shape): String
-func name(rectangle: Rectangle): String = 'rect'
-func name(box: BoundingBox): String = 'box'
-func name(circle: Circle): String = 'circle'
+func name(Shape): String
+func name(Rectangle): String = 'rect'
+func name(BoundingBox): String = 'box'
+func name(Circle): String = 'circle'
 
 
 let pi: Real = 3.14159265359

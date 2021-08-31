@@ -3,9 +3,9 @@ struct Cereal extends Content
 struct Blood extends Content
 struct Pudding extends Content
 
-func toString(cereal: Cereal): String = 'cereal'
-func toString(blood: Blood): String = 'blood'
-func toString(pudding: Pudding): String = 'pudding'
+func toString(Cereal): String = 'cereal'
+func toString(Blood): String = 'blood'
+func toString(Pudding): String = 'pudding'
 
 
 trait Container[+C]

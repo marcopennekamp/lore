@@ -58,15 +58,15 @@ type StatLabel = StatLabelInt | StatLabelReal
 type StatLabelInt = #regeneration | #defense | #attack | #range | #speed
 type StatLabelReal = #dodge
 
-func baseStat(entity: +Stats, label: StatLabel): Int | Real
+func baseStat(entity: +Stats, StatLabel): Int | Real
 
-func baseStat(entity: +Stats, label: StatLabelInt): Int
-func baseStat(entity: +Stats, label: #regeneration): Int = entity.stats.regeneration
-func baseStat(entity: +Stats, label: #defense): Int = entity.stats.defense
-func baseStat(entity: +Stats, label: #attack): Int = entity.stats.attack
-func baseStat(entity: +Stats, label: #range): Int = entity.stats.range
-func baseStat(entity: +Stats, label: #speed): Int = entity.stats.speed
+func baseStat(entity: +Stats, StatLabelInt): Int
+func baseStat(entity: +Stats, #regeneration): Int = entity.stats.regeneration
+func baseStat(entity: +Stats, #defense): Int = entity.stats.defense
+func baseStat(entity: +Stats, #attack): Int = entity.stats.attack
+func baseStat(entity: +Stats, #range): Int = entity.stats.range
+func baseStat(entity: +Stats, #speed): Int = entity.stats.speed
 
-func baseStat(entity: +Stats, label: #dodge): Real = entity.stats.dodge
+func baseStat(entity: +Stats, #dodge): Real = entity.stats.dodge
 
 func isAlive(entity: +Stats): Boolean = entity.stats.health > 0

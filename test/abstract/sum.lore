@@ -10,13 +10,13 @@ struct C
 struct D extends Y
 struct E extends X
 
-func f(t: A | B | C): Int
-func f(a: A): Int
-func f(y: Y): Int = 1
-func f(x: X): Int = 2
-func f(a: A1): Int = 3
-func f(a: A2): Int = 4
-func f(a: A3): Int = 4
-func f(b: B | C): Int = 5
+func f(A | B | C): Int
+func f(A): Int
+func f(Y): Int = 1
+func f(X): Int = 2
+func f(A1): Int = 3
+func f(A2): Int = 4
+func f(A3): Int = 4
+func f(B | C): Int = 5
 
 func test(): [Int] = [f(A1()), f(A2()), f(A3()), f(B()), f(C()), f(D()), f(E())]

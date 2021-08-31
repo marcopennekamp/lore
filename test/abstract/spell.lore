@@ -18,8 +18,8 @@ type Damage = Int
 
 trait Spell[+E <: Element, +C <: Cost]
 
-func rawDamage(spell: Spell[Element, Cost]): Damage
-func damageOf(spell: Spell[Element, Cost], defense: Defense): Damage
+func rawDamage(Spell[Element, Cost]): Damage
+func damageOf(Spell[Element, Cost], Defense): Damage
 
 
 trait Spike[+E <: Ice | Earth, +S <: Specialty, +Id] extends Spell[E, Mana]
@@ -27,9 +27,9 @@ struct IceSpike extends Spike[Ice, Freezing, #ice_spike]
 struct NeedleIceSpike extends Spike[Ice, Penetrating, #needle_ice_spike]
 struct EarthSpike extends Spike[Earth, Penetrating, #earth_spike]
 
-func rawDamage(spell: Spike[Ice, Specialty, #ice_spike]): Damage = 10
-func rawDamage(spell: Spike[Ice, Specialty, #needle_ice_spike]): Damage = 12
-func rawDamage(spell: Spike[Earth, Specialty, Any]): Damage = 8
+func rawDamage(Spike[Ice, Specialty, #ice_spike]): Damage = 10
+func rawDamage(Spike[Ice, Specialty, #needle_ice_spike]): Damage = 12
+func rawDamage(Spike[Earth, Specialty, Any]): Damage = 8
 
 // We would usually define this for any Specialty and then override only Penetrating, but the point here is testing
 // that the totality constraint sees that all possibilities have been covered.

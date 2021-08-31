@@ -23,8 +23,8 @@ Instead of **accessing the underlying value** directly, the envelope type is use
   trait B extends A
   envelope X(A)
   
-  func foo(a: A): String = 'hello'
-  func foo(b: B): String = 'world'
+  func foo(A): String = 'hello'
+  func foo(B): String = 'world'
   ```
 
   What if we invoke `foo(X(b))` with `b` being a subtype of `B`? If an envelope merely subtypes its value type, multiple dispatch would choose to invoke `foo(A)`. So the subtyping relationship would have to be extended to `E < B` iff `E` contains a value that subtypes `B`. This would lead to `foo(B)` becoming the call target.

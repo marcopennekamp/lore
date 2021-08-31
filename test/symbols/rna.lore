@@ -4,11 +4,11 @@ type RnaNucleotide = #a | #u | #g | #c
 type Dna = [DnaNucleotide]
 type Rna = [RnaNucleotide]
 
-func transcribe(nucleotide: DnaNucleotide): RnaNucleotide
-func transcribe(n: #a): #u = #u
-func transcribe(n: #t): #a = #a
-func transcribe(n: #g): #c = #c
-func transcribe(n: #c): #g = #g
+func transcribe(DnaNucleotide): RnaNucleotide
+func transcribe(#a): #u = #u
+func transcribe(#t): #a = #a
+func transcribe(#g): #c = #c
+func transcribe(#c): #g = #g
 
 func transcribe(dna: Dna): Rna = map(dna, transcribe)
 

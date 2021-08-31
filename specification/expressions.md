@@ -386,8 +386,8 @@ To **define equality** for a given type, you can specialize the function `isEqua
 
 ```
 func isEqual(c1: Car, c2: Car): Boolean = ...
-func isEqual(c1: SportsCar, c2: CheapCar): Boolean = false
-func isEqual(c1: CheapCar, c2: SportsCar): Boolean = false // Don't forget to be symmetric!
+func isEqual(SportsCar, CheapCar): Boolean = false
+func isEqual(CheapCar, SportsCar): Boolean = false // Don't forget to be symmetric!
 ```
 
 To **define order** for a given type, specialize the function `isLessThan(a, b)`. The *greater than* operator is strictly defined as `!(a < b) && a != b`.

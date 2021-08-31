@@ -13,7 +13,7 @@ struct Voidbringer extends Monster {
   statusEffects: StatusEffects = StatusEffects([])
 }
 
-func name(voidbringer: Voidbringer): String = 'Voidbringer'
+func name(Voidbringer): String = 'Voidbringer'
 
 act enterCombat(voidbringer: Voidbringer) {
   buff(voidbringer, createArmored(2, 3))

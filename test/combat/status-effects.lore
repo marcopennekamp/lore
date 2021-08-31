@@ -3,22 +3,22 @@ trait StatusEffect
 /**
  * Applies the given status effect to the stat identified with the given label.
  */
-func affectStat(effect: StatusEffect, statLabel: StatLabel, value: A): A where A = value
+func affectStat(StatusEffect, StatLabel, value: A): A where A = value
 
 /**
  * Called during the end-of-turn status effect update.
  */
-act onUpdate(effect: StatusEffect) { }
+act onUpdate(StatusEffect) { }
 
 /**
  * Called whenever the entity gets hit by an attack (after a potential dodge failed).
  */
-act onHit(effect: StatusEffect) { }
+act onHit(StatusEffect) { }
 
 /**
  * Whether the given status effect is active.
  */
-func isActive(effect: StatusEffect): Boolean = true
+func isActive(StatusEffect): Boolean = true
 
 
 struct DurationLimit {
@@ -61,7 +61,7 @@ struct Armored extends StatusEffect {
 
 func createArmored(armor: Int, durability: Int): Armored = Armored(armor, HitLimit(durability))
 
-func affectStat(effect: Armored, statLabel: #defense, value: Int): Int = value + effect.armor
+func affectStat(effect: Armored, #defense, value: Int): Int = value + effect.armor
 
 
 /**
@@ -73,9 +73,9 @@ struct Infusion extends StatusEffect {
 
 func createInfusion(duration: Int): Infusion = Infusion(DurationLimit(duration))
 
-func affectStat(effect: Infusion, statLabel: #attack | #speed, value: Int): Int = floor(value * 1.5)
-func affectStat(effect: Infusion, statLabel: #dodge, value: Real): Real = 1.0 // Dodge all attacks while infused.
-func affectStat(effect: Infusion, statLabel: #regeneration, value: Int): Int = 5
+func affectStat(effect: Infusion, #attack | #speed, value: Int): Int = floor(value * 1.5)
+func affectStat(effect: Infusion, #dodge, value: Real): Real = 1.0 // Dodge all attacks while infused.
+func affectStat(effect: Infusion, #regeneration, value: Int): Int = 5
 
 
 struct StatusEffects {

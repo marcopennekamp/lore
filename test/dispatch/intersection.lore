@@ -14,21 +14,21 @@ struct E extends Y, L1, L2
 struct F extends Y, W, L1
 struct G extends Z
 
-func f(v1: T1, v2: T2): String where T1, T2 = 'T1,T2'
-func f(x: X, y: Y): String = 'X,Y'
-func f(z: Z, w: W): String = 'Z,W'
-func f(z: Z, w: W & L): String = 'Z,W&L'
-func f(z: Z, w: W & L1): String = 'Z,W&L1'
-func f(z: Z, w: W & L2): String = 'Z,W&L2'
-func f(v1: Z & L, v2: W & L): String = 'Z&L,W&L'
-func f(v1: X & W, v2: Y & L2): String = 'X&W,Y&L2'
-func f(v1: W & Z, v2: Y & L): String = 'X&Z,Y&L'
-func f(v1: Y & L, v2: X & Y): String = 'Y&L,X&Y'
-func f(v1: Y & L1, v2: X & Y): String = 'Y&L1,X&Y'
-func f(v1: Y & W & L1, v2: X & Y): String = 'Y&W&L1,X&Y'
-func f(v1: Y, v2: Z & L): String = 'Y,Z&L'
-func f(v1: Y, v2: Z & L1): String = 'Y,Z&L1'
-func f(v1: Y, v2: Z & L2): String = 'Y,Z&L2'
+func f(T1, T2): String where T1, T2 = 'T1,T2'
+func f(X, Y): String = 'X,Y'
+func f(Z, W): String = 'Z,W'
+func f(Z, W & L): String = 'Z,W&L'
+func f(Z, W & L1): String = 'Z,W&L1'
+func f(Z, W & L2): String = 'Z,W&L2'
+func f(Z & L, W & L): String = 'Z&L,W&L'
+func f(X & W, Y & L2): String = 'X&W,Y&L2'
+func f(W & Z, Y & L): String = 'X&Z,Y&L'
+func f(Y & L, X & Y): String = 'Y&L,X&Y'
+func f(Y & L1, X & Y): String = 'Y&L1,X&Y'
+func f(Y & W & L1, X & Y): String = 'Y&W&L1,X&Y'
+func f(Y, Z & L): String = 'Y,Z&L'
+func f(Y, Z & L1): String = 'Y,Z&L1'
+func f(Y, Z & L2): String = 'Y,Z&L2'
 
 func test(): [String] = [
   f(A(), B()),

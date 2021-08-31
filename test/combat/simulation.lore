@@ -1,11 +1,11 @@
 trait Combatant extends +Stats, +StatusEffects
 
-func name(combatant: Combatant): String
+func name(Combatant): String
 
 /**
  * This is called once at the beginning of combat to give each combatant a chance to prepare.
  */
-act enterCombat(combatant: Combatant) { }
+act enterCombat(Combatant) { }
 
 act onHit(combatant: Combatant) {
   onHitStatusEffects(combatant)

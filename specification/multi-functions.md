@@ -97,10 +97,10 @@ struct Human extends Mammal
 struct Guppy extends Fish
 struct ManBearGuppy extends Mammal, Fish
 
-func kind(animal: Animal): String
-func kind(mammal: Mammal): String = 'mammal'
-func kind(human: Human): String = 'idiotic'
-func kind(fish: Fish): String = 'fish'
+func kind(Animal): String
+func kind(Mammal): String = 'mammal'
+func kind(Human): String = 'idiotic'
+func kind(Fish): String = 'fish'
 ```
 
 What's the **fit and min set** of a call `kind(human)` given `human: Human`? The fit contains `kind(Animal)`, `kind(Mammal)`, and `kind(Human)`, while the min set contains only `kind(Human)`, because `Human` is more specific than both `Animal` and `Mammal`. This is good news!
@@ -221,15 +221,15 @@ This function is abstract because it has no definition. It satisfies the totalit
 
 ```
 trait Animal
-func name(animal: Animal): String
+func name(Animal): String
 
 trait Fish extends Animal
 
 struct Bass extends Fish
-func name(bass: Bass): String = 'Bass'
+func name(Bass): String = 'Bass'
 
 struct Trout extends Fish
-func name(trout: Trout): String = 'Trout'
+func name(Trout): String = 'Trout'
 ```
 
 Abstract functions do not need to be **redeclared** for subtypes. The example above demonstrates this by having the trait `Fish` omit a declaration of the multi-function `name`. The constraint's checking algorithm for `name(Animal)` will try to find a function `name(Fish)` and upon failure, assume that it is implicitly abstract. The totality constraint will then be checked given the input type `Fish`. 
@@ -297,13 +297,13 @@ In Lore, you can define a type hierarchy with behavior such as presented in this
 trait Target
 
 trait Vehicle
-act move(vehicle: Vehicle, target: Target)
+act move(Vehicle, Target)
 
 trait Car extends Vehicle
-act move(car: Car, target: Target)
+act move(Car, Target)
 
 trait Train extends Vehicle
-act move(train: Train, target: Target)
+act move(Train, Target)
 ```
 
 This is a fairly standard example of single dispatch. Note that all actions so far are declared abstract. We can **create a struct** that extends the `Car` trait:

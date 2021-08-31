@@ -7,8 +7,8 @@ func toString(position: Position): String = '{ x = ${position.x}, y = ${position
 //       would require shape types to support mutable properties, though.
 trait Movable
 
-func position(movable: Movable): Position
-act setPosition(movable: Movable, position: Position)
+func position(Movable): Position
+act setPosition(Movable, Position)
 
 act move(movable: Movable, x: Real, y: Real, z: Real) {
   let old = position(movable)
@@ -41,6 +41,6 @@ func update(a: A): A where A <: Movable = {
 
 func test(): Zombie = {
   let zombie = Zombie { name = 'Fred', position = Position(0, 1.0, 0.5) }
-  let updatedZombie: Zombie = update(zombie)
+  let updatedZombie = update(zombie)
   updatedZombie
 }

@@ -6,14 +6,14 @@ trait Vehicle
 struct Car extends Vehicle
 struct Bicycle extends Vehicle
 
-func coolness(real: Real): Real = 3.14
+func coolness(Real): Real = 3.14
 
-func coolness(animal: Animal): Real
+func coolness(Animal): Real
 func coolness(cat: Cat): Real = 5.0 * cat.fame
 func coolness(dog: Dog): Real = 3.0 * dog.fame
 
-func coolness(vehicle: Vehicle): Real
-func coolness(car: Car): Real = 2.7
-func coolness(bicycle: Bicycle): Real = 5.2
+func coolness(Vehicle): Real
+func coolness(Car): Real = 2.7
+func coolness(Bicycle): Real = 5.2
 
 func test(): [Real] = map([Cat(1.2), Dog(5), Dog(3.50), Cat(7.7)], coolness)

@@ -1,8 +1,8 @@
 type Status = #ok | #error
 
-func stringify(status: Status): String
-func stringify(status: #ok): String = 'Success!'
-func stringify(status: #error): String = 'Failure!'
+func stringify(Status): String
+func stringify(#ok): String = 'Success!'
+func stringify(#error): String = 'Failure!'
 
 func process(value: Int): (Status, String) = {
   if (value < 5) (#ok, 'Below five.')
