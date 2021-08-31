@@ -43,9 +43,9 @@ This is not a property of multi-functions but **individual functions**. As subty
 
 Note that type variables can only be used in bounds if they are declared **preceding** the bound. So in the example above, `A` and `B` must be declared before `C`.
 
-##### Optional Parameter Names
+##### Unnamed Parameters
 
-A **parameter name** may be omitted if it's not used within the function's body. Only the parameter type has to be specified. This is especially useful for abstract functions, where parameter names are often redundant.
+A **parameter name** may be omitted if it's not used within the function's body. Only the parameter type has to be specified. Unnamed parameters are especially useful for abstract functions, where parameter names are often redundant.
 
 ###### Example
 
