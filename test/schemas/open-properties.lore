@@ -1,11 +1,11 @@
-struct Box[+A] {
+struct Box[+A]
   open value: A
-}
+end
 
 trait Content
-struct Juice extends Content
-struct Berry extends Content
-struct Hammer extends Content
+struct Juice() extends Content
+struct Berry() extends Content
+struct Hammer() extends Content
 
 func toString(Box[Juice]): String = 'juice box'
 func toString(Box[Berry]): String = 'berry box'
@@ -14,7 +14,11 @@ func toString(thing: %{ value: Hammer }): String = 'thing with hammer'
 
 // This verifies that struct types with open properties are correctly interned. Open property types should be taken
 // into account.
-func test(): [String] = {
-  let boxes = [Box[Content](Juice()), Box[Content](Berry()), Box[Content](Hammer())]
+func test(): [String] = do
+  let boxes = [
+    Box[Content](Juice()),
+    Box[Content](Berry()),
+    Box[Content](Hammer())
+  ]
   map(boxes, toString)
-}
+end

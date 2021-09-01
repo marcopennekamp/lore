@@ -1,15 +1,15 @@
-struct A {
+struct Thing
   mut counter: Int
-}
+end
 
 func get(shape: %{ counter: Int }): Int = shape.counter
 
-func increment(instance: A): Unit = {
+act increment(instance: Thing) do
   instance.counter += 1
-}
+end
 
-func test(): [Int] = {
-  let instance = A(0)
+func test(): [Int] = do
+  let instance = Thing(0)
   let r1 = get(instance)
   increment(instance)
   let r2 = get(instance)
@@ -17,4 +17,4 @@ func test(): [Int] = {
   increment(instance)
   let r3 = get(instance)
   [r1, r2, r3]
-}
+end

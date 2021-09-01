@@ -38,5 +38,5 @@ func test(): [Any] = [
     %{ part1: %{ a: 1, b: 2 }, part2: %{ c: 3, a: 'hello' } }
   ]
 
-  // TODO: Atoms such as :none.
+  // TODO: Atoms such as #error.
 ]

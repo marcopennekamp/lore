@@ -1,12 +1,12 @@
 struct Position(x: Real = 0.0, y: Real = 0.0, z: Real = 0.0)
 
-func from2D(x: Real, y: Real): Position = {
+func from2D(x: Real, y: Real): Position = do
   Position { x, y }
-}
+end
 
-func from1D(x: Real): Position = {
+func from1D(x: Real): Position = do
   from2D(x, 0.0)
-}
+end
 
 
 func test(): [Position] = [

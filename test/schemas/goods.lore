@@ -1,14 +1,14 @@
 struct Box[+A](content: A)
 
 trait Price
-struct HighPrice extends Price
-struct MediumPrice extends Price
-struct LowPrice extends Price
+struct HighPrice() extends Price
+struct MediumPrice() extends Price
+struct LowPrice() extends Price
 
 trait Metal[+P <: Price]
-struct Gold extends Metal[HighPrice]
-struct Silver extends Metal[MediumPrice]
-struct Iron extends Metal[LowPrice]
+struct Gold() extends Metal[HighPrice]
+struct Silver() extends Metal[MediumPrice]
+struct Iron() extends Metal[LowPrice]
 
 func price(Box[Metal[Price]]): Real = 0
 func price(Box[Metal[HighPrice]]): Real = 48.5

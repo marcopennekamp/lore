@@ -1,9 +1,9 @@
 func greet(name: String, title: String): String = 'Hello, $title $name.'
 
-func test(): [String] = {
+func test(): [String] = do
   let f = v => greet(v.name, v.title)
   [
     f(%{ name: 'Smith', title: 'Mr.' }),
     f(%{ name: 'Chang', title: 'Ms.' })
   ]
-}
+end

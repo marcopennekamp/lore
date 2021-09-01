@@ -1,6 +1,6 @@
 trait Monster extends Combatant
 
-struct Voidbringer extends Monster {
+struct Voidbringer extends Monster
   stats: Stats = Stats {
     health = 30,
     maximumHealth = 30,
@@ -11,10 +11,10 @@ struct Voidbringer extends Monster {
   }
 
   statusEffects: StatusEffects = StatusEffects([])
-}
+end
 
 func name(Voidbringer): String = 'Voidbringer'
 
-act enterCombat(voidbringer: Voidbringer) {
+act enterCombat(voidbringer: Voidbringer) do
   buff(voidbringer, createArmored(2, 3))
-}
+end

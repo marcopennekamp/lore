@@ -1,30 +1,30 @@
 trait A
 trait B extends A
-struct C extends B
+struct C() extends B
 trait D extends B
-struct E extends D
+struct E() extends D
 
 func stringify(a: A): String = 'A'
 
-func stringify(b: B): String = {
+func stringify(b: B): String = do
   let super = stringify.fixed[A](b)
   concat(super, 'B')
-}
+end
 
-func stringify(c: C): String = {
+func stringify(c: C): String = do
   let super = stringify.fixed[B](c)
   concat(super, 'C')
-}
+end
 
-func stringify(d: D): String = {
+func stringify(d: D): String = do
   let super = stringify.fixed[B](d)
   concat(super, 'D')
-}
+end
 
-func stringify(e: E): String = {
+func stringify(e: E): String = do
   let super = stringify.fixed[D](e)
   concat('E', super)
-}
+end
 
 func test(): [String] = [
   stringify(C()),

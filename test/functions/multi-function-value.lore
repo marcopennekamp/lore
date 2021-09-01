@@ -3,8 +3,8 @@ struct Cat(fame: Real) extends Animal
 struct Dog(fame: Real) extends Animal
 
 trait Vehicle
-struct Car extends Vehicle
-struct Bicycle extends Vehicle
+struct Car() extends Vehicle
+struct Bicycle() extends Vehicle
 
 func coolness(Real): Real = 3.14
 

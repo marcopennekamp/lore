@@ -8,19 +8,19 @@ func height(Shape): Real
 func area(shape: Shape): Real = width(shape) * height(shape)
 
 
-struct BoundingBox extends Shape {
+struct BoundingBox extends Shape
   x: Real, xEnd: Real
   y: Real, yEnd: Real
-}
+end
 
 func width(box: BoundingBox): Real = box.xEnd - box.x
 func height(box: BoundingBox): Real = box.yEnd - box.y
 
 
-struct Circle extends Shape {
+struct Circle extends Shape
   x: Real, y: Real
   radius: Real
-}
+end
 
 func width(circle: Circle): Real = circle.radius
 func height(circle: Circle): Real = circle.radius
@@ -28,10 +28,10 @@ func height(circle: Circle): Real = circle.radius
 func area(circle: Circle): Real = circle.radius * circle.radius * pi()
 
 
-struct Rectangle extends Shape {
+struct Rectangle extends Shape
   x: Real, y: Real
   width: Real, height: Real
-}
+end
 
 // The same suggestions about a property syntax apply here. This is quite verbose, but alright for the MVL, since
 // we should focus on functionality/correctness first, not syntactic nicety.

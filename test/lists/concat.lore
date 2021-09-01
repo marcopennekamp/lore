@@ -3,7 +3,7 @@ func printList(list: [Int]): String = 'Int list: $list'
 func printList(list: [String | Int]): String = 'String/Int list: $list'
 func printList(list: [String | Int | Boolean]): String = 'String/Int/Boolean list: $list'
 
-func test(): [String] = {
+func test(): [String] = do
   let mut results: [String] = []
 
   let list = [10]
@@ -19,4 +19,4 @@ func test(): [String] = {
   results = results :+ printList(merged3)
 
   results
-}
+end

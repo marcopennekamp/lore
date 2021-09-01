@@ -14,7 +14,7 @@ func transcribe(dna: Dna): Rna = map(dna, transcribe)
 
 func toString(rna: Rna): String = concat(map(rna, symbolName))
 
-func test(): [String] = {
+func test(): [String] = do
   let cases = [
     [#a],
     [#t],
@@ -24,4 +24,4 @@ func test(): [String] = {
   ]
 
   map(cases, dna => toString(transcribe(dna)))
-}
+end

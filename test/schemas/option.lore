@@ -1,6 +1,6 @@
 trait Option[+A]
 struct Some[open +A](value: A) extends Option[A]
-struct None extends Option[Nothing]
+struct None() extends Option[Nothing]
 
 func toString(Option[A]): String where A
 func toString(some: Some[A]): String where A = 'Some(${some.value})'
@@ -8,9 +8,9 @@ func toString(None): String = 'None'
 
 
 trait AerialPhenomenon
-struct Bird extends AerialPhenomenon
-struct Plane extends AerialPhenomenon
-struct Dragon extends AerialPhenomenon
+struct Bird() extends AerialPhenomenon
+struct Plane() extends AerialPhenomenon
+struct Dragon() extends AerialPhenomenon
 
 func toString(Some[Bird]): String = 'It\'s just a bird.'
 func toString(Some[Plane]): String = 'My gosh, the pollution up there!'
@@ -18,11 +18,11 @@ func toString(Some[Dragon]): String = 'Oh shit, it\'s a dragon!'
 func toString(Some[[Dragon]]): String = 'They\'re everywhere!'
 
 
-func test(): [String] = {
+func test(): [String] = do
   let none = None()
   let string = Some('Hello, world!')
   let list = Some([1, 2, 3])
   let aerials = [Some(Bird()), Some(Plane()), Some(Dragon())]
   let dragons = Some { value = [Dragon(), Dragon(), Dragon()] }
   [toString(none), toString(string), toString(list), toString(aerials), toString(dragons)]
-}
+end

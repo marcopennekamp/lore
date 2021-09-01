@@ -1,6 +1,6 @@
 // TODO: We won't implement options using symbols, so this test case needs to be moved and rewritten.
 
-func test(): [String] = {
+func test(): [String] = do
   let a = 'hello options'
   let b = #none
   let c: String | #none = 'test'
@@ -17,4 +17,4 @@ func test(): [String] = {
     getOrElse(c, 'fallback'),
     getOrElse(d, 'fallback')
   ]
-}
+end

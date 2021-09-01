@@ -1,4 +1,4 @@
-struct Bar
+struct Bar()
 
 func foo(String): Int = 0
 func foo(Int): Int = 1
@@ -6,7 +6,7 @@ func foo(Boolean): Int = 2
 
 // TODO: Test this in dispatch.test.ts.
 
-func test(): [Int] = {
+func test(): [Int] = do
   let a: String | Int = 2
   let b: Boolean | Int = 3
   let c: String | Boolean = 'Boom'
@@ -23,4 +23,4 @@ func test(): [Int] = {
     // This one should not compile:
     foo(d)
   ]
-}
+end

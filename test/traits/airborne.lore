@@ -4,19 +4,21 @@ func name(Named): String
 trait Airborne
 func wingspan(Airborne): Real
 
-struct Bird extends Named, Airborne {
+struct Bird extends Named, Airborne
   species: String
   weight: Real
   wingspan: Real
-}
+end
+
 func name(bird: Bird): String = bird.species
 func wingspan(bird: Bird): Real = bird.wingspan
 
-struct Plane extends Named, Airborne {
+struct Plane extends Named, Airborne
   model: String
   capacity: Int
   wingspan: Real
-}
+end
+
 func name(plane: Plane): String = plane.model
 func wingspan(plane: Plane): Real = plane.wingspan
 
@@ -35,9 +37,9 @@ func areEqual(p1: Plane, p2: Plane): Boolean = p1.model == p2.model && p1.capaci
 //func areEqual(bird: Bird, plane: Plane): Boolean = bird.wingspan == plane.wingspan
 //func areEqual(plane: Plane, bird: Bird): Boolean = bird == plane
 
-func check(v1: Named, v2: Named): [String] = if (v1 == v2) ['${name(v1)} == ${name(v2)}'] else []
+func check(v1: Named, v2: Named): [String] = if v1 == v2 then ['${name(v1)} == ${name(v2)}'] else []
 
-func test(): [String] = {
+func test(): [String] = do
   let airbornes = [
     Bird('Raven', 1.5, 1.2),
     Bird('Dragon', 6000.0, 12),
@@ -49,4 +51,4 @@ func test(): [String] = {
 
   let pairs = symmetricPairs(airbornes)
   flatMap(pairs, pair => check(first(pair), second(pair)))
-}
+end

@@ -5,11 +5,11 @@ type +Weapon = %{ weapon: Weapon }
 trait RangedWeapon extends Weapon
 type +RangedWeapon = %{ weapon: RangedWeapon }
 
-struct Sword extends Weapon
-struct Shardblade extends Weapon
-struct Spear extends Weapon
-struct Shardbow extends RangedWeapon
-struct Bow extends RangedWeapon
+struct Sword() extends Weapon
+struct Shardblade() extends Weapon
+struct Spear() extends Weapon
+struct Shardbow() extends RangedWeapon
+struct Bow() extends RangedWeapon
 
 func weaponStrength(Weapon): Int
 func weaponStrength(Sword): Int = 7

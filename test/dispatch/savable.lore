@@ -21,7 +21,7 @@
  */
 
 // Let's assume that ExternalPhysics is defined in an external library and cannot just extend Savable.
-struct ExternalPhysics
+struct ExternalPhysics()
 
 
 // The result of the save is currently a list of things. Obviously this would be more sensible in the "real world".
@@ -42,10 +42,10 @@ func save(pos: Position): [Any] = flatten([['Position'], save(pos.x), save(pos.y
 func save(ExternalPhysics): [Any] = ['ExternalPhysics', 42]
 
 
-struct Character extends Savable {
+struct Character extends Savable
   position: Position
   physics: ExternalPhysics
-}
+end
 
 func save(char: Character): [Any] = flatten([['Character'], save(char.position), save(char.physics)])
 

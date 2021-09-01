@@ -1,25 +1,32 @@
+// ---------------------------------------------------------------------------------------------------------------------
+// Let's set the scene: Bertram Bunsnatcher, a rich industrialist, was found murdered in his cliff-side manor. There
+// are a number of suspects. Ten, to be precise. And Detective Truman Trout must find the culprit, as only one of them
+// could've done it. Let's dive into the prejudiced mind of Detective Trout and test all the subjects' guilt!
+// ---------------------------------------------------------------------------------------------------------------------
+
+
 trait Color
-struct Red extends Color
-struct Black extends Color
-struct Brown extends Color
-struct Yellow extends Color
-struct Blue extends Color
+struct Red() extends Color
+struct Black() extends Color
+struct Brown() extends Color
+struct Yellow() extends Color
+struct Blue() extends Color
 
 
 trait Profession
-struct Tailor extends Profession
-struct Lawyer extends Profession
-struct Entrepreneur extends Profession
-struct Gardener extends Profession
-struct Assassin extends Profession
+struct Tailor() extends Profession
+struct Lawyer() extends Profession
+struct Entrepreneur() extends Profession
+struct Gardener() extends Profession
+struct Assassin() extends Profession
 
 
 trait Tool
-struct Scissors extends Tool
-struct Suitcase extends Tool
-struct Paperknife extends Tool
-struct Spade extends Tool
-struct Dagger extends Tool
+struct Scissors() extends Tool
+struct Suitcase() extends Tool
+struct Paperknife() extends Tool
+struct Spade() extends Tool
+struct Dagger() extends Tool
 
 func tool(Profession): Tool
 func tool(Tailor): Tool = Scissors()
@@ -39,22 +46,22 @@ trait Relation
 trait Friendly extends Relation
 trait Neutral extends Relation
 trait Hostile extends Relation
-struct Professional extends Neutral
-struct Cordial extends Neutral
-struct Friends extends Friendly
-struct Lovers extends Friendly, Hostile
-struct Competing extends Hostile
-struct Shunned extends Hostile
+struct Professional() extends Neutral
+struct Cordial() extends Neutral
+struct Friends() extends Friendly
+struct Lovers() extends Friendly, Hostile
+struct Competing() extends Hostile
+struct Shunned() extends Hostile
 
 
 trait Approach
-struct Socialising extends Approach
-struct Calculating extends Approach
-struct Honest extends Approach
-struct Indifferent extends Approach
+struct Socialising() extends Approach
+struct Calculating() extends Approach
+struct Honest() extends Approach
+struct Indifferent() extends Approach
 
 
-struct Suspect {
+struct Suspect
   name: String
 
   open hairColor: Color
@@ -70,33 +77,35 @@ struct Suspect {
     * The suspect's relation to the victim.
     */
   open relation: Relation
-}
+end
 
 
-/**
-  * The kitchen maid saw a person leave by the staff entrance into the rainstorm outside. She noticed a flash of red as
-  * the door slammed behind the suspect. Detective Trout wonders: Was it the color of their clothes, their hair, or
-  * both?
-  */
+// ---------------------------------------------------------------------------------------------------------------------
+// The kitchen maid saw a person leave by the staff entrance into the rainstorm outside. She noticed a flash of red as
+// the door slammed behind the suspect. Detective Trout wonders: Was it the color of their clothes, their hair, or both?
+// ---------------------------------------------------------------------------------------------------------------------
+
 func colorFactor(suspect: %{ hairColor: Color, clothesColor: Color }): Real = 0.8
 func colorFactor(suspect: %{ hairColor: Red, clothesColor: Color }): Real = 1.2
 func colorFactor(suspect: %{ hairColor: Color, clothesColor: Red }): Real = 1.2
 func colorFactor(suspect: %{ hairColor: Red, clothesColor: Red }): Real = 1.5
 
 
-/**
-  * The suspect was murdered with a blunt weapon devoid of any sharpness. However, the murder weapon hasn't been
-  * found and Bunsnatcher's mansion is vast with an unaccountable number of objects. It cannot be ruled out that the
-  * murder weapon was already in the mansion before the suspect arrived, meaning the suspect didn't use their own
-  * tools of the trade.
-  */
+// ---------------------------------------------------------------------------------------------------------------------
+// The suspect was murdered with a blunt weapon devoid of any sharpness. However, the murder weapon hasn't been found
+// and Bunsnatcher's mansion is vast with an unaccountable number of objects. It cannot be ruled out that the murder
+// weapon was already in the mansion before the suspect arrived, meaning the suspect didn't use their own tools of the
+// trade.
+// ---------------------------------------------------------------------------------------------------------------------
+
 func weaponFactor(suspect: Suspect): Real = 1 + bluntness(tool(suspect.profession)) / 2
 
 
-/**
-  * Bertram Bunsnatcher was an influential man. He crossed paths with many people throughout his life, and some of them
-  * were blessed by his business, while others suffered from his influence.
-  */
+// ---------------------------------------------------------------------------------------------------------------------
+// Bertram Bunsnatcher was an influential man. He crossed paths with many people throughout his life. Some were blessed
+// by his business, while others suffered from his influence.
+// ---------------------------------------------------------------------------------------------------------------------
+
 func motiveFactor(suspect: %{ }): Real = 1.0
 
 // Friends don't kill friends, right?
@@ -130,10 +139,11 @@ func motiveFactor(suspect: %{ profession: Assassin, relation: Friendly }): Real 
 func motiveFactor(suspect: %{ profession: Assassin, relation: Lovers }): Real = 1.5 // Sadly needed for disambiguation.
 
 
-/**
-  * "75% of all cases are decided based on character," Detective Trout says. "Horrible people are more likely to commit
-  * horrible crimes."
-  */
+// ---------------------------------------------------------------------------------------------------------------------
+// "75% of all cases are decided based on character," Detective Trout says. "Horrible people are more likely to commit
+// horrible crimes."
+// ---------------------------------------------------------------------------------------------------------------------
+
 func characterFactor(suspect: %{ }): Real = 1.0
 
 // Honest jobs for honest people.
@@ -154,13 +164,7 @@ func characterFactor(suspect: %{ profession: Entrepreneur, approach: Honest }): 
   */
 func guilt(suspect: Suspect): Real = colorFactor(suspect) * weaponFactor(suspect) * motiveFactor(suspect) * characterFactor(suspect)
 
-
-/**
-  * Let's set the scene: Bertram Bunsnatcher, a rich industrialist, was found murdered in his cliff-side manor. There
-  * are a number of suspects. Ten, to be precise. And Detective Truman Trout must find the culprit, as only one of them
-  * could've done it. Let's dive into the prejudiced mind of Detective Trout and test all the subjects' guilt!
-  */
-func test(): [Real] = {
+func test(): [Real] = do
   let suspects = [
     Suspect('Rilam Ralam', Black(), Yellow(), Entrepreneur(), Calculating(), Competing()),
     Suspect('Warren Warner', Black(), Brown(), Gardener(), Honest(), Cordial()),
@@ -173,6 +177,5 @@ func test(): [Real] = {
     Suspect('Rooney Rudigiani', Black(), Brown(), Lawyer(), Socialising(), Lovers()),
     Suspect('Goodman Niceman', Black(), Black(), Assassin(), Honest(), Cordial())
   ]
-
-  for (suspect <- suspects) guilt(suspect)
-}
+  map(suspects, guilt)
+end

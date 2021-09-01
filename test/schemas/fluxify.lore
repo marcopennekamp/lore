@@ -1,18 +1,18 @@
 trait Option[+A]
 struct Some[open +A](value: A) extends Option[A]
-struct None extends Option[Nothing]
+struct None() extends Option[Nothing]
 
 
-struct Box[open +A, open +B] {
+struct Box[open +A, open +B]
   a: (Int, A, Real)
   b: Option[B]
-}
+end
 
 
 trait Counter
-struct Little extends Counter
-struct Several extends Counter
-struct Many extends Counter
+struct Little() extends Counter
+struct Several() extends Counter
+struct Many() extends Counter
 
 type CounterBox = Box[Counter, Int]
 
@@ -28,11 +28,11 @@ func perexonate(option: Some[Int]): Int = option.value
 func perexonate(option: None): Int = 0
 
 
-func test(): [Int] = {
+func test(): [Int] = do
   let boxes = [
     Box((3, Little(), 0.2), Some(8)),
     Box((1, Several(), 0.5), None()),
     Box((0, Many(), 0.1), Some(2))
   ]
   map(boxes, fluxify)
-}
+end

@@ -12,3 +12,6 @@ Map functions:
 
 Math functions:
 - increment
+
+Shape functions:
+- A type-safe merge function for shapes. (It probably needs compiler support.)

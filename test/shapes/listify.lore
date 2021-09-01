@@ -24,7 +24,7 @@ func genericListify2D(shape: %{ x: X, y: Y }): [X | Y] where X, Y = [shape.x, sh
 func genericListify3D(shape: %{ x: X, y: Y, z: Z }): [X | Y | Z] where X, Y, Z = [shape.x, shape.y, shape.z]
 
 
-func test(): [[Real]] = {
+func test(): [[Real]] = do
   let pos2D = Position2D(1.2, 5)
   let pos3D = Position3D(0, 5.1, 4.8)
   let pos2DShape = %{ x: 1.2, y: 5 }
@@ -33,4 +33,4 @@ func test(): [[Real]] = {
     listify(pos2D), listify(pos3D), genericListify2D(pos2D), genericListify3D(pos3D),
     listify(pos2DShape), listify(pos3DShape), genericListify2D(pos2DShape), genericListify3D(pos3DShape)
   ]
-}
+end

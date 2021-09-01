@@ -1,8 +1,8 @@
-func apples(person: %{ name: String }, count: Int): String = {
-  '${person.name}, you have $count apples. Please claim your ${if (count < 10) 'free' else '1000\$'} apple at the reception.'
-}
+func apples(person: %{ name: String }, count: Int): String = do
+  '${person.name}, you have $count apples. Please claim your ${if count < 10 then 'free' else '1000\$'} apple at the reception.'
+end
 
-func test(): [String] = {
+func test(): [String] = do
   let x = 'X'
   let myLongVariable = 'my long variable'
   let some = 'SOME'
@@ -20,4 +20,4 @@ func test(): [String] = {
     apples(%{ name: 'John' }, 11),
     apples(%{ name: 'Martin' }, 5)
   ]
-}
+end

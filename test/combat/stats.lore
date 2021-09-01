@@ -4,7 +4,7 @@
  * Note that you should use the accompanying baseStat function to access all stats except health, which may be accessed
  * directly. The reason is that select entities may want to overwrite the stats without changing the Stats object.
  */
-struct Stats {
+struct Stats
   // TODO: Does this really belong here?
   mut health: Int
 
@@ -47,7 +47,7 @@ struct Stats {
    * The running speed of the entity, per turn. This is used to close the distance to an opponent with ranged attacks.
    */
   speed: Int = 1
-}
+end
 
 type +Stats = %{ stats: Stats }
 

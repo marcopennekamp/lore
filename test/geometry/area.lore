@@ -1,9 +1,8 @@
-func test(): [Real] = {
+func test(): [Real] = do
   let shapes = [
     BoundingBox(0, 10, -5, 20),
     Circle(0, 5, 2.7),
     Rectangle(-5, -5, 20, 77)
   ]
-
-  for (shape <- shapes) { area(shape) }
-}
+  map(shapes, area)
+end

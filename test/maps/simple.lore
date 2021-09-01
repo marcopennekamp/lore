@@ -1,11 +1,9 @@
 func dummy_map(): #[String -> Int] = #['a' -> 0, 'b' -> 1, 'c' -> 2]
 
-func test(): [String] = {
+func test(): [String] = do
   // TODO: This is, understandably, not valid and needs a different kind of runtime type handling as outlined in runtime-types.
   //let empty: String -> Int = #[]
 
   let map = dummy_map()
-  for (entry <- map) {
-    '${first(entry)} is ${second(entry)}'
-  }
-}
+  for entry <- map yield '${first(entry)} is ${second(entry)}'
+end

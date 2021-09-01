@@ -1,26 +1,26 @@
-func lowIncrement(n: Int): Int = if (n < 25) n + 1 else n
+func lowIncrement(n: Int): Int = if n < 25 then n + 1 else n
 
-func towards25(n: Int): Int = {
-  if (n < 25)       n + 1
-  else if (n > 25)  n - 1
-  else              n
-}
+func towards25(n: Int): Int = do
+  if n < 25 then       n + 1
+  else if n > 25 then  n - 1
+  else                 n
+end
 
-func abc(a: Boolean, b: Boolean, c: Boolean): Boolean = {
-  if (a) {
+func abc(a: Boolean, b: Boolean, c: Boolean): Boolean = do
+  if a
     return b
-  } else {
+  end else
     return c
-  }
-}
+  end
+end
 
-func dangle(flag: Boolean, flag2: Boolean): Int = {
-  if (flag) if (flag2) return 1 else return 2
+func dangle(flag: Boolean, flag2: Boolean): Int = do
+  if flag then if flag2 then return 1 else return 2
   3
-}
+end
 
 func test(): [Boolean | Int] = [
-  if (true) false else true,
+  if true then false else true,
   abc(true, false, true),
   abc(false, false, true),
 

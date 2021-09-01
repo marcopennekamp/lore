@@ -8,7 +8,7 @@
   - ~~Change keywords: `function` --> `func`, `action` --> `act`.~~
   - ~~Add alternative struct syntax `struct Circle(x: Real, y: Real, radius: Real) extends Shape` that doesn't use a block.~~
   - ~~Allow omitting parameter names in function declarations if the parameter isn't used in a function's body.~~
-  - Change block syntax from curly braces to `do...end`.
+  - ~~Change block syntax from curly braces to `do...end`.~~
     - ~~Allow omitting parentheses in all control structures.~~
     - ~~Change `if` syntax to `if cond then A else B`. `then` may be omitted if A is an implicit block.~~
     - ~~Change `for` syntax to `for extractors yield E`. `yield` may be omitted if A is an implicit block.~~

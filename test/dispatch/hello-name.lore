@@ -2,14 +2,15 @@ func hello(String | Int): String
 func hello(name: String): String = 'Hello, $name.'
 func hello(id: Int): String = 'Hello, anonymous #$id.'
 
-func greetings(): [String] = {
+func greetings(): [String] = do
   let mut names: [String | Int] = []
   names = names :+ 'world'
   names = names :+ 5
   names = names :+ 'marco'
   names = names :+ 'console'
   names = names :+ 100
-  for (name <- names) { hello(name) }
-}
+
+  map(names, hello)
+end
 
 func test(): [String] = greetings()

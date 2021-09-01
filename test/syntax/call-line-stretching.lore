@@ -2,8 +2,8 @@
 // to the next line.
 
 // If not parsed correctly, Lore would try to compile a multi-function call x().
-act test() {
+act test() do
   let x = 5
   let y = x
   ()
-}
+end

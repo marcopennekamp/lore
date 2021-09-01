@@ -2,13 +2,13 @@ trait A
 trait X
 trait Y extends X
 
-struct A1 extends A
-struct A2 extends A
-struct A3 extends A, Y
-struct B
-struct C
-struct D extends Y
-struct E extends X
+struct A1() extends A
+struct A2() extends A
+struct A3() extends A, Y
+struct B()
+struct C()
+struct D() extends Y
+struct E() extends X
 
 func f(A | B | C): Int
 func f(A): Int

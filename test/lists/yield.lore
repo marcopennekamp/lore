@@ -1,9 +1,7 @@
 struct Copper(value: Int)
 struct Gold(value: Int)
 
-func absolute(value: A): A where A <: Real = if (value < 0) -value else value
-
 func transform(a: Copper): Gold = Gold(absolute(a.value) * 2)
-func transform(as: [Copper]): [Gold] = for (a <- as) { transform(a) }
+func transform(as: [Copper]): [Gold] = for a <- as yield transform(a)
 
 func test(): [Gold] = transform([Copper(1), Copper(-5), Copper(10), Copper(-12)])

@@ -8,12 +8,12 @@ func affectStat(StatusEffect, StatLabel, value: A): A where A = value
 /**
  * Called during the end-of-turn status effect update.
  */
-act onUpdate(StatusEffect) { }
+act onUpdate(StatusEffect) do end
 
 /**
  * Called whenever the entity gets hit by an attack (after a potential dodge failed).
  */
-act onHit(StatusEffect) { }
+act onHit(StatusEffect) do end
 
 /**
  * Whether the given status effect is active.
@@ -21,32 +21,32 @@ act onHit(StatusEffect) { }
 func isActive(StatusEffect): Boolean = true
 
 
-struct DurationLimit {
+struct DurationLimit
   mut duration: Int
-}
+end
 
 type +DurationLimit = StatusEffect & %{ limit: DurationLimit }
 
-act onUpdate(effect: +DurationLimit) {
-  if (isActive(effect)) {
+act onUpdate(effect: +DurationLimit) do
+  if isActive(effect)
     effect.limit.duration -= 1
-  }
-}
+  end
+end
 
 func isActive(effect: +DurationLimit): Boolean = effect.limit.duration > 0
 
 
-struct HitLimit {
+struct HitLimit
   mut hits: Int
-}
+end
 
 type +HitLimit = StatusEffect & %{ limit: HitLimit }
 
-act onHit(effect: +HitLimit) {
-  if (isActive(effect)) {
+act onHit(effect: +HitLimit) do
+  if isActive(effect)
     effect.limit.hits -= 1
-  }
-}
+  end
+end
 
 func isActive(effect: +HitLimit): Boolean = effect.limit.hits > 0
 
@@ -54,10 +54,10 @@ func isActive(effect: +HitLimit): Boolean = effect.limit.hits > 0
 /**
  * The entity is armored and has increased defense. The armor breaks after a set amount of hits.
  */
-struct Armored extends StatusEffect {
+struct Armored extends StatusEffect
   armor: Int
   limit: HitLimit
-}
+end
 
 func createArmored(armor: Int, durability: Int): Armored = Armored(armor, HitLimit(durability))
 
@@ -67,9 +67,9 @@ func affectStat(effect: Armored, #defense, value: Int): Int = value + effect.arm
 /**
  * The entity is infused with Stormlight.
  */
-struct Infusion extends StatusEffect {
+struct Infusion extends StatusEffect
   limit: DurationLimit
-}
+end
 
 func createInfusion(duration: Int): Infusion = Infusion(DurationLimit(duration))
 
@@ -78,25 +78,27 @@ func affectStat(effect: Infusion, #dodge, value: Real): Real = 1.0 // Dodge all 
 func affectStat(effect: Infusion, #regeneration, value: Int): Int = 5
 
 
-struct StatusEffects {
+struct StatusEffects
   mut effects: [StatusEffect]
-}
+end
 
 type +StatusEffects = %{ statusEffects: StatusEffects }
 
-act buff(entity: +StatusEffects, effect: StatusEffect) {
+act buff(entity: +StatusEffects, effect: StatusEffect) do
   entity.statusEffects.effects = entity.statusEffects.effects :+ effect
-}
+end
 
 /**
  * Updates status effects, removing those from the list that have expired.
  */
-act updateStatusEffects(entity: +StatusEffects) {
+act updateStatusEffects(entity: +StatusEffects) do
   let effects = entity.statusEffects.effects
   foreach(effects, onUpdate)
   entity.statusEffects.effects = filter(effects, isActive)
-}
+end
 
-act onHitStatusEffects(entity: +StatusEffects) {
-  for (effect <- entity.statusEffects.effects) onHit(effect)
-}
+act onHitStatusEffects(entity: +StatusEffects) do
+  for effect <- entity.statusEffects.effects
+    onHit(effect)
+  end
+end

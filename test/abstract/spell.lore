@@ -23,9 +23,9 @@ func damageOf(Spell[Element, Cost], Defense): Damage
 
 
 trait Spike[+E <: Ice | Earth, +S <: Specialty, +Id] extends Spell[E, Mana]
-struct IceSpike extends Spike[Ice, Freezing, #ice_spike]
-struct NeedleIceSpike extends Spike[Ice, Penetrating, #needle_ice_spike]
-struct EarthSpike extends Spike[Earth, Penetrating, #earth_spike]
+struct IceSpike() extends Spike[Ice, Freezing, #ice_spike]
+struct NeedleIceSpike() extends Spike[Ice, Penetrating, #needle_ice_spike]
+struct EarthSpike() extends Spike[Earth, Penetrating, #earth_spike]
 
 func rawDamage(Spike[Ice, Specialty, #ice_spike]): Damage = 10
 func rawDamage(Spike[Ice, Specialty, #needle_ice_spike]): Damage = 12
@@ -34,15 +34,15 @@ func rawDamage(Spike[Earth, Specialty, Any]): Damage = 8
 // We would usually define this for any Specialty and then override only Penetrating, but the point here is testing
 // that the totality constraint sees that all possibilities have been covered.
 func damageOf(spell: Spike[Ice | Earth, Freezing, Any], defense: Defense): Damage = calculateDamage(rawDamage(spell), defense)
-func damageOf(spell: Spike[Ice | Earth, Penetrating, Any], defense: Defense): Damage = {
+func damageOf(spell: Spike[Ice | Earth, Penetrating, Any], defense: Defense): Damage = do
   // `Penetrating` ignores 50% of defense.
   calculateDamage(rawDamage(spell), floor(defense / 2))
-}
+end
 
 func calculateDamage(rawDamage: Damage, defense: Defense): Damage = max(rawDamage - defense, 0)
 
 
-func test(): [Damage] = {
+func test(): [Damage] = do
   let iceSpike = IceSpike()
   let needleIceSpike = NeedleIceSpike()
   let earthSpike = EarthSpike()
@@ -58,4 +58,4 @@ func test(): [Damage] = {
     damageOf(needleIceSpike, 12),
     damageOf(earthSpike, 12)
   ]
-}
+end

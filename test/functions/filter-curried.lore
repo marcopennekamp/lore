@@ -1,8 +1,8 @@
-func filterCurried(f: A => Boolean): [A] => [A] where A = {
+func filterCurried(f: A => Boolean): [A] => [A] where A = do
   list => filter(list, f)
-}
+end
 
-func test(): [[Int]] = {
+func test(): [[Int]] = do
   let data = [
     [1, 2, 3, 4, 5],
     [4, 8, 11, 15, 6],
@@ -10,4 +10,4 @@ func test(): [[Int]] = {
     [1, 1, 1, 1, 1]
   ]
   map(data, filterCurried(x => remainder(x, 2) == 0))
-}
+end

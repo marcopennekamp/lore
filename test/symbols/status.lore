@@ -4,10 +4,10 @@ func stringify(Status): String
 func stringify(#ok): String = 'Success!'
 func stringify(#error): String = 'Failure!'
 
-func process(value: Int): (Status, String) = {
-  if (value < 5) (#ok, 'Below five.')
+func process(value: Int): (Status, String) = do
+  if value < 5 then (#ok, 'Below five.')
   else (#error, 'At or above five.')
-}
+end
 
 func stringify(result: (Status, String)): String = stringify(first(result))
 

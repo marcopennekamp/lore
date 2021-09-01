@@ -1,9 +1,9 @@
 trait Animal
-struct Cat extends Animal
-struct Dog extends Animal
+struct Cat() extends Animal
+struct Dog() extends Animal
 
-func test(): [Cat | Dog] = {
+func test(): [Cat | Dog] = do
   // TODO: This should compile, but the list is inferred as [Animal]. See TypingJudgment.LeastUpperBound.
   let result: [Cat | Dog] = [Cat(), Dog(), Cat()]
   result
-}
+end

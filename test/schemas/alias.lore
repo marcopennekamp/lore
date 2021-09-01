@@ -7,7 +7,7 @@ type IntConsumer[B] = Function[Int, B]
 type Int2IntFunction = Function[Int, Int]
 
 
-func test(): [String] = {
+func test(): [String] = do
   let f1 = StringFunction((x: Int) => 'hey int $x')
   let f2 = StringFunction((list: [Int]) => stringJoin(map(list, f1.f), ', '))
   let f3 = IntConsumer(x => x * 0.4)
@@ -20,4 +20,4 @@ func test(): [String] = {
     apply(f4, 2), apply(f4, -1)
   ]
   map(data, toString)
-}
+end

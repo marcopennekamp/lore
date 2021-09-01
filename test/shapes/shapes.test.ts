@@ -3,6 +3,11 @@ import { ListValue } from '../../runtime/src/lore/runtime/lists.ts'
 import { assertIsList, assertListEquals, assertListForall } from '../assertions.ts'
 import { LoreTest } from '../base.ts'
 
+Deno.test('shapes/barks', async () => {
+  const result: string = await LoreTest.run('shapes/barks.lore')
+  assertEquals(result, 'Your dog Raider barks at a MADNESS-INDUCING volume showing sharp teeth!')
+})
+
 Deno.test('shapes/bunsnatcher', async () => {
   const result: ListValue<number> = await LoreTest.run('shapes/bunsnatcher.lore')
   assertIsList(result)
@@ -31,9 +36,4 @@ Deno.test('shapes/listify', async () => {
 Deno.test('shapes/mut', async () => {
   const result: ListValue<number> = await LoreTest.run('shapes/mut.lore')
   assertListEquals(result, [0, 1, 3])
-})
-
-Deno.test('shapes/options', async () => {
-  const result: string = await LoreTest.run('shapes/options.lore')
-  assertEquals(result, 'Your dog Robby barks at a MADNESS-INDUCING volume showing sharp teeth!')
 })

@@ -3,7 +3,7 @@ func foo(A, A): Int where A = 2
 func foo(String, A): Int where A = 3
 func foo(String, String): Int = 4
 
-struct Block
+struct Block()
 
 func test(): [Int] = [
   foo(Block(), 'Code'),

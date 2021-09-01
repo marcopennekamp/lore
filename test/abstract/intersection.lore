@@ -8,13 +8,13 @@ trait V1 extends V
 trait W
 trait W1 extends W
 
-struct A extends T1, V {
+struct A extends T1, V
   name: String
-}
-struct B extends T2, U1, V1, W1
-struct C extends T1, T2, U2 {
+end
+struct B() extends T2, U1, V1, W1
+struct C extends T1, T2, U2
   name: String
-}
+end
 
 func f1(T1): String
 func f1(A): String = 'A'
@@ -50,18 +50,18 @@ func f9(W1 & %{ name: String }): String
 
 trait X
 trait Y
-struct X1 extends X, Y
-struct X2 extends X, Y
-struct X3 extends X, Y
-struct X4 extends X
-struct Y1 extends Y
+struct X1() extends X, Y
+struct X2() extends X, Y
+struct X3() extends X, Y
+struct X4() extends X
+struct Y1() extends Y
 
 func f10(X & Y): String
 func f10(X1 | X2): String = 'X1|X2'
 func f10(X3): String = 'X3'
 
 
-func test(): [String] = {
+func test(): [String] = do
   let a = A('Ada')
   let b = B()
   let c = C('Cone')
@@ -77,4 +77,4 @@ func test(): [String] = {
     f8(c),
     f10(X1()), f10(X2()), f10(X3())
   ]
-}
+end

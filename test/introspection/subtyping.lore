@@ -1,14 +1,14 @@
 trait Animal
 
-struct Ox extends Animal {
+struct Ox extends Animal
   name: String
   weight: Real
-}
+end
 
-struct Crane extends Animal {
+struct Crane extends Animal
   name: String
   height: Real
-}
+end
 
 func niuzao(): Ox = Ox('Niuzao', 387.23)
 func chiji(): Crane = Crane('Chi-Ji', 5.51)

@@ -1,4 +1,4 @@
-func test(): [Real | Boolean] = {
+func test(): [Real | Boolean] = do
   let a = 10
   let b = 5
   let c = 40
@@ -8,7 +8,7 @@ func test(): [Real | Boolean] = {
 
   [
     a + b,
-    a + { b },
+    a + (do b end),
     a - b,
     a + -b,
     a * b + b * 3.5,
@@ -26,4 +26,4 @@ func test(): [Real | Boolean] = {
     !(a == 10) || (-b < a) && (!b1 == b2),
     b1 && !b2 && c < -a * -b
   ]
-}
+end

@@ -1,21 +1,21 @@
 trait Hero extends Combatant, +Weapon
 
 
-struct Shardbearer extends Hero {
+struct Shardbearer extends Hero
   name: String
   stats: Stats
   statusEffects: StatusEffects = StatusEffects([])
   open weapon: Weapon
-}
+end
 
 func name(shardbearer: Shardbearer): String = shardbearer.name
 
-act enterCombat(shardbearer: Shardbearer) {
+act enterCombat(shardbearer: Shardbearer) do
   buff(shardbearer, createArmored(15, 3))
-}
+end
 
 
-struct Radiant extends Hero {
+struct Radiant extends Hero
   name: String
 
   /**
@@ -27,11 +27,11 @@ struct Radiant extends Hero {
   stats: Stats
   statusEffects: StatusEffects = StatusEffects([])
   weapon: Weapon
-}
+end
 
 func name(radiant: Radiant): String = radiant.name
 
-act enterCombat(radiant: Radiant) {
+act enterCombat(radiant: Radiant) do
   buff(radiant, createInfusion(radiant.infusion))
   buff(radiant, createArmored(3, 5))
-}
+end

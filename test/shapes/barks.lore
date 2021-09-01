@@ -1,0 +1,18 @@
+type Animal = %{ name: String, breed: String }
+type Options = %{ showTeeth: Boolean, volume: Real }
+
+func bark(animal: Animal, options: Options): String = 'Your ${animal.breed} ${animal.name} barks at a ${volumeMeaning(options.volume)} volume${showingTeeth(options.showTeeth)}!'
+
+func volumeMeaning(volume: Real): String = do
+  if volume < 50 then 'real quiet'
+  else if volume < 60 then 'pretty normal'
+  else if volume < 70 then 'quite loud'
+  else if volume < 80 then 'wall-banging'
+  else 'MADNESS-INDUCING'
+end
+
+func showingTeeth(showTeeth: Boolean): String = do
+  if showTeeth then ' showing sharp teeth' else ''
+end
+
+func test(): String = bark(%{ name: 'Raider', breed: 'dog' }, %{ showTeeth: true, volume: 80 })

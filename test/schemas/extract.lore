@@ -7,7 +7,7 @@ func extract(crate: IntCrate): Int = crate.value
 struct ListCrate[+A](list: [A]) extends Crate[[A]]
 func extract(crate: ListCrate[A]): [A] where A = crate.list
 
-struct TobyCrate extends Crate[String]
+struct TobyCrate() extends Crate[String]
 func extract(TobyCrate): String = 'I am a crate and my name is Toby!'
 
 

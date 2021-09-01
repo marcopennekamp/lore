@@ -6,12 +6,12 @@
 // other part of the system would benefit from a rule change.
 
 trait Material
-struct Leather extends Material
-struct Cloth extends Material
+struct Leather() extends Material
+struct Cloth() extends Material
 
-struct Bag {
+struct Bag
   open material: Material
-}
+end
 
 func equalTypes(A, B): Boolean where A, B = false
 func equalTypes(A, A): Boolean where A = true
@@ -19,7 +19,7 @@ func equalTypes(A, A): Boolean where A = true
 func subtype(A, B): Boolean where A, B = false
 func subtype(A, B): Boolean where A, B <: A = true
 
-func test(): [Boolean] = {
+func test(): [Boolean] = do
   let leatherBag = Bag(Leather())
   let clothBag = Bag(Cloth())
 
@@ -33,4 +33,4 @@ func test(): [Boolean] = {
     subtype(leatherBag, clothBag),        // --> false
     subtype(clothBag, leatherBag)         // --> false
   ]
-}
+end
