@@ -54,6 +54,31 @@
 - Allow question marks in identifiers. Example: `is_empty(list)` would become `empty?(list)`.
   - I'm holding out on this regarding the new syntax to see whether the question mark would be better placed with special option handling. I want to make options first-class with if/cond evaluating to an Option if there is no else path, so there might be value in also adding operators that make option handling easier.
   - In addition to this, the question mark before the parentheses in the call above at least *looks* strange. So I need additional time to consider this before I implement it.
+- Down the line, it would be great to have something like:
+  ```
+  if cond
+    tles1
+  else
+    tles2
+  end
+  ```
+  For now, we require an `end` before the `else` so that an ambiguity like this cannot happen:
+  ```
+  if cond
+    let x = if hello then world
+  else
+    y
+  end
+  ```
+  Is the `else y` part of the outer or the inner `if`? This is essentially the dangling else problem turned up to 11. Remember that the parser just sees `if abc\n let x = if hello then world\n else\n y\n end`. One solution would be to require a then-style `if` to have its `else` on the same line, but this disallows styles such as this:
+  ```
+  if cond then hey
+  else 
+    foo
+    bar
+  end
+  ```
+  So we'd need indentation-based blocks to really disambiguate here.
 
 ##### Type System
 

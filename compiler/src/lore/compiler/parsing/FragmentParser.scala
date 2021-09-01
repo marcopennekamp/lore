@@ -54,12 +54,12 @@ class FragmentParser(implicit fragment: Fragment) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def function[_: P]: P[DeclNode.FunctionNode] = {
     P(
-      Index ~ "func" ~~ Space.WS1 ~/ name ~ parameters ~ typeParser.typing ~ functionTypeVariables ~ ("=" ~ expressionParser.expression).? ~ Index
+      Index ~~ "func" ~~ Space.WS1 ~/ name ~ parameters ~ typeParser.typing ~ functionTypeVariables ~ ("=" ~ expressionParser.expression).? ~ Index
     ).map(withPosition(DeclNode.FunctionNode.fromFunction _))
   }
 
   private def action[_: P]: P[DeclNode.FunctionNode] = {
-    P(Index ~ "act" ~~ Space.WS1 ~/ name ~ parameters ~ functionTypeVariables ~~ expressionParser.block.? ~ Index)
+    P(Index ~~ "act" ~~ Space.WS1 ~/ name ~ parameters ~ functionTypeVariables ~ expressionParser.block.? ~ Index)
       .map(withPosition(DeclNode.FunctionNode.fromAction _))
   }
 

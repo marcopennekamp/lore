@@ -70,17 +70,12 @@ class ExpressionParser(
     def elsePart = P("else" ~~ Space.WS ~~ (implicitBlock | topLevelExpression))
     def thenStyle = P(expression ~ "then" ~ topLevelExpression ~ elsePart.?)
 
-    // `empty` is needed so that we don't require a second `Space.terminators` if the block is empty.
-    def endOrElse = P("end".!.map(_ => None) | elsePart.map(Some(_)))
-    def empty = P(Index ~~ endOrElse).map { case (endIndex, onFalse) => (Vector.empty, endIndex, onFalse) }
-    def nonEmpty = P(blockExpressions ~~ Space.terminators ~~ Index ~~ endOrElse)
-    def emptyOrBlock = P(Index ~~ (empty | nonEmpty)).map {
-      case (startIndex, (blockStatements, endIndex, onFalse)) =>
-        val block = withPosition(ExprNode.BlockNode)(startIndex, blockStatements, endIndex)
-        (block, onFalse)
-    }
-    def blockStyle = P(singleLineExpression ~~ Space.terminators ~~ emptyOrBlock).map {
-      case (condition, (onTrue, onFalse)) => (condition, onTrue, onFalse)
+    def blockStyle = {
+      P(singleLineExpression ~~ Space.terminators ~~ Index ~~ blockExpressions ~ "end" ~~ Index ~~ elsePart.?).map {
+        case (condition, startIndex, onTrueExpressions, endIndex, onFalse) =>
+          val onTrue = withPosition(ExprNode.BlockNode)(startIndex, onTrueExpressions, endIndex)
+          (condition, onTrue, onFalse)
+      }
     }
 
     P(Index ~~ "if" ~~ Space.WS1 ~~ (thenStyle | blockStyle) ~~ Index)

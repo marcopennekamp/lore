@@ -202,7 +202,7 @@ We will add **multi-line strings** in another version of Lore.
 ```
 let k = 10
 let p = Person('Smith Johnson', 48)
-let announcement = '${p.name}, you have $k apples. Please claim your ${if (k < 10) 'free' else '1000\$'} apple at the reception.'
+let announcement = '${p.name}, you have $k apples. Please claim your ${if k < 10 then 'free' else '1000\$'} apple at the reception.'
 ```
 
 ##### String Operators
@@ -455,14 +455,14 @@ end
 
 if cond
   tles1
-else
+end else
   tles2
 end
 ```
 
 Note that either top-level expression (TLE) (or even `cond`) may be a block. The else part is, of course, optional. The so-called **dangling else** is always parsed as belonging to the `if` closest to it.
 
-The if-expressions without a `then` require the top-level expression(s) to be placed on the next line. This also implicitly opens a block, which must be closed with an `end`, or an `else` on a new line. An `else` with an implicit block must also be closed with an `end`.
+The if-expressions without a `then` require the top-level expression(s) to be placed on the next line. This also implicitly opens a block, which must be closed with an `end`. An `else` with an implicit block must also be closed with an `end`.
 
 
 
