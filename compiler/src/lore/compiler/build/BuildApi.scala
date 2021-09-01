@@ -40,11 +40,16 @@ object BuildApi {
     *
     * This is used by the language server, so by default it never terminates compilation early.
     */
-  def analyze(options: BuildOptions, exitEarly: Boolean = false)(implicit reporter: Reporter): Registry = {
+  def analyze(options: BuildOptions)(implicit reporter: Reporter): Registry = {
     val fragments = getFragments(options)
-    LoreCompiler.analyze(fragments, exitEarly).getOrElse(
+    LoreCompiler.analyze(fragments, exitEarly = false).getOrElse(
       throw CompilationException("`LoreCompiler.analyze` called with `exitEarly = false` should always return a Registry.")
     )
+  }
+
+  def analyzeExitEarly(options: BuildOptions)(implicit reporter: Reporter): Option[Registry] = {
+    val fragments = getFragments(options)
+    LoreCompiler.analyze(fragments, exitEarly = true)
   }
 
   case class DuplicateFragmentName(fragment: Fragment) extends Feedback.Error(Position(fragment, 0, 0)) {

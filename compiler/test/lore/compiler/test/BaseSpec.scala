@@ -21,14 +21,16 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
     */
   def analyzeFragment(fragmentPath: String): Registry = {
     implicit val reporter: MemoReporter = MemoReporter()
-    val registry = BuildApi.analyze(BuildOptions().withSources(testFragmentBase.resolve(fragmentPath)), exitEarly = true)
+    val registry = BuildApi.analyzeExitEarly(BuildOptions().withSources(testFragmentBase.resolve(fragmentPath)))
 
     val errors = reporter.feedback.filter(_.isError)
     if (errors.nonEmpty) {
       Assertions.fail(s"Compilation of $fragmentPath should have succeeded, but unexpectedly failed with errors:\n${errors.mkString("\n")}")
     }
 
-    registry
+    registry.getOrElse(
+      Assertions.fail(s"Compilation of $fragmentPath succeeded without errors, but didn't produce a Registry.")
+    )
   }
 
   /**
@@ -37,7 +39,7 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
     */
   def assertCompilationErrors(fragmentPath: String)(assert: Vector[Feedback.Error] => Assertion): Assertion = {
     implicit val reporter: MemoReporter = MemoReporter()
-    BuildApi.analyze(BuildOptions().withSources(testFragmentBase.resolve(fragmentPath)), exitEarly = true)
+    BuildApi.analyzeExitEarly(BuildOptions().withSources(testFragmentBase.resolve(fragmentPath)))
 
     if (!reporter.feedback.exists(_.isError)) {
       Assertions.fail(s"Compilation of $fragmentPath should have failed with errors, but unexpectedly succeeded.")
