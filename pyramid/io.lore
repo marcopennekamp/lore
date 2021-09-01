@@ -1,4 +1,4 @@
-act println(value: Any)
+act println(value: Any) do
   dynamic[()]('Lore.io.println', toString(value))
 end
 

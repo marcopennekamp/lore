@@ -12,7 +12,7 @@ end
 func pi(): Real = 3.14
 
 // Illegal: 5.5 is a Real, not an Int.
-act test2()
+act test2() do
   let number: Int = 5.5
 end
 

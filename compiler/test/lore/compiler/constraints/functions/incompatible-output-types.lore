@@ -8,5 +8,4 @@ func f(value: A): Int = 0
 func f(value: B1): Real = 1.0
 
 // Illegal: () is not a subtype of Int.
-act f(value: B2)
-end
+act f(value: B2) do end

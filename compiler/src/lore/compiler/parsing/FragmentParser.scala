@@ -59,7 +59,7 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def action[_: P]: P[DeclNode.FunctionNode] = {
-    P(Index ~ "act" ~~ Space.WS1 ~/ name ~ parameters ~ functionTypeVariables ~~ expressionParser.implicitBlock.? ~ Index)
+    P(Index ~ "act" ~~ Space.WS1 ~/ name ~ parameters ~ functionTypeVariables ~~ expressionParser.block.? ~ Index)
       .map(withPosition(DeclNode.FunctionNode.fromAction _))
   }
 
