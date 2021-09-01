@@ -14,4 +14,4 @@ trait Z[-A] extends %{
 
 trait Array[A]
 // Error: A is covariant but stands in an invariant position.
-struct NaiveArray[+A] extends Array[A]
+struct NaiveArray[+A]() extends Array[A]

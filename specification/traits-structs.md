@@ -25,13 +25,17 @@ trait T extends A, B, %{ property: C }
 
 A **struct** is a set of **properties** with optional default values and optional mutability. As structs describe actual instances, a struct type is **always concrete and never abstract**. A struct may extend traits and shapes, which is elaborated on further below.
 
-Structs can be defined using two **syntax styles**, either with properties in parentheses directly after the name, or with properties in a block, which offers more flexibility. In the block style, properties can be delimited using commas and newlines. Both approaches are permitted interchangeably, giving the ability to use both commas and newlines in the same struct definition. All styles and approaches should be chosen based on readability. 
+Structs can be defined using two **syntax styles**, either with properties in parentheses directly after the name, or with properties in a block, which offers more flexibility. In the block style, properties can be delimited using commas and newlines. Both approaches are permitted interchangeably, giving the ability to use both commas and newlines in the same struct definition. All styles and approaches should be chosen based on readability.
 
 Properties can be **accessed** using the member access notation `struct.property`.
 
 ###### Example
 
 ```
+struct Empty()
+struct Empty
+end
+
 struct Point(x: Real = 0, y: Real = 0, z: Real = 0)
 struct Point
   x: Real = 0, y: Real = 0, z: Real = 0

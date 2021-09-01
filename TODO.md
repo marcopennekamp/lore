@@ -13,7 +13,7 @@
     - ~~Change `if` syntax to `if cond then A else B`. `then` may be omitted if A is an implicit block.~~
     - ~~Change `for` syntax to `for extractors yield E`. `yield` may be omitted if A is an implicit block.~~
     - ~~Change `while` syntax accordingly.~~
-    - Start treating newlines in specific contexts (such as ~~after `if condition\n`s~~ or `struct X extends A\n`) as `do` portions of a `do...end` block.
+    - ~~Start treating newlines in specific contexts (such as after `if condition\n` or `struct X extends A\n`) as `do` portions of a `do...end` block.~~
   - Apply snake_case across the board for variable and function names.
   - `@where` "annotation".
   - Pipe operator.
@@ -25,6 +25,7 @@
     - This would allow us to write `obj None extends Option[Nothing]` instead of `struct None() extends Option[Nothing]` AND it would remove the need to constantly instantiate Nones: `None` instead of `None()`.
     - Alternative keywords: `instance`/`inst`, `singleton`/`sing`.
   - Possibly rename `to_string` to `stringify` or something similar to make it a single word.
+  - Clear all `TODO (new syntax)` entries.
   - Unsupported for now:
     - Implicit underscore sections (e.g. `map(things, _.name)`).
     - `@given` parameters.

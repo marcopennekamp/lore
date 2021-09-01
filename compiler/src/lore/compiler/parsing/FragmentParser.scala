@@ -89,16 +89,46 @@ class FragmentParser(implicit fragment: Fragment) {
     P(Index ~ "trait" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(traitTypeVariable) ~ `extends` ~ Index).map(withPosition(TypeDeclNode.TraitNode))
   }
 
-  private def struct[_: P]: P[TypeDeclNode.StructNode] = {
-    def conciseForm = P("(" ~ property.rep(sep = CharIn(",")).map(_.toVector) ~ ")" ~ `extends`).map { case (properties, extended) => (extended, properties) }
-    def bodyForm = P(`extends` ~ structBody)
-    P(Index ~ "struct" ~~ Space.WS1 ~/ structName ~~ Space.WS ~~ typeVariables(structTypeVariable) ~ (conciseForm | bodyForm) ~ Index)
-      .map { case (startIndex, nameNode, typeVariables, (extended, properties), endIndex) => (startIndex, nameNode, typeVariables, extended, properties, endIndex) }
-      .map(withPosition(TypeDeclNode.StructNode))
-  }
-
   private def `extends`[_: P]: P[Vector[TypeExprNode]] = {
     P(("extends" ~~ Space.WS1 ~ typeExpression.rep(1, CharIn(",")).map(_.toVector)).?).map(_.getOrElse(Vector.empty))
+  }
+
+  private def struct[_: P]: P[TypeDeclNode.StructNode] = {
+    def conciseForm = P("(" ~ property.rep(sep = CharIn(",")).map(_.toVector) ~ ")" ~ `extends`)
+      .map { case (properties, extended) => (extended, properties) }
+
+    // Note that given the implicit struct body as it is now (newline..end), we cannot both allow newlines and trailing
+    // commas in `extends` clauses. If we allow newlines, a trailing comma could lead the parser to make bad decisions:
+    //
+    //    struct Hello extends
+    //        World,
+    //        ExclamationMark,
+    //      text: String
+    //    end
+    //
+    // If we don't allow newlines, trailing commas are fine, BUT they wouldn't be useful anyway, and structs with many
+    // extends clauses will become very messy. Hence, we have to disallow trailing commas, so that this becomes legal:
+    //
+    //    struct Hello extends
+    //        World,
+    //        ExclamationMark
+    //      text: String
+    //    end
+    // TODO (new syntax): Another way would be to disallow trailing commas if a newline is used to delimit the extends
+    //                    clause from the properties, but also to allow them if `do` is used as an optional delimiter.
+    //                    The code example would then become:
+    //    struct Hello extends
+    //        World,
+    //        ExclamationMark,
+    //    do
+    //      text: String
+    //    end
+    //                    This seems to be the best approach, considering that it's also visually clearer.
+    def bodyForm = P(`extends` ~~ structBody)
+
+    P(Index ~~ "struct" ~~ Space.WS1 ~~/ structName ~~ Space.WS ~~ typeVariables(structTypeVariable) ~~ Space.WS ~~ (conciseForm | bodyForm) ~~ Index)
+      .map { case (startIndex, nameNode, typeVariables, (extended, properties), endIndex) => (startIndex, nameNode, typeVariables, extended, properties, endIndex) }
+      .map(withPosition(TypeDeclNode.StructNode))
   }
 
   private def structBody[_: P]: P[Vector[TypeDeclNode.PropertyNode]] = {
@@ -107,7 +137,7 @@ class FragmentParser(implicit fragment: Fragment) {
     // a comment between the property and the comma, so we have to apply the .rep parser there.
     def propertyLine = P(property.rep(sep = CharIn(","))).map(_.toVector)
     def properties = P(propertyLine.repX(sep = Space.terminators)).map(_.toVector.flatten)
-    P(("{" ~ properties ~ "}").?).map(_.getOrElse(Vector.empty))
+    P(Space.terminators ~~ properties ~ "end")
   }
 
   private def property[_: P]: P[TypeDeclNode.PropertyNode] = {

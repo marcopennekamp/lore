@@ -2,9 +2,9 @@ trait X[-A, +B]
 
 // Error: B is covariant but stands in a contravariant position.
 // Error: A is contravariant but stands in a covariant position.
-struct Y[-A, +B] extends X[B, A]
+struct Y[-A, +B]() extends X[B, A]
 
-struct Z[-A, +B, C] {
+struct Z[-A, +B, C]
   // Error: B is covariant but stands in a contravariant position.
   // Error: A is contravariant but stands in a covariant position.
   callable: B => A
@@ -19,10 +19,10 @@ struct Z[-A, +B, C] {
   mut callable2: C => Y[Int, A]
   // Error: A is contravariant but stands in an invariant position.
   mut callable3: Y[Int, A] => C
-}
+end
 
 trait Array[A]
-struct Collection[+A] {
+struct Collection[+A]
   // Error: A is covariant but stands in an invariant position.
   array: Array[A]
-}
+end

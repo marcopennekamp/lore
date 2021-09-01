@@ -1,20 +1,20 @@
 // Error: The open type parameter A must be covariant.
-struct X1[open A] {
+struct X1[open A]
   value: A
-}
+end
 
 // Error: The open type parameter A is not uniquely deducible.
-struct X2[open +A] {
+struct X2[open +A]
   v1: A
   v2: A
-}
+end
 
 // Error: The open type parameter A is not uniquely deducible.
-struct X3[open +A] {
+struct X3[open +A]
   value: X1[A] | Real
-}
+end
 
 // Error: The open type parameter A must be used in an immutable property.
-struct X4[open +A] {
+struct X4[open +A]
   mut value: A
-}
+end

@@ -1,4 +1,4 @@
-struct VeryIllegal {
+struct VeryIllegal
   crimes: Int
   crimes: Real
-}
+end

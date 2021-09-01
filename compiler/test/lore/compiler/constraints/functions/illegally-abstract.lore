@@ -2,7 +2,7 @@ trait Tree
 trait Wood
 
 trait Augmentation
-struct Struct
+struct Struct()
 
 func f1(Any): Any
 

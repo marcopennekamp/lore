@@ -6,18 +6,18 @@ trait Animal
 trait Bird extends Animal
 trait Mammal extends Animal
 trait Fish extends Animal
-struct Chicken extends Bird
-struct Penguin extends Bird
-struct Raven extends Bird
-struct Human extends Mammal
+struct Chicken() extends Bird
+struct Penguin() extends Bird
+struct Raven() extends Bird
+struct Human() extends Mammal
 trait Cat extends Mammal
-struct ScottishFold extends Cat
-struct Unicorn extends Mammal
-struct Goldfish extends Fish {
+struct ScottishFold() extends Cat
+struct Unicorn() extends Mammal
+struct Goldfish extends Fish
   name: String
   size: Real
-}
-struct Koi extends Fish
+end
+struct Koi() extends Fish
 
 trait Status
 trait Healthy extends Status
@@ -27,9 +27,9 @@ struct Zoo(animals: [Animal])
 
 
 trait Cage[+A <: Animal] extends %{ animal: A }
-struct Aquarium[+A <: Fish] extends Cage[A] {
+struct Aquarium[+A <: Fish] extends Cage[A]
   animal: A
-}
+end
 struct UnicornPen(animal: Unicorn) extends Cage[Unicorn]
 
 trait ConfusedCage1 extends Cage[Fish]
@@ -39,10 +39,10 @@ trait ConfusedCage4 extends Cage[Fish], ConfusedCage1
 
 
 trait Function[-A, +R]
-struct IdentityFunction[T] extends Function[T, T]
-struct IndexFunction[+T] extends Function[Int, T]
+struct IdentityFunction[T]() extends Function[T, T]
+struct IndexFunction[+T]() extends Function[Int, T]
 struct Box[+A](value: A)
-struct BoxFunction[T] extends Function[T, Box[T]], Function[Int, Box[T]]
+struct BoxFunction[T]() extends Function[T, Box[T]], Function[Int, Box[T]]
 
 
 trait Sauce
@@ -53,23 +53,23 @@ trait Steak
 trait Tofu
 
 trait Meal[+S <: Sauce, Highlight]
-struct SurpriseMeal[+S <: Sauce, H] extends Meal[S, H]
-struct MeatLoversMeal[+S <: Sauce] extends Meal[S, Steak]
-struct VeggieMeal[+S <: Sauce] extends Meal[S, Tofu]
-struct VeganMeal extends Meal[Ketchup, Tofu]
+struct SurpriseMeal[+S <: Sauce, H]() extends Meal[S, H]
+struct MeatLoversMeal[+S <: Sauce]() extends Meal[S, Steak]
+struct VeggieMeal[+S <: Sauce]() extends Meal[S, Tofu]
+struct VeganMeal() extends Meal[Ketchup, Tofu]
 
 
 trait Hashable
 
 trait Wheel extends Hashable
-struct CoolWheel extends Wheel
-struct CheapWheel extends Wheel
+struct CoolWheel() extends Wheel
+struct CheapWheel() extends Wheel
 
 type +Wheel = %{ wheel: Wheel }
 
 trait Engine extends Hashable
-struct GasEngine extends Engine
-struct ElectricEngine extends Engine
+struct GasEngine() extends Engine
+struct ElectricEngine() extends Engine
 
 type +Engine = %{ engine: Engine }
 
@@ -77,11 +77,11 @@ trait Car extends +Wheel, +Engine
 
 trait Cycle extends +Wheel
 
-struct Motorcycle extends Cycle {
+struct Motorcycle extends Cycle
   wheel: Wheel
   engine: Engine
-}
+end
 
-struct Bicycle extends Cycle {
+struct Bicycle extends Cycle
   wheel: Wheel
-}
+end

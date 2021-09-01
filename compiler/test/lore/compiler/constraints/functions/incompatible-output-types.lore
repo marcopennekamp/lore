@@ -1,6 +1,6 @@
 trait A
-struct B1 extends A
-struct B2 extends A
+struct B1() extends A
+struct B2() extends A
 
 func f(value: A): Int = 0
 

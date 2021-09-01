@@ -1,7 +1,7 @@
 trait A
-struct B extends A {
+struct B extends A
   mut name: String
-}
+end
 
 // Illegal: `shape.prop` has the type A, not B.
 func test(): Unit = do
