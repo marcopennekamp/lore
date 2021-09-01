@@ -19,8 +19,6 @@ object InstantiationTranspiler {
     structType: StructType,
     arguments: Vector[TargetExpression],
   )(implicit runtimeTypeVariables: RuntimeTypeVariables, symbolHistory: SymbolHistory): TargetExpression = {
-    println(s"Direct `construct` call of $structType!")
-
     val typeArguments = if (!structType.schema.isConstant) {
       // We can pass `undefined` for any open type arguments because they will be overridden in the instantiation
       // function anyway.

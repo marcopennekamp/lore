@@ -71,7 +71,7 @@ class ExpressionParser(
     def thenStyle = P(expression ~ "then" ~ topLevelExpression ~ elsePart.?)
 
     def blockStyle = {
-      P(singleLineExpression ~~ Space.terminators ~~ Index ~~ blockExpressions ~ "end" ~~ Index ~~ elsePart.?).map {
+      P(singleLineExpression ~~ Space.terminators ~~ Index ~~ blockExpressions ~ "end" ~~ Index ~ elsePart.?).map {
         case (condition, startIndex, onTrueExpressions, endIndex, onFalse) =>
           val onTrue = withPosition(ExprNode.BlockNode)(startIndex, onTrueExpressions, endIndex)
           (condition, onTrue, onFalse)
