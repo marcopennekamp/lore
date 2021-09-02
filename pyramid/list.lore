@@ -12,7 +12,7 @@ func slice(list: [A], startIndex: Int, length: Int): [A] where A = dynamic[[A]](
   */
 func slice(list: [A], startIndex: Int): [A] where A = slice(list, startIndex, length(list))
 
-func isEmpty(list: [A]): Boolean where A = length(list) == 0
+func empty?(list: [A]): Boolean where A = length(list) == 0
 
 /**
   * Returns the first element of the list. Results in an error if the list is empty.

@@ -10,7 +10,7 @@ func concat(strings: [String]): String = fold(strings, '', concat)
 func concatMap(strings: [A], f: B => String): String where A, B >: A = concat(map(strings, f))
 
 func stringJoin(list: [A], separator: String): String where A = do
-  if isEmpty(list) then return ''
+  if empty?(list) then return ''
   concat(
     concatMap(init(list), a => '$a$separator'),
     toString(last(list))

@@ -15,6 +15,7 @@
     - ~~Change `while` syntax accordingly.~~
     - ~~Start treating newlines in specific contexts (such as after `if condition\n` or `struct X extends A\n`) as `do` portions of a `do...end` block.~~
   - Apply snake_case across the board for variable and function names.
+  - Allow question marks in identifiers: `empty?`.
   - `@where` "annotation".
   - Pipe operator.
   - `cond` operator.
@@ -51,9 +52,6 @@
 
 ##### Syntax
 
-- Allow question marks in identifiers. Example: `is_empty(list)` would become `empty?(list)`.
-  - I'm holding out on this regarding the new syntax to see whether the question mark would be better placed with special option handling. I want to make options first-class with if/cond evaluating to an Option if there is no else path, so there might be value in also adding operators that make option handling easier.
-  - In addition to this, the question mark before the parentheses in the call above at least *looks* strange. So I need additional time to consider this before I implement it.
 - Down the line, it would be great to have something like:
   ```
   if cond

@@ -11,6 +11,11 @@ object Target {
   sealed trait TargetStatement
   sealed trait TargetExpression extends TargetStatement
 
+  /**
+    * A target name wraps a Lore identifier so that it can later be generated to a name that's legal in the generated
+    * code. For example, the Javascript target doesn't allow question marks, so we have to convert them to a different
+    * character first.
+    */
   class TargetName(val name: String) extends AnyVal {
     def asVariable: Variable = Variable(this)
     def asParameter: Parameter = Parameter(this)

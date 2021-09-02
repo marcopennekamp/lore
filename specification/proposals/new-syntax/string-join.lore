@@ -2,7 +2,7 @@
 // is a bit messy as so much information is condensed in a single line.
 @where A
 func string_join(list: [A], separator: String): String = do
-  if is_empty(list) then return ''
+  if empty?(list) then return ''
   concat(
     init(list) |> concat_map(a => '$a$separator'),
     last(list) |> to_string

@@ -39,9 +39,9 @@ object LexicalParser {
     "do", "dynamic", "else", "end", "false", "fixed", "for", "if", "let", "return", "then", "true", "while", "yield",
   )
 
-  def identifier[_: P]: P[String] = P((letter | "_") ~ (letter | digit | "_").rep).!.filter(!keywords.contains(_))
+  def identifier[_: P]: P[String] = P((letter | "_") ~ (letter | digit | "_" | "?").rep).!.filter(!keywords.contains(_))
   def structIdentifier[_: P]: P[String] = P(identifier)
-  def typeIdentifier[_: P]: P[String] = P((typeSpecialCharacter | letter | "_") ~ (typeSpecialCharacter | letter | digit | "_").rep).!.filter(!keywords.contains(_))
+  def typeIdentifier[_: P]: P[String] = P((typeSpecialCharacter | letter | "_") ~ (typeSpecialCharacter | letter | digit | "_" | "?").rep).!.filter(!keywords.contains(_))
   def integer[_: P]: P[Long] = P(negatable[Long, Any](digitsNoTrailing.!.map(_.toLong)))
   def real[_: P]: P[Double] = P(negatable[Double, Any]((digitsNoTrailing ~ fraction).!.map(_.toDouble)))
 }

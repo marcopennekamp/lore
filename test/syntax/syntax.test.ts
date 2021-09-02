@@ -121,6 +121,11 @@ Deno.test('syntax/operators', async () => {
   ])
 })
 
+Deno.test('syntax/special-characters', async () => {
+  const result: ListValue<boolean> = await LoreTest.run('syntax/special-characters.lore')
+  assertListEquals(result, [true, false, false, true])
+})
+
 Deno.test('syntax/strings', async () => {
   const result: ListValue<string> = await LoreTest.run('syntax/strings.lore')
   assertListEquals(result, [

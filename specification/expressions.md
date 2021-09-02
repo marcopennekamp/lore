@@ -34,6 +34,8 @@ Variables can be **immutable or mutable**. Only mutable variables can be changed
 
 A **variable expression** is an expression that evaluates to the value of its named variable. A variable expression may also evaluate to the function value of a multi-function with the same name.
 
+Variable **identifiers** may be a combination of letters, numbers, underscores, and question marks.
+
 ###### Syntax Example
 
 ```
@@ -317,8 +319,8 @@ We suggest using a snake_case naming convention for symbols.
 ```
 func process(query: Query): Result | #syntax_error = do
   let parsed = parse(query)
-  if isError(parsed) then #syntax_error
   else getResult(parsed)
+  if error?(parsed) then #syntax_error
 end
 ```
 
@@ -384,15 +386,15 @@ a > b    // Greater than
 a >= b   // Greater than or equal
 ```
 
-To **define equality** for a given type, you can specialize the function `isEqual(a, b)`. Inequality is strictly defined as `!isEqual(a, b)`.
+To **define equality** for a given type, you can specialize the function `equal?(a, b)`. Inequality is strictly defined as `!equal?(a, b)`.
 
 ```
-func isEqual(c1: Car, c2: Car): Boolean = ...
-func isEqual(SportsCar, CheapCar): Boolean = false
-func isEqual(CheapCar, SportsCar): Boolean = false // Don't forget to be symmetric!
+func equal?(c1: Car, c2: Car): Boolean = ...
+func equal?(SportsCar, CheapCar): Boolean = false
+func equal?(CheapCar, SportsCar): Boolean = false // Don't forget to be symmetric!
 ```
 
-To **define order** for a given type, specialize the function `isLessThan(a, b)`. The *greater than* operator is strictly defined as `!(a < b) && a != b`.
+To **define order** for a given type, specialize the function `less_than?(a, b)`. The *greater than* operator is strictly defined as `!(a < b) && a != b`.
 
 
 

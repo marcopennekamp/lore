@@ -15,7 +15,7 @@ A **type expression** is a representation of a particular type, built with the t
   - The name of a type may contain the following **special characters:**
   
     ```
-    +
+    + ?
     ```
   
     **Struct names** cannot contain these special characters because a struct's name is also the name of its constructor. **Type variable names** may not contain a `+`, because this symbol is also used to declare covariant type parameters.

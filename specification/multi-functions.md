@@ -10,6 +10,8 @@ A **multi-function** is a set of functions bearing the same name, embedded in a 
 
 A **function** in Lore has a full name, a list of parameters, an input type, a return type (also called output type), and potentially an expression body. The full name might include the module or package name in a future version of Lore. The input type is defined as the tuple type of all parameter types in order of their declaration. The type of the result of the expression body, as well as the types of all values returned using `return`, must be subtypes of the function's return type. If the body expression is omitted, a function is considered **abstract** and may not be called at run-time. A function that is not abstract is also called *concrete*.
 
+Function **names** may be a combination of letters, numbers, underscores, and question marks.
+
 An **action** is a function whose return type is `Unit`. Unless abstract, an action must have a block as its body, rather than any kind of expression. Conceptually, an action achieves results via side effects rather than a returned value.
 
 A **multi-function** is a set of functions with the same full name. Each multi-function exhibits its own specificity hierarchy, which is used to choose the correct function to invoke during multiple dispatch.

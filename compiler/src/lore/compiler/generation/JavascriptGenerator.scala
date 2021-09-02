@@ -1,7 +1,7 @@
 package lore.compiler.generation
 
 import lore.compiler.core.CompilationException
-import lore.compiler.target.Target.TargetStatement
+import lore.compiler.target.Target.{TargetName, TargetStatement}
 import lore.compiler.target.{Target, TargetOperator}
 
 object JavascriptGenerator {
@@ -22,22 +22,22 @@ object JavascriptGenerator {
       val header = connectWith(';')(Vector(generate(init), generate(condition), generate(post)))
       s"for ($header) ${generate(body)}"
 
-    case Target.Iteration(collection, elementName, body) =>s"for (const $elementName of ${generate(collection)}) ${generate(body)}"
+    case Target.Iteration(collection, elementName, body) =>s"for (const ${generate(elementName)} of ${generate(collection)}) ${generate(body)}"
 
     case Target.Return(value) => s"return ${generate(value)};"
 
     case Target.VariableDeclaration(name, value, isMutable) =>
       val modifier = if (isMutable) "let" else "const"
-      s"$modifier $name = ${generate(value)};"
+      s"$modifier ${generate(name)} = ${generate(value)};"
 
     case Target.Assignment(left, right) => s"${generate(left)} = ${generate(right)};"
 
-    case Target.Variable(name) => name.toString
+    case Target.Variable(name) => generate(name)
 
     case Target.Function(name, parameters, body, shouldExport) =>
       val exportKeyword = if (shouldExport) "export " else ""
       val params = parameters.map(generateParameter).mkString(", ")
-      s"${exportKeyword}function $name($params) ${generate(body)}"
+      s"${exportKeyword}function ${generate(name)}($params) ${generate(body)}"
 
     case Target.Lambda(parameters, body) =>
       val params = parameters.map(generateParameter).mkString(", ")
@@ -94,17 +94,39 @@ object JavascriptGenerator {
         case TargetOperator.Concat => xary("+")
       }
       s"($expression)"
-    case Target.PropertyAccess(instance, name) => s"${generate(instance)}.$name"
+    case Target.PropertyAccess(instance, name) => s"${generate(instance)}${generatePropertyAccess(name.name)}"
     case Target.ListAccess(list, key) => s"${generate(list)}[${generate(key)}]"
+  }
+
+  /**
+    * Target names need to be converted to a proper identifier that's legal in Javascript.
+    */
+  private def generate(targetName: TargetName): String = {
+    targetName.name.replace('?', '\u304b')
   }
 
   private def generateParameter(parameter: Target.Parameter): String = {
     val rest = if (parameter.isRestParameter) "..." else ""
-    val default = parameter.default.map(generate).map(v => " = v").getOrElse("")
-    s"$rest${parameter.name}$default"
+    val default = parameter.default.map(generate).map(v => s" = $v").getOrElse("")
+    s"$rest${generate(parameter.name)}$default"
   }
 
+  /**
+    * Property names should be stringified so that special characters don't lead to errors in the generated code. The
+    * prettifier will later remove quotation marks where possible.
+    */
   private def generateProperty(property: Target.Property): String = s"${generate(Target.StringLiteral(property.name))}: ${generate(property.value)}"
+
+  /**
+    * We have to represent property names containing question marks as string literals, as question marks cannot be
+    * parts of a Javascript identifier.
+    */
+  private def generatePropertyAccess(name: String): String = {
+    if (name.contains("?")) {
+      return s"[${generate(Target.StringLiteral(name))}]"
+    }
+    s".$name"
+  }
 
   /**
     * Connects the strings with the given connector. If a string already ends with the connector, the connector is not
