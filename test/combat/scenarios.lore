@@ -1,16 +1,16 @@
 func test(): [SimulationResult] = do
-  let scenarios = [kaladinVoidbringer(), sadeasDalinar()]
+  let scenarios = [kaladin_vs_voidbringer(), sadeas_vs_dalinar()]
   for scenario <- scenarios
-    simulateCombat(first(scenario), second(scenario))
+    simulate_combat(first(scenario), second(scenario))
   end
 end
 
-func kaladinVoidbringer(): (Combatant, Combatant) = do
+func kaladin_vs_voidbringer(): (Combatant, Combatant) = do
   let kaladin = Radiant {
     name = 'Kaladin',
     stats = Stats {
       health = 25,
-      maximumHealth = 25, // TODO: How can we set the health to the maximum health by default?
+      maximum_health = 25, // TODO: How can we set the health to the maximum health by default?
       regeneration = 0,
       dodge = 0.34,
       speed = 3
@@ -23,12 +23,12 @@ func kaladinVoidbringer(): (Combatant, Combatant) = do
   (kaladin, voidbringer)
 end
 
-func sadeasDalinar(): (Combatant, Combatant) = do
+func sadeas_vs_dalinar(): (Combatant, Combatant) = do
   let sadeas = Shardbearer {
     name = 'Sadeas',
     stats = Stats {
       health = 15,
-      maximumHealth = 15,
+      maximum_health = 15,
       regeneration = 0,
       dodge = 0.2,
       speed = 2
@@ -40,7 +40,7 @@ func sadeasDalinar(): (Combatant, Combatant) = do
     name = 'Dalinar',
     stats = Stats {
       health = 30,
-      maximumHealth = 30,
+      maximum_health = 30,
       regeneration = 0,
       dodge = 0.15,
       speed = 3

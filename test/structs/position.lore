@@ -1,17 +1,17 @@
 struct Position(x: Real = 0.0, y: Real = 0.0, z: Real = 0.0)
 
-func from2D(x: Real, y: Real): Position = do
+func from_2D(x: Real, y: Real): Position = do
   Position { x, y }
 end
 
-func from1D(x: Real): Position = do
-  from2D(x, 0.0)
+func from_1D(x: Real): Position = do
+  from_2D(x, 0.0)
 end
 
 
 func test(): [Position] = [
   Position(1, 2, 3),
   Position { y = 5 },
-  from2D(20, 10),
-  from1D(7)
+  from_2D(20, 10),
+  from_1D(7)
 ]

@@ -7,14 +7,14 @@ func test(): [String] = do
   let d: String | #none = #none
 
   [
-    toString(isEmpty(a)),
-    toString(isEmpty(b)),
-    toString(isEmpty(c)),
-    toString(isEmpty(d)),
+    to_string(isEmpty(a)),
+    to_string(isEmpty(b)),
+    to_string(isEmpty(c)),
+    to_string(isEmpty(d)),
 
-    getOrElse(a, 'fallback'),
-    getOrElse(b, 'fallback'),
-    getOrElse(c, 'fallback'),
-    getOrElse(d, 'fallback')
+    get_or_else(a, 'fallback'),
+    get_or_else(b, 'fallback'),
+    get_or_else(c, 'fallback'),
+    get_or_else(d, 'fallback')
   ]
 end

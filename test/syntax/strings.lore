@@ -4,7 +4,7 @@ end
 
 func test(): [String] = do
   let x = 'X'
-  let myLongVariable = 'my long variable'
+  let my_long_variable = 'my long variable'
   let some = 'SOME'
   let that = 'THAT'
 
@@ -14,8 +14,8 @@ func test(): [String] = do
     '\n',
     '\n\t\r\'\$\\',
     'test $x\n\t\u0394',
-    '$myLongVariable',
-    '${x} ${myLongVariable}',
+    '$my_long_variable',
+    '${x} ${my_long_variable}',
     '\${quite} $some \$confusion in ${that} string',
     apples(%{ name: 'John' }, 11),
     apples(%{ name: 'Martin' }, 5)

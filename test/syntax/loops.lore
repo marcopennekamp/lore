@@ -1,4 +1,4 @@
-func divideBy2(a: Real, b: Real): Real = do
+func divide_by_2(a: Real, b: Real): Real = do
   let mut r = a
   while r > b yield r /= 2
   r
@@ -12,9 +12,9 @@ func repeat(v: Int, n: Int): [Int] = do
   end
 end
 
-func incrementAll(values: [Int]): [Int] = for v <- values yield v + 1
+func increment_all(values: [Int]): [Int] = for v <- values yield v + 1
 
-func addPairs(as: [Int], bs: [Int]): [Int] = do
+func add_pairs(as: [Int], bs: [Int]): [Int] = do
   for a <- as, b <- bs
     a + b
   end
@@ -23,12 +23,12 @@ end
 func test(): [[Real]] = do
   [
     [
-      divideBy2(10, 20),
-      divideBy2(40, 20),
-      divideBy2(234, 45)
+      divide_by_2(10, 20),
+      divide_by_2(40, 20),
+      divide_by_2(234, 45)
     ],
     repeat(15, 3),
-    incrementAll([10, 3, 40, -2, 15]),
-    addPairs([1, 2], [3, 4])
+    increment_all([10, 3, 40, -2, 15]),
+    add_pairs([1, 2], [3, 4])
   ]
 end

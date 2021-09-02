@@ -1,6 +1,6 @@
-func lowIncrement(n: Int): Int = if n < 25 then n + 1 else n
+func low_increment(n: Int): Int = if n < 25 then n + 1 else n
 
-func towards25(n: Int): Int = do
+func towards_25(n: Int): Int = do
   if n < 25 then       n + 1
   else if n > 25 then  n - 1
   else                 n
@@ -24,11 +24,11 @@ func test(): [Boolean | Int] = [
   abc(true, false, true),
   abc(false, false, true),
 
-  lowIncrement(20),
-  lowIncrement(25),
-  towards25(25),
-  towards25(23),
-  towards25(30),
+  low_increment(20),
+  low_increment(25),
+  towards_25(25),
+  towards_25(23),
+  towards_25(30),
 
   dangle(true, true),
   dangle(true, false),

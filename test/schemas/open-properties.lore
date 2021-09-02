@@ -7,10 +7,10 @@ struct Juice() extends Content
 struct Berry() extends Content
 struct Hammer() extends Content
 
-func toString(Box[Juice]): String = 'juice box'
-func toString(Box[Berry]): String = 'berry box'
-func toString(thing: %{ value: Content }): String = 'thing with content'
-func toString(thing: %{ value: Hammer }): String = 'thing with hammer'
+func to_string(Box[Juice]): String = 'juice box'
+func to_string(Box[Berry]): String = 'berry box'
+func to_string(thing: %{ value: Content }): String = 'thing with content'
+func to_string(thing: %{ value: Hammer }): String = 'thing with hammer'
 
 // This verifies that struct types with open properties are correctly interned. Open property types should be taken
 // into account.
@@ -20,5 +20,5 @@ func test(): [String] = do
     Box[Content](Berry()),
     Box[Content](Hammer())
   ]
-  map(boxes, toString)
+  map(boxes, to_string)
 end

@@ -4,14 +4,14 @@ trait Hero extends Combatant, +Weapon
 struct Shardbearer extends Hero
   name: String
   stats: Stats
-  statusEffects: StatusEffects = StatusEffects([])
+  status_effects: StatusEffects = StatusEffects([])
   open weapon: Weapon
 end
 
 func name(shardbearer: Shardbearer): String = shardbearer.name
 
-act enterCombat(shardbearer: Shardbearer) do
-  buff(shardbearer, createArmored(15, 3))
+act enter_combat(shardbearer: Shardbearer) do
+  buff(shardbearer, create_armored(15, 3))
 end
 
 
@@ -25,13 +25,13 @@ struct Radiant extends Hero
   infusion: Int = 5
 
   stats: Stats
-  statusEffects: StatusEffects = StatusEffects([])
+  status_effects: StatusEffects = StatusEffects([])
   weapon: Weapon
 end
 
 func name(radiant: Radiant): String = radiant.name
 
-act enterCombat(radiant: Radiant) do
-  buff(radiant, createInfusion(radiant.infusion))
-  buff(radiant, createArmored(3, 5))
+act enter_combat(radiant: Radiant) do
+  buff(radiant, create_infusion(radiant.infusion))
+  buff(radiant, create_armored(3, 5))
 end

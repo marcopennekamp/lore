@@ -3,22 +3,22 @@ trait StatusEffect
 /**
  * Applies the given status effect to the stat identified with the given label.
  */
-func affectStat(StatusEffect, StatLabel, value: A): A where A = value
+func affect_stat(StatusEffect, StatLabel, value: A): A where A = value
 
 /**
  * Called during the end-of-turn status effect update.
  */
-act onUpdate(StatusEffect) do end
+act on_update(StatusEffect) do end
 
 /**
  * Called whenever the entity gets hit by an attack (after a potential dodge failed).
  */
-act onHit(StatusEffect) do end
+act on_hit(StatusEffect) do end
 
 /**
  * Whether the given status effect is active.
  */
-func isActive(StatusEffect): Boolean = true
+func active?(StatusEffect): Boolean = true
 
 
 struct DurationLimit
@@ -27,13 +27,13 @@ end
 
 type +DurationLimit = StatusEffect & %{ limit: DurationLimit }
 
-act onUpdate(effect: +DurationLimit) do
-  if isActive(effect)
+act on_update(effect: +DurationLimit) do
+  if active?(effect)
     effect.limit.duration -= 1
   end
 end
 
-func isActive(effect: +DurationLimit): Boolean = effect.limit.duration > 0
+func active?(effect: +DurationLimit): Boolean = effect.limit.duration > 0
 
 
 struct HitLimit
@@ -42,13 +42,13 @@ end
 
 type +HitLimit = StatusEffect & %{ limit: HitLimit }
 
-act onHit(effect: +HitLimit) do
-  if isActive(effect)
+act on_hit(effect: +HitLimit) do
+  if active?(effect)
     effect.limit.hits -= 1
   end
 end
 
-func isActive(effect: +HitLimit): Boolean = effect.limit.hits > 0
+func active?(effect: +HitLimit): Boolean = effect.limit.hits > 0
 
 
 /**
@@ -59,9 +59,9 @@ struct Armored extends StatusEffect
   limit: HitLimit
 end
 
-func createArmored(armor: Int, durability: Int): Armored = Armored(armor, HitLimit(durability))
+func create_armored(armor: Int, durability: Int): Armored = Armored(armor, HitLimit(durability))
 
-func affectStat(effect: Armored, #defense, value: Int): Int = value + effect.armor
+func affect_stat(effect: Armored, #defense, value: Int): Int = value + effect.armor
 
 
 /**
@@ -71,34 +71,34 @@ struct Infusion extends StatusEffect
   limit: DurationLimit
 end
 
-func createInfusion(duration: Int): Infusion = Infusion(DurationLimit(duration))
+func create_infusion(duration: Int): Infusion = Infusion(DurationLimit(duration))
 
-func affectStat(effect: Infusion, #attack | #speed, value: Int): Int = floor(value * 1.5)
-func affectStat(effect: Infusion, #dodge, value: Real): Real = 1.0 // Dodge all attacks while infused.
-func affectStat(effect: Infusion, #regeneration, value: Int): Int = 5
+func affect_stat(effect: Infusion, #attack | #speed, value: Int): Int = floor(value * 1.5)
+func affect_stat(effect: Infusion, #dodge, value: Real): Real = 1.0 // Dodge all attacks while infused.
+func affect_stat(effect: Infusion, #regeneration, value: Int): Int = 5
 
 
 struct StatusEffects
   mut effects: [StatusEffect]
 end
 
-type +StatusEffects = %{ statusEffects: StatusEffects }
+type +StatusEffects = %{ status_effects: StatusEffects }
 
 act buff(entity: +StatusEffects, effect: StatusEffect) do
-  entity.statusEffects.effects = entity.statusEffects.effects :+ effect
+  entity.status_effects.effects = entity.status_effects.effects :+ effect
 end
 
 /**
  * Updates status effects, removing those from the list that have expired.
  */
-act updateStatusEffects(entity: +StatusEffects) do
-  let effects = entity.statusEffects.effects
-  each(effects, onUpdate)
-  entity.statusEffects.effects = filter(effects, isActive)
+act update_status_effects(entity: +StatusEffects) do
+  let effects = entity.status_effects.effects
+  each(effects, on_update)
+  entity.status_effects.effects = filter(effects, active?)
 end
 
-act onHitStatusEffects(entity: +StatusEffects) do
-  for effect <- entity.statusEffects.effects
-    onHit(effect)
+act on_hit_status_effects(entity: +StatusEffects) do
+  for effect <- entity.status_effects.effects
+    on_hit(effect)
   end
 end

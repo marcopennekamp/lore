@@ -17,9 +17,9 @@ end
 
 func mul(a: Int, b: Int): Int = do
   let mut remaining = a
-  let isNegative = remaining < 0
+  let negative? = remaining < 0
 
-  if isNegative
+  if negative?
     remaining = -remaining
   end
 
@@ -29,7 +29,7 @@ func mul(a: Int, b: Int): Int = do
     remaining = add(remaining, -1)
   end
 
-  if isNegative then -result else result
+  if negative? then -result else result
 end
 
 func test(): Int = mul(12, 5)

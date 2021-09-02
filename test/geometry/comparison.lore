@@ -5,6 +5,8 @@ func check(s1: Shape, s2: Shape): [String] = do
   let mut result: [String] = []
 
   // TODO (new syntax): This should be replaced with a `cond`.
+  // TODO (new syntax): This could also be replaced with a list construction that contains options via option ifs and
+  //                    then the list gets flattened: `[if s1 < s2 then '...', if s1 <= s2 then '...'] |> flatten`.
   if s1 < s2
     result = result :+ '${name(s1)} < ${name(s2)}'
   end

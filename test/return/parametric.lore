@@ -1,6 +1,6 @@
 struct Position(x: Real = 0, y: Real = 0, z: Real = 0)
 
-func toString(position: Position): String = '{ x = ${position.x}, y = ${position.y}, z = ${position.z} }'
+func to_string(position: Position): String = '{ x = ${position.x}, y = ${position.y}, z = ${position.z} }'
 
 
 // TODO: Make it so that we can work directly on +Position instead of having to declare a Movable trait. This
@@ -8,12 +8,12 @@ func toString(position: Position): String = '{ x = ${position.x}, y = ${position
 trait Movable
 
 func position(Movable): Position
-act setPosition(Movable, Position)
+act set_position(Movable, Position)
 
 act move(movable: Movable, x: Real, y: Real, z: Real) do
   let old = position(movable)
   let position = Position(old.x + x, old.y + y, old.z + z)
-  setPosition(movable, position)
+  set_position(movable, position)
 end
 
 
@@ -23,11 +23,11 @@ struct Zombie extends Movable
 end
 
 func position(zombie: Zombie): Position = zombie.position
-act setPosition(zombie: Zombie, position: Position) do
+act set_position(zombie: Zombie, position: Position) do
   zombie.position = position
 end
 
-func toString(zombie: Zombie): String = '${zombie.name} is at position ${zombie.position}'
+func to_string(zombie: Zombie): String = '${zombie.name} is at position ${zombie.position}'
 
 
 func update(a: A): A where A = a
@@ -41,6 +41,6 @@ end
 
 func test(): Zombie = do
   let zombie = Zombie { name = 'Fred', position = Position(0, 1.0, 0.5) }
-  let updatedZombie = update(zombie)
-  updatedZombie
+  let updated_zombie = update(zombie)
+  updated_zombie
 end

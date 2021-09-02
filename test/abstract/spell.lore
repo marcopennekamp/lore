@@ -18,8 +18,8 @@ type Damage = Int
 
 trait Spell[+E <: Element, +C <: Cost]
 
-func rawDamage(Spell[Element, Cost]): Damage
-func damageOf(Spell[Element, Cost], Defense): Damage
+func raw_damage(Spell[Element, Cost]): Damage
+func damage_of(Spell[Element, Cost], Defense): Damage
 
 
 trait Spike[+E <: Ice | Earth, +S <: Specialty, +Id] extends Spell[E, Mana]
@@ -27,35 +27,35 @@ struct IceSpike() extends Spike[Ice, Freezing, #ice_spike]
 struct NeedleIceSpike() extends Spike[Ice, Penetrating, #needle_ice_spike]
 struct EarthSpike() extends Spike[Earth, Penetrating, #earth_spike]
 
-func rawDamage(Spike[Ice, Specialty, #ice_spike]): Damage = 10
-func rawDamage(Spike[Ice, Specialty, #needle_ice_spike]): Damage = 12
-func rawDamage(Spike[Earth, Specialty, Any]): Damage = 8
+func raw_damage(Spike[Ice, Specialty, #ice_spike]): Damage = 10
+func raw_damage(Spike[Ice, Specialty, #needle_ice_spike]): Damage = 12
+func raw_damage(Spike[Earth, Specialty, Any]): Damage = 8
 
 // We would usually define this for any Specialty and then override only Penetrating, but the point here is testing
 // that the totality constraint sees that all possibilities have been covered.
-func damageOf(spell: Spike[Ice | Earth, Freezing, Any], defense: Defense): Damage = calculateDamage(rawDamage(spell), defense)
-func damageOf(spell: Spike[Ice | Earth, Penetrating, Any], defense: Defense): Damage = do
+func damage_of(spell: Spike[Ice | Earth, Freezing, Any], defense: Defense): Damage = calculate_damage(raw_damage(spell), defense)
+func damage_of(spell: Spike[Ice | Earth, Penetrating, Any], defense: Defense): Damage = do
   // `Penetrating` ignores 50% of defense.
-  calculateDamage(rawDamage(spell), floor(defense / 2))
+  calculate_damage(raw_damage(spell), floor(defense / 2))
 end
 
-func calculateDamage(rawDamage: Damage, defense: Defense): Damage = max(rawDamage - defense, 0)
+func calculate_damage(raw_damage: Damage, defense: Defense): Damage = max(raw_damage - defense, 0)
 
 
 func test(): [Damage] = do
-  let iceSpike = IceSpike()
-  let needleIceSpike = NeedleIceSpike()
-  let earthSpike = EarthSpike()
+  let ice_spike = IceSpike()
+  let needle_ice_spike = NeedleIceSpike()
+  let earth_spike = EarthSpike()
 
   [
-    damageOf(iceSpike, 0),
-    damageOf(needleIceSpike, 0),
-    damageOf(earthSpike, 0),
-    damageOf(iceSpike, 5),
-    damageOf(needleIceSpike, 5),
-    damageOf(earthSpike, 5),
-    damageOf(iceSpike, 12),
-    damageOf(needleIceSpike, 12),
-    damageOf(earthSpike, 12)
+    damage_of(ice_spike, 0),
+    damage_of(needle_ice_spike, 0),
+    damage_of(earth_spike, 0),
+    damage_of(ice_spike, 5),
+    damage_of(needle_ice_spike, 5),
+    damage_of(earth_spike, 5),
+    damage_of(ice_spike, 12),
+    damage_of(needle_ice_spike, 12),
+    damage_of(earth_spike, 12)
   ]
 end

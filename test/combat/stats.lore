@@ -1,7 +1,7 @@
 /**
  * All combat stats for fighting entities.
  *
- * Note that you should use the accompanying baseStat function to access all stats except health, which may be accessed
+ * Note that you should use the accompanying base_stat function to access all stats except health, which may be accessed
  * directly. The reason is that select entities may want to overwrite the stats without changing the Stats object.
  */
 struct Stats
@@ -11,7 +11,7 @@ struct Stats
   /**
    * The current health stat cannot surpass this maximum value.
    */
-  maximumHealth: Int
+  maximum_health: Int
 
   /**
    * Regeneration determines how much health the combatant regenerates at the end of each combat turn.
@@ -58,15 +58,15 @@ type StatLabel = StatLabelInt | StatLabelReal
 type StatLabelInt = #regeneration | #defense | #attack | #range | #speed
 type StatLabelReal = #dodge
 
-func baseStat(entity: +Stats, StatLabel): Int | Real
+func base_stat(entity: +Stats, StatLabel): Int | Real
 
-func baseStat(entity: +Stats, StatLabelInt): Int
-func baseStat(entity: +Stats, #regeneration): Int = entity.stats.regeneration
-func baseStat(entity: +Stats, #defense): Int = entity.stats.defense
-func baseStat(entity: +Stats, #attack): Int = entity.stats.attack
-func baseStat(entity: +Stats, #range): Int = entity.stats.range
-func baseStat(entity: +Stats, #speed): Int = entity.stats.speed
+func base_stat(entity: +Stats, StatLabelInt): Int
+func base_stat(entity: +Stats, #regeneration): Int = entity.stats.regeneration
+func base_stat(entity: +Stats, #defense): Int = entity.stats.defense
+func base_stat(entity: +Stats, #attack): Int = entity.stats.attack
+func base_stat(entity: +Stats, #range): Int = entity.stats.range
+func base_stat(entity: +Stats, #speed): Int = entity.stats.speed
 
-func baseStat(entity: +Stats, #dodge): Real = entity.stats.dodge
+func base_stat(entity: +Stats, #dodge): Real = entity.stats.dodge
 
-func isAlive(entity: +Stats): Boolean = entity.stats.health > 0
+func alive?(entity: +Stats): Boolean = entity.stats.health > 0

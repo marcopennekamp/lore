@@ -6,7 +6,7 @@ struct HonestQuestion() extends Question
 
 type Named = %{ name: String }
 type +Question = %{ question: Question }
-type Known = %{ knownBy: Int }
+type Known = %{ known_by: Int }
 
 trait Person extends %{ id: Int }
 trait Questioner extends Person, Named, +Question
@@ -14,6 +14,6 @@ trait AncientPhilosopher extends Questioner, Known
 
 struct Plato extends AncientPhilosopher
   id: Id
-  knownBy: Real
+  known_by: Real
   question: RudeQuestion
 end

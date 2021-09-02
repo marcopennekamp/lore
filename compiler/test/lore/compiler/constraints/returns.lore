@@ -1,14 +1,14 @@
 // Illegal: Impossible return.
-func impossibleReturn(): Int = do
+func impossible_return(): Int = do
   if (do return 0 end) then return 5
 end
 
-func validReturn(): Int = do
+func valid_return(): Int = do
   if 1 == 2 then return 5 else return 10
 end
 
 // Illegal: Dead code.
-func deadCode(): Int = do
+func dead_code(): Int = do
   if 1 == 2 then return 5 else return 10
   let x = 5 + 5
 end

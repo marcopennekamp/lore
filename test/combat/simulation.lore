@@ -5,21 +5,20 @@ func name(Combatant): String
 /**
  * This is called once at the beginning of combat to give each combatant a chance to prepare.
  */
-act enterCombat(Combatant) do
+act enter_combat(Combatant) do end
+
+act on_hit(combatant: Combatant) do
+  on_hit_status_effects(combatant)
 end
 
-act onHit(combatant: Combatant) do
-  onHitStatusEffects(combatant)
-end
+func stat(combatant: Combatant, stat_label: StatLabelInt): Int = stat_impl(combatant, stat_label, base_stat(combatant, stat_label))
+func stat(combatant: Combatant, stat_label: StatLabelReal): Real = stat_impl(combatant, stat_label, base_stat(combatant, stat_label))
 
-func stat(combatant: Combatant, statLabel: StatLabelInt): Int = statImpl(combatant, statLabel, baseStat(combatant, statLabel))
-func stat(combatant: Combatant, statLabel: StatLabelReal): Real = statImpl(combatant, statLabel, baseStat(combatant, statLabel))
-
-func statImpl(combatant: Combatant, statLabel: StatLabel, base: A): A where A = do
+func stat_impl(combatant: Combatant, stat_label: StatLabel, base: A): A where A = do
   fold(
-    combatant.statusEffects.effects,
+    combatant.status_effects.effects,
     base,
-    (result: A, effect) => affectStat(effect, statLabel, result)
+    (result: A, effect) => affect_stat(effect, stat_label, result)
   )
 end
 
@@ -28,8 +27,8 @@ trait SimulationResult
 struct SimulationVictory(winner: Combatant) extends SimulationResult
 struct SimulationStalemate() extends SimulationResult
 
-act combatLog(message: String) do
-  println(message)
+act combat_log(message: String) do
+  //println(message)
 end
 
 /**
@@ -38,49 +37,49 @@ end
  *
  * Returns the winner of the engagement.
  */
-func simulateCombat(left: Combatant, right: Combatant): SimulationResult = do
+func simulate_combat(left: Combatant, right: Combatant): SimulationResult = do
   let mut turn = 1
   let mut distance = 8
 
-  enterCombat(left)
-  enterCombat(right)
+  enter_combat(left)
+  enter_combat(right)
 
-  let leftState = CombatantState { combatant = left }
-  let rightState = CombatantState { combatant = right }
+  let left_state = CombatantState { combatant = left }
+  let right_state = CombatantState { combatant = right }
 
-  while isAlive(left) && isAlive(right)
-    combatLog('Turn $turn:')
+  while alive?(left) && alive?(right)
+    combat_log('Turn $turn:')
 
     // Phase 1: Closing the distance.
     if distance > 0
-      distance = closeDistance(left, distance)
-      distance = closeDistance(right, distance)
+      distance = close_distance(left, distance)
+      distance = close_distance(right, distance)
     end
 
     // Phase 2: Attack phase.
-    attemptAttack(leftState, rightState, distance)
-    attemptAttack(rightState, leftState, distance)
+    attempt_attack(left_state, right_state, distance)
+    attempt_attack(right_state, left_state, distance)
 
     // Phase 3: Post-attack regeneration and status effect updates.
-    updateCombatantPostAttack(left)
-    updateCombatantPostAttack(right)
+    update_combatant_post_attack(left)
+    update_combatant_post_attack(right)
 
-    combatLog('${name(left)} health: ${left.stats.health}')
-    combatLog('${name(right)} health: ${right.stats.health}')
+    combat_log('${name(left)} health: ${left.stats.health}')
+    combat_log('${name(right)} health: ${right.stats.health}')
 
     turn += 1
 
-    combatLog('')
+    combat_log('')
   end
 
-  if isAlive(left) && !isAlive(right)
-    combatLog('${name(left)} wins the battle!')
+  if alive?(left) && !alive?(right)
+    combat_log('${name(left)} wins the battle!')
     SimulationVictory(left)
-  end else if !isAlive(left) && isAlive(right)
-    combatLog('${name(right)} wins the battle!')
+  end else if !alive?(left) && alive?(right)
+    combat_log('${name(right)} wins the battle!')
     SimulationVictory(right)
   end else
-    combatLog('We have a stalemate between ${name(left)} and ${name(right)}!')
+    combat_log('We have a stalemate between ${name(left)} and ${name(right)}!')
     SimulationStalemate()
   end
 end
@@ -93,15 +92,15 @@ end
 /**
  * Whether the combatant is in range to attack, based on the entity's range stat.
  */
-func isInRange(combatant: Combatant, distance: Int): Boolean = stat(combatant, #range) >= distance
+func in_range?(combatant: Combatant, distance: Int): Boolean = stat(combatant, #range) >= distance
 
 /**
  * Closes the given distance to the other combatant, provided the given combatant isn't already in range.
  */
-func closeDistance(combatant: Combatant, distance: Int): Int = do
-  if distance > 0 && !isInRange(combatant, distance)
+func close_distance(combatant: Combatant, distance: Int): Int = do
+  if distance > 0 && !in_range?(combatant, distance)
     let new = max(distance - stat(combatant, #speed), 0)
-    combatLog('${name(combatant)} closes distance to $new.')
+    combat_log('${name(combatant)} closes distance to $new.')
     new
   end else distance
 end
@@ -110,51 +109,51 @@ end
  * Performs dodge calculations for the given state and returns whether the current attempt succeeded. This function
  * has side effects.
  */
-func attemptDodge(state: CombatantState): Boolean = do
+func attempt_dodge(state: CombatantState): Boolean = do
   state.dodge += stat(state.combatant, #dodge)
   if state.dodge >= 1.0
-    combatLog('${name(state.combatant)} dodges an attack.')
+    combat_log('${name(state.combatant)} dodges an attack.')
     state.dodge -= 1.0
     true
   end else false
 end
 
-act attemptAttack(attackerState: CombatantState, defenderState: CombatantState, distance: Int) do
-  if isInRange(attackerState.combatant, distance)
-    let dodgeSuccessful = attemptDodge(defenderState)
-    if !dodgeSuccessful
-      let attack = stat(attackerState.combatant, #attack)
-      hit(attackerState.combatant, defenderState.combatant, attack)
+act attempt_attack(attacker_state: CombatantState, defender_state: CombatantState, distance: Int) do
+  if in_range?(attacker_state.combatant, distance)
+    let dodged? = attempt_dodge(defender_state)
+    if !dodged?
+      let attack = stat(attacker_state.combatant, #attack)
+      hit(attacker_state.combatant, defender_state.combatant, attack)
     end
   end
 end
 
 /**
- * Damages a target, taking into account defense but not dodge. Also triggers onHit calls.
+ * Damages a target, taking into account defense but not dodge. Also triggers on_hit calls.
  */
 act hit(source: Combatant, target: Combatant, damage: Int) do
   let defense = stat(target, #defense)
-  let damageAfterDefense = max(damage - defense, 0)
-  combatLog('${name(source)} attacks ${name(target)} for $damageAfterDefense damage given a defense of $defense.')
-  target.stats.health -= damageAfterDefense
-  onHit(target)
+  let damage_after_defense = max(damage - defense, 0)
+  combat_log('${name(source)} attacks ${name(target)} for $damage_after_defense damage given a defense of $defense.')
+  target.stats.health -= damage_after_defense
+  on_hit(target)
 end
 
 /**
  * Performs post-attack regeneration and status effect updates provided the combatant is still alive.
  */
-act updateCombatantPostAttack(combatant: Combatant) do
-  if isAlive(combatant)
+act update_combatant_post_attack(combatant: Combatant) do
+  if alive?(combatant)
     heal(combatant, stat(combatant, #regeneration))
-    updateStatusEffects(combatant)
+    update_status_effects(combatant)
   end
 end
 
 act heal(target: Combatant, amount: Int) do
   let stats = target.stats
-  let oldHealth = stats.health
-  stats.health = min(stats.health + amount, stats.maximumHealth)
-  if stats.health > oldHealth
-    combatLog('${name(target)} is healed by ${stats.health - oldHealth} points.')
+  let old_health = stats.health
+  stats.health = min(stats.health + amount, stats.maximum_health)
+  if stats.health > old_health
+    combat_log('${name(target)} is healed by ${stats.health - old_health} points.')
   end
 end

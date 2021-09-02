@@ -13,24 +13,24 @@ struct Bag
   open material: Material
 end
 
-func equalTypes(A, B): Boolean where A, B = false
-func equalTypes(A, A): Boolean where A = true
+func equal_types?(A, B): Boolean where A, B = false
+func equal_types?(A, A): Boolean where A = true
 
-func subtype(A, B): Boolean where A, B = false
-func subtype(A, B): Boolean where A, B <: A = true
+func subtype?(A, B): Boolean where A, B = false
+func subtype?(A, B): Boolean where A, B <: A = true
 
 func test(): [Boolean] = do
-  let leatherBag = Bag(Leather())
-  let clothBag = Bag(Cloth())
+  let leather_bag = Bag(Leather())
+  let cloth_bag = Bag(Cloth())
 
   [
-    equalTypes(leatherBag, leatherBag),   // --> true
-    equalTypes(clothBag, clothBag),       // --> true
-    equalTypes(leatherBag, clothBag),     // --> false
-    equalTypes(clothBag, leatherBag),     // --> false
-    subtype(leatherBag, leatherBag),      // --> true
-    subtype(clothBag, clothBag),          // --> true
-    subtype(leatherBag, clothBag),        // --> false
-    subtype(clothBag, leatherBag)         // --> false
+    equal_types?(leather_bag, leather_bag),   // --> true
+    equal_types?(cloth_bag, cloth_bag),       // --> true
+    equal_types?(leather_bag, cloth_bag),     // --> false
+    equal_types?(cloth_bag, leather_bag),     // --> false
+    subtype?(leather_bag, leather_bag),       // --> true
+    subtype?(cloth_bag, cloth_bag),           // --> true
+    subtype?(leather_bag, cloth_bag),         // --> false
+    subtype?(cloth_bag, leather_bag)          // --> false
   ]
 end

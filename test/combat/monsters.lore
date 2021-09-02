@@ -3,18 +3,18 @@ trait Monster extends Combatant
 struct Voidbringer extends Monster
   stats: Stats = Stats {
     health = 30,
-    maximumHealth = 30,
+    maximum_health = 30,
     regeneration = 2,
     dodge = 0.2,
     attack = 5,
     speed = 2
   }
 
-  statusEffects: StatusEffects = StatusEffects([])
+  status_effects: StatusEffects = StatusEffects([])
 end
 
 func name(Voidbringer): String = 'Voidbringer'
 
-act enterCombat(voidbringer: Voidbringer) do
-  buff(voidbringer, createArmored(2, 3))
+act enter_combat(voidbringer: Voidbringer) do
+  buff(voidbringer, create_armored(2, 3))
 end

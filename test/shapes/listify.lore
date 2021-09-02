@@ -20,17 +20,17 @@ func listify(shape: %{ x: Real, y: Real, z: Real }): [Real] = [shape.x, shape.y,
 //func genericListify(shape: %{ x: X, y: Y, z: Z }): [R] where R, X <: R, Y <: R, Z <: R = [shape.x, shape.y, shape.z]
 
 // Ultimately, we have to separate the generic functions so that we cannot trip up with run-time dispatch.
-func genericListify2D(shape: %{ x: X, y: Y }): [X | Y] where X, Y = [shape.x, shape.y]
-func genericListify3D(shape: %{ x: X, y: Y, z: Z }): [X | Y | Z] where X, Y, Z = [shape.x, shape.y, shape.z]
+func generic_listify_2D(shape: %{ x: X, y: Y }): [X | Y] where X, Y = [shape.x, shape.y]
+func generic_listify_3D(shape: %{ x: X, y: Y, z: Z }): [X | Y | Z] where X, Y, Z = [shape.x, shape.y, shape.z]
 
 
 func test(): [[Real]] = do
-  let pos2D = Position2D(1.2, 5)
-  let pos3D = Position3D(0, 5.1, 4.8)
-  let pos2DShape = %{ x: 1.2, y: 5 }
-  let pos3DShape = %{ x: 0, y: 5.1, z: 4.8 }
+  let pos_2D = Position2D(1.2, 5)
+  let pos_3D = Position3D(0, 5.1, 4.8)
+  let pos_2D_shape = %{ x: 1.2, y: 5 }
+  let pos_3D_shape = %{ x: 0, y: 5.1, z: 4.8 }
   [
-    listify(pos2D), listify(pos3D), genericListify2D(pos2D), genericListify3D(pos3D),
-    listify(pos2DShape), listify(pos3DShape), genericListify2D(pos2DShape), genericListify3D(pos3DShape)
+    listify(pos_2D), listify(pos_3D), generic_listify_2D(pos_2D), generic_listify_3D(pos_3D),
+    listify(pos_2D_shape), listify(pos_3D_shape), generic_listify_2D(pos_2D_shape), generic_listify_3D(pos_3D_shape)
   ]
 end

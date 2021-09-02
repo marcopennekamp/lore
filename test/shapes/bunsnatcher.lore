@@ -36,8 +36,8 @@ func tool(Gardener): Tool = Spade()
 func tool(Assassin): Tool = Dagger()
 
 func sharpness(Tool): Real
-func sharpness(sharpTool: Scissors | Paperknife | Dagger): Real = 1
-func sharpness(bluntTool: Suitcase | Spade): Real = 0
+func sharpness(sharp_tool: Scissors | Paperknife | Dagger): Real = 1
+func sharpness(blunt_tool: Suitcase | Spade): Real = 0
 
 func bluntness(tool: Tool): Real = 1 - sharpness(tool)
 
@@ -64,8 +64,8 @@ struct Indifferent() extends Approach
 struct Suspect
   name: String
 
-  open hairColor: Color
-  open clothesColor: Color
+  open hair_color: Color
+  open clothes_color: Color
   open profession: Profession
 
   /**
@@ -85,10 +85,10 @@ end
 // the door slammed behind the suspect. Detective Trout wonders: Was it the color of their clothes, their hair, or both?
 // ---------------------------------------------------------------------------------------------------------------------
 
-func colorFactor(suspect: %{ hairColor: Color, clothesColor: Color }): Real = 0.8
-func colorFactor(suspect: %{ hairColor: Red, clothesColor: Color }): Real = 1.2
-func colorFactor(suspect: %{ hairColor: Color, clothesColor: Red }): Real = 1.2
-func colorFactor(suspect: %{ hairColor: Red, clothesColor: Red }): Real = 1.5
+func colorFactor(suspect: %{ hair_color: Color, clothes_color: Color }): Real = 0.8
+func colorFactor(suspect: %{ hair_color: Red, clothes_color: Color }): Real = 1.2
+func colorFactor(suspect: %{ hair_color: Color, clothes_color: Red }): Real = 1.2
+func colorFactor(suspect: %{ hair_color: Red, clothes_color: Red }): Real = 1.5
 
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -98,7 +98,7 @@ func colorFactor(suspect: %{ hairColor: Red, clothesColor: Red }): Real = 1.5
 // trade.
 // ---------------------------------------------------------------------------------------------------------------------
 
-func weaponFactor(suspect: Suspect): Real = 1 + bluntness(tool(suspect.profession)) / 2
+func weapon_factor(suspect: Suspect): Real = 1 + bluntness(tool(suspect.profession)) / 2
 
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -106,37 +106,37 @@ func weaponFactor(suspect: Suspect): Real = 1 + bluntness(tool(suspect.professio
 // by his business, while others suffered from his influence.
 // ---------------------------------------------------------------------------------------------------------------------
 
-func motiveFactor(suspect: %{ }): Real = 1.0
+func motive_factor(suspect: %{ }): Real = 1.0
 
 // Friends don't kill friends, right?
-func motiveFactor(suspect: %{ relation: Friendly }): Real = 0.8
+func motive_factor(suspect: %{ relation: Friendly }): Real = 0.8
 
 // Anyone who was hostile to Bunsnatcher could be the killer! "Let's also not forget that lovers are unpredictable,"
 // says Detective Trout.
-func motiveFactor(suspect: %{ relation: Hostile }): Real = 1.2
+func motive_factor(suspect: %{ relation: Hostile }): Real = 1.2
 
 // Some ex-employees of Bertram Bunsnatcher would have more than plenty of motive to kill him.
-func motiveFactor(suspect: %{ profession: Tailor | Lawyer | Gardener, relation: Shunned }): Real = 1.5
+func motive_factor(suspect: %{ profession: Tailor | Lawyer | Gardener, relation: Shunned }): Real = 1.5
 
 // It is widely acknowledged that lawyers are utterly inhuman and thus cannot have or be friends. The lawyer must've
 // pretended to Bertram Bunsnatcher for some ulterior motive.
-func motiveFactor(suspect: %{ profession: Lawyer, relation: Friendly }): Real = 1.2
-func motiveFactor(suspect: %{ profession: Lawyer, relation: Lovers }): Real = 1.2 // Sadly needed for disambiguation.
+func motive_factor(suspect: %{ profession: Lawyer, relation: Friendly }): Real = 1.2
+func motive_factor(suspect: %{ profession: Lawyer, relation: Lovers }): Real = 1.2 // Sadly needed for disambiguation.
 
 // Business rivals always have a good motive to kill such a wealthy business magnet.
-func motiveFactor(suspect: %{ profession: Entrepreneur, relation: Competing }): Real = 1.3
+func motive_factor(suspect: %{ profession: Entrepreneur, relation: Competing }): Real = 1.3
 
 // Shunned rivals even more so, as Bunsnatcher doesn't even acknowledge them anymore.
-func motiveFactor(suspect: %{ profession: Entrepreneur, relation: Shunned }): Real = 1.4
+func motive_factor(suspect: %{ profession: Entrepreneur, relation: Shunned }): Real = 1.4
 
 // Perhaps a more than calculating business partner who murdered Bunsnatcher in cold blood?
-func motiveFactor(suspect: %{ profession: Entrepreneur, approach: Calculating, relation: Friendly | Neutral }): Real = 1.5
+func motive_factor(suspect: %{ profession: Entrepreneur, approach: Calculating, relation: Friendly | Neutral }): Real = 1.5
 
 // It is highly unlikely that an assassin would've done such a sloppy job, unless the victim and the assassin were
 // friends and the assassin messed up out of emotional attachment to the "job"!
-func motiveFactor(suspect: %{ profession: Assassin }): Real = 0.2
-func motiveFactor(suspect: %{ profession: Assassin, relation: Friendly }): Real = 1.5
-func motiveFactor(suspect: %{ profession: Assassin, relation: Lovers }): Real = 1.5 // Sadly needed for disambiguation.
+func motive_factor(suspect: %{ profession: Assassin }): Real = 0.2
+func motive_factor(suspect: %{ profession: Assassin, relation: Friendly }): Real = 1.5
+func motive_factor(suspect: %{ profession: Assassin, relation: Lovers }): Real = 1.5 // Sadly needed for disambiguation.
 
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -144,25 +144,25 @@ func motiveFactor(suspect: %{ profession: Assassin, relation: Lovers }): Real = 
 // horrible crimes."
 // ---------------------------------------------------------------------------------------------------------------------
 
-func characterFactor(suspect: %{ }): Real = 1.0
+func character_factor(suspect: %{ }): Real = 1.0
 
 // Honest jobs for honest people.
-func characterFactor(suspect: %{ profession: Tailor | Gardener | Assassin, approach: Honest }): Real = 0.5
+func character_factor(suspect: %{ profession: Tailor | Gardener | Assassin, approach: Honest }): Real = 0.5
 
 // Lawyers are terrible people, obviously. Except the honest ones. They are only slightly terrible.
-func characterFactor(suspect: %{ profession: Lawyer }): Real = 1.4
-func characterFactor(suspect: %{ profession: Lawyer, approach: Honest }): Real = 1.1
+func character_factor(suspect: %{ profession: Lawyer }): Real = 1.4
+func character_factor(suspect: %{ profession: Lawyer, approach: Honest }): Real = 1.1
 
 // Do you like to exploit people? Then this is the profession for you! The honest ones are even worse: they don't even
 // hide or justify their exploitation behind a curtain of lies.
-func characterFactor(suspect: %{ profession: Entrepreneur }): Real = 1.2
-func characterFactor(suspect: %{ profession: Entrepreneur, approach: Honest }): Real = 1.3
+func character_factor(suspect: %{ profession: Entrepreneur }): Real = 1.2
+func character_factor(suspect: %{ profession: Entrepreneur, approach: Honest }): Real = 1.3
 
 
 /**
   * For the given suspect, returns the likelihood of their guilt. There can only be a single murderer.
   */
-func guilt(suspect: Suspect): Real = colorFactor(suspect) * weaponFactor(suspect) * motiveFactor(suspect) * characterFactor(suspect)
+func guilt(suspect: Suspect): Real = colorFactor(suspect) * weapon_factor(suspect) * motive_factor(suspect) * character_factor(suspect)
 
 func test(): [Real] = do
   let suspects = [

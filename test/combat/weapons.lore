@@ -11,19 +11,19 @@ struct Spear() extends Weapon
 struct Shardbow() extends RangedWeapon
 struct Bow() extends RangedWeapon
 
-func weaponStrength(Weapon): Int
-func weaponStrength(Sword): Int = 7
-func weaponStrength(Shardblade): Int = 15
-func weaponStrength(Spear): Int = 5
-func weaponStrength(Shardbow): Int = 10
-func weaponStrength(Bow): Int = 4
+func weapon_strength(Weapon): Int
+func weapon_strength(Sword): Int = 7
+func weapon_strength(Shardblade): Int = 15
+func weapon_strength(Spear): Int = 5
+func weapon_strength(Shardbow): Int = 10
+func weapon_strength(Bow): Int = 4
 
-func weaponRange(RangedWeapon): Int
-func weaponRange(Shardbow): Int = 20
-func weaponRange(Bow): Int = 10
+func weapon_range(RangedWeapon): Int
+func weapon_range(Shardbow): Int = 20
+func weapon_range(Bow): Int = 10
 
 
-func baseStat(entity: +Stats & +Weapon, #attack): Int = weaponStrength(entity.weapon)
+func base_stat(entity: +Stats & +Weapon, #attack): Int = weapon_strength(entity.weapon)
 
-func baseStat(entity: +Stats & +Weapon, #range): Int = 0
-func baseStat(entity: +Stats & +RangedWeapon, #range): Int = weaponRange(entity.weapon)
+func base_stat(entity: +Stats & +Weapon, #range): Int = 0
+func base_stat(entity: +Stats & +RangedWeapon, #range): Int = weapon_range(entity.weapon)

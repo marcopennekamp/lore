@@ -9,12 +9,12 @@ func area(shape: Shape): Real = width(shape) * height(shape)
 
 
 struct BoundingBox extends Shape
-  x: Real, xEnd: Real
-  y: Real, yEnd: Real
+  x: Real, x_end: Real
+  y: Real, y_end: Real
 end
 
-func width(box: BoundingBox): Real = box.xEnd - box.x
-func height(box: BoundingBox): Real = box.yEnd - box.y
+func width(box: BoundingBox): Real = box.x_end - box.x
+func height(box: BoundingBox): Real = box.y_end - box.y
 
 
 struct Circle extends Shape
