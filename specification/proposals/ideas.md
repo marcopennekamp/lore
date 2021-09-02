@@ -76,7 +76,7 @@ func more(): Unit = counter.value += 1
 
 // The variable name can be omitted if the implicit parameter is simply passed on.
 @given Counter
-func evenMore(): Unit = do
+func even_more(): Unit = do
   more()
   more()
 end
@@ -104,7 +104,7 @@ Inspiration: Java annotations, Nim pragmas.
     - That is not to say that we can't check the fit of parameters out of order even with type variables, at least partially. Maybe the magic word here is "rule out". If we have a function whose second parameter is a tuple `(A, Animal)` with `A` being a type variable, we can still rule out this branch if the argument is not a tuple, or if the argument is a tuple whose second element is incompatible with `Animal`.
   - We have to be careful with this, however, as hierarchies aren't always readily apparent. There is no question that a list and a tuple are mutually exclusive, but traits and structs get vastly more complicated with multiple inheritance and, possibly still planned, dynamic specialization.
   - In the spirit of this optimization, we should also add an optimization for how some trait/struct-heavy multi-function hierarchies are handled. There are certainly single-dispatch-like multi-functions which could be compiled down to a lookup table. We just have to identify them.
-- The ideal dispatch algorithm would not even delegate to functions like `isSubtype` unless absolutely necessary. If we want to check that a given type is a tuple that contains the elements `Animal` and `String`, we don't go `isSubtype(argumentTuple, tupleType(Animal, String))`, we go `isSubtype(argumentTuple[0], Animal) && argumentTuple[1] === String`. That's inherently cheaper, because we have to process fewer function calls, fewer match statements, and much more. I doubt that V8 will inline all of this at run-time. The motto here is: "Do the same with less!"
+- The ideal dispatch algorithm would not even delegate to functions like `isSubtype` unless absolutely necessary. If we want to check that a given type is a tuple that contains the elements `Animal` and `String`, we don't go `isSubtype(argumentTuple, tupleType(Animal, String))`, we go `argumentTuple.kind === Kind.Tuple && argumentTuple.elements.length === 2 && isSubtype(argumentTuple.elements[0], Animal) && argumentTuple.elements[1] === String`. That's inherently cheaper, because we have to process fewer function calls, fewer match statements, and much more. I doubt that V8 will inline all of this at run-time. The motto here is: "Do the same with less!"
 
 
 

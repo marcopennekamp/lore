@@ -47,7 +47,7 @@ The `use` declaration can be used to **simplify member names** at their point of
 2. **Multiple:** Use multiple members of the same module.
 
    ```
-   use lore.Enum.[map, flatMap]
+   use lore.Enum.[map, flat_map]
    ```
 
 3. **Wildcard:** Use all members of a module.
@@ -118,8 +118,8 @@ module Foo
   
   func fresh(): Foo = Implementation(0)
   
-  func getAndIncrement(Foo): Int
-  func getAndIncrement(foo: Implementation): Int = do
+  func get_and_increment(Foo): Int
+  func get_and_increment(foo: Implementation): Int = do
     let result = foo.counter
     increment(foo)
     result

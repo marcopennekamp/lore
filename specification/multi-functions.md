@@ -312,7 +312,7 @@ This is a fairly standard example of single dispatch. Note that all actions so f
 
 ```
 struct SmartCar extends Car
-act move(car: SmartCar, target: Target)
+act move(car: SmartCar, target: Target) do
   // ...
 end
 ```
@@ -322,15 +322,15 @@ Now, data (types) and behavior are **completely orthogonal**. You can define the
 So let's assume that we have two kinds of targets: `GpsCoordinates` and `Directions`. Our smart car can deal with both (either taking GPS coordinates or directions through verbal input). Instead of pattern-matching the `target` argument (as one might approach it in a language like Scala, since we cannot go beyond single dispatch), we can simply **specialize** the `move` function:
 
 ```
-act move(car: SmartCar, target: Target) 
+act move(car: SmartCar, target: Target) do
   /* fallback behavior */
 end
 
-act move(car: SmartCar, target: GpsCoordinates)
+act move(car: SmartCar, target: GpsCoordinates) do
   // ... use GPS and self-driving capability to move to the coordinates.
 end
 
-act move(car: SmartCar, target: Directions)
+act move(car: SmartCar, target: Directions) do
   // ... understand and execute the driver's verbal directions.
 end
 ```
@@ -340,7 +340,7 @@ Even though, when `Vehicle` and Co. were declared, it might never have been anti
 Of course, we don't have to dispatch on named types only. Maybe our car has crashed and instead of moving needs to start some sort of recovery procedure:
 
 ```
-act move(car: Car & Crashed, target: Target)
+act move(car: Car & Crashed, target: Target) do
   // ... initiate recovery procedures.
 end
 ```

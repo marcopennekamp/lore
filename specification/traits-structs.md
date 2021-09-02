@@ -232,9 +232,9 @@ This allows us to define various structs extending the same `Position`, for exam
 struct Point(x: Real, y: Real, z: Real) extends Position
 
 struct Box extends Position
-  xStart: Real, xEnd: Real
-  yStart: Real, yEnd: Real
-  zStart: Real, zEnd: Real
+  x_start: Real, x_end: Real
+  y_start: Real, y_end: Real
+  z_start: Real, z_end: Real
 end
 ```
 
@@ -246,9 +246,9 @@ func y(point: Point): Real = point.y
 func z(point: Point): Real = point.z
 
 // The position of a box is its center!
-func x(box: Box): Real = box.xStart + width(box) / 2
-func y(box: Box): Real = box.yStart + height(box) / 2
-func z(box: Box): Real = box.zStart + depth(box) / 2
+func x(box: Box): Real = box.x_start + width(box) / 2
+func y(box: Box): Real = box.y_start + height(box) / 2
+func z(box: Box): Real = box.z_start + depth(box) / 2
 ```
 
 Finally, we could declare a function that just works with the data provided by `Position`: 
@@ -298,13 +298,13 @@ Consider we have a trait `Statistic` that should be hashable, so that we can use
 
 ```
 trait Statistic extends Hashable
-func uniqueName(Statistic): String
+func unique_name(Statistic): String
 ```
 
 Instead of implementing the hash function for every statistic individually, we can implement it just for the trait, relying on the unique name supplied by concrete statistics:
 
 ```
-func hash(statistic: Statistic): Int = hash(uniqueName(statistic))
+func hash(statistic: Statistic): Int = hash(unique_name(statistic))
 ```
 
 Note that `Statistic` wouldn't need to extend the `Hashable` trait just to provide an implementation for the `hash` function. The value of having `Statistic` implement `Hashable` is chiefly twofold:
@@ -374,7 +374,7 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
   
   property mut name: Type of Trait
   --> func name(self: Trait): Type
-  --> func setName(self: Trait, value: Type): ()
+  --> func set_name(self: Trait, value: Type): ()
   ```
 
   And then implement it like this:
@@ -386,14 +386,14 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
   end
   
   // Indirect mapping
-  property x: Real of box: Box = box.xStart + width(box) / 2
+  property x: Real of box: Box = box.x_start + width(box) / 2
   ```
 
   This could also be used as syntactic sugar for derived properties:
 
   ```
-  property width: Real of box: Box = box.xEnd - box.xStart
-  property x: Real of box: Box = box.xStart + box.width / 2
+  property width: Real of box: Box = box.x_end - box.x_start
+  property x: Real of box: Box = box.x_start + box.width / 2
   ```
 
   The `property` syntax thus wouldn't only be allowed for traits but for any types. We could define properties over tuples:
@@ -421,11 +421,11 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
     end
     
     // Indirect mapping
-    property x: Real of box: Box = box.xStart + width(box) / 2
+    property x: Real of box: Box = box.x_start + width(box) / 2
     // or:
-    func x(box: Box): Real = box.xStart + width(box) / 2
+    func x(box: Box): Real = box.x_start + width(box) / 2
     // or:
-    property x(box: Box): Real = box.xStart + width(box) / 2
+    property x(box: Box): Real = box.x_start + width(box) / 2
     ```
 
     This would internally still be represented by multi-functions, but the declaration in traits is shorter and more natural. **Potential downside:** This way of declaring trait properties could confuse users into thinking that properties are inherited. It could also make the idea that trait properties are just multi-functions under the hood harder to convey. Another question is which namespace/module these property functions will be part of.

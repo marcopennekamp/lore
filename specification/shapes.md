@@ -58,7 +58,7 @@ Open properties are generally slower, because they lead to more difficult run-ti
 
 ```
 func free(cage: %{ content: Animal }): Animal = cage.content
-fun free(cage: %{ content: Tiger }): Nothing = error('Are you insane?')
+func free(cage: %{ content: Tiger }): Nothing = error('Are you insane?')
 
 struct Blackbox(content: Animal)
 struct Whitebox
@@ -135,8 +135,8 @@ The ability to dispatch on property types effectively turns a struct type into a
    Take the following example. If we assume that `Coffin`'s type takes into account the run-time property type of `nail`, we have it quite trivially and on good account that the two coffins compared in the last line don't have equal types. Even worse, they are not even subtypes of one another. Since the programmer probably doesn't expect two types of the same name (in a mostly nominal typing context) to *not* be equal, this might lead to a lot of confusion. Unless the programmer specifically *states* that "yes, I want run-time struct types of the same name to vary," it's probably not a good idea to trip her up like this.
 
    ```
-   func equalTypes(A, B): Boolean where A, B = false
-   func equalTypes(A, A): Boolean where A = true
+   func equal_types(A, B): Boolean where A, B = false
+   func equal_types(A, A): Boolean where A = true
    
    trait Nail
    struct FancyNail
@@ -147,10 +147,10 @@ The ability to dispatch on property types effectively turns a struct type into a
    act main()
      let fancy = FancyNail()
      let bloody = BloodyNail()
-     let coffinFancy = Coffin(fancy)
-     let coffinBloody = Coffin(bloody)
+     let coffin_fancy = Coffin(fancy)
+     let coffin_bloody = Coffin(bloody)
      
-     equalTypes(coffinFancy, coffinBloody) // --> false
+     equalTypes(coffin_fancy, coffin_bloody) // --> false
    end
    ```
 
