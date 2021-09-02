@@ -1,14 +1,14 @@
 struct Wrapper[-A, +B](function: A => B)
 
-func mapWrapper(list: [A], wrapper: Wrapper[B, C]): [C] where A, B >: A, C = map(list, wrapper.function)
+func map_wrapper(list: [A], wrapper: Wrapper[B, C]): [C] where A, B >: A, C = map(list, wrapper.function)
 
 func test(): [String] = do
   let numbers = [1, 2, 3]
-  mapWrapper(
+  map_wrapper(
     numbers,
     Wrapper(n => do
-      let strings = repeat(n, 'Hey!')
-      stringJoin(strings, ' ')
+      let strings = repeat('Hey!', n)
+      string_join(strings, ' ')
     end)
   )
 end

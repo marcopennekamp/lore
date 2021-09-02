@@ -10,4 +10,4 @@ func third(tuple: (A, B, C)): C where A, B, C = dynamic[C]('Lore.tuples.get', tu
 // func map(tuple: (A, B), f: A | B => C): (C, C) where A, B, C = (f(first(tuple)), f(second(tuple)))
 // Pipes? (tuple |> first |> f, tuple |> second |> f)
 
-func toString(tuple: (A, B)): String where A, B = '(${first(tuple)}, ${second(tuple)})'
+func to_string(tuple: (A, B)): String where A, B = '(${first(tuple)}, ${second(tuple)})'

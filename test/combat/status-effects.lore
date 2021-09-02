@@ -93,7 +93,7 @@ end
  */
 act updateStatusEffects(entity: +StatusEffects) do
   let effects = entity.statusEffects.effects
-  foreach(effects, onUpdate)
+  each(effects, onUpdate)
   entity.statusEffects.effects = filter(effects, isActive)
 end
 

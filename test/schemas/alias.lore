@@ -9,7 +9,7 @@ type Int2IntFunction = Function[Int, Int]
 
 func test(): [String] = do
   let f1 = StringFunction((x: Int) => 'hey int $x')
-  let f2 = StringFunction((list: [Int]) => stringJoin(map(list, f1.f), ', '))
+  let f2 = StringFunction((list: [Int]) => string_join(map(list, f1.f), ', '))
   let f3 = IntConsumer(x => x * 0.4)
   let f4 = Int2IntFunction(x => x + 2)
 
@@ -19,5 +19,5 @@ func test(): [String] = do
     apply(f3, 5), apply(f3, 2),
     apply(f4, 2), apply(f4, -1)
   ]
-  map(data, toString)
+  map(data, to_string)
 end

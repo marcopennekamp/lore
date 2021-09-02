@@ -2,7 +2,7 @@ package lore.compiler.transformation
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.{Feedback, Reporter}
-import lore.compiler.semantics.Registry
+import lore.compiler.semantics.{Core, Registry}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.BinaryOperator
 import lore.compiler.types.{BasicType, SymbolType}
@@ -15,15 +15,15 @@ object BuiltinsTransformation {
 
   object ComparisonFunction {
     case object AreEqual extends ComparisonFunction {
-      override val name = "areEqual"
+      override val name: String = Core.equal
     }
 
     case object IsLessThan extends ComparisonFunction {
-      override val name = "isLessThan"
+      override val name: String = Core.less_than
     }
 
     case object IsLessThanOrEqual extends ComparisonFunction {
-      override val name = "isLessThanOrEqual"
+      override val name: String = Core.less_than_equal
     }
   }
 

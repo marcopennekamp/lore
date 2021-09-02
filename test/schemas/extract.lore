@@ -12,7 +12,7 @@ func extract(TobyCrate): String = 'I am a crate and my name is Toby!'
 
 
 func test(): [String] = [
-  toString(extract(IntCrate(5))),
-  toString(extract(ListCrate([1, 2, 3]))),
+  to_string(extract(IntCrate(5))),
+  to_string(extract(ListCrate([1, 2, 3]))),
   extract(TobyCrate())
 ]

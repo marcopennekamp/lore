@@ -12,7 +12,7 @@ func transcribe(#c): #g = #g
 
 func transcribe(dna: Dna): Rna = map(dna, transcribe)
 
-func toString(rna: Rna): String = concat(map(rna, symbolName))
+func toString(rna: Rna): String = concat(map(rna, symbol_name))
 
 func test(): [String] = do
   let cases = [

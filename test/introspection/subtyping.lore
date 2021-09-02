@@ -16,13 +16,13 @@ func chiji(): Crane = Crane('Chi-Ji', 5.51)
 func shape(): %{ name: String, weight: Real } = %{ name: 'Peter', weight: 87.2 }
 
 func test(): [Boolean] = [
-  isSubtype(typeOf(1), typeOf(1.5)),               // --> true
-  isSubtype(typeOf(1.5), typeOf(1)),               // --> false
+  subtype?(type_of(1), type_of(1.5)),               // --> true
+  subtype?(type_of(1.5), type_of(1)),               // --> false
   // TODO: How to get the Animal trait type for introspection? We would have to add compiler support.
-  //isSubtype(niuzao(), Animal),                   // --> true
+  //subtype?(niuzao(), Animal),                     // --> true
   true,
-  isSubtype(typeOf(niuzao()), typeOf(chiji())),    // --> false
-  isSubtype(typeOf(chiji()), typeOf(niuzao())),    // --> false
-  isSubtype(typeOf(niuzao()), typeOf(shape())),    // --> true
-  isSubtype(typeOf(chiji()), typeOf(shape()))    // --> false
+  subtype?(type_of(niuzao()), type_of(chiji())),    // --> false
+  subtype?(type_of(chiji()), type_of(niuzao())),    // --> false
+  subtype?(type_of(niuzao()), type_of(shape())),    // --> true
+  subtype?(type_of(chiji()), type_of(shape()))      // --> false
 ]

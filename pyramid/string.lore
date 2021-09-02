@@ -1,18 +1,20 @@
+func concat(a: String, b: String): String = '$a$b'
+
+// TODO: This could perhaps benefit from the performance of a dynamic implementation.
+func concat(strings: [String]): String = fold(strings, '', concat)
+
+func concat_map(strings: [A], f: B => String): String where A, B >: A = concat(map(strings, f))
+
+// TODO: This could lose the `string` prefix if we put this in a module `String`.
+func string_join(list: [A], separator: String): String where A = do
+  if empty?(list) then return ''
+  concat(
+    concat_map(init(list), a => '$a$separator'),
+    to_string(last(list))
+  )
+end
+
 /**
  * The string value of a string is simply its identity.
  */
-func toString(value: String): String = value
-
-func concat(a: String, b: String): String = '$a$b'
-
-func concat(strings: [String]): String = fold(strings, '', concat)
-
-func concatMap(strings: [A], f: B => String): String where A, B >: A = concat(map(strings, f))
-
-func stringJoin(list: [A], separator: String): String where A = do
-  if empty?(list) then return ''
-  concat(
-    concatMap(init(list), a => '$a$separator'),
-    toString(last(list))
-  )
-end
+func to_string(value: String): String = value

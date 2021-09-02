@@ -1,7 +1,7 @@
 package lore.compiler.transformation
 
 import lore.compiler.feedback.Reporter
-import lore.compiler.semantics.Registry
+import lore.compiler.semantics.{Core, Registry}
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, XaryOperator}
 import lore.compiler.semantics.expressions.{Expression, ExpressionIdentityVisitor}
 import lore.compiler.transformation.BuiltinsTransformation.ComparisonFunction
@@ -29,7 +29,7 @@ class BuiltinsVisitor(implicit registry: Registry, reporter: Reporter) extends E
     case XaryOperator.Concatenation =>
       def transformOperand(operand: Expression) = {
         if (operand.tpe != BasicType.String) {
-          CallTransformation.multiFunctionCall("toString", Vector(operand), BasicType.String, operand.position)
+          CallTransformation.multiFunctionCall(Core.to_string, Vector(operand), BasicType.String, operand.position)
         } else operand
       }
       Expression.XaryOperation(XaryOperator.Concatenation, operands.map(transformOperand), BasicType.String, expression.position)

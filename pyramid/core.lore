@@ -1,39 +1,52 @@
 /**
-  * The Unit type is represented by exactly one value: (). A Unit value effectively acts as a throwaway,
-  * equivalent in use to the `void` type of other languages.
+  * The Unit type is represented by exactly one value: (). A Unit value effectively acts as a throwaway, equivalent in
+  * use to the `void` type of other languages.
   */
 type Unit = ()
 
-/**
-  * The default "equals" function used by the compiler for comparing complex types. This function is invoked
-  * when using the == and != operators.
-  */
-func areEqual(a: Any, b: Any): Boolean = dynamic[Boolean]('Lore.values.areEqual', a, b)
+// TODO: Equality should be restricted to a trait Equality. Global equality is a bad idea, as it fails silently,
+//       because `equal?` can always fall back to the Any/Any function. The same issue applies to `less_than?`, which
+//       should be locked behind a trait Order.
+//       Of course, this and other traits defined in Core need proper support for providing "implementations" for
+//       traits, unless we want to hardcode these traits into the compiler. We will also have to provide a means with
+//       which a standard implementation can be derived for Equality, Order, and Showable. And finally, there need to
+//       be standard implementations for lists, maps, etc.
 
 /**
- * The default "less than" function used by the compiler for comparing complex types. This function is invoked
- * when using the < and > operators.
+  * The default "equals" function used by the compiler for comparing complex types. This function is invoked when using
+  * the == and != operators.
+  */
+func equal?(a: Any, b: Any): Boolean = dynamic[Boolean]('Lore.values.areEqual', a, b)
+
+/**
+ * The default "less than" function used by the compiler for comparing complex types. This function is invoked when
+ * using the < and > operators.
  */
-func isLessThan(a: Any, b: Any): Boolean = dynamic[Boolean]('Lore.values.isLessThan', a, b)
+func less_than?(a: Any, b: Any): Boolean = dynamic[Boolean]('Lore.values.isLessThan', a, b)
 
 /**
  * The default "less than or equal" function used by the compiler for comparing complex types. This function is invoked
- * when using the <= and >= operators. By default, isLessThan and areEqual are used to test the values, but this
+ * when using the <= and >= operators. By default, `less_than?` and `equal?` are used to test the values, but this
  * behavior can be implemented more efficiently for specialized types.
  */
-func isLessThanOrEqual(a: Any, b: Any): Boolean = isLessThan(a, b) || areEqual(a, b)
+func less_than_equal?(a: Any, b: Any): Boolean = less_than?(a, b) || equal?(a, b)
 
 // TODO: Restrict hashes to a Hashable label type. This would provide better safety when using maps. More often than
 //       not, especially when maps are easy to create, proper hash-ability of a type gets overlooked and keys are
 //       used recklessly. It's much better to require a programmer to explicitly declare hash-ability.
+
 /**
  * Computes a hash from any given value. This is used by the compiler to implement maps. The standard implementation
  * defers the computation to the Javascript runtime and works for any sort of value.
  */
 func hash(value: Any): Int = dynamic[Int]('Lore.values.hash', value)
 
+// TODO: Restrict `to_string` to a Showable label type so that only types for which `to_string` is explicitly
+//       implemented can be used in string interpolation.
+
 /**
- * Converts any Lore value to a string using Javascripts's native stringifier. You can specialize this function to
- * stringify your own custom types. This function is used by library functions such as io.println.
+ * Converts any Lore value to a string using Javascript's native stringifier. You can specialize this function to
+ * stringify your own custom types. This function is used by library functions such as `println`, as well as string
+ * interpolation.
  */
-func toString(value: Any): String = dynamic[String]('Lore.values.toString', value)
+func to_string(value: Any): String = dynamic[String]('Lore.values.toString', value)

@@ -3,9 +3,9 @@ struct Cereal() extends Content
 struct Blood() extends Content
 struct Pudding() extends Content
 
-func toString(Cereal): String = 'cereal'
-func toString(Blood): String = 'blood'
-func toString(Pudding): String = 'pudding'
+func to_string(Cereal): String = 'cereal'
+func to_string(Blood): String = 'blood'
+func to_string(Pudding): String = 'pudding'
 
 
 trait Container[+C]
@@ -20,8 +20,8 @@ struct Cup[+C <: Content] extends Container[C]
   exclusivity: Int
 end
 
-func toString(bowl: Bowl[Content]): String = '${bowl.content} bowl'
-func toString(cup: Cup[Content]): String = '${cup.content} cup'
+func to_string(bowl: Bowl[Content]): String = '${bowl.content} bowl'
+func to_string(cup: Cup[Content]): String = '${cup.content} cup'
 
 
 func cereal(container: (Cereal, Int) => A): A where A = container(Cereal(), 4)
@@ -35,5 +35,5 @@ func test(): [String] = do
     blood(Bowl), blood(Cup),
     pudding(Bowl), pudding(Cup)
   ]
-  map(containers, toString)
+  map(containers, to_string)
 end

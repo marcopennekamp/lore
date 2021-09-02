@@ -1,7 +1,7 @@
 
 package lore.compiler.transpilation.expressions
 
-import lore.compiler.semantics.Registry
+import lore.compiler.semantics.{Core, Registry}
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.semantics.structures.StructConstructor
@@ -104,7 +104,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
     }
 
     Chunk.combine(entries) { entries =>
-      Chunk.expression(RuntimeApi.maps.value(entries, tpe, "hash".asVariable, "areEqual".asVariable))
+      Chunk.expression(RuntimeApi.maps.value(entries, tpe, Core.hash.asVariable, Core.equal.asVariable))
     }
   }
 

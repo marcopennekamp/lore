@@ -1,2 +1,2 @@
-func typeOf(value: Any): Type = dynamic[Type]('Lore.types.introspection.typeOf', value)
-func isSubtype(t1: Type, t2: Type): Boolean = dynamic[Boolean]('Lore.types.introspection.isSubtype', t1, t2)
+func type_of(value: Any): Type = dynamic[Type]('Lore.types.introspection.typeOf', value)
+func subtype?(t1: Type, t2: Type): Boolean = dynamic[Boolean]('Lore.types.introspection.isSubtype', t1, t2)
