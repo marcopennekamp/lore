@@ -35,15 +35,20 @@ Take two functions *f1* and *f2* from a multi-function with *f2* specializing *f
 
 ##### Type Variables
 
-A function can additionally declare **type variables:**
+A function can additionally declare **type variables** with a `@where` annotation:
 
 ```
-func foo(a: A, b: B, c: C): Boolean where A, B, C >: A <: B = true
+@where A, B, C >: A <: B
+func foo(a: A, b: B, c: C): Boolean = true
 ```
 
 This is not a property of multi-functions but **individual functions**. As subtyping and fit have been extended for type variables, Lore can decide the specificity of two functions even if one of them is parametric and also do so at run-time during multiple dispatch. More on that later.
 
 Note that type variables can only be used in bounds if they are declared **preceding** the bound. So in the example above, `A` and `B` must be declared before `C`.
+
+The usual syntax for function type parameters in many programming languages is: `foo<A, B, C>(...)`. This is *not* possible in Lore, because functions are dispatched to at run time and thus the compiler cannot anticipate which function is being called. Hence, **direct assignments** to function type parameters are impossible. Even a `.fixed` call simply performs multiple dispatch at compile time, without directly assigning type parameters.
+
+The **annotation syntax** has the advantage that it's clearly separated from the function head, which improves readability. The `@` in front of `where` also helps with putting initial visual focus on the function head instead.
 
 ##### Unnamed Parameters
 
@@ -76,7 +81,8 @@ In the context of multiple dispatch, **fit** is *almost* defined as subtyping. T
 ###### Example
 
 ```
-func append(list: [A], element: B): [A] where A, B <: A
+@where A, B <: A
+func append(list: [A], element: B): [A]
 ```
 
 This is not the signature of the actual appends operator in Lore, but this function will help us demonstrate polymorphic fit. The function `append` has the input type `([A], B)` for the type variables as defined. If we want to call the function, we will have to ensure that the argument types fit into the input type. Say we have an argument type `([Real], Int)`. Lore will know to assign `Real` to `A`  and `Int` to `B`. Since `Int <: Real`, the variable assignment is legal and the function can be called with the given arguments. This is subtly different to subtyping, because `Real` is not a subtype of `A`: it would have to be a subtype of *all possible instances* of `A`. `Real` can merely be assigned to `A`, making the given arguments fit.
@@ -137,16 +143,18 @@ As seen above, Lore functions can declare type variables. **Parametric multiple 
 Take the following function **example:**
 
 ```
-func append(list: [A], element: A): [A] where A
+@where A
+func append(list: [A], element: A): [A]
 ```
 
-When `append` is called via multiple dispatch, the unbounded type variable `A` is assigned some type based on the actual argument types. The arguments must agree *at run-time* such that `A` is consistently assigned the same type. If, given traits `X` and `Y extends X`, we called the function with an input type `([X], Y)`, this (naively defined) append function **would not be dispatched to**, because `X` and `Y` are not the same type, even though they agree in principle (and the function would be callable like that outside a multiple-dispatch universe). Rather, we have to define the following function:
+When `append` is called via multiple dispatch, the unbounded type variable `A` is assigned some type based on the actual argument types. The arguments must agree *at run time* such that `A` is consistently assigned the same type. If, given traits `X` and `Y extends X`, we called the function with an input type `([X], Y)`, this (naively defined) append function **would not be dispatched to**, because `X` and `Y` are not the same type, even though they agree in principle (and the function would be callable like that outside a multiple-dispatch universe). Rather, we have to define the following function:
 
 ```
-func append(list: [A], element: B): [A] where A, B <: A
+@where A, B <: A
+func append(list: [A], element: B): [A]
 ```
 
-This function does not assume the list and element to agree. Rather, it expects the **element to be some subtype of the list's element type**, which still allows us to append the element to the list as lists are covariant and immutable. If the data structure was invariant, however, we would have to write a function like the first one, where the list and element have to agree. In this example you have also seen usage of an upper bound. Type variables that are declared before the current type variable (such as `A` being declared before `B`) can be used in the current type variable's bound.
+This function does not assume the list and element to agree. Rather, it expects the **element to be some subtype of the list's element type**, which still allows us to append the element to the list as lists are covariant and immutable. If the data structure was invariant, however, we would have to write a function like the first one, where the list and element have to agree. In this example you have also seen the usage of an upper bound. Type variables that are declared before the current type variable (such as `A` being declared before `B`) can be used in the current type variable's bound.
 
 Since type variables are assigned by multiple dispatch, **assigning type variables manually during a function call is impossible**. A call such as this, with imaginary syntax, is simply impossible:
 
@@ -156,7 +164,7 @@ append[Real]([1, 2, 3], 4.5)  // Impossible code!
 
 Of course, this is quite idiomatic in languages like Scala. We should be able to force the type variable if it isn't being inferred correctly, right? But with multiple dispatch, we are **moving type variable assignment to the runtime**, because it is essentially part of the dispatch decision.
 
-On top of that, the execution engine makes **type variable assignments available at run-time**. This is, for example, used with the list appends operator to construct a proper type for the resulting list. It will also be important to have access to type variable assignments once structs become parametric. A struct, carrying its actual type information at run-time, will need to be instantiated with the actual type carried in a variable (say, `Real`) instead of the variable itself (`A`). This cannot be decided at compile-time and thus needed to be moved to the execution engine.
+On top of that, the execution engine makes **type variable assignments available at run-time**. This is, for example, used with the list appends operator to construct a proper type for the resulting list. It's also crucial to have access to type variable assignments to construct parametric structs. A struct, carrying its actual type information at run-time, needs to be instantiated with the actual type carried in a variable (say, `Real`) instead of the variable itself (`A`). This cannot be decided at compile-time and thus needed to be moved to the execution engine.
 
 
 

@@ -10,7 +10,7 @@ Currently, there are four kinds of **type scopes** in Lore:
 
 - The **registry type scope** contains all global named types, including all traits, structs, and type aliases. It also contains top-level modules.
 - A **module type scope** contains named types declared in a specific module, as well as nested modules.
-- A **function type scope** contains the type variables declared in a function's `where` clause. 
+- A **function type scope** contains the type variables declared in a function's `@where` annotation. 
 - A **trait/struct type scope** contains the type parameters of a trait or struct.
 
 These scopes **shadow** each other, with the last mentioned scope having the highest priority. For example, if you declare a type variable `Apple` in a function, any type named `Apple` in the registry type scope won't be accessible from that function.

@@ -399,7 +399,8 @@ Right now, it is not possible to attach a label type to a value at run-time, so 
   The `property` syntax thus wouldn't only be allowed for traits but for any types. We could define properties over tuples:
 
   ```
-  property first: A of tuple: (A, B) where A, B = get(tuple, 0)
+  @where A, B
+  property first: A of tuple: (A, B) = get(tuple, 0)
   ```
 
   Note: Since this proposal does not add any additional expressiveness to the language (only convenience), it is not a candidate for the MVL itself. Also, another question is how this system interacts with namespacing, and thus it would be prudent to define the module system first and THEN turn our attention to this proposal.

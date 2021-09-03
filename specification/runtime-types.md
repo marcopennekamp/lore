@@ -13,7 +13,7 @@ Hence, we define, for *values*, the types they have at run-time:
 - A (singly linked) list's run-time type is assigned at the point of its construction, but determined at compile-time (mostly for performance reasons). Since lists are immutable and covariant, we can prepend an element of type `A` to a list of type `B <: A` if we expect a list of type `C >: A`. This makes it possible to always type the empty list as `[Nothing]`.
   - Note that we could technically type lists at run-time by deciding the LUB of the two element types when prepending an element to a list, but this will add excessive overhead to each and every list construction and is thus not desirable.  
   - TODO: How does concatenation work?
-    - The function would have the signature `concat(as: [A], bs: [B]): LUB(A, B) where A, B`, with LUB as the type operator that would result in a least upper bound of types A and B. We'd somehow have to mirror that type computation to the runtime...  
+    - The function would have the signature `concat(as: [A], bs: [B]): LUB(A, B)`, with LUB as the type operator that would result in a least upper bound of types A and B. We'd somehow have to mirror that type computation to the runtime...
     - Maybe we should implement default lists as immutable Scala-like Vectors and see how we can actually support at least type widening at run-time. This would make it easier to type empty lists as `[Nothing]` without having to resort to magic.
   
 - Because maps are mutable, their type is decided when they are constructed. This also means that we will have to pass key and value type parameters to maps unless the type can be immediately inferred from the given entries. Since maps are invariant, a careless coder won't be able to accidentally pass a `#[Nothing -> Nothing]` map to some other function expecting a, say, `#[String -> Int]` map.
@@ -24,7 +24,10 @@ Hence, we define, for *values*, the types they have at run-time:
     - Simple example:
       ```
       class C[A] { x: A }
-      func create(x: A): C[A] where A = C[A](x)
+      
+      @where A
+      func create(x: A): C[A] = C[A](x)
+      
       create('hello') --> C[String] at run-time
       create(15)      --> C[Int] at run-time
       ```
