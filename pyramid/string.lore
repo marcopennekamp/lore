@@ -3,10 +3,12 @@ func concat(a: String, b: String): String = '$a$b'
 // TODO: This could perhaps benefit from the performance of a dynamic implementation.
 func concat(strings: [String]): String = fold(strings, '', concat)
 
-func concat_map(strings: [A], f: B => String): String where A, B >: A = concat(map(strings, f))
+@where A, B >: A
+func concat_map(strings: [A], f: B => String): String = concat(map(strings, f))
 
 // TODO: This could lose the `string` prefix if we put this in a module `String`.
-func string_join(list: [A], separator: String): String where A = do
+@where A
+func string_join(list: [A], separator: String): String = do
   if empty?(list) then return ''
   concat(
     concat_map(init(list), a => '$a$separator'),

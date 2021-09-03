@@ -6,16 +6,11 @@ import lore.compiler.parsing.LexicalParser.{identifier, typeIdentifier}
 import lore.compiler.syntax._
 
 /**
-  * @param whitespaceParser This can be manually specified to disable newlines in whitespace.
+  * @param whitespace This can be manually specified to disable newlines in whitespace.
   */
-class TypeParser(
-  nameParser: NameParser,
-  whitespaceParser: P[Any] => P[Unit] = ScalaWhitespace.whitespace,
-)(implicit fragment: Fragment) {
+class TypeParser(nameParser: NameParser)(implicit fragment: Fragment, whitespace: P[Any] => P[Unit]) {
   import Node._
   import nameParser.name
-
-  private implicit val whitespace: P[Any] => P[Unit] = whitespaceParser
 
   def typing[_: P]: P[TypeExprNode] = P(":" ~ typeExpression)
 

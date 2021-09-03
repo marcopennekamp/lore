@@ -1,18 +1,26 @@
-func length(list: [A]): Int where A = dynamic[Int]('Lore.lists.length', list)
-func size(list: [A]): Int where A = length(list)
-func get(list: [A], index: Int): A where A = dynamic[A]('Lore.lists.get', list, index)
+@where A
+func length(list: [A]): Int = dynamic[Int]('Lore.lists.length', list)
+
+@where A
+func size(list: [A]): Int = length(list)
+
+@where A
+func get(list: [A], index: Int): A = dynamic[A]('Lore.lists.get', list, index)
 
 /**
   * Creates a slice of `list` from the start index, taking `length` elements if available.
   */
-func slice(list: [A], startIndex: Int, length: Int): [A] where A = dynamic[[A]]('Lore.lists.slice', list, startIndex, length)
+@where A
+func slice(list: [A], startIndex: Int, length: Int): [A] = dynamic[[A]]('Lore.lists.slice', list, startIndex, length)
 
 /**
   * Creates a slice of `list` from the start index until the end of the list.
   */
-func slice(list: [A], startIndex: Int): [A] where A = slice(list, startIndex, length(list))
+@where A
+func slice(list: [A], startIndex: Int): [A] = slice(list, startIndex, length(list))
 
-func empty?(list: [A]): Boolean where A = length(list) == 0
+@where A
+func empty?(list: [A]): Boolean = length(list) == 0
 
 /**
   * Returns the first element of the list. Results in an error if the list is empty.
@@ -21,7 +29,8 @@ func empty?(list: [A]): Boolean where A = length(list) == 0
   *       instead.
   * TODO: Alternative name: First. (second, third, same functions as for tuples)
   */
-func head(list: [A]): A where A = get(list, 0)
+@where A
+func head(list: [A]): A = get(list, 0)
 
 /**
   * Returns the last element of the list. Results in an error if the list is empty.
@@ -29,24 +38,34 @@ func head(list: [A]): A where A = get(list, 0)
   * TODO: The default `last` should return an option. We can add a second function `last!` that throws an error
   *       instead.
   */
-func last(list: [A]): A where A = get(list, length(list) - 1)
+@where A
+func last(list: [A]): A = get(list, length(list) - 1)
 
 /**
   * Returns a slice of `list` that includes all elements except for the last one.
   */
-func init(list: [A]): [A] where A = slice(list, 0, length(list) - 1)
+@where A
+func init(list: [A]): [A] = slice(list, 0, length(list) - 1)
 
 /**
   * Returns a slice of `list` that includes all elements except for the first one.
   */
-func tail(list: [A]): [A] where A = slice(list, 1)
+@where A
+func tail(list: [A]): [A] = slice(list, 1)
 
-func map(list: [A], f: B => C): [C] where A, B >: A, C = for a <- list yield f(a)
-func flat_map(list: [A], f: B => [C]): [C] where A, B >: A, C = flatten(map(list, f))
+@where A, B >: A, C
+func map(list: [A], f: B => C): [C] = for a <- list yield f(a)
 
-func each(list: [A], f: B => Unit): Unit where A, B >: A = for a <- list yield f(a)
+@where A, B >: A, C
+func flat_map(list: [A], f: B => [C]): [C] = flatten(map(list, f))
 
-func filter(list: [A], predicate: B => Boolean): [A] where A, B >: A = do
+@where A, B >: A
+act each(list: [A], f: B => Unit) do
+  for a <- list yield f(a)
+end
+
+@where A, B >: A
+func filter(list: [A], predicate: B => Boolean): [A] = do
   let mut result: [A] = []
   for a <- list
     if predicate(a)
@@ -56,7 +75,8 @@ func filter(list: [A], predicate: B => Boolean): [A] where A, B >: A = do
   result
 end
 
-func fold(list: [A], initial: I, f: (R, B) => R): R where A, B >: A, I, R >: I = do
+@where A, B >: A, I, R >: I
+func fold(list: [A], initial: I, f: (R, B) => R): R = do
   let mut result: R = initial
   for element <- list
     result = f(result, element)
@@ -64,7 +84,8 @@ func fold(list: [A], initial: I, f: (R, B) => R): R where A, B >: A, I, R >: I =
   result
 end
 
-func concat(as: [A], bs: [B]): [A | B] where A, B = do
+@where A, B
+func concat(as: [A], bs: [B]): [A | B] = do
   let mut result: [A | B] = as
   for b <- bs
     result = result :+ b
@@ -72,7 +93,8 @@ func concat(as: [A], bs: [B]): [A | B] where A, B = do
   result
 end
 
-func flatten(lists: [[A]]): [A] where A = do
+@where A
+func flatten(lists: [[A]]): [A] = do
   // TODO: Typing `initial` as `[A]` explicitly is currently required for this to compile. If we don't, the type of the
   //       third argument is narrowed down to ([Nothing], [A]) => [A] in both bounds. Type inference then tries to
   //       resolve the following judgment: `([Nothing], [A]) => [A] fits (iv15, iv16) => iv15` with
@@ -91,7 +113,8 @@ end
   * symmetric: if the list contains two elements A and B, only one pair (A, B) or (B, A) will be included in the
   * result.
   */
-func symmetric_pairs(list: [A]): [(A, A)] where A = do
+@where A
+func symmetric_pairs(list: [A]): [(A, A)] = do
   let mut result: [(A, A)] = []
   let len = length(list)
   let mut i = 0
@@ -109,7 +132,8 @@ end
 /**
   * Creates a list that contains `element` `n` times.
   */
-func repeat(element: A, n: Int): [A] where A = do
+@where A
+func repeat(element: A, n: Int): [A] = do
   let mut result: [A] = []
   let mut i = 0
   while i < n
@@ -122,7 +146,8 @@ end
 /**
   * Converts a Lore list to a string.
   */
-func to_string(list: [A]): String where A = do
+@where A
+func to_string(list: [A]): String = do
   let strings = map(list, to_string)
   let joined = string_join(strings, ', ')
   '[$joined]'

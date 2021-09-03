@@ -5,7 +5,6 @@ import fastparse._
 import lore.compiler.core.{Fragment, Position}
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.syntax._
-import lore.compiler.types.TypeVariable.Variance
 
 /**
   * The parsers contained in this parser collection all parse top-level declarations that can occur in a
@@ -15,12 +14,13 @@ class FragmentParser(implicit fragment: Fragment) {
   import Node._
 
   val nameParser = new NameParser
-  import nameParser._
-
-  val typeParser = new TypeParser(nameParser)
-  import typeParser.typeExpression
-
+  val annotationParser = new AnnotationParser(nameParser)
   val expressionParser = new ExpressionParser(nameParser)
+  val typeParser = new TypeParser(nameParser)
+  val typeParameterParser = new TypeParameterParser(nameParser)
+
+  import typeParser.typeExpression
+  import nameParser._
 
   case class ParsingError(fastparseError: String, override val position: Position) extends Feedback.Error(position) {
     override def message: String = s"The file had parsing errors: $fastparseError"
@@ -53,14 +53,18 @@ class FragmentParser(implicit fragment: Fragment) {
   // Function declarations.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def function[_: P]: P[DeclNode.FunctionNode] = {
-    P(
-      Index ~~ "func" ~~ Space.WS1 ~/ name ~ parameters ~ typeParser.typing ~ functionTypeVariables ~ ("=" ~ expressionParser.expression).? ~ Index
-    ).map(withPosition(DeclNode.FunctionNode.fromFunction _))
+    P(functionCommons("func") ~ typeParser.typing ~ ("=" ~ expressionParser.expression).? ~ Index)
+      .map(withPosition(DeclNode.FunctionNode.fromFunction _))
   }
 
   private def action[_: P]: P[DeclNode.FunctionNode] = {
-    P(Index ~~ "act" ~~ Space.WS1 ~/ name ~ parameters ~ functionTypeVariables ~ expressionParser.block.? ~ Index)
+    P(functionCommons("act") ~ expressionParser.block.? ~ Index)
       .map(withPosition(DeclNode.FunctionNode.fromAction _))
+  }
+
+  private def functionCommons[_: P](keyword: => P[Unit]) = {
+    P(annotationParser.where.? ~ Index ~~ keyword ~~ Space.WS1 ~/ name ~ parameters)
+      .map { case (typeVariables, startIndex, name, parameters) => (startIndex, typeVariables.getOrElse(Vector.empty), name, parameters) }
   }
 
   private def parameters[_: P]: P[Vector[DeclNode.ParameterNode]] = {
@@ -72,21 +76,17 @@ class FragmentParser(implicit fragment: Fragment) {
     P("(" ~ parameter.rep(sep = ",") ~ ")").map(_.toVector)
   }
 
-  private def functionTypeVariables[_: P]: P[Vector[DeclNode.TypeVariableNode]] = {
-    P(("where" ~~ Space.WS1 ~ simpleTypeVariable.rep(1, CharIn(",")).map(_.toVector)).?).map(_.getOrElse(Vector.empty))
-  }
-
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Type Declarations.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`type` | `trait` | struct)
 
   private def `type`[_: P]: P[TypeDeclNode.AliasNode] = {
-    P(Index ~ "type" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(simpleTypeVariable) ~ "=" ~ typeExpression ~ Index).map(withPosition(TypeDeclNode.AliasNode))
+    P(Index ~ "type" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(typeParameterParser.simpleParameter) ~ "=" ~ typeExpression ~ Index).map(withPosition(TypeDeclNode.AliasNode))
   }
 
   private def `trait`[_: P]: P[TypeDeclNode.TraitNode] = {
-    P(Index ~ "trait" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(traitTypeVariable) ~ `extends` ~ Index).map(withPosition(TypeDeclNode.TraitNode))
+    P(Index ~ "trait" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(typeParameterParser.traitParameter) ~ `extends` ~ Index).map(withPosition(TypeDeclNode.TraitNode))
   }
 
   private def `extends`[_: P]: P[Vector[TypeExprNode]] = {
@@ -126,7 +126,7 @@ class FragmentParser(implicit fragment: Fragment) {
     //                    This seems to be the best approach, considering that it's also visually clearer.
     def bodyForm = P(`extends` ~~ structBody)
 
-    P(Index ~~ "struct" ~~ Space.WS1 ~~/ structName ~~ Space.WS ~~ typeVariables(structTypeVariable) ~~ Space.WS ~~ (conciseForm | bodyForm) ~~ Index)
+    P(Index ~~ "struct" ~~ Space.WS1 ~~/ structName ~~ Space.WS ~~ typeVariables(typeParameterParser.structParameter) ~~ Space.WS ~~ (conciseForm | bodyForm) ~~ Index)
       .map { case (startIndex, nameNode, typeVariables, (extended, properties), endIndex) => (startIndex, nameNode, typeVariables, extended, properties, endIndex) }
       .map(withPosition(TypeDeclNode.StructNode))
   }
@@ -150,35 +150,5 @@ class FragmentParser(implicit fragment: Fragment) {
 
   private def typeVariables[_: P](typeVariable: => P[DeclNode.TypeVariableNode]): P[Vector[DeclNode.TypeVariableNode]] = {
     P(("[" ~ typeVariable.rep(1, CharIn(",")).map(_.toVector) ~ "]").?).map(_.getOrElse(Vector.empty))
-  }
-
-  private def simpleTypeVariable[_: P]: P[DeclNode.TypeVariableNode] = {
-    P(Index ~ typeVariableCommons ~ Index)
-      .map { case (index1, (name, lowerBound, upperBound), index2) => (index1, name, lowerBound, upperBound, index2) }
-      .map(withPosition(DeclNode.TypeVariableNode.simple _))
-  }
-
-  private def traitTypeVariable[_: P]: P[DeclNode.TypeVariableNode] = {
-    P(Index ~ variance ~ typeVariableCommons ~ Index)
-      .map { case (index1, variance, (name, lowerBound, upperBound), index2) => (index1, name, lowerBound, upperBound, variance, index2) }
-      .map(withPosition(DeclNode.TypeVariableNode.variant _))
-  }
-
-  private def structTypeVariable[_: P]: P[DeclNode.TypeVariableNode] = {
-    // We could require the variance to be "+" here, but parser error messages aren't very useful. Hence, it's better
-    // to explicitly check this in a later phase.
-    P(Index ~ "open".!.?.map(_.isDefined) ~ variance ~ typeVariableCommons ~ Index)
-      .map { case (index1, isOpen, variance, (name, lowerBound, upperBound), index2) => (index1, name, lowerBound, upperBound, variance, isOpen, index2) }
-      .map(withPosition(DeclNode.TypeVariableNode.apply _))
-  }
-
-  private def typeVariableCommons[_: P]: P[(NameNode, Option[TypeExprNode], Option[TypeExprNode])] = {
-    P(typeVariableName ~ (">:" ~ typeExpression).? ~ ("<:" ~ typeExpression).?)
-  }
-
-  private def variance[_: P]: P[Variance] = P(("+".! | "-".!).?).map {
-    case Some("+") => Variance.Covariant
-    case Some("-") => Variance.Contravariant
-    case None => Variance.Invariant
   }
 }

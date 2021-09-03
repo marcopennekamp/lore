@@ -1,11 +1,11 @@
 package lore.compiler.parsing
 
-import fastparse.P
+import fastparse.{P, ScalaWhitespace}
 import lore.compiler.core.Fragment
 import lore.compiler.syntax.TypeExprNode
 
 class TypeParserSpec extends ParserSpec[TypeExprNode] {
-  override def parser[_: P](implicit fragment: Fragment): P[TypeExprNode] = new TypeParser(new NameParser()).typeExpression
+  override def parser[_: P](implicit fragment: Fragment): P[TypeExprNode] = new TypeParser(new NameParser())(fragment, ScalaWhitespace.whitespace).typeExpression
 
   it should "fail on incorrect type syntax" in {
     "A & B &".fails

@@ -30,10 +30,10 @@ object DeclNode {
 
   object FunctionNode {
     def fromFunction(
+      typeVariables: Vector[TypeVariableNode],
       nameNode: NameNode,
       parameters: Vector[ParameterNode],
       outputType: TypeExprNode,
-      typeVariables: Vector[TypeVariableNode],
       body: Option[ExprNode],
       position: Position,
     ): FunctionNode = {
@@ -41,9 +41,9 @@ object DeclNode {
     }
 
     def fromAction(
+      typeVariables: Vector[TypeVariableNode],
       nameNode: NameNode,
       parameters: Vector[ParameterNode],
-      typeVariables: Vector[TypeVariableNode],
       body: Option[ExprNode],
       position: Position,
     ): FunctionNode = {

@@ -7,7 +7,7 @@ import lore.compiler.syntax._
 class ExpressionParserSpec extends ParserSpec[TopLevelExprNode] {
   override def parser[_: P](implicit fragment: Fragment): P[TopLevelExprNode] = {
     val nameParser = new NameParser()
-    new ExpressionParser(nameParser).topLevelExpression
+    new ExpressionParser(nameParser)(fragment, ScalaWhitespace.whitespace).topLevelExpression
   }
 
   "The expression parser" should "reject incorrect literals" in {

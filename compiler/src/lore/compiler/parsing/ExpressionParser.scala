@@ -7,20 +7,15 @@ import lore.compiler.syntax.ExprNode.StringLiteralNode
 import lore.compiler.syntax._
 
 /**
-  * @param whitespaceParser This can be manually specified to disable newlines in whitespace.
+  * @param whitespace This can be manually specified to disable newlines in whitespace.
   */
-class ExpressionParser(
-  nameParser: NameParser,
-  whitespaceParser: P[Any] => P[Unit] = ScalaWhitespace.whitespace,
-)(implicit fragment: Fragment) {
+class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whitespace: P[Any] => P[Unit]) {
   import Node._
   import nameParser._
 
-  private val typeParser = new TypeParser(nameParser, whitespaceParser)
-  private lazy val singleLineParser = new ExpressionParser(nameParser, Space.WS(_))
-  private lazy val multiLineParser = new ExpressionParser(nameParser, ScalaWhitespace.whitespace)
-
-  private implicit val whitespace: P[Any] => P[Unit] = whitespaceParser
+  private val typeParser = new TypeParser(nameParser)
+  private lazy val singleLineParser = new ExpressionParser(nameParser)(fragment, Space.WS(_))
+  private lazy val multiLineParser = new ExpressionParser(nameParser)(fragment, ScalaWhitespace.whitespace)
 
   // Parse a handful of top-level expressions before jumping into the deep end.
   def topLevelExpression[_: P]: P[TopLevelExprNode] = {
