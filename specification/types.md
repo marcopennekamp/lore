@@ -52,7 +52,7 @@ Type constructors have the following **precedence** (lowest priority first):
 
 
 
-### Type Aliases
+### Type Aliases <a id="type-aliases"></a>
 
 A **type alias** turns any type into a named type available in the global scope. They may have any number of **type parameters**. Type aliases don't carry additional semantics, which makes them **referentially transparent**.
 

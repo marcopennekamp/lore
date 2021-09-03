@@ -14,6 +14,7 @@ Apart from these highlights, Lore strives to be a modern, functional-first progr
 
 To learn more about Lore, take a look at the following **core documents:**
 
+- [**Fragments:**](fragments.md) This document describes which top-level declarations Lore source code may contain.
 - [**Types:**](types.md) Multiple dispatch is nothing without types, and Lore is statically typed, so the type system isn't just some afterthought. This document thus presents the type system of the language.
 - [**Multi-Functions:**](multi-functions.md) This document presents the basics of multi-functions and functions, multiple dispatch, type parameters, abstraction and specialization, and also some usage examples.
 - [**Traits and Structs:**](traits-structs.md) Traits and structs are the central means to define and work with data in Lore.
