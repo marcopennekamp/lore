@@ -34,7 +34,8 @@ func update(a: A): A where A = a
 
 // This is essentially a way to test that the compiler and runtime correctly handle returning an argument that
 // doesn't have a concrete type at compile-time.
-func update(a: A): A where A <: Movable = do
+@where A <: Movable
+func update(a: A): A = do
   move(a, 1.7, 1.5, 0)
   a
 end

@@ -2,8 +2,8 @@ trait Option[+A]
 struct Some[open +A](value: A) extends Option[A]
 struct None() extends Option[Nothing]
 
-func to_string(Option[A]): String where A
-func to_string(some: Some[A]): String where A = 'Some(${some.value})'
+func to_string(Option[Any]): String
+func to_string(some: Some[Any]): String = 'Some(${some.value})'
 func to_string(None): String = 'None'
 
 

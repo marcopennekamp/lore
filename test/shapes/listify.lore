@@ -20,8 +20,11 @@ func listify(shape: %{ x: Real, y: Real, z: Real }): [Real] = [shape.x, shape.y,
 //func genericListify(shape: %{ x: X, y: Y, z: Z }): [R] where R, X <: R, Y <: R, Z <: R = [shape.x, shape.y, shape.z]
 
 // Ultimately, we have to separate the generic functions so that we cannot trip up with run-time dispatch.
-func generic_listify_2D(shape: %{ x: X, y: Y }): [X | Y] where X, Y = [shape.x, shape.y]
-func generic_listify_3D(shape: %{ x: X, y: Y, z: Z }): [X | Y | Z] where X, Y, Z = [shape.x, shape.y, shape.z]
+@where X, Y
+func generic_listify_2D(shape: %{ x: X, y: Y }): [X | Y] = [shape.x, shape.y]
+
+@where X, Y, Z
+func generic_listify_3D(shape: %{ x: X, y: Y, z: Z }): [X | Y | Z] = [shape.x, shape.y, shape.z]
 
 
 func test(): [[Real]] = do

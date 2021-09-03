@@ -1,6 +1,7 @@
 struct Wrapper[-A, +B](function: A => B)
 
-func map_wrapper(list: [A], wrapper: Wrapper[B, C]): [C] where A, B >: A, C = map(list, wrapper.function)
+@where A, B >: A, C
+func map_wrapper(list: [A], wrapper: Wrapper[B, C]): [C] = map(list, wrapper.function)
 
 func test(): [String] = do
   let numbers = [1, 2, 3]

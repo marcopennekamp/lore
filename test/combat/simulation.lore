@@ -14,7 +14,8 @@ end
 func stat(combatant: Combatant, stat_label: StatLabelInt): Int = stat_impl(combatant, stat_label, base_stat(combatant, stat_label))
 func stat(combatant: Combatant, stat_label: StatLabelReal): Real = stat_impl(combatant, stat_label, base_stat(combatant, stat_label))
 
-func stat_impl(combatant: Combatant, stat_label: StatLabel, base: A): A where A = do
+@where A
+func stat_impl(combatant: Combatant, stat_label: StatLabel, base: A): A = do
   fold(
     combatant.status_effects.effects,
     base,

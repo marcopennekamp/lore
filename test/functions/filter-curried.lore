@@ -1,4 +1,5 @@
-func filter_curried(f: A => Boolean): [A] => [A] where A = do
+@where A
+func filter_curried(f: A => Boolean): [A] => [A] = do
   list => filter(list, f)
 end
 

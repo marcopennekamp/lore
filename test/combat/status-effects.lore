@@ -3,7 +3,8 @@ trait StatusEffect
 /**
  * Applies the given status effect to the stat identified with the given label.
  */
-func affect_stat(StatusEffect, StatLabel, value: A): A where A = value
+@where A
+func affect_stat(StatusEffect, StatLabel, value: A): A = value
 
 /**
  * Called during the end-of-turn status effect update.

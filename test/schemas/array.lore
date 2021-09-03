@@ -1,10 +1,19 @@
 trait Array[+A]
 
-func at(Array[A], index: Int): A where A
-func prepend(Array[A], element: E): Unit where A, E <: A
-func append(Array[A], element: E): Unit where A, E <: A
-func removeFirst(Array[A]): Unit where A
-func removeLast(Array[A]): Unit where A
+@where A
+func at(Array[A], index: Int): A
+
+@where A, E <: A
+act prepend(Array[A], element: E)
+
+@where A, E <: A
+act append(Array[A], element: E)
+
+@where A
+act remove_first(Array[A])
+
+@where A
+act remove_last(Array[A])
 
 
 struct NaiveArray[A] extends Array[A]
@@ -14,21 +23,26 @@ end
 // TODO: Given these functions, the compiler should not allow `NaiveArray` to extend a covariant `Array[A]`. But can we
 //       deduce this? Right now, trying to add a Real to a NaiveArray[Int] via an Array[Real] interface leads to a
 //       run-time error. This is acceptable, but might not be good enough.
-func at(array: NaiveArray[A], index: Int): A where A = get(array.underlying, index)
+@where A
+func at(array: NaiveArray[A], index: Int): A = get(array.underlying, index)
 
-func prepend(array: NaiveArray[A], element: E): Unit where A, E <: A = do
+@where A, E <: A
+act prepend(array: NaiveArray[A], element: E) do
   array.underlying = concat([element], array.underlying)
 end
 
-func append(array: NaiveArray[A], element: E): Unit where A, E <: A = do
+@where A, E <: A
+act append(array: NaiveArray[A], element: E) do
   array.underlying = array.underlying :+ element
 end
 
-func removeFirst(array: NaiveArray[A]): Unit where A = do
+@where A
+act remove_first(array: NaiveArray[A]) do
   array.underlying = tail(array.underlying)
 end
 
-func removeLast(array: NaiveArray[A]): Unit where A = do
+@where A
+act remove_last(array: NaiveArray[A]) do
   array.underlying = init(array.underlying)
 end
 
@@ -39,8 +53,8 @@ func test(): [Int] = do
   append(array, 4)
   append(array, 5)
   prepend(array, 0)
-  removeLast(array)
-  removeFirst(array)
-  removeFirst(array)
+  remove_last(array)
+  remove_first(array)
+  remove_first(array)
   array.underlying
 end
