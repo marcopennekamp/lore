@@ -29,25 +29,15 @@ object DeclNode {
   }
 
   object FunctionNode {
-    def fromFunction(
-      typeVariables: Vector[TypeVariableNode],
+    def from(
       nameNode: NameNode,
+      typeVariables: Vector[TypeVariableNode],
       parameters: Vector[ParameterNode],
-      outputType: TypeExprNode,
+      outputType: Option[TypeExprNode],
       body: Option[ExprNode],
       position: Position,
     ): FunctionNode = {
-      DeclNode.FunctionNode(nameNode, parameters, outputType, typeVariables, body, position)
-    }
-
-    def fromAction(
-      typeVariables: Vector[TypeVariableNode],
-      nameNode: NameNode,
-      parameters: Vector[ParameterNode],
-      body: Option[ExprNode],
-      position: Position,
-    ): FunctionNode = {
-      DeclNode.FunctionNode(nameNode, parameters, TypeExprNode.UnitNode(position), typeVariables, body, position)
+      DeclNode.FunctionNode(nameNode, parameters, outputType.getOrElse(TypeExprNode.UnitNode(position)), typeVariables, body, position)
     }
   }
 

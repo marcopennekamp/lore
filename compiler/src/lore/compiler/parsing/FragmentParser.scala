@@ -53,18 +53,32 @@ class FragmentParser(implicit fragment: Fragment) {
   // Function declarations.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def function[_: P]: P[DeclNode.FunctionNode] = {
-    P(functionCommons("func") ~ typeParser.typing ~ ("=" ~ expressionParser.expression).? ~ Index)
-      .map(withPosition(DeclNode.FunctionNode.fromFunction _))
+    def definition = P(("=" ~ expressionParser.expression).?)
+    P(functionCommons("func", typeParser.typing.map(Some(_)), definition))
+      .map(withPosition(DeclNode.FunctionNode.from _))
   }
 
   private def action[_: P]: P[DeclNode.FunctionNode] = {
-    P(functionCommons("act") ~ expressionParser.block.? ~ Index)
-      .map(withPosition(DeclNode.FunctionNode.fromAction _))
+    def definition = P(expressionParser.block.?)
+    P(functionCommons("act", Pass.map(_ => None), definition))
+      .map(withPosition(DeclNode.FunctionNode.from _))
   }
 
-  private def functionCommons[_: P](keyword: => P[Unit]) = {
-    P(annotationParser.where.? ~ Index ~~ keyword ~~ Space.WS1 ~/ name ~ parameters)
-      .map { case (typeVariables, startIndex, name, parameters) => (startIndex, typeVariables.getOrElse(Vector.empty), name, parameters) }
+  private def functionCommons[_: P](
+    keyword: => P[Unit],
+    typing: => P[Option[TypeExprNode]],
+    definition: => P[Option[ExprNode]],
+  ) = {
+    def commons = P(Index ~~ keyword ~~ Space.WS1 ~/ name ~ parameters ~ typing)
+    def annotationStyle = {
+      P(annotationParser.where ~ commons ~ definition ~~ Index)
+        .map { case (typeVariables, (startIndex, name, parameters, outputType), body, endIndex) => (startIndex, name, typeVariables, parameters, outputType, body, endIndex) }
+    }
+    def inlineStyle = {
+      P(commons ~ inlineWhere.?.map(_.getOrElse(Vector.empty)) ~ definition ~~ Index)
+        .map { case (startIndex, name, parameters, outputType, typeVariables, body, endIndex) => (startIndex, name, typeVariables, parameters, outputType, body, endIndex) }
+    }
+    P(annotationStyle | inlineStyle)
   }
 
   private def parameters[_: P]: P[Vector[DeclNode.ParameterNode]] = {
@@ -74,6 +88,10 @@ class FragmentParser(implicit fragment: Fragment) {
       .map { case (startIndex, (name, tpe), endIndex) => (startIndex, name, tpe, endIndex) }
       .map(withPosition(DeclNode.ParameterNode))
     P("(" ~ parameter.rep(sep = ",") ~ ")").map(_.toVector)
+  }
+
+  private def inlineWhere[_: P]: P[Vector[DeclNode.TypeVariableNode]] = {
+    P("where" ~~ Space.WS1 ~ typeParameterParser.simpleParameter.rep(1, CharIn(",")).map(_.toVector)).map(_.toVector)
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

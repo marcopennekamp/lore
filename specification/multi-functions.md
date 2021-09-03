@@ -35,9 +35,11 @@ Take two functions *f1* and *f2* from a multi-function with *f2* specializing *f
 
 ##### Type Variables
 
-A function can additionally declare **type variables** with a `@where` annotation:
+A function can additionally declare **type variables** with an inline `where` clause or `@where` annotation:
 
 ```
+func identity(x: A): A where A = x
+
 @where A, B, C >: A <: B
 func foo(a: A, b: B, c: C): Boolean = true
 ```
@@ -48,7 +50,7 @@ Note that type variables can only be used in bounds if they are declared **prece
 
 The usual syntax for function type parameters in many programming languages is: `foo<A, B, C>(...)`. This is *not* possible in Lore, because functions are dispatched to at run time and thus the compiler cannot anticipate which function is being called. Hence, **direct assignments** to function type parameters are impossible. Even a `.fixed` call simply performs multiple dispatch at compile time, without directly assigning type parameters.
 
-The **annotation syntax** has the advantage that it's clearly separated from the function head, which improves readability. The `@` in front of `where` also helps with putting initial visual focus on the function head instead.
+The **annotation syntax** has the advantage that it's clearly separated from the function head, which improves readability. The `@` in front of `where` also helps putting initial visual focus on the function head instead. In contrast, the **inline syntax** is more concise and provides better visual clarity when only one or two type parameters without custom bounds are desired. The inline syntax and annotation syntax cannot be used at the same time.
 
 ##### Unnamed Parameters
 
