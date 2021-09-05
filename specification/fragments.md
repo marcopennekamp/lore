@@ -7,6 +7,7 @@ A fragment may contain the following **declarations:**
 - [Functions and actions](multi-functions.md)
 - [Trait and structs](traits-structs.md)
 - [Type aliases](types.md#type-aliases)
+- [Modules](modules.md)
 - Domains
 
 ###### Example
@@ -26,6 +27,10 @@ end
 
 type StringFunction[A] = A => String
 
+module Math
+  func absolute(x: Real): Real = if x < 0 then -x else x
+end
+
 domain zombie: Zombie
   act damage(attack: Int) do
     zombie.health -= attack
@@ -37,7 +42,7 @@ end
 
 ### Domains
 
-A **domain** is a purely syntactical construct that surrounds function declarations. For each domain, one can specify a list of parameters and type parameters that get *prepended* to the parameter and type parameter lists of every function in the domain. Domains are **resolved** during parsing and have no bearing on run-time semantics or the execution environment. They cannot be nested.
+A **domain** is a purely syntactical construct that surrounds function declarations. For each domain, one can specify a list of parameters and type parameters that get *prepended* to the parameter and type parameter lists of every function in the domain. Domains are **resolved** during parsing and have no bearing on run-time semantics or the execution environment. Domains cannot be nested and may only contain function declarations, but they may be contained in a module.
 
 Domains help to **avoid repetition** when defining multiple functions over the same partial set of parameters and type parameters. They are inspired by methods found in object-oriented languages, but obviously not constrained to such usage. While we don't want to tie functions to objects, like object-oriented programming does, we still want to provide some syntactic advantages that object-oriented programming offers. Like many other syntactic features in Lore, there is no obligation to use domains. It is simply a question of style.
 
