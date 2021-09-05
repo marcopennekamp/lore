@@ -44,54 +44,82 @@ class FragmentParser(implicit fragment: Fragment) {
     // We repeat topDeclaration an arbitrary amount of times, terminated by Space.terminators. The repX in contrast
     // to rep does not take whitespace into account. We don't want it to consume the newline that needs to be consumed
     // by Space.terminators!
-    P(Space.WL ~~ topDeclaration.repX(0, Space.terminators) ~~ Space.WL ~~ End).map(_.toVector)
+    P(Space.WL ~~ topDeclaration.repX(0, Space.terminators) ~~ Space.WL ~~ End).map(_.toVector.flatten)
   }
 
-  private def topDeclaration[_: P]: P[DeclNode] = P(function | action | typeDeclaration)
+  private def topDeclaration[_: P]: P[Vector[DeclNode]] = {
+    def single = P(function | action | typeDeclaration).map(Vector(_))
+    P(single | domain)
+  }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Function declarations.
+  // Function declarations and domains.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def function[_: P]: P[DeclNode.FunctionNode] = {
-    def definition = P(("=" ~ expressionParser.expression).?)
+    def definition = P((Space.WS ~~ "=" ~ expressionParser.expression).?)
     P(functionCommons("func", typeParser.typing.map(Some(_)), definition))
-      .map(withPosition(DeclNode.FunctionNode.from _))
   }
 
   private def action[_: P]: P[DeclNode.FunctionNode] = {
-    def definition = P(expressionParser.block.?)
+    def definition = P((Space.WS ~~ expressionParser.block).?)
     P(functionCommons("act", Pass.map(_ => None), definition))
-      .map(withPosition(DeclNode.FunctionNode.from _))
+  }
+
+  private def domain[_: P]: P[Vector[DeclNode.FunctionNode]] = {
+    def parameters = P(parameter.rep(sep = ",")).map(_.toVector)
+    def commons = P("domain" ~~ Space.WS1 ~~/ parameters)
+    def functions = P((function | action).repX(1, Space.terminators)).map(_.toVector)
+    def definition = P(Space.terminators ~~ functions ~ "end")
+
+    P(whereStyles(commons, definition)).map { case (_, domainParameters, domainTypeVariables, functions, _) =>
+      functions.map { function =>
+        DeclNode.FunctionNode(
+          function.nameNode,
+          domainParameters ++ function.parameters,
+          function.outputType,
+          domainTypeVariables ++ function.typeVariables,
+          function.body,
+          function.position,
+        )
+      }
+    }
   }
 
   private def functionCommons[_: P](
     keyword: => P[Unit],
     typing: => P[Option[TypeExprNode]],
     definition: => P[Option[ExprNode]],
-  ) = {
-    def commons = P(Index ~~ keyword ~~ Space.WS1 ~/ name ~ parameters ~ typing)
-    def annotationStyle = {
-      P(annotationParser.where ~ commons ~ definition ~~ Index)
-        .map { case (typeVariables, (startIndex, name, parameters, outputType), body, endIndex) => (startIndex, name, typeVariables, parameters, outputType, body, endIndex) }
-    }
-    def inlineStyle = {
-      P(commons ~ inlineWhere.?.map(_.getOrElse(Vector.empty)) ~ definition ~~ Index)
-        .map { case (startIndex, name, parameters, outputType, typeVariables, body, endIndex) => (startIndex, name, typeVariables, parameters, outputType, body, endIndex) }
-    }
-    P(annotationStyle | inlineStyle)
+  ): P[DeclNode.FunctionNode] = {
+    def parameters = P("(" ~ parameter.rep(sep = ",") ~ ")").map(_.toVector)
+    def commons = P(keyword ~~ Space.WS1 ~~/ name ~ parameters ~ typing)
+    P(whereStyles(commons, definition))
+      .map { case (startIndex, (name, parameters, outputType), typeVariables, body, endIndex) => (startIndex, name, typeVariables, parameters, outputType, body, endIndex) }
+      .map(withPosition(DeclNode.FunctionNode.from _))
   }
 
-  private def parameters[_: P]: P[Vector[DeclNode.ParameterNode]] = {
+  def parameter[_: P]: P[DeclNode.ParameterNode] = {
     def named = P(name ~ typeParser.typing).map { case (name, tpe) => (Option(name), tpe) }
     def unnamed = P(typeExpression).map(tpe => (Option.empty, tpe))
-    def parameter = P(Index ~ (named | unnamed) ~ Index)
+
+    P(Index ~ (named | unnamed) ~ Index)
       .map { case (startIndex, (name, tpe), endIndex) => (startIndex, name, tpe, endIndex) }
       .map(withPosition(DeclNode.ParameterNode))
-    P("(" ~ parameter.rep(sep = ",") ~ ")").map(_.toVector)
   }
 
-  private def inlineWhere[_: P]: P[Vector[DeclNode.TypeVariableNode]] = {
-    P("where" ~~ Space.WS1 ~ typeParameterParser.simpleParameter.rep(1, CharIn(",")).map(_.toVector)).map(_.toVector)
+  private def whereStyles[_: P, A, B](
+    head: => P[A],
+    definition: => P[B],
+  ) = {
+    def annotationStyle = {
+      P(annotationParser.where ~ Index ~~ head ~~ definition ~~ Index)
+        .map { case (typeVariables, startIndex, a, b, endIndex) => (startIndex, a, typeVariables, b, endIndex) }
+    }
+
+    def typeParameters = P(typeParameterParser.simpleParameter.rep(1, CharIn(",")).map(_.toVector))
+    def inlineWhere = P("where" ~~ Space.WS1 ~ typeParameters).map(_.toVector)
+    def inlineStyle = P(Index ~~ head ~~ Space.WS ~~ inlineWhere.?.map(_.getOrElse(Vector.empty)) ~~ definition ~~ Index)
+
+    P(annotationStyle | inlineStyle)
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
