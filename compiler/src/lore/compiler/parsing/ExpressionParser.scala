@@ -115,7 +115,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
   def operatorExpression[_: P]: P[ExprNode] = {
     import PrecedenceParser._
     PrecedenceParser.parser(
-      operator = StringIn("||", "&&", "==", "!=", "<", "<=", ">", ">=", ":+", "+", "-", "*", "/"),
+      operator = StringIn("||", "&&", "==", "!=", "<", "<=", ">", ">=", "|>", ":+", "+", "-", "*", "/"),
       operand = unary,
       operatorMeta = Map(
         "||" -> XaryOperator[ExprNode](1, ExprNode.DisjunctionNode),
@@ -126,11 +126,12 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
         "<=" -> BinaryOperator[ExprNode](4, ExprNode.LessThanEqualsNode),
         ">" -> BinaryOperator[ExprNode](4, ExprNode.greaterThan),
         ">=" -> BinaryOperator[ExprNode](4, ExprNode.greaterThanEquals),
-        ":+" -> BinaryOperator[ExprNode](5, ExprNode.AppendNode),
-        "+" -> BinaryOperator[ExprNode](6, ExprNode.AdditionNode),
-        "-" -> BinaryOperator[ExprNode](6, ExprNode.SubtractionNode),
-        "*" -> BinaryOperator[ExprNode](7, ExprNode.MultiplicationNode),
-        "/" -> BinaryOperator[ExprNode](7, ExprNode.DivisionNode),
+        "|>" -> BinaryOperator[ExprNode](5, ExprNode.pipe),
+        ":+" -> BinaryOperator[ExprNode](6, ExprNode.AppendNode),
+        "+" -> BinaryOperator[ExprNode](7, ExprNode.AdditionNode),
+        "-" -> BinaryOperator[ExprNode](7, ExprNode.SubtractionNode),
+        "*" -> BinaryOperator[ExprNode](8, ExprNode.MultiplicationNode),
+        "/" -> BinaryOperator[ExprNode](8, ExprNode.DivisionNode),
       ),
     )
   }

@@ -197,6 +197,19 @@ object ExprNode {
     position: Position,
   ) extends XaryNode(arguments) with ExprNode
 
+  /**
+    * Constructs a CallNode or a SimpleCallNode from a pipe operator.
+    */
+  def pipe(argument: ExprNode, target: ExprNode, position: Position): ExprNode = {
+    target match {
+      case VariableNode(name, position) => SimpleCallNode(NameNode(name, position), Vector(argument), position)
+      case CallNode(target, arguments, position) => CallNode(target, argument +: arguments, position)
+      case SimpleCallNode(nameNode, arguments, position) => SimpleCallNode(nameNode, argument +: arguments, position)
+      case DynamicCallNode(nameLiteral, resultType, arguments, position) => DynamicCallNode(nameLiteral, resultType, argument +: arguments, position)
+      case expression => CallNode(expression, Vector(argument), expression.position)
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and loop expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

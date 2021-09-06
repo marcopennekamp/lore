@@ -57,7 +57,7 @@ func tail(list: [A]): [A] = slice(list, 1)
 func map(list: [A], f: B => C): [C] = for a <- list yield f(a)
 
 @where A, B >: A, C
-func flat_map(list: [A], f: B => [C]): [C] = flatten(map(list, f))
+func flat_map(list: [A], f: B => [C]): [C] = list |> map(f) |> flatten
 
 @where A, B >: A
 act each(list: [A], f: B => Unit) do
