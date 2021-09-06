@@ -1,25 +1,26 @@
 trait StatusEffect
 
-/**
- * Applies the given status effect to the stat identified with the given label.
- */
-@where A
-func affect_stat(StatusEffect, StatLabel, value: A): A = value
+domain StatusEffect
+  /**
+   * Applies the status effect to the stat identified with the given label.
+   */
+  func affect_stat(StatLabel, value: A): A where A = value
 
-/**
- * Called during the end-of-turn status effect update.
- */
-act on_update(StatusEffect) do end
+  /**
+   * Whether the status effect is active.
+   */
+  func active?(): Boolean = true
 
-/**
- * Called whenever the entity gets hit by an attack (after a potential dodge failed).
- */
-act on_hit(StatusEffect) do end
+  /**
+   * Called during the end-of-turn status effect update.
+   */
+  act on_update() do end
 
-/**
- * Whether the given status effect is active.
- */
-func active?(StatusEffect): Boolean = true
+  /**
+   * Called whenever the owning entity of the status effect gets hit by an attack (after a potential dodge failed).
+   */
+  act on_hit() do end
+end
 
 
 struct DurationLimit
@@ -28,13 +29,15 @@ end
 
 type +DurationLimit = StatusEffect & %{ limit: DurationLimit }
 
-act on_update(effect: +DurationLimit) do
-  if active?(effect)
-    effect.limit.duration -= 1
+domain effect: +DurationLimit
+  func active?(): Boolean = effect.limit.duration > 0
+
+  act on_update() do
+    if active?(effect)
+      effect.limit.duration -= 1
+    end
   end
 end
-
-func active?(effect: +DurationLimit): Boolean = effect.limit.duration > 0
 
 
 struct HitLimit
@@ -43,13 +46,15 @@ end
 
 type +HitLimit = StatusEffect & %{ limit: HitLimit }
 
-act on_hit(effect: +HitLimit) do
-  if active?(effect)
-    effect.limit.hits -= 1
+domain effect: +HitLimit
+  func active?(): Boolean = effect.limit.hits > 0
+
+  act on_hit() do
+    if active?(effect)
+      effect.limit.hits -= 1
+    end
   end
 end
-
-func active?(effect: +HitLimit): Boolean = effect.limit.hits > 0
 
 
 /**
@@ -62,7 +67,9 @@ end
 
 func create_armored(armor: Int, durability: Int): Armored = Armored(armor, HitLimit(durability))
 
-func affect_stat(effect: Armored, #defense, value: Int): Int = value + effect.armor
+domain effect: Armored
+  func affect_stat(#defense, value: Int): Int = value + effect.armor
+end
 
 
 /**
@@ -74,9 +81,11 @@ end
 
 func create_infusion(duration: Int): Infusion = Infusion(DurationLimit(duration))
 
-func affect_stat(effect: Infusion, #attack | #speed, value: Int): Int = floor(value * 1.5)
-func affect_stat(effect: Infusion, #dodge, value: Real): Real = 1.0 // Dodge all attacks while infused.
-func affect_stat(effect: Infusion, #regeneration, value: Int): Int = 5
+domain effect: Infusion
+  func affect_stat(#attack | #speed, value: Int): Int = floor(value * 1.5)
+  func affect_stat(#dodge, value: Real): Real = 1.0 // Dodge all attacks while infused.
+  func affect_stat(#regeneration, value: Int): Int = 5
+end
 
 
 struct StatusEffects
@@ -85,21 +94,23 @@ end
 
 type +StatusEffects = %{ status_effects: StatusEffects }
 
-act buff(entity: +StatusEffects, effect: StatusEffect) do
-  entity.status_effects.effects = entity.status_effects.effects :+ effect
-end
+domain entity: +StatusEffects
+  act buff(effect: StatusEffect) do
+    entity.status_effects.effects = entity.status_effects.effects :+ effect
+  end
 
-/**
- * Updates status effects, removing those from the list that have expired.
- */
-act update_status_effects(entity: +StatusEffects) do
-  let effects = entity.status_effects.effects
-  each(effects, on_update)
-  entity.status_effects.effects = filter(effects, active?)
-end
+  /**
+   * Updates status effects, removing those from the list that have expired.
+   */
+  act update_status_effects() do
+    let effects = entity.status_effects.effects
+    each(effects, on_update)
+    entity.status_effects.effects = filter(effects, active?)
+  end
 
-act on_hit_status_effects(entity: +StatusEffects) do
-  for effect <- entity.status_effects.effects
-    on_hit(effect)
+  act on_hit_status_effects() do
+    for effect <- entity.status_effects.effects
+      on_hit(effect)
+    end
   end
 end

@@ -1,19 +1,18 @@
 trait Array[+A]
 
 @where A
-func at(Array[A], index: Int): A
+domain Array[A]
+  func at(index: Int): A
 
-@where A, E <: A
-act prepend(Array[A], element: E)
+  @where E <: A
+  act prepend(element: E)
 
-@where A, E <: A
-act append(Array[A], element: E)
+  @where E <: A
+  act append(element: E)
 
-@where A
-act remove_first(Array[A])
-
-@where A
-act remove_last(Array[A])
+  act remove_first()
+  act remove_last()
+end
 
 
 struct NaiveArray[A] extends Array[A]
@@ -24,26 +23,26 @@ end
 //       deduce this? Right now, trying to add a Real to a NaiveArray[Int] via an Array[Real] interface leads to a
 //       run-time error. This is acceptable, but might not be good enough.
 @where A
-func at(array: NaiveArray[A], index: Int): A = get(array.underlying, index)
+domain array: NaiveArray[A]
+  func at(index: Int): A = get(array.underlying, index)
 
-@where A, E <: A
-act prepend(array: NaiveArray[A], element: E) do
-  array.underlying = concat([element], array.underlying)
-end
+  @where E <: A
+  act prepend(element: E) do
+    array.underlying = concat([element], array.underlying)
+  end
 
-@where A, E <: A
-act append(array: NaiveArray[A], element: E) do
-  array.underlying = array.underlying :+ element
-end
+  @where E <: A
+  act append(element: E) do
+    array.underlying = array.underlying :+ element
+  end
 
-@where A
-act remove_first(array: NaiveArray[A]) do
-  array.underlying = tail(array.underlying)
-end
+  act remove_first() do
+    array.underlying = tail(array.underlying)
+  end
 
-@where A
-act remove_last(array: NaiveArray[A]) do
-  array.underlying = init(array.underlying)
+  act remove_last() do
+    array.underlying = init(array.underlying)
+  end
 end
 
 

@@ -1,29 +1,3 @@
-trait Combatant extends +Stats, +StatusEffects
-
-func name(Combatant): String
-
-/**
- * This is called once at the beginning of combat to give each combatant a chance to prepare.
- */
-act enter_combat(Combatant) do end
-
-act on_hit(combatant: Combatant) do
-  on_hit_status_effects(combatant)
-end
-
-func stat(combatant: Combatant, stat_label: StatLabelInt): Int = stat_impl(combatant, stat_label, base_stat(combatant, stat_label))
-func stat(combatant: Combatant, stat_label: StatLabelReal): Real = stat_impl(combatant, stat_label, base_stat(combatant, stat_label))
-
-@where A
-func stat_impl(combatant: Combatant, stat_label: StatLabel, base: A): A = do
-  fold(
-    combatant.status_effects.effects,
-    base,
-    (result: A, effect) => affect_stat(effect, stat_label, result)
-  )
-end
-
-
 trait SimulationResult
 struct SimulationVictory(winner: Combatant) extends SimulationResult
 struct SimulationStalemate() extends SimulationResult

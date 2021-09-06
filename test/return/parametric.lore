@@ -7,13 +7,15 @@ func to_string(position: Position): String = '{ x = ${position.x}, y = ${positio
 //       would require shape types to support mutable properties, though.
 trait Movable
 
-func position(Movable): Position
-act set_position(Movable, Position)
+domain movable: Movable
+  func position(): Position
+  act set_position(Position)
 
-act move(movable: Movable, x: Real, y: Real, z: Real) do
-  let old = position(movable)
-  let position = Position(old.x + x, old.y + y, old.z + z)
-  set_position(movable, position)
+  act move(x: Real, y: Real, z: Real) do
+    let old = position(movable)
+    let position = Position(old.x + x, old.y + y, old.z + z)
+    set_position(movable, position)
+  end
 end
 
 
@@ -22,12 +24,14 @@ struct Zombie extends Movable
   mut position: Position = Position { }
 end
 
-func position(zombie: Zombie): Position = zombie.position
-act set_position(zombie: Zombie, position: Position) do
-  zombie.position = position
-end
+domain zombie: Zombie
+  func position(): Position = zombie.position
+  act set_position(position: Position) do
+    zombie.position = position
+  end
 
-func to_string(zombie: Zombie): String = '${zombie.name} is at position ${zombie.position}'
+  func to_string(): String = '${zombie.name} is at position ${zombie.position}'
+end
 
 
 func update(a: A): A where A = a

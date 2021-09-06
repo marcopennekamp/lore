@@ -4,14 +4,18 @@ func name(Named): String
 trait Airborne
 func wingspan(Airborne): Real
 
+
 struct Bird extends Named, Airborne
   species: String
   weight: Real
   wingspan: Real
 end
 
-func name(bird: Bird): String = bird.species
-func wingspan(bird: Bird): Real = bird.wingspan
+domain bird: Bird
+  func name(): String = bird.species
+  func wingspan(): Real = bird.wingspan
+end
+
 
 struct Plane extends Named, Airborne
   model: String
@@ -19,8 +23,11 @@ struct Plane extends Named, Airborne
   wingspan: Real
 end
 
-func name(plane: Plane): String = plane.model
-func wingspan(plane: Plane): Real = plane.wingspan
+domain plane: Plane
+  func name(): String = plane.model
+  func wingspan(): Real = plane.wingspan
+end
+
 
 func equal?(a1: Airborne, a2: Airborne): Boolean = wingspan(a1) == wingspan(a2)
 func equal?(b1: Bird, b2: Bird): Boolean = b1.species == b2.species && b1.weight == b2.weight && b1.wingspan == b2.wingspan

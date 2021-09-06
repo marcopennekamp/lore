@@ -1,11 +1,13 @@
 // Not to be confused with shape types and shape values. :)
 trait Shape
 
-// "Computed"/"Virtual" properties. Could be improved with the property syntax for types/traits suggested in the spec.
-func width(Shape): Real
-func height(Shape): Real
+domain shape: Shape
+  // "Computed"/"Virtual" properties. Could be improved with the property syntax for types/traits suggested in the spec.
+  func width(): Real
+  func height(): Real
 
-func area(shape: Shape): Real = width(shape) * height(shape)
+  func area(): Real = width(shape) * height(shape)
+end
 
 
 struct BoundingBox extends Shape
@@ -13,8 +15,10 @@ struct BoundingBox extends Shape
   y: Real, y_end: Real
 end
 
-func width(box: BoundingBox): Real = box.x_end - box.x
-func height(box: BoundingBox): Real = box.y_end - box.y
+domain box: BoundingBox
+  func width(): Real = box.x_end - box.x
+  func height(): Real = box.y_end - box.y
+end
 
 
 struct Circle extends Shape
@@ -22,10 +26,12 @@ struct Circle extends Shape
   radius: Real
 end
 
-func width(circle: Circle): Real = circle.radius
-func height(circle: Circle): Real = circle.radius
+domain circle: Circle
+  func width(): Real = circle.radius
+  func height(): Real = circle.radius
 
-func area(circle: Circle): Real = circle.radius * circle.radius * pi()
+  func area(): Real = circle.radius * circle.radius * pi()
+end
 
 
 struct Rectangle extends Shape
@@ -33,10 +39,10 @@ struct Rectangle extends Shape
   width: Real, height: Real
 end
 
-// The same suggestions about a property syntax apply here. This is quite verbose, but alright for the MVL, since
-// we should focus on functionality/correctness first, not syntactic nicety.
-func width(rect: Rectangle): Real = rect.width
-func height(rect: Rectangle): Real = rect.height
+domain rect: Rectangle
+  func width(): Real = rect.width
+  func height(): Real = rect.height
+end
 
 
 func name(Shape): String

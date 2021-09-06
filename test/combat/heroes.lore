@@ -8,10 +8,12 @@ struct Shardbearer extends Hero
   open weapon: Weapon
 end
 
-func name(shardbearer: Shardbearer): String = shardbearer.name
+domain shardbearer: Shardbearer
+  func name(): String = shardbearer.name
 
-act enter_combat(shardbearer: Shardbearer) do
-  buff(shardbearer, create_armored(15, 3))
+  act enter_combat() do
+    buff(shardbearer, create_armored(15, 3))
+  end
 end
 
 
@@ -29,9 +31,11 @@ struct Radiant extends Hero
   weapon: Weapon
 end
 
-func name(radiant: Radiant): String = radiant.name
+domain radiant: Radiant
+  func name(): String = radiant.name
 
-act enter_combat(radiant: Radiant) do
-  buff(radiant, create_infusion(radiant.infusion))
-  buff(radiant, create_armored(3, 5))
+  act enter_combat() do
+    buff(radiant, create_infusion(radiant.infusion))
+    buff(radiant, create_armored(3, 5))
+  end
 end

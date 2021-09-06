@@ -1,0 +1,25 @@
+trait Combatant extends +Stats, +StatusEffects
+
+domain combatant: Combatant
+  func name(): String
+
+  /**
+   * This is called once at the beginning of combat to give each combatant a chance to prepare.
+   */
+  act enter_combat() do end
+
+  act on_hit() do
+    on_hit_status_effects(combatant)
+  end
+
+  func stat(stat_label: StatLabelInt): Int = stat_impl(combatant, stat_label, base_stat(combatant, stat_label))
+  func stat(stat_label: StatLabelReal): Real = stat_impl(combatant, stat_label, base_stat(combatant, stat_label))
+
+  func stat_impl(stat_label: StatLabel, base: A): A where A = do
+    fold(
+      combatant.status_effects.effects,
+      base,
+      (result: A, effect) => affect_stat(effect, stat_label, result)
+    )
+  end
+end
