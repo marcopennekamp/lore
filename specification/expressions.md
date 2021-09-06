@@ -570,6 +570,7 @@ Our **operator precedence** is as follows, from lowest to highest precedence:
 &&
 == !=
 < <= > >=
+|>
 + -
 * /
 ! - (unary)
