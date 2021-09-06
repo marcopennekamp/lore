@@ -2,20 +2,21 @@ package lore.compiler.parsing
 
 import fastparse._
 import lore.compiler.core.{Fragment, Position}
-import lore.compiler.parsing.LexicalParser.{hexDigit, identifier}
-import lore.compiler.syntax.ExprNode.StringLiteralNode
+import lore.compiler.parsing.LexicalParser.identifier
 import lore.compiler.syntax._
 
 /**
   * @param whitespace This can be manually specified to disable newlines in whitespace.
   */
 class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whitespace: P[Any] => P[Unit]) {
-  import Node._
-  import nameParser._
-
   private val typeParser = new TypeParser(nameParser)
+  private val stringParser = new StringParser(this)
   private lazy val singleLineParser = new ExpressionParser(nameParser)(fragment, Space.WS(_))
   private lazy val multiLineParser = new ExpressionParser(nameParser)(fragment, ScalaWhitespace.whitespace)
+
+  import Node._
+  import nameParser._
+  import stringParser.{string, plainString}
 
   // Parse a handful of top-level expressions before jumping into the deep end.
   def topLevelExpression[_: P]: P[TopLevelExprNode] = {
@@ -198,7 +199,13 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
     P(real | int | booleanLiteral | string)
   }
 
-  private def dynamicCall[_: P]: P[ExprNode] = P(Index ~ "dynamic" ~~ Space.WS ~~ singleTypeArgument ~~ Space.WS ~~ arguments ~ Index).map(withPosition(ExprNode.DynamicCallNode))
+  private def dynamicCall[_: P]: P[ExprNode] = {
+    def prefix = P("dynamic" ~~ Space.WS ~~ singleTypeArgument)
+    def arguments = P(("," ~ expression.rep(1, ",")).?.map(_.getOrElse(Vector.empty)))
+    P(Index ~ prefix ~~ Space.WS ~~ "(" ~ plainString ~ arguments ~ ")" ~ Index)
+      .map { case (startIndex, resultType, name, arguments, endIndex) => (startIndex, name, resultType, arguments.toVector, endIndex) }
+      .map(withPosition(ExprNode.DynamicCallNode))
+  }
 
   private def constructor[_: P]: P[ExprNode] = P(Index ~ name ~ Space.WS ~~ typeArguments ~~ Index).map(withPosition(ExprNode.ConstructorNode))
 
@@ -285,67 +292,5 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
       case (_, Seq(expr), _) => expr
       case (startIndex, elements, endIndex) => ExprNode.TupleNode(elements.toVector, Position(fragment, startIndex, endIndex))
     }
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Strings and interpolation! (Thanks again to Li Haoyi and his scalaparse example, which I used as a base for this.)
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  private def string[_: P]: P[ExprNode] = {
-    // Strings are sensitive to whitespace.
-    import fastparse.NoWhitespace._
-
-    // Helper to quickly gobble up large chunks of uninteresting characters. We break out conservatively, even if
-    // we don't know it's a "real" escape sequence: worst come to worst it turns out to be a dud and we go back into
-    // a CharsChunk next rep.
-    def stringChars = P(CharsWhile(c => c != '\n' && c != '\'' && c != '\\' && c != '$').!)
-    // The repetitions here attempt to shove as many characters into StringLiteralNode as possible.
-    def notStringEnd = P(Index ~ (!CharIn("\n'") ~ AnyChar).! ~ Index).map(withPosition(ExprNode.StringLiteralNode))
-    def content = P(Index ~ (stringChars | escape).rep(1) ~ Index)
-      .map { case (startIndex, strings, endIndex) => (startIndex, strings.foldLeft("")(_ + _), endIndex) }
-      .map(withPosition(ExprNode.StringLiteralNode))
-    // We have to check content, interpolation, notStringEnd exactly in this order, otherwise notStringEnd would
-    // consume parts that are meant to be escapes or interpolations.
-    P(Index ~ "'" ~ (content | interpolation | notStringEnd).rep.map(_.toVector) ~ "'" ~ Index)
-      .map {
-        case (startIndex, Vector(), endIndex) => ExprNode.StringLiteralNode("", Position(fragment, startIndex, endIndex))
-        // This can either be a single string literal or any expression enclosed as such: '$expr'.
-        case (startIndex, Vector(expression), endIndex) => expression match {
-          case literal: StringLiteralNode =>
-            // One unfortunate side effect of immutable positions is that we can't easily change the position of
-            // an expression. The 'content' parser parses a string without the enclosing '' being factored in for
-            // the index. So a string 'abc' at the beginning of a file would start at index 1 instead of 0. We
-            // reconstruct this for string literals. Expressions aren't as easily changed with a new position, and
-            // as such we accept that an expression such as '$value' starts at index 2, after the $.
-            StringLiteralNode(literal.value, Position(fragment, startIndex, endIndex))
-          case _ => expression
-        }
-        case (startIndex, strings, endIndex) => ExprNode.ConcatenationNode(strings, Position(fragment, startIndex, endIndex))
-      }
-  }
-
-  private def interpolation[_: P]: P[ExprNode] = {
-    // Strings are sensitive to whitespace.
-    import fastparse.NoWhitespace._
-
-    def simple = P(Index ~ identifier ~ Index).map(withPosition(ExprNode.VariableNode))
-    def block = P("{" ~ NoCut(expression) ~ "}")
-    P("$" ~ (block | simple))
-  }
-
-  private def escape[_: P]: P[String] = {
-    // Strings are sensitive to whitespace.
-    import fastparse.NoWhitespace._
-
-    def unicodeEscape = P("u" ~ (hexDigit ~ hexDigit ~ hexDigit ~ hexDigit).!).map {
-      string => Integer.parseInt(string, 16).toChar.toString
-    }
-    def basicEscape = P(CharIn("""nrt'$\\""").!).map {
-      case "n" => "\n"
-      case "r" => "\r"
-      case "t" => "\t"
-      // ' $ \
-      case x => x
-    }
-    P("\\" ~ (basicEscape | unicodeEscape))
   }
 }

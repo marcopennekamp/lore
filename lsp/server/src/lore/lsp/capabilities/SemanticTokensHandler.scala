@@ -154,7 +154,7 @@ object SemanticTokensHandler {
             case None => singleHighlight(nameNode, SemanticTokenTypes.Variable)
           }
         }
-      case ExprNode.DynamicCallNode(_, _, position) => Vector(createKeywordHighlight(position, "dynamic".length))
+      case ExprNode.DynamicCallNode(_, _, _, position) => Vector(createKeywordHighlight(position, "dynamic".length))
 
       case ExprNode.IfElseNode(_, onTrue, onFalse, position) =>
         val elseHighlight = onFalse.map(onFalse => createKeywordHighlight(onTrue.position, onFalse.position)).toVector

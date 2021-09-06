@@ -276,16 +276,9 @@ class InferringExpressionTransformationVisitor(
         .map(handleBinding)
         .getOrElse(Expression.Hole(BasicType.Nothing, position))
 
-    case node@DynamicCallNode(resultTypeNode, _, position) =>
-      // The first argument to the dynamic call must be a constant function name.
-      val name = expressions.headOption match {
-        case Some(Expression.Literal(name: String, BasicType.String, _)) => name
-        case _ =>
-          reporter.error(DynamicFunctionNameExpected(node))
-          "unknown"
-      }
+    case node@DynamicCallNode(nameLiteral, resultTypeNode, _, position) =>
       val resultType = TypeExpressionEvaluator.evaluate(resultTypeNode).getOrElse(BasicType.Nothing)
-      Expression.Call(CallTarget.Dynamic(name), expressions.tail, resultType, position)
+      Expression.Call(CallTarget.Dynamic(nameLiteral.value), expressions, resultType, position)
   }
 
   private def transformBooleanOperation(operator: XaryOperator, expressions: Vector[Expression], position: Position): Expression.XaryOperation = {
@@ -389,11 +382,6 @@ object InferringExpressionTransformationVisitor {
     override def message: String = s"The integer literal ${node.value} is outside the safe run-time range of" +
       s" ${BasicType.Int.minSafeInteger} and ${BasicType.Int.maxSafeInteger}. The Javascript runtime will not be able" +
       s" to properly store and process integers this large."
-  }
-
-  case class DynamicFunctionNameExpected(node: ExprNode.DynamicCallNode) extends Feedback.Error(node) {
-    override def message: String = "Dynamic calls require a string literal as their first argument, which represents the" +
-      " name of the function. Since the name must be available at compile-time, it must be a constant."
   }
 
 }

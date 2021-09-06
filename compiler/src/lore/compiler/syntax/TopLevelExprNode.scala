@@ -191,6 +191,7 @@ object ExprNode {
     * The name of the dynamic function must be the first argument, as a string.
     */
   case class DynamicCallNode(
+    nameLiteral: StringLiteralNode,
     resultType: TypeExprNode,
     arguments: Vector[ExprNode],
     position: Position,
