@@ -398,33 +398,67 @@ To **define order** for a given type, specialize the function `less_than?(a, b)`
 
 
 
-### Multi-Function Calls
+### Function Calls
 
-**Multi-Function calls** are the heart of Lore. Their syntax is simple:
+The syntax of a **function call** is simple:
 
 ```
-name(a1, a2, ...)
+target(a1, a2, ...)
 ```
 
-That's it! Types will be checked, values will be dispatched, and some function will be called. The **semantics** of multi-function calls are defined in [multi-functions](multi-functions.md).
+**Call semantics** depend on the `target`:
 
-We say *multi-function call*, because it only becomes a function call at run-time, when a function has been chosen according to the dispatch semantics. At compile-time, we are calling a whole multi-function with a bounded but unknown input type.
+- If the target is a **multi-function**, the compiler will simulate multiple dispatch to find the correct function implementation. The semantics of such multi-function calls are defined in [multi-functions](multi-functions.md).
 
-##### Fixing Functions at Compile-Time
+  We say *multi-function call*, because it only becomes a function call at run-time, when a function has been chosen according to the dispatch semantics. At compile-time, we are calling a whole multi-function with a bounded but unknown input type.
 
-Instead of dispatching at run-time, you can **fix a function at compile-time:**
+- If the target is a **function value**, the function will be called directly at run time. Anonymous functions and constructors will be called directly, but if the function value refers to a multi-function, multiple dispatch will of course still be performed.
+
+##### Pipes
+
+Function application may be chained using **pipes**:
+
+```
+a1 |> target(a2, ...)
+```
+
+Pipes are a purely syntactic construct. They are transformed to equivalent nested function calls. For example, the pipe application above would be transformed to `target(a1, a2, ...)`.
+
+###### Example
+
+```
+['Hello', 'Bonjour', 'Hola', 'Privyet', 'Ciao', 'Hallo', 'Hej']
+  |> filter(str => String.length(str) < 5)
+  |> map(str => '$str, world!')
+  |> String.join(' ')
+```
+
+This example will be transformed to:
+
+```
+String.join(
+  map(
+    filter(
+      ['Hello', 'Bonjour', 'Hola', 'Privyet', 'Ciao', 'Hallo', 'Hej'],
+      str => String.length(str) < 5
+    ),
+    str => '$str, world!'
+  ),
+  ' '
+)
+```
+
+
+
+### Fixing Functions at Compile-Time
+
+Instead of deciding dispatch at run-time, you can **fix a function at compile-time:**
 
 ```
 f.fixed[T1, T2, ...]
 ```
 
 The expression evaluates to a **function value** which may be subsequently invoked or passed around.
-
-
-
-### Function Calls
-
-**Function values** may be called with the same syntax as multi-functions. Because multiple dispatch is compiled on the implementing side, a function call may still lead to multiple dispatch and would thus be semantically equivalent to a regular multi-function call. The function value may also be an anonymous function, however, which doesn't engage in dynamic dispatch.
 
 
 
