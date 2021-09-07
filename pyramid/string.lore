@@ -1,3 +1,5 @@
+func length(string: String): Int = dynamic[Int]('Lore.strings.length', string)
+
 func concat(a: String, b: String): String = '$a$b'
 
 // TODO: This could perhaps benefit from the performance of a dynamic implementation.
