@@ -480,25 +480,43 @@ In the long term, we want to be able to use, for example, TypeScript declaration
 
 ### Conditional Expressions
 
-Lore will support a variety of **conditional expressions** (especially pattern matching, guards, and so on). For now, we will have to make do with If:
+Lore supports a variety of **conditional expressions**.
+
+##### If-Else
+
+If the condition is true, the **`if` expression** evaluates to `tle1`, otherwise to `tle2`. Omitting the `else` branch leads to an implicit result type of `Unit`.
 
 ```
-if cond then tle1 else tle2
+if condition then tle1 else tle2
 
-if cond
+if condition
   tles1
 end
 
-if cond
+if condition
   tles1
 end else
   tles2
 end
 ```
 
-Note that either top-level expression (TLE) (or even `cond`) may be a block. The else part is, of course, optional. The so-called **dangling else** is always parsed as belonging to the `if` closest to it.
+Note that either top-level expression (TLE) (or even `condition`) may be a block. The else part is, of course, optional. The so-called **dangling else** is always parsed as belonging to the `if` closest to it.
 
 The if-expressions without a `then` require the top-level expression(s) to be placed on the next line. This also implicitly opens a block, which must be closed with an `end`. An `else` with an implicit block must also be closed with an `end`.
+
+##### Cond
+
+The `cond` expression is more suitable than an `if` expression when many cases are involved. A `cond` case consists of a condition and a single top-level expression. The `true => ...` case simulates an `else` branch. Any case after the `true` case will be disregarded at run time, but may influence the result type of the `cond` expression.
+
+```
+cond
+  condition1 => tle1
+  condition2 => tle2
+  ...
+end
+```
+
+A newline must always follow `cond` and it must always be closed with an `end`. Each case must be placed on its own line. If a condition should be a conditional expression, a loop, or an anonymous function, the condition must be enclosed in parentheses: `(if a then b else c) => 'fabulous!'`.
 
 
 
@@ -511,9 +529,9 @@ The if-expressions without a `then` require the top-level expression(s) to be pl
 In Lore, a **while loop** repeats some piece of code as long as a given boolean expression is true:
 
 ```
-while cond yield tle
+while condition yield tle
 
-while cond
+while condition
   tles
 end
 ```
