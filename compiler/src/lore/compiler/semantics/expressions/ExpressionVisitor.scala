@@ -33,6 +33,7 @@ trait ExpressionVisitor[A, B] {
   def visit(expression: XaryOperation)(operands: Vector[A]): B
   def visit(expression: Call)(target: Option[A], arguments: Vector[A]): B
   def visit(expression: IfElse)(condition: A, onTrue: A, onFalse: A): B
+  def visit(expression: Cond)(cases: Vector[(A, A)]): B
   def visit(expression: WhileLoop)(condition: A, body: A): B
   def visit(expression: ForLoop)(collections: Vector[A], body: A): B
 
@@ -78,6 +79,7 @@ object ExpressionVisitor {
       case node@XaryOperation(_, expressions, _, _) => visitor.visit(node)(expressions.map(rec))
       case node@Call(target, arguments, _, _) => visitor.visit(node)(target.getExpression.map(rec), arguments.map(rec))
       case node@IfElse(condition, onTrue, onFalse, _, _) => visitor.visit(node)(rec(condition), rec(onTrue), rec(onFalse))
+      case node@Cond(cases, _, _) => visitor.visit(node)(cases.map(c => (rec(c.condition), rec(c.body))))
       case node@WhileLoop(condition, body, _, _) => visitor.visit(node)(rec(condition), rec(body))
       case node@ForLoop(extractors, body, _, _) => visitor.visit(node)(extractors.map(e => rec(e.collection)), rec(body))
     }

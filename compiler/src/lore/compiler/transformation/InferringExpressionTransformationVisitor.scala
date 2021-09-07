@@ -7,13 +7,14 @@ import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
+import lore.compiler.semantics.expressions.Expression.{BinaryOperator, CondCase, Literal, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
 import lore.compiler.semantics.scopes._
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.transformation.InferringExpressionTransformationVisitor._
 import lore.compiler.types._
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalaz.Id.Id
 
 class InferringExpressionTransformationVisitor(
@@ -322,6 +323,23 @@ class InferringExpressionTransformationVisitor(
 
   override def visitCall(node: CallNode)(target: Expression, arguments: Vector[Expression]): Expression = {
     CallTransformation.valueCall(target, arguments, node.position)
+  }
+
+  override def visitCond(node: CondNode)(rawCases: Vector[(Expression, Expression)]): Expression = {
+    val cases = rawCases.map(CondCase.tupled)
+    val isTotal = cases.exists(_.isTotalCase)
+    val resultType = new InferenceVariable
+
+    judgmentCollector.add(
+      cases.map(_.condition).map(condition => TypingJudgment.Subtypes(condition.tpe, BasicType.Boolean, condition.position))
+    )
+
+    // If there is no `true` case, we have to assume that the `cond` won't lead to a value in all instances. Hence, we
+    // have to assume that Unit may be a result type.
+    val bodyTypes = cases.map(_.body.tpe) ++ (if (!isTotal) Vector(TupleType.UnitType) else Vector.empty)
+    judgmentCollector.add(TypingJudgment.LeastUpperBound(resultType, bodyTypes, node.position))
+
+    Expression.Cond(cases, resultType, node.position)
   }
 
   override def visitIteration(node: ForNode)(

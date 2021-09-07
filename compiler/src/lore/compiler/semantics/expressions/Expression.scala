@@ -177,6 +177,23 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class IfElse(condition: Expression, onTrue: Expression, onFalse: Expression, tpe: Type, position: Position) extends Expression
 
+  case class Cond(cases: Vector[CondCase], tpe: Type, position: Position) extends Expression {
+    /**
+      * Whether the `cond` evaluates to a value in all cases. This is true if one case's condition is simply `true`,
+      * which is the "else" branch of the cond.
+      */
+    val isTotal: Boolean = cases.exists(_.isTotalCase)
+
+    def withCases(pairs: Vector[(Expression, Expression)]): Cond = this.copy(pairs.map(CondCase.tupled))
+  }
+
+  case class CondCase(condition: Expression, body: Expression) {
+    val isTotalCase: Boolean = condition match {
+      case Literal(true, BasicType.Boolean, _) => true
+      case _ => false
+    }
+  }
+
   sealed trait Loop extends Expression {
     def body: Expression
   }
@@ -192,5 +209,6 @@ object Expression {
       this.copy(extractors.zip(collections).map { case (extractor, collection) => extractor.copy(collection = collection) })
     }
   }
+
   case class Extractor(variable: Variable, collection: Expression)
 }

@@ -106,6 +106,12 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
     tpe = assignments.instantiate(expression.tpe)
   )
 
+  override def visit(expression: Cond)(cases: Vector[(Expression, Expression)]): Expression = {
+    expression.withCases(cases).copy(
+      tpe = assignments.instantiate(expression.tpe)
+    )
+  }
+
   override def visit(expression: WhileLoop)(condition: Expression, body: Expression): Expression = expression.copy(
     condition = condition,
     body = body,
