@@ -24,5 +24,6 @@ func test(): [String] = do
   let list = Some([1, 2, 3])
   let aerials = [Some(Bird()), Some(Plane()), Some(Dragon())]
   let dragons = Some { value = [Dragon(), Dragon(), Dragon()] }
-  map([none, string, list, aerials, dragons], to_string)
+
+  [none, string, list, aerials, dragons] |> map(to_string)
 end

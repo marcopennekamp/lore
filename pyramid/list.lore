@@ -144,11 +144,8 @@ func repeat(element: A, n: Int): [A] = do
 end
 
 /**
-  * Converts a Lore list to a string.
+  * Converts a Lore list to a string by separating stringified elements with commas, then surrounding the list with
+  * square brackets.
   */
 @where A
-func to_string(list: [A]): String = do
-  let strings = map(list, to_string)
-  let joined = string_join(strings, ', ')
-  '[$joined]'
-end
+func to_string(list: [A]): String = list |> map(to_string) |> string_join(', ') |> affix('[', ']')

@@ -35,5 +35,5 @@ func test(): [String] = do
     blood(Bowl), blood(Cup),
     pudding(Bowl), pudding(Cup)
   ]
-  map(containers, to_string)
+  containers |> map(to_string)
 end

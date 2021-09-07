@@ -10,5 +10,5 @@ func test(): [[Int]] = do
     [],
     [1, 1, 1, 1, 1]
   ]
-  map(data, filter_curried(x => remainder(x, 2) == 0))
+  data |> map(filter_curried(x => remainder(x, 2) == 0))
 end

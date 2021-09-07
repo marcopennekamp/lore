@@ -104,8 +104,8 @@ domain entity: +StatusEffects
    */
   act update_status_effects() do
     let effects = entity.status_effects.effects
-    each(effects, on_update)
-    entity.status_effects.effects = filter(effects, active?)
+    effects |> each(on_update)
+    entity.status_effects.effects = effects |> filter(active?)
   end
 
   act on_hit_status_effects() do

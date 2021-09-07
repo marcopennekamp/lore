@@ -10,9 +10,9 @@ func transcribe(#t): #a = #a
 func transcribe(#g): #c = #c
 func transcribe(#c): #g = #g
 
-func transcribe(dna: Dna): Rna = map(dna, transcribe)
+func transcribe(dna: Dna): Rna = dna |> map(transcribe)
 
-func to_string(rna: Rna): String = concat_map(rna, symbol_name)
+func to_string(rna: Rna): String = rna |> concat_map(symbol_name)
 
 func test(): [String] = do
   let cases = [
@@ -23,5 +23,5 @@ func test(): [String] = do
     [#a, #c, #g, #t, #g, #g, #t, #c, #t, #t, #a, #a]
   ]
 
-  map(cases, dna => to_string(transcribe(dna)))
+  cases |> map(transcribe) |> map(to_string)
 end

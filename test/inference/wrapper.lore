@@ -8,8 +8,7 @@ func test(): [String] = do
   map_wrapper(
     numbers,
     Wrapper(n => do
-      let strings = repeat('Hey!', n)
-      string_join(strings, ' ')
+      repeat('Hey!', n) |> string_join(' ')
     end)
   )
 end

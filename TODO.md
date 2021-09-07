@@ -17,8 +17,8 @@
   - ~~Apply snake_case across the board for variable and function names.~~
   - ~~Allow question marks in identifiers: `empty?`.~~
   - ~~Add `@where` annotation~~.
-  - Add `domain` blocks.
-  - Add pipe operator.
+  - ~~Add `domain` blocks.~~
+  - ~~Add pipe operator.~~
   - Add `cond` operator.
   - Trailing commas.
   - Trailing lambdas?

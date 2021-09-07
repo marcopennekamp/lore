@@ -16,4 +16,4 @@ func coolness(Vehicle): Real
 func coolness(Car): Real = 2.7
 func coolness(Bicycle): Real = 5.2
 
-func test(): [Real] = map([Cat(1.2), Dog(5), Dog(3.50), Cat(7.7)], coolness)
+func test(): [Real] = [Cat(1.2), Dog(5), Dog(3.50), Cat(7.7)] |> map(coolness)

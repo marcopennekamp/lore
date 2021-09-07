@@ -10,7 +10,7 @@ func greetings(): [String] = do
   names = names :+ 'console'
   names = names :+ 100
 
-  map(names, hello)
+  names |> map(hello)
 end
 
 func test(): [String] = greetings()

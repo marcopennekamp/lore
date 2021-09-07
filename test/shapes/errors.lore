@@ -6,7 +6,7 @@ func read2(): Result[String] = %{ status: #error, result: '' }
 func read3(): Result[String] = %{ status: #ok, result: 'I am another result!' }
 
 func test(): [String] = do
-  let entries = [read1(), read2(), read3()]
-  let successes = filter(entries, entry => entry.status == #ok)
-  map(successes, entry => entry.result)
+  [read1(), read2(), read3()]
+    |> filter(entry => entry.status == #ok)
+    |> map(entry => entry.result)
 end

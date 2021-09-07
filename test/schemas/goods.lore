@@ -16,8 +16,11 @@ func price(Box[Metal[MediumPrice]]): Real = 17.2
 func price(Box[Metal[LowPrice]]): Real = 1.6
 
 
-func test(): [Real] = [
-  price(Box(Gold())),
-  price(Box(Silver())),
-  price(Box(Iron()))
-]
+func test(): [Real] = do
+  let boxes = [
+    Box(Gold()),
+    Box(Silver()),
+    Box(Iron())
+  ]
+  boxes |> map(price)
+end

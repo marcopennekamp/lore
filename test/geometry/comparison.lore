@@ -28,9 +28,9 @@ func test(): [String] = do
   let box = BoundingBox(2, 10, 8, 14)
   let circle = Circle(0, 0, 5)
 
-  flatten([
+  [
     check(rect, box),
     check(rect, circle),
     check(box, circle)
-  ])
+  ] |> flatten
 end

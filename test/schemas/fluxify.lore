@@ -34,5 +34,5 @@ func test(): [Int] = do
     Box((1, Several(), 0.5), None()),
     Box((0, Many(), 0.1), Some(2))
   ]
-  map(boxes, fluxify)
+  boxes |> map(fluxify)
 end
