@@ -191,24 +191,10 @@ private[transpilation] class ExpressionTranspilationVisitor()(
   }
 
   override def visit(expression: IfElse)(condition: Chunk, onTrue: Chunk, onFalse: Chunk): Chunk = {
-    // If the result type of the if-else is unit, we can ignore the results of the respective then and else blocks.
-    val varResult = if (expression.tpe != TupleType.UnitType) Some(variableProvider.createVariable()) else None
-    val resultDeclaration = varResult.map(_.declareMutableAs(Target.Undefined))
-
-    def asBlock(chunk: Chunk): Target.Block = {
-      // If there is a result variable, we want to assign the chunk's expression to the variable. Otherwise, we still
-      // want the expression to execute to preserve potential side effects! (But only if it's not a unit value.)
-      val lastStatement = varResult.map(_.assign(chunk.expression)).orElse(chunk.meaningfulExpression)
-      Target.Block(chunk.statements ++ lastStatement.toVector)
-    }
-
-    val ifElse = Target.IfElse(condition.expression, asBlock(onTrue), asBlock(onFalse))
-
-    Chunk(
-      condition.statements ++ resultDeclaration.toVector ++ Vector(ifElse),
-      varResult.getOrElse(RuntimeApi.tuples.unitValue)
-    )
+    ConditionalTranspiler().transpile(expression)(condition, onTrue, onFalse)
   }
+
+  override def visit(expression: Cond)(cases: Vector[(Chunk, Chunk)]): Chunk = ConditionalTranspiler().transpile(expression)(cases)
 
   override def visit(loop: WhileLoop)(condition: Chunk, body: Chunk): Chunk = LoopTranspiler().transpile(loop, condition, body)
 

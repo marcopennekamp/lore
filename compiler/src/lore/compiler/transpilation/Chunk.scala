@@ -40,13 +40,13 @@ case class Chunk(statements: Vector[TargetStatement], expression: TargetExpressi
     * Translates the chunk to the target representation by wrapping the chunk's code in a block and returning the
     * expression from the block.
     */
-  def asBody: Target.Block = Target.Block(statements :+ Target.Return(expression))
+  val asBody: Target.Block = Target.Block(statements :+ Target.Return(expression))
 
   /**
     * An "all executable" view on the chunk. Returns the statements concatenated with the expression, though a unit
     * value expression is ignored.
     */
-  def asCode: Vector[TargetStatement] = statements ++ meaningfulExpression.toVector
+  val asCode: Vector[TargetStatement] = statements ++ meaningfulExpression.toVector
 
 }
 
