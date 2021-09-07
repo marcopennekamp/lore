@@ -1,0 +1,4 @@
+// TODO: It's currently not possible to just write `t => ...` without the type ascription. The type inference
+///      algorithm should definitely be able to do that.
+@where A, B, R
+func tupled(f: (A, B) => R): ((A, B)) => R = (t: (A, B)) => f(first(t), second(t))

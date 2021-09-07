@@ -56,6 +56,5 @@ func test(): [String] = do
     Plane('Model Plane', 0, 1.2)
   ]
 
-  let pairs = symmetric_pairs(airbornes)
-  flat_map(pairs, pair => check(first(pair), second(pair)))
+  airbornes |> symmetric_pairs |> flat_map(tupled(check))
 end
