@@ -36,13 +36,18 @@ class TypeParser(nameParser: NameParser)(implicit fragment: Fragment, whitespace
   }
 
   /**
-    * The parser for tuple types doesn't support tuples of length 1 because of the ambiguity with the enclosedType
-    * parser. Since length-1 tuple types are generally useless, we think this is fine as is.
+    * The parser for tuple types doesn't support 1-tuples with a syntax `(A)`, because this would clash with the
+    * `enclosedType` parser. However, we still want to be able to parse function types that work on single tuple
+    * arguments. The syntax `(Int, Int) => Int` would create a function type with two arguments, so we need a special
+    * syntax. The solution is to parse `((Int, Int))` as a *nested* tuple.
     */
   private def tupleType[_: P]: P[TypeExprNode.TupleNode] = {
-    P(Index ~ "(" ~ typeExpression ~ ("," ~ typeExpression).rep(1) ~ ")" ~ Index).map {
-      case (startIndex, e, es, endIndex) => TypeExprNode.TupleNode(e +: es.toVector, Position(fragment, startIndex, endIndex))
+    def nested = P("(" ~ tupleType ~ ")").map(Vector(_))
+    def tuple = {
+      P("(" ~ typeExpression ~ ("," ~ typeExpression).rep(1) ~ ")")
+        .map { case (e1, rest) => e1 +: rest.toVector }
     }
+    P(Index ~~ (nested | tuple) ~~ Index).map(withPosition(TypeExprNode.TupleNode))
   }
 
   private def listType[_: P]: P[TypeExprNode.ListNode] = P(Index ~ "[" ~ typeExpression ~ "]" ~ Index).map(withPosition(TypeExprNode.ListNode))

@@ -49,6 +49,7 @@ This is a partly organized list of mostly loose ideas which may find their way i
 - (!) Anonymous functions with unnamed parameters such as `map(list, _.name)` could additionally be defined with multiple parameter positions. `($1, $2)` would create a function `(a, b) => (a, b)`. The difficulty is: where is the boundary of the anonymous function? Why wouldn't `($1, $2)` be `(x => x, (y, z) => z)`?
 - Think about removing `return`, as it is annoying to implement and reduces the straight-forwardness of the language. On the other hand, `return` helps avoid some nesting.
 - Build a list from optionals: `[if (a) x, if (b) y, if (c) z] |> flatten`. The trick here is that an `if` expression without a corresponding else should return an option.
+  - This would also be applicable to `cond` and `case`.
 - Delayed computations: https://www.unisonweb.org/docs/language-reference#delayed-computations
 - Watch expressions for rapid development: https://www.unisonweb.org/docs/quickstart/
 - Provide an easy way to update immutable structs and shapes. For example, Scala's case class `copy` function.
