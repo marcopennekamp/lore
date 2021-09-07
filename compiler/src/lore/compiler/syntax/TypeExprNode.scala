@@ -23,6 +23,15 @@ object TypeExprNode {
   case class SymbolNode(name: String, position: Position) extends TypeExprNode
 
   /**
+    * Constructs a right-associative nested function type from the given types.
+    */
+  def xaryFunction(types: Vector[TypeExprNode], position: Position): TypeExprNode = {
+    types.init.foldRight(types.last) {
+      case (input, output) => FunctionNode(input, output, Position(position.fragment, input.position.startIndex, output.position.endIndex))
+    }
+  }
+
+  /**
     * Collects all leaf nodes in a flattened list.
     */
   def leaves(node: TypeExprNode): Vector[TypeExprNode] = node match {

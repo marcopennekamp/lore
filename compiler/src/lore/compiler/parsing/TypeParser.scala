@@ -22,7 +22,7 @@ class TypeParser(nameParser: NameParser)(implicit fragment: Fragment, whitespace
       operatorMeta = Map(
         "|" -> XaryOperator[TypeExprNode](1, TypeExprNode.SumNode),
         "&" -> XaryOperator[TypeExprNode](2, TypeExprNode.IntersectionNode),
-        "=>" -> BinaryOperator[TypeExprNode](3, TypeExprNode.FunctionNode),
+        "=>" -> XaryOperator[TypeExprNode](3, TypeExprNode.xaryFunction),
       ),
     )
   }

@@ -141,3 +141,8 @@ Deno.test('syntax/strings', async () => {
     'Martin, you have 5 apples. Please claim your free apple at the reception.',
   ])
 })
+
+Deno.test('syntax/types', async () => {
+  const result: number = await LoreTest.run('syntax/types.lore')
+  assertEquals(result, 18)
+})
