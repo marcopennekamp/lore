@@ -59,6 +59,7 @@ object Expression {
   case class BindingAccess(binding: TypedBinding, position: Position) extends Expression.Apply(binding.tpe) with Access {
     override val name: String = binding.name
     override val isMutable: Boolean = binding.isMutable
+    override val toString: String = name
   }
 
   case class MemberAccess(instance: Expression, member: Member, position: Position) extends Expression.Apply(member.tpe) with Access {

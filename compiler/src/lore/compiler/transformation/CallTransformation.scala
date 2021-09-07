@@ -11,14 +11,22 @@ import lore.compiler.types.{FunctionType, TupleType, Type}
 
 object CallTransformation {
 
+  case class IllegalArity(target: Expression, targetType: FunctionType, argumentCount: Int, override val position: Position) extends Feedback.Error(position) {
+    override def message: String = s"A function $target of arity ${targetType.input.elements.length} cannot be called with $argumentCount arguments."
+  }
+
   /**
     * Builds a function value call from the given target and arguments.
     */
-  def valueCall(target: Expression, arguments: Vector[Expression], position: Position)(implicit judgmentCollector: JudgmentCollector): Expression.Call = {
+  def valueCall(target: Expression, arguments: Vector[Expression], position: Position)(implicit judgmentCollector: JudgmentCollector, reporter: Reporter): Expression.Call = {
     // A call target must be a value with a function type.
     val (inputType, outputType) = target.tpe match {
       // If the target's type is defined now, we can take a shortcut, because it's definitely a function.
-      case FunctionType(input, output) => (input, output)
+      case targetType@FunctionType(input, output) =>
+        if (arguments.length != input.elements.length) {
+          reporter.error(IllegalArity(target, targetType, arguments.length, position))
+        }
+        (input, output)
 
       // May or may not be a function type, so we have to make sure that the type is even a function. The Assign
       // judgments ensure that the target's type is even a function type. For now, we don't want to infer the type of
