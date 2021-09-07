@@ -53,6 +53,11 @@ trait TopLevelExprVisitor[A, M[_]] {
   def visitCall(node: ExprNode.CallNode)(target: A, arguments: Vector[A]): M[A]
 
   /**
+    * Visits a cond node with its cases.
+    */
+  def visitCond(node: ExprNode.CondNode)(cases: Vector[(A, A)]): M[A]
+
+  /**
     * Visits an iteration node with its extractors and the body.
     *
     * We don't pass the evaluated body but rather a function that visits the body expression. This allows the
@@ -92,19 +97,25 @@ object TopLevelExprVisitor {
 
         case node@AnonymousFunctionNode(_, body, _) => visitor.visitAnonymousFunction(node)(() => visit(body, props))
 
-        case node@MapNode(kvs, _) =>
-          val entries = kvs.map {
+        case node@MapNode(entries, _) =>
+          val visitedEntries = entries.map {
             case KeyValueNode(key, value, _) => (visit(key, props), visit(value, props))
           }
-          visitor.visitMap(node)(entries)
+          visitor.visitMap(node)(visitedEntries)
 
         case node@CallNode(target, arguments, _) => visitor.visitCall(node)(visit(target, props), arguments.map(visit(_, props)))
 
+        case node@CondNode(cases, _) =>
+          val visitedCases = cases.map {
+            case CondCaseNode(condition, body, _) => (visit(condition, props), visit(body, props))
+          }
+          visitor.visitCond(node)(visitedCases)
+
         case node@ForNode(extractors, body, _) =>
-          val extracts = extractors.map {
+          val visitedExtractors = extractors.map {
             case ExtractorNode(nameNode, collection, _) => (nameNode.value, visit(collection, props))
           }
-          visitor.visitIteration(node)(extracts, () => visit(body, props))
+          visitor.visitIteration(node)(visitedExtractors, () => visit(body, props))
       }
     }
   }

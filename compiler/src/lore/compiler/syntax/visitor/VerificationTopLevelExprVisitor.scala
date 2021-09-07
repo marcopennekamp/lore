@@ -23,6 +23,7 @@ trait VerificationTopLevelExprVisitor extends TopLevelExprVisitor[Unit, Id] {
   }
   override final def visitMap(node: ExprNode.MapNode)(entries: Vector[(Unit, Unit)]): Unit = verify(node)
   override final def visitCall(node: ExprNode.CallNode)(target: Unit, arguments: Vector[Unit]): Unit = verify(node)
+  override final def visitCond(node: ExprNode.CondNode)(cases: Vector[(Unit, Unit)]): Unit = verify(node)
   override def visitIteration(node: ExprNode.ForNode)(extractors: Vector[(String, Unit)], visitBody: () => Unit): Unit = {
     visitBody()
     verify(node)

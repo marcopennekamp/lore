@@ -119,7 +119,7 @@ object ExprNode {
   // Collection expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class ListNode(expressions: Vector[ExprNode], position: Position) extends XaryNode(expressions) with ExprNode
-  case class MapNode(kvs: Vector[KeyValueNode], position: Position) extends ExprNode
+  case class MapNode(entries: Vector[KeyValueNode], position: Position) extends ExprNode
   case class KeyValueNode(key: ExprNode, value: ExprNode, position: Position) extends Node
   case class AppendNode(collection: ExprNode, element: ExprNode, position: Position) extends BinaryNode(collection, element) with ExprNode
 
@@ -214,8 +214,22 @@ object ExprNode {
   // Conditional and loop expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class IfElseNode(
-    condition: ExprNode, onTrue: TopLevelExprNode, onFalse: Option[TopLevelExprNode], position: Position,
+    condition: ExprNode,
+    onTrue: TopLevelExprNode,
+    onFalse: Option[TopLevelExprNode],
+    position: Position,
   ) extends TernaryNode(condition, onTrue, onFalse.getOrElse(ExprNode.TupleNode(Vector.empty, position))) with ExprNode
+
+  case class CondNode(
+    cases: Vector[CondCaseNode],
+    position: Position,
+  ) extends ExprNode
+
+  case class CondCaseNode(
+    condition: ExprNode,
+    body: TopLevelExprNode,
+    position: Position,
+  ) extends Node
 
   /**
     * A cross-cutting node for loops.

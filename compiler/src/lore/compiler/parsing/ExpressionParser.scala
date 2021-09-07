@@ -59,7 +59,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
     P(prop | variable)
   }
 
-  def expression[_: P]: P[ExprNode] = P(ifElse | whileLoop | forLoop | anonymousFunction | operatorExpression)
+  def expression[_: P]: P[ExprNode] = P(ifElse | cond | whileLoop | forLoop | anonymousFunction | operatorExpression)
   def singleLineExpression[_: P]: P[ExprNode] = singleLineParser.expression
 
   private def ifElse[_: P]: P[ExprNode] = {
@@ -77,6 +77,15 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
     P(Index ~~ "if" ~~ Space.WS1 ~~ (thenStyle | blockStyle) ~~ Index)
       .map { case (startIndex, (condition, onTrue, onFalse), endIndex) => (startIndex, condition, onTrue, onFalse, endIndex) }
       .map(withPosition(ExprNode.IfElseNode))
+  }
+
+  private def cond[_: P]: P[ExprNode] = {
+    def condCase = {
+      P(Index ~~ operatorExpression ~ "=>" ~ operatorExpression ~~ Index)
+        .map(withPosition(ExprNode.CondCaseNode))
+    }
+    P(Index ~~ "cond" ~~ Space.terminators ~ condCase.repX(0, Space.terminators).map(_.toVector) ~ "end" ~~ Index)
+      .map(withPosition(ExprNode.CondNode))
   }
 
   private def whileLoop[_: P]: P[ExprNode.WhileNode] = {

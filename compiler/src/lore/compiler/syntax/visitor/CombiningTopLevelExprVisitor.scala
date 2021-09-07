@@ -31,10 +31,17 @@ trait CombiningTopLevelExprVisitor[A, M[_]] extends TopLevelExprVisitor[A, M] {
     visit(node, Vector(target) ++ arguments)
   }
   override def visitMap(node: ExprNode.MapNode)(entries: Vector[(A, A)]): M[A] = {
-    visit(node, entries.map { case (a, b) => combine(Vector(a, b)) })
+    visit(node, combinePairs(entries))
+  }
+  override def visitCond(node: ExprNode.CondNode)(cases: Vector[(A, A)]): M[A] = {
+    visit(node, combinePairs(cases))
   }
   override def visitIteration(node: ExprNode.ForNode)(extractors: Vector[(String, A)], visitBody: () => M[A]): M[A] = {
     flatMap(visitBody(), body => visit(node, extractors.map(_._2) ++ Vector(body)))
+  }
+
+  private def combinePairs(pairs: Vector[(A, A)]): Vector[A] = {
+    pairs.map { case (a1, a2) => combine(Vector(a1, a2)) }
   }
 }
 
