@@ -1,0 +1,48 @@
+trait Thing[A, B,]
+type Thing2[C,] = Thing[C, C,]
+
+struct Ahoo[A](
+  ah: String,
+  woo: A,
+)
+
+func get_tuple(
+  a: A,
+  b: B,
+): (A, B,) where A, B = (
+  a,
+  b,
+)
+
+func get_map(): #[String -> Int] = #[
+  'Hieronymus' -> 5,
+  'Homunculus' -> 10,
+  'Harbingers' -> 3,
+]
+
+func get_shape(): %{ name: String, level: Int, } = %{
+  name: 'Aurifana',
+  level: 100,
+}
+
+func test(): [String] = do
+  let ahoo = Ahoo[String,](
+    'foo',
+    'bar',
+  )
+  let ahoo2 = Ahoo[Int,] {
+    ah = 'boo',
+    woo = 12,
+  }
+  let tuple = get_tuple(1, 'hello')
+  let dict = get_map()
+  let shape = get_shape()
+
+  [
+    ahoo.woo,
+    ahoo2.ah,
+    second(tuple),
+    get(dict, 'Harbingers') |> to_string,
+    shape.name,
+  ]
+end

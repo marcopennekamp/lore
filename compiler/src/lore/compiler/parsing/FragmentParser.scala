@@ -65,6 +65,9 @@ class FragmentParser(implicit fragment: Fragment) {
     P(functionCommons("act", Pass.map(_ => None), definition))
   }
 
+  /**
+    * Note that a domain's parameters may not have a trailing comma because a domain is terminated by a newline.
+    */
   private def domain[_: P]: P[Vector[DeclNode.FunctionNode]] = {
     def parameters = P(parameter.rep(sep = ",")).map(_.toVector)
     def commons = P("domain" ~~ Space.WS1 ~~/ parameters)
@@ -90,7 +93,7 @@ class FragmentParser(implicit fragment: Fragment) {
     typing: => P[Option[TypeExprNode]],
     definition: => P[Option[ExprNode]],
   ): P[DeclNode.FunctionNode] = {
-    def parameters = P("(" ~ parameter.rep(sep = ",") ~ ")").map(_.toVector)
+    def parameters = P("(" ~ parameter.rep(sep = ",") ~ ",".? ~ ")").map(_.toVector)
     def commons = P(keyword ~~ Space.WS1 ~~/ name ~ parameters ~ typing)
     P(whereStyles(commons, definition))
       .map { case (startIndex, (name, parameters, outputType), typeVariables, body, endIndex) => (startIndex, name, typeVariables, parameters, outputType, body, endIndex) }
@@ -115,6 +118,7 @@ class FragmentParser(implicit fragment: Fragment) {
         .map { case (typeVariables, startIndex, a, b, endIndex) => (startIndex, a, typeVariables, b, endIndex) }
     }
 
+    // Because an inline where is supposed to be simple, we're disallowing trailing commas here.
     def typeParameters = P(typeParameterParser.simpleParameter.rep(1, CharIn(",")).map(_.toVector))
     def inlineWhere = P("where" ~~ Space.WS1 ~ typeParameters).map(_.toVector)
     def inlineStyle = P(Index ~~ head ~~ Space.WS ~~ inlineWhere.?.map(_.getOrElse(Vector.empty)) ~~ definition ~~ Index)
@@ -135,12 +139,16 @@ class FragmentParser(implicit fragment: Fragment) {
     P(Index ~ "trait" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(typeParameterParser.traitParameter) ~ `extends` ~ Index).map(withPosition(TypeDeclNode.TraitNode))
   }
 
+  /**
+    * Note that, because traits and structs may be terminated with a newline after the end of the `extends` list, we
+    * cannot allow trailing commas here.
+    */
   private def `extends`[_: P]: P[Vector[TypeExprNode]] = {
     P(("extends" ~~ Space.WS1 ~ typeExpression.rep(1, CharIn(",")).map(_.toVector)).?).map(_.getOrElse(Vector.empty))
   }
 
   private def struct[_: P]: P[TypeDeclNode.StructNode] = {
-    def conciseForm = P("(" ~ property.rep(sep = CharIn(",")).map(_.toVector) ~ ")" ~ `extends`)
+    def conciseForm = P("(" ~ property.rep(sep = CharIn(",")).map(_.toVector) ~ ",".? ~ ")" ~ `extends`)
       .map { case (properties, extended) => (extended, properties) }
 
     // Note that given the implicit struct body as it is now (newline..end), we cannot both allow newlines and trailing
@@ -178,9 +186,7 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def structBody[_: P]: P[Vector[TypeDeclNode.PropertyNode]] = {
-    // We have to parse the properties in a tiered structure because newline separators may only be used with repX,
-    // otherwise the newline is consumed by the whitespace parser. We want properties separated by commas to contain
-    // a comment between the property and the comma, so we have to apply the .rep parser there.
+    // Property lines should be terminated by newlines, so we're consciously not allowing trailing commas here.
     def propertyLine = P(property.rep(sep = CharIn(","))).map(_.toVector)
     def properties = P(propertyLine.repX(sep = Space.terminators)).map(_.toVector.flatten)
     P(Space.terminators ~~ properties ~ "end")
@@ -195,6 +201,6 @@ class FragmentParser(implicit fragment: Fragment) {
   private def defaultValue[_: P]: P[ExprNode] = P("=" ~ expressionParser.expression)
 
   private def typeVariables[_: P](typeVariable: => P[DeclNode.TypeVariableNode]): P[Vector[DeclNode.TypeVariableNode]] = {
-    P(("[" ~ typeVariable.rep(1, CharIn(",")).map(_.toVector) ~ "]").?).map(_.getOrElse(Vector.empty))
+    P(("[" ~ typeVariable.rep(1, CharIn(",")).map(_.toVector) ~ ",".? ~ "]").?).map(_.getOrElse(Vector.empty))
   }
 }

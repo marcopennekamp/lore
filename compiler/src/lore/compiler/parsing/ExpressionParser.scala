@@ -105,6 +105,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
   }
 
   private def extractors[_: P]: P[Vector[ExprNode.ExtractorNode]] = {
+    // Because a `for` head may be terminated by a newline, we cannot allow trailing commas for extractors.
     def extractor = P(Index ~~ name ~ "<-" ~ expression ~~ Index).map(withPosition(ExprNode.ExtractorNode))
     P(extractor.rep(1, sep = ",")).map(_.toVector)
   }
@@ -118,7 +119,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
       case (startIndex, name, endIndex) => withPosition(ExprNode.AnonymousFunctionParameterNode)(startIndex, name, None, endIndex)
     }
     def parameter = P(Index ~ name ~ typeParser.typing.? ~ Index).map(withPosition(ExprNode.AnonymousFunctionParameterNode))
-    P(simpleParameter.map(Vector(_)) | "(" ~ parameter.rep(sep = ",").map(_.toVector) ~ ")")
+    P(simpleParameter.map(Vector(_)) | "(" ~ parameter.rep(sep = ",").map(_.toVector) ~ ",".? ~ ")")
   }
 
   def operatorExpression[_: P]: P[ExprNode] = {
@@ -211,7 +212,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
 
   private def dynamicCall[_: P]: P[ExprNode] = {
     def prefix = P("dynamic" ~~ Space.WS ~~ singleTypeArgument)
-    def arguments = P(("," ~ expression.rep(1, ",")).?.map(_.getOrElse(Vector.empty)))
+    def arguments = P(("," ~ expression.rep(1, ",") ~ ",".?).?.map(_.getOrElse(Vector.empty)))
     P(Index ~ prefix ~~ Space.WS ~~ "(" ~ plainString ~ arguments ~ ")" ~ Index)
       .map { case (startIndex, resultType, name, arguments, endIndex) => (startIndex, name, resultType, arguments.toVector, endIndex) }
       .map(withPosition(ExprNode.DynamicCallNode))
@@ -240,8 +241,8 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
     }
   }
 
-  private def arguments[_: P]: P[Vector[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ")").map(_.toVector)
-  private def typeArguments[_: P]: P[Vector[TypeExprNode]] = P("[" ~ typeParser.typeExpression.rep(sep = ",") ~ "]").map(_.toVector)
+  private def arguments[_: P]: P[Vector[ExprNode]] = P("(" ~ expression.rep(sep = ",") ~ ",".? ~ ")").map(_.toVector)
+  private def typeArguments[_: P]: P[Vector[TypeExprNode]] = P("[" ~ typeParser.typeExpression.rep(sep = ",") ~ ",".? ~ "]").map(_.toVector)
   private def singleTypeArgument[_: P]: P[TypeExprNode] = P("[" ~ typeParser.typeExpression ~ "]")
 
   private def fixedFunction[_: P]: P[ExprNode] = P(Index ~ name ~ ".fixed" ~~ Space.WS ~~ typeArguments ~ Index).map(withPosition(ExprNode.FixedFunctionNode))
@@ -252,7 +253,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
       val position = Position(fragment, startIndex, endIndex)
       ExprNode.ObjectEntryNode(nameNode, ExprNode.VariableNode(nameNode.value, position), position)
     }
-    def entries = P((entry | shorthand).rep(sep = ",")).map(_.toVector)
+    def entries = P((entry | shorthand).rep(sep = ",") ~ ",".?).map(_.toVector)
     P(Index ~ structName ~~ Space.WS ~~ typeArguments.? ~ "{" ~ entries ~ "}" ~ Index).map(withPosition(ExprNode.ObjectMapNode))
   }
 
@@ -271,12 +272,12 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
   }
 
   private def list[_: P]: P[ExprNode] = {
-    P(Index ~ "[" ~ expression.rep(sep = ",").map(_.toVector) ~ "]" ~ Index).map(withPosition(ExprNode.ListNode))
+    P(Index ~ "[" ~ expression.rep(sep = ",").map(_.toVector) ~ ",".? ~ "]" ~ Index).map(withPosition(ExprNode.ListNode))
   }
 
   private def map[_: P]: P[ExprNode] = {
     def keyValue = P(Index ~ expression ~ "->" ~ expression ~ Index).map(withPosition(ExprNode.KeyValueNode))
-    P(Index ~ "#[" ~ keyValue.rep(sep = ",").map(_.toVector) ~ "]" ~ Index).map(withPosition(ExprNode.MapNode))
+    P(Index ~ "#[" ~ keyValue.rep(sep = ",").map(_.toVector) ~ ",".? ~ "]" ~ Index).map(withPosition(ExprNode.MapNode))
   }
 
   private def shape[_: P]: P[ExprNode.ShapeValueNode] = {
@@ -285,7 +286,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
       val position = Position(fragment, startIndex, endIndex)
       ExprNode.ShapeValuePropertyNode(nameNode, ExprNode.VariableNode(nameNode.value, position), position)
     }
-    def properties = P((property | shorthand).rep(sep = ",")).map(_.toVector)
+    def properties = P((property | shorthand).rep(sep = ",") ~ ",".?).map(_.toVector)
     P(Index ~ "%{" ~ properties ~ "}" ~ Index).map(withPosition(ExprNode.ShapeValueNode))
   }
 
@@ -298,7 +299,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
     * Note that the inner expressions are always parsed with full whitespace, including newlines.
     */
   private def enclosed[_: P]: P[ExprNode] = {
-    P(Index ~ "(" ~ multiLineParser.expression.rep(sep = ",") ~ ")" ~ Index).map {
+    P(Index ~ "(" ~ multiLineParser.expression.rep(sep = ",") ~ ",".? ~ ")" ~ Index).map {
       case (_, Seq(expr), _) => expr
       case (startIndex, elements, endIndex) => ExprNode.TupleNode(elements.toVector, Position(fragment, startIndex, endIndex))
     }

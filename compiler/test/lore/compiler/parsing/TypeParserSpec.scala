@@ -14,7 +14,7 @@ class TypeParserSpec extends ParserSpec[TypeExprNode] {
     "(A, B]".fails
     "A -> (".fails
     "[A -> (B | )]".fails
-    "(A, B, C,)".fails
+    "(A, B, C,,)".fails
     "(A,,B, C)".fails
   }
 }

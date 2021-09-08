@@ -44,7 +44,7 @@ class TypeParser(nameParser: NameParser)(implicit fragment: Fragment, whitespace
   private def tupleType[_: P]: P[TypeExprNode.TupleNode] = {
     def nested = P("(" ~ tupleType ~ ")").map(Vector(_))
     def tuple = {
-      P("(" ~ typeExpression ~ ("," ~ typeExpression).rep(1) ~ ")")
+      P("(" ~ typeExpression ~ ("," ~ typeExpression).rep(1) ~ ",".? ~ ")")
         .map { case (e1, rest) => e1 +: rest.toVector }
     }
     P(Index ~~ (nested | tuple) ~~ Index).map(withPosition(TypeExprNode.TupleNode))
@@ -56,13 +56,13 @@ class TypeParser(nameParser: NameParser)(implicit fragment: Fragment, whitespace
 
   private def shapeType[_: P]: P[TypeExprNode.ShapeNode] = {
     def property = P(Index ~ name ~ typing ~ Index).map(withPosition(TypeExprNode.ShapePropertyNode))
-    P(Index ~ "%{" ~ property.rep(0, ",").map(_.toVector) ~ "}" ~ Index).map(withPosition(TypeExprNode.ShapeNode))
+    P(Index ~ "%{" ~ property.rep(0, ",").map(_.toVector) ~ ",".? ~ "}" ~ Index).map(withPosition(TypeExprNode.ShapeNode))
   }
 
   private def symbolType[_: P]: P[TypeExprNode.SymbolNode] = P(Index ~ "#" ~ identifier ~ Index).map(withPosition(TypeExprNode.SymbolNode))
 
   private def instantiation[_: P]: P[TypeExprNode.InstantiationNode] = {
-    P(Index ~ namedType ~ "[" ~ typeExpression.rep(1, ",").map(_.toVector) ~ "]" ~ Index).map(withPosition(TypeExprNode.InstantiationNode))
+    P(Index ~ namedType ~ "[" ~ typeExpression.rep(1, ",").map(_.toVector) ~ ",".? ~ "]" ~ Index).map(withPosition(TypeExprNode.InstantiationNode))
   }
 
   private def namedType[_: P]: P[TypeExprNode.TypeNameNode] = P(Index ~ typeIdentifier ~ Index).map(withPosition(TypeExprNode.TypeNameNode))

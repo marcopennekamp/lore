@@ -440,11 +440,11 @@ String.join(
   map(
     filter(
       ['Hello', 'Bonjour', 'Hola', 'Privyet', 'Ciao', 'Hallo', 'Hej'],
-      str => String.length(str) < 5
+      str => String.length(str) < 5,
     ),
-    str => '$str, world!'
+    str => '$str, world!',
   ),
-  ' '
+  ' ',
 )
 ```
 
@@ -620,17 +620,6 @@ Note that we don't view assignments as operators. **Complex expressions** such a
   - Implement some default tuple **ordering**.
 
 - A feature such as Swift's **trailing closures**, maybe add some way to pass two or more closures. (Or just multiple parameter lists.)
-
-- Add a match-like expression that executes the **first case where a boolean expression is true:**
-
-  ```
-  cond
-    foo(x, y) => 'hello'
-    bar(x, y) => 'world'
-    baz(x, y) && baz(y, x) && baz(z, z) => 'hello darkness'
-    _ => 'default'
-  end
-  ```
 
 - **If-else:**
 

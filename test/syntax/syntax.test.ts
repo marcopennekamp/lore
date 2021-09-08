@@ -142,6 +142,17 @@ Deno.test('syntax/strings', async () => {
   ])
 })
 
+Deno.test('syntax/trailing-commmas', async () => {
+  const result: ListValue<string> = await LoreTest.run('syntax/trailing-commas.lore')
+  assertListEquals(result, [
+    'bar',
+    'boo',
+    'hello',
+    '3',
+    'Aurifana',
+  ])
+})
+
 Deno.test('syntax/types', async () => {
   const result: number = await LoreTest.run('syntax/types.lore')
   assertEquals(result, 18)
