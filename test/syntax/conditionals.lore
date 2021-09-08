@@ -1,9 +1,9 @@
 func low_increment(n: Int): Int = if n < 25 then n + 1 else n
 
-func towards_25(n: Int): Int = do
-  if n < 25 then       n + 1
-  else if n > 25 then  n - 1
-  else                 n
+func towards_25(n: Int): Int = cond
+  n < 25 => n + 1
+  n > 25 => n - 1
+  true   => n
 end
 
 func abc(a: Boolean, b: Boolean, c: Boolean): Boolean = do

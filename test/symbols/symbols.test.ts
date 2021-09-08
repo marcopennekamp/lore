@@ -9,5 +9,5 @@ Deno.test('symbols/rna', async () => {
 
 Deno.test('symbols/status', async () => {
   const result: ListValue<string> = await LoreTest.run('symbols/status.lore')
-  assertListEquals(result, ['Success!', 'Failure!', 'Success!', 'Failure!'])
+  assertListEquals(result, ['Success!', 'Failure!', 'Success!', 'Failure!', 'Success!'])
 })

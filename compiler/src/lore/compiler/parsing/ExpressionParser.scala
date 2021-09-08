@@ -81,7 +81,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
 
   private def cond[_: P]: P[ExprNode] = {
     def condCase = {
-      P(Index ~~ operatorExpression ~ "=>" ~ operatorExpression ~~ Index)
+      P(Index ~~ operatorExpression ~ "=>" ~ topLevelExpression ~~ Index)
         .map(withPosition(ExprNode.CondCaseNode))
     }
     P(Index ~~ "cond" ~~ Space.terminators ~ condCase.repX(0, Space.terminators).map(_.toVector) ~ "end" ~~ Index)

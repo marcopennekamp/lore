@@ -4,16 +4,12 @@ func stringify(Status): String
 func stringify(#ok): String = 'Success!'
 func stringify(#error): String = 'Failure!'
 
-func process(value: Int): (Status, String) = do
-  if value < 5 then (#ok, 'Below five.')
-  else (#error, 'At or above five.')
+func process(value: Int): (Status, String) = cond
+  value < 2 => (#ok, 'Below two.')
+  value < 5 => (#ok, 'Below five.')
+  true      => (#error, 'At or above five.')
 end
 
 func stringify(result: (Status, String)): String = stringify(first(result))
 
-func test(): [String] = [
-  stringify(process(3)),
-  stringify(process(5)),
-  stringify(process(2)),
-  stringify(process(10))
-]
+func test(): [String] = [3, 5, 2, 10, 1] |> map(process) |> map(stringify)

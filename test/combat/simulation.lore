@@ -1,6 +1,14 @@
 trait SimulationResult
 struct SimulationVictory(winner: Combatant) extends SimulationResult
-struct SimulationStalemate() extends SimulationResult
+struct SimulationStalemate(left: Combatant, right: Combatant) extends SimulationResult
+
+act log_simulation_result(SimulationResult)
+act log_simulation_result(result: SimulationVictory) do
+  combat_log('${name(result.winner)} wins the battle!')
+end
+act log_simulation_result(result: SimulationStalemate) do
+  combat_log('We have a stalemate between ${name(result.left)} and ${name(result.right)}!')
+end
 
 act combat_log(message: String) do
   //println(message)
@@ -47,16 +55,14 @@ func simulate_combat(left: Combatant, right: Combatant): SimulationResult = do
     combat_log('')
   end
 
-  if alive?(left) && !alive?(right)
-    combat_log('${name(left)} wins the battle!')
-    SimulationVictory(left)
-  end else if !alive?(left) && alive?(right)
-    combat_log('${name(right)} wins the battle!')
-    SimulationVictory(right)
-  end else
-    combat_log('We have a stalemate between ${name(left)} and ${name(right)}!')
-    SimulationStalemate()
+  let result = cond
+    alive?(left) && !alive?(right) => SimulationVictory(left)
+    !alive?(left) && alive?(right) => SimulationVictory(right)
+    true                           => SimulationStalemate(left, right)
   end
+
+  log_simulation_result(result)
+  result
 end
 
 struct CombatantState
