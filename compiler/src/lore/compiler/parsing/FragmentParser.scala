@@ -183,16 +183,17 @@ class FragmentParser(implicit fragment: Fragment) {
     //        ExclamationMark
     //      text: String
     //    end
-    // TODO (new syntax): Another way would be to disallow trailing commas if a newline is used to delimit the extends
-    //                    clause from the properties, but also to allow them if `do` is used as an optional delimiter.
-    //                    The code example would then become:
+    //
+    // TODO: Another way would be to disallow trailing commas if a newline is used to delimit the extends clause from
+    //       the properties, but also to allow them if `do` is used as an optional delimiter. The code example would
+    //       then become:
     //    struct Hello extends
     //        World,
     //        ExclamationMark,
     //    do
     //      text: String
     //    end
-    //                    This seems to be the best approach, considering that it's also visually clearer.
+    //       This seems to be the best approach, considering that it's also visually clearer.
     def bodyForm = P(`extends` ~~ structBody)
 
     def emptyForm = if (isObject) P(`extends`).map(extended => (extended, Vector.empty)) else Fail
