@@ -23,6 +23,11 @@ object RuntimeNames {
       * [[RuntimeApi.structs.getConstructor]] instead.
       */
     def constructor(struct: StructSchema): Target.Variable = s"${schema(struct).name}__constructor".asVariable
+
+    /**
+      * The instance of an `object` struct. This only gets transpiled when the struct is actually an object.
+      */
+    def `object`(struct: StructSchema): Target.Variable = s"${schema(struct).name}__object".asVariable
   }
 
   def newType(tpe: DeclaredType): Target.Variable = s"lore_newtype_${tpe.name}".asVariable

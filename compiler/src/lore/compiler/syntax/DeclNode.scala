@@ -101,6 +101,7 @@ object TypeDeclNode {
     */
   case class StructNode(
     nameNode: NameNode,
+    isObject: Boolean,
     typeVariables: Vector[TypeVariableNode],
     extended: Vector[TypeExprNode],
     properties: Vector[PropertyNode],

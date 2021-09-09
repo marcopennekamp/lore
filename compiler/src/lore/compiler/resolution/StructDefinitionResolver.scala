@@ -16,7 +16,7 @@ object StructDefinitionResolver {
     implicit val typeScope: TypeScope = schema.getTypeScope(parentScope)
 
     val properties = node.properties.map(resolveProperty)
-    val definition = new StructDefinition(node.name, schema, properties, node.nameNode.position)
+    val definition = new StructDefinition(node.name, schema, properties, node.isObject, node.nameNode.position)
     schema.initialize(definition)
     definition
   }

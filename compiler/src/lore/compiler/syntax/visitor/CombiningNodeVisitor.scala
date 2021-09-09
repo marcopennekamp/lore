@@ -67,7 +67,7 @@ object CombiningNodeVisitor {
         val result = concat(visit(typeVariables), visit(tpe))
         visitor.visit(node, result)
 
-      case TypeDeclNode.StructNode(_, typeVariables, extended, properties, _) =>
+      case TypeDeclNode.StructNode(_, _, typeVariables, extended, properties, _) =>
         val result = concat(visit(typeVariables), visit(extended), visit(properties))
         visitor.visit(node, result)
 

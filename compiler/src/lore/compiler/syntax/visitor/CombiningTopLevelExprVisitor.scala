@@ -50,4 +50,8 @@ object CombiningTopLevelExprVisitor {
     override protected def wrap(a: A): A = a
     override protected def flatMap(b: A, f: A => A): A = f(b)
   }
+
+  trait OrVisitor extends CombiningTopLevelExprVisitor.Identity[Boolean] {
+    override protected def combine(list: Vector[Boolean]): Boolean = list.exists(identity)
+  }
 }

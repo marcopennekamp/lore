@@ -2,7 +2,7 @@ package lore.compiler.transformation
 
 import lore.compiler.core._
 import lore.compiler.feedback.DispatchFeedback.{FixedFunctionAmbiguousCall, FixedFunctionEmptyFit}
-import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.feedback.{Feedback, Reporter, StructFeedback}
 import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.Registry
@@ -266,18 +266,21 @@ class InferringExpressionTransformationVisitor(
 
     // Xary function calls.
     case SimpleCallNode(nameNode, _, position) =>
-      def handleBinding(binding: Binding): Expression.Call = binding match {
-        case mf: MultiFunctionDefinition => FunctionTyping.multiFunctionCall(mf, expressions, position)
+      def handleBinding(binding: Binding): Option[Expression.Call] = binding match {
+        case mf: MultiFunctionDefinition => Some(FunctionTyping.multiFunctionCall(mf, expressions, position))
         case structBinding: StructBinding => handleBinding(StructTransformation.getConstructor(structBinding, nameNode.position))
-        case binding: TypedBinding => CallTransformation.valueCall(Expression.BindingAccess(binding, nameNode.position), expressions, position)
+        case _: StructObject =>
+          reporter.error(StructFeedback.Object.NoConstructor(binding.name, nameNode.position))
+          None
+        case binding: TypedBinding => Some(CallTransformation.valueCall(Expression.BindingAccess(binding, nameNode.position), expressions, position))
       }
 
       scopeContext.currentScope
         .resolve(nameNode.value, nameNode.position)
-        .map(handleBinding)
+        .flatMap(handleBinding)
         .getOrElse(Expression.Hole(BasicType.Nothing, position))
 
-    case node@DynamicCallNode(nameLiteral, resultTypeNode, _, position) =>
+    case DynamicCallNode(nameLiteral, resultTypeNode, _, position) =>
       val resultType = TypeExpressionEvaluator.evaluate(resultTypeNode).getOrElse(BasicType.Nothing)
       Expression.Call(CallTarget.Dynamic(nameLiteral.value), expressions, resultType, position)
   }

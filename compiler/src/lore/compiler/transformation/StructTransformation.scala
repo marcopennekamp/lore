@@ -1,19 +1,15 @@
 package lore.compiler.transformation
 
 import lore.compiler.core.Position
-import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.feedback.{Feedback, Reporter, StructFeedback}
 import lore.compiler.inference.InferenceVariable
 import lore.compiler.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.scopes.{BindingScope, StructBinding, TypeScope}
+import lore.compiler.semantics.scopes.{BindingScope, StructObject, StructBinding, TypeScope}
 import lore.compiler.semantics.structures.{StructConstructor, StructDefinition, StructPropertyDefinition}
 import lore.compiler.syntax.TypeExprNode
 
 object StructTransformation {
-
-  case class StructExpected(name: String, override val position: Position) extends Feedback.Error(position) {
-    override def message: String = s"The type $name doesn't have an associated constructor. It must be a struct."
-  }
 
   /**
     * Gets the struct binding called `name` from the given scope.
@@ -21,8 +17,11 @@ object StructTransformation {
   def getStructBinding(name: String, position: Position)(implicit bindingScope: BindingScope, reporter: Reporter): Option[StructBinding] = {
     bindingScope.resolve(name, position).flatMap {
       case structBinding: StructBinding => Some(structBinding)
+      case _: StructObject =>
+        reporter.error(StructFeedback.Object.NoConstructor(name, position))
+        None
       case _ =>
-        reporter.error(StructExpected(name, position))
+        reporter.error(StructFeedback.ConstructorExpected(name, position))
         None
     }
   }

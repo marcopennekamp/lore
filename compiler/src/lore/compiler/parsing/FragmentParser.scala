@@ -4,6 +4,7 @@ import fastparse.ScalaWhitespace._
 import fastparse._
 import lore.compiler.core.{Fragment, Position}
 import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.syntax.DeclNode.TypeVariableNode
 import lore.compiler.syntax._
 
 /**
@@ -129,7 +130,7 @@ class FragmentParser(implicit fragment: Fragment) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Type Declarations.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`type` | `trait` | struct)
+  private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`type` | `trait` | struct | `object`)
 
   private def `type`[_: P]: P[TypeDeclNode.AliasNode] = {
     P(Index ~ "type" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(typeParameterParser.simpleParameter) ~ "=" ~ typeExpression ~ Index).map(withPosition(TypeDeclNode.AliasNode))
@@ -148,8 +149,22 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def struct[_: P]: P[TypeDeclNode.StructNode] = {
-    def conciseForm = P("(" ~ property.rep(sep = CharIn(",")).map(_.toVector) ~ ",".? ~ ")" ~ `extends`)
-      .map { case (properties, extended) => (extended, properties) }
+    structCommons("struct", typeVariables(typeParameterParser.structParameter), isObject = false)
+  }
+
+  private def `object`[_: P]: P[TypeDeclNode.StructNode] = {
+    structCommons("object", Pass.map(_ => Vector.empty), isObject = true)
+  }
+
+  private def structCommons[_: P](
+    keyword: => P[Unit],
+    tvs: => P[Vector[TypeVariableNode]],
+    isObject: Boolean,
+  ): P[TypeDeclNode.StructNode] = {
+    def conciseForm = {
+      P("(" ~ property.rep(sep = CharIn(",")).map(_.toVector) ~ ",".? ~ ")" ~ `extends`)
+        .map { case (properties, extended) => (extended, properties) }
+    }
 
     // Note that given the implicit struct body as it is now (newline..end), we cannot both allow newlines and trailing
     // commas in `extends` clauses. If we allow newlines, a trailing comma could lead the parser to make bad decisions:
@@ -180,8 +195,10 @@ class FragmentParser(implicit fragment: Fragment) {
     //                    This seems to be the best approach, considering that it's also visually clearer.
     def bodyForm = P(`extends` ~~ structBody)
 
-    P(Index ~~ "struct" ~~ Space.WS1 ~~/ structName ~~ Space.WS ~~ typeVariables(typeParameterParser.structParameter) ~~ Space.WS ~~ (conciseForm | bodyForm) ~~ Index)
-      .map { case (startIndex, nameNode, typeVariables, (extended, properties), endIndex) => (startIndex, nameNode, typeVariables, extended, properties, endIndex) }
+    def emptyForm = if (isObject) P(`extends`).map(extended => (extended, Vector.empty)) else Fail
+
+    P(Index ~~ keyword ~~ Space.WS1 ~~/ structName ~~ Space.WS ~~ tvs ~~ Space.WS ~~ (conciseForm | bodyForm | emptyForm) ~~ Index)
+      .map { case (startIndex, nameNode, typeVariables, (extended, properties), endIndex) => (startIndex, nameNode, isObject, typeVariables, extended, properties, endIndex) }
       .map(withPosition(TypeDeclNode.StructNode))
   }
 

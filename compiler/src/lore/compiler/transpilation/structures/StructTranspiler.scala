@@ -166,10 +166,10 @@ case class StructTranspiler(schema: StructSchema)(
     * schemas have been transpiled. This is the only way to avoid having to lazily initialize the constructor's
     * function value.
     */
-  override def transpiledDeferredDeclarations(): Vector[TargetStatement] = transpileConstructor()
+  override def transpiledDeferredDeclarations(): Vector[TargetStatement] = transpileConstructor() ++ transpileObject()
 
   /**
-    * Transpiles a constructor for a constant struct schema.
+    * Transpiles a constructor for a constant struct schema. Constructors aren't transpiled for objects.
     *
     * Example:
     * {{{
@@ -180,7 +180,7 @@ case class StructTranspiler(schema: StructSchema)(
     * }}}
     */
   private def transpileConstructor(): Vector[TargetStatement] = {
-    if (!schema.isConstant) {
+    if (!schema.isConstant || schema.definition.isObject) {
       return Vector.empty
     }
 
@@ -197,6 +197,32 @@ case class StructTranspiler(schema: StructSchema)(
         RuntimeApi.functions.value(varConstruct, TypeTranspiler.transpile(functionType))
       )
     )
+  }
+
+  /**
+    * Transpiles the object instance declaration of a struct object. The object may be instantiated lazily if the
+    * definition indicates so.
+    */
+  private def transpileObject(): Vector[TargetStatement] = {
+    if (!schema.definition.isObject) {
+      return Vector.empty
+    }
+
+    val varObject = RuntimeNames.struct.`object`(schema)
+    val varConstruct = RuntimeNames.struct.construct(schema)
+    val defaultValues = schema.definition.properties.map { property =>
+      RuntimeNames.struct.defaultValue(schema, property).call()
+    }
+    val construction = varConstruct.call(defaultValues: _*)
+    val declaration = varObject.declareAs(
+      if (schema.definition.isLazyObject) {
+        RuntimeApi.utils.`lazy`.of(construction)
+      } else {
+        construction
+      }
+    )
+
+    Vector(declaration)
   }
 
 }

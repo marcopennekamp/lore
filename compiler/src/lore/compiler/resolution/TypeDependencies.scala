@@ -51,7 +51,7 @@ object TypeDependencies {
 
     val restNames = node match {
       case TypeDeclNode.AliasNode(_, _, expr, _) => TypeExprNode.identifiers(expr)
-      case TypeDeclNode.StructNode(_, _, extended, _, _) => extended.flatMap(TypeExprNode.identifiers).toSet
+      case TypeDeclNode.StructNode(_, _, _, extended, _, _) => extended.flatMap(TypeExprNode.identifiers).toSet
       case TypeDeclNode.TraitNode(_, _, extended, _) => extended.flatMap(TypeExprNode.identifiers).toSet
     }
 

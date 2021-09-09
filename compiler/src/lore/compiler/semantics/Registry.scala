@@ -1,12 +1,12 @@
 package lore.compiler.semantics
 
-import lore.compiler.core.Position
+import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.Registry.MultiFunctionNotFound
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.scopes._
 import lore.compiler.semantics.structures.SchemaDefinition
-import lore.compiler.types.{DeclaredSchema, DeclaredTypeHierarchy, NamedSchema, StructType}
+import lore.compiler.types.{DeclaredSchema, DeclaredTypeHierarchy, NamedSchema, StructType, TypeVariable}
 import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtension}
 
 /**
@@ -35,7 +35,7 @@ case class Registry(
     * The global binding scope backed by the registry, containing multi-functions and struct bindings.
     *
     * The binding scope does not contain plain struct constructors, even for constant schemas. A [[StructBinding]] is
-    * used in all cases.
+    * used in all cases. Objects are represented by [[StructObject]].
     */
   val bindingScope: BindingScope = new BindingScope {
     override protected def local(name: String): Option[Binding] = multiFunctions.get(name).orElse(getStructBinding(name))
@@ -52,16 +52,29 @@ case class Registry(
   }
 
   /**
-    * Gets a struct binding from a struct schema with the given name. If the name refers to a type alias that
-    * represents a struct type, the struct binding will be able to instantiate the correct struct type given the type
-    * alias's type parameters.
+    * Gets a [[StructBinding]] from a struct schema with the given name. If the name refers to a type alias that
+    * represents a struct type, the struct binding will be able to instantiate the struct with the correct struct type
+    * given the type alias's type parameters.
+    *
+    * Objects are represented by [[StructObject]].
     */
-  def getStructBinding(name: String): Option[StructBinding] = {
-    typeScope.getStructSchema(name).map(schema => StructBinding(name, schema.parameters, schema.representative)).orElse {
+  def getStructBinding(name: String): Option[Binding] = {
+    def getByType(tpe: StructType, typeParameters: Vector[TypeVariable]): Binding = {
+      if (tpe.schema.definition.isObject) {
+        if (typeParameters.nonEmpty) {
+          throw CompilationException(s"Objects cannot have type parameters. Violated by object ${tpe.name}.")
+        }
+        StructObject(name, tpe)
+      } else {
+        StructBinding(name, typeParameters, tpe)
+      }
+    }
+
+    typeScope.getStructSchema(name).map(schema => getByType(schema.representative, schema.parameters)).orElse {
       typeScope.getAliasSchema(name).flatMap { aliasSchema =>
         Some(aliasSchema.representative)
           .filterType[StructType]
-          .map(StructBinding(name, aliasSchema.parameters, _))
+          .map(getByType(_, aliasSchema.parameters))
       }
     }
   }

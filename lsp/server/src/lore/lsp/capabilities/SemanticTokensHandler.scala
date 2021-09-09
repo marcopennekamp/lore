@@ -92,7 +92,7 @@ object SemanticTokensHandler {
           createHighlight(nameNode, SemanticTokenTypes.Interface),
         ) ++ extendedHighlight
 
-      case TypeDeclNode.StructNode(nameNode, _, extended, _, position) =>
+      case TypeDeclNode.StructNode(nameNode, _, _, extended, _, position) =>
         val extendedHighlight = extended.headOption.map(
           tpe => createKeywordHighlight(nameNode.position, tpe.position)
         ).toVector

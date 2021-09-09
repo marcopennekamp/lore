@@ -16,12 +16,17 @@ object StructConstraints {
     *   2. The properties of the struct's inherited shape type must all be defined.
     *   3. Co-/contra-/invariant type parameters must be used in appropriate positions in property types.
     *   4. Open type parameters must be covariant, uniquely deducible, and used in immutable properties.
+    *   5. All properties of an object must have default values.
     */
   def verify(definition: StructDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
     verifyPropertiesUnique(definition)
     verifyInheritedShapeProperties(definition)
     verifyVariancePositions(definition)
     verifyOpenTypeParameters(definition)
+
+    if (definition.isObject) {
+      verifyObjectProperties(definition)
+    }
   }
 
   /**
@@ -100,6 +105,15 @@ object StructConstraints {
       case _ => Some(0)
     }
     count(tpe).contains(1)
+  }
+
+  /**
+    * Verifies that the properties of the given object all have default values.
+    */
+  private def verifyObjectProperties(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
+    definition.properties.filterNot(_.hasDefault).foreach {
+      property => reporter.error(StructFeedback.Object.MissingDefault(definition, property))
+    }
   }
 
 }

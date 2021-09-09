@@ -42,4 +42,21 @@ object StructFeedback {
     }
   }
 
+  object Object {
+    case class MissingDefault(definition: StructDefinition, property: StructPropertyDefinition) extends Feedback.Error(property) {
+      override def message: String = s"The property ${property.name} must have a default value because ${definition.name}" +
+        s" is an object. Objects cannot be instantiated directly, so the default value ensures that each property is" +
+        s" assigned an appropriate value."
+    }
+
+    case class NoConstructor(name: String, override val position: Position) extends Feedback.Error(position) {
+      override def message: String = s"The type $name is an object, which doesn't have a constructor. Objects cannot be" +
+        s" constructed. You can refer to the object value simply by the variable $name."
+    }
+  }
+
+  case class ConstructorExpected(name: String, override val position: Position) extends Feedback.Error(position) {
+    override def message: String = s"The type $name doesn't have an associated constructor. It must be a struct."
+  }
+
 }
