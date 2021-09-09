@@ -39,5 +39,5 @@ func test(): [String] = [
   f(E(), D()),
   f(F(), D()),
   f(G(), F()),
-  f(D(), A())
+  f(D(), A()),
 ]

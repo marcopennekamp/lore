@@ -33,5 +33,5 @@ func test(): [Boolean | Int] = [
   dangle(true, true),
   dangle(true, false),
   dangle(false, true),
-  dangle(false, false)
+  dangle(false, false),
 ]

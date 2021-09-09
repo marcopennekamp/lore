@@ -24,5 +24,5 @@ func test(): [Boolean] = [
   subtype?(type_of(niuzao()), type_of(chiji())),    // --> false
   subtype?(type_of(chiji()), type_of(niuzao())),    // --> false
   subtype?(type_of(niuzao()), type_of(shape())),    // --> true
-  subtype?(type_of(chiji()), type_of(shape()))      // --> false
+  subtype?(type_of(chiji()), type_of(shape())),     // --> false
 ]

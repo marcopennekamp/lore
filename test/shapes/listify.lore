@@ -33,7 +33,13 @@ func test(): [[Real]] = do
   let pos_2D_shape = %{ x: 1.2, y: 5 }
   let pos_3D_shape = %{ x: 0, y: 5.1, z: 4.8 }
   [
-    listify(pos_2D), listify(pos_3D), generic_listify_2D(pos_2D), generic_listify_3D(pos_3D),
-    listify(pos_2D_shape), listify(pos_3D_shape), generic_listify_2D(pos_2D_shape), generic_listify_3D(pos_3D_shape)
+    listify(pos_2D),
+    listify(pos_3D),
+    generic_listify_2D(pos_2D),
+    generic_listify_3D(pos_3D),
+    listify(pos_2D_shape),
+    listify(pos_3D_shape),
+    generic_listify_2D(pos_2D_shape),
+    generic_listify_3D(pos_3D_shape),
   ]
 end

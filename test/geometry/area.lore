@@ -2,7 +2,7 @@ func test(): [Real] = do
   let shapes = [
     BoundingBox(0, 10, -5, 20),
     Circle(0, 5, 2.7),
-    Rectangle(-5, -5, 20, 77)
+    Rectangle(-5, -5, 20, 77),
   ]
   shapes |> map(area)
 end

@@ -10,5 +10,5 @@ func test(): [Boolean] = [
   truly?(Bar?(true)),
   truly?(Bar?(false)),
   truly?(%{ no?: true }),
-  truly?(%{ no?: false })
+  truly?(%{ no?: false }),
 ]

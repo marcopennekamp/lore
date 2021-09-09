@@ -14,5 +14,5 @@ func extract(TobyCrate): String = 'I am a crate and my name is Toby!'
 func test(): [String] = [
   IntCrate(5) |> extract |> to_string,
   ListCrate([1, 2, 3]) |> extract |> to_string,
-  TobyCrate() |> extract
+  TobyCrate() |> extract,
 ]

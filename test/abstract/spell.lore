@@ -56,6 +56,6 @@ func test(): [Damage] = do
     damage_of(earth_spike, 5),
     damage_of(ice_spike, 12),
     damage_of(needle_ice_spike, 12),
-    damage_of(earth_spike, 12)
+    damage_of(earth_spike, 12),
   ]
 end

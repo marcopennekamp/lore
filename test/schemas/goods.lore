@@ -20,7 +20,7 @@ func test(): [Real] = do
   let boxes = [
     Box(Gold()),
     Box(Silver()),
-    Box(Iron())
+    Box(Iron()),
   ]
   boxes |> map(price)
 end

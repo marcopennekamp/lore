@@ -18,7 +18,7 @@ func test(): [String] = do
     apply(f1, 5), apply(f1, 2),
     apply(f2, []), apply(f2, [1, 2, 3]),
     apply(f3, 5), apply(f3, 2),
-    apply(f4, 2), apply(f4, -1)
+    apply(f4, 2), apply(f4, -1),
   ]
   map(data, to_string)
 end

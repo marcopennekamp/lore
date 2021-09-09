@@ -33,7 +33,7 @@ func test(): [String] = do
   let containers = [
     cereal(Bowl), cereal(Cup),
     blood(Bowl), blood(Cup),
-    pudding(Bowl), pudding(Cup)
+    pudding(Bowl), pudding(Cup),
   ]
   containers |> map(to_string)
 end

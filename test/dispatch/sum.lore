@@ -21,6 +21,6 @@ func test(): [Int] = do
     foo(b),
     foo(c),
     // This one should not compile:
-    foo(d)
+    foo(d),
   ]
 end

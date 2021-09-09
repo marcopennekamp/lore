@@ -1,7 +1,7 @@
 // Error: B is covariant but stands in a contravariant position.
 // Error: A is contravariant but stands in a covariant position.
 trait X[-A, +B] extends %{
-  callable: B => A
+  callable: B => A,
 }
 
 // Error: B is covariant but stands in a contravariant position.
@@ -9,7 +9,7 @@ trait Y[A, +B] extends X[B, A]
 
 // Error: A is contravariant but stands in a covariant position (flipped twice: co- ==> contra- ==> covariant).
 trait Z[-A] extends %{
-  stringifier: X[A, Int] => String
+  stringifier: X[A, Int] => String,
 }
 
 trait Array[A]

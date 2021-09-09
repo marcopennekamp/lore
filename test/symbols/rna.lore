@@ -20,7 +20,7 @@ func test(): [String] = do
     [#t],
     [#g],
     [#c],
-    [#a, #c, #g, #t, #g, #g, #t, #c, #t, #t, #a, #a]
+    [#a, #c, #g, #t, #g, #g, #t, #c, #t, #t, #a, #a],
   ]
 
   cases |> map(transcribe) |> map(to_string)

@@ -11,5 +11,5 @@ func test(): [String] = [
   consume(obscure(15, 'string')),
   consume(obscure('string', false)),
   consume(obscure(true, 'string')),
-  consume(obscure('string', 'string'))
+  consume(obscure('string', 'string')),
 ]

@@ -18,6 +18,6 @@ func test(): [String] = do
     '${x} ${my_long_variable}',
     '\${quite} $some \$confusion in ${that} string',
     apples(%{ name: 'John' }, 11),
-    apples(%{ name: 'Martin' }, 5)
+    apples(%{ name: 'Martin' }, 5),
   ]
 end

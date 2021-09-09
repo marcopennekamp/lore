@@ -4,6 +4,6 @@ func test(): [String] = do
   let f = v => greet(v.name, v.title)
   [
     f(%{ name: 'Smith', title: 'Mr.' }),
-    f(%{ name: 'Chang', title: 'Ms.' })
+    f(%{ name: 'Chang', title: 'Ms.' }),
   ]
 end

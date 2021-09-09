@@ -31,6 +31,6 @@ func test(): [Boolean] = do
     subtype?(leather_bag, leather_bag),       // --> true
     subtype?(cloth_bag, cloth_bag),           // --> true
     subtype?(leather_bag, cloth_bag),         // --> false
-    subtype?(cloth_bag, leather_bag)          // --> false
+    subtype?(cloth_bag, leather_bag),         // --> false
   ]
 end

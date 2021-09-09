@@ -15,5 +15,5 @@ func test(): [Real] = [
   pow(3, 2),
   pow(0, 5),
   pow(pow(2, 2), 2),
-  pow(pow(2, floor(pow(2, 2))), 2)
+  pow(pow(2, floor(pow(2, 2))), 2),
 ]

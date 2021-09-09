@@ -18,7 +18,7 @@ func test(): [String] = do
   let boxes = [
     Box[Content](Juice()),
     Box[Content](Berry()),
-    Box[Content](Hammer())
+    Box[Content](Hammer()),
   ]
   boxes |> map(to_string)
 end

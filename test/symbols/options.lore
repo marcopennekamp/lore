@@ -15,6 +15,6 @@ func test(): [String] = do
     get_or_else(a, 'fallback'),
     get_or_else(b, 'fallback'),
     get_or_else(c, 'fallback'),
-    get_or_else(d, 'fallback')
+    get_or_else(d, 'fallback'),
   ]
 end

@@ -8,7 +8,7 @@ func test(): [[Int]] = do
     [1, 2, 3, 4, 5],
     [4, 8, 11, 15, 6],
     [],
-    [1, 1, 1, 1, 1]
+    [1, 1, 1, 1, 1],
   ]
   data |> map(filter_curried(x => remainder(x, 2) == 0))
 end

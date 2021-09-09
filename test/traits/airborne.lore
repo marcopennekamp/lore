@@ -53,7 +53,7 @@ func test(): [String] = do
     Bird('Crow', 1.0, 1.2),
     Plane('B-2 Spirit', 2, 52.4),
     Plane('Cessna', 2, 12),
-    Plane('Model Plane', 0, 1.2)
+    Plane('Model Plane', 0, 1.2),
   ]
 
   airbornes |> symmetric_pairs |> flat_map(tupled(check))

@@ -175,7 +175,7 @@ func test(): [Real] = do
     Suspect('Meredith Partnertwon', Red(), Black(), Entrepreneur(), Calculating(), Professional()),
     Suspect('Ella Marsk', Brown(), Blue(), Gardener(), Socialising(), Shunned()),
     Suspect('Rooney Rudigiani', Black(), Brown(), Lawyer(), Socialising(), Lovers()),
-    Suspect('Goodman Niceman', Black(), Black(), Assassin(), Honest(), Cordial())
+    Suspect('Goodman Niceman', Black(), Black(), Assassin(), Honest(), Cordial()),
   ]
   suspects |> map(guilt)
 end

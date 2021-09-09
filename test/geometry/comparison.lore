@@ -30,6 +30,6 @@ func test(): [String] = do
   [
     check(rect, box),
     check(rect, circle),
-    check(box, circle)
+    check(box, circle),
   ] |> flatten
 end

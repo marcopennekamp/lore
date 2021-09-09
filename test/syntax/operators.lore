@@ -24,6 +24,6 @@ func test(): [Real | Boolean] = do
     b1 || b2 || b3,
     b1 && b2 && b3,
     !(a == 10) || (-b < a) && (!b1 == b2),
-    b1 && !b2 && c < -a * -b
+    b1 && !b2 && c < -a * -b,
   ]
 end

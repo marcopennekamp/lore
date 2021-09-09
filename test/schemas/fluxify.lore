@@ -32,7 +32,7 @@ func test(): [Int] = do
   let boxes = [
     Box((3, Little(), 0.2), Some(8)),
     Box((1, Several(), 0.5), None()),
-    Box((0, Many(), 0.1), Some(2))
+    Box((0, Many(), 0.1), Some(2)),
   ]
   boxes |> map(fluxify)
 end

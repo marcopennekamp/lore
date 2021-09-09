@@ -12,5 +12,5 @@ func test(): [Int] = [
   foo(4.5, 5.0), // TODO: Man, this poses a problem. We'd expect the second function to be called, but of course Int != Real.
   foo('Code', Block()),
   foo(Block(), Block()),
-  foo('Hello', 'World')
+  foo('Hello', 'World'),
 ]

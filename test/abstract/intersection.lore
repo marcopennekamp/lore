@@ -75,6 +75,6 @@ func test(): [String] = do
     f6(b),
     f7(a),
     f8(c),
-    f10(X1()), f10(X2()), f10(X3())
+    f10(X1()), f10(X2()), f10(X3()),
   ]
 end
