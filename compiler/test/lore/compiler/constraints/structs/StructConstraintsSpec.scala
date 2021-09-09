@@ -21,6 +21,13 @@ class StructConstraintsSpec extends BaseSpec {
     )
   }
 
+  "constraints/structs/object-property-values" should "be compiled with 'missing default value' errors" in {
+    assertCompilationErrorSignatures(s"$fragmentBase/object-property-values.lore")(
+      (classOf[StructFeedback.Object.MissingDefault], 2),
+      (classOf[StructFeedback.Object.MissingDefault], 8),
+    )
+  }
+
   "constraints/structs/open-type-parameters" should "be compiled with various open type parameter errors" in {
     assertCompilationErrorSignatures(s"$fragmentBase/open-type-parameters.lore")(
       (classOf[StructFeedback.OpenTypeParameter.CovarianceRequired], 2),

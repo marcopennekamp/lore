@@ -1,0 +1,9 @@
+object Player
+  level: Int
+end
+
+object ComradeZaichik
+  name: String = 'Zaichik'
+  motherland_love: Int = 10
+  species: String
+end
