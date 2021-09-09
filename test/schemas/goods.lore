@@ -1,14 +1,14 @@
 struct Box[+A](content: A)
 
 trait Price
-struct HighPrice() extends Price
-struct MediumPrice() extends Price
-struct LowPrice() extends Price
+object HighPrice extends Price
+object MediumPrice extends Price
+object LowPrice extends Price
 
 trait Metal[+P <: Price]
-struct Gold() extends Metal[HighPrice]
-struct Silver() extends Metal[MediumPrice]
-struct Iron() extends Metal[LowPrice]
+object Gold extends Metal[HighPrice]
+object Silver extends Metal[MediumPrice]
+object Iron extends Metal[LowPrice]
 
 func price(Box[Metal[Price]]): Real = 0
 func price(Box[Metal[HighPrice]]): Real = 48.5
@@ -18,9 +18,9 @@ func price(Box[Metal[LowPrice]]): Real = 1.6
 
 func test(): [Real] = do
   let boxes = [
-    Box(Gold()),
-    Box(Silver()),
-    Box(Iron()),
+    Box(Gold),
+    Box(Silver),
+    Box(Iron),
   ]
   boxes |> map(price)
 end

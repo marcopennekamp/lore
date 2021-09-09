@@ -6,13 +6,13 @@ trait L
 trait L1 extends L
 trait L2 extends L
 
-struct A() extends X, W
-struct B() extends Y, L2
-struct C() extends Z, W, L1
-struct D() extends X, Y
-struct E() extends Y, L1, L2
-struct F() extends Y, W, L1
-struct G() extends Z
+object A extends X, W
+object B extends Y, L2
+object C extends Z, W, L1
+object D extends X, Y
+object E extends Y, L1, L2
+object F extends Y, W, L1
+object G extends Z
 
 func f(T1, T2): String where T1, T2 = 'T1,T2'
 func f(X, Y): String = 'X,Y'
@@ -31,13 +31,13 @@ func f(Y, Z & L1): String = 'Y,Z&L1'
 func f(Y, Z & L2): String = 'Y,Z&L2'
 
 func test(): [String] = [
-  f(A(), B()),
-  f(D(), D()),
-  f(F(), C()),
-  f(G(), C()),
-  f(B(), D()),
-  f(E(), D()),
-  f(F(), D()),
-  f(G(), F()),
-  f(D(), A()),
+  f(A, B),
+  f(D, D),
+  f(F, C),
+  f(G, C),
+  f(B, D),
+  f(E, D),
+  f(F, D),
+  f(G, F),
+  f(D, A),
 ]

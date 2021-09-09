@@ -15,7 +15,7 @@ func kaladin_vs_voidbringer(): (Combatant, Combatant) = do
       dodge = 0.34,
       speed = 3
     },
-    weapon = Spear()
+    weapon = Spear
   }
 
   let voidbringer = Voidbringer { }
@@ -33,7 +33,7 @@ func sadeas_vs_dalinar(): (Combatant, Combatant) = do
       dodge = 0.2,
       speed = 2
     },
-    weapon = Shardbow()
+    weapon = Shardbow
   }
 
   let dalinar = Shardbearer {
@@ -45,7 +45,7 @@ func sadeas_vs_dalinar(): (Combatant, Combatant) = do
       dodge = 0.15,
       speed = 3
     },
-    weapon = Shardblade()
+    weapon = Shardblade
   }
 
   (sadeas, dalinar)

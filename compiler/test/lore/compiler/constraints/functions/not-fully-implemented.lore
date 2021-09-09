@@ -1,7 +1,7 @@
 trait A
-struct AI() extends A
+object AI extends A
 trait B
-struct BI() extends B
+object BI extends B
 
 /**
  * This example is meant to fail totality constraint validation. In simple terms, we want to ensure that

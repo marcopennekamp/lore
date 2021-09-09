@@ -1,4 +1,4 @@
-struct Bar()
+object Bar
 
 func foo(String): Int = 0
 func foo(Int): Int = 1
@@ -10,7 +10,7 @@ func test(): [Int] = do
   let a: String | Int = 2
   let b: Boolean | Int = 3
   let c: String | Boolean = 'Boom'
-  let d: String | Bar = Bar()
+  let d: String | Bar = Bar
 
   [
     // TODO: These calls should compile. The basic idea is that, yes, we have a sum value that foo doesn't directly

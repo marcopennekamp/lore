@@ -6,34 +6,34 @@
 
 
 trait Color
-struct Red() extends Color
-struct Black() extends Color
-struct Brown() extends Color
-struct Yellow() extends Color
-struct Blue() extends Color
+object Red extends Color
+object Black extends Color
+object Brown extends Color
+object Yellow extends Color
+object Blue extends Color
 
 
 trait Profession
-struct Tailor() extends Profession
-struct Lawyer() extends Profession
-struct Entrepreneur() extends Profession
-struct Gardener() extends Profession
-struct Assassin() extends Profession
+object Tailor extends Profession
+object Lawyer extends Profession
+object Entrepreneur extends Profession
+object Gardener extends Profession
+object Assassin extends Profession
 
 
 trait Tool
-struct Scissors() extends Tool
-struct Suitcase() extends Tool
-struct Paperknife() extends Tool
-struct Spade() extends Tool
-struct Dagger() extends Tool
+object Scissors extends Tool
+object Suitcase extends Tool
+object Paperknife extends Tool
+object Spade extends Tool
+object Dagger extends Tool
 
 func tool(Profession): Tool
-func tool(Tailor): Tool = Scissors()
-func tool(Lawyer): Tool = Suitcase()
-func tool(Entrepreneur): Tool = Paperknife()
-func tool(Gardener): Tool = Spade()
-func tool(Assassin): Tool = Dagger()
+func tool(Tailor): Tool = Scissors
+func tool(Lawyer): Tool = Suitcase
+func tool(Entrepreneur): Tool = Paperknife
+func tool(Gardener): Tool = Spade
+func tool(Assassin): Tool = Dagger
 
 func sharpness(Tool): Real
 func sharpness(sharp_tool: Scissors | Paperknife | Dagger): Real = 1
@@ -46,19 +46,19 @@ trait Relation
 trait Friendly extends Relation
 trait Neutral extends Relation
 trait Hostile extends Relation
-struct Professional() extends Neutral
-struct Cordial() extends Neutral
-struct Friends() extends Friendly
-struct Lovers() extends Friendly, Hostile
-struct Competing() extends Hostile
-struct Shunned() extends Hostile
+object Professional extends Neutral
+object Cordial extends Neutral
+object Friends extends Friendly
+object Lovers extends Friendly, Hostile
+object Competing extends Hostile
+object Shunned extends Hostile
 
 
 trait Approach
-struct Socialising() extends Approach
-struct Calculating() extends Approach
-struct Honest() extends Approach
-struct Indifferent() extends Approach
+object Socialising extends Approach
+object Calculating extends Approach
+object Honest extends Approach
+object Indifferent extends Approach
 
 
 struct Suspect
@@ -166,16 +166,16 @@ func guilt(suspect: Suspect): Real = colorFactor(suspect) * weapon_factor(suspec
 
 func test(): [Real] = do
   let suspects = [
-    Suspect('Rilam Ralam', Black(), Yellow(), Entrepreneur(), Calculating(), Competing()),
-    Suspect('Warren Warner', Black(), Brown(), Gardener(), Honest(), Cordial()),
-    Suspect('Vichity Vichy', Yellow(), Red(), Lawyer(), Calculating(), Shunned()),
-    Suspect('Redmond Riley', Red(), Red(), Tailor(), Socialising(), Friends()),
-    Suspect('Mary Monroe', Red(), Blue(), Assassin(), Indifferent(), Lovers()),
-    Suspect('Burke Partnerton', Black(), Black(), Entrepreneur(), Socialising(), Professional()),
-    Suspect('Meredith Partnertwon', Red(), Black(), Entrepreneur(), Calculating(), Professional()),
-    Suspect('Ella Marsk', Brown(), Blue(), Gardener(), Socialising(), Shunned()),
-    Suspect('Rooney Rudigiani', Black(), Brown(), Lawyer(), Socialising(), Lovers()),
-    Suspect('Goodman Niceman', Black(), Black(), Assassin(), Honest(), Cordial()),
+    Suspect('Rilam Ralam', Black, Yellow, Entrepreneur, Calculating, Competing),
+    Suspect('Warren Warner', Black, Brown, Gardener, Honest, Cordial),
+    Suspect('Vichity Vichy', Yellow, Red, Lawyer, Calculating, Shunned),
+    Suspect('Redmond Riley', Red, Red, Tailor, Socialising, Friends),
+    Suspect('Mary Monroe', Red, Blue, Assassin, Indifferent, Lovers),
+    Suspect('Burke Partnerton', Black, Black, Entrepreneur, Socialising, Professional),
+    Suspect('Meredith Partnertwon', Red, Black, Entrepreneur, Calculating, Professional),
+    Suspect('Ella Marsk', Brown, Blue, Gardener, Socialising, Shunned),
+    Suspect('Rooney Rudigiani', Black, Brown, Lawyer, Socialising, Lovers),
+    Suspect('Goodman Niceman', Black, Black, Assassin, Honest, Cordial),
   ]
   suspects |> map(guilt)
 end

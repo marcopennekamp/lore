@@ -11,7 +11,7 @@ trait W1 extends W
 struct A extends T1, V
   name: String
 end
-struct B() extends T2, U1, V1, W1
+object B extends T2, U1, V1, W1
 struct C extends T1, T2, U2
   name: String
 end
@@ -63,7 +63,7 @@ func f10(X3): String = 'X3'
 
 func test(): [String] = do
   let a = A('Ada')
-  let b = B()
+  let b = B
   let c = C('Cone')
 
   [

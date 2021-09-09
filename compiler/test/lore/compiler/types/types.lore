@@ -6,18 +6,18 @@ trait Animal
 trait Bird extends Animal
 trait Mammal extends Animal
 trait Fish extends Animal
-struct Chicken() extends Bird
-struct Penguin() extends Bird
-struct Raven() extends Bird
-struct Human() extends Mammal
+object Chicken extends Bird
+object Penguin extends Bird
+object Raven extends Bird
+object Human extends Mammal
 trait Cat extends Mammal
-struct ScottishFold() extends Cat
-struct Unicorn() extends Mammal
+object ScottishFold extends Cat
+object Unicorn extends Mammal
 struct Goldfish extends Fish
   name: String
   size: Real
 end
-struct Koi() extends Fish
+object Koi extends Fish
 
 trait Status
 trait Healthy extends Status
@@ -56,20 +56,20 @@ trait Meal[+S <: Sauce, Highlight]
 struct SurpriseMeal[+S <: Sauce, H]() extends Meal[S, H]
 struct MeatLoversMeal[+S <: Sauce]() extends Meal[S, Steak]
 struct VeggieMeal[+S <: Sauce]() extends Meal[S, Tofu]
-struct VeganMeal() extends Meal[Ketchup, Tofu]
+object VeganMeal extends Meal[Ketchup, Tofu]
 
 
 trait Hashable
 
 trait Wheel extends Hashable
-struct CoolWheel() extends Wheel
-struct CheapWheel() extends Wheel
+object CoolWheel extends Wheel
+object CheapWheel extends Wheel
 
 type +Wheel = %{ wheel: Wheel }
 
 trait Engine extends Hashable
-struct GasEngine() extends Engine
-struct ElectricEngine() extends Engine
+object GasEngine extends Engine
+object ElectricEngine extends Engine
 
 type +Engine = %{ engine: Engine }
 

@@ -23,9 +23,9 @@ func damage_of(Spell[Element, Cost], Defense): Damage
 
 
 trait Spike[+E <: Ice | Earth, +S <: Specialty, +Id] extends Spell[E, Mana]
-struct IceSpike() extends Spike[Ice, Freezing, #ice_spike]
-struct NeedleIceSpike() extends Spike[Ice, Penetrating, #needle_ice_spike]
-struct EarthSpike() extends Spike[Earth, Penetrating, #earth_spike]
+object IceSpike extends Spike[Ice, Freezing, #ice_spike]
+object NeedleIceSpike extends Spike[Ice, Penetrating, #needle_ice_spike]
+object EarthSpike extends Spike[Earth, Penetrating, #earth_spike]
 
 func raw_damage(Spike[Ice, Specialty, #ice_spike]): Damage = 10
 func raw_damage(Spike[Ice, Specialty, #needle_ice_spike]): Damage = 12
@@ -42,20 +42,14 @@ end
 func calculate_damage(raw_damage: Damage, defense: Defense): Damage = max(raw_damage - defense, 0)
 
 
-func test(): [Damage] = do
-  let ice_spike = IceSpike()
-  let needle_ice_spike = NeedleIceSpike()
-  let earth_spike = EarthSpike()
-
-  [
-    damage_of(ice_spike, 0),
-    damage_of(needle_ice_spike, 0),
-    damage_of(earth_spike, 0),
-    damage_of(ice_spike, 5),
-    damage_of(needle_ice_spike, 5),
-    damage_of(earth_spike, 5),
-    damage_of(ice_spike, 12),
-    damage_of(needle_ice_spike, 12),
-    damage_of(earth_spike, 12),
-  ]
-end
+func test(): [Damage] = [
+  damage_of(IceSpike, 0),
+  damage_of(NeedleIceSpike, 0),
+  damage_of(EarthSpike, 0),
+  damage_of(IceSpike, 5),
+  damage_of(NeedleIceSpike, 5),
+  damage_of(EarthSpike, 5),
+  damage_of(IceSpike, 12),
+  damage_of(NeedleIceSpike, 12),
+  damage_of(EarthSpike, 12),
+]

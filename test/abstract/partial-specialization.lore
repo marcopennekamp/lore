@@ -1,13 +1,13 @@
 trait A
-struct A1() extends A
-struct A2() extends A
+object A1 extends A
+object A2 extends A
 
 trait B
-struct B1() extends B
-struct B2() extends B
+object B1 extends B
+object B2 extends B
 
 func f(A, B): String
 func f(A1, B): String = 'A1,B'
 func f(A2, B): String = 'A2,B'
 
-func test(): [String] = [f(A1(), B1()), f(A1(), B2()), f(A2(), B1()), f(A2(), B2())]
+func test(): [String] = [f(A1, B1), f(A1, B2), f(A2, B1), f(A2, B2)]

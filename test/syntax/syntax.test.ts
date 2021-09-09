@@ -29,6 +29,11 @@ Deno.test('syntax/append', async () => {
   assertListEquals(lists[9], [44, -5, 7, 'hello', 'world'], Sum.type([Types.int, Types.string]))
 })
 
+Deno.test('syntax/associativity', async () => {
+  const result: number = await LoreTest.run('syntax/associativity.lore')
+  assertEquals(result, 18)
+})
+
 Deno.test('syntax/call-line-stretching', async () => {
   const result: TupleValue = await LoreTest.run('syntax/call-line-stretching.lore')
   assertEquals(result.lore$type, Tuple.unitType)
@@ -151,9 +156,4 @@ Deno.test('syntax/trailing-commmas', async () => {
     '3',
     'Aurifana',
   ])
-})
-
-Deno.test('syntax/types', async () => {
-  const result: number = await LoreTest.run('syntax/types.lore')
-  assertEquals(result, 18)
 })

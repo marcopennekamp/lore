@@ -1,8 +1,8 @@
 trait A
 trait B extends A
-struct C() extends B
+object C extends B
 trait D extends B
-struct E() extends D
+object E extends D
 
 func stringify(a: A): String = 'A'
 
@@ -27,10 +27,10 @@ func stringify(e: E): String = do
 end
 
 func test(): [String] = [
-  stringify(C()),
-  stringify(E()),
-  stringify.fixed[B](C()),
-  stringify.fixed[D](E()),
-  stringify.fixed[A](C()),
-  stringify.fixed[A](E()),
+  stringify(C),
+  stringify(E),
+  stringify.fixed[B](C),
+  stringify.fixed[D](E),
+  stringify.fixed[A](C),
+  stringify.fixed[A](E),
 ]

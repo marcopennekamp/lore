@@ -1,6 +1,6 @@
 trait Option[+A]
 struct Some[open +A](value: A) extends Option[A]
-struct None() extends Option[Nothing]
+object None extends Option[Nothing]
 
 func to_string(Option[Any]): String
 func to_string(some: Some[Any]): String = 'Some(${some.value})'
@@ -8,9 +8,9 @@ func to_string(None): String = 'None'
 
 
 trait AerialPhenomenon
-struct Bird() extends AerialPhenomenon
-struct Plane() extends AerialPhenomenon
-struct Dragon() extends AerialPhenomenon
+object Bird extends AerialPhenomenon
+object Plane extends AerialPhenomenon
+object Dragon extends AerialPhenomenon
 
 func to_string(Some[Bird]): String = 'It\'s just a bird.'
 func to_string(Some[Plane]): String = 'My gosh, the pollution up there!'
@@ -19,11 +19,11 @@ func to_string(Some[[Dragon]]): String = 'They\'re everywhere!'
 
 
 func test(): [String] = do
-  let none = None()
+  let none = None
   let string = Some('Hello, world!')
   let list = Some([1, 2, 3])
-  let aerials = [Some(Bird()), Some(Plane()), Some(Dragon())]
-  let dragons = Some { value = [Dragon(), Dragon(), Dragon()] }
+  let aerials = [Some(Bird), Some(Plane), Some(Dragon)]
+  let dragons = Some { value = [Dragon, Dragon, Dragon] }
 
   [none, string, list, aerials, dragons] |> map(to_string)
 end

@@ -21,17 +21,15 @@
   - ~~Add pipe operator.~~
   - ~~Add `cond` operator.~~
   - ~~Trailing commas.~~
-  - Implement `object` struct-like singletons.
-    - This would allow us to write `object None extends Option[Nothing]` instead of `struct None() extends Option[Nothing]` AND it would remove the need to constantly instantiate Nones: `None` instead of `None()`.
-    - Alternative keywords: `instance`/`inst`, `singleton`/`sing`.
+  - ~~Implement objects.~~
   - Clear all `TODO (new syntax)` entries.
+- Add global constants.
+- Add a module system.
 - Implement a vector backend for lists.
 - Fix map types and values:
   - Add clear covariance/contravariance type semantics.
   - Make maps immutable and support this in the runtime.
   - Implement a clear appends operation for maps and make them generally usable.
-- Add global constants.
-- Add a module system.
 - Add pattern matching.
 - Add immutable (hash) sets with a syntax `#[A]`.
 - Add further syntactic sugar:

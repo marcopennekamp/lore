@@ -3,9 +3,9 @@ struct Box[+A]
 end
 
 trait Content
-struct Juice() extends Content
-struct Berry() extends Content
-struct Hammer() extends Content
+object Juice extends Content
+object Berry extends Content
+object Hammer extends Content
 
 func to_string(Box[Juice]): String = 'juice box'
 func to_string(Box[Berry]): String = 'berry box'
@@ -16,9 +16,9 @@ func to_string(thing: %{ value: Hammer }): String = 'thing with hammer'
 // into account.
 func test(): [String] = do
   let boxes = [
-    Box[Content](Juice()),
-    Box[Content](Berry()),
-    Box[Content](Hammer()),
+    Box[Content](Juice),
+    Box[Content](Berry),
+    Box[Content](Hammer),
   ]
   boxes |> map(to_string)
 end
