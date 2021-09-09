@@ -215,11 +215,8 @@ case class StructTranspiler(schema: StructSchema)(
     }
     val construction = varConstruct.call(defaultValues: _*)
     val declaration = varObject.declareAs(
-      if (schema.definition.isLazyObject) {
-        RuntimeApi.utils.`lazy`.of(construction)
-      } else {
-        construction
-      }
+      if (schema.definition.allDefaultsLocalized) construction
+      else RuntimeApi.utils.`lazy`.of(construction)
     )
 
     Vector(declaration)

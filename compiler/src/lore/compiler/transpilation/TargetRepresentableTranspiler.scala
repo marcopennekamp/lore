@@ -22,11 +22,11 @@ object TargetRepresentableTranspiler {
 
       case structObject: StructObject =>
         val definition = structObject.tpe.schema.definition
-        if (definition.isLazyObject) {
+        if (definition.allDefaultsLocalized) {
+          RuntimeNames.struct.`object`(structObject.tpe.schema)
+        } else {
           // Call the `value()` method of the LazyValue to get the actual object instance.
           RuntimeNames.struct.`object`(structObject.tpe.schema).prop("value").call()
-        } else {
-          RuntimeNames.struct.`object`(structObject.tpe.schema)
         }
 
       case constructor: StructConstructor =>

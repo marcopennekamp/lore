@@ -1,6 +1,7 @@
 package lore.compiler.semantics.structures
 
 import lore.compiler.core.{Position, Positioned}
+import lore.compiler.semantics.analysis.LocalizedExpression
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.{CallTarget, ParameterDefinition}
 import lore.compiler.semantics.members.Member
@@ -42,6 +43,12 @@ class StructPropertyDefinition(
 object StructPropertyDefinition {
   case class DefaultValue(expression: Expression, callTarget: CallTarget.Dynamic) {
     val tpe: Type = expression.tpe
+
+    /**
+      * Whether this default value is localized, meaning that its expression doesn't access external functions,
+      * constructors, objects, or global variables.
+      */
+    lazy val isLocalized: Boolean = LocalizedExpression.isLocalized(expression)
   }
 
   case class Instance(definition: StructPropertyDefinition, tpe: Type) {
