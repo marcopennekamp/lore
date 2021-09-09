@@ -90,6 +90,29 @@ struct Soldier
 end
 ```
 
+##### Objects
+
+An **object** is a special struct of which only one instance exists. The corresponding value of an object `None` is also called `None`. In this sense an object is like a singleton, just with better language-level guarantees.
+
+While objects may have properties, they each have to have a default value, which becomes the object's **property value**. This is because an object is instantiated when the Lore program is initialized. A Lore programmer has no control over the relevant constructor invocation. Objects cannot have type parameters.
+
+It is possible to use objects inside the property values of other objects. Objects with property values that refer to functions or structs/objects are initialized **lazily** to avoid any ordering issues that may arise. Cyclical use is currently undefined behavior and will lead to run-time errors.
+
+###### Syntax Example
+
+```
+object None extends Option[Nothing]
+
+// Accessing an object via its name.
+let option: Option[Int] = None
+
+// Objects (None) can be used in the properties of other objects (Game). Note that this particular example essentially
+// creates mutable global state, which should be avoided if possible. Handle mutability with care!
+object Game
+  mut player: Option[Player] = None
+end
+```
+
 
 
 ### Inheritance
@@ -131,7 +154,7 @@ At the point of **construction**, type parameters must be either inferred or man
 ```
 trait Option[A]
 struct Some[A](value: A) extends Option[A]
-struct None extends Option[Nothing]
+object None extends Option[Nothing]
 
 let v1 = Some(32)        // --> Some[Int]
 let v2 = Some[Real](32)  // --> Some[Real]
@@ -333,7 +356,7 @@ act hit(monster: Monster & Dead)
 end
 ```
 
-Right now, it is not possible to attach a label type to a value at run-time, so label types can only be "attached" by having a struct extend the label type. But once we introduce **dynamic specialization and generalization**, label types will be attachable to and removable from existing values, provided their compile-time types still agree. Then it becomes a matter of moving labels traditionally handled as object properties to the type space and harnessing the power of multiple dispatch. For example, one could attach their own label type to values that are declared in a library, then specialize some library functions for types that also have the label.
+Right now, it is not possible to attach a label type to a value at run-time, so label types can only be "attached" by having a struct extend the label type. But once we introduce **dynamic specialization and generalization**, label types will be attachable to and removable from existing values, provided their compile-time types still agree. Then it becomes a matter of moving labels traditionally handled as properties to the type space and harnessing the power of multiple dispatch. For example, one could attach their own label type to values that are declared in a library, then specialize some library functions for types that also have the label.
 
 
 

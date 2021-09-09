@@ -6,8 +6,8 @@ Consider the following piece of code:
 trait A
 trait Y
 
-struct A1 extends A
-struct A2 extends A, Y
+object A1 extends A
+object A2 extends A, Y
 
 func f(a: A): Int
 func f(a: A1): Int = 2
@@ -29,7 +29,9 @@ We'd have to change the **totality constraint** itself, of course. This isn't tr
 ```
 trait P
 trait Q
-struct X extends P, Q
+
+object X extends P, Q
+
 func f(p: P): Int
 func f(q: Q): Int
 ```
@@ -103,7 +105,7 @@ It might also be that checking the return type is possible, but then we'd also h
 #### Outlook
 
 I hesitate to implement this now because of the difficulty of implementing the right checks and the danger that this is actually wrong and will break Lore programs in one way or another. So before implementing these changes, it would be prudent to do the following:
- 
+
 1. Expand the test base around multiple dispatch and abstract functions.
 2. Work out many more edge cases (including cases where multiple parameters are abstract) that should work *now* and continue to work and ones that don't work now but should work *then*. Maybe we can infer the right implementation of the totality constraint from more examples of this kind.
 3. Work out many examples around preferring concrete over abstract functions to solve ambiguities, or some other way to solve the `f(y: Y)` and `f(a: A)` ambiguity.

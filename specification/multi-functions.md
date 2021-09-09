@@ -103,9 +103,10 @@ Multiple dispatch is defined so that the most specific function gets to work wit
 trait Animal
 trait Mammal extends Animal
 trait Fish extends Animal
-struct Human extends Mammal
-struct Guppy extends Fish
-struct ManBearGuppy extends Mammal, Fish
+
+object Human extends Mammal
+object Guppy extends Fish
+object ManBearGuppy extends Mammal, Fish
 
 func kind(Animal): String
 func kind(Mammal): String = 'mammal'
@@ -192,9 +193,10 @@ To demonstrate what we discussed above, take the **following constellation of fu
 
 ```
 trait A
-struct AI extends A
+object AI extends A
+
 trait B
-struct BI extends B
+object BI extends B
 
 func f(a: A, b: B)   // f1
 func f(a: AI, b: B)  // f2
@@ -212,8 +214,8 @@ Now, the totality constraint is satisfied for all functions. But then the code c
 ###### Example 2
 
 ```
-struct A
-struct B
+object A
+object B
 
 func f(a: A): A = ...
 func f(b: B): B = ...
@@ -237,10 +239,10 @@ func name(Animal): String
 
 trait Fish extends Animal
 
-struct Bass extends Fish
+object Bass extends Fish
 func name(Bass): String = 'Bass'
 
-struct Trout extends Fish
+object Trout extends Fish
 func name(Trout): String = 'Trout'
 ```
 
