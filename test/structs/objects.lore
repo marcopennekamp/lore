@@ -1,0 +1,51 @@
+struct IntBox(value: Int)
+func to_string(box: IntBox): String = to_string(box.value)
+
+object Empty
+func to_string(Empty): String = 'empty'
+
+object Mutable
+  mut level: Int = 1
+end
+
+object LazyEmpty
+  empty: Empty = Empty
+end
+
+object LazyBox
+  box: IntBox = IntBox(5)
+end
+
+object LazyLazy
+  lazyEmpty: LazyEmpty = LazyEmpty
+  lazyBox: LazyBox = LazyBox
+end
+
+object Mindfunc
+  func: String = 'func'
+end
+
+type MutableAlias = Mutable
+
+
+func test(): [String] = do
+  let mutable1 = Mutable.level
+  Mutable.level += 1
+  let mutable2 = Mutable.level
+  Mutable.level += Mutable.level
+  let mutable3 = Mutable.level
+  Mutable.level = 1
+
+  [
+    Empty,
+    mutable1,
+    mutable2,
+    mutable3,
+    LazyEmpty.empty,
+    LazyBox.box,
+    LazyLazy.lazyEmpty.empty,
+    LazyLazy.lazyBox.box,
+    Mindfunc.func,
+    MutableAlias.level,
+  ] |> map(to_string)
+end
