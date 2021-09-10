@@ -65,7 +65,7 @@ let complex_variable: [Int] = do
   while i < a
     let result = i
     i += 1
-    i
+    result
   end
 end
 ```

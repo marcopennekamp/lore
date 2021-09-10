@@ -1,0 +1,21 @@
+let default_name: String = 'John Doe'
+
+let complex_variable: [Int] = do
+  let a = 5
+  let b = 2
+  let mut i = b
+  while i < a
+    let result = i
+    i += 1
+    result
+  end
+end
+
+let lazy_variable: [Int] = complex_variable |> filter(n => n >= 3)
+
+let crazy_variable: [String | [Int]] = [default_name, complex_variable, lazy_variable]
+
+
+func test(): [String] = do
+  crazy_variable |> map(to_string)
+end
