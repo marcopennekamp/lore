@@ -1,12 +1,3 @@
-trait Option[+A]
-struct Some[open +A](value: A) extends Option[A]
-object None extends Option[Nothing]
-
-func to_string(Option[Any]): String
-func to_string(some: Some[Any]): String = 'Some(${some.value})'
-func to_string(None): String = 'None'
-
-
 trait AerialPhenomenon
 object Bird extends AerialPhenomenon
 object Plane extends AerialPhenomenon

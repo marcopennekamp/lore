@@ -1,0 +1,23 @@
+func test(): [String] = do
+  let a = Some('hello options')
+  let b = None
+  let c: Option[String] = Some('test')
+  let d: Option[String] = None
+
+  [
+    get(a, 'fallback'),
+    get(b, 'fallback'),
+    get(c, 'fallback'),
+    get(d, 'fallback'),
+
+    empty?(a),
+    empty?(b),
+    empty?(c),
+    empty?(d),
+
+    present?(a),
+    present?(b),
+    present?(c),
+    present?(d),
+  ] |> map(to_string)
+end

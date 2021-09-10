@@ -1,8 +1,3 @@
-trait Option[+A]
-struct Some[open +A](value: A) extends Option[A]
-object None extends Option[Nothing]
-
-
 struct Box[open +A, open +B]
   a: (Int, A, Real)
   b: Option[B]
@@ -23,9 +18,7 @@ func fluxify(box: Box[Little, Int]): Int = 2 + fluxify.fixed[CounterBox](box)
 func fluxify(box: Box[Several, Int]): Int = 7 + fluxify.fixed[CounterBox](box)
 func fluxify(box: Box[Many, Int]): Int = 17 + fluxify.fixed[CounterBox](box)
 
-func perexonate(option: Option[Int]): Int
-func perexonate(option: Some[Int]): Int = option.value
-func perexonate(option: None): Int = 0
+func perexonate(option: Option[Int]): Int = get(option, 0)
 
 
 func test(): [Int] = do
