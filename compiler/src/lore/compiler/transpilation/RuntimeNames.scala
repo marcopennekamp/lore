@@ -2,6 +2,7 @@ package lore.compiler.transpilation
 
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.semantics.structures.StructPropertyDefinition
+import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.target.Target
 import lore.compiler.target.TargetDsl.StringExtension
 import lore.compiler.types.{DeclaredSchema, DeclaredType, StructSchema}
@@ -28,6 +29,11 @@ object RuntimeNames {
       * The instance of an `object` struct. This only gets transpiled when the struct is actually an object.
       */
     def `object`(struct: StructSchema): Target.Variable = s"${schema(struct).name}__object".asVariable
+  }
+
+  object globalVariable {
+    def apply(variable: GlobalVariableDefinition): Target.Variable = variable.name.asVariable
+    def getValue(variable: GlobalVariableDefinition): Target.Variable = s"${globalVariable(variable).name}__get_value".asVariable
   }
 
   def newType(tpe: DeclaredType): Target.Variable = s"lore_newtype_${tpe.name}".asVariable

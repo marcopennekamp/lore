@@ -6,6 +6,7 @@ import lore.compiler.semantics.Registry.MultiFunctionNotFound
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.scopes._
 import lore.compiler.semantics.structures.SchemaDefinition
+import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.types.{DeclaredSchema, DeclaredTypeHierarchy, NamedSchema, StructType, TypeVariable}
 import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtension}
 
@@ -16,6 +17,7 @@ case class Registry(
   schemas: Registry.Schemas,
   schemaResolutionOrder: Registry.SchemaResolutionOrder,
   schemaDefinitions: Registry.SchemaDefinitions,
+  globalVariables: Registry.GlobalVariables,
   multiFunctions: Registry.MultiFunctions,
 ) {
 
@@ -32,13 +34,14 @@ case class Registry(
   val typeScope: TypeScope = ImmutableTypeScope(schemas, None)
 
   /**
-    * The global binding scope backed by the registry, containing multi-functions and struct bindings.
+    * The global binding scope backed by the registry, containing global variables, multi-functions, struct bindings,
+    * and objects.
     *
     * The binding scope does not contain plain struct constructors, even for constant schemas. A [[StructBinding]] is
     * used in all cases. Objects are represented by [[StructObject]].
     */
   val bindingScope: BindingScope = new BindingScope {
-    override protected def local(name: String): Option[Binding] = multiFunctions.get(name).orElse(getStructBinding(name))
+    override protected def local(name: String): Option[Binding] = globalVariables.get(name).orElse(multiFunctions.get(name)).orElse(getStructBinding(name))
     override protected def add(name: String, entry: Binding): Unit = {
       throw new UnsupportedOperationException(s"You may not add bindings to the Registry via its BindingScope interface. Name: $name. Binding: $entry.")
     }
@@ -85,6 +88,7 @@ object Registry {
   type Schemas = Map[String, NamedSchema]
   type SchemaResolutionOrder = Vector[String]
   type SchemaDefinitions = Map[String, SchemaDefinition]
+  type GlobalVariables = Map[String, GlobalVariableDefinition]
   type MultiFunctions = Map[String, MultiFunctionDefinition]
 
   case class MultiFunctionNotFound(name: String, override val position: Position) extends Feedback.Error(position) {

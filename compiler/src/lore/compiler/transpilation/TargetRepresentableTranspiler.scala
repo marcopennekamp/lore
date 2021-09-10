@@ -3,6 +3,7 @@ package lore.compiler.transpilation
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.semantics.scopes.{StructObject, Variable}
 import lore.compiler.semantics.structures.StructConstructor
+import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.target.Target.TargetExpression
 import lore.compiler.target.TargetDsl.ExpressionExtension
 import lore.compiler.target.{Target, TargetRepresentable}
@@ -16,6 +17,7 @@ object TargetRepresentableTranspiler {
     */
   def transpile(targetRepresentable: TargetRepresentable)(implicit runtimeTypeVariables: RuntimeTypeVariables, symbolHistory: SymbolHistory): TargetExpression = {
     targetRepresentable match {
+      case variable: GlobalVariableDefinition => RuntimeNames.globalVariable(variable)
       case mf: MultiFunctionDefinition => RuntimeNames.multiFunction(mf)
       case function: FunctionDefinition => RuntimeNames.functionDefinition(function)
       case Variable(name, _, _) => RuntimeNames.localVariable(name)

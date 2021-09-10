@@ -15,7 +15,7 @@ case class InferenceBounds(variable: InferenceVariable, lower: Type, upper: Type
   val candidateType: Type = {
     if (lower != BasicType.Nothing) lower
     else if (upper != BasicType.Any) upper
-    else BasicType.Any
+    else BasicType.Any // TODO: Shouldn't this be Nothing since we're favoring the lower bound now?
   }
 
   /**

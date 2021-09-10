@@ -37,7 +37,7 @@ object Target {
   def block(statements: TargetStatement*): Block = Block(statements.toVector)
 
   // Variables.
-  case class VariableDeclaration(name: TargetName, value: TargetExpression, isMutable: Boolean = false) extends TargetStatement
+  case class VariableDeclaration(name: TargetName, value: TargetExpression, isMutable: Boolean = false, shouldExport: Boolean = false) extends TargetStatement
   case class Assignment(left: TargetExpression, right: TargetExpression) extends TargetStatement
   case class Variable(name: TargetName) extends TargetExpression {
     lazy val asParameter: Parameter = Parameter(name)

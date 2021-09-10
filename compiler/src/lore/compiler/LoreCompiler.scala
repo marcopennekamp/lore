@@ -9,6 +9,7 @@ import lore.compiler.resolution.ResolutionPhase
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.structures.DeclaredSchemaDefinition
+import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.transformation.TransformationPhase
 import lore.compiler.transpilation.TranspilationPhase
 import lore.compiler.types.DeclaredSchema
@@ -65,15 +66,23 @@ object LoreCompiler {
 
   private def analyze(implicit registry: Registry, reporter: Reporter): Unit = {
     val declaredSchemaDefinitions = registry.schemasInOrder.map(_._2).filterType[DeclaredSchema].map(_.definition)
+    val globalVariables = registry.globalVariables.values.toVector
     val multiFunctions = registry.multiFunctions.values.toVector
 
     declaredSchemaDefinitions.foreach(analyze(_, reporter))
+    globalVariables.foreach(analyze(_, reporter))
     multiFunctions.foreach(analyze(_, reporter))
   }
 
   private def analyze(definition: DeclaredSchemaDefinition, parentReporter: Reporter)(implicit registry: Registry): Unit = {
     MemoReporter.chain(parentReporter)(
       implicit reporter => ConstraintsPhase.process(definition),
+      implicit reporter => TransformationPhase.process(definition),
+    )
+  }
+
+  private def analyze(definition: GlobalVariableDefinition, parentReporter: Reporter)(implicit registry: Registry): Unit = {
+    MemoReporter.chain(parentReporter)(
       implicit reporter => TransformationPhase.process(definition),
     )
   }

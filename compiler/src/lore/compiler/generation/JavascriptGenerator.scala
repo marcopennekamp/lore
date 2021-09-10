@@ -26,9 +26,10 @@ object JavascriptGenerator {
 
     case Target.Return(value) => s"return ${generate(value)};"
 
-    case Target.VariableDeclaration(name, value, isMutable) =>
+    case Target.VariableDeclaration(name, value, isMutable, shouldExport) =>
+      val export = if (shouldExport) "export " else ""
       val modifier = if (isMutable) "let" else "const"
-      s"$modifier ${generate(name)} = ${generate(value)};"
+      s"$export$modifier ${generate(name)} = ${generate(value)};"
 
     case Target.Assignment(left, right) => s"${generate(left)} = ${generate(right)};"
 

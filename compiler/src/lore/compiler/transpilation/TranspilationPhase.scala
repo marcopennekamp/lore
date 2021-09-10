@@ -7,6 +7,7 @@ import lore.compiler.target.Target.TargetStatement
 import lore.compiler.transpilation.functions.MultiFunctionTranspiler
 import lore.compiler.transpilation.structures.DeclaredSchemaTranspiler
 import lore.compiler.transpilation.values.{SymbolHistory, SymbolTranspiler}
+import lore.compiler.transpilation.variables.GlobalVariableTranspiler
 import lore.compiler.types.DeclaredSchema
 
 object TranspilationPhase {
@@ -35,10 +36,13 @@ object TranspilationPhase {
       )
     }
 
+    val globalVariables = registry.globalVariables.values.toVector.flatMap(GlobalVariableTranspiler.transpile(_) :+ Target.Divider)
     val functions = registry.multiFunctions.values.toVector.flatMap(new MultiFunctionTranspiler(_).transpile() :+ Target.Divider)
 
+    // We have to transpile symbol declarations last, because we first need to transpile everything else to fill the
+    // symbol history.
     val symbolDeclarations = SymbolTranspiler.transpile(symbolHistory) :+ Target.Divider
 
-    symbolDeclarations ++ schemaDeclarations ++ schemaDeclarationDeferredDeclarations ++ introspectionInitialization ++ functions
+    symbolDeclarations ++ schemaDeclarations ++ schemaDeclarationDeferredDeclarations ++ introspectionInitialization ++ globalVariables ++ functions
   }
 }

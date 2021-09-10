@@ -11,8 +11,15 @@ import lore.compiler.types.TypeVariable.Variance
 sealed trait DeclNode extends NamedNode
 
 object DeclNode {
+  case class GlobalVariableNode(
+    nameNode: NameNode,
+    tpe: TypeExprNode,
+    value: ExprNode,
+    position: Position,
+  ) extends DeclNode
+
   /**
-    * Function declarations. These include action declarations, which are resolved as "syntactic sugar" by the parser.
+    * Function declarations. These include action declarations, which are resolved as syntactic sugar by the parser.
     *
     * @param body Notably, a function body is NOT a TopLevelExprNode. Rather, it may be a block which can then
     *             represent TopLevelExprNode.

@@ -3,7 +3,7 @@ package lore.compiler.inference.matchers
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.Reporter
 import lore.compiler.feedback.TypingFeedback.EqualTypesExpected
-import lore.compiler.inference.Inference.{Assignments, isFullyInstantiated}
+import lore.compiler.inference.Inference.{Assignments, instantiateCandidateType, isFullyInstantiated}
 import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions.VectorExtension
@@ -24,21 +24,18 @@ object EqualityMatcher {
     assignments: Assignments,
     context: TypingJudgment,
   )(implicit reporter: Reporter): Option[Assignments] = {
+    def expectedTypeEquality() = {
+      reporter.error(EqualTypesExpected(instantiateCandidateType(assignments, t1), instantiateCandidateType(assignments, t2), context))
+      None
+    }
+
     if (isFullyInstantiated(t1) && isFullyInstantiated(t2)) {
-      return if (t1 == t2) Some(assignments) else {
-        reporter.error(EqualTypesExpected(t1, t2, context))
-        None
-      }
+      return if (t1 == t2) Some(assignments) else expectedTypeEquality()
     }
 
     def unsupported: Nothing = {
       throw CompilationException(s"Inference equality matching of intersection and sum types is not yet supported." +
         s" Given types: $t1 and $t2.")
-    }
-
-    def expectedTypeEquality() = {
-      reporter.error(EqualTypesExpected(t1, t2, context))
-      None
     }
 
     val rec = (assignments2: Assignments, u1: Type, u2: Type) => matchEquals(processor)(u1, u2, assignments2, context)

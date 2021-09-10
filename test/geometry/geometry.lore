@@ -1,3 +1,5 @@
+let pi: Real = 3.14159265359
+
 // Not to be confused with shape types and shape values. :)
 trait Shape
 
@@ -30,7 +32,7 @@ domain circle: Circle
   func width(): Real = circle.radius
   func height(): Real = circle.radius
 
-  func area(): Real = circle.radius * circle.radius * pi()
+  func area(): Real = circle.radius * circle.radius * pi
 end
 
 
@@ -49,7 +51,3 @@ func name(Shape): String
 func name(Rectangle): String = 'rect'
 func name(BoundingBox): String = 'box'
 func name(Circle): String = 'circle'
-
-
-// Yeah, I know. We don't have global constants yet.
-func pi(): Real = 3.14159265359

@@ -2,6 +2,7 @@ package lore.compiler.semantics.expressions
 
 import lore.compiler.core.{CompilationException, Position, Positioned}
 import lore.compiler.inference.InferenceVariable
+import lore.compiler.semantics.analysis.LocalizedExpression
 import lore.compiler.semantics.functions.{CallTarget, FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
 import lore.compiler.semantics.scopes.{TypedBinding, Variable}
@@ -9,6 +10,12 @@ import lore.compiler.types._
 
 sealed trait Expression extends Positioned {
   def tpe: Type
+
+  /**
+    * Whether this expression is localized, meaning that it doesn't access multi-functions, constructors, objects, or
+    * global variables.
+    */
+  lazy val isLocalized: Boolean = LocalizedExpression.isLocalized(this)
 }
 
 object Expression {

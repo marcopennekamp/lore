@@ -43,12 +43,6 @@ class StructPropertyDefinition(
 object StructPropertyDefinition {
   case class DefaultValue(expression: Expression, callTarget: CallTarget.Dynamic) {
     val tpe: Type = expression.tpe
-
-    /**
-      * Whether this default value is localized, meaning that its expression doesn't access external functions,
-      * constructors, objects, or global variables.
-      */
-    lazy val isLocalized: Boolean = LocalizedExpression.isLocalized(expression)
   }
 
   case class Instance(definition: StructPropertyDefinition, tpe: Type) {

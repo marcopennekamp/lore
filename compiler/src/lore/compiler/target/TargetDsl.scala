@@ -12,6 +12,10 @@ object TargetDsl {
     def declareMutableAs(value: TargetExpression): VariableDeclaration = {
       VariableDeclaration(variable.name, value, isMutable = true)
     }
+
+    def exportAs(value: TargetExpression): VariableDeclaration = {
+      VariableDeclaration(variable.name, value, shouldExport = true)
+    }
   }
 
   implicit class ExpressionExtension(expression: TargetExpression) {

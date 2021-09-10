@@ -49,8 +49,13 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def topDeclaration[_: P]: P[Vector[DeclNode]] = {
-    def single = P(function | action | typeDeclaration).map(Vector(_))
+    def single = P(globalVariable | function | action | typeDeclaration).map(Vector(_))
     P(single | domain)
+  }
+
+  private def globalVariable[_: P]: P[DeclNode.GlobalVariableNode] = {
+    P(Index ~~ "let" ~~ Space.WS1 ~~ name ~~ Space.WS ~~ typeParser.typing ~~ Space.WS ~~ "=" ~ expressionParser.expression ~~ Index)
+      .map(withPosition(DeclNode.GlobalVariableNode))
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
