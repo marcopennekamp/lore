@@ -156,7 +156,7 @@ trait DeclaredType extends NamedType {
       val candidates = TypeVariableAllocation.of(TupleType(this.typeArguments), TupleType(extendsClause.typeArguments)).allAssignments
       processCandidates(candidates).flatMap { assignments =>
         val instantiatedClause = Type.substitute(extendsClause, assignments)
-        if (Fit.fits(instantiatedClause, this)) {
+        if (instantiatedClause fits this) {
           Type.logger.trace(s"Extends clause: $instantiatedClause fits $this.")
           Some(assignments)
         } else {
@@ -196,8 +196,8 @@ trait DeclaredType extends NamedType {
       val argument = assignments.getOrElse(
         parameter,
         parameter.variance match {
-          case Variance.Covariant => Type.substitute(parameter.upperBound, assignments)
-          case Variance.Contravariant => Type.substitute(parameter.lowerBound, assignments)
+          case Variance.Covariant => upperBound
+          case Variance.Contravariant => lowerBound
           case Variance.Invariant =>
             // This must be the type parameter itself, because the most general type argument must represent all
             // possible type arguments, and only a type variable can do that if the parameter is invariant.
@@ -205,17 +205,26 @@ trait DeclaredType extends NamedType {
         }
       )
 
-      // TODO: I don't like that `argument <= lowerBound` and `upperBound fits argument` are inherently asymmetric. We
-      //       definitely need to apply Fit here, as checking for subtyping doesn't lead to the correct results for
-      //       source types with type arguments themselves. It seems like we'd need a Fit implementation that assigns
-      //       types from `lowerBound` to variables in `argument`, but also checks `argument <= lowerBound` instead of
-      //       the usual `lowerBound <= argument`.
-      val boundedArgument = if (argument <= lowerBound && parameter.variance == Variance.Contravariant) {
+      // We have to take special care when the type argument is a type variable. The goal here is to narrow the type
+      // argument so that it's compatible with the type parameter's bounds. Subtype checks are not sufficient when the
+      // type argument is a type variable itself.
+      // For example, if we're specializing a type `Cage[X]` with `X <: Animal` to a schema `Aquarium[A]` with
+      // `A <: Fish`, we set `A = X`. But X could be `Animal`, which isn't a `Fish`. A is narrower than X. Hence, we
+      // have to narrow the type argument to `Fish`. To find this out for type variables, we check that `Fish` fits
+      // into X (proving that X is equally specific or more general than A) and that X does not fit into `Fish`
+      // (proving that X and A are not equally specific).
+      // TODO: The above considerations also have to be applied to lower bounds. We definitely need to apply Fit there
+      //       too. But it seems like we'd need a Fit implementation that assigns types from `lowerBound` to variables
+      //       in `argument`, but also checks `argument <= lowerBound` instead of the usual `lowerBound <= argument`.
+      val boundedArgument = if (argument < lowerBound && parameter.variance == Variance.Contravariant) {
         lowerBound
-      } else if (Fit.fits(upperBound, argument) && parameter.variance == Variance.Covariant) {
+      } else if ((upperBound fits argument) && (argument fitsNot upperBound) && parameter.variance == Variance.Covariant) {
         upperBound
-      } else if ((lowerBound </= argument) || (argument </= upperBound)) {
-        Type.logger.trace(s"Lower bound $lowerBound or upper bound $upperBound don't agree with type argument $argument.")
+      } else if (lowerBound </= argument) {
+        Type.logger.trace(s"Lower bound $lowerBound doesn't agree with type argument $argument.")
+        return None
+      } else if (argument </= upperBound) {
+        Type.logger.trace(s"Upper bound $upperBound doesn't agree with type argument $argument.")
         return None
       } else {
         argument

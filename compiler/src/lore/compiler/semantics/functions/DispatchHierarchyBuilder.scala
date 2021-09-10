@@ -30,7 +30,7 @@ object DispatchHierarchyBuilder {
     while (remaining.nonEmpty) {
       // All unused functions that don't have a superfunction in the remaining set.
       val top = remaining.toVector.filter { f =>
-        !remaining.exists(f2 => f != f2 && Fit.fits(f.signature.inputType, f2.signature.inputType))
+        !remaining.exists(f2 => f != f2 && (f.signature.inputType fits f2.signature.inputType))
       }
 
       // If the top is empty, the algorithm will result in an endless loop, as no remaining functions are removed

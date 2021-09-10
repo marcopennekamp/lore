@@ -60,7 +60,7 @@ object Dispatch {
     * When used as a visit-predicate for [[traverse]], all and only nodes that are part of the function
     * fit for a given input type are visited.
     */
-  private def predicateVisitFit(hierarchy: DispatchHierarchy, input: TupleType)(node: hierarchy.graph.NodeT): Boolean = Fit.fits(input, node.signature.inputType)
+  private def predicateVisitFit(hierarchy: DispatchHierarchy, input: TupleType)(node: hierarchy.graph.NodeT): Boolean = input fits node.signature.inputType
 
   /**
     * Traverses the hierarchy, visiting all nodes for which visit(node) is true, selecting all nodes for which

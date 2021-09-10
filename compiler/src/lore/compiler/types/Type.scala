@@ -23,6 +23,9 @@ trait Type extends TypeSchema with HasMembers {
   def <(rhs: Type): Boolean = Subtyping.isStrictSubtype(this, rhs)
   def >=(rhs: Type): Boolean = rhs <= this
   def >(rhs: Type): Boolean = rhs < this
+
+  def fits(rhs: Type): Boolean = Fit.fits(this, rhs)
+  def fitsNot(rhs: Type): Boolean = !Fit.fits(this, rhs)
 }
 
 object Type {

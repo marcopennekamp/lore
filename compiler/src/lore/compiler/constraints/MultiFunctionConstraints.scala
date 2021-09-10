@@ -97,9 +97,12 @@ object MultiFunctionConstraints {
     * the totality of the `name(animal: Animal)` function without having to declare a function `name(fish: Fish)`. We
     * merely have to define the function for all types that extend `Fish`.
     */
-  private def verifyInputTypeTotality(inputType: Type, mf: MultiFunctionDefinition)(implicit registry: Registry): Vector[TupleType] = {
+  private def verifyInputTypeTotality(inputType: TupleType, mf: MultiFunctionDefinition)(implicit registry: Registry): Vector[TupleType] = {
+    Type.loggerBlank.trace("")
+    Type.logger.trace(s"Totality constraint: Checking relevant subtypes for input type $inputType.")
+    Type.loggerBlank.trace("")
     val subtypes = relevantSubtypes(inputType).map(_.asInstanceOf[TupleType])
-    Type.logger.trace(s"Totality constraint: Checking ${subtypes.size} relevant subtypes for input type $inputType.")
+    Type.logger.trace(s"Totality constraint: $inputType has ${subtypes.length} relevant subtypes: ${subtypes.mkString(", ")}.")
     subtypes.flatMap { subtype =>
       if (mf.fit(subtype).exists(f2 => Fit.isMoreSpecific(f2.signature.inputType, inputType))) {
         Vector.empty
