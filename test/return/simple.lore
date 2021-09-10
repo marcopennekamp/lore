@@ -18,4 +18,11 @@ func f3(): Int = do
   0
 end
 
-func test(): (Int, Int, Int) = (f1(), f2(), f3())
+let v1: Int = do
+  if 'x' != 'y'
+  then return 5
+  else return 10
+end
+
+
+func test(): [Int] = [f1(), f2(), f3(), v1]

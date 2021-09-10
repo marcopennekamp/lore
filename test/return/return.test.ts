@@ -16,6 +16,6 @@ Deno.test('return/parametric', async () => {
 })
 
 Deno.test('return/simple', async () => {
-  const result: TupleValue = await LoreTest.run('return/simple.lore')
-  assertTupleEquals(result, [10, 1, 5])
+  const result: ListValue<number> = await LoreTest.run('return/simple.lore')
+  assertListEquals(result, [10, 1, 5, 5])
 })

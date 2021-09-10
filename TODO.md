@@ -2,7 +2,6 @@
 
 #### Features
 
-- Add global constants.
 - Add a module system.
 - Implement a vector backend for lists.
 - Fix map types and values:
