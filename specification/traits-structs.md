@@ -96,7 +96,7 @@ An **object** is a special struct of which only one instance exists. The corresp
 
 While objects may have properties, they each have to have a default value, which becomes the object's **property value**. This is because an object is instantiated when the Lore program is initialized. A Lore programmer has no control over the relevant constructor invocation. Objects cannot have type parameters.
 
-It is possible to use objects inside the property values of other objects. Objects with property values that refer to functions or structs/objects are initialized **lazily** to avoid any ordering issues that may arise. Cyclical use is currently undefined behavior and will lead to run-time errors.
+It is possible to use objects inside the property values of other objects. Objects with property values that refer to functions, structs, objects, or global variables are initialized **lazily** to avoid any ordering issues that may arise. Cyclical use is currently undefined behavior and will lead to run-time errors.
 
 ###### Syntax Example
 

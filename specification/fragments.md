@@ -8,6 +8,7 @@ A fragment may contain the following **declarations:**
 - [Trait and structs](traits-structs.md)
 - [Type aliases](types.md#type-aliases)
 - [Modules](modules.md)
+- Global Variables
 - Domains
 
 ###### Example
@@ -19,6 +20,8 @@ act move(entity: Player, distance: Int) do
   move(entity.position, distance)
 end
 
+let melee_range: Real = 1.5
+
 trait Monster extends Character
 
 struct Zombie extends Monster
@@ -28,12 +31,41 @@ end
 type StringFunction[A] = A => String
 
 module Math
+  let pi: Real = 3.14159
+
   func absolute(x: Real): Real = if x < 0 then -x else x
 end
 
 domain zombie: Zombie
   act damage(attack: Int) do
     zombie.health -= attack
+  end
+end
+```
+
+
+
+### Global Variables
+
+Lore supports **immutable global variables**. Every global variable has a type and must be initialized immediately.
+
+Global variables may be initialized with complex expressions. However, similar to how object properties are handled, an expression that refers to a function, constructor, object, or another global variable requires the global variable to be initialized **lazily**. Cyclical use is currently undefined behavior and will lead to run-time errors.
+
+Declaring a global variable and function with the **same name** is illegal and results in a compilation error. The same applies to two or more global variables that share a name.
+
+###### Example
+
+```
+let default_name: String = 'John Doe'
+
+let complex_variable: [Int] = do
+  let a = 5
+  let b = 2
+  let mut i = b
+  while i < a
+    let result = i
+    i += 1
+    i
   end
 end
 ```
