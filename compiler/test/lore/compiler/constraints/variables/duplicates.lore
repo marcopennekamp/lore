@@ -1,0 +1,6 @@
+struct Pie(awesomeness: Int)
+let pie: Pie = Pie(10)
+
+let pie: Real = 3.14159
+
+func pie(adjective: String): String = 'It\'s a $adjective pie!'
