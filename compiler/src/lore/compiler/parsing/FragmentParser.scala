@@ -73,7 +73,7 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def moduleMember[_: P]: P[Vector[DeclNode]] = {
-    def single = P(globalVariable | function | action | typeDeclaration).map(Vector(_))
+    def single = P(module | globalVariable | function | action | typeDeclaration).map(Vector(_))
     P(single | domain)
   }
 
