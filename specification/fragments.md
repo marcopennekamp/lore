@@ -30,7 +30,7 @@ end
 
 type StringFunction[A] = A => String
 
-module Math
+module Math do
   let pi: Real = 3.14159
 
   func absolute(x: Real): Real = if x < 0 then -x else x
