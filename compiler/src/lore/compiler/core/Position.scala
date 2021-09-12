@@ -34,6 +34,16 @@ case class Position(fragment: Fragment, startIndex: Index, endIndex: Index) {
   def length: Int = endIndex - startIndex
 
   /**
+    * Creates a new position that spans from the start index of this position to the end index of `end`.
+    */
+  def to(end: Position): Position = {
+    if (this.fragment != end.fragment) {
+      throw CompilationException(s"Cannot create a spanning position from $this to $end. The positions must be located" +
+        s" in the same fragment!")
+    }
+  }
+
+  /**
     * A complete string representation of this position.
     */
   override def toString: String = s"${fragment.name} ($prettyIndex)"

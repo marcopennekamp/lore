@@ -2,7 +2,7 @@ package lore.compiler.syntax
 
 import lore.compiler.core.Position
 import lore.compiler.syntax.DeclNode.TypeVariableNode
-import lore.compiler.syntax.Node.{NameNode, NamedNode}
+import lore.compiler.syntax.Node.{NameNode, NamePathNode, NamedNode, PathNamedNode}
 import lore.compiler.types.TypeVariable.Variance
 
 /**
@@ -11,6 +11,19 @@ import lore.compiler.types.TypeVariable.Variance
 sealed trait DeclNode extends NamedNode
 
 object DeclNode {
+  case class ModuleNode(
+    namePathNode: NamePathNode,
+    imports: Vector[ImportNode],
+    members: Vector[DeclNode],
+    position: Position,
+  ) extends DeclNode with PathNamedNode
+
+  // TODO (modules): Support multi- and wildcard imports.
+  case class ImportNode(
+    namePathNode: NamePathNode,
+    position: Position,
+  ) extends Node with PathNamedNode
+
   case class GlobalVariableNode(
     nameNode: NameNode,
     tpe: TypeExprNode,

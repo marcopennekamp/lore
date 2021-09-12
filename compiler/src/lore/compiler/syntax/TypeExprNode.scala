@@ -1,7 +1,8 @@
 package lore.compiler.syntax
 
 import lore.compiler.core.Position
-import lore.compiler.syntax.Node.{NameNode, NamedNode}
+import lore.compiler.semantics.NamePath
+import lore.compiler.syntax.Node.{NameNode, NamePathNode, NamedNode, PathNamedNode}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 /**
@@ -9,8 +10,8 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
   */
 sealed trait TypeExprNode extends Node
 object TypeExprNode {
-  case class TypeNameNode(name: String, position: Position) extends TypeExprNode
-  case class InstantiationNode(nameNode: TypeNameNode, arguments: Vector[TypeExprNode], position: Position) extends TypeExprNode
+  case class TypeNameNode(namePathNode: NamePathNode, position: Position) extends TypeExprNode with PathNamedNode
+  case class InstantiationNode(typeNameNode: TypeNameNode, arguments: Vector[TypeExprNode], position: Position) extends TypeExprNode
   case class SumNode(types: Vector[TypeExprNode], position: Position) extends TypeExprNode
   case class IntersectionNode(types: Vector[TypeExprNode], position: Position) extends TypeExprNode
   case class TupleNode(types: Vector[TypeExprNode], position: Position) extends TypeExprNode
@@ -47,7 +48,7 @@ object TypeExprNode {
   }
 
   /**
-    * Finds all identifiers mentioned in the type expression.
+    * Finds all type names mentioned in the type expression.
     */
-  def identifiers(node: TypeExprNode): Set[String] = leaves(node).filterType[TypeNameNode].map(_.name).toSet
+  def names(node: TypeExprNode): Set[NamePath] = leaves(node).filterType[TypeNameNode].map(_.namePath).toSet
 }

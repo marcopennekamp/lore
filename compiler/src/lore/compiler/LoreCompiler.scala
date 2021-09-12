@@ -54,7 +54,7 @@ object LoreCompiler {
     * beneath a mountain of other errors.
     */
   def analyze(fragments: Vector[Fragment], exitEarly: Boolean)(implicit reporter: Reporter): Option[Registry] = {
-    val declarations = timed("Parsing")(ParsingPhase.process(fragments))
+    val fragmentModules = timed("Parsing")(ParsingPhase.process(fragments))
     if (exitEarly && reporter.hasErrors) return None
 
     val registry = timed("Resolution")(ResolutionPhase.process(declarations))

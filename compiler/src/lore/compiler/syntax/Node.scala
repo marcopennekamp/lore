@@ -1,6 +1,7 @@
 package lore.compiler.syntax
 
 import lore.compiler.core.{Fragment, Position, Positioned}
+import lore.compiler.semantics.NamePath
 
 trait Node extends Positioned
 
@@ -14,9 +15,28 @@ object Node {
     */
   case class NameNode(value: String, position: Position) extends Node
 
+  /**
+    * The name path version of [[NameNode]].
+    */
+  case class NamePathNode(segments: Vector[NameNode]) extends Node {
+    val position: Position = if (segments.nonEmpty) segments.head.position.to(segments.last.position) else Position.unknown
+    val simpleNameNode: NameNode = if (segments.nonEmpty) segments.last else NameNode("", position)
+    val namePath: NamePath = NamePath.from(this)
+  }
+
+  object NamePathNode {
+    val empty: NamePathNode = NamePathNode(Vector.empty)
+  }
+
   trait NamedNode extends Node {
     def nameNode: NameNode
     def name: String = nameNode.value
+  }
+
+  trait PathNamedNode extends NamedNode {
+    def namePathNode: NamePathNode
+    def namePath: NamePath = namePathNode.namePath
+    override def nameNode: NameNode = namePathNode.simpleNameNode
   }
 
   /**

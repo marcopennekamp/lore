@@ -46,13 +46,13 @@ object TypeDependencies {
   private def dependencies(node: TypeDeclNode): Vector[String] = {
     val boundNames = node.typeVariables
       .flatMap(tv => tv.lowerBound.toVector ++ tv.upperBound.toVector)
-      .flatMap(TypeExprNode.identifiers)
+      .flatMap(TypeExprNode.names)
       .toSet
 
     val restNames = node match {
-      case TypeDeclNode.AliasNode(_, _, expr, _) => TypeExprNode.identifiers(expr)
-      case TypeDeclNode.StructNode(_, _, _, extended, _, _) => extended.flatMap(TypeExprNode.identifiers).toSet
-      case TypeDeclNode.TraitNode(_, _, extended, _) => extended.flatMap(TypeExprNode.identifiers).toSet
+      case TypeDeclNode.AliasNode(_, _, expr, _) => TypeExprNode.names(expr)
+      case TypeDeclNode.StructNode(_, _, _, extended, _, _) => extended.flatMap(TypeExprNode.names).toSet
+      case TypeDeclNode.TraitNode(_, _, extended, _) => extended.flatMap(TypeExprNode.names).toSet
     }
 
     // We have to remove all type variable names from the result names, because they are declared locally and thus

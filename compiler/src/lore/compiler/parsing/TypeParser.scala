@@ -2,7 +2,7 @@ package lore.compiler.parsing
 
 import fastparse._
 import lore.compiler.core.{Fragment, Position}
-import lore.compiler.parsing.LexicalParser.{identifier, typeIdentifier}
+import lore.compiler.parsing.LexicalParser.identifier
 import lore.compiler.syntax._
 
 /**
@@ -10,7 +10,7 @@ import lore.compiler.syntax._
   */
 class TypeParser(nameParser: NameParser)(implicit fragment: Fragment, whitespace: P[Any] => P[Unit]) {
   import Node._
-  import nameParser.name
+  import nameParser._
 
   def typing[_: P]: P[TypeExprNode] = P(":" ~ typeExpression)
 
@@ -65,7 +65,7 @@ class TypeParser(nameParser: NameParser)(implicit fragment: Fragment, whitespace
     P(Index ~ namedType ~ "[" ~ typeExpression.rep(1, ",").map(_.toVector) ~ ",".? ~ "]" ~ Index).map(withPosition(TypeExprNode.InstantiationNode))
   }
 
-  private def namedType[_: P]: P[TypeExprNode.TypeNameNode] = P(Index ~ typeIdentifier ~ Index).map(withPosition(TypeExprNode.TypeNameNode))
+  private def namedType[_: P]: P[TypeExprNode.TypeNameNode] = P(Index ~ typeNamePath ~ Index).map(withPosition(TypeExprNode.TypeNameNode))
 
   private def enclosedType[_: P]: P[TypeExprNode] = P("(" ~ typeExpression ~ ")")
 }

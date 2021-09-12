@@ -20,8 +20,8 @@ class FragmentParser(implicit fragment: Fragment) {
   val typeParser = new TypeParser(nameParser)
   val typeParameterParser = new TypeParameterParser(nameParser)
 
-  import typeParser.typeExpression
   import nameParser._
+  import typeParser.typeExpression
 
   case class ParsingError(fastparseError: String, override val position: Position) extends Feedback.Error(position) {
     override def message: String = s"The file had parsing errors: $fastparseError"
@@ -30,29 +30,56 @@ class FragmentParser(implicit fragment: Fragment) {
   /**
     * Attempts to parse the fragment and returns the parsing result.
     */
-  def parse()(implicit reporter: Reporter): Vector[DeclNode] = {
+  def parse()(implicit reporter: Reporter): DeclNode.ModuleNode = {
     fastparse.parse(fragment.input, fullFragment(_)) match {
       case Parsed.Failure(_, _, extra) =>
         val error = ParsingError(s"Parsing failure: ${extra.trace().aggregateMsg}", Position(fragment, extra.index, extra.index))
         reporter.error(error)
-        Vector.empty
+        DeclNode.ModuleNode(NamePathNode.empty, Vector.empty, Vector.empty, Position(fragment, 0, 0))
 
       case Parsed.Success(result, _) => result
     }
   }
 
-  def fullFragment[_: P]: P[Vector[DeclNode]] = {
-    // We repeat topDeclaration an arbitrary amount of times, terminated by Space.terminators. The repX in contrast
-    // to rep does not take whitespace into account. We don't want it to consume the newline that needs to be consumed
-    // by Space.terminators!
-    P(Space.WL ~~ topDeclaration.repX(0, Space.terminators) ~~ Space.WL ~~ End).map(_.toVector.flatten)
+  def fullFragment[_: P]: P[DeclNode.ModuleNode] = {
+    P(Space.WL ~~ Index ~~ topModuleDeclaration ~~ Space.terminators ~ moduleBody ~~ Index ~~ Space.WL ~~ End)
+      .map { case (startIndex, modulePath, (imports, members), endIndex) => (startIndex, modulePath, imports, members, endIndex) }
+      .map(withPosition(DeclNode.ModuleNode))
   }
 
-  private def topDeclaration[_: P]: P[Vector[DeclNode]] = {
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Modules.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  private def topModuleDeclaration[_: P]: P[NamePathNode] = {
+    P(("module" ~~ Space.WS1 ~~ namePath).?)
+      .map(_.getOrElse(NamePathNode.empty))
+  }
+
+  private def module[_: P]: P[DeclNode.ModuleNode] = {
+    P(Index ~~ "module" ~~ Space.WS1 ~~ namePath ~ "do" ~ moduleBody ~ "end" ~~ Index)
+      .map { case (startIndex, modulePath, (imports, members), endIndex) => (startIndex, modulePath, imports, members, endIndex) }
+      .map(withPosition(DeclNode.ModuleNode))
+  }
+
+  private def moduleBody[_: P]: P[(Vector[DeclNode.ImportNode], Vector[DeclNode])] = {
+    def imports = P(use.repX(0, Space.terminators)).map(_.toVector)
+    def members = P(moduleMember.repX(0, Space.terminators)).map(_.toVector.flatten)
+    P(imports ~ members)
+  }
+
+  private def use[_: P]: P[DeclNode.ImportNode] = {
+    P(Index ~~ "use" ~~ Space.WS1 ~~ namePath ~~ Index)
+      .map(withPosition(DeclNode.ImportNode))
+  }
+
+  private def moduleMember[_: P]: P[Vector[DeclNode]] = {
     def single = P(globalVariable | function | action | typeDeclaration).map(Vector(_))
     P(single | domain)
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Global variables.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def globalVariable[_: P]: P[DeclNode.GlobalVariableNode] = {
     P(Index ~~ "let" ~~ Space.WS1 ~~ name ~~ Space.WS ~~ typeParser.typing ~~ Space.WS ~~ "=" ~ expressionParser.expression ~~ Index)
       .map(withPosition(DeclNode.GlobalVariableNode))
