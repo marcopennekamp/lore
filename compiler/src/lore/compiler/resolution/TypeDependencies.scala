@@ -4,7 +4,7 @@ import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.resolution.DeclarationResolver.TypeDeclarations
 import lore.compiler.semantics.Registry
-import lore.compiler.syntax.{TypeDeclNode, TypeExprNode}
+import lore.compiler.syntax.{DeclNode, TypeDeclNode, TypeExprNode}
 import lore.compiler.types.{BasicType, Type}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalax.collection.GraphEdge.DiEdge
@@ -50,9 +50,9 @@ object TypeDependencies {
       .toSet
 
     val restNames = node match {
-      case TypeDeclNode.AliasNode(_, _, expr, _) => TypeExprNode.names(expr)
-      case TypeDeclNode.StructNode(_, _, _, extended, _, _) => extended.flatMap(TypeExprNode.names).toSet
-      case TypeDeclNode.TraitNode(_, _, extended, _) => extended.flatMap(TypeExprNode.names).toSet
+      case DeclNode.AliasNode(_, _, expr, _) => TypeExprNode.names(expr)
+      case DeclNode.StructNode(_, _, _, extended, _, _) => extended.flatMap(TypeExprNode.names).toSet
+      case DeclNode.TraitNode(_, _, extended, _) => extended.flatMap(TypeExprNode.names).toSet
     }
 
     // We have to remove all type variable names from the result names, because they are declared locally and thus

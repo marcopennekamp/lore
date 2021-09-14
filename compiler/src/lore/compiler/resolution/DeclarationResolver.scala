@@ -44,9 +44,11 @@ object DeclarationResolver {
     * The run-time Introspection API requires the compiler to generate a special "Type" trait that represents actual
     * Lore types. The trait cannot be defined in Pyramid because the compiler needs to call the initialization function
     * of the Introspection API with the actual type.
+    *
+    * TODO (modules): Just define this in `lore.Core` and have the compiler get the trait from the module.
     */
   private val introspectionTypeDeclarations: Vector[TypeDeclNode] = Vector(
-    TypeDeclNode.TraitNode(NameNode(Introspection.typeName, Position.internal), Vector.empty, Vector.empty, Position.internal)
+    DeclNode.TraitNode(NameNode(Introspection.typeName, Position.internal), Vector.empty, Vector.empty, Position.internal)
   )
 
   private def processTypeDeclaration(declaration: TypeDeclNode, declarations: TypeDeclarations)(implicit reporter: Reporter): TypeDeclarations = {
@@ -70,9 +72,9 @@ object DeclarationResolver {
       case (types, name) =>
         val typeScope: TypeScope = ImmutableTypeScope(types, None)
         val tpe = typeDeclarations(name) match {
-          case aliasNode: TypeDeclNode.AliasNode => AliasSchemaResolver.resolve(aliasNode, typeScope)
-          case traitNode: TypeDeclNode.TraitNode => TraitSchemaResolver.resolve(traitNode, typeScope)
-          case structNode: TypeDeclNode.StructNode => StructSchemaResolver.resolve(structNode, typeScope)
+          case aliasNode: DeclNode.AliasNode => AliasSchemaResolver.resolve(aliasNode, typeScope)
+          case traitNode: DeclNode.TraitNode => TraitSchemaResolver.resolve(traitNode, typeScope)
+          case structNode: DeclNode.StructNode => StructSchemaResolver.resolve(structNode, typeScope)
         }
         types + (name -> tpe)
     }
@@ -88,9 +90,9 @@ object DeclarationResolver {
     schemaResolutionOrder.foldLeft(Map.empty: Registry.SchemaDefinitions) {
       case (schemaDefinitions, name) =>
         val definition = typeDeclarations(name) match {
-          case aliasNode: TypeDeclNode.AliasNode => AliasDefinitionResolver.resolve(aliasNode, typeScope)
-          case traitNode: TypeDeclNode.TraitNode => TraitDefinitionResolver.resolve(traitNode, typeScope)
-          case structNode: TypeDeclNode.StructNode => StructDefinitionResolver.resolve(structNode, typeScope)
+          case aliasNode: DeclNode.AliasNode => AliasDefinitionResolver.resolve(aliasNode, typeScope)
+          case traitNode: DeclNode.TraitNode => TraitDefinitionResolver.resolve(traitNode, typeScope)
+          case structNode: DeclNode.StructNode => StructDefinitionResolver.resolve(structNode, typeScope)
         }
         schemaDefinitions + (name -> definition)
     }

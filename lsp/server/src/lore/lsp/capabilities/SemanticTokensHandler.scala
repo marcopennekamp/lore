@@ -77,12 +77,12 @@ object SemanticTokensHandler {
       case DeclNode.ParameterNode(nameNode, _, _) => singleHighlight(nameNode, SemanticTokenTypes.Parameter)
       case DeclNode.TypeVariableNode(nameNode, _, _, _, _, _) => singleHighlight(nameNode, SemanticTokenTypes.TypeParameter)
 
-      case TypeDeclNode.AliasNode(nameNode, _, _, position) => Vector(
+      case DeclNode.AliasNode(nameNode, _, _, position) => Vector(
         createKeywordHighlight(position.startIndex, nameNode.position),
         createHighlight(nameNode, SemanticTokenTypes.Type),
       )
 
-      case TypeDeclNode.TraitNode(nameNode, _, extended, position) =>
+      case DeclNode.TraitNode(nameNode, _, extended, position) =>
         val extendedHighlight = extended.headOption.map(
           tpe => createKeywordHighlight(nameNode.position, tpe.position)
         ).toVector
@@ -92,7 +92,7 @@ object SemanticTokensHandler {
           createHighlight(nameNode, SemanticTokenTypes.Interface),
         ) ++ extendedHighlight
 
-      case TypeDeclNode.StructNode(nameNode, _, _, extended, _, position) =>
+      case DeclNode.StructNode(nameNode, _, _, extended, _, position) =>
         val extendedHighlight = extended.headOption.map(
           tpe => createKeywordHighlight(nameNode.position, tpe.position)
         ).toVector
@@ -102,7 +102,7 @@ object SemanticTokensHandler {
           createHighlight(nameNode, SemanticTokenTypes.Struct),
         ) ++ extendedHighlight
 
-      case TypeDeclNode.PropertyNode(nameNode, _, _, _, _, position) => Vector(
+      case DeclNode.PropertyNode(nameNode, _, _, _, _, position) => Vector(
         // This colors both `open` and `mut`, if applicable.
         createKeywordHighlight(position.startIndex, nameNode.position),
         createHighlight(nameNode, SemanticTokenTypes.Property),

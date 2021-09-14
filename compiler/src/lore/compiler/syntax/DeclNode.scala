@@ -10,26 +10,39 @@ import lore.compiler.types.TypeVariable.Variance
   */
 sealed trait DeclNode extends NamedNode
 
+/**
+  * Top-level binding declarations.
+  */
+sealed trait BindingDeclNode extends DeclNode
+
+/**
+  * Top-level type declarations.
+  */
+sealed trait TypeDeclNode extends DeclNode {
+  def typeVariables: Vector[TypeVariableNode]
+}
+
 object DeclNode {
+
   case class ModuleNode(
     namePathNode: NamePathNode,
     imports: Vector[ImportNode],
     members: Vector[DeclNode],
     position: Position,
-  ) extends DeclNode with PathNamedNode
+  ) extends BindingDeclNode with PathNamedNode
 
   // TODO (modules): Support multi- and wildcard imports.
   case class ImportNode(
     namePathNode: NamePathNode,
     position: Position,
-  ) extends Node with PathNamedNode
+  ) extends Node
 
   case class GlobalVariableNode(
     nameNode: NameNode,
     tpe: TypeExprNode,
     value: ExprNode,
     position: Position,
-  ) extends DeclNode
+  ) extends BindingDeclNode
 
   /**
     * Function declarations. These include action declarations, which are resolved as syntactic sugar by the parser.
@@ -44,7 +57,7 @@ object DeclNode {
     typeVariables: Vector[TypeVariableNode],
     body: Option[ExprNode],
     position: Position,
-  ) extends DeclNode {
+  ) extends BindingDeclNode {
     def isAbstract: Boolean = body.isEmpty
   }
 
@@ -98,16 +111,6 @@ object DeclNode {
       variant(nameNode, lowerBound, upperBound, Variance.Invariant, position)
     }
   }
-}
-
-/**
-  * Top-level type declarations.
-  */
-sealed trait TypeDeclNode extends DeclNode {
-  def typeVariables: Vector[TypeVariableNode]
-}
-
-object TypeDeclNode {
 
   case class AliasNode(
     nameNode: NameNode,

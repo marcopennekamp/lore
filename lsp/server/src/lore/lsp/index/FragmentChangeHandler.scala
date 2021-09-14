@@ -25,13 +25,13 @@ object FragmentChangeHandler {
       }
 
       val typeDeclarations = nodes.filterType[TypeDeclNode].map {
-        case TypeDeclNode.AliasNode(nameNode, _, _, position) =>
+        case DeclNode.AliasNode(nameNode, _, _, position) =>
           IndexBuilder.updateTypeDeclaration(nameNode.value, Vector.empty, position)
 
-        case TypeDeclNode.StructNode(nameNode, _, _, _, properties, position) =>
+        case DeclNode.StructNode(nameNode, _, _, _, properties, position) =>
           IndexBuilder.updateTypeDeclaration(nameNode.value, properties.map(p => (p.name, p.nameNode.position)), position)
 
-        case TypeDeclNode.TraitNode(nameNode, _, _, position) =>
+        case DeclNode.TraitNode(nameNode, _, _, position) =>
           IndexBuilder.updateTypeDeclaration(nameNode.value, Vector.empty, position)
       }
 

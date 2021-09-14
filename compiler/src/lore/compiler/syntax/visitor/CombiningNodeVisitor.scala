@@ -63,19 +63,19 @@ object CombiningNodeVisitor {
         val result = concat(visit(lowerBound), visit(upperBound))
         visitor.visit(node, result)
 
-      case TypeDeclNode.AliasNode(_, typeVariables, tpe, _) =>
+      case DeclNode.AliasNode(_, typeVariables, tpe, _) =>
         val result = concat(visit(typeVariables), visit(tpe))
         visitor.visit(node, result)
 
-      case TypeDeclNode.StructNode(_, _, typeVariables, extended, properties, _) =>
+      case DeclNode.StructNode(_, _, typeVariables, extended, properties, _) =>
         val result = concat(visit(typeVariables), visit(extended), visit(properties))
         visitor.visit(node, result)
 
-      case TypeDeclNode.PropertyNode(_, tpe, _, _, defaultValue, _) =>
+      case DeclNode.PropertyNode(_, tpe, _, _, defaultValue, _) =>
         val result = concat(visit(tpe), visit(defaultValue))
         visitor.visit(node, result)
 
-      case TypeDeclNode.TraitNode(_, typeVariables, extended, _) =>
+      case DeclNode.TraitNode(_, typeVariables, extended, _) =>
         val result = concat(visit(typeVariables), visit(extended))
         visitor.visit(node, result)
 

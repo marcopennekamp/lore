@@ -24,8 +24,8 @@ class IndexedModule {
       case node: ModuleNode => throw CompilationException(
         s"Module nodes must be denested when being added to the IndexedModule. Position: ${node.position}."
       )
+      case node: BindingDeclNode => addBindingName(node.name)
       case node: TypeDeclNode => addTypeName(node.name)
-      case node: NamedNode => addBindingName(node.name)
     }
   }
 

@@ -164,12 +164,12 @@ class FragmentParser(implicit fragment: Fragment) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`type` | `trait` | struct | `object`)
 
-  private def `type`[_: P]: P[TypeDeclNode.AliasNode] = {
-    P(Index ~ "type" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(typeParameterParser.simpleParameter) ~ "=" ~ typeExpression ~ Index).map(withPosition(TypeDeclNode.AliasNode))
+  private def `type`[_: P]: P[DeclNode.AliasNode] = {
+    P(Index ~ "type" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(typeParameterParser.simpleParameter) ~ "=" ~ typeExpression ~ Index).map(withPosition(DeclNode.AliasNode))
   }
 
-  private def `trait`[_: P]: P[TypeDeclNode.TraitNode] = {
-    P(Index ~ "trait" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(typeParameterParser.traitParameter) ~ `extends` ~ Index).map(withPosition(TypeDeclNode.TraitNode))
+  private def `trait`[_: P]: P[DeclNode.TraitNode] = {
+    P(Index ~ "trait" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(typeParameterParser.traitParameter) ~ `extends` ~ Index).map(withPosition(DeclNode.TraitNode))
   }
 
   /**
@@ -180,11 +180,11 @@ class FragmentParser(implicit fragment: Fragment) {
     P(("extends" ~~ Space.WS1 ~ typeExpression.rep(1, CharIn(",")).map(_.toVector)).?).map(_.getOrElse(Vector.empty))
   }
 
-  private def struct[_: P]: P[TypeDeclNode.StructNode] = {
+  private def struct[_: P]: P[DeclNode.StructNode] = {
     structCommons("struct", typeVariables(typeParameterParser.structParameter), isObject = false)
   }
 
-  private def `object`[_: P]: P[TypeDeclNode.StructNode] = {
+  private def `object`[_: P]: P[DeclNode.StructNode] = {
     structCommons("object", Pass.map(_ => Vector.empty), isObject = true)
   }
 
@@ -192,7 +192,7 @@ class FragmentParser(implicit fragment: Fragment) {
     keyword: => P[Unit],
     tvs: => P[Vector[TypeVariableNode]],
     isObject: Boolean,
-  ): P[TypeDeclNode.StructNode] = {
+  ): P[DeclNode.StructNode] = {
     def conciseForm = {
       P("(" ~ property.rep(sep = CharIn(",")).map(_.toVector) ~ ",".? ~ ")" ~ `extends`)
         .map { case (properties, extended) => (extended, properties) }
@@ -232,20 +232,20 @@ class FragmentParser(implicit fragment: Fragment) {
 
     P(Index ~~ keyword ~~ Space.WS1 ~~/ structName ~~ Space.WS ~~ tvs ~~ Space.WS ~~ (conciseForm | bodyForm | emptyForm) ~~ Index)
       .map { case (startIndex, nameNode, typeVariables, (extended, properties), endIndex) => (startIndex, nameNode, isObject, typeVariables, extended, properties, endIndex) }
-      .map(withPosition(TypeDeclNode.StructNode))
+      .map(withPosition(DeclNode.StructNode))
   }
 
-  private def structBody[_: P]: P[Vector[TypeDeclNode.PropertyNode]] = {
+  private def structBody[_: P]: P[Vector[DeclNode.PropertyNode]] = {
     // Property lines should be terminated by newlines, so we're consciously not allowing trailing commas here.
     def propertyLine = P(property.rep(sep = CharIn(","))).map(_.toVector)
     def properties = P(propertyLine.repX(sep = Space.terminators)).map(_.toVector.flatten)
     P(Space.terminators ~~ properties ~ "end")
   }
 
-  private def property[_: P]: P[TypeDeclNode.PropertyNode] = {
+  private def property[_: P]: P[DeclNode.PropertyNode] = {
     P(Index ~ ("open" ~~ Space.WS1).!.?.map(_.isDefined) ~ ("mut" ~~ Space.WS1).!.?.map(_.isDefined) ~ name ~ typeParser.typing ~ defaultValue.? ~ Index)
       .map { case (startIndex, isOpen, isMutable, name, tpe, defaultValue, endIndex) => (startIndex, name, tpe, isOpen, isMutable, defaultValue, endIndex) }
-      .map(withPosition(TypeDeclNode.PropertyNode))
+      .map(withPosition(DeclNode.PropertyNode))
   }
 
   private def defaultValue[_: P]: P[ExprNode] = P("=" ~ expressionParser.expression)
