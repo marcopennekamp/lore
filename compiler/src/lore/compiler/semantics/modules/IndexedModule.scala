@@ -1,9 +1,10 @@
 package lore.compiler.semantics.modules
 
 import lore.compiler.core.CompilationException
+import lore.compiler.semantics.NameKind
 import lore.compiler.syntax.DeclNode.ModuleNode
 import lore.compiler.syntax.Node.{NamePathNode, NamedNode}
-import lore.compiler.syntax.{DeclNode, TypeDeclNode}
+import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
 
 /**
   * An IndexedModule is a global entry in the [[GlobalModuleIndex]].
@@ -35,5 +36,15 @@ class IndexedModule {
 
   private def addBindingName(name: String): Unit = {
     bindingNames = bindingNames + name
+  }
+
+  /**
+    * Whether this module has a member named `name` given `nameKind`.
+    */
+  def has(name: String, nameKind: NameKind): Boolean = namesOf(nameKind).contains(name)
+
+  private def namesOf(nameKind: NameKind): Set[String] = nameKind match {
+    case NameKind.Type => typeNames
+    case NameKind.Binding => bindingNames
   }
 }

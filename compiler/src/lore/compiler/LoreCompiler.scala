@@ -57,7 +57,7 @@ object LoreCompiler {
     val fragmentModules = timed("Parsing")(ParsingPhase.process(fragments))
     if (exitEarly && reporter.hasErrors) return None
 
-    val registry = timed("Resolution")(ResolutionPhase.process(declarations))
+    val registry = timed("Resolution")(ResolutionPhase.process(fragmentModules))
     if (exitEarly && reporter.hasErrors) return Some(registry)
 
     timed("Constraints & Transformation")(analyze(registry, reporter))

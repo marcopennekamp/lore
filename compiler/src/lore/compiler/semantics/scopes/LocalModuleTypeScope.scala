@@ -1,18 +1,18 @@
 package lore.compiler.semantics.scopes
 
-import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.modules.LexicalModule
+import lore.compiler.semantics.{NameKind, NamePath}
+import lore.compiler.semantics.modules.LocalModule
 import lore.compiler.types.NamedSchema
 
 /**
-  * A lexical module type scope implements the lookup and precedence criteria described in [[LexicalModule]].
+  * A LocalModuleTypeScope implements the lookup and precedence criteria described in [[LocalModule]] for types.
   *
   * TODO (modules): If we go back to a flat Registry without ModuleDefinitions, `schemas` would become a Registry
   *                 `typeScope.get(namePath)`.
   */
-case class LexicalModuleTypeScope(lexicalModule: LexicalModule, schemas: Map[NamePath, NamedSchema]) extends TypeScope {
+case class LocalModuleTypeScope(localModule: LocalModule, schemas: Map[NamePath, NamedSchema]) extends TypeScope {
   override protected def local(name: String): Option[NamedSchema] = {
-    lexicalModule.getTypePath(name).flatMap {
+    localModule.getPath(name, NameKind.Type).flatMap {
       namePath => schemas.get(namePath)
     }
   }

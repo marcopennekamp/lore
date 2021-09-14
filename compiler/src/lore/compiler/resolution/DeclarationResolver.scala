@@ -14,13 +14,13 @@ object DeclarationResolver {
   type TypeDeclarations = Map[String, TypeDeclNode]
 
   /**
-    * Builds the registry from all declarations.
+    * Builds the registry from all module nodes.
     *
     * We perform two separate passes over type declarations: (1) Resolve types and (2) resolve type definitions. This
     * has the distinct advantage that we don't need to defer typings of parameters and members when resolving
     * definitions, as all declared types have been added to the registry by then.
     */
-  def resolve(declarations: Vector[DeclNode])(implicit reporter: Reporter): Registry = {
+  def resolve(moduleNodes: Vector[DeclNode.ModuleNode])(implicit reporter: Reporter): Registry = {
     val typeDeclNodes = introspectionTypeDeclarations ++ declarations.filterType[TypeDeclNode]
     val globalVariableDeclarations = declarations.filterType[DeclNode.GlobalVariableNode]
     val multiFunctionDeclarations = declarations.filterType[DeclNode.FunctionNode].groupBy(_.name)

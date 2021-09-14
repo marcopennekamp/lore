@@ -1,6 +1,6 @@
 package lore.compiler.semantics.modules
 
-import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.{NameKind, NamePath}
 import lore.compiler.syntax.DeclNode
 import lore.compiler.syntax.DeclNode.ModuleNode
 import lore.compiler.syntax.Node.NamePathNode
@@ -56,47 +56,49 @@ class GlobalModuleIndex {
         } else node
 
         indexedModule.add(denestedModuleNode)
-        denestedModuleNode.members.foreach(add(_, modulePath.concat(denestedModuleNode.namePath)))
+        denestedModuleNode.members.foreach(add(_, modulePath ++ denestedModuleNode.namePath))
 
       case _ => indexedModule.add(node)
     }
   }
 
   /**
-    * This function is the type-centric version of [[findPath]].
+    * Whether the index has a binding or type with the exact name path.
     */
-  def getTypePath(startPath: NamePath, memberName: String): Option[NamePath] = {
-    findPath(_.typeNames)(startPath, memberName)
-  }
-
-  /**
-    * This function is the binding-centric version of [[findPath]]
-    */
-  def getBindingPath(startPath: NamePath, memberName: String): Option[NamePath] = {
-    findPath(_.bindingNames)(startPath, memberName)
+  def has(namePath: NamePath): Boolean = {
+    index
+      .get(namePath.parentOrEmpty)
+      .exists(m => m.has(namePath.simpleName, NameKind.Type) || m.has(namePath.simpleName, NameKind.Binding))
   }
 
   /**
     * Finds the closest module member with the given name, starting with the module at `startPath` and successively
     * working up the parentage, up to and including the root module. Returns None if none of the modules contain a
-    * member called `name`.
+    * member called `name`. If the path is empty, `getPath` also returns None because the root module shouldn't be
+    * referenced directly.
     *
-    * For example, if we are requesting a member `baz` by simple name inside the module `Foo.Bar`, but `baz` is
-    * actually a member of `Foo`, this function will return `Foo.baz`. If `baz` is instead a member of the root, this
-    * function will return simply `baz`.
+    * For example, if we are requesting a member via the member path `Foo.Bar.baz`, but `baz` is actually a member of
+    * `Foo`, `getPath` will return `Foo.baz`. If `baz` is instead a member of the root, this function will return
+    * simply `baz`.
     */
-  def findPath(getNames: IndexedModule => Set[String])(startPath: NamePath, memberName: String): Option[NamePath] = {
+  def getPath(memberPath: NamePath, nameKind: NameKind): Option[NamePath] = {
+    if (memberPath.isEmpty) {
+      return None
+    }
+
+    val modulePath = memberPath.parent
+    val memberName = memberPath.simpleName
+
     def fallback: Option[NamePath] = {
-      startPath.parent.flatMap(
-        parentPath => findPath(getNames)(parentPath, memberName)
+      modulePath.flatMap(_.parent).flatMap(
+        parentPath => getPath(parentPath + memberName, nameKind)
       )
     }
 
-    index.get(startPath) match {
+    index.get(modulePath.getOrElse(NamePath.empty)) match {
       case Some(indexedModule) =>
-        val names = getNames(indexedModule)
-        if (names.contains(memberName)) {
-          Some(startPath.append(memberName))
+        if (indexedModule.has(memberName, nameKind)) {
+          Some(memberPath)
         } else fallback
 
       case None => fallback
