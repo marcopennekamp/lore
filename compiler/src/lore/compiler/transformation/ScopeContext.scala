@@ -7,19 +7,19 @@ import lore.compiler.semantics.scopes.{BindingScope, BlockBindingScope}
   * A local variable scope context for expression transformation passes.
   */
 class ScopeContext(parentScope: BindingScope) {
-  private var scopes: List[BindingScope] = List(parentScope)
+  private var scopes = Vector(new BlockBindingScope(parentScope))
 
-  def currentScope: BindingScope = scopes.head
+  def currentScope: BlockBindingScope = scopes.last
 
   def openScope(): Unit = {
     val scope = new BlockBindingScope(currentScope)
-    scopes = scope :: scopes
+    scopes = scopes :+ scope
   }
 
   def closeScope(): Unit = {
     if (scopes.isEmpty) {
-      throw CompilationException("The parent scope cannot not be closed from within the expression that's being transformed.")
+      throw CompilationException("The parent scope cannot be closed from within the expression that's being transformed.")
     }
-    scopes = scopes.tail
+    scopes = scopes.init
   }
 }

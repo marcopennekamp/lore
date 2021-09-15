@@ -1,97 +1,61 @@
 package lore.compiler.semantics
 
-import lore.compiler.core.{CompilationException, Position}
-import lore.compiler.feedback.{Feedback, Reporter}
-import lore.compiler.semantics.Registry.MultiFunctionNotFound
 import lore.compiler.semantics.functions.MultiFunctionDefinition
+import lore.compiler.semantics.modules.{LocalModule, ModuleDefinition}
 import lore.compiler.semantics.scopes._
 import lore.compiler.semantics.structures.SchemaDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
-import lore.compiler.types.{DeclaredSchema, DeclaredTypeHierarchy, NamedSchema, StructType, TypeVariable}
-import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtension}
+import lore.compiler.types.{DeclaredSchema, DeclaredTypeHierarchy, NamedSchema}
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 /**
-  * The Registry represents the global scope of type and multi-function definitions.
+  * The Registry represents the global scope of module, type, global variable, and function definitions.
   */
 case class Registry(
-  schemas: Registry.Schemas,
+  types: Registry.Types,
+  bindings: Registry.Bindings,
   schemaResolutionOrder: Registry.SchemaResolutionOrder,
-  schemaDefinitions: Registry.SchemaDefinitions,
-  globalVariables: Registry.GlobalVariables,
-  multiFunctions: Registry.MultiFunctions,
 ) {
 
-  val declaredTypeHierarchy = new DeclaredTypeHierarchy(schemas.values.toVector.filterType[DeclaredSchema])
+  val declaredTypeHierarchy = new DeclaredTypeHierarchy(types.schemas.values.toVector.filterType[DeclaredSchema])
 
   /**
     * All schemas in their proper order of resolution. Excludes predefined types.
     */
-  val schemasInOrder: Vector[(String, NamedSchema)] = schemaResolutionOrder.map(name => (name, schemas(name)))
+  val schemasInOrder: Vector[(NamePath, NamedSchema)] = schemaResolutionOrder.map(name => (name, types.schemas(name)))
 
   /**
-    * The global type scope backed by the registry.
+    * Creates a type scope that represents the Registry. Name resolution requires the presence of a local module.
     */
-  val typeScope: TypeScope = ImmutableTypeScope(schemas, None)
+  def getTypeScope(localModule: LocalModule): LocalModuleTypeScope = LocalModuleTypeScope(localModule, types)
 
   /**
-    * The global binding scope backed by the registry, containing global variables, multi-functions, struct bindings,
-    * and objects.
-    *
-    * The binding scope does not contain plain struct constructors, even for constant schemas. A [[StructBinding]] is
-    * used in all cases. Objects are represented by [[StructObject]].
+    * Creates a binding scope that represents the Registry. Name resolution requires the presence of a local module.
     */
-  val bindingScope: BindingScope = new BindingScope {
-    override protected def local(name: String): Option[Binding] = globalVariables.get(name).orElse(multiFunctions.get(name)).orElse(getStructBinding(name))
-    override protected def add(name: String, entry: Binding): Unit = {
-      throw new UnsupportedOperationException(s"You may not add bindings to the Registry via its BindingScope interface. Name: $name. Binding: $entry.")
-    }
-  }
-
-  /**
-    * Gets a multi-function with the given name. An appropriate error is reported if it cannot be found.
-    */
-  def resolveMultiFunction(name: String, position: Position)(implicit reporter: Reporter): Option[MultiFunctionDefinition] = {
-    multiFunctions.get(name).ifEmpty(reporter.error(MultiFunctionNotFound(name, position)))
-  }
-
-  /**
-    * Gets a [[StructBinding]] from a struct schema with the given name. If the name refers to a type alias that
-    * represents a struct type, the struct binding will be able to instantiate the struct with the correct struct type
-    * given the type alias's type parameters.
-    *
-    * Objects are represented by [[StructObject]].
-    */
-  def getStructBinding(name: String): Option[Binding] = {
-    def getByType(tpe: StructType, typeParameters: Vector[TypeVariable]): Binding = {
-      if (tpe.schema.definition.isObject) {
-        if (typeParameters.nonEmpty) {
-          throw CompilationException(s"Objects cannot have type parameters. Violated by object ${tpe.name}.")
-        }
-        StructObject(name, tpe)
-      } else {
-        StructBinding(name, typeParameters, tpe)
-      }
-    }
-
-    typeScope.getStructSchema(name).map(schema => getByType(schema.representative, schema.parameters)).orElse {
-      typeScope.getAliasSchema(name).flatMap { aliasSchema =>
-        Some(aliasSchema.representative)
-          .filterType[StructType]
-          .map(getByType(_, aliasSchema.parameters))
-      }
-    }
-  }
+  def getBindingScope(localModule: LocalModule): LocalModuleBindingScope = LocalModuleBindingScope(localModule, bindings)
 
 }
 
 object Registry {
-  type Schemas = Map[String, NamedSchema]
-  type SchemaResolutionOrder = Vector[String]
-  type SchemaDefinitions = Map[String, SchemaDefinition]
-  type GlobalVariables = Map[String, GlobalVariableDefinition]
-  type MultiFunctions = Map[String, MultiFunctionDefinition]
+  type Schemas = Map[NamePath, NamedSchema]
+  type SchemaDefinitions = Map[NamePath, SchemaDefinition]
 
-  case class MultiFunctionNotFound(name: String, override val position: Position) extends Feedback.Error(position) {
-    override def message = s"The multi-function $name does not exist in the current scope."
-  }
+  case class Types(
+    schemas: Schemas,
+    schemaDefinitions: SchemaDefinitions,
+  )
+
+  type GlobalVariables = Map[NamePath, GlobalVariableDefinition]
+  type MultiFunctions = Map[NamePath, MultiFunctionDefinition]
+  type StructBindings = Map[NamePath, StructBinding]
+  type Modules = Map[NamePath, ModuleDefinition]
+
+  case class Bindings(
+    globalVariables: GlobalVariables,
+    multiFunctions: MultiFunctions,
+    structBindings: StructBindings,
+    modules: Modules,
+  )
+
+  type SchemaResolutionOrder = Vector[NamePath]
 }

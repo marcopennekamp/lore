@@ -7,14 +7,13 @@ import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.expressions.Expression.{BinaryOperator, CondCase, Literal, UnaryOperator, XaryOperator}
+import lore.compiler.semantics.expressions.Expression.{BinaryOperator, CondCase, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions._
 import lore.compiler.semantics.scopes._
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.transformation.InferringExpressionTransformationVisitor._
 import lore.compiler.types._
-import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalaz.Id.Id
 
 class InferringExpressionTransformationVisitor(
@@ -60,7 +59,7 @@ class InferringExpressionTransformationVisitor(
           judgmentCollector.add(TypingJudgment.MultiFunctionValue(functionType, mf, position))
           Expression.MultiFunctionValue(mf, functionType, position)
 
-        case structBinding: StructBinding => Expression.BindingAccess(StructTransformation.getConstructor(structBinding, position), position)
+        case structBinding: StructConstructorBinding => Expression.BindingAccess(StructTransformation.getConstructor(structBinding, position), position)
         case binding: TypedBinding => Expression.BindingAccess(binding, position)
       }.getOrElse(Expression.Hole(BasicType.Nothing, position))
 
@@ -80,11 +79,13 @@ class InferringExpressionTransformationVisitor(
         FixedFunctionEmptyFit(mf, inputType, position),
         min => FixedFunctionAmbiguousCall(mf, inputType, min, position)
       )
-      registry
+      // TODO (modules): Get the binding from the scope. If it isn't a multi-function, report an error.
+      /* registry
         .resolveMultiFunction(nameNode.value, nameNode.position)
         .flatMap(dispatch)
         .map(instance => Expression.FixedFunctionValue(instance, position))
-        .getOrElse(Expression.Hole(BasicType.Nothing, position))
+        .getOrElse(Expression.Hole(BasicType.Nothing, position)) */
+      ???
 
     case ConstructorNode(nameNode, typeArgumentNodes, position) =>
       StructTransformation.getConstructor(nameNode.value, Some(typeArgumentNodes), nameNode.position) match {
@@ -268,9 +269,9 @@ class InferringExpressionTransformationVisitor(
     case SimpleCallNode(nameNode, _, position) =>
       def handleBinding(binding: Binding): Option[Expression.Call] = binding match {
         case mf: MultiFunctionDefinition => Some(FunctionTyping.multiFunctionCall(mf, expressions, position))
-        case structBinding: StructBinding => handleBinding(StructTransformation.getConstructor(structBinding, nameNode.position))
-        case _: StructObject =>
-          reporter.error(StructFeedback.Object.NoConstructor(binding.name, nameNode.position))
+        case structBinding: StructConstructorBinding => handleBinding(StructTransformation.getConstructor(structBinding, nameNode.position))
+        case structObject: StructObjectBinding =>
+          reporter.error(StructFeedback.Object.NoConstructor(structObject.name, nameNode.position))
           None
         case binding: TypedBinding => Some(CallTransformation.valueCall(Expression.BindingAccess(binding, nameNode.position), expressions, position))
       }

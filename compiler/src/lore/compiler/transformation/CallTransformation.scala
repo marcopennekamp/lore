@@ -6,7 +6,7 @@ import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.inference.{FunctionInference, InferenceVariable, TypingJudgment}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.functions.CallTarget
+import lore.compiler.semantics.functions.{CallTarget, MultiFunctionDefinition}
 import lore.compiler.types.{FunctionType, TupleType, Type}
 
 object CallTransformation {
@@ -55,19 +55,21 @@ object CallTransformation {
     * expected output type.
     */
   def multiFunctionCall(
-    functionName: String,
+    mf: MultiFunctionDefinition,
     arguments: Vector[Expression],
     expectedOutputType: Type,
     position: Position,
   )(implicit registry: Registry, reporter: Reporter): Expression = {
-    val option = for {
-      mf <- registry.resolveMultiFunction(functionName, position)
-      inputType = TupleType(arguments.map(_.tpe))
-      instance <- mf.dispatch(inputType, EmptyFit(mf, inputType, position), min => AmbiguousCall(mf, inputType, min, position))
-      expression = Expression.Call(CallTarget.MultiFunction(mf), arguments, instance.signature.outputType, position)
-      _ = verifyOutputType(expectedOutputType)(expression)
-    } yield expression
-
+    val inputType = TupleType(arguments.map(_.tpe))
+    val option = mf.dispatch(
+      inputType,
+      EmptyFit(mf, inputType, position),
+      min => AmbiguousCall(mf, inputType, min, position)
+    ).map { instance =>
+      val expression = Expression.Call(CallTarget.MultiFunction(mf), arguments, instance.signature.outputType, position)
+      verifyOutputType(expectedOutputType)(expression)
+      expression
+    }
     option.getOrElse(Expression.Hole(expectedOutputType, position))
   }
 

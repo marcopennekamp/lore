@@ -59,19 +59,17 @@ object Expression {
     * of an assignment.
     */
   sealed trait Access extends Expression {
-    def name: String
     def isMutable: Boolean
   }
 
   case class BindingAccess(binding: TypedBinding, position: Position) extends Expression.Apply(binding.tpe) with Access {
-    override val name: String = binding.name
     override val isMutable: Boolean = binding.isMutable
-    override val toString: String = name
+    override val toString: String = binding.toString
   }
 
   case class MemberAccess(instance: Expression, member: Member, position: Position) extends Expression.Apply(member.tpe) with Access {
-    override val name: String = member.name
-    override def isMutable: Boolean = member.isMutable
+    override val isMutable: Boolean = member.isMutable
+    override val toString: String = member.name
   }
 
   /**

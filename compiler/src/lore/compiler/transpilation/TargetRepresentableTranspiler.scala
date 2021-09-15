@@ -1,7 +1,7 @@
 package lore.compiler.transpilation
 
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.compiler.semantics.scopes.{StructObject, Variable}
+import lore.compiler.semantics.scopes.{StructObjectBinding, Variable}
 import lore.compiler.semantics.structures.StructConstructor
 import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.target.Target.TargetExpression
@@ -29,7 +29,7 @@ object TargetRepresentableTranspiler {
       case function: FunctionDefinition => RuntimeNames.functionDefinition(function)
       case Variable(name, _, _) => RuntimeNames.localVariable(name)
 
-      case structObject: StructObject =>
+      case structObject: StructObjectBinding =>
         val definition = structObject.tpe.schema.definition
         val varObject = RuntimeNames.struct.`object`(structObject.tpe.schema)
         supportLazy(varObject, !definition.allDefaultsLocalized)

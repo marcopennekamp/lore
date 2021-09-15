@@ -99,6 +99,8 @@ If a module is nested twice, the inner parent has precedence over the outer pare
 
 A type and a module may share a name. A module that bears the same name as a type is called a **companion module**. This module is *expected*, by convention, to contain functions for working with the type. For example, the `Option` type has a companion module `Option` that contains functions for working with options, such as `Option.get`.
 
+**Struct objects** may also have a companion module, but an object's properties have precedence over the module's members.
+
 ###### Example
 
 ```

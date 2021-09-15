@@ -5,7 +5,7 @@ import lore.compiler.feedback.{Feedback, Reporter, StructFeedback}
 import lore.compiler.inference.InferenceVariable
 import lore.compiler.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.scopes.{BindingScope, StructObject, StructBinding, TypeScope}
+import lore.compiler.semantics.scopes.{BindingScope, StructObjectBinding, StructConstructorBinding, TypeScope}
 import lore.compiler.semantics.structures.{StructConstructor, StructDefinition, StructPropertyDefinition}
 import lore.compiler.syntax.TypeExprNode
 
@@ -14,10 +14,10 @@ object StructTransformation {
   /**
     * Gets the struct binding called `name` from the given scope.
     */
-  def getStructBinding(name: String, position: Position)(implicit bindingScope: BindingScope, reporter: Reporter): Option[StructBinding] = {
+  def getStructBinding(name: String, position: Position)(implicit bindingScope: BindingScope, reporter: Reporter): Option[StructConstructorBinding] = {
     bindingScope.resolve(name, position).flatMap {
-      case structBinding: StructBinding => Some(structBinding)
-      case _: StructObject =>
+      case structBinding: StructConstructorBinding => Some(structBinding)
+      case _: StructObjectBinding =>
         reporter.error(StructFeedback.Object.NoConstructor(name, position))
         None
       case _ =>
@@ -27,18 +27,19 @@ object StructTransformation {
   }
 
   /**
-    * Gets a struct constructor from the given struct binding. If the struct has type parameters, all type parameters in the
-    * constructor's type are replaced with inference variables. Type parameter bounds are added as typing judgments.
+    * Gets a struct constructor from the given struct constructor binding. If the struct has type parameters, all type
+    * parameters in the constructor's type are replaced with inference variables. Type parameter bounds are added as
+    * typing judgments.
     *
     * This function should be used if there are no manually specified type arguments.
     */
-  def getConstructor(structBinding: StructBinding, position: Position)(implicit judgmentCollector: JudgmentCollector): StructConstructor = {
-    if (structBinding.isConstant) {
-      structBinding.representative.constructor
+  def getConstructor(structConstructorBinding: StructConstructorBinding, position: Position)(implicit judgmentCollector: JudgmentCollector): StructConstructor = {
+    if (structConstructorBinding.isConstant) {
+      structConstructorBinding.instantiate(Map.empty)
     } else {
-      val (assignments, judgments) = InferenceVariable.fromTypeVariables(structBinding.parameters, position)
+      val (assignments, judgments) = InferenceVariable.fromTypeVariables(structConstructorBinding.parameters, position)
       judgmentCollector.add(judgments)
-      structBinding.instantiate(assignments).constructor
+      structConstructorBinding.instantiate(assignments)
     }
   }
 

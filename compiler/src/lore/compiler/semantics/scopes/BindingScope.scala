@@ -5,25 +5,26 @@ import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.functions.FunctionSignature
 
 /**
-  * A scope that provides access to bindings (variables, multi-functions, struct constructors, etc.).
+  * A scope that provides access to bindings (variables, multi-functions, struct constructors, modules, etc.).
   */
 trait BindingScope extends Scope[Binding] {
-  def add(binding: Binding): Unit = add(binding.name, binding)
-  def register[A <: Binding](binding: A, position: Position)(implicit reporter: Reporter): Unit = register(binding.name, binding, position)
-
-  override def entryLabel: String = "variable, multi-function, or struct constructor"
+  override def entryLabel: String = "variable, multi-function, struct constructor, or module"
 }
 
 /**
   * The root binding scope of a function, containing parameter bindings.
   */
-class FunctionBindingScope(val signature: FunctionSignature, parent: BindingScope) extends BasicScope[Binding](Some(parent)) with BindingScope {
-  // Register all named parameters as immutable variables with the function scope. We bypass 'register' since this
-  // operation should not fail at this stage.
-  signature.namedParameters.map(_.asVariable).foreach(this.add)
+case class FunctionBindingScope(signature: FunctionSignature, parent: BindingScope) extends ImmutableScope[Binding] with BindingScope {
+  override protected val optionalParent: Option[Scope[Binding]] = Some(parent)
+  override protected val entries: Map[String, Binding] = signature.namedParameters.map(p => p.name -> p.asVariable).toMap
 }
 
 /**
   * A scope opened by a block, containing local variable bindings.
   */
-class BlockBindingScope(parent: BindingScope) extends BasicScope[Binding](Some(parent)) with BindingScope
+class BlockBindingScope(parent: BindingScope) extends MutableScope[Binding] with BindingScope {
+  override protected def optionalParent: Option[Scope[Binding]] = Some(parent)
+  def register(variable: Variable, position: Position)(implicit reporter: Reporter): Unit = {
+    super.register(variable.name, variable, position)
+  }
+}

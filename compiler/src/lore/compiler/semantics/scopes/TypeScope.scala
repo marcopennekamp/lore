@@ -1,8 +1,9 @@
 package lore.compiler.semantics.scopes
 
 import lore.compiler.core.Position
-import lore.compiler.feedback.Reporter
-import lore.compiler.semantics.Registry
+import lore.compiler.feedback.{Reporter, ScopeFeedback}
+import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.modules.ModuleDefinition
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions.OptionExtension
 
@@ -10,7 +11,45 @@ import lore.compiler.utils.CollectionExtensions.OptionExtension
   * A scope that provides access to type schemas.
   */
 trait TypeScope extends Scope[NamedSchema] {
-  def register(entry: NamedSchema, position: Position)(implicit reporter: Reporter): Unit = super.register(entry.name, entry, position)
+
+  /**
+    * Resolves a schema either by simple name, or by a more complex name path. A name path must be comprised of 1 to N
+    * module names, followed by a type name as the last segment. Types cannot contain types and thus cannot be earlier
+    * segments in a name path.
+    *
+    * To resolve the correct module, this function requires a [[BindingScope]].
+    */
+  def resolve(namePath: NamePath, position: Position)(implicit bindingScope: BindingScope, reporter: Reporter): Option[NamedSchema] = {
+    // If the name path only contains a single segment, we don't need to resolve any module paths.
+    if (!namePath.isMultiple) {
+      return resolve(namePath.simpleName, position)
+    }
+
+    // To get the correct binding which we can jump off of, we have to search with the name path's head name.
+    bindingScope.get(namePath.headName) match {
+      case Some(binding) => binding match {
+        case module: ModuleDefinition =>
+          val typePath = module.name ++ namePath.tail
+          resolveAbsolute(typePath)
+
+        case _ =>
+          reporter.error(ScopeFeedback.ModuleExpected(namePath.headName, position))
+          None
+      }
+
+      case None =>
+        reporter.error(ScopeFeedback.ModuleNotFound(namePath.headName, position))
+        None
+    }
+  }
+
+  /**
+    * Resolves the type identified by the <b>absolute</b> name path. By default, this function passes the ball to the
+    * parent scope.
+    */
+  protected def resolveAbsolute(absolutePath: NamePath): Option[NamedSchema] = {
+    optionalParent.filterType[TypeScope].flatMap(_.resolveAbsolute(absolutePath))
+  }
 
   /**
     * Fetches an alias schema with the given name from the closest scope.
@@ -30,16 +69,13 @@ trait TypeScope extends Scope[NamedSchema] {
   override def entryLabel: String = "type"
 }
 
-/**
-  * A type scope that is backed by an existing schema map. New schemas cannot be registered.
-  */
-case class ImmutableTypeScope(schemas: Registry.Schemas, override val parent: Option[TypeScope]) extends TypeScope {
-  override protected def local(name: String): Option[NamedSchema] = schemas.get(name)
-  override protected def add(name: String, entry: NamedSchema): Unit = throw new UnsupportedOperationException
-}
+case class ImmutableTypeScope(
+  entries: Map[String, NamedSchema],
+  override val optionalParent: Option[TypeScope],
+) extends ImmutableScope[NamedSchema] with TypeScope
 
 object ImmutableTypeScope {
   def from(schemas: Vector[NamedSchema], parent: TypeScope): ImmutableTypeScope = {
-    ImmutableTypeScope(schemas.map(tpe => (tpe.name, tpe)).toMap, Some(parent))
+    ImmutableTypeScope(schemas.map(tpe => (tpe.name.simpleName, tpe)).toMap, Some(parent))
   }
 }

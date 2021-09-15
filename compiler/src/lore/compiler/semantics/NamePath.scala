@@ -23,6 +23,8 @@ case class NamePath(segments: Vector[NamePath.Segment]) {
   lazy val parentOrEmpty: NamePath = parent.getOrElse(NamePath.empty)
 
   val isEmpty: Boolean = segments.isEmpty
+  val isSingle: Boolean = segments.length == 1
+  val isMultiple: Boolean = segments.length > 1
 
   override lazy val toString: String = segments.mkString(".")
 }

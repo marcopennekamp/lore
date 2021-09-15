@@ -2,7 +2,7 @@ package lore.compiler.resolution
 
 import lore.compiler.feedback.FeedbackExtensions.FilterDuplicatesExtension
 import lore.compiler.feedback.{Feedback, Reporter}
-import lore.compiler.semantics.scopes.TypeScope
+import lore.compiler.semantics.scopes.{BindingScope, TypeScope}
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions.{OptionTuple2Extension, OptionVectorExtension}
@@ -21,9 +21,9 @@ object TypeExpressionEvaluator {
     override def message = s"The property ${property.name} is declared twice in the shape type. Shape type properties must be unique."
   }
 
-  def evaluate(expression: TypeExprNode)(implicit typeScope: TypeScope, reporter: Reporter): Option[Type] = {
+  def evaluate(expression: TypeExprNode)(implicit typeScope: TypeScope, bindingScope: BindingScope, reporter: Reporter): Option[Type] = {
     expression match {
-      case TypeExprNode.TypeNameNode(name, position) => typeScope.resolve(name, position).map {
+      case node@TypeExprNode.TypeNameNode(_, position) => typeScope.resolve(node.namePath, position).map {
         case tpe: NamedType => tpe
         case schema: NamedSchema =>
           if (!schema.isConstant) {
@@ -33,7 +33,7 @@ object TypeExpressionEvaluator {
           schema.instantiate(Vector.empty, expression.position)
       }
 
-      case TypeExprNode.InstantiationNode(nameNode, argumentNodes, _) => typeScope.resolve(nameNode.name, nameNode.position).map {
+      case TypeExprNode.InstantiationNode(nameNode, argumentNodes, _) => typeScope.resolve(nameNode.namePath, nameNode.position).map {
         case tpe: NamedType =>
           reporter.error(UnexpectedTypeArguments(tpe, expression))
           tpe
@@ -53,7 +53,7 @@ object TypeExpressionEvaluator {
     }
   }
 
-  private def evaluateShape(expression: TypeExprNode.ShapeNode)(implicit typeScope: TypeScope, reporter: Reporter): ShapeType = {
+  private def evaluateShape(expression: TypeExprNode.ShapeNode)(implicit typeScope: TypeScope, bindingScope: BindingScope, reporter: Reporter): ShapeType = {
     ShapeType(
       expression.properties
         .filterDuplicates(_.name, DuplicateProperty)
@@ -61,7 +61,7 @@ object TypeExpressionEvaluator {
     )
   }
 
-  private def evaluateShapeProperty(expression: TypeExprNode.ShapePropertyNode)(implicit typeScope: TypeScope, reporter: Reporter): ShapeType.Property = {
+  private def evaluateShapeProperty(expression: TypeExprNode.ShapePropertyNode)(implicit typeScope: TypeScope, bindingScope: BindingScope, reporter: Reporter): ShapeType.Property = {
     val tpe = evaluate(expression.tpe).getOrElse(BasicType.Any)
     ShapeType.Property(expression.name, tpe)
   }

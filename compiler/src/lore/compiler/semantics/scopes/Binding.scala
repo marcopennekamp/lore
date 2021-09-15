@@ -7,6 +7,5 @@ import lore.compiler.target.TargetRepresentable
   * bindings.
   */
 trait Binding extends TargetRepresentable {
-  def name: String
   def isMutable: Boolean = false
 }
