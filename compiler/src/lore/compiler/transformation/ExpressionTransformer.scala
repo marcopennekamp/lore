@@ -15,13 +15,16 @@ object ExpressionTransformer {
   /**
     * Builds a semantic expression tree from the given AST expression node, performing type inference in the process.
     * Ensures that all other expression constraints hold.
+    *
+    * @param label An identifier string that is used during inference logging to make a specific function's inference
+    *              logs more accessible.
     */
   def transform(
-    name: String,
     node: ExprNode,
     expectedType: Type,
     typeScope: TypeScope,
     bindingScope: BindingScope,
+    label: String,
   )(implicit registry: Registry, reporter: Reporter): Expression = {
     MemoReporter.nested(reporter) { implicit reporter =>
       val visitor = new InferringExpressionTransformationVisitor(expectedType, typeScope, bindingScope)
@@ -30,7 +33,7 @@ object ExpressionTransformer {
       // Only continue with the transformation if the visitor produced no errors. Otherwise, type inference might
       // report a lot of useless errors.
       if (!reporter.hasErrors) {
-        val inferredTypes = Inference.inferVerbose(visitor.typingJudgments, name, reporter)
+        val inferredTypes = Inference.inferVerbose(visitor.typingJudgments, label, reporter)
         val inferenceFailed = reporter.hasErrors
 
         val rehydrationVisitor = new TypeRehydrationVisitor(inferredTypes)

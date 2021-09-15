@@ -2,11 +2,13 @@ package lore.compiler.semantics.functions
 
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionDefinition.CannotInstantiateFunction
 import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.target.TargetRepresentable
+import lore.compiler.transpilation.RuntimeNames
 import lore.compiler.types.{Fit, Type, TypeVariable}
 
 /**
@@ -25,7 +27,7 @@ class FunctionDefinition(
   override val position: Position = signature.position
   override def toString = s"${if (isAbstract) "abstract " else ""}$name(${signature.parameters.mkString(", ")})"
 
-  val name: String = signature.name
+  val name: NamePath = signature.name
   val isAbstract: Boolean = bodyNode.isEmpty
   val isPolymorphic: Boolean = signature.isPolymorphic
   val isMonomorphic: Boolean = signature.isMonomorphic
@@ -65,8 +67,9 @@ class FunctionDefinition(
     * Unit functions thus are represented by the simple name `function$`.
     */
   lazy val runtimeName: String = {
+    val runtimeName = RuntimeNames.namePath(runtimeName)
     val id = Type.uniqueIdentifier(signature.inputType.elements)
-    s"$name$$$id"
+    s"$runtimeName$$$id"
   }
 }
 

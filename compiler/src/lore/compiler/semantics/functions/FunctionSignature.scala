@@ -1,13 +1,14 @@
 package lore.compiler.semantics.functions
 
 import lore.compiler.core.{Position, Positioned}
+import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.functions.ParameterDefinition.NamedParameterDefinition
 import lore.compiler.types._
 
 import scala.util.hashing.MurmurHash3
 
 case class FunctionSignature(
-  name: String,
+  name: NamePath,
   parameters: Vector[ParameterDefinition],
   outputType: Type,
   position: Position,

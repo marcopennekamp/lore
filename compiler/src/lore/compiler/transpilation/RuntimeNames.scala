@@ -1,5 +1,6 @@
 package lore.compiler.transpilation
 
+import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
@@ -8,6 +9,8 @@ import lore.compiler.target.TargetDsl.StringExtension
 import lore.compiler.types.{DeclaredSchema, DeclaredType, StructSchema}
 
 object RuntimeNames {
+  def namePath(namePath: NamePath): Target.Variable = namePath.segments.mkString("$_").asVariable
+
   object schema {
     def apply(schema: DeclaredSchema): Target.Variable = s"lore_schema_${schema.name}".asVariable
     def typeParameters(schema: DeclaredSchema): Target.Variable = s"${apply(schema).name}__type_parameters".asVariable

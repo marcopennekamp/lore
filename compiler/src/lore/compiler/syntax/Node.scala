@@ -33,10 +33,9 @@ object Node {
     def name: String = nameNode.value
   }
 
-  trait PathNamedNode extends NamedNode {
+  trait PathNamedNode extends Node {
     def namePathNode: NamePathNode
     def namePath: NamePath = namePathNode.namePath
-    override def nameNode: NameNode = namePathNode.simpleNameNode
   }
 
   /**

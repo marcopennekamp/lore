@@ -1,5 +1,6 @@
 package lore.compiler.types
 
+import lore.compiler.semantics.NamePath
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.utils.CollectionExtensions.{MapVectorExtension, VectorExtension}
 
@@ -10,7 +11,7 @@ trait DeclaredType extends NamedType {
     */
   def schema: DeclaredSchema
 
-  override def name: String = schema.name
+  override def name: NamePath = schema.name
 
   /**
     * The type arguments this declared type has been instantiated with.

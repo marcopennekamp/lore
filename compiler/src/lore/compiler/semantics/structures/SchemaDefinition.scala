@@ -1,6 +1,7 @@
 package lore.compiler.semantics.structures
 
 import lore.compiler.core.Positioned
+import lore.compiler.semantics.NamePath
 import lore.compiler.types.TypeSchema
 
 /**
@@ -9,6 +10,6 @@ import lore.compiler.types.TypeSchema
   * The position is restricted to the schema definition's name for better error highlighting and index building.
   */
 trait SchemaDefinition extends Positioned {
-  def name: String
+  def name: NamePath
   def schema: TypeSchema
 }

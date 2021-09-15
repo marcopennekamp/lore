@@ -15,11 +15,11 @@ object FunctionTransformer {
     function.bodyNode.foreach { node =>
       function.body = Some(
         ExpressionTransformer.transform(
-          function.name,
           node,
           function.signature.outputType,
           function.getTypeScope(registry.typeScope),
           new FunctionBindingScope(function.signature, registry.bindingScope),
+          function.name.toString,
         )
       )
     }

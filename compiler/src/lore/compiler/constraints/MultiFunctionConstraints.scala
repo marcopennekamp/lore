@@ -34,7 +34,7 @@ object MultiFunctionConstraints {
   }
 
   case class DuplicateParameterName(signature: FunctionSignature, name: String) extends Feedback.Error(signature.position) {
-    override def message: String = s"The function ${signature.name} has two or more parameters named $name. Parameter names must be unique."
+    override def message: String = s"The function ${signature.name.simpleName} has two or more parameters named $name. Parameter names must be unique."
   }
 
   private def verifyUniqueParameterNames(signature: FunctionSignature)(implicit reporter: Reporter): Unit = {

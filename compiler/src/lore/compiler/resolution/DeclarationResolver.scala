@@ -3,7 +3,7 @@ package lore.compiler.resolution
 import lore.compiler.core.Position
 import lore.compiler.feedback.{GlobalVariableFeedback, MultiFunctionFeedback, Reporter, TypeFeedback}
 import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
-import lore.compiler.semantics.{Introspection, Registry}
+import lore.compiler.semantics.{Introspection, NamePath, Registry}
 import lore.compiler.syntax.Node.NameNode
 import lore.compiler.syntax.{DeclNode, TypeDeclNode}
 import lore.compiler.types.Type
@@ -11,7 +11,7 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object DeclarationResolver {
 
-  type TypeDeclarations = Map[String, TypeDeclNode]
+  type TypeDeclarations = Map[NamePath, TypeDeclNode]
 
   /**
     * Builds the registry from all module nodes.
@@ -63,7 +63,7 @@ object DeclarationResolver {
     }
   }
 
-  private def isTypeNameTaken(name: String, typeDeclarations: TypeDeclarations): Boolean = {
+  private def isTypeNameTaken(name: NamePath, typeDeclarations: TypeDeclarations): Boolean = {
     typeDeclarations.contains(name) || Type.predefinedTypes.contains(name)
   }
 

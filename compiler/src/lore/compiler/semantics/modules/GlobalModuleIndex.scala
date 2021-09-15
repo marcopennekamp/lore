@@ -65,10 +65,10 @@ class GlobalModuleIndex {
   /**
     * Whether the index has a binding or type with the exact name path.
     */
-  def has(namePath: NamePath): Boolean = {
+  def has(name: NamePath): Boolean = {
     index
-      .get(namePath.parentOrEmpty)
-      .exists(m => m.has(namePath.simpleName, NameKind.Type) || m.has(namePath.simpleName, NameKind.Binding))
+      .get(name.parentOrEmpty)
+      .exists(m => m.has(name.simpleName, NameKind.Type) || m.has(name.simpleName, NameKind.Binding))
   }
 
   /**
@@ -81,24 +81,23 @@ class GlobalModuleIndex {
     * `Foo`, `getPath` will return `Foo.baz`. If `baz` is instead a member of the root, this function will return
     * simply `baz`.
     */
-  def getPath(memberPath: NamePath, nameKind: NameKind): Option[NamePath] = {
-    if (memberPath.isEmpty) {
+  def getPath(memberName: NamePath, nameKind: NameKind): Option[NamePath] = {
+    if (memberName.isEmpty) {
       return None
     }
 
-    val modulePath = memberPath.parent
-    val memberName = memberPath.simpleName
+    val modulePath = memberName.parent
 
     def fallback: Option[NamePath] = {
       modulePath.flatMap(_.parent).flatMap(
-        parentPath => getPath(parentPath + memberName, nameKind)
+        parentPath => getPath(parentPath + memberName.simpleName, nameKind)
       )
     }
 
     index.get(modulePath.getOrElse(NamePath.empty)) match {
       case Some(indexedModule) =>
-        if (indexedModule.has(memberName, nameKind)) {
-          Some(memberPath)
+        if (indexedModule.has(memberName.simpleName, nameKind)) {
+          Some(memberName)
         } else fallback
 
       case None => fallback

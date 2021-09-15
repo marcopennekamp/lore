@@ -1,18 +1,42 @@
 package lore.compiler.syntax
 
 import lore.compiler.core.Position
+import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.modules.LocalModule
 import lore.compiler.syntax.DeclNode.TypeVariableNode
-import lore.compiler.syntax.Node.{NameNode, NamePathNode, NamedNode, PathNamedNode}
+import lore.compiler.syntax.Node.{NameNode, NamePathNode, NamedNode}
 import lore.compiler.types.TypeVariable.Variance
 
 /**
   * All top-level declaration nodes.
   */
-sealed trait DeclNode extends NamedNode
+sealed trait DeclNode extends Node {
   /**
     * The [[LocalModule]] this DeclNode is declared in. Each DeclNode has exactly one associated local module.
     */
   var localModule: LocalModule = _
+
+  /**
+    * The simple name of the declared entity.
+    */
+  def simpleName: String
+
+  /**
+    * The full name of the DeclNode. This is only available once [[localModule]] has been set.
+    */
+  lazy val fullName: NamePath = localModule.modulePath + simpleName
+}
+
+sealed trait SimpleNamedDeclNode extends DeclNode {
+  def nameNode: NameNode
+  override def simpleName: String = nameNode.value
+}
+
+sealed trait PathNamedDeclNode extends DeclNode {
+  def namePathNode: NamePathNode
+  def namePath: NamePath = namePathNode.namePath
+  override def simpleName: String = namePath.simpleName
+}
 
 /**
   * Top-level binding declarations.
@@ -33,7 +57,7 @@ object DeclNode {
     imports: Vector[ImportNode],
     members: Vector[DeclNode],
     position: Position,
-  ) extends BindingDeclNode with PathNamedNode
+  ) extends BindingDeclNode with PathNamedDeclNode
 
   // TODO (modules): Support multi- and wildcard imports.
   case class ImportNode(
@@ -46,7 +70,7 @@ object DeclNode {
     tpe: TypeExprNode,
     value: ExprNode,
     position: Position,
-  ) extends BindingDeclNode
+  ) extends BindingDeclNode with SimpleNamedDeclNode
 
   /**
     * Function declarations. These include action declarations, which are resolved as syntactic sugar by the parser.
@@ -61,7 +85,7 @@ object DeclNode {
     typeVariables: Vector[TypeVariableNode],
     body: Option[ExprNode],
     position: Position,
-  ) extends BindingDeclNode {
+  ) extends BindingDeclNode with SimpleNamedDeclNode {
     def isAbstract: Boolean = body.isEmpty
   }
 
@@ -121,7 +145,7 @@ object DeclNode {
     typeVariables: Vector[TypeVariableNode],
     tpe: TypeExprNode,
     position: Position,
-  ) extends TypeDeclNode
+  ) extends TypeDeclNode with SimpleNamedDeclNode
 
   /**
     * @param extended The names of all traits that the struct extends.
@@ -133,7 +157,7 @@ object DeclNode {
     extended: Vector[TypeExprNode],
     properties: Vector[PropertyNode],
     position: Position,
-  ) extends TypeDeclNode
+  ) extends TypeDeclNode with SimpleNamedDeclNode
 
   case class PropertyNode(
     nameNode: NameNode,
@@ -152,6 +176,6 @@ object DeclNode {
     typeVariables: Vector[TypeVariableNode],
     extended: Vector[TypeExprNode],
     position: Position,
-  ) extends TypeDeclNode
+  ) extends TypeDeclNode with SimpleNamedDeclNode
 
 }

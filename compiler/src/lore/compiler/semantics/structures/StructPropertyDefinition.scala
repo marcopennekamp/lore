@@ -1,7 +1,6 @@
 package lore.compiler.semantics.structures
 
 import lore.compiler.core.{Position, Positioned}
-import lore.compiler.semantics.analysis.LocalizedExpression
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.{CallTarget, ParameterDefinition}
 import lore.compiler.semantics.members.Member

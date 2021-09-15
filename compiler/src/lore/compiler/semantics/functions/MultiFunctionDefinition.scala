@@ -1,10 +1,11 @@
 package lore.compiler.semantics.functions
 
 import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.scopes.Binding
 import lore.compiler.types.TupleType
 
-case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefinition]) extends Binding {
+case class MultiFunctionDefinition(name: NamePath, functions: Vector[FunctionDefinition]) extends Binding {
 
   val hierarchy: DispatchHierarchy = DispatchHierarchyBuilder.build(this)
 
@@ -29,5 +30,7 @@ case class MultiFunctionDefinition(name: String, functions: Vector[FunctionDefin
     * Calculates the multi-function's min set for the given type.
     */
   def min(tpe: TupleType): Vector[FunctionDefinition] = Dispatch.min(hierarchy, tpe)
+
+  override def toString: String = name.toString
 
 }

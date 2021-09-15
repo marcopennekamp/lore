@@ -1,13 +1,14 @@
 package lore.compiler.semantics.variables
 
 import lore.compiler.core.{Position, Positioned}
+import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.scopes.TypedBinding
 import lore.compiler.syntax.ExprNode
 import lore.compiler.types.Type
 
 class GlobalVariableDefinition(
-  override val name: String,
+  val name: NamePath,
   override val tpe: Type,
   val valueNode: ExprNode,
   override val position: Position,

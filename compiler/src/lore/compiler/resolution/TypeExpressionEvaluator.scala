@@ -10,7 +10,7 @@ import lore.compiler.utils.CollectionExtensions.{OptionTuple2Extension, OptionVe
 object TypeExpressionEvaluator {
 
   case class MissingTypeArguments(schema: NamedSchema, node: TypeExprNode) extends Feedback.Error(node) {
-    override def message: String = s"The type ${schema.name} expects ${schema.arity} type arguments. It cannot be used as is."
+    override def message: String = s"The type ${schema.name.simpleName} expects ${schema.arity} type arguments. It cannot be used as is."
   }
 
   case class UnexpectedTypeArguments(tpe: Type, node: TypeExprNode) extends Feedback.Error(node) {
