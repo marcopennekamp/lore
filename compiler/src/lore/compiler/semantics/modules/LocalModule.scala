@@ -1,6 +1,8 @@
 package lore.compiler.semantics.modules
 
 import lore.compiler.semantics.{NameKind, NamePath}
+import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 /**
   * A LocalModule is a lexical object that contains the import map and names of local declarations for a local module
@@ -16,10 +18,23 @@ import lore.compiler.semantics.{NameKind, NamePath}
 case class LocalModule(
   modulePath: NamePath,
   parent: Option[LocalModule],
-  localTypeNames: Set[String],
-  localBindingNames: Set[String],
+  members: Vector[DeclNode],
   importMap: LocalModule.ImportMap,
 )(implicit globalModuleIndex: GlobalModuleIndex) {
+  val localTypeNames: Set[String] = {
+    members.filterType[TypeDeclNode].map(_.simpleName).toSet
+  }
+
+  val localBindingNames: Set[String] = {
+    members.flatMap {
+      case node: DeclNode.ModuleNode => Some(node.namePath.headName)
+      case node: BindingDeclNode => Some(node.simpleName)
+      // Structs always have a constructor or an object and thus also define binding names.
+      case node: DeclNode.StructNode => Some(node.simpleName)
+      case _ => None
+    }.toSet
+  }
+
   /**
     * Returns the full NamePath for the given simple name if it occurs in this local module, in one of the local
     * module's parents, or globally as a module member of the current module or one of its parents.

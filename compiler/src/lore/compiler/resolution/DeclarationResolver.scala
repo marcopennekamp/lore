@@ -21,9 +21,12 @@ object DeclarationResolver {
     * definitions, as all declared types have been added to the registry by then.
     */
   def resolve(moduleNodes: Vector[DeclNode.ModuleNode])(implicit reporter: Reporter): Registry = {
-    val typeDeclNodes = introspectionTypeDeclarations ++ declarations.filterType[TypeDeclNode]
-    val globalVariableDeclarations = declarations.filterType[DeclNode.GlobalVariableNode]
-    val multiFunctionDeclarations = declarations.filterType[DeclNode.FunctionNode].groupBy(_.name)
+    val (localModules, globalModuleIndex) = ModuleResolver.resolve(moduleNodes)
+    val allDeclarations = localModules.flatMap(_.members)
+
+    val typeDeclNodes = allDeclarations.filterType[TypeDeclNode]
+    val globalVariableDeclarations = allDeclarations.filterType[DeclNode.GlobalVariableNode]
+    val multiFunctionDeclarations = allDeclarations.filterType[DeclNode.FunctionNode].groupBy(_.fullName)
 
     val typeDeclarations = typeDeclNodes.foldLeft(Map.empty: TypeDeclarations) {
       case (typeDeclarations, declaration) => processTypeDeclaration(declaration, typeDeclarations)

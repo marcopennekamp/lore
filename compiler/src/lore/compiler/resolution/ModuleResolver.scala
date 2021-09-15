@@ -1,27 +1,31 @@
 package lore.compiler.resolution
 
+import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{ModuleFeedback, Reporter}
-import lore.compiler.semantics.{NameKind, NamePath}
 import lore.compiler.semantics.modules.{GlobalModuleIndex, LocalModule}
-import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
+import lore.compiler.semantics.{NameKind, NamePath}
+import lore.compiler.syntax.DeclNode
 
 object ModuleResolver {
 
   /**
-    * TODO (modules): Synthesize documentation from the step list.
+    * Resolves a list of module nodes and produces LocalModules in the process. The function will also build a
+    * GlobalModuleIndex. The imports of each local module are processed fully and can be accessed through each local
+    * module's import map.
     */
-  def resolve(moduleNodes: Vector[DeclNode.ModuleNode])(implicit reporter: Reporter) = {
+  def resolve(moduleNodes: Vector[DeclNode.ModuleNode])(implicit reporter: Reporter): (Vector[LocalModule], GlobalModuleIndex) = {
     // Step 1: Build the ModuleNodeIndex, which will be used to resolve name paths for imports and scopes.
-    implicit val index: GlobalModuleIndex = new GlobalModuleIndex
-    moduleNodes.foreach(index.add(_, NamePath.empty))
+    implicit val globalModuleIndex: GlobalModuleIndex = new GlobalModuleIndex
+    moduleNodes.foreach(globalModuleIndex.add(_, NamePath.empty))
 
     // Step 2: Flatten module nodes and resolve imports.
     val localModules = moduleNodes.flatMap(resolve(_, None))
 
-    // TODO (modules): Go through the local modules and annotate each DeclNode with it. This will allow type resolution
-    //                 and later phases to easily build LocalModule*Scopes.
+    // Step 3: Annotate each DeclNode with the LocalModule it's declared in. This allows type resolution and later
+    //         phases to easily build LocalModule*Scopes.
+    localModules.foreach(annotateNodes)
 
-    ???
+    (localModules, globalModuleIndex)
   }
 
   /**
@@ -37,18 +41,8 @@ object ModuleResolver {
   )(implicit globalModuleIndex: GlobalModuleIndex, reporter: Reporter): Vector[LocalModule] = {
     val modulePath = parent.map(_.modulePath).getOrElse(NamePath.empty) ++ moduleNode.namePath
 
-    val localTypeNames = moduleNode.members.flatMap {
-      case node: TypeDeclNode => Some(node.name)
-      case _ => None
-    }.toSet
-
-    val localBindingNames = moduleNode.members.flatMap {
-      case DeclNode.ModuleNode(namePathNode, _, _, _) => Some(namePathNode.segments.head.value)
-      case node: BindingDeclNode => Some(node.name)
-      case _ => None
-    }.toSet
-
-    val localModule = moduleNode.imports.foldLeft(LocalModule(modulePath, parent, localTypeNames, localBindingNames, Map.empty)) {
+    val starterModule = LocalModule(modulePath, parent, moduleNode.members, Map.empty)
+    val localModule = moduleNode.imports.foldLeft(starterModule) {
       case (localModule, importNode) => resolve(importNode, localModule)
     }
 
@@ -64,10 +58,9 @@ object ModuleResolver {
     * as long as the import is valid. If the import is invalid in any way, an unchanged local module is returned
     * instead.
     *
-    * Imports
-    * are first resolved such that an import `use a.b.c` is mapped to its absolute path, which may be more complex if
-    * `a` is a relative binding. For example, the absolute path may be `x.y.a.b.c`. In this first step, we only have to
-    * resolve the first segment of the import path.
+    * Imports are first resolved such that an import `use a.b.c` is mapped to its absolute path, which may be more
+    * complex if `a` is a relative binding. For example, the absolute path may be `x.y.a.b.c`. In this first step, we
+    * only have to resolve the head segment of the import path.
     *
     * To check the rest of the path, in a second step, we take the complete absolute path and check it against the
     * GlobalModuleIndex. If the index has a member with the exact path name, the import is valid. If not, the compiler
@@ -117,11 +110,10 @@ object ModuleResolver {
     // The head segment is the segment that we have to resolve to get the absolute import path. Because the head
     // segment must be a module to contain any meaningful members to import, we can avoid calling `getPath` with
     // `NameKind.Type`.
-    val headSegment = importPath.segments.head.name
-    val absolutePath = localModule.getPath(headSegment, NameKind.Binding).map(prefix => prefix ++ importPath.tail) match {
+    val absolutePath = localModule.getPath(importPath.headName, NameKind.Binding).map(prefix => prefix ++ importPath.tail) match {
       case Some(absolutePath) => absolutePath
       case None =>
-        reporter.error(ModuleFeedback.Import.UnresolvedHeadSegment(importNode, headSegment))
+        reporter.error(ModuleFeedback.Import.UnresolvedHeadSegment(importNode, importPath.headName))
         return localModule
     }
 
@@ -134,6 +126,19 @@ object ModuleResolver {
     localModule.copy(
       importMap = localModule.importMap.updated(absolutePath.simpleName, absolutePath)
     )
+  }
+
+  /**
+    * Annotates all DeclNodes contained in the local module with the instance of the local module.
+    */
+  private def annotateNodes(localModule: LocalModule): Unit = {
+    localModule.members.foreach {
+      node =>
+        if (node.localModule != null) {
+          throw CompilationException(s"`localModule` for DeclNode $node was already set!")
+        }
+        node.localModule = localModule
+    }
   }
 
 }

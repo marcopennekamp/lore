@@ -4,6 +4,7 @@ import lore.compiler.syntax.Node.NamePathNode
 
 case class NamePath(segments: Vector[NamePath.Segment]) {
   val simpleName: String = segments.lastOption.map(_.name).getOrElse("")
+  val headName: String = segments.headOption.map(_.name).getOrElse("")
 
   val length: Int = segments.length
   lazy val tail: NamePath = NamePath(segments.tail)

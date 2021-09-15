@@ -9,6 +9,10 @@ import lore.compiler.types.TypeVariable.Variance
   * All top-level declaration nodes.
   */
 sealed trait DeclNode extends NamedNode
+  /**
+    * The [[LocalModule]] this DeclNode is declared in. Each DeclNode has exactly one associated local module.
+    */
+  var localModule: LocalModule = _
 
 /**
   * Top-level binding declarations.

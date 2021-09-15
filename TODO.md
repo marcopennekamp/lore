@@ -3,6 +3,9 @@
 #### Features
 
 - Add a module system.
+  - An expression `lore.Core.to_string(15)` will be parsed as a `CallNode`, because it cannot be lexically separated from an expression such as `function.apply(15)`, where `function` is a struct or shape. Hence, during resolution when we've actually built the module resolution infrastructure, we have to convert CallNodes to SimpleCallNodes if we're actually dealing with a module access chain.
+    - An alternative might be hooking into this during transformation, but I'm not sure that's possible. The problem is the reason we need "simple calls": a multi-function which isn't immediately called is implicitly converted to a function value right away.
+      - I wonder if this point would be moot with a bidirectional type checker that actually traverses the AST. Such a type inference algorithm could decide ad-hoc if a multi-function needs to be converted or not.
   - Clear all `TODO (modules)` entries.
 - Implement a vector backend for lists.
 - Fix map types and values:
@@ -27,7 +30,7 @@
     - Both structs and shapes should have no default ordering.
 
 ##### Syntax
-
+ 
 - Down the line, it would be great to have something like:
   ```
   if cond

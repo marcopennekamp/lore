@@ -7,7 +7,8 @@ This is a partly organized list of mostly loose ideas which may find their way i
 ### Syntax
 
 - (!) Seriously considering using indentation-based blocks. Multi-line lambdas are tricky then, but we can always allow optional do/end block syntax.
-- Implement a pipe operator `t |*> f` that adds all elements of a tuple `t` to the arguments of a function call `f`. 
+- Implement a pipe operator `t |*> f` that adds all elements of a tuple `t` to the arguments of a function call `f`.
+- Turn comparison (and possibly equality operators) into xary operators that evaluate complex inequalities/equalities. For example, `a <= b < c <= d` should be equal to `a <= b && b < c && c <= d`.
 
 
 
