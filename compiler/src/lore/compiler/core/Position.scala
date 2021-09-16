@@ -41,6 +41,7 @@ case class Position(fragment: Fragment, startIndex: Index, endIndex: Index) {
       throw CompilationException(s"Cannot create a spanning position from $this to $end. The positions must be located" +
         s" in the same fragment!")
     }
+    Position(this.fragment, this.startIndex, end.endIndex)
   }
 
   /**
