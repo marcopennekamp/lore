@@ -35,6 +35,8 @@ object NamePath {
     override val toString: String = name
   }
 
+  def apply(name: String): NamePath = NamePath(Vector(Segment(name)))
+
   def from(namePathNode: NamePathNode): NamePath = {
     NamePath(namePathNode.segments.map(node => NamePath.Segment(node.value)))
   }

@@ -26,7 +26,7 @@ object CallTarget {
     * Represents multi-functions as call targets.
     */
   case class MultiFunction(mf: MultiFunctionDefinition) extends CallTarget {
-    override def toString: String = mf.name
+    override def toString: String = mf.name.toString
   }
 
   /**

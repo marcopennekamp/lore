@@ -1,9 +1,7 @@
 package lore.compiler.syntax
 
 import lore.compiler.core.Position
-import lore.compiler.semantics.NamePath
 import lore.compiler.syntax.Node.{NameNode, NamePathNode, NamedNode, PathNamedNode}
-import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 /**
   * All type expressions.
@@ -46,9 +44,4 @@ object TypeExprNode {
     case ShapeNode(properties, _) => properties.map(_.tpe).flatMap(leaves)
     case _ => Vector(node)
   }
-
-  /**
-    * Finds all type names mentioned in the type expression.
-    */
-  def names(node: TypeExprNode): Set[NamePath] = leaves(node).filterType[TypeNameNode].map(_.namePath).toSet
 }

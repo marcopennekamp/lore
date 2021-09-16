@@ -3,7 +3,9 @@ package lore.compiler.resolution
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.resolution.DeclarationResolver.TypeDeclarations
+import lore.compiler.semantics.modules.LocalModule
 import lore.compiler.semantics.{NamePath, Registry}
+import lore.compiler.syntax.TypeExprNode.TypeNameNode
 import lore.compiler.syntax.{DeclNode, TypeDeclNode, TypeExprNode}
 import lore.compiler.types.{BasicType, Type}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
@@ -13,6 +15,8 @@ import scalax.collection.config.CoreConfig
 import scalax.collection.immutable.Graph
 
 object TypeDependencies {
+
+  private case class TypeDeclarationInfo(node: TypeDeclNode, dependencies: Vector[NamePath])
 
   /**
     * Verifies that the dependencies between the given types are correct and computes an order in which schemas need to
@@ -41,31 +45,40 @@ object TypeDependencies {
     computeSchemaResolutionOrder(graph)
   }
 
-  private case class TypeDeclarationInfo(node: TypeDeclNode, dependencies: Vector[String])
+  private def dependencies(declNode: TypeDeclNode): Vector[NamePath] = {
+    val localModule: LocalModule = declNode.localModule
+    val typeVariableNames = declNode.typeVariables.map(_.name)
 
-  private def dependencies(node: TypeDeclNode): Vector[NamePath] = {
-    val boundNames = node.typeVariables
-      .flatMap(tv => tv.lowerBound.toVector ++ tv.upperBound.toVector)
-      .flatMap(TypeExprNode.names)
-      .toSet
-
-    val restNames = node match {
-      case DeclNode.AliasNode(_, _, expr, _) => TypeExprNode.names(expr)
-      case DeclNode.StructNode(_, _, _, extended, _, _) => extended.flatMap(TypeExprNode.names).toSet
-      case DeclNode.TraitNode(_, _, extended, _) => extended.flatMap(TypeExprNode.names).toSet
+    def names(typeExprNode: TypeExprNode): Set[NamePath] = {
+      TypeExprNode.leaves(typeExprNode)
+        .filterType[TypeNameNode]
+        .map(_.namePath)
+        // We have to remove all type variable names from the name path list, because they are declared locally and
+        // thus cannot be depended on.
+        .filterNot(namePath => namePath.isSingle && typeVariableNames.contains(namePath.simpleName))
+        .flatMap(localModule.toAbsoluteTypePath)
+        .toSet
     }
 
-    // We have to remove all type variable names from the result names, because they are declared locally and thus
-    // cannot be depended on. The same goes for predefined types.
+    val boundNames = declNode.typeVariables
+      .flatMap(tv => tv.lowerBound.toVector ++ tv.upperBound.toVector)
+      .flatMap(names)
+      .toSet
+
+    val restNames = declNode match {
+      case DeclNode.AliasNode(_, _, expr, _) => names(expr)
+      case DeclNode.StructNode(_, _, _, extended, _, _) => extended.flatMap(names).toSet
+      case DeclNode.TraitNode(_, _, extended, _) => extended.flatMap(names).toSet
+    }
+
+    // We also have to remove all predefined types from the list because they aren't part of the schema hierarchy.
     (
-      (boundNames ++ restNames)
-        -- node.typeVariables.map(_.name)
-        -- Type.predefinedTypes.keys
+      (boundNames ++ restNames) -- Type.predefinedTypes.keys
     ).toVector
   }
 
-  case class UndefinedDependency(node: TypeDeclNode, dependency: String) extends Feedback.Error(node) {
-    override def message: String = s"The type ${node.name} depends on a type $dependency, but it doesn't exist."
+  case class UndefinedDependency(node: TypeDeclNode, dependency: NamePath) extends Feedback.Error(node) {
+    override def message: String = s"The type ${node.fullName} depends on a type $dependency, but it doesn't exist."
   }
 
   /**
@@ -78,7 +91,7 @@ object TypeDependencies {
     info.copy(dependencies = defined)
   }
 
-  private type DependencyGraph = Graph[String, DiEdge]
+  private type DependencyGraph = Graph[NamePath, DiEdge]
 
   /**
     * Builds the dependency graph which is used to find dependency cycles and compute the type resolution order.
@@ -89,16 +102,16 @@ object TypeDependencies {
     Graph.from(edges)
   }
 
-  private def buildDependencyEdges(info: TypeDeclarationInfo): Vector[DiEdge[String]] = {
+  private def buildDependencyEdges(info: TypeDeclarationInfo): Vector[DiEdge[NamePath]] = {
     info.dependencies
-      .map(dependency => dependency ~> info.node.name)
-      .withDefault(BasicType.Any.name ~> info.node.name)
+      .map(dependency => dependency ~> info.node.fullName)
+      .withDefault(BasicType.Any.name ~> info.node.fullName)
   }
 
   /**
     * @param occurrence One of the type declarations where the cycles occurs, so that we can report one error location.
     */
-  case class InheritanceCycle(typeNames: Vector[String], occurrence: TypeDeclNode) extends Feedback.Error(occurrence) {
+  case class InheritanceCycle(typeNames: Vector[NamePath], occurrence: TypeDeclNode) extends Feedback.Error(occurrence) {
     override def message: String =
       s"""An inheritance cycle between the following types has been detected: ${typeNames.mkString(", ")}.
          |A declared type must not inherit from itself directly or indirectly. The subtyping relationships of declared
@@ -159,7 +172,7 @@ object TypeDependencies {
   /**
     * Computes the order in which schemas need to be resolved.
     */
-  private def computeSchemaResolutionOrder(graph: DependencyGraph): Vector[String] = {
+  private def computeSchemaResolutionOrder(graph: DependencyGraph): Vector[NamePath] = {
     val order = graph.topologicalSort.fold(
       _ => throw CompilationException(
         "Topological sort on the type dependency graph found a cycle, even though we verified earlier that there was no such cycle."

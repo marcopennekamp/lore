@@ -23,6 +23,8 @@ case class LocalModule(
   importMap: LocalModule.ImportMap,
   position: Position,
 )(implicit globalModuleIndex: GlobalModuleIndex) {
+  // TODO (modules): With the way that LocalModules are currently built incrementally, these local*Names sets are
+  //                 constantly being rebuilt when the LocalModule is copied. This might be detrimental to performance.
   val localTypeNames: Set[String] = {
     members.filterType[TypeDeclNode].map(_.simpleName).toSet
   }
@@ -55,6 +57,19 @@ case class LocalModule(
         //                 parent that doesn't consult the global index.
         .orElse(parent.flatMap(_.getPath(memberName, nameKind)))
         .orElse(globalModuleIndex.getPath(memberPath, nameKind))
+    }
+  }
+
+  /**
+    * Turns a relative type path into an absolute type path. This works similar to type path resolution in TypeScopes.
+    * If the name cannot be found, the function returns None.
+    */
+  def toAbsoluteTypePath(relativePath: NamePath): Option[NamePath] = {
+    if (!relativePath.isMultiple) {
+      getPath(relativePath.simpleName, NameKind.Type)
+    } else {
+      getPath(relativePath.headName, NameKind.Binding)
+        .map(_ ++ relativePath.tail)
     }
   }
 
