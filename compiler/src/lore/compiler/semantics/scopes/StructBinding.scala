@@ -39,7 +39,7 @@ case class StructConstructorBinding(
 }
 
 case class StructObjectBinding(
-  name: String,
+  name: NamePath,
   tpe: StructType,
   hasCompanionModule: Boolean,
 ) extends StructBinding with TypedBinding

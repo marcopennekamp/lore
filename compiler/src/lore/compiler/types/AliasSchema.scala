@@ -1,9 +1,10 @@
 package lore.compiler.types
 
+import lore.compiler.semantics.NamePath
 import lore.compiler.types.TypeVariable.Assignments
 
 class AliasSchema(
-  override val name: String,
+  override val name: NamePath,
   override val parameters: Vector[TypeVariable],
   val originalType: Type,
 ) extends NamedSchema {

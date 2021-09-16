@@ -41,7 +41,7 @@ object ModuleResolver {
   )(implicit globalModuleIndex: GlobalModuleIndex, reporter: Reporter): Vector[LocalModule] = {
     val modulePath = parent.map(_.modulePath).getOrElse(NamePath.empty) ++ moduleNode.namePath
 
-    val starterModule = LocalModule(modulePath, parent, moduleNode.members, Map.empty)
+    val starterModule = LocalModule(modulePath, parent, moduleNode.members, Map.empty, moduleNode.namePathNode.position)
     val localModule = moduleNode.imports.foldLeft(starterModule) {
       case (localModule, importNode) => resolve(importNode, localModule)
     }

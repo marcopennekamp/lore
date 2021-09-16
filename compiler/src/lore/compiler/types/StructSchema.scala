@@ -1,9 +1,10 @@
 package lore.compiler.types
 
+import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 
 class StructSchema(
-  override val name: String,
+  override val name: NamePath,
   override val parameters: Vector[TypeVariable],
   override val supertypes: Vector[Type],
 ) extends DeclaredSchema with DeclaredSchema.DefinitionProperty[StructDefinition] {

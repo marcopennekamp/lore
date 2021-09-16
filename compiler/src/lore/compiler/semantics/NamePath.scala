@@ -30,6 +30,7 @@ case class NamePath(segments: Vector[NamePath.Segment]) {
 }
 
 object NamePath {
+  // TODO (modules): We can probably remove Segment and just use a Vector[String] for the NamePath's segments.
   case class Segment(name: String) {
     override val toString: String = name
   }

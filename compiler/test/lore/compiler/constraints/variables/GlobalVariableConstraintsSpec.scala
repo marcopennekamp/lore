@@ -10,7 +10,7 @@ class GlobalVariableConstraintsSpec extends BaseSpec {
     assertCompilationErrorSignatures(s"$fragmentBase/duplicates.lore")(
       (classOf[GlobalVariableFeedback.AlreadyExists], 2),
       (classOf[GlobalVariableFeedback.AlreadyExists], 4),
-      (classOf[MultiFunctionFeedback.NameTakenByVariable], 6),
+      (classOf[MultiFunctionFeedback.NameTaken], 6),
     )
   }
 }

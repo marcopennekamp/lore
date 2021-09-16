@@ -21,6 +21,10 @@ object TypeExpressionEvaluator {
     override def message = s"The property ${property.name} is declared twice in the shape type. Shape type properties must be unique."
   }
 
+  /**
+    * @param bindingScope The binding scope is required to properly resolve modules containing types, for qualified
+    *                     type names.
+    */
   def evaluate(expression: TypeExprNode)(implicit typeScope: TypeScope, bindingScope: BindingScope, reporter: Reporter): Option[Type] = {
     expression match {
       case node@TypeExprNode.TypeNameNode(_, position) => typeScope.resolve(node.namePath, position).map {

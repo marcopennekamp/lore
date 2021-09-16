@@ -27,12 +27,12 @@ case class Registry(
   /**
     * Creates a type scope that represents the Registry. Name resolution requires the presence of a local module.
     */
-  def getTypeScope(localModule: LocalModule): LocalModuleTypeScope = LocalModuleTypeScope(localModule, types)
+  def getTypeScope(localModule: LocalModule): LocalModuleTypeScope = types.scope(localModule)
 
   /**
     * Creates a binding scope that represents the Registry. Name resolution requires the presence of a local module.
     */
-  def getBindingScope(localModule: LocalModule): LocalModuleBindingScope = LocalModuleBindingScope(localModule, bindings)
+  def getBindingScope(localModule: LocalModule): LocalModuleBindingScope = bindings.scope(localModule)
 
 }
 
@@ -43,19 +43,23 @@ object Registry {
   case class Types(
     schemas: Schemas,
     schemaDefinitions: SchemaDefinitions,
-  )
+  ) {
+    def scope(localModule: LocalModule): LocalModuleTypeScope = LocalModuleTypeScope(localModule, this)
+  }
 
+  type Modules = Map[NamePath, ModuleDefinition]
   type GlobalVariables = Map[NamePath, GlobalVariableDefinition]
   type MultiFunctions = Map[NamePath, MultiFunctionDefinition]
   type StructBindings = Map[NamePath, StructBinding]
-  type Modules = Map[NamePath, ModuleDefinition]
 
   case class Bindings(
+    modules: Modules,
     globalVariables: GlobalVariables,
     multiFunctions: MultiFunctions,
     structBindings: StructBindings,
-    modules: Modules,
-  )
+  ) {
+    def scope(localModule: LocalModule): LocalModuleBindingScope = LocalModuleBindingScope(localModule, this)
+  }
 
   type SchemaResolutionOrder = Vector[NamePath]
 }

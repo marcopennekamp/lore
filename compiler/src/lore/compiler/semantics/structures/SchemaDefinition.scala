@@ -2,6 +2,7 @@ package lore.compiler.semantics.structures
 
 import lore.compiler.core.Positioned
 import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.modules.LocalModule
 import lore.compiler.types.TypeSchema
 
 /**
@@ -12,4 +13,5 @@ import lore.compiler.types.TypeSchema
 trait SchemaDefinition extends Positioned {
   def name: NamePath
   def schema: TypeSchema
+  def localModule: LocalModule
 }

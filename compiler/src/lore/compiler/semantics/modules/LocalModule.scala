@@ -1,5 +1,6 @@
 package lore.compiler.semantics.modules
 
+import lore.compiler.core.Position
 import lore.compiler.semantics.{NameKind, NamePath}
 import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
@@ -20,6 +21,7 @@ case class LocalModule(
   parent: Option[LocalModule],
   members: Vector[DeclNode],
   importMap: LocalModule.ImportMap,
+  position: Position,
 )(implicit globalModuleIndex: GlobalModuleIndex) {
   val localTypeNames: Set[String] = {
     members.filterType[TypeDeclNode].map(_.simpleName).toSet

@@ -17,8 +17,8 @@ object FunctionTransformer {
         ExpressionTransformer.transform(
           node,
           function.signature.outputType,
-          function.getTypeScope(registry.typeScope),
-          new FunctionBindingScope(function.signature, registry.bindingScope),
+          function.getTypeScope,
+          function.getBindingScope,
           function.name.toString,
         )
       )

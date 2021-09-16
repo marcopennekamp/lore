@@ -2,33 +2,34 @@ package lore.compiler.resolution
 
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
-import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
 import lore.compiler.syntax.DeclNode
 import lore.compiler.types.{BasicType, Fit}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object MultiFunctionDefinitionResolver {
 
-  def resolve(functionNodes: Vector[DeclNode.FunctionNode])(implicit typeScope: TypeScope, reporter: Reporter): MultiFunctionDefinition = {
-    if (!functionNodes.allEqual(_.name)) {
-      val uniqueNames = functionNodes.map(_.name).distinct
-      throw CompilationException(s"The function nodes of a multi-function don't all have the same name. Names: ${uniqueNames.mkString(", ")}.")
+  def resolve(functionNodes: Vector[DeclNode.FunctionNode])(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): MultiFunctionDefinition = {
+    if (!functionNodes.allEqual(_.fullName)) {
+      val uniqueNames = functionNodes.map(_.fullName).distinct
+      throw CompilationException(s"The function nodes of a multi-function must all have the same name. Names: ${uniqueNames.mkString(", ")}.")
     }
 
-    val name = functionNodes.head.name
-    val functions = functionNodes.map(resolveFunction(_, typeScope))
+    val name = functionNodes.head.fullName
+    val functions = functionNodes.map(resolveFunction)
     val uniqueFunctions = filterDuplicateFunctions(functions)
     MultiFunctionDefinition(name, uniqueFunctions)
   }
 
-  private def resolveFunction(node: DeclNode.FunctionNode, registryTypeScope: TypeScope)(implicit reporter: Reporter): FunctionDefinition = {
-    val typeParameters = TypeVariableResolver.resolve(node.typeVariables, registryTypeScope)
-    implicit val typeScope: TypeScope = ImmutableTypeScope.from(typeParameters, registryTypeScope)
-    val parameters = node.parameters.map(ParameterDefinitionResolver.resolve)
-    val outputType = TypeExpressionEvaluator.evaluate(node.outputType).getOrElse(BasicType.Any)
-    val signature = FunctionSignature(node.name, parameters, outputType, node.nameNode.position)
-    new FunctionDefinition(signature, typeParameters, node.body)
+  private def resolveFunction(node: DeclNode.FunctionNode)(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): FunctionDefinition = {
+    Resolver.withTypeParameters(node.localModule, node.typeVariables) {
+      implicit typeScope => implicit bindingScope => typeParameters =>
+        val parameters = node.parameters.map(ParameterDefinitionResolver.resolve)
+        val outputType = TypeExpressionEvaluator.evaluate(node.outputType).getOrElse(BasicType.Any)
+        val signature = FunctionSignature(node.fullName, parameters, outputType, node.nameNode.position)
+        new FunctionDefinition(signature, typeParameters, node.body, node.localModule)
+    }
   }
 
   case class FunctionAlreadyExists(definition: FunctionDefinition) extends Feedback.Error(definition) {

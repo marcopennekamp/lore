@@ -3,7 +3,7 @@ package lore.compiler.resolution
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.resolution.DeclarationResolver.TypeDeclarations
-import lore.compiler.semantics.Registry
+import lore.compiler.semantics.{NamePath, Registry}
 import lore.compiler.syntax.{DeclNode, TypeDeclNode, TypeExprNode}
 import lore.compiler.types.{BasicType, Type}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
@@ -43,7 +43,7 @@ object TypeDependencies {
 
   private case class TypeDeclarationInfo(node: TypeDeclNode, dependencies: Vector[String])
 
-  private def dependencies(node: TypeDeclNode): Vector[String] = {
+  private def dependencies(node: TypeDeclNode): Vector[NamePath] = {
     val boundNames = node.typeVariables
       .flatMap(tv => tv.lowerBound.toVector ++ tv.upperBound.toVector)
       .flatMap(TypeExprNode.names)

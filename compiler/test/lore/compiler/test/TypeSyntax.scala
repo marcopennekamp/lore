@@ -1,6 +1,7 @@
 package lore.compiler.test
 
 import lore.compiler.semantics.Registry
+import lore.compiler.semantics.modules.LocalModule
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
 
@@ -20,7 +21,7 @@ trait TypeSyntax {
     new TypeVariable(name, lowerBound, upperBound, Variance.Invariant, false)
   }
 
-  implicit def toType(name: String)(implicit registry: Registry): Type = registry.typeScope.get(name).get.representative
+  implicit def toType(name: String)(implicit registry: Registry): Type = registry.getTypeScope.get(name).get.representative
 
   def tuple(elements: Type*): TupleType = TupleType(elements.toVector)
 

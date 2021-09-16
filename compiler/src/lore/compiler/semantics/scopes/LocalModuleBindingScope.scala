@@ -26,35 +26,4 @@ case class LocalModuleBindingScope(
     }
   }
 
-  /**
-    * Gets a [[StructConstructorBinding]] from a struct schema with the given name. If the name refers to a type alias that
-    * represents a struct type, the struct binding will be able to instantiate the struct with the correct struct type
-    * given the type alias's type parameters.
-    *
-    * Objects are represented by [[StructObjectBinding]].
-    *
-    * TODO (modules): This should be moved to the declaration resolver, where we'll generate a struct binding for each
-    *                 struct schema and type alias.
-    */
-  /*private def getStructBinding(name: String): Option[Binding] = {
-    def getByType(tpe: StructType, typeParameters: Vector[TypeVariable]): Binding = {
-      if (tpe.schema.definition.isObject) {
-        if (typeParameters.nonEmpty) {
-          throw CompilationException(s"Objects cannot have type parameters. Violated by object ${tpe.name}.")
-        }
-        StructObjectBinding(name, tpe)
-      } else {
-        StructConstructorBinding(name, typeParameters, tpe)
-      }
-    }
-
-    typeScope.getStructSchema(name).map(schema => getByType(schema.representative, schema.parameters)).orElse {
-      typeScope.getAliasSchema(name).flatMap { aliasSchema =>
-        Some(aliasSchema.representative)
-          .filterType[StructType]
-          .map(getByType(_, aliasSchema.parameters))
-      }
-    }
-  }*/
-
 }

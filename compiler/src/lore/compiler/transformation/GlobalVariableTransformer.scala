@@ -11,8 +11,8 @@ object GlobalVariableTransformer {
       variable.name,
       variable.valueNode,
       variable.tpe,
-      registry.typeScope,
-      registry.bindingScope,
+      registry.getTypeScope,
+      registry.getBindingScope,
     )
   }
 

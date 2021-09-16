@@ -1,7 +1,7 @@
 package lore.compiler.resolution
 
 import lore.compiler.feedback.{Feedback, Reporter}
-import lore.compiler.semantics.scopes.TypeScope
+import lore.compiler.semantics.scopes.{BindingScope, TypeScope}
 import lore.compiler.syntax.TypeExprNode
 import lore.compiler.types.{IntersectionType, ShapeType, TraitType, Type}
 
@@ -21,7 +21,10 @@ object InheritanceResolver {
     * If a supertype expression cannot be evaluated, it is omitted from the list of inherited types and a proper error
     * is reported.
     */
-  def resolveInheritedTypes(nodes: Vector[TypeExprNode], error: => Feedback.Error)(implicit typeScope: TypeScope, reporter: Reporter): Vector[Type] = {
+  def resolveInheritedTypes(
+    nodes: Vector[TypeExprNode],
+    error: => Feedback.Error,
+  )(implicit typeScope: TypeScope, bindingScope: BindingScope, reporter: Reporter): Vector[Type] = {
     def extract(tpe: Type): Vector[Type] = tpe match {
       case supertrait: TraitType => Vector(supertrait)
       case shape: ShapeType => Vector(shape)

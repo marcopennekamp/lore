@@ -66,8 +66,8 @@ object LoreCompiler {
 
   private def analyze(implicit registry: Registry, reporter: Reporter): Unit = {
     val declaredSchemaDefinitions = registry.schemasInOrder.map(_._2).filterType[DeclaredSchema].map(_.definition)
-    val globalVariables = registry.globalVariables.values.toVector
-    val multiFunctions = registry.multiFunctions.values.toVector
+    val globalVariables = registry.bindings.globalVariables.values.toVector
+    val multiFunctions = registry.bindings.multiFunctions.values.toVector
 
     declaredSchemaDefinitions.foreach(analyze(_, reporter))
     globalVariables.foreach(analyze(_, reporter))
