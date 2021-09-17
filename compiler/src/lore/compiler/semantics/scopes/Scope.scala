@@ -2,6 +2,9 @@ package lore.compiler.semantics.scopes
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.{Reporter, ScopeFeedback}
+import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.modules.ModuleDefinition
+import lore.compiler.types.NamedSchema
 import lore.compiler.utils.CollectionExtensions.OptionExtension
 
 import scala.collection.mutable
@@ -32,6 +35,67 @@ trait Scope[A] {
     */
   def resolve(name: String, position: Position)(implicit reporter: Reporter): Option[A] = {
     get(name).ifEmpty(reporter.error(ScopeFeedback.UnknownEntry(entryLabel, name, position)))
+  }
+
+  /**
+    * Fetches a member of the global scope identified by the <b>absolute</b> name path.
+    */
+  def global(absolutePath: NamePath): Option[A] = {
+    optionalParent.flatMap(_.global(absolutePath))
+  }
+
+  /**
+    * Resolves a member of the global scope identified by the <b>absolute</b> name path. By default, this function
+    * delegates to its parent scope.
+    */
+  def resolveGlobal(absolutePath: NamePath, position: Position)(implicit reporter: Reporter): Option[A] = {
+    global(absolutePath).ifEmpty(reporter.error(ScopeFeedback.UnknownEntry(entryLabel, absolutePath.toString, position)))
+  }
+
+  /**
+    * Resolves an entry that is either plainly named with a simple name, or belongs to a module. In the latter case,
+    * the head segment of the name path must refer to a module name.
+    *
+    * This function should be used in cases where members of other bindings (such as struct properties) should be
+    * explicitly excluded. In other words, only <i>static</i> bindings and types are considered.
+    *
+    * To use this function from outside the scope, please use the `resolveStatic` functions in BindingScope and
+    * TypeScope.
+    *
+    * To resolve the correct module, this function requires a [[BindingScope]]. Supplying a LocalModule is not
+    * sufficient, because module names are shadowed by e.g. local variable names. Code such as this should not compile:
+    *
+    * <pre>
+    * // Earlier: Module `foo` contains type `Bar`.
+    * let foo = 5
+    * let bar: foo.Bar = foo.Bar()
+    * </pre>
+    *
+    * `foo` should refer to the local variable here, not the module. Hence, using a LocalModule is not sufficient for
+    * module name resolution.
+    */
+  protected def resolveStatic(namePath: NamePath, bindingScope: BindingScope, position: Position)(implicit reporter: Reporter): Option[A] = {
+    // If the name path only contains a single segment, we don't need to resolve any module paths.
+    if (!namePath.isMultiple) {
+      return resolve(namePath.simpleName, position)
+    }
+
+    // To get the correct binding which we can jump off of, we have to search with the name path's head name.
+    bindingScope.get(namePath.headName) match {
+      case Some(binding) => binding match {
+        case module: ModuleDefinition =>
+          val memberPath = module.name ++ namePath.tail
+          resolveGlobal(memberPath, position)
+
+        case _ =>
+          reporter.error(ScopeFeedback.ModuleExpected(namePath.headName, position))
+          None
+      }
+
+      case None =>
+        reporter.error(ScopeFeedback.ModuleNotFound(namePath.headName, position))
+        None
+    }
   }
 
   /**

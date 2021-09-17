@@ -5,16 +5,16 @@ import lore.compiler.core.{Fragment, Position}
 import lore.compiler.parsing.LexicalParser.hexDigit
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.ExprNode.StringLiteralNode
-import lore.compiler.syntax.Node.withPosition
+import lore.compiler.syntax.Node.{NamePathNode, withPosition}
 
 /**
   * Thanks again to Li Haoyi and his scalaparse example, which I used as a base for this.
   */
-class StringParser(expressionParser: ExpressionParser)(implicit fragment: Fragment) {
+class StringParser(nameParser: NameParser, expressionParser: ExpressionParser)(implicit fragment: Fragment) {
   // Strings are sensitive to whitespace.
   import fastparse.NoWhitespace._
 
-  import LexicalParser.identifier
+  import nameParser.name
   import expressionParser.expression
 
   def string[_: P]: P[ExprNode] = {
@@ -70,7 +70,9 @@ class StringParser(expressionParser: ExpressionParser)(implicit fragment: Fragme
     // Strings are sensitive to whitespace.
     import fastparse.NoWhitespace._
 
-    def simple = P(Index ~ identifier ~ Index).map(withPosition(ExprNode.VariableNode))
+    def simple = P(Index ~ name ~ Index)
+      .map { case (startIndex, nameNode, endIndex) => (startIndex, NamePathNode(nameNode), endIndex) }
+      .map(withPosition(ExprNode.VariableNode))
     def block = P("{" ~ NoCut(expression) ~ "}")
     P("$" ~ (block | simple))
   }

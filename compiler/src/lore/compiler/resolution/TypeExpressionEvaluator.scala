@@ -27,7 +27,7 @@ object TypeExpressionEvaluator {
     */
   def evaluate(expression: TypeExprNode)(implicit typeScope: TypeScope, bindingScope: BindingScope, reporter: Reporter): Option[Type] = {
     expression match {
-      case node@TypeExprNode.TypeNameNode(_, position) => typeScope.resolve(node.namePath, position).map {
+      case node@TypeExprNode.TypeNameNode(_, position) => typeScope.resolveStatic(node.namePath, position).map {
         case tpe: NamedType => tpe
         case schema: NamedSchema =>
           if (!schema.isConstant) {
@@ -37,7 +37,7 @@ object TypeExpressionEvaluator {
           schema.instantiate(Vector.empty, expression.position)
       }
 
-      case TypeExprNode.InstantiationNode(nameNode, argumentNodes, _) => typeScope.resolve(nameNode.namePath, nameNode.position).map {
+      case TypeExprNode.InstantiationNode(nameNode, argumentNodes, _) => typeScope.resolveStatic(nameNode.namePath, nameNode.position).map {
         case tpe: NamedType =>
           reporter.error(UnexpectedTypeArguments(tpe, expression))
           tpe

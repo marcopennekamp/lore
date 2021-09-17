@@ -1,6 +1,7 @@
 package lore.compiler.feedback
 
 import lore.compiler.core.Position
+import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.types.{ShapeType, TypeVariable}
 
@@ -49,13 +50,13 @@ object StructFeedback {
         s" assigned an appropriate value."
     }
 
-    case class NoConstructor(name: String, override val position: Position) extends Feedback.Error(position) {
+    case class NoConstructor(name: NamePath, override val position: Position) extends Feedback.Error(position) {
       override def message: String = s"The type $name is an object, which doesn't have a constructor. Objects cannot be" +
         s" constructed. You can refer to the object value simply by the variable $name."
     }
   }
 
-  case class ConstructorExpected(name: String, override val position: Position) extends Feedback.Error(position) {
+  case class ConstructorExpected(name: NamePath, override val position: Position) extends Feedback.Error(position) {
     override def message: String = s"The type $name doesn't have an associated constructor. It must be a struct."
   }
 

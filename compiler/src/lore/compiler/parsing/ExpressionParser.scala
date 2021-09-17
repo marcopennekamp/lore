@@ -10,7 +10,7 @@ import lore.compiler.syntax._
   */
 class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whitespace: P[Any] => P[Unit]) {
   private val typeParser = new TypeParser(nameParser)
-  private val stringParser = new StringParser(this)
+  private val stringParser = new StringParser(nameParser, this)
   private lazy val singleLineParser = new ExpressionParser(nameParser)(fragment, Space.WS(_))
   private lazy val multiLineParser = new ExpressionParser(nameParser)(fragment, ScalaWhitespace.whitespace)
 
@@ -51,12 +51,14 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
 
   /**
     * An assignment address is either a plain variable or some property that is accessed on any accessible expression.
+    *
+    * Note that a member access such as `foo.bar` will be parsed as a variable due to how name paths are handled.
     */
   private def address[_: P]: P[ExprNode.AddressNode] = {
     // We can cast to PropertyAccessNode because we set minAccess to 1, which ensures that the parse results in such
     // a node.
     def prop = P(propertyAccess(accessible, minAccess = 1)).asInstanceOf[P[ExprNode.MemberAccessNode]]
-    P(prop | variable)
+    P(variable | prop)
   }
 
   def expression[_: P]: P[ExprNode] = P(ifElse | cond | whileLoop | forLoop | anonymousFunction | operatorExpression)
@@ -218,9 +220,9 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
       .map(withPosition(ExprNode.DynamicCallNode))
   }
 
-  private def constructor[_: P]: P[ExprNode] = P(Index ~ name ~ Space.WS ~~ typeArguments ~~ Index).map(withPosition(ExprNode.ConstructorNode))
+  private def constructor[_: P]: P[ExprNode] = P(Index ~ namePath ~ Space.WS ~~ typeArguments ~~ Index).map(withPosition(ExprNode.ConstructorNode))
 
-  private def simpleCall[_: P]: P[ExprNode] = P(Index ~ name ~~ Space.WS ~~ arguments.rep(1) ~ Index).map {
+  private def simpleCall[_: P]: P[ExprNode] = P(Index ~ namePath ~~ Space.WS ~~ arguments.rep(1) ~ Index).map {
     case (startIndex, name, argumentLists, endIndex) =>
       val firstCall = withPosition(ExprNode.SimpleCallNode)(startIndex, name, argumentLists.head, endIndex)
       foldCalls(startIndex, firstCall, argumentLists.tail, endIndex)
@@ -245,19 +247,19 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
   private def typeArguments[_: P]: P[Vector[TypeExprNode]] = P("[" ~ typeParser.typeExpression.rep(sep = ",") ~ ",".? ~ "]").map(_.toVector)
   private def singleTypeArgument[_: P]: P[TypeExprNode] = P("[" ~ typeParser.typeExpression ~ "]")
 
-  private def fixedFunction[_: P]: P[ExprNode] = P(Index ~ name ~ ".fixed" ~~ Space.WS ~~ typeArguments ~ Index).map(withPosition(ExprNode.FixedFunctionNode))
+  private def fixedFunction[_: P]: P[ExprNode] = P(Index ~ namePath ~ ".fixed" ~~ Space.WS ~~ typeArguments ~ Index).map(withPosition(ExprNode.FixedFunctionNode))
 
   private def objectMap[_: P]: P[ExprNode.ObjectMapNode] = {
     def entry = P(Index ~ name ~ "=" ~ expression ~ Index).map(withPosition(ExprNode.ObjectEntryNode))
     def shorthand = P(Index ~ name ~ Index).map { case (startIndex, nameNode, endIndex) =>
       val position = Position(fragment, startIndex, endIndex)
-      ExprNode.ObjectEntryNode(nameNode, ExprNode.VariableNode(nameNode.value, position), position)
+      ExprNode.ObjectEntryNode(nameNode, ExprNode.VariableNode(NamePathNode(nameNode), position), position)
     }
     def entries = P((entry | shorthand).rep(sep = ",") ~ ",".?).map(_.toVector)
-    P(Index ~ structName ~~ Space.WS ~~ typeArguments.? ~ "{" ~ entries ~ "}" ~ Index).map(withPosition(ExprNode.ObjectMapNode))
+    P(Index ~ namePath ~~ Space.WS ~~ typeArguments.? ~ "{" ~ entries ~ "}" ~ Index).map(withPosition(ExprNode.ObjectMapNode))
   }
 
-  private def variable[_: P]: P[ExprNode.VariableNode] = P(Index ~ identifier ~ Index).map(withPosition(ExprNode.VariableNode))
+  private def variable[_: P]: P[ExprNode.VariableNode] = P(Index ~ namePath ~ Index).map(withPosition(ExprNode.VariableNode))
 
   def block[_: P]: P[ExprNode.BlockNode] = {
     P(Index ~ "do" ~~ (Space.WS1 | Space.terminator) ~ blockExpressions ~ "end" ~ Index).map(withPosition(ExprNode.BlockNode))
@@ -284,7 +286,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
     def property = P(Index ~ name ~ ":" ~ expression ~ Index).map(withPosition(ExprNode.ShapeValuePropertyNode))
     def shorthand = P(Index ~ name ~ Index).map { case (startIndex, nameNode, endIndex) =>
       val position = Position(fragment, startIndex, endIndex)
-      ExprNode.ShapeValuePropertyNode(nameNode, ExprNode.VariableNode(nameNode.value, position), position)
+      ExprNode.ShapeValuePropertyNode(nameNode, ExprNode.VariableNode(NamePathNode(nameNode), position), position)
     }
     def properties = P((property | shorthand).rep(sep = ",") ~ ",".?).map(_.toVector)
     P(Index ~ "%{" ~ properties ~ "}" ~ Index).map(withPosition(ExprNode.ShapeValueNode))

@@ -1,7 +1,8 @@
 package lore.compiler.syntax
 
 import lore.compiler.core.Position
-import lore.compiler.syntax.Node.{NameNode, NamedNode}
+import lore.compiler.semantics.NamePath
+import lore.compiler.syntax.Node.{NameNode, NamePathNode, NamedNode, PathNamedNode}
 import lore.compiler.syntax.TopLevelExprNode._
 
 /**
@@ -45,7 +46,7 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Variable expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class VariableNode(name: String, position: Position) extends LeafNode with ExprNode with AddressNode
+  case class VariableNode(namePathNode: NamePathNode, position: Position) extends LeafNode with ExprNode with AddressNode with PathNamedNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Numeric expressions.
@@ -100,20 +101,20 @@ object ExprNode {
   ) extends NamedNode
 
   case class FixedFunctionNode(
-    nameNode: NameNode,
+    namePathNode: NamePathNode,
     argumentTypes: Vector[TypeExprNode],
     position: Position,
-  ) extends LeafNode with ExprNode with NamedNode
+  ) extends LeafNode with ExprNode with PathNamedNode
 
   /**
     * A constructor instantiation with manual assignment of type arguments. A constructor call with inferred type
     * arguments is instead represented by [[SimpleCallNode]].
     */
   case class ConstructorNode(
-    nameNode: NameNode,
+    namePathNode: NamePathNode,
     typeArguments: Vector[TypeExprNode],
     position: Position,
-  ) extends LeafNode with ExprNode with NamedNode
+  ) extends LeafNode with ExprNode with PathNamedNode
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Collection expressions.
@@ -126,6 +127,10 @@ object ExprNode {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Object expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /**
+    * Even though member access might be parsed as name paths, there is still a need for MemberAccessNodes to represent
+    * expressions such as `(if a then b else c).member`.
+    */
   case class MemberAccessNode(
     instance: ExprNode,
     nameNode: NameNode,
@@ -133,11 +138,11 @@ object ExprNode {
   ) extends UnaryNode(instance) with ExprNode with AddressNode with NamedNode
 
   case class ObjectMapNode(
-    nameNode: NameNode,
+    namePathNode: NamePathNode,
     typeArguments: Option[Vector[TypeExprNode]],
     entries: Vector[ObjectEntryNode],
     position: Position,
-  ) extends XaryNode(entries.map(_.expression)) with ExprNode with NamedNode
+  ) extends XaryNode(entries.map(_.expression)) with ExprNode with PathNamedNode
 
   case class ObjectEntryNode(nameNode: NameNode, expression: ExprNode, position: Position) extends NamedNode
 
@@ -182,10 +187,10 @@ object ExprNode {
     * function type. Splitting these concerns at the syntax level leads to a simpler implementation down the pipeline.
     */
   case class SimpleCallNode(
-    nameNode: NameNode,
+    namePathNode: NamePathNode,
     arguments: Vector[ExprNode],
     position: Position,
-  ) extends XaryNode(arguments) with ExprNode with NamedNode
+  ) extends XaryNode(arguments) with ExprNode with PathNamedNode
 
   /**
     * The name of the dynamic function must be the first argument, as a string.
@@ -202,7 +207,7 @@ object ExprNode {
     */
   def pipe(argument: ExprNode, target: ExprNode, position: Position): ExprNode = {
     target match {
-      case VariableNode(name, position) => SimpleCallNode(NameNode(name, position), Vector(argument), position)
+      case VariableNode(name, position) => SimpleCallNode(name, Vector(argument), position)
       case CallNode(target, arguments, position) => CallNode(target, argument +: arguments, position)
       case SimpleCallNode(nameNode, arguments, position) => SimpleCallNode(nameNode, argument +: arguments, position)
       case DynamicCallNode(nameLiteral, resultType, arguments, position) => DynamicCallNode(nameLiteral, resultType, argument +: arguments, position)

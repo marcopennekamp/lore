@@ -4,27 +4,13 @@ import lore.compiler.core.Position
 import lore.compiler.feedback.{Feedback, Reporter, StructFeedback}
 import lore.compiler.inference.InferenceVariable
 import lore.compiler.resolution.TypeExpressionEvaluator
+import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.scopes.{BindingScope, StructObjectBinding, StructConstructorBinding, TypeScope}
+import lore.compiler.semantics.scopes.{BindingScope, StructConstructorBinding, StructObjectBinding, TypeScope}
 import lore.compiler.semantics.structures.{StructConstructor, StructDefinition, StructPropertyDefinition}
 import lore.compiler.syntax.TypeExprNode
 
 object StructTransformation {
-
-  /**
-    * Gets the struct binding called `name` from the given scope.
-    */
-  def getStructConstructorBinding(name: String, position: Position)(implicit bindingScope: BindingScope, reporter: Reporter): Option[StructConstructorBinding] = {
-    bindingScope.resolve(name, position).flatMap {
-      case binding: StructConstructorBinding => Some(binding)
-      case _: StructObjectBinding =>
-        reporter.error(StructFeedback.Object.NoConstructor(name, position))
-        None
-      case _ =>
-        reporter.error(StructFeedback.ConstructorExpected(name, position))
-        None
-    }
-  }
 
   /**
     * Gets a struct constructor from the given struct constructor binding. If the struct has type parameters, all type
@@ -49,15 +35,25 @@ object StructTransformation {
     * constructor type is inferred.
     */
   def getConstructor(
-    name: String,
+    name: NamePath,
     typeArgumentNodes: Option[Vector[TypeExprNode]],
     position: Position,
   )(implicit bindingScope: BindingScope, typeScope: TypeScope, judgmentCollector: JudgmentCollector, reporter: Reporter): Option[StructConstructor] = {
-    StructTransformation.getStructConstructorBinding(name, position).map { structBinding =>
-      typeArgumentNodes match {
-        case Some(nodes) => structBinding.asSchema.instantiate(nodes.map(TypeExpressionEvaluator.evaluate), position).constructor
-        case None => getConstructor(structBinding, position)
-      }
+    bindingScope.resolveStatic(name, position).flatMap {
+      case binding: StructConstructorBinding =>
+        val constructor = typeArgumentNodes match {
+          case Some(nodes) => binding.asSchema.instantiate(nodes.map(TypeExpressionEvaluator.evaluate), position).constructor
+          case None => getConstructor(binding, position)
+        }
+        Some(constructor)
+
+      case _: StructObjectBinding =>
+        reporter.error(StructFeedback.Object.NoConstructor(name, position))
+        None
+
+      case _ =>
+        reporter.error(StructFeedback.ConstructorExpected(name, position))
+        None
     }
   }
 

@@ -25,7 +25,9 @@ object Node {
   }
 
   object NamePathNode {
-    val empty: NamePathNode = NamePathNode(Vector.empty)
+    def apply(segments: NameNode*): NamePathNode = NamePathNode(segments.toVector)
+
+    val empty: NamePathNode = NamePathNode()
   }
 
   trait NamedNode extends Node {

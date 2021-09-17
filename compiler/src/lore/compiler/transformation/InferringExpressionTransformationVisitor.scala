@@ -2,7 +2,7 @@ package lore.compiler.transformation
 
 import lore.compiler.core._
 import lore.compiler.feedback.DispatchFeedback.{FixedFunctionAmbiguousCall, FixedFunctionEmptyFit}
-import lore.compiler.feedback.{Feedback, Reporter, StructFeedback}
+import lore.compiler.feedback.{ExpressionFeedback, Feedback, Reporter, StructFeedback}
 import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.Registry
@@ -51,17 +51,11 @@ class InferringExpressionTransformationVisitor(
   def typingJudgments: Vector[TypingJudgment] = judgmentCollector.judgments
 
   override def visitLeaf(node: LeafNode): Expression = node match {
-    case VariableNode(name, position) =>
-      scopeContext.currentScope.resolve(name, position).map {
-        case mf: MultiFunctionDefinition =>
-          // Multi-functions which aren't used in a simple call must be converted to function values immediately.
-          val functionType = new InferenceVariable
-          judgmentCollector.add(TypingJudgment.MultiFunctionValue(functionType, mf, position))
-          Expression.MultiFunctionValue(mf, functionType, position)
-
-        case structBinding: StructConstructorBinding => Expression.BindingAccess(StructTransformation.getConstructor(structBinding, position), position)
-        case binding: TypedBinding => Expression.BindingAccess(binding, position)
-      }.getOrElse(Expression.Hole(BasicType.Nothing, position))
+    case VariableNode(namePathNode, position) =>
+      val bindingProcessor = BindingProcessors.accessCoercion(position)
+      AccessTransformation
+        .transform(namePathNode)(bindingProcessor, bindingProcessor)
+        .getOrElse(Expression.Hole(BasicType.Nothing, position))
 
     case RealLiteralNode(value, position) => Expression.Literal(value, BasicType.Real, position)
     case node@IntLiteralNode(value, position) =>
@@ -72,23 +66,23 @@ class InferringExpressionTransformationVisitor(
     case BoolLiteralNode(value, position) => Expression.Literal(value, BasicType.Boolean, position)
     case StringLiteralNode(value, position) => Expression.Literal(value, BasicType.String, position)
 
-    case FixedFunctionNode(nameNode, typeExpressions, position) =>
-      val inputType = TupleType(typeExpressions.map(TypeExpressionEvaluator.evaluate).map(_.getOrElse(BasicType.Nothing)))
-      def dispatch(mf: MultiFunctionDefinition) = mf.dispatch(
-        inputType,
-        FixedFunctionEmptyFit(mf, inputType, position),
-        min => FixedFunctionAmbiguousCall(mf, inputType, min, position)
-      )
-      // TODO (modules): Get the binding from the scope. If it isn't a multi-function, report an error.
-      /* registry
-        .resolveMultiFunction(nameNode.value, nameNode.position)
-        .flatMap(dispatch)
-        .map(instance => Expression.FixedFunctionValue(instance, position))
-        .getOrElse(Expression.Hole(BasicType.Nothing, position)) */
-      ???
+    case FixedFunctionNode(namePathNode, typeExpressions, position) =>
+      scopeContext.currentScope.resolveStatic(namePathNode.namePath, namePathNode.position).flatMap {
+        case mf: MultiFunctionDefinition =>
+          val inputType = TupleType(typeExpressions.map(TypeExpressionEvaluator.evaluate).map(_.getOrElse(BasicType.Nothing)))
+          mf.dispatch(
+            inputType,
+            FixedFunctionEmptyFit(mf, inputType, position),
+            min => FixedFunctionAmbiguousCall(mf, inputType, min, position)
+          ).map(instance => Expression.FixedFunctionValue(instance, position))
 
-    case ConstructorNode(nameNode, typeArgumentNodes, position) =>
-      StructTransformation.getConstructor(nameNode.value, Some(typeArgumentNodes), nameNode.position) match {
+        case _ =>
+          reporter.error(ExpressionFeedback.FixedFunction.MultiFunctionExpected(namePathNode.namePath, namePathNode.position))
+          None
+      }.getOrElse(Expression.Hole(BasicType.Nothing, position))
+
+    case ConstructorNode(namePathNode, typeArgumentNodes, position) =>
+      StructTransformation.getConstructor(namePathNode.namePath, Some(typeArgumentNodes), namePathNode.position) match {
         case Some(constructor) => Expression.BindingAccess(constructor, position)
         case None => Expression.Hole(BasicType.Nothing, position)
       }
@@ -128,12 +122,7 @@ class InferringExpressionTransformationVisitor(
       judgmentCollector.add(TypingJudgment.Subtypes(expression.tpe, BasicType.Boolean, position))
       Expression.UnaryOperation(UnaryOperator.LogicalNot, expression, BasicType.Boolean, position)
 
-    case MemberAccessNode(_, nameNode, position) =>
-      // We cannot decide the member until the type has been inferred. Hence we first have to return an "unresolved
-      // member access" expression node, which will be resolved later.
-      val memberType = new InferenceVariable
-      judgmentCollector.add(TypingJudgment.MemberAccess(memberType, expression.tpe, nameNode.value, nameNode.position))
-      Expression.UnresolvedMemberAccess(expression, nameNode.value, memberType, position)
+    case MemberAccessNode(_, nameNode, _) => AccessTransformation.transformMemberAccess(expression, Vector(nameNode))
   }
 
   override def visitBinary(node: BinaryNode)(left: Expression, right: Expression): Expression = node match {
@@ -239,14 +228,14 @@ class InferringExpressionTransformationVisitor(
       judgmentCollector.add(TypingJudgment.LeastUpperBound(elementType, expressions.map(_.tpe), position))
       Expression.ListConstruction(expressions, ListType(elementType), position)
 
-    case ObjectMapNode(nameNode, typeArgumentNodes, entryNodes, position) =>
-      StructTransformation.getConstructor(nameNode.value, typeArgumentNodes, nameNode.position) match {
+    case ObjectMapNode(namePathNode, typeArgumentNodes, entryNodes, position) =>
+      StructTransformation.getConstructor(namePathNode.namePath, typeArgumentNodes, namePathNode.position) match {
         case Some(constructor) =>
           val entries = entryNodes.zip(expressions).map {
             case (ObjectEntryNode(nameNode, _, _), expression) => nameNode.value -> expression
           }
           val arguments = StructTransformation.entriesToArguments(constructor.structType.schema.definition, entries, position)
-          CallTransformation.valueCall(Expression.BindingAccess(constructor, nameNode.position), arguments, position)
+          CallTransformation.valueCall(Expression.BindingAccess(constructor, namePathNode.position), arguments, position)
 
         case None => Expression.Hole(BasicType.Nothing, position)
       }
@@ -266,20 +255,24 @@ class InferringExpressionTransformationVisitor(
       Expression.XaryOperation(XaryOperator.Concatenation, expressions, BasicType.String, position)
 
     // Xary function calls.
-    case SimpleCallNode(nameNode, _, position) =>
-      def handleBinding(binding: Binding): Option[Expression.Call] = binding match {
-        case mf: MultiFunctionDefinition => Some(FunctionTyping.multiFunctionCall(mf, expressions, position))
-        case structBinding: StructConstructorBinding => handleBinding(StructTransformation.getConstructor(structBinding, nameNode.position))
-        case structObject: StructObjectBinding =>
-          reporter.error(StructFeedback.Object.NoConstructor(structObject.name, nameNode.position))
-          None
-        case binding: TypedBinding => Some(CallTransformation.valueCall(Expression.BindingAccess(binding, nameNode.position), expressions, position))
+    case SimpleCallNode(namePathNode, _, position) =>
+      def handleValueCall(target: Expression): Expression.Call = {
+        CallTransformation.valueCall(target, expressions, position)
       }
 
-      scopeContext.currentScope
-        .resolve(nameNode.value, nameNode.position)
-        .flatMap(handleBinding)
-        .getOrElse(Expression.Hole(BasicType.Nothing, position))
+      def handleModuleMember(binding: Binding): Option[Expression.Call] = binding match {
+        case mf: MultiFunctionDefinition => Some(FunctionTyping.multiFunctionCall(mf, expressions, position))
+        case structBinding: StructConstructorBinding => handleModuleMember(StructTransformation.getConstructor(structBinding, namePathNode.position))
+        case structObject: StructObjectBinding =>
+          reporter.error(StructFeedback.Object.NoConstructor(structObject.name, namePathNode.position))
+          None
+        case binding: TypedBinding => Some(handleValueCall(Expression.BindingAccess(binding, namePathNode.position)))
+      }
+
+      AccessTransformation.transform(namePathNode)(
+        handleModuleMember,
+        BindingProcessors.accessCoercion(namePathNode.position).andThen(_.map(handleValueCall)),
+      ).getOrElse(Expression.Hole(BasicType.Nothing, position))
 
     case DynamicCallNode(nameLiteral, resultTypeNode, _, position) =>
       val resultType = TypeExpressionEvaluator.evaluate(resultTypeNode).getOrElse(BasicType.Nothing)

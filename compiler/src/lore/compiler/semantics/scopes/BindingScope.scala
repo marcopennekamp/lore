@@ -2,12 +2,17 @@ package lore.compiler.semantics.scopes
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
+import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.functions.FunctionSignature
 
 /**
   * A scope that provides access to bindings (variables, multi-functions, struct constructors, modules, etc.).
   */
 trait BindingScope extends Scope[Binding] {
+  def resolveStatic(namePath: NamePath, position: Position)(implicit reporter: Reporter): Option[Binding] = {
+    resolveStatic(namePath, this, position)
+  }
+
   override def entryLabel: String = "variable, multi-function, struct constructor, or module"
 }
 
