@@ -69,6 +69,7 @@ object LoreCompiler {
     val globalVariables = registry.bindings.globalVariables.values.toVector
     val multiFunctions = registry.bindings.multiFunctions.values.toVector
 
+    ConstraintsPhase.process()
     declaredSchemaDefinitions.foreach(analyze(_, reporter))
     globalVariables.foreach(analyze(_, reporter))
     multiFunctions.foreach(analyze(_, reporter))

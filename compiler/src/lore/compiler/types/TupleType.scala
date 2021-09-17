@@ -8,4 +8,6 @@ case class TupleType(elements: Vector[Type]) extends Type {
 
 object TupleType {
   val UnitType: TupleType = TupleType(Vector.empty)
+
+  def apply(elements: Type*): TupleType = TupleType(elements.toVector)
 }

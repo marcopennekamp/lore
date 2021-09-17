@@ -4,6 +4,7 @@ import lore.compiler.core.Position
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.types.Type
 
+// TODO (modules): Move these errors to MultiFunctionFeedback.
 object DispatchFeedback {
 
   case class EmptyFit(mf: MultiFunctionDefinition, inputType: Type, override val position: Position) extends Feedback.Error(position) {

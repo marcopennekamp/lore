@@ -1,34 +1,43 @@
 package lore.compiler.transformation
 
 import lore.compiler.core.Position
-import lore.compiler.feedback.{Feedback, Reporter}
-import lore.compiler.semantics.{Core, Registry}
+import lore.compiler.feedback.DispatchFeedback.{AmbiguousCall, EmptyFit}
+import lore.compiler.feedback.{ExpressionFeedback, Reporter, TypingFeedback}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.BinaryOperator
-import lore.compiler.types.{BasicType, SymbolType}
+import lore.compiler.semantics.functions.{CallTarget, CoreMultiFunction}
+import lore.compiler.semantics.{Core, Registry}
+import lore.compiler.types.{BasicType, SymbolType, TupleType}
 
 object BuiltinsTransformation {
 
-  sealed trait ComparisonFunction {
-    def name: String
-  }
+  /**
+    * Builds a multi-function call to a core multi-function such as `to_string`.
+    */
+  def multiFunctionCall(
+    cmf: CoreMultiFunction,
+    arguments: Vector[Expression],
+    position: Position,
+  )(implicit registry: Registry, reporter: Reporter): Expression = {
+    registry.bindings.multiFunctions.get(cmf.name) match {
+      case Some(mf) =>
+        val inputType = TupleType(arguments.map(_.tpe))
+        mf.dispatch(
+          inputType,
+          EmptyFit(mf, inputType, position),
+          min => AmbiguousCall(mf, inputType, min, position),
+        ).map { instance =>
+          val expression = Expression.Call(CallTarget.MultiFunction(mf), arguments, instance.signature.outputType, position)
+          if (instance.signature.outputType </= cmf.outputType) {
+            reporter.error(TypingFeedback.SubtypeExpected(instance.signature.outputType, cmf.outputType, expression))
+          }
+          expression
+        }.getOrElse {
+          Expression.Hole(cmf.outputType, position)
+        }
 
-  object ComparisonFunction {
-    case object AreEqual extends ComparisonFunction {
-      override val name: String = Core.equal
+      case None => Expression.Hole(cmf.outputType, position)
     }
-
-    case object IsLessThan extends ComparisonFunction {
-      override val name: String = Core.less_than
-    }
-
-    case object IsLessThanOrEqual extends ComparisonFunction {
-      override val name: String = Core.less_than_equal
-    }
-  }
-
-  case class IllegalSymbolComparison(override val position: Position) extends Feedback.Error(position) {
-    override def message = "Symbols are unordered and may not be compared using 'less than' or 'greater than'."
   }
 
   /**
@@ -39,7 +48,7 @@ object BuiltinsTransformation {
     * If an expression cannot be created, the function falls back to [[Expression.Hole]] with a Boolean type.
     */
   def transformComparison(
-    comparisonFunction: ComparisonFunction,
+    cmf: CoreMultiFunction,
     basicOperator: BinaryOperator,
     left: Expression,
     right: Expression,
@@ -48,17 +57,17 @@ object BuiltinsTransformation {
     (left.tpe, right.tpe) match {
       case (_: BasicType, _: BasicType) => Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position)
 
-      case (_: SymbolType, _: SymbolType) => comparisonFunction match {
-        case ComparisonFunction.AreEqual =>
+      case (_: SymbolType, _: SymbolType) => cmf match {
+        case Core.equal =>
           // Because symbol values are interned, they can be compared by reference, using the equality operator.
           Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position)
 
-        case ComparisonFunction.IsLessThan | ComparisonFunction.IsLessThanOrEqual =>
-          reporter.error(IllegalSymbolComparison(position))
+        case Core.less_than | Core.less_than_equal =>
+          reporter.error(ExpressionFeedback.IllegalSymbolComparison(position))
           Expression.Hole(BasicType.Boolean, position)
       }
 
-      case _ => CallTransformation.multiFunctionCall(comparisonFunction.name, Vector(left, right), BasicType.Boolean, position)
+      case _ => multiFunctionCall(cmf, Vector(left, right), position)
     }
   }
 
