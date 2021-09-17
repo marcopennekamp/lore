@@ -46,8 +46,8 @@ object SchemaStringifier {
           }
           val extended = if (dt.schema.supertypes.nonEmpty) s" extends ${dt.schema.supertypes.map(toString(_, verbose)).mkString(", ")}" else ""
           s"$kind ${dt.name}$typeArguments$extended"
-        } else s"${dt.name}$typeArguments"
-      case t: NamedSchema => t.name
+        } else s"${dt.name.simpleName}$typeArguments"
+      case t: NamedSchema => t.name.simpleName
       case _ => schema.toString
     }
   }

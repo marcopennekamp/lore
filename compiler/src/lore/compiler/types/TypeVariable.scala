@@ -1,5 +1,6 @@
 package lore.compiler.types
 
+import lore.compiler.semantics.NamePath
 import lore.compiler.types.TypeVariable.Variance
 
 /**
@@ -12,12 +13,14 @@ import lore.compiler.types.TypeVariable.Variance
   * Openness is only taken into account in structs. It has no bearing on traits, alias types, and functions.
   */
 class TypeVariable(
-  val name: String,
+  val simpleName: String,
   val lowerBound: Type,
   val upperBound: Type,
   val variance: Variance,
   val isOpen: Boolean,
 ) extends NamedType {
+  override val name: NamePath = NamePath(simpleName)
+
   override def equals(obj: Any): Boolean = obj match {
     case var2: TypeVariable => this eq var2
     case _ => false

@@ -123,9 +123,9 @@ object TypeEncoder {
         case (BasicType.Nothing, _) => (Tag.variableNothing, writeType(tv.upperBound))
         case _ => (Tag.variable, writeType(tv.lowerBound) ++ writeType(tv.upperBound))
       }
-      (tag +: writeString(tv.name)) ++ bounds
+      (tag +: writeString(tv.name.toString)) ++ bounds
     case t: BasicType => Vector(Tag.basic(t))
-    case dt: DeclaredType => (Tag.variableSize(Kind.named, dt.typeArguments.length) +: writeString(dt.name)) ++ dt.typeArguments.flatMap(writeType)
+    case dt: DeclaredType => (Tag.variableSize(Kind.named, dt.typeArguments.length) +: writeString(dt.name.toString)) ++ dt.typeArguments.flatMap(writeType)
   }
 
   /**
