@@ -12,7 +12,7 @@ object GlobalVariableDefinitionResolver {
     Resolver.withRegistryScopes(node.localModule) {
       implicit typeScope => implicit bindingScope =>
         val tpe = TypeExpressionEvaluator.evaluate(node.tpe).getOrElse(BasicType.Nothing)
-        new GlobalVariableDefinition(node.fullName, tpe, node.value, node.position)
+        new GlobalVariableDefinition(node.fullName, tpe, node.value, node.localModule, node.position)
     }
   }
 

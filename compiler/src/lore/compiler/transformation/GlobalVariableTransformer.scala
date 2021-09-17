@@ -8,11 +8,11 @@ object GlobalVariableTransformer {
 
   def transform(variable: GlobalVariableDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
     variable.value = ExpressionTransformer.transform(
-      variable.name,
       variable.valueNode,
       variable.tpe,
-      registry.getTypeScope,
-      registry.getBindingScope,
+      registry.getTypeScope(variable.localModule),
+      registry.getBindingScope(variable.localModule),
+      variable.name.toString,
     )
   }
 

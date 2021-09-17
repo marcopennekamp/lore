@@ -17,11 +17,11 @@ object StructTransformer {
         // Note that we pass the registry binding scope, since other properties of the struct should not be accessible in
         // default value expressions.
         val expression = ExpressionTransformer.transform(
-          s"${struct.name}.${property.name}",
           node,
           property.tpe,
-          registry.getTypeScope,
-          registry.getBindingScope
+          struct.schema.getTypeScope(registry.getTypeScope(struct.localModule)),
+          registry.getBindingScope(struct.localModule),
+          s"${struct.name}.${property.name}",
         )
         val callTarget = CallTarget.Dynamic(RuntimeNames.struct.defaultValue(struct.schema, property).name.name)
         StructPropertyDefinition.DefaultValue(expression, callTarget)

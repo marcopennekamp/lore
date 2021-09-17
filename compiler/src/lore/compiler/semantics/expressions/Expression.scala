@@ -59,23 +59,26 @@ object Expression {
     * of an assignment.
     */
   sealed trait Access extends Expression {
+    def label: String
     def isMutable: Boolean
+    override def toString: String = label
   }
 
   case class BindingAccess(binding: TypedBinding, position: Position) extends Expression.Apply(binding.tpe) with Access {
+    override val label: String = binding.toString
     override val isMutable: Boolean = binding.isMutable
-    override val toString: String = binding.toString
   }
 
   case class MemberAccess(instance: Expression, member: Member, position: Position) extends Expression.Apply(member.tpe) with Access {
+    override val label: String = member.name
     override val isMutable: Boolean = member.isMutable
-    override val toString: String = member.name
   }
 
   /**
     * A member access that cannot yet be resolved because the expression's type hasn't been inferred.
     */
   case class UnresolvedMemberAccess(instance: Expression, name: String, tpe: InferenceVariable, position: Position) extends Expression with Access {
+    override val label: String = name
     override def isMutable: Boolean = throw CompilationException(s"$this has an undefined mutability.")
   }
 

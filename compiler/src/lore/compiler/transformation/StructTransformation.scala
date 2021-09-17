@@ -14,9 +14,9 @@ object StructTransformation {
   /**
     * Gets the struct binding called `name` from the given scope.
     */
-  def getStructBinding(name: String, position: Position)(implicit bindingScope: BindingScope, reporter: Reporter): Option[StructConstructorBinding] = {
+  def getStructConstructorBinding(name: String, position: Position)(implicit bindingScope: BindingScope, reporter: Reporter): Option[StructConstructorBinding] = {
     bindingScope.resolve(name, position).flatMap {
-      case structBinding: StructConstructorBinding => Some(structBinding)
+      case binding: StructConstructorBinding => Some(binding)
       case _: StructObjectBinding =>
         reporter.error(StructFeedback.Object.NoConstructor(name, position))
         None
@@ -53,9 +53,9 @@ object StructTransformation {
     typeArgumentNodes: Option[Vector[TypeExprNode]],
     position: Position,
   )(implicit bindingScope: BindingScope, typeScope: TypeScope, judgmentCollector: JudgmentCollector, reporter: Reporter): Option[StructConstructor] = {
-    StructTransformation.getStructBinding(name, position).map { structBinding =>
+    StructTransformation.getStructConstructorBinding(name, position).map { structBinding =>
       typeArgumentNodes match {
-        case Some(nodes) => structBinding.instantiate(nodes.map(TypeExpressionEvaluator.evaluate), position).constructor
+        case Some(nodes) => structBinding.asSchema.instantiate(nodes.map(TypeExpressionEvaluator.evaluate), position).constructor
         case None => getConstructor(structBinding, position)
       }
     }

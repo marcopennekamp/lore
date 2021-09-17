@@ -1,9 +1,12 @@
 package lore.compiler.semantics.scopes
 
+import lore.compiler.core.Position
+import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.scopes.StructConstructorBinding.StructConstructorBindingSchema
 import lore.compiler.semantics.structures.StructConstructor
-import lore.compiler.types.{StructType, Type, TypeVariable}
 import lore.compiler.types.TypeVariable.Assignments
+import lore.compiler.types.{NamedSchema, StructType, Type, TypeVariable}
 
 sealed trait StructBinding extends Binding {
   /**
@@ -27,14 +30,24 @@ case class StructConstructorBinding(
   hasCompanionModule: Boolean,
 ) extends StructBinding {
   val isConstant: Boolean = parameters.isEmpty
+  lazy val asSchema: StructConstructorBindingSchema = StructConstructorBindingSchema(name, parameters, underlyingType)
 
   def instantiate(assignments: Assignments): StructConstructor = {
-    Type.substitute(underlyingType, assignments).asInstanceOf[StructType].constructor
+    asSchema.instantiate(assignments).constructor
   }
 
   override def toString: String = {
     val parameterString = if (parameters.nonEmpty) s"[${parameters.mkString(", ")}]" else ""
     s"$name$parameterString"
+  }
+}
+
+object StructConstructorBinding {
+  case class StructConstructorBindingSchema(name: NamePath, parameters: Vector[TypeVariable], underlyingType: StructType) extends NamedSchema {
+    override def instantiate(assignments: Assignments): StructType = Type.substitute(underlyingType, assignments).asInstanceOf[StructType]
+    override def instantiate(arguments: Vector[Option[Type]], position: Position)(implicit reporter: Reporter): StructType = {
+      super.instantiate(arguments, position).asInstanceOf[StructType]
+    }
   }
 }
 
