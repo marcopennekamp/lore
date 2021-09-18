@@ -1,5 +1,6 @@
 package lore.compiler.transpilation
 
+import lore.compiler.semantics.NamePath
 import lore.compiler.target.Target
 import lore.compiler.target.Target.TargetExpression
 import lore.compiler.target.TargetDsl._
@@ -100,7 +101,9 @@ object RuntimeApi {
     implicit val base = named("maps")(RuntimeApi.base)
 
     def tpe(key: TargetExpression, value: TargetExpression) = named("type").call(key, value)
-    def value(entries: Vector[TargetExpression], tpe: TargetExpression, hash: TargetExpression, equals: TargetExpression) = named("value").call(Target.List(entries), tpe, hash, equals)
+    def value(entries: Vector[TargetExpression], tpe: TargetExpression, hash: TargetExpression, equals: TargetExpression) = {
+      named("value").call(Target.List(entries), tpe, hash, equals)
+    }
     def entries(map: TargetExpression) = named("entries").call(map)
   }
 
@@ -122,14 +125,14 @@ object RuntimeApi {
     implicit val base = named("traits")(RuntimeApi.base)
 
     def schema(
-      name: String,
+      name: NamePath,
       typeParameters: Vector[TargetExpression],
       supertraits: Vector[TargetExpression],
       hasMultipleParameterizedInheritance: Boolean,
       inheritedShapeType: TargetExpression,
     ) = {
       named("schema").call(
-        name.asLiteral,
+        name.toString.asLiteral,
         Target.List(typeParameters),
         Target.List(supertraits),
         Target.BooleanLiteral(hasMultipleParameterizedInheritance),
@@ -143,7 +146,7 @@ object RuntimeApi {
     implicit val base = named("structs")(RuntimeApi.base)
 
     def schema(
-      name: String,
+      name: NamePath,
       typeParameters: Vector[TargetExpression],
       supertraits: Vector[TargetExpression],
       hasMultipleParameterizedInheritance: Boolean,
@@ -152,7 +155,7 @@ object RuntimeApi {
       openPropertyOrder: Vector[String],
     ) = {
       named("schema").call(
-        name.asLiteral,
+        name.toString.asLiteral,
         Target.List(typeParameters),
         Target.List(supertraits),
         Target.BooleanLiteral(hasMultipleParameterizedInheritance),
@@ -194,9 +197,15 @@ object RuntimeApi {
     object error {
       implicit val base = named("error")(RuntimeApi.utils.base)
 
-      def ambiguousCall(functionName: String, inputType: TargetExpression) = named("ambiguousCall").call(functionName.asLiteral, inputType)
-      def emptyFit(functionName: String, inputType: TargetExpression) = named("emptyFit").call(functionName.asLiteral, inputType)
-      def missingImplementation(functionName: String, parameterType: TargetExpression, argumentType: TargetExpression) = named("missingImplementation").call(functionName.asLiteral, parameterType, argumentType)
+      def ambiguousCall(functionName: NamePath, inputType: TargetExpression) = {
+        named("ambiguousCall").call(functionName.toString.asLiteral, inputType)
+      }
+      def emptyFit(functionName: NamePath, inputType: TargetExpression) = {
+        named("emptyFit").call(functionName.toString.asLiteral, inputType)
+      }
+      def missingImplementation(functionName: NamePath, parameterType: TargetExpression, argumentType: TargetExpression) = {
+        named("missingImplementation").call(functionName.toString.asLiteral, parameterType, argumentType)
+      }
     }
   }
 

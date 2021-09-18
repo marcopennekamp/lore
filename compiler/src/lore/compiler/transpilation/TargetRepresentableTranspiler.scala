@@ -1,6 +1,8 @@
 package lore.compiler.transpilation
 
+import lore.compiler.core.CompilationException
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
+import lore.compiler.semantics.modules.ModuleDefinition
 import lore.compiler.semantics.scopes.{StructObjectBinding, Variable}
 import lore.compiler.semantics.structures.StructConstructor
 import lore.compiler.semantics.variables.GlobalVariableDefinition
@@ -24,6 +26,7 @@ object TargetRepresentableTranspiler {
     }
 
     targetRepresentable match {
+      case module: ModuleDefinition => throw CompilationException(s"Modules don't have a representation in the target language. Module name: ${module.name}.")
       case variable: GlobalVariableDefinition => supportLazy(RuntimeNames.globalVariable(variable), !variable.value.isLocalized)
       case mf: MultiFunctionDefinition => RuntimeNames.multiFunction(mf)
       case function: FunctionDefinition => RuntimeNames.functionDefinition(function)

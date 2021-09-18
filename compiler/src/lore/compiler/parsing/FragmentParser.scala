@@ -42,7 +42,8 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   def fullFragment[_: P]: P[DeclNode.ModuleNode] = {
-    P(Space.WL ~~ Index ~~ topModuleDeclaration ~~ Space.terminators ~ moduleBody ~~ Index ~~ Space.WL ~~ End)
+    def topModuleDeclaration = P(("module" ~~ Space.WS1 ~~ namePath ~~ Space.terminators).?).map(_.getOrElse(NamePathNode.empty))
+    P(Space.WL ~~ Index ~~ topModuleDeclaration ~ moduleBody ~~ Index ~~ Space.WL ~~ End)
       .map { case (startIndex, modulePath, (imports, members), endIndex) => (startIndex, modulePath, imports, members, endIndex) }
       .map(withPosition(DeclNode.ModuleNode))
   }
@@ -50,11 +51,6 @@ class FragmentParser(implicit fragment: Fragment) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Modules.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  private def topModuleDeclaration[_: P]: P[NamePathNode] = {
-    P(("module" ~~ Space.WS1 ~~ namePath).?)
-      .map(_.getOrElse(NamePathNode.empty))
-  }
-
   private def module[_: P]: P[DeclNode.ModuleNode] = {
     P(Index ~~ "module" ~~ Space.WS1 ~~ namePath ~ "do" ~ moduleBody ~ "end" ~~ Index)
       .map { case (startIndex, modulePath, (imports, members), endIndex) => (startIndex, modulePath, imports, members, endIndex) }

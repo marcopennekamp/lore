@@ -44,8 +44,8 @@ object DeclaredSchemaTranspiler {
     */
   def transpile(schema: DeclaredSchema)(implicit registry: Registry, symbolHistory: SymbolHistory): Vector[TargetStatement] = {
     val schemaTranspiler = getSchemaTranspiler(schema)
-    implicit val variableProvider: TemporaryVariableProvider = new TemporaryVariableProvider(s"${RuntimeNames.schema(schema).name}__")
-    implicit val (typeParameterStatements, runtimeTypeVariables) = TypeTranspiler.transpileTypeVariables(schema.parameters, schema.name)
+    implicit val variableProvider: TemporaryVariableProvider = new TemporaryVariableProvider(s"${RuntimeNames.schema(schema)}__")
+    implicit val (typeParameterStatements, runtimeTypeVariables) = TypeTranspiler.transpileTypeVariables(schema.parameters, RuntimeNames.namePath(schema.name).toString)
 
     val typeParameterExpressions = runtimeTypeVariables.values.map(_.expression).toVector
     val supertraitExpressions = schema.declaredSupertypes.map(TypeTranspiler.transpile)

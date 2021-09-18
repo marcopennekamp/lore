@@ -28,21 +28,22 @@ object TranspilationPhase {
       case _ => Vector.empty
     }
 
-    val introspectionInitialization = registry.getTypeScope.getTraitSchema(Introspection.typeName) match {
+    // TODO (modules): Properly initialize introspection.
+    /* val introspectionInitialization = registry.getTypeScope.getTraitSchema(Introspection.typeName) match {
       case None => throw CompilationException(s"The compiler should generate a trait '${Introspection.typeName}' for the introspection API.")
       case Some(introspectionType) => Vector(
         RuntimeApi.types.introspection.initialize(TypeTranspiler.transpile(introspectionType.representative)(Map.empty, symbolHistory)),
         Target.Divider,
       )
-    }
+    } */
 
-    val globalVariables = registry.globalVariables.values.toVector.flatMap(GlobalVariableTranspiler.transpile(_) :+ Target.Divider)
-    val functions = registry.multiFunctions.values.toVector.flatMap(new MultiFunctionTranspiler(_).transpile() :+ Target.Divider)
+    val globalVariables = registry.bindings.globalVariables.values.toVector.flatMap(GlobalVariableTranspiler.transpile(_) :+ Target.Divider)
+    val functions = registry.bindings.multiFunctions.values.toVector.flatMap(new MultiFunctionTranspiler(_).transpile() :+ Target.Divider)
 
     // We have to transpile symbol declarations last, because we first need to transpile everything else to fill the
     // symbol history.
     val symbolDeclarations = SymbolTranspiler.transpile(symbolHistory) :+ Target.Divider
 
-    symbolDeclarations ++ schemaDeclarations ++ schemaDeclarationDeferredDeclarations ++ introspectionInitialization ++ globalVariables ++ functions
+    symbolDeclarations ++ schemaDeclarations ++ schemaDeclarationDeferredDeclarations /* ++ introspectionInitialization */ ++ globalVariables ++ functions
   }
 }

@@ -104,7 +104,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
     }
 
     Chunk.combine(entries) { entries =>
-      Chunk.expression(RuntimeApi.maps.value(entries, tpe, Core.hash.asVariable, Core.equal.asVariable))
+      Chunk.expression(RuntimeApi.maps.value(entries, tpe, RuntimeNames.multiFunction(Core.hash.name), RuntimeNames.multiFunction(Core.equal.name)))
     }
   }
 

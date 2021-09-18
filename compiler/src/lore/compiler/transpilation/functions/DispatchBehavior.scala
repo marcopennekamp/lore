@@ -18,7 +18,7 @@ class DispatchBehavior(
   symbolHistory: SymbolHistory,
 ) {
 
-  private val varDispatchCache = s"${RuntimeNames.multiFunction(mf).name}__dispatchCache".asVariable
+  private val varDispatchCache = s"${RuntimeNames.multiFunction(mf)}__dispatchCache".asVariable
 
   lazy val preamble: Vector[TargetStatement] = {
     // The cache is declared as a global constant so that it exists between multi-function calls.

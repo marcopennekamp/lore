@@ -21,7 +21,8 @@ object TypeTranspiler {
     * The variable list must be ordered in the declaration order of the variables. At run time, the order of the type
     * variables will determine at which index their instantiations will be placed in an assignments array.
     *
-    * @param ownerName The owner's name, which is used to generate the type variable's full name, required by the runtime.
+    * @param ownerName A representation of the owner's name, which is used to generate the type variable's full name,
+    *                  required by the runtime.
     */
   def transpileTypeVariables(typeVariables: Vector[TypeVariable], ownerName: String)(implicit variableProvider: TemporaryVariableProvider, symbolHistory: SymbolHistory): (Vector[TargetStatement], RuntimeTypeVariables) = {
     implicit val runtimeTypeVariables: RuntimeTypeVariables = typeVariables.zipWithIndex.map {

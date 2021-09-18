@@ -1,6 +1,6 @@
 package lore.compiler.transformation
 
-import lore.compiler.core.Position
+import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.feedback.DispatchFeedback.{AmbiguousCall, EmptyFit}
 import lore.compiler.feedback.{ExpressionFeedback, Reporter, TypingFeedback}
 import lore.compiler.semantics.expressions.Expression
@@ -55,6 +55,7 @@ object BuiltinsTransformation {
     position: Position,
   )(implicit registry: Registry, reporter: Reporter): Expression = {
     (left.tpe, right.tpe) match {
+      // TODO (modules): Any and Nothing should lead to a multi-function call...
       case (_: BasicType, _: BasicType) => Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position)
 
       case (_: SymbolType, _: SymbolType) => cmf match {
@@ -65,6 +66,8 @@ object BuiltinsTransformation {
         case Core.less_than | Core.less_than_equal =>
           reporter.error(ExpressionFeedback.IllegalSymbolComparison(position))
           Expression.Hole(BasicType.Boolean, position)
+
+        case _ => throw CompilationException(s"The core multi-function ${cmf.name} is not a comparison function!")
       }
 
       case _ => multiFunctionCall(cmf, Vector(left, right), position)

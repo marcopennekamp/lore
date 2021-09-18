@@ -41,6 +41,8 @@ object Target {
   case class Assignment(left: TargetExpression, right: TargetExpression) extends TargetStatement
   case class Variable(name: TargetName) extends TargetExpression {
     lazy val asParameter: Parameter = Parameter(name)
+
+    override val toString: String = name.toString
   }
 
   // Functions.
