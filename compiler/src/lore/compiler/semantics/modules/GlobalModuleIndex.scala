@@ -21,14 +21,7 @@ class GlobalModuleIndex {
     * it's a module.
     */
   def add(node: DeclNode, modulePath: NamePath): Unit = this.synchronized {
-    val indexedModule = index.get(modulePath) match {
-      case Some(indexedModule) => indexedModule
-      case None =>
-        val indexedModule = new IndexedModule
-        index = index.updated(modulePath, indexedModule)
-        indexedModule
-    }
-
+    val indexedModule = getIndexedModule(modulePath)
     node match {
       case node@DeclNode.ModuleNode(pathNode, imports, members, position) =>
         // A nested module node `module Foo.Bar` has to be added to the global index such that both Foo and Bar are
@@ -55,10 +48,30 @@ class GlobalModuleIndex {
           }
         } else node
 
-        indexedModule.add(denestedModuleNode)
+        if (!node.namePath.isRoot) {
+          indexedModule.add(denestedModuleNode)
+        }
         denestedModuleNode.members.foreach(add(_, modulePath ++ denestedModuleNode.namePath))
 
       case _ => indexedModule.add(node)
+    }
+  }
+
+  /**
+    * Adds the type or binding `name` to the proper indexed module. This is used to add predefined types to the root
+    * indexed module.
+    */
+  def add(name: NamePath, kind: NameKind): Unit = {
+    getIndexedModule(name.parentOrEmpty).add(name.simpleName, kind)
+  }
+
+  private def getIndexedModule(modulePath: NamePath): IndexedModule = {
+    index.get(modulePath) match {
+      case Some(indexedModule) => indexedModule
+      case None =>
+        val indexedModule = new IndexedModule
+        index = index.updated(modulePath, indexedModule)
+        indexedModule
     }
   }
 

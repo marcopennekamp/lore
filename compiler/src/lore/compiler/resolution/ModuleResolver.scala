@@ -5,6 +5,7 @@ import lore.compiler.feedback.{ModuleFeedback, Reporter}
 import lore.compiler.semantics.modules.{GlobalModuleIndex, LocalModule}
 import lore.compiler.semantics.{NameKind, NamePath}
 import lore.compiler.syntax.DeclNode
+import lore.compiler.types.Type
 
 object ModuleResolver {
 
@@ -16,6 +17,7 @@ object ModuleResolver {
   def resolve(moduleNodes: Vector[DeclNode.ModuleNode])(implicit reporter: Reporter): (Vector[LocalModule], GlobalModuleIndex) = {
     // Step 1: Build the ModuleNodeIndex, which will be used to resolve name paths for imports and scopes.
     implicit val globalModuleIndex: GlobalModuleIndex = new GlobalModuleIndex
+    Type.predefinedTypes.values.foreach(tpe => globalModuleIndex.add(tpe.name, NameKind.Type))
     moduleNodes.foreach(globalModuleIndex.add(_, NamePath.empty))
 
     // Step 2: Flatten module nodes and resolve imports.

@@ -19,11 +19,16 @@ class IndexedModule {
     node match {
       case ModuleNode(NamePathNode(Vector(nameNode)), _, _, _) => addBindingName(nameNode.value)
       case node: ModuleNode => throw CompilationException(
-        s"Module nodes must be denested when being added to the IndexedModule. Position: ${node.position}."
+        s"Module nodes must be denested when being added to the IndexedModule. Module name: ${node.namePathNode}. Position: ${node.position}."
       )
       case node: BindingDeclNode => addBindingName(node.simpleName)
       case node: TypeDeclNode => addTypeName(node.simpleName)
     }
+  }
+
+  def add(name: String, kind: NameKind): Unit = kind match {
+    case NameKind.Type => addTypeName(name)
+    case NameKind.Binding => addBindingName(name)
   }
 
   private def addTypeName(name: String): Unit = {
