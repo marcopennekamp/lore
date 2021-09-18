@@ -52,9 +52,8 @@ class InferringExpressionTransformationVisitor(
 
   override def visitLeaf(node: LeafNode): Expression = node match {
     case VariableNode(namePathNode, position) =>
-      val bindingProcessor = BindingProcessors.accessCoercion(position)
       AccessTransformation
-        .transform(namePathNode)(bindingProcessor, bindingProcessor)
+        .transform(BindingProcessors.accessCoercion(position))(namePathNode)
         .getOrElse(Expression.Hole(BasicType.Nothing, position))
 
     case RealLiteralNode(value, position) => Expression.Literal(value, BasicType.Real, position)
@@ -260,19 +259,21 @@ class InferringExpressionTransformationVisitor(
         CallTransformation.valueCall(target, expressions, position)
       }
 
-      def handleModuleMember(binding: Binding): Option[Expression.Call] = binding match {
-        case mf: MultiFunctionDefinition => Some(FunctionTyping.multiFunctionCall(mf, expressions, position))
-        case structBinding: StructConstructorBinding => handleModuleMember(StructTransformation.getConstructor(structBinding, namePathNode.position))
-        case structObject: StructObjectBinding =>
-          reporter.error(StructFeedback.Object.NoConstructor(structObject.name, namePathNode.position))
-          None
-        case binding: TypedBinding => Some(handleValueCall(Expression.BindingAccess(binding, namePathNode.position)))
+      def handleSingleBinding(binding: Binding): Option[Expression.Call] = {
+        binding match {
+          case mf: MultiFunctionDefinition => Some(FunctionTyping.multiFunctionCall(mf, expressions, position))
+          case structBinding: StructConstructorBinding => handleSingleBinding(StructTransformation.getConstructor(structBinding, namePathNode.position))
+          case structObject: StructObjectBinding =>
+            reporter.error(StructFeedback.Object.NoConstructor(structObject.name, namePathNode.position))
+            None
+          case binding: TypedBinding => Some(handleValueCall(Expression.BindingAccess(binding, namePathNode.position)))
+        }
       }
 
-      AccessTransformation.transform(namePathNode)(
-        handleModuleMember,
+      AccessTransformation.transform(
+        handleSingleBinding,
         BindingProcessors.accessCoercion(namePathNode.position).andThen(_.map(handleValueCall)),
-      ).getOrElse(Expression.Hole(BasicType.Nothing, position))
+      )(namePathNode).getOrElse(Expression.Hole(BasicType.Nothing, position))
 
     case DynamicCallNode(nameLiteral, resultTypeNode, _, position) =>
       val resultType = TypeExpressionEvaluator.evaluate(resultTypeNode).getOrElse(BasicType.Nothing)

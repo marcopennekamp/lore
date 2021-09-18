@@ -4,7 +4,6 @@ import lore.compiler.core.Position
 import lore.compiler.feedback.{Reporter, ScopeFeedback}
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.modules.ModuleDefinition
-import lore.compiler.types.NamedSchema
 import lore.compiler.utils.CollectionExtensions.OptionExtension
 
 import scala.collection.mutable

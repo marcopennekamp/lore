@@ -1,3 +1,5 @@
+use lore.Core.to_string
+
 func length(string: String): Int = dynamic[Int]('Lore.strings.length', string)
 
 func concat(a: String, b: String): String = '$a$b'
@@ -23,7 +25,9 @@ end
   */
 func affix(string: String, prefix: String, suffix: String): String = '$prefix$string$suffix'
 
-/**
- * The string value of a string is simply its identity.
- */
-func to_string(value: String): String = value
+module lore.Core do
+  /**
+   * The string value of a string is simply its identity.
+   */
+  func to_string(value: String): String = value
+end

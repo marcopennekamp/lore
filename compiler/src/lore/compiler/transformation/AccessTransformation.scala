@@ -1,6 +1,6 @@
 package lore.compiler.transformation
 
-import lore.compiler.feedback.Reporter
+import lore.compiler.feedback.{ExpressionFeedback, Reporter}
 import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.modules.ModuleDefinition
@@ -13,20 +13,35 @@ object AccessTransformation {
     * Transforms a name path node, whose underlying name path either refers to a module member or represents a member
     * access chain, into the correct kind of expression.
     *
-    * If the path refers to a module member, the member binding is processed with `processModuleMember`. If the path
-    * instead refers to a non-module binding, this initial binding is processed with `processInstance`, before
-    * additional member accesses are built.
+    * If the path refers to a module member or a local non-module binding, the binding is processed with
+    * `processSingle`. If the path instead refers to a non-module binding <i>and</i> the path has multiple segments,
+    * this initial binding is processed with `processInstance`, before additional member accesses are built.
     */
-  def transform(namePathNode: NamePathNode)(
-    processModuleMember: Binding => Option[Expression],
+  def transform(
+    processSingle: Binding => Option[Expression],
     processInstance: Binding => Option[Expression],
-  )(implicit bindingScope: BindingScope, judgmentCollector: JudgmentCollector, reporter: Reporter): Option[Expression] = {
+  )(namePathNode: NamePathNode)(implicit bindingScope: BindingScope, judgmentCollector: JudgmentCollector, reporter: Reporter): Option[Expression] = {
     val namePath = namePathNode.namePath
     val position = namePathNode.position
-    bindingScope.resolve(namePath.headName, position).flatMap {
-      case module: ModuleDefinition => bindingScope.resolveStatic(module.name ++ namePath.tail, position).flatMap(processModuleMember)
-      case binding => processInstance(binding).map(transformMemberAccess(_, namePathNode.segments.tail))
+
+    def prohibitModuleAccess(binding: Binding): Option[Binding] = binding match {
+      case module: ModuleDefinition =>
+        reporter.error(ExpressionFeedback.IllegalModuleValue(module, position))
+        None
+      case binding => Some(binding)
     }
+
+    bindingScope.resolve(namePath.headName, position).flatMap {
+      case module: ModuleDefinition => bindingScope.resolveStatic(module.name ++ namePath.tail, position).flatMap(processSingle)
+      case binding if namePath.isSingle => prohibitModuleAccess(binding).flatMap(processSingle)
+      case binding => prohibitModuleAccess(binding).flatMap(processInstance).map(transformMemberAccess(_, namePathNode.segments.tail))
+    }
+  }
+
+  def transform(
+    process: Binding => Option[Expression],
+  )(namePathNode: NamePathNode)(implicit bindingScope: BindingScope, judgmentCollector: JudgmentCollector, reporter: Reporter): Option[Expression] = {
+    transform(process, process)(namePathNode)
   }
 
   /**

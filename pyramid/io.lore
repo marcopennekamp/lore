@@ -1,3 +1,7 @@
+module lore.IO
+
+use lore.Core.to_string
+
 act println(value: Any) do
   dynamic[()]('Lore.io.println', to_string(value))
 end

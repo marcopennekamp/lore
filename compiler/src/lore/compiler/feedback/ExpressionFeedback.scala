@@ -3,6 +3,7 @@ package lore.compiler.feedback
 import lore.compiler.core.Position
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.modules.ModuleDefinition
 import lore.compiler.types.FunctionType
 
 object ExpressionFeedback {
@@ -12,6 +13,11 @@ object ExpressionFeedback {
 
   case class ImmutableAssignment(access: Expression.Access) extends Feedback.Error(access) {
     override def message = s"The variable or member $access may not be mutated."
+  }
+
+  case class IllegalModuleValue(module: ModuleDefinition, override val position: Position) extends Feedback.Error(position) {
+    override def message: String = s"The binding ${module.name} is a module. Modules cannot be used directly as" +
+      s" expressions."
   }
 
   object FixedFunction {

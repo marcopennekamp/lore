@@ -9,7 +9,7 @@ import lore.compiler.target.TargetDsl.StringExtension
 import lore.compiler.types.{DeclaredSchema, DeclaredType, StructSchema}
 
 object RuntimeNames {
-  def namePath(namePath: NamePath): Target.Variable = namePath.segments.mkString("$_").asVariable
+  def namePath(namePath: NamePath): Target.Variable = namePath.segments.mkString("$").asVariable
 
   object schema {
     def apply(schema: DeclaredSchema): Target.Variable = s"lore_schema_${namePath(schema.name)}".asVariable
