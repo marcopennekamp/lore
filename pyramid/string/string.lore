@@ -1,6 +1,9 @@
 module lore.String
 
 use lore.core.to_string
+use lore.List
+use lore.List.map
+use lore.List.fold
 
 /**
   * Returns the number of Unicode code units in the string.
@@ -30,10 +33,10 @@ func concat_map(list: [A], f: B => String): String = list |> map(f) |> concat
   */
 @where A
 func join(list: [A], separator: String): String = do
-  if empty?(list) then return ''
+  if List.empty?(list) then return ''
   concat(
-    init(list) |> concat_map(a => '$a$separator'),
-    last(list) |> to_string
+    List.init(list) |> concat_map(a => '$a$separator'),
+    List.last(list) |> to_string
   )
 end
 

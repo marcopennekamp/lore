@@ -1,3 +1,6 @@
+use lore.List.map
+use lore.Tuple
+
 type Status = #ok | #error
 
 func stringify(Status): String
@@ -10,6 +13,6 @@ func process(value: Int): (Status, String) = cond
   true      => (#error, 'At or above five.')
 end
 
-func stringify(result: (Status, String)): String = stringify(first(result))
+func stringify(result: (Status, String)): String = stringify(Tuple.first(result))
 
 func test(): [String] = [3, 5, 2, 10, 1] |> map(process) |> map(stringify)

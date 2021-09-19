@@ -1,3 +1,5 @@
+module lore.List
+
 @where A
 func length(list: [A]): Int = dynamic[Int]('Lore.lists.length', list)
 
