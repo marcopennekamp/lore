@@ -48,8 +48,15 @@ class GlobalModuleIndex {
           }
         } else node
 
+        // The denested module node must be added to the global module, UNLESS the module node is an implicit root
+        // module, which is the case when a fragment doesn't contain a top module declaration: the fragment's outer
+        // module node has the root name path then. This exception exists because we don't want to add the root module
+        // to the root module itself.
         if (!node.namePath.isRoot) {
           indexedModule.add(denestedModuleNode)
+
+          // Adding positions to the root module would be fruitless because it's declared everywhere.
+          indexedModule.add(position)
         }
         denestedModuleNode.members.foreach(add(_, modulePath ++ denestedModuleNode.namePath))
 
@@ -69,11 +76,16 @@ class GlobalModuleIndex {
     index.get(modulePath) match {
       case Some(indexedModule) => indexedModule
       case None =>
-        val indexedModule = new IndexedModule
+        val indexedModule = new IndexedModule(modulePath)
         index = index.updated(modulePath, indexedModule)
         indexedModule
     }
   }
+
+  /**
+    * Returns all global modules.
+    */
+  def modules: Iterable[IndexedModule] = index.values
 
   /**
     * Whether the index has a binding or type with the exact name path.

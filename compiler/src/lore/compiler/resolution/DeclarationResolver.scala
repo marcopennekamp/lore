@@ -24,9 +24,9 @@ object DeclarationResolver {
     */
   def resolve(moduleNodes: Vector[DeclNode.ModuleNode])(implicit reporter: Reporter): Registry = {
     val (localModules, globalModuleIndex) = ModuleResolver.resolve(moduleNodes)
-    val moduleDefinitions = localModules.groupBy(_.modulePath).map {
-      case (name, localModules) => name -> new ModuleDefinition(name, localModules.map(_.position))
-    }
+    val moduleDefinitions = globalModuleIndex.modules.map {
+      module => module.name -> new ModuleDefinition(module.name, module.positions)
+    }.toMap
     val bindings1: Registry.Bindings = Registry.Bindings(moduleDefinitions, Map.empty, Map.empty, Map.empty)
 
     val allDeclarations = localModules.flatMap(_.members)

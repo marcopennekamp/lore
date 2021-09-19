@@ -1,7 +1,7 @@
 package lore.compiler.semantics.modules
 
-import lore.compiler.core.CompilationException
-import lore.compiler.semantics.NameKind
+import lore.compiler.core.{CompilationException, Position}
+import lore.compiler.semantics.{NameKind, NamePath}
 import lore.compiler.syntax.DeclNode.ModuleNode
 import lore.compiler.syntax.Node.NamePathNode
 import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
@@ -11,9 +11,10 @@ import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
   *
   * TODO (modules): Rename to GlobalModule?
   */
-class IndexedModule {
+class IndexedModule(val name: NamePath) {
   var typeNames: Set[String] = Set.empty
   var bindingNames: Set[String] = Set.empty
+  var positions: Vector[Position] = Vector.empty
 
   def add(node: DeclNode): Unit = {
     node match {
@@ -37,6 +38,10 @@ class IndexedModule {
 
   private def addBindingName(name: String): Unit = {
     bindingNames = bindingNames + name
+  }
+
+  def add(position: Position): Unit = {
+    positions = positions :+ position
   }
 
   /**
