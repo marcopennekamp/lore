@@ -1,0 +1,10 @@
+module lore.core
+
+use lore.String
+
+/**
+  * Converts a Lore list to a string by separating stringified elements with commas, then surrounding the list with
+  * square brackets.
+  */
+@where A
+func to_string(list: [A]): String = list |> map(to_string) |> String.join(', ') |> String.affix('[', ']')

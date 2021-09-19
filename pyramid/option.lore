@@ -1,46 +1,56 @@
+module lore
+
 /**
   * An Option makes the absence of a value explicit. It can either be a `Some`, which wraps the present value, or a
   * None, which signifies the absence of a value.
   */
 trait Option[+A]
 
-/**
-  * An Option with a present value. The type variable A is open to allow dispatching on an Option's run-time value
-  * type.
-  */
-struct Some[open +A](value: A) extends Option[A]
+module Option do
+  /**
+    * An Option with a present value. The type variable A is open to allow dispatching on an Option's run-time value
+    * type.
+    */
+  struct Some[open +A](value: A) extends Option[A]
 
-/**
-  * An Option with an absent value.
-  */
-object None extends Option[Nothing]
+  /**
+    * An Option with an absent value.
+    */
+  object None extends Option[Nothing]
 
-/**
-  * Returns the option's value if it is something, or otherwise the alternative.
-  */
-@where A, B >: A
-func get(Option[A], alternative: B): B
+  /**
+    * Returns the option's value if it is something, or otherwise the alternative.
+    */
+  @where A, B >: A
+  func get(Option[A], alternative: B): B
 
-@where A, B >: A
-func get(option: Some[A], B): B = option.value
+  @where A, B >: A
+  func get(option: Some[A], B): B = option.value
 
-@where B
-func get(None, alternative: B): B = alternative
+  @where B
+  func get(None, alternative: B): B = alternative
 
-/**
-  * Returns true if the given option is None, and false otherwise.
-  */
-func empty?(Option[Any]): Boolean = false
-func empty?(None): Boolean = true
+  /**
+    * Returns true if the given option is None, and false otherwise.
+    */
+  func empty?(Option[Any]): Boolean = false
+  func empty?(None): Boolean = true
 
-/**
-  * Returns true if the given option is Some, and false otherwise.
-  */
-func present?(option: Option[Any]): Boolean = !empty?(option)
+  /**
+    * Returns true if the given option is Some, and false otherwise.
+    */
+  func present?(option: Option[Any]): Boolean = !empty?(option)
+end
 
-/**
-  * Stringifies the option to either `'Some($value)'` or `'None'`.
-  */
-func to_string(Option[Any]): String
-func to_string(some: Some[Any]): String = 'Some(${some.value})'
-func to_string(None): String = 'None'
+module core do
+  use Option.Some
+  use Option.None
+  // TODO (modules): Instead one should write `use Option._`.
+
+  /**
+    * Stringifies the option either to `'Some($value)'` or `'None'`.
+    */
+  func to_string(Option[Any]): String
+  func to_string(some: Some[Any]): String = 'Some(${some.value})'
+  func to_string(None): String = 'None'
+end

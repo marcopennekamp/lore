@@ -1,3 +1,7 @@
+module lore.Math
+
+let pi: Real = 3.14159265359
+
 func floor(x: Real): Int = dynamic[Int]('Lore.math.floor', x)
 func round(x: Real): Int = dynamic[Int]('Lore.math.round', x)
 func ceil(x: Real): Int = dynamic[Int]('Lore.math.ceil', x)

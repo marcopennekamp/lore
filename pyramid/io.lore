@@ -5,5 +5,3 @@ use lore.core.to_string
 act println(value: Any) do
   dynamic[()]('Lore.io.println', to_string(value))
 end
-
-func now(): Int = dynamic[Int]('performance.now')

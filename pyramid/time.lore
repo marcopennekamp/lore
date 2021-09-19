@@ -1,0 +1,3 @@
+module lore.Time
+
+func now(): Int = dynamic[Int]('performance.now')

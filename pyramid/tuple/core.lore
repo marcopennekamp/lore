@@ -1,0 +1,16 @@
+module lore.core
+
+use lore.Tuple.first
+use lore.Tuple.second
+use lore.Tuple.third
+// TODO (modules): Should be `use lore.Tuple._`.
+
+@where A, B
+domain tuple: (A, B)
+  func to_string(): String = '(${first(tuple)}, ${second(tuple)})'
+end
+
+@where A, B, C
+domain tuple: (A, B, C)
+  func to_string(): String = '(${first(tuple)}, ${second(tuple)}, ${third(tuple)})'
+end

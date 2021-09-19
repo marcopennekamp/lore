@@ -1,10 +1,10 @@
+module lore.Tuple
+
 @where A, B
 domain tuple: (A, B)
   // TODO: Tuples need a more generic solution for accessing elements.
   func first(): A = dynamic[A]('Lore.tuples.get', tuple, 0)
   func second(): B = dynamic[B]('Lore.tuples.get', tuple, 1)
-
-  func to_string(): String = '(${first(tuple)}, ${second(tuple)})'
 end
 
 @where A, B, C
@@ -12,8 +12,6 @@ domain tuple: (A, B, C)
   func first(): A = dynamic[A]('Lore.tuples.get', tuple, 0)
   func second(): B = dynamic[B]('Lore.tuples.get', tuple, 1)
   func third(): C = dynamic[C]('Lore.tuples.get', tuple, 2)
-
-  func to_string(): String = '(${first(tuple)}, ${second(tuple)}, ${third(tuple)})'
 end
 
 // TODO: Map function on tuples:
