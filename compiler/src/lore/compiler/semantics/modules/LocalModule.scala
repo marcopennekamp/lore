@@ -50,13 +50,12 @@ case class LocalModule(
     if (namesOf(nameKind).contains(memberName)) {
       Some(memberPath)
     } else {
-      importMap
-        .get(memberName)
-        // TODO (modules): This `getPath` call will lead to the wrong order, because the parent's global module will be
-        //                 consulted before this module's global module. We have to thus invoke a `getLocalPath` on the
-        //                 parent that doesn't consult the global index.
-        .orElse(parent.flatMap(_.getPath(memberName, nameKind)))
-        .orElse(globalModuleIndex.getPath(memberPath, nameKind))
+      importMap.get(memberName).orElse {
+        parent match {
+          case Some(parent) => parent.getPath(memberName, nameKind)
+          case None => globalModuleIndex.getPath(memberPath, nameKind)
+        }
+      }
     }
   }
 
