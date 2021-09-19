@@ -78,10 +78,17 @@ class GlobalModuleIndex {
   /**
     * Whether the index has a binding or type with the exact name path.
     */
-  def has(name: NamePath): Boolean = {
+  def has(name: NamePath, nameKind: NameKind): Boolean = {
     index
       .get(name.parentOrEmpty)
-      .exists(m => m.has(name.simpleName, NameKind.Type) || m.has(name.simpleName, NameKind.Binding))
+      .exists(m => m.has(name.simpleName, nameKind))
+  }
+
+  /**
+    * Whether the index has a binding and/or type with the exact name path.
+    */
+  def has(name: NamePath): Boolean = {
+    has(name, NameKind.Type) || has(name, NameKind.Binding)
   }
 
   /**

@@ -13,6 +13,8 @@ sealed trait StructBinding extends Binding {
     * Whether the struct binding also has a companion module. Because modules are also resolved via binding scopes,
     * we need a means to tell certain parts of transformation that the struct constructor or object binding also has a
     * possible module component that can be accessed.
+    *
+    * TODO (modules): We need to honor this flag in the appropriate places so that companion modules can be used correctly.
     */
   def hasCompanionModule: Boolean
 }

@@ -3,6 +3,7 @@
 #### Features
 
 - Add a module system.
+  - Implement visibility. 
   - Idea: If a type or function declaration is written with a name path, this becomes the *absolute* name path of the entity, disregarding any surrounding modules. This would allow us to override core functions without the need for specifying a new module. Especially so because currently, wanting to override core functions basically disallows using a top module declaration, or introduces the need to override core functions in a separate file. Without the ability to use a top module declaration for, e.g., lists, all list functions would be indented two spaces for a pretty pointless reason. 
   - Clear all `TODO (modules)` entries.
 - Implement a vector backend for lists.

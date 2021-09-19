@@ -2,6 +2,7 @@ package lore.compiler.resolution
 
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{ModuleFeedback, Reporter}
+import lore.compiler.semantics.modules.LocalModule.ImportMap
 import lore.compiler.semantics.modules.{GlobalModuleIndex, LocalModule}
 import lore.compiler.semantics.{NameKind, NamePath}
 import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
@@ -58,7 +59,17 @@ object ModuleResolver {
       }.toSet
     }
 
-    val starterModule = LocalModule(modulePath, parent, moduleNode.members, localTypeNames, localBindingNames, Map.empty, moduleNode.namePathNode.position)
+    val starterModule = LocalModule(
+      modulePath,
+      parent,
+      moduleNode.members,
+      localTypeNames,
+      localBindingNames,
+      Map.empty,
+      Map.empty,
+      moduleNode.namePathNode.position
+    )
+
     val localModule = moduleNode.imports.foldLeft(starterModule) {
       case (localModule, importNode) => resolve(importNode, localModule)
     }
@@ -140,8 +151,15 @@ object ModuleResolver {
       return localModule
     }
 
+    def updateImportMap(importMap: ImportMap, nameKind: NameKind): ImportMap = {
+      if (globalModuleIndex.has(absolutePath, nameKind)) {
+        importMap.updated(absolutePath.simpleName, absolutePath)
+      } else importMap
+    }
+
     localModule.copy(
-      importMap = localModule.importMap.updated(absolutePath.simpleName, absolutePath)
+      typeImportMap = updateImportMap(localModule.typeImportMap, NameKind.Type),
+      bindingImportMap = updateImportMap(localModule.bindingImportMap, NameKind.Binding),
     )
   }
 

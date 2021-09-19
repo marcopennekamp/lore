@@ -23,7 +23,7 @@ object ModuleFeedback {
 
     case class NotFound(node: ImportNode, absolutePath: NamePath) extends Feedback.Error(node) {
       override def message: String = s"The import of ${node.namePathNode.namePath} cannot be resolved:" +
-        s" the import leads to a member $absolutePath, which does not exist."
+        s" $absolutePath does not exist."
     }
   }
 }
