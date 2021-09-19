@@ -2,8 +2,7 @@ package lore.compiler.semantics.modules
 
 import lore.compiler.core.Position
 import lore.compiler.semantics.{NameKind, NamePath}
-import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
-import lore.compiler.utils.CollectionExtensions.VectorExtension
+import lore.compiler.syntax.DeclNode
 
 /**
   * A LocalModule is a lexical object that contains the import map and names of local declarations for a local module
@@ -15,30 +14,20 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
   * This requires us to carry the local module forward throughout the compilation process, so that DeclNodes don't lose
   * their connection to the other local declarations. It also requires us to create a parent/child relationship between
   * nested local modules.
+  *
+  * @param localTypeNames Even though these names can be derived from `members`, we don't want this set and
+  *                       `localBindingNames` to have to be recreated every time a LocalModule is copied (for
+  *                       successively populating the import map).
   */
 case class LocalModule(
   modulePath: NamePath,
   parent: Option[LocalModule],
   members: Vector[DeclNode],
+  localTypeNames: Set[String],
+  localBindingNames: Set[String],
   importMap: LocalModule.ImportMap,
   position: Position,
 )(implicit globalModuleIndex: GlobalModuleIndex) {
-  // TODO (modules): With the way that LocalModules are currently built incrementally, these local*Names sets are
-  //                 constantly being rebuilt when the LocalModule is copied. This might be detrimental to performance.
-  val localTypeNames: Set[String] = {
-    members.filterType[TypeDeclNode].map(_.simpleName).toSet
-  }
-
-  val localBindingNames: Set[String] = {
-    members.flatMap {
-      case node: DeclNode.ModuleNode => Some(node.namePath.headName)
-      case node: BindingDeclNode => Some(node.simpleName)
-      // Structs always have a constructor or an object and thus also define binding names.
-      case node: DeclNode.StructNode => Some(node.simpleName)
-      case _ => None
-    }.toSet
-  }
-
   /**
     * Returns the full NamePath for the given simple name if it occurs in this local module, in one of the local
     * module's parents, or globally as a module member of the current module or one of its parents.

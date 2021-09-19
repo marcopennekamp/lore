@@ -4,8 +4,9 @@ import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{ModuleFeedback, Reporter}
 import lore.compiler.semantics.modules.{GlobalModuleIndex, LocalModule}
 import lore.compiler.semantics.{NameKind, NamePath}
-import lore.compiler.syntax.DeclNode
+import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
 import lore.compiler.types.Type
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object ModuleResolver {
 
@@ -43,7 +44,21 @@ object ModuleResolver {
   )(implicit globalModuleIndex: GlobalModuleIndex, reporter: Reporter): Vector[LocalModule] = {
     val modulePath = parent.map(_.modulePath).getOrElse(NamePath.empty) ++ moduleNode.namePath
 
-    val starterModule = LocalModule(modulePath, parent, moduleNode.members, Map.empty, moduleNode.namePathNode.position)
+    val localTypeNames: Set[String] = {
+      moduleNode.members.filterType[TypeDeclNode].map(_.simpleName).toSet
+    }
+
+    val localBindingNames: Set[String] = {
+      moduleNode.members.flatMap {
+        case node: DeclNode.ModuleNode => Some(node.namePath.headName)
+        case node: BindingDeclNode => Some(node.simpleName)
+        // Structs always have a constructor or an object and thus also define binding names.
+        case node: DeclNode.StructNode => Some(node.simpleName)
+        case _ => None
+      }.toSet
+    }
+
+    val starterModule = LocalModule(modulePath, parent, moduleNode.members, localTypeNames, localBindingNames, Map.empty, moduleNode.namePathNode.position)
     val localModule = moduleNode.imports.foldLeft(starterModule) {
       case (localModule, importNode) => resolve(importNode, localModule)
     }
