@@ -143,7 +143,7 @@ func repeat(element: A, n: Int): [A] = do
   result
 end
 
-module lore.Core do
+module lore.core do
   /**
     * Converts a Lore list to a string by separating stringified elements with commas, then surrounding the list with
     * square brackets.

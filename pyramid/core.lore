@@ -1,6 +1,4 @@
-// TODO (modules): Write `Core` in lower case because its functions and types aren't intended to be used with the
-//                 qualified name? One would never write `abc |> Core.to_string`.
-module lore.Core
+module lore.core
 
 // TODO: Equality should be restricted to a trait Equality. Global equality is a bad idea, as it fails silently,
 //       because `equal?` can always fall back to the Any/Any function. The same issue applies to `less_than?`, which

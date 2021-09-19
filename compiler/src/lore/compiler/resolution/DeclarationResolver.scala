@@ -62,7 +62,7 @@ object DeclarationResolver {
     * Lore types. The trait cannot be defined in Pyramid because the compiler needs to call the initialization function
     * of the Introspection API with the actual type.
     *
-    * TODO (modules): Just define this in `lore.Core` and have the compiler get the trait from the module.
+    * TODO (modules): Just define this in `lore.core` and have the compiler get the trait from the module.
     */
   private val introspectionTypeDeclarations: Vector[TypeDeclNode] = Vector(
     DeclNode.TraitNode(NameNode(Introspection.typeName, Position.internal), Vector.empty, Vector.empty, Position.internal)

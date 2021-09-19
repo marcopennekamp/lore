@@ -1,6 +1,6 @@
 // Lore's preamble includes any declarations that should be implicitly part of the root module. There aren't many of
 // these. One philosophy when designing Lore is to pollute the root namespace as little as possible. Most of the
-// functions and types that would usually be found in a root namespace are collected in lore.Core and lore.Enum. To
+// functions and types that would usually be found in a root namespace are collected in lore.core and lore.Enum. To
 // have a place in the root namespace, a declaration must justify its prominent position. Hence, each declaration in
 // this file must explicitly comment on its inclusion.
 

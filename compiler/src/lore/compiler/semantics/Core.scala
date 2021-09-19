@@ -4,11 +4,11 @@ import lore.compiler.semantics.functions.CoreMultiFunction
 import lore.compiler.types.{BasicType, TupleType}
 
 /**
-  * This object contains all core definitions of Pyramid's `lore.Core` module. The compiler expects these definitions
+  * This object contains all core definitions of Pyramid's `lore.core` module. The compiler expects these definitions
   * to exist somewhere in the source code with compatible parameters and output types.
   */
 object Core {
-  private val modulePath: NamePath = NamePath("lore", "Core")
+  private val modulePath: NamePath = NamePath("lore", "core")
 
   val equal: CoreMultiFunction = CoreMultiFunction(modulePath + "equal?", TupleType(BasicType.Any, BasicType.Any), BasicType.Boolean)
   val less_than: CoreMultiFunction = CoreMultiFunction(modulePath + "less_than?", TupleType(BasicType.Any, BasicType.Any), BasicType.Boolean)

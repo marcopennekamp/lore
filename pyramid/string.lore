@@ -1,4 +1,4 @@
-use lore.Core.to_string
+use lore.core.to_string
 
 func length(string: String): Int = dynamic[Int]('Lore.strings.length', string)
 
@@ -25,7 +25,7 @@ end
   */
 func affix(string: String, prefix: String, suffix: String): String = '$prefix$string$suffix'
 
-module lore.Core do
+module lore.core do
   /**
    * The string value of a string is simply its identity.
    */

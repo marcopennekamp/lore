@@ -1,6 +1,6 @@
 module lore.IO
 
-use lore.Core.to_string
+use lore.core.to_string
 
 act println(value: Any) do
   dynamic[()]('Lore.io.println', to_string(value))
