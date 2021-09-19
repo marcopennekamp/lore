@@ -91,33 +91,25 @@ class GlobalModuleIndex {
     has(name, NameKind.Type) || has(name, NameKind.Binding)
   }
 
+  def root: Option[IndexedModule] = index.get(NamePath.empty)
+
   /**
-    * Finds the closest module member with the given name, starting with the module at `startPath` and successively
-    * working up the parentage, up to and including the root module. Returns None if none of the modules contain a
-    * member called `name`. If the path is empty, `getPath` also returns None because the root module shouldn't be
-    * referenced directly.
+    * Finds a path to the module member with the given name, either in the module identified by `modulePath`, or in the
+    * root module. Returns None if the member cannot be found.
     *
-    * For example, if we are requesting a member via the member path `Foo.Bar.baz`, but `baz` is actually a member of
-    * `Foo`, `getPath` will return `Foo.baz`. If `baz` is instead a member of the root, this function will return
-    * simply `baz`.
+    * For example, if we are requesting a member via the module path `foo.bar` and member name `baz`, but `baz` is
+    * actually a member of `foo`, `getPath` will return None. If `baz` is instead a member of the root, this function
+    * will return simply `baz`.
     */
-  def getPath(memberName: NamePath, nameKind: NameKind): Option[NamePath] = {
-    if (memberName.isEmpty) {
-      return None
-    }
-
-    val modulePath = memberName.parent
-
+  def getPath(modulePath: NamePath, memberName: String, nameKind: NameKind): Option[NamePath] = {
     def fallback: Option[NamePath] = {
-      modulePath.flatMap(_.parent).flatMap(
-        parentPath => getPath(parentPath + memberName.simpleName, nameKind)
-      )
+      root.filter(_.has(memberName, nameKind)).map(_ => NamePath(memberName))
     }
 
-    index.get(modulePath.getOrElse(NamePath.empty)) match {
+    index.get(modulePath) match {
       case Some(indexedModule) =>
-        if (indexedModule.has(memberName.simpleName, nameKind)) {
-          Some(memberName)
+        if (indexedModule.has(memberName, nameKind)) {
+          Some(modulePath + memberName)
         } else fallback
 
       case None => fallback

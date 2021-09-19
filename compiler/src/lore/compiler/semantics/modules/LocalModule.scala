@@ -11,7 +11,7 @@ import lore.compiler.syntax.DeclNode
   * semantic global module known via the name path.
   *
   * Precedence in the same module is skewed towards local declarations: local declarations > imports > parent local
-  * declarations > parent imports > module members > parent module members. (Also consult the specification on this.)
+  * declarations > parent imports > module members > root module members. (Also consult the specification on this.)
   * This requires us to carry the local module forward throughout the compilation process, so that DeclNodes don't lose
   * their connection to the other local declarations. It also requires us to create a parent/child relationship between
   * nested local modules.
@@ -41,14 +41,13 @@ case class LocalModule(
     * To decide global membership, the [[GlobalModuleIndex]] is taken into consideration.
     */
   def getPath(memberName: String, nameKind: NameKind): Option[NamePath] = {
-    lazy val memberPath = modulePath + memberName
     if (namesOf(nameKind).contains(memberName)) {
-      Some(memberPath)
+      Some(modulePath + memberName)
     } else {
       importMapOf(nameKind).get(memberName).orElse {
         parent match {
           case Some(parent) => parent.getPath(memberName, nameKind)
-          case None => globalModuleIndex.getPath(memberPath, nameKind)
+          case None => globalModuleIndex.getPath(modulePath, memberName, nameKind)
         }
       }
     }
