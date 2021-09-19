@@ -4,7 +4,7 @@
 
 A module can be **declared** in two ways:
 
-1. **At the top of a file**, a declaration `module* Name` will include all other declarations in the file into the module called `Name`. Each file can only have a single top module declaration.
+1. **At the top of a file**, a declaration `module Name` will include all other declarations in the file into the module called `Name`. Each file can only have a single top module declaration.
 2. With a **block scope**, a module can be declared at any declaration-level position in the file. All declarations inside the module's block will be put into the module.
 
 A declaration inside a module is called a **module member**. Module members may be accessed with the member access notation: `Module.member`. Such an expression is also called a **module path**.
@@ -12,8 +12,6 @@ A declaration inside a module is called a **module member**. Module members may 
 A module path can also be used as the name in a module declaration, which effectively creates a nested module. A module declaration `module my_project.utils.Timer` creates a module `Timer` inside a module `utils`, which in turn is inside a module `my_project`.
 
 Declarations outside a module are put into the implicit **root module**, which all first-level modules are also part of. The module `my_project` defined in the preceding paragraph would be part of the root module.
-
-The requirement for the `do` is purely due to parsing ambiguities that would arise otherwise. Without the `do`, the parser might have to read the whole file to find the `end` that closes the block module declaration which the parser would first assume to be a top module declaration. This will eventually be removed once we introduce significant indentation.
 
 ###### Example (Declaration)
 
@@ -29,6 +27,8 @@ end
 
 The module `Name2` is located inside the surrounding module `Name`. Without any `use` qualifiers, the functions can be accessed using `Name.foo` and `Name.Name2.foo`. Both `foo` multi-functions are completely distinct, as their full names are different. Hence we each have a multi-function that contains only one function instance.
 
+The requirement for the `do` when declaring module `Name2` is purely due to parsing ambiguities that would arise otherwise. Without the `do`, the parser might have to read the whole file to find the `end` that closes the block module declaration which the parser would first assume to be a top module declaration. This will eventually be removed once we introduce significant indentation.
+
 ###### Example (Access)
 
 ```
@@ -38,9 +38,57 @@ lore.String.concat(['Hello', ', ', 'world', '!'])  // --> 'Hello, world!'
 
 
 
-### Use Declarations
+### Name Resolution
 
-The `use` declaration can be used to **simplify member names** at their point of use. It is also called an **import**. It has three flavors:
+**Name resolution** is the technique with which simple names are resolved to absolute name paths. A simple name refers to the last segment of a name path, e.g. `baz` in `foo.bar.baz`.
+
+##### Defaults
+
+**By default**, module members have access to certain other module members by their simple name. A member in a module `foo.bar` has default access to the following module members by simple name (and in this order):
+
+- Locally declared members in the **same** local module.
+- Imports of the local module `foo.bar`.
+- Locally declared members in the surrounding module `foo`.
+- Imports of the local module `foo`.
+- Locally declared members in the surrounding local root module. 
+  - Note: If a module is nested twice, the inner parent has precedence over the outer parent, and so on. In this case, `foo` has precedence over the local root module.
+- Imports of the local root module.
+- Globally declared members of `foo.bar`.
+- Globally declared members of the root module.
+
+A **local module** in respect to e.g. a function declaration refers to the module declaration that's placed specifically around the function declaration in source code. Because modules may be comprised of many module declarations sharing the same name across multiple fragments, the term local module is a necessary contrast to global modules.
+
+Note that, given these precedence rules, the following situation occurs: If we access `baz` in a local module `foo.bar`, but `foo.bar.baz` is declared in a non-local module, and the current fragment has an import `use bin.ban.baz`, the import is preferred, so `baz` refers to `bin.ban.baz`. This is necessary so that adding a name to a module doesn't break existing code in other fragments.
+
+###### Example
+
+```
+use lore.Math
+
+module foo do
+  use bin.ban.baz
+  
+  module bar do
+    func test(): Int = baz()
+    func west(): Real = 3.9
+  end
+end
+
+module foo.bar do
+  func baz(): Int = 5
+  func east(): Real = 1.6
+end
+
+module foo do 
+  func doo(): Int = Math.min(22, 7)
+end
+```
+
+In this example, `test` has access to `west` as it's locally declared, `baz` from `use bin.ban.baz`, `foo` as it's locally declared in the local root module, `Math` via the import at the root, `east` as a global module member, and module `lore` (for example) via the global root scope. `foo.bar.baz` is not accessible to `test`, because `use bin.ban.baz`  has precedence. For `test`'s frame of reference, the second `module foo.bar` declaration is NOT a local module. `foo.doo` is not accessible, even though `foo` is a parent module of `foo.bar`, as children don't automatically inherit the global members of their parent modules.
+
+##### Use Declarations
+
+The `use` declaration can be used to **introduce simple names** for other module members at their point of use. It is also called an **import**. It has three flavors:
 
 1. **Simple:** Use a single member.
 
@@ -81,20 +129,6 @@ let x1 = (-b + sqrt(pow(b, 2) - product([4, a, c]))) / (2 * a)
 
 
 
-### Name Precedence
-
-**TODO (modules):** Rewrite this for easier digestion and add a code example spanning at least two fragments.
-
-If a module member of the current module is declared as `name`, an import `use name` will have no effect in that module, because **local declarations supersede imports**. However, if `name` is declared in some other fragment, and the current fragment has an import `use name`, the import is preferred. This is necessary so that adding a name to a module doesn't break existing code in other fragments. And finally, a local declaration or import in a parent module (through nesting) supersedes non-local module members. Hence, we have the following **name precedence:**
-
-```
-local declarations > imports (> parent local declarations > parent imports)* > module members (> parent module members)*
-```
-
-If a module is nested twice, the inner parent has precedence over the outer parent, and so on. This is signified by the `*` in the above inequation.
-
-
-
 ### Companion Modules
 
 A type and a module may share a name. A module that bears the same name as a type is called a **companion module**. This module is *expected*, by convention, to contain functions for working with the type. For example, the `Option` type has a companion module `Option` that contains functions for working with options, such as `Option.get`.
@@ -120,7 +154,7 @@ end
 Module members have two modes of **visibility:**
 
 - **Private** members may only be accessed from the same module.
-- **Public** members may be accessed anywhere. 
+- **Public** members may be accessed anywhere.
 
 All module members are **public by default**. Private members are declared by prefixing their declaration keywords with a `-` sign: `-trait`, `-function`, and so on. If a single function definition is private, all function definitions of the owning **multi-function** must be private as well. This has to be applied *explicitly* so that multi-functions cannot be unexpectedly private.
 
