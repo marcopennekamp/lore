@@ -1,0 +1,25 @@
+use lore.Enum._
+
+struct TypeFilter[A]()
+
+@where A
+func filterType(list: [Any], tf: TypeFilter[A]): [A] = do
+  list |> flat_map(e => e |> filterElementType(tf))
+end
+
+// TODO: Multiple dispatch is a bit overkill here, of course. We will replace `filterElementType` with pattern matching
+//       once that's actually supported.
+
+@where A
+func filterElementType(element: Any, tf: TypeFilter[A]): [A] = []
+
+@where A
+func filterElementType(element: A, tf: TypeFilter[A]): [A] = [element]
+
+func test(): ([Int], [String]) = do
+  let data = [12, 5, 'hello world', #schwifty, 37, 'cool world', false]
+  (
+    data |> filterType(TypeFilter[Int]()),
+    data |> filterType(TypeFilter[String]()),
+  )
+end
