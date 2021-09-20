@@ -130,10 +130,11 @@ object ModuleResolver {
     localModule: LocalModule,
   )(implicit globalModuleIndex: GlobalModuleIndex, reporter: Reporter): LocalModule = {
     val importPath = importNode.namePathNode.namePath
-    if (importNode.isWildcard && importPath.length < 1) {
-      reporter.error(ModuleFeedback.Import.Wildcard.TooShort(importNode))
-      return localModule
-    } else if (!importNode.isWildcard && importPath.length < 2) {
+
+    // Note that wildcard imports have at least one segment due to how they are parsed. The minimum segment length of a
+    // wildcard is 1, because the wildcard itself stands in for the usual second name. Hence we only need to check the
+    // minimum segment length for non-wildcard imports.
+    if (!importNode.isWildcard && importPath.length < 2) {
       reporter.error(ModuleFeedback.Import.TooShort(importNode))
       return localModule
     }
