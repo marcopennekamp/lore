@@ -9,11 +9,8 @@ case class NamePath(segments: Vector[NamePath.Segment]) {
   val length: Int = segments.length
   lazy val tail: NamePath = NamePath(segments.tail)
 
-  def concat(other: NamePath): NamePath = NamePath(segments ++ other.segments)
-  def ++(other: NamePath): NamePath = concat(other)
-
-  def append(other: String): NamePath = NamePath(segments :+ NamePath.Segment(other))
-  def +(name: String): NamePath = append(name)
+  def ++(other: NamePath): NamePath = NamePath(segments ++ other.segments)
+  def +(name: String): NamePath = NamePath(segments :+ NamePath.Segment(name))
 
   /**
     * Returns a new NamePath with the last segment removed, essentially creating the parent of this name path. If this

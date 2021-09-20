@@ -24,17 +24,16 @@ object AccessTransformation {
     val namePath = namePathNode.namePath
     val position = namePathNode.position
 
-    def prohibitModuleAccess(binding: Binding): Option[Binding] = binding match {
-      case module: ModuleDefinition =>
-        reporter.error(ExpressionFeedback.IllegalModuleValue(module, position))
-        None
-      case binding => Some(binding)
-    }
-
     bindingScope.resolve(namePath.headName, position).flatMap {
-      case module: ModuleDefinition => bindingScope.resolveStatic(module.name ++ namePath.tail, position).flatMap(processSingle)
-      case binding if namePath.isSingle => prohibitModuleAccess(binding).flatMap(processSingle)
-      case binding => prohibitModuleAccess(binding).flatMap(processInstance).map(transformMemberAccess(_, namePathNode.segments.tail))
+      case module: ModuleDefinition =>
+        if (namePath.isMultiple) {
+          bindingScope.resolveGlobal(module.name ++ namePath.tail, position).flatMap(processSingle)
+        } else {
+          reporter.error(ExpressionFeedback.IllegalModuleValue(module, position))
+          None
+        }
+      case binding if namePath.isSingle => processSingle(binding)
+      case binding => processInstance(binding).map(transformMemberAccess(_, namePathNode.segments.tail))
     }
   }
 

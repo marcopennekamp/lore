@@ -82,10 +82,7 @@ trait Scope[A] {
     // To get the correct binding which we can jump off of, we have to search with the name path's head name.
     bindingScope.get(namePath.headName) match {
       case Some(binding) => binding match {
-        case module: ModuleDefinition =>
-          val memberPath = module.name ++ namePath.tail
-          resolveGlobal(memberPath, position)
-
+        case module: ModuleDefinition => resolveGlobal(module.name ++ namePath.tail, position)
         case _ =>
           reporter.error(ScopeFeedback.ModuleExpected(namePath.headName, position))
           None
