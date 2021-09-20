@@ -21,7 +21,7 @@ class GlobalModuleIndex {
     * it's a module.
     */
   def add(node: DeclNode, modulePath: NamePath): Unit = this.synchronized {
-    val indexedModule = getIndexedModule(modulePath)
+    val indexedModule = getOrCreateModule(modulePath)
     node match {
       case node@DeclNode.ModuleNode(pathNode, imports, members, position) =>
         // A nested module node `module Foo.Bar` has to be added to the global index such that both Foo and Bar are
@@ -69,10 +69,23 @@ class GlobalModuleIndex {
     * indexed module.
     */
   def add(name: NamePath, kind: NameKind): Unit = {
-    getIndexedModule(name.parentOrEmpty).add(name.simpleName, kind)
+    getOrCreateModule(name.parentOrEmpty).add(name.simpleName, kind)
   }
 
-  private def getIndexedModule(modulePath: NamePath): IndexedModule = {
+  /**
+    * Returns all global modules.
+    */
+  def modules: Iterable[IndexedModule] = index.values
+
+  /**
+    * Gets the global module with the given name, if it exists.
+    */
+  def getModule(modulePath: NamePath): Option[IndexedModule] = index.get(modulePath)
+
+  /**
+    * Gets the global module with the given name if it exists, or creates a new one.
+    */
+  private def getOrCreateModule(modulePath: NamePath): IndexedModule = {
     index.get(modulePath) match {
       case Some(indexedModule) => indexedModule
       case None =>
@@ -81,11 +94,6 @@ class GlobalModuleIndex {
         indexedModule
     }
   }
-
-  /**
-    * Returns all global modules.
-    */
-  def modules: Iterable[IndexedModule] = index.values
 
   /**
     * Whether the index has a binding or type with the exact name path.

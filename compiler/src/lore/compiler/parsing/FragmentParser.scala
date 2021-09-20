@@ -58,14 +58,28 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def moduleBody[_: P]: P[(Vector[DeclNode.ImportNode], Vector[DeclNode])] = {
-    def imports = P(use.repX(0, Space.terminators)).map(_.toVector)
+    def imports = P(use.repX(0, Space.terminators)).map(_.toVector.flatten)
     def members = P(moduleMember.repX(0, Space.terminators)).map(_.toVector.flatten)
     P(imports ~ members)
   }
 
-  private def use[_: P]: P[DeclNode.ImportNode] = {
-    P(Index ~~ "use" ~~ Space.WS1 ~~ namePath ~~ Index)
-      .map(withPosition(DeclNode.ImportNode))
+  private def use[_: P]: P[Vector[DeclNode.ImportNode]] = {
+    def wildcard = P(namePath ~~ "._").map(path => Vector((path, true)))
+    def multi = P(namePath ~~ "." ~~ "[" ~ namePath.rep(1, ",") ~ "]").map {
+      case (prefix, paths) =>
+        paths
+          .map(path => NamePathNode(prefix.segments ++ path.segments))
+          .toVector
+          .map(path => (path, false))
+    }
+    def single = P(namePath).map(path => Vector((path, false)))
+
+    P(Index ~~ "use" ~~ Space.WS1 ~~ (wildcard | multi | single) ~~ Index)
+      .map {
+        case (startIndex, entries, endIndex) =>
+          val position = Position(fragment, startIndex, endIndex)
+          entries.map { case (namePath, isWildcard) => DeclNode.ImportNode(namePath, isWildcard, position) }
+      }
   }
 
   private def moduleMember[_: P]: P[Vector[DeclNode]] = {

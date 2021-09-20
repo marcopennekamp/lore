@@ -130,7 +130,10 @@ object ModuleResolver {
     localModule: LocalModule,
   )(implicit globalModuleIndex: GlobalModuleIndex, reporter: Reporter): LocalModule = {
     val importPath = importNode.namePathNode.namePath
-    if (importPath.length < 2) {
+    if (importNode.isWildcard && importPath.length < 1) {
+      reporter.error(ModuleFeedback.Import.Wildcard.TooShort(importNode))
+      return localModule
+    } else if (!importNode.isWildcard && importPath.length < 2) {
       reporter.error(ModuleFeedback.Import.TooShort(importNode))
       return localModule
     }
@@ -145,21 +148,36 @@ object ModuleResolver {
         return localModule
     }
 
-    // In this second step, we have to verify that the absolute path is valid as checked against the global index.
-    if (!globalModuleIndex.has(absolutePath)) {
-      reporter.error(ModuleFeedback.Import.NotFound(importNode, absolutePath))
-      return localModule
+    // The second step depends on whether the import is a wildcard import. If it is, we can get the global module for
+    // the absolute path, as a wildcard import path describes a module. If the import is single, we must verify that
+    // the absolute path is valid.
+    val (importedTypes, importedBindings) = if (importNode.isWildcard) {
+      val globalModule = globalModuleIndex.getModule(absolutePath).getOrElse {
+        reporter.error(ModuleFeedback.Import.Wildcard.NotFound(importNode, absolutePath))
+        return localModule
+      }
+
+      def pathsFor(names: Set[String]) = names.toVector.map(absolutePath + _)
+      (pathsFor(globalModule.typeNames), pathsFor(globalModule.bindingNames))
+    } else {
+      if (!globalModuleIndex.has(absolutePath)) {
+        reporter.error(ModuleFeedback.Import.NotFound(importNode, absolutePath))
+        return localModule
+      }
+
+      def pathsFor(nameKind: NameKind) = if (globalModuleIndex.has(absolutePath, nameKind)) Vector(absolutePath) else Vector.empty
+      (pathsFor(NameKind.Type), pathsFor(NameKind.Binding))
     }
 
-    def updateImportMap(importMap: ImportMap, nameKind: NameKind): ImportMap = {
-      if (globalModuleIndex.has(absolutePath, nameKind)) {
-        importMap.updated(absolutePath.simpleName, absolutePath)
-      } else importMap
+    def updateImportMap(importMap: ImportMap, namePaths: Vector[NamePath]): ImportMap = {
+      namePaths.foldLeft(importMap) {
+        case (importMap, path) => importMap + (path.simpleName -> path)
+      }
     }
 
     localModule.copy(
-      typeImportMap = updateImportMap(localModule.typeImportMap, NameKind.Type),
-      bindingImportMap = updateImportMap(localModule.bindingImportMap, NameKind.Binding),
+      typeImportMap = updateImportMap(localModule.typeImportMap, importedTypes),
+      bindingImportMap = updateImportMap(localModule.bindingImportMap, importedBindings),
     )
   }
 

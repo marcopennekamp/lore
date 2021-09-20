@@ -1,6 +1,5 @@
-use lore.List.map
-use lore.String
-use lore.Symbol
+use lore.List._
+use lore.[String, Symbol]
 
 type DnaNucleotide = #a | #t | #g | #c
 type RnaNucleotide = #a | #u | #g | #c

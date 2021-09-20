@@ -25,5 +25,17 @@ object ModuleFeedback {
       override def message: String = s"The import of ${node.namePathNode.namePath} cannot be resolved:" +
         s" $absolutePath does not exist."
     }
+
+    object Wildcard {
+      case class TooShort(node: ImportNode) extends Feedback.Error(node) {
+        override def message: String = "A wildcard import path must have at least one segment. An import `use _` is" +
+          " nonsensical and thus illegal."
+      }
+
+      case class NotFound(node: ImportNode, absolutePath: NamePath) extends Feedback.Error(node) {
+        override def message: String = s"This wildcard import cannot be resolved: $absolutePath does not exist or is" +
+          s" not a module."
+      }
+    }
   }
 }

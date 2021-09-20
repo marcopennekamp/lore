@@ -1,7 +1,7 @@
 package lore.compiler.transpilation
 
-import lore.compiler.core.{CompilationException, CompilerOptions}
-import lore.compiler.semantics.{Introspection, Registry}
+import lore.compiler.core.CompilerOptions
+import lore.compiler.semantics.Registry
 import lore.compiler.target.Target
 import lore.compiler.target.Target.TargetStatement
 import lore.compiler.transpilation.functions.MultiFunctionTranspiler

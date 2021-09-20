@@ -1,9 +1,6 @@
 module lore.core
 
-use lore.Tuple.first
-use lore.Tuple.second
-use lore.Tuple.third
-// TODO (modules): Should be `use lore.Tuple._`.
+use lore.Tuple._
 
 @where A, B
 domain tuple: (A, B)

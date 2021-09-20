@@ -32,11 +32,14 @@ object LexicalParser {
     * Another example concerns the `dynamic` keyword: Declaring a function named "dynamic" would be possible, but
     * calling said function is impossible since `dynamic` gets parsed as a dynamic call.
     *
+    * The underscore (`_`) is a keyword because it acts as a wildcard in imports. It will also be used in pattern
+    * matching as the "don't care" marker, which shouldn't be an actual variable name.
+    *
     * Some additional words may have special meaning to the parser, but aren't keywords, because the parser can resolve
     * the ambiguity in all instances. These words are: act, extends, func, mut, struct, trait, type, and where.
     */
   val keywords: Vector[String] = Vector(
-    "do", "dynamic", "else", "end", "false", "fixed", "for", "if", "let", "return", "then", "true", "while", "yield",
+    "_", "do", "dynamic", "else", "end", "false", "fixed", "for", "if", "let", "return", "then", "true", "while", "yield",
   )
 
   def identifier[_: P]: P[String] = P((letter | "_") ~ (letter | digit | "_" | "?").rep).!.filter(!keywords.contains(_))

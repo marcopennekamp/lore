@@ -2,8 +2,7 @@ module lore.String
 
 use lore.core.to_string
 use lore.List
-use lore.List.map
-use lore.List.fold
+use lore.List.[map, fold]
 
 /**
   * Returns the number of Unicode code units in the string.

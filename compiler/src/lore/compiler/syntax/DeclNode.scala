@@ -59,9 +59,9 @@ object DeclNode {
     position: Position,
   ) extends BindingDeclNode with PathNamedDeclNode
 
-  // TODO (modules): Support multi- and wildcard imports.
   case class ImportNode(
     namePathNode: NamePathNode,
+    isWildcard: Boolean,
     position: Position,
   ) extends Node
 

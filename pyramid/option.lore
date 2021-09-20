@@ -43,9 +43,7 @@ module Option do
 end
 
 module core do
-  use Option.Some
-  use Option.None
-  // TODO (modules): Instead one should write `use Option._`.
+  use Option._
 
   /**
     * Stringifies the option either to `'Some($value)'` or `'None'`.
