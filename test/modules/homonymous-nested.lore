@@ -1,0 +1,14 @@
+module Foo do
+  func foo(): String = 'Foo'
+
+  module Foo do
+    func foo(): Int = 17
+  end
+
+  func test(): [String | Int] = [
+    foo(),
+    Foo.foo(),
+  ]
+end
+
+func test(): [String | Int] = Foo.test()

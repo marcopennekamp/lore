@@ -95,35 +95,6 @@ object ModuleResolver {
     * reports an error.
     *
     * An import can start from the current module, any parent of the current module, or a previously imported module.
-    *
-    * <h3>Example</h3>
-    *
-    * TODO (modules): Turn this into a test case instead.
-    *
-    * <pre>
-    * module abc
-    *
-    * use A.fuz
-    * use B.bar
-    *
-    * module A do
-    *   use B.buz
-    *   func foo(): Int = 5
-    *   func fuz(): Int = buz()
-    * end
-    *
-    * module B do
-    *   use A.foo
-    *   func bar(): Int = foo()
-    *   func buz(): Int = 7
-    * end
-    *
-    * func c(): Int = fuz() + bar()
-    * </pre>
-    *
-    * This example demonstrates how nested modules and imports should interact. Module `A` should know module `B` even
-    * if `B` is declared after `A`. And the outer module `abc` should be able to import from `A` and `B` before either
-    * are declared.
     */
   private def resolve(
     importNode: DeclNode.ImportNode,

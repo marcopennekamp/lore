@@ -1,7 +1,0 @@
-module Foo
-
-func foo(): String = 'Foo'
-
-module Foo do
-  func foo(): Int = 17
-end

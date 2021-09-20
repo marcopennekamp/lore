@@ -1,0 +1,29 @@
+use lore.Math
+
+module foo do
+  use bin.ban.baz
+
+  module bar do
+    func test(): Int = baz()
+    func west(): Real = 3.9
+  end
+end
+
+module foo.bar do
+  func baz(): Int = 5
+  func east(): Real = 1.6
+end
+
+module foo do
+  func doo(): Int = Math.min(22, 7)
+end
+
+module bin.ban do
+  func baz(): Int = 8
+end
+
+func test(): [Real] = [
+  foo.bar.test() + foo.bar.baz(),
+  foo.bar.west() + foo.bar.east(),
+  foo.doo(),
+]

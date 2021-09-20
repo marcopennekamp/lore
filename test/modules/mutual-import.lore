@@ -1,0 +1,20 @@
+module abc do
+  use A.fuz
+  use B.bar
+
+  module A do
+    use B.buz
+    func foo(): Int = 5
+    func fuz(): Int = buz()
+  end
+
+  module B do
+    use A.foo
+    func bar(): Int = foo()
+    func buz(): Int = 7
+  end
+
+  func c(): Int = fuz() + bar()
+end
+
+func test(): Int = abc.c()
