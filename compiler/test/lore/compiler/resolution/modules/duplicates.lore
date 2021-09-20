@@ -1,0 +1,9 @@
+// Error: 'abc' is already declared as a function/module.
+let abc: String = 'abc'
+
+// Error: 'abc' is already declared as a global variable/module.
+func abc(): String = 'abc'
+
+// Error: 'abc' is already declared as a global variable/function.
+module abc do
+end

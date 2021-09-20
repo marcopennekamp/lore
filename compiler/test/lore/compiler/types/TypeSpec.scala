@@ -1,11 +1,12 @@
 package lore.compiler.types
 
-import lore.compiler.semantics.Registry
+import lore.compiler.semantics.{NamePath, Registry}
 import lore.compiler.test.{BaseSpec, TypeSyntax}
+import lore.compiler.utils.CollectionExtensions.OptionExtension
 
 trait TypeSpec extends BaseSpec with TypeSyntax {
-  def havingTraitSchema(name: String)(implicit registry: Registry): TraitSchema = registry.getTypeScope.getTraitSchema(name).get
-  def havingStructSchema(name: String)(implicit registry: Registry): StructSchema = registry.getTypeScope.getStructSchema(name).get
+  def havingTraitSchema(name: String)(implicit registry: Registry): TraitSchema = registry.types.schemas.get(NamePath(name)).filterType[TraitSchema].get
+  def havingStructSchema(name: String)(implicit registry: Registry): StructSchema = registry.types.schemas.get(NamePath(name)).filterType[StructSchema].get
 
   def havingTrait(name: String)(implicit registry: Registry): TraitType = havingTraitSchema(name).representative
   def havingStruct(name: String)(implicit registry: Registry): StructType = havingStructSchema(name).representative

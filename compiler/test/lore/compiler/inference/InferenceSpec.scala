@@ -2,6 +2,7 @@ package lore.compiler.inference
 
 import lore.compiler.feedback.{Feedback, MemoReporter}
 import lore.compiler.inference.Inference.Assignments
+import lore.compiler.semantics.NamePath
 import lore.compiler.types._
 import org.scalatest.Assertion
 
@@ -38,7 +39,10 @@ trait InferenceSpec extends TypeSpec {
     def assignment(iv: InferenceVariable, lowerBound: Type, upperBound: Type): (InferenceVariable, InferenceBounds) = iv -> InferenceBounds(iv, lowerBound, upperBound)
   }
 
-  def constantTrait(name: String, supertypes: Vector[Type]): TraitType = new TraitSchema(name, Vector.empty, supertypes).representative
-  def constantStruct(name: String, supertypes: Vector[Type]): StructType = new StructSchema(name, Vector.empty, supertypes).representative
+  def constantTrait(name: NamePath, supertypes: Vector[Type]): TraitType = new TraitSchema(name, Vector.empty, supertypes).representative
+  def constantStruct(name: NamePath, supertypes: Vector[Type]): StructType = new StructSchema(name, Vector.empty, supertypes).representative
+
+  def constantTrait(name: String, supertypes: Vector[Type]): TraitType = constantTrait(NamePath(name), supertypes)
+  def constantStruct(name: String, supertypes: Vector[Type]): StructType = constantStruct(NamePath(name), supertypes)
 
 }

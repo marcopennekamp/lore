@@ -1,6 +1,6 @@
 package lore.compiler.resolution
 
-import lore.compiler.semantics.scopes.Scope
+import lore.compiler.feedback.ScopeFeedback
 import lore.compiler.test.BaseSpec
 
 class TypeDependencySpec extends BaseSpec {
@@ -14,7 +14,7 @@ class TypeDependencySpec extends BaseSpec {
       (classOf[TypeDependencies.InheritanceCycle], 2),
       (classOf[TypeDependencies.InheritanceCycle], 2),
       (classOf[TypeDependencies.InheritanceCycle], 3),
-      (classOf[Scope.UnknownEntry], 4),
+      (classOf[ScopeFeedback.UnknownEntry], 4),
       (classOf[TypeDependencies.InheritanceCycle], 9),
       (classOf[TypeDependencies.InheritanceCycle], 10),
       (classOf[TypeDependencies.InheritanceCycle], 13),

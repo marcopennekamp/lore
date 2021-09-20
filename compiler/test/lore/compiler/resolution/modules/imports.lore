@@ -1,0 +1,11 @@
+// Error: Single imports must have at least two segments.
+use lore
+
+// Error: `core` is not a type or binding.
+use core._
+
+// Error: `lore.Oist.map` cannot be found.
+use lore.Oist.map
+
+// Error: `lore.Oist._` cannot be found.
+use lore.Oist._
