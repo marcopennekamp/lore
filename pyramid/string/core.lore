@@ -1,3 +1,0 @@
-module lore.core
-
-func to_string(value: String): String = value

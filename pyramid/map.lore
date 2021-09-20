@@ -1,0 +1,6 @@
+module lore
+
+module Map do
+  @where K, V
+  func get(kvs: #[K -> V], key: K): V = dynamic[V]('Lore.maps.get', kvs, key)
+end

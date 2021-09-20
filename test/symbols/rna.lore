@@ -1,4 +1,4 @@
-use lore.List._
+use lore.Enum._
 use lore.[String, Symbol]
 
 type DnaNucleotide = #a | #t | #g | #c

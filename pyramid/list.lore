@@ -1,0 +1,167 @@
+module lore
+
+module List do
+  use Enum._
+
+  @where A
+  func get(list: [A], index: Int): A = dynamic[A]('Lore.lists.get', list, index)
+
+  func length(list: [Any]): Int = dynamic[Int]('Lore.lists.length', list)
+
+  @where A, B
+  func concat(as: [A], bs: [B]): [A | B] = do
+    let mut result: [A | B] = as
+    for b <- bs
+      result = result :+ b
+    end
+    result
+  end
+
+  /**
+    * Returns the first element of the list. Results in an error if the list is empty.
+    *
+    * TODO: The default `head` should return an option. We can add a second function `head!` that throws an error
+    *       instead.
+    * TODO: Alternative name: First. (second, third, same functions as for tuples)
+    */
+  @where A
+  func head(list: [A]): A = get(list, 0)
+
+  /**
+    * Returns the last element of the list. Results in an error if the list is empty.
+    *
+    * TODO: The default `last` should return an option. We can add a second function `last!` that throws an error
+    *       instead.
+    */
+  @where A
+  func last(list: [A]): A = get(list, length(list) - 1)
+
+  /**
+    * Returns a slice of `list` that includes all elements except for the last one.
+    */
+  @where A
+  func init(list: [A]): [A] = slice(list, 0, length(list) - 1)
+
+  /**
+    * Returns a slice of `list` that includes all elements except for the first one.
+    */
+  @where A
+  func tail(list: [A]): [A] = slice(list, 1)
+
+  /**
+    * Creates a slice of `list` from the start index, taking `length` elements if available.
+    */
+  @where A
+  func slice(list: [A], startIndex: Int, length: Int): [A] = dynamic[[A]]('Lore.lists.slice', list, startIndex, length)
+
+  /**
+    * Creates a slice of `list` from the start index until the end of the list.
+    */
+  @where A
+  func slice(list: [A], startIndex: Int): [A] = slice(list, startIndex, length(list))
+
+  /**
+    * Creates pairs with elements from the given list of <i>distinct</i> elements. The function assumes that pairs are
+    * symmetric: if the list contains two elements A and B, only one pair (A, B) or (B, A) will be included in the
+    * result.
+    */
+  @where A
+  func symmetric_pairs(list: [A]): [(A, A)] = do
+    let mut result: [(A, A)] = []
+    let len = length(list)
+    let mut i = 0
+    while i < len
+      let mut j = i
+      while j < len
+        result = result :+ (get(list, i), get(list, j))
+        j += 1
+      end
+      i += 1
+    end
+    result
+  end
+
+  /**
+    * Creates a list that contains `element` `n` times.
+    */
+  @where A
+  func repeat(element: A, n: Int): [A] = do
+    let mut result: [A] = []
+    let mut i = 0
+    while i < n
+      result = result :+ element
+      i += 1
+    end
+    result
+  end
+end
+
+/**
+  * Enum provides functions for finite collections, of which lists are the most basic one.
+  */
+module Enum do
+  use List._
+
+  func size(list: [Any]): Int = List.length(list)
+
+  func empty?(list: [Any]): Boolean = size(list) == 0
+
+  @where A, B >: A, C
+  func map(list: [A], f: B => C): [C] = for a <- list yield f(a)
+
+  @where A
+  func flatten(lists: [[A]]): [A] = do
+    // TODO: Typing `initial` as `[A]` explicitly is currently required for this to compile. If we don't, the type of the
+    //       third argument is narrowed down to ([Nothing], [A]) => [A] in both bounds. Type inference then tries to
+    //       resolve the following judgment: `([Nothing], [A]) => [A] fits (iv15, iv16) => iv15` with
+    //       `iv15([Nothing], Any)`. Obviously, this can't work, since iv15 would be typed as both [Nothing] and [A].
+    //       It'd be correct to type iv15 as [A]. The core of the problem lies in how concat is defined: A and B are
+    //       independent, so we cannot infer A from B and vice versa. Hence, the first argument of concat is inferred to
+    //       be Nothing here.
+    //       This problem might be resolvable by enabling "backwards inference" from the result type, where flatten's
+    //       result type [A] is taken into account such that fold's C is immediately set (upper bounded) to [A].
+    let initial: [A] = []
+    fold(lists, initial, concat)
+  end
+
+  @where A, B >: A, C
+  func flat_map(list: [A], f: B => [C]): [C] = list |> map(f) |> flatten
+
+  @where A, B >: A
+  act each(list: [A], f: B => Unit) do
+    for a <- list yield f(a)
+  end
+
+  @where A, B >: A
+  func filter(list: [A], predicate: B => Boolean): [A] = do
+    let mut result: [A] = []
+    for a <- list
+      if predicate(a)
+        result = result :+ a
+      end
+    end
+    result
+  end
+
+  @where A, B >: A, I, R >: I
+  func fold(list: [A], initial: I, f: (R, B) => R): R = do
+    let mut result: R = initial
+    for element <- list
+      result = f(result, element)
+    end
+    result
+  end
+end
+
+module core do
+  use Enum.map
+  use lore.String
+
+  /**
+    * Converts a Lore list to a string by separating stringified elements with commas, then surrounding the list with
+    * square brackets.
+    */
+  func to_string(list: [Any]): String = list |> map(to_string) |> String.join(', ') |> String.affix('[', ']')
+
+  // TODO (modules): Implement other core functions.
+end
