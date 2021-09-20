@@ -162,7 +162,7 @@ object LeastUpperBound {
       }
 
       c1.typeArguments.zip(c2.typeArguments).zip(c1.schema.parameters)
-        .map { case ((a1, a2), parameter) => val result = combineTypeArguments(parameter, a1, a2); println(s"combine $a1 and $a2 into $result"); combineTypeArguments(parameter, a1, a2) }
+        .map { case ((a1, a2), parameter) => combineTypeArguments(parameter, a1, a2) }
         .sequence
         .flatMap(c1.schema.instantiate)
         .orElse {

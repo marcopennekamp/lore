@@ -21,7 +21,7 @@ class GlobalModuleIndex {
     * it's a module.
     */
   def add(node: DeclNode, modulePath: NamePath): Unit = this.synchronized {
-    val indexedModule = getOrCreateModule(modulePath)
+    val parentModule = getOrCreateModule(modulePath)
     node match {
       case node@DeclNode.ModuleNode(pathNode, imports, members, position) =>
         // A nested module node `module Foo.Bar` has to be added to the global index such that both Foo and Bar are
@@ -48,19 +48,23 @@ class GlobalModuleIndex {
           }
         } else node
 
-        // The denested module node must be added to the global module, UNLESS the module node is an implicit root
+        // The denested module node must be added to its parent module, UNLESS the module node is an implicit root
         // module, which is the case when a fragment doesn't contain a top module declaration: the fragment's outer
         // module node has the root name path then. This exception exists because we don't want to add the root module
         // to the root module itself.
         if (!node.namePath.isRoot) {
-          indexedModule.add(denestedModuleNode)
-
-          // Adding positions to the root module would be fruitless because it's declared everywhere.
-          indexedModule.add(position)
+          parentModule.add(denestedModuleNode)
         }
-        denestedModuleNode.members.foreach(add(_, modulePath ++ denestedModuleNode.namePath))
 
-      case _ => indexedModule.add(node)
+        // Although global modules are usually created implicitly when the first module member is added to the index,
+        // empty modules must be added to the index manually. This also allows us to add a "declared at" position to
+        // the module.
+        val denestedModulePath = modulePath ++ denestedModuleNode.namePath
+        val denestedModule = getOrCreateModule(denestedModulePath)
+        denestedModule.add(position)
+        denestedModuleNode.members.foreach(add(_, denestedModulePath))
+
+      case _ => parentModule.add(node)
     }
   }
 
