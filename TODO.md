@@ -14,6 +14,13 @@
   - Add clear covariance/contravariance type semantics.
   - Make maps immutable and support this in the runtime.
   - Implement a clear appends operation for maps and make them generally usable.
+- Add "global specialization"/"trait implementation" for tuples, lists, maps, shapes, traits, and structs.
+  - This will allow us to type lists, for example, as Enums, and so on.
+- Possibly add protocols. (Also see the specification proposal.)
+  - This will allow us to add equality, ordering, hashing, and stringification traits to the core, which makes the operations associated with these traits more type-safe. For example, right now, it is possible to compare values of any two types, even those that are incomparable (e.g. `function == struct`).
+  - Protocols might be mergeable with "global specialization".
+- Start designing Pyramid properly.
+  - Clear all `TODO (pyramid)` entries.
 - Add pattern matching.
 - Add immutable (hash) sets with a syntax `#[A]`.
 - Further syntactic changes:

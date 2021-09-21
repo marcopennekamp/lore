@@ -9,6 +9,7 @@ end
 
 // TODO: Multiple dispatch is a bit overkill here, of course. We will replace `filterElementType` with pattern matching
 //       once that's actually supported.
+// TODO (modules): `filterElementType` can also be private.
 
 @where A
 func filterElementType(element: Any, tf: TypeFilter[A]): [A] = []

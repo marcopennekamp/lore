@@ -1,0 +1,57 @@
+protocol Equality[A, B]
+  func equal?(a: A, b: B): Boolean
+end
+
+
+struct Beer
+  contents: [String]
+end
+
+// `impl` requires all the multi-functions defined by the protocol to be implemented. `impl` is entirely optional.
+impl Equality[Beer, Beer]
+func equal?(b1: Beer, b2: Beer): Boolean = b1.contents == b2.contents
+
+
+// A protocol can't just be a compile-time construct. Consider this:
+impl Equality[Fox, Fox]
+func equal?(a: Fox, b: Fox): Boolean = a.name == b.name
+
+func yes?(a: Any, b: Any): Boolean = false
+
+@where A, B
+@protocol Equality[A, B]
+func yes?(a: A, b: B): Boolean = equal?(a, b)
+
+action test() do
+  let a = Fox()
+  let b: Animal = Fox()
+  yes?(a, b)  // This must dispatch, at run time, such that the SECOND implementation of `yes?` is chosen.
+
+  let c = Fox()
+  let d = Deer()
+  yes?(c, d)  // This must dispatch, at run time, such that the FIRST implementation of `yes?` is chosen.
+end
+
+// In particular, the type `(A, B)` with protocol `Equality[A, B]` must be a subtype of `(Any, Any)`, but not vice
+// versa. This complicates the type system further, though not necessarily to the detriment of performance.
+// Checking whether types implement a protocol is also only needed at run time during dispatch when a protocol is
+// specifically mentioned in an ´@protocol` annotation. In all other cases, compile-time checks are sufficient for
+// protocols. If the function `yes?` only defined the second implementation, the dispatch logic could feasibly be
+// optimized away entirely.
+
+// The biggest problem is probably how to represent protocols in the runtime and generated code such that it can be
+// efficiently decided whether a protocol is implemented for an arbitrary list of type arguments. If `impl`
+// declarations become mandatory, this would be relatively easy. Optional `impl` declarations require a lot more
+// compiler work, and I'm not sure whether a protocol `P[A, B, ...]` can always be deduced from just function
+// definitions, or if so whether it's computationally feasible.
+
+// Another approach would be to move the burden to the runtime. Instead of trying to enumerate all protocol
+// implementations, the runtime would keep a cache for each protocol. When dispatch has to resolve an `@protocol`
+// annotation that contains type arguments, the type arguments are substituted into the protocol. Then we simulate
+// dispatch for each of the functions mentioned in the protocol with argument types equal to the substituted types
+// in the protocol. For example, to check `Equality[A, B]` with `A = Fox` and `B = Deer`, we simulate the dispatch of
+// `equal?(Fox, Deer)`. If the dispatch algorithm can find a call target for each protocol function, the protocol is
+// implemented by the given type arguments. This additionally requires us to separate the dispatch code (input type -->
+// call target) from the surrounding code that currently makes up the dispatch logic of a multi-function. And finally,
+// when it has been determined whether the protocol is implemented for the given type arguments, this is saved in a
+// separate cache.
