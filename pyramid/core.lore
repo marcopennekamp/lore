@@ -1,12 +1,12 @@
 module lore.core
 
-// TODO: Equality should be restricted to a trait Equality. Global equality is a bad idea, as it fails silently,
-//       because `equal?` can always fall back to the Any/Any function. The same issue applies to `less_than?`, which
-//       should be locked behind a trait Order.
-//       Of course, this and other traits defined in Core need proper support for providing "implementations" for
-//       traits, unless we want to hardcode these traits into the compiler. We will also have to provide a means with
-//       which a standard implementation can be derived for Equality, Order, and Showable. And finally, there need to
-//       be standard implementations for lists, maps, etc.
+// TODO (pyramid): Equality should be restricted to a trait Equality. Global equality is a bad idea, as it fails
+//                 silently, because `equal?` can always fall back to the Any/Any function. The same issue applies to
+//                 `less_than?`, which should be locked behind a trait Order.
+//                 Of course, this and other traits defined in Core need proper support for providing "implementations"
+//                 for traits, unless we want to hardcode these traits into the compiler. We will also have to provide
+//                 a means with which a standard implementation can be derived for Equality, Order, and Showable. And
+//                 finally, there need to be standard implementations for lists, maps, etc.
 
 /**
   * The default "equals" function used by the compiler for comparing complex types. This function is invoked when using
@@ -27,18 +27,22 @@ func less_than?(a: Any, b: Any): Boolean = dynamic[Boolean]('Lore.values.isLessT
  */
 func less_than_equal?(a: Any, b: Any): Boolean = less_than?(a, b) || equal?(a, b)
 
-// TODO: Restrict hashes to a Hashable label type. This would provide better safety when using maps. More often than
-//       not, especially when maps are easy to create, proper hash-ability of a type gets overlooked and keys are
-//       used recklessly. It's much better to require a programmer to explicitly declare hash-ability.
+// TODO (pyramid): Restrict hashes to a Hashable label type. This would provide better safety when using maps. More
+//                 often than not, especially when maps are easy to create, proper hash-ability of a type gets
+//                 overlooked and keys are used recklessly. It's much better to require a programmer to explicitly
+//                 declare hash-ability.
 
 /**
  * Computes a hash from any given value. This is used by the compiler to implement maps. The standard implementation
  * defers the computation to the Javascript runtime and works for any sort of value.
+ *
+ * TODO (pyramid): Consider adding a second parameter that represents partially computed hashes or hash state, a
+ *                 technique which Julia and Rust seem to follow.
  */
 func hash(value: Any): Int = dynamic[Int]('Lore.values.hash', value)
 
-// TODO: Restrict `to_string` to a Showable label type so that only types for which `to_string` is explicitly
-//       implemented can be used in string interpolation.
+// TODO (pyramid): Restrict `to_string` to a Showable/ToString label type so that only types for which `to_string` is
+//                 explicitly implemented can be used in string interpolation.
 
 /**
  * Converts any Lore value to a string using Javascript's native stringifier. You can specialize this function to

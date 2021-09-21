@@ -19,7 +19,7 @@ module String do
   /**
     * Concatenates all strings in the given list.
     *
-    * TODO: This could perhaps benefit from the performance of a dynamic implementation.
+    * TODO (pyramid): This could perhaps benefit from the performance of a dynamic implementation.
     */
   func concat(strings: [String]): String = fold(strings, '', concat)
 

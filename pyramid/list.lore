@@ -20,9 +20,8 @@ module List do
   /**
     * Returns the first element of the list. Results in an error if the list is empty.
     *
-    * TODO: The default `head` should return an option. We can add a second function `head!` that throws an error
-    *       instead.
-    * TODO: Alternative name: First. (second, third, same functions as for tuples)
+    * TODO (pyramid): The default `head` should return an option. We can add a second function `head!` that throws an
+    *                 error instead.
     */
   @where A
   func head(list: [A]): A = get(list, 0)
@@ -30,8 +29,8 @@ module List do
   /**
     * Returns the last element of the list. Results in an error if the list is empty.
     *
-    * TODO: The default `last` should return an option. We can add a second function `last!` that throws an error
-    *       instead.
+    * TODO (pyramid): The default `last` should return an option. We can add a second function `last!` that throws an
+    *                 error instead.
     */
   @where A
   func last(list: [A]): A = get(list, length(list) - 1)
