@@ -1,0 +1,115 @@
+// Similar to `hash.lore`, the question here is, too, whether an Enum would rather be a protocol or a trait.
+// Intuitively, Enum is not a capability and hence shouldn't be a protocol. If a collection can implement Enum, that
+// implies that the collection IS an Enum. If String was in the same position, we wouldn't give a hypothetical `[Char]`
+// list a String protocol. `[Char]` WOULD BE a String.
+// However, for the sake of exploration, we're implementing parts of Enum as both a protocol and a trait here.
+
+// (1) Protocol variant.
+protocol Enum[S, E]
+  func size(enum: S): Int
+
+  @where B >: E, C
+  func map(enum: S, f: B => C): [C]
+
+  // TODO: This is one of the biggest problems when protocols are concerned. I'm not sure this definition is correct,
+  //       and it's surely looking hellish. The idea is that given Enum S, we have an element E, which must ALSO be an
+  //       Enum with element type A. So we essentially have a nested enum by way of how the type variables are
+  //       constrained. But this is so hard around the corner that it's barely unreadable.
+  @where A with Enum[E, A]
+  func flatten(enum: S): E
+end
+
+// Note that the `Any` for the second argument effectively implements this for all possible types, as protocol type
+// argument specify the upper bound of an argument. A protocol `Hash[Animal]` can obviously also hash Foxes.
+@where S with Enum[S, Any]
+func empty?(enum: S): Boolean = size(enum)
+
+// TODO: Is this correct?
+@where S, E, B >: E, C with Enum[S, E]
+func flat_map(enum: S, f: B => [C]): [C] = enum |> map(f) |> flatten
+
+// It's really getting awkward here, because we need both the Enum self type S, and the element type E.
+
+// A sample implementation for lists:
+impl Enum[[A], A] where A
+
+func size(list: [A]): Int = List.length(list)
+
+// TODO: How can the compiler deduce that `map` does indeed implement the protocol's `map`?
+// The biggest problem is that there is no connection between S and E in Enum.
+@where A, B >: A, C
+func map(list: [A], f: B => C): [C] = for a <- list yield f(a)
+
+// TODO: Given the convoluted declaration of `flatten` above, consider how the compiler should deduce that `map`
+//       implements the protocol's `map`.
+func flatten(list: [[A]]): [A] = /* ... */
+
+
+
+// (2) Trait variant.
+trait Enum[+A]
+
+func size(enum: Enum[Any]): Int
+
+@where A, B >: A, C
+func map(enum: Enum[A], f: B => C): Enum[C]
+
+// TODO: A sticky point here is that any concrete Enum has to implement `flatten` for inner enums of different concrete
+//       types. For example, the list implementation can't simply flatten `[[A]]`. It must flatten `[Enum[A]]`. This is
+//       generally correct, however, if a little undesirable. An implementation can always further specialize, so that
+//       lists might provide two flatten functions: `flatten([Enum[A]])` and `flatten([[A]])`. And of course, if a user
+//       is directly working with lists anyway, enums aren't even going to get touched.
+@where A
+func flatten(enum: Enum[Enum[A]]): Enum[A]
+
+func empty?(enum: Enum[Any]): Boolean = size(enum)
+
+@where A, B >: A, C
+func flat_map(enum: Enum[A], f: B => Enum[C]): Enum[C] = enum |> map(f) |> flatten
+
+// This is much simpler already.
+
+// Implementation for lists:
+extend [A] <: Enum[A] where A
+// Alternative syntax:
+//    type [A] extends Enum[A] where A
+// Or with an `@where` annotation.
+
+func size(list: [Any]): Int = List.length(list)
+
+@where A, B >: A, C
+func map(list: [A], f: B => C): [C] = for a <- list yield f(a)
+
+@where A
+func flatten(list: [Enum[A]]): [A] = /* ... */
+
+@where A
+func flatten(list: [[A]]): [A] = /* ... */
+
+// Implementation for maps:
+extend #[K -> V] <: Enum[(K, V)] where K, V
+// Alternative syntax:
+// type #[K -> V] extends Enum[(K, V)] where K, V
+
+// K must be a type parameter for now as maps may be invariant in their key type. (Not sure about that yet.)
+@where K
+func size(map: [K -> Any]): Int = List.length(list)
+
+@where K, V, K2 >: K, V2 >: V, C
+func map(map: #[K -> V], f: ((K2, V2)) => C): Enum[C] = /* ... */
+
+// We can specialize `map` here to cover the case where `f` returns a key-value tuple.
+@where K, V, K2 >: K, V2 >: V, KR, VR
+func map(map: #[K -> V], f: ((K2, V2)) => (KR, VR)): #[KR -> VR] = /* ... */
+
+// TODO: For convenience, to get rid of the tuple in `f`:
+//          @where K, V, K2 >: K, V2 >: V, C
+//          func map(map: #[K -> V], f: (K2, V2) => C): Enum[C] = Enum.map(map, Function.tupled(f))
+
+// TODO: Is this correct?
+@where K, V
+func flatten(map: #[K -> Enum[V]]): Enum[V] = /* ... */
+
+// TODO: Is this correct?
+@where K, V
+func flatten(list: #[K -> #[K -> V]]): #[K -> V] = /* ... */

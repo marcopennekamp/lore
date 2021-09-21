@@ -1,0 +1,33 @@
+protocol Equality[A, B]
+  func equal?(a: A, b: B): Boolean
+end
+
+protocol Order[A, B]
+  func less_than?(a: Any, b: Any): Boolean
+end
+
+@where A, B with Equality[A, B], Order[A, B]
+func less_than_equal?(a: A, b: B): Boolean = less_than?(a, b) || equal?(a, b)
+
+
+// This implementation would be placed in a file `list.lore`, of course. Note that `impl` is optional and as such
+// doesn't need to be specified for the protocol to be valid.
+//impl Equality[[A], [B]] where A, B with Equality[A, B]  // This is optional.
+@where A, B with Equality[A, B]
+func equal?(as: [A], bs: [B]): Boolean = do
+  if Enum.size(as) != Enum.size(bs)
+    return false
+  end
+
+  for i <- List.index_range(as)
+    // We can only compare these two elements here because the equality constraint specifies that for A and B, the
+    // function equal? has an adequate definition.
+    if Enum.get(as, i) != Enum.get(bs, i)
+      return false
+    end
+  end
+  true
+end
+
+@where A, B with Order[A, B]
+func less_than?(as: [A], bs: [B]): Boolean = /* ... */

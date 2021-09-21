@@ -1,0 +1,41 @@
+// With the "free specialization" features, there are two ways to implement type-safe Hash support:
+//    1. With a protocol `Hash[A]`.
+//    2. By creating a trait `Hash` and extending it/implementing it for the required types.
+// We'll try both approaches here to get a feel for which one would be better.
+struct Person
+  name: String
+  age: Int
+end
+
+
+// (1) Protocol variant.
+protocol Hash[A]
+  func hash(value: A): Int = dynamic[Int]('Lore.values.hash', value)
+end
+
+impl Hash[Person]
+func hash(person: Person): Int = hash((person.name, person.age))
+
+impl Hash[(A, B)] where A, B with Hash[A], Hash[B]
+func hash(tuple: (A, B)): Int = /* ... */
+
+
+// (2) Trait variant.
+trait Hash
+func hash(value: Hash): Int
+
+// This assumes that Person is defined in some other, non-accessible fragment. Otherwise Person could directly inherit
+// from Hash.
+extend Person <: Hash
+// Alternative syntax:
+// type Person extends Hash
+func hash(person: Person): Int = hash((person.name, person.age))
+
+@where A <: Hash, B <: Hash
+extend (A, B) <: Hash
+func hash(tuple: (A, B)): Int = /* ... */
+
+// The immediate downside of the trait variant is that it pollutes the supertrait space for a variety of types.
+// Especially widely used concepts that are orthogonal to the rest of a type (such as equality, hashing, to_string) are
+// probably better modeled with protocols. The question to ask, perhaps, is whether a type T IS an X (traits) or
+// whether it must have CAPABILITY X (protocols).

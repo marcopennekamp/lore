@@ -1,3 +1,24 @@
+// TODO: Investigate whether protocols can be represented by traits as well. Or if there is any way that "trait
+//       implementation" and protocols could be subsumed under the same feature. It's not clear to me yet, both
+//       logically and feeling, whether protocols and traits are distinct features that should both be allowed in Lore
+//       and which both have their place, or whether there should only be either protocols or implementable traits and
+//       having both is essentially "doing twice the work".
+//          - One crucial difference between traits and protocols is this: Traits describe what a value IS, while a
+//            protocol describes what a type or multiple types CAN DO, i.e. their capabilities. While the
+//            multi-function system allows traits to also define what a type CAN DO in an abstract manner, traits
+//            cannot accomplish this across multiple types, which is for example required for the `equal?`
+//            multi-function. Protocols probably have a reduced run-time cost, because they ease the burden on the
+//            subtyping hierarchy.
+//          - In abstract terms, perhaps, a protocol is a constraint on one or multiple types. Such a constraint is
+//            fundamentally different from a type, which is rather a constraint on a value.
+// TODO: Protocols could also be called "capabilities", though "capability" is arguably harder to type. (Maybe being
+//       hard to type is good, though.)
+// TODO: Before we implement protocols, we should make sure that they have applications beyond these `lore.core`
+//       capabilities. Some examples closer to "userland" would be beneficial in deciding whether protocols are a
+//       feature to implement or not.
+// TODO: How should the compiler treat protocol type parameters that stand in contravariant positions? For example, a
+//       protocol function that returns a function type, such as `func foo(value: A): B => Int` for `Foo[A, B]`.
+
 protocol Equality[A, B]
   func equal?(a: A, b: B): Boolean
 end
@@ -18,8 +39,7 @@ func equal?(a: Fox, b: Fox): Boolean = a.name == b.name
 
 func yes?(a: Any, b: Any): Boolean = false
 
-@where A, B
-@protocol Equality[A, B]
+@where A, B with Equality[A, B]
 func yes?(a: A, b: B): Boolean = equal?(a, b)
 
 action test() do
@@ -34,8 +54,8 @@ end
 
 // In particular, the type `(A, B)` with protocol `Equality[A, B]` must be a subtype of `(Any, Any)`, but not vice
 // versa. This complicates the type system further, though not necessarily to the detriment of performance.
-// Checking whether types implement a protocol is also only needed at run time during dispatch when a protocol is
-// specifically mentioned in an ´@protocol` annotation. In all other cases, compile-time checks are sufficient for
+// Checking at run time whether types implement a protocol is also only needed during dispatch when a protocol is
+// specifically mentioned in a `@where` constraint. In all other cases, compile-time checks are sufficient for
 // protocols. If the function `yes?` only defined the second implementation, the dispatch logic could feasibly be
 // optimized away entirely.
 
@@ -46,12 +66,12 @@ end
 // definitions, or if so whether it's computationally feasible.
 
 // Another approach would be to move the burden to the runtime. Instead of trying to enumerate all protocol
-// implementations, the runtime would keep a cache for each protocol. When dispatch has to resolve an `@protocol`
-// annotation that contains type arguments, the type arguments are substituted into the protocol. Then we simulate
+// implementations, the runtime would keep a cache for each protocol. When dispatch has to resolve a protocol `@where`
+// constraint that contains type arguments, the type arguments are substituted into the protocol. Then we simulate
 // dispatch for each of the functions mentioned in the protocol with argument types equal to the substituted types
 // in the protocol. For example, to check `Equality[A, B]` with `A = Fox` and `B = Deer`, we simulate the dispatch of
 // `equal?(Fox, Deer)`. If the dispatch algorithm can find a call target for each protocol function, the protocol is
 // implemented by the given type arguments. This additionally requires us to separate the dispatch code (input type -->
 // call target) from the surrounding code that currently makes up the dispatch logic of a multi-function. And finally,
-// when it has been determined whether the protocol is implemented for the given type arguments, this is saved in a
-// separate cache.
+// when it has been determined whether the protocol is implemented for the given type arguments, the result is saved in
+// a separate cache.
