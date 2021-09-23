@@ -133,7 +133,7 @@ let x1 = (-b + sqrt(pow(b, 2) - product([4, a, c]))) / (2 * a)
 
 A type and a module may share a name. A module that bears the same name as a type is called a **companion module**. This module is *expected*, by convention, to contain functions for working with the type. For example, the `Option` type has a companion module `Option` that contains functions for working with options, such as `Option.get`.
 
-**Struct objects** may also have a companion module, but an object's properties have precedence over the module's members.
+**Struct objects** may also have a companion module, but an object's properties and its companion module's bindings may not share a name.
 
 ###### Example
 
@@ -149,14 +149,26 @@ end
 
 
 
-### Visibility
+### Naming Conventions
+
+Modules are essentially used in two ways, which determines their naming convention:
+
+1. Modules that **contain functions and global variables** are usually named in upper camel case. Often they will be used explicitly, so that functions from multiple modules don't clash. A good example is the module `lore.Enum`. Its functions will often be used together with the module name, e.g. `Enum.map([1, 2, 3], x => x + 1)` and `Enum.flatten(lists)`. Sometimes these modules are also companion modules. 
+   - An exception to this convention is when functions or global variables are intended to be used without the qualifying module name. In such cases the module is best understood as a namespace.
+2. Modules that only contain types and other modules are also informally known as **namespaces**. They are written in snake case, such as the `lore` namespace defined by the Pyramid standard library.
+
+
+
+### TODO: Visibility
+
+*(Visibility is not yet implemented in the compiler and won't be for some time. It's a relatively tangential feature that isn't crucial for building Lore's compiler in Lore.)*
 
 Module members have two modes of **visibility:**
 
 - **Private** members may only be accessed from the same module.
 - **Public** members may be accessed anywhere.
 
-All module members are **public by default**. Private members are declared by prefixing their declaration keywords with a `-` sign: `-trait`, `-function`, and so on. If a single function definition is private, all function definitions of the owning **multi-function** must be private as well. This has to be applied *explicitly* so that multi-functions cannot be unexpectedly private.
+All module members are **public by default**. Private members are declared by suffixing their declaration keywords with a `p`: `traitp`, `funcp`, and so on. If a single function definition is private, all function definitions of the collective **multi-function** must be private as well. This has to be applied *explicitly* so that multi-functions cannot be unexpectedly private.
 
 ###### Example
 
@@ -166,7 +178,7 @@ module my_project
 trait Foo
 
 module Foo do
-  -struct Implementation extends Foo
+  structp Implementation extends Foo
     mut counter: Int
   end
   
@@ -179,7 +191,7 @@ module Foo do
     result
   end
   
-  -act increment(foo: Implementation)
+  actp increment(foo: Implementation)
     foo.counter += 1
   end
 end
@@ -187,20 +199,10 @@ end
 
 
 
-### Naming Conventions
-
-Modules are essentially used in two ways, which determines their naming convention:
-
-1. Modules that **contain functions and global variables** are usually named in upper camel case. Often they will be used explicitly, so that functions from multiple modules don't clash. A good example is the module `lore.Enum`. Its functions will often be used together with the module name, e.g. `Enum.map([1, 2, 3], x => x + 1)` and `Enum.flatten(lists)`. Sometimes these modules are also companion modules. 
-   - An exception to this convention is when functions or global variables are intended to be used without the qualifying module name. In such cases the module is best understood as a namespace.
-2. Modules that only contain types and other modules are also informally known as **namespaces**. They are written in snake case, such as the `lore` namespace defined by the Pyramid standard library.
-
-
-
 ### TODOs
 
 - **Use anywhere:** The `use` declaration should be usable anywhere (inside expressions as a top-level expression) for more fine-grained control of names.
-  - To support this, we can support imports in *local scopes*.
+  - To support this, we can implement imports in *local scopes* as well.
 - **Aliases:** The `use` declaration should allow the programmer to rename a given symbol.
-- **Private problems:** Let's say we declare a private function `f` in a module defined by Pyramid, for example `lore.Enum`. When the language user (idiomatically) extends the `Enum` module with additional functions, for example to implement `Enum.map`  for their custom collection type, they are able to see the private function `f` from within their extension of the Enum module. This is a problem, right? Shouldn't private functions and types thus only be visible inside the same fragment? Or do we need an additional mechanism, for example `private[module]` for module privacy and `private[fragment]` for fragment privacy?
-
+- **Complex imports:** Allow imports such as `use lore.[Enum._, Tuple]` and `use lore.[Enum.[flat_map, map], Tuple]`.
+- **Absolute declarations:** With the syntax `func .lore.core.to_string` (and the equivalent for other top-level declarations), a user can declare a function with an absolute path, which would disregard its surrounding module declarations. This would allow us to override core functions without the need for specifying a new module. Especially so because currently, wanting to override core/Enum/... functions basically disallows using a top module declaration. For many modules, this either necessitates defining core/Enum/... functions in a separate file, or surrounding all definitions in the file with a module declaration, even the "main" definitions (such as `lore.List` definitions in `pyramid/list.lore`). The latter approach introduces needless indentation, while the former approach fragments a logical unit into multiple files.

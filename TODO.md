@@ -3,11 +3,7 @@
 #### Features
 
 - Add a module system.
-  - Allow imports such as `use lore.[Enum._, Tuple]` and `use lore.[Enum.[flat_map, map], Tuple]`. 
-  - Implement visibility.
-  - Idea: If a type or function declaration is written with a name path, this becomes the *absolute* name path of the entity, disregarding any surrounding modules. This would allow us to override core functions without the need for specifying a new module. Especially so because currently, wanting to override core functions basically disallows using a top module declaration, or introduces the need to override core functions in a separate file. Without the ability to use a top module declaration for, e.g., lists, all list functions would be indented two spaces for a pretty pointless reason. 
-    - Potentially allow declaring modules that start at the root scope: `module .lore.core do ... end`.
-    - This syntax could also be used for function names: `func .lore.core.to_string ...`.
+  - Consider renaming the module keyword to `mod`, which has the added benefit of being on the same column as `use`. This might be visually more pleasant.
   - Clear all `TODO (modules)` entries.
 - Implement a vector backend for lists.
 - Fix map types and values:
