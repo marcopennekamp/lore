@@ -25,7 +25,7 @@ object DeclarationResolver {
   def resolve(moduleNodes: Vector[DeclNode.ModuleNode])(implicit reporter: Reporter): Registry = {
     val (localModules, globalModuleIndex) = ModuleResolver.resolve(moduleNodes)
     val moduleDefinitions = globalModuleIndex.modules.map {
-      module => module.name -> new ModuleDefinition(module.name, module.positions)
+      module => module.name -> new ModuleDefinition(module.name, module)
     }.toMap
     val bindings1: Registry.Bindings = Registry.Bindings(moduleDefinitions, Map.empty, Map.empty, Map.empty)
 
@@ -147,14 +147,13 @@ object DeclarationResolver {
     */
   def resolveStructBindings()(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): Registry.StructBindings = {
     def getByType(name: NamePath, tpe: StructType, typeParameters: Vector[TypeVariable]): Option[(NamePath, StructBinding)] = {
-      val hasCompanionModule = bindings.modules.contains(name)
       val binding = if (tpe.schema.definition.isObject) {
         if (typeParameters.nonEmpty) {
           throw CompilationException(s"Objects cannot have type parameters. Violated by object ${tpe.name}.")
         }
-        StructObjectBinding(name, tpe, hasCompanionModule)
+        StructObjectBinding(name, tpe)
       } else {
-        StructConstructorBinding(name, typeParameters, tpe, hasCompanionModule)
+        StructConstructorBinding(name, typeParameters, tpe)
       }
       Some(name -> binding)
     }

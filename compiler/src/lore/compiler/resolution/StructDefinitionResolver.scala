@@ -20,7 +20,8 @@ object StructDefinitionResolver {
         implicit val typeScope: TypeScope = schema.getTypeScope(registryTypeScope)
 
         val properties = node.properties.map(resolveProperty)
-        val definition = new StructDefinition(node.fullName, schema, properties, node.isObject, node.localModule, node.nameNode.position)
+        val companionModule = bindings.modules.get(node.fullName)
+        val definition = new StructDefinition(node.fullName, schema, properties, node.isObject, companionModule, node.localModule, node.nameNode.position)
         schema.initialize(definition)
         definition
     }

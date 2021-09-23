@@ -12,45 +12,51 @@ import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
   * TODO (modules): Rename to GlobalModule?
   */
 class IndexedModule(val name: NamePath) {
-  var typeNames: Set[String] = Set.empty
-  var bindingNames: Set[String] = Set.empty
-  var positions: Vector[Position] = Vector.empty
+  var modulePositions: Vector[Position] = Vector.empty
+
+  private var types: Map[String, Vector[Position]] = Map.empty
+  private var bindings: Map[String, Vector[Position]] = Map.empty
+
+  def typeNames: Set[String] = types.keySet
+  def bindingNames: Set[String] = bindings.keySet
+
+  def addModulePosition(position: Position): Unit = {
+    modulePositions = modulePositions :+ position
+  }
 
   def add(node: DeclNode): Unit = {
     node match {
-      case ModuleNode(NamePathNode(Vector(nameNode)), _, _, _) => addBindingName(nameNode.value)
+      case ModuleNode(NamePathNode(Vector(nameNode)), _, _, position) => add(nameNode.value, position, NameKind.Binding)
       case node: ModuleNode => throw CompilationException(
         s"Module nodes must be denested when being added to the IndexedModule. Module name: ${node.namePathNode}. Position: ${node.position}."
       )
-      case node: BindingDeclNode => addBindingName(node.simpleName)
-      case node: TypeDeclNode => addTypeName(node.simpleName)
+      case node: BindingDeclNode => add(node.simpleName, node.position, NameKind.Binding)
+      case node: TypeDeclNode => add(node.simpleName, node.position, NameKind.Type)
     }
   }
 
-  def add(name: String, kind: NameKind): Unit = kind match {
-    case NameKind.Type => addTypeName(name)
-    case NameKind.Binding => addBindingName(name)
-  }
-
-  private def addTypeName(name: String): Unit = {
-    typeNames = typeNames + name
-  }
-
-  private def addBindingName(name: String): Unit = {
-    bindingNames = bindingNames + name
-  }
-
-  def add(position: Position): Unit = {
-    positions = positions :+ position
+  def add(name: String, position: Position, nameKind: NameKind): Unit = {
+    val entries = entriesOf(nameKind)
+    val positions = entries.getOrElse(name, Vector.empty)
+    val updatedEntries = entries.updated(name, positions :+ position)
+    nameKind match {
+      case NameKind.Type => types = updatedEntries
+      case NameKind.Binding => bindings = updatedEntries
+    }
   }
 
   /**
     * Whether this module has a member named `name` given `nameKind`.
     */
-  def has(name: String, nameKind: NameKind): Boolean = namesOf(nameKind).contains(name)
+  def has(name: String, nameKind: NameKind): Boolean = entriesOf(nameKind).contains(name)
 
-  private def namesOf(nameKind: NameKind): Set[String] = nameKind match {
-    case NameKind.Type => typeNames
-    case NameKind.Binding => bindingNames
+  /**
+    * Get all member positions for the member `name`. If the member doesn't exist, the empty list is returned.
+    */
+  def getMemberPositions(name: String, nameKind: NameKind): Vector[Position] = entriesOf(nameKind).getOrElse(name, Vector.empty)
+
+  private def entriesOf(nameKind: NameKind): Map[String, Vector[Position]] = nameKind match {
+    case NameKind.Type => types
+    case NameKind.Binding => bindings
   }
 }

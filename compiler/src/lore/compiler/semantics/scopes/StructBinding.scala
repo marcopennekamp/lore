@@ -4,19 +4,12 @@ import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.scopes.StructConstructorBinding.StructConstructorBindingSchema
-import lore.compiler.semantics.structures.StructConstructor
+import lore.compiler.semantics.structures.{StructConstructor, StructDefinition}
 import lore.compiler.types.TypeVariable.Assignments
 import lore.compiler.types.{NamedSchema, StructType, Type, TypeVariable}
 
 sealed trait StructBinding extends Binding {
-  /**
-    * Whether the struct binding also has a companion module. Because modules are also resolved via binding scopes,
-    * we need a means to tell certain parts of transformation that the struct constructor or object binding also has a
-    * possible module component that can be accessed.
-    *
-    * TODO (modules): We need to honor this flag in the appropriate places so that companion modules can be used correctly.
-    */
-  def hasCompanionModule: Boolean
+  def definition: StructDefinition
 }
 
 /**
@@ -29,7 +22,6 @@ case class StructConstructorBinding(
   name: NamePath,
   parameters: Vector[TypeVariable],
   underlyingType: StructType,
-  hasCompanionModule: Boolean,
 ) extends StructBinding {
   val isConstant: Boolean = parameters.isEmpty
   lazy val asSchema: StructConstructorBindingSchema = StructConstructorBindingSchema(name, parameters, underlyingType)
@@ -37,6 +29,8 @@ case class StructConstructorBinding(
   def instantiate(assignments: Assignments): StructConstructor = {
     asSchema.instantiate(assignments).constructor
   }
+
+  override val definition: StructDefinition = underlyingType.schema.definition
 
   override def toString: String = {
     val parameterString = if (parameters.nonEmpty) s"[${parameters.mkString(", ")}]" else ""
@@ -53,8 +47,6 @@ object StructConstructorBinding {
   }
 }
 
-case class StructObjectBinding(
-  name: NamePath,
-  tpe: StructType,
-  hasCompanionModule: Boolean,
-) extends StructBinding with TypedBinding
+case class StructObjectBinding(name: NamePath, tpe: StructType) extends StructBinding with TypedBinding {
+  override val definition: StructDefinition = tpe.schema.definition
+}

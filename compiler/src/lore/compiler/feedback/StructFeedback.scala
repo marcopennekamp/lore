@@ -2,6 +2,7 @@ package lore.compiler.feedback
 
 import lore.compiler.core.Position
 import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.scopes.{StructBinding, StructObjectBinding}
 import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.types.{ShapeType, TypeVariable}
 
@@ -9,6 +10,16 @@ object StructFeedback {
 
   case class DuplicateProperty(definition: StructDefinition, property: StructPropertyDefinition) extends Feedback.Error(property) {
     override def message = s"The property ${property.name} is declared twice in the struct ${definition.name}."
+  }
+
+  case class ConstructorExpected(name: NamePath, override val position: Position) extends Feedback.Error(position) {
+    override def message: String = s"The type $name doesn't have an associated constructor. It must be a struct."
+  }
+
+  // TODO (modules): Test this error.
+  case class CompanionModuleExpected(binding: StructBinding, memberName: String, override val position: Position) extends Feedback.Error(position) {
+    override def message: String = s"The struct ${binding.definition.name} does not have a companion module through" +
+      s" which a member called $memberName could be accessed."
   }
 
   object Shape {
@@ -44,20 +55,28 @@ object StructFeedback {
   }
 
   object Object {
-    case class MissingDefault(definition: StructDefinition, property: StructPropertyDefinition) extends Feedback.Error(property) {
-      override def message: String = s"The property ${property.name} must have a default value because ${definition.name}" +
+    case class MissingDefault(struct: StructDefinition, property: StructPropertyDefinition) extends Feedback.Error(property) {
+      override def message: String = s"The property ${property.name} must have a default value because ${struct.name}" +
         s" is an object. Objects cannot be instantiated directly, so the default value ensures that each property is" +
         s" assigned an appropriate value."
+    }
+
+    // TODO (modules): Test this error.
+    case class MemberNameTaken(struct: StructDefinition, name: String, memberPosition: Position) extends Feedback.Error(memberPosition) {
+      override def message: String = s"The struct object ${struct.name.simpleName} already has a property $name." +
+        s" Companion module members and struct properties may not share names."
     }
 
     case class NoConstructor(name: NamePath, override val position: Position) extends Feedback.Error(position) {
       override def message: String = s"The type $name is an object, which doesn't have a constructor. Objects cannot be" +
         s" constructed. You can refer to the object value simply by the variable $name."
     }
-  }
 
-  case class ConstructorExpected(name: NamePath, override val position: Position) extends Feedback.Error(position) {
-    override def message: String = s"The type $name doesn't have an associated constructor. It must be a struct."
+    // TODO (modules): Test this error.
+    case class CompanionModuleExpected(binding: StructObjectBinding, memberName: String, override val position: Position) extends Feedback.Error(position) {
+      override def message: String = s"The struct object ${binding.definition.name} does not contain an object property" +
+        s" called $memberName, and does not have a companion module through which the member could be accessed."
+    }
   }
 
 }

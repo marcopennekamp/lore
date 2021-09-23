@@ -2,7 +2,7 @@ package lore.compiler.constraints
 
 import lore.compiler.feedback.FeedbackExtensions.FilterDuplicatesExtension
 import lore.compiler.feedback.{Reporter, StructFeedback}
-import lore.compiler.semantics.Registry
+import lore.compiler.semantics.{NameKind, Registry}
 import lore.compiler.semantics.structures.StructDefinition
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
@@ -16,7 +16,10 @@ object StructConstraints {
     *   2. The properties of the struct's inherited shape type must all be defined.
     *   3. Co-/contra-/invariant type parameters must be used in appropriate positions in property types.
     *   4. Open type parameters must be covariant, uniquely deducible, and used in immutable properties.
-    *   5. All properties of an object must have default values.
+    *
+    * Additionally, if the struct is an object:
+    *   1. All properties must have default values.
+    *   2. None of the properties may share a name with the companion module's members.
     */
   def verify(definition: StructDefinition)(implicit registry: Registry, reporter: Reporter): Unit = {
     verifyPropertiesUnique(definition)
@@ -25,7 +28,8 @@ object StructConstraints {
     verifyOpenTypeParameters(definition)
 
     if (definition.isObject) {
-      verifyObjectProperties(definition)
+      verifyObjectDefaults(definition)
+      verifyObjectCompanionNames(definition)
     }
   }
 
@@ -110,9 +114,30 @@ object StructConstraints {
   /**
     * Verifies that the properties of the given object all have default values.
     */
-  private def verifyObjectProperties(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
+  private def verifyObjectDefaults(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
     definition.properties.filterNot(_.hasDefault).foreach {
       property => reporter.error(StructFeedback.Object.MissingDefault(definition, property))
+    }
+  }
+
+  /**
+    * Verifies that none of the properties of the given object share a name with its companion module's members.
+    *
+    * This constraint allows us to be a bit laxer when handling struct objects in scopes. Normally, a struct object's
+    * property would have to shadow a companion module's member. But this comes with two problems. First, accessing the
+    * member would at most be possible via imports. And second, the shadowing would make name resolution much more
+    * complex, especially when resolving absolute paths.
+    */
+  private def verifyObjectCompanionNames(definition: StructDefinition)(implicit reporter: Reporter): Unit = {
+    definition.companionModule.foreach { module =>
+      definition.properties.foreach { property =>
+        if (module.has(property.name, NameKind.Binding)) {
+          val positions = module.globalModule.getMemberPositions(property.name, NameKind.Binding)
+          positions.foreach { position =>
+            reporter.error(StructFeedback.Object.MemberNameTaken(definition, property.name, position))
+          }
+        }
+      }
     }
   }
 

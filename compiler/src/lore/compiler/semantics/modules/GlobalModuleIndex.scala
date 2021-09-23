@@ -1,5 +1,6 @@
 package lore.compiler.semantics.modules
 
+import lore.compiler.core.Position
 import lore.compiler.semantics.{NameKind, NamePath}
 import lore.compiler.syntax.DeclNode
 import lore.compiler.syntax.DeclNode.ModuleNode
@@ -61,7 +62,7 @@ class GlobalModuleIndex {
         // the module.
         val denestedModulePath = modulePath ++ denestedModuleNode.namePath
         val denestedModule = getOrCreateModule(denestedModulePath)
-        denestedModule.add(position)
+        denestedModule.addModulePosition(position)
         denestedModuleNode.members.foreach(add(_, denestedModulePath))
 
       case _ => parentModule.add(node)
@@ -73,7 +74,7 @@ class GlobalModuleIndex {
     * indexed module.
     */
   def add(name: NamePath, kind: NameKind): Unit = {
-    getOrCreateModule(name.parentOrEmpty).add(name.simpleName, kind)
+    getOrCreateModule(name.parentOrEmpty).add(name.simpleName, Position.unknown, kind)
   }
 
   /**

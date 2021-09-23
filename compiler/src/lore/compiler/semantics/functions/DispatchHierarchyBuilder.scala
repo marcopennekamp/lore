@@ -1,7 +1,6 @@
 package lore.compiler.semantics.functions
 
 import lore.compiler.core.CompilationException
-import lore.compiler.types.Fit
 import scalax.collection.Graph
 import scalax.collection.GraphEdge.DiEdge
 import scalax.collection.GraphPredef.EdgeAssoc
