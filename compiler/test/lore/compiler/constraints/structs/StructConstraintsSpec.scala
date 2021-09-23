@@ -7,6 +7,15 @@ import lore.compiler.test.BaseSpec
 class StructConstraintsSpec extends BaseSpec {
   private val fragmentBase = "constraints/structs"
 
+  "constraints/structs/companion-modules" should "be compiled with various companion module errors" in {
+    assertCompilationErrorSignatures(s"$fragmentBase/companion-modules.lore")(
+      (classOf[StructFeedback.CompanionModuleExpected], 4),
+      (classOf[StructFeedback.Object.MemberNameTaken], 15),
+      (classOf[StructFeedback.Object.MemberNameTaken], 17),
+      (classOf[StructFeedback.Object.CompanionModuleExpected], 27),
+    )
+  }
+
   "constraints/structs/duplicate-property" should "be compiled with a 'duplicate property' error" in {
     assertCompilationErrorSignatures(s"$fragmentBase/duplicate-property.lore")(
       (classOf[StructFeedback.DuplicateProperty], 2),

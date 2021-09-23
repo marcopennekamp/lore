@@ -1,0 +1,27 @@
+struct Foo()
+
+// Error: Foo does not have a companion module.
+let bar: String = Foo.bar
+
+
+object Bar
+  foo: Foo = Foo()
+  id: Int = 2
+  name: String = 'mind'
+end
+
+module Bar do
+  // Error: Bar already has a property `foo`.
+  let foo: String = 'hi'
+  // Error: Bar already has a property `id`.
+  let id: String = 'x18c'
+  let rule: String = 'cool'
+end
+
+
+object Baz
+  foo: Foo = Foo()
+end
+
+// Error: Baz has no property `bar`, nor a companion module which might define such a member.
+let bar2: String = Baz.bar

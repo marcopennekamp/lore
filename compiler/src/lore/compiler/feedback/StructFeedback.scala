@@ -16,10 +16,9 @@ object StructFeedback {
     override def message: String = s"The type $name doesn't have an associated constructor. It must be a struct."
   }
 
-  // TODO (modules): Test this error.
   case class CompanionModuleExpected(binding: StructBinding, memberName: String, override val position: Position) extends Feedback.Error(position) {
-    override def message: String = s"The struct ${binding.definition.name} does not have a companion module through" +
-      s" which a member called $memberName could be accessed."
+    override def message: String = s"The struct ${binding.definition.name} does not have a companion module which" +
+      s" might define a member $memberName."
   }
 
   object Shape {
@@ -61,21 +60,19 @@ object StructFeedback {
         s" assigned an appropriate value."
     }
 
-    // TODO (modules): Test this error.
-    case class MemberNameTaken(struct: StructDefinition, name: String, memberPosition: Position) extends Feedback.Error(memberPosition) {
-      override def message: String = s"The struct object ${struct.name.simpleName} already has a property $name." +
-        s" Companion module members and struct properties may not share names."
-    }
-
     case class NoConstructor(name: NamePath, override val position: Position) extends Feedback.Error(position) {
       override def message: String = s"The type $name is an object, which doesn't have a constructor. Objects cannot be" +
         s" constructed. You can refer to the object value simply by the variable $name."
     }
 
-    // TODO (modules): Test this error.
+    case class MemberNameTaken(struct: StructDefinition, name: String, memberPosition: Position) extends Feedback.Error(memberPosition) {
+      override def message: String = s"The struct object ${struct.name.simpleName} already has a property $name." +
+        s" Companion module members and struct properties may not share names."
+    }
+
     case class CompanionModuleExpected(binding: StructObjectBinding, memberName: String, override val position: Position) extends Feedback.Error(position) {
-      override def message: String = s"The struct object ${binding.definition.name} does not contain an object property" +
-        s" called $memberName, and does not have a companion module through which the member could be accessed."
+      override def message: String = s"The struct object ${binding.definition.name} does not have a property $memberName," +
+        s" nor a companion module which might define such a member."
     }
   }
 
