@@ -1,0 +1,59 @@
+trait Animal
+
+module Animal do
+  let id: Int = 0
+end
+
+
+struct Fox extends Animal
+  id: Int = 1
+end
+
+module Fox do
+  let id: Int = 2
+end
+
+
+object Garfield extends Animal
+  id: Int = 3
+end
+
+module Garfield do
+  let id2: Int = 4
+end
+
+
+module complex do
+  struct Container()
+
+  module Container do
+    object Box
+      id: Int = 5
+    end
+
+    module Box do
+      struct Container()
+      module Container do
+        object Box
+          id: Int = 6
+        end
+
+        module Box do
+          let id2: Int = 7
+        end
+      end
+    end
+  end
+end
+
+
+func test(): [Int] = [
+  Animal.id,
+  (Fox { }).id,
+  Fox.id,
+  Garfield.id,
+  Garfield.id2,
+  complex.Container.Box.id,
+  complex.Container.Box.Container.Box.id,
+  complex.Container.Box.Container.Box.id2,
+]

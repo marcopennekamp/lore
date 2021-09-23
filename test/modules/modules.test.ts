@@ -3,6 +3,11 @@ import { ListValue } from '../../runtime/src/lore/runtime/lists.ts'
 import { assertListEquals } from '../assertions.ts'
 import { LoreTest } from '../base.ts'
 
+Deno.test('modules/companions', async () => {
+  const result: ListValue<number> = await LoreTest.run('modules/companions.lore')
+  assertListEquals(result, [0, 1, 2, 3, 4, 5, 6, 7])
+})
+
 Deno.test('modules/homonymous-nested', async () => {
   const result: ListValue<string | number> = await LoreTest.run('modules/homonymous-nested.lore')
   assertListEquals(result, ['Foo', 17])
