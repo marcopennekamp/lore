@@ -1,3 +1,5 @@
+use lore.core._
+
 trait Animal
 
 struct Ox extends Animal

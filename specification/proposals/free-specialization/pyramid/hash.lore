@@ -9,6 +9,8 @@ end
 
 
 // (1) Protocol variant.
+// TODO: The Hash protocol should require the Equality protocol to be implemented as well! A hash code is useless
+//       (for our purposes) without a corresponding notion of equality.
 protocol Hash[A]
   func hash(value: A): Int = dynamic[Int]('Lore.values.hash', value)
 end

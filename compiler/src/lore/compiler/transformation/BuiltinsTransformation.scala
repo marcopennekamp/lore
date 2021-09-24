@@ -2,10 +2,11 @@ package lore.compiler.transformation
 
 import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.feedback.{ExpressionFeedback, MultiFunctionFeedback, Reporter, TypingFeedback}
+import lore.compiler.semantics.Registry
+import lore.compiler.semantics.core.CoreMultiFunction
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.BinaryOperator
-import lore.compiler.semantics.functions.{CallTarget, CoreMultiFunction}
-import lore.compiler.semantics.{Core, Registry}
+import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.types.{BasicType, SymbolType, TupleType}
 
 object BuiltinsTransformation {
@@ -18,7 +19,7 @@ object BuiltinsTransformation {
     arguments: Vector[Expression],
     position: Position,
   )(implicit registry: Registry, reporter: Reporter): Expression = {
-    registry.bindings.multiFunctions.get(cmf.name) match {
+    cmf.mf match {
       case Some(mf) =>
         val inputType = TupleType(arguments.map(_.tpe))
         mf.dispatch(
@@ -26,6 +27,9 @@ object BuiltinsTransformation {
           MultiFunctionFeedback.Dispatch.EmptyFit(mf, inputType, position),
           min => MultiFunctionFeedback.Dispatch.AmbiguousCall(mf, inputType, min, position),
         ).map { instance =>
+          // Even though we already checked during resolution that the core multi-function has the correct output type,
+          // the user might define a more general core function that dispatch might lead to here. We thus have to check
+          // once again that the output type is correct.
           val expression = Expression.Call(CallTarget.MultiFunction(mf), arguments, instance.signature.outputType, position)
           if (instance.signature.outputType </= cmf.outputType) {
             reporter.error(TypingFeedback.SubtypeExpected(instance.signature.outputType, cmf.outputType, expression))
@@ -58,11 +62,11 @@ object BuiltinsTransformation {
         Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position)
 
       case (_: SymbolType, _: SymbolType) => cmf match {
-        case Core.equal =>
+        case registry.core.equal =>
           // Because symbol values are interned, they can be compared by reference, using the equality operator.
           Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position)
 
-        case Core.less_than | Core.less_than_equal =>
+        case registry.core.less_than | registry.core.less_than_equal =>
           reporter.error(ExpressionFeedback.IllegalSymbolComparison(position))
           Expression.Hole(BasicType.Boolean, position)
 

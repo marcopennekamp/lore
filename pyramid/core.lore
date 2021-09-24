@@ -50,3 +50,19 @@ func hash(value: Any): Int = dynamic[Int]('Lore.values.hash', value)
  * interpolation.
  */
 func to_string(value: Any): String = dynamic[String]('Lore.values.toString', value)
+
+/**
+  * A run-time type. The struct type that backs this trait is defined ad-hoc in the runtime. Various introspection
+  * functions such as `type_of` and `subtype?` work with Types.
+  */
+trait Type
+
+/**
+  * Returns the run-time type of the given Lore value.
+  */
+func type_of(value: Any): Type = dynamic[Type]('Lore.types.introspection.typeOf', value)
+
+/**
+  * Whether `t1` is a subtype of `t2`.
+  */
+func subtype?(t1: Type, t2: Type): Boolean = dynamic[Boolean]('Lore.types.introspection.isSubtype', t1, t2)

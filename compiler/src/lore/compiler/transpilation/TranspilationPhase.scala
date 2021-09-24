@@ -28,14 +28,13 @@ object TranspilationPhase {
       case _ => Vector.empty
     }
 
-    // TODO (modules): Properly initialize introspection.
-    /* val introspectionInitialization = registry.getTypeScope.getTraitSchema(Introspection.typeName) match {
-      case None => throw CompilationException(s"The compiler should generate a trait '${Introspection.typeName}' for the introspection API.")
-      case Some(introspectionType) => Vector(
-        RuntimeApi.types.introspection.initialize(TypeTranspiler.transpile(introspectionType.representative)(Map.empty, symbolHistory)),
+    val introspectionInitialization = {
+      val tpe = TypeTranspiler.transpile(registry.core.Type.schema.get.representative)(Map.empty, symbolHistory)
+      Vector(
+        RuntimeApi.types.introspection.initialize(tpe),
         Target.Divider,
       )
-    } */
+    }
 
     val globalVariables = registry.bindings.globalVariables.values.toVector.flatMap(GlobalVariableTranspiler.transpile(_) :+ Target.Divider)
     val functions = registry.bindings.multiFunctions.values.toVector.flatMap(new MultiFunctionTranspiler(_).transpile() :+ Target.Divider)
@@ -44,6 +43,6 @@ object TranspilationPhase {
     // symbol history.
     val symbolDeclarations = SymbolTranspiler.transpile(symbolHistory) :+ Target.Divider
 
-    symbolDeclarations ++ schemaDeclarations ++ schemaDeclarationDeferredDeclarations /* ++ introspectionInitialization */ ++ globalVariables ++ functions
+    symbolDeclarations ++ schemaDeclarations ++ schemaDeclarationDeferredDeclarations ++ introspectionInitialization ++ globalVariables ++ functions
   }
 }

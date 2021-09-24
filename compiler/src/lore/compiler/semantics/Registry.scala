@@ -1,5 +1,6 @@
 package lore.compiler.semantics
 
+import lore.compiler.semantics.core.CoreDefinitions
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.modules.{GlobalModule, LocalModule}
 import lore.compiler.semantics.scopes._
@@ -14,6 +15,7 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
 case class Registry(
   types: Registry.Types,
   bindings: Registry.Bindings,
+  core: CoreDefinitions,
   schemaResolutionOrder: Registry.SchemaResolutionOrder,
 ) {
 

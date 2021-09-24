@@ -1,11 +1,10 @@
 package lore.compiler.resolution
 
-import lore.compiler.core.{CompilationException, Position}
+import lore.compiler.core.CompilationException
 import lore.compiler.feedback._
 import lore.compiler.semantics.Registry.Bindings
 import lore.compiler.semantics.scopes.{StructBinding, StructConstructorBinding, StructObjectBinding}
-import lore.compiler.semantics.{Introspection, NamePath, Registry}
-import lore.compiler.syntax.Node.NameNode
+import lore.compiler.semantics.{NamePath, Registry}
 import lore.compiler.syntax.{DeclNode, TypeDeclNode}
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions.{OptionExtension, VectorExtension}
@@ -53,19 +52,10 @@ object DeclarationResolver {
 
     verifyBindingsUnique(bindings4)
 
-    Registry(types, bindings4,schemaResolutionOrder)
-  }
+    val coreDefinitions = CoreDefinitionsResolver.resolve()(types, bindings4, reporter)
 
-  /**
-    * The run-time Introspection API requires the compiler to generate a special "Type" trait that represents actual
-    * Lore types. The trait cannot be defined in Pyramid because the compiler needs to call the initialization function
-    * of the Introspection API with the actual type.
-    *
-    * TODO (modules): Just define this in `lore.core` and have the compiler get the trait from the module.
-    */
-  private val introspectionTypeDeclarations: Vector[TypeDeclNode] = Vector(
-    DeclNode.TraitNode(NameNode(Introspection.typeName, Position.internal), Vector.empty, Vector.empty, Position.internal)
-  )
+    Registry(types, bindings4, coreDefinitions, schemaResolutionOrder)
+  }
 
   private def processTypeDeclaration(declaration: TypeDeclNode, declarations: TypeDeclarations)(implicit reporter: Reporter): TypeDeclarations = {
     if (isTypeNameTaken(declaration.fullName, declarations)) {
