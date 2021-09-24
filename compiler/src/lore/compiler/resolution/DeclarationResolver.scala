@@ -3,7 +3,6 @@ package lore.compiler.resolution
 import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.feedback._
 import lore.compiler.semantics.Registry.Bindings
-import lore.compiler.semantics.modules.ModuleDefinition
 import lore.compiler.semantics.scopes.{StructBinding, StructConstructorBinding, StructObjectBinding}
 import lore.compiler.semantics.{Introspection, NamePath, Registry}
 import lore.compiler.syntax.Node.NameNode
@@ -25,7 +24,7 @@ object DeclarationResolver {
   def resolve(moduleNodes: Vector[DeclNode.ModuleNode])(implicit reporter: Reporter): Registry = {
     val (localModules, globalModuleIndex) = ModuleResolver.resolve(moduleNodes)
     val moduleDefinitions = globalModuleIndex.modules.map {
-      module => module.name -> new ModuleDefinition(module.name, module)
+      module => module.name -> module
     }.toMap
     val bindings1: Registry.Bindings = Registry.Bindings(moduleDefinitions, Map.empty, Map.empty, Map.empty)
 

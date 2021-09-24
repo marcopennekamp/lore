@@ -3,7 +3,7 @@ package lore.compiler.feedback
 import lore.compiler.core.Position
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.modules.ModuleDefinition
+import lore.compiler.semantics.modules.GlobalModule
 import lore.compiler.types.FunctionType
 
 object ExpressionFeedback {
@@ -15,7 +15,7 @@ object ExpressionFeedback {
     override def message = s"The variable or member $access may not be mutated."
   }
 
-  case class IllegalModuleValue(module: ModuleDefinition, override val position: Position) extends Feedback.Error(position) {
+  case class IllegalModuleValue(module: GlobalModule, override val position: Position) extends Feedback.Error(position) {
     override def message: String = s"The binding ${module.name} is a module. Modules cannot be used directly as" +
       s" expressions."
   }

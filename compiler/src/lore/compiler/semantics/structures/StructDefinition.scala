@@ -2,7 +2,7 @@ package lore.compiler.semantics.structures
 
 import lore.compiler.core.Position
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.modules.{LocalModule, ModuleDefinition}
+import lore.compiler.semantics.modules.{GlobalModule, LocalModule}
 import lore.compiler.types.StructSchema
 
 class StructDefinition(
@@ -10,7 +10,7 @@ class StructDefinition(
   override val schema: StructSchema,
   val properties: Vector[StructPropertyDefinition],
   val isObject: Boolean,
-  val companionModule: Option[ModuleDefinition],
+  val companionModule: Option[GlobalModule],
   override val localModule: LocalModule,
   override val position: Position,
 ) extends DeclaredSchemaDefinition {

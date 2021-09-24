@@ -1,7 +1,7 @@
 package lore.compiler.semantics
 
 import lore.compiler.semantics.functions.MultiFunctionDefinition
-import lore.compiler.semantics.modules.{LocalModule, ModuleDefinition}
+import lore.compiler.semantics.modules.{GlobalModule, LocalModule}
 import lore.compiler.semantics.scopes._
 import lore.compiler.semantics.structures.SchemaDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
@@ -47,7 +47,7 @@ object Registry {
     def scope(localModule: LocalModule): LocalModuleTypeScope = LocalModuleTypeScope(localModule, this)
   }
 
-  type Modules = Map[NamePath, ModuleDefinition]
+  type Modules = Map[NamePath, GlobalModule]
   type GlobalVariables = Map[NamePath, GlobalVariableDefinition]
   type MultiFunctions = Map[NamePath, MultiFunctionDefinition]
   type StructBindings = Map[NamePath, StructBinding]

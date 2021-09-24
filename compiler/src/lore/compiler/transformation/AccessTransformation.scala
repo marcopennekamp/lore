@@ -4,7 +4,7 @@ import lore.compiler.core.Position
 import lore.compiler.feedback.{ExpressionFeedback, Feedback, Reporter, StructFeedback}
 import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.modules.ModuleDefinition
+import lore.compiler.semantics.modules.GlobalModule
 import lore.compiler.semantics.scopes._
 import lore.compiler.syntax.Node.{NameNode, NamePathNode}
 
@@ -47,7 +47,7 @@ object AccessTransformation {
   )(implicit bindingScope: BindingScope, reporter: Reporter): Option[(Binding, Vector[NameNode])] = {
     if (remaining.isEmpty) {
       return binding match {
-        case module: ModuleDefinition =>
+        case module: GlobalModule =>
           reporter.error(ExpressionFeedback.IllegalModuleValue(module, position))
           None
         case binding => Some((binding, remaining))
@@ -56,7 +56,7 @@ object AccessTransformation {
 
     val nameNode = remaining.head
 
-    def handleModule(module: ModuleDefinition) = {
+    def handleModule(module: GlobalModule) = {
       bindingScope
         .resolveGlobal(module.name + nameNode.value, nameNode.position)
         .flatMap(resolveAccessInstance(_, remaining.tail, nameNode.position))
@@ -72,7 +72,7 @@ object AccessTransformation {
     }
 
     binding match {
-      case module: ModuleDefinition => handleModule(module)
+      case module: GlobalModule => handleModule(module)
       case binding: StructConstructorBinding =>
         handleCompanionModule(binding, StructFeedback.CompanionModuleExpected(binding, nameNode.value, nameNode.position))
       case binding: StructObjectBinding =>

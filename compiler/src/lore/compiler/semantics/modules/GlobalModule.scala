@@ -1,20 +1,22 @@
 package lore.compiler.semantics.modules
 
 import lore.compiler.core.{CompilationException, Position}
+import lore.compiler.semantics.scopes.Binding
 import lore.compiler.semantics.{NameKind, NamePath}
 import lore.compiler.syntax.DeclNode.ModuleNode
 import lore.compiler.syntax.Node.NamePathNode
 import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
 
 /**
-  * A global entry in the [[GlobalModuleIndex]].
+  * A global module combines a module's definitions across all source fragments. It also represents modules as a
+  * palpable binding in scopes, so that module accesses can be resolved properly.
   */
-class GlobalModule(val name: NamePath) {
-  var modulePositions: Vector[Position] = Vector.empty
-
+class GlobalModule(val name: NamePath) extends Binding {
+  private var modulePositions: Vector[Position] = Vector.empty
   private var types: Map[String, Vector[Position]] = Map.empty
   private var bindings: Map[String, Vector[Position]] = Map.empty
 
+  def positions: Vector[Position] = modulePositions
   def typeNames: Set[String] = types.keySet
   def bindingNames: Set[String] = bindings.keySet
 
@@ -57,4 +59,6 @@ class GlobalModule(val name: NamePath) {
     case NameKind.Type => types
     case NameKind.Binding => bindings
   }
+
+  override def toString: String = name.toString
 }

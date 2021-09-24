@@ -3,7 +3,7 @@ package lore.compiler.semantics.scopes
 import lore.compiler.core.Position
 import lore.compiler.feedback.{Reporter, ScopeFeedback}
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.modules.ModuleDefinition
+import lore.compiler.semantics.modules.GlobalModule
 import lore.compiler.utils.CollectionExtensions.OptionExtension
 
 import scala.collection.mutable
@@ -82,7 +82,7 @@ trait Scope[A] {
     // To get the correct binding which we can jump off of, we have to search with the name path's head name.
     bindingScope.get(namePath.headName) match {
       case Some(binding) => binding match {
-        case module: ModuleDefinition => resolveGlobal(module.name ++ namePath.tail, position)
+        case module: GlobalModule => resolveGlobal(module.name ++ namePath.tail, position)
         case _ =>
           reporter.error(ScopeFeedback.ModuleExpected(namePath.headName, position))
           None

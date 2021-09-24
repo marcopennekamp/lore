@@ -132,7 +132,7 @@ object StructConstraints {
     definition.companionModule.foreach { module =>
       definition.properties.foreach { property =>
         if (module.has(property.name, NameKind.Binding)) {
-          val positions = module.globalModule.getMemberPositions(property.name, NameKind.Binding)
+          val positions = module.getMemberPositions(property.name, NameKind.Binding)
           positions.foreach { position =>
             reporter.error(StructFeedback.Object.MemberNameTaken(definition, property.name, position))
           }
