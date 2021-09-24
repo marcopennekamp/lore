@@ -1,4 +1,6 @@
+use lore.List
+
 // Even though concat returns a list, the compiler should recognize that the action implicitly returns a unit value.
 act test() do
-  concat([12], [15])
+  List.concat([12], [15])
 end

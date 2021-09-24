@@ -1,8 +1,12 @@
+use lore.Enum.map
+use lore.Option
+use lore.Option.[Some, None]
+use lore.Tuple
+
 struct Box[open +A, open +B]
   a: (Int, A, Real)
   b: Option[B]
 end
-
 
 trait Counter
 object Little extends Counter
@@ -11,14 +15,13 @@ object Many extends Counter
 
 type CounterBox = Box[Counter, Int]
 
-
 // These functions are convoluted on purpose to test open type arguments.
-func fluxify(box: CounterBox): Int = first(box.a) + perexonate(box.b)
+func fluxify(box: CounterBox): Int = Tuple.first(box.a) + perexonate(box.b)
 func fluxify(box: Box[Little, Int]): Int = 2 + fluxify.fixed[CounterBox](box)
 func fluxify(box: Box[Several, Int]): Int = 7 + fluxify.fixed[CounterBox](box)
 func fluxify(box: Box[Many, Int]): Int = 17 + fluxify.fixed[CounterBox](box)
 
-func perexonate(option: Option[Int]): Int = get(option, 0)
+func perexonate(option: Option[Int]): Int = Option.get(option, 0)
 
 
 func test(): [Int] = do

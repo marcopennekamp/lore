@@ -1,3 +1,7 @@
+use lore.core.to_string
+use lore.Map
+use lore.Tuple
+
 trait Thing[A, B,]
 type Thing2[C,] = Thing[C, C,]
 
@@ -41,8 +45,8 @@ func test(): [String] = do
   [
     ahoo.woo,
     ahoo2.ah,
-    second(tuple),
-    get(dict, 'Harbingers') |> to_string,
+    Tuple.second(tuple),
+    Map.get(dict, 'Harbingers') |> to_string,
     shape.name,
   ]
 end

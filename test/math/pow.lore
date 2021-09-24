@@ -1,3 +1,5 @@
+use lore.Math
+
 func pow(x: Real, exp: Int): Real = do
   let mut e = exp
   let mut result = 1.0
@@ -15,5 +17,5 @@ func test(): [Real] = [
   pow(3, 2),
   pow(0, 5),
   pow(pow(2, 2), 2),
-  pow(pow(2, floor(pow(2, 2))), 2),
+  pow(pow(2, Math.floor(pow(2, 2))), 2),
 ]

@@ -1,3 +1,5 @@
+use lore.Enum.map
+
 struct Box[+A](content: A)
 
 trait Price

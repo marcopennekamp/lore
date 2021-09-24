@@ -1,3 +1,6 @@
+use lore.core.to_string
+use lore.Enum._
+
 let default_name: String = 'John Doe'
 
 let complex_variable: [Int] = do

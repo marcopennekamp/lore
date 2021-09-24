@@ -1,5 +1,9 @@
-func less_than?(s1: Shape, s2: Shape): Boolean = area(s1) < area(s2)
-func less_than_equal?(s1: Shape, s2: Shape): Boolean = area(s1) <= area(s2)
+use lore.Enum._
+
+module lore.core do
+  func less_than?(s1: Shape, s2: Shape): Boolean = area(s1) < area(s2)
+  func less_than_equal?(s1: Shape, s2: Shape): Boolean = area(s1) <= area(s2)
+end
 
 func check(s1: Shape, s2: Shape): [String] = do
   let mut result: [String] = []

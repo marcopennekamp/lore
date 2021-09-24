@@ -1,3 +1,5 @@
+use lore.Enum.[filter, map]
+
 type Status = #ok | #error
 type Result[A] = %{ status: Status, result: A }
 

@@ -1,13 +1,18 @@
+use lore.core.to_string
+use lore.Enum.map
+use lore.Option.[Some, None]
+
 trait AerialPhenomenon
 object Bird extends AerialPhenomenon
 object Plane extends AerialPhenomenon
 object Dragon extends AerialPhenomenon
 
-func to_string(Some[Bird]): String = 'It\'s just a bird.'
-func to_string(Some[Plane]): String = 'My gosh, the pollution up there!'
-func to_string(Some[Dragon]): String = 'Oh shit, it\'s a dragon!'
-func to_string(Some[[Dragon]]): String = 'They\'re everywhere!'
-
+module lore.core do
+  func to_string(Some[Bird]): String = 'It\'s just a bird.'
+  func to_string(Some[Plane]): String = 'My gosh, the pollution up there!'
+  func to_string(Some[Dragon]): String = 'Oh shit, it\'s a dragon!'
+  func to_string(Some[[Dragon]]): String = 'They\'re everywhere!'
+end
 
 func test(): [String] = do
   let none = None

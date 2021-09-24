@@ -1,3 +1,5 @@
+use lore.Enum._
+
 func test(): [Real] = do
   let shapes = [
     BoundingBox(0, 10, -5, 20),

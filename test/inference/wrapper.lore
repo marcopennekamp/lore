@@ -1,3 +1,7 @@
+use lore.Enum.map
+use lore.List
+use lore.String
+
 struct Wrapper[-A, +B](function: A => B)
 
 @where A, B >: A, C
@@ -8,7 +12,7 @@ func test(): [String] = do
   map_wrapper(
     numbers,
     Wrapper(n => do
-      repeat('Hey!', n) |> string_join(' ')
+      List.repeat('Hey!', n) |> String.join(' ')
     end)
   )
 end

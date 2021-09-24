@@ -1,3 +1,5 @@
+use lore.Enum.flatten
+
 /**
  * Imagine a situation in which we want to save a struct. We have a macro that generates an implementation of a
  * function `save` as long as all the properties of the given struct can already be dispatched to some concrete

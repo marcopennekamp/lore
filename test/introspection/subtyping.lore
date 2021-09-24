@@ -18,10 +18,12 @@ let chiji: Crane = Crane('Chi-Ji', 5.51)
 let shape: %{ name: String, weight: Real } = %{ name: 'Peter', weight: 87.2 }
 
 func test(): [Boolean] = [
-  subtype?(type_of(1), type_of(1.5)),               // --> true
-  subtype?(type_of(1.5), type_of(1)),               // --> false
+  subtype?(type_of(1), type_of(1.5)),           // --> true
+  subtype?(type_of(1.5), type_of(1)),           // --> false
   // TODO: How to get the Animal trait type for introspection? We would have to add compiler support.
-  //subtype?(niuzao, Animal),                     // --> true
+  //       One idea would be to add a `TypeOf[A]` struct that extends Type and is handled by the runtime such
+  //       that the specified type argument `A` is taken as the run-time type.
+  //subtype?(niuzao, Animal),                   // --> true
   true,
   subtype?(type_of(niuzao), type_of(chiji)),    // --> false
   subtype?(type_of(chiji), type_of(niuzao)),    // --> false

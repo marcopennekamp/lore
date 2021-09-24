@@ -1,3 +1,5 @@
+use lore.Enum.map
+
 trait Animal
 struct Cat(fame: Real) extends Animal
 struct Dog(fame: Real) extends Animal

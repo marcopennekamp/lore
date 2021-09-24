@@ -1,7 +1,9 @@
+use lore.Math
+
 struct Copper(value: Int)
 struct Gold(value: Int)
 
-func transform(a: Copper): Gold = Gold(absolute(a.value) * 2)
+func transform(a: Copper): Gold = Gold(Math.absolute(a.value) * 2)
 func transform(as: [Copper]): [Gold] = for a <- as yield transform(a)
 
 func test(): [Gold] = transform([Copper(1), Copper(-5), Copper(10), Copper(-12)])

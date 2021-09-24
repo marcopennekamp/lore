@@ -1,3 +1,8 @@
+use lore.core.to_string
+use lore.Enum.[empty?, map, present?]
+use lore.Option
+use lore.Option._
+
 func test(): [String] = do
   let a = Some('hello options')
   let b = None

@@ -1,3 +1,5 @@
+use lore.Enum.map
+
 func hello(String | Int): String
 func hello(name: String): String = 'Hello, $name.'
 func hello(id: Int): String = 'Hello, anonymous #$id.'

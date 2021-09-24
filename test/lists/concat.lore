@@ -1,3 +1,5 @@
+use lore.List
+
 func print_list(list: [A]): String where A = 'Generic list: $list'
 func print_list(list: [Int]): String = 'Int list: $list'
 func print_list(list: [String | Int]): String = 'String/Int list: $list'
@@ -9,13 +11,13 @@ func test(): [String] = do
   let list = [10]
   results = results :+ print_list(list)
 
-  let merged = concat(list, ['test'])
+  let merged = List.concat(list, ['test'])
   results = results :+ print_list(merged)
 
-  let merged2 = concat(merged, [true, 'wow'])
+  let merged2 = List.concat(merged, [true, 'wow'])
   results = results :+ print_list(merged2)
 
-  let merged3 = concat(merged2, [15])
+  let merged3 = List.concat(merged2, [15])
   results = results :+ print_list(merged3)
 
   results

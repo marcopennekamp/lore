@@ -1,8 +1,17 @@
+use lore.core.to_string
+use lore.Enum.map
+
 struct IntBox(value: Int)
-func to_string(box: IntBox): String = to_string(box.value)
+
+module lore.core do
+  func to_string(box: IntBox): String = to_string(box.value)
+end
 
 object Empty
-func to_string(Empty): String = 'empty'
+
+module lore.core do
+  func to_string(Empty): String = 'empty'
+end
 
 object Mutable
   mut level: Int = 1
@@ -25,6 +34,7 @@ object Mindfunc
   func: String = 'func'
 end
 
+// TODO (modules): Same problem here with type aliases not defining a binding name in the local/global modules.
 type MutableAlias = Mutable
 
 

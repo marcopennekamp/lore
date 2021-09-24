@@ -1,3 +1,5 @@
+use lore.Enum.map
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Let's set the scene: Bertram Bunsnatcher, a rich industrialist, was found murdered in his cliff-side manor. There
 // are a number of suspects. Ten, to be precise. And Detective Truman Trout must find the culprit, as only one of them

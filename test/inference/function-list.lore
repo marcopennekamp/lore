@@ -1,3 +1,5 @@
+use lore.Enum.map
+
 func test(): [String] = do
   // TODO: Make the one-liner work. This requires us to combine tuple types in intersection types, as currently the
   //       function type is inferred to be: `((%{ foo: String }) & (%{ bar: String })) & (%{ foo: String })) => String`.

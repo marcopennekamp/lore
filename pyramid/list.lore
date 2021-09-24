@@ -104,6 +104,7 @@ module Enum do
   func size(list: [Any]): Int = List.length(list)
 
   func empty?(list: [Any]): Boolean = size(list) == 0
+  func present?(list: [Any]): Boolean = !empty?(list)
 
   @where A, B >: A, C
   func map(list: [A], f: B => C): [C] = for a <- list yield f(a)

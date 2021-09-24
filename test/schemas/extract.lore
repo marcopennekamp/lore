@@ -1,3 +1,5 @@
+use lore.core.to_string
+
 trait Crate[+A]
 func extract(Crate[A]): A where A
 

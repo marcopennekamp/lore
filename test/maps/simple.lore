@@ -1,3 +1,5 @@
+use lore.Tuple.[first, second]
+
 let dummy_map: #[String -> Int] = #['a' -> 0, 'b' -> 1, 'c' -> 2]
 
 func test(): [String] = do

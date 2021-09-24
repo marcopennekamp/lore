@@ -1,11 +1,16 @@
+use lore.core.to_string
+use lore.Enum.map
+
 trait Content
 object Cereal() extends Content
 object Blood() extends Content
 object Pudding() extends Content
 
-func to_string(Cereal): String = 'cereal'
-func to_string(Blood): String = 'blood'
-func to_string(Pudding): String = 'pudding'
+module lore.core do
+  func to_string(Cereal): String = 'cereal'
+  func to_string(Blood): String = 'blood'
+  func to_string(Pudding): String = 'pudding'
+end
 
 
 trait Container[+C]
@@ -20,9 +25,10 @@ struct Cup[+C <: Content] extends Container[C]
   exclusivity: Int
 end
 
-func to_string(bowl: Bowl[Content]): String = '${bowl.content} bowl'
-func to_string(cup: Cup[Content]): String = '${cup.content} cup'
-
+module lore.core do
+  func to_string(bowl: Bowl[Content]): String = '${bowl.content} bowl'
+  func to_string(cup: Cup[Content]): String = '${cup.content} cup'
+end
 
 func cereal(container: (Cereal, Int) => A): A where A = container(Cereal, 4)
 func blood(container: (Blood, Int) => A): A where A = container(Blood, 1)

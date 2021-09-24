@@ -29,6 +29,10 @@ module Option do
 
   @where B
   func get(None, alternative: B): B = alternative
+end
+
+module Enum do
+  use Option._
 
   /**
     * Returns true if the given option is None, and false otherwise.
