@@ -30,9 +30,18 @@ class GlobalModule(val name: NamePath) extends Binding {
       case node: ModuleNode => throw CompilationException(
         s"Module nodes must be denested when being added to the GlobalModule. Module name: ${node.namePathNode}. Position: ${node.position}."
       )
+      case node: DeclNode.StructNode => add(node.simpleName, node.position)
       case node: BindingDeclNode => add(node.simpleName, node.position, NameKind.Binding)
       case node: TypeDeclNode => add(node.simpleName, node.position, NameKind.Type)
     }
+  }
+
+  /**
+    * Adds both a type and a binding for the given name, e.g. for struct types and struct constructors/objects.
+    */
+  def add(name: String, position: Position): Unit = {
+    add(name, position, NameKind.Type)
+    add(name, position, NameKind.Binding)
   }
 
   def add(name: String, position: Position, nameKind: NameKind): Unit = {
