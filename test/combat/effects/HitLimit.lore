@@ -1,0 +1,19 @@
+module combat.effects
+
+struct HitLimit
+  mut hits: Int
+end
+
+type +HitLimit = StatusEffect & %{ limit: HitLimit }
+
+module StatusEffect do
+  domain effect: +HitLimit
+    func active?(): Boolean = effect.limit.hits > 0
+
+    act on_hit() do
+      if active?(effect)
+        effect.limit.hits -= 1
+      end
+    end
+  end
+end

@@ -1,0 +1,11 @@
+use lore.Tuple
+
+use combat.Scenario
+use combat.Simulation
+
+func test(): [Simulation.Result] = do
+  let scenarios = [Scenario.kaladin_vs_voidbringer(), Scenario.sadeas_vs_dalinar()]
+  for scenario <- scenarios
+    Simulation.simulate(Tuple.first(scenario), Tuple.second(scenario))
+  end
+end

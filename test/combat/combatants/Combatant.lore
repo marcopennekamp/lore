@@ -1,0 +1,34 @@
+module combat.combatants
+
+use lore.Enum.fold
+
+use combat.effects._
+use combat.stats._
+
+trait Combatant extends +Stats, +StatusEffects
+
+module Combatant do
+  domain combatant: Combatant
+    func name(): String
+
+    /**
+     * This is called once at the beginning of combat to give each combatant a chance to prepare.
+     */
+    act enter_combat() do end
+
+    act on_hit() do
+      StatusEffects.on_hit(combatant)
+    end
+
+    func stat(stat_label: StatLabelInt): Int = stat_impl(combatant, stat_label, Stats.base(combatant, stat_label))
+    func stat(stat_label: StatLabelReal): Real = stat_impl(combatant, stat_label, Stats.base(combatant, stat_label))
+
+    func stat_impl(stat_label: StatLabel, base: A): A where A = do
+      fold(
+        combatant.status_effects.effects,
+        base,
+        (result: A, effect) => StatusEffect.affect(effect, stat_label, result)
+      )
+    end
+  end
+end

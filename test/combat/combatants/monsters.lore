@@ -1,3 +1,8 @@
+module combat.combatants
+
+use combat.effects._
+use combat.stats._
+
 trait Monster extends Combatant
 
 struct Voidbringer extends Monster
@@ -13,10 +18,12 @@ struct Voidbringer extends Monster
   status_effects: StatusEffects = StatusEffects([])
 end
 
-domain voidbringer: Voidbringer
-  func name(): String = 'Voidbringer'
+module Combatant do
+  domain voidbringer: Voidbringer
+    func name(): String = 'Voidbringer'
 
-  act enter_combat() do
-    buff(voidbringer, create_armored(2, 3))
+    act enter_combat() do
+      StatusEffects.buff(voidbringer, Armored.create(2, 3))
+    end
   end
 end

@@ -1,29 +1,40 @@
-trait Weapon
-type +Weapon = %{ weapon: Weapon }
+module combat
 
-// Idea: Ranged weapons should do half or a third of the damage in melee range.
-trait RangedWeapon extends Weapon
-type +RangedWeapon = %{ weapon: RangedWeapon }
+use combat.stats._
 
-object Sword extends Weapon
-object Shardblade extends Weapon
-object Spear extends Weapon
-object Shardbow extends RangedWeapon
-object Bow extends RangedWeapon
+module weapons do
+  trait Weapon
+  type +Weapon = %{ weapon: Weapon }
 
-func weapon_strength(Weapon): Int
-func weapon_strength(Sword): Int = 7
-func weapon_strength(Shardblade): Int = 15
-func weapon_strength(Spear): Int = 5
-func weapon_strength(Shardbow): Int = 10
-func weapon_strength(Bow): Int = 4
+  // Idea: Ranged weapons should do half or a third of the damage in melee range.
+  trait RangedWeapon extends Weapon
+  type +RangedWeapon = %{ weapon: RangedWeapon }
 
-func weapon_range(RangedWeapon): Int
-func weapon_range(Shardbow): Int = 20
-func weapon_range(Bow): Int = 10
+  module Weapon do
+    object Sword extends Weapon
+    object Shardblade extends Weapon
+    object Spear extends Weapon
+    object Shardbow extends RangedWeapon
+    object Bow extends RangedWeapon
 
+    func strength(Weapon): Int
+    func strength(Sword): Int = 7
+    func strength(Shardblade): Int = 15
+    func strength(Spear): Int = 5
+    func strength(Shardbow): Int = 10
+    func strength(Bow): Int = 4
 
-func base_stat(entity: +Stats & +Weapon, #attack): Int = weapon_strength(entity.weapon)
+    func range(RangedWeapon): Int
+    func range(Shardbow): Int = 20
+    func range(Bow): Int = 10
+  end
+end
 
-func base_stat(entity: +Stats & +Weapon, #range): Int = 0
-func base_stat(entity: +Stats & +RangedWeapon, #range): Int = weapon_range(entity.weapon)
+module stats.Stats do
+  use combat.weapons._
+
+  func base(entity: +Stats & +Weapon, #attack): Int = Weapon.strength(entity.weapon)
+
+  func base(entity: +Stats & +Weapon, #range): Int = 0
+  func base(entity: +Stats & +RangedWeapon, #range): Int = Weapon.range(entity.weapon)
+end

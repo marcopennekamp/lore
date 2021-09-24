@@ -1,0 +1,49 @@
+module combat.combatants
+
+use combat.effects._
+use combat.stats._
+use combat.weapons._
+
+trait Hero extends Combatant, +Weapon
+
+struct Shardbearer extends Hero
+  name: String
+  stats: Stats
+  status_effects: StatusEffects = StatusEffects([])
+  open weapon: Weapon
+end
+
+module Combatant do
+  domain shardbearer: Shardbearer
+    func name(): String = shardbearer.name
+
+    act enter_combat() do
+      StatusEffects.buff(shardbearer, Armored.create(15, 3))
+    end
+  end
+end
+
+struct Radiant extends Hero
+  name: String
+
+  /**
+   * Infusion determines the number of combat turns that the radiant will be supported by Stormlight, starting
+   * from the beginning of combat.
+   */
+  infusion: Int = 5
+
+  stats: Stats
+  status_effects: StatusEffects = StatusEffects([])
+  weapon: Weapon
+end
+
+module Combatant do
+  domain radiant: Radiant
+    func name(): String = radiant.name
+
+    act enter_combat() do
+      StatusEffects.buff(radiant, Infusion.create(radiant.infusion))
+      StatusEffects.buff(radiant, Armored.create(3, 5))
+    end
+  end
+end

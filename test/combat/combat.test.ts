@@ -9,10 +9,10 @@ Deno.test('combat', async () => {
   assertIsList(result)
   const [scenario1, scenario2] = result.array
 
-  assertIsStruct(scenario1, 'SimulationVictory')
+  assertIsStruct(scenario1, 'combat.Simulation.Victory')
   const winner1 = (scenario1 as any).winner
-  assertIsStruct(winner1, 'Radiant')
+  assertIsStruct(winner1, 'combat.combatants.Radiant')
   assertEquals(winner1.name, 'Kaladin')
 
-  assertIsStruct(scenario2, 'SimulationStalemate')
+  assertIsStruct(scenario2, 'combat.Simulation.Stalemate')
 })

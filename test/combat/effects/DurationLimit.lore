@@ -1,0 +1,19 @@
+module combat.effects
+
+struct DurationLimit
+  mut duration: Int
+end
+
+type +DurationLimit = StatusEffect & %{ limit: DurationLimit }
+
+module StatusEffect do
+  domain effect: +DurationLimit
+    func active?(): Boolean = effect.limit.duration > 0
+
+    act on_update() do
+      if active?(effect)
+        effect.limit.duration -= 1
+      end
+    end
+  end
+end
