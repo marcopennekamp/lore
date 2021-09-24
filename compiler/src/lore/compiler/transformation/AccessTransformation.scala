@@ -105,7 +105,7 @@ object AccessTransformation {
     memberNames.foldLeft(instance) {
       case (expression, NameNode(memberName, position)) =>
         val memberType = new InferenceVariable
-        judgmentCollector.add(TypingJudgment.MemberAccess(memberType, instance.tpe, memberName, position))
+        judgmentCollector.add(TypingJudgment.MemberAccess(memberType, expression.tpe, memberName, position))
         Expression.UnresolvedMemberAccess(expression, memberName, memberType, position)
     }
   }
