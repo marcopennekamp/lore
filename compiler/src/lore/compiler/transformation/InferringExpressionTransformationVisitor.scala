@@ -128,11 +128,13 @@ class InferringExpressionTransformationVisitor(
       // Ensure that the value on the right can be assigned to the variable or member on the left.
       judgmentCollector.add(TypingJudgment.Subtypes(right.tpe, left.tpe, position))
 
-      val access = left match {
-        case access: Expression.Access => access
-        case _ => throw CompilationException("The left-hand-side expression of an assignment must be a variable or a member.")
+      left match {
+        case access: Expression.Access => Expression.Assignment(access, right, position)
+        case _ =>
+          // The left-hand-side expression of an assignment must be a variable or a member. The underlying issue, for
+          // example that a variable doesn't exist, will have been reported by now.
+          Expression.Hole(TupleType.UnitType, position)
       }
-      Expression.Assignment(access, right, position)
 
     // Arithmetic operations.
     case AdditionNode(_, _, position) => transformNumericOperation(BinaryOperator.Addition, left, right, position)
