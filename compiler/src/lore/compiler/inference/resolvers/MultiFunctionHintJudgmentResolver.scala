@@ -1,7 +1,6 @@
 package lore.compiler.inference.resolvers
 
-import lore.compiler.feedback.DispatchFeedback.EmptyFit
-import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
+import lore.compiler.feedback.{Feedback, MemoReporter, MultiFunctionFeedback, Reporter}
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.inference.InferenceOrder.InfluenceGraph
 import lore.compiler.inference._
@@ -113,7 +112,8 @@ object MultiFunctionHintJudgmentResolver extends JudgmentResolver[TypingJudgment
       }
     } else {
       Inference.logger.trace(s"Empty fit of `$judgment`:\n${results.mkString("\n")}")
-      reporter.error(EmptyFit(mf, Inference.instantiateCandidateType(assignments, TupleType(argumentTypes)), judgment.position))
+      val candidate = Inference.instantiateCandidateType(assignments, TupleType(argumentTypes))
+      reporter.error(MultiFunctionFeedback.Dispatch.EmptyFit(mf, candidate, judgment.position))
       None
     }
   }

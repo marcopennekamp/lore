@@ -29,7 +29,7 @@ case class FunctionBindingScope(signature: FunctionSignature, parent: BindingSco
   */
 class BlockBindingScope(parent: BindingScope) extends MutableScope[Binding] with BindingScope {
   override protected def optionalParent: Option[Scope[Binding]] = Some(parent)
-  def register(variable: Variable, position: Position)(implicit reporter: Reporter): Unit = {
+  def register(variable: LocalVariable, position: Position)(implicit reporter: Reporter): Unit = {
     super.register(variable.name, variable, position)
   }
 }

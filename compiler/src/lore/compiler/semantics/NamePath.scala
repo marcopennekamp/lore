@@ -2,15 +2,15 @@ package lore.compiler.semantics
 
 import lore.compiler.syntax.Node.NamePathNode
 
-case class NamePath(segments: Vector[NamePath.Segment]) {
-  val simpleName: String = segments.lastOption.map(_.name).getOrElse("")
-  val headName: String = segments.headOption.map(_.name).getOrElse("")
+case class NamePath(segments: Vector[String]) {
+  val simpleName: String = segments.lastOption.getOrElse("")
+  val headName: String = segments.headOption.getOrElse("")
 
   val length: Int = segments.length
   lazy val tail: NamePath = NamePath(segments.tail)
 
   def ++(other: NamePath): NamePath = NamePath(segments ++ other.segments)
-  def +(name: String): NamePath = NamePath(segments :+ NamePath.Segment(name))
+  def +(name: String): NamePath = NamePath(segments :+ name)
 
   /**
     * Returns a new NamePath with the last segment removed, essentially creating the parent of this name path. If this
@@ -28,16 +28,8 @@ case class NamePath(segments: Vector[NamePath.Segment]) {
 }
 
 object NamePath {
-  // TODO (modules): We can probably remove Segment and just use a Vector[String] for the NamePath's segments.
-  case class Segment(name: String) {
-    override val toString: String = name
-  }
-
-  def apply(names: String*): NamePath = NamePath(names.toVector.map(Segment))
-
-  def from(namePathNode: NamePathNode): NamePath = {
-    NamePath(namePathNode.segments.map(node => NamePath.Segment(node.value)))
-  }
+  def apply(names: String*): NamePath = NamePath(names.toVector)
+  def apply(namePathNode: NamePathNode): NamePath = NamePath(namePathNode.segments.map(_.value))
 
   val empty: NamePath = NamePath(Vector.empty)
 }

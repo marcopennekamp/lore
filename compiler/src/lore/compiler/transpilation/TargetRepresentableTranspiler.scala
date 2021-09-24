@@ -3,7 +3,7 @@ package lore.compiler.transpilation
 import lore.compiler.core.CompilationException
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.semantics.modules.ModuleDefinition
-import lore.compiler.semantics.scopes.{StructObjectBinding, Variable}
+import lore.compiler.semantics.scopes.{StructObjectBinding, LocalVariable}
 import lore.compiler.semantics.structures.StructConstructor
 import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.target.Target.TargetExpression
@@ -30,7 +30,7 @@ object TargetRepresentableTranspiler {
       case variable: GlobalVariableDefinition => supportLazy(RuntimeNames.globalVariable(variable), !variable.value.isLocalized)
       case mf: MultiFunctionDefinition => RuntimeNames.multiFunction(mf)
       case function: FunctionDefinition => RuntimeNames.functionDefinition(function)
-      case Variable(name, _, _) => RuntimeNames.localVariable(name)
+      case LocalVariable(name, _, _) => RuntimeNames.localVariable(name)
 
       case structObject: StructObjectBinding =>
         val definition = structObject.tpe.schema.definition

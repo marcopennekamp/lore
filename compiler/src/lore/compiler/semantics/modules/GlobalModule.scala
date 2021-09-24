@@ -7,11 +7,9 @@ import lore.compiler.syntax.Node.NamePathNode
 import lore.compiler.syntax.{BindingDeclNode, DeclNode, TypeDeclNode}
 
 /**
-  * An IndexedModule is a global entry in the [[GlobalModuleIndex]].
-  *
-  * TODO (modules): Rename to GlobalModule?
+  * A global entry in the [[GlobalModuleIndex]].
   */
-class IndexedModule(val name: NamePath) {
+class GlobalModule(val name: NamePath) {
   var modulePositions: Vector[Position] = Vector.empty
 
   private var types: Map[String, Vector[Position]] = Map.empty
@@ -28,7 +26,7 @@ class IndexedModule(val name: NamePath) {
     node match {
       case ModuleNode(NamePathNode(Vector(nameNode)), _, _, position) => add(nameNode.value, position, NameKind.Binding)
       case node: ModuleNode => throw CompilationException(
-        s"Module nodes must be denested when being added to the IndexedModule. Module name: ${node.namePathNode}. Position: ${node.position}."
+        s"Module nodes must be denested when being added to the GlobalModule. Module name: ${node.namePathNode}. Position: ${node.position}."
       )
       case node: BindingDeclNode => add(node.simpleName, node.position, NameKind.Binding)
       case node: TypeDeclNode => add(node.simpleName, node.position, NameKind.Type)

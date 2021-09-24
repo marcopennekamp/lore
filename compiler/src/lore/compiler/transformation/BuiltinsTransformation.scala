@@ -1,8 +1,7 @@
 package lore.compiler.transformation
 
 import lore.compiler.core.{CompilationException, Position}
-import lore.compiler.feedback.DispatchFeedback.{AmbiguousCall, EmptyFit}
-import lore.compiler.feedback.{ExpressionFeedback, Reporter, TypingFeedback}
+import lore.compiler.feedback.{ExpressionFeedback, MultiFunctionFeedback, Reporter, TypingFeedback}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.BinaryOperator
 import lore.compiler.semantics.functions.{CallTarget, CoreMultiFunction}
@@ -24,8 +23,8 @@ object BuiltinsTransformation {
         val inputType = TupleType(arguments.map(_.tpe))
         mf.dispatch(
           inputType,
-          EmptyFit(mf, inputType, position),
-          min => AmbiguousCall(mf, inputType, min, position),
+          MultiFunctionFeedback.Dispatch.EmptyFit(mf, inputType, position),
+          min => MultiFunctionFeedback.Dispatch.AmbiguousCall(mf, inputType, min, position),
         ).map { instance =>
           val expression = Expression.Call(CallTarget.MultiFunction(mf), arguments, instance.signature.outputType, position)
           if (instance.signature.outputType </= cmf.outputType) {
@@ -55,8 +54,8 @@ object BuiltinsTransformation {
     position: Position,
   )(implicit registry: Registry, reporter: Reporter): Expression = {
     (left.tpe, right.tpe) match {
-      // TODO (modules): Any and Nothing should lead to a multi-function call...
-      case (_: BasicType, _: BasicType) => Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position)
+      case (t1: BasicType, t2: BasicType) if t1.isPrimitive && t2.isPrimitive =>
+        Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position)
 
       case (_: SymbolType, _: SymbolType) => cmf match {
         case Core.equal =>

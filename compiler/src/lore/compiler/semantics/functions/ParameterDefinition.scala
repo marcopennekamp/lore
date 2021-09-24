@@ -1,7 +1,7 @@
 package lore.compiler.semantics.functions
 
 import lore.compiler.core.{Position, Positioned}
-import lore.compiler.semantics.scopes.Variable
+import lore.compiler.semantics.scopes.LocalVariable
 import lore.compiler.target.Target
 import lore.compiler.transpilation.RuntimeNames
 import lore.compiler.types.Type
@@ -30,6 +30,6 @@ object ParameterDefinition {
   case class NamedParameterDefinition(underlying: ParameterDefinition) {
     val name: String = underlying.name.get
     val tpe: Type = underlying.tpe
-    def asVariable: Variable = Variable(name, tpe, isMutable = false)
+    def asVariable: LocalVariable = LocalVariable(name, tpe, isMutable = false)
   }
 }

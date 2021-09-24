@@ -2,7 +2,7 @@ package lore.compiler.semantics.analysis
 
 import lore.compiler.semantics.expressions.{Expression, ExpressionVerificationVisitor, ExpressionVisitor}
 import lore.compiler.semantics.functions.CallTarget
-import lore.compiler.semantics.scopes.{StructObjectBinding, Variable}
+import lore.compiler.semantics.scopes.{StructObjectBinding, LocalVariable}
 import lore.compiler.semantics.structures.StructConstructor
 import lore.compiler.semantics.variables.GlobalVariableDefinition
 
@@ -29,7 +29,7 @@ object LocalizedExpression {
         case _: GlobalVariableDefinition => setFalse()
         case StructConstructor(_) => setFalse()
         case StructObjectBinding(_, _) => setFalse()
-        case Variable(_, _, _) =>
+        case LocalVariable(_, _, _) =>
       }
       case _: Expression.MultiFunctionValue => setFalse()
       case _: Expression.FixedFunctionValue => setFalse()

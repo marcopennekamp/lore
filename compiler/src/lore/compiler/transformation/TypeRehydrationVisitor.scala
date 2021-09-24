@@ -6,7 +6,7 @@ import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression._
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.members.Member
-import lore.compiler.semantics.scopes.{TypedBinding, Variable}
+import lore.compiler.semantics.scopes.{TypedBinding, LocalVariable}
 import lore.compiler.semantics.structures.StructConstructor
 import lore.compiler.types._
 
@@ -128,12 +128,12 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
   }
 
   private def instantiateBinding(binding: TypedBinding): TypedBinding = binding match {
-    case variable: Variable => instantiateVariable(variable)
+    case variable: LocalVariable => instantiateVariable(variable)
     case constructor: StructConstructor => StructConstructor(assignments.instantiate(constructor.structType).asInstanceOf[StructType])
     case v => v
   }
 
-  private def instantiateVariable(variable: Variable): Variable = variable.copy(tpe = assignments.instantiate(variable.tpe))
+  private def instantiateVariable(variable: LocalVariable): LocalVariable = variable.copy(tpe = assignments.instantiate(variable.tpe))
 
   /**
     * Instantiates the result type of the loop, simplifying [Unit] to Unit to cover "no result" loops.

@@ -5,7 +5,7 @@ import lore.compiler.inference.InferenceVariable
 import lore.compiler.semantics.analysis.LocalizedExpression
 import lore.compiler.semantics.functions.{CallTarget, FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
-import lore.compiler.semantics.scopes.{TypedBinding, Variable}
+import lore.compiler.semantics.scopes.{TypedBinding, LocalVariable}
 import lore.compiler.types._
 
 sealed trait Expression extends Positioned {
@@ -33,7 +33,7 @@ object Expression {
   case class Return(value: Expression, position: Position) extends Expression.Apply(BasicType.Nothing)
 
   case class VariableDeclaration(
-    variable: Variable,
+    variable: LocalVariable,
     value: Expression,
     position: Position,
   ) extends Expression.Apply(TupleType.UnitType)
@@ -218,5 +218,5 @@ object Expression {
     }
   }
 
-  case class Extractor(variable: Variable, collection: Expression)
+  case class Extractor(variable: LocalVariable, collection: Expression)
 }

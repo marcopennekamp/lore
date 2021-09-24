@@ -10,7 +10,7 @@ import lore.compiler.semantics.scopes.Binding
   */
 class ModuleDefinition(
   val name: NamePath,
-  val globalModule: IndexedModule,
+  val globalModule: GlobalModule,
 ) extends Binding {
   def has(memberName: String, nameKind: NameKind): Boolean = globalModule.has(memberName, nameKind)
 

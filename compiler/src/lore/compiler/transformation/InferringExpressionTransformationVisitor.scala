@@ -1,8 +1,7 @@
 package lore.compiler.transformation
 
 import lore.compiler.core._
-import lore.compiler.feedback.DispatchFeedback.{FixedFunctionAmbiguousCall, FixedFunctionEmptyFit}
-import lore.compiler.feedback.{ExpressionFeedback, Feedback, Reporter, StructFeedback}
+import lore.compiler.feedback.{ExpressionFeedback, Feedback, MultiFunctionFeedback, Reporter, StructFeedback}
 import lore.compiler.inference.{InferenceVariable, TypingJudgment}
 import lore.compiler.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.Registry
@@ -71,8 +70,8 @@ class InferringExpressionTransformationVisitor(
           val inputType = TupleType(typeExpressions.map(TypeExpressionEvaluator.evaluate).map(_.getOrElse(BasicType.Nothing)))
           mf.dispatch(
             inputType,
-            FixedFunctionEmptyFit(mf, inputType, position),
-            min => FixedFunctionAmbiguousCall(mf, inputType, min, position)
+            MultiFunctionFeedback.Dispatch.FixedFunctionEmptyFit(mf, inputType, position),
+            min => MultiFunctionFeedback.Dispatch.FixedFunctionAmbiguousCall(mf, inputType, min, position),
           ).map(instance => Expression.FixedFunctionValue(instance, position))
 
         case _ =>
@@ -109,7 +108,7 @@ class InferringExpressionTransformationVisitor(
           tpe
       }
 
-      val variable = Variable(nameNode.value, tpe, isMutable)
+      val variable = LocalVariable(nameNode.value, tpe, isMutable)
       scopeContext.currentScope.register(variable, nameNode.position)
       Expression.VariableDeclaration(variable, expression, position)
 
@@ -294,7 +293,7 @@ class InferringExpressionTransformationVisitor(
         val tpe = typeNode
           .flatMap(TypeExpressionEvaluator.evaluate)
           .getOrElse(new InferenceVariable)
-        val variable = Variable(nameNode.value, tpe, isMutable = false)
+        val variable = LocalVariable(nameNode.value, tpe, isMutable = false)
         scopeContext.currentScope.register(variable, nameNode.position)
         Expression.AnonymousFunctionParameter(variable.name, variable.tpe, position)
     }
@@ -352,7 +351,7 @@ class InferringExpressionTransformationVisitor(
       val elementType = new InferenceVariable
       judgmentCollector.add(TypingJudgment.ElementType(elementType, collection.tpe, position))
 
-      val variable = Variable(variableName, elementType, isMutable = false)
+      val variable = LocalVariable(variableName, elementType, isMutable = false)
       scopeContext.currentScope.register(variable, position)
       Expression.Extractor(variable, collection)
     }

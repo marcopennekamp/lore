@@ -100,9 +100,6 @@ object AccessTransformation {
     * expression, which will be resolved later.
     *
     * Note that `instance` is returned unchanged if `memberNames` is empty.
-    *
-    * TODO (modules): We can easily save on judgments and inference variables here if we immediately resolve members of
-    *                 fully instantiated types.
     */
   def transformMemberAccess(instance: Expression, memberNames: Vector[NameNode])(implicit judgmentCollector: JudgmentCollector): Expression = {
     memberNames.foldLeft(instance) {

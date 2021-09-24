@@ -15,7 +15,7 @@ import lore.compiler.syntax.Node.NamePathNode
   */
 class GlobalModuleIndex {
 
-  private var index: Map[NamePath, IndexedModule] = Map.empty
+  private var index: Map[NamePath, GlobalModule] = Map.empty
 
   /**
     * Adds the given DeclNode to the indexed module identified by `modulePath`, while also adding all of its members if
@@ -80,23 +80,23 @@ class GlobalModuleIndex {
   /**
     * Returns all global modules.
     */
-  def modules: Iterable[IndexedModule] = index.values
+  def modules: Iterable[GlobalModule] = index.values
 
   /**
     * Gets the global module with the given name, if it exists.
     */
-  def getModule(modulePath: NamePath): Option[IndexedModule] = index.get(modulePath)
+  def getModule(modulePath: NamePath): Option[GlobalModule] = index.get(modulePath)
 
   /**
     * Gets the global module with the given name if it exists, or creates a new one.
     */
-  private def getOrCreateModule(modulePath: NamePath): IndexedModule = {
+  private def getOrCreateModule(modulePath: NamePath): GlobalModule = {
     index.get(modulePath) match {
-      case Some(indexedModule) => indexedModule
+      case Some(globalModule) => globalModule
       case None =>
-        val indexedModule = new IndexedModule(modulePath)
-        index = index.updated(modulePath, indexedModule)
-        indexedModule
+        val globalModule = new GlobalModule(modulePath)
+        index = index.updated(modulePath, globalModule)
+        globalModule
     }
   }
 
@@ -116,7 +116,7 @@ class GlobalModuleIndex {
     has(name, NameKind.Type) || has(name, NameKind.Binding)
   }
 
-  def root: Option[IndexedModule] = index.get(NamePath.empty)
+  def root: Option[GlobalModule] = index.get(NamePath.empty)
 
   /**
     * Finds a path to the module member with the given name, either in the module identified by `modulePath`, or in the
@@ -132,8 +132,8 @@ class GlobalModuleIndex {
     }
 
     index.get(modulePath) match {
-      case Some(indexedModule) =>
-        if (indexedModule.has(memberName, nameKind)) {
+      case Some(globalModule) =>
+        if (globalModule.has(memberName, nameKind)) {
           Some(modulePath + memberName)
         } else fallback
 
