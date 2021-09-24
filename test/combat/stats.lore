@@ -3,13 +3,10 @@ module combat.stats
 /**
  * All combat stats for fighting entities.
  *
- * Note that you should use the accompanying base_stat function to access all stats except health, which may be accessed
- * directly. The reason is that select entities may want to overwrite the stats without changing the Stats object.
+ * Note that you should use the accompanying Stats.base function to access all stats. The reason is that select
+ * entities may want to overwrite their stats without changing the Stats object.
  */
 struct Stats
-  // TODO: Does this really belong here?
-  mut health: Int
-
   /**
    * The current health stat cannot surpass this maximum value.
    */
@@ -62,8 +59,6 @@ type StatLabelReal = #dodge
 
 module Stats do
   domain entity: +Stats
-    func alive?(): Boolean = entity.stats.health > 0
-
     func base(StatLabel): Int | Real
     func base(StatLabelInt): Int
 

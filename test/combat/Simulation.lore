@@ -5,7 +5,6 @@ use lore.Math
 
 use combat.combatants.Combatant
 use combat.effects._
-use combat.stats.Stats.alive?
 
 trait Result
 struct Victory(winner: Combatant) extends Result
@@ -23,6 +22,7 @@ end
 
 struct CombatantState
   combatant: Combatant
+  mut health: Real
   mut dodge: Real = 0.0
 end
 
@@ -39,10 +39,10 @@ func simulate(left: Combatant, right: Combatant): Result = do
   Combatant.enter_combat(left)
   Combatant.enter_combat(right)
 
-  let left_state = CombatantState { combatant = left }
-  let right_state = CombatantState { combatant = right }
+  let left_state = CombatantState { combatant = left, health = left.stats.maximum_health }
+  let right_state = CombatantState { combatant = right, health = right.stats.maximum_health }
 
-  while alive?(left) && alive?(right)
+  while alive?(left_state) && alive?(right_state)
     log('Turn $turn:')
 
     // Phase 1: Closing the distance.
@@ -56,11 +56,11 @@ func simulate(left: Combatant, right: Combatant): Result = do
     attempt_attack(right_state, left_state, distance)
 
     // Phase 3: Updates at the end of the turn.
-    end_turn(left)
-    end_turn(right)
+    end_turn(left_state)
+    end_turn(right_state)
 
-    log('${Combatant.name(left)} health: ${left.stats.health}')
-    log('${Combatant.name(right)} health: ${right.stats.health}')
+    log('${Combatant.name(left)} health: ${left_state.health}')
+    log('${Combatant.name(right)} health: ${right_state.health}')
 
     turn += 1
 
@@ -68,14 +68,19 @@ func simulate(left: Combatant, right: Combatant): Result = do
   end
 
   let result = cond
-    alive?(left) && !alive?(right) => Victory(left)
-    !alive?(left) && alive?(right) => Victory(right)
-    true                           => Stalemate(left, right)
+    alive?(left_state) && !alive?(right_state) => Victory(left)
+    !alive?(left_state) && alive?(right_state) => Victory(right)
+    true                                       => Stalemate(left, right)
   end
 
   Result.log(result)
   result
 end
+
+/**
+  * Whether the combatant is alive.
+  */
+func alive?(state: CombatantState): Boolean = state.health > 0
 
 /**
  * Whether the combatant is in range to attack, based on the entity's range stat.
@@ -111,7 +116,7 @@ act attempt_attack(attacker_state: CombatantState, defender_state: CombatantStat
     let dodged? = attempt_dodge(defender_state)
     if !dodged?
       let attack = Combatant.stat(attacker_state.combatant, #attack)
-      hit(attacker_state.combatant, defender_state.combatant, attack)
+      hit(attacker_state, defender_state, attack)
     end
   end
 end
@@ -119,30 +124,29 @@ end
 /**
  * Damages a target, taking into account defense but not dodge. Also triggers on_hit calls.
  */
-act hit(source: Combatant, target: Combatant, damage: Int) do
-  let defense = Combatant.stat(target, #defense)
+act hit(source: CombatantState, target: CombatantState, damage: Int) do
+  let defense = Combatant.stat(target.combatant, #defense)
   let damage_after_defense = Math.max(damage - defense, 0)
-  log('${Combatant.name(source)} attacks ${Combatant.name(target)} for $damage_after_defense damage given a defense of $defense.')
-  target.stats.health -= damage_after_defense
-  Combatant.on_hit(target)
+  log('${Combatant.name(source.combatant)} attacks ${Combatant.name(target.combatant)} for $damage_after_defense damage given a defense of $defense.')
+  target.health -= damage_after_defense
+  Combatant.on_hit(target.combatant)
 end
 
 /**
  * Performs post-attack regeneration and status effect updates provided the combatant is still alive.
  */
-act end_turn(combatant: Combatant) do
-  if alive?(combatant)
-    heal(combatant, Combatant.stat(combatant, #regeneration))
-    StatusEffects.update(combatant)
+act end_turn(state: CombatantState) do
+  if alive?(state)
+    heal(state, Combatant.stat(state.combatant, #regeneration))
+    StatusEffects.update(state.combatant)
   end
 end
 
-act heal(target: Combatant, amount: Int) do
-  let stats = target.stats
-  let old_health = stats.health
-  stats.health = Math.min(stats.health + amount, stats.maximum_health)
-  if stats.health > old_health
-    log('${Combatant.name(target)} is healed by ${stats.health - old_health} points.')
+act heal(target: CombatantState, amount: Int) do
+  let old_health = target.health
+  target.health = Math.min(target.health + amount, target.combatant.stats.maximum_health)
+  if target.health > old_health
+    log('${Combatant.name(target.combatant)} is healed by ${target.health - old_health} points.')
   end
 end
 
