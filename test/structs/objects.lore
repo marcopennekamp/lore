@@ -34,7 +34,6 @@ object Mindfunc
   func: String = 'func'
 end
 
-// TODO (modules): Same problem here with type aliases not defining a binding name in the local/global modules.
 struct MutableAlias = Mutable
 
 
