@@ -52,9 +52,11 @@ object ModuleResolver {
     val localBindingNames: Set[String] = {
       moduleNode.members.flatMap {
         case node: DeclNode.ModuleNode => Some(node.namePath.headName)
-        case node: BindingDeclNode => Some(node.simpleName)
-        // Structs always have a constructor or an object and thus also define binding names.
+        // Structs always have a constructor or an object and thus also define binding names. The same applies to
+        // struct aliases.
         case node: DeclNode.StructNode => Some(node.simpleName)
+        case node: DeclNode.AliasNode if node.isStructAlias => Some(node.simpleName)
+        case node: BindingDeclNode => Some(node.simpleName)
         case _ => None
       }.toSet
     }

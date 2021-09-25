@@ -8,6 +8,7 @@ import lore.compiler.types.AliasSchema
 class AliasDefinition(
   override val name: NamePath,
   override val schema: AliasSchema,
+  val isStructAlias: Boolean,
   override val localModule: LocalModule,
   override val position: Position,
 ) extends SchemaDefinition

@@ -172,10 +172,14 @@ class FragmentParser(implicit fragment: Fragment) {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Type Declarations.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  private def typeDeclaration[_: P]: P[TypeDeclNode] = P(`type` | `trait` | struct | `object`)
+  private def typeDeclaration[_: P]: P[TypeDeclNode] = P(alias | `trait` | struct | `object`)
 
-  private def `type`[_: P]: P[DeclNode.AliasNode] = {
-    P(Index ~ "type" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(typeParameterParser.simpleParameter) ~ "=" ~ typeExpression ~ Index).map(withPosition(DeclNode.AliasNode))
+  private def alias[_: P]: P[DeclNode.AliasNode] = {
+    def alias(keyword: => P[Unit], isStructAlias: Boolean) = {
+      P(Index ~~ keyword ~~ Space.WS1 ~~ typeName ~~ Space.WS ~~ typeVariables(typeParameterParser.simpleParameter) ~ "=" ~ typeExpression ~~ Index)
+        .map(withPosition((nameNode, typeVariables, tpe, position) => DeclNode.AliasNode(nameNode, typeVariables, tpe, isStructAlias, position)))
+    }
+    P(alias("type", isStructAlias = false) | alias("struct", isStructAlias = true))
   }
 
   private def `trait`[_: P]: P[DeclNode.TraitNode] = {

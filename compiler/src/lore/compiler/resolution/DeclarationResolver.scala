@@ -149,7 +149,7 @@ object DeclarationResolver {
 
     types.schemas.flatMap {
       case (name, schema: StructSchema) => getByType(name, schema.representative, schema.parameters)
-      case (name, schema: AliasSchema) =>
+      case (name, schema: AliasSchema) if schema.definition.isStructAlias =>
         Some(schema.representative)
           .filterType[StructType]
           .flatMap(tpe => getByType(name, tpe, schema.parameters))

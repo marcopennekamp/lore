@@ -14,7 +14,9 @@ object AliasDefinitionResolver {
     val schema = types.schemas.get(node.fullName).filterType[AliasSchema].getOrElse(
       throw CompilationException(s"The type schema for alias ${node.fullName} should be registered by now.")
     )
-    new AliasDefinition(node.fullName, schema, node.localModule, node.nameNode.position)
+    val definition = new AliasDefinition(node.fullName, schema, node.isStructAlias, node.localModule, node.nameNode.position)
+    schema.definition = definition
+    definition
   }
 
 }

@@ -56,12 +56,16 @@ Type constructors have the following **precedence** (lowest priority first):
 
 A **type alias** turns any type into a named type available in the global scope. They may have any number of **type parameters**. Type aliases don't carry additional semantics, which makes them **referentially transparent**.
 
+A **struct type alias** goes a step further: It aliases the type, but also provides the struct constructor/object value under the new name.
+
 ###### Syntax Example
 
 ```
 type Unit = ()
 type +Position = %{ position: Position }
 type Dictionary[V] = String -> V
+
+struct IntFunction[A] = Function[A, Int]
 ```
 
 

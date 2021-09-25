@@ -8,11 +8,11 @@ import lore.compiler.parsing.ParsingPhase
 import lore.compiler.resolution.ResolutionPhase
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.MultiFunctionDefinition
-import lore.compiler.semantics.structures.DeclaredSchemaDefinition
+import lore.compiler.semantics.structures.{AliasDefinition, DeclaredSchemaDefinition}
 import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.transformation.TransformationPhase
 import lore.compiler.transpilation.TranspilationPhase
-import lore.compiler.types.DeclaredSchema
+import lore.compiler.types.{AliasSchema, DeclaredSchema}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import lore.compiler.utils.Timer.timed
 
@@ -65,13 +65,13 @@ object LoreCompiler {
   }
 
   private def analyze(implicit registry: Registry, reporter: Reporter): Unit = {
-    val declaredSchemaDefinitions = registry.schemasInOrder.map(_._2).filterType[DeclaredSchema].map(_.definition)
-    val globalVariables = registry.bindings.globalVariables.values.toVector
-    val multiFunctions = registry.bindings.multiFunctions.values.toVector
-
-    declaredSchemaDefinitions.foreach(analyze(_, reporter))
-    globalVariables.foreach(analyze(_, reporter))
-    multiFunctions.foreach(analyze(_, reporter))
+    registry.schemasInOrder.foreach {
+      case (_, schema: DeclaredSchema) => analyze(schema.definition, reporter)
+      case (_, schema: AliasSchema) => analyze(schema.definition, reporter)
+      case _ =>
+    }
+    registry.bindings.globalVariables.values.foreach(analyze(_, reporter))
+    registry.bindings.multiFunctions.values.foreach(analyze(_, reporter))
   }
 
   private def analyze(definition: DeclaredSchemaDefinition, parentReporter: Reporter)(implicit registry: Registry): Unit = {
@@ -81,9 +81,15 @@ object LoreCompiler {
     )
   }
 
-  private def analyze(definition: GlobalVariableDefinition, parentReporter: Reporter)(implicit registry: Registry): Unit = {
+  private def analyze(alias: AliasDefinition, parentReporter: Reporter)(implicit registry: Registry): Unit = {
     MemoReporter.chain(parentReporter)(
-      implicit reporter => TransformationPhase.process(definition),
+      implicit reporter => ConstraintsPhase.process(alias),
+    )
+  }
+
+  private def analyze(variable: GlobalVariableDefinition, parentReporter: Reporter)(implicit registry: Registry): Unit = {
+    MemoReporter.chain(parentReporter)(
+      implicit reporter => TransformationPhase.process(variable),
     )
   }
 

@@ -352,11 +352,11 @@ let b = B()
 let a = construct(A, b)
 ```
 
-A **type alias** also defines a corresponding constructor function value:
+A **struct type alias** also defines a corresponding constructor function value:
 
 ```
 struct Box[+A](value: A)
-type StringBox = Box[String]
+struct StringBox = Box[String]
 
 let box = StringBox('I am in a box.')
 ```

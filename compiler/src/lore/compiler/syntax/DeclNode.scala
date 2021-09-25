@@ -144,6 +144,7 @@ object DeclNode {
     nameNode: NameNode,
     typeVariables: Vector[TypeVariableNode],
     tpe: TypeExprNode,
+    isStructAlias: Boolean,
     position: Position,
   ) extends TypeDeclNode with SimpleNamedDeclNode
 

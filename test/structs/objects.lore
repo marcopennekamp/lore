@@ -35,7 +35,7 @@ object Mindfunc
 end
 
 // TODO (modules): Same problem here with type aliases not defining a binding name in the local/global modules.
-type MutableAlias = Mutable
+struct MutableAlias = Mutable
 
 
 func test(): [String] = do

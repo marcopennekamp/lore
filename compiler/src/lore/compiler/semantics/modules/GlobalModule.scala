@@ -31,6 +31,7 @@ class GlobalModule(val name: NamePath) extends Binding {
         s"Module nodes must be denested when being added to the GlobalModule. Module name: ${node.namePathNode}. Position: ${node.position}."
       )
       case node: DeclNode.StructNode => add(node.simpleName, node.position)
+      case node: DeclNode.AliasNode if node.isStructAlias => add(node.simpleName, node.position)
       case node: BindingDeclNode => add(node.simpleName, node.position, NameKind.Binding)
       case node: TypeDeclNode => add(node.simpleName, node.position, NameKind.Type)
     }

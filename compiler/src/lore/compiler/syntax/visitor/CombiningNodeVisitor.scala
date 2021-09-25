@@ -63,7 +63,7 @@ object CombiningNodeVisitor {
         val result = concat(visit(lowerBound), visit(upperBound))
         visitor.visit(node, result)
 
-      case DeclNode.AliasNode(_, typeVariables, tpe, _) =>
+      case DeclNode.AliasNode(_, typeVariables, tpe, _, _) =>
         val result = concat(visit(typeVariables), visit(tpe))
         visitor.visit(node, result)
 

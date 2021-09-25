@@ -7,12 +7,9 @@ struct Function[-A, +B](f: A => B)
 @where A, B, V <: A
 func apply(fun: Function[A, B], v: V): B = fun.f(v)
 
-// TODO (modules): Tricky. If we want type aliases to provide struct bindings, we have to somehow tune binding name
-//                 resolution such that a type alias defines a binding, but ONLY if the type that the type alias points
-//                 to is a struct.
-type StringFunction[A] = Function[A, String]
-type IntConsumer[B] = Function[Int, B]
-type Int2IntFunction = Function[Int, Int]
+struct StringFunction[A] = Function[A, String]
+struct IntConsumer[B] = Function[Int, B]
+struct Int2IntFunction = Function[Int, Int]
 
 
 func test(): [String] = do
