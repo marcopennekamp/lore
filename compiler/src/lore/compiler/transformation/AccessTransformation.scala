@@ -17,18 +17,20 @@ object AccessTransformation {
     * If the full path refers to a module member or a local binding, without any actual member accesses, the binding is
     * processed with `processSingle`. Otherwise, if only a part of the name path refers to a sought binding and the
     * rest of the path is a member access chain, the binding is interpreted as an instance and processed with
-    * `processInstance`, before the required member access expressions are built.
+    * `processInstance`, before the required member access expressions are built, and finally `processAccessed` is
+    * invoked to handle the resulting full member access expression.
     */
   def transform(
     processSingle: Binding => Option[Expression],
     processInstance: Binding => Option[Expression],
+    processAccessed: Expression => Option[Expression],
   )(namePathNode: NamePathNode)(implicit bindingScope: BindingScope, judgmentCollector: JudgmentCollector, reporter: Reporter): Option[Expression] = {
     val headNameNode = namePathNode.segments.head
     bindingScope.resolve(headNameNode.value, headNameNode.position).flatMap { initialBinding =>
       resolveAccessInstance(initialBinding, namePathNode.segments.tail, headNameNode.position).flatMap {
         case (binding, memberNames) =>
           if (memberNames.isEmpty) processSingle(binding)
-          else processInstance(binding).map(transformMemberAccess(_, memberNames))
+          else processInstance(binding).map(transformMemberAccess(_, memberNames)).flatMap(processAccessed)
       }
     }
   }
@@ -91,7 +93,7 @@ object AccessTransformation {
   def transform(
     process: Binding => Option[Expression],
   )(namePathNode: NamePathNode)(implicit bindingScope: BindingScope, judgmentCollector: JudgmentCollector, reporter: Reporter): Option[Expression] = {
-    transform(process, process)(namePathNode)
+    transform(process, process, Some(_))(namePathNode)
   }
 
   /**

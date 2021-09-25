@@ -273,7 +273,8 @@ class InferringExpressionTransformationVisitor(
 
       AccessTransformation.transform(
         handleSingleBinding,
-        BindingProcessors.accessCoercion(namePathNode.position).andThen(_.map(handleValueCall)),
+        BindingProcessors.accessCoercion(namePathNode.position),
+        expression => Some(handleValueCall(expression)),
       )(namePathNode).getOrElse(Expression.Hole(BasicType.Nothing, position))
 
     case DynamicCallNode(nameLiteral, resultTypeNode, _, position) =>
