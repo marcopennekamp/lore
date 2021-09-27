@@ -1,0 +1,105 @@
+module Tokenizer
+
+use lore.Enum.[map, present?]
+use lore.IO.println
+use lore.Number
+use lore.Option
+use lore.Option.[Some, None, or_else]
+use lore.String
+use lore.Tuple
+
+use Token.[Operand, Operator]
+
+type Position = Int
+
+func tokenize(term: String): Option[[Token]] = do
+  let mut position = 0
+  let mut tokens: [Token] = []
+  let term_length = String.length(term)
+
+  while position < term_length
+    position = skip_whitespace(term, position)
+
+    // TODO (calculator): This fails with the following error: "The multi-function call lore.Tuple.first at this site
+    //                    has an empty fit. We cannot find a function of that name that would accept the given
+    //                    arguments with the type ((Operand, Int) | (Operator, Int))." To compile, we have to simplify
+    //                    tuples in sum and intersection types. (Or, more generally, simplify co- and contravariant
+    //                    positions.)
+    /*
+    let result =
+      try_operand(term, position)
+        |> or_else(() => try_operator(term, position))
+    */
+
+    // TODO (case): This could be an `or_else` and `map`.
+    let result_tuple = do
+      let result1 = try_operand(term, position)
+      if present?(result1)
+        Option.get(result1)
+      end else
+        let result2 = try_operator(term, position)
+        if present?(result2)
+          Option.get(result2)
+        end else
+          return None
+        end
+      end
+    end
+
+    // TODO (case): This is a little awkward due to missing destruction of tuples.
+    // It could read: `(let token, position) = result` or `let (token, ^position) = result` without the assignment
+    // pattern matching.
+    let token = Tuple.first(result_tuple)
+    tokens = tokens :+ token
+    position = Tuple.second(result_tuple)
+  end
+
+  Some(tokens)
+end
+
+func skip_whitespace(term: String, position: Position): Position = do
+  let mut pos = position
+  let term_length = String.length(term)
+  while pos < term_length && String.force_at(term, pos) |> String.whitespace?
+    pos += 1
+  end
+  pos
+end
+
+func try_operand(term: String, position: Position): Option[(Operand, Position)] = do
+  let mut number_string = ''
+  let mut pos = position
+  let term_length = String.length(term)
+
+  // TODO (calculator): It's obviously not ideal that we have to invoke `force_at` twice here. This seems like a
+  //                    language design deficit.
+  while pos < term_length && String.force_at(term, pos) |> String.digits?
+    number_string = String.concat(number_string, String.force_at(term, pos))
+    pos += 1
+  end
+
+  // If not a single digit has been parsed, `Number.parse` will consume the empty string and return None.
+  // TODO (syntax): This is essentially a trailing lambda.
+  number_string |> Number.parse |> map(number => do
+    // TODO (calculator): The following fails, likely because the tuple construction is parsed as a second function
+    //                    call argument list. (That is, the parser sees `Operand(number)(operand, pos)`.)
+    //let operand = Operand(number)
+    //(operand, pos)
+    (Operand(number), pos)
+  end)
+end
+
+func try_operator(term: String, position: Position): Option[(Operator, Position)] = do
+  let char = String.force_at(term, position)
+
+  // TODO (case): This could be a case expression.
+  let operator = cond
+    char == '+' => Operator.Add
+    char == '-' => Operator.Sub
+    char == '*' => Operator.Mul
+    char == '/' => Operator.Div
+    true        => return None
+  end
+
+  Some((operator, position + 1))
+end

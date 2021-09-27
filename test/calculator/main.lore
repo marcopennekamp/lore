@@ -1,0 +1,12 @@
+use lore.Enum.map
+use lore.Option
+
+func test(): [Real] = [
+  '',
+  '1 2 +',
+  '1 2 3 * +',
+  '3 30 / 5 /',
+  '2 3 * 4 0 - - 9 + 7 5 * /',
+] |> map(process)
+
+func process(term: String): Real = term |> Tokenizer.tokenize |> Option.get([]) |> Calculator.evaluate

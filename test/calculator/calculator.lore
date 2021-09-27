@@ -1,0 +1,58 @@
+module Calculator
+
+use lore.Enum.empty?
+use lore.List
+
+use Token._
+use Token.Operator._
+
+struct Stack
+  mut elements: [Real]
+end
+
+module Stack do
+  domain stack: Stack
+    func push(value: Real): Unit = do
+      stack.elements = stack.elements :+ value
+    end
+
+    func pop(): Real = do
+      // For now, instead of throwing an error when not enough elements are on the stack to perform an operation, we
+      // assume an endless well of zeroes.
+      if empty?(stack.elements)
+        return 0
+      end
+
+      let result = List.last(stack.elements)
+      stack.elements = List.init(stack.elements)
+      result
+    end
+  end
+end
+
+func evaluate(tokens: [Token]): Real = do
+  let stack = Stack([])
+
+  for token <- tokens
+    handle(token, stack)
+  end
+
+  Stack.pop(stack)
+end
+
+func handle(token: Token, stack: Stack): Unit
+
+func handle(operand: Operand, stack: Stack): Unit = do
+  Stack.push(stack, operand.value)
+end
+
+func handle(Add, stack: Stack): Unit = apply_binary_operator((a, b) => a + b, stack)
+func handle(Sub, stack: Stack): Unit = apply_binary_operator((a, b) => a - b, stack)
+func handle(Mul, stack: Stack): Unit = apply_binary_operator((a, b) => a * b, stack)
+func handle(Div, stack: Stack): Unit = apply_binary_operator((a, b) => a / b, stack)
+
+func apply_binary_operator(f: (Real, Real) => Real, stack: Stack): Unit = do
+  let a = Stack.pop(stack)
+  let b = Stack.pop(stack)
+  Stack.push(stack, f(a, b))
+end

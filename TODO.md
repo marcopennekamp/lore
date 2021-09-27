@@ -2,12 +2,17 @@
 
 #### Features
 
+- Write calculator functional test.
+  - Clear all `TODO (calculator)` entries.
+- Remove the need for `end else` by requiring a `then`'s `else` to occur without a line terminator.
+  - We can later relax this rule again when introducing indentation-aided parsing.
 - Implement a vector backend for lists.
 - Fix map types and values:
   - Add clear covariance/contravariance type semantics.
   - Make maps immutable and support this in the runtime.
   - Implement a clear appends operation for maps and make them generally usable.
 - Add pattern matching in `case` expressions, anonymous function parameters, variable declarations, and the left-hand side of assignments (e.g. for assigning tuple values to mutable variables).
+  - Clear all `TODO (case)` entries.
 - Add "global specialization"/"trait implementation" for tuples, lists, maps, shapes, traits, and structs.
   - This will allow us to type lists, for example, as Enums, and so on.
 - Possibly add protocols. (Also see the specification proposal.)
@@ -28,6 +33,7 @@
       - `cond` (and later `case`) requiring `do..end` for blocks, which adds serious visual noise.
       - Concrete actions require the `do` keyword to disambiguate them from abstract actions. With significant indentation, this `do` requirement would only be needed for empty actions, where indentation-aided parsing cannot rely on an indented expression. On the other hand, the `do..end` syntax is currently consistently applied to block functions and actions. We might want to keep this requirement for stylistic reasons.
   - Consider renaming the module keyword to `mod`, which has the added benefit of being on the same column as `use`. This might be visually more pleasant.
+  - Clear all `TODO (syntax)` entries.
 - Implement some form of ranges for index iteration using `for`.
 - Rethink properties: I don't like how shape properties are orthogonal to multi-functions right now. To use a shape, one is forced to ultimately give a property to an implementing struct. It would be much superior if properties could be declared "virtually", allowing traits to implement properties via some sort of function (perhaps even with dispatch on the accessed type). This feature should also simultaneously solve the question of "virtual/computed properties" posed in the geometry.lore example.
   - This would effectively mean that property types are always changeable and would either bar these kinds of properties to be open or would mean that we'd have to (a) rebuild the type each time the struct is used in dispatch or (b) disable the dispatch cache for multi-functions with shape types. Disallowing "virtual" properties to be open seems like an acceptable compromise, as the other options are far too detrimental on performance.
