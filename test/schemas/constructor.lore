@@ -2,9 +2,9 @@ use lore.core.to_string
 use lore.Enum.map
 
 trait Content
-object Cereal() extends Content
-object Blood() extends Content
-object Pudding() extends Content
+object Cereal extends Content
+object Blood extends Content
+object Pudding extends Content
 
 module lore.core do
   func to_string(Cereal): String = 'cereal'

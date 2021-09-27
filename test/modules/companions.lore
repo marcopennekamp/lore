@@ -14,7 +14,7 @@ module Fox do
 end
 
 
-object Garfield extends Animal
+object Garfield extends Animal do
   id: Int = 3
 end
 
@@ -27,14 +27,14 @@ module complex do
   struct Container()
 
   module Container do
-    object Box
+    object Box do
       id: Int = 5
     end
 
     module Box do
       struct Container()
       module Container do
-        object Box
+        object Box do
           id: Int = 6
         end
 

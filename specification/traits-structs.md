@@ -108,10 +108,13 @@ let option: Option[Int] = None
 
 // Objects (None) can be used in the properties of other objects (Game). Note that this particular example essentially
 // creates mutable global state, which should be avoided if possible. Handle mutability with care!
-object Game
+object Game(mut name: String = 'Garfield')
+object Game do
   mut player: Option[Player] = None
 end
 ```
+
+Note that a **block-style** object requires the keyword `do`. This is because a very important form of objects, propertyless "empty" objects, can be declared without parentheses and the `end` keyword. The approachable syntax for this common case introduces an ambiguity for block-style objects regarding the `end` keyword. It is resolved with the `do`.
 
 
 

@@ -4,7 +4,7 @@ struct Foo()
 let bar: String = Foo.bar
 
 
-object Bar
+object Bar do
   foo: Foo = Foo()
   id: Int = 2
   name: String = 'mind'
@@ -19,7 +19,7 @@ module Bar do
 end
 
 
-object Baz
+object Baz do
   foo: Foo = Foo()
 end
 

@@ -13,24 +13,24 @@ module lore.core do
   func to_string(Empty): String = 'empty'
 end
 
-object Mutable
+object Mutable do
   mut level: Int = 1
 end
 
-object LazyEmpty
+object LazyEmpty do
   empty: Empty = Empty
 end
 
-object LazyBox
+object LazyBox do
   box: IntBox = IntBox(5)
 end
 
-object LazyLazy
+object LazyLazy do
   lazyEmpty: LazyEmpty = LazyEmpty
   lazyBox: LazyBox = LazyBox
 end
 
-object Mindfunc
+object Mindfunc do
   func: String = 'func'
 end
 

@@ -240,20 +240,20 @@ class FragmentParser(implicit fragment: Fragment) {
     //      text: String
     //    end
     //       This seems to be the best approach, considering that it's also visually clearer.
-    def bodyForm = P(`extends` ~~ structBody)
+    def bodyForm = {
+      // Property lines should be terminated by newlines, so we're consciously not allowing trailing commas here.
+      def propertyLine = P(property.rep(sep = CharIn(","))).map(_.toVector)
+      def properties = P(propertyLine.repX(sep = Space.terminators)).map(_.toVector.flatten)
+
+      if (isObject) P(`extends` ~ "do" ~ properties ~ "end")
+      else P(`extends` ~~ Space.terminators ~~ properties ~ "end")
+    }
 
     def emptyForm = if (isObject) P(`extends`).map(extended => (extended, Vector.empty)) else Fail
 
     P(Index ~~ keyword ~~ Space.WS1 ~~/ structName ~~ Space.WS ~~ tvs ~~ Space.WS ~~ (conciseForm | bodyForm | emptyForm) ~~ Index)
       .map { case (startIndex, nameNode, typeVariables, (extended, properties), endIndex) => (startIndex, nameNode, isObject, typeVariables, extended, properties, endIndex) }
       .map(withPosition(DeclNode.StructNode))
-  }
-
-  private def structBody[_: P]: P[Vector[DeclNode.PropertyNode]] = {
-    // Property lines should be terminated by newlines, so we're consciously not allowing trailing commas here.
-    def propertyLine = P(property.rep(sep = CharIn(","))).map(_.toVector)
-    def properties = P(propertyLine.repX(sep = Space.terminators)).map(_.toVector.flatten)
-    P(Space.terminators ~~ properties ~ "end")
   }
 
   private def property[_: P]: P[DeclNode.PropertyNode] = {
