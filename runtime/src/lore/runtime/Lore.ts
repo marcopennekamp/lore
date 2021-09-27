@@ -3,6 +3,7 @@ import { LoreIO } from './io.ts'
 import { List } from './lists.ts'
 import { Map } from './maps.ts'
 import { LoreMath } from './math.ts'
+import { Numbers } from './numbers.ts'
 import { Shape } from './shapes.ts'
 import { StringFunctions } from './strings.ts'
 import { Struct } from './structs.ts'
@@ -35,4 +36,5 @@ export default {
   // APIs used by Pyramid.
   io: LoreIO,
   math: LoreMath,
+  numbers: Numbers,
 }

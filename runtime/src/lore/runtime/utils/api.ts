@@ -41,5 +41,8 @@ export default {
     missingImplementation(functionName: string, parameterType: string, argumentType: Type) {
       throw new Error(`The abstract function ${functionName}${parameterType} is missing an implementation for ${stringify(argumentType)}.`);
     },
+    panic(message: string) {
+      throw new Error(`Lore program terminated with the following message: ${message}.`)
+    },
   },
 }

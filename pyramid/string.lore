@@ -4,12 +4,45 @@ use lore.core.to_string
 use lore.List
 use lore.Enum
 use lore.Enum.[map, fold]
+use lore.Option
+use lore.Option.[Some, None]
 
+/**
+  * Please note: This version of string handling is currently bound to the way that our target language, Javascript,
+  * handles strings. In particular, the `length` of a string doesn't necessarily correspond to the number of graphemes
+  * in the string, and neither does `at` always return a grapheme.
+  */
 module String do
   /**
-    * Returns the number of Unicode code units in the string.
+    * Returns the number of code units in the UTF-16 string.
     */
   func length(string: String): Int = dynamic[Int]('Lore.strings.length', string)
+
+  /**
+    * Returns the code unit at the given position in the UTF-16 string. If `position` is out of range, the result is
+    * the empty string.
+    */
+  // TODO (pyramid): Rename to `at!`.
+  func force_at(string: String, index: Int): String = dynamic[String]('Lore.strings.at', string, index)
+
+  /**
+    * Returns the code unit at the given position in the UTF-16 string. If `position` is out of range, the result is
+    * `None`.
+    */
+  func at(string: String, index: Int): Option[String] = do
+    let result = dynamic[String]('Lore.strings.at', string, index)
+    if present?(result) then Some(result) else None
+  end
+
+  /**
+    * Whether `string` is empty.
+    */
+  func empty?(string: String): Boolean = length(string) == 0
+
+  /**
+    * Whether `string` has at least one grapheme.
+    */
+  func present?(string: String): Boolean = !empty?(string)
 
   /**
     * Concatenates `a` and `b` into a single string.
@@ -41,9 +74,42 @@ module String do
   end
 
   /**
+    * Whether the given predicate is true for all code units of the string.
+    *
+    * TODO (pyramid): Functions like `all?` suggest that String should also be treated as an Enum. `at` could be
+    *                 renamed to `get`.
+    */
+  func all?(string: String, predicate: String => Boolean): Boolean = do
+    let len = length(string)
+    let mut i = 0
+    while i < len
+      if !predicate(force_at(string, i))
+        return false
+      end
+      i += 1
+    end
+    true
+  end
+
+  /**
     * Prefixes `string` with `prefix` and suffixes it with `suffix`.
     */
   func affix(string: String, prefix: String, suffix: String): String = '$prefix$string$suffix'
+
+  // TODO (pyramid): We should probably replace the following functions with regex solutions. Also look at how
+  //                 fastparse solves this to keep performance high.
+
+  /**
+    * Whether the given string consists entirely of whitespace characters.
+    */
+  func whitespace?(string: String): Boolean = string |> all?(c => c == ' ' || c == '\t' || c == '\n' || c == '\r')
+
+  /**
+    * Whether the given string consists entirely of digits from 0 to 9.
+    *
+    * TODO (pyramid): This is obviously not optimized.
+    */
+  func digits?(string: String): Boolean = string |> all?(c => c == '0' || c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9')
 end
 
 module core do

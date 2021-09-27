@@ -1,5 +1,7 @@
 module lore
 
+use lore.core.panic
+
 /**
   * An Option makes the absence of a value explicit. It can either be a `Some`, which wraps the present value, or a
   * None, which signifies the absence of a value.
@@ -7,6 +9,8 @@ module lore
 trait Option[+A]
 
 module Option do
+  use Enum._
+
   /**
     * An Option with a present value. The type variable A is open to allow dispatching on an Option's run-time value
     * type.
@@ -21,18 +25,51 @@ module Option do
   /**
     * Returns the option's value if it is something, or otherwise the alternative.
     */
-  @where A, B >: A
-  func get(Option[A], alternative: B): B
+  @where A, B
+  func get(Option[A], alternative: B): A | B
 
-  @where A, B >: A
-  func get(option: Some[A], B): B = option.value
+  @where A, B
+  func get(option: Some[A], B): A = option.value
 
   @where B
   func get(None, alternative: B): B = alternative
+
+  /**
+    * Returns the option's value if it is something, or otherwise an error.
+    *
+    * TODO (pyramid): Rename to `get!`.
+    */
+  func get(Option[A]): A where A
+  func get(option: Some[A]): A where A = option.value
+  func get(None): Nothing = panic('Tried to force-get an `Option.None`.')
+
+  /**
+    * Returns the option if it is something, or otherwise the lazy alternative.
+    */
+  @where A, B
+  func or_else(option: Option[A], alternative: () => Option[B]): Option[A | B]
+
+  @where A, B
+  func or_else(option: Some[A], () => Option[B]): Option[A] = option
+
+  @where B
+  func or_else(None, alternative: () => Option[B]): Option[B] = alternative()
 end
 
 module Enum do
   use Option._
+
+  /**
+    * TODO (pyramid): Document.
+    */
+  @where A, B >: A, C
+  func map(option: Option[A], f: B => C): Option[C]
+
+  @where A, B >: A, C
+  func map(option: Some[A], f: B => C): Some[C] = option.value |> f |> Some
+
+  @where B, C
+  func map(None, f: B => C): None = None
 
   /**
     * Returns true if the given option is None, and false otherwise.
