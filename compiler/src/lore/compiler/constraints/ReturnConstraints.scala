@@ -82,6 +82,13 @@ private class ReturnAllowedApplicator(implicit reporter: Reporter)
   extends TopLevelExprVisitor.Applicator[Unit, IsReturnAllowed](new VerificationTopLevelExprVisitor { })
 {
   override def handleMatch(node: TopLevelExprNode, isReturnAllowed: IsReturnAllowed): Unit = node match {
+    case TopLevelExprNode.VariableDeclarationNode(_, _, _, value, _) =>
+      visit(value, isReturnAllowed)
+
+    case TopLevelExprNode.AssignmentNode(address, value, _) =>
+      visit(address, false)
+      visit(value, isReturnAllowed)
+
     case node@TopLevelExprNode.ReturnNode(expr, _) =>
       visit(expr, false)
       if (!isReturnAllowed) {
@@ -95,6 +102,12 @@ private class ReturnAllowedApplicator(implicit reporter: Reporter)
       visit(condition, false)
       visit(onTrue, isReturnAllowed)
       onFalse.foreach(visit(_, isReturnAllowed))
+
+    case ExprNode.CondNode(cases, _) =>
+      cases.foreach { condCase =>
+        visit(condCase.condition, false)
+        visit(condCase.body, isReturnAllowed)
+      }
 
     case ExprNode.WhileNode(condition, body, _) =>
       visit(condition, false)

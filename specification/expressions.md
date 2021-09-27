@@ -91,7 +91,7 @@ end
 
 ##### Nesting Returns
 
-Returns cannot be nested in top-level expressions that are not at the **top-level of a function**. For example, the following code is *illegal*:
+Returns **cannot be placed in nested expressions** in certain cases. For example, the following code is *illegal*:
 
 ```
 func foo(): String = do
@@ -99,7 +99,12 @@ func foo(): String = do
 end
 ```
 
-Lore's semantics would not be well defined if we allowed such constellations.
+Lore's semantics would not be well defined if we allowed such constellations. Returns may be placed in the following kinds of expressions, provided the expression itself occurs in a permissible context:
+
+- **Blocks.**
+- **Variable declarations and assignments:** The right-hand side may contain returns.
+- **`if` and `cond` expressions:** The conditions may *not* contain returns, but the bodies may.
+- **`while` and `for` expressions:** The conditions/extractors may *not* contain returns, but the bodies may.
 
 
 
