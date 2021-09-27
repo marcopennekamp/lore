@@ -7,6 +7,7 @@
   - Add clear covariance/contravariance type semantics.
   - Make maps immutable and support this in the runtime.
   - Implement a clear appends operation for maps and make them generally usable.
+- Add pattern matching in `case` expressions, anonymous function parameters, variable declarations, and the left-hand side of assignments (e.g. for assigning tuple values to mutable variables).
 - Add "global specialization"/"trait implementation" for tuples, lists, maps, shapes, traits, and structs.
   - This will allow us to type lists, for example, as Enums, and so on.
 - Possibly add protocols. (Also see the specification proposal.)
@@ -14,12 +15,18 @@
   - Protocols might be mergeable with "global specialization".
 - Start designing Pyramid properly.
   - Clear all `TODO (pyramid)` entries.
-- Add pattern matching.
 - Add immutable (hash) sets with a syntax `#[A]`.
+  - Maps and sets can't share the `#[]` syntax, because this would make an empty map and an empty set have the same syntax. Maps or sets should have a different prefix character. 
 - Further syntactic changes:
   - Implicit underscore sections (e.g. `map(things, _.name)`) or an equivalent shortcut syntax.
   - Trailing lambdas.
-  - Significant indentation.
+  - Indentation-aided parsing:
+    - Significant indentation is not intended to replace `do..end`, but rather aid in parsing ambiguities. In that sense, we are calling this feature "indentation-aided parsing".
+    - This would resolve some issues with `do..end` inconsistencies, such as:
+      - Block-style objects and modules requiring the `do` keyword due to parsing ambiguities.
+      - A block-style `if` requiring the `end` keyword before an `else`.
+      - `cond` (and later `case`) requiring `do..end` for blocks, which adds serious visual noise.
+      - Concrete actions require the `do` keyword to disambiguate them from abstract actions. With significant indentation, this `do` requirement would only be needed for empty actions, where indentation-aided parsing cannot rely on an indented expression. On the other hand, the `do..end` syntax is currently consistently applied to block functions and actions. We might want to keep this requirement for stylistic reasons.
   - Consider renaming the module keyword to `mod`, which has the added benefit of being on the same column as `use`. This might be visually more pleasant.
 - Implement some form of ranges for index iteration using `for`.
 - Rethink properties: I don't like how shape properties are orthogonal to multi-functions right now. To use a shape, one is forced to ultimately give a property to an implementing struct. It would be much superior if properties could be declared "virtually", allowing traits to implement properties via some sort of function (perhaps even with dispatch on the accessed type). This feature should also simultaneously solve the question of "virtual/computed properties" posed in the geometry.lore example.
