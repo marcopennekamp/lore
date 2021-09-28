@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # If you pass a folder name as the first parameter, Deno will only execute tests contained in the folder. For example,
-# running `./test.sh dispatch` will only execute dispatch tests.
+# running `./test.sh features/dispatch` will only execute dispatch tests.
 
 # Compile and package the JAR.
 sbt assembly > /dev/null

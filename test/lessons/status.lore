@@ -1,0 +1,20 @@
+// Objective: Process a list of numbers, returning a status `#ok` or `#error` for each number.
+
+use lore.Enum._
+use lore.Tuple
+
+type Status = #ok | #error
+
+func stringify(Status): String
+func stringify(#ok): String = 'Success!'
+func stringify(#error): String = 'Failure!'
+
+func process(value: Int): (Status, String) = cond
+  value < 2 => (#ok, 'Below two.')
+  value < 5 => (#ok, 'Below five.')
+  true      => (#error, 'At or above five.')
+end
+
+func stringify(result: (Status, String)): String = stringify(Tuple.first(result))
+
+func test(): [String] = [3, 5, 2, 10, 1] |> map(process) |> map(Tuple.first) |> map(stringify)

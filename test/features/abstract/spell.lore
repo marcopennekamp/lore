@@ -1,0 +1,58 @@
+// This case tests how the totality constraint treats complex type arguments.
+use lore.Math
+
+trait Element
+trait Fire extends Element
+trait Ice extends Element
+trait Earth extends Element
+
+trait Cost
+trait Mana extends Cost
+trait Stamina extends Cost
+trait Health extends Cost
+
+trait Specialty
+trait Freezing extends Specialty
+trait Penetrating extends Specialty
+
+type Defense = Int
+type Damage = Int
+
+
+trait Spell[+E <: Element, +C <: Cost]
+
+func raw_damage(Spell[Element, Cost]): Damage
+func damage_of(Spell[Element, Cost], Defense): Damage
+
+
+trait Spike[+E <: Ice | Earth, +S <: Specialty, +Id] extends Spell[E, Mana]
+object IceSpike extends Spike[Ice, Freezing, #ice_spike]
+object NeedleIceSpike extends Spike[Ice, Penetrating, #needle_ice_spike]
+object EarthSpike extends Spike[Earth, Penetrating, #earth_spike]
+
+func raw_damage(Spike[Ice, Specialty, #ice_spike]): Damage = 10
+func raw_damage(Spike[Ice, Specialty, #needle_ice_spike]): Damage = 12
+func raw_damage(Spike[Earth, Specialty, Any]): Damage = 8
+
+// We would usually define this for any Specialty and then override only Penetrating, but the point here is testing
+// that the totality constraint sees that all possibilities have been covered.
+func damage_of(spell: Spike[Ice | Earth, Freezing, Any], defense: Defense): Damage = calculate_damage(raw_damage(spell), defense)
+func damage_of(spell: Spike[Ice | Earth, Penetrating, Any], defense: Defense): Damage = do
+  // `Penetrating` ignores 50% of defense.
+  calculate_damage(raw_damage(spell), Math.floor(defense / 2))
+end
+
+func calculate_damage(raw_damage: Damage, defense: Defense): Damage = Math.max(raw_damage - defense, 0)
+
+
+func test(): [Damage] = [
+  damage_of(IceSpike, 0),
+  damage_of(NeedleIceSpike, 0),
+  damage_of(EarthSpike, 0),
+  damage_of(IceSpike, 5),
+  damage_of(NeedleIceSpike, 5),
+  damage_of(EarthSpike, 5),
+  damage_of(IceSpike, 12),
+  damage_of(NeedleIceSpike, 12),
+  damage_of(EarthSpike, 12),
+]

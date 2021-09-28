@@ -5,7 +5,7 @@ import { assert } from 'https://deno.land/std/testing/asserts.ts'
  * a test function can be executed and its return value can be judged. You need to execute these tests with --allow-run
  * or --allow-all because the tests have to invoke the Lore compiler via a shell command.
  *
- * Please run the test from the <lore root>/test directory so that the current working directory of the compilation
+ * Please run the test from the `<lore root>/test` directory so that the current working directory of the compilation
  * command is correct.
  */
 export const LoreTest = {
@@ -16,10 +16,11 @@ export const LoreTest = {
   },
 
   /**
-   * Compiles a given test file to <lore root>/lore-program.js and asserts that the compilation was successful.
+   * Compiles a given test file to `<lore root>/lore-program.js` and asserts that the compilation was successful.
    *
-   * @param paths All paths to the test files or directories, with <lore root>/test as the base directory. For example,
-   *              giving 'return/simple.lore' as the test path would result in <lore root>/test/return/simple.lore.
+   * @param paths All paths to the test files or directories, with `<lore root>/test` as the base directory. For
+   *              example, giving 'features/syntax/return.lore' as the test path would result in
+   *              `<lore root>/test/features/syntax/return.lore`.
    * @param outputFile The unique Javascript file that the generated code is written to.
    */
   async compile(paths: string[], outputFile: string): Promise<void> {
