@@ -1,0 +1,108 @@
+// Objective: Calculate the lower and upper resistance range (in ohm) of a resistor according to the color codes
+//            described here: https://en.wikipedia.org/wiki/Electronic_color_code#Resistors.
+
+use lore.Enum.[flat_map, map, present?]
+use lore.Math
+use lore.Option
+use lore.Option.[Some, None]
+
+use Color._
+
+trait Color
+trait Figure extends Color
+trait Multiplier extends Color
+trait Tolerance extends Color
+
+module Color do
+  object Pink extends Multiplier
+  object Silver extends Multiplier, Tolerance
+  object Gold extends Multiplier, Tolerance
+  object Black extends Figure, Multiplier
+  object Brown extends Figure, Multiplier, Tolerance
+  object Red extends Figure, Multiplier, Tolerance
+  object Orange extends Figure, Multiplier, Tolerance
+  object Yellow extends Figure, Multiplier, Tolerance
+  object Green extends Figure, Multiplier, Tolerance
+  object Blue extends Figure, Multiplier, Tolerance
+  object Violet extends Figure, Multiplier, Tolerance
+  object Grey extends Figure, Multiplier, Tolerance
+  object White extends Figure, Multiplier
+end
+
+type Resistance = Real
+
+module Figure do
+  func of(Figure): Int
+  func of(Black): Int = 0
+  func of(Brown): Int = 1
+  func of(Red): Int = 2
+  func of(Orange): Int = 3
+  func of(Yellow): Int = 4
+  func of(Green): Int = 5
+  func of(Blue): Int = 6
+  func of(Violet): Int = 7
+  func of(Grey): Int = 8
+  func of(White): Int = 9
+end
+
+module Multiplier do
+  func of(Multiplier): Real
+  func of(Pink): Real = 0.001
+  func of(Silver): Real = 0.01
+  func of(Gold): Real = 0.1
+
+  // The multiplier of a figure X is 10^X, so we can calculate the multiplier here. The `Multiplier &` intersection is
+  // necessary because `Figure` is not a subtype of `Multiplier`. If `figure` was just typed as `Figure`, the
+  // multi-function call would be ambiguous for a type such as `Green` which extends both `Figure` and `Multiplier`.
+  func of(figure: Multiplier & Figure): Real = Math.pow(10, Figure.of(figure))
+end
+
+module Tolerance do
+  func of(Tolerance): Real
+  func of(Silver): Real = 0.1
+  func of(Gold): Real   = 0.05
+  func of(Brown): Real  = 0.01
+  func of(Red): Real    = 0.02
+  func of(Orange): Real = 0.0005
+  func of(Yellow): Real = 0.0002
+  func of(Green): Real  = 0.005
+  func of(Blue): Real   = 0.0025
+  func of(Violet): Real = 0.001
+  func of(Grey): Real   = 0.0001
+end
+
+/**
+  * The rating of a resistor comprises the low and high resistances, which are calculated from the resistor's base
+  * resistance and the tolerance value.
+  */
+struct Rating(low: Resistance, high: Resistance)
+
+module Rating do
+  /**
+    * Calculates the rating given the color codes on the resistor. `figure3` is optional, as it's only used in precision
+    * resistors. The `tolerance` is also optional; `None` implies a tolerance of 20%.
+    */
+  func of(figure1: Figure, figure2: Figure, figure3: Option[Figure], multiplier_code: Multiplier, tolerance_code: Option[Tolerance]): Rating = do
+    // TODO (case): This should be solved with pattern matching.
+    let base = if present?(figure3)
+      100 * Figure.of(figure1) + 10 * Figure.of(figure2) + Figure.of(Option.get(figure3))
+    end else
+      10 * Figure.of(figure1) + Figure.of(figure2)
+    end
+    let raw = base * Multiplier.of(multiplier_code)
+    let tolerance = tolerance_code |> map(Tolerance.of) |> Option.get(0.2)
+    Rating(raw * (1 - tolerance), raw * (1 + tolerance))
+  end
+end
+
+
+// The `flat_map` maps the rating list to a list of resistances, alternating between low and high resistances. This
+// makes it easier for the test code to check the individual values.
+func test(): [Resistance] = [
+  Rating.of(Red,      Violet,   None,          Green,    Some(Gold)),
+  Rating.of(Green,    Blue,     Some(Black),   Black,    Some(Brown)),
+  Rating.of(Red,      Red,      None,          Orange,   Some(Blue)),
+  Rating.of(Yellow,   Violet,   None,          Brown,    Some(Gold)),
+  Rating.of(Blue,     Grey,     None,          Black,    Some(Orange)),
+  Rating.of(Blue,     Blue,     Some(Blue),    Black,    None),
+] |> flat_map((rating: Rating) => [rating.low, rating.high]) // TODO (inference): The type inference algorithm currently doesn't correctly infer `rating` to be Rating.

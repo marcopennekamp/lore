@@ -1,5 +1,5 @@
 import { ListValue } from '../../runtime/src/lore/runtime/lists.ts'
-import { assertListEquals } from '../assertions.ts'
+import { assertListEquals, assertListEpsilonEquals } from '../assertions.ts'
 import { LoreTest } from '../base.ts'
 
 const base = 'lessons'
@@ -13,6 +13,11 @@ Deno.test(`${base}/hello-name`, async () => {
     'Hello, console.',
     'Hello, anonymous #42.'
   ])
+})
+
+Deno.test(`${base}/resistor`, async () => {
+  const result: ListValue<number> = await LoreTest.run(`${base}/resistor.lore`)
+  assertListEpsilonEquals(result, [2565000, 2835000, 554.4, 565.6, 21945, 22055, 446.5, 493.5, 67.966, 68.034, 532.8, 799.2])
 })
 
 Deno.test(`${base}/rna`, async () => {
