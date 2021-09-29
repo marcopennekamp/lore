@@ -11,6 +11,13 @@ import { Kind } from '../runtime/src/lore/runtime/types/kinds.ts'
 import { PropertyTypes } from '../runtime/src/lore/runtime/types/property-types.ts'
 import { Type, Types } from '../runtime/src/lore/runtime/types/types.ts'
 
+export function assertEpsilonEquals(actual: number, expected: number) {
+  const epsilon = 0.0000001
+  const message = `The number ${actual} must be epsilon-equal to the expected number ${expected}.`
+  assert(expected - epsilon <= actual, message)
+  assert(expected + epsilon >= actual, message)
+}
+
 export function assertTypeEquals(actual: Type, expected: Type) {
   assert(areEqual(actual, expected), `The type ${Types.stringify(actual)} should be equal to the expected type ${Types.stringify(expected)}.`)
 }
@@ -59,6 +66,14 @@ export function assertIsList(actual: ListValue<any>, element?: Type) {
 export function assertListEquals<A>(actual: ListValue<A>, expected: Array<A>, elementType?: Type) {
   assertIsList(actual, elementType)
   assertEquals(actual.array, expected)
+}
+
+export function assertListEpsilonEquals(actual: ListValue<number>, expected: Array<number>) {
+  assertIsList(actual)
+  assertEquals(actual.array.length, expected.length)
+  for (let i = 0; i < expected.length; i += 1) {
+    assertEpsilonEquals(actual.array[i], expected[i])
+  }
 }
 
 export function assertListEqualsUnordered(actual: ListValue<any>, expected: Array<any>) {
