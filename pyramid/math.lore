@@ -15,3 +15,5 @@ func max(x: Int, y: Int): Int = if x > y then x else y
 
 func absolute(x: Real): Real = if x < 0 then -x else x
 func absolute(x: Int): Int = if x < 0 then -x else x
+
+func pow(base: Real, exponent: Real): Real = dynamic[Real]('Lore.math.pow', base, exponent)
