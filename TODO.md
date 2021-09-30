@@ -2,6 +2,8 @@
 
 #### Features
 
+- Implement bidirectional typechecking:
+  - Clear all `TODO (inference)` entries.
 - Write calculator functional test.
   - Clear all `TODO (calculator)` entries.
 - Remove the need for `end else` by requiring a `then`'s `else` to occur without a line terminator.

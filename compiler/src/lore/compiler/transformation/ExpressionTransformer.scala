@@ -68,6 +68,11 @@ object ExpressionTransformer {
     *   concat([12], [15]) // Should compile even though it returns a list.
     * }
     * }}}
+    *
+    * TODO (inference): This should be moved to a visitor such as [[TypeRehydrationVisitor]] (which operates
+    *                   post-inference) so that this can be applied to all blocks, not just the top-most block. In
+    *                   addition, we might also have to amend the Checker to turn the actual return type of a block
+    *                   into `Unit` if the expected type is `Unit`.
     */
   private def withImplicitUnitValue(expectedType: Type)(expression: Expression): Expression = {
     expression match {

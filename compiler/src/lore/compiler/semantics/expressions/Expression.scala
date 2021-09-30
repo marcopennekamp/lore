@@ -32,9 +32,13 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   case class Return(value: Expression, position: Position) extends Expression.Apply(BasicType.Nothing)
 
+  /**
+    * @param typeAnnotation The type that the variable declaration was annotated with.
+    */
   case class VariableDeclaration(
     variable: LocalVariable,
     value: Expression,
+    typeAnnotation: Option[Type],
     position: Position,
   ) extends Expression.Apply(TupleType.UnitType)
 
@@ -47,9 +51,11 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Block expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class Block(expressions: Vector[Expression], position: Position) extends Expression {
-    override val tpe: Type = expressions.lastOption.map(_.tpe).getOrElse(TupleType.UnitType)
-  }
+  /**
+    * @param expressions The expressions list must have at least one element. Empty blocks should be populated with a
+    *                    single unit value expression.
+    */
+  case class Block(expressions: Vector[Expression], position: Position) extends Expression.Apply(expressions.last.tpe)
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Access expressions.

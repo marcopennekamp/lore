@@ -119,7 +119,7 @@ object Inference {
     * account. Contravariant types flip the bound type relationship, because their upper bounds effectively relate to
     * the lower bound of inference variables and vice versa.
     */
-  private def instantiate(assignments: Assignments, tpe: Type, boundType: BoundType, get: (InferenceBounds, BoundType) => Type): Type = {
+  def instantiate(assignments: Assignments, tpe: Type, boundType: BoundType, get: (InferenceBounds, BoundType) => Type): Type = {
     // `instantiate` may be called with simple types quite often. We want to avoid reconstructing types (with all the
     // required allocations) in such cases.
     if (isFullyInstantiated(tpe)) {
