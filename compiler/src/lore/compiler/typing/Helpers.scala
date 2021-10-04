@@ -88,8 +88,14 @@ object Helpers {
   }
 
   /**
+    * Instantiates the type of `expression` with all inference variables from the given assignments. The function
+    * reports an error if not all inference variables can be instantiated.
+    */
+  def instantiate(expression: Expression, assignments: Assignments)(implicit reporter: Reporter): Type = instantiate(expression.tpe, assignments, expression)
+
+  /**
     * Guesses the best instantiation for `tpe` from the given assignments. This can be used to preprocess types for
     * error reporting.
     */
-  def instantiate(tpe: Type, assignments: Assignments): Type = Inference.instantiateCandidateType(assignments, tpe)
+  def instantiateCandidate(tpe: Type, assignments: Assignments): Type = Inference.instantiateCandidateType(assignments, tpe)
 }

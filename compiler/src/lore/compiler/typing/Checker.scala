@@ -5,7 +5,7 @@ import lore.compiler.feedback.{Feedback, Reporter, TypingFeedback, TypingFeedbac
 import lore.compiler.inference.Inference
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.types.{FunctionType, TupleType, Type}
+import lore.compiler.types.{FunctionType, ListType, MapType, TupleType, Type}
 
 /**
   * @param returnType The return type of the surrounding function, used to check `Return` expressions.
@@ -15,6 +15,9 @@ case class Checker(returnType: Type) {
   private implicit val checker: Checker = this
 
   /**
+    * Checks that `expression` has the type `expectedType` (or a subtype thereof). In the process, inference might
+    * assign types to one or more inference variables, modeled via the input and output assignments.
+    *
     * @param expectedType The type expected from the expression by the surrounding context. `expectedType` must be
     *                     fully instantiated.
     */
@@ -23,6 +26,17 @@ case class Checker(returnType: Type) {
     if (!Inference.isFullyInstantiated(expectedType)) {
       throw CompilationException(s"The expected type $expectedType must be fully instantiated! Position: ${expression.position}.")
     }
+
+    // The fallback is used when the expected type is clearly invalid in respect to the expression, for example when
+    // the expression is a ListConstruction and the expected type is a tuple. We attempt inference as a fallback to
+    // assign types to inference variables, so that the eventual subtyping error can be most informed. For example,
+    // if we have a ListConstruction `[a.x, b.x]`, with `x` being a member of type `Int`, and an expected type
+    // `(Int, Int)`, we want the resulting error to say "[Int] is not a subtype of (Int, Int)" instead of "[Any] is not
+    // a subtype of (Int, Int)".
+    // TODO (inference): If we allow e.g. lists to extend traits, this fallback is also instrumental in providing a
+    //                   secondary path for type checking to accept a ListConstruction as a valid option for an
+    //                   expected type `Enum`.
+    def fallback: Assignments = Synthesizer.infer(expression, assignments)
 
     // Using `reportOnly` will suppress the default `SubtypeExpected` error in favor of an error that provides
     // additional context and information.
@@ -45,28 +59,22 @@ case class Checker(returnType: Type) {
         // to infer the type of the variable from the value expression.
         typeAnnotation match {
           case Some(typeAnnotation) => check(value, typeAnnotation, assignments)
-          case None => Synthesizer.infer(value, assignments).assignments
+          case None => fallback
         }
 
       case Expression.Assignment(target, value, _) =>
-        val Synthesizer.Result(targetType, assignments2) = Synthesizer.infer(target, assignments)
+        val assignments2 = Synthesizer.infer(target, assignments)
+        val targetType = Helpers.instantiate(target, assignments2)
         check(value, targetType, assignments2)
 
       case Expression.Tuple(values, _) =>
+        // TODO (inference): One of the best things about bidirectional typechecking is that it can produce very
+        //                   good errors. Instead of reporting `(a, b) is not a subtype of (a, b, c)`, we could
+        //                   report `(a, b) is a tuple with 2 elements and thus cannot be a subtype of a tuple
+        //                   (a, b, c) with 3 elements.`
         expectedType match {
-          case TupleType(elements) if elements.length == values.length =>
-            values.zip(elements).foldLeft(assignments) {
-              case (assignments2, (value, elementType)) => check(value, elementType, assignments2)
-            }
-
-          case _ =>
-            // The tuple value cannot correspond to an expected type that isn't a tuple type or which has a different
-            // length. This will be reported by the subtyping check in Step 2.
-            // TODO (inference): One of the best things about bidirectional typechecking is that it can produce very
-            //                   good errors. Instead of reporting `(a, b) is not a subtype of (a, b, c)`, we could
-            //                   report `(a, b) is a tuple with 2 elements and thus cannot be a subtype of a tuple
-            //                   (a, b, c) with 3 elements.`
-            assignments
+          case TupleType(elements) if elements.length == values.length => check(values, elements, assignments)
+          case _ => fallback
         }
 
       // TODO (inference): As it stands now, an anonymous function either requires an expected type context, or all of
@@ -79,7 +87,7 @@ case class Checker(returnType: Type) {
       //                   algorithm is a bit more mature.
       case expression@Expression.AnonymousFunction(parameters, body, _) =>
         if (expression.isFullyAnnotated) {
-          Synthesizer.infer(expression, assignments).assignments
+          Synthesizer.infer(expression, assignments)
         } else {
           // If an anonymous function is missing a parameter type declaration, it requires the expected type to be a
           // function type.
@@ -90,7 +98,7 @@ case class Checker(returnType: Type) {
                   check(body, output, assignments2)
 
                 case None =>
-                  val instantiatedInput = Helpers.instantiate(expression.tpe.input, assignments).asInstanceOf[TupleType]
+                  val instantiatedInput = Helpers.instantiateCandidate(expression.tpe.input, assignments).asInstanceOf[TupleType]
                   reportOnly(TypingFeedback2.AnonymousFunction.IllegalParameterTypes(expression, expectedType, instantiatedInput))
                   assignments
               }
@@ -108,12 +116,27 @@ case class Checker(returnType: Type) {
       // TODO (inference): ConstructorValue.
       // TODO (inference): MultiFunctionValue.
 
+      case Expression.ListConstruction(values, _) =>
+        expectedType match {
+          case ListType(elementType) => check(values, elementType, assignments)
+          case _ => fallback
+        }
+
+      case Expression.MapConstruction(entries, _) =>
+        expectedType match {
+          case MapType(keyType, valueType) =>
+            val assignments2 = check(entries.map(_.key), keyType, assignments)
+            check(entries.map(_.value), valueType, assignments2)
+
+          case _ => fallback
+        }
+
       // The general case delegates to the Synthesizer, which simply infers the type of the expression. This
       // corresponds to a particular rule in most bidirectional type systems, defined as such:
       //    If `Γ ⊢ e => A` (infer) and `A = B` then `Γ ⊢ e <= B` (checked)
       // See: "Jana Dunfield and Neel Krishnaswami. 2020. Bidirectional Typing."
       // Of course, in Lore's type system, type equality must be replaced with subtyping, i.e. `A subtypes B`.
-      case _ => Synthesizer.infer(expression, assignments).assignments
+      case _ => Synthesizer.infer(expression, assignments)
     }
 
     // Step 2: Use the new assignments map to check that `expression.tpe` (as instantiated) is a subtype of
@@ -127,6 +150,24 @@ case class Checker(returnType: Type) {
     }
 
     postAssignments
+  }
+
+  /**
+    * Executes [[check]] for all `expressions` in order.
+    */
+  def check(expressions: Vector[Expression], expectedType: Type, assignments: Assignments)(implicit reporter: Reporter): Assignments = {
+    expressions.foldLeft(assignments) {
+      case (assignments2, expression) => check(expression, expectedType, assignments2)
+    }
+  }
+
+  /**
+    * Executes [[check]] for all `expressions` and `exprectedTypes` pairs in order.
+    */
+  def check(expressions: Vector[Expression], expectedTypes: Vector[Type], assignments: Assignments)(implicit reporter: Reporter): Assignments = {
+    expressions.zip(expectedTypes).foldLeft(assignments) {
+      case (assignments2, (expression, expectedType)) => check(expression, expectedType, assignments2)
+    }
   }
 
 }

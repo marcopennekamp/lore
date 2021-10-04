@@ -210,9 +210,7 @@ class ExpressionTransformationVisitor(
       Expression.Tuple(expressions, position)
 
     case ListNode(_, position) =>
-      val elementType = new InferenceVariable
-      judgmentCollector.add(TypingJudgment.LeastUpperBound(elementType, expressions.map(_.tpe), position))
-      Expression.ListConstruction(expressions, ListType(elementType), position)
+      Expression.ListConstruction(expressions, position)
 
     case ObjectMapNode(namePathNode, typeArgumentNodes, entryNodes, position) =>
       StructTransformation.getConstructor(namePathNode.namePath, typeArgumentNodes, namePathNode.position) match {
@@ -294,17 +292,7 @@ class ExpressionTransformationVisitor(
   }
 
   override def visitMap(node: MapNode)(kvs: Vector[(Expression, Expression)]): Expression = {
-    val entries = kvs.map(Expression.MapEntry.tupled)
-
-    val keyType = new InferenceVariable
-    val valueType = new InferenceVariable
-
-    judgmentCollector.add(
-      TypingJudgment.LeastUpperBound(keyType, entries.map(_.key.tpe), node.position),
-      TypingJudgment.LeastUpperBound(valueType, entries.map(_.value.tpe), node.position),
-    )
-
-    Expression.MapConstruction(entries, MapType(keyType, valueType), node.position)
+    Expression.MapConstruction(kvs.map(Expression.MapEntry.tupled), node.position)
   }
 
   override def visitCall(node: CallNode)(target: Expression, arguments: Vector[Expression]): Expression = {
