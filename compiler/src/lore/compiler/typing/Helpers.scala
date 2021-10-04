@@ -1,9 +1,11 @@
 package lore.compiler.typing
 
-import lore.compiler.feedback.{Feedback, Reporter}
+import lore.compiler.core.Position
+import lore.compiler.feedback.{Feedback, LambdaReporter, Reporter}
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.inference.InferenceBounds.BoundType
-import lore.compiler.inference.{Inference, InferenceBounds, InferenceVariable}
+import lore.compiler.inference.matchers.{Matchers, SubtypingMatcher}
+import lore.compiler.inference.{Inference, InferenceBounds, InferenceVariable, TypingJudgment}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types.{BasicType, Type}
 
@@ -27,6 +29,36 @@ object Helpers {
       Some(assignments.updated(iv, InferenceBounds(iv, tpe, tpe)))
     } else {
       None
+    }
+  }
+
+  /**
+    * Unifies `t1` and `t2` such that `t1` is a subtype of `t2`, assigning inference variables accordingly.
+    *
+    * TODO (inference): This uses the old SubtypingMatcher, so the code should be moved and simplified.
+    */
+  def unifySubtypes(t1: Type, t2: Type, assignments: Assignments): Option[Assignments] = {
+    // TODO (inference): This is a temporary mock so that we can use the old SubtypingMatcher.
+    val context = TypingJudgment.Subtypes(t1, t2, Position.internal)
+
+    // TODO (inference): The reporter has to suppress any generated errors, because we want `unifySubtypes` to not leak
+    //                   any errors.
+    implicit val reporter: Reporter = new LambdaReporter(_ => { })
+
+    SubtypingMatcher.matchSubtype(SubtypesProcessor)(t1, t2, assignments, context)
+  }
+
+  private object SubtypesProcessor extends Matchers.Processor {
+    override def processIv1(iv1: InferenceVariable, t2: Type, assignments: Assignments, context: TypingJudgment)(implicit reporter: Reporter): Option[Assignments] = {
+      assign(iv1, t2, assignments)
+    }
+
+    override def processIv2(t1: Type, iv2: InferenceVariable, assignments: Assignments, context: TypingJudgment)(implicit reporter: Reporter): Option[Assignments] = {
+      assign(iv2, t1, assignments)
+    }
+
+    override def processBoth(iv1: InferenceVariable, iv2: InferenceVariable, assignments: Assignments, context: TypingJudgment)(implicit reporter: Reporter): Option[Assignments] = {
+      ???
     }
   }
 
@@ -54,4 +86,10 @@ object Helpers {
     }
     result
   }
+
+  /**
+    * Guesses the best instantiation for `tpe` from the given assignments. This can be used to preprocess types for
+    * error reporting.
+    */
+  def instantiate(tpe: Type, assignments: Assignments): Type = Inference.instantiateCandidateType(assignments, tpe)
 }

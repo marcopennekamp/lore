@@ -1,11 +1,11 @@
 package lore.compiler.semantics.expressions
 
 import lore.compiler.core.{CompilationException, Position, Positioned}
-import lore.compiler.inference.InferenceVariable
+import lore.compiler.inference.{Inference, InferenceVariable}
 import lore.compiler.semantics.analysis.LocalizedExpression
 import lore.compiler.semantics.functions.{CallTarget, FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
-import lore.compiler.semantics.scopes.{TypedBinding, LocalVariable}
+import lore.compiler.semantics.scopes.{LocalVariable, TypedBinding}
 import lore.compiler.types._
 
 sealed trait Expression extends Positioned {
@@ -94,7 +94,7 @@ object Expression {
   case class Literal(value: Any, tpe: BasicType, position: Position) extends Expression
 
   case class Tuple(values: Vector[Expression], position: Position) extends Expression {
-    override val tpe: Type = if (values.isEmpty) TupleType.UnitType else TupleType(values.map(_.tpe))
+    override val tpe: TupleType = if (values.isEmpty) TupleType.UnitType else TupleType(values.map(_.tpe))
   }
 
   case class AnonymousFunction(
@@ -102,10 +102,22 @@ object Expression {
     body: Expression,
     position: Position,
   ) extends Expression {
-    override val tpe: Type = FunctionType(TupleType(parameters.map(_.tpe)), body.tpe)
+    /**
+      * Whether the anonymous function only has annotated parameters. This allows the inference algorithm to infer the
+      * type of the anonymous function directly.
+      */
+    lazy val isFullyAnnotated: Boolean = parameters.forall(_.isAnnotated)
+
+    override val tpe: FunctionType = FunctionType(TupleType(parameters.map(_.tpe)), body.tpe)
   }
 
   case class AnonymousFunctionParameter(name: String, tpe: Type, position: Position) {
+    /**
+      * Whether the parameter has a type annotation. Unannotated parameters always have an inference variable as their
+      * type.
+      */
+    lazy val isAnnotated: Boolean = Inference.isFullyInstantiated(tpe)
+
     def mapType(f: Type => Type): AnonymousFunctionParameter = this.copy(tpe = f(tpe))
   }
 

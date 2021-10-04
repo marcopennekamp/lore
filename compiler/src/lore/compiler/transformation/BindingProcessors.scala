@@ -17,6 +17,8 @@ object BindingProcessors {
       judgmentCollector.add(TypingJudgment.MultiFunctionValue(functionType, mf, position))
       Some(Expression.MultiFunctionValue(mf, functionType, position))
 
+    // TODO (inference): To properly infer a struct constructor with bidirectional typechecking, we should introduce a
+    //                   ConstructorValue expression, similar to the MultiFunctionValue expression.
     case structBinding: StructConstructorBinding => Some(Expression.BindingAccess(StructTransformation.getConstructor(structBinding, position), position))
     case binding: TypedBinding => Some(Expression.BindingAccess(binding, position))
   }

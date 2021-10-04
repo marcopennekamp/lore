@@ -1,9 +1,11 @@
 package lore.compiler.typing
 
-import lore.compiler.feedback.{Reporter, TypingFeedback}
+import lore.compiler.core.CompilationException
+import lore.compiler.feedback.{Feedback, Reporter, TypingFeedback, TypingFeedback2}
+import lore.compiler.inference.Inference
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.types.Type
+import lore.compiler.types.{FunctionType, TupleType, Type}
 
 /**
   * @param returnType The return type of the surrounding function, used to check `Return` expressions.
@@ -12,7 +14,24 @@ case class Checker(returnType: Type) {
 
   private implicit val checker: Checker = this
 
+  /**
+    * @param expectedType The type expected from the expression by the surrounding context. `expectedType` must be
+    *                     fully instantiated.
+    */
   def check(expression: Expression, expectedType: Type, assignments: Assignments)(implicit reporter: Reporter): Assignments = {
+    // TODO (inference): This is a sanity check for now and can probably be removed once the algorithm is stable.
+    if (!Inference.isFullyInstantiated(expectedType)) {
+      throw CompilationException(s"The expected type $expectedType must be fully instantiated! Position: ${expression.position}.")
+    }
+
+    // Using `reportOnly` will suppress the default `SubtypeExpected` error in favor of an error that provides
+    // additional context and information.
+    var suppressDefaultError = false
+    def reportOnly(error: Feedback.Error): Unit = {
+      reporter.report(error)
+      suppressDefaultError = true
+    }
+
     // Step 1: Check and/or infer the expression's sub-expressions to produce an assignments map that will allow us to
     //         instantiate `expression.tpe`.
     val postAssignments = expression match {
@@ -33,6 +52,62 @@ case class Checker(returnType: Type) {
         val Synthesizer.Result(targetType, assignments2) = Synthesizer.infer(target, assignments)
         check(value, targetType, assignments2)
 
+      case Expression.Tuple(values, _) =>
+        expectedType match {
+          case TupleType(elements) if elements.length == values.length =>
+            values.zip(elements).foldLeft(assignments) {
+              case (assignments2, (value, elementType)) => check(value, elementType, assignments2)
+            }
+
+          case _ =>
+            // The tuple value cannot correspond to an expected type that isn't a tuple type or which has a different
+            // length. This will be reported by the subtyping check in Step 2.
+            // TODO (inference): One of the best things about bidirectional typechecking is that it can produce very
+            //                   good errors. Instead of reporting `(a, b) is not a subtype of (a, b, c)`, we could
+            //                   report `(a, b) is a tuple with 2 elements and thus cannot be a subtype of a tuple
+            //                   (a, b, c) with 3 elements.`
+            assignments
+        }
+
+      // TODO (inference): As it stands now, an anonymous function either requires an expected type context, or all of
+      //                   its parameters to have type annotations. There is a very niche area where we could actually
+      //                   infer the parameter's types based on their usage within the body. For example, a function
+      //                   `x => x.name` could be typed as `%{ name: Any } => Any`. Of course that's not very useful if
+      //                   we cannot also deduce the return type, but that's the gist of it. Supporting such a style of
+      //                   inference would be, as said, very niche, so it's probably not worth the (considerable)
+      //                   effort. However, we should still consider this down the line, when the new typechecking
+      //                   algorithm is a bit more mature.
+      case expression@Expression.AnonymousFunction(parameters, body, _) =>
+        if (expression.isFullyAnnotated) {
+          Synthesizer.infer(expression, assignments).assignments
+        } else {
+          // If an anonymous function is missing a parameter type declaration, it requires the expected type to be a
+          // function type.
+          expectedType match {
+            case expectedType@FunctionType(input, output) if input.elements.length == parameters.length =>
+              Helpers.unifySubtypes(input, expression.tpe.input, assignments) match {
+                case Some(assignments2) =>
+                  check(body, output, assignments2)
+
+                case None =>
+                  val instantiatedInput = Helpers.instantiate(expression.tpe.input, assignments).asInstanceOf[TupleType]
+                  reportOnly(TypingFeedback2.AnonymousFunction.IllegalParameterTypes(expression, expectedType, instantiatedInput))
+                  assignments
+              }
+
+            case expectedType: FunctionType =>
+              reportOnly(TypingFeedback2.AnonymousFunction.IllegalArity(expression, expectedType))
+              assignments
+
+            case _ =>
+              reportOnly(TypingFeedback2.AnonymousFunction.FunctionTypeExpected(expression, expectedType))
+              assignments
+          }
+        }
+
+      // TODO (inference): ConstructorValue.
+      // TODO (inference): MultiFunctionValue.
+
       // The general case delegates to the Synthesizer, which simply infers the type of the expression. This
       // corresponds to a particular rule in most bidirectional type systems, defined as such:
       //    If `Γ ⊢ e => A` (infer) and `A = B` then `Γ ⊢ e <= B` (checked)
@@ -42,12 +117,15 @@ case class Checker(returnType: Type) {
     }
 
     // Step 2: Use the new assignments map to check that `expression.tpe` (as instantiated) is a subtype of
-    //         `expectedType`.
-    val actualType = Helpers.instantiate(expression.tpe, postAssignments, expression)
-    if (actualType </= expectedType) {
-      // TODO (inference): This probably needs a new typing error, maybe even dependent on the expression kind.
-      reporter.error(TypingFeedback.SubtypeExpected(actualType, expectedType, expression))
+    //         `expectedType`, unless the default error has been suppressed by `reportOnly`.
+    if (!suppressDefaultError) {
+      val actualType = Helpers.instantiate(expression.tpe, postAssignments, expression)
+      if (actualType </= expectedType) {
+        // TODO (inference): Does this need a new typing error?
+        reporter.error(TypingFeedback.SubtypeExpected(actualType, expectedType, expression))
+      }
     }
+
     postAssignments
   }
 
