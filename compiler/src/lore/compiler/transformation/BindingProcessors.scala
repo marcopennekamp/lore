@@ -10,16 +10,14 @@ object BindingProcessors {
   /**
     * A binding processor that coerces multi-functions and constructors to function values.
     */
-  def accessCoercion(position: Position)(implicit judgmentCollector: JudgmentCollector): Binding => Option[Expression] = {
+  def accessCoercion(position: Position): Binding => Option[Expression] = {
     case mf: MultiFunctionDefinition =>
       // Multi-functions which aren't directly used in a simple call must be converted to function values immediately.
-      val functionType = new InferenceVariable
-      judgmentCollector.add(TypingJudgment.MultiFunctionValue(functionType, mf, position))
-      Some(Expression.MultiFunctionValue(mf, functionType, position))
+      Some(Expression.MultiFunctionValue(mf, new InferenceVariable, position))
 
     // TODO (inference): To properly infer a struct constructor with bidirectional typechecking, we should introduce a
     //                   ConstructorValue expression, similar to the MultiFunctionValue expression.
-    case structBinding: StructConstructorBinding => Some(Expression.BindingAccess(StructTransformation.getConstructor(structBinding, position), position))
+    case structBinding: StructConstructorBinding => ??? //Some(Expression.BindingAccess(StructTransformation.getConstructor(structBinding, position), position))
     case binding: TypedBinding => Some(Expression.BindingAccess(binding, position))
   }
 }

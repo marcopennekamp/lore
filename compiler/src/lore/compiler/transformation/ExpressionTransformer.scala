@@ -8,7 +8,9 @@ import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.scopes.{BindingScope, TypeScope}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
+import lore.compiler.transformation2.ExpressionTransformationVisitor
 import lore.compiler.types.{TupleType, Type}
+import lore.compiler.typing.Checker
 
 object ExpressionTransformer {
 
@@ -27,13 +29,14 @@ object ExpressionTransformer {
     label: String,
   )(implicit registry: Registry, reporter: Reporter): Expression = {
     MemoReporter.nested(reporter) { implicit reporter =>
-      val visitor = new InferringExpressionTransformationVisitor(expectedType, typeScope, bindingScope)
+      val visitor = new ExpressionTransformationVisitor(typeScope, bindingScope)
       val expression = TopLevelExprVisitor.visit(visitor)(node)
 
       // Only continue with the transformation if the visitor produced no errors. Otherwise, type inference might
       // report a lot of useless errors.
       if (!reporter.hasErrors) {
-        val inferredTypes = Inference.inferVerbose(visitor.typingJudgments, label, reporter)
+        val typeChecker = Checker(expectedType)
+        val inferredTypes = typeChecker.check(expression, expectedType, Map.empty)
         val inferenceFailed = reporter.hasErrors
 
         val rehydrationVisitor = new TypeRehydrationVisitor(inferredTypes)

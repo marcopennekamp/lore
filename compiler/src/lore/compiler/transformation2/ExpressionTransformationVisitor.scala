@@ -11,13 +11,10 @@ import lore.compiler.semantics.functions._
 import lore.compiler.semantics.scopes._
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
-import lore.compiler.transformation.InferringExpressionTransformationVisitor._
 import lore.compiler.transformation._
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalaz.Id.Id
-
-// TODO (inference): This is the new version of the InferringExpressionTransformationVisitor.
 
 class ExpressionTransformationVisitor(
   /**
@@ -38,15 +35,6 @@ class ExpressionTransformationVisitor(
   implicit def currentScope: BindingScope = scopeContext.currentScope
   implicit val typeScopeImplicit: TypeScope = typeScope
 
-  // These typing judgments should contain even trivial judgments that could be resolved now. If for example all types
-  // are available here to type an addition operation, we could avoid adding any typing judgments and just type the
-  // expression here. The problem is that we'd have to still report typing errors, and in a consistent manner with the
-  // way type inference reports errors. The amount of duplicated work required here makes this optimization not worth
-  // it.
-  // TODO (inference): We shouldn't need typing judgments at this stage with bidirectional typechecking.
-  //implicit val judgmentCollector: JudgmentCollector = new JudgmentCollector
-  //def typingJudgments: Vector[TypingJudgment] = judgmentCollector.judgments
-
   override def visitLeaf(node: LeafNode): Expression = node match {
     case VariableNode(namePathNode, position) =>
       AccessTransformation
@@ -56,7 +44,7 @@ class ExpressionTransformationVisitor(
     case RealLiteralNode(value, position) => Expression.Literal(value, BasicType.Real, position)
     case node@IntLiteralNode(value, position) =>
       if (value < BasicType.Int.minSafeInteger || BasicType.Int.maxSafeInteger < value) {
-        reporter.error(UnsafeInteger(node))
+        reporter.error(ExpressionFeedback.UnsafeInteger(node))
       }
       Expression.Literal(value, BasicType.Int, position)
     case BoolLiteralNode(value, position) => Expression.Literal(value, BasicType.Boolean, position)
@@ -78,10 +66,11 @@ class ExpressionTransformationVisitor(
       }.getOrElse(Expression.Hole(BasicType.Nothing, position))
 
     case ConstructorNode(namePathNode, typeArgumentNodes, position) =>
-      StructTransformation.getConstructor(namePathNode.namePath, Some(typeArgumentNodes), namePathNode.position) match {
+      /* StructTransformation.getConstructor(namePathNode.namePath, Some(typeArgumentNodes), namePathNode.position) match {
         case Some(constructor) => Expression.BindingAccess(constructor, position)
         case None => Expression.Hole(BasicType.Nothing, position)
-      }
+      } */
+      ???
 
     case SymbolValueNode(name, position) => Expression.Symbol(name, position)
   }
@@ -171,7 +160,7 @@ class ExpressionTransformationVisitor(
       Expression.ListConstruction(expressions, position)
 
     case ObjectMapNode(namePathNode, typeArgumentNodes, entryNodes, position) =>
-      StructTransformation.getConstructor(namePathNode.namePath, typeArgumentNodes, namePathNode.position) match {
+      /* StructTransformation.getConstructor(namePathNode.namePath, typeArgumentNodes, namePathNode.position) match {
         case Some(constructor) =>
           val entries = entryNodes.zip(expressions).map {
             case (ObjectEntryNode(nameNode, _, _), expression) => nameNode.value -> expression
@@ -180,7 +169,8 @@ class ExpressionTransformationVisitor(
           CallTransformation.valueCall(Expression.BindingAccess(constructor, namePathNode.position), arguments, position)
 
         case None => Expression.Hole(BasicType.Nothing, position)
-      }
+      } */
+      ???
 
     case ShapeValueNode(propertyNodes, position) =>
       val properties = propertyNodes.zip(expressions).map { case (propertyNode, value) => Expression.ShapeProperty(propertyNode.name, value) }
@@ -199,8 +189,8 @@ class ExpressionTransformationVisitor(
 
       def handleSingleBinding(binding: Binding): Option[Expression.Call] = {
         binding match {
-          case structBinding: StructConstructorBinding => handleSingleBinding(StructTransformation.getConstructor(structBinding, namePathNode.position))
           case mf: MultiFunctionDefinition => Some(Expression.Call(CallTarget.MultiFunction(mf), expressions, new InferenceVariable, position))
+          case structBinding: StructConstructorBinding => ??? //handleSingleBinding(StructTransformation.getConstructor(structBinding, namePathNode.position))
           case structObject: StructObjectBinding =>
             reporter.error(StructFeedback.Object.NoConstructor(structObject.name, namePathNode.position))
             None

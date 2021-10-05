@@ -2,7 +2,7 @@ package lore.compiler.transformation
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.{ExpressionFeedback, Feedback, Reporter, StructFeedback}
-import lore.compiler.inference.{InferenceVariable, TypingJudgment}
+import lore.compiler.inference.InferenceVariable
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.modules.GlobalModule
 import lore.compiler.semantics.scopes._
@@ -24,7 +24,7 @@ object AccessTransformation {
     processSingle: Binding => Option[Expression],
     processInstance: Binding => Option[Expression],
     processAccessed: Expression => Option[Expression],
-  )(namePathNode: NamePathNode)(implicit bindingScope: BindingScope, judgmentCollector: JudgmentCollector, reporter: Reporter): Option[Expression] = {
+  )(namePathNode: NamePathNode)(implicit bindingScope: BindingScope, reporter: Reporter): Option[Expression] = {
     val headNameNode = namePathNode.segments.head
     bindingScope.resolve(headNameNode.value, headNameNode.position).flatMap { initialBinding =>
       resolveAccessInstance(initialBinding, namePathNode.segments.tail, headNameNode.position).flatMap {
@@ -92,7 +92,7 @@ object AccessTransformation {
 
   def transform(
     process: Binding => Option[Expression],
-  )(namePathNode: NamePathNode)(implicit bindingScope: BindingScope, judgmentCollector: JudgmentCollector, reporter: Reporter): Option[Expression] = {
+  )(namePathNode: NamePathNode)(implicit bindingScope: BindingScope, reporter: Reporter): Option[Expression] = {
     transform(process, process, Some(_))(namePathNode)
   }
 
@@ -103,12 +103,10 @@ object AccessTransformation {
     *
     * Note that `instance` is returned unchanged if `memberNames` is empty.
     */
-  def transformMemberAccess(instance: Expression, memberNames: Vector[NameNode])(implicit judgmentCollector: JudgmentCollector): Expression = {
+  def transformMemberAccess(instance: Expression, memberNames: Vector[NameNode]): Expression = {
     memberNames.foldLeft(instance) {
       case (expression, NameNode(memberName, position)) =>
-        val memberType = new InferenceVariable
-        judgmentCollector.add(TypingJudgment.MemberAccess(memberType, expression.tpe, memberName, position))
-        Expression.UnresolvedMemberAccess(expression, memberName, memberType, position)
+        Expression.UnresolvedMemberAccess(expression, memberName, new InferenceVariable, position)
     }
   }
 

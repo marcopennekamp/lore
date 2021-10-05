@@ -1,3 +1,4 @@
+/*
 package lore.compiler.transformation
 
 import lore.compiler.core._
@@ -403,3 +404,4 @@ object InferringExpressionTransformationVisitor {
   }
 
 }
+*/
