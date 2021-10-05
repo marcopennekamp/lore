@@ -1,6 +1,6 @@
 package lore.compiler.feedback
 
-import lore.compiler.core.Positioned
+import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types.{FunctionType, TupleType, Type}
 
@@ -34,8 +34,20 @@ object TypingFeedback2 {
     }
   }
 
-  case class CollectionExpected(actualType: Type, context: Positioned) extends Feedback.Error(context) {
-    override def message: String = s"You can only iterate over lists and maps. The type $actualType is not a list or map."
+  object ValueCalls {
+    case class FunctionExpected(expression: Expression.Call, actualType: Type) extends Feedback.Error(expression) {
+      override def message: String = s"Only functions may be called. You are trying to call a value of type $actualType."
+    }
+
+    case class IllegalArity(expression: Expression.Call, inputType: TupleType) extends Feedback.Error(expression) {
+      override def message: String = s"A function of arity ${inputType.elements.length} cannot be called with ${expression.arguments.length} arguments."
+    }
+  }
+
+  object Loops {
+    case class CollectionExpected(actualType: Type, context: Positioned) extends Feedback.Error(context) {
+      override def message: String = s"You can only iterate over lists and maps. The type $actualType is not a list or map."
+    }
   }
 
 }

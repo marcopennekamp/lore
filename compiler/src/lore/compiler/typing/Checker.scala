@@ -144,8 +144,6 @@ case class Checker(returnType: Type) {
           case _ => fallback
         }
 
-      // TODO (inference): Call.
-
       case Expression.Cond(cases, _) =>
         val assignments2 = check(cases.map(_.condition), BasicType.Boolean, assignments)
         check(cases.map(_.body), expectedType, assignments2)

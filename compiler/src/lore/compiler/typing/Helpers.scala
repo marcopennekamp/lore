@@ -109,6 +109,8 @@ object Helpers {
     */
   def instantiate(expression: Expression, assignments: Assignments)(implicit reporter: Reporter): Type = instantiate(expression.tpe, assignments, expression)
 
+  def instantiate(expressions: Vector[Expression], assignments: Assignments)(implicit reporter: Reporter): Vector[Type] = expressions.map(instantiate(_, assignments))
+
   /**
     * Guesses the best instantiation for `tpe` from the given assignments. This can be used to preprocess types for
     * error reporting.

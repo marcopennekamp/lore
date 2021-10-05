@@ -5,6 +5,7 @@ import lore.compiler.feedback.{Reporter, TypingFeedback2}
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
+import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.types._
 
 // TODO (inference): We're using the old definition of Assignments here, which might be correct. However, we need to
@@ -149,7 +150,43 @@ object Synthesizer {
           case Concatenation => assignOperationResult(checkOperands(BasicType.Any), expression, BasicType.String)
         }
 
-      // TODO (inference): Call.
+      case expression@Expression.Call(target, arguments, tpe, _) =>
+        target match {
+          case CallTarget.Value(target) =>
+            // TODO (inference): We can technically `check` the `target` here with the types of the arguments. This
+            //                   complicates things, however, as most of the time we want to infer an argument's actual
+            //                   type from the target's function type. So we'd first have to try to infer the
+            //                   arguments, if everything can be inferred `check` the `target`, and if they cannot be
+            //                   inferred, `infer` `target` instead.
+            // TODO (inference): If we want to assign types to type parameters of constructors here, we'll have to
+            //                   allow unresolved inference variables and somehow also implement their bounds. What's
+            //                   probably easier is to treat constructor calls as a separate entity and handle them
+            //                   like single-function multi-function calls. We will essentially need the same type
+            //                   parameter handling for both multi-functions and constructors.
+            val targetAssignments = infer(target, assignments)
+            val (argumentAssignments, output) = Helpers.instantiate(target, targetAssignments) match {
+              case FunctionType(input, output) =>
+                if (arguments.length == input.elements.length) {
+                  val assignments3 = arguments.zip(input.elements).foldLeft(targetAssignments) {
+                    case (assignments2, (argument, parameterType)) =>
+                      checker.check(argument, parameterType, assignments2)
+                  }
+                  (assignments3, output)
+                } else {
+                  reporter.error(TypingFeedback2.ValueCalls.IllegalArity(expression, input))
+                  (targetAssignments, BasicType.Nothing)
+                }
+
+              case targetType =>
+                reporter.error(TypingFeedback2.ValueCalls.FunctionExpected(expression, targetType))
+                (targetAssignments, BasicType.Nothing)
+            }
+            Helpers.unifyEquals(tpe, output, argumentAssignments).getOrElse(argumentAssignments)
+
+          case CallTarget.MultiFunction(mf) => ??? // TODO (inference): Implement.
+
+          case CallTarget.Dynamic(_) => infer(arguments, assignments)
+        }
 
       case Expression.Cond(cases, _) =>
         val assignments2 = checker.check(cases.map(_.condition), BasicType.Boolean, assignments)
@@ -202,7 +239,7 @@ object Synthesizer {
           case ListType(element) => Some(element)
           case MapType(key, value) => Some(TupleType(key, value))
           case _ =>
-            reporter.error(TypingFeedback2.CollectionExpected(collectionType, extractor.collection))
+            reporter.error(TypingFeedback2.Loops.CollectionExpected(collectionType, extractor.collection))
             None
         }
 

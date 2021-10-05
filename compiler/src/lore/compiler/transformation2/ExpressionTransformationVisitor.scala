@@ -199,8 +199,8 @@ class ExpressionTransformationVisitor(
 
       def handleSingleBinding(binding: Binding): Option[Expression.Call] = {
         binding match {
-          case mf: MultiFunctionDefinition => Some(FunctionTyping.multiFunctionCall(mf, expressions, position))
           case structBinding: StructConstructorBinding => handleSingleBinding(StructTransformation.getConstructor(structBinding, namePathNode.position))
+          case mf: MultiFunctionDefinition => Some(Expression.Call(CallTarget.MultiFunction(mf), expressions, new InferenceVariable, position))
           case structObject: StructObjectBinding =>
             reporter.error(StructFeedback.Object.NoConstructor(structObject.name, namePathNode.position))
             None
