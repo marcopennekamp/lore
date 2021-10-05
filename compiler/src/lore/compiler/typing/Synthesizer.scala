@@ -4,6 +4,7 @@ import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Reporter, TypingFeedback2}
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.types._
 
 // TODO (inference): We're using the old definition of Assignments here, which might be correct. However, we need to
@@ -97,9 +98,85 @@ object Synthesizer {
 
       case Expression.Symbol(_, _) => assignments
 
+      case expression@Expression.UnaryOperation(operator, value, _, _) =>
+        import UnaryOperator._
+        def checkOperand(t1: Type) = checker.check(value, t1, assignments)
+
+        operator match {
+          case Negation => assignOperationResult(checkOperand(BasicType.Real), expression, value.tpe, BasicType.Real)
+          case LogicalNot => assignOperationResult(checkOperand(BasicType.Boolean), expression, BasicType.Boolean)
+        }
+
+      case expression@Expression.BinaryOperation(operator, left, right, _, _) =>
+        import BinaryOperator._
+        def checkOperands(t1: Type, t2: Type) = checker.check(right, t2, checker.check(left, t1, assignments))
+
+        operator match {
+          case Addition | Subtraction | Multiplication | Division => assignOperationResult(
+            checkOperands(BasicType.Real, BasicType.Real),
+            expression,
+            SumType.construct(left.tpe, right.tpe),
+            BasicType.Real,
+          )
+
+          case Equals | LessThan | LessThanEquals => assignOperationResult(checkOperands(BasicType.Any, BasicType.Any), expression, BasicType.Boolean)
+
+          case Append =>
+            val assignments2 = infer(left, assignments)
+            val collectionType = Helpers.instantiate(left, assignments2)
+            val assignments3 = infer(right, assignments2)
+            val newElementType = Helpers.instantiate(right, assignments3)
+
+            // We have to combine the collection's element type with the new element's type. This is only possible if
+            // `collectionType` is actually a list.
+            collectionType match {
+              case ListType(elementType) =>
+                val combinedType = ListType(SumType.construct(elementType, newElementType))
+                Helpers.unifySubtypes(expression.tpe, combinedType, assignments3).getOrElse(assignments3)
+
+              case _ =>
+                reporter.report(TypingFeedback2.Lists.ListExpected(expression, collectionType))
+                assignments3
+            }
+        }
+
+      case expression@Expression.XaryOperation(operator, operands, _, _) =>
+        import XaryOperator._
+        def checkOperands(tpe: Type): Assignments = checker.check(operands, tpe, assignments)
+
+        operator match {
+          case Conjunction | Disjunction => assignOperationResult(checkOperands(BasicType.Boolean), expression, BasicType.Boolean)
+          case Concatenation => assignOperationResult(checkOperands(BasicType.Any), expression, BasicType.String)
+        }
+
       // TODO (inference): This is missing type ascription, which delegates back to the checker! Obviously we'll have
       //                   to support this in the syntax first. (Such as `expr :: Type`.)
     }
+  }
+
+  /**
+    * Unifies `resultType` with `operation.tpe` such that `operation.tpe` is a subtype of `resultType`, unless
+    * `resultType` is not a subtype of `upperBound`, in which case `upperBound` is unified with `operationType`.
+    *
+    * @param resultType The result type will be instantiated by this function, so it is possible to pass an
+    *                   uninstantiated type.
+    * @param upperBound The upper bound ensures that the result type of an expression must adhere to certain standards.
+    *                   For example, the result type of a negation is the type of its value, but if the value isn't Int
+    *                   or Real, we don't want the negation to suddenly be typed as a String.
+    */
+  private def assignOperationResult(
+    assignments: Assignments,
+    operation: Expression,
+    resultType: Type,
+    upperBound: Type,
+  )(implicit reporter: Reporter): Assignments = {
+    val resultType2 = Helpers.instantiate(resultType, assignments, operation)
+    val resultType3 = if (resultType2 <= upperBound) resultType2 else upperBound
+    Helpers.unifySubtypes(operation.tpe, resultType3, assignments).getOrElse(assignments)
+  }
+
+  private def assignOperationResult(assignments: Assignments, operation: Expression, resultType: Type)(implicit reporter: Reporter): Assignments = {
+    assignOperationResult(assignments, operation, resultType, resultType)
   }
 
   /**

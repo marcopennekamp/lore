@@ -101,13 +101,8 @@ class ExpressionTransformationVisitor(
       scopeContext.currentScope.register(variable, nameNode.position)
       Expression.VariableDeclaration(variable, expression, typeAnnotation, position)
 
-    case NegationNode(_, position) =>
-      judgmentCollector.add(TypingJudgment.Subtypes(expression.tpe, BasicType.Real, position))
-      Expression.UnaryOperation(UnaryOperator.Negation, expression, expression.tpe, position)
-
-    case LogicalNotNode(_, position) =>
-      judgmentCollector.add(TypingJudgment.Subtypes(expression.tpe, BasicType.Boolean, position))
-      Expression.UnaryOperation(UnaryOperator.LogicalNot, expression, BasicType.Boolean, position)
+    case NegationNode(_, position) => Expression.UnaryOperation(UnaryOperator.Negation, expression, expression.tpe, position)
+    case LogicalNotNode(_, position) => Expression.UnaryOperation(UnaryOperator.LogicalNot, expression, BasicType.Boolean, position)
 
     case MemberAccessNode(_, nameNode, _) => AccessTransformation.transformMemberAccess(expression, Vector(nameNode))
   }
@@ -123,10 +118,10 @@ class ExpressionTransformationVisitor(
       }
 
     // Arithmetic operations.
-    case AdditionNode(_, _, position) => transformNumericOperation(BinaryOperator.Addition, left, right, position)
-    case SubtractionNode(_, _, position) => transformNumericOperation(BinaryOperator.Subtraction, left, right, position)
-    case MultiplicationNode(_, _, position) => transformNumericOperation(BinaryOperator.Multiplication, left, right, position)
-    case DivisionNode(_, _, position) => transformNumericOperation(BinaryOperator.Division, left, right, position)
+    case AdditionNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.Addition, left, right, new InferenceVariable, position)
+    case SubtractionNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.Subtraction, left, right, new InferenceVariable, position)
+    case MultiplicationNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.Multiplication, left, right, new InferenceVariable, position)
+    case DivisionNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.Division, left, right, new InferenceVariable, position)
 
     // Boolean operations.
     case EqualsNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.Equals, left, right, BasicType.Boolean, position)
@@ -141,19 +136,7 @@ class ExpressionTransformationVisitor(
     case LessThanEqualsNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.LessThanEquals, left, right, BasicType.Boolean, position)
 
     // Collection operations.
-    case AppendNode(_, _, position) =>
-      val elementType = new InferenceVariable
-      val combinedType = new InferenceVariable
-
-      // The Equals judgment is chosen deliberately, because we want the list's type to be able to be inferred from the
-      // combined type (which might in turn be inferred from an explicitly typed variable declaration). This inference
-      // is possible due to the bidirectionality of the LUB judgment.
-      judgmentCollector.add(
-        TypingJudgment.Equals(ListType(elementType), left.tpe, position),
-        TypingJudgment.LeastUpperBound(combinedType, Vector(elementType, right.tpe), position),
-      )
-
-      Expression.BinaryOperation(BinaryOperator.Append, left, right, ListType(combinedType), position)
+    case AppendNode(_, _, position) => Expression.BinaryOperation(BinaryOperator.Append, left, right, ListType(new InferenceVariable), position)
 
     // Loops.
     case WhileNode(_, _, position) =>
@@ -165,21 +148,6 @@ class ExpressionTransformationVisitor(
       judgmentCollector.add(TypingJudgment.Subtypes(condition.tpe, BasicType.Boolean, position))
 
       Expression.WhileLoop(condition, body, inferLoopType(body, position), position)
-  }
-
-  private def transformNumericOperation(
-    operator: BinaryOperator,
-    left: Expression,
-    right: Expression,
-    position: Position,
-  ): Expression.BinaryOperation = {
-    val resultType = new InferenceVariable
-    judgmentCollector.add(
-      TypingJudgment.Subtypes(left.tpe, BasicType.Real, position),
-      TypingJudgment.Subtypes(right.tpe, BasicType.Real, position),
-      TypingJudgment.LeastUpperBound(resultType, Vector(left.tpe, right.tpe), position),
-    )
-    Expression.BinaryOperation(operator, left, right, resultType, position)
   }
 
   override def visitTernary(node: TernaryNode)(
@@ -196,6 +164,7 @@ class ExpressionTransformationVisitor(
         TypingJudgment.LeastUpperBound(resultType, Vector(onTrue.tpe, onFalse.tpe), position),
       )
 
+      // TODO (inference): Can't we represent IfElse in terms of Cond?
       Expression.IfElse(condition, onTrue, onFalse, resultType, position)
   }
 
@@ -229,14 +198,9 @@ class ExpressionTransformationVisitor(
       Expression.ShapeValue(properties, position)
 
     // Xary operations.
-    case ConjunctionNode(_, position) =>
-      transformBooleanOperation(XaryOperator.Conjunction, expressions, position)
-
-    case DisjunctionNode(_, position) =>
-      transformBooleanOperation(XaryOperator.Disjunction, expressions, position)
-
-    case ConcatenationNode(_, position) =>
-      Expression.XaryOperation(XaryOperator.Concatenation, expressions, BasicType.String, position)
+    case ConjunctionNode(_, position) => Expression.XaryOperation(XaryOperator.Conjunction, expressions, BasicType.Boolean, position)
+    case DisjunctionNode(_, position) => Expression.XaryOperation(XaryOperator.Disjunction, expressions, BasicType.Boolean, position)
+    case ConcatenationNode(_, position) => Expression.XaryOperation(XaryOperator.Concatenation, expressions, BasicType.String, position)
 
     // Xary function calls.
     case SimpleCallNode(namePathNode, _, position) =>
@@ -264,11 +228,6 @@ class ExpressionTransformationVisitor(
     case DynamicCallNode(nameLiteral, resultTypeNode, _, position) =>
       val resultType = TypeExpressionEvaluator.evaluate(resultTypeNode).getOrElse(BasicType.Nothing)
       Expression.Call(CallTarget.Dynamic(nameLiteral.value), expressions, resultType, position)
-  }
-
-  private def transformBooleanOperation(operator: XaryOperator, expressions: Vector[Expression], position: Position): Expression.XaryOperation = {
-    judgmentCollector.add(expressions.map(e => TypingJudgment.Subtypes(e.tpe, BasicType.Boolean, e.position)))
-    Expression.XaryOperation(operator, expressions, BasicType.Boolean, position)
   }
 
   override def visitAnonymousFunction(node: AnonymousFunctionNode)(visitBody: () => Expression): Expression = {

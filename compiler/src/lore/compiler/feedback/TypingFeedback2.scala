@@ -27,4 +27,10 @@ object TypingFeedback2 {
     }
   }
 
+  object Lists {
+    case class ListExpected(expression: Expression.BinaryOperation, actualType: Type) extends Feedback.Error(expression) {
+      override def message: String = s"You can only append elements to lists. The type $actualType is not a list."
+    }
+  }
+
 }
