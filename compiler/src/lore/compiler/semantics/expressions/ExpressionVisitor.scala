@@ -32,7 +32,6 @@ trait ExpressionVisitor[A, B] {
   def visit(expression: BinaryOperation)(left: A, right: A): B
   def visit(expression: XaryOperation)(operands: Vector[A]): B
   def visit(expression: Call)(target: Option[A], arguments: Vector[A]): B
-  def visit(expression: IfElse)(condition: A, onTrue: A, onFalse: A): B
   def visit(expression: Cond)(cases: Vector[(A, A)]): B
   def visit(expression: WhileLoop)(condition: A, body: A): B
   def visit(expression: ForLoop)(collections: Vector[A], body: A): B
@@ -57,7 +56,7 @@ object ExpressionVisitor {
 
       // Top-Level Expressions
       case node@Return(value, _) => visitor.visit(node)(rec(value))
-      case node@VariableDeclaration(_, value, _) => visitor.visit(node)(rec(value))
+      case node@VariableDeclaration(_, value, _, _) => visitor.visit(node)(rec(value))
       case node@Assignment(target, value, _) => visitor.visit(node)(rec(target), rec(value))
 
       // Expressions
@@ -70,16 +69,15 @@ object ExpressionVisitor {
       case node@AnonymousFunction(_, body, _) => visitor.visit(node)(rec(body))
       case node@MultiFunctionValue(_, _, _) => visitor.visit(node)
       case node@FixedFunctionValue(_, _) => visitor.visit(node)
-      case node@ListConstruction(values, _, _) => visitor.visit(node)(values.map(rec))
-      case node@MapConstruction(entries, _, _) => visitor.visit(node)(entries.map(e => (rec(e.key), rec(e.value))))
+      case node@ListConstruction(values, _) => visitor.visit(node)(values.map(rec))
+      case node@MapConstruction(entries, _) => visitor.visit(node)(entries.map(e => (rec(e.key), rec(e.value))))
       case node@ShapeValue(properties, _) => visitor.visit(node)(properties.map(p => rec(p.value)))
       case node@Symbol(_, _) => visitor.visit(node)
       case node@UnaryOperation(_, value, _, _) => visitor.visit(node)(rec(value))
       case node@BinaryOperation(_, left, right, _, _) => visitor.visit(node)(rec(left), rec(right))
       case node@XaryOperation(_, expressions, _, _) => visitor.visit(node)(expressions.map(rec))
       case node@Call(target, arguments, _, _) => visitor.visit(node)(target.getExpression.map(rec), arguments.map(rec))
-      case node@IfElse(condition, onTrue, onFalse, _, _) => visitor.visit(node)(rec(condition), rec(onTrue), rec(onFalse))
-      case node@Cond(cases, _, _) => visitor.visit(node)(cases.map(c => (rec(c.condition), rec(c.body))))
+      case node@Cond(cases, _) => visitor.visit(node)(cases.map(c => (rec(c.condition), rec(c.body))))
       case node@WhileLoop(condition, body, _, _) => visitor.visit(node)(rec(condition), rec(body))
       case node@ForLoop(extractors, body, _, _) => visitor.visit(node)(extractors.map(e => rec(e.collection)), rec(body))
     }

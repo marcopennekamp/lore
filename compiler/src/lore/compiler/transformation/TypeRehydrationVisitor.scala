@@ -62,16 +62,9 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
 
   override def visit(expression: FixedFunctionValue): Expression = expression
 
-  override def visit(expression: ListConstruction)(values: Vector[Expression]): Expression = expression.copy(
-    values = values,
-    tpe = assignments.instantiate(expression.tpe)
-  )
+  override def visit(expression: ListConstruction)(values: Vector[Expression]): Expression = expression.copy(values = values)
 
-  override def visit(expression: MapConstruction)(entries: Vector[(Expression, Expression)]): Expression = {
-    expression.withEntries(entries).copy(
-      tpe = assignments.instantiate(expression.tpe)
-    )
-  }
+  override def visit(expression: MapConstruction)(entries: Vector[(Expression, Expression)]): Expression = expression.withEntries(entries)
 
   override def visit(expression: ShapeValue)(properties: Vector[Expression]): Expression = expression.withPropertyValues(properties)
 
@@ -99,18 +92,7 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
     tpe = assignments.instantiate(expression.tpe),
   )
 
-  override def visit(expression: IfElse)(condition: Expression, onTrue: Expression, onFalse: Expression): Expression = expression.copy(
-    condition = condition,
-    onTrue = onTrue,
-    onFalse = onFalse,
-    tpe = assignments.instantiate(expression.tpe)
-  )
-
-  override def visit(expression: Cond)(cases: Vector[(Expression, Expression)]): Expression = {
-    expression.withCases(cases).copy(
-      tpe = assignments.instantiate(expression.tpe)
-    )
-  }
+  override def visit(expression: Cond)(cases: Vector[(Expression, Expression)]): Expression = expression.withCases(cases)
 
   override def visit(expression: WhileLoop)(condition: Expression, body: Expression): Expression = expression.copy(
     condition = condition,

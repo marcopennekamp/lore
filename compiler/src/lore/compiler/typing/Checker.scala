@@ -144,6 +144,12 @@ case class Checker(returnType: Type) {
           case _ => fallback
         }
 
+      // TODO (inference): Call.
+
+      case Expression.Cond(cases, _) =>
+        val assignments2 = check(cases.map(_.condition), BasicType.Boolean, assignments)
+        check(cases.map(_.body), expectedType, assignments2)
+
       // The general case delegates to the Synthesizer, which simply infers the type of the expression. This
       // corresponds to a particular rule in most bidirectional type systems, defined as such:
       //    If `Γ ⊢ e => A` (infer) and `A = B` then `Γ ⊢ e <= B` (checked)

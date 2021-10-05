@@ -149,6 +149,12 @@ object Synthesizer {
           case Concatenation => assignOperationResult(checkOperands(BasicType.Any), expression, BasicType.String)
         }
 
+      // TODO (inference): Call.
+
+      case Expression.Cond(cases, _) =>
+        val assignments2 = checker.check(cases.map(_.condition), BasicType.Boolean, assignments)
+        infer(cases.map(_.body), assignments2)
+
       // TODO (inference): This is missing type ascription, which delegates back to the checker! Obviously we'll have
       //                   to support this in the syntax first. (Such as `expr :: Type`.)
     }

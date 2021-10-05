@@ -114,7 +114,7 @@ object ExpressionTransformer {
     expression match {
       case Expression.Return(_, _) => true
       case Expression.Block(expressions, _) => expressions.lastOption.exists(allPathsReturn)
-      case Expression.IfElse(_, onTrue, onFalse, _, _) => allPathsReturn(onTrue) && allPathsReturn(onFalse)
+      case cond@Expression.Cond(cases, _) => cond.isTotal && cases.forall(c => allPathsReturn(c.body))
 
       // Loops aren't guaranteed to run even once and so cannot guarantee that all paths end in a return.
       // Hence Expression.WhileLoop and Expression.ForLoop will also result in false.

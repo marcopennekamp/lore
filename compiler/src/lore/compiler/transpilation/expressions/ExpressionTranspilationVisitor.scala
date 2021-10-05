@@ -193,11 +193,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
     }
   }
 
-  override def visit(expression: IfElse)(condition: Chunk, onTrue: Chunk, onFalse: Chunk): Chunk = {
-    ConditionalTranspiler().transpile(expression)(condition, onTrue, onFalse)
-  }
-
-  override def visit(expression: Cond)(cases: Vector[(Chunk, Chunk)]): Chunk = ConditionalTranspiler().transpile(expression)(cases)
+  override def visit(expression: Cond)(cases: Vector[(Chunk, Chunk)]): Chunk = ConditionalTranspiler.transpile(expression, cases)
 
   override def visit(loop: WhileLoop)(condition: Chunk, body: Chunk): Chunk = LoopTranspiler().transpile(loop, condition, body)
 

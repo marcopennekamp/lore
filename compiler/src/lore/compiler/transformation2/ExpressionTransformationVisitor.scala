@@ -154,18 +154,11 @@ class ExpressionTransformationVisitor(
     argument1: Expression, argument2: Expression, argument3: Expression,
   ): Expression = node match {
     case IfElseNode(_, _, _, position) =>
-      val condition = argument1
-      val onTrue = argument2
-      val onFalse = argument3
-      val resultType = new InferenceVariable
-
-      judgmentCollector.add(
-        TypingJudgment.Subtypes(condition.tpe, BasicType.Boolean, position),
-        TypingJudgment.LeastUpperBound(resultType, Vector(onTrue.tpe, onFalse.tpe), position),
+      val cases = Vector(
+        CondCase(argument1, argument2),
+        CondCase(Expression.Literal(true, BasicType.Boolean, Position.internal), argument3)
       )
-
-      // TODO (inference): Can't we represent IfElse in terms of Cond?
-      Expression.IfElse(condition, onTrue, onFalse, resultType, position)
+      Expression.Cond(cases, position)
   }
 
   override def visitXary(node: XaryNode)(expressions: Vector[Expression]): Expression = node match {
@@ -260,19 +253,7 @@ class ExpressionTransformationVisitor(
 
   override def visitCond(node: CondNode)(rawCases: Vector[(Expression, Expression)]): Expression = {
     val cases = rawCases.map(CondCase.tupled)
-    val isTotal = cases.exists(_.isTotalCase)
-    val resultType = new InferenceVariable
-
-    judgmentCollector.add(
-      cases.map(_.condition).map(condition => TypingJudgment.Subtypes(condition.tpe, BasicType.Boolean, condition.position))
-    )
-
-    // If there is no `true` case, we have to assume that the `cond` won't lead to a value in all instances. Hence, we
-    // have to assume that Unit may be a result type.
-    val bodyTypes = cases.map(_.body.tpe) ++ (if (!isTotal) Vector(TupleType.UnitType) else Vector.empty)
-    judgmentCollector.add(TypingJudgment.LeastUpperBound(resultType, bodyTypes, node.position))
-
-    Expression.Cond(cases, resultType, node.position)
+    Expression.Cond(cases, node.position)
   }
 
   override def visitIteration(node: ForNode)(

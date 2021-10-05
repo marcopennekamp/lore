@@ -1,34 +1,17 @@
 package lore.compiler.transpilation.expressions
 
-import lore.compiler.core.Position
-import lore.compiler.semantics.expressions.Expression.{Cond, CondCase, IfElse, Literal}
+import lore.compiler.semantics.expressions.Expression.Cond
 import lore.compiler.target.Target
 import lore.compiler.target.Target.TargetStatement
 import lore.compiler.target.TargetDsl._
 import lore.compiler.transpilation.TypeTranspiler.RuntimeTypeVariables
 import lore.compiler.transpilation.values.SymbolHistory
 import lore.compiler.transpilation.{Chunk, RuntimeApi, TemporaryVariableProvider}
-import lore.compiler.types.{BasicType, TupleType}
+import lore.compiler.types.TupleType
 
-case class ConditionalTranspiler()(implicit variableProvider: TemporaryVariableProvider, runtimeTypeVariables: RuntimeTypeVariables, symbolHistory: SymbolHistory) {
+object ConditionalTranspiler {
 
-  /**
-    * Transpiles an `if` expression by delegating to the `cond` transpiler.
-    */
-  def transpile(expression: IfElse)(condition: Chunk, onTrue: Chunk, onFalse: Chunk): Chunk = {
-    val cases = Vector(
-      CondCase(expression.condition, expression.onTrue),
-      CondCase(Literal(true, BasicType.Boolean, Position.internal), expression.onFalse),
-    )
-    val caseChunks = Vector(
-      (condition, onTrue),
-      (Chunk.expression(Target.BooleanLiteral(true)), onFalse),
-    )
-    val cond = Cond(cases, expression.tpe, expression.position)
-    transpile(cond)(caseChunks)
-  }
-
-  def transpile(expression: Cond)(cases: Vector[(Chunk, Chunk)]): Chunk = {
+  def transpile(expression: Cond, cases: Vector[(Chunk, Chunk)])(implicit variableProvider: TemporaryVariableProvider, runtimeTypeVariables: RuntimeTypeVariables, symbolHistory: SymbolHistory): Chunk = {
     if (cases.isEmpty) {
       return Chunk.unit()
     }

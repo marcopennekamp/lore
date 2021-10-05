@@ -218,14 +218,19 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and loop expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class IfElse(condition: Expression, onTrue: Expression, onFalse: Expression, tpe: Type, position: Position) extends Expression
-
-  case class Cond(cases: Vector[CondCase], tpe: Type, position: Position) extends Expression {
+  case class Cond(cases: Vector[CondCase], position: Position) extends Expression {
     /**
       * Whether the `cond` evaluates to a value in all cases. This is true if one case's condition is simply `true`,
       * which is the "else" branch of the cond.
       */
     val isTotal: Boolean = cases.exists(_.isTotalCase)
+
+    override val tpe: Type = {
+      // If there is no `true` case, we have to assume that the `cond` won't lead to a value in all instances. Hence,
+      // we have to assume that Unit may be a result type.
+      val bodyTypes = cases.map(_.body.tpe) ++ (if (!isTotal) Vector(TupleType.UnitType) else Vector.empty)
+      SumType.construct(bodyTypes)
+    }
 
     def withCases(pairs: Vector[(Expression, Expression)]): Cond = this.copy(pairs.map(CondCase.tupled))
   }
