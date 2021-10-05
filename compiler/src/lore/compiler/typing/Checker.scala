@@ -99,16 +99,16 @@ case class Checker(returnType: Type) {
 
                 case None =>
                   val instantiatedInput = Helpers.instantiateCandidate(expression.tpe.input, assignments).asInstanceOf[TupleType]
-                  reportOnly(TypingFeedback2.AnonymousFunction.IllegalParameterTypes(expression, expectedType, instantiatedInput))
+                  reportOnly(TypingFeedback2.AnonymousFunctions.IllegalParameterTypes(expression, expectedType, instantiatedInput))
                   assignments
               }
 
             case expectedType: FunctionType =>
-              reportOnly(TypingFeedback2.AnonymousFunction.IllegalArity(expression, expectedType))
+              reportOnly(TypingFeedback2.AnonymousFunctions.IllegalArity(expression, expectedType))
               assignments
 
             case _ =>
-              reportOnly(TypingFeedback2.AnonymousFunction.FunctionTypeExpected(expression, expectedType))
+              reportOnly(TypingFeedback2.AnonymousFunctions.FunctionTypeExpected(expression, expectedType))
               assignments
           }
         }

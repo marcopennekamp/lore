@@ -73,7 +73,7 @@ object Synthesizer {
         if (expression.isFullyAnnotated) {
           infer(body, assignments)
         } else {
-          reporter.report(TypingFeedback2.AnonymousFunction.TypeContextExpected(expression))
+          reporter.report(TypingFeedback2.AnonymousFunctions.TypeContextExpected(expression))
           assignments
         }
 

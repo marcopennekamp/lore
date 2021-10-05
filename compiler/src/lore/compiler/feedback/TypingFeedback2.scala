@@ -5,7 +5,7 @@ import lore.compiler.types.{FunctionType, TupleType, Type}
 
 object TypingFeedback2 {
 
-  object AnonymousFunction {
+  object AnonymousFunctions {
     case class FunctionTypeExpected(expression: Expression.AnonymousFunction, expectedType: Type) extends Feedback.Error(expression) {
       override def message: String = s"The type of the anonymous function cannot be inferred from a type $expectedType." +
         s" Either annotate all parameters with a type, or provide a function type in an outer expression."
