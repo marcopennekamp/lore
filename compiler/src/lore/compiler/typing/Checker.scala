@@ -150,6 +150,14 @@ case class Checker(returnType: Type) {
         val assignments2 = check(cases.map(_.condition), BasicType.Boolean, assignments)
         check(cases.map(_.body), expectedType, assignments2)
 
+      case expression@Expression.WhileLoop(condition, _, _) =>
+        val assignments2 = check(condition, BasicType.Boolean, assignments)
+        checkLoop(expression, expectedType, assignments2)
+
+      case expression@Expression.ForLoop(extractors, _, _) =>
+        val assignments2 = Synthesizer.inferExtractors(extractors, assignments)
+        checkLoop(expression, expectedType, assignments2)
+
       // The general case delegates to the Synthesizer, which simply infers the type of the expression. This
       // corresponds to a particular rule in most bidirectional type systems, defined as such:
       //    If `Γ ⊢ e => A` (infer) and `A = B` then `Γ ⊢ e <= B` (checked)
@@ -169,6 +177,13 @@ case class Checker(returnType: Type) {
     }
 
     postAssignments
+  }
+
+  private def checkLoop(loop: Expression.Loop, expectedType: Type, assignments: Assignments)(implicit reporter: Reporter): Assignments = {
+    expectedType match {
+      case ListType(elementType) => check(loop.body, elementType, assignments)
+      case _ => Synthesizer.infer(loop.body, assignments)
+    }
   }
 
   /**

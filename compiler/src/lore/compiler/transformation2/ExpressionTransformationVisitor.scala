@@ -142,12 +142,8 @@ class ExpressionTransformationVisitor(
     case WhileNode(_, _, position) =>
       // Close the previously opened scope.
       scopeContext.closeScope()
-      val condition = left
-      val body = right
 
-      judgmentCollector.add(TypingJudgment.Subtypes(condition.tpe, BasicType.Boolean, position))
-
-      Expression.WhileLoop(condition, body, inferLoopType(body, position), position)
+      Expression.WhileLoop(left, right, position)
   }
 
   override def visitTernary(node: TernaryNode)(
@@ -266,8 +262,6 @@ class ExpressionTransformationVisitor(
 
     def transformExtractor(variableName: String, collection: Expression, position: Position) = {
       val elementType = new InferenceVariable
-      judgmentCollector.add(TypingJudgment.ElementType(elementType, collection.tpe, position))
-
       val variable = LocalVariable(variableName, elementType, isMutable = false)
       scopeContext.currentScope.register(variable, position)
       Expression.Extractor(variable, collection)
@@ -277,23 +271,11 @@ class ExpressionTransformationVisitor(
       case ((variableName, collection), position) => transformExtractor(variableName, collection, position)
     }
     val body = visitBody()
-    val tpe = inferLoopType(body, node.position)
 
     // We have to close the scope that we opened for the extractors.
     scopeContext.closeScope()
 
-    Expression.ForLoop(extractors, body, tpe, node.position)
-  }
-
-  private def inferLoopType(body: Expression, position: Position): InferenceVariable = {
-    val resultType = new InferenceVariable
-    // The Equals judgment is chosen deliberately so that we can infer the body's type via a potentially explicitly
-    // specified result type.
-    // For example:
-    //    let things = [%{ x: 5 }, %{ x: -2 }, %{ x: 12 }]
-    //    let functions: %{ n: Int } => Int = for (v <- things) { v2 => v2.n * v.x }
-    judgmentCollector.add(TypingJudgment.Equals(resultType, ListType(body.tpe), position))
-    resultType
+    Expression.ForLoop(extractors, body, node.position)
   }
 
   override def before: PartialFunction[TopLevelExprNode, Unit] = {

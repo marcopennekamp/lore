@@ -5,7 +5,7 @@ import lore.compiler.feedback.{Feedback, LambdaReporter, Reporter}
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.inference.InferenceBounds.BoundType
 import lore.compiler.inference.matchers.{Matchers, SubtypingMatcher}
-import lore.compiler.inference.{Inference, InferenceBounds, InferenceVariable, TypingJudgment}
+import lore.compiler.inference.{Inference, InferenceBounds, InferenceVariable, TypingJudgment, Unification}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types.{BasicType, Type}
 
@@ -30,6 +30,22 @@ object Helpers {
     } else {
       None
     }
+  }
+
+  /**
+    * Unifies `t1` and `t2` such that `t1` is equal to `t2`, assigning inference variables accordingly.
+    *
+    * TODO (inference): This uses the old Unification object, so the code should be moved and simplified.
+    */
+  def unifyEquals(t1: Type, t2: Type, assignments: Assignments): Option[Assignments] = {
+    // TODO (inference): This is a temporary mock so that we can use the old Unification object.
+    val context = TypingJudgment.Equals(t1, t2, Position.internal)
+
+    // TODO (inference): The reporter has to suppress any generated errors, because we want `unifyEquals` to not leak
+    //                   any errors.
+    implicit val reporter: Reporter = new LambdaReporter(_ => { })
+
+    Unification.unify(t1, t2, assignments, context)
   }
 
   /**

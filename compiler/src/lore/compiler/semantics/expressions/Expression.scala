@@ -244,11 +244,19 @@ object Expression {
 
   sealed trait Loop extends Expression {
     def body: Expression
+
+    /**
+      * A loop with element type Unit is treated as a special loop with type Unit.
+      */
+    def tpe: Type = body.tpe match {
+      case TupleType.UnitType => TupleType.UnitType
+      case elementType => ListType(elementType)
+    }
   }
 
-  case class WhileLoop(condition: Expression, body: Expression, tpe: Type, position: Position) extends Loop
+  case class WhileLoop(condition: Expression, body: Expression, position: Position) extends Loop
 
-  case class ForLoop(extractors: Vector[Extractor], body: Expression, tpe: Type, position: Position) extends Loop {
+  case class ForLoop(extractors: Vector[Extractor], body: Expression, position: Position) extends Loop {
     /**
       * Creates a for-loop expression with the given collection values. The order of extractors and collections must be
       * compatible!
@@ -258,5 +266,8 @@ object Expression {
     }
   }
 
+  /**
+    * Note that `variable` contains the element type of the extractor, which must be inferred and rehydrated later.
+    */
   case class Extractor(variable: LocalVariable, collection: Expression)
 }

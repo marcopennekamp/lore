@@ -97,7 +97,6 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
   override def visit(expression: WhileLoop)(condition: Expression, body: Expression): Expression = expression.copy(
     condition = condition,
     body = body,
-    tpe = instantiateLoopResultType(expression.tpe)
   )
 
   override def visit(expression: ForLoop)(collections: Vector[Expression], body: Expression): Expression = {
@@ -105,7 +104,6 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
     newLoop.copy(
       extractors = newLoop.extractors.map(extractor => extractor.copy(instantiateVariable(extractor.variable))),
       body = body,
-      tpe = instantiateLoopResultType(expression.tpe)
     )
   }
 
@@ -116,13 +114,5 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
   }
 
   private def instantiateVariable(variable: LocalVariable): LocalVariable = variable.copy(tpe = assignments.instantiate(variable.tpe))
-
-  /**
-    * Instantiates the result type of the loop, simplifying [Unit] to Unit to cover "no result" loops.
-    */
-  private def instantiateLoopResultType(resultType: Type): Type = assignments.instantiate(resultType) match {
-    case ListType(TupleType.UnitType) => TupleType.UnitType
-    case t => t
-  }
 
 }

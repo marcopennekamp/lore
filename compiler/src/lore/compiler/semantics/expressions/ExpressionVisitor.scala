@@ -78,8 +78,8 @@ object ExpressionVisitor {
       case node@XaryOperation(_, expressions, _, _) => visitor.visit(node)(expressions.map(rec))
       case node@Call(target, arguments, _, _) => visitor.visit(node)(target.getExpression.map(rec), arguments.map(rec))
       case node@Cond(cases, _) => visitor.visit(node)(cases.map(c => (rec(c.condition), rec(c.body))))
-      case node@WhileLoop(condition, body, _, _) => visitor.visit(node)(rec(condition), rec(body))
-      case node@ForLoop(extractors, body, _, _) => visitor.visit(node)(extractors.map(e => rec(e.collection)), rec(body))
+      case node@WhileLoop(condition, body, _) => visitor.visit(node)(rec(condition), rec(body))
+      case node@ForLoop(extractors, body, _) => visitor.visit(node)(extractors.map(e => rec(e.collection)), rec(body))
     }
   }
 

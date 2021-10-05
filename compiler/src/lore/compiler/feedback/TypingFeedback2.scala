@@ -1,5 +1,6 @@
 package lore.compiler.feedback
 
+import lore.compiler.core.Positioned
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types.{FunctionType, TupleType, Type}
 
@@ -31,6 +32,10 @@ object TypingFeedback2 {
     case class ListExpected(expression: Expression.BinaryOperation, actualType: Type) extends Feedback.Error(expression) {
       override def message: String = s"You can only append elements to lists. The type $actualType is not a list."
     }
+  }
+
+  case class CollectionExpected(actualType: Type, context: Positioned) extends Feedback.Error(context) {
+    override def message: String = s"You can only iterate over lists and maps. The type $actualType is not a list or map."
   }
 
 }

@@ -132,7 +132,7 @@ object Synthesizer {
             collectionType match {
               case ListType(elementType) =>
                 val combinedType = ListType(SumType.construct(elementType, newElementType))
-                Helpers.unifySubtypes(expression.tpe, combinedType, assignments3).getOrElse(assignments3)
+                Helpers.unifyEquals(expression.tpe, combinedType, assignments3).getOrElse(assignments3)
 
               case _ =>
                 reporter.report(TypingFeedback2.Lists.ListExpected(expression, collectionType))
@@ -154,6 +154,14 @@ object Synthesizer {
       case Expression.Cond(cases, _) =>
         val assignments2 = checker.check(cases.map(_.condition), BasicType.Boolean, assignments)
         infer(cases.map(_.body), assignments2)
+
+      case Expression.WhileLoop(condition, body, _) =>
+        val assignments2 = checker.check(condition, BasicType.Boolean, assignments)
+        infer(body, assignments2)
+
+      case Expression.ForLoop(extractors, body, _) =>
+        val assignments2 = inferExtractors(extractors, assignments)
+        infer(body, assignments2)
 
       // TODO (inference): This is missing type ascription, which delegates back to the checker! Obviously we'll have
       //                   to support this in the syntax first. (Such as `expr :: Type`.)
@@ -178,11 +186,30 @@ object Synthesizer {
   )(implicit reporter: Reporter): Assignments = {
     val resultType2 = Helpers.instantiate(resultType, assignments, operation)
     val resultType3 = if (resultType2 <= upperBound) resultType2 else upperBound
-    Helpers.unifySubtypes(operation.tpe, resultType3, assignments).getOrElse(assignments)
+    Helpers.unifyEquals(operation.tpe, resultType3, assignments).getOrElse(assignments)
   }
 
   private def assignOperationResult(assignments: Assignments, operation: Expression, resultType: Type)(implicit reporter: Reporter): Assignments = {
     assignOperationResult(assignments, operation, resultType, resultType)
+  }
+
+  def inferExtractors(extractors: Vector[Expression.Extractor], assignments: Assignments)(implicit checker: Checker, reporter: Reporter): Assignments = {
+    extractors.foldLeft(assignments) {
+      case (assignments2, extractor) =>
+        val assignments3 = infer(extractor.collection, assignments2)
+        val collectionType = Helpers.instantiate(extractor.collection, assignments3)
+        val elementType = collectionType match {
+          case ListType(element) => Some(element)
+          case MapType(key, value) => Some(TupleType(key, value))
+          case _ =>
+            reporter.error(TypingFeedback2.CollectionExpected(collectionType, extractor.collection))
+            None
+        }
+
+        elementType
+          .flatMap(Helpers.unifyEquals(_, extractor.variable.tpe, assignments3))
+          .getOrElse(assignments3)
+    }
   }
 
   /**
