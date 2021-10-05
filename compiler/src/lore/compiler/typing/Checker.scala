@@ -5,7 +5,7 @@ import lore.compiler.feedback.{Feedback, Reporter, TypingFeedback, TypingFeedbac
 import lore.compiler.inference.Inference
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.types.{FunctionType, ListType, MapType, TupleType, Type}
+import lore.compiler.types._
 
 /**
   * @param returnType The return type of the surrounding function, used to check `Return` expressions.
@@ -127,6 +127,19 @@ case class Checker(returnType: Type) {
           case MapType(keyType, valueType) =>
             val assignments2 = check(entries.map(_.key), keyType, assignments)
             check(entries.map(_.value), valueType, assignments2)
+
+          case _ => fallback
+        }
+
+      case Expression.ShapeValue(properties, _) =>
+        expectedType match {
+          case ShapeType(propertyTypes) =>
+            properties.foldLeft(assignments) {
+              case (assignments2, property) => propertyTypes.get(property.name) match {
+                case Some(expectedProperty) => check(property.value, expectedProperty.tpe, assignments2)
+                case None => Synthesizer.infer(property.value, assignments2)
+              }
+            }
 
           case _ => fallback
         }

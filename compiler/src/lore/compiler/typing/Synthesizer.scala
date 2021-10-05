@@ -4,7 +4,7 @@ import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Reporter, TypingFeedback2}
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.types.{BasicType, TupleType, Type}
+import lore.compiler.types._
 
 // TODO (inference): We're using the old definition of Assignments here, which might be correct. However, we need to
 //                   reevaluate whether we need lower and upper inference variable bounds, or if a direct assignment
@@ -92,6 +92,10 @@ object Synthesizer {
       case Expression.MapConstruction(entries, _) =>
         val assignments2 = infer(entries.map(_.key), assignments)
         infer(entries.map(_.value), assignments2)
+
+      case Expression.ShapeValue(properties, _) => infer(properties.map(_.value), assignments)
+
+      case Expression.Symbol(_, _) => assignments
 
       // TODO (inference): This is missing type ascription, which delegates back to the checker! Obviously we'll have
       //                   to support this in the syntax first. (Such as `expr :: Type`.)
