@@ -90,7 +90,7 @@ object LeastUpperBound {
         // merged as the reverse of a sum type: an intersection type.
         case (f1: FunctionType, f2: FunctionType) =>
           FunctionType(
-            Type.tupled(IntersectionType.construct(Vector(f1.input, f2.input))),
+            Type.tupled(IntersectionType.construct(f1.input, f2.input)),
             apply(f1.output, f2.output)
           )
 
@@ -187,7 +187,7 @@ object LeastUpperBound {
     private def combineTypeArguments(parameter: TypeVariable, a1: Type, a2: Type): Option[Type] = {
       parameter.variance match {
         case Variance.Covariant => Some(lubDefaultToSum(a1, a2))
-        case Variance.Contravariant => Some(IntersectionType.construct(Vector(a1, a2)))
+        case Variance.Contravariant => Some(IntersectionType.construct(a1, a2))
         case Variance.Invariant => if (a1 == a2) Some(a1) else None
       }
     }
@@ -195,7 +195,7 @@ object LeastUpperBound {
     /**
       * The fallback LUB, which is either Any or t1 | t2 depending on the settings.
       */
-    private def fallback(t1: Type, t2: Type) = if (defaultToSum) SumType.construct(Vector(t1, t2)) else BasicType.Any
+    private def fallback(t1: Type, t2: Type) = if (defaultToSum) SumType.construct(t1, t2) else BasicType.Any
 
     private implicit class FallbackIfAny(tpe: Type) {
       def fallbackIfAny(t1: Type, t2: Type): Type = tpe match {

@@ -5,19 +5,19 @@ class ConstructionSpec extends TypeSpec {
   import TypesExample._
 
   "IntersectionType.construct" should "handle shape types correctly" in {
-    IntersectionType.construct(Vector(
+    IntersectionType.construct(
       ShapeType("x" -> BasicType.Real),
       ShapeType("y" -> BasicType.Real),
       ShapeType("z" -> BasicType.Real),
-    )) shouldEqual ShapeType("x" -> BasicType.Real, "y" -> BasicType.Real, "z" -> BasicType.Real)
+    ) shouldEqual ShapeType("x" -> BasicType.Real, "y" -> BasicType.Real, "z" -> BasicType.Real)
 
-    IntersectionType.construct(Vector(
+    IntersectionType.construct(
       ShapeType("animal" -> Chicken),
       ShapeType("animal" -> Animal, "size" -> BasicType.Int),
       ShapeType("size" -> BasicType.Real),
-    )) shouldEqual ShapeType("animal" -> Chicken, "size" -> BasicType.Int)
+    ) shouldEqual ShapeType("animal" -> Chicken, "size" -> BasicType.Int)
 
-    IntersectionType.construct(Vector(
+    IntersectionType.construct(
       Cat,
       ShapeType("x" -> BasicType.Real),
       Animal,
@@ -27,7 +27,7 @@ class ConstructionSpec extends TypeSpec {
       ShapeType("z" -> BasicType.Real),
       BasicType.Any,
       ScottishFold,
-    )) shouldEqual IntersectionType(Set(
+    ) shouldEqual IntersectionType(Set(
       ShapeType("x" -> BasicType.Real, "y" -> BasicType.Real, "z" -> BasicType.Real),
       ScottishFold,
       Chicken,

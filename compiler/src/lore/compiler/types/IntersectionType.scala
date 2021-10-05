@@ -40,4 +40,5 @@ object IntersectionType {
   }
 
   def construct(parts: Set[Type]): Type = construct(parts.toVector)
+  def construct(parts: Type*): Type = construct(parts.toVector)
 }

@@ -125,7 +125,7 @@ object InferenceBounds {
   )(implicit reporter: Reporter): Option[Assignments] = {
     val bounds = InferenceVariable.bounds(inferenceVariable, assignments)
 
-    val newBound = SumType.construct(Vector(lowerBound, bounds.lower))
+    val newBound = SumType.construct(lowerBound, bounds.lower)
     if (bounds.lower <= newBound && newBound <= bounds.upper) {
       Some(assignments.updated(inferenceVariable, InferenceBounds(inferenceVariable, lowerBound, bounds.upper)))
     } else {
@@ -148,7 +148,7 @@ object InferenceBounds {
   )(implicit reporter: Reporter): Option[Assignments] = {
     val bounds = InferenceVariable.bounds(inferenceVariable, assignments)
 
-    val newBound = IntersectionType.construct(Vector(upperBound, bounds.upper))
+    val newBound = IntersectionType.construct(upperBound, bounds.upper)
     if (bounds.lower <= newBound && newBound <= bounds.upper) {
       Some(assignments.updated(inferenceVariable, InferenceBounds(inferenceVariable, bounds.lower, newBound)))
     } else {

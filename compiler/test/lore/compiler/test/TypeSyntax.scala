@@ -35,8 +35,8 @@ trait TypeSyntax {
   def shape(properties: (String, Type)*): ShapeType = ShapeType(properties: _*)
 
   implicit class TypeOperators(t1: Type) {
-    def &(t2: Type): Type = IntersectionType.construct(Vector(t1, t2))
-    def |(t2: Type): Type = SumType.construct(Vector(t1, t2))
+    def &(t2: Type): Type = IntersectionType.construct(t1, t2)
+    def |(t2: Type): Type = SumType.construct(t1, t2)
     def #>(t2: Type): Type = MapType(t1, t2)
   }
 
