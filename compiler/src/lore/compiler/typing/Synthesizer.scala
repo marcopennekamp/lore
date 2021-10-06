@@ -17,6 +17,9 @@ object Synthesizer {
     * Infers the type of `expression` solely from the shape of the expression and the current inference variable
     * assignments, producing a new set of assignments with which the type of `expression` can be instantiated. If the
     * type cannot be inferred, one or more errors are reported.
+    *
+    * TODO (inference): Maybe return an option so that we can return `None` instead of `assignments` when an error has
+    *                   been found.
     */
   def infer(expression: Expression, assignments: Assignments)(implicit checker: Checker, reporter: Reporter): Assignments = {
     // Delegates the handling of the expression to the Checker.
@@ -81,11 +84,9 @@ object Synthesizer {
 
       // TODO (inference): ConstructorValue.
 
-      case Expression.MultiFunctionValue(_, _, position) =>
-        // TODO (inference): Is this the right way to go about it? Of course the exception would have to be a reported
-        //                   error instead, but the general gist is that we need checking mode to decide a how a
-        //                   MultiFunctionValue is resolved.
-        throw CompilationException(s"Cannot get multi-function value at $position without a proper type context.")
+      case expression@Expression.MultiFunctionValue(_, _, position) =>
+        reporter.error(TypingFeedback2.MultiFunctions.FunctionTypeExpected(expression))
+        assignments
 
       case Expression.FixedFunctionValue(_, _) => assignments
 
@@ -183,7 +184,7 @@ object Synthesizer {
             }
             Helpers.unifyEquals(tpe, output, argumentAssignments).getOrElse(argumentAssignments)
 
-          case CallTarget.MultiFunction(mf) => ??? // TODO (inference): Implement.
+          case CallTarget.MultiFunction(mf) => MultiFunctionSynthesizer(mf, expression).infer(assignments)
 
           case CallTarget.Dynamic(_) => infer(arguments, assignments)
         }
@@ -258,7 +259,29 @@ object Synthesizer {
     }
   }
 
-  // TODO (inference): Implement the `tryInference` function which uses a nested reporter and returns None if the
-  //                   reporter contains any errors.
+  /**
+    * Attempts type inference via [[infer]], using an internal reporter that silently accumulates errors. If the
+    * inference finishes without errors, the new assignments are returned. Otherwise, `None` is returned. All errors
+    * produced during this local inference are thrown away.
+    *
+    * `attempt` can be used to try a particular inference path without committing to it.
+    */
+  def attempt(expression: Expression, assignments: Assignments)(implicit checker: Checker): Option[Assignments] = {
+    Reporter.requireSuccess {
+      implicit reporter => infer(expression, assignments)
+    }
+  }
+
+  /**
+    * Executes [[attempt]] for all `expressions` in order.
+    *
+    * TODO (inference): Do we need this function?
+    */
+  def attempt(expressions: Vector[Expression], assignments: Assignments)(implicit checker: Checker): Option[Assignments] = {
+    expressions.foldLeft(Option(assignments)) {
+      case (Some(assignments2), expression) => attempt(expression, assignments2)
+      case (None, _) => None
+    }
+  }
 
 }

@@ -1,10 +1,23 @@
 package lore.compiler.feedback
 
-import lore.compiler.core.{Position, Positioned}
+import lore.compiler.core.Positioned
 import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.types.{FunctionType, TupleType, Type}
 
 object TypingFeedback2 {
+
+  object MultiFunctions {
+    case class FunctionTypeExpected(expression: Expression.MultiFunctionValue) extends Feedback.Error(expression) {
+      override def message: String = s"The multi-function value cannot be coerced without a proper type context." +
+        s" Please provide a function type in an outer expression."
+    }
+
+    case class AmbiguousArgumentTypes(mf: MultiFunctionDefinition, candidates: Vector[Type], context: Expression) extends Feedback.Error(context) {
+      override def message: String = s"In this call of multi-function $mf, the argument types cannot be inferred. There" +
+        s" are multiple equally specific candidates. These are: ${candidates.mkString(", ")}."
+    }
+  }
 
   object AnonymousFunctions {
     case class FunctionTypeExpected(expression: Expression.AnonymousFunction, expectedType: Type) extends Feedback.Error(expression) {

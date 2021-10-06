@@ -28,11 +28,11 @@ object InferenceVariable {
   private val nameCounter: AtomicInteger = new AtomicInteger()
 
   /**
-    * Get the bounds of the given inference variable. If the inference variable isn't contained in `assignments`, a
-    * compilation exception is thrown.
+    * Get the bounds of the given inference variable.
     */
   def bounds(iv: InferenceVariable, assignments: Assignments): InferenceBounds = {
-    assignments.getOrElse(iv, throw CompilationException(s"The bounds of inference variable $iv should have been defined by now."))
+    //assignments.getOrElse(iv, throw CompilationException(s"The bounds of inference variable $iv should have been defined by now."))
+    assignments.getOrElse(iv, InferenceBounds(iv, BasicType.Nothing, BasicType.Any))
   }
 
   /**

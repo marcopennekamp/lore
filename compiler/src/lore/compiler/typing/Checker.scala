@@ -1,11 +1,12 @@
 package lore.compiler.typing
 
 import lore.compiler.core.CompilationException
-import lore.compiler.feedback.{Feedback, Reporter, TypingFeedback, TypingFeedback2}
+import lore.compiler.feedback.{Feedback, LambdaReporter, Reporter, TypingFeedback, TypingFeedback2}
 import lore.compiler.inference.Inference
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types._
+import lore.compiler.typing.Synthesizer.infer
 
 /**
   * @param returnType The return type of the surrounding function, used to check `Return` expressions.
@@ -59,7 +60,7 @@ case class Checker(returnType: Type) {
         // to infer the type of the variable from the value expression.
         typeAnnotation match {
           case Some(typeAnnotation) => check(value, typeAnnotation, assignments)
-          case None => fallback
+          case None => Synthesizer.infer(value, assignments)
         }
 
       case Expression.Assignment(target, value, _) =>
@@ -199,6 +200,19 @@ case class Checker(returnType: Type) {
   def check(expressions: Vector[Expression], expectedTypes: Vector[Type], assignments: Assignments)(implicit reporter: Reporter): Assignments = {
     expressions.zip(expectedTypes).foldLeft(assignments) {
       case (assignments2, (expression, expectedType)) => check(expression, expectedType, assignments2)
+    }
+  }
+
+  /**
+    * Attempts type checking via [[check]], using an internal reporter that silently accumulates errors. If the type
+    * checking finishes without errors, the new assignments are returned. Otherwise, `None` is returned. All errors
+    * produced during this local checking are thrown away.
+    *
+    * `attempt` can be used to try a particular checking path without committing to it.
+    */
+  def attempt(expression: Expression, expectedType: Type, assignments: Assignments): Option[Assignments] = {
+    Reporter.requireSuccess {
+      implicit reporter => check(expression, expectedType, assignments)
     }
   }
 

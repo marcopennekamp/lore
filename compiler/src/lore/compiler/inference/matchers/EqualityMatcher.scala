@@ -62,6 +62,8 @@ object EqualityMatcher {
       case (d1: DeclaredType, d2: DeclaredType) if d1.schema == d2.schema =>
         Matchers.matchMultiple(d1.typeArguments.zip(d2.typeArguments), assignments, rec)
 
+      // TODO (inference): We might have to support the cases where an intersection type only stands on the left, like
+      //                   in TypeVariableAllocation. This also hinges on the TODO mentioned in TypeVariableAllocation.
       case (_: IntersectionType, _) => unsupported
       case (_, _: IntersectionType) => unsupported
       case (_: SumType, _) => unsupported

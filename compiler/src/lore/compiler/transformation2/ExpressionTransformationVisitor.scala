@@ -2,7 +2,7 @@ package lore.compiler.transformation2
 
 import lore.compiler.core._
 import lore.compiler.feedback.{ExpressionFeedback, MultiFunctionFeedback, Reporter, StructFeedback}
-import lore.compiler.inference.{InferenceVariable, TypingJudgment}
+import lore.compiler.inference.InferenceVariable
 import lore.compiler.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
@@ -279,5 +279,3 @@ class ExpressionTransformationVisitor(
   }
 
 }
-
-

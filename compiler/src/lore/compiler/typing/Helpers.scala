@@ -2,9 +2,10 @@ package lore.compiler.typing
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.{Feedback, LambdaReporter, Reporter}
-import lore.compiler.inference.Inference.Assignments
-import lore.compiler.inference.InferenceBounds.BoundType
+import lore.compiler.inference.Inference.{Assignments, instantiateByBound}
+import lore.compiler.inference.InferenceBounds.{BoundType, ensureLowerBound, ensureUpperBound}
 import lore.compiler.inference.matchers.{Matchers, SubtypingMatcher}
+import lore.compiler.inference.resolvers.SubtypesJudgmentResolver.ensureSubtypes
 import lore.compiler.inference.{Inference, InferenceBounds, InferenceVariable, TypingJudgment, Unification}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types.{BasicType, Type}
@@ -66,15 +67,21 @@ object Helpers {
 
   private object SubtypesProcessor extends Matchers.Processor {
     override def processIv1(iv1: InferenceVariable, t2: Type, assignments: Assignments, context: TypingJudgment)(implicit reporter: Reporter): Option[Assignments] = {
-      assign(iv1, t2, assignments)
+      ensureUpperBound(assignments, iv1, instantiateByBound(assignments, t2, BoundType.Upper), context).flatMap {
+        assignments2 => unifySubtypes(instantiateByBound(assignments2, iv1, BoundType.Lower), t2, assignments2)
+      }
     }
 
     override def processIv2(t1: Type, iv2: InferenceVariable, assignments: Assignments, context: TypingJudgment)(implicit reporter: Reporter): Option[Assignments] = {
-      assign(iv2, t1, assignments)
+      ensureLowerBound(assignments, iv2, instantiateByBound(assignments, t1, BoundType.Lower), context).flatMap {
+        assignments2 => unifySubtypes(t1, instantiateByBound(assignments2, iv2, BoundType.Upper), assignments2)
+      }
     }
 
     override def processBoth(iv1: InferenceVariable, iv2: InferenceVariable, assignments: Assignments, context: TypingJudgment)(implicit reporter: Reporter): Option[Assignments] = {
-      ???
+      ensureLowerBound(assignments, iv2, instantiateByBound(assignments, iv1, BoundType.Lower), context).flatMap {
+        assignments2 => ensureUpperBound(assignments2, iv1, instantiateByBound(assignments2, iv2, BoundType.Upper), context)
+      }
     }
   }
 
