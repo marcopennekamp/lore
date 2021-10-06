@@ -3,8 +3,9 @@ package lore.compiler.semantics.scopes
 import lore.compiler.core.Position
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.NamePath
+import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.semantics.scopes.StructConstructorBinding.StructConstructorBindingSchema
-import lore.compiler.semantics.structures.{StructConstructor, StructDefinition}
+import lore.compiler.semantics.structures.StructDefinition
 import lore.compiler.types.TypeVariable.Assignments
 import lore.compiler.types.{NamedSchema, StructType, Type, TypeVariable}
 
@@ -17,6 +18,10 @@ sealed trait StructBinding extends Binding {
   * struct type's constructor. The instantiation may require a type parameter list that is different from the struct
   * schema's original type parameters. This is due to the ability of (parameterized) type aliases to be used as
   * constructor names.
+  *
+  * TODO (inference): This is probably a misnomer. `StructConstructorValue` is currently the "struct constructor
+  *                   binding" that is actually used as a function value. This should be called something else. It's
+  *                   more of a "schema".
   */
 case class StructConstructorBinding(
   name: NamePath,
@@ -25,10 +30,7 @@ case class StructConstructorBinding(
 ) extends StructBinding {
   val isConstant: Boolean = parameters.isEmpty
   lazy val asSchema: StructConstructorBindingSchema = StructConstructorBindingSchema(name, parameters, underlyingType)
-
-  def instantiate(assignments: Assignments): StructConstructor = {
-    asSchema.instantiate(assignments).constructor
-  }
+  lazy val signature: FunctionSignature = underlyingType.constructorSignature
 
   override val definition: StructDefinition = underlyingType.schema.definition
 

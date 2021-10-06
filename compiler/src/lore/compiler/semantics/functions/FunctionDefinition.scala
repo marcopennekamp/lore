@@ -22,7 +22,6 @@ import lore.compiler.types.{Fit, Type, TypeVariable}
   */
 class FunctionDefinition(
   val signature: FunctionSignature,
-  val typeParameters: Vector[TypeVariable],
   val bodyNode: Option[ExprNode],
   val localModule: LocalModule,
 ) extends Positioned with TargetRepresentable {
@@ -30,6 +29,7 @@ class FunctionDefinition(
   override def toString = s"${if (isAbstract) "abstract " else ""}$name(${signature.parameters.mkString(", ")})"
 
   val name: NamePath = signature.name
+  val typeParameters: Vector[TypeVariable] = signature.typeParameters
   val isAbstract: Boolean = bodyNode.isEmpty
   val isPolymorphic: Boolean = signature.isPolymorphic
   val isMonomorphic: Boolean = signature.isMonomorphic

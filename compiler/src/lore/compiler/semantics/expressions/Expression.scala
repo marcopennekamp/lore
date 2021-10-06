@@ -5,7 +5,7 @@ import lore.compiler.inference.{Inference, InferenceVariable}
 import lore.compiler.semantics.analysis.LocalizedExpression
 import lore.compiler.semantics.functions.{CallTarget, FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
-import lore.compiler.semantics.scopes.{LocalVariable, TypedBinding}
+import lore.compiler.semantics.scopes.{LocalVariable, StructConstructorBinding, TypedBinding}
 import lore.compiler.types._
 
 sealed trait Expression extends Positioned {
@@ -131,6 +131,13 @@ object Expression {
     */
   case class FixedFunctionValue(instance: FunctionInstance, position: Position) extends Expression {
     override def tpe: Type = instance.signature.functionType
+  }
+
+  /**
+    * A struct constructor typed as a function. It can be passed around like any other function value.
+    */
+  case class ConstructorValue(binding: StructConstructorBinding, position: Position) extends Expression {
+    override def tpe: Type = ??? // TODO (inference): ???
   }
 
   /**

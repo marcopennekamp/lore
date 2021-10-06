@@ -189,7 +189,7 @@ case class StructTranspiler(schema: StructSchema)(
 
     val varConstruct = RuntimeNames.struct.construct(schema)
     val varConstructor = RuntimeNames.struct.constructor(schema)
-    val functionType = schema.representative.constructor.signature.functionType
+    val functionType = schema.representative.constructorSignature.functionType
 
     Vector(
       Target.VariableDeclaration(

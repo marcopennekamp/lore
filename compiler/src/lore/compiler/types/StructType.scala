@@ -1,6 +1,7 @@
 package lore.compiler.types
 
-import lore.compiler.semantics.structures.{StructConstructor, StructPropertyDefinition}
+import lore.compiler.semantics.functions.FunctionSignature
+import lore.compiler.semantics.structures.StructPropertyDefinition
 
 case class StructType(
   schema: StructSchema,
@@ -13,9 +14,15 @@ case class StructType(
   lazy val properties: Vector[StructPropertyDefinition.Instance] = schema.definition.properties.map(_.instantiate(assignments))
 
   /**
-    * The struct constructor with all type parameters instantiated.
+    * The struct constructor signature with all type parameters instantiated.
     */
-  lazy val constructor: StructConstructor = StructConstructor(this)
+  lazy val constructorSignature: FunctionSignature = FunctionSignature(
+    name,
+    properties.map(_.tpe).flatMap(Type.variables).distinct,
+    properties.map(_.asParameter),
+    this,
+    schema.definition.position,
+  )
 
   /**
     * The type arguments corresponding to the schema's open type parameters.

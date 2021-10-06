@@ -2,8 +2,7 @@ package lore.compiler.semantics.analysis
 
 import lore.compiler.semantics.expressions.{Expression, ExpressionVerificationVisitor, ExpressionVisitor}
 import lore.compiler.semantics.functions.CallTarget
-import lore.compiler.semantics.scopes.{StructObjectBinding, LocalVariable}
-import lore.compiler.semantics.structures.StructConstructor
+import lore.compiler.semantics.scopes.{LocalVariable, StructObjectBinding}
 import lore.compiler.semantics.variables.GlobalVariableDefinition
 
 object LocalizedExpression {
@@ -27,12 +26,12 @@ object LocalizedExpression {
     override def verify(expression: Expression): Unit = expression match {
       case Expression.BindingAccess(binding, _) => binding match {
         case _: GlobalVariableDefinition => setFalse()
-        case StructConstructor(_) => setFalse()
         case StructObjectBinding(_, _) => setFalse()
         case LocalVariable(_, _, _) =>
       }
       case _: Expression.MultiFunctionValue => setFalse()
       case _: Expression.FixedFunctionValue => setFalse()
+      case _: Expression.ConstructorValue => setFalse()
       case Expression.Call(target, _, _, _) => target match {
         case CallTarget.Value(_) =>
         case CallTarget.MultiFunction(_) => setFalse()

@@ -82,13 +82,13 @@ object Synthesizer {
           assignments
         }
 
-      // TODO (inference): ConstructorValue.
-
-      case expression@Expression.MultiFunctionValue(_, _, position) =>
+      case expression@Expression.MultiFunctionValue(_, _, _) =>
         reporter.error(TypingFeedback2.MultiFunctions.FunctionTypeExpected(expression))
         assignments
 
       case Expression.FixedFunctionValue(_, _) => assignments
+
+      // TODO (inference): ConstructorValue.
 
       case Expression.ListConstruction(values, _) => infer(values, assignments)
 
@@ -185,6 +185,8 @@ object Synthesizer {
             Helpers.unifyEquals(tpe, output, argumentAssignments).getOrElse(argumentAssignments)
 
           case CallTarget.MultiFunction(mf) => MultiFunctionSynthesizer(mf, expression).infer(assignments)
+
+          case CallTarget.Constructor(structBinding) => ConstructorSynthesizer.infer(structBinding, expression, assignments)
 
           case CallTarget.Dynamic(_) => infer(arguments, assignments)
         }

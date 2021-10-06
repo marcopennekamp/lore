@@ -6,8 +6,7 @@ import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression._
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.members.Member
-import lore.compiler.semantics.scopes.{TypedBinding, LocalVariable}
-import lore.compiler.semantics.structures.StructConstructor
+import lore.compiler.semantics.scopes.{LocalVariable, TypedBinding}
 import lore.compiler.types._
 
 /**
@@ -62,6 +61,8 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
 
   override def visit(expression: FixedFunctionValue): Expression = expression
 
+  override def visit(expression: ConstructorValue): Expression = ??? // TODO (inference): What to do here?
+
   override def visit(expression: ListConstruction)(values: Vector[Expression]): Expression = expression.copy(values = values)
 
   override def visit(expression: MapConstruction)(entries: Vector[(Expression, Expression)]): Expression = expression.withEntries(entries)
@@ -109,7 +110,6 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
 
   private def instantiateBinding(binding: TypedBinding): TypedBinding = binding match {
     case variable: LocalVariable => instantiateVariable(variable)
-    case constructor: StructConstructor => StructConstructor(assignments.instantiate(constructor.structType).asInstanceOf[StructType])
     case v => v
   }
 

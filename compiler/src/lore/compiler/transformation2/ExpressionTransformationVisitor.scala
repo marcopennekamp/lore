@@ -66,11 +66,10 @@ class ExpressionTransformationVisitor(
       }.getOrElse(Expression.Hole(BasicType.Nothing, position))
 
     case ConstructorNode(namePathNode, typeArgumentNodes, position) =>
-      /* StructTransformation.getConstructor(namePathNode.namePath, Some(typeArgumentNodes), namePathNode.position) match {
-        case Some(constructor) => Expression.BindingAccess(constructor, position)
+      StructTransformation.getConstructorBinding(namePathNode.namePath, namePathNode.position) match {
+        case Some(binding) => StructTransformation.getConstructorValue(binding, typeArgumentNodes, namePathNode.position)
         case None => Expression.Hole(BasicType.Nothing, position)
-      } */
-      ???
+      }
 
     case SymbolValueNode(name, position) => Expression.Symbol(name, position)
   }
@@ -160,17 +159,24 @@ class ExpressionTransformationVisitor(
       Expression.ListConstruction(expressions, position)
 
     case ObjectMapNode(namePathNode, typeArgumentNodes, entryNodes, position) =>
-      /* StructTransformation.getConstructor(namePathNode.namePath, typeArgumentNodes, namePathNode.position) match {
-        case Some(constructor) =>
+      StructTransformation.getConstructorBinding(namePathNode.namePath, namePathNode.position) match {
+        case Some(binding) =>
           val entries = entryNodes.zip(expressions).map {
             case (ObjectEntryNode(nameNode, _, _), expression) => nameNode.value -> expression
           }
-          val arguments = StructTransformation.entriesToArguments(constructor.structType.schema.definition, entries, position)
-          CallTransformation.valueCall(Expression.BindingAccess(constructor, namePathNode.position), arguments, position)
+          val arguments = StructTransformation.entriesToArguments(binding.underlyingType.schema.definition, entries, position)
+          typeArgumentNodes match {
+            case Some(typeArgumentNodes) =>
+              val target = StructTransformation.getConstructorValue(binding, typeArgumentNodes, namePathNode.position)
+              CallTransformation.valueCall(target, arguments, position)
+
+            case None =>
+              val target = CallTarget.Constructor(binding)
+              Expression.Call(target, arguments, new InferenceVariable, position)
+          }
 
         case None => Expression.Hole(BasicType.Nothing, position)
-      } */
-      ???
+      }
 
     case ShapeValueNode(propertyNodes, position) =>
       val properties = propertyNodes.zip(expressions).map { case (propertyNode, value) => Expression.ShapeProperty(propertyNode.name, value) }
@@ -190,7 +196,7 @@ class ExpressionTransformationVisitor(
       def handleSingleBinding(binding: Binding): Option[Expression.Call] = {
         binding match {
           case mf: MultiFunctionDefinition => Some(Expression.Call(CallTarget.MultiFunction(mf), expressions, new InferenceVariable, position))
-          case structBinding: StructConstructorBinding => ??? //handleSingleBinding(StructTransformation.getConstructor(structBinding, namePathNode.position))
+          case structBinding: StructConstructorBinding => Some(Expression.Call(CallTarget.Constructor(structBinding), expressions, new InferenceVariable, position))
           case structObject: StructObjectBinding =>
             reporter.error(StructFeedback.Object.NoConstructor(structObject.name, namePathNode.position))
             None

@@ -2,50 +2,24 @@ package lore.compiler.transformation
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.{Feedback, Reporter, StructFeedback}
-import lore.compiler.inference.InferenceVariable
 import lore.compiler.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.scopes.{BindingScope, StructConstructorBinding, StructObjectBinding, TypeScope}
-import lore.compiler.semantics.structures.{StructConstructor, StructDefinition, StructPropertyDefinition}
+import lore.compiler.semantics.structures.{StructDefinition, StructPropertyDefinition}
 import lore.compiler.syntax.TypeExprNode
 
 object StructTransformation {
 
   /**
-    * Gets a struct constructor from the given struct constructor binding. If the struct has type parameters, all type
-    * parameters in the constructor's type are replaced with inference variables. Type parameter bounds are added as
-    * typing judgments.
-    *
-    * This function should be used if there are no manually specified type arguments.
+    * Gets the constructor binding corresponding to the given struct `name`.
     */
-  def getConstructor(structConstructorBinding: StructConstructorBinding, position: Position)(implicit judgmentCollector: JudgmentCollector): StructConstructor = {
-    if (structConstructorBinding.isConstant) {
-      structConstructorBinding.instantiate(Map.empty)
-    } else {
-      val (assignments, judgments) = InferenceVariable.fromTypeVariables(structConstructorBinding.parameters, position)
-      judgmentCollector.add(judgments)
-      structConstructorBinding.instantiate(assignments)
-    }
-  }
-
-  /**
-    * Gets a constructor from the struct binding identified by `name`, instantiating the struct schema with the given
-    * type arguments (which may not contain any inference variables). If no type arguments are supplied, the
-    * constructor type is inferred.
-    */
-  def getConstructor(
+  def getConstructorBinding(
     name: NamePath,
-    typeArgumentNodes: Option[Vector[TypeExprNode]],
     position: Position,
-  )(implicit bindingScope: BindingScope, typeScope: TypeScope, judgmentCollector: JudgmentCollector, reporter: Reporter): Option[StructConstructor] = {
+  )(implicit bindingScope: BindingScope, reporter: Reporter): Option[StructConstructorBinding] = {
     bindingScope.resolveStatic(name, position).flatMap {
-      case binding: StructConstructorBinding =>
-        val constructor = typeArgumentNodes match {
-          case Some(nodes) => binding.asSchema.instantiate(nodes.map(TypeExpressionEvaluator.evaluate), position).constructor
-          case None => getConstructor(binding, position)
-        }
-        Some(constructor)
+      case binding: StructConstructorBinding => Some(binding)
 
       case _: StructObjectBinding =>
         reporter.error(StructFeedback.Object.NoConstructor(name, position))
@@ -55,6 +29,19 @@ object StructTransformation {
         reporter.error(StructFeedback.ConstructorExpected(name, position))
         None
     }
+  }
+
+  /**
+    * Instantiates the given struct constructor binding with the given type arguments.
+    */
+  def getConstructorValue(
+    binding: StructConstructorBinding,
+    typeArgumentNodes: Vector[TypeExprNode],
+    position: Position,
+  )(implicit bindingScope: BindingScope, typeScope: TypeScope, reporter: Reporter): Expression.ConstructorValue = {
+    val typeArguments = typeArgumentNodes.map(TypeExpressionEvaluator.evaluate)
+    // TODO (inference): What to do here? How can we pass the type arguments?
+    Expression.ConstructorValue(binding, position)
   }
 
   case class DuplicateProperty(name: String, override val position: Position) extends Feedback.Error(position) {
