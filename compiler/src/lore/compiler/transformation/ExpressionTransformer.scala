@@ -10,7 +10,7 @@ import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.transformation2.ExpressionTransformationVisitor
 import lore.compiler.types.{TupleType, Type}
-import lore.compiler.typing.Checker
+import lore.compiler.typing.{Checker, Typing}
 
 object ExpressionTransformer {
 
@@ -35,8 +35,7 @@ object ExpressionTransformer {
       // Only continue with the transformation if the visitor produced no errors. Otherwise, type inference might
       // report a lot of useless errors.
       if (!reporter.hasErrors) {
-        val typeChecker = Checker(expectedType)
-        val inferredTypes = typeChecker.check(expression, expectedType, Map.empty)
+        val inferredTypes = Typing.check(expression, expectedType, label, reporter)
         val inferenceFailed = reporter.hasErrors
 
         val rehydrationVisitor = new TypeRehydrationVisitor(inferredTypes)

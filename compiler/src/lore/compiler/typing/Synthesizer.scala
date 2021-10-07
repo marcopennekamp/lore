@@ -1,6 +1,7 @@
 package lore.compiler.typing
 
 import lore.compiler.feedback.{Reporter, TypingFeedback2}
+import lore.compiler.inference.Inference
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
@@ -29,7 +30,7 @@ object Synthesizer {
     // other case is returning a "static result", which happens when we try to infer leaf expressions such as literals
     // or binding accesses.
     // To avoid confusion between these two default cases, this match doesn't have a default case.
-    expression match {
+    val resultAssignments = expression match {
       case Expression.Hole(_, _) => assignments
 
       // These delegations of top-level expressions are necessary, because the inference for blocks, for example, uses
@@ -223,6 +224,10 @@ object Synthesizer {
       // TODO (inference): This is missing type ascription, which delegates back to the checker! Obviously we'll have
       //                   to support this in the syntax first. (Such as `expr :: Type`.)
     }
+
+    Helpers.traceExpressionType(expression, resultAssignments, "Inferred")
+
+    resultAssignments
   }
 
   /**

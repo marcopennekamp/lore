@@ -48,7 +48,7 @@ case class Checker(returnType: Type) {
 
     // Step 1: Check and/or infer the expression's sub-expressions to produce an assignments map that will allow us to
     //         instantiate `expression.tpe`.
-    val postAssignments = expression match {
+    val resultAssignments = expression match {
       case Expression.Hole(_, _) => assignments // TODO (inference): Should we just ignore holes?
 
       case Expression.Return(value, _) =>
@@ -213,14 +213,16 @@ case class Checker(returnType: Type) {
     // Step 2: Use the new assignments map to check that `expression.tpe` (as instantiated) is a subtype of
     //         `expectedType`, unless the default error has been suppressed by `reportOnly`.
     if (!suppressDefaultError) {
-      val actualType = Helpers.instantiate(expression.tpe, postAssignments, expression)
+      val actualType = Helpers.instantiate(expression.tpe, resultAssignments, expression)
       if (actualType </= expectedType) {
         // TODO (inference): Does this need a new typing error?
         reporter.error(TypingFeedback.SubtypeExpected(actualType, expectedType, expression))
       }
     }
 
-    postAssignments
+    Helpers.traceExpressionType(expression, resultAssignments, "Checked", s" (Expected type: $expectedType.)")
+
+    resultAssignments
   }
 
   private def checkLoop(loop: Expression.Loop, expectedType: Type, assignments: Assignments)(implicit reporter: Reporter): Assignments = {

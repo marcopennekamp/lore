@@ -45,6 +45,19 @@ case class Position(fragment: Fragment, startIndex: Index, endIndex: Index) {
   }
 
   /**
+    * The actual code from the start to the end of the position.
+    *
+    * TODO (inference): Also try to remove comments or improve indexing (for example for dynamic calls)!
+    * TODO (inference): Display code in errors and logs where it makes sense.
+    */
+  lazy val code: String = fragment.input.slice(startIndex, endIndex).strip()
+
+  /**
+    * The first line of `code`.
+    */
+  lazy val truncatedCode: String = code.takeWhile(_ != '\n')
+
+  /**
     * A complete string representation of this position.
     */
   override def toString: String = s"${fragment.name} ($prettyIndex)"

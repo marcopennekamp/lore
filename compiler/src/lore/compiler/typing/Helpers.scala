@@ -5,7 +5,6 @@ import lore.compiler.feedback.{Feedback, LambdaReporter, Reporter}
 import lore.compiler.inference.Inference.{Assignments, instantiateByBound}
 import lore.compiler.inference.InferenceBounds.{BoundType, ensureLowerBound, ensureUpperBound}
 import lore.compiler.inference.matchers.{Matchers, SubtypingMatcher}
-import lore.compiler.inference.resolvers.SubtypesJudgmentResolver.ensureSubtypes
 import lore.compiler.inference.{Inference, InferenceBounds, InferenceVariable, TypingJudgment, Unification}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types.{BasicType, Type}
@@ -123,4 +122,11 @@ object Helpers {
     * error reporting.
     */
   def instantiateCandidate(tpe: Type, assignments: Assignments): Type = Inference.instantiateCandidateType(assignments, tpe)
+
+  def traceExpressionType(expression: Expression, assignments: Assignments, label: String, additional: String = ""): Unit = {
+    Inference.logger.whenTraceEnabled {
+      val inferredType = Helpers.instantiate(expression, assignments)(new LambdaReporter(_ => { }))
+      Inference.logger.trace(s"$label type $inferredType for `${expression.position.truncatedCode}`.$additional")
+    }
+  }
 }

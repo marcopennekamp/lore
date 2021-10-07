@@ -22,10 +22,14 @@ case class MultiFunctionSynthesizer(mf: MultiFunctionDefinition, expression: Exp
     * candidate, we either have an empty fit or an ambiguity error.
     */
   def infer(assignments: Assignments): Assignments = {
+    Inference.logger.trace(s"Start inference of multi-function call `${expression.position.truncatedCode}`.")
+
     // Step 1: Try to infer as many argument types as possible.
     // TODO (inference): If all argument types can be inferred trivially, we can simply perform dispatch and call it a
     //                   day. This should significantly improve type checking performance.
     val (knownArgumentTypes, assignments2) = ParametricFunctionSynthesizer.preprocessArguments(expression.arguments, assignments)
+
+    Inference.logger.trace(s"Known argument types: ${knownArgumentTypes.mkString(", ")}.")
 
     // Step 2: Pre-filter all function candidates by arity.
     // TODO (inference): Would it be possible to filter by input type as well? Using `Nothing` for unknown argument
