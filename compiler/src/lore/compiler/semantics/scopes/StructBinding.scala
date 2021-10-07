@@ -18,10 +18,6 @@ sealed trait StructBinding extends Binding {
   * struct type's constructor. The instantiation may require a type parameter list that is different from the struct
   * schema's original type parameters. This is due to the ability of (parameterized) type aliases to be used as
   * constructor names.
-  *
-  * TODO (inference): This is probably a misnomer. `StructConstructorValue` is currently the "struct constructor
-  *                   binding" that is actually used as a function value. This should be called something else. It's
-  *                   more of a "schema".
   */
 case class StructConstructorBinding(
   name: NamePath,

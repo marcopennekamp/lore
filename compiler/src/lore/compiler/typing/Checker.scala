@@ -143,7 +143,18 @@ case class Checker(returnType: Type) {
             assignments
         }
 
-      // TODO (inference): ConstructorValue.
+      case Expression.UntypedConstructorValue(binding, tpe, _) =>
+        expectedType match {
+          case FunctionType(input, _) =>
+            ParametricFunctionSynthesizer.inferTypeArguments(binding.signature, input.elements, assignments)
+              .flatMap {
+                case (typeVariableAssignments, assignments2) =>
+                  Helpers.assign(tpe, binding.asSchema.instantiate(typeVariableAssignments), assignments2)
+              }
+              .getOrElse(assignments)
+
+          case _ => fallback
+        }
 
       case Expression.ListConstruction(values, _) =>
         expectedType match {

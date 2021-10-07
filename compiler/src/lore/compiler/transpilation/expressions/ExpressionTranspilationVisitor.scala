@@ -91,18 +91,16 @@ private[transpilation] class ExpressionTranspilationVisitor()(
   }
 
   override def visit(expression: ConstructorValue): Chunk = {
-    // TODO (inference): How to get the struct type?
-    /* val structType = ???
-    val schema = structType.schema
-    if (schema.isConstant) {
+    val schema = expression.structType.schema
+    val value = if (schema.isConstant) {
       RuntimeNames.struct.constructor(schema)
     } else {
       val varSchema = RuntimeNames.schema(schema)
-      val typeArguments = structType.typeArguments.map(TypeTranspiler.transpile)
+      val typeArguments = expression.structType.typeArguments.map(TypeTranspiler.transpile)
       val varConstruct = RuntimeNames.struct.construct(schema)
       RuntimeApi.structs.getConstructor(varSchema, Target.List(typeArguments), varConstruct)
-    } */
-    ???
+    }
+    Chunk.expression(value)
   }
 
   override def visit(expression: ListConstruction)(values: Vector[Chunk]): Chunk = {
@@ -195,12 +193,11 @@ private[transpilation] class ExpressionTranspilationVisitor()(
     def directCall(expression: Target.TargetExpression) = withArguments(Target.Call(expression, _))
 
     expression.target match {
-      case CallTarget.Value(ConstructorValue(_, _)) =>
+      case CallTarget.Value(ConstructorValue(_, structType, _)) =>
         // Optimization: If we're directly calling a constructor value, the function call boils down to calling the
         // `construct` function. This allows us to bypass a run-time call to `getConstructor` for structs with type
         // parameters.
-        // TODO (inference): How to get the struct type?
-        withArguments(arguments => InstantiationTranspiler.transpileStructInstantiation(???, arguments))
+        withArguments(arguments => InstantiationTranspiler.transpileStructInstantiation(structType, arguments))
 
       case CallTarget.Value(_) => target.get.flatMap(functionValueCall)
 

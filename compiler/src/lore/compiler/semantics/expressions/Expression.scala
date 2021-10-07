@@ -139,9 +139,14 @@ object Expression {
   /**
     * A struct constructor typed as a function. It can be passed around like any other function value.
     */
-  case class ConstructorValue(binding: StructConstructorBinding, position: Position) extends Expression {
-    override def tpe: Type = ??? // TODO (inference): ???
+  case class ConstructorValue(binding: StructConstructorBinding, structType: StructType, position: Position) extends Expression {
+    override def tpe: Type = structType.constructorSignature.functionType
   }
+
+  /**
+    * A [[ConstructorValue]] without explicitly specified type arguments, which need to be inferred first.
+    */
+  case class UntypedConstructorValue(binding: StructConstructorBinding, tpe: InferenceVariable, position: Position) extends Expression
 
   /**
     * A list's element type is fully informed by the types of its elements.

@@ -25,6 +25,7 @@ trait ExpressionVisitor[A, B] {
   def visit(expression: MultiFunctionValue): B
   def visit(expression: FixedFunctionValue): B
   def visit(expression: ConstructorValue): B
+  def visit(expression: UntypedConstructorValue): B = throw CompilationException("Expression.UntypedConstructorValue is not supported by this visitor.")
   def visit(expression: ListConstruction)(values: Vector[A]): B
   def visit(expression: MapConstruction)(entries: Vector[(A, A)]): B
   def visit(expression: ShapeValue)(properties: Vector[A]): B
@@ -70,7 +71,7 @@ object ExpressionVisitor {
       case node@AnonymousFunction(_, body, _) => visitor.visit(node)(rec(body))
       case node@MultiFunctionValue(_, _, _) => visitor.visit(node)
       case node@FixedFunctionValue(_, _) => visitor.visit(node)
-      case node@ConstructorValue(_, _) => visitor.visit(node)
+      case node@ConstructorValue(_, _, _) => visitor.visit(node)
       case node@ListConstruction(values, _) => visitor.visit(node)(values.map(rec))
       case node@MapConstruction(entries, _) => visitor.visit(node)(entries.map(e => (rec(e.key), rec(e.value))))
       case node@ShapeValue(properties, _) => visitor.visit(node)(properties.map(p => rec(p.value)))

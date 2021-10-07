@@ -97,7 +97,15 @@ object Synthesizer {
 
       case Expression.FixedFunctionValue(_, _) => assignments
 
-      // TODO (inference): ConstructorValue. (Only for monomorphic constructors.)
+      case Expression.ConstructorValue(_, _, _) => assignments
+
+      case expression@Expression.UntypedConstructorValue(binding, tpe, _) =>
+        if (binding.isConstant) {
+          Helpers.assign(tpe, binding.asSchema.representative, assignments).getOrElse(assignments)
+        } else {
+          reporter.report(TypingFeedback2.ConstructorValues.TypeContextExpected(expression))
+          assignments
+        }
 
       case Expression.ListConstruction(values, _) => infer(values, assignments)
 

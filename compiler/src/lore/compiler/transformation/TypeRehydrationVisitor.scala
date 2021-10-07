@@ -61,7 +61,17 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
 
   override def visit(expression: FixedFunctionValue): Expression = expression
 
-  override def visit(expression: ConstructorValue): Expression = ??? // TODO (inference): What to do here?
+  override def visit(expression: ConstructorValue): Expression = expression
+
+  override def visit(expression: UntypedConstructorValue): Expression = {
+    assignments.instantiate(expression.tpe) match {
+      case FunctionType(_, structType: StructType) => ConstructorValue(expression.binding, structType, expression.position)
+      case _ =>
+        // If the instantiated type is not a function type with a struct output type, we can be sure that typechecking
+        // will have produced an appropriate error. Hence we don't need to report anything here.
+        Expression.Hole(BasicType.Nothing, expression.position)
+    }
+  }
 
   override def visit(expression: ListConstruction)(values: Vector[Expression]): Expression = expression.copy(values = values)
 

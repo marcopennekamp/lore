@@ -49,6 +49,13 @@ object TypingFeedback2 {
     }
   }
 
+  object ConstructorValues {
+    case class TypeContextExpected(expression: Expression.UntypedConstructorValue) extends Feedback.Error(expression) {
+      override def message: String = s"The constructor value's type arguments cannot be inferred without a proper type context." +
+        s" Please provide a function type in an outer expression."
+    }
+  }
+
   object Lists {
     case class ListExpected(expression: Expression.BinaryOperation, actualType: Type) extends Feedback.Error(expression) {
       override def message: String = s"You can only append elements to lists. The type $actualType is not a list."

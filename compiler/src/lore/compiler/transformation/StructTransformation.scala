@@ -40,8 +40,8 @@ object StructTransformation {
     position: Position,
   )(implicit bindingScope: BindingScope, typeScope: TypeScope, reporter: Reporter): Expression.ConstructorValue = {
     val typeArguments = typeArgumentNodes.map(TypeExpressionEvaluator.evaluate)
-    // TODO (inference): What to do here? How can we pass the type arguments?
-    Expression.ConstructorValue(binding, position)
+    val structType = binding.asSchema.instantiate(typeArguments, position)
+    Expression.ConstructorValue(binding, structType, position)
   }
 
   case class DuplicateProperty(name: String, override val position: Position) extends Feedback.Error(position) {
