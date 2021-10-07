@@ -2,7 +2,7 @@ package lore.compiler.typing
 
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback._
-import lore.compiler.inference.Inference
+import lore.compiler.inference.{Inference, InferenceVariable}
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types._
@@ -24,7 +24,7 @@ case class Checker(returnType: Type) {
   def check(expression: Expression, expectedType: Type, assignments: Assignments)(implicit reporter: Reporter): Assignments = {
     // TODO (inference): This is a sanity check for now and can probably be removed once the algorithm is stable.
     if (!Inference.isFullyInstantiated(expectedType)) {
-      throw CompilationException(s"The expected type $expectedType must be fully instantiated! Position: ${expression.position}.")
+      throw CompilationException(s"The expected type $expectedType must be fully instantiated! Position: ${expression.position}. Assignments: $assignments")
     }
 
     // The fallback is used when the expected type is clearly invalid in respect to the expression, for example when
@@ -54,12 +54,18 @@ case class Checker(returnType: Type) {
       case Expression.Return(value, _) =>
         check(value, returnType, assignments)
 
-      case Expression.VariableDeclaration(_, value, typeAnnotation, _) =>
+      case Expression.VariableDeclaration(variable, value, typeAnnotation, _) =>
         // If a type annotation exists, we just have to check that the value has a compatible type. Otherwise, we need
         // to infer the type of the variable from the value expression.
         typeAnnotation match {
           case Some(typeAnnotation) => check(value, typeAnnotation, assignments)
-          case None => Synthesizer.infer(value, assignments)
+          case None => variable.tpe match {
+            case iv: InferenceVariable =>
+              val assignments2 = Synthesizer.infer(value, assignments)
+              val valueType = Helpers.instantiateCandidate(value.tpe, assignments2)
+              Helpers.assign(iv, valueType, assignments2)
+            case _ => throw CompilationException(s"A variable declared without a type annotation should have an inference variable as its type. Position: ${expression.position}.")
+          }
         }
 
       case Expression.Assignment(target, value, _) =>
