@@ -1,6 +1,5 @@
 package lore.compiler.typing
 
-import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Reporter, TypingFeedback2}
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.semantics.expressions.Expression
@@ -82,13 +81,23 @@ object Synthesizer {
           assignments
         }
 
-      case expression@Expression.MultiFunctionValue(_, _, _) =>
-        reporter.error(TypingFeedback2.MultiFunctions.FunctionTypeExpected(expression))
-        assignments
+      case expression@Expression.MultiFunctionValue(mf, _, _) =>
+        // We can infer a multi-function value without a function type context if the multi-function has a single,
+        // monomorphic function.
+        mf.functions match {
+          case Vector(function) if function.isMonomorphic =>
+            MultiFunctionValueSynthesizer
+              .handleFunctionInstance(function.monomorphicInstance, expression, None, assignments)
+              .getOrElse(assignments)
+
+          case _ =>
+            reporter.error(TypingFeedback2.MultiFunctionValues.TypeContextExpected(expression))
+            assignments
+        }
 
       case Expression.FixedFunctionValue(_, _) => assignments
 
-      // TODO (inference): ConstructorValue.
+      // TODO (inference): ConstructorValue. (Only for monomorphic constructors.)
 
       case Expression.ListConstruction(values, _) => infer(values, assignments)
 

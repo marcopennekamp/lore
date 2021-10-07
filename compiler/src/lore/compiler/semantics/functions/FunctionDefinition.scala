@@ -1,6 +1,6 @@
 package lore.compiler.semantics.functions
 
-import lore.compiler.core.{Position, Positioned}
+import lore.compiler.core.{CompilationException, Position, Positioned}
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.{NamePath, Registry}
 import lore.compiler.semantics.expressions.Expression
@@ -55,6 +55,17 @@ class FunctionDefinition(
       reporter.error(CannotInstantiateFunction(this, argumentType))
     }
     option
+  }
+
+  /**
+    * A function instance that is effectively equal to this monomorphic function definition, as a monomorphic function
+    * doesn't have any type variables that would need to be substituted.
+    */
+  lazy val monomorphicInstance: FunctionInstance = {
+    if (!isMonomorphic) {
+      throw CompilationException(s"The function instance $signature cannot be instantiated monomorphically, because it is not monomorphic.")
+    }
+    FunctionInstance(this, signature)
   }
 
   /**

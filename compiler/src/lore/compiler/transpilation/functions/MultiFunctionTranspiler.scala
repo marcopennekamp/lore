@@ -18,11 +18,10 @@ class MultiFunctionTranspiler(mf: MultiFunctionDefinition)(implicit compilerOpti
   private implicit val variableProvider: TemporaryVariableProvider = new TemporaryVariableProvider(s"${targetName}__")
 
   def transpile(): Vector[TargetStatement] = {
-    if (properties.isSingleFunction) {
-      val function = mf.functions.head
-      if (function.isMonomorphic && !function.isAbstract) {
+    mf.functions match {
+      case Vector(function) if function.isMonomorphic && !function.isAbstract =>
         return transpileSingleFunction(function)
-      }
+      case _ =>
     }
 
     // Phase 1: Transpile type variables.

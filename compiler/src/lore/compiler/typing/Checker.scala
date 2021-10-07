@@ -1,12 +1,11 @@
 package lore.compiler.typing
 
 import lore.compiler.core.CompilationException
-import lore.compiler.feedback.{Feedback, LambdaReporter, Reporter, TypingFeedback, TypingFeedback2}
+import lore.compiler.feedback._
 import lore.compiler.inference.Inference
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types._
-import lore.compiler.typing.Synthesizer.infer
 
 /**
   * @param returnType The return type of the surrounding function, used to check `Return` expressions.
@@ -114,8 +113,37 @@ case class Checker(returnType: Type) {
           }
         }
 
+      case expression@Expression.MultiFunctionValue(mf, _, position) =>
+        expectedType match {
+          case expectedType@FunctionType(expectedInput, _) =>
+            mf.dispatch(
+              expectedInput,
+              MultiFunctionFeedback.Dispatch.EmptyFit(mf, expectedInput, position),
+              min => MultiFunctionFeedback.Dispatch.AmbiguousCall(mf, expectedInput, min, position),
+            ) match {
+              case Some(instance) =>
+                MultiFunctionValueSynthesizer
+                  .handleFunctionInstance(instance, expression, Some(expectedType), assignments)
+                  .getOrElse(assignments)
+
+              case None =>
+                // `dispatch` already reported an error.
+                suppressDefaultError = true
+                assignments
+            }
+
+          case BasicType.Any =>
+            // If the expected type isn't a function type, but still can be a supertype of the function type, the
+            // Synthesizer may be able to infer the multi-function value if the multi-function contains a single,
+            // monomorphic function.
+            fallback
+
+          case _ =>
+            reportOnly(TypingFeedback2.MultiFunctionValues.FunctionTypeExpected(expression, expectedType))
+            assignments
+        }
+
       // TODO (inference): ConstructorValue.
-      // TODO (inference): MultiFunctionValue.
 
       case Expression.ListConstruction(values, _) =>
         expectedType match {

@@ -9,11 +9,6 @@ import lore.compiler.types._
 case class MultiFunctionProperties(mf: MultiFunctionDefinition) {
 
   /**
-    * Whether this multi-function consists of a single function.
-    */
-  lazy val isSingleFunction: Boolean = mf.functions.length == 1
-
-  /**
     * All possible arities of the functions.
     */
   lazy val arities: Set[Int] = mf.functions.map(_.signature.arity).toSet

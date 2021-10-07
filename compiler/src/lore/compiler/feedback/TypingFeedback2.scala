@@ -7,18 +7,6 @@ import lore.compiler.types.{FunctionType, TupleType, Type}
 
 object TypingFeedback2 {
 
-  object MultiFunctions {
-    case class FunctionTypeExpected(expression: Expression.MultiFunctionValue) extends Feedback.Error(expression) {
-      override def message: String = s"The multi-function value cannot be coerced without a proper type context." +
-        s" Please provide a function type in an outer expression."
-    }
-
-    case class AmbiguousArgumentTypes(mf: MultiFunctionDefinition, candidates: Vector[Type], context: Expression) extends Feedback.Error(context) {
-      override def message: String = s"In this call of multi-function $mf, the argument types cannot be inferred. There" +
-        s" are multiple equally specific candidates. These are: ${candidates.mkString(", ")}."
-    }
-  }
-
   object AnonymousFunctions {
     case class FunctionTypeExpected(expression: Expression.AnonymousFunction, expectedType: Type) extends Feedback.Error(expression) {
       override def message: String = s"The type of the anonymous function cannot be inferred from a type $expectedType." +
@@ -41,6 +29,26 @@ object TypingFeedback2 {
     }
   }
 
+  object MultiFunctionValues {
+    case class FunctionTypeExpected(expression: Expression.MultiFunctionValue, expectedType: Type) extends Feedback.Error(expression) {
+      override def message: String = s"A multi-function can only be coerced to a function type. The expected type is" +
+        s" $expectedType, which is not a function type. Most likely, the multi-function ${expression.mf.name} cannot be" +
+        s" used as a value in this context."
+    }
+
+    case class IllegalOutput(expression: Expression.MultiFunctionValue, expectedType: FunctionType, actualType: FunctionType) extends Feedback.Error(expression) {
+      override def message: String = s"While coercing the multi-function ${expression.mf.name} to a function, the" +
+        s" following function type was expected: $expectedType. The actual function type inferred via dispatch is" +
+        s" $actualType. The multi-function cannot be coerced to the expected function type because the output types" +
+        s" are incompatible."
+    }
+
+    case class TypeContextExpected(expression: Expression.MultiFunctionValue) extends Feedback.Error(expression) {
+      override def message: String = s"The multi-function cannot be coerced to a function value without a proper type context." +
+        s" Please provide a function type in an outer expression."
+    }
+  }
+
   object Lists {
     case class ListExpected(expression: Expression.BinaryOperation, actualType: Type) extends Feedback.Error(expression) {
       override def message: String = s"You can only append elements to lists. The type $actualType is not a list."
@@ -54,6 +62,13 @@ object TypingFeedback2 {
 
     case class IllegalArity(expression: Expression.Call, inputType: TupleType) extends Feedback.Error(expression) {
       override def message: String = s"A function of arity ${inputType.elements.length} cannot be called with ${expression.arguments.length} arguments."
+    }
+  }
+
+  object MultiFunctionCalls {
+    case class AmbiguousArgumentTypes(mf: MultiFunctionDefinition, candidates: Vector[Type], context: Expression) extends Feedback.Error(context) {
+      override def message: String = s"In this call of multi-function $mf, the argument types cannot be inferred. There" +
+        s" are multiple equally specific candidates. These are: ${candidates.mkString(", ")}."
     }
   }
 

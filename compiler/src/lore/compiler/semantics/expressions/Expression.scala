@@ -123,6 +123,9 @@ object Expression {
 
   /**
     * A multi-function typed as a function. It can be passed around like any other function value.
+    *
+    * @param tpe The [[FunctionType]] of the multi-function value. Typechecking expects `tpe` to be an
+    *            [[InferenceVariable]].
     */
   case class MultiFunctionValue(mf: MultiFunctionDefinition, tpe: Type, position: Position) extends Expression
 

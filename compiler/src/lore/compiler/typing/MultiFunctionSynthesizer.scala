@@ -55,7 +55,7 @@ case class MultiFunctionSynthesizer(mf: MultiFunctionDefinition, expression: Exp
         case Vector(argumentCandidate) => Some(argumentCandidate)
         case _ =>
           Inference.logger.trace(s"Ambiguous argument types of call at ${expression.position}:\n${argumentCandidates.mkString("\n")}")
-          reporter.error(TypingFeedback2.MultiFunctions.AmbiguousArgumentTypes(mf, mostSpecific.map(_.tpe), expression))
+          reporter.error(TypingFeedback2.MultiFunctionCalls.AmbiguousArgumentTypes(mf, mostSpecific.map(_.tpe), expression))
           None
       }
     } else {
