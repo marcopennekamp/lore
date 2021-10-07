@@ -63,7 +63,7 @@ case class Checker(returnType: Type) {
             case iv: InferenceVariable =>
               val assignments2 = Synthesizer.infer(value, assignments)
               val valueType = Helpers.instantiateCandidate(value.tpe, assignments2)
-              Helpers.assign(iv, valueType, assignments2)
+              Helpers.assign(iv, valueType, assignments2).getOrElse(assignments2)
             case _ => throw CompilationException(s"A variable declared without a type annotation should have an inference variable as its type. Position: ${expression.position}.")
           }
         }

@@ -35,7 +35,7 @@ case class MultiFunctionSynthesizer(mf: MultiFunctionDefinition, expression: Exp
 
     // Step 3: Handle each function candidate by inferring an argument type from it.
     val argumentCandidates = functionCandidates.flatMap {
-      function => ParametricFunctionSynthesizer.inferArgumentType(function.signature, expression.arguments, knownArgumentTypes, assignments)
+      function => ParametricFunctionSynthesizer.inferArgumentType(function.signature, expression.arguments, knownArgumentTypes, assignments2)
     }
 
     // Step 4: Choose the most specific resulting arguments type and perform dispatch with it, assigning the result
