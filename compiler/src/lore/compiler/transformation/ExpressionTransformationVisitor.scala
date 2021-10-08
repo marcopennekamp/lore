@@ -1,4 +1,4 @@
-package lore.compiler.transformation2
+package lore.compiler.transformation
 
 import lore.compiler.core._
 import lore.compiler.feedback.{ExpressionFeedback, MultiFunctionFeedback, Reporter, StructFeedback}
@@ -11,7 +11,6 @@ import lore.compiler.semantics.functions._
 import lore.compiler.semantics.scopes._
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
-import lore.compiler.transformation._
 import lore.compiler.types._
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalaz.Id.Id
@@ -168,7 +167,7 @@ class ExpressionTransformationVisitor(
           typeArgumentNodes match {
             case Some(typeArgumentNodes) =>
               val target = StructTransformation.getConstructorValue(binding, typeArgumentNodes, namePathNode.position)
-              CallTransformation.valueCall(target, arguments, position)
+              Expression.Call(CallTarget.Value(target), arguments, new InferenceVariable, position)
 
             case None =>
               val target = CallTarget.Constructor(binding)
@@ -190,7 +189,7 @@ class ExpressionTransformationVisitor(
     // Xary function calls.
     case SimpleCallNode(namePathNode, _, position) =>
       def handleValueCall(target: Expression): Expression.Call = {
-        CallTransformation.valueCall(target, expressions, position)
+        Expression.Call(CallTarget.Value(target), expressions, new InferenceVariable, position)
       }
 
       def handleSingleBinding(binding: Binding): Option[Expression.Call] = {
@@ -240,7 +239,7 @@ class ExpressionTransformationVisitor(
   }
 
   override def visitCall(node: CallNode)(target: Expression, arguments: Vector[Expression]): Expression = {
-    CallTransformation.valueCall(target, arguments, node.position)
+    Expression.Call(CallTarget.Value(target), arguments, new InferenceVariable, node.position)
   }
 
   override def visitCond(node: CondNode)(rawCases: Vector[(Expression, Expression)]): Expression = {
