@@ -14,9 +14,10 @@ object MemberAccessJudgmentResolver extends JudgmentResolver[TypingJudgment.Memb
     judgment: TypingJudgment.MemberAccess,
     assignments: Assignments,
   )(implicit registry: Registry, reporter: Reporter): Option[Assignments] = {
-    instantiateCandidateType(assignments, judgment.source).member(judgment.name, judgment.position).flatMap {
+    /* instantiateCandidateType(assignments, judgment.source).member(judgment.name, judgment.position).flatMap {
       member => narrowBounds(assignments, judgment.target, member.tpe, judgment)
-    }
+    } */
+    ???
   }
 
   override def backwards(

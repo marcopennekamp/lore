@@ -2,10 +2,17 @@ package lore.compiler.feedback
 
 import lore.compiler.core.Positioned
 import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.expressions.Expression.UnresolvedMemberAccess
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.types.{FunctionType, TupleType, Type}
 
 object TypingFeedback2 {
+
+  object Members {
+    case class NotFound(expression: UnresolvedMemberAccess, instanceType: Type) extends Feedback.Error(expression) {
+      override def message: String = s"The type $instanceType does not have a member ${expression.name}."
+    }
+  }
 
   object AnonymousFunctions {
     case class FunctionTypeExpected(expression: Expression.AnonymousFunction, expectedType: Type) extends Feedback.Error(expression) {

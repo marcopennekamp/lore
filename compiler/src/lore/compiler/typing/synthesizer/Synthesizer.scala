@@ -55,15 +55,18 @@ object Synthesizer {
         //                   unresolved member accesses.
         ???
 
-      case Expression.UnresolvedMemberAccess(instance, name, memberInferenceVariable, _) =>
+      case expression@Expression.UnresolvedMemberAccess(instance, name, memberInferenceVariable, _) =>
         // TODO (inference): Alternatively, we can call `check(instance, %{ <name>: <tpe> }, assignments)` instead to
         //                   get the other direction, which infers the instance type from the member access. (A valid
         //                   direction in the typing judgments world.) We'll have to test this practically before
         //                   implementing that direction, however.
         val assignments2 = infer(instance, assignments)
-        val memberType = Helpers.instantiate(instance, assignments2).member(name) match {
+        val instanceType = Helpers.instantiate(instance, assignments2)
+        val memberType = instanceType.member(name) match {
           case Some(member) => member.tpe
-          case None => BasicType.Nothing
+          case None =>
+            reporter.report(TypingFeedback2.Members.NotFound(expression, instanceType))
+            BasicType.Nothing
         }
 
         // We must assign the member's type to the inference variable, which may be part of types of other
