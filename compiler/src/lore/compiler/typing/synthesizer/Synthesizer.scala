@@ -1,12 +1,13 @@
-package lore.compiler.typing
+package lore.compiler.typing.synthesizer
 
 import lore.compiler.feedback.{Reporter, TypingFeedback2}
-import lore.compiler.inference.Inference
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.types._
+import lore.compiler.typing.Helpers
+import lore.compiler.typing.checker.Checker
 
 // TODO (inference): We're using the old definition of Assignments here, which might be correct. However, we need to
 //                   reevaluate whether we need lower and upper inference variable bounds, or if a direct assignment
@@ -19,7 +20,7 @@ object Synthesizer {
     * type cannot be inferred, one or more errors are reported.
     *
     * TODO (inference): Maybe return an option so that we can return `None` instead of `assignments` when an error has
-    *                   been found.
+    * been found.
     */
   def infer(expression: Expression, assignments: Assignments)(implicit checker: Checker, reporter: Reporter): Assignments = {
     // Delegates the handling of the expression to the Checker.

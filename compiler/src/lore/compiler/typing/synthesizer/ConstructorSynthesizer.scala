@@ -1,11 +1,12 @@
-package lore.compiler.typing
+package lore.compiler.typing.synthesizer
 
 import lore.compiler.feedback.Reporter
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.inference.InferenceVariable
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.scopes.StructConstructorBinding
-import lore.compiler.types.TypeVariableAllocation
+import lore.compiler.typing.Helpers
+import lore.compiler.typing.checker.Checker
 
 object ConstructorSynthesizer {
 

@@ -1,4 +1,4 @@
-package lore.compiler.typing
+package lore.compiler.typing.synthesizer
 
 import lore.compiler.feedback.{MultiFunctionFeedback, Reporter, TypingFeedback2}
 import lore.compiler.inference.Inference.Assignments
@@ -6,7 +6,8 @@ import lore.compiler.inference.{Inference, InferenceVariable}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.types.TupleType
-import lore.compiler.typing.ParametricFunctionSynthesizer.ArgumentCandidate
+import lore.compiler.typing.Helpers
+import lore.compiler.typing.checker.Checker
 
 case class MultiFunctionSynthesizer(mf: MultiFunctionDefinition, expression: Expression.Call)(implicit checker: Checker, reporter: Reporter) {
 

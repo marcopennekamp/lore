@@ -10,7 +10,7 @@ import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.transformation2.ExpressionTransformationVisitor
 import lore.compiler.types.{TupleType, Type}
-import lore.compiler.typing.{Checker, Typing}
+import lore.compiler.typing.Typing
 
 object ExpressionTransformer {
 

@@ -1,11 +1,13 @@
-package lore.compiler.typing
+package lore.compiler.typing.checker
 
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback._
-import lore.compiler.inference.{Inference, InferenceVariable}
 import lore.compiler.inference.Inference.Assignments
+import lore.compiler.inference.{Inference, InferenceVariable}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types._
+import lore.compiler.typing.Helpers
+import lore.compiler.typing.synthesizer.{MultiFunctionValueSynthesizer, ParametricFunctionSynthesizer, Synthesizer}
 
 /**
   * @param returnType The return type of the surrounding function, used to check `Return` expressions.
@@ -41,6 +43,7 @@ case class Checker(returnType: Type) {
     // Using `reportOnly` will suppress the default `SubtypeExpected` error in favor of an error that provides
     // additional context and information.
     var suppressDefaultError = false
+
     def reportOnly(error: Feedback.Error): Unit = {
       reporter.report(error)
       suppressDefaultError = true

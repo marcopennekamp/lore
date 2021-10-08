@@ -5,6 +5,7 @@ import lore.compiler.inference.Inference.{Assignments, AssignmentsExtension, log
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types.{BasicType, TupleType, Type}
+import lore.compiler.typing.checker.Checker
 import lore.compiler.utils.Timer.timed
 
 object Typing {
