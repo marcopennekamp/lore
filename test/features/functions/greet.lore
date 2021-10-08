@@ -1,0 +1,11 @@
+func greet(name: String, title: String): String = 'Hello, $title $name.'
+
+func test(): [String] = do
+  // Note that it would be technically possible to infer the argument type of `v` from the context, but this is such a
+  // niche feature that we haven't implemented this yet.
+  let f = (v: %{ name: String, title: String }) => greet(v.name, v.title)
+  [
+    f(%{ name: 'Smith', title: 'Mr.' }),
+    f(%{ name: 'Chang', title: 'Ms.' }),
+  ]
+end

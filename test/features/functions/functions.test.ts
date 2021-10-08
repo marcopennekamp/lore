@@ -25,6 +25,11 @@ Deno.test(`${base}/filter-curried`, async () => {
   )
 })
 
+Deno.test(`${base}/greet`, async () => {
+  const result: ListValue<string> = await LoreTest.run(`${base}/greet.lore`)
+  assertListEquals(result, ['Hello, Mr. Smith.', 'Hello, Ms. Chang.'])
+})
+
 Deno.test(`${base}/map`, async () => {
   const result: TupleValue = await LoreTest.run(`${base}/map.lore`)
   assertIsTuple(result, [List.type(Types.int), List.type(Types.string)])
