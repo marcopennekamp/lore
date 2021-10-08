@@ -145,6 +145,8 @@ object Expression {
 
   /**
     * A [[ConstructorValue]] without explicitly specified type arguments, which need to be inferred first.
+    *
+    * @param tpe This inference variable represents the function type of the constructor value.
     */
   case class UntypedConstructorValue(binding: StructConstructorBinding, tpe: InferenceVariable, position: Position) extends Expression
 

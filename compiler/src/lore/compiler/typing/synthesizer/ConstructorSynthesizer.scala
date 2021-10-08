@@ -5,7 +5,7 @@ import lore.compiler.inference.Inference.Assignments
 import lore.compiler.inference.InferenceVariable
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.scopes.StructConstructorBinding
-import lore.compiler.typing.{Helpers, InferenceVariable2}
+import lore.compiler.typing.InferenceVariable2
 import lore.compiler.typing.checker.Checker
 
 object ConstructorSynthesizer {

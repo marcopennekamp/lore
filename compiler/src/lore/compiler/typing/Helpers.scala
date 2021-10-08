@@ -50,7 +50,7 @@ object Helpers {
 
   def traceExpressionType(expression: Expression, assignments: Assignments, label: String, additional: String = ""): Unit = {
     Inference.logger.whenTraceEnabled {
-      val inferredType = Helpers.instantiate(expression, assignments)(new LambdaReporter(_ => { }))
+      val inferredType = Helpers.instantiateCandidate(expression.tpe, assignments)
       Inference.logger.trace(s"$label type $inferredType for `${expression.position.truncatedCode}`.$additional")
     }
   }
