@@ -24,6 +24,14 @@ case class MultiFunctionSynthesizer(mf: MultiFunctionDefinition, expression: Exp
     * candidate, we either have an empty fit or an ambiguity error.
     */
   def infer(assignments: Assignments): Assignments = {
+    // TODO (inference): Error reporting currently sucks. If we have a call `Enum.map(list, v => ...)` and something is
+    //                   wrong inside the anonymous function, the error will simply be swallowed and the user gets a
+    //                   generic "empty fit" error. Obviously it's not so easy to pass through the right errors if
+    //                   there are multiple function candidates. But if there is only one candidate, we can easily just
+    //                   pass through the errors instead of reporting the "empty fit" error. This just requires making
+    //                   ParametricFunctionSynthesizer return these errors for failed argument candidates. Inside of
+    //                   it, we have to make `checker.attempt` in `checkUntypedArgument` return its errors and then
+    //                   return them.
     Inference.logger.trace(s"Start inference of multi-function call `${expression.position.truncatedCode}`.")
 
     // Step 1: Try to infer as many argument types as possible.

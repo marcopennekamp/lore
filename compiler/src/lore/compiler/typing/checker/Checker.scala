@@ -30,7 +30,11 @@ case class Checker(returnType: Type) {
       throw CompilationException(s"The expected type $expectedType must be fully instantiated! Position: ${expression.position}. Assignments: $assignments")
     }
 
-    // The fallback is used when the expected type is clearly invalid in respect to the expression, for example when
+    // When the Checker can't handle an expression, we fall back to the Synthesizer. This corresponds to a particular
+    // rule in most bidirectional type systems, defined as such:
+    //    If `Γ ⊢ e => A` (infer) and `A = B` then `Γ ⊢ e <= B` (checked)
+    // See: "Jana Dunfield and Neel Krishnaswami. 2020. Bidirectional Typing."
+    // `fallback` is also used when the expected type is clearly invalid in respect to the expression, for example when
     // the expression is a ListConstruction and the expected type is a tuple. We attempt inference as a fallback to
     // assign types to inference variables, so that the eventual subtyping error can be most informed. For example,
     // if we have a ListConstruction `[a.x, b.x]`, with `x` being a member of type `Int`, and an expected type
@@ -39,6 +43,7 @@ case class Checker(returnType: Type) {
     // TODO (inference): If we allow e.g. lists to extend traits, this fallback is also instrumental in providing a
     //                   secondary path for type checking to accept a ListConstruction as a valid option for an
     //                   expected type `Enum`.
+    // TODO (inference): If the Synthesizer already reports errors, we should suppress the default error.
     def fallback: Assignments = Synthesizer.infer(expression, assignments)
 
     // Using `reportOnly` will suppress the default `SubtypeExpected` error in favor of an error that provides
@@ -206,16 +211,12 @@ case class Checker(returnType: Type) {
         val assignments2 = Synthesizer.inferExtractors(extractors, assignments)
         checkLoop(expression, expectedType, assignments2)
 
-      // The general case delegates to the Synthesizer, which simply infers the type of the expression. This
-      // corresponds to a particular rule in most bidirectional type systems, defined as such:
-      //    If `Γ ⊢ e => A` (infer) and `A = B` then `Γ ⊢ e <= B` (checked)
-      // See: "Jana Dunfield and Neel Krishnaswami. 2020. Bidirectional Typing."
-      // Of course, in Lore's type system, type equality must be replaced with subtyping, i.e. `A subtypes B`.
-      case _ => Synthesizer.infer(expression, assignments)
+      case _ => fallback
     }
 
     // Step 2: Use the new assignments map to check that `expression.tpe` (as instantiated) is a subtype of
-    //         `expectedType`, unless the default error has been suppressed by `reportOnly`.
+    //         `expectedType`, unless the default error has been suppressed, which means that another error has already
+    //         been reported.
     if (!suppressDefaultError) {
       val actualType = Helpers.instantiate(expression.tpe, resultAssignments, expression)
       if (actualType </= expectedType) {
