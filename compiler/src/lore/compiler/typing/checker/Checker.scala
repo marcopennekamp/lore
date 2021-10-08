@@ -218,7 +218,7 @@ case class Checker(returnType: Type) {
     //         `expectedType`, unless the default error has been suppressed, which means that another error has already
     //         been reported.
     if (!suppressDefaultError) {
-      val actualType = Helpers.instantiate(expression.tpe, resultAssignments, expression)
+      val actualType = Helpers.instantiateCandidate(expression.tpe, resultAssignments)
       if (actualType </= expectedType) {
         // TODO (inference): Does this need a new typing error?
         reporter.error(TypingFeedback.SubtypeExpected(actualType, expectedType, expression))
