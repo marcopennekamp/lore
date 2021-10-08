@@ -6,7 +6,7 @@ import lore.compiler.inference.InferenceVariable
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionInstance
 import lore.compiler.types.FunctionType
-import lore.compiler.typing.Helpers
+import lore.compiler.typing.InferenceVariable2
 
 object MultiFunctionValueSynthesizer {
 
@@ -29,7 +29,7 @@ object MultiFunctionValueSynthesizer {
       }
     }
 
-    Helpers.assign(expression.tpe.asInstanceOf[InferenceVariable], functionType, assignments)
+    InferenceVariable2.assign(expression.tpe.asInstanceOf[InferenceVariable], functionType, assignments)
   }
 
 }

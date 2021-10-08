@@ -6,8 +6,9 @@ import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.types._
-import lore.compiler.typing.Helpers
+import lore.compiler.typing.{Helpers, InferenceVariable2}
 import lore.compiler.typing.checker.Checker
+import lore.compiler.typing.unification.Unification
 
 // TODO (inference): We're using the old definition of Assignments here, which might be correct. However, we need to
 //                   reevaluate whether we need lower and upper inference variable bounds, or if a direct assignment
@@ -67,7 +68,7 @@ object Synthesizer {
 
         // We must assign the member's type to the inference variable, which may be part of types of other
         // expressions, regardless of whether the member type itself can be inferred.
-        Helpers.assign(memberInferenceVariable, memberType, assignments2)
+        InferenceVariable2.assign(memberInferenceVariable, memberType, assignments2)
           .getOrElse(assignments2)
 
       case Expression.Literal(_, _, _) => assignments
@@ -103,7 +104,7 @@ object Synthesizer {
 
       case expression@Expression.UntypedConstructorValue(binding, tpe, _) =>
         if (binding.isConstant) {
-          Helpers.assign(tpe, binding.asSchema.representative, assignments).getOrElse(assignments)
+          InferenceVariable2.assign(tpe, binding.asSchema.representative, assignments).getOrElse(assignments)
         } else {
           reporter.report(TypingFeedback2.ConstructorValues.TypeContextExpected(expression))
           assignments
@@ -153,7 +154,7 @@ object Synthesizer {
             collectionType match {
               case ListType(elementType) =>
                 val combinedType = ListType(SumType.construct(elementType, newElementType))
-                Helpers.unifyEquals(expression.tpe, combinedType, assignments3).getOrElse(assignments3)
+                Unification.unifyEquals(expression.tpe, combinedType, assignments3).getOrElse(assignments3)
 
               case _ =>
                 reporter.report(TypingFeedback2.Lists.ListExpected(expression, collectionType))
@@ -201,7 +202,7 @@ object Synthesizer {
                 reporter.error(TypingFeedback2.ValueCalls.FunctionExpected(expression, targetType))
                 (targetAssignments, BasicType.Nothing)
             }
-            Helpers.unifyEquals(tpe, output, argumentAssignments).getOrElse(argumentAssignments)
+            Unification.unifyEquals(tpe, output, argumentAssignments).getOrElse(argumentAssignments)
 
           case CallTarget.MultiFunction(mf) => MultiFunctionSynthesizer(mf, expression).infer(assignments)
 
@@ -249,7 +250,7 @@ object Synthesizer {
   )(implicit reporter: Reporter): Assignments = {
     val resultType2 = Helpers.instantiate(resultType, assignments, operation)
     val resultType3 = if (resultType2 <= upperBound) resultType2 else upperBound
-    Helpers.unifyEquals(operation.tpe, resultType3, assignments).getOrElse(assignments)
+    Unification.unifyEquals(operation.tpe, resultType3, assignments).getOrElse(assignments)
   }
 
   private def assignOperationResult(assignments: Assignments, operation: Expression, resultType: Type)(implicit reporter: Reporter): Assignments = {
@@ -270,7 +271,7 @@ object Synthesizer {
         }
 
         elementType
-          .flatMap(Helpers.unifyEquals(_, extractor.variable.tpe, assignments3))
+          .flatMap(Unification.unifyEquals(_, extractor.variable.tpe, assignments3))
           .getOrElse(assignments3)
     }
   }

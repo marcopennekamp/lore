@@ -6,8 +6,9 @@ import lore.compiler.inference.{Inference, InferenceVariable}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.types.TupleType
-import lore.compiler.typing.Helpers
+import lore.compiler.typing.{Helpers, InferenceVariable2}
 import lore.compiler.typing.checker.Checker
+import lore.compiler.typing.synthesizer.ParametricFunctionSynthesizer.ArgumentCandidate
 
 case class MultiFunctionSynthesizer(mf: MultiFunctionDefinition, expression: Expression.Call)(implicit checker: Checker, reporter: Reporter) {
 
@@ -80,7 +81,7 @@ case class MultiFunctionSynthesizer(mf: MultiFunctionDefinition, expression: Exp
       min => MultiFunctionFeedback.Dispatch.AmbiguousCall(mf, argumentCandidate.tpe, min, expression.position),
     ).flatMap { instance =>
       Inference.logger.trace(s"Assign output type ${instance.signature.outputType} of function instance ${instance.definition} to result type ${expression.tpe}.")
-      Helpers.assign(
+      InferenceVariable2.assign(
         expression.tpe.asInstanceOf[InferenceVariable],
         instance.signature.outputType,
         argumentCandidate.assignments,

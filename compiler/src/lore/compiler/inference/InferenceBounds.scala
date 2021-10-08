@@ -31,7 +31,6 @@ case class InferenceBounds(variable: InferenceVariable, lower: Type, upper: Type
 
 object InferenceBounds {
 
-  // In Lore: type BoundType = #lower | #upper
   sealed trait BoundType
   object BoundType {
     case object Lower extends BoundType

@@ -10,7 +10,7 @@ import scala.collection.mutable
   *
   * An assignment is a single binding. An allocation is a nested set of assignments.
   *
-  * TODO (inference): Can't we use equality unification to achieve the same goal? We'd still need a run-time type
+  * TODO (inference): Can't we use subtyping unification to achieve the same goal? We'd still need a run-time type
   *                   variable allocation, but could use the inference code for the compiler.
   */
 class TypeVariableAllocation(variables: Set[TypeVariable]) {

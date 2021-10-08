@@ -6,8 +6,9 @@ import lore.compiler.inference.Inference.Assignments
 import lore.compiler.inference.{Inference, InferenceVariable}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types._
-import lore.compiler.typing.Helpers
+import lore.compiler.typing.{Helpers, InferenceVariable2}
 import lore.compiler.typing.synthesizer.{MultiFunctionValueSynthesizer, ParametricFunctionSynthesizer, Synthesizer}
+import lore.compiler.typing.unification.Unification
 
 /**
   * @param returnType The return type of the surrounding function, used to check `Return` expressions.
@@ -66,7 +67,7 @@ case class Checker(returnType: Type) {
             case iv: InferenceVariable =>
               val assignments2 = Synthesizer.infer(value, assignments)
               val valueType = Helpers.instantiateCandidate(value.tpe, assignments2)
-              Helpers.assign(iv, valueType, assignments2).getOrElse(assignments2)
+              InferenceVariable2.assign(iv, valueType, assignments2).getOrElse(assignments2)
             case _ => throw CompilationException(s"A variable declared without a type annotation should have an inference variable as its type. Position: ${expression.position}.")
           }
         }
@@ -102,7 +103,7 @@ case class Checker(returnType: Type) {
           // function type.
           expectedType match {
             case expectedType@FunctionType(input, output) if input.elements.length == parameters.length =>
-              Helpers.unifySubtypes(input, expression.tpe.input, assignments) match {
+              Unification.unifySubtypes(input, expression.tpe.input, assignments) match {
                 case Some(assignments2) =>
                   check(body, output, assignments2)
 
@@ -158,7 +159,7 @@ case class Checker(returnType: Type) {
             ParametricFunctionSynthesizer.inferTypeArguments(binding.signature, input.elements, assignments)
               .flatMap {
                 case (typeVariableAssignments, assignments2) =>
-                  Helpers.assign(tpe, binding.asSchema.instantiate(typeVariableAssignments), assignments2)
+                  InferenceVariable2.assign(tpe, binding.asSchema.instantiate(typeVariableAssignments), assignments2)
               }
               .getOrElse(assignments)
 

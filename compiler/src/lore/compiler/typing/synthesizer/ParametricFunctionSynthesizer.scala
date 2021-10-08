@@ -8,6 +8,8 @@ import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.types.{BasicType, TupleType, Type, TypeVariable}
 import lore.compiler.typing.Helpers
 import lore.compiler.typing.checker.Checker
+import lore.compiler.typing.unification.Unification
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object ParametricFunctionSynthesizer {
 
@@ -109,7 +111,7 @@ object ParametricFunctionSynthesizer {
     parameterTypes: Vector[Type],
     assignments: Assignments,
   ): Option[Assignments] = {
-    Helpers.unifySubtypes(
+    Unification.unifySubtypes(
       TupleType(argumentTypes),
       TupleType(parameterTypes),
       assignments,
@@ -128,22 +130,22 @@ object ParametricFunctionSynthesizer {
 
   private def handleTypeVariableBounds(tv: TypeVariable, typeVariableAssignments: Map[TypeVariable, InferenceVariable], assignments: Assignments): Option[Assignments] = {
     val assignments2 = if (tv.lowerBound != BasicType.Nothing) {
-      Helpers.unifySubtypes(Type.substitute(tv.lowerBound, typeVariableAssignments), typeVariableAssignments(tv), assignments)
+      Unification.unifySubtypes(Type.substitute(tv.lowerBound, typeVariableAssignments), typeVariableAssignments(tv), assignments)
         .getOrElse(return None)
     } else assignments
 
     if (tv.upperBound != BasicType.Any) {
-      Helpers.unifySubtypes(typeVariableAssignments(tv), Type.substitute(tv.upperBound, typeVariableAssignments), assignments2)
+      Unification.unifySubtypes(typeVariableAssignments(tv), Type.substitute(tv.upperBound, typeVariableAssignments), assignments2)
     } else Some(assignments2)
   }
 
-  private def checkUntypedArgument(argument: Expression, parameterType: Type, assignments: Assignments)(implicit checker: Checker, reporter: Reporter) = {
+  private def checkUntypedArgument(argument: Expression, parameterType: Type, assignments: Assignments)(implicit checker: Checker, reporter: Reporter): Option[Assignments] = {
     // TODO (inference): For a call `Enum.map` and its second argument, the candidate instantiation would probably
     //                   result in `Int => Nothing`, because the lower bound is preferred. This has to be `Int => Any`.
     //                   Similarly, for contravariant types, the instantiation also has to instantiate the smart
     //                   default, namely `Nothing`, such as in `Nothing => Int`.
     checker.attempt(argument, Helpers.instantiateCandidate(parameterType, assignments), assignments).flatMap { assignments2 =>
-      Helpers.unifySubtypes(Helpers.instantiateCandidate(argument.tpe, assignments2), parameterType, assignments2)
+      Unification.unifySubtypes(Helpers.instantiateCandidate(argument.tpe, assignments2), parameterType, assignments2)
     }
   }
 
