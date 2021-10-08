@@ -18,11 +18,16 @@ object SumType {
     * has only one part, this type is returned instead.
     *
     * We also apply the following simplification: In a sum type A | B | ..., if B < A, then B can be dropped.
-    * That is, A already "clears the way" for values of type B to be part of the sum type.
+    * That is, A already "clears the way" for values of type B to be part of the sum type. This also leads to the
+    * identity for empty sum types: Nothing.
     *
     * The resulting flattened normal form is a requirement for subtyping to work correctly.
     */
   def construct(parts: Vector[Type]): Type = {
+    if (parts.isEmpty) {
+      return BasicType.Nothing
+    }
+
     val flattened = parts.flatMap {
       case t: SumType => t.parts
       case t => Vector(t)

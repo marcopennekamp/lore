@@ -35,6 +35,7 @@ object LocalizedExpression {
       case Expression.Call(target, _, _, _) => target match {
         case CallTarget.Value(_) =>
         case CallTarget.MultiFunction(_) => setFalse()
+        case CallTarget.Constructor(_) => setFalse()
         case CallTarget.Dynamic(_) => setFalse()
       }
       case _ =>

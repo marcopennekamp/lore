@@ -72,6 +72,7 @@ object ExpressionVisitor {
       case node@MultiFunctionValue(_, _, _) => visitor.visit(node)
       case node@FixedFunctionValue(_, _) => visitor.visit(node)
       case node@ConstructorValue(_, _, _) => visitor.visit(node)
+      case node@UntypedConstructorValue(_, _, _) => visitor.visit(node)
       case node@ListConstruction(values, _) => visitor.visit(node)(values.map(rec))
       case node@MapConstruction(entries, _) => visitor.visit(node)(entries.map(e => (rec(e.key), rec(e.value))))
       case node@ShapeValue(properties, _) => visitor.visit(node)(properties.map(p => rec(p.value)))

@@ -156,7 +156,7 @@ object Expression {
     *                   interesting for performance reasons.
     */
   case class ListConstruction(values: Vector[Expression], position: Position) extends Expression {
-    val elementType: Type = if (values.isEmpty) BasicType.Nothing else SumType.construct(values.map(_.tpe))
+    val elementType: Type = SumType.construct(values.map(_.tpe))
     override val tpe: Type = ListType(elementType)
   }
 

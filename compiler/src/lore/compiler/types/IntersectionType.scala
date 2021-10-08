@@ -20,11 +20,15 @@ object IntersectionType {
     * multiple shape types, they are combined into a single shape type.
     *
     * We also apply the following simplification: In an intersection type A & B & ..., if A < B, then B can
-    * be dropped.
+    * be dropped. This also leads to the identity for empty intersection types: Any.
     *
     * The resulting flattened normal form is a requirement for subtyping to work correctly.
     */
   def construct(parts: Vector[Type]): Type = {
+    if (parts.isEmpty) {
+      return BasicType.Any
+    }
+
     val flattened = parts.flatMap {
       case t: IntersectionType => t.parts
       case t => Vector(t)
