@@ -1,7 +1,7 @@
 package lore.compiler.semantics.members
 
 import lore.compiler.types._
-import lore.compiler.utils.CollectionExtensions.VectorExtension
+import lore.compiler.utils.CollectionExtensions.{MapVectorExtension, VectorExtension}
 
 import scala.collection.immutable.HashMap
 
@@ -21,20 +21,19 @@ object MemberExplorer {
     *   - Type Variable: A type variable's members are defined by its upper bound. If a member is a member of the
     *     upper bound type, it must also be present in all possible instances of the type variable. If it wasn't, we
     *     would be violating a basic contract of polymorphism.
-    *   - Intersection Type: In the case of an intersection type, if a member is part of one of the types, it is also
-    *     a member of the intersection type. This leads to a possible problem with ambiguities: if two or more parts
-    *     define a member of the same name, the definition is technically ambiguous. We can resolve these as such:
-    *       - Case 1: All members (bearing the same name) are assignable and their types are exactly equal. The
-    *                 resulting member is also assignable.
-    *       - Case 2: At least one member is assignable or mutable. Bearing in mind case 1 does not apply, the
-    *                 resulting member is nonassignable and mutable.
-    *       - Case 3: All members are nonassignable and immutable. Then the resulting member is also nonassignable
-    *                 and immutable.
-    *       - The type of the resulting member is always the intersection of all member types, because we are saying
-    *         "this property has types A, B, C, ... at the same time." For example, if we have a type
-    *         `{ x: Real } & { x: String }`, `x` is both a `Real` and a `String`. Because `{ x: Real }` and
-    *         `{ x: String }` must both be supertypes of `{ x: Real } & { x: String }`, `{ x: Real & String }` is the
-    *         only sensible solution. See also [[ShapeType.combine]].
+    *   - Sum Type: If all parts of a sum type have a member `name`, the sum type also has this member. The combined
+    *     member's type is a sum type of all member types.
+    *   - Intersection Type: If one part of an intersection type has a member `name`, the intersection type also has
+    *     this member. The combined member's type is an intersection of all member types.
+    *
+    * The situation for sum and intersection types leads to a possible problem with ambiguities. If two or more parts
+    * induce a sum/intersection type member, its definition is technically ambiguous. We can resolve that as such:
+    *   - Case 1: All members (bearing the same name) are assignable and their types are exactly equal. The resulting
+    *             member is also assignable.
+    *   - Case 2: At least one member is assignable or mutable. Bearing in mind case (1) does not apply, the resulting
+    *             member is nonassignable and mutable.
+    *   - Case 3: All members are nonassignable and immutable. Then the resulting member is also nonassignable and
+    *             immutable.
     */
   def members(tpe: Type): MemberMap = {
     tpe match {
@@ -50,32 +49,44 @@ object MemberExplorer {
 
       case tv: TypeVariable => tv.upperBound.members
 
+      case SumType(parts) =>
+        val partsVector = parts.toVector
+        val commonMembers = partsVector.map(_.members)
+          .merged
+          // A member is a common member if it occurs in all member maps. This means that the merged member map must
+          // contain exactly as many members as there are parts in the sum type.
+          .filter { case (_, members) => members.length == partsVector.length }
+        combineMembers(commonMembers, SumType.construct(_))
+
       case IntersectionType(types) =>
         val allMembers = types.toVector.map(_.members).flatMap(_.values)
-        val combinedMembers = allMembers.groupBy(_.name).map {
-          // No ambiguity, so we don't have to construct a common member.
-          case (_, Vector(member)) => member
-
-          // Ambiguity, so we have to resolve this according to the cases outlined in the comment above.
-          case (name, members) =>
-            // Case 1.
-            if (members.forall(_.isAssignable) && members.allEqual(_.tpe)) {
-              members.head
-            } else {
-              val tpe = IntersectionType.construct(members.map(_.tpe))
-
-              // Case 2.
-              if (members.exists(m => m.isAssignable || m.isMutable)) {
-                Member(name, tpe, isMutable = true)
-              } else {
-                // Case 3.
-                Member(name, tpe)
-              }
-            }
-        }.toVector
-        HashMap(combinedMembers.map(m => (m.name, m)): _*)
+        combineMembers(allMembers.groupBy(_.name), IntersectionType.construct(_))
 
       case _ => HashMap.empty: MemberMap
+    }
+  }
+
+  private def combineMembers(members: Map[String, Vector[Member]], combineMemberTypes: Vector[Type] => Type): MemberMap = {
+    members.map {
+      // No ambiguity, so we don't have to construct a common member.
+      case (name, Vector(member)) => name -> member
+
+      // Ambiguity, so we have to resolve this according to the cases outlined above.
+      case (name, members) =>
+        // Case 1.
+        if (members.forall(_.isAssignable) && members.allEqual(_.tpe)) {
+          name -> members.head
+        } else {
+          val tpe = combineMemberTypes(members.map(_.tpe))
+
+          // Case 2.
+          if (members.exists(m => m.isAssignable || m.isMutable)) {
+            name -> Member(name, tpe, isMutable = true)
+          } else {
+            // Case 3.
+            name -> Member(name, tpe)
+          }
+        }
     }
   }
 

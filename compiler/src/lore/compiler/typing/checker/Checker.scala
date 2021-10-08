@@ -247,7 +247,7 @@ case class Checker(returnType: Type) {
   }
 
   /**
-    * Executes [[check]] for all `expressions` and `exprectedTypes` pairs in order.
+    * Executes [[check]] for all `expressions` and `expectedTypes` pairs in order.
     */
   def check(expressions: Vector[Expression], expectedTypes: Vector[Type], assignments: Assignments)(implicit reporter: Reporter): Assignments = {
     expressions.zip(expectedTypes).foldLeft(assignments) {
