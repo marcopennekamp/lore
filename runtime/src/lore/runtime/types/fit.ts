@@ -160,10 +160,10 @@ class TypeVariableAllocation {
           // We can only assign types from type arguments if the declared type is parametric.
           if (d2.typeArguments) {
             let s1: DeclaredType | undefined
-            if (d2.kind === Kind.Trait) {
-              s1 = DeclaredTypes.findSupertrait(d1, <TraitSchema> d2.schema)
-            } else if (d1.schema === d2.schema) {
+            if (d1.schema === d2.schema) {
               s1 = d1
+            } else if (d2.kind === Kind.Trait) {
+              s1 = DeclaredTypes.findSupertrait(d1, <TraitSchema> d2.schema)
             }
 
             if (s1) {

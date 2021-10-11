@@ -74,9 +74,9 @@ export const DeclaredTypes = {
   },
 
   /**
-   * Finds the supertrait with the given schema that `type` inherits from, or `undefined` if `type` inherits from no
-   * such supertype schema. The algorithm combines all occurrences of the trait if `type` inherits from it multiple
-   * times.
+   * Finds the supertrait with the given schema that `type` inherits from (or `type` itself), or `undefined` if `type`
+   * inherits from no such supertype schema. The algorithm combines all occurrences of the trait if `type` inherits
+   * from it multiple times.
    *
    * TODO: The current implementation essentially scans the whole supertrait hierarchy. Is there any way in which we
    *       could improve performance? Probably at the sacrifice of some memory.
@@ -106,6 +106,10 @@ export const DeclaredTypes = {
    *       the result would be saved in the transitive supertype cache.)
    */
   findSupertrait(type: DeclaredType, supertypeSchema: TraitSchema): TraitType | undefined {
+    if (type.schema === supertypeSchema) {
+      return <TraitType> type
+    }
+
     if (!type.schema.hasMultipleParameterizedInheritance || DeclaredSchemas.isConstant(supertypeSchema)) {
       return getFirstSupertrait(type, supertypeSchema)
     } else {

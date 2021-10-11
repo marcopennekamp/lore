@@ -60,9 +60,12 @@ trait DeclaredType extends NamedType {
     * resulting declared supertype will be `Cage[Fish & Unicorn]`.
     */
   def findSupertype(supertypeSchema: DeclaredSchema): Option[DeclaredType] = {
+    if (this.schema == supertypeSchema) {
+      return Some(this)
+    }
+
     if (!schema.hasMultipleParameterizedInheritance || supertypeSchema.isConstant) {
-      if (this.schema == supertypeSchema) Some(this)
-      else declaredSupertypes.firstDefined(_.findSupertype(supertypeSchema))
+      declaredSupertypes.firstDefined(_.findSupertype(supertypeSchema))
     } else {
       def collect(dt: DeclaredType): Vector[DeclaredType] = {
         if (dt.schema == supertypeSchema) Vector(dt)
