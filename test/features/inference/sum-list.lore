@@ -1,0 +1,18 @@
+use lore.core.to_string
+use lore.Enum.map
+
+trait Animal
+struct Cat() extends Animal
+struct Dog() extends Animal
+
+module lore.core do
+  func to_string(Cat): String = 'cat'
+  func to_string(Dog): String = 'dog'
+end
+
+// The objective of this test is to ensure that a list `[Cat(), Dog(), Cat()]` is typed as `[Cat | Dog]` and not
+// `[Animal]` if the type context requires this more specific type.
+func test(): [String] = do
+  let result: [Cat | Dog] = [Cat(), Dog(), Cat()]
+  result |> map(to_string)
+end

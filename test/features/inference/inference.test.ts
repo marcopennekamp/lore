@@ -9,6 +9,11 @@ Deno.test(`${base}/function-list`, async () => {
   assertListEquals(result, ['foo', 'bar', '!foobar!'])
 })
 
+Deno.test(`${base}/sum-list`, async () => {
+  const result: ListValue<string> = await LoreTest.run(`${base}/sum-list.lore`)
+  assertListEquals(result, ['cat', 'dog', 'cat'])
+})
+
 Deno.test(`${base}/wrapper`, async () => {
   const result: ListValue<string> = await LoreTest.run(`${base}/wrapper.lore`)
   assertListEquals(result, ['Hey!', 'Hey! Hey!', 'Hey! Hey! Hey!'])

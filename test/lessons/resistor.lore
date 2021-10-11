@@ -105,4 +105,4 @@ func test(): [Resistance] = [
   Rating.of(Yellow,   Violet,   None,          Brown,    Some(Gold)),
   Rating.of(Blue,     Grey,     None,          Black,    Some(Orange)),
   Rating.of(Blue,     Blue,     Some(Blue),    Black,    None),
-] |> flat_map((rating: Rating) => [rating.low, rating.high]) // TODO (inference): The type inference algorithm currently doesn't correctly infer `rating` to be Rating.
+] |> flat_map(rating => [rating.low, rating.high])
