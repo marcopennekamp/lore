@@ -42,6 +42,10 @@ object StructFeedback {
       override def message: String = s"The open type parameter $typeParameter must be covariant."
     }
 
+    case class IllegalLowerBound(typeParameter: TypeVariable, override val position: Position) extends Feedback.Error(position) {
+      override def message: String = s"The open type parameter $typeParameter may not have a lower bound."
+    }
+
     case class NotUniquelyDeducible(typeParameter: TypeVariable, override val position: Position) extends Feedback.Error(position) {
       override def message: String = s"The open type parameter $typeParameter is not uniquely deducible. It may only be" +
         s" used once in a single property, and not within a sum or intersection type."

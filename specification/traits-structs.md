@@ -216,6 +216,7 @@ If `A` is fixed at compile-time, `process(Some(animal))` will evaluate to "Maybe
 
 - Open type variables can only be part of **structs**. They make no sense in traits, because traits aren't instantiated directly.
 - Open type variables must be **covariant**. This is easy to see: if we have a type `Some[A]` with `A` being open, we could have a variable of type `Option[Animal]` at compile time, but a value of `Some[Fox]` at run time. If `A` was invariant, we could not put this value into the variable, because `Some[Fox]` would not be a subtype of `Option[Animal]`.
+- Open type variables may not have a **lower bound**, because they can easily lead to run-time errors.
 - Open type variables must be **uniquely deducible**. This means that the type variable may only occur in one position of a single property.
 - Properties typed with an open type variable must be **immutable**.
 

@@ -74,6 +74,10 @@ object StructConstraints {
         reporter.error(StructFeedback.OpenTypeParameter.CovarianceRequired(typeParameter, definition.position))
       }
 
+      if (typeParameter.lowerBound != BasicType.Nothing) {
+        reporter.error(StructFeedback.OpenTypeParameter.IllegalLowerBound(typeParameter, definition.position))
+      }
+
       definition.schema.derivingProperties.get(typeParameter) match {
         case None => reporter.error(StructFeedback.OpenTypeParameter.NotUniquelyDeducible(typeParameter, definition.position))
         case Some(property) =>
