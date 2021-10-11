@@ -16,8 +16,8 @@ case class IntersectionType private (parts: Set[Type]) extends Type {
 object IntersectionType {
   /**
     * Constructs an intersection type from the given types and flattens it if necessary. If the resulting
-    * intersection type has only one part, that type is returned instead. If the intersection type contains
-    * multiple shape types, they are combined into a single shape type.
+    * intersection type has only one part, that type is returned instead. Some types such as shapes and tuples are
+    * combined if they occur multiple times.
     *
     * We also apply the following simplification: In an intersection type A & B & ..., if A < B, then B can
     * be dropped. This also leads to the identity for empty intersection types: Any.
@@ -28,19 +28,7 @@ object IntersectionType {
     if (parts.isEmpty) {
       return BasicType.Any
     }
-
-    val flattened = parts.flatMap {
-      case t: IntersectionType => t.parts
-      case t => Vector(t)
-    }
-
-    val (noShapes, shapes) = flattened.separateByType[ShapeType]
-    val shapesCombined = if (shapes.length > 1) {
-      noShapes :+ ShapeType.combine(shapes)
-    } else flattened
-
-    val simplified = Type.mostSpecific(shapesCombined).toSet
-    if (simplified.size == 1) simplified.head else IntersectionType(simplified)
+    Simplification.construct(Kind.Intersection, parts)
   }
 
   def construct(parts: Set[Type]): Type = construct(parts.toVector)

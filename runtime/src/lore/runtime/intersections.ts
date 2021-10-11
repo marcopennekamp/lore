@@ -1,4 +1,5 @@
 import { Shape, ShapeType } from './shapes.ts'
+import { BasicType } from './types/basic-types.ts'
 import { Kind } from './types/kinds.ts'
 import { isSubtype } from './types/subtyping.ts'
 import { Type, XaryType } from './types/types.ts'
@@ -12,7 +13,17 @@ export const Intersection = {
     return { kind: Kind.Intersection, types, hash: unorderedHashWithSeed(types, 0x74a2317d) }
   },
 
+  /**
+   * Simplifies the given intersection type parts according to our intersection type normal form. If the resulting
+   * intersection type would only contain a single part, we instead return the type itself.
+   *
+   * TODO (inference): Implement the same type of simplification as present at compile time.
+   */
   simplified(types: Array<Type>): Type {
+    if (types.length === 0) {
+      return BasicType.any
+    }
+
     if (types.length === 1) {
       return types[0]
     }

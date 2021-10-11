@@ -13,6 +13,7 @@
   - Add clear covariance/contravariance type semantics.
   - Make maps immutable and support this in the runtime.
   - Implement a clear appends operation for maps and make them generally usable.
+  - Clear all `TODO (maps)` entries.
 - Add pattern matching in `case` expressions, anonymous function parameters, variable declarations, and the left-hand side of assignments (e.g. for assigning tuple values to mutable variables).
   - Clear all `TODO (case)` entries.
 - Add "global specialization"/"trait implementation" for tuples, lists, maps, shapes, traits, and structs.

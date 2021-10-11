@@ -91,13 +91,25 @@ object CollectionExtensions {
       */
     def merged: Map[K, Vector[V]] = {
       vector.foldLeft(Map.empty[K, Vector[V]]) { case (result, map) =>
-        map.foldLeft(result) { case (result, (key, value)) =>
-          result.updatedWith(key) {
-            case Some(values) => Some(values :+ value)
-            case None => Some(Vector(value))
-          }
+        map.foldLeft(result) {
+          case (result, (key, value)) => result.appended(key, value)
         }
       }
+    }
+  }
+
+  implicit class VectorMapExtension[K, V](map: Map[K, Vector[V]]) {
+    /**
+      * Appends `value` to the vector at `key`.
+      */
+    def appended(key: K, value: V): Map[K, Vector[V]] = {
+      map.updated(
+        key,
+        map.get(key) match {
+          case Some(vector) => vector :+ value
+          case None => Vector(value)
+        },
+      )
     }
   }
 

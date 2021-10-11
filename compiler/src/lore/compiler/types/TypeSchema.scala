@@ -23,6 +23,11 @@ trait TypeSchema {
   def isConstant: Boolean = arity == 0
 
   /**
+    * Whether the schema has invariant type parameters.
+    */
+  lazy val hasInvariantParameters: Boolean = parameters.exists(_.variance == Variance.Invariant)
+
+  /**
     * The representative of a type schema is the type that contains the schema's type parameters as type arguments.
     *
     * If the type schema is constant, the representative is equal to the constant type.

@@ -74,6 +74,10 @@ object ShapeType {
     * Which are the standard intersection type subtyping rules.
     */
   def combine(shapes: Vector[ShapeType]): ShapeType = {
+    if (shapes.length == 1) {
+      return shapes.head
+    }
+
     val combinedProperties = shapes.flatMap(_.properties.values).groupBy(_.name).map {
       case (name, properties) => Property(name, IntersectionType.construct(properties.map(_.tpe)))
     }

@@ -15,7 +15,8 @@ case class SumType private (parts: Set[Type]) extends Type {
 object SumType {
   /**
     * Constructs the sum type from the given types and flattens it if necessary. If the resulting sum type
-    * has only one part, this type is returned instead.
+    * has only one part, this type is returned instead. Some types such as tuples and lists are combined if they occur
+    * multiple times.
     *
     * We also apply the following simplification: In a sum type A | B | ..., if B < A, then B can be dropped.
     * That is, A already "clears the way" for values of type B to be part of the sum type. This also leads to the
@@ -27,13 +28,7 @@ object SumType {
     if (parts.isEmpty) {
       return BasicType.Nothing
     }
-
-    val flattened = parts.flatMap {
-      case t: SumType => t.parts
-      case t => Vector(t)
-    }
-    val simplified = Type.mostGeneral(flattened).toSet
-    if (simplified.size == 1) simplified.head else SumType(simplified)
+    Simplification.construct(Kind.Sum, parts)
   }
 
   def construct(parts: Set[Type]): Type = construct(parts.toVector)
