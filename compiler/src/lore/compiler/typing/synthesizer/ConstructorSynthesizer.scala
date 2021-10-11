@@ -17,17 +17,15 @@ object ConstructorSynthesizer {
     binding: StructConstructorBinding,
     expression: Expression.Call,
     assignments: Assignments,
-  )(implicit checker: Checker, reporter: Reporter): Assignments = {
+  )(implicit checker: Checker, reporter: Reporter): Option[Assignments] = {
     val (knownArgumentTypes, assignments2) = ParametricFunctionSynthesizer.preprocessArguments(expression.arguments, assignments)
 
-    ParametricFunctionSynthesizer.inferArgumentType(binding.signature, expression.arguments, knownArgumentTypes, assignments2) match {
-      case Some(argumentCandidate) =>
+    ParametricFunctionSynthesizer
+      .inferArgumentType(binding.signature, expression.arguments, knownArgumentTypes, assignments2)
+      .flatMap { argumentCandidate =>
         val resultType = binding.asSchema.instantiate(argumentCandidate.typeVariableAssignments).constructorSignature.outputType
         InferenceVariable2.assign(expression.tpe.asInstanceOf[InferenceVariable], resultType, argumentCandidate.assignments)
-          .getOrElse(argumentCandidate.assignments)
-
-      case None => assignments2
-    }
+      }
   }
 
 }

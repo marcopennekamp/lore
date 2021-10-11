@@ -25,8 +25,8 @@ object ParametricFunctionSynthesizer {
   )(implicit checker: Checker, reporter: Reporter): (KnownArgumentTypes, Assignments) = {
     arguments.foldLeft((Vector.empty: KnownArgumentTypes, assignments)) {
       case ((knownArgumentTypes, previousAssignments), argument) => Synthesizer.attempt(argument, previousAssignments) match {
-        case Some(argumentAssignments) => (knownArgumentTypes :+ Some(Helpers.instantiate(argument, argumentAssignments)), argumentAssignments)
-        case None => (knownArgumentTypes :+ None, previousAssignments)
+        case (Some(argumentAssignments), _) => (knownArgumentTypes :+ Some(Helpers.instantiate(argument, argumentAssignments)), argumentAssignments)
+        case (None, _) => (knownArgumentTypes :+ None, previousAssignments)
       }
     }
   }
@@ -144,7 +144,7 @@ object ParametricFunctionSynthesizer {
     //                   result in `Int => Nothing`, because the lower bound is preferred. This has to be `Int => Any`.
     //                   Similarly, for contravariant types, the instantiation also has to instantiate the smart
     //                   default, namely `Nothing`, such as in `Nothing => Int`.
-    checker.attempt(argument, Helpers.instantiateCandidate(parameterType, assignments), assignments).flatMap { assignments2 =>
+    checker.attempt(argument, Helpers.instantiateCandidate(parameterType, assignments), assignments)._1.flatMap { assignments2 =>
       Unification.unifySubtypes(Helpers.instantiateCandidate(argument.tpe, assignments2), parameterType, assignments2)
     }
   }

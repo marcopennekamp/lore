@@ -29,14 +29,3 @@ trait Reporter {
   def hasErrors: Boolean
 
 }
-
-object Reporter {
-  /**
-    * Executes `f` with a fresh reporter, returning `f`'s result if no errors have been reported, and `None` otherwise.
-    */
-  def requireSuccess[R](f: Reporter => R): Option[R] = {
-    implicit val reporter: Reporter = new LambdaReporter(_ => { })
-    val result = f(reporter)
-    if (!reporter.hasErrors) Some(result) else None
-  }
-}

@@ -6,7 +6,7 @@ import lore.compiler.inference.{Inference, InferenceVariable}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.types.TupleType
-import lore.compiler.typing.{Helpers, InferenceVariable2}
+import lore.compiler.typing.InferenceVariable2
 import lore.compiler.typing.checker.Checker
 import lore.compiler.typing.synthesizer.ParametricFunctionSynthesizer.ArgumentCandidate
 
@@ -23,7 +23,7 @@ case class MultiFunctionSynthesizer(mf: MultiFunctionDefinition, expression: Exp
     * chosen. From all fully typed argument candidates, we finally choose the most specific one. If there is no such
     * candidate, we either have an empty fit or an ambiguity error.
     */
-  def infer(assignments: Assignments): Assignments = {
+  def infer(assignments: Assignments): Option[Assignments] = {
     // TODO (inference): Error reporting currently sucks. If we have a call `Enum.map(list, v => ...)` and something is
     //                   wrong inside the anonymous function, the error will simply be swallowed and the user gets a
     //                   generic "empty fit" error. Obviously it's not so easy to pass through the right errors if
@@ -39,7 +39,7 @@ case class MultiFunctionSynthesizer(mf: MultiFunctionDefinition, expression: Exp
     //                   day. This should significantly improve type checking performance.
     val (knownArgumentTypes, assignments2) = ParametricFunctionSynthesizer.preprocessArguments(expression.arguments, assignments)
 
-    Inference.logger.trace(s"Known argument types: ${knownArgumentTypes.mkString(", ")}.")
+    Inference.logger.trace(s"Known argument types for multi-function call `${expression.position.truncatedCode}`: ${knownArgumentTypes.mkString(", ")}.")
 
     // Step 2: Pre-filter all function candidates by arity.
     // TODO (inference): Would it be possible to filter by input type as well? Using `Nothing` for unknown argument
@@ -56,7 +56,6 @@ case class MultiFunctionSynthesizer(mf: MultiFunctionDefinition, expression: Exp
     //         type of the function call on success.
     chooseArgumentCandidate(argumentCandidates, assignments2)
       .flatMap(handleDispatch)
-      .getOrElse(assignments2)
   }
 
   private def chooseArgumentCandidate(argumentCandidates: Vector[ArgumentCandidate], oldAssignments: Assignments): Option[ArgumentCandidate] = {

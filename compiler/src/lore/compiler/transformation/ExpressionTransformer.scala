@@ -1,6 +1,5 @@
 package lore.compiler.transformation
 
-import lore.compiler.feedback.TypingFeedback.SubtypeExpected
 import lore.compiler.feedback.{MemoReporter, Reporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
@@ -32,29 +31,21 @@ object ExpressionTransformer {
 
       // Only continue with the transformation if the visitor produced no errors. Otherwise, type inference might
       // report a lot of useless errors.
+      val hole = Expression.Hole(expectedType, node.position)
       if (!reporter.hasErrors) {
-        val inferredTypes = Typing.check(expression, expectedType, label, reporter)
-        val inferenceFailed = reporter.hasErrors
+        Typing.check(expression, expectedType, label, reporter).map { assignments =>
+          val rehydrationVisitor = new TypeRehydrationVisitor(assignments)
+          val typedExpression = ExpressionVisitor.visit(rehydrationVisitor)(expression)
 
-        val rehydrationVisitor = new TypeRehydrationVisitor(inferredTypes)
-        val typedExpression = ExpressionVisitor.visit(rehydrationVisitor)(expression)
+          val mutabilityVerifier = new MutabilityVerifier
+          ExpressionVisitor.visit(mutabilityVerifier)(typedExpression)
 
-        val mutabilityVerifier = new MutabilityVerifier
-        ExpressionVisitor.visit(mutabilityVerifier)(typedExpression)
+          val builtinsVisitor = new BuiltinsVisitor
+          val expressionWithBuiltins = ExpressionVisitor.visit(builtinsVisitor)(typedExpression)
 
-        val builtinsVisitor = new BuiltinsVisitor
-        val expressionWithBuiltins = ExpressionVisitor.visit(builtinsVisitor)(typedExpression)
-
-        val expressionWithImplicitUnit = withImplicitUnitValue(expectedType)(expressionWithBuiltins)
-
-        // Only verify the expected type if type inference actually completed. Otherwise, the expression's type will
-        // likely be Any, which will always highlight the whole expression. This makes it almost impossible to see the
-        // actual error.
-        if (!inferenceFailed) {
-          verifyExpectedType(expressionWithImplicitUnit, expectedType)
-        }
-        expressionWithImplicitUnit
-      } else Expression.Hole(expectedType, node.position)
+          withImplicitUnitValue(expectedType)(expressionWithBuiltins)
+        }.getOrElse(hole)
+      } else hole
     }
   }
 
@@ -79,46 +70,6 @@ object ExpressionTransformer {
       case Expression.Block(expressions, position) if expectedType == TupleType.UnitType && expression.tpe != TupleType.UnitType =>
         Expression.Block(expressions :+ Expression.Tuple(Vector.empty, position), position)
       case _ => expression
-    }
-  }
-
-  /**
-    * Verifies that the expected result type is compatible with the type of the expression. If the actual type is not
-    * compatible, it might be the case that all paths of the expression's last expression return a valid value. In such
-    * a case, the expression is valid as well, because we can guarantee at compile-time that the right kind of value
-    * is returned before the end of the expression is reached. This special case is also handled by this verification.
-    */
-  private def verifyExpectedType(expression: Expression, expectedType: Type)(implicit reporter: Reporter): Unit = {
-    if ((expression.tpe </= expectedType) && !allPathsReturn(expression)) {
-      reporter.error(SubtypeExpected(expression.tpe, expectedType, expression))
-    }
-  }
-
-  /**
-    * Whether all paths that could be taken during the evaluation of the expression definitely end in a return.
-    * If that is the case, and such an expression is the last expression in a block, we can be sure that the
-    * block evaluates to the correct value regardless of the type of the actual expression.
-    *
-    * We only look at the last expression of a block to decide whether the returns suffice. That is only valid because
-    * we combine it with dead code analysis, with dead code resulting in an error. A function like the following could
-    * thus never be valid:
-    *
-    * {{{
-    * function foo(): Int = {
-    *   return 5
-    *   'You fool!'
-    * }
-    * }}}
-    */
-  private def allPathsReturn(expression: Expression): Boolean = {
-    expression match {
-      case Expression.Return(_, _) => true
-      case Expression.Block(expressions, _) => expressions.lastOption.exists(allPathsReturn)
-      case cond@Expression.Cond(cases, _) => cond.isTotal && cases.forall(c => allPathsReturn(c.body))
-
-      // Loops aren't guaranteed to run even once and so cannot guarantee that all paths end in a return.
-      // Hence Expression.WhileLoop and Expression.ForLoop will also result in false.
-      case _ => false
     }
   }
 

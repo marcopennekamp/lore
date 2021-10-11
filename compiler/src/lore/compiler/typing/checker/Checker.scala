@@ -9,6 +9,7 @@ import lore.compiler.types._
 import lore.compiler.typing.{Helpers, InferenceVariable2}
 import lore.compiler.typing.synthesizer.{MultiFunctionValueSynthesizer, ParametricFunctionSynthesizer, Synthesizer}
 import lore.compiler.typing.unification.Unification
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 /**
   * @param returnType The return type of the surrounding function, used to check `Return` expressions.
@@ -19,12 +20,13 @@ case class Checker(returnType: Type) {
 
   /**
     * Checks that `expression` has the type `expectedType` (or a subtype thereof). In the process, inference might
-    * assign types to one or more inference variables, modeled via the input and output assignments.
+    * assign types to one or more inference variables, modeled via the input and output assignments. Any typing errors
+    * result in `None`.
     *
     * @param expectedType The type expected from the expression by the surrounding context. `expectedType` must be
     *                     fully instantiated.
     */
-  def check(expression: Expression, expectedType: Type, assignments: Assignments)(implicit reporter: Reporter): Assignments = {
+  def check(expression: Expression, expectedType: Type, assignments: Assignments)(implicit reporter: Reporter): Option[Assignments] = {
     // TODO (inference): This is a sanity check for now and can probably be removed once the algorithm is stable.
     if (!Inference.isFullyInstantiated(expectedType)) {
       throw CompilationException(s"The expected type $expectedType must be fully instantiated! Position: ${expression.position}. Assignments: $assignments")
@@ -44,21 +46,12 @@ case class Checker(returnType: Type) {
     //                   secondary path for type checking to accept a ListConstruction as a valid option for an
     //                   expected type `Enum`.
     // TODO (inference): If the Synthesizer already reports errors, we should suppress the default error.
-    def fallback: Assignments = Synthesizer.infer(expression, assignments)
-
-    // Using `reportOnly` will suppress the default `SubtypeExpected` error in favor of an error that provides
-    // additional context and information.
-    var suppressDefaultError = false
-
-    def reportOnly(error: Feedback.Error): Unit = {
-      reporter.report(error)
-      suppressDefaultError = true
-    }
+    def fallback = Synthesizer.infer(expression, assignments)
 
     // Step 1: Check and/or infer the expression's sub-expressions to produce an assignments map that will allow us to
     //         instantiate `expression.tpe`.
-    val resultAssignments = expression match {
-      case Expression.Hole(_, _) => assignments // TODO (inference): Should we just ignore holes?
+    val resultAssignments: Option[Assignments] = expression match {
+      case Expression.Hole(_, _) => Some(assignments)
 
       case Expression.Return(value, _) =>
         check(value, returnType, assignments)
@@ -70,17 +63,19 @@ case class Checker(returnType: Type) {
           case Some(typeAnnotation) => check(value, typeAnnotation, assignments)
           case None => variable.tpe match {
             case iv: InferenceVariable =>
-              val assignments2 = Synthesizer.infer(value, assignments)
-              val valueType = Helpers.instantiateCandidate(value.tpe, assignments2)
-              InferenceVariable2.assign(iv, valueType, assignments2).getOrElse(assignments2)
+              Synthesizer.infer(value, assignments).flatMap { assignments2 =>
+                val valueType = Helpers.instantiateCandidate(value.tpe, assignments2)
+                InferenceVariable2.assign(iv, valueType, assignments2)
+              }
             case _ => throw CompilationException(s"A variable declared without a type annotation should have an inference variable as its type. Position: ${expression.position}.")
           }
         }
 
       case Expression.Assignment(target, value, _) =>
-        val assignments2 = Synthesizer.infer(target, assignments)
-        val targetType = Helpers.instantiate(target, assignments2)
-        check(value, targetType, assignments2)
+        Synthesizer.infer(target, assignments).flatMap { assignments2 =>
+          val targetType = Helpers.instantiate(target, assignments2)
+          check(value, targetType, assignments2)
+        }
 
       case Expression.Tuple(values, _) =>
         // TODO (inference): One of the best things about bidirectional typechecking is that it can produce very
@@ -114,17 +109,17 @@ case class Checker(returnType: Type) {
 
                 case None =>
                   val instantiatedInput = Helpers.instantiateCandidate(expression.tpe.input, assignments).asInstanceOf[TupleType]
-                  reportOnly(TypingFeedback2.AnonymousFunctions.IllegalParameterTypes(expression, expectedType, instantiatedInput))
-                  assignments
+                  reporter.error(TypingFeedback2.AnonymousFunctions.IllegalParameterTypes(expression, expectedType, instantiatedInput))
+                  None
               }
 
             case expectedType: FunctionType =>
-              reportOnly(TypingFeedback2.AnonymousFunctions.IllegalArity(expression, expectedType))
-              assignments
+              reporter.error(TypingFeedback2.AnonymousFunctions.IllegalArity(expression, expectedType))
+              None
 
             case _ =>
-              reportOnly(TypingFeedback2.AnonymousFunctions.FunctionTypeExpected(expression, expectedType))
-              assignments
+              reporter.error(TypingFeedback2.AnonymousFunctions.FunctionTypeExpected(expression, expectedType))
+              None
           }
         }
 
@@ -136,15 +131,10 @@ case class Checker(returnType: Type) {
               MultiFunctionFeedback.Dispatch.EmptyFit(mf, expectedInput, position),
               min => MultiFunctionFeedback.Dispatch.AmbiguousCall(mf, expectedInput, min, position),
             ) match {
-              case Some(instance) =>
-                MultiFunctionValueSynthesizer
-                  .handleFunctionInstance(instance, expression, Some(expectedType), assignments)
-                  .getOrElse(assignments)
-
+              case Some(instance) => MultiFunctionValueSynthesizer.handleFunctionInstance(instance, expression, Some(expectedType), assignments)
               case None =>
                 // `dispatch` already reported an error.
-                suppressDefaultError = true
-                assignments
+                None
             }
 
           case BasicType.Any =>
@@ -154,8 +144,8 @@ case class Checker(returnType: Type) {
             fallback
 
           case _ =>
-            reportOnly(TypingFeedback2.MultiFunctionValues.FunctionTypeExpected(expression, expectedType))
-            assignments
+            reporter.error(TypingFeedback2.MultiFunctionValues.FunctionTypeExpected(expression, expectedType))
+            None
         }
 
       case Expression.UntypedConstructorValue(binding, tpe, _) =>
@@ -166,7 +156,6 @@ case class Checker(returnType: Type) {
                 case (typeVariableAssignments, assignments2) =>
                   InferenceVariable2.assign(tpe, binding.asSchema.instantiate(typeVariableAssignments).constructorSignature.functionType, assignments2)
               }
-              .getOrElse(assignments)
 
           case _ => fallback
         }
@@ -180,8 +169,8 @@ case class Checker(returnType: Type) {
       case Expression.MapConstruction(entries, _) =>
         expectedType match {
           case MapType(keyType, valueType) =>
-            val assignments2 = check(entries.map(_.key), keyType, assignments)
-            check(entries.map(_.value), valueType, assignments2)
+            check(entries.map(_.key), keyType, assignments)
+              .flatMap(check(entries.map(_.value), valueType, _))
 
           case _ => fallback
         }
@@ -189,7 +178,7 @@ case class Checker(returnType: Type) {
       case Expression.ShapeValue(properties, _) =>
         expectedType match {
           case ShapeType(propertyTypes) =>
-            properties.foldLeft(assignments) {
+            properties.foldSome(assignments) {
               case (assignments2, property) => propertyTypes.get(property.name) match {
                 case Some(expectedProperty) => check(property.value, expectedProperty.tpe, assignments2)
                 case None => Synthesizer.infer(property.value, assignments2)
@@ -200,37 +189,37 @@ case class Checker(returnType: Type) {
         }
 
       case Expression.Cond(cases, _) =>
-        val assignments2 = check(cases.map(_.condition), BasicType.Boolean, assignments)
-        check(cases.map(_.body), expectedType, assignments2)
+        check(cases.map(_.condition), BasicType.Boolean, assignments)
+          .flatMap(check(cases.map(_.body), expectedType, _))
 
       case expression@Expression.WhileLoop(condition, _, _) =>
-        val assignments2 = check(condition, BasicType.Boolean, assignments)
-        checkLoop(expression, expectedType, assignments2)
+        check(condition, BasicType.Boolean, assignments)
+          .flatMap(checkLoop(expression, expectedType, _))
 
       case expression@Expression.ForLoop(extractors, _, _) =>
-        val assignments2 = Synthesizer.inferExtractors(extractors, assignments)
-        checkLoop(expression, expectedType, assignments2)
+        Synthesizer.inferExtractors(extractors, assignments)
+          .flatMap(checkLoop(expression, expectedType, _))
 
       case _ => fallback
     }
 
-    // Step 2: Use the new assignments map to check that `expression.tpe` (as instantiated) is a subtype of
-    //         `expectedType`, unless the default error has been suppressed, which means that another error has already
-    //         been reported.
-    if (!suppressDefaultError) {
+    resultAssignments.flatMap { resultAssignments =>
+      Helpers.traceExpressionType(expression, resultAssignments, "Checked", s" (Expected type: $expectedType.)")
+
+      // Step 2: Use the new assignments map to check that `expression.tpe` (as instantiated) is a subtype of
+      //         `expectedType`.
       val actualType = Helpers.instantiateCandidate(expression.tpe, resultAssignments)
       if (actualType </= expectedType) {
         // TODO (inference): Does this need a new typing error?
         reporter.error(TypingFeedback.SubtypeExpected(actualType, expectedType, expression))
+        None
+      } else {
+        Some(resultAssignments)
       }
     }
-
-    Helpers.traceExpressionType(expression, resultAssignments, "Checked", s" (Expected type: $expectedType.)")
-
-    resultAssignments
   }
 
-  private def checkLoop(loop: Expression.Loop, expectedType: Type, assignments: Assignments)(implicit reporter: Reporter): Assignments = {
+  private def checkLoop(loop: Expression.Loop, expectedType: Type, assignments: Assignments)(implicit reporter: Reporter): Option[Assignments] = {
     expectedType match {
       case ListType(elementType) => check(loop.body, elementType, assignments)
       case _ => Synthesizer.infer(loop.body, assignments)
@@ -240,8 +229,8 @@ case class Checker(returnType: Type) {
   /**
     * Executes [[check]] for all `expressions` in order.
     */
-  def check(expressions: Vector[Expression], expectedType: Type, assignments: Assignments)(implicit reporter: Reporter): Assignments = {
-    expressions.foldLeft(assignments) {
+  def check(expressions: Vector[Expression], expectedType: Type, assignments: Assignments)(implicit reporter: Reporter): Option[Assignments] = {
+    expressions.foldSome(assignments) {
       case (assignments2, expression) => check(expression, expectedType, assignments2)
     }
   }
@@ -249,23 +238,21 @@ case class Checker(returnType: Type) {
   /**
     * Executes [[check]] for all `expressions` and `expectedTypes` pairs in order.
     */
-  def check(expressions: Vector[Expression], expectedTypes: Vector[Type], assignments: Assignments)(implicit reporter: Reporter): Assignments = {
-    expressions.zip(expectedTypes).foldLeft(assignments) {
+  def check(expressions: Vector[Expression], expectedTypes: Vector[Type], assignments: Assignments)(implicit reporter: Reporter): Option[Assignments] = {
+    expressions.zip(expectedTypes).foldSome(assignments) {
       case (assignments2, (expression, expectedType)) => check(expression, expectedType, assignments2)
     }
   }
 
   /**
-    * Attempts type checking via [[check]], using an internal reporter that silently accumulates errors. If the type
-    * checking finishes without errors, the new assignments are returned. Otherwise, `None` is returned. All errors
-    * produced during this local checking are thrown away.
+    * Attempts type checking via [[check]], using an internal reporter that accumulates errors, which are then returned
+    * separately.
     *
     * `attempt` can be used to try a particular checking path without committing to it.
     */
-  def attempt(expression: Expression, expectedType: Type, assignments: Assignments): Option[Assignments] = {
-    Reporter.requireSuccess {
-      implicit reporter => check(expression, expectedType, assignments)
-    }
+  def attempt(expression: Expression, expectedType: Type, assignments: Assignments): (Option[Assignments], Vector[Feedback]) = {
+    implicit val reporter: MemoReporter = MemoReporter()
+    (check(expression, expectedType, assignments), reporter.feedback)
   }
 
 }
