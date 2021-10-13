@@ -5,9 +5,11 @@ import lore.compiler.feedback._
 import lore.compiler.inference.Inference.Assignments
 import lore.compiler.inference.{Inference, InferenceVariable}
 import lore.compiler.semantics.expressions.Expression
+import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.types._
+import lore.compiler.typing.synthesizer.Synthesizer.infer
 import lore.compiler.typing.{Helpers, InferenceVariable2}
-import lore.compiler.typing.synthesizer.{MultiFunctionValueSynthesizer, ParametricFunctionSynthesizer, Synthesizer}
+import lore.compiler.typing.synthesizer.{ConstructorCallSynthesizer, MultiFunctionCallSynthesizer, MultiFunctionValueSynthesizer, ParametricFunctionSynthesizer, Synthesizer}
 import lore.compiler.typing.unification.Unification
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
@@ -153,8 +155,8 @@ case class Checker(returnType: Type) {
           case FunctionType(input, _) =>
             ParametricFunctionSynthesizer.inferTypeArguments(binding.signature, input.elements, assignments)
               .flatMap {
-                case (typeVariableAssignments, assignments2) =>
-                  InferenceVariable2.assign(tpe, binding.asSchema.instantiate(typeVariableAssignments).constructorSignature.functionType, assignments2)
+                case (typeParameterAssignments, assignments2) =>
+                  InferenceVariable2.assign(tpe, binding.asSchema.instantiate(typeParameterAssignments).constructorSignature.functionType, assignments2)
               }
 
           case _ => fallback
@@ -185,6 +187,16 @@ case class Checker(returnType: Type) {
               }
             }
 
+          case _ => fallback
+        }
+
+      case expression@Expression.Call(target, _, _, _) =>
+        target match {
+          case CallTarget.Constructor(structBinding) =>
+            expectedType match {
+              case dt: DeclaredType => ConstructorCallChecker.check(structBinding, expression, dt, assignments)
+              case _ => fallback
+            }
           case _ => fallback
         }
 

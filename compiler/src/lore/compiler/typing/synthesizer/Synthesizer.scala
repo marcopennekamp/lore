@@ -211,9 +211,9 @@ object Synthesizer {
               }
             }
 
-          case CallTarget.MultiFunction(mf) => MultiFunctionSynthesizer(mf, expression).infer(assignments)
+          case CallTarget.MultiFunction(mf) => MultiFunctionCallSynthesizer(mf, expression).infer(assignments)
 
-          case CallTarget.Constructor(structBinding) => ConstructorSynthesizer.infer(structBinding, expression, assignments)
+          case CallTarget.Constructor(structBinding) => ConstructorCallSynthesizer.infer(structBinding, expression, assignments)
 
           case CallTarget.Dynamic(_) => infer(arguments, assignments)
         }

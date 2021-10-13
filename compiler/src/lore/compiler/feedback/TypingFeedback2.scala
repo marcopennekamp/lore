@@ -4,7 +4,8 @@ import lore.compiler.core.Positioned
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.UnresolvedMemberAccess
 import lore.compiler.semantics.functions.MultiFunctionDefinition
-import lore.compiler.types.{FunctionType, TupleType, Type}
+import lore.compiler.semantics.scopes.{StructBinding, StructConstructorBinding}
+import lore.compiler.types.{DeclaredType, FunctionType, TupleType, Type}
 
 object TypingFeedback2 {
 
@@ -83,6 +84,14 @@ object TypingFeedback2 {
     case class AmbiguousArgumentTypes(mf: MultiFunctionDefinition, candidates: Vector[Type], context: Expression) extends Feedback.Error(context) {
       override def message: String = s"In this call of multi-function $mf, the argument types cannot be inferred. There" +
         s" are multiple equally specific candidates. These are: ${candidates.mkString(", ")}."
+    }
+  }
+
+  object ConstructorCalls {
+    case class CannotSpecialize(binding: StructConstructorBinding, expectedType: DeclaredType, context: Expression) extends Feedback.Error(context) {
+      override def message: String = s"A construction of ${binding.definition.name} cannot result in expected type $expectedType," +
+        s" because $expectedType cannot be specialized to ${binding.definition.name}. Most likely, ${binding.definition.name}" +
+        s" is not a subtype of $expectedType."
     }
   }
 

@@ -10,7 +10,7 @@ import lore.compiler.typing.InferenceVariable2
 import lore.compiler.typing.checker.Checker
 import lore.compiler.typing.synthesizer.ParametricFunctionSynthesizer.ArgumentCandidate
 
-case class MultiFunctionSynthesizer(mf: MultiFunctionDefinition, expression: Expression.Call)(implicit checker: Checker, reporter: Reporter) {
+case class MultiFunctionCallSynthesizer(mf: MultiFunctionDefinition, expression: Expression.Call)(implicit checker: Checker, reporter: Reporter) {
 
   /**
     * Infers a multi-function call of `mf` in `expression`, assigning the output type of the multi-function call to
@@ -32,30 +32,31 @@ case class MultiFunctionSynthesizer(mf: MultiFunctionDefinition, expression: Exp
     //                   ParametricFunctionSynthesizer return these errors for failed argument candidates. Inside of
     //                   it, we have to make `checker.attempt` in `checkUntypedArgument` return its errors and then
     //                   return them.
-    Inference.logger.trace(s"Start inference of multi-function call `${expression.position.truncatedCode}`.")
+    Inference.logger.trace(s"Inference of multi-function call `${expression.position.truncatedCode}`:")
+    Inference.indentationLogger.indented {
+      // Step 1: Try to infer as many argument types as possible.
+      // TODO (inference): If all argument types can be inferred trivially, we can simply perform dispatch and call it a
+      //                   day. This should significantly improve type checking performance.
+      val (knownArgumentTypes, assignments2) = ParametricFunctionSynthesizer.preprocessArguments(expression.arguments, assignments)
 
-    // Step 1: Try to infer as many argument types as possible.
-    // TODO (inference): If all argument types can be inferred trivially, we can simply perform dispatch and call it a
-    //                   day. This should significantly improve type checking performance.
-    val (knownArgumentTypes, assignments2) = ParametricFunctionSynthesizer.preprocessArguments(expression.arguments, assignments)
+      // Step 2: Pre-filter all function candidates by arity.
+      // TODO (inference): Would it be possible to filter by input type as well? Using `Nothing` for unknown argument
+      //                   types would usually work, unless a type parameter has a lower bound. This complicates things,
+      //                   but may ultimately be resolvable.
+      val functionCandidates = mf.functions.filter(_.signature.arity == expression.arguments.length)
 
-    Inference.logger.trace(s"Known argument types for multi-function call `${expression.position.truncatedCode}`: ${knownArgumentTypes.mkString(", ")}.")
+      // Step 3: Handle each function candidate by inferring an argument type from it.
+      val argumentCandidates = functionCandidates.flatMap {
+        function =>
+          val (typeParameterAssignments, parameterTypes) = ParametricFunctionSynthesizer.prepareParameterTypes(function.signature)
+          ParametricFunctionSynthesizer.inferArgumentTypes(function.signature.typeParameters, typeParameterAssignments, parameterTypes, expression.arguments, knownArgumentTypes, assignments2)
+      }
 
-    // Step 2: Pre-filter all function candidates by arity.
-    // TODO (inference): Would it be possible to filter by input type as well? Using `Nothing` for unknown argument
-    //                   types would usually work, unless a type parameter has a lower bound. This complicates things,
-    //                   but may ultimately be resolvable.
-    val functionCandidates = mf.functions.filter(_.signature.arity == expression.arguments.length)
-
-    // Step 3: Handle each function candidate by inferring an argument type from it.
-    val argumentCandidates = functionCandidates.flatMap {
-      function => ParametricFunctionSynthesizer.inferArgumentType(function.signature, expression.arguments, knownArgumentTypes, assignments2)
+      // Step 4: Choose the most specific resulting arguments type and perform dispatch with it, assigning the result
+      //         type of the function call on success.
+      chooseArgumentCandidate(argumentCandidates, assignments2)
+        .flatMap(handleDispatch)
     }
-
-    // Step 4: Choose the most specific resulting arguments type and perform dispatch with it, assigning the result
-    //         type of the function call on success.
-    chooseArgumentCandidate(argumentCandidates, assignments2)
-      .flatMap(handleDispatch)
   }
 
   private def chooseArgumentCandidate(argumentCandidates: Vector[ArgumentCandidate], oldAssignments: Assignments): Option[ArgumentCandidate] = {
@@ -67,12 +68,12 @@ case class MultiFunctionSynthesizer(mf: MultiFunctionDefinition, expression: Exp
       mostSpecific match {
         case Vector(argumentCandidate) => Some(argumentCandidate)
         case _ =>
-          Inference.logger.trace(s"Ambiguous argument types of call at ${expression.position}:\n${argumentCandidates.mkString("\n")}")
+          Inference.logger.trace(s"Ambiguous argument types of call `${expression.position.truncatedCode}`:\n${argumentCandidates.mkString("\n")}")
           reporter.error(TypingFeedback2.MultiFunctionCalls.AmbiguousArgumentTypes(mf, mostSpecific.map(_.tpe), expression))
           None
       }
     } else {
-      Inference.logger.trace(s"Empty fit of call at ${expression.position}:\n${argumentCandidates.mkString("\n")}")
+      Inference.logger.trace(s"Empty fit of call `${expression.position.truncatedCode}`.")
       val candidate = Inference.instantiateCandidateType(oldAssignments, TupleType(expression.arguments.map(_.tpe)))
       // TODO (inference): Move the error to TypingFeedback?
       reporter.error(MultiFunctionFeedback.Dispatch.EmptyFit(mf, candidate, expression.position))
@@ -87,7 +88,7 @@ case class MultiFunctionSynthesizer(mf: MultiFunctionDefinition, expression: Exp
       MultiFunctionFeedback.Dispatch.EmptyFit(mf, argumentCandidate.tpe, expression.position),
       min => MultiFunctionFeedback.Dispatch.AmbiguousCall(mf, argumentCandidate.tpe, min, expression.position),
     ).flatMap { instance =>
-      Inference.logger.trace(s"Assign output type ${instance.signature.outputType} of function instance ${instance.definition} to result type ${expression.tpe}.")
+      Inference.logger.trace(s"Assigned output type ${instance.signature.outputType} to result type ${expression.tpe}.")
       InferenceVariable2.assign(
         expression.tpe.asInstanceOf[InferenceVariable],
         instance.signature.outputType,

@@ -20,4 +20,8 @@ object Unification {
     SubtypingUnification.unify(t1, t2, assignments)
   }
 
+  def unifySubtypes(types1: Vector[Type], types2: Vector[Type], assignments: Assignments): Option[Assignments] = {
+    unifySubtypes(TupleType(types1), TupleType(types2), assignments)
+  }
+
 }
