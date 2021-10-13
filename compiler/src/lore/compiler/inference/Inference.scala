@@ -6,6 +6,7 @@ import lore.compiler.inference.InferenceBounds.BoundType
 import lore.compiler.semantics.Registry
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
+import lore.compiler.utils.IndentationLogger
 import lore.compiler.utils.Timer.timed
 
 object Inference {
@@ -25,10 +26,12 @@ object Inference {
     SimpleResolution.infer(InferenceBounds.prefill(Map.empty, judgments), judgments)
   }
 
+  val indentationLogger: IndentationLogger = IndentationLogger("lore.compiler.inference")
+
   /**
-    * This logger is used to log inference minutiae.
+    * The Logger interface for the indentation logger.
     */
-  val logger: Logger = Logger("lore.compiler.inference")
+  val logger: Logger = Logger(indentationLogger)
   val loggerBlank: Logger = Logger("lore.compiler.inference.blank")
 
   def inferVerbose(judgments: Vector[TypingJudgment], label: String, parentReporter: Reporter)(implicit registry: Registry): Assignments = {
