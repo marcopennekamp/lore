@@ -18,3 +18,8 @@ Deno.test(`${base}/wrapper`, async () => {
   const result: ListValue<string> = await LoreTest.run(`${base}/wrapper.lore`)
   assertListEquals(result, ['Hey!', 'Hey! Hey!', 'Hey! Hey! Hey!'])
 })
+
+Deno.test(`${base}/wrapper-alias`, async () => {
+  const result: ListValue<string> = await LoreTest.run(`${base}/wrapper-alias.lore`)
+  assertListEquals(result, ['Hey!', 'Hey! Hey! Hey!', 'Hey! Hey! Hey! Hey! Hey!'])
+})

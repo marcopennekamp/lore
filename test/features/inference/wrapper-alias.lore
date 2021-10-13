@@ -1,0 +1,21 @@
+use lore.Enum.map
+use lore.List
+use lore.String
+
+struct Wrapper[-A, +B](function: A => B)
+
+@where A, B >: A, C
+func map_wrapper(list: [A], wrapper: Wrapper[B, C]): [C] = map(list, wrapper.function)
+
+struct StringWrapper[X] = Wrapper[X, String]
+
+// The objective of this test case is to ensure that constructor calls involving struct aliases are correctly typed.
+func test(): [String] = do
+  let numbers = [1, 3, 5]
+  map_wrapper(
+    numbers,
+    StringWrapper(n => do
+      List.repeat('Hey!', n) |> String.join(' ')
+    end)
+  )
+end
