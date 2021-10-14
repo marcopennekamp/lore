@@ -196,11 +196,14 @@ case class Checker(returnType: Type) {
 
       case expression@Expression.Call(target, _, _, _) =>
         target match {
+          case CallTarget.MultiFunction(mf) => MultiFunctionCallChecker.check(mf, expression, expectedType, assignments)
+
           case CallTarget.Constructor(structBinding) =>
             expectedType match {
               case dt: DeclaredType => ConstructorCallChecker.check(structBinding, expression, dt, assignments)
               case _ => fallback
             }
+
           case _ => fallback
         }
 

@@ -1,9 +1,8 @@
 package lore.compiler.typing.unification
 
-import lore.compiler.core.CompilationException
 import lore.compiler.inference.Inference.{Assignments, instantiateByBound, isFullyInstantiated}
 import lore.compiler.inference.InferenceBounds.BoundType
-import lore.compiler.inference.InferenceVariable
+import lore.compiler.inference.{Inference, InferenceVariable}
 import lore.compiler.types._
 import lore.compiler.typing.InferenceVariable2
 import lore.compiler.utils.CollectionExtensions.VectorExtension
@@ -20,9 +19,10 @@ object SubtypingUnification {
       return if (t1 <= t2) Some(assignments) else None
     }
 
-    def unsupported: Nothing = {
-      throw CompilationException(s"Subtyping unification of intersection and sum types is not yet supported." +
-        s" Given types: $t1 and $t2.")
+    def unsupported: Option[Assignments] = {
+      Inference.logger.debug(s"Subtyping unification of intersection and sum types is not yet supported." +
+        s" Given types: `$t1` and `$t2`.")
+      None
     }
 
     (t1, t2) match {
