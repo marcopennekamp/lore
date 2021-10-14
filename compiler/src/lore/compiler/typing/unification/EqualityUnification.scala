@@ -9,12 +9,6 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object EqualityUnification {
 
-  /**
-    * Unifies `t1` and `t2` such that `t1` is equal to `t2` in the given `boundTypes`, assigning inference variables
-    * accordingly.
-    *
-    * If the types cannot be unified, `None` is returned. Unification does not report errors on its own.
-    */
   def unify(t1: Type, t2: Type, boundTypes: Vector[BoundType], assignments: Assignments): Option[Assignments] = {
     if (isFullyInstantiated(t1) && isFullyInstantiated(t2)) {
       return if (t1 == t2) Some(assignments) else None

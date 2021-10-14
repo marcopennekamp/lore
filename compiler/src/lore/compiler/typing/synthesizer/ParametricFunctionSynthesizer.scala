@@ -75,7 +75,7 @@ object ParametricFunctionSynthesizer {
       case (None, _) => None
     }.unzip
 
-    val assignments2 = Unification.unifySubtypes(certainArgumentTypes, certainParameterTypes, assignments).getOrElse {
+    val assignments2 = Unification.unifyFits(certainArgumentTypes, certainParameterTypes, assignments).getOrElse {
       return None
     }
 
@@ -145,7 +145,7 @@ object ParametricFunctionSynthesizer {
     //                   Similarly, for contravariant types, the instantiation also has to instantiate the smart
     //                   default, namely `Nothing`, such as in `Nothing => Int`.
     checker.attempt(argument, Helpers.instantiateCandidate(parameterType, assignments), assignments)._1.flatMap { assignments2 =>
-      Unification.unifySubtypes(Helpers.instantiateCandidate(argument.tpe, assignments2), parameterType, assignments2)
+      Unification.unifyFits(Helpers.instantiateCandidate(argument.tpe, assignments2), parameterType, assignments2)
     }
   }
 
@@ -173,7 +173,7 @@ object ParametricFunctionSynthesizer {
   ): Option[(TypeVariable.Assignments, Assignments)] = {
     val (typeParameterAssignments, parameterTypes) = prepareParameterTypes(signature)
     for {
-      assignments2 <- Unification.unifySubtypes(argumentTypes, parameterTypes, assignments)
+      assignments2 <- Unification.unifyFits(argumentTypes, parameterTypes, assignments)
       assignments3 <- handleTypeVariableBounds(signature.typeParameters, typeParameterAssignments, assignments2)
       candidate = instantiateResult(argumentTypes, typeParameterAssignments, assignments3)
     } yield (candidate.typeParameterAssignments, candidate.assignments)
