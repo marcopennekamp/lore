@@ -79,6 +79,10 @@ case class Checker(returnType: Type) {
           check(value, targetType, assignments2)
         }
 
+      case Expression.Block(expressions, _) =>
+        check(expressions.init, BasicType.Any, assignments)
+          .flatMap(check(expressions.last, expectedType, _))
+
       case Expression.Tuple(values, _) =>
         // TODO (inference): One of the best things about bidirectional typechecking is that it can produce very
         //                   good errors. Instead of reporting `(a, b) is not a subtype of (a, b, c)`, we could
