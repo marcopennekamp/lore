@@ -5,10 +5,10 @@ import lore.compiler.feedback._
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.types._
-import lore.compiler.typing.{Helpers, InferenceVariable}
 import lore.compiler.typing.InferenceVariable.Assignments
 import lore.compiler.typing.synthesizer.{MultiFunctionValueSynthesizer, ParametricFunctionSynthesizer, Synthesizer}
 import lore.compiler.typing.unification.Unification
+import lore.compiler.typing.{InferenceVariable, Typing}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 /**
@@ -64,7 +64,7 @@ case class Checker(returnType: Type) {
           case None => variable.tpe match {
             case iv: InferenceVariable =>
               Synthesizer.infer(value, assignments).flatMap { assignments2 =>
-                val valueType = Helpers.instantiateCandidate(value.tpe, assignments2)
+                val valueType = InferenceVariable.instantiateCandidate(value.tpe, assignments2)
                 InferenceVariable.assign(iv, valueType, assignments2)
               }
             case _ => throw CompilationException(s"A variable declared without a type annotation should have an inference variable as its type. Position: ${expression.position}.")
@@ -73,7 +73,7 @@ case class Checker(returnType: Type) {
 
       case Expression.Assignment(target, value, _) =>
         Synthesizer.infer(target, assignments).flatMap { assignments2 =>
-          val targetType = Helpers.instantiate(target, assignments2)
+          val targetType = InferenceVariable.instantiateCandidate(target, assignments2)
           check(value, targetType, assignments2)
         }
 
@@ -112,7 +112,7 @@ case class Checker(returnType: Type) {
                   check(body, output, assignments2)
 
                 case None =>
-                  val instantiatedInput = Helpers.instantiateCandidate(expression.tpe.input, assignments).asInstanceOf[TupleType]
+                  val instantiatedInput = InferenceVariable.instantiateCandidate(expression.tpe.input, assignments).asInstanceOf[TupleType]
                   reporter.error(TypingFeedback.AnonymousFunctions.IllegalParameterTypes(expression, expectedType, instantiatedInput))
                   None
               }
@@ -221,11 +221,11 @@ case class Checker(returnType: Type) {
     }
 
     resultAssignments.flatMap { resultAssignments =>
-      Helpers.traceExpressionType(expression, resultAssignments, "Checked", s" (Expected type: $expectedType.)")
+      Typing.traceExpressionType(expression, resultAssignments, "Checked", s" (Expected type: $expectedType.)")
 
       // Step 2: Use the new assignments map to check that `expression.tpe` (as instantiated) is a subtype of
       //         `expectedType`.
-      val actualType = Helpers.instantiateCandidate(expression.tpe, resultAssignments)
+      val actualType = InferenceVariable.instantiateCandidate(expression.tpe, resultAssignments)
       if (actualType </= expectedType) {
         // TODO (inference): Does this need a new typing error?
         reporter.error(TypingFeedback.SubtypeExpected(actualType, expectedType, expression))

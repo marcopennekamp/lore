@@ -5,9 +5,9 @@ import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.types.{BasicType, TupleType, Type, TypeVariable}
 import lore.compiler.typing.InferenceVariable.Assignments
-import lore.compiler.typing.{Helpers, InferenceVariable, Typing}
 import lore.compiler.typing.checker.Checker
 import lore.compiler.typing.unification.Unification
+import lore.compiler.typing.{InferenceVariable, Typing}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object ParametricFunctionSynthesizer {
@@ -28,7 +28,7 @@ object ParametricFunctionSynthesizer {
 
         Typing.indentationLogger.indented {
           Synthesizer.attempt(argument, previousAssignments) match {
-            case (Some(argumentAssignments), _) => (knownArgumentTypes :+ Some(Helpers.instantiate(argument, argumentAssignments)), argumentAssignments)
+            case (Some(argumentAssignments), _) => (knownArgumentTypes :+ Some(InferenceVariable.instantiateCandidate(argument, argumentAssignments)), argumentAssignments)
             case (None, _) => (knownArgumentTypes :+ None, previousAssignments)
           }
         }
@@ -94,7 +94,7 @@ object ParametricFunctionSynthesizer {
     val assignments4 = knownArgumentTypes.zip(arguments).zip(parameterTypes).foldSome(assignments3) {
       case (innerAssignments, ((None, argument), parameterType)) =>
         Typing.logger.whenTraceEnabled {
-          val parameterTypeCandidate = Helpers.instantiateCandidate(parameterType, innerAssignments)
+          val parameterTypeCandidate = InferenceVariable.instantiateCandidate(parameterType, innerAssignments)
           Typing.logger.trace(s"Check untyped argument `${argument.position.truncatedCode}` with parameter type `$parameterTypeCandidate`:")
         }
 
@@ -143,8 +143,8 @@ object ParametricFunctionSynthesizer {
     //                   result in `Int => Nothing`, because the lower bound is preferred. This has to be `Int => Any`.
     //                   Similarly, for contravariant types, the instantiation also has to instantiate the smart
     //                   default, namely `Nothing`, such as in `Nothing => Int`.
-    checker.attempt(argument, Helpers.instantiateCandidate(parameterType, assignments), assignments)._1.flatMap { assignments2 =>
-      Unification.unifyFits(Helpers.instantiateCandidate(argument.tpe, assignments2), parameterType, assignments2)
+    checker.attempt(argument, InferenceVariable.instantiateCandidate(parameterType, assignments), assignments)._1.flatMap { assignments2 =>
+      Unification.unifyFits(InferenceVariable.instantiateCandidate(argument.tpe, assignments2), parameterType, assignments2)
     }
   }
 
@@ -154,9 +154,9 @@ object ParametricFunctionSynthesizer {
     assignments: Assignments,
   ): ArgumentCandidate = {
     ArgumentCandidate(
-      Helpers.instantiateCandidate(TupleType(argumentTypes), assignments).asInstanceOf[TupleType],
+      InferenceVariable.instantiateCandidate(TupleType(argumentTypes), assignments).asInstanceOf[TupleType],
       typeParameterAssignments.map {
-        case (tv, iv) => tv -> Helpers.instantiateCandidate(iv, assignments)
+        case (tv, iv) => tv -> InferenceVariable.instantiateCandidate(iv, assignments)
       },
       assignments.removedAll(typeParameterAssignments.values),
     )

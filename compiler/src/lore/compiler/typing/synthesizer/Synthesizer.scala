@@ -5,10 +5,10 @@ import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.types._
-import lore.compiler.typing.{Helpers, InferenceVariable}
 import lore.compiler.typing.InferenceVariable.Assignments
 import lore.compiler.typing.checker.Checker
 import lore.compiler.typing.unification.Unification
+import lore.compiler.typing.{InferenceVariable, Typing}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 // TODO (inference): We're using the old definition of Assignments here, which might be correct. However, we need to
@@ -62,7 +62,7 @@ object Synthesizer {
         //                   direction in the typing judgments world.) We'll have to test this practically before
         //                   implementing that direction, however.
         infer(instance, assignments).flatMap { assignments2 =>
-          val instanceType = Helpers.instantiate(instance, assignments2)
+          val instanceType = InferenceVariable.instantiateCandidate(instance, assignments2)
           val memberType = instanceType.member(name) match {
             case Some(member) => member.tpe
             case None =>
@@ -147,8 +147,8 @@ object Synthesizer {
 
           case Append =>
             infer(left, assignments).flatMap(infer(right, _)).flatMap { assignments2 =>
-              val collectionType = Helpers.instantiate(left, assignments2)
-              val newElementType = Helpers.instantiate(right, assignments2)
+              val collectionType = InferenceVariable.instantiateCandidate(left, assignments2)
+              val newElementType = InferenceVariable.instantiateCandidate(right, assignments2)
 
               // We have to combine the collection's element type with the new element's type. This is only possible if
               // `collectionType` is actually a list.
@@ -188,7 +188,7 @@ object Synthesizer {
             //                   parameter handling for both multi-functions and constructors.
 
             infer(target, assignments).flatMap { targetAssignments =>
-              val argumentsResult = Helpers.instantiate(target, targetAssignments) match {
+              val argumentsResult = InferenceVariable.instantiateCandidate(target, targetAssignments) match {
                 case FunctionType(input, output) =>
                   if (arguments.length == input.elements.length) {
                     val assignments3 = arguments.zip(input.elements).foldSome(targetAssignments) {
@@ -233,7 +233,7 @@ object Synthesizer {
       //                   to support this in the syntax first. (Such as `expr :: Type`.)
     }
 
-    resultAssignments.foreach(Helpers.traceExpressionType(expression, _, "Inferred"))
+    resultAssignments.foreach(Typing.traceExpressionType(expression, _, "Inferred"))
     resultAssignments
   }
 
@@ -253,7 +253,7 @@ object Synthesizer {
     resultType: Type,
     upperBound: Type,
   )(implicit reporter: Reporter): Option[Assignments] = {
-    val resultType2 = Helpers.instantiate(resultType, assignments, operation)
+    val resultType2 = InferenceVariable.instantiateCandidate(resultType, assignments)
     val resultType3 = if (resultType2 <= upperBound) resultType2 else upperBound
     Unification.unifyEquals(operation.tpe, resultType3, assignments)
   }
@@ -266,7 +266,7 @@ object Synthesizer {
     extractors.foldSome(assignments) {
       case (assignments2, extractor) =>
         infer(extractor.collection, assignments2).flatMap { assignments3 =>
-          val collectionType = Helpers.instantiate(extractor.collection, assignments3)
+          val collectionType = InferenceVariable.instantiateCandidate(extractor.collection, assignments3)
           val elementType = collectionType match {
             case ListType(element) => Some(element)
             case MapType(key, value) => Some(TupleType(key, value))

@@ -103,8 +103,8 @@ object EqualityUnification {
   ): Option[Assignments] = {
     def narrowByBound(assignments: Assignments, boundType: BoundType) = {
       if (boundTypes.contains(boundType)) {
-        val instantiatedIv = InferenceVariable.instantiateByBound(assignments, iv, boundType)
-        val instantiatedType = InferenceVariable.instantiateByBound(assignments, tpe, boundType)
+        val instantiatedIv = InferenceVariable.instantiateByBound(iv, boundType, assignments)
+        val instantiatedType = InferenceVariable.instantiateByBound(tpe, boundType, assignments)
         lazy val isTypeNarrower = boundType match {
           case BoundType.Lower => instantiatedIv <= instantiatedType
           case BoundType.Upper => instantiatedType <= instantiatedIv

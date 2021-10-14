@@ -1,5 +1,6 @@
 package lore.compiler.typing
 
+import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.types._
 import lore.compiler.typing.InferenceBounds.BoundType
@@ -35,7 +36,7 @@ object InferenceVariable {
       *
       * This function is intended to be used by other compiler components, not within the `typing` package.
       */
-    def instantiate(tpe: Type): Type = instantiateCandidateType(assignments, tpe)
+    def instantiate(tpe: Type): Type = instantiateCandidate(tpe, assignments)
 
     def stringified: String = assignments.values.toVector.sortBy(_.variable.label).mkString("\n")
   }
@@ -151,39 +152,47 @@ object InferenceVariable {
 
   /**
     * Instantiates all inference variables in `tpe` with the respective bound.
-    *
-    * TODO (inference): Assignments last.
     */
-  def instantiateByBound(assignments: Assignments, tpe: Type, boundType: BoundType): Type = {
-    instantiate(assignments, tpe, boundType, (bounds, boundType2) => bounds.get(boundType2))
+  def instantiateByBound(tpe: Type, boundType: BoundType, assignments: Assignments): Type = {
+    instantiate(tpe, boundType, (bounds, boundType2) => bounds.get(boundType2), assignments)
   }
 
   /**
-    * Instantiates all inference variables in `tpe` with a type given by `get`.
-    *
-    * TODO (inference): Assignments last.
+    * Instantiates all inference variables in `tpe` with their candidate types.
     */
-  def instantiateCandidateType(assignments: Assignments, tpe: Type): Type = {
+  def instantiateCandidate(tpe: Type, assignments: Assignments): Type = {
     // Note that the bound type is unimportant and just a dummy value here.
-    instantiate(assignments, tpe, BoundType.Lower, (bounds, _) => bounds.candidateType)
+    instantiate(tpe, BoundType.Lower, (bounds, _) => bounds.candidateType, assignments)
+  }
+
+  /**
+    * Instantiates all inference variables in the type of `expression` with their candidate types.
+    */
+  def instantiateCandidate(expression: Expression, assignments: Assignments): Type = {
+    instantiateCandidate(expression.tpe, assignments)
+  }
+
+  /**
+    * Instantiates all inference variables in all types of `expressions` with their candidate types.
+    */
+  def instantiateCandidate(expressions: Vector[Expression], assignments: Assignments): Vector[Type] = {
+    expressions.map(instantiateCandidate(_, assignments))
   }
 
   /**
     * Instantiates all inference variables in `tpe` with a type given by `get`, which should take the bound type into
     * account. Contravariant types flip the bound type relationship, because their upper bounds effectively relate to
     * the lower bound of inference variables and vice versa.
-    *
-    * TODO (inference): Assignments last.
     */
-  def instantiate(assignments: Assignments, tpe: Type, boundType: BoundType, get: (InferenceBounds, BoundType) => Type): Type = {
+  def instantiate(tpe: Type, boundType: BoundType, get: (InferenceBounds, BoundType) => Type, assignments: Assignments): Type = {
     // `instantiate` may be called with simple types quite often. We want to avoid reconstructing types (with all the
     // required allocations) in such cases.
     if (isFullyInstantiated(tpe)) {
       return tpe
     }
 
-    val rec = (t: Type) => instantiate(assignments, t, boundType, get)
-    val recContravariant = (t: Type) => instantiate(assignments, t, BoundType.flip(boundType), get)
+    val rec = (t: Type) => instantiate(t, boundType, get, assignments)
+    val recContravariant = (t: Type) => instantiate(t, BoundType.flip(boundType), get, assignments)
     tpe match {
       case iv: InferenceVariable => get(InferenceVariable.getBounds(iv, assignments), boundType)
       case SumType(types) => SumType.construct(types.map(rec))

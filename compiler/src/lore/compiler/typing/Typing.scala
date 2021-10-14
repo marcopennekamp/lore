@@ -52,4 +52,11 @@ object Typing {
     result
   }
 
+  def traceExpressionType(expression: Expression, assignments: Assignments, label: String, additional: String = ""): Unit = {
+    logger.whenTraceEnabled {
+      val inferredType = InferenceVariable.instantiateCandidate(expression.tpe, assignments)
+      logger.trace(s"$label type $inferredType for `${expression.position.truncatedCode}`.$additional")
+    }
+  }
+
 }

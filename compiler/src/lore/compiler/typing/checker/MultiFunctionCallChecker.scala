@@ -127,7 +127,7 @@ object MultiFunctionCallChecker {
       }
     } else {
       Typing.logger.trace(s"Empty fit of call `${expression.position.truncatedCode}`.")
-      val candidate = InferenceVariable.instantiateCandidateType(oldAssignments, TupleType(expression.arguments.map(_.tpe)))
+      val candidate = InferenceVariable.instantiateCandidate(TupleType(expression.arguments.map(_.tpe)), oldAssignments)
       // TODO (inference): Move the error to TypingFeedback?
       reporter.error(MultiFunctionFeedback.Dispatch.EmptyFit(mf, candidate, expression.position))
       None

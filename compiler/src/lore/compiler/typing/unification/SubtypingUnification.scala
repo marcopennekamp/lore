@@ -24,10 +24,10 @@ object SubtypingUnification {
 
     def ensure(iv: InferenceVariable, tpe: Type, boundType: BoundType, assignments: Assignments): Option[Assignments] = {
       if (isFit) {
-        val candidateType = InferenceVariable.instantiateCandidateType(assignments, tpe)
+        val candidateType = InferenceVariable.instantiateCandidate(tpe, assignments)
         InferenceVariable.ensure(iv, candidateType, candidateType, assignments)
       } else {
-        InferenceVariable.ensure(iv, InferenceVariable.instantiateByBound(assignments, tpe, boundType), boundType, assignments)
+        InferenceVariable.ensure(iv, InferenceVariable.instantiateByBound(tpe, boundType, assignments), boundType, assignments)
       }
     }
 
@@ -36,8 +36,8 @@ object SubtypingUnification {
         if (isFit) {
           Unification.unifyEquals(iv1, iv2, assignments)
         } else {
-          InferenceVariable.ensure(iv2, InferenceVariable.instantiateByBound(assignments, iv1, BoundType.Lower), BoundType.Lower, assignments).flatMap {
-            assignments2 => InferenceVariable.ensure(iv1, InferenceVariable.instantiateByBound(assignments2, iv2, BoundType.Upper), BoundType.Upper, assignments2)
+          InferenceVariable.ensure(iv2, InferenceVariable.instantiateByBound(iv1, BoundType.Lower, assignments), BoundType.Lower, assignments).flatMap {
+            assignments2 => InferenceVariable.ensure(iv1, InferenceVariable.instantiateByBound(iv2, BoundType.Upper, assignments2), BoundType.Upper, assignments2)
           }
         }
       case (iv1: InferenceVariable, t2) => ensure(iv1, t2, BoundType.Upper, assignments)
