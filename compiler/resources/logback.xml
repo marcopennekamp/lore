@@ -29,8 +29,8 @@
         <appender-ref ref="minimal"/>
     </logger>
 
-    <logger name="lore.compiler.inference" level="info" />
-    <logger name="lore.compiler.inference.blank" additivity="false">
+    <logger name="lore.compiler.typing" level="info" />
+    <logger name="lore.compiler.typing.blank" additivity="false">
         <appender-ref ref="minimal"/>
     </logger>
 </configuration>

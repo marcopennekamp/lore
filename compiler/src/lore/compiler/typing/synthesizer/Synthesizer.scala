@@ -1,13 +1,12 @@
 package lore.compiler.typing.synthesizer
 
-import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback2}
-import lore.compiler.inference.Inference
-import lore.compiler.inference.Inference.Assignments
+import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.types._
-import lore.compiler.typing.{Helpers, InferenceVariable2}
+import lore.compiler.typing.{Helpers, InferenceVariable}
+import lore.compiler.typing.InferenceVariable.Assignments
 import lore.compiler.typing.checker.Checker
 import lore.compiler.typing.unification.Unification
 import lore.compiler.utils.CollectionExtensions.VectorExtension
@@ -67,13 +66,13 @@ object Synthesizer {
           val memberType = instanceType.member(name) match {
             case Some(member) => member.tpe
             case None =>
-              reporter.report(TypingFeedback2.Members.NotFound(expression, instanceType))
+              reporter.report(TypingFeedback.Members.NotFound(expression, instanceType))
               BasicType.Nothing
           }
 
           // We must assign the member's type to the inference variable, which may be part of types of other
           // expressions, regardless of whether the member type itself can be inferred.
-          InferenceVariable2.assign(memberInferenceVariable, memberType, assignments2)
+          InferenceVariable.assign(memberInferenceVariable, memberType, assignments2)
         }
 
       case Expression.Literal(_, _, _) => Some(assignments)
@@ -85,7 +84,7 @@ object Synthesizer {
         if (expression.isFullyAnnotated) {
           infer(body, assignments)
         } else {
-          reporter.report(TypingFeedback2.AnonymousFunctions.TypeContextExpected(expression))
+          reporter.report(TypingFeedback.AnonymousFunctions.TypeContextExpected(expression))
           None
         }
 
@@ -97,7 +96,7 @@ object Synthesizer {
             MultiFunctionValueSynthesizer.handleFunctionInstance(function.monomorphicInstance, expression, None, assignments)
 
           case _ =>
-            reporter.error(TypingFeedback2.MultiFunctionValues.TypeContextExpected(expression))
+            reporter.error(TypingFeedback.MultiFunctionValues.TypeContextExpected(expression))
             None
         }
 
@@ -107,9 +106,9 @@ object Synthesizer {
 
       case expression@Expression.UntypedConstructorValue(binding, tpe, _) =>
         if (binding.isConstant) {
-          InferenceVariable2.assign(tpe, binding.asSchema.representative, assignments)
+          InferenceVariable.assign(tpe, binding.asSchema.representative, assignments)
         } else {
-          reporter.report(TypingFeedback2.ConstructorValues.TypeContextExpected(expression))
+          reporter.report(TypingFeedback.ConstructorValues.TypeContextExpected(expression))
           None
         }
 
@@ -159,7 +158,7 @@ object Synthesizer {
                   Unification.unifyEquals(expression.tpe, combinedType, assignments2)
 
                 case _ =>
-                  reporter.report(TypingFeedback2.Lists.ListExpected(expression, collectionType))
+                  reporter.report(TypingFeedback.Lists.ListExpected(expression, collectionType))
                   None
               }
             }
@@ -198,12 +197,12 @@ object Synthesizer {
                     }
                     assignments3.map((_, output))
                   } else {
-                    reporter.error(TypingFeedback2.ValueCalls.IllegalArity(expression, input))
+                    reporter.error(TypingFeedback.ValueCalls.IllegalArity(expression, input))
                     None
                   }
 
                 case targetType =>
-                  reporter.error(TypingFeedback2.ValueCalls.FunctionExpected(expression, targetType))
+                  reporter.error(TypingFeedback.ValueCalls.FunctionExpected(expression, targetType))
                   None
               }
               argumentsResult.flatMap {
@@ -272,7 +271,7 @@ object Synthesizer {
             case ListType(element) => Some(element)
             case MapType(key, value) => Some(TupleType(key, value))
             case _ =>
-              reporter.error(TypingFeedback2.Loops.CollectionExpected(collectionType, extractor.collection))
+              reporter.error(TypingFeedback.Loops.CollectionExpected(collectionType, extractor.collection))
               None
           }
 

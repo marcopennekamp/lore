@@ -2,7 +2,6 @@ package lore.compiler.transformation
 
 import lore.compiler.core._
 import lore.compiler.feedback.{ExpressionFeedback, MultiFunctionFeedback, Reporter, StructFeedback}
-import lore.compiler.inference.InferenceVariable
 import lore.compiler.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
@@ -12,6 +11,7 @@ import lore.compiler.semantics.scopes._
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
 import lore.compiler.syntax.{ExprNode, TopLevelExprNode}
 import lore.compiler.types._
+import lore.compiler.typing.InferenceVariable
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 import scalaz.Id.Id
 

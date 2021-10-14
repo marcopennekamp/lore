@@ -1,12 +1,12 @@
 package lore.compiler.semantics.expressions
 
 import lore.compiler.core.{CompilationException, Position, Positioned}
-import lore.compiler.inference.{Inference, InferenceVariable}
 import lore.compiler.semantics.analysis.LocalizedExpression
 import lore.compiler.semantics.functions.{CallTarget, FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
 import lore.compiler.semantics.scopes.{LocalVariable, StructConstructorBinding, TypedBinding}
 import lore.compiler.types._
+import lore.compiler.typing.InferenceVariable
 
 sealed trait Expression extends Positioned {
   def tpe: Type
@@ -116,7 +116,7 @@ object Expression {
       * Whether the parameter has a type annotation. Unannotated parameters always have an inference variable as their
       * type.
       */
-    lazy val isAnnotated: Boolean = Inference.isFullyInstantiated(tpe)
+    lazy val isAnnotated: Boolean = InferenceVariable.isFullyInstantiated(tpe)
 
     def mapType(f: Type => Type): AnonymousFunctionParameter = this.copy(tpe = f(tpe))
   }

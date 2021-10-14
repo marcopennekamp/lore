@@ -1,14 +1,20 @@
 package lore.compiler.typing
 
+import com.typesafe.scalalogging.Logger
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
-import lore.compiler.inference.Inference.{Assignments, AssignmentsExtension, logger, loggerBlank}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types.{BasicType, TupleType, Type}
+import lore.compiler.typing.InferenceVariable.Assignments
 import lore.compiler.typing.checker.Checker
+import lore.compiler.utils.IndentationLogger
 import lore.compiler.utils.Timer.timed
 
 object Typing {
+
+  val indentationLogger: IndentationLogger = IndentationLogger("lore.compiler.typing")
+  val logger: Logger = Logger(indentationLogger)
+  val loggerBlank: Logger = Logger("lore.compiler.typing.blank")
 
   def check(expression: Expression, returnType: Type, label: String, parentReporter: Reporter)(implicit registry: Registry): Option[Assignments] = {
     logger.debug(s"Check types for `$label` at ${expression.position}:")

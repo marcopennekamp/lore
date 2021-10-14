@@ -1,11 +1,10 @@
 package lore.compiler.typing
 
-import lore.compiler.feedback.{Feedback, LambdaReporter, Reporter}
-import lore.compiler.inference.Inference
-import lore.compiler.inference.Inference.Assignments
-import lore.compiler.inference.InferenceBounds.BoundType
+import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types.{BasicType, Type}
+import lore.compiler.typing.InferenceBounds.BoundType
+import lore.compiler.typing.InferenceVariable.Assignments
 
 // TODO (inference): This obviously needs a more descriptive name.
 object Helpers {
@@ -23,12 +22,12 @@ object Helpers {
     *                   caller of `instantiate` to properly handle an instantiation failure.
     */
   def instantiate(tpe: Type, assignments: Assignments, context: Expression)(implicit reporter: Reporter): Type = {
-    val result = Inference.instantiate(assignments, tpe, BoundType.Lower, (bounds, _) => {
+    val result = InferenceVariable.instantiate(assignments, tpe, BoundType.Lower, (bounds, _) => {
       if (bounds.lower > BasicType.Nothing) bounds.lower
       else if (bounds.upper < BasicType.Any) bounds.upper
       else bounds.variable // This case is what separates the instantiation from `instantiateCandidateType`.
     })
-    if (!Inference.isFullyInstantiated(result)) {
+    if (!InferenceVariable.isFullyInstantiated(result)) {
       reporter.error(IncompleteAssignments(tpe, result, assignments, context))
     }
     result
@@ -46,12 +45,12 @@ object Helpers {
     * Guesses the best instantiation for `tpe` from the given assignments. This can be used to preprocess types for
     * error reporting.
     */
-  def instantiateCandidate(tpe: Type, assignments: Assignments): Type = Inference.instantiateCandidateType(assignments, tpe)
+  def instantiateCandidate(tpe: Type, assignments: Assignments): Type = InferenceVariable.instantiateCandidateType(assignments, tpe)
 
   def traceExpressionType(expression: Expression, assignments: Assignments, label: String, additional: String = ""): Unit = {
-    Inference.logger.whenTraceEnabled {
+    Typing.logger.whenTraceEnabled {
       val inferredType = Helpers.instantiateCandidate(expression.tpe, assignments)
-      Inference.logger.trace(s"$label type $inferredType for `${expression.position.truncatedCode}`.$additional")
+      Typing.logger.trace(s"$label type $inferredType for `${expression.position.truncatedCode}`.$additional")
     }
   }
 }

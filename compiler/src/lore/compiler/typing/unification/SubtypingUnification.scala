@@ -1,10 +1,9 @@
 package lore.compiler.typing.unification
 
-import lore.compiler.inference.Inference.{Assignments, instantiateByBound, instantiateCandidateType, isFullyInstantiated}
-import lore.compiler.inference.InferenceBounds.BoundType
-import lore.compiler.inference.{Inference, InferenceVariable}
 import lore.compiler.types._
-import lore.compiler.typing.InferenceVariable2
+import lore.compiler.typing.InferenceBounds.BoundType
+import lore.compiler.typing.{InferenceVariable, Typing}
+import lore.compiler.typing.InferenceVariable.Assignments
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object SubtypingUnification {
@@ -13,22 +12,22 @@ object SubtypingUnification {
     * @param isFit If enabled, both bounds of an inference variable will be assigned.
     */
   def unify(t1: Type, t2: Type, isFit: Boolean, assignments: Assignments): Option[Assignments] = {
-    if (isFullyInstantiated(t1) && isFullyInstantiated(t2)) {
+    if (InferenceVariable.isFullyInstantiated(t1) && InferenceVariable.isFullyInstantiated(t2)) {
       return if (t1 <= t2) Some(assignments) else None
     }
 
     def unsupported: Option[Assignments] = {
-      Inference.logger.debug(s"Subtyping unification of intersection and sum types is not yet supported." +
+      Typing.logger.debug(s"Subtyping unification of intersection and sum types is not yet supported." +
         s" Given types: `$t1` and `$t2`.")
       None
     }
 
     def ensure(iv: InferenceVariable, tpe: Type, boundType: BoundType, assignments: Assignments): Option[Assignments] = {
       if (isFit) {
-        val candidateType = instantiateCandidateType(assignments, tpe)
-        InferenceVariable2.ensure(iv, candidateType, candidateType, assignments)
+        val candidateType = InferenceVariable.instantiateCandidateType(assignments, tpe)
+        InferenceVariable.ensure(iv, candidateType, candidateType, assignments)
       } else {
-        InferenceVariable2.ensure(iv, instantiateByBound(assignments, tpe, boundType), boundType, assignments)
+        InferenceVariable.ensure(iv, InferenceVariable.instantiateByBound(assignments, tpe, boundType), boundType, assignments)
       }
     }
 
@@ -37,8 +36,8 @@ object SubtypingUnification {
         if (isFit) {
           Unification.unifyEquals(iv1, iv2, assignments)
         } else {
-          InferenceVariable2.ensure(iv2, instantiateByBound(assignments, iv1, BoundType.Lower), BoundType.Lower, assignments).flatMap {
-            assignments2 => InferenceVariable2.ensure(iv1, instantiateByBound(assignments2, iv2, BoundType.Upper), BoundType.Upper, assignments2)
+          InferenceVariable.ensure(iv2, InferenceVariable.instantiateByBound(assignments, iv1, BoundType.Lower), BoundType.Lower, assignments).flatMap {
+            assignments2 => InferenceVariable.ensure(iv1, InferenceVariable.instantiateByBound(assignments2, iv2, BoundType.Upper), BoundType.Upper, assignments2)
           }
         }
       case (iv1: InferenceVariable, t2) => ensure(iv1, t2, BoundType.Upper, assignments)

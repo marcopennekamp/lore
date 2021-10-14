@@ -1,12 +1,11 @@
 package lore.compiler.typing.checker
 
-import lore.compiler.feedback.{MultiFunctionFeedback, Reporter, TypingFeedback2}
-import lore.compiler.inference.{Inference, InferenceVariable}
-import lore.compiler.inference.Inference.Assignments
+import lore.compiler.feedback.{MultiFunctionFeedback, Reporter, TypingFeedback}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.types.{TupleType, Type}
-import lore.compiler.typing.InferenceVariable2
+import lore.compiler.typing.InferenceVariable.Assignments
+import lore.compiler.typing.{InferenceVariable, Typing}
 import lore.compiler.typing.synthesizer.ParametricFunctionSynthesizer
 import lore.compiler.typing.synthesizer.ParametricFunctionSynthesizer.ArgumentCandidate
 import lore.compiler.typing.unification.Unification
@@ -58,8 +57,8 @@ object MultiFunctionCallChecker {
     //                   return them.
     val modeLabel = expectedType.map(_ => "Checking").getOrElse("Inference")
     val expectedTypeInfo = expectedType.map(t => s" with expected output type `$t`").getOrElse("")
-    Inference.logger.trace(s"$modeLabel of multi-function call `${expression.position.truncatedCode}`$expectedTypeInfo:")
-    Inference.indentationLogger.indented {
+    Typing.logger.trace(s"$modeLabel of multi-function call `${expression.position.truncatedCode}`$expectedTypeInfo:")
+    Typing.indentationLogger.indented {
       // Step 1: Try to infer as many argument types as possible.
       // TODO (inference): If all argument types can be inferred trivially, we can simply perform dispatch and call it a
       //                   day. This should significantly improve type checking performance.
@@ -122,13 +121,13 @@ object MultiFunctionCallChecker {
       mostSpecific match {
         case Vector(argumentCandidate) => Some(argumentCandidate)
         case _ =>
-          Inference.logger.trace(s"Ambiguous argument types of call `${expression.position.truncatedCode}`:\n${argumentCandidates.mkString("\n")}")
-          reporter.error(TypingFeedback2.MultiFunctionCalls.AmbiguousArgumentTypes(mf, mostSpecific.map(_.tpe), expression))
+          Typing.logger.trace(s"Ambiguous argument types of call `${expression.position.truncatedCode}`:\n${argumentCandidates.mkString("\n")}")
+          reporter.error(TypingFeedback.MultiFunctionCalls.AmbiguousArgumentTypes(mf, mostSpecific.map(_.tpe), expression))
           None
       }
     } else {
-      Inference.logger.trace(s"Empty fit of call `${expression.position.truncatedCode}`.")
-      val candidate = Inference.instantiateCandidateType(oldAssignments, TupleType(expression.arguments.map(_.tpe)))
+      Typing.logger.trace(s"Empty fit of call `${expression.position.truncatedCode}`.")
+      val candidate = InferenceVariable.instantiateCandidateType(oldAssignments, TupleType(expression.arguments.map(_.tpe)))
       // TODO (inference): Move the error to TypingFeedback?
       reporter.error(MultiFunctionFeedback.Dispatch.EmptyFit(mf, candidate, expression.position))
       None
@@ -146,8 +145,8 @@ object MultiFunctionCallChecker {
       MultiFunctionFeedback.Dispatch.EmptyFit(mf, argumentCandidate.tpe, expression.position),
       min => MultiFunctionFeedback.Dispatch.AmbiguousCall(mf, argumentCandidate.tpe, min, expression.position),
     ).flatMap { instance =>
-      Inference.logger.trace(s"Assigned output type ${instance.signature.outputType} to result type ${expression.tpe}.")
-      InferenceVariable2.assign(
+      Typing.logger.trace(s"Assigned output type ${instance.signature.outputType} to result type ${expression.tpe}.")
+      InferenceVariable.assign(
         expression.tpe.asInstanceOf[InferenceVariable],
         instance.signature.outputType,
         argumentCandidate.assignments,

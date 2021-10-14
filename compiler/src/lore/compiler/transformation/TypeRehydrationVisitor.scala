@@ -1,13 +1,13 @@
 package lore.compiler.transformation
 
 import lore.compiler.feedback.Reporter
-import lore.compiler.inference.Inference.{Assignments, AssignmentsExtension}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression._
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.members.Member
 import lore.compiler.semantics.scopes.{LocalVariable, TypedBinding}
 import lore.compiler.types._
+import lore.compiler.typing.InferenceVariable.Assignments
 
 /**
   * Replaces all inference variables with inferred types.

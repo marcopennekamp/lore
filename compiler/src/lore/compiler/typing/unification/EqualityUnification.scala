@@ -1,21 +1,20 @@
 package lore.compiler.typing.unification
 
-import lore.compiler.inference.Inference.{Assignments, instantiateByBound, isFullyInstantiated}
-import lore.compiler.inference.InferenceBounds.BoundType
-import lore.compiler.inference.{Inference, InferenceVariable}
 import lore.compiler.types._
-import lore.compiler.typing.InferenceVariable2
+import lore.compiler.typing.InferenceBounds.BoundType
+import lore.compiler.typing.{InferenceVariable, Typing}
+import lore.compiler.typing.InferenceVariable.Assignments
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object EqualityUnification {
 
   def unify(t1: Type, t2: Type, boundTypes: Vector[BoundType], assignments: Assignments): Option[Assignments] = {
-    if (isFullyInstantiated(t1) && isFullyInstantiated(t2)) {
+    if (InferenceVariable.isFullyInstantiated(t1) && InferenceVariable.isFullyInstantiated(t2)) {
       return if (t1 == t2) Some(assignments) else None
     }
 
     def unsupported: Option[Assignments] = {
-      Inference.logger.debug(s"Equality unification of intersection and sum types is not yet supported." +
+      Typing.logger.debug(s"Equality unification of intersection and sum types is not yet supported." +
         s" Given types: `$t1` and `$t2`.")
       None
     }
@@ -69,12 +68,12 @@ object EqualityUnification {
     assignments: Assignments,
     boundTypes: Vector[BoundType],
   ): Option[Assignments] = {
-    val bounds1 = InferenceVariable.bounds(iv1, assignments)
-    val bounds2 = InferenceVariable.bounds(iv2, assignments)
+    val bounds1 = InferenceVariable.getBounds(iv1, assignments)
+    val bounds2 = InferenceVariable.getBounds(iv2, assignments)
 
     def assignBoth(bound: Type, boundType: BoundType, assignments: Assignments) = {
-      InferenceVariable2.assign(iv1, bound, boundType, assignments)
-        .flatMap(InferenceVariable2.assign(iv2, bound, boundType, _))
+      InferenceVariable.assign(iv1, bound, boundType, assignments)
+        .flatMap(InferenceVariable.assign(iv2, bound, boundType, _))
     }
 
     val lowerAssignments = if (boundTypes.contains(BoundType.Lower)) {
@@ -104,16 +103,16 @@ object EqualityUnification {
   ): Option[Assignments] = {
     def narrowByBound(assignments: Assignments, boundType: BoundType) = {
       if (boundTypes.contains(boundType)) {
-        val instantiatedIv = instantiateByBound(assignments, iv, boundType)
-        val instantiatedType = instantiateByBound(assignments, tpe, boundType)
+        val instantiatedIv = InferenceVariable.instantiateByBound(assignments, iv, boundType)
+        val instantiatedType = InferenceVariable.instantiateByBound(assignments, tpe, boundType)
         lazy val isTypeNarrower = boundType match {
           case BoundType.Lower => instantiatedIv <= instantiatedType
           case BoundType.Upper => instantiatedType <= instantiatedIv
         }
-        if (!isFullyInstantiated(tpe) && !isTypeNarrower) {
+        if (!InferenceVariable.isFullyInstantiated(tpe) && !isTypeNarrower) {
           unify(instantiatedIv, tpe, Vector(boundType), assignments)
         } else {
-          InferenceVariable2.assign(iv, instantiatedType, boundType, assignments)
+          InferenceVariable.assign(iv, instantiatedType, boundType, assignments)
         }
       } else Some(assignments)
     }

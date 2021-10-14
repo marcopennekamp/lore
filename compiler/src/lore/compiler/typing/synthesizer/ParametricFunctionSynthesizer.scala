@@ -1,12 +1,11 @@
 package lore.compiler.typing.synthesizer
 
 import lore.compiler.feedback.Reporter
-import lore.compiler.inference.Inference.Assignments
-import lore.compiler.inference.{Inference, InferenceVariable}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.types.{BasicType, TupleType, Type, TypeVariable}
-import lore.compiler.typing.Helpers
+import lore.compiler.typing.InferenceVariable.Assignments
+import lore.compiler.typing.{Helpers, InferenceVariable, Typing}
 import lore.compiler.typing.checker.Checker
 import lore.compiler.typing.unification.Unification
 import lore.compiler.utils.CollectionExtensions.VectorExtension
@@ -25,9 +24,9 @@ object ParametricFunctionSynthesizer {
   )(implicit checker: Checker, reporter: Reporter): (KnownArgumentTypes, Assignments) = {
     val (knownArgumentTypes, assignments2) = arguments.foldLeft((Vector.empty: KnownArgumentTypes, assignments)) {
       case ((knownArgumentTypes, previousAssignments), argument) =>
-        Inference.logger.trace(s"Preprocess argument `${argument.position.truncatedCode}`:")
+        Typing.logger.trace(s"Preprocess argument `${argument.position.truncatedCode}`:")
 
-        Inference.indentationLogger.indented {
+        Typing.indentationLogger.indented {
           Synthesizer.attempt(argument, previousAssignments) match {
             case (Some(argumentAssignments), _) => (knownArgumentTypes :+ Some(Helpers.instantiate(argument, argumentAssignments)), argumentAssignments)
             case (None, _) => (knownArgumentTypes :+ None, previousAssignments)
@@ -35,7 +34,7 @@ object ParametricFunctionSynthesizer {
         }
     }
 
-    Inference.logger.trace(s"Preprocessed argument types: ${knownArgumentTypes.mkString(", ")}.")
+    Typing.logger.trace(s"Preprocessed argument types: ${knownArgumentTypes.mkString(", ")}.")
 
     (knownArgumentTypes, assignments2)
   }
@@ -94,12 +93,12 @@ object ParametricFunctionSynthesizer {
     //     arguments, and also bounds processing to allow changes in type variable assignments to carry across bounds.
     val assignments4 = knownArgumentTypes.zip(arguments).zip(parameterTypes).foldSome(assignments3) {
       case (innerAssignments, ((None, argument), parameterType)) =>
-        Inference.logger.whenTraceEnabled {
+        Typing.logger.whenTraceEnabled {
           val parameterTypeCandidate = Helpers.instantiateCandidate(parameterType, innerAssignments)
-          Inference.logger.trace(s"Check untyped argument `${argument.position.truncatedCode}` with parameter type `$parameterTypeCandidate`:")
+          Typing.logger.trace(s"Check untyped argument `${argument.position.truncatedCode}` with parameter type `$parameterTypeCandidate`:")
         }
 
-        Inference.indentationLogger.indented {
+        Typing.indentationLogger.indented {
           checkUntypedArgument(argument, parameterType, innerAssignments)
             .flatMap(handleTypeVariableBounds(typeParameters, typeParameterAssignments, _))
         }

@@ -2,11 +2,11 @@ package lore.compiler.transformation
 
 import lore.compiler.core.Position
 import lore.compiler.feedback.{ExpressionFeedback, Feedback, Reporter, StructFeedback}
-import lore.compiler.inference.InferenceVariable
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.modules.GlobalModule
 import lore.compiler.semantics.scopes._
 import lore.compiler.syntax.Node.{NameNode, NamePathNode}
+import lore.compiler.typing.InferenceVariable
 
 object AccessTransformation {
 

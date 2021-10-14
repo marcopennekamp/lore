@@ -1,12 +1,11 @@
 package lore.compiler.typing.synthesizer
 
-import lore.compiler.feedback.{Reporter, TypingFeedback2}
-import lore.compiler.inference.Inference.Assignments
-import lore.compiler.inference.InferenceVariable
+import lore.compiler.feedback.{Reporter, TypingFeedback}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionInstance
 import lore.compiler.types.FunctionType
-import lore.compiler.typing.InferenceVariable2
+import lore.compiler.typing.InferenceVariable
+import lore.compiler.typing.InferenceVariable.Assignments
 
 object MultiFunctionValueSynthesizer {
 
@@ -24,12 +23,12 @@ object MultiFunctionValueSynthesizer {
 
     expectedType.foreach { expectedType =>
       if (functionType.output </= expectedType.output) {
-        reporter.error(TypingFeedback2.MultiFunctionValues.IllegalOutput(expression, expectedType, functionType))
+        reporter.error(TypingFeedback.MultiFunctionValues.IllegalOutput(expression, expectedType, functionType))
         return None
       }
     }
 
-    InferenceVariable2.assign(expression.tpe.asInstanceOf[InferenceVariable], functionType, assignments)
+    InferenceVariable.assign(expression.tpe.asInstanceOf[InferenceVariable], functionType, assignments)
   }
 
 }

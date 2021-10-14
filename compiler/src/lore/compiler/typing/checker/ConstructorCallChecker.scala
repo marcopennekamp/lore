@@ -1,11 +1,11 @@
 package lore.compiler.typing.checker
 
-import lore.compiler.feedback.{Reporter, TypingFeedback2}
-import lore.compiler.inference.Inference
-import lore.compiler.inference.Inference.Assignments
+import lore.compiler.feedback.{Reporter, TypingFeedback}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.scopes.StructConstructorBinding
 import lore.compiler.types.{DeclaredType, StructType}
+import lore.compiler.typing.InferenceVariable.Assignments
+import lore.compiler.typing.Typing
 import lore.compiler.typing.synthesizer.{ConstructorCallSynthesizer, ParametricFunctionSynthesizer}
 import lore.compiler.typing.unification.Unification
 import lore.compiler.utils.CollectionExtensions.OptionExtension
@@ -26,13 +26,13 @@ object ConstructorCallChecker {
     expectedType: DeclaredType,
     assignments: Assignments,
   )(implicit checker: Checker, reporter: Reporter): Option[Assignments] = {
-    Inference.logger.trace(s"Checking of constructor call `${expression.position.truncatedCode}`:")
-    Inference.indentationLogger.indented {
+    Typing.logger.trace(s"Checking of constructor call `${expression.position.truncatedCode}`:")
+    Typing.indentationLogger.indented {
       val structSchema = binding.underlyingType.schema
       val expectedStructType = expectedType match {
         case structType: StructType if structType.schema == structSchema => structType
         case _ => expectedType.specialize(structSchema).filterType[StructType].getOrElse {
-          reporter.error(TypingFeedback2.ConstructorCalls.CannotSpecialize(binding, expectedType, expression))
+          reporter.error(TypingFeedback.ConstructorCalls.CannotSpecialize(binding, expectedType, expression))
           return None
         }
       }

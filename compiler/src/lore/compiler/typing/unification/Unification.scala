@@ -1,8 +1,8 @@
 package lore.compiler.typing.unification
 
-import lore.compiler.inference.Inference.Assignments
-import lore.compiler.inference.InferenceBounds.BoundType
 import lore.compiler.types._
+import lore.compiler.typing.InferenceBounds.BoundType
+import lore.compiler.typing.InferenceVariable.Assignments
 
 object Unification {
 

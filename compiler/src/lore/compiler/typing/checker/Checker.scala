@@ -2,14 +2,12 @@ package lore.compiler.typing.checker
 
 import lore.compiler.core.CompilationException
 import lore.compiler.feedback._
-import lore.compiler.inference.Inference.Assignments
-import lore.compiler.inference.{Inference, InferenceVariable}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.types._
-import lore.compiler.typing.synthesizer.Synthesizer.infer
-import lore.compiler.typing.{Helpers, InferenceVariable2}
-import lore.compiler.typing.synthesizer.{ConstructorCallSynthesizer, MultiFunctionCallSynthesizer, MultiFunctionValueSynthesizer, ParametricFunctionSynthesizer, Synthesizer}
+import lore.compiler.typing.{Helpers, InferenceVariable}
+import lore.compiler.typing.InferenceVariable.Assignments
+import lore.compiler.typing.synthesizer.{MultiFunctionValueSynthesizer, ParametricFunctionSynthesizer, Synthesizer}
 import lore.compiler.typing.unification.Unification
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
@@ -30,7 +28,7 @@ case class Checker(returnType: Type) {
     */
   def check(expression: Expression, expectedType: Type, assignments: Assignments)(implicit reporter: Reporter): Option[Assignments] = {
     // TODO (inference): This is a sanity check for now and can probably be removed once the algorithm is stable.
-    if (!Inference.isFullyInstantiated(expectedType)) {
+    if (!InferenceVariable.isFullyInstantiated(expectedType)) {
       throw CompilationException(s"The expected type $expectedType must be fully instantiated! Position: ${expression.position}. Assignments: $assignments")
     }
 
@@ -67,7 +65,7 @@ case class Checker(returnType: Type) {
             case iv: InferenceVariable =>
               Synthesizer.infer(value, assignments).flatMap { assignments2 =>
                 val valueType = Helpers.instantiateCandidate(value.tpe, assignments2)
-                InferenceVariable2.assign(iv, valueType, assignments2)
+                InferenceVariable.assign(iv, valueType, assignments2)
               }
             case _ => throw CompilationException(s"A variable declared without a type annotation should have an inference variable as its type. Position: ${expression.position}.")
           }
@@ -115,16 +113,16 @@ case class Checker(returnType: Type) {
 
                 case None =>
                   val instantiatedInput = Helpers.instantiateCandidate(expression.tpe.input, assignments).asInstanceOf[TupleType]
-                  reporter.error(TypingFeedback2.AnonymousFunctions.IllegalParameterTypes(expression, expectedType, instantiatedInput))
+                  reporter.error(TypingFeedback.AnonymousFunctions.IllegalParameterTypes(expression, expectedType, instantiatedInput))
                   None
               }
 
             case expectedType: FunctionType =>
-              reporter.error(TypingFeedback2.AnonymousFunctions.IllegalArity(expression, expectedType))
+              reporter.error(TypingFeedback.AnonymousFunctions.IllegalArity(expression, expectedType))
               None
 
             case _ =>
-              reporter.error(TypingFeedback2.AnonymousFunctions.FunctionTypeExpected(expression, expectedType))
+              reporter.error(TypingFeedback.AnonymousFunctions.FunctionTypeExpected(expression, expectedType))
               None
           }
         }
@@ -150,7 +148,7 @@ case class Checker(returnType: Type) {
             fallback
 
           case _ =>
-            reporter.error(TypingFeedback2.MultiFunctionValues.FunctionTypeExpected(expression, expectedType))
+            reporter.error(TypingFeedback.MultiFunctionValues.FunctionTypeExpected(expression, expectedType))
             None
         }
 
@@ -160,7 +158,7 @@ case class Checker(returnType: Type) {
             ParametricFunctionSynthesizer.inferTypeArguments(binding.signature, input.elements, assignments)
               .flatMap {
                 case (typeParameterAssignments, assignments2) =>
-                  InferenceVariable2.assign(tpe, binding.asSchema.instantiate(typeParameterAssignments).constructorSignature.functionType, assignments2)
+                  InferenceVariable.assign(tpe, binding.asSchema.instantiate(typeParameterAssignments).constructorSignature.functionType, assignments2)
               }
 
           case _ => fallback
