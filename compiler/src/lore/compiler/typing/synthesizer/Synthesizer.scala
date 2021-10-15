@@ -146,16 +146,27 @@ object Synthesizer {
               .flatMap(assignOperationResult(_, expression, BasicType.Boolean))
 
           case Append =>
-            infer(left, assignments).flatMap(infer(right, _)).flatMap { assignments2 =>
-              val collectionType = InferenceVariable.instantiateCandidate(left, assignments2)
-              val newElementType = InferenceVariable.instantiateCandidate(right, assignments2)
+            infer(left, assignments).flatMap { collectionAssignments =>
+              val collectionType = InferenceVariable.instantiateCandidate(left, collectionAssignments)
 
-              // We have to combine the collection's element type with the new element's type. This is only possible if
-              // `collectionType` is actually a list.
+              // The appended element's type might need to be informed by the collection's type, for example when
+              // the collection is a list of functions and the appended element is an anonymous function without
+              // parameter type annotations. Hence, we first attempt to check the appended element with the expected
+              // element type. This is not always valid, though, because appending might widen the type of the list.
+              // When checking fails, we thus need to default to inference.
+              def checkAppendedElement(expectedElementType: Type): Option[(Assignments, Type)] = {
+                val (checkedAssignments, _) = checker.attempt(right, expectedElementType, collectionAssignments)
+                checkedAssignments.orElse(infer(right, collectionAssignments)).map {
+                  elementAssignments => (elementAssignments, InferenceVariable.instantiateCandidate(right, elementAssignments))
+                }
+              }
+
               collectionType match {
                 case ListType(elementType) =>
-                  val combinedType = ListType(SumType.construct(elementType, newElementType))
-                  Unification.unifyEquals(expression.tpe, combinedType, assignments2)
+                  checkAppendedElement(elementType).flatMap { case (elementAssignments, appendedElementType) =>
+                    val combinedType = ListType(SumType.construct(elementType, appendedElementType))
+                    Unification.unifyEquals(expression.tpe, combinedType, elementAssignments)
+                  }
 
                 case _ =>
                   reporter.report(TypingFeedback.Lists.ListExpected(expression, collectionType))
