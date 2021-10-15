@@ -43,9 +43,10 @@ object Synthesizer {
       case Expression.VariableDeclaration(_, _, _, _) => delegate(TupleType.UnitType)
       case Expression.Assignment(_, _, _) => delegate(TupleType.UnitType)
 
-      case Expression.Block(expressions, _) =>
+      case block@Expression.Block(expressions, _, _) =>
         checker.check(expressions.init, BasicType.Any, assignments)
           .flatMap(infer(expressions.last, _))
+          .flatMap(checker.assignBlockType(block, None, _))
 
       case Expression.BindingAccess(_, _) => Some(assignments)
 

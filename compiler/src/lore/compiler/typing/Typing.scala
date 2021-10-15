@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.Logger
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.types.{BasicType, TupleType, Type}
+import lore.compiler.types.Type
 import lore.compiler.typing.InferenceVariable.Assignments
 import lore.compiler.typing.checker.Checker
 import lore.compiler.utils.IndentationLogger
@@ -22,11 +22,7 @@ object Typing {
     val result = timed(s"Checking types for `$label`", log = s => logger.debug(s)) {
       MemoReporter.nested(parentReporter) { implicit reporter =>
         val checker = Checker(returnType)
-
-        // TODO (inference): This feels like a hack. Is there another way to handle unit values? Perhaps in Checker
-        //                   itself?
-        val expectedType = if (returnType == TupleType.UnitType) BasicType.Any else returnType
-        val assignmentsOption = checker.check(expression, expectedType, Map.empty)
+        val assignmentsOption = checker.check(expression, returnType, Map.empty)
 
         logger.whenDebugEnabled {
           assignmentsOption match {

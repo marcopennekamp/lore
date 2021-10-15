@@ -28,7 +28,15 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
     value = value
   )
 
-  override def visit(expression: Block)(expressions: Vector[Expression]): Expression = expression.copy(expressions)
+  override def visit(expression: Block)(expressions: Vector[Expression]): Expression = {
+    // For a block expression expected to result in Unit, we have to manually add a unit value if the block's last
+    // expression doesn't already result in Unit.
+    val blockType = assignments.instantiate(expression.tpe)
+    val allExpressions = if (blockType == TupleType.UnitType && expressions.last.tpe != TupleType.UnitType) {
+      expressions :+ Expression.Tuple(Vector.empty, expressions.last.position)
+    } else expressions
+    expression.copy(expressions = allExpressions, tpe = blockType)
+  }
 
   override def visit(expression: BindingAccess): Expression = expression.copy(
     binding = instantiateBinding(expression.binding)

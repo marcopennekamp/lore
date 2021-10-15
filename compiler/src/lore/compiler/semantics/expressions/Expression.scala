@@ -54,8 +54,11 @@ object Expression {
   /**
     * @param expressions The expressions list must have at least one element. Empty blocks should be populated with a
     *                    single unit value expression.
+    * @param tpe         The result type of the block. This is usually the type of the last expression, but not when
+    *                    the type expected of the block is Unit. In this case, the block will receive an implicit unit
+    *                    value as its last expression after typechecking.
     */
-  case class Block(expressions: Vector[Expression], position: Position) extends Expression.Apply(expressions.last.tpe)
+  case class Block(expressions: Vector[Expression], tpe: Type, position: Position) extends Expression
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Access expressions.

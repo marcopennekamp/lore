@@ -6,7 +6,7 @@ import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.scopes.{BindingScope, TypeScope}
 import lore.compiler.syntax.ExprNode
 import lore.compiler.syntax.visitor.TopLevelExprVisitor
-import lore.compiler.types.{TupleType, Type}
+import lore.compiler.types.Type
 import lore.compiler.typing.Typing
 
 object ExpressionTransformer {
@@ -41,35 +41,9 @@ object ExpressionTransformer {
           ExpressionVisitor.visit(mutabilityVerifier)(typedExpression)
 
           val builtinsVisitor = new BuiltinsVisitor
-          val expressionWithBuiltins = ExpressionVisitor.visit(builtinsVisitor)(typedExpression)
-
-          withImplicitUnitValue(expectedType)(expressionWithBuiltins)
+          ExpressionVisitor.visit(builtinsVisitor)(typedExpression)
         }.getOrElse(hole)
       } else hole
-    }
-  }
-
-  /**
-    * For a block expression expected to return Unit, we have to manually add a unit return value if the block's value
-    * isn't already a unit value.
-    *
-    * Example:
-    * {{{
-    * act test() {
-    *   concat([12], [15]) // Should compile even though it returns a list.
-    * }
-    * }}}
-    *
-    * TODO (inference): This should be moved to a visitor such as [[TypeRehydrationVisitor]] (which operates
-    *                   post-inference) so that this can be applied to all blocks, not just the top-most block. In
-    *                   addition, we might also have to amend the Checker to turn the actual return type of a block
-    *                   into `Unit` if the expected type is `Unit`.
-    */
-  private def withImplicitUnitValue(expectedType: Type)(expression: Expression): Expression = {
-    expression match {
-      case Expression.Block(expressions, position) if expectedType == TupleType.UnitType && expression.tpe != TupleType.UnitType =>
-        Expression.Block(expressions :+ Expression.Tuple(Vector.empty, position), position)
-      case _ => expression
     }
   }
 

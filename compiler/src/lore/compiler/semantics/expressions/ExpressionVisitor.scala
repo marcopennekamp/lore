@@ -62,7 +62,7 @@ object ExpressionVisitor {
       case node@Assignment(target, value, _) => visitor.visit(node)(rec(target), rec(value))
 
       // Expressions
-      case node@Block(expressions, _) => visitor.visit(node)(expressions.map(rec))
+      case node@Block(expressions, _, _) => visitor.visit(node)(expressions.map(rec))
       case node@BindingAccess(_, _) => visitor.visit(node)
       case node@MemberAccess(instance, _, _) => visitor.visit(node)(rec(instance))
       case node@UnresolvedMemberAccess(instance, _, _, _) => visitor.visit(node)(rec(instance))

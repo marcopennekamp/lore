@@ -53,8 +53,7 @@ case class Checker(returnType: Type) {
     val resultAssignments: Option[Assignments] = expression match {
       case Expression.Hole(_, _) => Some(assignments)
 
-      case Expression.Return(value, _) =>
-        check(value, returnType, assignments)
+      case Expression.Return(value, _) => check(value, returnType, assignments)
 
       case Expression.VariableDeclaration(variable, value, typeAnnotation, _) =>
         // If a type annotation exists, we just have to check that the value has a compatible type. Otherwise, we need
@@ -77,9 +76,14 @@ case class Checker(returnType: Type) {
           check(value, targetType, assignments2)
         }
 
-      case Expression.Block(expressions, _) =>
+      case block@Expression.Block(expressions, _, _) =>
+        // If the expected type is Unit, we're relying on a feature that blocks have implicit unit values. After
+        // typechecking, the type rehydration will additionally add these implicit unit values to the blocks that need
+        // them.
+        val effectiveExpectedType = if (expectedType == TupleType.UnitType) BasicType.Any else expectedType
         check(expressions.init, BasicType.Any, assignments)
-          .flatMap(check(expressions.last, expectedType, _))
+          .flatMap(check(expressions.last, effectiveExpectedType, _))
+          .flatMap(assignBlockType(block, Some(expectedType), _))
 
       case Expression.Tuple(values, _) =>
         // TODO (inference): One of the best things about bidirectional typechecking is that it can produce very
@@ -227,13 +231,25 @@ case class Checker(returnType: Type) {
       //         `expectedType`.
       val actualType = InferenceVariable.instantiateCandidate(expression.tpe, resultAssignments)
       if (actualType </= expectedType) {
-        // TODO (inference): Does this need a new typing error?
         reporter.error(TypingFeedback.SubtypeExpected(actualType, expectedType, expression))
         None
       } else {
         Some(resultAssignments)
       }
     }
+  }
+
+  def assignBlockType(
+    block: Expression.Block,
+    expectedType: Option[Type],
+    assignments: Assignments,
+  ): Option[Assignments] = {
+    val lastExpressionType = InferenceVariable.instantiateCandidate(block.expressions.last, assignments)
+    val resultType = expectedType match {
+      case Some(TupleType.UnitType) => TupleType.UnitType
+      case _ => lastExpressionType
+    }
+    InferenceVariable.assign(block.tpe.asInstanceOf[InferenceVariable], resultType, assignments)
   }
 
   private def checkLoop(loop: Expression.Loop, expectedType: Type, assignments: Assignments)(implicit reporter: Reporter): Option[Assignments] = {

@@ -148,7 +148,7 @@ class ExpressionTransformationVisitor(
     case BlockNode(_, position) =>
       // This is AFTER the block has been visited. The scope has already been opened and needs to be closed.
       scopeContext.closeScope()
-      Expression.Block(expressions.withDefault(Expression.Tuple(Vector.empty, position)), position)
+      Expression.Block(expressions.withDefault(Expression.Tuple(Vector.empty, position)), new InferenceVariable, position)
 
     // Value constructors.
     case TupleNode(_, position) =>
