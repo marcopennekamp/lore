@@ -27,7 +27,6 @@ case class Checker(returnType: Type) {
     *                     fully instantiated.
     */
   def check(expression: Expression, expectedType: Type, assignments: Assignments)(implicit reporter: Reporter): Option[Assignments] = {
-    // TODO (inference): This is a sanity check for now and can probably be removed once the algorithm is stable.
     if (!InferenceVariable.isFullyInstantiated(expectedType)) {
       throw CompilationException(s"The expected type $expectedType must be fully instantiated! Position: ${expression.position}. Assignments: $assignments")
     }
@@ -42,10 +41,6 @@ case class Checker(returnType: Type) {
     // if we have a ListConstruction `[a.x, b.x]`, with `x` being a member of type `Int`, and an expected type
     // `(Int, Int)`, we want the resulting error to say "[Int] is not a subtype of (Int, Int)" instead of "[Any] is not
     // a subtype of (Int, Int)".
-    // TODO (inference): If we allow e.g. lists to extend traits, this fallback is also instrumental in providing a
-    //                   secondary path for type checking to accept a ListConstruction as a valid option for an
-    //                   expected type `Enum`.
-    // TODO (inference): If the Synthesizer already reports errors, we should suppress the default error.
     def fallback = Synthesizer.infer(expression, assignments)
 
     // Step 1: Check and/or infer the expression's sub-expressions to produce an assignments map that will allow us to
@@ -76,14 +71,14 @@ case class Checker(returnType: Type) {
           check(value, targetType, assignments2)
         }
 
-      case block@Expression.Block(expressions, _, _) =>
+      case expression@Expression.Block(expressions, _, _) =>
         // If the expected type is Unit, we're relying on a feature that blocks have implicit unit values. After
         // typechecking, the type rehydration will additionally add these implicit unit values to the blocks that need
         // them.
         val effectiveExpectedType = if (expectedType == TupleType.UnitType) BasicType.Any else expectedType
         check(expressions.init, BasicType.Any, assignments)
           .flatMap(check(expressions.last, effectiveExpectedType, _))
-          .flatMap(assignBlockType(block, Some(expectedType), _))
+          .flatMap(assignBlockType(expression, Some(expectedType), _))
 
       case expression@Expression.Tuple(values, _) =>
         expectedType match {
@@ -98,14 +93,6 @@ case class Checker(returnType: Type) {
           case _ => fallback
         }
 
-      // TODO (inference): As it stands now, an anonymous function either requires an expected type context, or all of
-      //                   its parameters to have type annotations. There is a very niche area where we could actually
-      //                   infer the parameter's types based on their usage within the body. For example, a function
-      //                   `x => x.name` could be typed as `%{ name: Any } => Any`. Of course that's not very useful if
-      //                   we cannot also deduce the return type, but that's the gist of it. Supporting such a style of
-      //                   inference would be, as said, very niche, so it's probably not worth the (considerable)
-      //                   effort. However, we should still consider this down the line, when the new typechecking
-      //                   algorithm is a bit more mature.
       case expression@Expression.AnonymousFunction(parameters, body, _) =>
         if (expression.isFullyAnnotated) {
           Synthesizer.infer(expression, assignments)

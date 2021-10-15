@@ -77,10 +77,10 @@ object MultiFunctionCallChecker {
 
           // As mentioned in the documentation comment, if we have an expected (output) type, we can unify this type
           // with the candidate's output type to potentially assign type arguments right away.
-          // TODO (inference): Because sum/intersection type unification cannot be resolved yet, we can't rule out that
-          //                   the candidate can't be chosen if the unification fails, here. If that is resolved,
-          //                   there's a good chance that we can optimize here: if the output type and expected types
-          //                   cannot be unified, the multi-function cannot be chosen.
+          // TODO: Because sum/intersection type unification cannot be resolved yet, we can't rule out that the
+          //       candidate can't be chosen if the unification fails, here. If that is resolved, there's a good chance
+          //       that we can optimize here: if the output type and expected types cannot be unified, the
+          //       multi-function cannot be chosen.
           val outputTypeAssignments = expectedType match {
             case Some(expectedType) =>
               val outputType = Type.substitute(function.signature.outputType, typeParameterAssignments)
@@ -128,7 +128,6 @@ object MultiFunctionCallChecker {
     } else {
       Typing.logger.trace(s"Empty fit of call `${expression.position.truncatedCode}`.")
       val candidate = InferenceVariable.instantiateCandidate(TupleType(expression.arguments.map(_.tpe)), oldAssignments)
-      // TODO (inference): Move the error to TypingFeedback?
       reporter.error(MultiFunctionFeedback.Dispatch.EmptyFit(mf, candidate, expression.position))
       None
     }
@@ -141,7 +140,6 @@ object MultiFunctionCallChecker {
   )(implicit checker: Checker, reporter: Reporter): Option[Assignments] = {
     mf.dispatch(
       argumentCandidate.tpe,
-      // TODO (inference): Move these errors to TypingFeedback?
       MultiFunctionFeedback.Dispatch.EmptyFit(mf, argumentCandidate.tpe, expression.position),
       min => MultiFunctionFeedback.Dispatch.AmbiguousCall(mf, argumentCandidate.tpe, min, expression.position),
     ).flatMap { instance =>

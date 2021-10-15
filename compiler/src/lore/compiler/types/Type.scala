@@ -161,26 +161,6 @@ object Type {
   }
 
   /**
-    * Removes types from the list that are subtyped by other types in the list, essentially keeping the most specific
-    * types.
-    *
-    * TODO (inference): This can be removed.
-    */
-  def mostSpecific(types: Vector[Type]): Vector[Type] = {
-    types.filterNot(t => types.exists(_ < t)).distinct
-  }
-
-  /**
-    * Removes types from the list that are supertyped by other types in the list, essentially keeping the most general
-    * types.
-    *
-    * TODO (inference): This can be removed.
-    */
-  def mostGeneral(types: Vector[Type]): Vector[Type] = {
-    types.filterNot(t => types.exists(t < _)).distinct
-  }
-
-  /**
     * Whether `tpe` is equal to `term` or contains a subterm which is equal to `term`.
     *
     * `contains` is a faster but less feature-rich version of [[TypePath]].

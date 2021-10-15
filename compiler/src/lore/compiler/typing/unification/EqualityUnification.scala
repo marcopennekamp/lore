@@ -48,8 +48,6 @@ object EqualityUnification {
           case (assignments2, (a1, a2)) => unify(a1, a2, boundTypes, assignments2)
         }
 
-      // TODO (inference): We might have to support the cases where an intersection type only stands on the left, like
-      //                   in TypeVariableAllocation. This also hinges on the TODO mentioned in TypeVariableAllocation.
       case (_: IntersectionType, _) => unsupported
       case (_, _: IntersectionType) => unsupported
       case (_: SumType, _) => unsupported

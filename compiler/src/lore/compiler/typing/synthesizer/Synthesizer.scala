@@ -1,5 +1,6 @@
 package lore.compiler.typing.synthesizer
 
+import lore.compiler.core.CompilationException
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter, TypingFeedback}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
@@ -11,18 +12,12 @@ import lore.compiler.typing.unification.Unification
 import lore.compiler.typing.{InferenceVariable, Typing}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
 
-// TODO (inference): We're using the old definition of Assignments here, which might be correct. However, we need to
-//                   reevaluate whether we need lower and upper inference variable bounds, or if a direct assignment
-//                   of types suffices. Type parameters with various bounds might complicate this, however.
 object Synthesizer {
 
   /**
     * Infers the type of `expression` solely from the shape of the expression and the current inference variable
     * assignments, producing a new set of assignments with which the type of `expression` can be instantiated. If the
     * type cannot be inferred, one or more errors are reported and `None` is returned.
-    *
-    * TODO (inference): Maybe return an option so that we can return `None` instead of `assignments` when an error has
-    * been found.
     */
   def infer(expression: Expression, assignments: Assignments)(implicit checker: Checker, reporter: Reporter): Option[Assignments] = {
     // Delegates the handling of the expression to the Checker.
@@ -50,18 +45,9 @@ object Synthesizer {
 
       case Expression.BindingAccess(_, _) => Some(assignments)
 
-      case Expression.MemberAccess(_, _, _) =>
-        // TODO (inference): What to do here? This might become relevant if we only produce unresolved member accesses
-        //                   if the instance type isn't known during expression transformation. Otherwise, this case
-        //                   can result in a CompilationException because typing should only have to deal with
-        //                   unresolved member accesses.
-        ???
+      case Expression.MemberAccess(_, _, position) => throw CompilationException(s"At this stage of typechecking, there should be no MemberAccess expressions. Position: $position.")
 
       case expression@Expression.UnresolvedMemberAccess(instance, name, memberInferenceVariable, _) =>
-        // TODO (inference): Alternatively, we can call `check(instance, %{ <name>: <tpe> }, assignments)` instead to
-        //                   get the other direction, which infers the instance type from the member access. (A valid
-        //                   direction in the typing judgments world.) We'll have to test this practically before
-        //                   implementing that direction, however.
         infer(instance, assignments).flatMap { assignments2 =>
           val instanceType = InferenceVariable.instantiateCandidate(instance, assignments2)
           val memberType = instanceType.member(name) match {
@@ -193,12 +179,6 @@ object Synthesizer {
             //                   type from the target's function type. So we'd first have to try to infer the
             //                   arguments, if everything can be inferred `check` the `target`, and if they cannot be
             //                   inferred, `infer` `target` instead.
-            // TODO (inference): If we want to assign types to type parameters of constructors here, we'll have to
-            //                   allow unresolved inference variables and somehow also implement their bounds. What's
-            //                   probably easier is to treat constructor calls as a separate entity and handle them
-            //                   like single-function multi-function calls. We will essentially need the same type
-            //                   parameter handling for both multi-functions and constructors.
-
             infer(target, assignments).flatMap { targetAssignments =>
               val argumentsResult = InferenceVariable.instantiateCandidate(target, targetAssignments) match {
                 case FunctionType(input, output) =>

@@ -76,8 +76,6 @@ object InferenceVariable {
   /**
     * Assigns `bound` to the lower or upper bound of `iv`, depending on `boundType`. Returns None if the old and new
     * bounds are incompatible.
-    *
-    * TODO (inference): Sum/intersection type construction, like in the old inference model, or is this not needed here?
     */
   def assign(
     iv: InferenceVariable,
@@ -98,8 +96,6 @@ object InferenceVariable {
   /**
     * Ensures that `lowerBound` is a subtype of `iv`'s lower bound and `upperBound` is a supertype of `iv`'s upper
     * bound. If this is not the case, the respective bound will be assigned to `iv`.
-    *
-    * TODO (inference): Do we need this?
     */
   def ensure(
     iv: InferenceVariable,

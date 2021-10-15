@@ -171,11 +171,6 @@ object TypeVariableAllocation {
       // assign types to a type variable embedded in a sum or intersection, which we cannot decide yet. When the
       // left-hand type is a sum or an intersection and the right-hand type isn't, we can assume that t1 cannot be a
       // subtype of t2 in any case, because t1 should be simplified. Hence, we don't need to assign anything.
-      // TODO: This hinges on additional simplification for sum and intersection types: we need to ensure that
-      //       covariant and contravariant positions are properly simplified. For example, if we have a type
-      //       `[X] & [Y]`, we want it to be combined to `[X & Y]` before we ask whether `[X] & [Y]` fits into `[A]`.
-      //       If we don't do the simplification, the type variable allocation will just silently avoid assigning
-      //       anything to A.
       case (_, _: SumType) => unsupportedSubstitution
       case (_: SumType, _) =>
       case (_, _: IntersectionType) => unsupportedSubstitution

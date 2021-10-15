@@ -83,15 +83,11 @@
     I already saw this problem with built-in collection types, such as lists. Say some library has a trait X, but we want lists to implement this trait. That's currently not possible, but quite easy in languages with protocols. The same happens when we have a trait X in library A and a struct Y in library B. It's currently not possible to have Y implement X. It would suffice to specify this at <b>compile time</b> and this is actually quite possible. It's not much different from extending a multi-function defined in library A. We just have to give the option, add runtime support, and make it even harder to implement incremental compilation down the line.
   - A simple syntax would be `impl Trait for Type`. This would add `Trait` as a direct supertype of `Type`. Any abstract multi-functions would have to be implemented accordingly.
   - How we can accomplish this in the runtime for built-in types such as lists and maps is another question. We can, of course, keep a global map of the supertypes of lists, maps, tuples, etc., but this might heavily affect performance.
-- Rethink whether multiple type variable mentions at run-time must really be equal, or whether we could go with a softer approach based on finding a "consensus" between occurrences using subtyping. The definition of `fold` for lists is seriously complex. This aspect of the runtime system is not friendly to the daily life of a programmer.
-- Add the `expectedType` checking for functions to the inference algorithm. There is no need to check separately, and it would allow the inference algorithm to infer certain types from a function's output type.
+- Reintroduce a "least upper bound"/join for complex sum types for select expressions, such as list and map constructions.
 - Merge Real and Int into a Number type (named Number or something similar). There is no advantage in keeping these two apart when the underlying runtime system has only one numeric type. The subtyping relationship `Int <: Real` is awkward as well.
 - Turn map keys and values into covariant/contravariant type variables if possible.
 - Support intersection and sum types in TypeVariableAllocation.
 - We could theoretically introduce a limited form of ambiguity analysis at compile-time: For each function `f(a: A, b: B, ...)`, get a list of possible subtypes (mostly trait subtypes) and simulate dispatch with these types. If any of the inputs result in an ambiguity, raise at least a warning.
-- Inference:
-  - Introduce rewrite rules which come into effect before cycle resolution. One such rewrite rule would be to rewrite judgments such as `(a, b) :<: (c, d)` to `a :<: c` and `b :<: d`. Perhaps this will give the algorithm additional options to continue the inference rather than having to fall back to cycle resolution.
-  - `CallTransformation.valueCall` should produce a Fits judgment in one direction (if the right-hand type is not fully instantiated) and a single-direction Subtypes judgment exclusively in the other. The same goes for arguments in MultiFunctionHints.
 
 ##### CLI
 
@@ -100,7 +96,7 @@
 ##### Error Reporting
 
 - Add positions to CompilationExceptions.
-- Add names to errors (similar to Typescript) so that programmers can quickly google/search for Lore errors.
+- Add names to errors (similar to Typescript) so that programmers can quickly google/search for Lore errors. We might also add links to a specific error documentation (or wiki) on the web to keep compiler error messages short, but still allow beginners to read an extended version of the error, along with examples (DOs and DONTs). 
 - Transformation phase: If the expression of a variable declaration is incorrect, the variable won't be registered and there will be follow-up errors that may be confusing for a user. There is already code to handle a similar case if the type required of the expression is false. However, the `visitUnary` of the visitor isn't even called when the subtree expression produces compilation errors, so we will have to introduce some other mechanism to the visitor.
 - Warn the user if the result type of an if-else expression is Any. This usually suggests an error on the side of the user.
 
@@ -126,35 +122,24 @@
 
 #### Specification
 
-- Add global constants to the specification.
-- Clear TODOs in documents: expressions, minimum-viable-language, multi-functions, types.
-- Decide what will happen with the technical/multi-functions document.
-- Finish writing the technical/runtime-types document. Also move it to the specification folder directly. scopes.md sets a precedent for supplemental documents in the same folder.
+- Finish writing the `runtime-types` document.
 
 
 #### Testing
 
-- ConstructionSpec: Test SumType.construct.
-- Write additional tests in TypeEncoderSpec: sum types, intersection types, tuple types, function types, shape types, symbol types, named types, complex/nested type combinations containing named types. 
-- Figure out which portions of the compiler and runtime to unit test.
-- We should ideally invest in a system that can test the parts that are replicated in both the compiler and the runtime with the same values. This system should read type relationships from text files and then execute tests. This is crucial because as we discover type system bugs, we should add test cases that cover those bugs. 
+- We should ideally invest in a system that can test the parts that are replicated in both the compiler and the runtime with the same values. This system should read type relationships from text files and then execute tests. This is crucial because as we discover type system bugs, we should add test cases that cover those bugs.
   - Idea: The system can be implemented on the compiler side. It would have two parts: (1) immediately executing the typing tests with the compiler subtyping, equality, and fit functions. (2) Compiling the typing tests to Javascript and using the runtime subtyping, equality, and fit functions. This would allow us to reuse the existing type parser even for the runtime tests and also allow us to parse the custom test format using fastparse. 
-- Ultimately, we will have a two-layer testing approach:
-    1. Unit tests for the most critical components of the runtime and the compiler, especially the type system. Possibly unit tests that test both the compiler and the runtime with the same inputs.
-    2. Functional tests for complete Lore programs that test the compiler as a whole, the runtime as a whole, and Pyramid as a whole.
+  - Such a system is only advisable once we have the compiler written in Lore. Otherwise we're duplicating work which doesn't directly go towards building the compiler in Lore.
 - In the long run, we should build a simple testing framework written in Lore and use it to unit-test Pyramid.
 - Add multiple tests that verify that we correctly handle the negative side of totality constraint verification / abstract functions. This is especially important so that changes to the totality constraint checking algorithm don't accidentally lead to illegal programs not being detected anymore. Use the Scala testing environment for this, because the functional tests are not well suited to testing negative compilation outcomes.
+  - It's debatable whether this should be added to the Scala compiler, or whether we should only implement this once we have written the compiler in Lore.
 
 
 #### Code Quality
 
 ##### Architecture
 
-- `DeclarationResolver.introspectionTypeDeclarations`: We should refrain from keeping Pyramid optional and just add the Type trait to the core definitions. Then the compiler can just discover the trait and generate the correct API call.
 - Rewrite TypeVariableAllocation (compiler) with immutability.
-- Can we split the type inference phase from the transformation phase?
-- Clean up ExpressionTransformationVisitor by moving more functionality to helper objects like ExpressionTransformationHelper.
-  - Reconsider some names, as ExpressionTransformation and StatementTransformation aren't similar in functionality even though their names suggest so.
 - Move errors to a more central location. It should be easy to see which errors a given phase can produce. This may also allow us to merge some errors.
 - Intern declared types as weak references so that they can be reclaimed if no values use the types.
 
@@ -189,6 +174,7 @@
 
 ##### Language Server
 
+- Fix the language server given the recent module feature addition and typechecking changes.
 - Implement the following features:
   - Find usages (LSP: references).
   - Rename symbol (LSP: rename, prepareRename).
