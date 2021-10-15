@@ -52,6 +52,13 @@ The usual syntax for function type parameters in many programming languages is: 
 
 The **annotation syntax** has the advantage that it's clearly separated from the function head, which improves readability. The `@` in front of `where` also helps putting initial visual focus on the function head instead. In contrast, the **inline syntax** is more concise and provides better visual clarity when only one or two type parameters without custom bounds are desired. The inline syntax and annotation syntax cannot be used at the same time.
 
+Because type parameters are assigned from argument types, all type parameters declared with a function must be **contained in at least one parameter type**. Function declarations such as this are illegal:
+
+```
+@where A, B
+func apply_to(a: A): (A => B) => B = f => f(a)
+```
+
 ##### Unnamed Parameters
 
 A **parameter name** may be omitted if it's not used within the function's body. Only the parameter type has to be specified. Unnamed parameters are especially useful for abstract functions, where parameter names are often redundant.

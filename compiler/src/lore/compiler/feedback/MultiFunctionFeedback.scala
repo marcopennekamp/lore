@@ -2,12 +2,18 @@ package lore.compiler.feedback
 
 import lore.compiler.core.Position
 import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
-import lore.compiler.types.Type
+import lore.compiler.types.{Type, TypeVariable}
 
 object MultiFunctionFeedback {
   case class NameTaken(mf: MultiFunctionDefinition) extends Feedback.Error(mf.functions.head) {
     override def message: String = s"The name of the multi-function ${mf.name} is already taken by a module or global" +
       s" variable. Modules, global variables, and multi-functions may not share names."
+  }
+
+  case class TypeParametersMissing(function: FunctionDefinition, missingTypeParameters: Vector[TypeVariable]) extends Feedback.Error(function) {
+    override def message: String = s"The function `${function.name}` declares type parameters which are not part of any" +
+      s" parameter type. These are: ${missingTypeParameters.mkString(", ")}. Type parameters must occur in the type of" +
+      s" at least one parameter."
   }
 
   object Dispatch {

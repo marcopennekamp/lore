@@ -1,0 +1,2 @@
+@where A, B
+func apply_to(a: A): (A => B) => B = f => f(a)

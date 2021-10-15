@@ -1,7 +1,7 @@
 package lore.compiler.constraints
 
 import lore.compiler.feedback.FeedbackExtensions.FilterDuplicatesExtension
-import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
+import lore.compiler.feedback.{Feedback, MemoReporter, MultiFunctionFeedback, Reporter}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature, MultiFunctionDefinition}
 import lore.compiler.types._
@@ -16,6 +16,7 @@ object MultiFunctionConstraints {
     *   2. Abstractness constraints for each function.
     *   3. Return constraints for each function.
     *   4. A child function's output type is a subtype of its parent function's output type.
+    *   5. All type parameters of each function are contained in their respective parameter types.
     *
     * Note that uniqueness of input types is already checked by the DeclarationResolver.
     */
@@ -24,6 +25,7 @@ object MultiFunctionConstraints {
     verifyAbstractness(mf)
     verifyOutputTypes(mf)
     verifyReturnConstraints(mf)
+    verifyTypeParameters(mf)
   }
 
   /**
@@ -221,6 +223,21 @@ object MultiFunctionConstraints {
     */
   private def verifyReturnConstraints(mf: MultiFunctionDefinition)(implicit reporter: Reporter): Unit = {
     mf.functions.flatMap(_.bodyNode).foreach(ReturnConstraints.verify)
+  }
+
+  /**
+    * Verifies that the type parameters of each function are contained in their parameter types.
+    */
+  private def verifyTypeParameters(mf: MultiFunctionDefinition)(implicit reporter: Reporter): Unit = {
+    mf.functions.foreach { function =>
+      // We're purposefully keeping the signature's type parameters as a vector so that the order of the missing type
+      // parameters is preserved for the error message.
+      val inputTypeParameters = Type.variables(function.signature.inputType)
+      val missingTypeParameters = function.signature.typeParameters.filter(tv => !inputTypeParameters.contains(tv))
+      if (missingTypeParameters.nonEmpty) {
+        reporter.error(MultiFunctionFeedback.TypeParametersMissing(function, missingTypeParameters))
+      }
+    }
   }
 
 }
