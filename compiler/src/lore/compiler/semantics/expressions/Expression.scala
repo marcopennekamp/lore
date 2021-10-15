@@ -152,19 +152,12 @@ object Expression {
 
   /**
     * A list's element type is fully informed by the types of its elements.
-    *
-    * TODO (inference): There are cases where a list `[Cat | Dog | Octopus]` would be better typed as `[Animal]`, but
-    *                   we'll avoid this application of a sum type join for now. It's quite a slippery slope and mostly
-    *                   interesting for performance reasons.
     */
   case class ListConstruction(values: Vector[Expression], position: Position) extends Expression {
     val elementType: Type = SumType.construct(values.map(_.tpe))
     override val tpe: Type = ListType(elementType)
   }
 
-  /**
-    * TODO (inference): The same point about sum type joins as with [[ListConstruction]] applies here as well.
-    */
   case class MapConstruction(entries: Vector[MapEntry], position: Position) extends Expression {
     val keyType: Type = SumType.construct(entries.map(_.key.tpe))
     val valueType: Type = SumType.construct(entries.map(_.value.tpe))
