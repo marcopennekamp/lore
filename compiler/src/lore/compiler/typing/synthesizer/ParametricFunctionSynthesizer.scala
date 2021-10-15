@@ -139,10 +139,6 @@ object ParametricFunctionSynthesizer {
   }
 
   private def checkUntypedArgument(argument: Expression, parameterType: Type, assignments: Assignments)(implicit checker: Checker, reporter: Reporter): Option[Assignments] = {
-    // TODO (inference): For a call `Enum.map` and its second argument, the candidate instantiation would probably
-    //                   result in `Int => Nothing`, because the lower bound is preferred. This has to be `Int => Any`.
-    //                   Similarly, for contravariant types, the instantiation also has to instantiate the smart
-    //                   default, namely `Nothing`, such as in `Nothing => Int`.
     checker.attempt(argument, InferenceVariable.instantiateCandidate(parameterType, assignments), assignments)._1.flatMap { assignments2 =>
       Unification.unifyFits(InferenceVariable.instantiateCandidate(argument.tpe, assignments2), parameterType, assignments2)
     }

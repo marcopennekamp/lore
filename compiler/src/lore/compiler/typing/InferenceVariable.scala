@@ -154,15 +154,24 @@ object InferenceVariable {
     * Instantiates all inference variables in `tpe` with the respective bound.
     */
   def instantiateByBound(tpe: Type, boundType: BoundType, assignments: Assignments): Type = {
-    instantiate(tpe, boundType, (bounds, boundType2) => bounds.get(boundType2), assignments)
+    instantiate(tpe, boundType, assignments)((bounds, boundType2) => bounds.get(boundType2))
   }
 
   /**
     * Instantiates all inference variables in `tpe` with their candidate types.
     */
   def instantiateCandidate(tpe: Type, assignments: Assignments): Type = {
-    // Note that the bound type is unimportant and just a dummy value here.
-    instantiate(tpe, BoundType.Lower, (bounds, _) => bounds.candidateType, assignments)
+    // Note that the bound type determines whether the candidate type is instantiated with a default of Nothing or Any,
+    // if an inference variable doesn't have a candidate type.
+    instantiate(tpe, BoundType.Upper, assignments) {
+      (bounds, boundType) => bounds.candidateType match {
+        case Some(candidateType) => candidateType
+        case None => boundType match {
+          case BoundType.Lower => BasicType.Nothing
+          case BoundType.Upper => BasicType.Any
+        }
+      }
+    }
   }
 
   /**
@@ -184,15 +193,15 @@ object InferenceVariable {
     * account. Contravariant types flip the bound type relationship, because their upper bounds effectively relate to
     * the lower bound of inference variables and vice versa.
     */
-  def instantiate(tpe: Type, boundType: BoundType, get: (InferenceBounds, BoundType) => Type, assignments: Assignments): Type = {
+  private def instantiate(tpe: Type, boundType: BoundType, assignments: Assignments)(get: (InferenceBounds, BoundType) => Type): Type = {
     // `instantiate` may be called with simple types quite often. We want to avoid reconstructing types (with all the
     // required allocations) in such cases.
     if (isFullyInstantiated(tpe)) {
       return tpe
     }
 
-    val rec = (t: Type) => instantiate(t, boundType, get, assignments)
-    val recContravariant = (t: Type) => instantiate(t, BoundType.flip(boundType), get, assignments)
+    val rec = (t: Type) => instantiate(t, boundType, assignments)(get: (InferenceBounds, BoundType) => Type)
+    val recContravariant = (t: Type) => instantiate(t, BoundType.flip(boundType), assignments)(get)
     tpe match {
       case iv: InferenceVariable => get(InferenceVariable.getBounds(iv, assignments), boundType)
       case SumType(types) => SumType.construct(types.map(rec))

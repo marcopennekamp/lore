@@ -10,10 +10,10 @@ case class InferenceBounds(variable: InferenceVariable, lower: Type, upper: Type
     * be the lower bound of the inference variable (representing the narrowest possible type), but may also be the
     * upper bound if the variable's lower bound cannot be inferred.
     */
-  val candidateType: Type = {
-    if (lower != BasicType.Nothing) lower
-    else if (upper != BasicType.Any) upper
-    else BasicType.Any // TODO: Shouldn't this be Nothing since we're favoring the lower bound now?
+  val candidateType: Option[Type] = {
+    if (lower != BasicType.Nothing) Some(lower)
+    else if (upper != BasicType.Any) Some(upper)
+    else None
   }
 
   /**
