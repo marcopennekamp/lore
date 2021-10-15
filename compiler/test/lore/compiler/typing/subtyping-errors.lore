@@ -1,0 +1,37 @@
+trait A
+struct B extends A
+  mut name: String
+end
+
+// Illegal: `shape.prop` has the illegal type A. Expected: B.
+func test(): Unit = do
+  let shape: %{ prop: A } = %{ prop: B('') }
+  let result: B = shape.prop
+end
+
+func pi(): Real = 3.14
+
+// Illegal: 5.5 has the illegal type Real. Expected: Int.
+act test2() do
+  let number: Int = 5.5
+end
+
+// Illegal: `test()` has the illegal type Unit. Expected: Real.
+func test3(): Real = do
+  15 + test()
+end
+
+// Illegal: `pi()` has the illegal type Real. Expected: String.
+func test4(): A = do
+  let b = B('')
+  b.name = pi()
+  b
+end
+
+func increment(number: Int): Real = number + 1.5
+
+func test5(): %{ number: Int } = do
+  // Illegal: `increment(2)` has the illegal type Real. Expected: Int.
+  let abc: %{ number: Int } = %{ number: increment(2) }
+  abc
+end
