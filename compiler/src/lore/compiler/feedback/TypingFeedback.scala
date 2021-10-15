@@ -68,6 +68,13 @@ object TypingFeedback {
     }
   }
 
+  object Tuples {
+    case class IncorrectLength(expression: Expression.Tuple, expectedType: TupleType) extends Feedback.Error(expression) {
+      override def message: String = s"The tuple has ${expression.values.length} elements, but the expected tuple type" +
+        s" $expectedType requires ${expectedType.elements.length} elements."
+    }
+  }
+
   object Lists {
     case class ListExpected(expression: Expression.BinaryOperation, actualType: Type) extends Feedback.Error(expression) {
       override def message: String = s"You can only append elements to lists. The type $actualType is not a list."

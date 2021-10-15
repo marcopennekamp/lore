@@ -85,13 +85,16 @@ case class Checker(returnType: Type) {
           .flatMap(check(expressions.last, effectiveExpectedType, _))
           .flatMap(assignBlockType(block, Some(expectedType), _))
 
-      case Expression.Tuple(values, _) =>
-        // TODO (inference): One of the best things about bidirectional typechecking is that it can produce very
-        //                   good errors. Instead of reporting `(a, b) is not a subtype of (a, b, c)`, we could
-        //                   report `(a, b) is a tuple with 2 elements and thus cannot be a subtype of a tuple
-        //                   (a, b, c) with 3 elements.`
+      case expression@Expression.Tuple(values, _) =>
         expectedType match {
-          case TupleType(elements) if elements.length == values.length => check(values, elements, assignments)
+          case expectedType@TupleType(elements)  =>
+            if (elements.length == values.length) {
+              check(values, elements, assignments)
+            } else {
+              reporter.report(TypingFeedback.Tuples.IncorrectLength(expression, expectedType))
+              None
+            }
+
           case _ => fallback
         }
 
