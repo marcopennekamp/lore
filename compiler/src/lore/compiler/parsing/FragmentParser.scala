@@ -147,7 +147,7 @@ class FragmentParser(implicit fragment: Fragment) {
     def named = P(name ~ typeParser.typing).map { case (name, tpe) => (Option(name), tpe) }
     def unnamed = P(typeExpression).map(tpe => (Option.empty, tpe))
 
-    P(Index ~ (named | unnamed) ~ Index)
+    P(Index ~~ (named | unnamed) ~~ Index)
       .map { case (startIndex, (name, tpe), endIndex) => (startIndex, name, tpe, endIndex) }
       .map(withPosition(DeclNode.ParameterNode))
   }
@@ -183,7 +183,7 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def `trait`[_: P]: P[DeclNode.TraitNode] = {
-    P(Index ~ "trait" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(typeParameterParser.traitParameter) ~ `extends` ~ Index).map(withPosition(DeclNode.TraitNode))
+    P(Index ~~ "trait" ~~ Space.WS1 ~/ typeName ~~ Space.WS ~~ typeVariables(typeParameterParser.traitParameter) ~ `extends` ~~ Index).map(withPosition(DeclNode.TraitNode))
   }
 
   /**
@@ -257,7 +257,7 @@ class FragmentParser(implicit fragment: Fragment) {
   }
 
   private def property[_: P]: P[DeclNode.PropertyNode] = {
-    P(Index ~ ("open" ~~ Space.WS1).!.?.map(_.isDefined) ~ ("mut" ~~ Space.WS1).!.?.map(_.isDefined) ~ name ~ typeParser.typing ~ defaultValue.? ~ Index)
+    P(Index ~~ ("open" ~~ Space.WS1).!.?.map(_.isDefined) ~ ("mut" ~~ Space.WS1).!.?.map(_.isDefined) ~ name ~ typeParser.typing ~ defaultValue.? ~~ Index)
       .map { case (startIndex, isOpen, isMutable, name, tpe, defaultValue, endIndex) => (startIndex, name, tpe, isOpen, isMutable, defaultValue, endIndex) }
       .map(withPosition(DeclNode.PropertyNode))
   }

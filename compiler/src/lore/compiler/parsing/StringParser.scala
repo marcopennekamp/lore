@@ -33,7 +33,7 @@ class StringParser(nameParser: NameParser, expressionParser: ExpressionParser)(i
   }
 
   private def stringBase[_: P](part: => P[ExprNode]): P[ExprNode] = {
-    P(Index ~ "'" ~ part.rep.map(_.toVector) ~ "'" ~ Index).map {
+    P(Index ~~ "'" ~ part.rep.map(_.toVector) ~ "'" ~~ Index).map {
       case (startIndex, Vector(), endIndex) => ExprNode.StringLiteralNode("", Position(fragment, startIndex, endIndex))
       // This can either be a single string literal or any expression enclosed as such: '$expr'.
       case (startIndex, Vector(expression), endIndex) => expression match {
@@ -60,9 +60,9 @@ class StringParser(nameParser: NameParser, expressionParser: ExpressionParser)(i
   /**
     * This parser attempts to shove as many characters into StringLiteralNode as possible.
     */
-  private def notStringEnd[_: P]: P[StringLiteralNode] = P(Index ~ (!CharIn("\n'") ~ AnyChar).! ~ Index).map(withPosition(ExprNode.StringLiteralNode))
+  private def notStringEnd[_: P]: P[StringLiteralNode] = P(Index ~~ (!CharIn("\n'") ~ AnyChar).! ~~ Index).map(withPosition(ExprNode.StringLiteralNode))
 
-  private def content[_: P]: P[StringLiteralNode] = P(Index ~ (chars | escape).rep(1) ~ Index)
+  private def content[_: P]: P[StringLiteralNode] = P(Index ~~ (chars | escape).rep(1) ~~ Index)
     .map { case (startIndex, strings, endIndex) => (startIndex, strings.foldLeft("")(_ + _), endIndex) }
     .map(withPosition(ExprNode.StringLiteralNode))
 
@@ -70,7 +70,7 @@ class StringParser(nameParser: NameParser, expressionParser: ExpressionParser)(i
     // Strings are sensitive to whitespace.
     import fastparse.NoWhitespace._
 
-    def simple = P(Index ~ name ~ Index)
+    def simple = P(Index ~~ name ~~ Index)
       .map { case (startIndex, nameNode, endIndex) => (startIndex, NamePathNode(nameNode), endIndex) }
       .map(withPosition(ExprNode.VariableNode))
     def block = P("{" ~ NoCut(expression) ~ "}")
