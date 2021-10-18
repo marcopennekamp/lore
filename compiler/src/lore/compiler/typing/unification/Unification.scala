@@ -2,7 +2,9 @@ package lore.compiler.typing.unification
 
 import lore.compiler.types._
 import lore.compiler.typing.InferenceBounds.BoundType
+import lore.compiler.typing.InferenceVariable
 import lore.compiler.typing.InferenceVariable.Assignments
+import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 object Unification {
 
@@ -47,6 +49,32 @@ object Unification {
 
   def unifyFits(ts1: Vector[Type], ts2: Vector[Type], assignments: Assignments): Option[Assignments] = {
     unifyFits(TupleType(ts1), TupleType(ts2), assignments)
+  }
+
+  /**
+    * For the given `typeVariables` and their representation as inference variables via `typeVariableAssignments`, this
+    * function unifies the current assignments of each inference variable with the bounds of its respective type
+    * variable.
+    */
+  def unifyTypeVariableBounds(
+    typeVariables: Vector[TypeVariable],
+    typeVariableAssignments: Map[TypeVariable, InferenceVariable],
+    assignments: Assignments,
+  ): Option[Assignments] = {
+    typeVariables.foldSome(assignments) {
+      case (assignments2, tv) => handleTypeVariableBounds(tv, typeVariableAssignments, assignments2)
+    }
+  }
+
+  private def handleTypeVariableBounds(tv: TypeVariable, typeVariableAssignments: Map[TypeVariable, InferenceVariable], assignments: Assignments): Option[Assignments] = {
+    val assignments2 = if (tv.lowerBound != BasicType.Nothing) {
+      Unification.unifySubtypes(Type.substitute(tv.lowerBound, typeVariableAssignments), typeVariableAssignments(tv), assignments)
+        .getOrElse(return None)
+    } else assignments
+
+    if (tv.upperBound != BasicType.Any) {
+      Unification.unifySubtypes(typeVariableAssignments(tv), Type.substitute(tv.upperBound, typeVariableAssignments), assignments2)
+    } else Some(assignments2)
   }
 
 }

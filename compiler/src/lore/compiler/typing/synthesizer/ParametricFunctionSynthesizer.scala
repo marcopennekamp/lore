@@ -83,7 +83,7 @@ object ParametricFunctionSynthesizer {
       //     function, we have to assign `B >: Int`, which is possible due to the bound `B >: A`. This is why we're
       //     processing bounds here.
       //     We will have to repeat this process each time a new argument has been
-      handleTypeVariableBounds(typeParameters, typeParameterAssignments, assignments2).getOrElse {
+      Unification.unifyTypeVariableBounds(typeParameters, typeParameterAssignments, assignments2).getOrElse {
         return None
       }
     } else assignments
@@ -107,27 +107,6 @@ object ParametricFunctionSynthesizer {
     Some(instantiateResult(arguments.map(_.tpe), typeParameterAssignments, assignments4))
   }
 
-  private def handleTypeVariableBounds(
-    typeParameters: Vector[TypeVariable],
-    typeParameterAssignments: Map[TypeVariable, InferenceVariable],
-    assignments: Assignments,
-  ): Option[Assignments] = {
-    typeParameters.foldSome(assignments) {
-      case (assignments2, tv) => handleTypeVariableBounds(tv, typeParameterAssignments, assignments2)
-    }
-  }
-
-  private def handleTypeVariableBounds(tv: TypeVariable, typeVariableAssignments: Map[TypeVariable, InferenceVariable], assignments: Assignments): Option[Assignments] = {
-    val assignments2 = if (tv.lowerBound != BasicType.Nothing) {
-      Unification.unifySubtypes(Type.substitute(tv.lowerBound, typeVariableAssignments), typeVariableAssignments(tv), assignments)
-        .getOrElse(return None)
-    } else assignments
-
-    if (tv.upperBound != BasicType.Any) {
-      Unification.unifySubtypes(typeVariableAssignments(tv), Type.substitute(tv.upperBound, typeVariableAssignments), assignments2)
-    } else Some(assignments2)
-  }
-
   private def handleUntypedArgument(
     argument: Expression,
     parameterType: Type,
@@ -146,7 +125,7 @@ object ParametricFunctionSynthesizer {
         // inference variables if it doesn't.
         if (typeParameters.nonEmpty) {
           Unification.unifyFits(InferenceVariable.instantiateCandidate(argument.tpe, assignments2), parameterType, assignments2)
-            .flatMap(handleTypeVariableBounds(typeParameters, typeParameterAssignments, _))
+            .flatMap(Unification.unifyTypeVariableBounds(typeParameters, typeParameterAssignments, _))
         } else Some(assignments2)
       }
     }
@@ -177,7 +156,7 @@ object ParametricFunctionSynthesizer {
     val (typeParameterAssignments, parameterTypes) = prepareParameterTypes(signature)
     for {
       assignments2 <- Unification.unifyFits(argumentTypes, parameterTypes, assignments)
-      assignments3 <- handleTypeVariableBounds(signature.typeParameters, typeParameterAssignments, assignments2)
+      assignments3 <- Unification.unifyTypeVariableBounds(signature.typeParameters, typeParameterAssignments, assignments2)
       candidate = instantiateResult(argumentTypes, typeParameterAssignments, assignments3)
     } yield (candidate.typeParameterAssignments, candidate.assignments)
   }
