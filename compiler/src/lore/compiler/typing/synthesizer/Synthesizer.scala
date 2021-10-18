@@ -50,16 +50,12 @@ object Synthesizer {
       case expression@Expression.UnresolvedMemberAccess(instance, name, memberInferenceVariable, _) =>
         infer(instance, assignments).flatMap { assignments2 =>
           val instanceType = InferenceVariable.instantiateCandidate(instance, assignments2)
-          val memberType = instanceType.member(name) match {
-            case Some(member) => member.tpe
+          instanceType.member(name) match {
+            case Some(member) => InferenceVariable.assign(memberInferenceVariable, member.tpe, assignments2)
             case None =>
               reporter.report(TypingFeedback.Members.NotFound(expression, instanceType))
-              BasicType.Nothing
+              None
           }
-
-          // We must assign the member's type to the inference variable, which may be part of types of other
-          // expressions, regardless of whether the member type itself can be inferred.
-          InferenceVariable.assign(memberInferenceVariable, memberType, assignments2)
         }
 
       case Expression.Literal(_, _, _) => Some(assignments)
