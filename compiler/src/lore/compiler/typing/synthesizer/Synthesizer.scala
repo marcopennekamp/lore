@@ -174,11 +174,6 @@ object Synthesizer {
       case expression@Expression.Call(target, arguments, tpe, _) =>
         target match {
           case CallTarget.Value(target) =>
-            // TODO (inference): We can technically `check` the `target` here with the types of the arguments. This
-            //                   complicates things, however, as most of the time we want to infer an argument's actual
-            //                   type from the target's function type. So we'd first have to try to infer the
-            //                   arguments, if everything can be inferred `check` the `target`, and if they cannot be
-            //                   inferred, `infer` `target` instead.
             infer(target, assignments).flatMap { targetAssignments =>
               val argumentsResult = InferenceVariable.instantiateCandidate(target, targetAssignments) match {
                 case FunctionType(input, output) =>

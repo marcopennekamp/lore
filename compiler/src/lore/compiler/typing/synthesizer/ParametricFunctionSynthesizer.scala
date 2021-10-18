@@ -65,44 +65,34 @@ object ParametricFunctionSynthesizer {
     knownArgumentTypes: KnownArgumentTypes,
     assignments: Assignments,
   )(implicit checker: Checker, reporter: Reporter): Option[ArgumentCandidate] = {
-    // TODO (inference): If the function doesn't have type variables, we can simply skip all type variable handling and
-    //                   go straight to checking (step 3).
+    // If the function doesn't have type parameters, we can skip all type parameter handling and go straight to step 3.
+    val assignments3 = if (typeParameters.nonEmpty) {
+      // (1) Build a working understanding of type variables from the already inferred argument types.
+      val (certainArgumentTypes, certainParameterTypes) = knownArgumentTypes.zip(parameterTypes).flatMap {
+        case (Some(argumentType), parameterType) => Some((argumentType, parameterType))
+        case (None, _) => None
+      }.unzip
 
-    // (1) Build a working understanding of type variables from the already inferred argument types.
-    val (certainArgumentTypes, certainParameterTypes) = knownArgumentTypes.zip(parameterTypes).flatMap {
-      case (Some(argumentType), parameterType) => Some((argumentType, parameterType))
-      case (None, _) => None
-    }.unzip
+      val assignments2 = Unification.unifyFits(certainArgumentTypes, certainParameterTypes, assignments).getOrElse {
+        return None
+      }
 
-    val assignments2 = Unification.unifyFits(certainArgumentTypes, certainParameterTypes, assignments).getOrElse {
-      return None
-    }
-
-    // (2) Now that we've assigned the known types to some or all of the function's type parameters, we can narrow
-    //     bounds from left to right. For example, if we have a function call `Enum.map([1, 2, 3], x => x + 1)`, we
-    //     know that `A = Int`, but the second parameter is typed as `B => C`. To properly `check` the anonymous
-    //     function, we have to assign `B >: Int`, which is possible due to the bound `B >: A`. This is why we're
-    //     processing bounds here.
-    //     We will have to repeat this process each time a new argument has been
-    val assignments3 = handleTypeVariableBounds(typeParameters, typeParameterAssignments, assignments2).getOrElse {
-      return None
-    }
+      // (2) Now that we've assigned the known types to some or all of the function's type parameters, we can narrow
+      //     bounds from left to right. For example, if we have a function call `Enum.map([1, 2, 3], x => x + 1)`, we
+      //     know that `A = Int`, but the second parameter is typed as `B => C`. To properly `check` the anonymous
+      //     function, we have to assign `B >: Int`, which is possible due to the bound `B >: A`. This is why we're
+      //     processing bounds here.
+      //     We will have to repeat this process each time a new argument has been
+      handleTypeVariableBounds(typeParameters, typeParameterAssignments, assignments2).getOrElse {
+        return None
+      }
+    } else assignments
 
     // (3) With maximum type variable information at hand, we can `check` the untyped arguments from left to right.
     //     In the process, we have to attempt unification for each newly typed argument to further narrow down the type
     //     arguments, and also bounds processing to allow changes in type variable assignments to carry across bounds.
     val assignments4 = knownArgumentTypes.zip(arguments).zip(parameterTypes).foldSome(assignments3) {
-      case (innerAssignments, ((None, argument), parameterType)) =>
-        Typing.logger.whenTraceEnabled {
-          val parameterTypeCandidate = InferenceVariable.instantiateCandidate(parameterType, innerAssignments)
-          Typing.logger.trace(s"Check untyped argument `${argument.position.truncatedCode}` with parameter type `$parameterTypeCandidate`:")
-        }
-
-        Typing.indentationLogger.indented {
-          checkUntypedArgument(argument, parameterType, innerAssignments)
-            .flatMap(handleTypeVariableBounds(typeParameters, typeParameterAssignments, _))
-        }
-
+      case (innerAssignments, ((None, argument), parameterType)) => handleUntypedArgument(argument, parameterType, typeParameters, typeParameterAssignments, innerAssignments)
       case (innerAssignments, ((Some(_), _), _)) => Some(innerAssignments)
     }.getOrElse {
       return None
@@ -138,9 +128,27 @@ object ParametricFunctionSynthesizer {
     } else Some(assignments2)
   }
 
-  private def checkUntypedArgument(argument: Expression, parameterType: Type, assignments: Assignments)(implicit checker: Checker, reporter: Reporter): Option[Assignments] = {
-    checker.attempt(argument, InferenceVariable.instantiateCandidate(parameterType, assignments), assignments)._1.flatMap { assignments2 =>
-      Unification.unifyFits(InferenceVariable.instantiateCandidate(argument.tpe, assignments2), parameterType, assignments2)
+  private def handleUntypedArgument(
+    argument: Expression,
+    parameterType: Type,
+    typeParameters: Vector[TypeVariable],
+    typeParameterAssignments: Map[TypeVariable, InferenceVariable],
+    assignments: Assignments,
+  )(implicit checker: Checker, reporter: Reporter): Option[Assignments] = {
+    Typing.logger.whenTraceEnabled {
+      val parameterTypeCandidate = InferenceVariable.instantiateCandidate(parameterType, assignments)
+      Typing.logger.trace(s"Check untyped argument `${argument.position.truncatedCode}` with parameter type `$parameterTypeCandidate`:")
+    }
+
+    Typing.indentationLogger.indented {
+      checker.attempt(argument, InferenceVariable.instantiateCandidate(parameterType, assignments), assignments)._1.flatMap { assignments2 =>
+        // `unifyFits` only makes sense when the function has type parameters, as the parameter type won't contain any
+        // inference variables if it doesn't.
+        if (typeParameters.nonEmpty) {
+          Unification.unifyFits(InferenceVariable.instantiateCandidate(argument.tpe, assignments2), parameterType, assignments2)
+            .flatMap(handleTypeVariableBounds(typeParameters, typeParameterAssignments, _))
+        } else Some(assignments2)
+      }
     }
   }
 
