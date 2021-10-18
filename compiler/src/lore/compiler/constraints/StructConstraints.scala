@@ -92,8 +92,8 @@ object StructConstraints {
   }
 
   /**
-    * Whether the given type parameter is contained in `tpe` exactly once and in a way that allows a
-    * [[lore.compiler.types.TypeVariableAllocation]] to assign a type to the type parameter deterministically.
+    * Whether the given type parameter is contained in `tpe` exactly once, and in a way that allows a run-time type
+    * variable allocation to assign a type to the type parameter deterministically.
     */
   private def isUniquelyDeducible(typeParameter: TypeVariable, tpe: Type): Boolean = {
     // Counts the occurrences of `typeParameter` in the given subterm. If a sum or intersection type contains an

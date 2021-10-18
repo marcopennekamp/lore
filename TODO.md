@@ -86,7 +86,7 @@
 - Reintroduce a "least upper bound"/join for complex sum types for select expressions, such as list and map constructions.
 - Merge Real and Int into a Number type (named Number or something similar). There is no advantage in keeping these two apart when the underlying runtime system has only one numeric type. The subtyping relationship `Int <: Real` is awkward as well.
 - Turn map keys and values into covariant/contravariant type variables if possible.
-- Support intersection and sum types in TypeVariableAllocation.
+- Support intersection and sum types in subtyping/equality unification.
 - We could theoretically introduce a limited form of ambiguity analysis at compile-time: For each function `f(a: A, b: B, ...)`, get a list of possible subtypes (mostly trait subtypes) and simulate dispatch with these types. If any of the inputs result in an ambiguity, raise at least a warning.
 
 ##### CLI
@@ -139,7 +139,6 @@
 
 ##### Architecture
 
-- Rewrite TypeVariableAllocation (compiler) with immutability.
 - Move errors to a more central location. It should be easy to see which errors a given phase can produce. This may also allow us to merge some errors.
 - Intern declared types as weak references so that they can be reclaimed if no values use the types.
 

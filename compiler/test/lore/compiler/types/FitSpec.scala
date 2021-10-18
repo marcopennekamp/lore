@@ -73,10 +73,6 @@ class FitSpec extends TypeSpec {
       Box2D fitsNotInto T3D
     }
     { val A = typeVariable("A")
-      // TODO: The test with B currently does not work. See the TODO in TypeVariableAllocation.of.
-      //val B = typeVariable("B", upperBound = ListType(A))
-      //Zoo fitsInto ShapeType("animals" -> B)
-
       Zoo fitsInto ShapeType("animals" -> ListType(A))
     }
   }

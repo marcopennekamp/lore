@@ -196,7 +196,7 @@ object MultiFunctionConstraints {
     * the same type.
     *
     * TODO: This is yet a bit more complicated when the return type of the child function is inferred via the
-    *       type variable allocation. See [[lore.compiler.types.TypeVariableAllocation.of]] with the genericListify
+    *       type variable allocation. See [[lore.compiler.types.Fit.assignments]] with the genericListify
     *       example.
     */
   private def verifyOutputTypes(mf: MultiFunctionDefinition)(implicit reporter: Reporter): Unit = {

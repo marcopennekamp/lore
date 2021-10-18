@@ -3,7 +3,7 @@ package lore.compiler.typing.synthesizer
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionSignature
-import lore.compiler.types.{BasicType, TupleType, Type, TypeVariable}
+import lore.compiler.types.{TupleType, Type, TypeVariable}
 import lore.compiler.typing.InferenceVariable.Assignments
 import lore.compiler.typing.checker.Checker
 import lore.compiler.typing.unification.Unification
@@ -43,9 +43,11 @@ object ParametricFunctionSynthesizer {
     * Replaces any type variables in `signature` with inference variables, preparing the signature for inference.
     */
   def prepareParameterTypes(signature: FunctionSignature): (Map[TypeVariable, InferenceVariable], Vector[Type]) = {
-    val typeParameterAssignments = signature.typeParameters.map(tv => (tv, new InferenceVariable)).toMap
-    val parameterTypes = signature.parameters.map(parameter => Type.substitute(parameter.tpe, typeParameterAssignments))
-    (typeParameterAssignments, parameterTypes)
+    val (parameterType, typeParameterAssignments) = InferenceVariable.fromTypeVariables(
+      TupleType(signature.parameters.map(_.tpe)),
+      signature.typeParameters
+    )
+    (typeParameterAssignments,parameterType.asInstanceOf[TupleType].elements)
   }
 
   case class ArgumentCandidate(tpe: TupleType, typeParameterAssignments: TypeVariable.Assignments, assignments: Assignments)

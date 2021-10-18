@@ -147,6 +147,16 @@ object InferenceVariable {
   }
 
   /**
+    * Substitutes in `tpe` all type variables from `typeVariables` with inference variables, returning the result type
+    * and a type variable assignments map.
+    */
+  def fromTypeVariables(tpe: Type, typeVariables: Vector[TypeVariable]): (Type, Map[TypeVariable, InferenceVariable]) = {
+    val typeVariableAssignments = typeVariables.map(tv => (tv, new InferenceVariable)).toMap
+    val resultType = Type.substitute(tpe, typeVariableAssignments)
+    (resultType, typeVariableAssignments)
+  }
+
+  /**
     * Instantiates all inference variables in `tpe` with the respective bound.
     */
   def instantiateByBound(tpe: Type, boundType: BoundType, assignments: Assignments): Type = {
