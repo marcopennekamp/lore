@@ -1,14 +1,15 @@
 package lore.compiler.typing.checker
 
-import lore.compiler.feedback.{MultiFunctionFeedback, Reporter, TypingFeedback}
+import lore.compiler.feedback.{Feedback, MemoReporter, MultiFunctionFeedback, Reporter, TypingFeedback}
 import lore.compiler.semantics.expressions.Expression
-import lore.compiler.semantics.functions.MultiFunctionDefinition
+import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefinition}
 import lore.compiler.types.{TupleType, Type}
 import lore.compiler.typing.InferenceVariable.Assignments
 import lore.compiler.typing.{InferenceVariable, Typing}
 import lore.compiler.typing.synthesizer.ParametricFunctionSynthesizer
-import lore.compiler.typing.synthesizer.ParametricFunctionSynthesizer.ArgumentCandidate
+import lore.compiler.typing.synthesizer.ParametricFunctionSynthesizer.{ArgumentCandidate, KnownArgumentTypes}
 import lore.compiler.typing.unification.Unification
+import lore.compiler.utils.CollectionExtensions.OptionVectorExtension
 
 object MultiFunctionCallChecker {
 
@@ -47,64 +48,84 @@ object MultiFunctionCallChecker {
     expectedType: Option[Type],
     assignments: Assignments,
   )(implicit checker: Checker, reporter: Reporter): Option[Assignments] = {
-    // TODO (inference): Error reporting currently sucks. If we have a call `Enum.map(list, v => ...)` and something is
-    //                   wrong inside the anonymous function, the error will simply be swallowed and the user gets a
-    //                   generic "empty fit" error. Obviously it's not so easy to pass through the right errors if
-    //                   there are multiple function candidates. But if there is only one candidate, we can easily just
-    //                   pass through the errors instead of reporting the "empty fit" error. This just requires making
-    //                   ParametricFunctionSynthesizer return these errors for failed argument candidates. Inside of
-    //                   it, we have to make `checker.attempt` in `checkUntypedArgument` return its errors and then
-    //                   return them.
     val modeLabel = expectedType.map(_ => "Checking").getOrElse("Inference")
     val expectedTypeInfo = expectedType.map(t => s" with expected output type `$t`").getOrElse("")
     Typing.logger.trace(s"$modeLabel of multi-function call `${expression.position.truncatedCode}`$expectedTypeInfo:")
     Typing.indentationLogger.indented {
       // Step 1: Try to infer as many argument types as possible.
-      // TODO (inference): If all argument types can be inferred trivially, we can simply perform dispatch and call it a
-      //                   day. This should significantly improve type checking performance.
       val (knownArgumentTypes, assignments2) = ParametricFunctionSynthesizer.preprocessArguments(expression.arguments, assignments)
 
-      // Step 2: Pre-filter all function candidates by arity.
-      // TODO (inference): Would it be possible to filter by input type as well? Using `Nothing` for unknown argument
-      //                   types would usually work, unless a type parameter has a lower bound. This complicates things,
-      //                   but may ultimately be resolvable.
-      val functionCandidates = mf.functions.filter(_.signature.arity == expression.arguments.length)
-
-      // Step 3: Handle each function candidate by inferring an argument type from it.
-      val argumentCandidates = functionCandidates.flatMap {
-        function =>
-          val (typeParameterAssignments, parameterTypes) = ParametricFunctionSynthesizer.prepareParameterTypes(function.signature)
-
-          // As mentioned in the documentation comment, if we have an expected (output) type, we can unify this type
-          // with the candidate's output type to potentially assign type arguments right away.
-          // TODO: Because sum/intersection type unification cannot be resolved yet, we can't rule out that the
-          //       candidate can't be chosen if the unification fails, here. If that is resolved, there's a good chance
-          //       that we can optimize here: if the output type and expected types cannot be unified, the
-          //       multi-function cannot be chosen.
-          val outputTypeAssignments = expectedType match {
-            case Some(expectedType) =>
-              val outputType = Type.substitute(function.signature.outputType, typeParameterAssignments)
-              Unification.unifySubtypes(outputType, expectedType, assignments2)
-                .getOrElse(assignments2)
-
-            case None => assignments2
-          }
-
-          ParametricFunctionSynthesizer.inferArgumentTypes(
-            function.signature.typeParameters,
-            typeParameterAssignments,
-            parameterTypes,
-            expression.arguments,
-            knownArgumentTypes,
-            outputTypeAssignments,
-          )
+      // If all argument types were inferred, we can simply perform dispatch.
+      knownArgumentTypes.sequence.foreach { argumentTypes =>
+        Typing.indentationLogger.dedent()
+        return handleDispatch(mf, expression, TupleType(argumentTypes), assignments2)
       }
 
-      // Step 4: Choose the most specific resulting arguments type and perform dispatch with it, assigning the result
-      //         type of the function call on success.
-      chooseArgumentCandidate(mf, expression, argumentCandidates, assignments2)
-        .flatMap(handleDispatch(mf, expression, _))
+      // Step 2: Pre-filter all function candidates by arity.
+      // TODO: Would it be possible to filter by input type as well? Using `Nothing` for unknown argument types would
+      //       usually work, unless a type parameter has a lower bound. This complicates things, but may ultimately be
+      //       resolvable. This is also necessary to improve error reports for "sole candidate" calls.
+      val functionCandidates = mf.functions.filter(_.signature.arity == expression.arguments.length)
+
+      // Step 3: Handle each function candidate by inferring an argument type from it. If there is only one function
+      //         candidate, we can improve error reporting by passing through any errors which occur in the arguments.
+      //         If there are multiple function candidates, we cannot differentiate between a genuine type error inside
+      //         an argument and a function candidate which does not work with the argument, so there we must default
+      //         to an empty fit error.
+      if (functionCandidates.length == 1) {
+        val (argumentCandidate, feedback) = handleFunctionCandidate(functionCandidates.head, expression, knownArgumentTypes, expectedType, assignments2)
+        reporter.report(feedback)
+
+        // Step 4: Perform dispatch with the argument type, assigning the result type of the function call on success.
+        argumentCandidate.flatMap(candidate => handleDispatch(mf, expression, candidate.tpe, candidate.assignments))
+      } else {
+        val argumentCandidates = functionCandidates.flatMap {
+          function => handleFunctionCandidate(function, expression, knownArgumentTypes, expectedType, assignments2)._1
+        }
+
+        // Step 4: Choose the most specific resulting arguments type and perform dispatch with it, assigning the result
+        //         type of the function call on success.
+        chooseArgumentCandidate(mf, expression, argumentCandidates, assignments2)
+          .flatMap(candidate => handleDispatch(mf, expression, candidate.tpe, candidate.assignments))
+      }
     }
+  }
+
+  private def handleFunctionCandidate(
+    function: FunctionDefinition,
+    expression: Expression.Call,
+    knownArgumentTypes: KnownArgumentTypes,
+    expectedType: Option[Type],
+    assignments: Assignments,
+  )(implicit checker: Checker): (Option[ArgumentCandidate], Vector[Feedback]) = {
+    val (typeParameterAssignments, parameterTypes) = ParametricFunctionSynthesizer.prepareParameterTypes(function.signature)
+
+    // As mentioned in the documentation comment, if we have an expected (output) type, we can unify this type
+    // with the candidate's output type to potentially assign type arguments right away.
+    // TODO: Because sum/intersection type unification cannot be resolved yet, we can't rule out that the
+    //       candidate can't be chosen if the unification fails, here. If that is resolved, there's a good chance
+    //       that we can optimize here: if the output type and expected types cannot be unified, the
+    //       multi-function cannot be chosen.
+    val outputTypeAssignments = expectedType match {
+      case Some(expectedType) =>
+        val outputType = Type.substitute(function.signature.outputType, typeParameterAssignments)
+        Unification.unifySubtypes(outputType, expectedType, assignments)
+          .getOrElse(assignments)
+
+      case None => assignments
+    }
+
+    implicit val reporter: MemoReporter = MemoReporter()
+    val result = ParametricFunctionSynthesizer.inferArgumentTypes(
+      function.signature.typeParameters,
+      typeParameterAssignments,
+      parameterTypes,
+      expression.arguments,
+      knownArgumentTypes,
+      outputTypeAssignments,
+    )
+
+    (result, reporter.feedback)
   }
 
   private def chooseArgumentCandidate(
@@ -136,18 +157,19 @@ object MultiFunctionCallChecker {
   private def handleDispatch(
     mf: MultiFunctionDefinition,
     expression: Expression,
-    argumentCandidate: ArgumentCandidate,
+    argumentType: TupleType,
+    assignments: Assignments,
   )(implicit checker: Checker, reporter: Reporter): Option[Assignments] = {
     mf.dispatch(
-      argumentCandidate.tpe,
-      MultiFunctionFeedback.Dispatch.EmptyFit(mf, argumentCandidate.tpe, expression.position),
-      min => MultiFunctionFeedback.Dispatch.AmbiguousCall(mf, argumentCandidate.tpe, min, expression.position),
+      argumentType,
+      MultiFunctionFeedback.Dispatch.EmptyFit(mf, argumentType, expression.position),
+      min => MultiFunctionFeedback.Dispatch.AmbiguousCall(mf, argumentType, min, expression.position),
     ).flatMap { instance =>
       Typing.logger.trace(s"Assigned output type ${instance.signature.outputType} to result type ${expression.tpe}.")
       InferenceVariable.assign(
         expression.tpe.asInstanceOf[InferenceVariable],
         instance.signature.outputType,
-        argumentCandidate.assignments,
+        assignments,
       )
     }
   }

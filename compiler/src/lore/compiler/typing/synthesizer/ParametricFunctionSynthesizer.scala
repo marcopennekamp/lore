@@ -122,7 +122,7 @@ object ParametricFunctionSynthesizer {
     }
 
     Typing.indentationLogger.indented {
-      checker.attempt(argument, InferenceVariable.instantiateCandidate(parameterType, assignments), assignments)._1.flatMap { assignments2 =>
+      checker.check(argument, InferenceVariable.instantiateCandidate(parameterType, assignments), assignments).flatMap { assignments2 =>
         // `unifyFits` only makes sense when the function has type parameters, as the parameter type won't contain any
         // inference variables if it doesn't.
         if (typeParameters.nonEmpty) {
