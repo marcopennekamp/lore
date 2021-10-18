@@ -2,7 +2,11 @@ package lore.compiler.types
 
 import lore.compiler.semantics.NamePath
 import lore.compiler.types.TypeVariable.Variance
-import lore.compiler.utils.CollectionExtensions.{MapVectorExtension, VectorExtension}
+import lore.compiler.typing.InferenceVariable.Assignments
+import lore.compiler.typing.unification.SubtypingUnification
+import lore.compiler.typing.unification.SubtypingUnification.FitsCombiner
+import lore.compiler.typing.{InferenceBounds, InferenceVariable}
+import lore.compiler.utils.CollectionExtensions.{MapVectorExtension, VectorExtension, VectorMapExtension}
 
 trait DeclaredType extends NamedType {
 
@@ -157,7 +161,30 @@ trait DeclaredType extends NamedType {
     }
 
     def processClause(extendsClause: DeclaredType): Option[TypeVariable.Assignments] = {
-      val candidates = TypeVariableAllocation.of(TupleType(this.typeArguments), TupleType(extendsClause.typeArguments)).allAssignments
+      // We want to use subtyping matching here such that each occurrence of a type variable gets its own candidate
+      // type. These candidates will then be combined in the next step. We cannot use the standard type variable
+      // allocation for this, as it will not tolerate different candidates for the same type variable. Instead, we
+      // replace each occurrence of a type variable with its own inference variable, and rebuild the candidates after.
+      // Note that we don't use `unifySubtypes`, because type variable handling must be fit-like. For example, if we
+      // have a type `Cage[Y]` with `Y <: Fish`, we want `ConfusedCage1` to be a direct subtype of `Cage[Y]`, because
+      // with `Y = Fish`, `ConfusedCage1` IS a subtype of `Cage[Y]`. We have a direct subtype if one possible
+      // instantiation of a type variable leads to the subtype, instead of all possible instantiations. The latter is
+      // the approach taken by standard subtyping, so `Fish <: Y` would only be true if `Fish` was the lower bound of
+      // `Y`. Hence we have to use `matchTypes`.
+      var typeVariableSubstitutes: Map[TypeVariable, Vector[InferenceVariable]] = Map.empty
+      val extendsClauseTuple = Type.substitute(TupleType(extendsClause.typeArguments), tv => {
+        val iv = new InferenceVariable
+        typeVariableSubstitutes = typeVariableSubstitutes.appended(tv, iv)
+        iv
+      })
+
+      val assignments = SubtypingUnification.unify(ClauseUnificationCombiner)(extendsClauseTuple, TupleType(this.typeArguments), Map.empty).getOrElse {
+        return None
+      }
+
+      val candidates = typeVariableSubstitutes.map {
+        case (tv, ivs) => tv -> ivs.map(InferenceVariable.instantiateCandidate(_, assignments))
+      }
       processCandidates(candidates).flatMap { assignments =>
         val instantiatedClause = Type.substitute(extendsClause, assignments)
         if (instantiatedClause fits this) {
@@ -177,6 +204,16 @@ trait DeclaredType extends NamedType {
     }
 
     processCandidates(possibleAssignments.merged)
+  }
+
+  private object ClauseUnificationCombiner extends SubtypingUnification.Combiner {
+    override def unify(iv1: InferenceVariable, iv2: InferenceVariable, assignments: Assignments): Option[Assignments] = FitsCombiner.unify(iv1, iv2, assignments)
+    override def ensure(iv: InferenceVariable, tpe: Type, boundType: InferenceBounds.BoundType, assignments: Assignments): Option[Assignments] = FitsCombiner.ensure(iv, tpe, boundType, assignments)
+    override def ifFullyInferred(t1: Type, t2: Type, assignments: Assignments): Option[Assignments] = {
+      // Get rid of the premature subtyping check, which removes the standard subtyping check from the match, and
+      // thereby solves the type variable problem outlined above with the `Cage[Y]` example.
+      Some(assignments)
+    }
   }
 
   /**
