@@ -38,19 +38,6 @@ object Fit {
   /**
     * Assigns types from `t1` to type variables in `t2`, returning the resulting type variable assignments. Otherwise
     * returns None if no consistent assignment can be found.
-    *
-    * TODO (inference): Test the following TODO.
-    *
-    * TODO: Considering that we want to infer variable assignments from upper and lower bounds, how can we still
-    *       disallow the following?
-    *           function genericListify(shape: { x: X, y: Y }): [R] where R, X <: R, Y <: R = [shape.x, shape.y]
-    *           function genericListify(shape: { x: X, y: Y, z: Z }): [R] where R, X <: R, Y <: R, Z <: R = [shape.x, shape.y, shape.z]
-    *       The problem with this multi-function is that when we pass a value of type { x: Real, y: Real } at compile-time
-    *       and get a return type of [Real], we could easily pass a value of type { x: Real, y: Real, z: String } and
-    *       get a return type of [Real | String] at run-time. This is clearly not valid!! So if we infer R = X | Y | Z,
-    *       we will have to take care that the return type checks consider this, so that "[R = X | Y | Z] is not a
-    *       subtype of [R = X | Y]" is the result of that constraint. NOT "[R] is equal to [R] so they are subtypes,
-    *       clearly." That would be very bad. :)
     */
   def assignments(t1: Type, t2: Type): Option[TypeVariable.Assignments] = {
     val typeVariables = Type.variables(t2).toVector
