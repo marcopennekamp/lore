@@ -4,7 +4,7 @@ module List do
   use Enum._
 
   @where A
-  func get(list: [A], index: Int): A = dynamic[A]('Lore.lists.get', list, index)
+  func get!(list: [A], index: Int): A = dynamic[A]('Lore.lists.get', list, index)
 
   func length(list: [Any]): Int = dynamic[Int]('Lore.lists.length', list)
 
@@ -24,7 +24,7 @@ module List do
     *                 error instead.
     */
   @where A
-  func head(list: [A]): A = get(list, 0)
+  func head(list: [A]): A = get!(list, 0)
 
   /**
     * Returns the last element of the list. Results in an error if the list is empty.
@@ -33,7 +33,7 @@ module List do
     *                 error instead.
     */
   @where A
-  func last(list: [A]): A = get(list, length(list) - 1)
+  func last(list: [A]): A = get!(list, length(list) - 1)
 
   /**
     * Returns a slice of `list` that includes all elements except for the last one.
@@ -72,7 +72,7 @@ module List do
     while i < len
       let mut j = i
       while j < len
-        result = result :+ (get(list, i), get(list, j))
+        result = result :+ (get!(list, i), get!(list, j))
         j += 1
       end
       i += 1

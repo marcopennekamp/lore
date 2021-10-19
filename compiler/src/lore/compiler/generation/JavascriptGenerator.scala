@@ -103,7 +103,8 @@ object JavascriptGenerator {
     * Target names need to be converted to a proper identifier that's legal in Javascript.
     */
   private def generate(targetName: TargetName): String = {
-    targetName.name.replace('?', '\u304b')
+    val name2 = targetName.name.replace('?', '\u0294')
+    name2.replace('!', '\u01c3')
   }
 
   private def generateParameter(parameter: Target.Parameter): String = {
@@ -123,7 +124,7 @@ object JavascriptGenerator {
     * parts of a Javascript identifier.
     */
   private def generatePropertyAccess(name: String): String = {
-    if (name.contains("?")) {
+    if (name.contains("?") || name.contains("!")) {
       return s"[${generate(Target.StringLiteral(name))}]"
     }
     s".$name"

@@ -2,7 +2,7 @@
 
 Lore is an expression-based language, which means that there are no statements, only expressions. This document presents the kinds of **values and expressions** available in Lore.
 
-**TODO:** How do we implement type casts / conversions? (Typings / Type Assertions: `expr :: Type`.)
+**TODO:** How do we implement type casts?
 
 
 

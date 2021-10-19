@@ -46,7 +46,7 @@ func test(): [String] = do
     ahoo.woo,
     ahoo2.ah,
     Tuple.second(tuple),
-    Map.get(dict, 'Harbingers') |> to_string,
+    Map.get!(dict, 'Harbingers') |> to_string,
     shape.name,
   ]
 end

@@ -43,12 +43,10 @@ module Option do
 
   /**
     * Returns the option's value if it is something, or otherwise an error.
-    *
-    * TODO (pyramid): Rename to `get!`.
     */
-  func get(Option[A]): A where A
-  func get(option: Some[A]): A where A = option.value
-  func get(None): Nothing = panic('Tried to force-get an `Option.None`.')
+  func get!(Option[A]): A where A
+  func get!(option: Some[A]): A where A = option.value
+  func get!(None): Nothing = panic('Tried to get! an `Option.None`.')
 
   /**
     * Returns the option if it is something, or otherwise the lazy alternative.

@@ -26,7 +26,7 @@ end
 //       run-time error. This is acceptable, but might not be good enough.
 @where A
 domain array: NaiveArray[A]
-  func at(index: Int): A = List.get(array.underlying, index)
+  func at(index: Int): A = List.get!(array.underlying, index)
 
   @where E <: A
   act prepend(element: E) do

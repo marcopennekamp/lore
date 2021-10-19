@@ -22,8 +22,7 @@ module String do
     * Returns the code unit at the given position in the UTF-16 string. If `position` is out of range, the result is
     * the empty string.
     */
-  // TODO (pyramid): Rename to `at!`.
-  func force_at(string: String, index: Int): String = dynamic[String]('Lore.strings.at', string, index)
+  func at!(string: String, index: Int): String = dynamic[String]('Lore.strings.at', string, index)
 
   /**
     * Returns the code unit at the given position in the UTF-16 string. If `position` is out of range, the result is
@@ -83,7 +82,7 @@ module String do
     let len = length(string)
     let mut i = 0
     while i < len
-      if !predicate(force_at(string, i))
+      if !predicate(at!(string, i))
         return false
       end
       i += 1
