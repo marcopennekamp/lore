@@ -20,6 +20,14 @@ export interface TupleValue extends Value {
 export const Tuple = {
   type: createType,
 
+  tupled(type: Type): TupleType {
+    if (type.kind === Kind.Tuple) {
+      return <TupleType> type
+    } else {
+      return createType([type])
+    }
+  },
+
   /**
    * Creates a tuple type WITHOUT a sensible hash. This should ONLY be used by the compiler to optimize
    * operations that don't require a hash, such as multiple dispatch resolution with a disabled cache.

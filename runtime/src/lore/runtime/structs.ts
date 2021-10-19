@@ -89,6 +89,7 @@ export const Struct = {
     openPropertyOrder: Array<string>,
   ): StructSchema {
     return DeclaredSchemas.schema<StructSchema>(
+      Kind.Struct,
       name,
       typeParameters,
       supertraits,

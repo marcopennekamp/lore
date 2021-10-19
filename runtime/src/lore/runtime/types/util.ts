@@ -69,3 +69,12 @@ export function allExcluding<A>(elements: Array<A>, predicate: (self: A, other: 
   }
   return result
 }
+
+export function appendInner<K, V>(map: Map<K, Array<V>>, key: K, element: V) {
+  let array = map.get(key)
+  if (array) {
+    array.push(element)
+  } else {
+    map.set(key, [element])
+  }
+}

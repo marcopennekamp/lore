@@ -1,10 +1,14 @@
-import { TraitType } from '../traits.ts'
+import { Struct, StructSchema, StructType } from '../structs.ts'
+import { Trait, TraitSchema, TraitType } from '../traits.ts'
 import { TupleType } from '../tuples.ts'
 import { TypeMap, TypeMaps } from '../utils/TypeMap.ts'
 import { DeclaredType } from './declared-types.ts'
-import { TypeVariable } from './type-variables.ts'
+import { Kind } from './kinds.ts'
+import { TypeVariable, Variance } from './type-variables.ts'
+import { Type } from './types.ts'
 
 export interface DeclaredSchema {
+  kind: Kind.Trait | Kind.Struct
   name: string
   typeParameters: Array<TypeVariable>
 
@@ -18,6 +22,11 @@ export interface DeclaredSchema {
    * determined at compile time.
    */
   hasMultipleParameterizedInheritance: boolean
+
+  /**
+   * Whether the schema has invariant type parameters.
+   */
+  hasInvariantParameters: boolean
 
   /**
    * The representative type of this schema, without instantiated type parameters.
@@ -35,6 +44,7 @@ export const DeclaredSchemas = {
    * Creates a declared schema from the given arguments.
    */
   schema<S extends DeclaredSchema>(
+    kind: Kind.Trait | Kind.Struct,
     name: string,
     typeParameters: Array<TypeVariable>,
     supertraits: Array<TraitType>,
@@ -42,12 +52,28 @@ export const DeclaredSchemas = {
     getRepresentative: (schema: S, typeArguments: Array<TypeVariable> | undefined) => DeclaredType,
     extras: object,
   ): S {
-    const schema = { name, typeParameters, supertraits, hasMultipleParameterizedInheritance, representative: undefined, ...extras } as unknown as S
+    const schema = { kind, name, typeParameters, supertraits, hasMultipleParameterizedInheritance, representative: undefined, ...extras } as unknown as S
+    schema.hasInvariantParameters = typeParameters.some(tv => tv.variance === Variance.Invariant)
     schema.representative = getRepresentative(schema, typeParameters.length > 0 ? typeParameters : undefined)
     if (typeParameters.length > 0) {
       schema.typeCache = TypeMaps.create()
     }
     return schema
+  },
+
+  /**
+   * Instantiates a declared type of the given schema with the given type arguments. The resulting struct type's open
+   * property types will be empty.
+   *
+   * This function can be used instead of `Trait.type` or `Struct.type` if the concrete kind of the schema is unknown
+   * at compile time.
+   */
+  type(schema: DeclaredSchema, typeArguments: Array<Type>): DeclaredType {
+    if (schema.kind === Kind.Trait) {
+      return Trait.type(<TraitSchema> schema, typeArguments)
+    } else {
+      return Struct.type(<StructSchema> schema, typeArguments)
+    }
   },
 
   /**

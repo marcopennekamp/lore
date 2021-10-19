@@ -88,6 +88,8 @@
 - Turn map keys and values into covariant/contravariant type variables if possible.
 - Support intersection and sum types in subtyping/equality unification.
 - We could theoretically introduce a limited form of ambiguity analysis at compile-time: For each function `f(a: A, b: B, ...)`, get a list of possible subtypes (mostly trait subtypes) and simulate dispatch with these types. If any of the inputs result in an ambiguity, raise at least a warning.
+- We may need to remove open property types from struct types in run-time type variable assignments. A motivating example would be `lore.List.concat`. We probably don't want the resulting list type to contain any open properties, provided that one of the type arguments contains a struct type with open property types. Reproducing this is probably a bit harder than one might expect, because most list types are set at compile time. But we could for example create a list via a function `func single(element: A): [A] where A = [element]`. This might type the run-time list with the element's actual type, thereby leaking a possible struct's open property types into the list. The solution would be to strip any open properties from struct types inside run-time type variable assignments.
+  - We have to think carefully about this, though. There might be instances where we **want** the type argument to have its open property types.
 
 ##### CLI
 

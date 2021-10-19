@@ -24,6 +24,12 @@ export interface DeclaredType extends Type {
   supertraits: Array<TraitType>
 }
 
+export class InvalidTypeArguments extends Error {
+  constructor(schema: DeclaredSchema, typeArguments: Array<Type>) {
+    super(`Cannot instantiate schema ${schema} with type arguments ${typeArguments}.`)
+  }
+}
+
 export const DeclaredTypes = {
   /**
    * Creates a declared type from the given arguments. If the schema is parametric, types are interned. If for the
@@ -58,7 +64,7 @@ export const DeclaredTypes = {
       let supertraits
       if (typeArguments) {
         if (!boundsContain(schema, typeArguments)) {
-          throw Error(`Cannot instantiate schema ${schema} with type arguments ${typeArguments}.`)
+          throw new InvalidTypeArguments(schema, typeArguments)
         }
         supertraits = instantiateSupertraits(schema, typeArguments)
       } else {

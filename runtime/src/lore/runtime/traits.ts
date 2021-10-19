@@ -38,7 +38,15 @@ export const Trait = {
     hasMultipleParameterizedInheritance: boolean,
     inheritedShapeType: LazyValue<ShapeType>,
   ): TraitSchema {
-    return DeclaredSchemas.schema<TraitSchema>(name, typeParameters, supertraits, hasMultipleParameterizedInheritance, Trait.type, { inheritedShapeType })
+    return DeclaredSchemas.schema<TraitSchema>(
+      Kind.Trait,
+      name,
+      typeParameters,
+      supertraits,
+      hasMultipleParameterizedInheritance,
+      Trait.type,
+      { inheritedShapeType },
+    )
   },
 
   type(schema: TraitSchema, typeArguments?: Assignments): TraitType {
