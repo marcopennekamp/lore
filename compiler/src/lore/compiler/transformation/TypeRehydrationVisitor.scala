@@ -3,7 +3,7 @@ package lore.compiler.transformation
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression._
-import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
+import lore.compiler.semantics.expressions.{Expression, ExpressionIdentityVisitor, ExpressionVisitor}
 import lore.compiler.semantics.members.Member
 import lore.compiler.semantics.scopes.{LocalVariable, TypedBinding}
 import lore.compiler.types._
@@ -12,19 +12,14 @@ import lore.compiler.typing.InferenceVariable.Assignments
 /**
   * Replaces all inference variables with inferred types.
   */
-class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Registry, reporter: Reporter) extends ExpressionVisitor[Expression, Expression] {
+class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Registry, reporter: Reporter) extends ExpressionIdentityVisitor[Expression] {
+
+  override protected def wrap(expression: Expression): Expression = expression
 
   override def visit(expression: Hole): Expression = expression.copy(assignments.instantiate(expression.tpe))
 
-  override def visit(expression: Return)(value: Expression): Expression = expression.copy(value)
-
   override def visit(expression: VariableDeclaration)(value: Expression): Expression = expression.copy(
     variable = instantiateVariable(expression.variable),
-    value = value
-  )
-
-  override def visit(expression: Assignment)(target: Expression, value: Expression): Expression = expression.copy(
-    target = target.asInstanceOf[Expression.Access],
     value = value
   )
 
@@ -42,8 +37,6 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
     binding = instantiateBinding(expression.binding)
   )
 
-  override def visit(expression: MemberAccess)(instance: Expression): Expression = expression.copy(instance)
-
   override def visit(expression: UnresolvedMemberAccess)(instance: Expression): Expression = {
     val member = instance.tpe.member(expression.name) match {
       case Some(member) => member
@@ -56,20 +49,12 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
     MemberAccess(instance, member, expression.position)
   }
 
-  override def visit(expression: Literal): Expression = expression
-
-  override def visit(expression: Tuple)(values: Vector[Expression]): Expression = expression.copy(values)
-
   override def visit(expression: AnonymousFunction)(body: Expression): Expression = expression.copy(
     expression.parameters.map(_.mapType(assignments.instantiate)),
     body
   )
 
   override def visit(expression: MultiFunctionValue): Expression = expression.copy(tpe = assignments.instantiate(expression.tpe))
-
-  override def visit(expression: FixedFunctionValue): Expression = expression
-
-  override def visit(expression: ConstructorValue): Expression = expression
 
   override def visit(expression: UntypedConstructorValue): Expression = {
     assignments.instantiate(expression.tpe) match {
@@ -80,14 +65,6 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
         Expression.Hole(BasicType.Nothing, expression.position)
     }
   }
-
-  override def visit(expression: ListConstruction)(values: Vector[Expression]): Expression = expression.copy(values = values)
-
-  override def visit(expression: MapConstruction)(entries: Vector[(Expression, Expression)]): Expression = expression.withEntries(entries)
-
-  override def visit(expression: ShapeValue)(properties: Vector[Expression]): Expression = expression.withPropertyValues(properties)
-
-  override def visit(expression: Symbol): Expression = expression
 
   override def visit(expression: UnaryOperation)(value: Expression): Expression = expression.copy(
     value = value,
@@ -109,13 +86,6 @@ class TypeRehydrationVisitor(assignments: Assignments)(implicit registry: Regist
     target = expression.target.withExpression(target),
     arguments = arguments,
     tpe = assignments.instantiate(expression.tpe),
-  )
-
-  override def visit(expression: Cond)(cases: Vector[(Expression, Expression)]): Expression = expression.withCases(cases)
-
-  override def visit(expression: WhileLoop)(condition: Expression, body: Expression): Expression = expression.copy(
-    condition = condition,
-    body = body,
   )
 
   override def visit(expression: ForLoop)(collections: Vector[Expression], body: Expression): Expression = {
