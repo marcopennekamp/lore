@@ -584,6 +584,18 @@ In the implementation, we can of course **optimize** the following case: When th
 
 
 
+### Type Ascriptions
+
+The **type ascription operator** `::` informs the compiler about the intended type of an expression. This can be used in situations where the compiler cannot infer a type, or doesn't infer the desired type.
+
+###### Example
+
+```
+let mut option = Option.some(Fox() :: Animal)  // option: Option[Animal]
+```
+
+
+
 ### Operator Precedence
 
 Our **operator precedence** is as follows, from lowest to highest precedence:
@@ -597,6 +609,7 @@ Our **operator precedence** is as follows, from lowest to highest precedence:
 :+
 + -
 * /
+::
 ! - (unary)
 atoms (including function application)
 ```
