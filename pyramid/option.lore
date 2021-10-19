@@ -18,6 +18,13 @@ module Option do
   struct Some[open +A](value: A) extends Option[A]
 
   /**
+    * Constructs an Option from the given value. This function can be used in contrast to the constructor `Some` to
+    * immediately create a Some that has the wider `Option` type.
+    */
+  @where A
+  func some(value: A): Option[A] = Some(value)
+
+  /**
     * An Option with an absent value.
     */
   object None extends Option[Nothing]
