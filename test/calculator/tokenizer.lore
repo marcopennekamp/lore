@@ -66,11 +66,8 @@ func try_operand(term: String, position: Position): Option[(Operand, Position)] 
   // If not a single digit has been parsed, `Number.parse` will consume the empty string and return None.
   // TODO (syntax): This is essentially a trailing lambda.
   number_string |> Number.parse |> map(number => do
-    // TODO (calculator): The following fails, likely because the tuple construction is parsed as a second function
-    //                    call argument list. (That is, the parser sees `Operand(number)(operand, pos)`.)
-    //let operand = Operand(number)
-    //(operand, pos)
-    (Operand(number), pos)
+    let operand = Operand(number)
+    (operand, pos)
   end)
 end
 

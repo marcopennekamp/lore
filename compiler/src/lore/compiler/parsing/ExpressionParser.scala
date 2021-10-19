@@ -223,7 +223,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
 
   private def constructor[_: P]: P[ExprNode] = P(Index ~~ namePath ~ Space.WS ~~ typeArguments ~~ Index).map(withPosition(ExprNode.ConstructorNode))
 
-  private def simpleCall[_: P]: P[ExprNode] = P(Index ~~ namePath ~~ Space.WS ~~ arguments.rep(1) ~~ Index).map {
+  private def simpleCall[_: P]: P[ExprNode] = P(Index ~~ namePath ~~ Space.WS ~~ (arguments ~~ Space.WS).repX(1) ~~ Index).map {
     case (startIndex, name, argumentLists, endIndex) =>
       val firstCall = withPosition(ExprNode.SimpleCallNode)(startIndex, name, argumentLists.head, endIndex)
       foldCalls(startIndex, firstCall, argumentLists.tail, endIndex)
