@@ -148,9 +148,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
     )
   }
 
-  // We apply NoCut here to allow the parser to backtrack if it doesn't find a multiplication/addition operator, while
-  // still allowing cuts inside of unary applications and atoms.
-  private def unary[_: P]: P[ExprNode] = NoCut(P(negation | logicalNot | atom))
+  private def unary[_: P]: P[ExprNode] = P(negation | logicalNot | atom)
   private def negation[_: P]: P[ExprNode] = P(Index ~~ "-" ~ atom ~~ Index).map { case (startIndex, expr, endIndex) =>
     // I don't want to put atom before negation, because I want the parser to handle the minus symbol before considering
     // atoms. However, the way it'd work with a naive implementation of this parser, a negative number would be parsed
