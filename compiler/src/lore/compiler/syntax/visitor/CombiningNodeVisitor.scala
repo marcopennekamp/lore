@@ -118,6 +118,7 @@ object CombiningNodeVisitor {
       case ExprNode.DynamicCallNode(nameLiteral, resultType, arguments, _) => visitor.visit(node, concat(visit(nameLiteral), visit(resultType), visit(arguments)))
       case ExprNode.CondNode(cases, _) => visitor.visit(node, concat(visit(cases)))
       case ExprNode.ForNode(extractors, body, _) => visitor.visit(node, concat(visit(extractors), visit(body)))
+      case ExprNode.AscriptionNode(value, expectedType, _) => visitor.visit(node, concat(visit(value), visit(expectedType)))
 
       // These cases have to be specified last so that we can override these defaults for specific nodes above.
       case node: TopLevelExprNode.LeafNode => visitor.visit(node, concat())

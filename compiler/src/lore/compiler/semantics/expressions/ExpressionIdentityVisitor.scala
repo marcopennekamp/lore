@@ -37,6 +37,7 @@ trait ExpressionIdentityVisitor[R] extends ExpressionVisitor[Expression, R] {
   override def visit(expression: Cond)(cases: Vector[(Expression, Expression)]): R = wrap(expression.withCases(cases))
   override def visit(expression: WhileLoop)(condition: Expression, body: Expression): R = wrap(expression.copy(condition, body))
   override def visit(expression: ForLoop)(collections: Vector[Expression], body: Expression): R = wrap(expression.withCollections(collections).copy(body = body))
+  override def visit(expression: Ascription)(value: Expression): R = wrap(expression.copy(value))
 
 }
 

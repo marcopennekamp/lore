@@ -92,6 +92,10 @@ class ExpressionTransformationVisitor(
     case LogicalNotNode(_, position) => Expression.UnaryOperation(UnaryOperator.LogicalNot, expression, BasicType.Boolean, position)
 
     case MemberAccessNode(_, nameNode, _) => AccessTransformation.transformMemberAccess(expression, Vector(nameNode))
+
+    case AscriptionNode(_, expectedTypeNode, position) =>
+      val expectedType = TypeExpressionEvaluator.evaluate(expectedTypeNode).getOrElse(BasicType.Any)
+      Expression.Ascription(expression, expectedType, position)
   }
 
   override def visitBinary(node: BinaryNode)(left: Expression, right: Expression): Expression = node match {

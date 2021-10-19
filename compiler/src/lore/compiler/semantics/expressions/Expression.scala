@@ -283,4 +283,9 @@ object Expression {
     * Note that `variable` contains the element type of the extractor, which must be inferred and rehydrated later.
     */
   case class Extractor(variable: LocalVariable, collection: Expression)
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Type ascriptions.
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  case class Ascription(value: Expression, expectedType: Type, position: Position) extends Expression.Apply(expectedType)
 }

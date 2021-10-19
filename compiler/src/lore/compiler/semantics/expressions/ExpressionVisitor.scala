@@ -37,6 +37,7 @@ trait ExpressionVisitor[A, B] {
   def visit(expression: Cond)(cases: Vector[(A, A)]): B
   def visit(expression: WhileLoop)(condition: A, body: A): B
   def visit(expression: ForLoop)(collections: Vector[A], body: A): B
+  def visit(expression: Ascription)(value: A): B
 
   /**
     * Invoked before an expressions's subtrees are visited. This can be used to set up contexts.
@@ -84,6 +85,7 @@ object ExpressionVisitor {
       case node@Cond(cases, _) => visitor.visit(node)(cases.map(c => (rec(c.condition), rec(c.body))))
       case node@WhileLoop(condition, body, _) => visitor.visit(node)(rec(condition), rec(body))
       case node@ForLoop(extractors, body, _) => visitor.visit(node)(extractors.map(e => rec(e.collection)), rec(body))
+      case node@Ascription(value, _, _) => visitor.visit(node)(rec(value))
     }
   }
 

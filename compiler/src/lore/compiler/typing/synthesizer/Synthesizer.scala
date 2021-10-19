@@ -212,8 +212,7 @@ object Synthesizer {
         inferExtractors(extractors, assignments)
           .flatMap(infer(body, _))
 
-      // TODO (inference): This is missing type ascription, which delegates back to the checker! Obviously we'll have
-      //                   to support this in the syntax first. (Such as `expr :: Type`.)
+      case Expression.Ascription(value, expectedType, _) => checker.check(value, expectedType, assignments)
     }
 
     resultAssignments.foreach(Typing.traceExpressionType(expression, _, "Inferred"))

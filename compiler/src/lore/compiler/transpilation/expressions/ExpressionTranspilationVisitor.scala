@@ -221,4 +221,6 @@ private[transpilation] class ExpressionTranspilationVisitor()(
   override def visit(loop: WhileLoop)(condition: Chunk, body: Chunk): Chunk = LoopTranspiler().transpile(loop, condition, body)
 
   override def visit(loop: ForLoop)(collections: Vector[Chunk], body: Chunk): Chunk = LoopTranspiler().transpile(loop, collections, body)
+
+  override def visit(expression: Ascription)(value: Chunk): Chunk = value
 }

@@ -33,4 +33,5 @@ trait ExpressionVerificationVisitor extends ExpressionVisitor[Unit, Unit] {
   override def visit(expression: Cond)(cases: Vector[(Unit, Unit)]): Unit = verify(expression)
   override def visit(expression: WhileLoop)(condition: Unit, body: Unit): Result = verify(expression)
   override def visit(expression: ForLoop)(collections: Vector[Unit], body: Unit): Result = verify(expression)
+  override def visit(expression: Ascription)(value: Unit): Result = verify(expression)
 }

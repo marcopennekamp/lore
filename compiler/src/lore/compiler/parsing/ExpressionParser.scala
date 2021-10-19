@@ -128,7 +128,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
     import PrecedenceParser._
     PrecedenceParser.parser(
       operator = StringIn("||", "&&", "==", "!=", "<", "<=", ">", ">=", "|>", ":+", "+", "-", "*", "/"),
-      operand = unary,
+      operand = ascripted,
       operatorMeta = Map(
         "||" -> XaryOperator[ExprNode](1, ExprNode.DisjunctionNode),
         "&&" -> XaryOperator[ExprNode](2, ExprNode.ConjunctionNode),
@@ -147,6 +147,9 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
       ),
     )
   }
+
+  private def ascripted[_: P]: P[ExprNode] = P(ascription | unary)
+  private def ascription[_: P]: P[ExprNode] = P(Index ~~ unary ~ "::" ~ typeParser.typeExpression ~~ Index).map(withPosition(ExprNode.AscriptionNode))
 
   private def unary[_: P]: P[ExprNode] = P(negation | logicalNot | atom)
   private def negation[_: P]: P[ExprNode] = P(Index ~~ "-" ~ atom ~~ Index).map { case (startIndex, expr, endIndex) =>

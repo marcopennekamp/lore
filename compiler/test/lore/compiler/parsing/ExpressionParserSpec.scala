@@ -40,12 +40,4 @@ class ExpressionParserSpec extends ParserSpec[TopLevelExprNode] {
       "do a + do b end + (do b end).x + b end".succeeds
     }
   }
-
-  it should "parse a block-rich expression repeated 10,000 times within 5 seconds" in {
-    timed(5000) { () =>
-      val repetitions = 10000
-      val source = "do " + "a + do if a < 10 then a + 10 else b + 10 end + b\n".repeat(repetitions) + " end"
-      source.succeeds
-    }
-  }
 }
