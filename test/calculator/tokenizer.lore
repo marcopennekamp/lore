@@ -56,8 +56,6 @@ func try_operand(term: String, position: Position): Option[(Operand, Position)] 
   let mut pos = position
   let term_length = String.length(term)
 
-  // TODO (calculator): It's obviously not ideal that we have to invoke `force_at` twice here. This seems like a
-  //                    language design deficit.
   while pos < term_length && String.force_at(term, pos) |> String.digits?
     number_string = String.concat(number_string, String.force_at(term, pos))
     pos += 1

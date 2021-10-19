@@ -2,8 +2,6 @@
 
 #### Features
 
-- Write calculator functional test.
-  - Clear all `TODO (calculator)` entries.
 - Remove the need for `end else` by requiring a `then`'s `else` to occur without a line terminator.
   - We can later relax this rule again when introducing indentation-aided parsing.
 - Implement a vector backend for lists.
