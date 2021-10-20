@@ -2,8 +2,6 @@
 
 #### Features
 
-- Remove the need for `end else` by requiring a `then`'s `else` to occur without a line terminator.
-  - We can later relax this rule again when introducing indentation-aided parsing.
 - Implement a vector backend for lists.
 - Fix map types and values:
   - Add clear covariance/contravariance type semantics.
@@ -28,7 +26,7 @@
     - Significant indentation is not intended to replace `do..end`, but rather aid in parsing ambiguities. In that sense, we are calling this feature "indentation-aided parsing".
     - This would resolve some issues with `do..end` inconsistencies, such as:
       - Block-style objects and modules requiring the `do` keyword due to parsing ambiguities.
-      - A block-style `if` requiring the `end` keyword before an `else`.
+      - A then-style `if` requiring the `else` to occur on the same line as the end of the "on true" top-level expression.
       - `cond` (and later `case`) requiring `do..end` for blocks, which adds serious visual noise.
       - Concrete actions require the `do` keyword to disambiguate them from abstract actions. With significant indentation, this `do` requirement would only be needed for empty actions, where indentation-aided parsing cannot rely on an indented expression. On the other hand, the `do..end` syntax is currently consistently applied to block functions and actions. We might want to keep this requirement for stylistic reasons.
   - Consider renaming the module keyword to `mod`, which has the added benefit of being on the same column as `use`. This might be visually more pleasant.
@@ -45,32 +43,8 @@
     - Both structs and shapes should have no default ordering.
 
 ##### Syntax
- 
-- Down the line, it would be great to have something like:
-  ```
-  if cond
-    tles1
-  else
-    tles2
-  end
-  ```
-  For now, we require an `end` before the `else` so that an ambiguity like this cannot happen:
-  ```
-  if cond
-    let x = if hello then world
-  else
-    y
-  end
-  ```
-  Is the `else y` part of the outer or the inner `if`? This is essentially the dangling else problem turned up to 11. Remember that the parser just sees `if abc\n let x = if hello then world\n else\n y\n end`. One solution would be to require a then-style `if` to have its `else` on the same line, but this disallows styles such as this:
-  ```
-  if cond then hey
-  else 
-    foo
-    bar
-  end
-  ```
-  So we'd need indentation-based blocks to really disambiguate here.
+
+- *Currently no TODOs.*
 
 ##### Type System
 

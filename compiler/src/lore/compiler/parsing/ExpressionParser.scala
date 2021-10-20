@@ -66,11 +66,13 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
 
   private def ifElse[_: P]: P[ExprNode] = {
     def elsePart = P("else" ~~ Space.WS ~~ (implicitBlock | topLevelExpression))
-    def thenStyle = P(expression ~ "then" ~ topLevelExpression ~ elsePart.?)
+    def thenStyle = P(expression ~ "then" ~~ Space.WS1 ~~ topLevelExpression ~~ Space.WS ~~ elsePart.?)
 
     def blockStyle = {
-      P(singleLineExpression ~~ Space.terminators ~~ Index ~~ blockExpressions ~ "end" ~~ Index ~ elsePart.?).map {
-        case (condition, startIndex, onTrueExpressions, endIndex, onFalse) =>
+      def closeEnd = P("end" ~~ Index).map(index => (index, None))
+      def closeElse = P(Index ~ elsePart.map(Some(_)))
+      P(singleLineExpression ~~ Space.terminators ~~ Index ~~ blockExpressions ~ (closeEnd | closeElse)).map {
+        case (condition, startIndex, onTrueExpressions, (endIndex, onFalse)) =>
           val onTrue = withPosition(ExprNode.BlockNode)(startIndex, onTrueExpressions, endIndex)
           (condition, onTrue, onFalse)
       }

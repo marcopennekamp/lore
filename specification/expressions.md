@@ -500,14 +500,26 @@ end
 
 if condition
   tles1
-end else
+else
   tles2
 end
 ```
 
 Note that either top-level expression (TLE) (or even `condition`) may be a block. The else part is, of course, optional. The so-called **dangling else** is always parsed as belonging to the `if` closest to it.
 
-The if-expressions without a `then` require the top-level expression(s) to be placed on the next line. This also implicitly opens a block, which must be closed with an `end`. An `else` with an implicit block must also be closed with an `end`.
+The if-expressions without a `then` require the top-level expression(s) to be placed on the next line. This also implicitly opens a block, which must be closed with an `end` or an `else`. An `else` with an implicit block must also be closed with an `end`. 
+
+To avoid ambiguities, the `else` part of an `if` with a `then` must follow on the same line as the closing of `tle1`, which will usually be on the same line as the `then`. This restriction will be relaxed once we implement indentation-guided parsing. An example of a situation which needs to be disambiguated is:
+
+```
+if condition1
+  if condition2 then tle1
+else
+  tle2
+end
+```
+
+Does the `else` belong to the outer or inner `if`? With the restriction, it belongs to the outer. Without, there would be an ambiguity which would be parsed, due to the dangling else rule, as belonging to the inner `if`.
 
 ##### Cond
 

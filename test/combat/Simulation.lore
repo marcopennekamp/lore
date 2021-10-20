@@ -95,7 +95,7 @@ func close_distance(combatant: Combatant, distance: Int): Int = do
     let new = Math.max(distance - Combatant.stat(combatant, #speed), 0)
     log('${Combatant.name(combatant)} closes distance to $new.')
     new
-  end else distance
+  else distance
 end
 
 /**
@@ -108,7 +108,7 @@ func attempt_dodge(state: CombatantState): Boolean = do
     log('${Combatant.name(state.combatant)} dodges an attack.')
     state.dodge -= 1.0
     true
-  end else false
+  else false
 end
 
 act attempt_attack(attacker_state: CombatantState, defender_state: CombatantState, distance: Int) do

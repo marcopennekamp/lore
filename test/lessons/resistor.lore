@@ -86,7 +86,7 @@ module Rating do
     // TODO (case): This should be solved with pattern matching.
     let base = if present?(figure3)
       100 * Figure.of(figure1) + 10 * Figure.of(figure2) + Figure.of(Option.get!(figure3))
-    end else
+    else
       10 * Figure.of(figure1) + Figure.of(figure2)
     end
     let raw = base * Multiplier.of(multiplier_code)

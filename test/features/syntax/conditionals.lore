@@ -9,13 +9,22 @@ end
 func abc(a: Boolean, b: Boolean, c: Boolean): Boolean = do
   if a
     return b
-  end else
+  else
     return c
   end
 end
 
 func dangle(flag: Boolean, flag2: Boolean): Int = do
   if flag then if flag2 then return 1 else return 2
+  3
+end
+
+func dangle2(condition1: Boolean, condition2: Boolean): Int = do
+  if condition1
+    if condition2 then return 1
+  else
+    return 2
+  end
   3
 end
 
@@ -34,4 +43,9 @@ func test(): [Boolean | Int] = [
   dangle(true, false),
   dangle(false, true),
   dangle(false, false),
+
+  dangle2(true, true),
+  dangle2(true, false),
+  dangle2(false, true),
+  dangle2(false, false),
 ]

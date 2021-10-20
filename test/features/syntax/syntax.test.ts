@@ -47,6 +47,7 @@ Deno.test(`${base}/conditionals`, async () => {
     false, false, true,
     21, 25, 25, 24, 29,
     1, 2, 3, 3,
+    1, 3, 2, 2,
   ])
 })
 
