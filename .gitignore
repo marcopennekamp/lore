@@ -34,6 +34,3 @@ vm/Cargo.lock
 lsp/client/node_modules/
 lsp/client/out/
 lsp/server/target/
-
-# Miscellaneous
-scratch.txt
