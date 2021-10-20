@@ -11,7 +11,7 @@ import { Types } from '../../../../src/lore/runtime/types/types.ts'
 
 Deno.test("types/subtyping: sum types are subtyped correctly", () => {
   assert(isSubtype(
-    Sum.simplified([Sum.type([Types.string, Types.int]), Types.boolean]),
-    Sum.type([Types.string, Types.int, Types.boolean])
+    Sum.simplified([Sum.type([Types.string, Types.number]), Types.boolean]),
+    Sum.type([Types.string, Types.number, Types.boolean])
   ))
 })
