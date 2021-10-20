@@ -16,13 +16,12 @@ object RuntimeApi {
 
     val any = named("any")
     val nothing = named("nothing")
-    val real = named("real")
-    val int = named("int")
+    val number = named("number")
     val boolean = named("boolean")
     val string = named("string")
 
     def variable(index: Int, lowerBound: TargetExpression, upperBound: TargetExpression, variance: Variance, fullName: String) = {
-      named("variable").call(Target.IntLiteral(index), lowerBound, upperBound, named("variance").prop(variance.toString), fullName.asLiteral)
+      named("variable").call(Target.NumberLiteral(index), lowerBound, upperBound, named("variance").prop(variance.toString), fullName.asLiteral)
     }
 
     def fitsMonomorphic(t1: TargetExpression, t2: TargetExpression) = named("fitsMonomorphic").call(t1, t2)
@@ -36,15 +35,15 @@ object RuntimeApi {
     object typePaths {
       implicit val base = named("typePaths")(RuntimeApi.types.base)
 
-      def tupleElement(tpe: TargetExpression, index: Int) = tpe.prop("types").element(Target.IntLiteral(index))
+      def tupleElement(tpe: TargetExpression, index: Int) = tpe.prop("types").element(Target.NumberLiteral(index))
       def functionInput(tpe: TargetExpression) = tpe.prop("input")
       def functionOutput(tpe: TargetExpression) = tpe.prop("output")
       def listElement(tpe: TargetExpression) = tpe.prop("element")
       def mapKey(tpe: TargetExpression) = tpe.prop("key")
       def mapValue(tpe: TargetExpression) = tpe.prop("value")
       def shapeProperty(tpe: TargetExpression, name: String) = named("shapeProperty").call(tpe, Target.StringLiteral(name))
-      def structTypeArgument(tpe: TargetExpression, index: Int) = tpe.prop("typeArguments").element(Target.IntLiteral(index))
-      def typeArgument(tpe: TargetExpression, schema: TargetExpression, index: Int) = named("typeArgument").call(tpe, schema, Target.IntLiteral(index))
+      def structTypeArgument(tpe: TargetExpression, index: Int) = tpe.prop("typeArguments").element(Target.NumberLiteral(index))
+      def typeArgument(tpe: TargetExpression, schema: TargetExpression, index: Int) = named("typeArgument").call(tpe, schema, Target.NumberLiteral(index))
     }
 
     object introspection {

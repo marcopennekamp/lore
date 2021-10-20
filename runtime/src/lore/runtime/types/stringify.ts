@@ -15,8 +15,7 @@ export function stringify(type: Type): string {
 
     case Kind.Any: return 'Any'
     case Kind.Nothing: return 'Nothing'
-    case Kind.Real: return 'Real'
-    case Kind.Int: return 'Int'
+    case Kind.Number: return 'Number'
     case Kind.Boolean: return 'Boolean'
     case Kind.String: return 'String'
 

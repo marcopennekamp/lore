@@ -110,7 +110,7 @@ object Synthesizer {
         def checkOperand(t1: Type) = checker.check(value, t1, assignments)
 
         operator match {
-          case Negation => checkOperand(BasicType.Real).flatMap(assignOperationResult(_, expression, value.tpe, BasicType.Real))
+          case Negation => checkOperand(BasicType.Number).flatMap(assignOperationResult(_, expression, BasicType.Number))
           case LogicalNot => checkOperand(BasicType.Boolean).flatMap(assignOperationResult(_, expression, BasicType.Boolean))
         }
 
@@ -120,8 +120,8 @@ object Synthesizer {
 
         operator match {
           case Addition | Subtraction | Multiplication | Division =>
-            checkOperands(BasicType.Real, BasicType.Real).flatMap(
-              assignOperationResult(_, expression, SumType.construct(left.tpe, right.tpe), BasicType.Real)
+            checkOperands(BasicType.Number, BasicType.Number).flatMap(
+              assignOperationResult(_, expression, BasicType.Number)
             )
 
           case Equals | LessThan | LessThanEquals =>
@@ -225,23 +225,13 @@ object Synthesizer {
     *
     * @param resultType The result type will be instantiated by this function, so it is possible to pass an
     *                   uninstantiated type.
-    * @param upperBound The upper bound ensures that the result type of an expression must adhere to certain standards.
-    *                   For example, the result type of a negation is the type of its value, but if the value isn't Int
-    *                   or Real, we don't want the negation to suddenly be typed as a String.
     */
   private def assignOperationResult(
     assignments: Assignments,
     operation: Expression,
     resultType: Type,
-    upperBound: Type,
   )(implicit reporter: Reporter): Option[Assignments] = {
-    val resultType2 = InferenceVariable.instantiateCandidate(resultType, assignments)
-    val resultType3 = if (resultType2 <= upperBound) resultType2 else upperBound
-    Unification.unifyEquals(operation.tpe, resultType3, assignments)
-  }
-
-  private def assignOperationResult(assignments: Assignments, operation: Expression, resultType: Type)(implicit reporter: Reporter): Option[Assignments] = {
-    assignOperationResult(assignments, operation, resultType, resultType)
+    Unification.unifyEquals(operation.tpe, InferenceVariable.instantiateCandidate(resultType, assignments), assignments)
   }
 
   def inferExtractors(extractors: Vector[Expression.Extractor], assignments: Assignments)(implicit checker: Checker, reporter: Reporter): Option[Assignments] = {

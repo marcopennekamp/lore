@@ -24,8 +24,7 @@ export const Types = {
   // Basic types.
   any: BasicType.any,
   nothing: BasicType.nothing,
-  real: BasicType.real,
-  int: BasicType.int,
+  number: BasicType.number,
   boolean: BasicType.boolean,
   string: BasicType.string,
 

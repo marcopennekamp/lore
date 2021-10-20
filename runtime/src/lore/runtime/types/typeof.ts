@@ -11,11 +11,7 @@ import { Type, Types } from './types.ts'
 export function typeOf(value: any): Type {
   switch (typeof value) {
     case 'number':
-      if (Number.isInteger(value)) {
-        return Types.int
-      } else {
-        return Types.real
-      }
+      return Types.number
     case 'boolean':
       return Types.boolean
     case 'string':

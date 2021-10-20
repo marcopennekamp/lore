@@ -23,8 +23,8 @@ object ExpressionFeedback {
 
   case class UnsafeInteger(node: ExprNode.IntLiteralNode) extends Feedback.Error(node) {
     override def message: String = s"The integer literal ${node.value} is outside the safe run-time range of" +
-      s" ${BasicType.Int.minSafeInteger} and ${BasicType.Int.maxSafeInteger}. The Javascript runtime will not be able" +
-      s" to properly store and process integers this large."
+      s" ${BasicType.Number.minSafeInteger} and ${BasicType.Number.maxSafeInteger}. The Javascript runtime will not be" +
+      s" able to properly store and process integers this large."
   }
 
   object FixedFunction {

@@ -53,8 +53,7 @@ object JavascriptGenerator {
       val args = arguments.map(generate).mkString(",")
       s"new ${generate(constructor)}($args)"
 
-    case Target.RealLiteral(value) => value.toString
-    case Target.IntLiteral(value) => value.toString
+    case Target.NumberLiteral(value) => value.toString
     case Target.BooleanLiteral(value) => value.toString
     case Target.StringLiteral(value) =>
       // Escaped characters such as \` need to be handled correctly. This is why we're using a proper JSON library.

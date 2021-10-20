@@ -38,9 +38,9 @@ case class Checker(returnType: Type) {
     // `fallback` is also used when the expected type is clearly invalid in respect to the expression, for example when
     // the expression is a ListConstruction and the expected type is a tuple. We attempt inference as a fallback to
     // assign types to inference variables, so that the eventual subtyping error can be most informed. For example,
-    // if we have a ListConstruction `[a.x, b.x]`, with `x` being a member of type `Int`, and an expected type
-    // `(Int, Int)`, we want the resulting error to say "[Int] is not a subtype of (Int, Int)" instead of "[Any] is not
-    // a subtype of (Int, Int)".
+    // if we have a ListConstruction `[a.x, b.x]`, with `x` being a member of type `Number`, and an expected type
+    // `(Number, Number)`, we want the resulting error to say "[Number] is not a subtype of (Number, Number)" instead
+    // of "[Any] is not a subtype of (Number, Number)".
     def fallback = Synthesizer.infer(expression, assignments)
 
     // Step 1: Check and/or infer the expression's sub-expressions to produce an assignments map that will allow us to

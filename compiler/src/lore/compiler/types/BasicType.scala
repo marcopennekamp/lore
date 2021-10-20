@@ -22,11 +22,7 @@ object BasicType {
     */
   case object Nothing extends BasicType(NamePath("Nothing"))
 
-  case object Real extends BasicType(NamePath("Real")) {
-    override def isPrimitive: Boolean = true
-  }
-
-  case object Int extends BasicType(NamePath("Int")) {
+  case object Number extends BasicType(NamePath("Number")) {
     override def isPrimitive: Boolean = true
 
     /**

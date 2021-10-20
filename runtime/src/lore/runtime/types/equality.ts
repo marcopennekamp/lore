@@ -8,7 +8,7 @@ import { SumType } from '../sums.ts'
 import { SymbolType } from '../symbols.ts'
 import { TraitType } from '../traits.ts'
 import { TupleType } from '../tuples.ts'
-import { AnyType, BooleanType, IntType, NothingType, RealType, StringType } from './basic-types.ts'
+import { AnyType, BooleanType, NothingType, NumberType, StringType } from './basic-types.ts'
 import { DeclaredType } from './declared-types.ts'
 import { PropertyTypes } from './property-types.ts'
 import { Assignments, TypeVariable } from './type-variables.ts'
@@ -52,8 +52,7 @@ const rules: Array<(t1: any, t2: any) => boolean> = [
   // return true.
   (t1: AnyType, t2: AnyType) => true,
   (t1: NothingType, t2: NothingType) => true,
-  (t1: RealType, t2: RealType) => true,
-  (t1: IntType, t2: IntType) => true,
+  (t1: NumberType, t2: NumberType) => true,
   (t1: BooleanType, t2: BooleanType) => true,
   (t1: StringType, t2: StringType) => true,
 

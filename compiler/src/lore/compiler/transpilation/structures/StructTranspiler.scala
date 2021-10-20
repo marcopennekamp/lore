@@ -114,7 +114,7 @@ case class StructTranspiler(schema: StructSchema)(
       case _ => throw CompilationException(s"The type path to the open type parameter $typeParameter must exist and be unique. This is not the case. Schema: $schema.")
     }
 
-    val target = varTypeArguments.element(Target.IntLiteral(index))
+    val target = varTypeArguments.element(Target.NumberLiteral(index))
     val propertyType = RuntimeApi.types.typeOf(varProperties.prop(property.name))
     val tpe = TypePathTranspiler.transpileAccess(propertyType, typePath)
 

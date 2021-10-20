@@ -81,10 +81,10 @@ object ParametricFunctionSynthesizer {
 
       // (2) Now that we've assigned the known types to some or all of the function's type parameters, we can narrow
       //     bounds from left to right. For example, if we have a function call `Enum.map([1, 2, 3], x => x + 1)`, we
-      //     know that `A = Int`, but the second parameter is typed as `B => C`. To properly `check` the anonymous
-      //     function, we have to assign `B >: Int`, which is possible due to the bound `B >: A`. This is why we're
+      //     know that `A = Number`, but the second parameter is typed as `B => C`. To properly `check` the anonymous
+      //     function, we have to assign `B >: Number`, which is possible due to the bound `B >: A`. This is why we're
       //     processing bounds here.
-      //     We will have to repeat this process each time a new argument has been
+      //     We will have to repeat this process each time an unchecked argument has been checked.
       Unification.unifyTypeVariableBounds(typeParameters, typeParameterAssignments, assignments2).getOrElse {
         return None
       }
@@ -102,10 +102,10 @@ object ParametricFunctionSynthesizer {
 
     // Note that the resulting type variable assignments are valid only because after checking an untyped argument, we
     // are attempting unification and handling bounds again. For example, for a call `Enum.map` as described in a
-    // comment further up, initially, the second argument would be typed as `Int => Any`. This is because there is no
-    // assignment to the type parameter `C` yet, meaning it has to be instantiated as the most general type. Only after
-    // checking the anonymous function `x => x + 1` do we know that the argument's actual type is `Int => Int` and
-    // therefore `C = Int`.
+    // comment further up, initially, the second argument would be typed as `Number => Any`. This is because there is
+    // no assignment to the type parameter `C` yet, meaning it has to be instantiated as the most general type. Only
+    // after  checking the anonymous function `x => x + 1` do we know that the argument's actual type is
+    // `Number => Number` and therefore `C = Number`.
     Some(instantiateResult(arguments.map(_.tpe), typeParameterAssignments, assignments4))
   }
 

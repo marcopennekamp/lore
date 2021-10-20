@@ -11,11 +11,11 @@ object Fit {
     * Specifically, the following needs to be true for the fit to hold:
     *   1. ALL variables in t2 need to be assigned types from t1.
     *   2. All assignments to the same variable need to be the same type. We cannot permit subtypes in assignments.
-    *      For example, assigning A = Real and then A = Int will fail, even though it would be quite valid in
+    *      For example, assigning A = Animal and then A = Fish will fail, even though it would be quite valid in
     *      programming languages that don't resolve parametric types at run-time.
     *   3. Upper and lower bounds of all variables that are assigned to are made concrete. For example, for an
-    *      allocation A = Real and B = Int and a bound B <= A, we get the bound B <= Real. Each type variable
-    *      assignment is checked against its expected bounds. So for B = Int, we would check Int <= Real.
+    *      allocation A = Animal and B = Fish and a bound B <= A, we get the bound B <= Animal. Each type variable
+    *      assignment is checked against its expected bounds. So for B = Fish, we would check Fish <= Animal.
     *   4. Finally, we substitute all assigned variables in t2 with their assigned types. Let's call the result
     *      of this substitution s(t2). We need to check whether t1 is a subtype of s(t2).
     *

@@ -38,8 +38,7 @@ object Type {
   val predefinedTypes: Map[NamePath, NamedType] = Vector(
     BasicType.Any,
     BasicType.Nothing,
-    BasicType.Int,
-    BasicType.Real,
+    BasicType.Number,
     BasicType.Boolean,
     BasicType.String,
   ).map(t => (t.name, t)).toMap

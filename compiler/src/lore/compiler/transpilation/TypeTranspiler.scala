@@ -62,7 +62,7 @@ object TypeTranspiler {
     if (Type.isPolymorphic(tpe)) {
       transpile(tpe, simplifyAtRuntime = true, tv => {
         val rtv = runtimeTypeVariables(tv)
-        RuntimeNames.localTypeVariableAssignments.element(Target.IntLiteral(rtv.index))
+        RuntimeNames.localTypeVariableAssignments.element(Target.NumberLiteral(rtv.index))
       })
     } else {
       transpile(tpe, simplifyAtRuntime = false, _ => throw CompilationException(s"The given type $tpe was determined to be monomorphic."))
@@ -80,8 +80,7 @@ object TypeTranspiler {
       case tv: TypeVariable => transpileTypeVariable(tv)
       case BasicType.Any => api.any
       case BasicType.Nothing => api.nothing
-      case BasicType.Real => api.real
-      case BasicType.Int => api.int
+      case BasicType.Number => api.number
       case BasicType.Boolean => api.boolean
       case BasicType.String => api.string
       case TupleType.UnitType => RuntimeApi.tuples.unitType

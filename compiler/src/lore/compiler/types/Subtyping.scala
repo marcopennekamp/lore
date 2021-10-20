@@ -16,9 +16,6 @@ object Subtyping {
       // Nothing is a subtype of all types.
       case BasicType.Nothing => true
 
-      // Int is a subtype of Real.
-      case BasicType.Int => t2 == BasicType.Real
-
       // All instances of v1 are definitely subtypes of t2 if v1's upper bound is a subtype of t2, hence ensuring
       // that any instance of v1 has t2 as a supertype.
       case v1: TypeVariable => isSubtype(v1.upperBound, t2)

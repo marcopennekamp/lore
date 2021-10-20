@@ -59,8 +59,7 @@ object Target {
   case class New(constructor: TargetExpression, arguments: Vector[TargetExpression]) extends TargetExpression
 
   // Values.
-  case class RealLiteral(value: Double) extends TargetExpression
-  case class IntLiteral(value: Long) extends TargetExpression
+  case class NumberLiteral(value: Double) extends TargetExpression
   case class BooleanLiteral(value: Boolean) extends TargetExpression
   case class StringLiteral(value: String) extends TargetExpression
   case object Undefined extends TargetExpression

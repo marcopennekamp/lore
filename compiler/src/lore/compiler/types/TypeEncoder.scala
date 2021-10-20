@@ -11,7 +11,7 @@ import lore.compiler.core.CompilationException
   *   - The first byte of a type's representation, the tag, determines the kind of the type and, possibly,
   *     its number of operands. Types are divided into variable-size types, fixed-size types and basic types:
   *       - Variable size: Sum, Intersection, Tuple, Named
-  *       - Basic type: Any, Nothing, Real, Int, Boolean, String
+  *       - Basic type: Any, Nothing, Number, Boolean, String
   *       - Fixed size: Function, List, Map, Variable, Symbol
   *     The first three bits determine the kind of the type:
   *       - 000: Sum
@@ -27,10 +27,9 @@ import lore.compiler.core.CompilationException
   *       - basic type:
   *         - 00000: Any
   *         - 00001: Nothing
-  *         - 00010: Real
-  *         - 00011: Int
-  *         - 00100: Boolean
-  *         - 00101: String
+  *         - 00010: Number
+  *         - 00011: Boolean
+  *         - 00100: String
   *       - fixed-size type:
   *         - 00000: Function
   *         - 00001: List
@@ -84,10 +83,9 @@ object TypeEncoder {
       val args: Byte = tpe match {
         case BasicType.Any => 0
         case BasicType.Nothing => 1
-        case BasicType.Real => 2
-        case BasicType.Int => 3
-        case BasicType.Boolean => 4
-        case BasicType.String => 5
+        case BasicType.Number => 2
+        case BasicType.Boolean => 3
+        case BasicType.String => 4
       }
       Tag(Kind.basic, args)
     }

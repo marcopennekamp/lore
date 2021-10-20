@@ -34,10 +34,6 @@ export function isSubtype(t1: Type, t2: Type): boolean {
     case Kind.Nothing:
       return true
 
-    case Kind.Int:
-      if (t2.kind === Kind.Real) return true
-      break
-
     case Kind.Trait:
     case Kind.Struct:
       if (t2.kind === Kind.Shape) {
