@@ -34,10 +34,4 @@ class ExpressionParserSpec extends ParserSpec[TopLevelExprNode] {
     "#[2 -> a = 0]".fails
     "%{ a: a = 1 }".fails
   }
-
-  it should "parse a block-rich expression within 50 milliseconds" in {
-    timed(50) { () =>
-      "do a + do b end + (do b end).x + b end".succeeds
-    }
-  }
 }

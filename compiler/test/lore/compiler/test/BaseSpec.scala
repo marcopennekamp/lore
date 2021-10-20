@@ -83,15 +83,4 @@ trait BaseSpec extends AnyFlatSpec with Matchers with OptionValues with Inside w
 
   val beAbstract: Matcher[FunctionDefinition] = (f: FunctionDefinition) => MatchResult(f.isAbstract, s"$f was not abstract", s"$f was abstract")
 
-  /**
-    * Checks that the assertion is within the milliseconds time limit.
-    */
-  def timed(timeLimit: Int)(assertion: () => Assertion): Assertion = {
-    val time1 = System.currentTimeMillis
-    assertion()
-    val time2 = System.currentTimeMillis
-    val difference = (time2 - time1).toInt
-    difference should be < timeLimit
-  }
-
 }
