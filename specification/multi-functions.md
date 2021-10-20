@@ -94,7 +94,7 @@ In the context of multiple dispatch, **fit** is *almost* defined as subtyping. T
 func append(list: [A], element: B): [A]
 ```
 
-This is not the signature of the actual appends operator in Lore, but this function will help us demonstrate polymorphic fit. The function `append` has the input type `([A], B)` for the type variables as defined. If we want to call the function, we will have to ensure that the argument types fit into the input type. Say we have an argument type `([Real], Int)`. Lore will know to assign `Real` to `A`  and `Int` to `B`. Since `Int <: Real`, the variable assignment is legal and the function can be called with the given arguments. This is subtly different to subtyping, because `Real` is not a subtype of `A`: it would have to be a subtype of *all possible instances* of `A`. `Real` can merely be assigned to `A`, making the given arguments fit.
+This is not the signature of the actual appends operator in Lore, but this function will help us demonstrate polymorphic fit. The function `append` has the input type `([A], B)` for the type variables as defined. If we want to call the function, we will have to ensure that the argument types fit into the input type. Say we have an argument type `([Animal], Fish)`. Lore will know to assign `Animal` to `A`  and `Fish` to `B`. Since `Fish <: Animal`, the variable assignment is legal and the function can be called with the given arguments. This is subtly different to subtyping, because `Animal` is not a subtype of `A`: it would have to be a subtype of *all possible instances* of `A`. `Animal` can merely be assigned to `A`, making the given arguments fit.
 
 ##### Multi-Function Fit and Min
 
@@ -174,7 +174,7 @@ append[Real]([1, 2, 3], 4.5)  // Impossible code!
 
 Of course, this is quite idiomatic in languages like Scala. We should be able to force the type variable if it isn't being inferred correctly, right? But with multiple dispatch, we are **moving type variable assignment to the runtime**, because it is essentially part of the dispatch decision.
 
-On top of that, the execution engine makes **type variable assignments available at run-time**. This is, for example, used with the list appends operator to construct a proper type for the resulting list. It's also crucial to have access to type variable assignments to construct parametric structs. A struct, carrying its actual type information at run-time, needs to be instantiated with the actual type carried in a variable (say, `Real`) instead of the variable itself (`A`). This cannot be decided at compile-time and thus needed to be moved to the execution engine.
+On top of that, the execution engine makes **type variable assignments available at run-time**. This is, for example, used with the list appends operator to construct a proper type for the resulting list. It's also crucial to have access to type variable assignments to construct parametric structs. A struct, carrying its actual type information at run-time, needs to be instantiated with the actual type carried in a variable (say, `Number`) instead of the variable itself (`A`). This cannot be decided at compile-time and thus needed to be moved to the execution engine.
 
 
 
@@ -298,7 +298,7 @@ end
 
 ### Multi-Function Values
 
-When a multi-function isn't immediately called, a **multi-function value** is created. This is a function value taken from the multi-function based on the given type context. For example, if we have an expression `map([1, 2, 3], foo)` and `foo` is a multi-function, the type inference algorithm will simulate multiple dispatch for the input type `(Int)`, because we're mapping over a list of integers. If exactly one function `foo: Int => String` is in the fit, the type of the resulting function value will also be `Int => String`. At run time, multiple dispatch is still performed every time the function value is called.
+When a multi-function isn't immediately called, a **multi-function value** is created. This is a function value taken from the multi-function based on the given type context. For example, if we have an expression `map([1, 2, 3], foo)` and `foo` is a multi-function, the type inference algorithm will simulate multiple dispatch for the input type `(Number)`, because we're mapping over a list of numbers. If exactly one function `foo: Number => String` is in the fit, the type of the resulting function value will also be `Number => String`. At run time, multiple dispatch is still performed every time the function value is called.
 
 
 

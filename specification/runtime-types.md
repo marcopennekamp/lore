@@ -27,6 +27,6 @@ Hence, we define, for *values*, the types they have at run-time:
       func create(x: A): C[A] where A = C[A](x)
       
       create('hello') --> C[String] at run-time
-      create(15)      --> C[Int] at run-time
+      create(15)      --> C[Number] at run-time
       ```
   -  We should introduce an LUB operator so that types can be combined. For example, let's say we have a concat function for a class `Collection[A]`. We want to express a function `concat(a: Collection[A], b: Collection[B]): Collection[LUB(A, B)] where A, B = Collection[LUB(A, B)](... some concat magic)`. The class type would be instantiated at RUN-TIME with the LUB of the actual types A and B. This would be necessary to correctly type classes in many cases.

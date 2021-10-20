@@ -159,18 +159,18 @@ trait Option[A]
 struct Some[A](value: A) extends Option[A]
 object None extends Option[Nothing]
 
-let v1 = Some(32)        // --> Some[Int]
-let v2 = Some[Real](32)  // --> Some[Real]
+let v1 = Some(Fox())          // --> Some[Fox]
+let v2 = Some[Animal](Fox())  // --> Some[Animal]
 ```
 
 The compiler will try its best to infer all type variables from the given properties, but this is not always possible. The same applies to **constructor function values**. Consider the following example:
 
 ```
-map([1, 2, 3], Some[Int])  // --> [Some[Int]]
-map([1, 2, 3], Some)       // --> [Some[Int]]
+map([1, 2, 3], Some[Number])  // --> [Some[Number]]
+map([1, 2, 3], Some)          // --> [Some[Number]]
 ```
 
-Both of these variants should work, as the compiler has enough context to infer that `A = Int` for the second `Some`.
+Both of these variants should work, as the compiler has enough context to infer that `A = Number` for the second `Some`.
 
 ##### Variance 
 

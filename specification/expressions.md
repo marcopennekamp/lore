@@ -127,18 +127,9 @@ Blocks also give you the luxury of **lexical scoping**, so make sure you declare
 
 ### Numbers
 
-Lore supports **real** and **integer** numbers. Their types are `Real` and `Int`. `Int` is a subtype of `Real`. They are both implemented using the standard Javascript number type, and so precise integers can only be guaranteed up to [MAX_SAFE_INTEGER](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number/MAX_SAFE_INTEGER). We believe this is sufficient for all common use cases.
+Lore only has a single numeric data type, **Number**. This is because the underlying Javascript runtime only knows a single numeric type as well. 
 
-We are not introducing integers for performance reasons. Rather, we think that it is useful to **state intent with the type:** if a function expects a `Real` number, it can be any number, while a function expecting an `Int` is explicitly requiring the number to be an integer.
-
-Internally, integers are represented as reals, but with additional **guarantees and checks:**
-
-- The compiler guarantees that integer **literals** have `Int` shape.
-- The compiler guarantees that integer **operations** evaluate to `Int`.
-- The compiler guarantees that functions **returning** `Int` have integer shape.
-- **Reals** cannot be passed as integers and need to be manually cast down.
-  - Since there are no precision issues, there is no need to require manual casting of integers to reals.
-- If we dynamically **dispatch** on the `Real` type, the actual type at runtime is determined using `isInteger`. If true, we dispatch with the value having `Int` as its type, and otherwise having `Real` as its type.
+Pyramid's preamble defines the **type aliases** `Int` and `Real` as both `Number`. They can be used to properly signify semantic intent when declaring numeric variables or properties. In the far future, the plan is to move to a different runtime system, one which should support distinct integer and floating point values. At that point, `Int` and `Real` will become properly distinct types. You are thus encouraged to use `Int` and `Real` for type declarations exclusively.
 
 For now, we want to keep literal grammar to a minimum. Hence, we do not support scientific notation and only support decimal numbers. Here are the **valid number formats:**
 
@@ -157,16 +148,9 @@ a / b  // Division
 -a     // Negation
 ```
 
-Arithmetic operations have the following **typing rules:**
-
-- If both arguments are real or integer, the result is also **of the same type**.
-- If one of the arguments is real, the result will also **be real**.
-
-This only concerns types at **compile time**, of course. A calculation such as `2.5 * 2` might be typed as `Real` at compile-time, but provides a run-time value of `Int`. This is not a problem, since `Int` is a subtype of `Real`. This cannot happen in reverse, either: two integers will always produce another integer, unless the result exceeds (or would exceed) the MAX_SAFE_INTEGER or MIN_SAFE_INTEGER limit.
-
 ##### Equality and Order
 
-Numbers are equal and ordered in accordance with the rules of sanity. Integers and reals can be mixed in comparisons without any issues.
+Numbers are equal and ordered in accordance with the rules of sanity.
 
 
 
@@ -287,7 +271,7 @@ We can define a map from strings to integers:
 
 ```
 let points = #['Ameela' -> 120, 'Bart' -> 14, 'Morrigan' -> 50]
-// points: #[String -> Int]
+// points: #[String -> Number]
 ```
 
 ##### Equality and Order
