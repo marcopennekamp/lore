@@ -11,8 +11,8 @@ class SubtypingSpec extends TypeSpec {
   }
 
   "Subtyping" should "handle sum types correctly" in {
-    ((BasicType.String | BasicType.Int) | BasicType.Boolean) <:< (BasicType.String | BasicType.Int | BasicType.Boolean)
-    (((BasicType.String | BasicType.Int) | BasicType.Boolean) | BasicType.Int) <:< (BasicType.String | BasicType.Int | BasicType.Boolean)
+    ((string | int) | boolean) <:< (string | int | boolean)
+    (((string | int) | boolean) | int) <:< (string | int | boolean)
   }
 
   it should "handle shape types correctly" in {
@@ -49,7 +49,7 @@ class SubtypingSpec extends TypeSpec {
   it should "handle type variables correctly" in {
     { // An excerpt of Example 1 from the spec's type allocation examples.
       val C = typeVariable("C")
-      BasicType.Int </< C
+      int </< C
     }
     { // An excerpt of Example 2 from the spec's type allocation examples.
       val C = typeVariable("C")

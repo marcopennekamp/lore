@@ -6,5 +6,5 @@ const base = 'features/introspection'
 
 Deno.test(`${base}/subtyping`, async () => {
   const result: ListValue<boolean> = await LoreTest.run(`${base}/subtyping.lore`)
-  assertListEquals(result, [true, false, true, false, false, true, false])
+  assertListEquals(result, [true, true, false, false, true, false])
 })

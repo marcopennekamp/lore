@@ -13,24 +13,23 @@ class FitSpec extends TypeSpec {
 
   "Fit" should "handle type variables correctly" in {
     { val A = typeVariable("A")
-      ((ListType(BasicType.String), BasicType.String): TupleType) fitsInto (ListType(A), A)
-      ((ListType(BasicType.Real), BasicType.String): TupleType) fitsNotInto (ListType(A), A)
-      ((ListType(BasicType.Real), BasicType.Int): TupleType) fitsNotInto (ListType(A), A)
+      ((ListType(string), string): TupleType) fitsInto (ListType(A), A)
+      ((ListType(real), string): TupleType) fitsNotInto (ListType(A), A)
     }
     { val X = typeVariable("X")
       val Y = typeVariable("Y")
-      ((BasicType.Real, Y): TupleType) fitsInto (X, BasicType.Any)
+      ((real, Y): TupleType) fitsInto (X, BasicType.Any)
     }
     { val A = typeVariable("A")
       val B = typeVariable("B", upperBound = A)
-      ((ListType(BasicType.Real), BasicType.Int): TupleType) fitsInto (ListType(A), B)
+      ((ListType(real), int): TupleType) fitsInto (ListType(A), B)
       ((ListType(Bird), Mammal): TupleType) fitsNotInto (ListType(A), B)
     }
     { // Example 1 from the spec's type allocation examples.
       val A = typeVariable("A")
       val B = typeVariable("B", upperBound = A)
       val C = typeVariable("C")
-      ((C, BasicType.Int): TupleType) fitsNotInto (A, B)
+      ((C, int): TupleType) fitsNotInto (A, B)
     }
     { // Example 2 from the spec's type allocation examples.
       val A = typeVariable("A", Cat, Animal)
@@ -47,7 +46,7 @@ class FitSpec extends TypeSpec {
     }
     { val A = typeVariable("A")
       val B = typeVariable("B", lowerBound = A)
-      ((ListType(BasicType.String | BasicType.Int), BasicType.Int): TupleType) fitsInto (ListType(B), A)
+      ((ListType(string | int), int): TupleType) fitsInto (ListType(B), A)
     }
   }
 
@@ -56,13 +55,13 @@ class FitSpec extends TypeSpec {
 
     { val A = typeVariable("A")
       Goldfish fitsInto ShapeType("name" -> A)
-      Goldfish fitsInto ShapeType("name" -> A, "size" -> BasicType.Real)
-      Goldfish fitsInto ShapeType("name" -> BasicType.String, "size" -> A)
+      Goldfish fitsInto ShapeType("name" -> A, "size" -> real)
+      Goldfish fitsInto ShapeType("name" -> string, "size" -> A)
       Goldfish fitsNotInto ShapeType("name" -> A, "size" -> A)
     }
-    { val X = typeVariable("X", upperBound = BasicType.Real)
-      val Y = typeVariable("Y", upperBound = BasicType.Real)
-      val Z = typeVariable("Z", upperBound = BasicType.Real)
+    { val X = typeVariable("X", upperBound = real)
+      val Y = typeVariable("Y", upperBound = real)
+      val Z = typeVariable("Z", upperBound = real)
       val T2D = ShapeType("x" -> X, "y" -> Y)
       val T3D = T2D & ShapeType("z" -> Z)
       Position2D fitsInto T2D

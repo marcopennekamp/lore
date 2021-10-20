@@ -1,4 +1,4 @@
 struct VeryIllegal
   crimes: Int
-  crimes: Real
+  crimes: Boolean
 end

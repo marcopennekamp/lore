@@ -14,6 +14,6 @@ trait AncientPhilosopher extends Questioner, Known
 
 struct Plato extends AncientPhilosopher
   id: Id
-  known_by: Real
+  known_by: String
   question: RudeQuestion
 end

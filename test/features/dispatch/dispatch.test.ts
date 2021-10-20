@@ -28,7 +28,7 @@ Deno.test(`${base}/movable`, async () => {
 
 Deno.test(`${base}/parametric`, async () => {
   const result: ListValue<number> = await LoreTest.run(`${base}/parametric.lore`)
-  assertListEquals(result, [1, 3, 2, 1, 3, 2, 4])
+  assertListEquals(result, [1, 3, 2, 2, 3, 2, 4])
 })
 
 Deno.test(`${base}/tuple`, async () => {

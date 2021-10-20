@@ -16,29 +16,29 @@ class IntersectionConstructionSpec extends TypeSpec {
 
   "IntersectionType.construct" should "handle shape types correctly" in {
     (
-      ShapeType("x" -> BasicType.Real),
-      ShapeType("y" -> BasicType.Real),
-      ShapeType("z" -> BasicType.Real),
-    ) --> ShapeType("x" -> BasicType.Real, "y" -> BasicType.Real, "z" -> BasicType.Real)
+      ShapeType("x" -> real),
+      ShapeType("y" -> real),
+      ShapeType("z" -> real),
+    ) --> ShapeType("x" -> real, "y" -> real, "z" -> real)
 
     (
       ShapeType("animal" -> Chicken),
-      ShapeType("animal" -> Animal, "size" -> BasicType.Int),
-      ShapeType("size" -> BasicType.Real),
-    ) --> ShapeType("animal" -> Chicken, "size" -> BasicType.Int)
+      ShapeType("animal" -> Animal, "size" -> int),
+      ShapeType("size" -> real),
+    ) --> ShapeType("animal" -> Chicken, "size" -> int)
 
     (
       Cat,
-      ShapeType("x" -> BasicType.Real),
+      ShapeType("x" -> real),
       Animal,
       Chicken,
-      ShapeType("y" -> BasicType.Real),
+      ShapeType("y" -> real),
       BasicType.String,
-      ShapeType("z" -> BasicType.Real),
+      ShapeType("z" -> real),
       BasicType.Any,
       ScottishFold,
     ) --> IntersectionType(Set(
-      ShapeType("x" -> BasicType.Real, "y" -> BasicType.Real, "z" -> BasicType.Real),
+      ShapeType("x" -> real, "y" -> real, "z" -> real),
       ScottishFold,
       Chicken,
       BasicType.String,

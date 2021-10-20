@@ -34,6 +34,6 @@ Deno.test(`${base}/savable`, async () => {
   const result: ListValue<number> = await LoreTest.run(`${base}/savable.lore`)
   assertListEquals(result, ['Character', 'Position', 1.5, 2.7, 'ExternalPhysics', 42])
 
-  // Because the list only contains String and Real values, its type should be [String | Real].
-  assertSumTypeParts(result.lore$type.element, ({ kind }) => kind === Kind.Real || kind === Kind.String)
+  // Because the list only contains String and Number values, its type should be [String | Number].
+  assertSumTypeParts(result.lore$type.element, ({ kind }) => kind === Kind.Number || kind === Kind.String)
 })

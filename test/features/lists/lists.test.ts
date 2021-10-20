@@ -11,10 +11,10 @@ Deno.test(`${base}/concat`, async () => {
   assertListEquals(
     result,
     [
-      'Int list: [10]',
-      'String/Int list: [10, test]',
-      'String/Int/Boolean list: [10, test, true, wow]',
-      'String/Int/Boolean list: [10, test, true, wow, 15]',
+      'Number list: [10]',
+      'String/Number list: [10, test]',
+      'String/Number/Boolean list: [10, test, true, wow]',
+      'String/Number/Boolean list: [10, test, true, wow, 15]',
     ]
   )
 })

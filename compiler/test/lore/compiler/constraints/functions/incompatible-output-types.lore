@@ -2,10 +2,10 @@ trait A
 object B1 extends A
 object B2 extends A
 
-func f(value: A): Int = 0
+func f(value: A): B2 = B2()
 
-// Illegal: Real is not a subtype of Int.
-func f(value: B1): Real = 1.0
+// Illegal: B1 is not a subtype of B2.
+func f(value: B1): B1 = value
 
-// Illegal: () is not a subtype of Int.
+// Illegal: () is not a subtype of B2.
 act f(value: B2) do end

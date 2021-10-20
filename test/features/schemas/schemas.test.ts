@@ -63,7 +63,7 @@ Deno.test(`${base}/option`, async () => {
 
 Deno.test(`${base}/type-filter`, async () => {
   const result: TupleValue = await LoreTest.run(`${base}/type-filter.lore`)
-  assertIsTuple(result, [List.type(Types.int), List.type(Types.string)])
+  assertIsTuple(result, [List.type(Types.number), List.type(Types.string)])
   assertListEquals(result.elements[0], [12, 5, 37])
   assertListEquals(result.elements[1], ['hello world', 'cool world'])
 })

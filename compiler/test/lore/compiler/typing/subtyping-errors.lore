@@ -3,6 +3,10 @@ struct B extends A
   mut name: String
 end
 
+trait Animal
+struct Fox() extends Animal
+struct Ox() extends Animal
+
 // Illegal: `shape.prop` has the illegal type A. Expected: B.
 func test(): Unit = do
   let shape: %{ prop: A } = %{ prop: B('') }
@@ -11,9 +15,9 @@ end
 
 func pi(): Real = 3.14
 
-// Illegal: 5.5 has the illegal type Real. Expected: Int.
+// Illegal: `if ...` has the illegal type Fox | Ox. Expected: Fox.
 act test2() do
-  let number: Int = 5.5
+  let animal: Fox = if 1 == 2 then Fox() else Ox()
 end
 
 // Illegal: `test()` has the illegal type Unit. Expected: Real.
@@ -28,10 +32,11 @@ func test4(): A = do
   b
 end
 
-func increment(number: Int): Real = number + 1.5
+func advance(fox: Fox): Animal = fox
 
 func test5(): %{ number: Int } = do
-  // Illegal: `increment(2)` has the illegal type Real. Expected: Int.
-  let abc: %{ number: Int } = %{ number: increment(2) }
+  let fox = Fox()
+  // Illegal: `advance(fox)` has the illegal type Animal. Expected: Fox.
+  let abc: %{ animal: Fox } = %{ animal: advance(fox) }
   abc
 end

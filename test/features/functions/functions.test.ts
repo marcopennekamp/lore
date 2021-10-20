@@ -32,7 +32,7 @@ Deno.test(`${base}/greet`, async () => {
 
 Deno.test(`${base}/map`, async () => {
   const result: TupleValue = await LoreTest.run(`${base}/map.lore`)
-  assertIsTuple(result, [List.type(Types.int), List.type(Types.string)])
+  assertIsTuple(result, [List.type(Types.number), List.type(Types.string)])
 
   const numbers = result.elements[0]
   assertListEquals(numbers, [4, 5, 6, 7, 8])

@@ -11,8 +11,8 @@ import lore.compiler.types._
 trait TypeSyntax {
   val any: BasicType = BasicType.Any
   val nothing: BasicType = BasicType.Nothing
-  val real: BasicType = BasicType.Real
-  val int: BasicType = BasicType.Int
+  val real: BasicType = BasicType.Number
+  val int: BasicType = BasicType.Number
   val boolean: BasicType = BasicType.Boolean
   val string: BasicType = BasicType.String
 

@@ -19,16 +19,16 @@ Deno.test(`${base}/append`, async () => {
   assertIsList(result)
 
   const lists = result.array
-  assertListEquals(lists[0], [10], Types.int)
-  assertListEquals(lists[1], [5.5], Types.real)
+  assertListEquals(lists[0], [10], Types.number)
+  assertListEquals(lists[1], [5.5], Types.number)
   assertListEquals(lists[2], ['hello'], Types.string)
-  assertListEquals(lists[3], [12, 14.5, 10], Types.real)
-  assertListEquals(lists[4], [12, 14.5, 5.5], Types.real)
-  assertListEquals(lists[5], [12, 14.5, 'hello'], Sum.type([Types.real, Types.string]))
-  assertListEquals(lists[6], [44, -5, 7, 10], Types.int)
-  assertListEquals(lists[7], [44, -5, 7, 5.5], Types.real)
-  assertListEquals(lists[8], [44, -5, 7, 'hello'], Sum.type([Types.int, Types.string]))
-  assertListEquals(lists[9], [44, -5, 7, 'hello', 'world'], Sum.type([Types.int, Types.string]))
+  assertListEquals(lists[3], [12, 14.5, 10], Types.number)
+  assertListEquals(lists[4], [12, 14.5, 5.5], Types.number)
+  assertListEquals(lists[5], [12, 14.5, 'hello'], Sum.type([Types.number, Types.string]))
+  assertListEquals(lists[6], [44, -5, 7, 10], Types.number)
+  assertListEquals(lists[7], [44, -5, 7, 5.5], Types.number)
+  assertListEquals(lists[8], [44, -5, 7, 'hello'], Sum.type([Types.number, Types.string]))
+  assertListEquals(lists[9], [44, -5, 7, 'hello', 'world'], Sum.type([Types.number, Types.string]))
 })
 
 Deno.test(`${base}/associativity`, async () => {
@@ -72,19 +72,19 @@ Deno.test(`${base}/literals`, async () => {
   const tuples = <ListValue<TupleValue>> elements[7]
   assertIsList(tuples)
   assertTupleEquals(tuples.array[0], [], [])
-  assertTupleEquals(tuples.array[1], [0, 'hello', true], [Types.int, Types.string, Types.boolean])
-  assertTupleEquals(tuples.array[2], [3, 6, true], [Types.int, Types.int, Types.boolean])
+  assertTupleEquals(tuples.array[1], [0, 'hello', true], [Types.number, Types.string, Types.boolean])
+  assertTupleEquals(tuples.array[2], [3, 6, true], [Types.number, Types.number, Types.boolean])
 
-  assertIsFunction(elements[8], Function.type(Tuple.type([Types.int]), Types.int))
+  assertIsFunction(elements[8], Function.type(Tuple.type([Types.number]), Types.number))
 
   const lists = <ListValue<ListValue<any>>> elements[9]
   assertIsList(lists)
   assertListEquals(lists.array[0], [], Types.nothing)
-  assertListEquals(lists.array[1], [1, 2, 3], Types.int)
-  assertIsList(lists.array[2], Tuple.type([Types.int, Types.int]))
+  assertListEquals(lists.array[1], [1, 2, 3], Types.number)
+  assertIsList(lists.array[2], Tuple.type([Types.number, Types.number]))
   assertListForall(lists.array[2], [[1, 2], [3, 4]], (actual, expected) => assertTupleEquals(actual, expected))
-  assertListEquals(lists.array[3], [3, 6, false], Sum.type([Types.int, Types.boolean]))
-  assertIsList(lists.array[4], List.type(Sum.type([Types.int, Types.string])))
+  assertListEquals(lists.array[3], [3, 6, false], Sum.type([Types.number, Types.boolean]))
+  assertIsList(lists.array[4], List.type(Sum.type([Types.number, Types.string])))
   assertListForall(lists.array[4], [[1, 2], ['test', 'me', 'well man'], ['container']], (actual, expected: Array<number | string>) => {
     assertListEquals(actual, expected)
   })
@@ -92,18 +92,18 @@ Deno.test(`${base}/literals`, async () => {
   const maps = <ListValue<MapValue<any, any>>> elements[10]
   assertIsList(maps)
   assertMapEquals(maps.array[0], [], Types.nothing, Types.nothing)
-  assertMapEquals(maps.array[1], [['john', 11], ['martin', 5]], Types.string, Types.int)
-  assertIsMap(maps.array[2], Types.int, Map.type(Types.string, Types.string))
+  assertMapEquals(maps.array[1], [['john', 11], ['martin', 5]], Types.string, Types.number)
+  assertIsMap(maps.array[2], Types.number, Map.type(Types.string, Types.string))
   assertMapForall(maps.array[2], [[1, [['test', 'me']]], [2, [['test', 'well man'], ['test2', 'abc']]]], (actual, expected: Array<[string, string]>) => {
     assertMapEquals(actual, expected, Types.string, Types.string)
   })
-  assertMapEquals(maps.array[3], [[1, 3], [5, 6], [10, true]], Types.int, Sum.type([Types.int, Types.boolean]))
+  assertMapEquals(maps.array[3], [[1, 3], [5, 6], [10, true]], Types.number, Sum.type([Types.number, Types.boolean]))
 
   const shapes = <ListValue<ShapeValue>> elements[11]
   assertIsList(shapes)
   assertShapeEquals(shapes.array[0], {}, {})
   assertShapeEquals(shapes.array[1], { name: 'John', occupation: 'Salaryman' }, { name: Types.string, occupation: Types.string })
-  assertIsShape(shapes.array[2], { part1: Shape.type({ a: Types.int, b: Types.int }), part2: Shape.type({ c: Types.int, a: Types.string }) })
+  assertIsShape(shapes.array[2], { part1: Shape.type({ a: Types.number, b: Types.number }), part2: Shape.type({ c: Types.number, a: Types.string }) })
   assertShapeForall(shapes.array[2], { part1: { a: 1, b: 2 }, part2: { c: 3, a: 'hello' } }, (actual, expected) => {
     assertShapeEquals(actual, expected)
   })
@@ -114,10 +114,10 @@ Deno.test(`${base}/loops`, async () => {
   assertIsList(result)
 
   const lists = result.array
-  assertListEquals(lists[0], [10, 20, 29.25], Types.real)
-  assertListEquals(lists[1], [15, 15, 15], Types.int)
-  assertListEquals(lists[2], [11, 4, 41, -1, 16], Types.int)
-  assertListEquals(lists[3], [4, 5, 5, 6], Types.int)
+  assertListEquals(lists[0], [10, 20, 29.25], Types.number)
+  assertListEquals(lists[1], [15, 15, 15], Types.number)
+  assertListEquals(lists[2], [11, 4, 41, -1, 16], Types.number)
+  assertListEquals(lists[3], [4, 5, 5, 6], Types.number)
 })
 
 Deno.test(`${base}/operators`, async () => {
