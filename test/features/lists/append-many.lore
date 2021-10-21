@@ -1,0 +1,11 @@
+func test(): [Int] = do
+  let mut result: [Int] = []
+  let mut i = 0
+
+  while i < 1000
+    result = result :+ i
+    i += 1
+  end
+
+  result
+end

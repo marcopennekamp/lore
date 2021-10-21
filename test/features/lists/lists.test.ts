@@ -6,6 +6,15 @@ import { LoreTest } from '../../base.ts'
 
 const base = 'features/lists'
 
+Deno.test(`${base}/append-many`, async () => {
+  const result: ListValue<number> = await LoreTest.run(`${base}/append-many.lore`)
+  const expected: Array<number> = []
+  for (let i = 0; i < 1000; i += 1) {
+    expected.push(i)
+  }
+  assertListEquals(result, expected)
+})
+
 Deno.test(`${base}/concat`, async () => {
   const result: ListValue<string> = await LoreTest.run(`${base}/concat.lore`)
   assertListEquals(
