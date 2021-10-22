@@ -87,7 +87,7 @@ export const Lists = {
 
   flatMap<A, B>(list: ListValue<A>, f: FunctionValue<ListValue<B>>): ListValue<B> {
     const result = list.elements.flatMap(v => f.callable(v).elements)
-    const resultType = Lists.type(f.lore$type.output)
+    const resultType = Lists.type((<ListType> f.lore$type.output).element)
     return Lists.fromImmutableJs(result, resultType)
   },
 
