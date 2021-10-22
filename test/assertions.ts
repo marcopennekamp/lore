@@ -11,7 +11,8 @@ import { Kind } from '../runtime/src/lore/runtime/types/kinds.ts'
 import { PropertyTypes } from '../runtime/src/lore/runtime/types/property-types.ts'
 import { Type, Types } from '../runtime/src/lore/runtime/types/types.ts'
 
-export function assertEpsilonEquals(actual: number, expected: number) {
+export function assertEpsilonEquals(actual: number | undefined, expected: number) {
+  assert(typeof actual === 'number')
   const epsilon = 0.0000001
   const message = `The number ${actual} must be epsilon-equal to the expected number ${expected}.`
   assert(expected - epsilon <= actual, message)
@@ -42,7 +43,8 @@ export function assertIsTuple(actual: TupleValue, elements?: Array<Type>) {
   }
 }
 
-export function assertTupleEquals(actual: TupleValue, expected: Array<any>, elementTypes?: Array<Type>) {
+export function assertTupleEquals(actual: TupleValue | undefined, expected: Array<any>, elementTypes?: Array<Type>) {
+  assert(actual)
   assertIsTuple(actual, elementTypes)
   assertEquals(actual.elements, expected)
 }
@@ -55,7 +57,8 @@ export function assertIsFunction(actual: FunctionValue<any>, expected?: Function
   }
 }
 
-export function assertIsList(actual: ListValue<any>, element?: Type) {
+export function assertIsList(actual: ListValue<any> | undefined, element?: Type) {
+  assert(actual)
   const actualType = actual.lore$type
   assertEquals(actualType.kind, Kind.List)
   if (element) {
@@ -63,16 +66,17 @@ export function assertIsList(actual: ListValue<any>, element?: Type) {
   }
 }
 
-export function assertListEquals<A>(actual: ListValue<A>, expected: Array<A>, elementType?: Type) {
+export function assertListEquals<A>(actual: ListValue<A> | undefined, expected: Array<A>, elementType?: Type) {
+  assert(actual)
   assertIsList(actual, elementType)
-  assertEquals(actual.elements, expected)
+  assertEquals(actual.elements.toJS(), expected)
 }
 
 export function assertListEpsilonEquals(actual: ListValue<number>, expected: Array<number>) {
   assertIsList(actual)
-  assertEquals(actual.elements.length, expected.length)
+  assertEquals(actual.elements.size, expected.length)
   for (let i = 0; i < expected.length; i += 1) {
-    assertEpsilonEquals(actual.elements[i], expected[i])
+    assertEpsilonEquals(actual.elements.get(i), expected[i])
   }
 }
 
@@ -86,10 +90,11 @@ export function assertListEqualsUnordered(actual: ListValue<any>, expected: Arra
   })
 }
 
-export function assertListForall<A, B>(actual: ListValue<A>, expected: Array<B>, assertCondition: (actual: A, expected: B) => void) {
+export function assertListForall<A, B>(actual: ListValue<A> | undefined, expected: Array<B>, assertCondition: (actual: A, expected: B) => void) {
+  assert(actual)
   assertIsList(actual)
   assertEquals(
-    actual.elements.length,
+    actual.elements.size,
     expected.length,
     `The lists of actual (${actual.elements}) and expected (${expected}) values must be of equal length.`
   )
@@ -100,7 +105,8 @@ export function assertListForall<A, B>(actual: ListValue<A>, expected: Array<B>,
   })
 }
 
-export function assertIsMap(actual: MapValue<any, any>, key?: Type, value?: Type) {
+export function assertIsMap(actual: MapValue<any, any> | undefined, key?: Type, value?: Type) {
+  assert(actual)
   const actualType = actual.lore$type
   assertEquals(actualType.kind, Kind.Map)
   if (key) {
@@ -111,12 +117,13 @@ export function assertIsMap(actual: MapValue<any, any>, key?: Type, value?: Type
   }
 }
 
-export function assertMapEquals<K, V>(actual: MapValue<K, V>, expected: Array<[K, V]>, keyType?: Type, valueType?: Type) {
+export function assertMapEquals<K, V>(actual: MapValue<K, V> | undefined, expected: Array<[K, V]>, keyType?: Type, valueType?: Type) {
   assertIsMap(actual, keyType, valueType)
   assertMapForall(actual, expected, (actual, expected) => assertEquals(actual, expected))
 }
 
-export function assertMapForall<K, V, A>(actual: MapValue<K, V>, expected: Array<[K, A]>, assertCondition: (actual: V, expected: A) => void) {
+export function assertMapForall<K, V, A>(actual: MapValue<K, V> | undefined, expected: Array<[K, A]>, assertCondition: (actual: V, expected: A) => void) {
+  assert(actual)
   assertIsMap(actual)
 
   const actualEntries = getMapEntries(actual)
@@ -140,7 +147,8 @@ function getMapEntries<K, V>(actual: MapValue<K, V>): Map<K, V> {
   )
 }
 
-export function assertIsShape(actual: ShapeValue, properties?: PropertyTypes) {
+export function assertIsShape(actual: ShapeValue | undefined, properties?: PropertyTypes) {
+  assert(actual)
   assertEquals(actual.lore$type.kind, Kind.Shape)
   if (properties) {
     const actualProperties = actual.lore$type.propertyTypes
@@ -155,12 +163,14 @@ export function assertIsShape(actual: ShapeValue, properties?: PropertyTypes) {
   }
 }
 
-export function assertShapeEquals(actual: ShapeValue, expected: object, propertyTypes?: PropertyTypes) {
+export function assertShapeEquals(actual: ShapeValue | undefined, expected: object, propertyTypes?: PropertyTypes) {
+  assert(actual)
   assertIsShape(actual, propertyTypes)
   assertShapeForall(actual, expected, (actual, expected) => assertEquals(actual, expected))
 }
 
-export function assertShapeForall(actual: ShapeValue, expected: object, assertCondition: (actual: any, expected: any) => void) {
+export function assertShapeForall(actual: ShapeValue | undefined, expected: object, assertCondition: (actual: any, expected: any) => void) {
+  assert(actual)
   assertIsShape(actual)
 
   const keys = Object.keys(expected)
@@ -177,7 +187,8 @@ export function assertIsStruct(actual: StructValue, fullName: string) {
   assertEquals(actualType.schema.name, fullName)
 }
 
-export function assertStructHasValues(actual: StructValue, expectedFullStructName: string, expectedValues: object) {
+export function assertStructHasValues(actual: StructValue | undefined, expectedFullStructName: string, expectedValues: object) {
+  assert(actual)
   assertIsStruct(actual, expectedFullStructName)
   Object.entries(expectedValues).forEach(kv => {
     const [key, value] = kv

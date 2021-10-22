@@ -1,4 +1,5 @@
 import { assert } from 'https://deno.land/std/testing/asserts.ts'
+import { JsonConversion } from '../runtime/src/lore/runtime/utils/JsonConversion.ts'
 
 /*+
  * A test utility that allows functional testing of individual Lore source files. The files can be compiled and then
@@ -62,7 +63,7 @@ export const LoreTest = {
     if (errors.length) {
       result = errors[0]
     } else {
-      result = JSON.parse(messages[messages.length - 1])
+      result = JsonConversion.toLoreFromString(messages[messages.length - 1])
     }
 
     process.close()

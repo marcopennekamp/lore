@@ -1,4 +1,4 @@
-import { List, ListValue } from '../../../runtime/src/lore/runtime/lists.ts'
+import { Lists, ListValue } from '../../../runtime/src/lore/runtime/lists.ts'
 import { TupleValue } from '../../../runtime/src/lore/runtime/tuples.ts'
 import { Types } from '../../../runtime/src/lore/runtime/types/types.ts'
 import { assertIsTuple, assertListEquals } from '../../assertions.ts'
@@ -63,7 +63,7 @@ Deno.test(`${base}/option`, async () => {
 
 Deno.test(`${base}/type-filter`, async () => {
   const result: TupleValue = await LoreTest.run(`${base}/type-filter.lore`)
-  assertIsTuple(result, [List.type(Types.number), List.type(Types.string)])
+  assertIsTuple(result, [Lists.type(Types.number), Lists.type(Types.string)])
   assertListEquals(result.elements[0], [12, 5, 37])
   assertListEquals(result.elements[1], ['hello world', 'cool world'])
 })

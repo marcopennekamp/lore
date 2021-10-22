@@ -22,7 +22,7 @@ Deno.test(`${base}/listify`, async () => {
     [1.2, 5], [0, 5.1, 4.8], [1.2, 5], [0, 5.1, 4.8]
   ]
   assertListForall(result, expected, (actual: ListValue<number>, expected: Array<number>) => {
-    assertEquals(actual.array, expected)
+    assertListEquals(actual, expected)
   })
 })
 

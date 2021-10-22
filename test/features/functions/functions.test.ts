@@ -12,8 +12,8 @@ const base = 'features/functions'
 Deno.test(`${base}/constructor`, async () => {
   const result: ListValue<StructValue> = await LoreTest.run(`${base}/constructor.lore`)
   assertIsList(result)
-  assertStructHasValues(result.array[0], 'Person', { name: 'Victor', age: 21 })
-  assertStructHasValues(result.array[1], 'Company', { name: 'Victor', worth: 21 })
+  assertStructHasValues(result.elements.get(0), 'Person', { name: 'Victor', age: 21 })
+  assertStructHasValues(result.elements.get(1), 'Company', { name: 'Victor', worth: 21 })
 })
 
 Deno.test(`${base}/filter-curried`, async () => {

@@ -30,7 +30,7 @@ export const Lists = {
 
   // TODO (lists): Use `empty` instead of `value` when creating empty lists to avoid an empty array allocation.
   empty(type: ListType): ListValue<any> {
-    return Lists.fromImmutableJs(ListConstructor(), type)
+    return Lists.fromImmutableJs(ListConstructor(undefined), type)
   },
 
   fromImmutableJs<A>(elements: List<A>, type: ListType): ListValue<A> {

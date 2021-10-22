@@ -7,7 +7,7 @@ Deno.test('combat', async () => {
   const result: ListValue<any> = await LoreTest.run(`combat`)
 
   assertIsList(result)
-  const [scenario1, scenario2] = result.array
+  const [scenario1, scenario2] = result.elements
 
   assertIsStruct(scenario1, 'combat.Simulation.Victory')
   const winner1 = (scenario1 as any).winner
