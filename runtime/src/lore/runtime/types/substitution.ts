@@ -1,5 +1,5 @@
 import { Intersection, IntersectionType } from '../intersections.ts'
-import { List, ListType } from '../lists.ts'
+import { Lists, ListType } from '../lists.ts'
 import { Map, MapType } from '../maps.ts'
 import { Shape, ShapeType } from '../shapes.ts'
 import { Struct, StructType } from '../structs.ts'
@@ -67,7 +67,7 @@ function substitutePolymorphic(type: Type, assignments: Assignments): Type | und
       const list = <ListType> type
       const element = substitutePolymorphic(list.element, assignments)
       if (!element) return undefined
-      return List.type(element)
+      return Lists.type(element)
     }
     case Kind.Map: {
       const map = <MapType> type

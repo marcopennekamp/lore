@@ -1,0 +1,15 @@
+use lore.List
+
+func test(): [Int] = do
+  let part = List.repeat(42, 50)
+
+  let mut result: [Int] = []
+  let mut i = 0
+
+  while i < 100
+    result = List.concat(result, part)
+    i += 1
+  end
+
+  result
+end

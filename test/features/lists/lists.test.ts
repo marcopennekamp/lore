@@ -28,6 +28,15 @@ Deno.test(`${base}/concat`, async () => {
   )
 })
 
+Deno.test(`${base}/concat-many`, async () => {
+  const result: ListValue<number> = await LoreTest.run(`${base}/concat-many.lore`)
+  const expected: Array<number> = []
+  for (let i = 0; i < 5000; i += 1) {
+    expected.push(42)
+  }
+  assertListEquals(result, expected)
+})
+
 Deno.test(`${base}/yield`, async () => {
   const result: ListValue<StructValue> = await LoreTest.run(`${base}/yield.lore`)
   assertListForall(result, [2, 10, 20, 24], (actual, expected) => {

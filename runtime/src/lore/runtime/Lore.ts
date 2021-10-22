@@ -1,6 +1,6 @@
 import { Intersection } from './intersections.ts'
 import { LoreIO } from './io.ts'
-import { List } from './lists.ts'
+import { Lists } from './lists.ts'
 import { Map } from './maps.ts'
 import { LoreMath } from './math.ts'
 import { Numbers } from './numbers.ts'
@@ -24,7 +24,7 @@ export default {
   intersections: Intersection,
   tuples: Tuple,
   functions: Function,
-  lists: List,
+  lists: Lists,
   maps: Map,
   shapes: Shape,
   strings: StringFunctions,

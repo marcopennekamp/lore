@@ -1,6 +1,6 @@
 import { Function, FunctionType } from './functions.ts'
 import { Intersection } from './intersections.ts'
-import { List, ListType } from './lists.ts'
+import { Lists, ListType } from './lists.ts'
 import { Shape, ShapeType } from './shapes.ts'
 import { Sum } from './sums.ts'
 import { Tuple, TupleType } from './tuples.ts'
@@ -130,7 +130,7 @@ function combine(parts: Array<Type>, kind: Kind): Array<Type> {
   // [A] & [B] :=: [A & B]
   if (lists.length > 0) {
     const element = constructCovariant(lists.map(t => t.element))
-    result.push(List.type(element))
+    result.push(Lists.type(element))
   }
 
   // { name: A } & { name: B } & { health: Int }  ==  { name: A & B, health: Int }

@@ -65,23 +65,23 @@ export function assertIsList(actual: ListValue<any>, element?: Type) {
 
 export function assertListEquals<A>(actual: ListValue<A>, expected: Array<A>, elementType?: Type) {
   assertIsList(actual, elementType)
-  assertEquals(actual.array, expected)
+  assertEquals(actual.elements, expected)
 }
 
 export function assertListEpsilonEquals(actual: ListValue<number>, expected: Array<number>) {
   assertIsList(actual)
-  assertEquals(actual.array.length, expected.length)
+  assertEquals(actual.elements.length, expected.length)
   for (let i = 0; i < expected.length; i += 1) {
-    assertEpsilonEquals(actual.array[i], expected[i])
+    assertEpsilonEquals(actual.elements[i], expected[i])
   }
 }
 
 export function assertListEqualsUnordered(actual: ListValue<any>, expected: Array<any>) {
   assertIsList(actual)
   expected.forEach(x => {
-    assert(actual.array.includes(x), `The actual list does not contain an expected value ${x}.`)
+    assert(actual.elements.includes(x), `The actual list does not contain an expected value ${x}.`)
   })
-  actual.array.forEach(x => {
+  actual.elements.forEach(x => {
     assert(expected.includes(x), `The actual list contains an unexpected value ${x}.`)
   })
 }
@@ -89,12 +89,12 @@ export function assertListEqualsUnordered(actual: ListValue<any>, expected: Arra
 export function assertListForall<A, B>(actual: ListValue<A>, expected: Array<B>, assertCondition: (actual: A, expected: B) => void) {
   assertIsList(actual)
   assertEquals(
-    actual.array.length,
+    actual.elements.length,
     expected.length,
-    `The lists of actual (${actual.array}) and expected (${expected}) values must be of equal length.`
+    `The lists of actual (${actual.elements}) and expected (${expected}) values must be of equal length.`
   )
 
-  actual.array.forEach((act, index) => {
+  actual.elements.forEach((act, index) => {
     const exp = expected[index]
     assertCondition(act, exp)
   })

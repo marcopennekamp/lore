@@ -9,13 +9,7 @@ module List do
   func length(list: [Any]): Int = dynamic[Int]('Lore.lists.length', list)
 
   @where A, B
-  func concat(as: [A], bs: [B]): [A | B] = do
-    let mut result: [A | B] = as
-    for b <- bs
-      result = result :+ b
-    end
-    result
-  end
+  func concat(as: [A], bs: [B]): [A | B] = dynamic[[A | B]]('Lore.lists.concat', as, bs)
 
   /**
     * Returns the first element of the list. Results in an error if the list is empty.
@@ -106,26 +100,14 @@ module Enum do
   func empty?(list: [Any]): Boolean = size(list) == 0
   func present?(list: [Any]): Boolean = !empty?(list)
 
-  @where A, B >: A, C
-  func map(list: [A], f: B => C): [C] = for a <- list yield f(a)
-
   @where A
-  func flatten(lists: [[A]]): [A] = do
-    // TODO: Typing `initial` as `[A]` explicitly is currently required for this to compile. If we don't, the type of the
-    //       third argument is narrowed down to ([Nothing], [A]) => [A] in both bounds. Type inference then tries to
-    //       resolve the following judgment: `([Nothing], [A]) => [A] fits (iv15, iv16) => iv15` with
-    //       `iv15([Nothing], Any)`. Obviously, this can't work, since iv15 would be typed as both [Nothing] and [A].
-    //       It'd be correct to type iv15 as [A]. The core of the problem lies in how concat is defined: A and B are
-    //       independent, so we cannot infer A from B and vice versa. Hence, the first argument of concat is inferred to
-    //       be Nothing here.
-    //       This problem might be resolvable by enabling "backwards inference" from the result type, where flatten's
-    //       result type [A] is taken into account such that fold's C is immediately set (upper bounded) to [A].
-    let initial: [A] = []
-    fold(lists, initial, concat)
-  end
+  func flatten(lists: [[A]]): [A] = dynamic[[A]]('Lore.lists.flatten', lists)
 
   @where A, B >: A, C
-  func flat_map(list: [A], f: B => [C]): [C] = list |> map(f) |> flatten
+  func map(list: [A], f: B => C): [C] = dynamic[[C]]('Lore.lists.map', list, f)
+
+  @where A, B >: A, C
+  func flat_map(list: [A], f: B => [C]): [C] = dynamic[[C]]('Lore.lists.flatMap', list, f)
 
   @where A, B >: A
   act each(list: [A], f: B => Unit) do
@@ -133,15 +115,7 @@ module Enum do
   end
 
   @where A, B >: A
-  func filter(list: [A], predicate: B => Boolean): [A] = do
-    let mut result: [A] = []
-    for a <- list
-      if predicate(a)
-        result = result :+ a
-      end
-    end
-    result
-  end
+  func filter(list: [A], predicate: B => Boolean): [A] = dynamic[[A]]('Lore.lists.filter', list, predicate)
 
   @where A, B >: A, I, R >: I
   func fold(list: [A], initial: I, f: (R, B) => R): R = do

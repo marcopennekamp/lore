@@ -25,7 +25,7 @@ Deno.test(`${base}/bunsnatcher`, async () => {
   const result: ListValue<number> = await LoreTest.run(`${base}/bunsnatcher.lore`)
   assertIsList(result)
   assertEquals(
-    result.array.map(x => Number.parseFloat(x.toFixed(3))),
+    result.elements.map(x => Number.parseFloat(x.toFixed(3))),
     [1.248, 0.6, 3.78, 1.2, 1.8, 0.96, 2.16, 1.8, 2.016, 0.08],
   )
 })

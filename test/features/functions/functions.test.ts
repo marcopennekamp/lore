@@ -1,4 +1,4 @@
-import { List, ListValue } from '../../../runtime/src/lore/runtime/lists.ts'
+import { Lists, ListValue } from '../../../runtime/src/lore/runtime/lists.ts'
 import { StructValue } from '../../../runtime/src/lore/runtime/structs.ts'
 import { TupleValue } from '../../../runtime/src/lore/runtime/tuples.ts'
 import { Types } from '../../../runtime/src/lore/runtime/types/types.ts'
@@ -32,7 +32,7 @@ Deno.test(`${base}/greet`, async () => {
 
 Deno.test(`${base}/map`, async () => {
   const result: TupleValue = await LoreTest.run(`${base}/map.lore`)
-  assertIsTuple(result, [List.type(Types.number), List.type(Types.string)])
+  assertIsTuple(result, [Lists.type(Types.number), Lists.type(Types.string)])
 
   const numbers = result.elements[0]
   assertListEquals(numbers, [4, 5, 6, 7, 8])

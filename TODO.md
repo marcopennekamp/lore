@@ -2,7 +2,8 @@
 
 #### Features
 
-- Implement a vector backend for lists.
+- Implement a new backend for lists.
+  - Clear all `TODO (lists)` entries.
 - Fix map types and values:
   - Add clear covariance/contravariance type semantics.
   - Make maps immutable and support this in the runtime.

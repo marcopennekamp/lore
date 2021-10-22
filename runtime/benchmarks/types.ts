@@ -1,5 +1,5 @@
 import { Intersection } from '../src/lore/runtime/intersections.ts'
-import { List } from '../src/lore/runtime/lists.ts'
+import { Lists } from '../src/lore/runtime/lists.ts'
 import { Map } from '../src/lore/runtime/maps.ts'
 import { Shape } from '../src/lore/runtime/shapes.ts'
 import { Sum } from '../src/lore/runtime/sums.ts'
@@ -15,14 +15,14 @@ const sum3 = Sum.type([Types.string, Types.int, Types.boolean])
 const intersection1 = Intersection.type([Types.string, Types.int, Types.boolean])
 const intersection2 = Intersection.type([Types.boolean, Types.string, Types.int])
 const intersection3 = Intersection.type([Types.string, Types.int, Types.boolean])
-const list1 = List.type(Types.int)
-const list2 = List.type(Types.int)
-const list3 = List.type(Map.type(Types.string, Types.int))
-const list4 = List.type(Map.type(Types.string, Types.int))
+const list1 = Lists.type(Types.int)
+const list2 = Lists.type(Types.int)
+const list3 = Lists.type(Map.type(Types.string, Types.int))
+const list4 = Lists.type(Map.type(Types.string, Types.int))
 const tuple1 = Tuple.type([sum2, intersection1, list3])
 const tuple2 = Tuple.type([sum2, intersection1, list3])
-const tuple3 = Tuple.type([Sum.type([Types.string, Types.int, Types.boolean]), Intersection.type([Types.string, Types.int, Types.boolean]), List.type(Map.type(Types.string, Types.int))])
-const tuple4 = Tuple.type([Sum.type([Types.string, Types.int, Types.boolean]), Intersection.type([Types.string, Types.int, Types.boolean]), List.type(Map.type(Types.string, Types.int))])
+const tuple3 = Tuple.type([Sum.type([Types.string, Types.int, Types.boolean]), Intersection.type([Types.string, Types.int, Types.boolean]), Lists.type(Map.type(Types.string, Types.int))])
+const tuple4 = Tuple.type([Sum.type([Types.string, Types.int, Types.boolean]), Intersection.type([Types.string, Types.int, Types.boolean]), Lists.type(Map.type(Types.string, Types.int))])
 const shape1 = Shape.type({ x: Types.real, y: Types.real })
 const shape2 = Shape.type({ x: Types.real, y: Types.real, c: Types.int, d: Types.string })
 const shape3 = Shape.type({ d: Types.string, c: Types.int, x: Types.real, y: Types.real })

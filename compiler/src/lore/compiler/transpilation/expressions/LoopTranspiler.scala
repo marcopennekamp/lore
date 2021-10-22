@@ -39,7 +39,7 @@ case class LoopTranspiler()(implicit variableProvider: TemporaryVariableProvider
     collection.statements ++ Vector(
       varList.declareAs(collection.expression),
       Target.Iteration(
-        varList.prop("array"),
+        varList.prop("elements"),
         extractor.variable.targetVariable.name,
         Target.Block(inner),
       ),
