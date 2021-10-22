@@ -2,6 +2,7 @@ import type { List } from 'https://deno.land/x/immutable@4.0.0-rc.14-deno/node_m
 import { List as ListConstructor } from 'https://deno.land/x/immutable@4.0.0-rc.14-deno/node_modules/immutable/dist/immutable.es.js'
 import { FunctionValue } from './functions.ts'
 import { Sum } from './sums.ts'
+import { BasicType } from './types/basic-types.ts'
 import { Kind } from './types/kinds.ts'
 import { Type } from './types/types.ts'
 import { singleHash } from './utils/hash.ts'
@@ -21,28 +22,21 @@ export interface ListValue<A> extends Value {
 
 export const Lists = {
   type(element: Type): ListType {
-    return { kind: Kind.List, element, hash: singleHash(element, 0xfb04146c) }
+    return createType(element)
   },
 
   value<A>(array: Array<A>, type: ListType): ListValue<A> {
-    return Lists.fromImmutableJs(ListConstructor(array), type)
+    return fromImmutableJs(ListConstructor(array), type)
   },
 
-  // TODO (lists): Use `empty` instead of `value` when creating empty lists to avoid an empty array allocation.
-  empty(type: ListType): ListValue<any> {
-    return Lists.fromImmutableJs(ListConstructor(undefined), type)
-  },
-
-  fromImmutableJs<A>(elements: List<A>, type: ListType): ListValue<A> {
-    return { elements: elements, lore$type: type }
-  },
+  empty: fromImmutableJs(ListConstructor(undefined), createType(BasicType.nothing)),
 
   /**
    * Creates a new list by appending the element to the given list. The type has to be supplied manually as we don't
    * always calculate it at run-time.
    */
   append<A, B extends A>(list: ListValue<A>, element: B, type: ListType): ListValue<A> {
-    return Lists.fromImmutableJs(list.elements.push(element), type)
+    return fromImmutableJs(list.elements.push(element), type)
   },
 
   /**
@@ -51,7 +45,7 @@ export const Lists = {
    * type of the list.
    */
   appendUntyped<A, B extends A>(list: ListValue<A>, element: B): ListValue<A> {
-    return Lists.fromImmutableJs(list.elements.push(element), list.lore$type)
+    return fromImmutableJs(list.elements.push(element), list.lore$type)
   },
 
   get<A>(list: ListValue<A>, index: number): A | undefined {
@@ -67,32 +61,40 @@ export const Lists = {
   concat<A, B>(as: ListValue<A>, bs: ListValue<B>): ListValue<A | B> {
     const result = as.elements.concat(bs.elements)
     const resultType = Lists.type(Sum.simplified([as.lore$type.element, bs.lore$type.element]))
-    return Lists.fromImmutableJs(result, resultType)
+    return fromImmutableJs(result, resultType)
   },
 
   slice<A>(list: ListValue<A>, startIndex: number, length: number): ListValue<A> {
-    return Lists.fromImmutableJs(list.elements.slice(startIndex, startIndex + length), list.lore$type)
+    return fromImmutableJs(list.elements.slice(startIndex, startIndex + length), list.lore$type)
   },
 
   flatten<A>(list: ListValue<ListValue<A>>): ListValue<A> {
     const result = list.elements.flatMap(list2 => list2.elements)
-    return Lists.fromImmutableJs(result, <ListType> list.lore$type.element)
+    return fromImmutableJs(result, <ListType> list.lore$type.element)
   },
 
   map<A, B>(list: ListValue<A>, f: FunctionValue<B>): ListValue<B> {
     const result = list.elements.map(f.callable)
     const resultType = Lists.type(f.lore$type.output)
-    return Lists.fromImmutableJs(result, resultType)
+    return fromImmutableJs(result, resultType)
   },
 
   flatMap<A, B>(list: ListValue<A>, f: FunctionValue<ListValue<B>>): ListValue<B> {
     const result = list.elements.flatMap(v => f.callable(v).elements)
     const resultType = Lists.type((<ListType> f.lore$type.output).element)
-    return Lists.fromImmutableJs(result, resultType)
+    return fromImmutableJs(result, resultType)
   },
 
   filter<A>(list: ListValue<A>, predicate: FunctionValue<boolean>): ListValue<A> {
     const result = list.elements.filter(predicate.callable)
-    return Lists.fromImmutableJs(result, list.lore$type)
+    return fromImmutableJs(result, list.lore$type)
   },
+}
+
+function createType(element: Type): ListType {
+  return { kind: Kind.List, element, hash: singleHash(element, 0xfb04146c) }
+}
+
+function fromImmutableJs<A>(elements: List<A>, type: ListType): ListValue<A> {
+  return { elements: elements, lore$type: type }
 }

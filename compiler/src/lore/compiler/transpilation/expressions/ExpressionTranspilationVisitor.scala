@@ -103,9 +103,14 @@ private[transpilation] class ExpressionTranspilationVisitor()(
   }
 
   override def visit(expression: ListConstruction)(values: Vector[Chunk]): Chunk = {
-    val tpe = TypeTranspiler.transpileSubstitute(expression.tpe)
-    Chunk.combine(values) { values =>
-      Chunk.expression(RuntimeApi.lists.value(values, tpe))
+    if (values.nonEmpty) {
+      val tpe = TypeTranspiler.transpileSubstitute(expression.tpe)
+      Chunk.combine(values) { values =>
+        Chunk.expression(RuntimeApi.lists.value(values, tpe))
+      }
+    } else {
+      // This allows the runtime to optimize list construction for empty lists.
+      Chunk.expression(RuntimeApi.lists.empty())
     }
   }
 
