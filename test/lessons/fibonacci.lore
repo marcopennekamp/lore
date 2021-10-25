@@ -1,0 +1,7 @@
+func fibonacci(n: Int): Int = do
+  if n > 1
+    fibonacci(n - 1) + fibonacci(n - 2)
+  else n
+end
+
+func test(): Int = fibonacci(10)

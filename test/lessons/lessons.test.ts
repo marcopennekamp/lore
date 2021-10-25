@@ -1,8 +1,14 @@
+import { assertEquals } from 'https://deno.land/std/testing/asserts.ts'
 import { ListValue } from '../../runtime/src/lore/runtime/lists.ts'
 import { assertListEquals, assertListEpsilonEquals } from '../assertions.ts'
 import { LoreTest } from '../base.ts'
 
 const base = 'lessons'
+
+Deno.test(`${base}/fibonacci`, async () => {
+  const result: number = await LoreTest.run(`${base}/fibonacci.lore`)
+  assertEquals(result, 55)
+})
 
 Deno.test(`${base}/hello-name`, async () => {
   const result: ListValue<string> = await LoreTest.run(`${base}/hello-name.lore`)
