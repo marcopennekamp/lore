@@ -1,0 +1,38 @@
+use {
+  &0 = 'fib'
+}
+
+// func fib(n: Int): Int = do
+//   if n > 1
+//     fib(n - 1) + fib(n - 2)
+//   else n
+// end
+@frame_size 1
+multi fib(%0: Int): Int {
+  int_push 1
+  load %0
+  int_less_than
+  jump_if_false .else
+  load %0
+  int_push 1
+  int_subtract
+  call &0 1
+  load %0
+  int_push 2
+  int_subtract
+  dispatch &0 1
+  int_add
+  jump .end
+  .else
+  load %0
+  .end
+  return
+}
+
+// func test(): Int = fib(10)
+@frame_size 0
+multi test(): Int {
+  int_push 10
+  dispatch &0 1
+  return
+}

@@ -1,0 +1,49 @@
+// The constants table is unique per bytecode unit and contains for each 16-bit index a pointer to an actual, typed
+// value.
+constants {
+  $0 = 'Hello, '
+  $1 = '.'
+  $2 = 'Hello, anonymous #'
+  $3 = '.'
+  $4 = ['world', 5, 'marco', 'console', 42]
+  $5 = multi_function_value('hello', (String | Int) => String)
+}
+
+use {
+  &0 = 'lore.Enum.map'
+}
+
+// TODO (vm): Do we even need to compile abstract functions?
+// func hello(String | Int): String
+multi hello(String | Int): String
+
+// func hello(name: String): String = 'Hello, $name.'
+@frame_size 1
+multi hello(%0: String): String {
+  const_push $0
+  load %0
+  string_concat
+  const_push $1
+  string_concat
+  return
+}
+
+// func hello(id: Int): String = 'Hello, anonymous #$id.'
+@frame_size 1
+multi hello(%0: Int): String {
+  const_push $2
+  load %0
+  string_concat
+  const_push $3
+  string_concat
+  return
+}
+
+// func test(): [String] = ['world', 5, 'marco', 'console', 42] |> map(hello)
+@frame_size 0
+multi test(): [String] {
+  const_push $4
+  const_push $5
+  dispatch &0 2
+  return
+}
