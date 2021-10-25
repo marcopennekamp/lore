@@ -1,0 +1,13 @@
+name: lore_vm
+version: 0.1.0
+
+authors:
+  - marcopennekamp <marco.pennekamp96@gmail.com>
+
+targets:
+  vmcr:
+    main: src/vm.cr
+
+crystal: 1.2.1
+
+license: MIT

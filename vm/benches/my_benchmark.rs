@@ -30,6 +30,12 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         Instruction { operation: Operation::IntPush, arguments: [1, 0] },
         Instruction { operation: Operation::IntPush, arguments: [2, 0] },
         Instruction { operation: Operation::IntAdd, arguments: [0, 0] },
+        Instruction { operation: Operation::IntPush, arguments: [3, 0] },
+        Instruction { operation: Operation::IntPush, arguments: [4, 0] },
+        Instruction { operation: Operation::IntAdd, arguments: [0, 0] },
+        Instruction { operation: Operation::IntAdd, arguments: [0, 0] },
+        Instruction { operation: Operation::IntPush, arguments: [0xffff, 0] },
+        Instruction { operation: Operation::IntAdd, arguments: [0, 0] },
         Instruction { operation: Operation::Return, arguments: [0, 0] },
     ];
 
@@ -37,7 +43,7 @@ pub fn criterion_benchmark(c: &mut Criterion) {
         Instruction { operation: Operation::Return, arguments: [0, 0] },
     ];
 
-    c.bench_function("1 + 2", |b| b.iter(|| evaluate(black_box(&instructions), black_box(0))));
+    c.bench_function("1 + 2 + 3 + 4 - 1", |b| b.iter(|| evaluate(black_box(&instructions), black_box(0))));
 
     /* c.bench_function("are_equal (string, string)", |b| b.iter(|| are_equal(black_box(&Type::String), black_box(&Type::String))));
     c.bench_function("are_equal (string, int)", |b| b.iter(|| are_equal(black_box(&Type::String), black_box(&Type::Int))));
