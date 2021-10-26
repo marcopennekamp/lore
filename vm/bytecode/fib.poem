@@ -7,21 +7,27 @@ use {
 //     fib(n - 1) + fib(n - 2)
 //   else n
 // end
-@frame_size 1
+@frame_size 2
 multi fib(%0: Int): Int {
-  int_push 1
+  // We have to unbox the integer argument first and save it on the frame.
   load %0
+  int_unbox
+  store %1
+  int_push 1
+  load %1
   int_less_than
   jump_if_false .else
-  load %0
+  load %1
   int_push 1
   int_subtract
-  call &0 1
-  load %0
+  int_box // Every time we want to call a multi-function with an integer, we have to box it.
+  dispatch &0 1
+  load %1
   int_push 2
   int_subtract
+  int_box
   dispatch &0 1
-  int_add
+  int_box_add // Instead of unboxing the integer values already on the stack, we can best use the boxed version of int_add.
   jump .end
   .else
   load %0
@@ -32,7 +38,7 @@ multi fib(%0: Int): Int {
 // func test(): Int = fib(10)
 @frame_size 0
 multi test(): Int {
-  int_push 10
+  int_box_push 10
   dispatch &0 1
   return
 }
