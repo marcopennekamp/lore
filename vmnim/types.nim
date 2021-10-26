@@ -18,6 +18,8 @@ type
     Trait
     Struct
 
+  # TODO (vm): Turn these into a real object hierarchy. Object variants are apparently represented as C unions, which
+  #            is not memory-efficient here.
   TypeObj = object
     case kind: Kind
     of TypeVariable:

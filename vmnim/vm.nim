@@ -17,7 +17,8 @@ template benchmark(benchmark_name: string, runs: uint, code: untyped) =
     echo "CPU Time [", benchmark_name, "] ", per_run, "ns/op"
 
 let code = @[
-  new_instruction(Operation.IntPush, 1, 0),
+  new_instruction(Operation.IntBoxPush, 1, 0), # This simulates loading an Int argument.
+  new_instruction(Operation.IntUnbox, 0, 0),
   new_instruction(Operation.IntPush, 2, 0),
   new_instruction(Operation.IntAdd, 0, 0),
   new_instruction(Operation.IntPush, 3, 0),
@@ -26,6 +27,7 @@ let code = @[
   new_instruction(Operation.IntAdd, 0, 0),
   new_instruction(Operation.IntPush, 0xffff, 0), # 0xffff is -1 as an int16.
   new_instruction(Operation.IntAdd, 0, 0),
+  new_instruction(Operation.IntBox, 0, 0),
   new_instruction(Operation.Return, 0, 0),
 ]
 
