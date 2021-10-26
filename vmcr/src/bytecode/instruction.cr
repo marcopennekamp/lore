@@ -1,5 +1,5 @@
 module Lore::Bytecode
-  enum Operation
+  enum Operation : UInt8
     IntAdd
     IntPush
     Return

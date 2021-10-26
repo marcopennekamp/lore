@@ -44,7 +44,7 @@ module Lore::Bytecode::Evaluator
   end
 
   macro stack_pop(type)
-    # The pointer cast circumvents the runtime type check that would normally be performed with `.as`.
+    # The pointer cast circumvents the run-time type check that would normally be performed with `.as`.
     element = Pointer(Void).new(stack[stack_index].object_id).as({{type}})
     stack_index -= 1
     element
