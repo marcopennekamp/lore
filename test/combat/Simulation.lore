@@ -151,5 +151,5 @@ act heal(target: CombatantState, amount: Int) do
 end
 
 act log(message: String) do
-  println(message)
+  //println(message)
 end

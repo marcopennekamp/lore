@@ -26,10 +26,6 @@ test/lore.jar
 # Deno
 test/target
 
-# Rust (VM)
-vm/target
-vm/Cargo.lock
-
 # Language Server
 lsp/client/node_modules/
 lsp/client/out/

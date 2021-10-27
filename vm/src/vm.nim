@@ -36,7 +36,7 @@ let code = @[
 let value = evaluator.evaluate(code)
 echo cast[IntValue](value)[]
 
-benchmark("VM run", 50_000_000):
+benchmark("VM run", 100_000_000):
   discard evaluator.evaluate(code)
 
 # TODO (vm): Move this to `types.nim` with `when main:`.
