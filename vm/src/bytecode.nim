@@ -1,10 +1,26 @@
 type
   Operation* {.pure.} = enum
-    IntAdd
+    Store
+    Load
+
     IntPush
+    IntAdd
+    IntSubtract
+    IntLessThan
+
     IntBox
-    IntBoxPush
     IntUnbox
+    IntBoxPush
+    IntBoxAdd
+
+    Jump
+    JumpIfFalse
+    JumpIfTrue
+
+    # arg0: Number of arguments to pop off the stack.
+    # arg1: Constant ID of the multi-function to call.
+    Dispatch
+
     Return
 
   Argument {.union.} = object
@@ -16,5 +32,18 @@ type
     arg0*: Argument
     arg1*: Argument
 
+  # A Constants object provides quick access to predefined types, values, and functions.
+  Constants* = ref object
+    # TODO (vm): Add types and values.
+    functions*: seq[Function] # TODO (vm): This should point to the multi-function, of course, once we implement them.
+
+  Function* = ref object
+    name*: string
+    # TODO (vm): Add the function's signature.
+    locals_size*: uint16
+    code*: seq[Instruction]
+    # The `constants` object will be initialized after all type, value, and function constants have been resolved.
+    constants*: Constants
+
 proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16): Instruction =
-  Instruction(operation: operation, arg0: Argument(uint_value: arg0), arg1: Argument(uint_value: arg0))
+  Instruction(operation: operation, arg0: Argument(uint_value: arg0), arg1: Argument(uint_value: arg1))
