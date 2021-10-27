@@ -21,12 +21,12 @@ multi fib(%0: Int): Int {
   int_push 1
   int_subtract
   int_box // Every time we want to call a multi-function with an integer, we have to box it.
-  dispatch &0 1
+  dispatch 1 &0
   load %1
   int_push 2
   int_subtract
   int_box
-  dispatch &0 1
+  dispatch 1 &0
   int_box_add // Instead of unboxing the integer values already on the stack, we can best use the boxed version of int_add.
   jump .end
   .else
@@ -39,6 +39,6 @@ multi fib(%0: Int): Int {
 @frame_size 0
 multi test(): Int {
   int_box_push 10
-  dispatch &0 1
+  dispatch 1 &0
   return
 }
