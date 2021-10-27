@@ -1,5 +1,5 @@
 type
-  Kind* = enum
+  Kind* {.pure.} = enum
     TypeVariable
     Any
     Nothing
@@ -18,30 +18,40 @@ type
     Trait
     Struct
 
-  # TODO (vm): Turn these into a real object hierarchy. Object variants are apparently represented as C unions, which
-  #            is not memory-efficient here.
-  TypeObj = object
-    case kind: Kind
-    of TypeVariable:
-      lower_bound, upper_bound: Type
-    of Any: discard
-    of Nothing: discard
-    of Int: discard
-    of Real: discard
-    of Boolean: discard
-    of String: discard
-    of Sum: discard
-    of Intersection: discard
-    of Tuple: discard
-    of Function: discard
-    of List: discard
-    of Map: discard
-    of Shape: discard
-    of Symbol: discard
-    of Trait: discard
-    of Struct: discard
+  # TODO (vm): Types can be marked `{.acyclic.}`. Also shallow?
+  Type* = ref object of RootObj
+    kind*: Kind
 
-  Type* = ref TypeObj
+  TypeVariable* = ref object of Type
+    lower_bound*, upper_bound*: Type
+
+  # TODO (vm): Perhaps different types for different arities, such as Tuple2/3/4, Sum2/3/4, etc. Of course, this is
+  #            trivially beneficial for tuples, because a 2-tuple will never be a sub- nor supertype of a 3-tuple.
+  #            However, a 2-sum can easily be a subtype of a 3-sum.
+  SumType* = ref object of Type
+    parts*: seq[Type]
+
+  IntersectionType* = ref object of Type
+    parts*: seq[Type]
+
+  TupleType* = ref object of Type
+    elements*: seq[Type]
+
+  FunctionType* = ref object of Type
+    input*, output*: Type
+
+  ListType* = ref object of Type
+    element*: Type
+
+  MapType* = ref object of Type
+    key*, value*: Type
+
+  # TODO (vm): Implement shape types.
+
+  SymbolType* = ref object of Type
+    name*: string
+
+  # TODO (vm): Implement trait and struct types.
 
 let
   any* = Type(kind: Any)
@@ -50,3 +60,85 @@ let
   real* = Type(kind: Real)
   boolean* = Type(kind: Boolean)
   string* = Type(kind: String)
+
+proc sum*(parts: seq[Type]): SumType = SumType(kind: Kind.Sum, parts: parts)
+proc intersection*(parts: seq[Type]): IntersectionType = IntersectionType(kind: Kind.Intersection, parts: parts)
+proc `tuple`*(elements: seq[Type]): TupleType = TupleType(kind: Kind.Tuple, elements: elements)
+proc list*(element: Type): ListType = ListType(kind: Kind.List, element: element)
+proc map*(key: Type, value: Type): MapType = MapType(kind: Kind.Map, key: key, value: value)
+
+
+proc has_equal_in(ts1: seq[Type], ts2: seq[Type]): bool
+proc are_exactly_equal(ts1: seq[Type], ts2: seq[Type]): bool
+
+# TODO (vm): `{.push checks: off.}` if compiling with `-d:release` only instead of danger.
+proc are_equal*(t1: Type, t2: Type): bool =
+  # If the two types are referentially equal, they are obviously the same!
+  if t1 == t2:
+    return true
+
+  if t1.kind != t2.kind:
+    return false
+
+  case t1.kind
+  of Kind.TypeVariable: false # Type variables can only be referentially equal.
+  of Kind.Any: true
+  of Kind.Nothing: true
+  of Kind.Real: true
+  of Kind.Int: true
+  of Kind.Boolean: true
+  of Kind.String: true
+
+  of Kind.Sum:
+    let s1 = cast[SumType](t1)
+    let s2 = cast[SumType](t2)
+    has_equal_in(s1.parts, s2.parts) and has_equal_in(s2.parts, s1.parts)
+
+  of Kind.Intersection:
+    let i1 = cast[IntersectionType](t1)
+    let i2 = cast[IntersectionType](t2)
+    has_equal_in(i1.parts, i2.parts) and has_equal_in(i2.parts, i1.parts)
+
+  of Kind.Tuple:
+    let tp1 = cast[TupleType](t1)
+    let tp2 = cast[TupleType](t2)
+    are_exactly_equal(tp1.elements, tp2.elements)
+
+  of Kind.Function:
+    let f1 = cast[FunctionType](t1)
+    let f2 = cast[FunctionType](t2)
+    are_equal(f1.input, f2.input) and are_equal(f1.output, f2.output)
+
+  of Kind.List:
+    let l1 = cast[ListType](t1)
+    let l2 = cast[ListType](t2)
+    are_equal(l1.element, l2.element)
+
+  of Kind.Map:
+    let m1 = cast[MapType](t1)
+    let m2 = cast[MapType](t2)
+    are_equal(m1.key, m2.key) and are_equal(m1.value, m2.value)
+
+  of Kind.Symbol:
+    let s1 = cast[SymbolType](t1)
+    let s2 = cast[SymbolType](t2)
+    s1.name == s2.name
+
+  else: false
+
+proc has_equal_in(ts1: seq[Type], ts2: seq[Type]): bool =
+  for t1 in ts1:
+    var found = false
+    for t2 in ts2:
+      if are_equal(t1, t2):
+        found = true
+    if not found: return false
+  true
+
+proc are_exactly_equal(ts1: seq[Type], ts2: seq[Type]): bool =
+  if ts1.len != ts2.len: return false
+  var i = 0
+  while i < ts1.len:
+    if not are_equal(ts1[i], ts2[i]): return false
+    i += 1
+  true

@@ -33,6 +33,7 @@ template stack_pop_int(): untyped =
   stack_index -= 1
   element
 
+# TODO (vm): `{.push checks: off.}` (or for the whole file) if compiling with `-d:release` only instead of danger.
 proc evaluate*(code: seq[Instruction]): Value =
   var index: uint = 0
   var stack: array[16, StackValue]
