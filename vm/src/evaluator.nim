@@ -37,51 +37,44 @@ template stack_push_int(value): untyped = stack_push(wrap_int(value))
 template stack_pop_int(): untyped = stack_pop().int_value
 template stack_peek_int(): untyped = stack_peek().int_value
 
-# TODO (vm): `{.push checks: off.}` (or for the whole file) if compiling with `-d:release` only instead of danger.
-# TODO (vm): `arguments` obviously need a more performant way to be passed around, ideally with zero new allocations,
-#            for example with a global buffer. The fact that Nim doesn't share heap space between threads helps in this
-#            regard.
-proc evaluate*(function: Function, arguments: seq[Value]): Value =
-  when_debug: echo "Evaluate function ", function.name
+var
+  # The `arguments` sequence is a global store of function arguments that expands and shrinks as functions are
+  # evaluated. This allows passing function arguments without allocating intermediate sequences.
+  arguments: seq[Value] = @[]
 
+proc evaluate(function: Function, arguments_bc: uint): Value
+
+proc evaluate*(function: Function, args: seq[Value]): Value =
+  for argument in args:
+    arguments.add(argument)
+  evaluate(function, 0)
+
+# TODO (vm): `{.push checks: off.}` (or for the whole file) if compiling with `-d:release` only instead of danger.
+# `arguments_bc`: The starting index of this function's `arguments` segment. ("Arguments base counter")
+proc evaluate(function: Function, arguments_bc: uint): Value =
   let code = function.code
   var pc: uint = 0
   var stack {.noinit.}: array[16, StackValue]
   var stack_index = -1
   var locals {.noinit.}: array[16, StackValue]
 
-  block:
-    var i = 0
-    let arguments_length = arguments.len
-    while i < arguments_length:
-      locals[i] = wrap_ref(arguments[i])
-      i += 1
-
-  # The `locals` sequence is either an array or a sequence, depending on the required locals size. An array is faster
-  # because it exists entirely on the stack, but it can't support arbitrary sizes.
-  #[
-  var locals: ptr StackValue
-  var locals_array: array[16, StackValue]
-  if (function.locals_size <= 16):
-    locals = cast[ptr StackValue](addr locals_array[0])
-  else:
-    # TODO (vm): I think the GC will free the sequence when the `else` ends... We'll have to test that, though.
-    var locals_seq = newSeqOfCap[StackValue](function.locals_size)
-    locals_seq.set_len(function.locals_size)
-    locals = cast[ptr StackValue](addr locals_seq[0])
-  ]#
+  when_debug: echo "Evaluating function ", function.name
 
   while true:
     let instruction = code[pc]
-    when_debug: echo "Get instruction of operation ", instruction.operation, " at ", pc
+    when_debug: echo instruction.operation, " (PC: ", pc, ")"
     pc += 1
 
     case instruction.operation
-    of Operation.Store:
+    of Operation.ArgumentLoad:
+      let v = arguments[arguments_bc + instruction.arg0.uint_value]
+      stack_push_ref(v)
+
+    of Operation.LocalStore:
       let sv = stack_pop()
       locals[instruction.arg0.uint_value] = sv
 
-    of Operation.Load:
+    of Operation.LocalLoad:
       let v = locals[instruction.arg0.uint_value]
       stack_push(v)
 
@@ -131,16 +124,20 @@ proc evaluate*(function: Function, arguments: seq[Value]): Value =
         pc = instruction.arg0.uint_value
 
     of Operation.Dispatch:
+      let arguments_next_bc = arguments_bc + function.arguments_count
       let argument_count = instruction.arg0.uint_value
       let target = function.constants.functions[instruction.arg1.uint_value]
-      #when_debug: echo "Dispatch to target ", target.name, " at index ", instruction.arg1.uint_value
+      when_debug: echo "Dispatch to target ", target.name
 
-      var arguments = newSeqOfCap[Value](argument_count)
-      var i: uint16 = 0
+      # TODO (vm): We want to move the arguments from the stack into `arguments` as efficiently as possible. `copyMem`
+      #            doesn't work with a reference-counting GC. Can we optimize this?
+      var i: uint = 0
       while i < argument_count:
         arguments.add(stack_pop_ref(Value))
         i += 1
-      let output = evaluate(target, arguments)
+
+      let output = evaluate(target, arguments_next_bc)
+      arguments.set_len(arguments_next_bc)
       stack_push_ref(output)
 
     of Operation.Return:

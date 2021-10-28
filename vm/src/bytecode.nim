@@ -1,7 +1,9 @@
 type
   Operation* {.pure.} = enum
-    Store
-    Load
+    ArgumentLoad
+
+    LocalStore
+    LocalLoad
 
     IntPush
     IntAdd
@@ -40,7 +42,8 @@ type
   Function* = ref object
     name*: string
     # TODO (vm): Add the function's signature.
-    locals_size*: uint16
+    arguments_count*: uint16
+    locals_count*: uint16
     code*: seq[Instruction]
     # The `constants` object will be initialized after all type, value, and function constants have been resolved.
     constants*: Constants
