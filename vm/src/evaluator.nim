@@ -39,14 +39,17 @@ template stack_peek_int(): untyped = stack_peek().int_value
 
 var
   # The `arguments` sequence is a global store of function arguments that expands and shrinks as functions are
-  # evaluated. This allows passing function arguments without allocating intermediate sequences.
-  arguments: seq[Value] = @[]
+  # evaluated. This allows passing function arguments without allocating intermediate sequences. The actual shrinking
+  # and growing is handled manually so that the sequence isn't reallocated too often.
+  arguments: seq[Value] = newSeq[Value](256)
 
 proc evaluate(function: Function, arguments_bc: uint): Value
 
 proc evaluate*(function: Function, args: seq[Value]): Value =
+  var i = 0
   for argument in args:
-    arguments.add(argument)
+    arguments[i] = argument
+    i += 1
   evaluate(function, 0)
 
 # TODO (vm): `{.push checks: off.}` (or for the whole file) if compiling with `-d:release` only instead of danger.
@@ -57,6 +60,8 @@ proc evaluate(function: Function, arguments_bc: uint): Value =
   var stack {.noinit.}: array[16, StackValue]
   var stack_index = -1
   var locals {.noinit.}: array[16, StackValue]
+
+  let arguments_next_bc = arguments_bc + function.arguments_count
 
   when_debug: echo "Evaluating function ", function.name
 
@@ -124,24 +129,30 @@ proc evaluate(function: Function, arguments_bc: uint): Value =
         pc = instruction.arg0.uint_value
 
     of Operation.Dispatch:
-      let arguments_next_bc = arguments_bc + function.arguments_count
       let argument_count = instruction.arg0.uint_value
       let target = function.constants.functions[instruction.arg1.uint_value]
       when_debug: echo "Dispatch to target ", target.name
+
+      # We should only increase the length of `arguments` if absolutely needed, and if so by a large margin.
+      if arguments_next_bc + argument_count > cast[uint](arguments.len):
+        arguments.set_len(arguments.len + 128)
 
       # TODO (vm): We want to move the arguments from the stack into `arguments` as efficiently as possible. `copyMem`
       #            doesn't work with a reference-counting GC. Can we optimize this?
       var i: uint = 0
       while i < argument_count:
-        arguments.add(stack_pop_ref(Value))
+        arguments[arguments_next_bc + i] = stack_pop_ref(Value)
         i += 1
 
       let output = evaluate(target, arguments_next_bc)
-      arguments.set_len(arguments_next_bc)
       stack_push_ref(output)
 
     of Operation.Return:
       break
+
+  # We have to conservatively shrink the arguments sequence again if its usage drops below 50%.
+  if cast[uint](arguments.len) < arguments_next_bc * 2:
+    arguments.set_len(arguments_next_bc)
 
   # The bytecode must ensure that the return value on the stack is a boxed Value.
   if stack.len > 0:

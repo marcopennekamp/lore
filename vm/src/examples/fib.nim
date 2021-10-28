@@ -51,4 +51,4 @@ let example_function* = Function(
 )
 
 let example_arguments*: seq[Value] = @[]
-let example_runs* = 250_000
+let example_runs* = 400_000
