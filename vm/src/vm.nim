@@ -2,6 +2,7 @@ import times, os
 
 import evaluator
 import values
+from utils import when_release
 
 from examples/fib import example_function, example_arguments, example_runs
 
@@ -21,8 +22,9 @@ template benchmark(benchmark_name: string, runs: int, code: untyped) =
 let value = evaluator.evaluate(example_function, example_arguments)
 echo cast[IntValue](value)[]
 
-benchmark("VM run", example_runs):
-  discard evaluator.evaluate(example_function, example_arguments)
+when_release:
+  benchmark("VM run", example_runs):
+    discard evaluator.evaluate(example_function, example_arguments)
 
 #[
 # TODO (vm): Move this to `types.nim` with `when main:`.
