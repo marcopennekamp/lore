@@ -67,6 +67,7 @@ proc evaluate(function: Function, arguments_bc: uint): Value =
   when_debug: echo "Evaluating function ", function.name
 
   while true:
+    {.computedgoto.}
     let instruction = code[pc]
     when_debug: echo instruction.operation, " (PC: ", pc, ")"
     pc += 1
