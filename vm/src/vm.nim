@@ -1,6 +1,5 @@
 from examples/fib import example_function, example_arguments, example_runs
 import evaluator
-import types
 import values
 from utils import when_release, benchmark
 

@@ -18,37 +18,42 @@ type
     Trait
     Struct
 
-  # TODO (vm): Types can be marked `{.acyclic.}`. Also shallow?
-  Type* = ref object of RootObj
+  # Types are considered immutable and should never be mutated once they're attached to a value. Types must also be
+  # acyclic, resembling a tree structure.
+  # The pragmas `inheritable` and `pure` omit the `m_type` pointer from each type instance. This type tag is usually
+  # used to discriminate between types at run time. However, `kind` already sufficiently distinguishes type instances.
+  # A type which contains a sequence or string should be marked `shallow`, to optimize copying. Types which themselves
+  # contain other types should be marked `acyclic`, to optimize garbage collection.
+  Type* {.inheritable, pure.} = ref object
     kind*: Kind
 
-  TypeVariable* = ref object of Type
+  TypeVariable* {.pure, acyclic.} = ref object of Type
     lower_bound*, upper_bound*: Type
 
   # TODO (vm): Perhaps different types for different arities, such as Tuple2/3/4, Sum2/3/4, etc. Of course, this is
   #            trivially beneficial for tuples, because a 2-tuple will never be a sub- nor supertype of a 3-tuple.
   #            However, a 2-sum can easily be a subtype of a 3-sum.
-  SumType* = ref object of Type
+  SumType* {.pure, shallow, acyclic.} = ref object of Type
     parts*: seq[Type]
 
-  IntersectionType* = ref object of Type
+  IntersectionType* {.pure, shallow, acyclic.} = ref object of Type
     parts*: seq[Type]
 
-  TupleType* = ref object of Type
+  TupleType* {.pure, shallow, acyclic.} = ref object of Type
     elements*: seq[Type]
 
-  FunctionType* = ref object of Type
+  FunctionType* {.pure, acyclic.} = ref object of Type
     input*, output*: Type
 
-  ListType* = ref object of Type
+  ListType* {.pure, acyclic.} = ref object of Type
     element*: Type
 
-  MapType* = ref object of Type
+  MapType {.pure, acyclic.} = ref object of Type
     key*, value*: Type
 
   # TODO (vm): Implement shape types.
 
-  SymbolType* = ref object of Type
+  SymbolType* {.pure, shallow.} = ref object of Type
     name*: string
 
   # TODO (vm): Implement trait and struct types.
@@ -63,7 +68,7 @@ let
 
 proc sum*(parts: open_array[Type]): SumType = SumType(kind: Kind.Sum, parts: @parts)
 proc intersection*(parts: open_array[Type]): IntersectionType = IntersectionType(kind: Kind.Intersection, parts: @parts)
-proc `tuple`*(elements: open_array[Type]): TupleType = TupleType(kind: Kind.Tuple, elements: @elements)
+proc tpl*(elements: open_array[Type]): TupleType = TupleType(kind: Kind.Tuple, elements: @elements)
 proc list*(element: Type): ListType = ListType(kind: Kind.List, element: element)
 proc map*(key: Type, value: Type): MapType = MapType(kind: Kind.Map, key: key, value: value)
 
@@ -163,13 +168,13 @@ when is_main_module:
   benchmark("sum1 == sum3", 100_000_000):
     discard are_equal(sum1, sum3)
 
-  let tuple1 = `tuple`([
+  let tuple1 = tpl([
     sum([string, int, boolean]),
     intersection([string, int, boolean]),
     list(map(string, int)),
   ])
 
-  let tuple2 = `tuple`([
+  let tuple2 = tpl([
     sum([string, int, boolean]),
     intersection([string, int, boolean]),
     list(map(string, int)),
@@ -180,13 +185,13 @@ when is_main_module:
     discard are_equal(tuple1, tuple2)
 
   benchmark("tuple3 == tuple4 (+creation)", 10_000_000):
-    let tuple3 = `tuple`([
+    let tuple3 = tpl([
       sum([string, int, boolean]),
       intersection([string, int, boolean]),
       list(map(string, int)),
     ])
 
-    let tuple4 = `tuple`([
+    let tuple4 = tpl([
       sum([string, int, boolean]),
       intersection([string, int, boolean]),
       list(map(string, int)),

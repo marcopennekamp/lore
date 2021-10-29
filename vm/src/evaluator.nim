@@ -53,6 +53,7 @@ proc evaluate*(function: Function, args: seq[Value]): Value =
   evaluate(function, 0)
 
 # TODO (vm): `{.push checks: off.}` (or for the whole file) if compiling with `-d:release` only instead of danger.
+# TODO (vm): Use `{.computedgoto.}` for the case statement.
 # `arguments_bc`: The starting index of this function's `arguments` segment. ("Arguments base counter")
 proc evaluate(function: Function, arguments_bc: uint): Value =
   let code = function.code
