@@ -1,9 +1,9 @@
 from bytecode import Operation, Instruction, Function, Constants, new_instruction
-from values import Value
+from common import Example
 
 let constants = Constants(functions: @[])
 
-let example_function* = Function(
+let nine = Function(
   name: "nine",
   arguments_count: 0,
   locals_count: 0,
@@ -24,6 +24,9 @@ let example_function* = Function(
   constants: constants,
 )
 
-let example_arguments*: seq[Value] = @[]
-
-let example_runs* = 50_000_000
+let example* = Example(
+  name: "nine",
+  function: nine,
+  arguments: @[],
+  runs: 50_000_000,
+)

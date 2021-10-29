@@ -1,7 +1,7 @@
 from bytecode import Operation, Instruction, Function, Constants, new_instruction
-import values
+from common import Example
 
-let add_five* = Function(
+let add_five = Function(
   name: "add_five",
   arguments_count: 1,
   locals_count: 0,
@@ -22,7 +22,7 @@ let constants = Constants(
 
 add_five.constants = constants
 
-let example_function* = Function(
+let test = Function(
   name: "test",
   arguments_count: 0,
   locals_count: 0,
@@ -34,5 +34,9 @@ let example_function* = Function(
   constants: constants,
 )
 
-let example_arguments*: seq[Value] = @[]
-let example_runs* = 50_000_000
+let example* = Example(
+  name: "add five",
+  function: test,
+  arguments: @[],
+  runs: 50_000_000,
+)

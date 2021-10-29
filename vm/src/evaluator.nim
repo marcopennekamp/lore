@@ -45,7 +45,7 @@ var
 
 proc evaluate(function: Function, arguments_bc: uint): Value
 
-proc evaluate*(function: Function, args: seq[Value]): Value =
+proc evaluate*(function: Function, args: open_array[Value]): Value =
   var i = 0
   for argument in args:
     arguments[i] = argument

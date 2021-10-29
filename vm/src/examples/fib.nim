@@ -1,8 +1,7 @@
 from bytecode import Operation, Instruction, Function, Constants, new_instruction
-import values
+from common import Example
 
-# For initial development, we're building the test programs in the correct data structure right away.
-let fib_function* = Function(
+let fib_function = Function(
   name: "fib",
   arguments_count: 1,
   locals_count: 1,
@@ -38,7 +37,7 @@ let constants = Constants(
 
 fib_function.constants = constants
 
-let example_function* = Function(
+let test = Function(
   name: "test",
   arguments_count: 0,
   locals_count: 0,
@@ -50,5 +49,9 @@ let example_function* = Function(
   constants: constants,
 )
 
-let example_arguments*: seq[Value] = @[]
-let example_runs* = 400_000
+let example* = Example(
+  name: "fib",
+  function: test,
+  arguments: @[],
+  runs: 500_000,
+)
