@@ -45,6 +45,11 @@ export function benchmarkAreEqual(): void {
   // to verify equality, since a map can have duplicate entries for a given hash key.
   benchmark('equal tuple (structural, shallow)', () => areEqual(tuple1, tuple2), times)
   benchmark('equal tuple (structural, deep)', () => areEqual(tuple3, tuple4), times)
+  benchmark('equal tuple (structural, deep, +creation)', () => {
+    const tuple5 = Tuple.type([Sum.type([Types.string, Types.number, Types.boolean]), Intersection.type([Types.string, Types.number, Types.boolean]), Lists.type(Map.type(Types.string, Types.number))])
+    const tuple6 = Tuple.type([Sum.type([Types.string, Types.number, Types.boolean]), Intersection.type([Types.string, Types.number, Types.boolean]), Lists.type(Map.type(Types.string, Types.number))])
+    return areEqual(tuple5, tuple6)
+  }, times)
   benchmark('equal shape (structural)', () => areEqual(shape2, shape3), times)
   benchmark('empty run', () => { }, times) // This can be used to gauge the benchmark's own overhead.
   console.log()

@@ -61,9 +61,9 @@ let
   boolean* = Type(kind: Boolean)
   string* = Type(kind: String)
 
-proc sum*(parts: seq[Type]): SumType = SumType(kind: Kind.Sum, parts: parts)
-proc intersection*(parts: seq[Type]): IntersectionType = IntersectionType(kind: Kind.Intersection, parts: parts)
-proc `tuple`*(elements: seq[Type]): TupleType = TupleType(kind: Kind.Tuple, elements: elements)
+proc sum*(parts: open_array[Type]): SumType = SumType(kind: Kind.Sum, parts: @parts)
+proc intersection*(parts: open_array[Type]): IntersectionType = IntersectionType(kind: Kind.Intersection, parts: @parts)
+proc `tuple`*(elements: open_array[Type]): TupleType = TupleType(kind: Kind.Tuple, elements: @elements)
 proc list*(element: Type): ListType = ListType(kind: Kind.List, element: element)
 proc map*(key: Type, value: Type): MapType = MapType(kind: Kind.Map, key: key, value: value)
 
@@ -142,3 +142,54 @@ proc are_exactly_equal(ts1: seq[Type], ts2: seq[Type]): bool =
     if not are_equal(ts1[i], ts2[i]): return false
     i += 1
   true
+
+
+when is_main_module:
+  from utils import benchmark
+
+  let sum1 = sum([string, int, boolean])
+  let sum2 = sum([string, int, boolean])
+  let sum3 = sum([real, boolean])
+
+  echo are_equal(sum1, sum1)
+  benchmark("sum1 == sum1", 100_000_000):
+    discard are_equal(sum1, sum1)
+
+  echo are_equal(sum1, sum2)
+  benchmark("sum1 == sum2", 100_000_000):
+    discard are_equal(sum1, sum2)
+
+  echo are_equal(sum1, sum2)
+  benchmark("sum1 == sum3", 100_000_000):
+    discard are_equal(sum1, sum3)
+
+  let tuple1 = `tuple`([
+    sum([string, int, boolean]),
+    intersection([string, int, boolean]),
+    list(map(string, int)),
+  ])
+
+  let tuple2 = `tuple`([
+    sum([string, int, boolean]),
+    intersection([string, int, boolean]),
+    list(map(string, int)),
+  ])
+
+  echo are_equal(tuple1, tuple2)
+  benchmark("tuple1 == tuple2", 100_000_000):
+    discard are_equal(tuple1, tuple2)
+
+  benchmark("tuple3 == tuple4 (+creation)", 10_000_000):
+    let tuple3 = `tuple`([
+      sum([string, int, boolean]),
+      intersection([string, int, boolean]),
+      list(map(string, int)),
+    ])
+
+    let tuple4 = `tuple`([
+      sum([string, int, boolean]),
+      intersection([string, int, boolean]),
+      list(map(string, int)),
+    ])
+
+    discard are_equal(tuple3, tuple4)
