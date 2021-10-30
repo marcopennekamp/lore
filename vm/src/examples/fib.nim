@@ -1,7 +1,8 @@
 from bytecode import Operation, Instruction, Function, Constants, new_instruction
 from common import Example
+from evaluator import init_frame_stats
 
-let fib_function = Function(
+let fib = Function(
   name: "fib",
   stack_size: 2,
   locals_size: 1,
@@ -32,12 +33,13 @@ let fib_function = Function(
   ],
   constants: nil,
 )
+init_frame_stats(fib)
 
 let constants = Constants(
-  functions: @[fib_function],
+  functions: @[fib],
 )
 
-fib_function.constants = constants
+fib.constants = constants
 
 let test = Function(
   name: "test",
@@ -52,6 +54,7 @@ let test = Function(
   ],
   constants: constants,
 )
+init_frame_stats(test)
 
 let example* = Example(
   name: "fib",

@@ -47,8 +47,17 @@ type
     ref_stack_size*: uint16
     ref_locals_size*: uint16
     code*: seq[Instruction]
-    # The `constants` object will be initialized after all type, value, and function constants have been resolved.
+
+    ## The `constants` object will be initialized after all type, value, and function constants have been resolved.
     constants*: Constants
+
+    ## These fields contain precomputed sizes and offsets for faster frame creation. They will be calculated by
+    ## `initialize_function`.
+    frame_size*: uint16
+    frame_stack_offset*: uint16
+    frame_locals_offset*: uint16
+    frame_ref_stack_offset*: uint16
+    frame_ref_locals_offset*: uint16
 
 proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16): Instruction =
   Instruction(operation: operation, arg0: Argument(uint_value: arg0), arg1: Argument(uint_value: arg1))

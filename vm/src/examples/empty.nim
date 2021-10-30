@@ -1,5 +1,6 @@
 from bytecode import Operation, Instruction, Function, Constants, new_instruction
 from common import Example
+from evaluator import init_frame_stats
 
 let constants = Constants(functions: @[])
 
@@ -14,6 +15,7 @@ let empty = Function(
   ],
   constants: constants,
 )
+init_frame_stats(empty)
 
 let example* = Example(
   name: "empty",

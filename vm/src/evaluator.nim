@@ -71,36 +71,26 @@ type
 # TODO (vm): Move this to `utils`.
 template `+`(p: pointer, offset: uint): pointer = cast[pointer](cast[uint](p) + offset)
 
+## Don't move `create_frame` to a different module. GCC won't inline it.
 proc create_frame(function: Function, frame_mem: pointer, caller: FramePtr): FramePtr =
-  # TODO (vm): Isn't this a bit heavy to calculate? We should do some of these calculations when processing Functions.
-  const preamble_size = sizeof(Frame)
-  let frame_size = cast[uint16](
-    preamble_size +
-    sizeof(uint64) * (cast[int](function.stack_size) + cast[int](function.locals_size)) +
-    sizeof(Value) * (cast[int](function.ref_stack_size) + cast[int](function.ref_locals_size))
-  )
-
   let frame_base =
     if caller == nil: frame_mem
-    else: cast[pointer](caller) + caller.frame_size
+    else: cast[pointer](caller) + caller.function.frame_size
+
   let frame = cast[FramePtr](frame_base)
   frame.function = function
   frame.caller = caller
-  frame.frame_size = frame_size
   frame.pc = 0
   frame.stack_index = -1
   frame.ref_stack_index = -1
-  let stack_base = cast[pointer](frame_base + cast[uint](preamble_size))
-  frame.stack = cast[ptr UncheckedArray[Primitive]](stack_base)
-  let locals_base = cast[pointer](stack_base + function.stack_size * cast[uint](sizeof(Primitive)))
-  frame.locals = cast[ptr UncheckedArray[Primitive]](locals_base)
-  let ref_stack_base = cast[pointer](locals_base + function.locals_size * cast[uint](sizeof(Primitive)))
-  frame.ref_stack = cast[ptr UncheckedArray[Value]](ref_stack_base)
-  let ref_locals_base = cast[pointer](ref_stack_base + function.ref_stack_size * cast[uint](sizeof(Value)))
-  frame.ref_locals = cast[ptr UncheckedArray[Value]](ref_locals_base)
+  frame.stack = cast[ptr UncheckedArray[Primitive]](frame_base + function.frame_stack_offset)
+  frame.locals = cast[ptr UncheckedArray[Primitive]](frame_base + function.frame_locals_offset)
+  frame.ref_stack = cast[ptr UncheckedArray[Value]](frame_base + function.frame_ref_stack_offset)
+  frame.ref_locals = cast[ptr UncheckedArray[Value]](frame_base + function.frame_ref_locals_offset)
 
   frame
 
+## Don't move `delete_frame` to a different module. GCC won't inline it.
 proc delete_frame(frame: FramePtr) =
   let function = frame.function
 
@@ -120,6 +110,19 @@ proc delete_frame(frame: FramePtr) =
     j += 1
 
   frame.function = nil
+
+## Initializes the `frame_*` size and offset stats of the given function.
+proc init_frame_stats*(function: Function) =
+  const preamble_size = sizeof(Frame)
+  function.frame_size = cast[uint16](
+    preamble_size +
+    sizeof(uint64) * (cast[int](function.stack_size) + cast[int](function.locals_size)) +
+    sizeof(Value) * (cast[int](function.ref_stack_size) + cast[int](function.ref_locals_size))
+  )
+  function.frame_stack_offset = cast[uint16](preamble_size)
+  function.frame_locals_offset = cast[uint16](function.frame_stack_offset + function.stack_size * cast[uint](sizeof(Primitive)))
+  function.frame_ref_stack_offset = cast[uint16](function.frame_locals_offset + function.locals_size * cast[uint](sizeof(Primitive)))
+  function.frame_ref_locals_offset = cast[uint16](function.frame_ref_stack_offset + function.ref_stack_size * cast[uint](sizeof(Primitive)))
 
 template stack_push(primitive): untyped =
   let new_stack_index = frame.stack_index + 1
