@@ -42,9 +42,6 @@ type
     caller: FramePtr
 
     frame_size: uint16
-    pc: uint16
-    stack_index: int16
-    ref_stack_index: int16
 
     stack: ptr UncheckedArray[Primitive]
     locals: ptr UncheckedArray[Primitive]
@@ -80,9 +77,6 @@ proc create_frame(function: Function, frame_mem: pointer, caller: FramePtr): Fra
   let frame = cast[FramePtr](frame_base)
   frame.function = function
   frame.caller = caller
-  frame.pc = 0
-  frame.stack_index = -1
-  frame.ref_stack_index = -1
   frame.stack = cast[ptr UncheckedArray[Primitive]](frame_base + function.frame_stack_offset)
   frame.locals = cast[ptr UncheckedArray[Primitive]](frame_base + function.frame_locals_offset)
   frame.ref_stack = cast[ptr UncheckedArray[Value]](frame_base + function.frame_ref_stack_offset)
@@ -125,48 +119,44 @@ proc init_frame_stats*(function: Function) =
   function.frame_ref_locals_offset = cast[uint16](function.frame_ref_stack_offset + function.ref_stack_size * cast[uint](sizeof(Primitive)))
 
 template stack_push(primitive): untyped =
-  let new_stack_index = frame.stack_index + 1
-  frame.stack_index = new_stack_index
-  frame.stack[new_stack_index] = primitive
+  stack_index += 1
+  frame.stack[stack_index] = primitive
 
 template stack_push_uint(value): untyped = stack_push(Primitive(uint_value: value))
 template stack_push_int(value): untyped = stack_push(Primitive(int_value: value))
 
 template stack_pop(): untyped =
-  let stack_index = frame.stack_index
   let element = frame.stack[stack_index]
-  frame.stack_index = stack_index - 1
+  stack_index -= 1
   element
 
 template stack_pop_uint(): untyped = stack_pop().uint_value
 template stack_pop_int(): untyped = stack_pop().int_value
 
-template stack_peek(): untyped = frame.stack[frame.stack_index]
+template stack_peek(): untyped = frame.stack[stack_index]
 
 template stack_peek_uint(): untyped = stack_peek().uint_value
 template stack_peek_int(): untyped = stack_peek().int_value
 
 template stack_assign_uint(value): untyped =
-  frame.stack[frame.stack_index].uint_value = value
+  frame.stack[stack_index].uint_value = value
 
 template stack_assign_int(value): untyped =
-  frame.stack[frame.stack_index].int_value = value
+  frame.stack[stack_index].int_value = value
 
 template ref_stack_push(value): untyped =
-    let new_stack_index = frame.ref_stack_index + 1
-    frame.ref_stack_index = new_stack_index
-    frame.ref_stack[new_stack_index] = value
+    ref_stack_index += 1
+    frame.ref_stack[ref_stack_index] = value
 
 template ref_stack_pop(tpe): untyped =
-  let stack_index = frame.ref_stack_index
-  let element = frame.ref_stack[stack_index]
-  frame.ref_stack_index = stack_index - 1
+  let element = frame.ref_stack[ref_stack_index]
+  ref_stack_index -= 1
   cast[tpe](element)
 
-template ref_stack_peek(tpe): untyped = cast[tpe](frame.ref_stack[frame.ref_stack_index])
+template ref_stack_peek(tpe): untyped = cast[tpe](frame.ref_stack[ref_stack_index])
 
 template ref_stack_assign(value): untyped =
-  frame.ref_stack[frame.ref_stack_index] = value
+  frame.ref_stack[ref_stack_index] = value
 
 #[
 template wrap_ref(value): untyped = StackValue(ref_value: value)
@@ -185,16 +175,21 @@ template stack_peek_int(): untyped = stack_peek().int_value
 ## `evaluate` does not yet support garbage collection. This includes the default `refc` memory management, which has a
 ## backup garbage collector. The GC won't see the value references contained in `frame_mem` and incorrectly free the
 ## memory associated with these values.
-proc evaluate*(entry_function: Function, frame_mem: pointer): Value =
-  when_debug: echo "Evaluating function ", entry_function.name
+proc evaluate(frame: FramePtr, frame_mem: pointer) =
+  when_debug: echo "Evaluating function ", frame.function.name
 
-  var frame = create_frame(entry_function, frame_mem, nil)
+  let code = frame.function.code
+  let constants = frame.function.constants
+
+  var pc: uint16 = 0
+  var stack_index: int16 = -1
+  var ref_stack_index: int16 = -1
 
   while true:
     {.computedgoto.}
-    let instruction = frame.function.code[frame.pc]
-    when_debug: echo instruction.operation, " (PC: ", frame.pc, ")"
-    frame.pc += 1
+    let instruction = code[pc]
+    when_debug: echo instruction.operation, " (PC: ", pc, ")"
+    pc += 1
 
     case instruction.operation
     of Operation.LocalStore:
@@ -247,21 +242,21 @@ proc evaluate*(entry_function: Function, frame_mem: pointer): Value =
       ref_stack_assign(values.new_int(a.value + b.value))
 
     of Operation.Jump:
-      frame.pc = instruction.arg0.uint_value
+      pc = instruction.arg0.uint_value
 
     of Operation.JumpIfFalse:
       let predicate = stack_pop_uint()
       if (predicate == 0):
-        frame.pc = instruction.arg0.uint_value
+        pc = instruction.arg0.uint_value
 
     of Operation.JumpIfTrue:
       let predicate = stack_pop_uint()
       if (predicate != 0):
-        frame.pc = instruction.arg0.uint_value
+        pc = instruction.arg0.uint_value
 
     of Operation.Dispatch:
       let argument_count = instruction.arg0.uint_value
-      let target = entry_function.constants.functions[instruction.arg1.uint_value]
+      let target = constants.functions[instruction.arg1.uint_value]
       when_debug: echo "Dispatch to target ", target.name
 
       let target_frame = create_frame(target, frame_mem, frame)
@@ -275,23 +270,21 @@ proc evaluate*(entry_function: Function, frame_mem: pointer): Value =
         target_frame.ref_locals[i] = ref_stack_pop(Value)
         i += 1
 
-      frame = target_frame
+      evaluate(target_frame, frame_mem)
+
+      # After function evaluation has finished, it must guarantee that there is exactly one reference on the stack.
+      ref_stack_push(target_frame.ref_stack[0])
+
+      delete_frame(target_frame)
 
     of Operation.Return:
-      if frame.caller != nil:
-        let caller = frame.caller
-        let output = ref_stack_pop(Value)
-        delete_frame(frame)
-        frame = caller
-        ref_stack_push(output)
-      else:
-        break
+      break
 
-  # The bytecode must ensure that there is one Value on the reference stack.
-  result = if frame.ref_stack_index > -1:
-    ref_stack_pop(Value)
-  else:
-    nil
+proc evaluate*(entry_function: Function, frame_mem: pointer): Value =
+  let frame = create_frame(entry_function, frame_mem, nil)
+  evaluate(frame, frame_mem)
 
-  # Deleting the last frame ensures that all reference counts are properly updated.
+  # The bytecode must ensure that there is exactly one Value on the reference stack.
+  result = frame.ref_stack[0]
+
   delete_frame(frame)
