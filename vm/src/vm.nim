@@ -6,6 +6,7 @@ import values
 from utils import when_release, when_debug, benchmark
 
 import examples/empty, examples/nine, examples/add_five, examples/fib
+from fib_native import test_fib
 
 proc with_frame_mem(f: (pointer) -> void) =
   # Note that alloc0 allocates memory specifically on the Boehm GC heap when the Boehm GC is selected.
@@ -42,6 +43,8 @@ let examples = [
 when_release:
   for example in examples:
     bench_example(example)
+  benchmark("fib native", 5_000_000):
+    discard test_fib()
 
 when_debug:
   for example in examples:
