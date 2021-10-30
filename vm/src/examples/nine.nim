@@ -5,8 +5,10 @@ let constants = Constants(functions: @[])
 
 let nine = Function(
   name: "nine",
-  arguments_count: 0,
-  locals_count: 0,
+  stack_size: 3,
+  locals_size: 0,
+  ref_stack_size: 1,
+  ref_locals_size: 0,
   code: @[
     new_instruction(Operation.IntBoxPush, 1, 0), # This simulates loading an Int argument.
     new_instruction(Operation.IntUnbox, 0, 0),

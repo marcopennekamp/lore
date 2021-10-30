@@ -3,10 +3,12 @@ from common import Example
 
 let fib_function = Function(
   name: "fib",
-  arguments_count: 1,
-  locals_count: 1,
+  stack_size: 2,
+  locals_size: 1,
+  ref_stack_size: 2,
+  ref_locals_size: 1,
   code: @[
-    new_instruction(Operation.ArgumentLoad, 0, 0),
+    new_instruction(Operation.RefLocalLoad, 0, 0),
     new_instruction(Operation.IntUnbox, 0, 0),
     new_instruction(Operation.LocalStore, 0, 0),
     new_instruction(Operation.IntPush, 1, 0),
@@ -25,7 +27,7 @@ let fib_function = Function(
     new_instruction(Operation.Dispatch, 1, 0),
     new_instruction(Operation.IntBoxAdd, 0, 0),
     new_instruction(Operation.Jump, 20, 0),
-    new_instruction(Operation.ArgumentLoad, 0, 0),  # 19
+    new_instruction(Operation.RefLocalLoad, 0, 0),  # 19
     new_instruction(Operation.Return, 0, 0),        # 20
   ],
   constants: nil,
@@ -39,8 +41,10 @@ fib_function.constants = constants
 
 let test = Function(
   name: "test",
-  arguments_count: 0,
-  locals_count: 0,
+  stack_size: 0,
+  locals_size: 0,
+  ref_stack_size: 1,
+  ref_locals_size: 0,
   code: @[
     new_instruction(Operation.IntBoxPush, 10, 0),
     new_instruction(Operation.Dispatch, 1, 0),
