@@ -36,13 +36,6 @@ type
   ## When a frame is deleted, its reference memory must be nilled, so that reference counts can be properly updated.
   Frame = object
     function: Function
-
-    ## This pointer allows a finished frame to reset the evaluator to the frame which called it. This allows us to
-    ## forego a naive frame stack data structure.
-    caller: FramePtr
-
-    frame_size: uint16
-
     stack: ptr UncheckedArray[Primitive]
     locals: ptr UncheckedArray[Primitive]
     # TODO (vm): This probably only works with reference counting, because with a classic GC, the GC will never see the
@@ -76,7 +69,6 @@ proc create_frame(function: Function, frame_mem: pointer, caller: FramePtr): Fra
 
   let frame = cast[FramePtr](frame_base)
   frame.function = function
-  frame.caller = caller
   frame.stack = cast[ptr UncheckedArray[Primitive]](frame_base + function.frame_stack_offset)
   frame.locals = cast[ptr UncheckedArray[Primitive]](frame_base + function.frame_locals_offset)
   frame.ref_stack = cast[ptr UncheckedArray[Value]](frame_base + function.frame_ref_stack_offset)
@@ -87,23 +79,12 @@ proc create_frame(function: Function, frame_mem: pointer, caller: FramePtr): Fra
 ## Don't move `delete_frame` to a different module. GCC won't inline it.
 proc delete_frame(frame: FramePtr) =
   let function = frame.function
-
-  # We have to manually nil all references so that reference counting can be applied.
-  let ref_stack_size = function.ref_stack_size
-  let ref_stack = frame.ref_stack
-  var i: uint16 = 0
-  while i < ref_stack_size:
-    ref_stack[i] = nil
-    i += 1
-
-  let ref_locals_size = function.ref_locals_size
-  let ref_locals = frame.ref_locals
-  var j: uint16 = 0
-  while j < ref_locals_size:
-    ref_locals[j] = nil
-    j += 1
-
   frame.function = nil
+
+  # TODO (vm): We should possibly nil all references so that pointers left on the stack or locals array aren't causing
+  #            memory leaks. However, this also incurs a big performance penalty, so we should probably rather verify
+  #            first that this is a problem before fixing it.
+  #zeroMem(frame.ref_stack, (function.ref_stack_size + function.ref_locals_size) * cast[uint](sizeof(Value)))
 
 ## Initializes the `frame_*` size and offset stats of the given function.
 proc init_frame_stats*(function: Function) =
