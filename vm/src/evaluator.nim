@@ -29,24 +29,17 @@ template `+`(p: pointer, offset: uint): pointer = cast[pointer](cast[uint](p) + 
 # TODO (vm): We should possibly clear a frame by nilling all references so that pointers left in registers aren't
 #            causing memory leaks. However, this also incurs a big performance penalty, so we should probably rather
 #            verify first that this is a problem before fixing it.
-proc create_frame(function: Function, frame_mem: pointer, caller: FramePtr): FramePtr =
-  let frame_base =
-    if caller == nil: frame_mem
-    else: cast[pointer](caller) + caller.function.frame_size
-
+proc create_frame(function: Function, frame_base: pointer): FramePtr =
+  const preamble_size = sizeof(Frame)
   let frame = cast[FramePtr](frame_base)
   frame.function = function
-  frame.registers = cast[ptr UncheckedArray[RegisterValue]](frame_base + function.frame_registers_offset)
-
+  frame.registers = cast[ptr UncheckedArray[RegisterValue]](frame_base + cast[uint](preamble_size))
   frame
 
 ## Initializes the `frame_*` size and offset stats of the given function.
-# TODO (vm): We can probably inline this into `create_frame`, as this calculation has become very easy. The pointer
-#            access is probably slower than that one extra multiplication for frame_size.
 proc init_frame_stats*(function: Function) =
   const preamble_size = sizeof(Frame)
   function.frame_size = cast[uint16](preamble_size + sizeof(uint64) * cast[int](function.register_count))
-  function.frame_registers_offset = cast[uint16](preamble_size)
 
 template reg_get(index): untyped = frame.registers[index]
 
@@ -72,8 +65,7 @@ template reg_set_uint_arg0(value): untyped = reg_set_uint(instruction.arg0.uint_
 template reg_set_int_arg0(value): untyped = reg_set_int(instruction.arg0.uint_value, value)
 template reg_set_ref_arg0(value): untyped = reg_set_ref(instruction.arg0.uint_value, value)
 
-# TODO (vm): Support entry arguments.
-proc evaluate(frame: FramePtr, frame_mem: pointer) =
+proc evaluate(frame: FramePtr) =
   when_debug: echo "Evaluating function ", frame.function.name, " with frame ", cast[uint](frame)
 
   let code = frame.function.code
@@ -157,11 +149,12 @@ proc evaluate(frame: FramePtr, frame_mem: pointer) =
 
     of Operation.Dispatch1:
       let target = constants.functions[instruction.arg1.uint_value]
-      let target_frame = create_frame(target, frame_mem, frame)
+      let target_frame_base = cast[pointer](frame) + frame.function.frame_size
+      let target_frame = create_frame(target, target_frame_base)
       when_debug: echo "Dispatch to target ", target.name, " with frame ", cast[uint](target_frame)
 
       target_frame.registers[0] = reg_get(instruction.arg2.uint_value)
-      evaluate(target_frame, frame_mem)
+      evaluate(target_frame)
 
       # After function evaluation has finished, it must guarantee that the return value is in the first register.
       reg_set(instruction.arg0.uint_value, target_frame.registers[0])
@@ -176,8 +169,8 @@ proc evaluate(frame: FramePtr, frame_mem: pointer) =
       break
 
 proc evaluate*(entry_function: Function, frame_mem: pointer): Value =
-  let frame = create_frame(entry_function, frame_mem, nil)
-  evaluate(frame, frame_mem)
+  let frame = create_frame(entry_function, frame_mem)
+  evaluate(frame)
 
   # The bytecode must ensure that the result is in the first register.
   reg_get_ref(0, Value)
