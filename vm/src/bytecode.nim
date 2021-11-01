@@ -40,7 +40,6 @@ type
   Function* = ref object
     name*: string
     # TODO (vm): Add the function's signature.
-    stack_size*: uint16
     locals_size*: uint16
     code*: seq[Instruction]
 
@@ -50,7 +49,6 @@ type
     ## These fields contain precomputed sizes and offsets for faster frame creation. They will be calculated by
     ## `initialize_function`.
     frame_size*: uint16
-    frame_stack_offset*: uint16
     frame_locals_offset*: uint16
 
 proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16): Instruction =

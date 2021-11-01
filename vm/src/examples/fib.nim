@@ -4,16 +4,16 @@ from evaluator import init_frame_stats
 
 let fib = Function(
   name: "fib",
-  stack_size: 3,
   locals_size: 2,
   code: @[
+    new_instruction(Operation.LocalStore, 0, 0),
     new_instruction(Operation.LocalLoad, 0, 0),
     new_instruction(Operation.IntUnbox, 0, 0),
     new_instruction(Operation.LocalStore, 1, 0),
     new_instruction(Operation.IntPush, 1, 0),
     new_instruction(Operation.LocalLoad, 1, 0),
     new_instruction(Operation.IntLessThan, 0, 0),
-    new_instruction(Operation.JumpIfFalse, 19, 0),
+    new_instruction(Operation.JumpIfFalse, 20, 0),
     new_instruction(Operation.LocalLoad, 1, 0),
     new_instruction(Operation.IntPush, 1, 0),
     new_instruction(Operation.IntSubtract, 0, 0),
@@ -25,9 +25,9 @@ let fib = Function(
     new_instruction(Operation.IntBox, 0, 0),
     new_instruction(Operation.Dispatch, 1, 0),
     new_instruction(Operation.IntBoxAdd, 0, 0),
-    new_instruction(Operation.Jump, 20, 0),
-    new_instruction(Operation.LocalLoad, 0, 0),     # 19
-    new_instruction(Operation.Return, 0, 0),        # 20
+    new_instruction(Operation.Jump, 21, 0),
+    new_instruction(Operation.LocalLoad, 0, 0),     # 20
+    new_instruction(Operation.Return, 0, 0),        # 21
   ],
   constants: nil,
 )
@@ -41,7 +41,6 @@ fib.constants = constants
 
 let test = Function(
   name: "test",
-  stack_size: 1,
   locals_size: 0,
   code: @[
     new_instruction(Operation.IntBoxPush, 10, 0),

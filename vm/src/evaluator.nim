@@ -19,7 +19,6 @@ type
   ## preallocated before `evaluate` is called.
   Frame = object
     function: Function
-    stack: ptr UncheckedArray[StackValue]
     locals: ptr UncheckedArray[StackValue]
   FramePtr = ptr Frame
 
@@ -34,7 +33,6 @@ proc create_frame(function: Function, frame_mem: pointer, caller: FramePtr): Fra
 
   let frame = cast[FramePtr](frame_base)
   frame.function = function
-  frame.stack = cast[ptr UncheckedArray[StackValue]](frame_base + function.frame_stack_offset)
   frame.locals = cast[ptr UncheckedArray[StackValue]](frame_base + function.frame_locals_offset)
 
   frame
@@ -47,28 +45,24 @@ proc delete_frame(frame: FramePtr) =
   # TODO (vm): We should possibly nil all references so that pointers left on the stack or locals array aren't causing
   #            memory leaks. However, this also incurs a big performance penalty, so we should probably rather verify
   #            first that this is a problem before fixing it.
-  #zeroMem(frame.stack, (function.stack_size + function.locals_size) * cast[uint](sizeof(StackValue)))
+  #zeroMem(stack, (function.stack_size + function.locals_size) * cast[uint](sizeof(StackValue)))
 
 ## Initializes the `frame_*` size and offset stats of the given function.
 proc init_frame_stats*(function: Function) =
   const preamble_size = sizeof(Frame)
-  function.frame_size = cast[uint16](
-    preamble_size +
-    sizeof(uint64) * (cast[int](function.stack_size) + cast[int](function.locals_size))
-  )
-  function.frame_stack_offset = cast[uint16](preamble_size)
-  function.frame_locals_offset = cast[uint16](function.frame_stack_offset + function.stack_size * cast[uint](sizeof(StackValue)))
+  function.frame_size = cast[uint16](preamble_size + sizeof(uint64) * cast[int](function.locals_size))
+  function.frame_locals_offset = cast[uint16](preamble_size)
 
 template stack_push(stack_value): untyped =
   stack_index += 1
-  frame.stack[stack_index] = stack_value
+  stack[stack_index] = stack_value
 
 template stack_push_uint(value): untyped = stack_push(StackValue(uint_value: value))
 template stack_push_int(value): untyped = stack_push(StackValue(int_value: value))
 template stack_push_ref(value): untyped = stack_push(StackValue(ref_value: value))
 
 template stack_pop(): untyped =
-  let element = frame.stack[stack_index]
+  let element = stack[stack_index]
   stack_index -= 1
   element
 
@@ -76,30 +70,32 @@ template stack_pop_uint(): untyped = stack_pop().uint_value
 template stack_pop_int(): untyped = stack_pop().int_value
 template stack_pop_ref(tpe): untyped = cast[tpe](stack_pop().ref_value)
 
-template stack_peek(): untyped = frame.stack[stack_index]
+template stack_peek(): untyped = stack[stack_index]
 
 template stack_peek_uint(): untyped = stack_peek().uint_value
 template stack_peek_int(): untyped = stack_peek().int_value
 template stack_peek_ref(tpe): untyped = cast[tpe](stack_peek().ref_value)
 
 template stack_assign_uint(value): untyped =
-  frame.stack[stack_index].uint_value = value
+  stack[stack_index].uint_value = value
 
 template stack_assign_int(value): untyped =
-  frame.stack[stack_index].int_value = value
+  stack[stack_index].int_value = value
 
 template stack_assign_ref(value): untyped =
-  frame.stack[stack_index].ref_value = value
+  stack[stack_index].ref_value = value
+
+var stack = cast[ptr UncheckedArray[StackValue]](alloc0(1024 * sizeof(StackValue)))
+var stack_index: int16 = -1
 
 # TODO (vm): Support entry arguments.
 proc evaluate(frame: FramePtr, frame_mem: pointer) =
-  when_debug: echo "Evaluating function ", frame.function.name, " at frame base ", cast[uint](frame)
+  when_debug: echo "Evaluating function ", frame.function.name, " with frame ", cast[uint](frame)
 
   let code = frame.function.code
   let constants = frame.function.constants
 
   var pc: uint16 = 0
-  var stack_index: int16 = -1
 
   while true:
     {.computedgoto.}
@@ -163,7 +159,7 @@ proc evaluate(frame: FramePtr, frame_mem: pointer) =
         pc = instruction.arg0.uint_value
 
     of Operation.Dispatch:
-      let argument_count = instruction.arg0.uint_value
+      #let argument_count = instruction.arg0.uint_value
       let target = constants.functions[instruction.arg1.uint_value]
       let target_frame = create_frame(target, frame_mem, frame)
       when_debug: echo "Dispatch to target ", target.name, " with frame ", cast[uint](target_frame)
@@ -171,19 +167,22 @@ proc evaluate(frame: FramePtr, frame_mem: pointer) =
       # TODO (vm): We want to move the arguments from the stack into `arguments` as efficiently as possible. `copyMem`
       #            doesn't work with reference-counting garbage collection. However, if we switch to a traditional GC,
       #            this should be possible.
+      #[
       var i: uint = 0
       while i < argument_count:
         target_frame.locals[i] = stack_pop()
         when_debug: echo "Argument: ", cast[IntValue](target_frame.locals[i].ref_value).value
         i += 1
+      ]#
 
+      # Note that with a global stack, the arguments are just on the stack for the function to consume.
       evaluate(target_frame, frame_mem)
 
       # After function evaluation has finished, it must guarantee that there is exactly one value on the stack.
-      stack_push(target_frame.stack[0])
+      #stack_push(target_frame.stack[0])
 
       delete_frame(target_frame)
-      when_debug: echo "Finished dispatch to target ", target.name, "with frame ", cast[uint](target_frame)
+      when_debug: echo "Finished dispatch to target ", target.name, " with frame ", cast[uint](target_frame)
 
     of Operation.Return:
       break
@@ -192,7 +191,10 @@ proc evaluate*(entry_function: Function, frame_mem: pointer): Value =
   let frame = create_frame(entry_function, frame_mem, nil)
   evaluate(frame, frame_mem)
 
-  # The bytecode must ensure that there is exactly one Value on the reference stack.
-  result = cast[Value](frame.stack[0])
+  # The bytecode must ensure that there is at most one Value on the stack.
+  if stack_index >= 0:
+    result = stack_pop_ref(Value)
+  else:
+    result = nil
 
   delete_frame(frame)

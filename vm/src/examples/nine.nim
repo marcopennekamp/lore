@@ -6,7 +6,6 @@ let constants = Constants(functions: @[])
 
 let nine = Function(
   name: "nine",
-  stack_size: 3,
   locals_size: 0,
   code: @[
     new_instruction(Operation.IntBoxPush, 1, 0), # This simulates loading an Int argument.
@@ -30,5 +29,5 @@ let example* = Example(
   name: "nine",
   function: nine,
   arguments: @[],
-  runs: 50_000_000,
+  runs: 50000,
 )
