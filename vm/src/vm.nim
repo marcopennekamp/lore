@@ -5,7 +5,7 @@ import evaluator
 import values
 from utils import when_release, when_debug, benchmark
 
-import examples/empty, examples/nine, examples/add_five, examples/fib
+import examples/empty, examples/nine, examples/add_five, examples/fib, examples/fib_primitive
 from fib_native import test_fib
 
 proc with_frame_mem(f: (pointer) -> void) =
@@ -38,6 +38,7 @@ let examples = [
   nine.example,
   add_five.example,
   fib.example,
+  fib_primitive.example,
 ]
 
 when_release:

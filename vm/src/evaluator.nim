@@ -58,6 +58,7 @@ template reg_get_uint_arg1(): untyped = reg_get_uint(instruction.arg1.uint_value
 template reg_get_int_arg1(): untyped = reg_get_int(instruction.arg1.uint_value)
 template reg_get_ref_arg1(tpe): untyped = reg_get_ref(instruction.arg1.uint_value, tpe)
 
+template reg_get_int_arg2(): untyped = reg_get_int(instruction.arg2.uint_value)
 template reg_get_ref_arg2(tpe): untyped = reg_get_ref(instruction.arg2.uint_value, tpe)
 
 template reg_set(target_index, register_value): untyped =
@@ -87,10 +88,28 @@ proc evaluate(frame: FramePtr, frame_mem: pointer) =
     pc += 1
 
     case instruction.operation
+    of Operation.IntConst:
+      reg_set_int_arg0(instruction.arg1.int_value)
+
+    of Operation.IntAdd:
+      let a = reg_get_int_arg1()
+      let b = reg_get_int_arg2()
+      reg_set_int_arg0(a + b)
+
     of Operation.IntAddConst:
       let a = reg_get_int_arg1()
       let b = instruction.arg2.int_value
       reg_set_int_arg0(a + b)
+
+    of Operation.IntSubConst:
+      let a = reg_get_int_arg1()
+      let b = instruction.arg2.int_value
+      reg_set_int_arg0(a - b)
+
+    of Operation.IntGtConst:
+      let a = reg_get_int_arg1()
+      let b = instruction.arg2.int_value
+      reg_set_uint_arg0(if a > b: 1 else: 0)
 
     of Operation.IntBox:
       let v = reg_get_int_arg1()
@@ -101,8 +120,7 @@ proc evaluate(frame: FramePtr, frame_mem: pointer) =
       reg_set_int_arg0(v.value)
 
     of Operation.IntBoxConst:
-      let v = instruction.arg1.int_value
-      reg_set_ref_arg0(values.new_int(v))
+      reg_set_ref_arg0(values.new_int(instruction.arg1.int_value))
 
     of Operation.IntBoxAdd:
       let a = reg_get_ref_arg1(IntValue).value

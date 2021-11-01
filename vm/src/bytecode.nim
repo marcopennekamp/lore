@@ -1,10 +1,12 @@
 type
   Operation* {.pure.} = enum
-    #IntAdd
+    IntConst
+    IntAdd
     IntAddConst
     #IntSub
-    #IntSubConst
+    IntSubConst
     #IntLt
+    IntGtConst
 
     IntBox
     IntUnbox
