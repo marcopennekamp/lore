@@ -2,8 +2,6 @@ type
   Operation* {.pure.} = enum
     LocalStore
     LocalLoad
-    RefLocalStore
-    RefLocalLoad
 
     IntPush
     IntAdd
@@ -44,8 +42,6 @@ type
     # TODO (vm): Add the function's signature.
     stack_size*: uint16
     locals_size*: uint16
-    ref_stack_size*: uint16
-    ref_locals_size*: uint16
     code*: seq[Instruction]
 
     ## The `constants` object will be initialized after all type, value, and function constants have been resolved.
@@ -56,8 +52,6 @@ type
     frame_size*: uint16
     frame_stack_offset*: uint16
     frame_locals_offset*: uint16
-    frame_ref_stack_offset*: uint16
-    frame_ref_locals_offset*: uint16
 
 proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16): Instruction =
   Instruction(operation: operation, arg0: Argument(uint_value: arg0), arg1: Argument(uint_value: arg1))

@@ -5,11 +5,9 @@ from evaluator import init_frame_stats
 let add_five = Function(
   name: "add_five",
   stack_size: 2,
-  locals_size: 0,
-  ref_stack_size: 1,
-  ref_locals_size: 1,
+  locals_size: 1,
   code: @[
-    new_instruction(Operation.RefLocalLoad, 0, 0),
+    new_instruction(Operation.LocalLoad, 0, 0),
     new_instruction(Operation.IntUnbox, 0, 0),
     new_instruction(Operation.IntPush, 5, 0),
     new_instruction(Operation.IntAdd, 0, 0),
@@ -28,10 +26,8 @@ add_five.constants = constants
 
 let test = Function(
   name: "test",
-  stack_size: 0,
+  stack_size: 1,
   locals_size: 0,
-  ref_stack_size: 1,
-  ref_locals_size: 0,
   code: @[
     new_instruction(Operation.IntBoxPush, 7, 0),
     new_instruction(Operation.Dispatch, 1, 0),
