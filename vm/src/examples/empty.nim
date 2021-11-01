@@ -6,9 +6,9 @@ let constants = Constants(functions: @[])
 
 let empty = Function(
   name: "empty",
-  locals_size: 0,
+  register_count: 1,
   code: @[
-    new_instruction(Operation.Return, 0, 0),
+    new_instruction(Operation.Return, 0),
   ],
   constants: constants,
 )

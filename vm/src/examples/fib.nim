@@ -4,30 +4,19 @@ from evaluator import init_frame_stats
 
 let fib = Function(
   name: "fib",
-  locals_size: 2,
+  register_count: 3,
   code: @[
-    new_instruction(Operation.LocalStore, 0, 0),
-    new_instruction(Operation.LocalLoad, 0, 0),
-    new_instruction(Operation.IntUnbox, 0, 0),
-    new_instruction(Operation.LocalStore, 1, 0),
-    new_instruction(Operation.IntPush, 1, 0),
-    new_instruction(Operation.LocalLoad, 1, 0),
-    new_instruction(Operation.IntLessThan, 0, 0),
-    new_instruction(Operation.JumpIfFalse, 20, 0),
-    new_instruction(Operation.LocalLoad, 1, 0),
-    new_instruction(Operation.IntPush, 1, 0),
-    new_instruction(Operation.IntSubtract, 0, 0),
-    new_instruction(Operation.IntBox, 0, 0),
-    new_instruction(Operation.Dispatch, 1, 0),      # TODO (vm): We could also support direct/fixed calls which even bypass the "is single function" check.
-    new_instruction(Operation.LocalLoad, 1, 0),
-    new_instruction(Operation.IntPush, 2, 0),
-    new_instruction(Operation.IntSubtract, 0, 0),
-    new_instruction(Operation.IntBox, 0, 0),
-    new_instruction(Operation.Dispatch, 1, 0),
-    new_instruction(Operation.IntBoxAdd, 0, 0),
-    new_instruction(Operation.Jump, 21, 0),
-    new_instruction(Operation.LocalLoad, 0, 0),     # 20
-    new_instruction(Operation.Return, 0, 0),        # 21
+    new_instruction(Operation.IntBoxGtConst, 1, 0, 1),
+    new_instruction(Operation.JumpIfFalse, 8, 1),
+
+    new_instruction(Operation.IntBoxSubConst, 1, 0, 1),
+    new_instruction(Operation.Dispatch1, 1, 0, 1),
+    new_instruction(Operation.IntBoxSubConst, 2, 0, 2),
+    new_instruction(Operation.Dispatch1, 2, 0, 2),
+    new_instruction(Operation.IntBoxAdd, 0, 1, 2),
+    new_instruction(Operation.Return0),
+
+    new_instruction(Operation.Return0),                  # 8
   ],
   constants: nil,
 )
@@ -41,11 +30,11 @@ fib.constants = constants
 
 let test = Function(
   name: "test",
-  locals_size: 0,
+  register_count: 1,
   code: @[
-    new_instruction(Operation.IntBoxPush, 10, 0),
-    new_instruction(Operation.Dispatch, 1, 0),
-    new_instruction(Operation.Return, 0, 0),
+    new_instruction(Operation.IntBoxConst, 0, 10),
+    new_instruction(Operation.Dispatch1, 0, 0, 0),
+    new_instruction(Operation.Return0),
   ],
   constants: constants,
 )

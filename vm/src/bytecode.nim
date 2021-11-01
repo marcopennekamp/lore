@@ -1,27 +1,33 @@
 type
   Operation* {.pure.} = enum
-    LocalStore
-    LocalLoad
-
-    IntPush
-    IntAdd
-    IntSubtract
-    IntLessThan
+    #IntAdd
+    IntAddConst
+    #IntSub
+    #IntSubConst
+    #IntLt
 
     IntBox
     IntUnbox
-    IntBoxPush
+    IntBoxConst
     IntBoxAdd
+    IntBoxAddConst
+    IntBoxSubConst
+    IntBoxGtConst
 
     Jump
     JumpIfFalse
     JumpIfTrue
 
-    # arg0: Number of arguments to pop off the stack.
-    # arg1: Constant ID of the multi-function to call.
-    Dispatch
+    ## arg0: Target register.
+    ## arg1: Constant ID of the multi-function to call.
+    ## arg2: Argument 1 register.
+    Dispatch1
 
+    ## arg0: Return value register.
     Return
+
+    ## `Return0` returns the value from register 0.
+    Return0
 
   Argument {.union.} = object
     uint_value*: uint16
@@ -31,6 +37,7 @@ type
     operation*: Operation
     arg0*: Argument
     arg1*: Argument
+    arg2*: Argument
 
   # A Constants object provides quick access to predefined types, values, and functions.
   Constants* = ref object
@@ -40,16 +47,25 @@ type
   Function* = ref object
     name*: string
     # TODO (vm): Add the function's signature.
-    locals_size*: uint16
+    register_count*: uint16
     code*: seq[Instruction]
 
     ## The `constants` object will be initialized after all type, value, and function constants have been resolved.
     constants*: Constants
 
     ## These fields contain precomputed sizes and offsets for faster frame creation. They will be calculated by
-    ## `initialize_function`.
+    ## `init_function`.
     frame_size*: uint16
-    frame_locals_offset*: uint16
+    frame_registers_offset*: uint16
 
-proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16): Instruction =
-  Instruction(operation: operation, arg0: Argument(uint_value: arg0), arg1: Argument(uint_value: arg1))
+proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16, arg2: uint16): Instruction =
+  Instruction(
+    operation: operation,
+    arg0: Argument(uint_value: arg0),
+    arg1: Argument(uint_value: arg1),
+    arg2: Argument(uint_value: arg2),
+  )
+
+proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16): Instruction = new_instruction(operation, arg0, arg1, 0)
+proc new_instruction*(operation: Operation, arg0: uint16): Instruction = new_instruction(operation, arg0, 0)
+proc new_instruction*(operation: Operation): Instruction = new_instruction(operation, 0)

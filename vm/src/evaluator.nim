@@ -3,14 +3,14 @@ from values import Value, IntValue
 from utils import when_debug
 
 type
-  ## A stack value is either a Value reference, an integer, or an unsigned integer (to represent booleans). The plain
-  ## types exist for optimization within function calls and occasionally across function calls when a parameter is
-  ## guaranteed to be e.g. an Int. Otherwise, non-references have to be boxed. Whether a StackValue is a reference or
-  ## primitive is encoded in the bytecode.
+  ## A register value is either a Value reference, an integer, or an unsigned integer (to represent booleans). The
+  ## plain types exist for optimization within function calls and occasionally across function calls when a parameter
+  ## is guaranteed to be e.g. an Int. Otherwise, non-references have to be boxed. Whether a RegisterValue is a
+  ## reference or primitive is encoded in the bytecode.
   ##
-  ## Note that when creating a StackValue, the generated C code will contain multiple assignments to each `*_value`
+  ## Note that when creating a RegisterValue, the generated C code will contain multiple assignments to each `*_value`
   ## field. GCC will optimize this and the resulting assembly will only contain a single assignment.
-  StackValue {.union.} = object
+  RegisterValue {.union.} = object
     uint_value: uint64
     int_value: int64
     ref_value: Value
@@ -19,13 +19,16 @@ type
   ## preallocated before `evaluate` is called.
   Frame = object
     function: Function
-    locals: ptr UncheckedArray[StackValue]
+    registers: ptr UncheckedArray[RegisterValue]
   FramePtr = ptr Frame
 
 # TODO (vm): Move this to `utils`.
 template `+`(p: pointer, offset: uint): pointer = cast[pointer](cast[uint](p) + offset)
 
 ## Don't move `create_frame` to a different module. GCC won't inline it.
+# TODO (vm): We should possibly clear a frame by nilling all references so that pointers left in registers aren't
+#            causing memory leaks. However, this also incurs a big performance penalty, so we should probably rather
+#            verify first that this is a problem before fixing it.
 proc create_frame(function: Function, frame_mem: pointer, caller: FramePtr): FramePtr =
   let frame_base =
     if caller == nil: frame_mem
@@ -33,60 +36,40 @@ proc create_frame(function: Function, frame_mem: pointer, caller: FramePtr): Fra
 
   let frame = cast[FramePtr](frame_base)
   frame.function = function
-  frame.locals = cast[ptr UncheckedArray[StackValue]](frame_base + function.frame_locals_offset)
+  frame.registers = cast[ptr UncheckedArray[RegisterValue]](frame_base + function.frame_registers_offset)
 
   frame
 
-## Don't move `delete_frame` to a different module. GCC won't inline it.
-proc delete_frame(frame: FramePtr) =
-  let function = frame.function
-  frame.function = nil
-
-  # TODO (vm): We should possibly nil all references so that pointers left on the stack or locals array aren't causing
-  #            memory leaks. However, this also incurs a big performance penalty, so we should probably rather verify
-  #            first that this is a problem before fixing it.
-  #zeroMem(stack, (function.stack_size + function.locals_size) * cast[uint](sizeof(StackValue)))
-
 ## Initializes the `frame_*` size and offset stats of the given function.
+# TODO (vm): We can probably inline this into `create_frame`, as this calculation has become very easy. The pointer
+#            access is probably slower than that one extra multiplication for frame_size.
 proc init_frame_stats*(function: Function) =
   const preamble_size = sizeof(Frame)
-  function.frame_size = cast[uint16](preamble_size + sizeof(uint64) * cast[int](function.locals_size))
-  function.frame_locals_offset = cast[uint16](preamble_size)
+  function.frame_size = cast[uint16](preamble_size + sizeof(uint64) * cast[int](function.register_count))
+  function.frame_registers_offset = cast[uint16](preamble_size)
 
-template stack_push(stack_value): untyped =
-  stack_index += 1
-  stack[stack_index] = stack_value
+template reg_get(index): untyped = frame.registers[index]
 
-template stack_push_uint(value): untyped = stack_push(StackValue(uint_value: value))
-template stack_push_int(value): untyped = stack_push(StackValue(int_value: value))
-template stack_push_ref(value): untyped = stack_push(StackValue(ref_value: value))
+template reg_get_uint(index): untyped = reg_get(index).uint_value
+template reg_get_int(index): untyped = reg_get(index).int_value
+template reg_get_ref(index, tpe): untyped = cast[tpe](reg_get(index).ref_value)
 
-template stack_pop(): untyped =
-  let element = stack[stack_index]
-  stack_index -= 1
-  element
+template reg_get_uint_arg1(): untyped = reg_get_uint(instruction.arg1.uint_value)
+template reg_get_int_arg1(): untyped = reg_get_int(instruction.arg1.uint_value)
+template reg_get_ref_arg1(tpe): untyped = reg_get_ref(instruction.arg1.uint_value, tpe)
 
-template stack_pop_uint(): untyped = stack_pop().uint_value
-template stack_pop_int(): untyped = stack_pop().int_value
-template stack_pop_ref(tpe): untyped = cast[tpe](stack_pop().ref_value)
+template reg_get_ref_arg2(tpe): untyped = reg_get_ref(instruction.arg2.uint_value, tpe)
 
-template stack_peek(): untyped = stack[stack_index]
+template reg_set(target_index, register_value): untyped =
+  frame.registers[target_index] = register_value
 
-template stack_peek_uint(): untyped = stack_peek().uint_value
-template stack_peek_int(): untyped = stack_peek().int_value
-template stack_peek_ref(tpe): untyped = cast[tpe](stack_peek().ref_value)
+template reg_set_uint(target_index, value): untyped = reg_set(target_index, RegisterValue(uint_value: value))
+template reg_set_int(target_index, value): untyped = reg_set(target_index, RegisterValue(int_value: value))
+template reg_set_ref(target_index, value): untyped = reg_set(target_index, RegisterValue(ref_value: value))
 
-template stack_assign_uint(value): untyped =
-  stack[stack_index].uint_value = value
-
-template stack_assign_int(value): untyped =
-  stack[stack_index].int_value = value
-
-template stack_assign_ref(value): untyped =
-  stack[stack_index].ref_value = value
-
-var stack = cast[ptr UncheckedArray[StackValue]](alloc0(1024 * sizeof(StackValue)))
-var stack_index: int16 = -1
+template reg_set_uint_arg0(value): untyped = reg_set_uint(instruction.arg0.uint_value, value)
+template reg_set_int_arg0(value): untyped = reg_set_int(instruction.arg0.uint_value, value)
+template reg_set_ref_arg0(value): untyped = reg_set_ref(instruction.arg0.uint_value, value)
 
 # TODO (vm): Support entry arguments.
 proc evaluate(frame: FramePtr, frame_mem: pointer) =
@@ -104,97 +87,79 @@ proc evaluate(frame: FramePtr, frame_mem: pointer) =
     pc += 1
 
     case instruction.operation
-    of Operation.LocalStore:
-      let sv = stack_pop()
-      frame.locals[instruction.arg0.uint_value] = sv
-
-    of Operation.LocalLoad:
-      let v = frame.locals[instruction.arg0.uint_value]
-      stack_push(v)
-
-    of Operation.IntPush:
-      stack_push_int(instruction.arg0.int_value)
-
-    of Operation.IntAdd:
-      let b = stack_pop_int()
-      stack_assign_int(stack_peek_int() + b)
-
-    of Operation.IntSubtract:
-      let b = stack_pop_int()
-      stack_assign_int(stack_peek_int() - b)
-
-    of Operation.IntLessThan:
-      let b = stack_pop_int()
-      let a = stack_peek_int()
-      stack_assign_uint(if a < b: 1 else: 0)
+    of Operation.IntAddConst:
+      let a = reg_get_int_arg1()
+      let b = instruction.arg2.int_value
+      reg_set_int_arg0(a + b)
 
     of Operation.IntBox:
-      let v = stack_pop_int()
-      stack_push_ref(values.new_int(v))
+      let v = reg_get_int_arg1()
+      reg_set_ref_arg0(values.new_int(v))
 
     of Operation.IntUnbox:
-      let v = stack_pop_ref(IntValue)
-      stack_push_int(v.value)
+      let v = reg_get_ref_arg1(IntValue)
+      reg_set_int_arg0(v.value)
 
-    of Operation.IntBoxPush:
-      let v = values.new_int(instruction.arg0.int_value)
-      stack_push_ref(v)
+    of Operation.IntBoxConst:
+      let v = instruction.arg1.int_value
+      reg_set_ref_arg0(values.new_int(v))
 
     of Operation.IntBoxAdd:
-      let b = stack_pop_ref(IntValue)
-      let a = stack_peek_ref(IntValue)
-      stack_assign_ref(values.new_int(a.value + b.value))
+      let a = reg_get_ref_arg1(IntValue).value
+      let b = reg_get_ref_arg2(IntValue).value
+      reg_set_ref_arg0(values.new_int(a + b))
+
+    of Operation.IntBoxAddConst:
+      let a = reg_get_ref_arg1(IntValue).value
+      let b = instruction.arg2.int_value
+      reg_set_ref_arg0(values.new_int(a + b))
+
+    of Operation.IntBoxSubConst:
+      let a = reg_get_ref_arg1(IntValue).value
+      let b = instruction.arg2.int_value
+      reg_set_ref_arg0(values.new_int(a - b))
+
+    of Operation.IntBoxGtConst:
+      let a = reg_get_ref_arg1(IntValue).value
+      let b = instruction.arg2.int_value
+      reg_set_uint_arg0(if a > b: 1 else: 0)
 
     of Operation.Jump:
       pc = instruction.arg0.uint_value
 
     of Operation.JumpIfFalse:
-      let predicate = stack_pop_uint()
+      let predicate = reg_get_uint_arg1()
       if (predicate == 0):
         pc = instruction.arg0.uint_value
 
     of Operation.JumpIfTrue:
-      let predicate = stack_pop_uint()
+      let predicate = reg_get_uint_arg1()
       if (predicate != 0):
         pc = instruction.arg0.uint_value
 
-    of Operation.Dispatch:
-      #let argument_count = instruction.arg0.uint_value
+    of Operation.Dispatch1:
       let target = constants.functions[instruction.arg1.uint_value]
       let target_frame = create_frame(target, frame_mem, frame)
       when_debug: echo "Dispatch to target ", target.name, " with frame ", cast[uint](target_frame)
 
-      # TODO (vm): We want to move the arguments from the stack into `arguments` as efficiently as possible. `copyMem`
-      #            doesn't work with reference-counting garbage collection. However, if we switch to a traditional GC,
-      #            this should be possible.
-      #[
-      var i: uint = 0
-      while i < argument_count:
-        target_frame.locals[i] = stack_pop()
-        when_debug: echo "Argument: ", cast[IntValue](target_frame.locals[i].ref_value).value
-        i += 1
-      ]#
-
-      # Note that with a global stack, the arguments are just on the stack for the function to consume.
+      target_frame.registers[0] = reg_get(instruction.arg2.uint_value)
       evaluate(target_frame, frame_mem)
 
-      # After function evaluation has finished, it must guarantee that there is exactly one value on the stack.
-      #stack_push(target_frame.stack[0])
+      # After function evaluation has finished, it must guarantee that the return value is in the first register.
+      reg_set(instruction.arg0.uint_value, target_frame.registers[0])
 
-      delete_frame(target_frame)
       when_debug: echo "Finished dispatch to target ", target.name, " with frame ", cast[uint](target_frame)
 
     of Operation.Return:
+      reg_set(0, reg_get(instruction.arg0.uint_value))
+      break
+
+    of Operation.Return0:
       break
 
 proc evaluate*(entry_function: Function, frame_mem: pointer): Value =
   let frame = create_frame(entry_function, frame_mem, nil)
   evaluate(frame, frame_mem)
 
-  # The bytecode must ensure that there is at most one Value on the stack.
-  if stack_index >= 0:
-    result = stack_pop_ref(Value)
-  else:
-    result = nil
-
-  delete_frame(frame)
+  # The bytecode must ensure that the result is in the first register.
+  reg_get_ref(0, Value)

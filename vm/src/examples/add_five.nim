@@ -4,13 +4,10 @@ from evaluator import init_frame_stats
 
 let add_five = Function(
   name: "add_five",
-  locals_size: 0,
+  register_count: 1,
   code: @[
-    new_instruction(Operation.IntUnbox, 0, 0),
-    new_instruction(Operation.IntPush, 5, 0),
-    new_instruction(Operation.IntAdd, 0, 0),
-    new_instruction(Operation.IntBox, 0, 0),
-    new_instruction(Operation.Return, 0, 0),
+    new_instruction(Operation.IntBoxAddConst, 0, 0, 5),
+    new_instruction(Operation.Return0),
   ],
   constants: nil,
 )
@@ -24,11 +21,11 @@ add_five.constants = constants
 
 let test = Function(
   name: "test",
-  locals_size: 0,
+  register_count: 1,
   code: @[
-    new_instruction(Operation.IntBoxPush, 7, 0),
-    new_instruction(Operation.Dispatch, 1, 0),
-    new_instruction(Operation.Return, 0, 0),
+    new_instruction(Operation.IntBoxConst, 0, 1),
+    new_instruction(Operation.Dispatch1, 0, 0, 0),
+    new_instruction(Operation.Return0),
   ],
   constants: constants,
 )
