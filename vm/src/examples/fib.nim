@@ -7,16 +7,15 @@ let fib = Function(
   register_count: 3,
   code: @[
     new_instruction(Operation.IntBoxGtConst, 1, 0, 1),
-    new_instruction(Operation.JumpIfFalse, 8, 1),
+    new_instruction(Operation.JumpIfFalse, 7, 1),
 
     new_instruction(Operation.IntBoxSubConst, 1, 0, 1),
     new_instruction(Operation.Dispatch1, 1, 0, 1),
     new_instruction(Operation.IntBoxSubConst, 2, 0, 2),
     new_instruction(Operation.Dispatch1, 2, 0, 2),
     new_instruction(Operation.IntBoxAdd, 0, 1, 2),
-    new_instruction(Operation.Return0),
 
-    new_instruction(Operation.Return0),                  # 8
+    new_instruction(Operation.Return0),                  # 7
   ],
   constants: nil,
 )

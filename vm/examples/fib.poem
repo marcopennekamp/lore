@@ -16,11 +16,10 @@ multi fib(%0: Int): Int {
   dispatch1 %1 &0 %1
   int_box_sub_const %2 %0 2
   dispatch1 %2 &0 %2
-  int_box_add %1 %1 %2
-  return %1
+  int_box_add %0 %1 %2
 
   .else
-  return %0
+  return0
 }
 
 // func test(): Int = fib(10)
@@ -28,5 +27,5 @@ multi fib(%0: Int): Int {
 multi test(): Int {
   int_box_const %0 10
   dispatch1 %0 &0 %0
-  return %0
+  return0
 }
