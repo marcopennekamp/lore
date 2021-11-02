@@ -1,4 +1,5 @@
-from bytecode import Operation, Instruction, Function
+from functions import Function, get_dispatch_target
+from instructions import Operation, Instruction
 from values import Value, IntValue
 from utils import when_debug
 
@@ -22,18 +23,15 @@ type
     registers: ptr UncheckedArray[RegisterValue]
   FramePtr = ptr Frame
 
-# TODO (vm): Move this to `utils`.
-template `+`(p: pointer, offset: uint): pointer = cast[pointer](cast[uint](p) + offset)
-
 ## Don't move `create_frame` to a different module. GCC won't inline it.
 # TODO (vm): We should possibly clear a frame by nilling all references so that pointers left in registers aren't
 #            causing memory leaks. However, this also incurs a big performance penalty, so we should probably rather
 #            verify first that this is a problem before fixing it.
-proc create_frame(function: Function, frame_base: pointer): FramePtr =
+proc create_frame(function: Function, frame_base: pointer): FramePtr {.inline.} =
   const preamble_size = sizeof(Frame)
   let frame = cast[FramePtr](frame_base)
   frame.function = function
-  frame.registers = cast[ptr UncheckedArray[RegisterValue]](frame_base + cast[uint](preamble_size))
+  frame.registers = cast[ptr UncheckedArray[RegisterValue]](cast[uint](frame_base) + cast[uint](preamble_size))
   frame
 
 ## Initializes the `frame_*` size and offset stats of the given function.
@@ -66,7 +64,7 @@ template reg_set_int_arg0(value): untyped = reg_set_int(instruction.arg0.uint_va
 template reg_set_ref_arg0(value): untyped = reg_set_ref(instruction.arg0.uint_value, value)
 
 proc evaluate(frame: FramePtr) =
-  when_debug: echo "Evaluating function ", frame.function.name, " with frame ", cast[uint](frame)
+  when_debug: echo "Evaluating function ", frame.function.multi_function.name, " with frame ", cast[uint](frame)
 
   let code = frame.function.code
   let constants = frame.function.constants
@@ -148,18 +146,21 @@ proc evaluate(frame: FramePtr) =
         pc = instruction.arg0.uint_value
 
     of Operation.Dispatch1:
-      let target = constants.functions[instruction.arg1.uint_value]
-      let target_frame_base = cast[pointer](frame) + frame.function.frame_size
-      let target_frame = create_frame(target, target_frame_base)
-      when_debug: echo "Dispatch to target ", target.name, " with frame ", cast[uint](target_frame)
+      let mf = constants.multi_functions[instruction.arg1.uint_value]
+      let argument0 = reg_get(instruction.arg2.uint_value)
 
-      target_frame.registers[0] = reg_get(instruction.arg2.uint_value)
+      let target = get_dispatch_target(mf, argument0.ref_value)
+      let target_frame_base = cast[pointer](cast[uint](frame) + frame.function.frame_size)
+      let target_frame = create_frame(target, target_frame_base)
+      when_debug: echo "Dispatch to target ", mf.name, " with frame ", cast[uint](target_frame)
+
+      target_frame.registers[0] = argument0
       evaluate(target_frame)
 
       # After function evaluation has finished, it must guarantee that the return value is in the first register.
       reg_set(instruction.arg0.uint_value, target_frame.registers[0])
 
-      when_debug: echo "Finished dispatch to target ", target.name, " with frame ", cast[uint](target_frame)
+      when_debug: echo "Finished dispatch to target ", mf.name, " with frame ", cast[uint](target_frame)
 
     of Operation.Return:
       reg_set(0, reg_get(instruction.arg0.uint_value))

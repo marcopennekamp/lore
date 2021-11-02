@@ -1,4 +1,4 @@
-from bytecode import Function
+from functions import Function
 from values import Value
 
 type

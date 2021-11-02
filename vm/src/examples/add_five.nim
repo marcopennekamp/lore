@@ -1,39 +1,48 @@
-from bytecode import Operation, Instruction, Function, Constants, new_instruction
 from common import Example
 from evaluator import init_frame_stats
+from functions import MultiFunction, Function, Constants, new_constants
+from instructions import Operation, Instruction, new_instruction
 
-let add_five = Function(
-  name: "add_five",
+let constants = new_constants()
+
+let add_five_0 = Function(
   register_count: 1,
   code: @[
     new_instruction(Operation.IntBoxAddConst, 0, 0, 5),
     new_instruction(Operation.Return0),
   ],
-  constants: nil,
+  constants: constants,
 )
-init_frame_stats(add_five)
+init_frame_stats(add_five_0)
 
-let constants = Constants(
-  functions: @[add_five],
+let add_five = MultiFunction(
+  name: "add_five",
+  functions: @[add_five_0],
 )
+add_five_0.multi_function = add_five
 
-add_five.constants = constants
-
-let test = Function(
-  name: "test",
+let test_0 = Function(
   register_count: 1,
   code: @[
-    new_instruction(Operation.IntBoxConst, 0, 1),
+    new_instruction(Operation.IntBoxConst, 0, 7),
     new_instruction(Operation.Dispatch1, 0, 0, 0),
     new_instruction(Operation.Return0),
   ],
   constants: constants,
 )
-init_frame_stats(test)
+init_frame_stats(test_0)
+
+let test = MultiFunction(
+  name: "test",
+  functions: @[test_0],
+)
+test_0.multi_function = test
+
+constants.multi_functions = @[add_five]
 
 let example* = Example(
   name: "add five",
-  function: test,
+  function: test_0,
   arguments: @[],
   runs: 50_000_000,
 )

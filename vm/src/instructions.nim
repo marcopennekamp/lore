@@ -41,25 +41,6 @@ type
     arg1*: Argument
     arg2*: Argument
 
-  # A Constants object provides quick access to predefined types, values, and functions.
-  Constants* = ref object
-    # TODO (vm): Add types and values.
-    functions*: seq[Function] # TODO (vm): This should point to the multi-function, of course, once we implement them.
-
-  Function* = ref object
-    name*: string
-    # TODO (vm): Add the function's signature.
-    register_count*: uint16
-    code*: seq[Instruction]
-
-    ## The `constants` object will be initialized after all type, value, and function constants have been resolved.
-    constants*: Constants
-
-    ## These fields contain precomputed sizes and offsets for faster frame creation. They will be calculated by
-    ## `init_function`.
-    frame_size*: uint16
-    frame_registers_offset*: uint16
-
 proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16, arg2: uint16): Instruction =
   Instruction(
     operation: operation,

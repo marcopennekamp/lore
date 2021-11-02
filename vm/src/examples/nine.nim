@@ -1,11 +1,11 @@
-from bytecode import Operation, Instruction, Function, Constants, new_instruction
 from common import Example
 from evaluator import init_frame_stats
+from functions import MultiFunction, Function, Constants, new_constants
+from instructions import Operation, Instruction, new_instruction
 
-let constants = Constants(functions: @[])
+let constants = new_constants()
 
-let nine = Function(
-  name: "nine",
+let nine_0 = Function(
   register_count: 2,
   code: @[
     new_instruction(Operation.IntBoxConst, 0, 1),          # This simulates an Int argument.
@@ -19,11 +19,17 @@ let nine = Function(
   ],
   constants: constants,
 )
-init_frame_stats(nine)
+init_frame_stats(nine_0)
+
+let nine = MultiFunction(
+  name: "nine",
+  functions: @[nine_0],
+)
+nine_0.multi_function = nine
 
 let example* = Example(
   name: "nine",
-  function: nine,
+  function: nine_0,
   arguments: @[],
   runs: 50_000_000,
 )
