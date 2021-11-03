@@ -9,14 +9,14 @@ use {
 // end
 @register_count 3
 multi fib(%0: Int): Int {
-  int_box_gt_const %1 %0 1
+  int_gt_const %1 %0 1
   jump_if_false .else %1
 
-  int_box_sub_const %1 %0 1  // Every time we want to call a multi-function with an integer, we have to box it.
+  int_sub_const %1 %0 1
   dispatch1 %1 &0 %1
-  int_box_sub_const %2 %0 2
+  int_sub_const %2 %0 2
   dispatch1 %2 &0 %2
-  int_box_add %0 %1 %2
+  int_add %0 %1 %2
 
   .else
   return0
@@ -25,7 +25,7 @@ multi fib(%0: Int): Int {
 // func test(): Int = fib(10)
 @register_count 1
 multi test(): Int {
-  int_box_const %0 10
+  int_const %0 10
   dispatch1 %0 &0 %0
   return0
 }
