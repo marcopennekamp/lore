@@ -1,6 +1,6 @@
 from instructions import Instruction
 from types import Type, TupleType
-from values import Value
+from values import TaggedValue
 
 type
   MultiFunction* = ref object
@@ -36,14 +36,12 @@ type
   ## multiple functions.
   Constants* = ref object
     types*: seq[Type]
-    values*: seq[Value]
+    values*: seq[TaggedValue]
     multi_functions*: seq[MultiFunction]
 
 proc new_constants*(): Constants = Constants(types: @[], values: @[], multi_functions: @[])
 
-# TODO (vm): How can we support passing primitives without type information, such as Ints? This is an important
-#            optimization for certain functions which are simple enough to omit type checks for certain parameters.
-proc get_dispatch_target*(mf: MultiFunction, value: Value): Function =
+proc get_dispatch_target*(mf: MultiFunction, value: TaggedValue): Function =
   # TODO (vm): This optimization is not quite correct. We can assume that the compiler produces valid calls in the
   #            bytecode, but we have to take lower bounds into account.
   # TODO (vm): This is an optimization I would like to be carried out in a preprocessing phase which could for example

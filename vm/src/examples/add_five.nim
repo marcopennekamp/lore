@@ -8,7 +8,7 @@ let constants = new_constants()
 let add_five_0 = Function(
   register_count: 1,
   code: @[
-    new_instruction(Operation.IntBoxAddConst, 0, 0, 5),
+    new_instruction(Operation.IntAddConst, 0, 0, 5),
     new_instruction(Operation.Return0),
   ],
   constants: constants,
@@ -24,7 +24,7 @@ add_five_0.multi_function = add_five
 let test_0 = Function(
   register_count: 1,
   code: @[
-    new_instruction(Operation.IntBoxConst, 0, 7),
+    new_instruction(Operation.IntConst, 0, 7),
     new_instruction(Operation.Dispatch1, 0, 0, 0),
     new_instruction(Operation.Return0),
   ],

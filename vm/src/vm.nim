@@ -5,7 +5,7 @@ import evaluator
 import values
 from utils import when_release, when_debug, benchmark
 
-import examples/empty, examples/nine, examples/add_five, examples/fib, examples/fib_primitive
+import examples/empty, examples/nine, examples/add_five, examples/fib
 from fib_native import test_fib
 
 proc with_frame_mem(f: (pointer) -> void) =
@@ -19,10 +19,17 @@ proc run_example(example: Example, runs: int) =
     var i = 0
     while i < runs:
       let res = evaluator.evaluate(example.function, frame_mem)
-      if (res != nil):
-        echo "Result: ", cast[IntValue](res)[]
+      if values.is_reference(res):
+        if res.reference != nil:
+          echo "Result: Some reference..."
+        else:
+          echo "Result: nil"
+      elif values.is_int(res):
+        echo "Result: ", values.untag_int(res)
+      elif values.is_boolean(res):
+        echo "Result: ", values.untag_boolean(res)
       else:
-        echo "Result: nil"
+        echo "Result: unknown"
       i += 1
   )
 
@@ -38,7 +45,6 @@ let examples = [
   nine.example,
   add_five.example,
   fib.example,
-  fib_primitive.example,
 ]
 
 when_release:

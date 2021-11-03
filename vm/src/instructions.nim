@@ -8,14 +8,6 @@ type
     #IntLt
     IntGtConst
 
-    IntBox
-    IntUnbox
-    IntBoxConst
-    IntBoxAdd
-    IntBoxAddConst
-    IntBoxSubConst
-    IntBoxGtConst
-
     Jump
     JumpIfFalse
     JumpIfTrue
