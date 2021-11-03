@@ -32,14 +32,14 @@ type
     frame_size*: uint16
     frame_registers_offset*: uint16
 
-  ## A Constants object provides quick access to predefined types, values, and functions. It may be shared between
-  ## multiple functions.
+  ## A Constants object provides quick access to predefined types, multi-functions, and values. It may be shared
+  ## between multiple function definitions.
   Constants* = ref object
     types*: seq[Type]
-    values*: seq[TaggedValue]
     multi_functions*: seq[MultiFunction]
+    values*: seq[TaggedValue]
 
-proc new_constants*(): Constants = Constants(types: @[], values: @[], multi_functions: @[])
+proc new_constants*(): Constants = Constants(types: @[], multi_functions: @[], values: @[])
 
 proc get_dispatch_target*(mf: MultiFunction, value: TaggedValue): Function =
   # TODO (vm): This optimization is not quite correct. We can assume that the compiler produces valid calls in the
