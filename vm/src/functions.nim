@@ -22,7 +22,7 @@ type
     output_type*: Type
 
     register_count*: uint16
-    code*: seq[Instruction]
+    code*: seq[Instruction]  # TODO (vm): Rename to `instructions`.
 
     ## `constants` will be initialized after all type, value, and multi-function constants have been resolved.
     constants*: Constants

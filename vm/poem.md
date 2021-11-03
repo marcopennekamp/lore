@@ -6,7 +6,14 @@ This document describes the structure of the `.poem` bytecode format. Poem files
 
 A **Poem** is a single bytecode unit. It contains exactly one *Constants* table, any number of *TypeDeclarations*, and any number of *Function* definitions. All Functions in a Poem have the same Constants table.
 
-Every Poem file starts with the magic bytes `'p', 'o', 'e', 'm'`.
+Concretely, a Poem file has the following structure:
+
+  - **Magic bytes** (char * 4): Always the string `poem` encoded in ASCII.
+  - **Constants** (Constants)
+  - **Type declaration count** (uint16)
+  - **Type declarations** (Type declaration)
+  - **Function count** (uint16)
+  - **Functions** (Function)
 
 ### Constants
 
@@ -36,7 +43,8 @@ A **Function** represents a single function definition. Its structure is as foll
   - **Input type** (TupleType)
   - **Output type** (Type)
   - **Register count** (uint16)
-  - **Code** (Instruction*)
+  - **Instruction count** (uint16)
+  - **Instructions** (Instruction*)
 
 ### Instructions
 
@@ -109,3 +117,11 @@ Note that **type variables** are represented as *Named* types and must be previo
 ### Values
 
 TODO
+
+
+### Strings
+
+A UTF-8 **string** is encoded as follows:
+
+  - **Size** (uint16): The string's size in bytes.
+  - **Characters** (uint8 * Size)
