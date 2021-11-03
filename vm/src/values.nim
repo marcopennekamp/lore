@@ -35,7 +35,6 @@ const
   False: uint64 = 0 or TagBoolean
   True: uint64 = (1 shl 3) or TagBoolean
 
-# TODO (vm): Turn on LTO to inline these.
 proc is_reference*(value: TaggedValue): bool = (value.uint and TagMask) == TagReference
 proc is_int*(value: TaggedValue): bool = (value.uint and TagMask) == TagInt
 proc is_boolean*(value: TaggedValue): bool = (value.uint and TagMask) == TagBoolean

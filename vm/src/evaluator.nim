@@ -1,6 +1,5 @@
 from functions import Function, get_dispatch_target
 from instructions import Operation, Instruction
-# TODO (vm): Perhaps including `values` here would be faster because the compiler will inline better. Or use LTO (link-time optimization).
 from values import TaggedValue, Value, tag_reference, untag_reference, tag_int, untag_int, tag_boolean, untag_boolean
 from utils import when_debug
 
