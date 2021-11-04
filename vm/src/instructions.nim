@@ -27,6 +27,7 @@ type
     uint_value*: uint16
     int_value*: int16
 
+  # TODO (vm): Maybe turn the arguments into a fixed-size array.
   Instruction* = object
     operation*: Operation
     arg0*: Argument
