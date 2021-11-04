@@ -65,6 +65,7 @@ let
   real* = Type(kind: Real)
   boolean* = Type(kind: Boolean)
   string* = Type(kind: String)
+  unit* = TupleType(kind: Kind.Tuple, elements: @[])
 
 proc sum*(parts: open_array[Type]): SumType = SumType(kind: Kind.Sum, parts: @parts)
 proc intersection*(parts: open_array[Type]): IntersectionType = IntersectionType(kind: Kind.Intersection, parts: @parts)
@@ -72,6 +73,8 @@ proc tpl*(elements: open_array[Type]): TupleType = TupleType(kind: Kind.Tuple, e
 proc list*(element: Type): ListType = ListType(kind: Kind.List, element: element)
 proc map*(key: Type, value: Type): MapType = MapType(kind: Kind.Map, key: key, value: value)
 
+# TODO (vm): Intern symbol types.
+proc symbol*(name: string): SymbolType = SymbolType(kind: Kind.Symbol, name: name)
 
 proc has_equal_in(ts1: seq[Type], ts2: seq[Type]): bool
 proc are_exactly_equal(ts1: seq[Type], ts2: seq[Type]): bool
