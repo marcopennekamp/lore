@@ -1,7 +1,6 @@
 import std/sequtils
 import std/strformat
 import std/tables
-from std/tables import Table, init_table
 import sugar
 
 from evaluator import init_frame_stats
@@ -73,15 +72,15 @@ proc resolve(universe: Universe, poem_function: PoemFunction, constants: Constan
 
   multi_function.functions.add(function)
 
-method resolve(poem_type: PoemType, universe: Universe): Type
+method resolve(poem_type: PoemType, universe: Universe): Type {.base, locks: "unknown".}
 
 proc resolve(universe: Universe, poem_type: PoemType): Type =
   poem_type.resolve(universe)
 
-method resolve(poem_type: PoemType, universe: Universe): Type =
+method resolve(poem_type: PoemType, universe: Universe): Type {.base, locks: "unknown".} =
   quit("Please implement `resolve` for all PoemTypes.")
 
-method resolve(poem_type: PoemBasicType, universe: Universe): Type = poem_type.tpe
+method resolve(poem_type: PoemBasicType, universe: Universe): Type {.locks: "unknown".} = poem_type.tpe
 
 method resolve(poem_type: PoemXaryType, universe: Universe): Type =
   if poem_type.kind != Kind.Tuple:
@@ -93,7 +92,7 @@ method resolve(poem_type: PoemXaryType, universe: Universe): Type =
     let elements = poem_type.types.map(t => t.resolve(universe))
     types.tpl(elements)
 
-method resolve(poem_type: PoemSymbolType, universe: Universe): Type = types.symbol(poem_type.name)
+method resolve(poem_type: PoemSymbolType, universe: Universe): Type {.locks: "unknown".} = types.symbol(poem_type.name)
 
-method resolve(poem_type: PoemNamedType, universe: Universe): Type =
+method resolve(poem_type: PoemNamedType, universe: Universe): Type {.locks: "unknown".} =
   quit(fmt"Cannot resolve named types yet. Name: {poem_type.name}.")

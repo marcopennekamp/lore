@@ -216,7 +216,7 @@ proc write_type(stream: FileStream, poem_type: PoemType)
 proc write_instruction(stream: FileStream, instruction: Instruction)
 proc write_string_with_length(stream: FileStream, string: string)
 
-method write(poem_type: PoemType, stream: FileStream)
+method write(poem_type: PoemType, stream: FileStream) {.base, locks: "unknown".}
 
 template write_many(stream: FileStream, items, write_one): untyped =
   for item in items:
@@ -290,11 +290,11 @@ proc write_type_tag(stream: FileStream, kind: Kind, child_count: uint8) =
 proc write_type_tag(stream: FileStream, kind: Kind) =
   stream.write_type_tag(kind, 0)
 
-method write(poem_type: PoemType, stream: FileStream) =
+method write(poem_type: PoemType, stream: FileStream) {.base, locks: "unknown".} =
   quit("Please implement `write` for all PoemTypes.")
 
 # TODO (vm): Implement shape type writing.
-method write(poem_type: PoemBasicType, stream: FileStream) =
+method write(poem_type: PoemBasicType, stream: FileStream) {.locks: "unknown".} =
   stream.write_type_tag(poem_type.tpe.kind)
 
 proc length_to_tag_metadata(length: int): uint8 =
@@ -310,7 +310,7 @@ method write(poem_type: PoemXaryType, stream: FileStream) =
   stream.write_type_tag(poem_type.kind, length_to_tag_metadata(poem_type.types.len))
   stream.write_many(poem_type.types, write_type)
 
-method write(poem_type: PoemSymbolType, stream: FileStream) =
+method write(poem_type: PoemSymbolType, stream: FileStream) {.locks: "unknown".} =
   stream.write_type_tag(Kind.Symbol)
   stream.write_string_with_length(poem_type.name)
 

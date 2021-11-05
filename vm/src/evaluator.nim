@@ -29,25 +29,25 @@ proc init_frame_stats*(function: Function) =
 
 template reg_get(index): untyped = frame.registers[index]
 
-template reg_get_ref(index, tpe): untyped = cast[tpe](untag_reference(reg_get(index)))
+#template reg_get_ref(index, tpe): untyped = cast[tpe](untag_reference(reg_get(index)))
 template reg_get_int(index): untyped = untag_int(reg_get(index))
 template reg_get_bool(index): untyped = untag_boolean(reg_get(index))
 
-template reg_get_ref_arg1(tpe): untyped = reg_get_ref(instruction.arg1.uint_value, tpe)
+#template reg_get_ref_arg1(tpe): untyped = reg_get_ref(instruction.arg1.uint_value, tpe)
 template reg_get_int_arg1(): untyped = reg_get_int(instruction.arg1.uint_value)
 template reg_get_bool_arg1(): untyped = reg_get_bool(instruction.arg1.uint_value)
 
-template reg_get_ref_arg2(tpe): untyped = reg_get_ref(instruction.arg2.uint_value, tpe)
+#template reg_get_ref_arg2(tpe): untyped = reg_get_ref(instruction.arg2.uint_value, tpe)
 template reg_get_int_arg2(): untyped = reg_get_int(instruction.arg2.uint_value)
 
 template reg_set(target_index, register_value): untyped =
   frame.registers[target_index] = register_value
 
-template reg_set_ref(target_index, value): untyped = reg_set(target_index, tag_reference(value))
+#template reg_set_ref(target_index, value): untyped = reg_set(target_index, tag_reference(value))
 template reg_set_int(target_index, value): untyped = reg_set(target_index, tag_int(value))
 template reg_set_bool(target_index, value): untyped = reg_set(target_index, tag_boolean(value))
 
-template reg_set_ref_arg0(value): untyped = reg_set_ref(instruction.arg0.uint_value, value)
+#template reg_set_ref_arg0(value): untyped = reg_set_ref(instruction.arg0.uint_value, value)
 template reg_set_int_arg0(value): untyped = reg_set_int(instruction.arg0.uint_value, value)
 template reg_set_bool_arg0(value): untyped = reg_set_bool(instruction.arg0.uint_value, value)
 

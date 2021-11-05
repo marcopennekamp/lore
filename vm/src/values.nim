@@ -30,7 +30,7 @@ const
   TagMask: uint64 = 0b111
   TagReference: uint64 = 0b000
   TagInt: uint64 = 0b001
-  TagReal: uint64 = 0b010  # TODO (vm): Implement Real value tagging and untagging.
+  #TagReal: uint64 = 0b010  # TODO (vm): Implement Real value tagging and untagging.
   TagBoolean: uint64 = 0b011
   False: uint64 = 0 or TagBoolean
   True: uint64 = (1 shl 3) or TagBoolean

@@ -1,17 +1,17 @@
 import os, std/strformat, sugar, tables
 
-import "../evaluator"
+from "../evaluator" import nil
 from "../functions" import Function
 from "../poems" import Poem
-import "../universes"
+from "../universes" import nil
 from "../utils" import with_frame_mem, benchmark
-import "../vm"
+from "../vm" import nil
 
 ########################################################################################################################
 # Examples definitions.                                                                                                #
 ########################################################################################################################
 
-import nine
+from nine import nil
 
 type Example* = ref object
   name*: string

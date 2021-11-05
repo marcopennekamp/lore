@@ -1,6 +1,6 @@
-import evaluator
+from evaluator import nil
 from functions import Function
-import values
+from values import nil
 
 proc run_and_print*(target: Function, frame_mem: pointer) =
   let res = evaluator.evaluate(target, frame_mem)
@@ -19,8 +19,8 @@ proc run_and_print*(target: Function, frame_mem: pointer) =
 when is_main_module:
   import os, sugar, tables
 
-  import poems
-  import universes
+  from poems import nil
+  from universes import nil
   from utils import with_frame_mem
 
   let help = "Please run `vm.nim` with a `.poem` file as the first and the entry function's name as the second argument." &
