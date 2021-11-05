@@ -53,6 +53,11 @@ type
     name*: string
     arguments*: seq[PoemType]
 
+let int_type*: PoemType = PoemBasicType(tpe: types.int)
+let unit_type*: PoemType = PoemXaryType(kind: Kind.Tuple, types: @[])
+
+proc tuple_type*(poem_types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.Tuple, types: @poem_types)
+
 proc fail(message: string) = raise new_exception(IOError, message)
 
 const

@@ -11,7 +11,10 @@ from "../vm" import nil
 # Examples definitions.                                                                                                #
 ########################################################################################################################
 
+from empty import nil
 from nine import nil
+from add_five import nil
+from fib import nil
 
 type Example* = ref object
   name*: string
@@ -24,7 +27,10 @@ type Example* = ref object
   runs*: int
 
 let examples = @[
+  Example(name: "empty", poem: empty.poem, main: "empty", runs: 100_000_000),
   Example(name: "nine", poem: nine.poem, main: "nine", runs: 100_000_000),
+  Example(name: "add_five", poem: add_five.poem, main: "test", runs: 100_000_000),
+  Example(name: "fib", poem: fib.poem, main: "test", runs: 1_000_000),
 ]
 
 proc prepare_example(example: Example): Function =

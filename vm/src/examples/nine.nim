@@ -1,11 +1,10 @@
 from "../instructions" import Operation, Instruction, new_instruction
-from "../poems" import Poem, PoemConstants, PoemFunction, PoemXaryType, PoemBasicType
-from "../types" import Kind
+from "../poems" import Poem, PoemConstants, PoemFunction
 
 let nine = PoemFunction(
   name: "nine",
-  input_type: PoemXaryType(kind: Kind.Tuple, types: @[]),
-  output_type: PoemBasicType(tpe: types.int),
+  input_type: poems.unit_type,
+  output_type: poems.int_type,
   register_count: 1,
   instructions: @[
     new_instruction(Operation.IntConst, 0, 1),
@@ -17,10 +16,7 @@ let nine = PoemFunction(
   ],
 )
 
-# runs: 50_000_000
 let poem* = Poem(
-  constants: PoemConstants(
-    multi_functions: @[],
-  ),
+  constants: PoemConstants(multi_functions: @[]),
   functions: @[nine],
 )
