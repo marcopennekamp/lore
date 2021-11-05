@@ -1,4 +1,4 @@
-import times, os
+import times, os, sugar
 
 const is_release* = defined(release) or defined(danger)
 
@@ -15,6 +15,14 @@ macro when_debug*(code: untyped): untyped =
     code
   else:
     discard
+
+## Executes the given function with newly allocated frame memory. The allocated memory is automatically freed after
+## `f` finishes. `with_frame_mem` allocates memory on the Boehm GC heap when the Boehm GC is in use. This allows the GC
+## to discover pointers to values which are only referenced from a frame register.
+proc with_frame_mem*(f: (pointer) -> void) =
+  let frame_mem: pointer = alloc0(sizeof(uint64) * 250_000)
+  f(frame_mem)
+  dealloc(frame_mem)
 
 template benchmark*(benchmark_name: string, runs: int, code: untyped) =
   block:

@@ -1,8 +1,4 @@
-from common import Example
-from evaluator import init_frame_stats
-from functions import MultiFunction, Function, Constants, new_constants
-from instructions import Operation, Instruction, new_instruction
-
+from "../instructions" import Operation, Instruction, new_instruction
 from "../poems" import Poem, PoemConstants, PoemFunction, PoemXaryType, PoemBasicType
 from "../types" import Kind
 
