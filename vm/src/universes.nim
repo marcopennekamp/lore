@@ -51,6 +51,8 @@ proc resolve(universe: Universe, poem: Poem) =
   for poem_function in poem.functions:
     universe.resolve(poem_function, constants)
 
+  constants.values = poem.constants.values
+
 proc resolve(universe: Universe, poem_function: PoemFunction, constants: Constants) =
   let multi_function = universe.multi_functions[poem_function.name]
 

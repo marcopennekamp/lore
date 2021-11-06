@@ -10,8 +10,7 @@ constants {
 }
 
 use {
-  &0 = 'lore.core.to_string'
-  &1 = 'lore.Enum.map'
+  &0 = 'lore.Enum.map'
 }
 
 // TODO (vm): Do we even need to compile abstract functions?
@@ -21,7 +20,7 @@ multi hello(String | Int): String
 // func hello(name: String): String = 'Hello, $name.'
 @register_count 1
 multi hello(%0: String): String {
-  string_concat_const_rev %0 $0 %0
+  string_concat_constl %0 $0 %0
   string_concat_const %0 %0 $1
   return0
 }
@@ -29,8 +28,8 @@ multi hello(%0: String): String {
 // func hello(id: Int): String = 'Hello, anonymous #$id.'
 @register_count 1
 multi hello(%0: Int): String {
-  dispatch1 %0 &0 %0
-  string_concat_const_rev %0 $2 %0
+  string_of %0 %0
+  string_concat_constl %0 $2 %0
   string_concat_const %0 %0 $3
   return0
 }
@@ -38,8 +37,8 @@ multi hello(%0: Int): String {
 // func test(): [String] = ['world', 5, 'marco', 'console', 42] |> map(hello)
 @register_count 0
 multi test(): [String] {
-  move_const %0 $4
-  move_const %1 $5
-  dispatch2 %0 &1 %0 %1
+  const %0 $4
+  const %1 $5
+  dispatch2 %0 &0 %0 %1
   return0
 }

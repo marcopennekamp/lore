@@ -24,7 +24,7 @@ The Constants table has the following structure:
   - **Types count** (uint16): The number of type constants.
   - **Types** (Type*): The type constants.
   - **Multi-functions count** (uint16): The number of multi-function constants.
-  - **Multi-functions** (string*): The full names of multi-function constants.
+  - **Multi-functions** (String*): The full names of multi-function constants.
   - **Values count** (uint16): The number of value constants.
   - **Values** (Value*): The value constants.
 
@@ -38,7 +38,7 @@ TODO
 
 A **Function** represents a single function definition. Its structure is as follows:
 
-  - **Name** (string)
+  - **Name** (String)
   - TODO (vm): Type parameters.
   - **Input type** (TupleType)
   - **Output type** (Type)
@@ -93,15 +93,15 @@ A **Type** is a particular instance of a type such as `Int`, `Real | Boolean`, o
       - **Key** (Type)
       - **Value** (Type)
     - Symbol:
-      - **Name** (string)
+      - **Name** (String)
     - Sum/Intersection/Tuple:
       - **Parts/elements** (Type*)
     - Named:
-      - **Name** (string)
+      - **Name** (String)
       - **Type arguments** (Type*)
     - Shape:
       - **Properties** (ShapeProperty*):
-        - **Name** (string)
+        - **Name** (String)
         - **Type** (Type)
 
 Note that **type variables** are represented as *Named* types and must be previously declared in a function definition or type declaration.
@@ -110,18 +110,29 @@ Note that **type variables** are represented as *Named* types and must be previo
 
 **TypeVariables** are declarations of type variables and have the following structure:
  
-  - **Name** (string)
+  - **Name** (String)
   - **Lower bound** (Type)
   - **Upper bound** (Type)
 
 ### Values
 
-TODO
+A **Value** is encoded as follows:
 
+  - **Type** (Type)
+  - **Representation** (varying): Depending on the value's type:
+    - Int:
+      - **Value** (int64)
+    - Real:
+      - **Value** (float64)
+    - Boolean:
+      - **Value** (uint8)
+    - String:
+      - **Value** (String)
+    - TODO (vm): Describe value encodings for more value kinds.
 
 ### Strings
 
-A UTF-8 **string** is encoded as follows:
+A UTF-8 **String** is encoded as follows:
 
   - **Size** (uint16): The string's size in bytes.
   - **Characters** (uint8 * Size)

@@ -49,4 +49,4 @@ proc get_dispatch_target*(mf: MultiFunction, value: TaggedValue): Function =
   if mf.functions.len == 1:
     return mf.functions[0]
   else:
-    assert(false, "Multi-function dispatch not yet implemented.")
+    quit("Error: Multi-function dispatch not yet implemented.")

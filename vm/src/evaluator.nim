@@ -1,6 +1,7 @@
 from functions import Function, get_dispatch_target
-from values import TaggedValue, Value, tag_reference, untag_reference, tag_int, untag_int, tag_boolean, untag_boolean
 import instructions
+from types import nil
+from values import TaggedValue, Value, StringValue, tag_reference, untag_reference, tag_int, untag_int, tag_boolean, untag_boolean
 from utils import when_debug
 
 type
@@ -51,6 +52,12 @@ template reg_set_ref_arg(index, value): untyped = reg_set_ref(instruction.arg(in
 template reg_set_int_arg(index, value): untyped = reg_set_int(instruction.arg(index), value)
 template reg_set_bool_arg(index, value): untyped = reg_set_bool(instruction.arg(index), value)
 
+template const_value(index): untyped = constants.values[index]
+template const_value_arg(index): untyped = const_value(instruction.arg(index))
+
+template const_value_ref(index, tpe): untyped = untag_reference(const_value(index), tpe)
+template const_value_ref_arg(index, tpe): untyped = const_value_ref(instruction.arg(index), tpe)
+
 proc evaluate(frame: FramePtr) =
   when_debug: echo "Evaluating function ", frame.function.multi_function.name, " with frame ", cast[uint](frame)
 
@@ -66,6 +73,9 @@ proc evaluate(frame: FramePtr) =
     pc += 1
 
     case instruction.operation
+    of Operation.Const:
+      reg_set_arg(0, const_value_arg(1))
+
     of Operation.IntConst:
       reg_set_int_arg(0, instruction.argi(1))
 
@@ -88,6 +98,39 @@ proc evaluate(frame: FramePtr) =
       let a = reg_get_int_arg(1)
       let b = instruction.argi(2)
       reg_set_bool_arg(0, a > b)
+
+    of Operation.StringOf:
+      let tagged_value = reg_get_arg(1)
+      let tag = values.get_tag(tagged_value)
+      let string = if tag == values.TagReference:
+        let value = untag_reference(tagged_value)
+        if value.tpe == types.string:
+          cast[StringValue](value).str
+        else:
+          $cast[uint64](value)
+      elif tag == values.TagInt:
+        $values.untag_int(tagged_value)
+      elif tag == values.TagBoolean:
+        if tagged_value.uint == values.True: "true"
+        else: "false"
+      else:
+        "unknown"
+      reg_set_ref_arg(0, values.new_string(string))
+
+    of Operation.StringConcat:
+      let a = reg_get_ref_arg(1, StringValue)
+      let b = reg_get_ref_arg(2, StringValue)
+      reg_set_ref_arg(0, values.new_string(a.str & b.str))
+
+    of Operation.StringConcatConst:
+      let a = reg_get_ref_arg(1, StringValue)
+      let b = const_value_ref_arg(2, StringValue)
+      reg_set_ref_arg(0, values.new_string(a.str & b.str))
+
+    of Operation.StringConcatConstl:
+      let a = const_value_ref_arg(1, StringValue)
+      let b = reg_get_ref_arg(2, StringValue)
+      reg_set_ref_arg(0, values.new_string(a.str & b.str))
 
     of Operation.Jump:
       pc = instruction.arg(0)

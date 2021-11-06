@@ -5,7 +5,7 @@ from values import nil
 proc run_and_print*(target: Function, frame_mem: pointer) =
   let res = evaluator.evaluate(target, frame_mem)
   if values.is_reference(res):
-    if res.reference != nil:
+    if values.untag_reference(res) != nil:
       echo "Result: Some reference..."
     else:
       echo "Result: nil"

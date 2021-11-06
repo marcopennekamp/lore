@@ -6,6 +6,9 @@ type
   ##  - `mf(x)`: The xth entry in the multi functions constants table.
   ##  - `val(x)`: The xth entry in the value constants table.
   Operation* {.pure.} = enum
+    ## reg(arg0) <- values(arg1)
+    Const
+
     ## reg(arg0) <- arg1 as int64
     IntConst
 
@@ -20,6 +23,20 @@ type
 
     ## reg(arg0) <- reg(arg1) > arg2.int
     IntGtConst
+
+    ## Converts any TaggedValue to its native string representation. Reference values are not converted with
+    ## `lore.core.to_string`. Rather, their pointer value is printed out. This operation is a fallback for `to_string`.
+    ## reg(arg0) <- string_of(reg(arg1))
+    StringOf
+
+    ## reg(arg0) <- concat(reg(arg1), reg(arg2))
+    StringConcat
+
+    ## reg(arg0) <- concat(reg(arg1), values(arg2))
+    StringConcatConst
+
+    ## reg(arg0) <- concat(values(arg1), reg(arg2))
+    StringConcatConstl
 
     ## pc <- arg0
     Jump
