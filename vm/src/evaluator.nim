@@ -1,7 +1,7 @@
 from functions import Function, get_dispatch_target
 import instructions
 from types import nil
-from values import TaggedValue, Value, StringValue, tag_reference, untag_reference, tag_int, untag_int, tag_boolean, untag_boolean
+import values
 from utils import when_debug
 
 type
@@ -100,21 +100,7 @@ proc evaluate(frame: FramePtr) =
       reg_set_bool_arg(0, a > b)
 
     of Operation.StringOf:
-      let tagged_value = reg_get_arg(1)
-      let tag = values.get_tag(tagged_value)
-      let string = if tag == values.TagReference:
-        let value = untag_reference(tagged_value)
-        if value.tpe == types.string:
-          cast[StringValue](value).str
-        else:
-          $cast[uint64](value)
-      elif tag == values.TagInt:
-        $values.untag_int(tagged_value)
-      elif tag == values.TagBoolean:
-        if tagged_value.uint == values.True: "true"
-        else: "false"
-      else:
-        "unknown"
+      let string = $reg_get_arg(1)
       reg_set_ref_arg(0, values.new_string(string))
 
     of Operation.StringConcat:

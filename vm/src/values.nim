@@ -1,3 +1,5 @@
+import std/strformat
+
 from types import Kind, Type
 
 type
@@ -79,3 +81,32 @@ proc type_of*(value: TaggedValue): Type =
     types.boolean
   else:
     quit(fmt"Unknown tag {tag}.")
+
+########################################################################################################################
+# Stringification.                                                                                                     #
+########################################################################################################################
+
+proc `$`*(value: Value): string
+
+proc `$`*(tagged_value: TaggedValue): string =
+  let tag = get_tag(tagged_value)
+  if tag == TagReference:
+    let value = untag_reference(tagged_value)
+    if value != nil:
+      $value
+    else:
+      "nil"
+  elif tag == TagInt:
+    $untag_int(tagged_value)
+  elif tag == TagBoolean:
+    if tagged_value.uint == True: "true"
+    else: "false"
+  else:
+    "unknown"
+
+method stringify(value: Value): string {.base.} =
+  quit("Please implement `stringify` for all Values.")
+
+method stringify(value: StringValue): string = value.str
+
+proc `$`*(value: Value): string = value.stringify()

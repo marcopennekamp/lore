@@ -1,20 +1,10 @@
 from evaluator import nil
 from functions import Function
-from values import nil
+from values import `$`
 
 proc run_and_print*(target: Function, frame_mem: pointer) =
   let res = evaluator.evaluate(target, frame_mem)
-  if values.is_reference(res):
-    if values.untag_reference(res) != nil:
-      echo "Result: Some reference..."
-    else:
-      echo "Result: nil"
-  elif values.is_int(res):
-    echo "Result: ", values.untag_int(res)
-  elif values.is_boolean(res):
-    echo "Result: ", values.untag_boolean(res)
-  else:
-    echo "Result: unknown"
+  echo "Result: ", res
 
 when is_main_module:
   import os, sugar, tables
