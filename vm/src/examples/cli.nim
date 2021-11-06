@@ -32,7 +32,7 @@ let examples = @[
   Example(name: "nine", poem: nine.poem, main: "nine", runs: 100_000_000),
   Example(name: "add_five", poem: add_five.poem, main: "test", runs: 100_000_000),
   Example(name: "fib", poem: fib.poem, main: "test", runs: 1_000_000),
-  Example(name: "hello_name", poem: hello_name.poem, main: "test", runs: 1_000_000),
+  Example(name: "hello_name", poem: hello_name.poem, main: "test", runs: 5_000_000),
 ]
 
 proc prepare_example(example: Example): Function =
