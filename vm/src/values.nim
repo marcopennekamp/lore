@@ -26,6 +26,8 @@ type
     reference: Value
     int: int64
 
+  # TODO (vm): Because we can discriminate between values based on `tpe` already, there is no need to have the `m_type`
+  #            field that's "inherited" from RootObj.
   Value* = ref object of RootObj
     tpe*: Type
 
