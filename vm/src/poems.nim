@@ -256,9 +256,8 @@ proc write_type(stream: FileStream, poem_type: PoemType) =
 
 proc write_instruction(stream: FileStream, instruction: Instruction) =
   stream.write(cast[uint16](instruction.operation))
-  stream.write(instruction.arg0.uint_value)
-  stream.write(instruction.arg1.uint_value)
-  stream.write(instruction.arg2.uint_value)
+  for argument in instruction.arguments:
+    stream.write(argument.uint_value)
 
 proc write_string_with_length(stream: FileStream, string: string) =
   if string.len > cast[int](high(uint16)):

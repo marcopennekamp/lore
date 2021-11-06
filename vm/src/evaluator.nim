@@ -1,6 +1,6 @@
 from functions import Function, get_dispatch_target
-from instructions import Operation, Instruction
 from values import TaggedValue, Value, tag_reference, untag_reference, tag_int, untag_int, tag_boolean, untag_boolean
+import instructions
 from utils import when_debug
 
 type
@@ -28,28 +28,28 @@ proc init_frame_stats*(function: Function) =
   function.frame_size = cast[uint16](preamble_size + sizeof(TaggedValue) * cast[int](function.register_count))
 
 template reg_get(index): untyped = frame.registers[index]
+template reg_get_arg(index): untyped = reg_get(instruction.arg(index))
 
-#template reg_get_ref(index, tpe): untyped = cast[tpe](untag_reference(reg_get(index)))
+template reg_get_ref(index, tpe): untyped = untag_reference(reg_get(index), tpe)
 template reg_get_int(index): untyped = untag_int(reg_get(index))
 template reg_get_bool(index): untyped = untag_boolean(reg_get(index))
 
-#template reg_get_ref_arg1(tpe): untyped = reg_get_ref(instruction.arg1.uint_value, tpe)
-template reg_get_int_arg1(): untyped = reg_get_int(instruction.arg1.uint_value)
-template reg_get_bool_arg1(): untyped = reg_get_bool(instruction.arg1.uint_value)
-
-#template reg_get_ref_arg2(tpe): untyped = reg_get_ref(instruction.arg2.uint_value, tpe)
-template reg_get_int_arg2(): untyped = reg_get_int(instruction.arg2.uint_value)
+template reg_get_ref_arg(index, tpe): untyped = reg_get_ref(instruction.arg(index), tpe)
+template reg_get_int_arg(index): untyped = reg_get_int(instruction.arg(index))
+template reg_get_bool_arg(index): untyped = reg_get_bool(instruction.arg(index))
 
 template reg_set(target_index, register_value): untyped =
   frame.registers[target_index] = register_value
 
-#template reg_set_ref(target_index, value): untyped = reg_set(target_index, tag_reference(value))
-template reg_set_int(target_index, value): untyped = reg_set(target_index, tag_int(value))
-template reg_set_bool(target_index, value): untyped = reg_set(target_index, tag_boolean(value))
+template reg_set_arg(index, register_value): untyped = reg_set(instruction.arg(index), register_value)
 
-#template reg_set_ref_arg0(value): untyped = reg_set_ref(instruction.arg0.uint_value, value)
-template reg_set_int_arg0(value): untyped = reg_set_int(instruction.arg0.uint_value, value)
-template reg_set_bool_arg0(value): untyped = reg_set_bool(instruction.arg0.uint_value, value)
+template reg_set_ref(index, value): untyped = reg_set(index, tag_reference(value))
+template reg_set_int(index, value): untyped = reg_set(index, tag_int(value))
+template reg_set_bool(index, value): untyped = reg_set(index, tag_boolean(value))
+
+template reg_set_ref_arg(index, value): untyped = reg_set_ref(instruction.arg(index), value)
+template reg_set_int_arg(index, value): untyped = reg_set_int(instruction.arg(index), value)
+template reg_set_bool_arg(index, value): untyped = reg_set_bool(instruction.arg(index), value)
 
 proc evaluate(frame: FramePtr) =
   when_debug: echo "Evaluating function ", frame.function.multi_function.name, " with frame ", cast[uint](frame)
@@ -67,44 +67,44 @@ proc evaluate(frame: FramePtr) =
 
     case instruction.operation
     of Operation.IntConst:
-      reg_set_int_arg0(instruction.arg1.int_value)
+      reg_set_int_arg(0, instruction.argi(1))
 
     of Operation.IntAdd:
-      let a = reg_get_int_arg1()
-      let b = reg_get_int_arg2()
-      reg_set_int_arg0(a + b)
+      let a = reg_get_int_arg(1)
+      let b = reg_get_int_arg(2)
+      reg_set_int_arg(0, a + b)
 
     of Operation.IntAddConst:
-      let a = reg_get_int_arg1()
-      let b = instruction.arg2.int_value
-      reg_set_int_arg0(a + b)
+      let a = reg_get_int_arg(1)
+      let b = instruction.argi(2)
+      reg_set_int_arg(0, a + b)
 
     of Operation.IntSubConst:
-      let a = reg_get_int_arg1()
-      let b = instruction.arg2.int_value
-      reg_set_int_arg0(a - b)
+      let a = reg_get_int_arg(1)
+      let b = instruction.argi(2)
+      reg_set_int_arg(0, a - b)
 
     of Operation.IntGtConst:
-      let a = reg_get_int_arg1()
-      let b = instruction.arg2.int_value
-      reg_set_bool_arg0(a > b)
+      let a = reg_get_int_arg(1)
+      let b = instruction.argi(2)
+      reg_set_bool_arg(0, a > b)
 
     of Operation.Jump:
-      pc = instruction.arg0.uint_value
+      pc = instruction.arg(0)
 
     of Operation.JumpIfFalse:
-      let predicate = reg_get_bool_arg1()
+      let predicate = reg_get_bool_arg(1)
       if (not predicate):
-        pc = instruction.arg0.uint_value
+        pc = instruction.arg(0)
 
     of Operation.JumpIfTrue:
-      let predicate = reg_get_bool_arg1()
+      let predicate = reg_get_bool_arg(1)
       if (predicate):
-        pc = instruction.arg0.uint_value
+        pc = instruction.arg(0)
 
     of Operation.Dispatch1:
-      let mf = constants.multi_functions[instruction.arg1.uint_value]
-      let argument0 = reg_get(instruction.arg2.uint_value)
+      let mf = constants.multi_functions[instruction.arg(1)]
+      let argument0 = reg_get_arg(2)
 
       let target = get_dispatch_target(mf, argument0)
       let target_frame_base = cast[pointer](cast[uint](frame) + frame.function.frame_size)
@@ -115,12 +115,12 @@ proc evaluate(frame: FramePtr) =
       evaluate(target_frame)
 
       # After function evaluation has finished, it must guarantee that the return value is in the first register.
-      reg_set(instruction.arg0.uint_value, target_frame.registers[0])
+      reg_set_arg(0, target_frame.registers[0])
 
       when_debug: echo "Finished dispatch to target ", mf.name, " with frame ", cast[uint](target_frame)
 
     of Operation.Return:
-      reg_set(0, reg_get(instruction.arg0.uint_value))
+      reg_set(0, reg_get_arg(0))
       break
 
     of Operation.Return0:
