@@ -1,4 +1,5 @@
-from functions import Function, get_dispatch_target
+from dispatch import get_dispatch_target
+from functions import Function
 import instructions
 import values
 from utils import when_debug
@@ -60,14 +61,14 @@ template const_value_ref_arg(index, tpe): untyped = const_value_ref(instruction.
 proc evaluate(frame: FramePtr) =
   when_debug: echo "Evaluating function ", frame.function.multi_function.name, " with frame ", cast[uint](frame)
 
-  let code = frame.function.code
+  let instructions = frame.function.instructions
   let constants = frame.function.constants
 
   var pc: uint16 = 0
 
   while true:
     {.computedgoto.}
-    let instruction = code[pc]
+    let instruction = instructions[pc]
     when_debug: echo instruction.operation, " (PC: ", pc, ")"
     pc += 1
 

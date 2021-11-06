@@ -75,7 +75,7 @@ proc resolve(universe: Universe, poem_function: PoemFunction, constants: Constan
     input_type: input_type,
     output_type: output_type,
     register_count: poem_function.register_count,
-    code: poem_function.instructions,
+    instructions: poem_function.instructions,
     constants: constants,
   )
   init_frame_stats(function)

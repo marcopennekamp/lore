@@ -30,9 +30,6 @@ type
   TypeVariable* {.pure, acyclic.} = ref object of Type
     lower_bound*, upper_bound*: Type
 
-  # TODO (vm): Perhaps different types for different arities, such as Tuple2/3/4, Sum2/3/4, etc. Of course, this is
-  #            trivially beneficial for tuples, because a 2-tuple will never be a sub- nor supertype of a 3-tuple.
-  #            However, a 2-sum can easily be a subtype of a 3-sum.
   SumType* {.pure, shallow, acyclic.} = ref object of Type
     parts*: seq[Type]
 
