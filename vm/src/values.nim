@@ -69,4 +69,13 @@ proc untag_boolean*(value: TaggedValue): bool = value.uint == True
 proc new_string*(value: string): Value = StringValue(tpe: types.string, str: value)
 proc new_string_tagged*(value: string): TaggedValue = tag_reference(new_string(value))
 
-# TODO (vm): Write a `type_of` function.
+proc type_of*(value: TaggedValue): Type =
+  let tag = get_tag(value)
+  if tag == TagReference:
+    untag_reference(value).tpe
+  elif tag == TagInt:
+    types.int
+  elif tag == TagBoolean:
+    types.boolean
+  else:
+    quit(fmt"Unknown tag {tag}.")
