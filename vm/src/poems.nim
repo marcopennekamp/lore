@@ -23,7 +23,7 @@ type
 
   ## An unresolved constants table.
   PoemConstants* = ref object
-    #types*: seq[Type]
+    types*: seq[PoemType]
     multi_functions*: seq[string]
     values*: seq[TaggedValue]  # TODO (vm): We have to make this a PoemValue and later resolve values, as types have to be resolved first...
 
@@ -126,12 +126,13 @@ proc read*(path: string): Poem =
     functions: functions,
   )
 
-# TODO (vm): Read type and value constants.
 proc read_constants(stream: FileStream): PoemConstants =
+  let types = stream.read_many_with_count(PoemType, uint16, read_type)
   let multi_functions = stream.read_many_with_count(string, uint16, read_string_with_length)
   let values = stream.read_many_with_count(TaggedValue, uint16, read_value)
 
   PoemConstants(
+    types: types,
     multi_functions: multi_functions,
     values: values,
   )
@@ -266,8 +267,8 @@ proc write*(path: string, poem: Poem) =
   stream.write_constants(poem.constants)
   stream.write_many_with_count(poem.functions, uint16, write_function)
 
-# TODO (vm): Write type and value constants.
 proc write_constants(stream: FileStream, constants: PoemConstants) =
+  stream.write_many_with_count(constants.types, uint16, write_type)
   stream.write_many_with_count(constants.multi_functions, uint16, write_string_with_length)
   stream.write_many_with_count(constants.values, uint16, write_value)
 

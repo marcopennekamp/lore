@@ -5,7 +5,7 @@ import sugar
 
 from evaluator import init_frame_stats
 from functions import MultiFunction, Function, Constants, new_constants
-from poems import Poem, PoemFunction, PoemType, PoemBasicType, PoemXaryType, PoemSymbolType, PoemNamedType
+from poems import Poem, PoemConstants, PoemFunction, PoemType, PoemBasicType, PoemXaryType, PoemSymbolType, PoemNamedType
 from types import Kind, Type, TupleType
 
 type
@@ -16,6 +16,7 @@ type
 proc ensure_multi_function(universe: Universe, name: string)
 
 proc resolve(universe: Universe, poem: Poem)
+proc resolve(universe: Universe, poem_constants: PoemConstants): Constants
 proc resolve(universe: Universe, poem_function: PoemFunction, constants: Constants)
 proc resolve(universe: Universe, poem_type: PoemType): Type
 
@@ -42,16 +43,23 @@ proc ensure_multi_function(universe: Universe, name: string) =
     )
 
 proc resolve(universe: Universe, poem: Poem) =
-  # At this point, all multi-functions will have been assigned a reference, so we can immediately build the constants
-  # table.
-  let constants = new_constants()
-  for name in poem.constants.multi_functions:
-    constants.multi_functions.add(universe.multi_functions[name])
-
+  let constants = universe.resolve(poem.constants)
   for poem_function in poem.functions:
     universe.resolve(poem_function, constants)
 
-  constants.values = poem.constants.values
+proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
+  let constants = new_constants()
+
+  for poem_type in poem_constants.types:
+    constants.types.add(universe.resolve(poem_type))
+
+  # At this point, all multi-functions will be known by reference, so we can immediately build the constants table.
+  for name in poem_constants.multi_functions:
+    constants.multi_functions.add(universe.multi_functions[name])
+
+  constants.values = poem_constants.values
+
+  constants
 
 proc resolve(universe: Universe, poem_function: PoemFunction, constants: Constants) =
   let multi_function = universe.multi_functions[poem_function.name]
@@ -74,11 +82,6 @@ proc resolve(universe: Universe, poem_function: PoemFunction, constants: Constan
 
   multi_function.functions.add(function)
 
-method resolve(poem_type: PoemType, universe: Universe): Type {.base, locks: "unknown".}
-
-proc resolve(universe: Universe, poem_type: PoemType): Type =
-  poem_type.resolve(universe)
-
 method resolve(poem_type: PoemType, universe: Universe): Type {.base, locks: "unknown".} =
   quit("Please implement `resolve` for all PoemTypes.")
 
@@ -98,3 +101,6 @@ method resolve(poem_type: PoemSymbolType, universe: Universe): Type {.locks: "un
 
 method resolve(poem_type: PoemNamedType, universe: Universe): Type {.locks: "unknown".} =
   quit(fmt"Cannot resolve named types yet. Name: {poem_type.name}.")
+
+proc resolve(universe: Universe, poem_type: PoemType): Type =
+  poem_type.resolve(universe)

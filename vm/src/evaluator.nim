@@ -1,6 +1,5 @@
 from functions import Function, get_dispatch_target
 import instructions
-from types import nil
 import values
 from utils import when_debug
 

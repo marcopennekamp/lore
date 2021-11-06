@@ -76,6 +76,8 @@ proc map*(key: Type, value: Type): MapType = MapType(kind: Kind.Map, key: key, v
 # TODO (vm): Intern symbol types.
 proc symbol*(name: string): SymbolType = SymbolType(kind: Kind.Symbol, name: name)
 
+# TODO (vm): Implement type stringification.
+
 ########################################################################################################################
 # Type equality.                                                                                                       #
 ########################################################################################################################

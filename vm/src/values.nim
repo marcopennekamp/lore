@@ -44,7 +44,6 @@ type
 const
   ## This mask can filter out the lowest three tag bits of a pointer.
   TagMask: uint64 = 0b111
-  TagUnmask: uint64 = 0b000
   TagReference*: uint64 = 0b000
   TagInt*: uint64 = 0b001
   #TagReal: uint64 = 0b010  # TODO (vm): Implement Real value tagging and untagging.
