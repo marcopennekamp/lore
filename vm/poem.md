@@ -23,10 +23,10 @@ The Constants table has the following structure:
 
   - **Types count** (uint16): The number of type constants.
   - **Types** (Type*): The type constants.
-  - **Multi-functions count** (uint16): The number of multi-function constants.
-  - **Multi-functions** (String*): The full names of multi-function constants.
   - **Values count** (uint16): The number of value constants.
   - **Values** (Value*): The value constants.
+  - **Multi-functions count** (uint16): The number of multi-function constants.
+  - **Multi-functions** (String*): The full names of multi-function constants.
 
 ### Type Declarations
 

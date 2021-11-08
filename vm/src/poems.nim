@@ -24,8 +24,8 @@ type
   ## An unresolved constants table.
   PoemConstants* = ref object
     types*: seq[PoemType]
-    multi_functions*: seq[string]
     values*: seq[TaggedValue]  # TODO (vm): We have to make this a PoemValue and later resolve values, as types have to be resolved first...
+    multi_functions*: seq[string]
 
   ## An unresolved function.
   PoemFunction* = ref object
@@ -128,13 +128,13 @@ proc read*(path: string): Poem =
 
 proc read_constants(stream: FileStream): PoemConstants =
   let types = stream.read_many_with_count(PoemType, uint16, read_type)
-  let multi_functions = stream.read_many_with_count(string, uint16, read_string_with_length)
   let values = stream.read_many_with_count(TaggedValue, uint16, read_value)
+  let multi_functions = stream.read_many_with_count(string, uint16, read_string_with_length)
 
   PoemConstants(
     types: types,
-    multi_functions: multi_functions,
     values: values,
+    multi_functions: multi_functions,
   )
 
 template read_xary_type(stream: FileStream, xary_kind: Kind, metadata: uint8): untyped =
@@ -269,8 +269,8 @@ proc write*(path: string, poem: Poem) =
 
 proc write_constants(stream: FileStream, constants: PoemConstants) =
   stream.write_many_with_count(constants.types, uint16, write_type)
-  stream.write_many_with_count(constants.multi_functions, uint16, write_string_with_length)
   stream.write_many_with_count(constants.values, uint16, write_value)
+  stream.write_many_with_count(constants.multi_functions, uint16, write_string_with_length)
 
 proc write_type(stream: FileStream, tpe: PoemType) =
   tpe.write(stream)

@@ -31,11 +31,11 @@ type
     frame_size*: uint16
     frame_registers_offset*: uint16
 
-  ## A Constants object provides quick access to predefined types, multi-functions, and values. It may be shared
-  ## between multiple function definitions.
+  ## A Constants object provides quick access to predefined types, values, and multi-functions. It may be shared across
+  ## multiple function definitions. All entries are separately accessed by a uint16.
   Constants* = ref object
     types*: seq[Type]
-    multi_functions*: seq[MultiFunction]
     values*: seq[TaggedValue]
+    multi_functions*: seq[MultiFunction]
 
-proc new_constants*(): Constants = Constants(types: @[], multi_functions: @[], values: @[])
+proc new_constants*(): Constants = Constants(types: @[], values: @[], multi_functions: @[])

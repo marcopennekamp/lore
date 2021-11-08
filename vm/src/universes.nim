@@ -53,11 +53,11 @@ proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
   for poem_type in poem_constants.types:
     constants.types.add(universe.resolve(poem_type))
 
+  constants.values = poem_constants.values
+
   # At this point, all multi-functions will be known by reference, so we can immediately build the constants table.
   for name in poem_constants.multi_functions:
     constants.multi_functions.add(universe.multi_functions[name])
-
-  constants.values = poem_constants.values
 
   constants
 
