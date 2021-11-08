@@ -79,9 +79,11 @@ let boolean_type*: PoemType = PoemBasicType(tpe: types.boolean)
 let string_type*: PoemType = PoemBasicType(tpe: types.string)
 let unit_type*: PoemType = PoemXaryType(kind: Kind.Tuple, types: @[])
 
-proc tuple_type*(poem_types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.Tuple, types: @poem_types)
-
+proc int_value*(value: int64): PoemValue = PoemIntValue(int: value)
 proc string_value*(value: string): PoemValue = PoemStringValue(string: value)
+
+proc tuple_type*(types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.Tuple, types: @types)
+proc tuple_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemTupleValue(tpe: tpe, elements: elements)
 
 proc fail(message: string) {.noreturn.} = raise new_exception(IOError, message)
 
