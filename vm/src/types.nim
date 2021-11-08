@@ -18,12 +18,12 @@ type
     Trait
     Struct
 
-  # Types are considered immutable and should never be mutated once they're attached to a value. Types must also be
-  # acyclic, resembling a tree structure.
-  # The pragmas `inheritable` and `pure` omit the `m_type` pointer from each type instance. This type tag is usually
-  # used to discriminate between types at run time. However, `kind` already sufficiently distinguishes type instances.
-  # A type which contains a sequence or string should be marked `shallow`, to optimize copying. Types which themselves
-  # contain other types should be marked `acyclic`, to optimize garbage collection.
+  ## Types are considered immutable and should never be mutated once they're attached to a value. Types must also be
+  ## acyclic, resembling a tree structure.
+  ## The pragmas `inheritable` and `pure` omit the `m_type` pointer from each type instance. This type tag is usually
+  ## used to discriminate between types at run time. However, `kind` already sufficiently distinguishes type instances.
+  ## A type which contains a sequence or string should be marked `shallow`, to optimize copying. Types which themselves
+  ## contain other types should be marked `acyclic`, to optimize garbage collection.
   Type* {.inheritable, pure.} = ref object
     kind*: Kind
 

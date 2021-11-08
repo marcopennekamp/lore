@@ -28,9 +28,9 @@ type
     reference: Value
     int: int64
 
-  # TODO (vm): Because we can discriminate between values based on `tpe` already, there is no need to have the `m_type`
-  #            field that's "inherited" from RootObj.
-  Value* = ref object of RootObj
+  ## The pragmas `inheritable` and `pure` omit the `m_type` pointer from each value instance, as `tpe` already
+  ## sufficiently distinguishes between value kinds.
+  Value* {.inheritable, pure.} = ref object
     tpe*: Type
 
   ## Real values are currently boxed, because a 64-bit float doesn't fit into a 64-bit tagged pointer. The technique to
@@ -41,16 +41,16 @@ type
   ## work with unboxed Reals. If a function parameter is definitely a Real, we also don't need to pass the boxed value
   ## to it, nor require the function itself to work with a boxed value. These and other optimizations may relieve us of
   ## the burden of nanboxing.
-  RealValue* = ref object of Value
-    value*: float64
+  RealValue* {.pure.} = ref object of Value
+    real*: float64
 
   # TODO (vm): Rethink string handling: Nim strings are mutable, so we can't just throw Nim strings around. We might
   #            have to implement our own string type. For now, this can work, though.
   #            This would have the added benefit of saving one allocation. Right now, we're allocating the StringValue,
   #            which allocates the string, which allocates the character array. With our own string type, we could bake
   #            the fields saved in `string` into StringValue.
-  StringValue* = ref object of Value
-    str*: string
+  StringValue* {.pure.} = ref object of Value
+    string*: string
 
 const
   ## This mask can filter out the lowest three tag bits of a pointer.
@@ -77,10 +77,10 @@ proc untag_int*(value: TaggedValue): int64 = value.int shr 3
 proc tag_boolean*(value: bool): TaggedValue = TaggedValue(uint: if value: True else: False)
 proc untag_boolean*(value: TaggedValue): bool = value.uint == True
 
-proc new_real*(value: float64): Value = RealValue(tpe: types.real, value: value)
+proc new_real*(value: float64): Value = RealValue(tpe: types.real, real: value)
 proc new_real_tagged*(value: float64): TaggedValue = tag_reference(new_real(value))
 
-proc new_string*(value: string): Value = StringValue(tpe: types.string, str: value)
+proc new_string*(value: string): Value = StringValue(tpe: types.string, string: value)
 proc new_string_tagged*(value: string): TaggedValue = tag_reference(new_string(value))
 
 proc type_of*(value: TaggedValue): Type =
@@ -116,11 +116,11 @@ proc `$`*(tagged_value: TaggedValue): string =
   else:
     "unknown"
 
-method stringify(value: Value): string {.base.} =
-  quit("Please implement `stringify` for all Values.")
+proc `$`*(value: Value): string =
+  case value.tpe.kind
+  of Kind.Real: $cast[RealValue](value).real
+  of Kind.String: cast[StringValue](value).string
+  else: quit("Please implement `$` for all Values.")
 
-proc `$`*(value: Value): string = value.stringify()
-
-method stringify(value: RealValue): string = $value.value
-
-method stringify(value: StringValue): string = value.str
+when is_main_module:
+  echo new_string_tagged("hello world")

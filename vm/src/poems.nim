@@ -281,7 +281,7 @@ proc write_value(stream: FileStream, tagged_value: TaggedValue) =
     let value = values.untag_reference(tagged_value)
     if value.tpe == types.string:
       stream.write_type(string_type)
-      stream.write_string_with_length(cast[StringValue](value).str)
+      stream.write_string_with_length(cast[StringValue](value).string)
     else:
       fail("Cannot write non-string reference values yet.")
   elif tag == values.TagInt:

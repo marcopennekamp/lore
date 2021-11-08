@@ -106,17 +106,17 @@ proc evaluate(frame: FramePtr) =
     of Operation.StringConcat:
       let a = reg_get_ref_arg(1, StringValue)
       let b = reg_get_ref_arg(2, StringValue)
-      reg_set_ref_arg(0, values.new_string(a.str & b.str))
+      reg_set_ref_arg(0, values.new_string(a.string & b.string))
 
     of Operation.StringConcatConst:
       let a = reg_get_ref_arg(1, StringValue)
       let b = const_value_ref_arg(2, StringValue)
-      reg_set_ref_arg(0, values.new_string(a.str & b.str))
+      reg_set_ref_arg(0, values.new_string(a.string & b.string))
 
     of Operation.StringConcatConstl:
       let a = const_value_ref_arg(1, StringValue)
       let b = reg_get_ref_arg(2, StringValue)
-      reg_set_ref_arg(0, values.new_string(a.str & b.str))
+      reg_set_ref_arg(0, values.new_string(a.string & b.string))
 
     of Operation.Jump:
       pc = instruction.arg(0)
