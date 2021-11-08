@@ -33,6 +33,17 @@ type
   Value* = ref object of RootObj
     tpe*: Type
 
+  ## Real values are currently boxed, because a 64-bit float doesn't fit into a 64-bit tagged pointer. The technique to
+  ## use would be nanboxing, but that is not quite future-proof because it relies on pointers only using the lower 48
+  ## bits.
+  ##
+  ## There are other Real optimizations which we may try first. For example, we can introduce specific operations which
+  ## work with unboxed Reals. If a function parameter is definitely a Real, we also don't need to pass the boxed value
+  ## to it, nor require the function itself to work with a boxed value. These and other optimizations may relieve us of
+  ## the burden of nanboxing.
+  RealValue* = ref object of Value
+    value*: float64
+
   # TODO (vm): Rethink string handling: Nim strings are mutable, so we can't just throw Nim strings around. We might
   #            have to implement our own string type. For now, this can work, though.
   #            This would have the added benefit of saving one allocation. Right now, we're allocating the StringValue,
@@ -46,8 +57,7 @@ const
   TagMask: uint64 = 0b111
   TagReference*: uint64 = 0b000
   TagInt*: uint64 = 0b001
-  #TagReal: uint64 = 0b010  # TODO (vm): Implement Real value tagging and untagging.
-  TagBoolean*: uint64 = 0b011
+  TagBoolean*: uint64 = 0b010
   False*: uint64 = 0 or TagBoolean
   True*: uint64 = (1 shl 3) or TagBoolean
 
@@ -66,6 +76,9 @@ proc untag_int*(value: TaggedValue): int64 = value.int shr 3
 
 proc tag_boolean*(value: bool): TaggedValue = TaggedValue(uint: if value: True else: False)
 proc untag_boolean*(value: TaggedValue): bool = value.uint == True
+
+proc new_real*(value: float64): Value = RealValue(tpe: types.real, value: value)
+proc new_real_tagged*(value: float64): TaggedValue = tag_reference(new_real(value))
 
 proc new_string*(value: string): Value = StringValue(tpe: types.string, str: value)
 proc new_string_tagged*(value: string): TaggedValue = tag_reference(new_string(value))
@@ -106,6 +119,8 @@ proc `$`*(tagged_value: TaggedValue): string =
 method stringify(value: Value): string {.base.} =
   quit("Please implement `stringify` for all Values.")
 
-method stringify(value: StringValue): string = value.str
-
 proc `$`*(value: Value): string = value.stringify()
+
+method stringify(value: RealValue): string = $value.value
+
+method stringify(value: StringValue): string = value.str
