@@ -58,6 +58,17 @@ template const_value_arg(index): untyped = const_value(instruction.arg(index))
 template const_value_ref(index, tpe): untyped = untag_reference(const_value(index), tpe)
 template const_value_ref_arg(index, tpe): untyped = const_value_ref(instruction.arg(index), tpe)
 
+template dispatch_start(mf, target): FramePtr =
+  let target_frame_base = cast[pointer](cast[uint](frame) + frame.function.frame_size)
+  let target_frame = create_frame(target, target_frame_base)
+  when_debug: echo "Dispatch to target ", mf.name, " with frame ", cast[uint](target_frame)
+  target_frame
+
+template dispatch_end(mf, target_frame): untyped =
+  # After function evaluation has finished, it must guarantee that the return value is in the first register.
+  reg_set_arg(0, target_frame.registers[0])
+  when_debug: echo "Finished dispatch to target ", mf.name, " with frame ", cast[uint](target_frame)
+
 proc evaluate(frame: FramePtr) =
   when_debug: echo "Evaluating function ", frame.function.multi_function.name, " with frame ", cast[uint](frame)
 
@@ -118,6 +129,25 @@ proc evaluate(frame: FramePtr) =
       let b = reg_get_ref_arg(2, StringValue)
       reg_set_ref_arg(0, values.new_string(a.string & b.string))
 
+    of Operation.Tuple:
+      let first = instruction.arg(1)
+      let last = instruction.arg(2)
+      var elements = new_seq_of_cap[TaggedValue](last - first + 1)
+      for i in first .. last:
+        elements.add(reg_get(i))
+      reg_set_ref_arg(0, values.new_tuple(elements))
+
+    of Operation.Tuple2:
+      var elements: seq[TaggedValue]
+      new_seq(elements, 2)
+      elements[0] = reg_get_arg(1)
+      elements[1] = reg_get_arg(2)
+      reg_set_ref_arg(0, values.new_tuple(elements))
+
+    of Operation.TupleGet:
+      let tpl = reg_get_ref_arg(1, TupleValue)
+      reg_set_arg(0, tpl.elements[instruction.arg(2)])
+
     of Operation.Jump:
       pc = instruction.arg(0)
 
@@ -134,19 +164,22 @@ proc evaluate(frame: FramePtr) =
     of Operation.Dispatch1:
       let mf = constants.multi_functions[instruction.arg(1)]
       let argument0 = reg_get_arg(2)
-
       let target = get_dispatch_target(mf, argument0)
-      let target_frame_base = cast[pointer](cast[uint](frame) + frame.function.frame_size)
-      let target_frame = create_frame(target, target_frame_base)
-      when_debug: echo "Dispatch to target ", mf.name, " with frame ", cast[uint](target_frame)
-
+      let target_frame = dispatch_start(mf, target)
       target_frame.registers[0] = argument0
       evaluate(target_frame)
+      dispatch_end(mf, target_frame)
 
-      # After function evaluation has finished, it must guarantee that the return value is in the first register.
-      reg_set_arg(0, target_frame.registers[0])
-
-      when_debug: echo "Finished dispatch to target ", mf.name, " with frame ", cast[uint](target_frame)
+    of Operation.Dispatch2:
+      let mf = constants.multi_functions[instruction.arg(1)]
+      let argument0 = reg_get_arg(2)
+      let argument1 = reg_get_arg(3)
+      let target = get_dispatch_target(mf, argument0, argument1)
+      let target_frame = dispatch_start(mf, target)
+      target_frame.registers[0] = argument0
+      target_frame.registers[1] = argument1
+      evaluate(target_frame)
+      dispatch_end(mf, target_frame)
 
     of Operation.Return:
       reg_set(0, reg_get_arg(0))

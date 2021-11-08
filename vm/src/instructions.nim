@@ -38,6 +38,15 @@ type
     ## reg(arg0) <- concat(values(arg1), reg(arg2))
     StringConcatConstl
 
+    ## reg(arg0) <- tuple(reg(arg1), reg(arg1 + 1), ..., reg(arg2))
+    Tuple
+
+    ## reg(arg0) <- tuple(reg(arg1), reg(arg2))
+    Tuple2
+
+    ## reg(arg0) <- reg(arg1).get(arg2)
+    TupleGet
+
     ## pc <- arg0
     Jump
 
@@ -47,11 +56,11 @@ type
     ## if reg(arg1): pc <- arg0
     JumpIfTrue
 
-    ## arg0: Target register.
-    ## arg1: Constants table ID of the multi-function.
-    ## arg2: Argument 1 register.
     ## reg(arg0) <- mfs(arg1)(reg(arg2))
     Dispatch1
+
+    ## reg(arg0) <- mfs(arg1)(reg(arg2), reg(arg3))
+    Dispatch2
 
     ## return reg(arg0)
     Return
@@ -71,21 +80,23 @@ type
 
   Instruction* = object
     operation*: Operation
-    arguments*: array[3, Argument]
+    arguments*: array[4, Argument]
 
 proc arg*(instruction: Instruction, index: uint16): uint16 = instruction.arguments[index].uint_value
 proc argi*(instruction: Instruction, index: uint16): int16 = instruction.arguments[index].int_value
 
-proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16, arg2: uint16): Instruction =
+proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16, arg2: uint16, arg3: uint16): Instruction =
   Instruction(
     operation: operation,
     arguments: [
       Argument(uint_value: arg0),
       Argument(uint_value: arg1),
       Argument(uint_value: arg2),
+      Argument(uint_value: arg3),
     ],
   )
 
+proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16, arg2: uint16): Instruction = new_instruction(operation, arg0, arg1, arg2, 0)
 proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16): Instruction = new_instruction(operation, arg0, arg1, 0)
 proc new_instruction*(operation: Operation, arg0: uint16): Instruction = new_instruction(operation, arg0, 0)
 proc new_instruction*(operation: Operation): Instruction = new_instruction(operation, 0)

@@ -1,4 +1,4 @@
-import std/strformat
+import std/strformat, std/strutils
 
 from types import Kind, Type
 
@@ -52,6 +52,12 @@ type
   StringValue* {.pure.} = ref object of Value
     string*: string
 
+  # TODO (vm): We can optimize this by introducing special types for small tuples, such as Tuple2 and Tuple3, which
+  #            would be 24 and 32 bytes large due to alignment. This will remove one layer of pointer indirection and
+  #            save an allocation, but obviously complicate the code.
+  TupleValue* {.pure.} = ref object of Value
+    elements*: seq[TaggedValue]
+
 const
   ## This mask can filter out the lowest three tag bits of a pointer.
   TagMask: uint64 = 0b111
@@ -60,6 +66,8 @@ const
   TagBoolean*: uint64 = 0b010
   False*: uint64 = 0 or TagBoolean
   True*: uint64 = (1 shl 3) or TagBoolean
+
+proc type_of*(value: TaggedValue): Type
 
 proc get_tag*(value: TaggedValue): uint64 = value.uint and TagMask
 
@@ -83,6 +91,14 @@ proc new_real_tagged*(value: float64): TaggedValue = tag_reference(new_real(valu
 proc new_string*(value: string): Value = StringValue(tpe: types.string, string: value)
 proc new_string_tagged*(value: string): TaggedValue = tag_reference(new_string(value))
 
+proc new_tuple*(elements: seq[TaggedValue]): Value =
+  var element_types = new_seq_of_cap[Type](elements.len)
+  for element in elements:
+    element_types.add(type_of(element))
+  TupleValue(tpe: types.tpl(element_types), elements: elements)
+
+proc new_tuple_tagged*(elements: seq[TaggedValue]): TaggedValue = tag_reference(new_tuple(elements))
+
 proc type_of*(value: TaggedValue): Type =
   let tag = get_tag(value)
   if tag == TagReference:
@@ -98,9 +114,9 @@ proc type_of*(value: TaggedValue): Type =
 # Stringification.                                                                                                     #
 ########################################################################################################################
 
-proc `$`*(value: Value): string
+func `$`*(value: Value): string
 
-proc `$`*(tagged_value: TaggedValue): string =
+func `$`*(tagged_value: TaggedValue): string =
   let tag = get_tag(tagged_value)
   if tag == TagReference:
     let value = untag_reference(tagged_value)
@@ -116,11 +132,14 @@ proc `$`*(tagged_value: TaggedValue): string =
   else:
     "unknown"
 
-proc `$`*(value: Value): string =
+func `$`*(value: Value): string =
   case value.tpe.kind
   of Kind.Real: $cast[RealValue](value).real
   of Kind.String: cast[StringValue](value).string
-  else: quit("Please implement `$` for all Values.")
+  of Kind.Tuple:
+    let tpl = cast[TupleValue](value)
+    "(" & tpl.elements.join(", ") & ")"
+  else: "unknown"
 
 when is_main_module:
   echo new_string_tagged("hello world")

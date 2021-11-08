@@ -231,6 +231,7 @@ proc read_instruction(stream: FileStream): Instruction =
     stream.read(uint16),
     stream.read(uint16),
     stream.read(uint16),
+    stream.read(uint16),
   )
 
 proc read_string_with_length(stream: FileStream): string =

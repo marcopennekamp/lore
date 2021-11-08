@@ -3,8 +3,10 @@
 #### Features
 
 - Implement all kinds of values except maps, shapes, traits, and structs:
-  - Values: Definitions, to string, poem reading, poem writing, universe resolution.
-  - Support multi-function and fixed-function values.
+  - Tuples: ~~Values~~, ~~to string~~, poem reading, poem writing, universe resolution, ~~operations~~, ~~test example~~.
+  - Lists: Values, to string, poem reading, poem writing, universe resolution, operations, test example.
+  - Symbols: Values, to string, poem reading, poem writing, universe resolution, operations, test example.
+  - Functions: Values, to string, poem reading, poem writing, universe resolution, call operation, multi-function values, fixed-function values, test example.
 - Implement list append as an operation.
   - The operation must use a type evaluated at compile time. This is the reason why we're implementing the appends as an operation instead of an intrinsic (for now).
   - Implement a ListAppendUntyped operation as a faster alternative to ListAppend.

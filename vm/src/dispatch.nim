@@ -32,7 +32,7 @@ proc get_dispatch_target*(mf: MultiFunction, input_type: TupleType): Function =
     quit(fmt"Cannot call multi-function {mf.name}: ambiguous call.")
   most_specific[0]
 
-proc get_dispatch_target*(mf: MultiFunction, value: TaggedValue): Function =
+template get_dispatch_target_fixed(mf, tuple_type): untyped =
   # TODO (vm): This optimization is not quite correct. We can assume that the compiler produces valid calls in the
   #            bytecode, but we have to take lower bounds into account.
   # TODO (vm): This is an optimization I would like to be carried out in a preprocessing phase which could for example
@@ -40,6 +40,12 @@ proc get_dispatch_target*(mf: MultiFunction, value: TaggedValue): Function =
   if mf.functions.len == 1:
     return mf.functions[0]
   else:
-    # TODO (vm): We can technically omit creating the tuple if we're a little smart about it. But this is an
-    #            optimization for later.
-    get_dispatch_target(mf, tpl([values.type_of(value)]))
+    get_dispatch_target(mf, tuple_type)
+
+proc get_dispatch_target*(mf: MultiFunction, argument0: TaggedValue): Function =
+  # TODO (vm): We can technically omit creating the tuple if we're a little smart about it. But this is an
+  #            optimization for later.
+  get_dispatch_target_fixed(mf, tpl([values.type_of(argument0)]))
+
+proc get_dispatch_target*(mf: MultiFunction, argument0: TaggedValue, argument1: TaggedValue): Function =
+  get_dispatch_target_fixed(mf, tpl([values.type_of(argument0), values.type_of(argument1)]))
