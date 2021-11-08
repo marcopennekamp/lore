@@ -28,9 +28,9 @@ The Constants table has the following structure:
   - **Multi-functions count** (uint16): The number of multi-function constants.
   - **Multi-functions** (String*): The full names of multi-function constants.
 
-### Type Declarations
+### Schemas
 
-A **TypeDeclaration** specifies a user-defined *trait* or *struct*.
+A **Schema** describes a user-defined *trait* or *struct* with optional type parameters.
 
 TODO
 
