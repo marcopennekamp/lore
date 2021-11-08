@@ -128,6 +128,9 @@ A **Value** is encoded as follows:
       - **Value** (uint8)
     - String:
       - **Value** (String)
+    - Tuple:
+      - **Elements** (Value*)
+      - The element count is given by *Type*.
     - TODO (vm): Describe value encodings for more value kinds.
 
 ### Strings

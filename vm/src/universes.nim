@@ -5,20 +5,29 @@ import sugar
 
 from evaluator import init_frame_stats
 from functions import MultiFunction, Function, Constants, new_constants
-from poems import Poem, PoemConstants, PoemFunction, PoemType, PoemBasicType, PoemXaryType, PoemSymbolType, PoemNamedType
+import poems
 from types import Kind, Type, TupleType
+from values import TaggedValue
 
 type
   ## The Universe object represents all combined information available about the current Lore program.
   Universe* = ref object
     multi_functions*: Table[string, MultiFunction]
 
-proc ensure_multi_function(universe: Universe, name: string)
-
 proc resolve(universe: Universe, poem: Poem)
 proc resolve(universe: Universe, poem_constants: PoemConstants): Constants
 proc resolve(universe: Universe, poem_function: PoemFunction, constants: Constants)
 proc resolve(universe: Universe, poem_type: PoemType): Type
+proc resolve(universe: Universe, poem_value: PoemValue): TaggedValue
+
+template resolve_many(universe, sequence): untyped =
+  sequence.map(o => universe.resolve(o))
+
+########################################################################################################################
+# Top-level resolution.                                                                                                #
+########################################################################################################################
+
+proc ensure_multi_function(universe: Universe, name: string)
 
 ## Resolves a Universe from the given set of Poem definitions.
 proc resolve*(poems: seq[Poem]): Universe =
@@ -53,13 +62,18 @@ proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
   for poem_type in poem_constants.types:
     constants.types.add(universe.resolve(poem_type))
 
-  constants.values = poem_constants.values
+  for poem_value in poem_constants.values:
+    constants.values.add(universe.resolve(poem_value))
 
   # At this point, all multi-functions will be known by reference, so we can immediately build the constants table.
   for name in poem_constants.multi_functions:
     constants.multi_functions.add(universe.multi_functions[name])
 
   constants
+
+########################################################################################################################
+# Function resolution.                                                                                                 #
+########################################################################################################################
 
 proc resolve(universe: Universe, poem_function: PoemFunction, constants: Constants) =
   let multi_function = universe.multi_functions[poem_function.name]
@@ -82,8 +96,15 @@ proc resolve(universe: Universe, poem_function: PoemFunction, constants: Constan
 
   multi_function.functions.add(function)
 
+########################################################################################################################
+# Type resolution.                                                                                                     #
+########################################################################################################################
+
 method resolve(poem_type: PoemType, universe: Universe): Type {.base, locks: "unknown".} =
   quit("Please implement `resolve` for all PoemTypes.")
+
+proc resolve(universe: Universe, poem_type: PoemType): Type =
+  poem_type.resolve(universe)
 
 method resolve(poem_type: PoemBasicType, universe: Universe): Type {.locks: "unknown".} = poem_type.tpe
 
@@ -94,13 +115,30 @@ method resolve(poem_type: PoemXaryType, universe: Universe): Type =
   if poem_type.types.len == 0:
     types.unit
   else:
-    let elements = poem_type.types.map(t => t.resolve(universe))
-    types.tpl(elements)
+    types.tpl(universe.resolve_many(poem_type.types))
 
 method resolve(poem_type: PoemSymbolType, universe: Universe): Type {.locks: "unknown".} = types.symbol(poem_type.name)
 
 method resolve(poem_type: PoemNamedType, universe: Universe): Type {.locks: "unknown".} =
   quit(fmt"Cannot resolve named types yet. Name: {poem_type.name}.")
 
-proc resolve(universe: Universe, poem_type: PoemType): Type =
-  poem_type.resolve(universe)
+########################################################################################################################
+# Value resolution.                                                                                                    #
+########################################################################################################################
+
+method resolve(poem_value: PoemValue, universe: Universe): TaggedValue {.base, locks: "unknown".} =
+  quit("Please implement `resolve` for all PoemValues.")
+
+proc resolve(universe: Universe, poem_value: PoemValue): TaggedValue =
+  poem_value.resolve(universe)
+
+method resolve(poem_value: PoemIntValue, universe: Universe): TaggedValue {.locks: "unknown".} = values.tag_int(poem_value.int)
+method resolve(poem_value: PoemRealValue, universe: Universe): TaggedValue {.locks: "unknown".} = values.new_real_tagged(poem_value.real)
+method resolve(poem_value: PoemBooleanValue, universe: Universe): TaggedValue {.locks: "unknown".} = values.tag_boolean(poem_value.boolean)
+method resolve(poem_value: PoemStringValue, universe: Universe): TaggedValue {.locks: "unknown".} = values.new_string_tagged(poem_value.string)
+
+method resolve(poem_value: PoemTupleValue, universe: Universe): TaggedValue =
+  let tpe = universe.resolve(poem_value.tpe)
+  assert(tpe.kind == Kind.Tuple)
+  let elements = universe.resolve_many(poem_value.elements)
+  values.new_tuple_tagged(elements, tpe)

@@ -3,7 +3,7 @@
 #### Features
 
 - Implement all kinds of values except maps, shapes, traits, and structs:
-  - Tuples: ~~Values~~, ~~to string~~, poem reading, poem writing, universe resolution, ~~operations~~, ~~test example~~.
+  - Tuples: ~~Values~~, ~~to string~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~operations~~, ~~test example~~.
   - Lists: Values, to string, poem reading, poem writing, universe resolution, operations, test example.
   - Symbols: Values, to string, poem reading, poem writing, universe resolution, operations, test example.
   - Functions: Values, to string, poem reading, poem writing, universe resolution, call operation, multi-function values, fixed-function values, test example.

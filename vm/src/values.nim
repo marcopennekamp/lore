@@ -91,11 +91,15 @@ proc new_real_tagged*(value: float64): TaggedValue = tag_reference(new_real(valu
 proc new_string*(value: string): Value = StringValue(tpe: types.string, string: value)
 proc new_string_tagged*(value: string): TaggedValue = tag_reference(new_string(value))
 
+## Creates a new tuple, forcing its type to be `tpe` instead of taking the type from the elements.
+proc new_tuple*(elements: seq[TaggedValue], tpe: Type): Value = TupleValue(tpe: tpe, elements: elements)
+proc new_tuple_tagged*(elements: seq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_tuple(elements, tpe))
+
 proc new_tuple*(elements: seq[TaggedValue]): Value =
   var element_types = new_seq_of_cap[Type](elements.len)
   for element in elements:
     element_types.add(type_of(element))
-  TupleValue(tpe: types.tpl(element_types), elements: elements)
+  new_tuple(elements, types.tpl(element_types))
 
 proc new_tuple_tagged*(elements: seq[TaggedValue]): TaggedValue = tag_reference(new_tuple(elements))
 

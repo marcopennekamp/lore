@@ -4,7 +4,6 @@ import std/strformat
 
 from instructions import Operation, Instruction, new_instruction
 from types import Kind, Type
-from values import TaggedValue, StringValue
 
 type
   ## A Poem is essentially a single unit of bytecode which contains type and multi-function definitions. A program may
@@ -24,7 +23,7 @@ type
   ## An unresolved constants table.
   PoemConstants* = ref object
     types*: seq[PoemType]
-    values*: seq[TaggedValue]  # TODO (vm): We have to make this a PoemValue and later resolve values, as types have to be resolved first...
+    values*: seq[PoemValue]
     multi_functions*: seq[string]
 
   ## An unresolved function.
@@ -54,12 +53,35 @@ type
     name*: string
     arguments*: seq[PoemType]
 
+  ## An unresolved value.
+  PoemValue* = ref object of RootObj
+    discard
+
+  PoemIntValue* = ref object of PoemValue
+    int*: int64
+
+  PoemRealValue* = ref object of PoemValue
+    real*: float64
+
+  PoemBooleanValue* = ref object of PoemValue
+    boolean*: bool
+
+  PoemStringValue* = ref object of PoemValue
+    string*: string
+
+  PoemTupleValue* = ref object of PoemValue
+    tpe*: PoemType
+    elements*: seq[PoemValue]
+
 let int_type*: PoemType = PoemBasicType(tpe: types.int)
+let real_type*: PoemType = PoemBasicType(tpe: types.real)
 let boolean_type*: PoemType = PoemBasicType(tpe: types.boolean)
 let string_type*: PoemType = PoemBasicType(tpe: types.string)
 let unit_type*: PoemType = PoemXaryType(kind: Kind.Tuple, types: @[])
 
 proc tuple_type*(poem_types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.Tuple, types: @poem_types)
+
+proc string_value*(value: string): PoemValue = PoemStringValue(string: value)
 
 proc fail(message: string) {.noreturn.} = raise new_exception(IOError, message)
 
@@ -84,13 +106,15 @@ const
   fsMap = 2'u8
   fsSymbol = 3'u8
 
+# TODO (vm): Organize this file by domain (functions, types, values) instead of reading/writing.
+
 ########################################################################################################################
 # Reading bytecode.                                                                                                    #
 ########################################################################################################################
 
 proc read_constants(stream: FileStream): PoemConstants
 proc read_type(stream: FileStream): PoemType
-proc read_value(stream: FileStream): TaggedValue  # TODO (vm): Again, this probably has to read PoemValues.
+proc read_value(stream: FileStream): PoemValue
 proc read_function(stream: FileStream): PoemFunction
 proc read_instruction(stream: FileStream): Instruction
 proc read_string_with_length(stream: FileStream): string
@@ -128,7 +152,7 @@ proc read*(path: string): Poem =
 
 proc read_constants(stream: FileStream): PoemConstants =
   let types = stream.read_many_with_count(PoemType, uint16, read_type)
-  let values = stream.read_many_with_count(TaggedValue, uint16, read_value)
+  let values = stream.read_many_with_count(PoemValue, uint16, read_value)
   let multi_functions = stream.read_many_with_count(string, uint16, read_string_with_length)
 
   PoemConstants(
@@ -191,24 +215,33 @@ proc read_type(stream: FileStream): PoemType =
 
   else: raise new_exception(IOError, fmt"Unknown type kind {kind}.")
 
-proc read_value(stream: FileStream): TaggedValue =
+proc read_value(stream: FileStream): PoemValue =
   let tpe = stream.read_type()
   if tpe of PoemBasicType:
     case cast[PoemBasicType](tpe).tpe.kind
     of Kind.Int:
       let value = stream.read(int64)
-      values.tag_int(value)
+      PoemIntValue(int: value)
     of Kind.Real:
-      fail("Reals are not yet supported.")
+      let value = stream.read(float64)
+      PoemRealValue(real: value)
     of Kind.Boolean:
       let value = stream.read(uint8)
-      values.tag_boolean(value == 1)
+      PoemBooleanValue(boolean: value == 1)
     of Kind.String:
       let value = stream.read_string_with_length()
-      values.new_string_tagged(value)
+      PoemStringValue(string: value)
     else: fail("Invalid kind for basic type value.")
+  elif tpe of PoemXaryType:
+    let xary = cast[PoemXaryType](tpe)
+    case xary.kind
+    of Kind.Tuple:
+      let elements = stream.read_many(PoemValue, cast[uint](xary.types.len), read_value)
+      PoemTupleValue(tpe: tpe, elements: elements)
+    else:
+      fail("Only tuple values are supported for now.")
   else:
-    fail("Only basic poem values are supported for now.")
+    fail("Symbol and named values aren't supported for now.")
 
 proc read_function(stream: FileStream): PoemFunction =
   let name = stream.read_string_with_length()
@@ -244,12 +277,13 @@ proc read_string_with_length(stream: FileStream): string =
 
 proc write_constants(stream: FileStream, constants: PoemConstants)
 proc write_type(stream: FileStream, tpe: PoemType)
-proc write_value(stream: FileStream, tagged_value: TaggedValue)  # TODO (vm): Again, this probably has to write PoemValues.
+proc write_value(stream: FileStream, value: PoemValue)
 proc write_function(stream: FileStream, function: PoemFunction)
 proc write_instruction(stream: FileStream, instruction: Instruction)
 proc write_string_with_length(stream: FileStream, string: string)
 
 method write(tpe: PoemType, stream: FileStream) {.base, locks: "unknown".}
+method write(value: PoemValue, stream: FileStream) {.base, locks: "unknown".}
 
 template write_many(stream: FileStream, items, write_one): untyped =
   for item in items:
@@ -276,23 +310,8 @@ proc write_constants(stream: FileStream, constants: PoemConstants) =
 proc write_type(stream: FileStream, tpe: PoemType) =
   tpe.write(stream)
 
-proc write_value(stream: FileStream, tagged_value: TaggedValue) =
-  let tag = values.get_tag(tagged_value)
-  if tag == values.TagReference:
-    let value = values.untag_reference(tagged_value)
-    if value.tpe == types.string:
-      stream.write_type(string_type)
-      stream.write_string_with_length(cast[StringValue](value).string)
-    else:
-      fail("Cannot write non-string reference values yet.")
-  elif tag == values.TagInt:
-    stream.write_type(int_type)
-    stream.write(values.untag_int(tagged_value))
-  elif tag == values.TagBoolean:
-    stream.write_type(boolean_type)
-    stream.write(if values.untag_boolean(tagged_value): 1'u8 else: 0'u8)
-  else:
-    fail("Unknown value type.")
+proc write_value(stream: FileStream, value: PoemValue) =
+  value.write(stream)
 
 proc write_function(stream: FileStream, function: PoemFunction) =
   stream.write_string_with_length(function.name)
@@ -369,3 +388,26 @@ method write(tpe: PoemNamedType, stream: FileStream) =
   stream.write_type_tag(tkNamed, length_to_tag_metadata(tpe.arguments.len))
   stream.write_string_with_length(tpe.name)
   stream.write_many(tpe.arguments, write_type)
+
+method write(value: PoemValue, stream: FileStream) {.base, locks: "unknown".} =
+  quit("Please implement `write` for all PoemValues")
+
+method write(value: PoemIntValue, stream: FileStream) {.locks: "unknown".} =
+  stream.write_type(int_type)
+  stream.write(value.int)
+
+method write(value: PoemRealValue, stream: FileStream) {.locks: "unknown".} =
+  stream.write_type(real_type)
+  stream.write(value.real)
+
+method write(value: PoemBooleanValue, stream: FileStream) {.locks: "unknown".} =
+  stream.write_type(boolean_type)
+  stream.write(if value.boolean: 1'u8 else: 0'u8)
+
+method write(value: PoemStringValue, stream: FileStream) {.locks: "unknown".} =
+  stream.write_type(string_type)
+  stream.write_string_with_length(value.string)
+
+method write(value: PoemTupleValue, stream: FileStream) {.locks: "unknown".} =
+  stream.write_type(value.tpe)
+  stream.write_many(value.elements, write_value)

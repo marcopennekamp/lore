@@ -1,6 +1,5 @@
 from "../instructions" import Operation, Instruction, new_instruction
 from "../poems" import Poem, PoemConstants, PoemFunction
-from "../values" import nil
 
 # TODO (vm): For now, this implements a single-element version of "hello name", so that we don't have to implement the
 #            `lore.Enum.map` function just yet.
@@ -53,11 +52,11 @@ let poem* = Poem(
   constants: PoemConstants(
     multi_functions: @["hello"],
     values: @[
-      values.new_string_tagged("Hello, "),
-      values.new_string_tagged("."),
-      values.new_string_tagged("Hello, anonymous #"),
-      values.new_string_tagged("world"),
-      values.new_string_tagged(" "),
+      poems.string_value("Hello, "),
+      poems.string_value("."),
+      poems.string_value("Hello, anonymous #"),
+      poems.string_value("world"),
+      poems.string_value(" "),
     ],
   ),
   functions: @[hello_0, hello_1, test],
