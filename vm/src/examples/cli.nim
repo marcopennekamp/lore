@@ -17,6 +17,7 @@ from add_five import nil
 from fib import nil
 from hello_name import nil
 from add_tuples import nil
+from stats import nil
 
 type Example* = ref object
   name*: string
@@ -35,6 +36,7 @@ let examples = @[
   Example(name: "fib", poem: fib.poem, main: "test", runs: 1_000_000),
   Example(name: "hello_name", poem: hello_name.poem, main: "test", runs: 5_000_000),
   Example(name: "add_tuples", poem: add_tuples.poem, main: "test", runs: 5_000_000),
+  Example(name: "stats", poem: stats.poem, main: "test", runs: 5_000_000),
 ]
 
 proc prepare_example(example: Example): Function =
