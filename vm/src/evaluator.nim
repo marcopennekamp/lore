@@ -52,11 +52,22 @@ template reg_set_ref_arg(index, value): untyped = reg_set_ref(instruction.arg(in
 template reg_set_int_arg(index, value): untyped = reg_set_int(instruction.arg(index), value)
 template reg_set_bool_arg(index, value): untyped = reg_set_bool(instruction.arg(index), value)
 
+template const_types(index): untyped = constants.types[index]
+template const_types_arg(index): untyped = const_types(instruction.arg(index))
+
 template const_value(index): untyped = constants.values[index]
 template const_value_arg(index): untyped = const_value(instruction.arg(index))
 
 template const_value_ref(index, tpe): untyped = untag_reference(const_value(index), tpe)
 template const_value_ref_arg(index, tpe): untyped = const_value_ref(instruction.arg(index), tpe)
+
+template list_append(new_tpe): untyped =
+  let list = reg_get_ref_arg(1, ListValue)
+  let new_element = reg_get_arg(2)
+  # This relies on `seq`'s deep copy semantics on assignment.
+  var new_elements = list.elements
+  new_elements.add(new_element)
+  reg_set_ref_arg(0, new_list(new_elements, new_tpe))
 
 template dispatch_start(mf, target): FramePtr =
   let target_frame_base = cast[pointer](cast[uint](frame) + frame.function.frame_size)
@@ -147,6 +158,14 @@ proc evaluate(frame: FramePtr) =
     of Operation.TupleGet:
       let tpl = reg_get_ref_arg(1, TupleValue)
       reg_set_arg(0, tpl.elements[instruction.arg(2)])
+
+    of Operation.ListAppend:
+      let new_tpe = const_types_arg(3)
+      list_append(new_tpe)
+
+    of Operation.ListAppendUntyped:
+      let list = reg_get_ref_arg(1, ListValue)
+      list_append(list.tpe)
 
     of Operation.SymbolEq:
       let a = reg_get_ref_arg(1, SymbolValue)

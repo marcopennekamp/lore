@@ -47,6 +47,12 @@ type
     ## reg(arg0) <- reg(arg1).get(arg2)
     TupleGet
 
+    ## reg(arg0) <- reg(arg1) :+ reg(arg2), with type `tpe(arg3)`
+    ListAppend
+
+    ## reg(arg0) <- reg(arg1) :+ reg(arg2), with type of `reg(arg1)`
+    ListAppendUntyped
+
     ## reg(arg0) <- reg(arg1) == reg(arg2)
     SymbolEq
 

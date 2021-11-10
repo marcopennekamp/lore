@@ -116,8 +116,10 @@ method resolve(poem_type: PoemXaryType, universe: Universe): Type =
       types.unit
     else:
       types.tpl(universe.resolve_many(poem_type.types))
+  elif poem_type.kind == Kind.List:
+    types.list(universe.resolve(poem_type.types[0]))
   else:
-    quit("Xary types except for sums and tuples cannot be resolved yet.")
+    quit("Xary types except for sums, tuples, and lists cannot be resolved yet.")
 
 method resolve(poem_type: PoemSymbolType, universe: Universe): Type {.locks: "unknown".} = types.symbol(poem_type.name)
 
@@ -144,5 +146,11 @@ method resolve(poem_value: PoemTupleValue, universe: Universe): TaggedValue =
   assert(tpe.kind == Kind.Tuple)
   let elements = universe.resolve_many(poem_value.elements)
   values.new_tuple_tagged(elements, tpe)
+
+method resolve(poem_value: PoemListValue, universe: Universe): TaggedValue {.locks: "unknown".} =
+  let tpe = universe.resolve(poem_value.tpe)
+  assert(tpe.kind == Kind.List)
+  let elements = universe.resolve_many(poem_value.elements)
+  values.new_list_tagged(elements, tpe)
 
 method resolve(poem_value: PoemSymbolValue, universe: Universe): TaggedValue {.locks: "unknown".} = values.new_symbol_tagged(poem_value.name)

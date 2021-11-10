@@ -49,16 +49,19 @@ type
   #            This would have the added benefit of saving one allocation. Right now, we're allocating the StringValue,
   #            which allocates the string, which allocates the character array. With our own string type, we could bake
   #            the fields saved in `string` into StringValue.
-  StringValue* {.pure.} = ref object of Value
+  StringValue* {.pure, shallow.} = ref object of Value
     string*: string
 
   # TODO (vm): We can optimize this by introducing special types for small tuples, such as Tuple2 and Tuple3, which
   #            would be 24 and 32 bytes large due to alignment. This will remove one layer of pointer indirection and
   #            save an allocation, but obviously complicate the code.
-  TupleValue* {.pure.} = ref object of Value
+  TupleValue* {.pure, shallow.} = ref object of Value
     elements*: seq[TaggedValue]
 
-  SymbolValue* {.pure.} = ref object of Value
+  ListValue* {.pure, shallow.} = ref object of Value
+    elements*: seq[TaggedValue]
+
+  SymbolValue* {.pure, shallow.} = ref object of Value
     name*: string
 
 const
@@ -98,9 +101,6 @@ proc new_string_tagged*(value: string): TaggedValue = tag_reference(new_string(v
 proc new_tuple*(elements: seq[TaggedValue], tpe: Type): Value = TupleValue(tpe: tpe, elements: elements)
 proc new_tuple_tagged*(elements: seq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_tuple(elements, tpe))
 
-proc new_symbol*(name: string): Value = SymbolValue(tpe: types.symbol(name), name: name)
-proc new_symbol_tagged*(name: string): TaggedValue = tag_reference(new_symbol(name))
-
 proc new_tuple*(elements: seq[TaggedValue]): Value =
   var element_types = new_seq_of_cap[Type](elements.len)
   for element in elements:
@@ -108,6 +108,12 @@ proc new_tuple*(elements: seq[TaggedValue]): Value =
   new_tuple(elements, types.tpl(element_types))
 
 proc new_tuple_tagged*(elements: seq[TaggedValue]): TaggedValue = tag_reference(new_tuple(elements))
+
+proc new_list*(elements: seq[TaggedValue], tpe: Type): Value = ListValue(tpe: tpe, elements: elements)
+proc new_list_tagged*(elements: seq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_list(elements, tpe))
+
+proc new_symbol*(name: string): Value = SymbolValue(tpe: types.symbol(name), name: name)
+proc new_symbol_tagged*(name: string): TaggedValue = tag_reference(new_symbol(name))
 
 proc type_of*(value: TaggedValue): Type =
   let tag = get_tag(value)
@@ -142,13 +148,18 @@ func `$`*(tagged_value: TaggedValue): string =
   else:
     "unknown"
 
+func `$`*(tagged_values: seq[TaggedValue]): string = tagged_values.join(", ")
+
 func `$`*(value: Value): string =
   case value.tpe.kind
   of Kind.Real: $cast[RealValue](value).real
   of Kind.String: cast[StringValue](value).string
   of Kind.Tuple:
     let tpl = cast[TupleValue](value)
-    "(" & tpl.elements.join(", ") & ")"
+    "(" & $tpl.elements & ")"
+  of Kind.List:
+    let list = cast[ListValue](value)
+    "[" & $list.elements & "]"
   of Kind.Symbol:
     let symbol = cast[SymbolValue](value)
     "#" & symbol.name

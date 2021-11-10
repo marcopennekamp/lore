@@ -74,6 +74,10 @@ type
     tpe*: PoemType
     elements*: seq[PoemValue]
 
+  PoemListValue* = ref object of PoemValue
+    tpe*: PoemType
+    elements*: seq[PoemValue]
+
   PoemSymbolValue* = ref object of PoemValue
     name*: string
 
@@ -90,6 +94,9 @@ proc sum_type*(types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.
 
 proc tuple_type*(types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.Tuple, types: @types)
 proc tuple_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemTupleValue(tpe: tpe, elements: elements)
+
+proc list_type*(element_type: PoemType): PoemType = PoemXaryType(kind: Kind.List, types: @[element_type])
+proc list_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemListValue(tpe: tpe, elements: elements)
 
 proc symbol_type*(name: string): PoemType = PoemSymbolType(name: name)
 proc symbol_value*(name: string): PoemValue = PoemSymbolValue(name: name)
@@ -249,13 +256,16 @@ proc read_value(stream: FileStream): PoemValue =
     of Kind.Tuple:
       let elements = stream.read_many(PoemValue, cast[uint](xary.types.len), read_value)
       PoemTupleValue(tpe: tpe, elements: elements)
+    of Kind.List:
+      let elements = stream.read_many_with_count(PoemValue, uint16, read_value)
+      PoemListValue(tpe: tpe, elements: elements)
     else:
-      fail("Only tuple values are supported for now.")
+      fail("Only tuple and list values are supported for now.")
   elif tpe of PoemSymbolType:
     let symbol_type = cast[PoemSymbolType](tpe)
     PoemSymbolValue(name: symbol_type.name)
   else:
-    fail("Symbol and named values aren't supported for now.")
+    fail("Named values aren't supported for now.")
 
 proc read_function(stream: FileStream): PoemFunction =
   let name = stream.read_string_with_length()
@@ -432,6 +442,10 @@ method write(value: PoemStringValue, stream: FileStream) {.locks: "unknown".} =
 method write(value: PoemTupleValue, stream: FileStream) {.locks: "unknown".} =
   stream.write_type(value.tpe)
   stream.write_many(value.elements, write_value)
+
+method write(value: PoemListValue, stream: FileStream) {.locks: "unknown".} =
+  stream.write_type(value.tpe)
+  stream.write_many_with_count(value.elements, uint16, write_value)
 
 method write(value: PoemSymbolValue, stream: FileStream) {.locks: "unknown".} =
   stream.write_type(symbol_type(value.name))

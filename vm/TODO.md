@@ -5,11 +5,9 @@
 - Implement all kinds of values except maps, shapes, traits, and structs:
   - Tuples: ~~Values~~, ~~to string~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~operations~~, ~~test example~~.
   - Symbols: ~~Values~~, ~~to string~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~operations~~, ~~test example~~.
-  - Lists: Values, to string, poem reading, poem writing, universe resolution, operations, test example.
+  - Lists: ~~Values~~, ~~to string~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~operations~~, test example.
   - Functions: Values, to string, poem reading, poem writing, universe resolution, call operation, multi-function values, fixed-function values, test example.
-- Implement list append as an operation.
-  - The operation must use a type evaluated at compile time. This is the reason why we're implementing the appends as an operation instead of an intrinsic (for now).
-  - Implement a ListAppendUntyped operation as a faster alternative to ListAppend.
+- Figure out whether `seq` deep copying by default is a significant performance problem. For example, when we call `values.new_tuple`, how many times is a sequence deep-copied before it finds its place inside `elements`? This might be a big reason why value and type creation performance is suboptimal.
 - Implement global variables: Global variable definition (eager or lazy), poem reading, poem writing, universe resolution, referencing via constants table, getter and setter operations.
 - Implement intrinsics: Intrinsics definition, constants table intrinsics, universe resolution, intrinsics calls.
   - Should we allow passing type arguments to intrinsics? This would allow us to implement the list append operation as an intrinsic.
@@ -29,7 +27,7 @@
   - Implement hashing for all types. 
   - Cache declared types within a schema.
 - Implement symbol type/value interning.
-  - Symbols can be represented by an integer into a symbol table that is resolved with the universe. We can use one of the unused tag bit patterns to avoid any allocations. 
+  - Symbols can be represented by an integer into a symbol table that is resolved with the universe. We can use one of the unused tag bit patterns to avoid any allocations.
 - Implement a dispatch cache.
 - Implement fast persistent lists.
 - Implement maps: Map values, append for maps.
