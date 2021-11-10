@@ -125,7 +125,7 @@ A **Value** is encoded as follows:
     - Real:
       - **Value** (float64)
     - Boolean:
-      - **Value** (uint8)
+      - **Value** (bool)
     - String:
       - **Value** (String)
     - Tuple:

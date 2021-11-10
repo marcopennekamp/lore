@@ -234,8 +234,8 @@ proc read_value(stream: FileStream): PoemValue =
       let value = stream.read(float64)
       PoemRealValue(real: value)
     of Kind.Boolean:
-      let value = stream.read(uint8)
-      PoemBooleanValue(boolean: value == 1)
+      let value = stream.read(bool)
+      PoemBooleanValue(boolean: value)
     of Kind.String:
       let value = stream.read_string_with_length()
       PoemStringValue(string: value)
@@ -413,7 +413,7 @@ method write(value: PoemRealValue, stream: FileStream) {.locks: "unknown".} =
 
 method write(value: PoemBooleanValue, stream: FileStream) {.locks: "unknown".} =
   stream.write_type(boolean_type)
-  stream.write(if value.boolean: 1'u8 else: 0'u8)
+  stream.write(value.boolean)
 
 method write(value: PoemStringValue, stream: FileStream) {.locks: "unknown".} =
   stream.write_type(string_type)
