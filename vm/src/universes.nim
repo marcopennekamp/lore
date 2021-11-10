@@ -109,13 +109,15 @@ proc resolve(universe: Universe, poem_type: PoemType): Type =
 method resolve(poem_type: PoemBasicType, universe: Universe): Type {.locks: "unknown".} = poem_type.tpe
 
 method resolve(poem_type: PoemXaryType, universe: Universe): Type =
-  if poem_type.kind != Kind.Tuple:
-    quit("Xary types except for tuples cannot be resolved yet.")
-
-  if poem_type.types.len == 0:
-    types.unit
+  if poem_type.kind == Kind.Sum:
+    types.sum(universe.resolve_many(poem_type.types))
+  elif poem_type.kind == Kind.Tuple:
+    if poem_type.types.len == 0:
+      types.unit
+    else:
+      types.tpl(universe.resolve_many(poem_type.types))
   else:
-    types.tpl(universe.resolve_many(poem_type.types))
+    quit("Xary types except for sums and tuples cannot be resolved yet.")
 
 method resolve(poem_type: PoemSymbolType, universe: Universe): Type {.locks: "unknown".} = types.symbol(poem_type.name)
 

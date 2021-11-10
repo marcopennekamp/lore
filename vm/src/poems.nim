@@ -86,6 +86,8 @@ let unit_type*: PoemType = PoemXaryType(kind: Kind.Tuple, types: @[])
 proc int_value*(value: int64): PoemValue = PoemIntValue(int: value)
 proc string_value*(value: string): PoemValue = PoemStringValue(string: value)
 
+proc sum_type*(types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.Sum, types: @types)
+
 proc tuple_type*(types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.Tuple, types: @types)
 proc tuple_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemTupleValue(tpe: tpe, elements: elements)
 
