@@ -5,6 +5,7 @@ let add_five = PoemFunction(
   name: "add_five",
   input_type: poems.tuple_type([poems.int_type]),
   output_type: poems.int_type,
+  is_abstract: false,
   register_count: 1,
   instructions: @[
     new_instruction(Operation.IntAddConst, 0, 0, 5),
@@ -16,6 +17,7 @@ let test = PoemFunction(
   name: "test",
   input_type: poems.unit_type,
   output_type: poems.int_type,
+  is_abstract: false,
   register_count: 1,
   instructions: @[
     new_instruction(Operation.IntConst, 0, 7),

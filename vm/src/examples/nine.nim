@@ -5,6 +5,7 @@ let nine = PoemFunction(
   name: "nine",
   input_type: poems.unit_type,
   output_type: poems.int_type,
+  is_abstract: false,
   register_count: 1,
   instructions: @[
     new_instruction(Operation.IntConst, 0, 1),

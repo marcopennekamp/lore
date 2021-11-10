@@ -5,6 +5,7 @@ let fib = PoemFunction(
   name: "fib",
   input_type: poems.tuple_type([poems.int_type]),
   output_type: poems.int_type,
+  is_abstract: false,
   register_count: 3,
   instructions: @[
     new_instruction(Operation.IntGtConst, 1, 0, 1),
@@ -24,6 +25,7 @@ let test = PoemFunction(
   name: "test",
   input_type: poems.unit_type,
   output_type: poems.int_type,
+  is_abstract: false,
   register_count: 1,
   instructions: @[
     new_instruction(Operation.IntConst, 0, 10),

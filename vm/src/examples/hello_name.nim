@@ -8,6 +8,7 @@ let hello_0 = PoemFunction(
   name: "hello",
   input_type: poems.tuple_type([poems.string_type]),
   output_type: poems.string_type,
+  is_abstract: false,
   register_count: 1,
   instructions: @[
     new_instruction(Operation.StringConcatConstl, 0, 0, 0),
@@ -20,6 +21,7 @@ let hello_1 = PoemFunction(
   name: "hello",
   input_type: poems.tuple_type([poems.int_type]),
   output_type: poems.string_type,
+  is_abstract: false,
   register_count: 1,
   instructions: @[
     new_instruction(Operation.StringOf, 0, 0),
@@ -33,6 +35,7 @@ let test = PoemFunction(
   name: "test",
   input_type: poems.unit_type,
   output_type: poems.string_type,
+  is_abstract: false,
   register_count: 2,
   instructions: @[
     # Call `hello` with 'world' and with 42, then finally concat the two strings with a separating space.

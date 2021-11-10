@@ -13,12 +13,14 @@ type
     #            DispatchX operation so that we can quickly access the relevant subset of functions.
     #hierarchy: MultiFunctionHierarchy
 
-  # TODO (vm): Allow functions to be abstract? This is probably relevant for the hierarchy.
   # TODO (vm): Add type parameters.
   Function* = ref object
     multi_function*: MultiFunction
     input_type*: TupleType
     output_type*: Type
+
+    ## An abstract function has no instructions and cannot be invoked.
+    is_abstract*: bool
 
     register_count*: uint16
     instructions*: seq[Instruction]

@@ -42,9 +42,11 @@ A **Function** represents a single function definition. Its structure is as foll
   - TODO (vm): Type parameters.
   - **Input type** (TupleType)
   - **Output type** (Type)
-  - **Register count** (uint16)
-  - **Instruction count** (uint16)
-  - **Instructions** (Instruction*)
+  - **Abstract** (bool)
+  - If *Abstract* is false:
+    - **Register count** (uint16)
+    - **Instruction count** (uint16)
+    - **Instructions** (Instruction*)
 
 ### Instructions
 

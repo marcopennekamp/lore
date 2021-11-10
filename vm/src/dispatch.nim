@@ -30,7 +30,12 @@ proc get_dispatch_target*(mf: MultiFunction, input_type: TupleType): Function =
     quit(fmt"Cannot call multi-function {mf.name}: empty fit.")
   elif most_specific.len > 1:
     quit(fmt"Cannot call multi-function {mf.name}: ambiguous call.")
-  most_specific[0]
+
+  let target = most_specific[0]
+  if target.is_abstract:
+    # TODO (vm): Specify the exact offending function.
+    quit(fmt"Cannot call multi-function {mf.name}: the chosen target function is abstract.")
+  target
 
 template get_dispatch_target_fixed(mf, tuple_type): untyped =
   # TODO (vm): This optimization is not quite correct. We can assume that the compiler produces valid calls in the

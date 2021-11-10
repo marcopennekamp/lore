@@ -10,6 +10,7 @@ let add_tuples = PoemFunction(
     int_tuple2,
   ]),
   output_type: int_tuple2,
+  is_abstract: false,
   register_count: 4,
   instructions: @[
     new_instruction(Operation.TupleGet, 2, 0, 1),
@@ -27,6 +28,7 @@ let test = PoemFunction(
   name: "test",
   input_type: poems.unit_type,
   output_type: int_tuple2,
+  is_abstract: false,
   register_count: 2,
   instructions: @[
     new_instruction(Operation.Const, 0, 0),

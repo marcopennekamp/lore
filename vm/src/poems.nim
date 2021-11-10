@@ -31,6 +31,7 @@ type
     name*: string
     input_type*: PoemType
     output_type*: PoemType
+    is_abstract*: bool
     register_count*: uint16
     instructions*: seq[Instruction]
 
@@ -258,16 +259,20 @@ proc read_function(stream: FileStream): PoemFunction =
   let name = stream.read_string_with_length()
   let input_type = stream.read_type()
   let output_type = stream.read_type()
-  let register_count = stream.read(uint16)
-  let instructions = stream.read_many_with_count(Instruction, uint16, read_instruction)
+  let is_abstract = stream.read(bool)
 
-  PoemFunction(
+  var function = PoemFunction(
     name: name,
     input_type: input_type,
     output_type: output_type,
-    register_count: register_count,
-    instructions: instructions,
+    is_abstract: is_abstract,
   )
+
+  if not is_abstract:
+    function.register_count = stream.read(uint16)
+    function.instructions = stream.read_many_with_count(Instruction, uint16, read_instruction)
+
+  function
 
 proc read_instruction(stream: FileStream): Instruction =
   new_instruction(
@@ -328,8 +333,11 @@ proc write_function(stream: FileStream, function: PoemFunction) =
   stream.write_string_with_length(function.name)
   stream.write_type(function.input_type)
   stream.write_type(function.output_type)
-  stream.write(function.register_count)
-  stream.write_many_with_count(function.instructions, uint16, write_instruction)
+  stream.write(function.is_abstract)
+
+  if not function.is_abstract:
+    stream.write(function.register_count)
+    stream.write_many_with_count(function.instructions, uint16, write_instruction)
 
 proc write_instruction(stream: FileStream, instruction: Instruction) =
   stream.write(cast[uint16](instruction.operation))
