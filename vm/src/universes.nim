@@ -142,3 +142,5 @@ method resolve(poem_value: PoemTupleValue, universe: Universe): TaggedValue =
   assert(tpe.kind == Kind.Tuple)
   let elements = universe.resolve_many(poem_value.elements)
   values.new_tuple_tagged(elements, tpe)
+
+method resolve(poem_value: PoemSymbolValue, universe: Universe): TaggedValue {.locks: "unknown".} = values.new_symbol_tagged(poem_value.name)

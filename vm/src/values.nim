@@ -58,6 +58,9 @@ type
   TupleValue* {.pure.} = ref object of Value
     elements*: seq[TaggedValue]
 
+  SymbolValue* {.pure.} = ref object of Value
+    name*: string
+
 const
   ## This mask can filter out the lowest three tag bits of a pointer.
   TagMask: uint64 = 0b111
@@ -94,6 +97,9 @@ proc new_string_tagged*(value: string): TaggedValue = tag_reference(new_string(v
 ## Creates a new tuple, forcing its type to be `tpe` instead of taking the type from the elements.
 proc new_tuple*(elements: seq[TaggedValue], tpe: Type): Value = TupleValue(tpe: tpe, elements: elements)
 proc new_tuple_tagged*(elements: seq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_tuple(elements, tpe))
+
+proc new_symbol*(name: string): Value = SymbolValue(tpe: types.symbol(name), name: name)
+proc new_symbol_tagged*(name: string): TaggedValue = tag_reference(new_symbol(name))
 
 proc new_tuple*(elements: seq[TaggedValue]): Value =
   var element_types = new_seq_of_cap[Type](elements.len)
@@ -143,7 +149,7 @@ func `$`*(value: Value): string =
   of Kind.Tuple:
     let tpl = cast[TupleValue](value)
     "(" & tpl.elements.join(", ") & ")"
+  of Kind.Symbol:
+    let symbol = cast[SymbolValue](value)
+    "#" & symbol.name
   else: "unknown"
-
-when is_main_module:
-  echo new_string_tagged("hello world")

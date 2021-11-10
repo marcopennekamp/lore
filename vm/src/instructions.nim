@@ -3,10 +3,10 @@ type
   ##  - `argx`: The xth uint16 argument of the instruction (starting with 0).
   ##  - `reg(x)`: Register x.
   ##  - `tpe(x)`: The xth entry in the types constants table.
-  ##  - `mf(x)`: The xth entry in the multi functions constants table.
   ##  - `val(x)`: The xth entry in the value constants table.
+  ##  - `mfs(x)`: The xth entry in the multi functions constants table.
   Operation* {.pure.} = enum
-    ## reg(arg0) <- values(arg1)
+    ## reg(arg0) <- val(arg1)
     Const
 
     ## reg(arg0) <- arg1 as int64
@@ -32,10 +32,10 @@ type
     ## reg(arg0) <- concat(reg(arg1), reg(arg2))
     StringConcat
 
-    ## reg(arg0) <- concat(reg(arg1), values(arg2))
+    ## reg(arg0) <- concat(reg(arg1), val(arg2))
     StringConcatConst
 
-    ## reg(arg0) <- concat(values(arg1), reg(arg2))
+    ## reg(arg0) <- concat(val(arg1), reg(arg2))
     StringConcatConstl
 
     ## reg(arg0) <- tuple(reg(arg1), reg(arg1 + 1), ..., reg(arg2))
@@ -46,6 +46,12 @@ type
 
     ## reg(arg0) <- reg(arg1).get(arg2)
     TupleGet
+
+    ## reg(arg0) <- reg(arg1) == reg(arg2)
+    SymbolEq
+
+    ## reg(arg0) <- reg(arg1) == val(arg2)
+    SymbolEqConst
 
     ## pc <- arg0
     Jump

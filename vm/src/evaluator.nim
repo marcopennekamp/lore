@@ -148,6 +148,16 @@ proc evaluate(frame: FramePtr) =
       let tpl = reg_get_ref_arg(1, TupleValue)
       reg_set_arg(0, tpl.elements[instruction.arg(2)])
 
+    of Operation.SymbolEq:
+      let a = reg_get_ref_arg(1, SymbolValue)
+      let b = reg_get_ref_arg(2, SymbolValue)
+      reg_set_bool_arg(0, a.name == b.name)
+
+    of Operation.SymbolEqConst:
+      let a = reg_get_ref_arg(1, SymbolValue)
+      let b = const_value_ref_arg(2, SymbolValue)
+      reg_set_bool_arg(0, a.name == b.name)
+
     of Operation.Jump:
       pc = instruction.arg(0)
 

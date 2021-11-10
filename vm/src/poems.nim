@@ -73,6 +73,9 @@ type
     tpe*: PoemType
     elements*: seq[PoemValue]
 
+  PoemSymbolValue* = ref object of PoemValue
+    name*: string
+
 let int_type*: PoemType = PoemBasicType(tpe: types.int)
 let real_type*: PoemType = PoemBasicType(tpe: types.real)
 let boolean_type*: PoemType = PoemBasicType(tpe: types.boolean)
@@ -84,6 +87,9 @@ proc string_value*(value: string): PoemValue = PoemStringValue(string: value)
 
 proc tuple_type*(types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.Tuple, types: @types)
 proc tuple_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemTupleValue(tpe: tpe, elements: elements)
+
+proc symbol_type*(name: string): PoemType = PoemSymbolType(name: name)
+proc symbol_value*(name: string): PoemValue = PoemSymbolValue(name: name)
 
 proc fail(message: string) {.noreturn.} = raise new_exception(IOError, message)
 
@@ -242,6 +248,9 @@ proc read_value(stream: FileStream): PoemValue =
       PoemTupleValue(tpe: tpe, elements: elements)
     else:
       fail("Only tuple values are supported for now.")
+  elif tpe of PoemSymbolType:
+    let symbol_type = cast[PoemSymbolType](tpe)
+    PoemSymbolValue(name: symbol_type.name)
   else:
     fail("Symbol and named values aren't supported for now.")
 
@@ -413,3 +422,6 @@ method write(value: PoemStringValue, stream: FileStream) {.locks: "unknown".} =
 method write(value: PoemTupleValue, stream: FileStream) {.locks: "unknown".} =
   stream.write_type(value.tpe)
   stream.write_many(value.elements, write_value)
+
+method write(value: PoemSymbolValue, stream: FileStream) {.locks: "unknown".} =
+  stream.write_type(symbol_type(value.name))

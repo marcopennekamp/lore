@@ -131,6 +131,8 @@ A **Value** is encoded as follows:
     - Tuple:
       - **Elements** (Value*)
       - The element count is given by *Type*.
+    - Symbol:
+      - *Type* already carries the name of the symbol value.
     - TODO (vm): Describe value encodings for more value kinds.
 
 ### Strings
