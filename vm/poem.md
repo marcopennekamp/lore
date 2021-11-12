@@ -133,6 +133,14 @@ A **Value** is encoded as follows:
     - Tuple:
       - **Elements** (Value*)
       - The element count is given by *Type*.
+    - Function:
+      - **Variant** (uint8):
+        - Fixed: A fixed function with a fixed input type resolved during universe resolution.
+        - Lambda: A lambda function. The VM's bytecode encodes lambda functions as single-function multi-functions. We could technically access lambdas as fixed functions, but this variant allows the compiler to omit the fixed input type from the bytecode, saving space.
+        - Multi: A multi-function value.
+      - **Name** (string): The name of the targeted multi-function.
+      - If `Fixed`:
+        - **Input type** (Type): The desired input type that the fixed function should match.
     - List:
       - **Element count** (uint16) 
       - **Elements** (Value*)

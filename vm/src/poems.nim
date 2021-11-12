@@ -74,6 +74,28 @@ type
     tpe*: PoemType
     elements*: seq[PoemValue]
 
+  PoemFunctionValue* = ref object of PoemValue
+    name: string
+    tpe: PoemType
+
+  PoemFixedFunctionValue* = ref object of PoemFunctionValue
+    ## The desired input type that the fixed function should match.
+    input_type: PoemType
+
+  ## A lambda function value is specially resolved from a multi-function that only has a single function, which is how
+  ## lambdas are encoded in the VM's bytecode.
+  PoemLambdaFunctionValue* = ref object of PoemFunctionValue
+    discard
+
+  PoemMultiFunctionValue* = ref object of PoemFunctionValue
+    discard
+
+  ## This variant enum is used to encode the actual type of a function value in the bytecode.
+  PoemFunctionValueVariant* {.pure.} = enum
+    Fixed
+    Lambda
+    Multi
+
   PoemListValue* = ref object of PoemValue
     tpe*: PoemType
     elements*: seq[PoemValue]
@@ -88,12 +110,19 @@ let string_type*: PoemType = PoemBasicType(tpe: types.string)
 let unit_type*: PoemType = PoemXaryType(kind: Kind.Tuple, types: @[])
 
 proc int_value*(value: int64): PoemValue = PoemIntValue(int: value)
+proc real_value*(value: float64): PoemValue = PoemRealValue(real: value)
+proc boolean_value(value: bool): PoemValue = PoemBooleanValue(boolean: value)
 proc string_value*(value: string): PoemValue = PoemStringValue(string: value)
 
 proc sum_type*(types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.Sum, types: @types)
 
 proc tuple_type*(types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.Tuple, types: @types)
 proc tuple_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemTupleValue(tpe: tpe, elements: elements)
+
+proc function_type*(input: PoemType, output: PoemType): PoemType = PoemXaryType(kind: Kind.Function, types: @[input, output])
+proc fixed_function_value*(name: string, input_type: PoemType, tpe: PoemType): PoemValue = PoemFixedFunctionValue(name: name, input_type: input_type, tpe: tpe)
+proc lambda_function_value*(name: string, tpe: PoemType): PoemValue = PoemLambdaFunctionValue(name: name, tpe: tpe)
+proc multi_function_value*(name: string, tpe: PoemType): PoemValue = PoemMultiFunctionValue(name: name, tpe: tpe)
 
 proc list_type*(element_type: PoemType): PoemType = PoemXaryType(kind: Kind.List, types: @[element_type])
 proc list_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemListValue(tpe: tpe, elements: elements)
@@ -239,31 +268,42 @@ proc read_value(stream: FileStream): PoemValue =
     case cast[PoemBasicType](tpe).tpe.kind
     of Kind.Int:
       let value = stream.read(int64)
-      PoemIntValue(int: value)
+      int_value(value)
     of Kind.Real:
       let value = stream.read(float64)
-      PoemRealValue(real: value)
+      real_value(value)
     of Kind.Boolean:
       let value = stream.read(bool)
-      PoemBooleanValue(boolean: value)
+      boolean_value(value)
     of Kind.String:
       let value = stream.read_string_with_length()
-      PoemStringValue(string: value)
+      string_value(value)
     else: fail("Invalid kind for basic type value.")
   elif tpe of PoemXaryType:
     let xary = cast[PoemXaryType](tpe)
     case xary.kind
     of Kind.Tuple:
       let elements = stream.read_many(PoemValue, cast[uint](xary.types.len), read_value)
-      PoemTupleValue(tpe: tpe, elements: elements)
+      tuple_value(elements, tpe)
+    of Kind.Function:
+      let variant = cast[PoemFunctionValueVariant](stream.read(uint8))
+      let name = stream.read_string_with_length()
+      case variant
+      of PoemFunctionValueVariant.Fixed:
+        let input_type = stream.read_type()
+        fixed_function_value(name, input_type, tpe)
+      of PoemFunctionValueVariant.Lambda:
+        lambda_function_value(name, tpe)
+      of PoemFunctionValueVariant.Multi:
+        multi_function_value(name, tpe)
     of Kind.List:
       let elements = stream.read_many_with_count(PoemValue, uint16, read_value)
-      PoemListValue(tpe: tpe, elements: elements)
+      list_value(elements, tpe)
     else:
-      fail("Only tuple and list values are supported for now.")
+      fail("Only tuple, function, and list values are supported for now.")
   elif tpe of PoemSymbolType:
     let symbol_type = cast[PoemSymbolType](tpe)
-    PoemSymbolValue(name: symbol_type.name)
+    symbol_value(symbol_type.name)
   else:
     fail("Named values aren't supported for now.")
 
@@ -442,6 +482,24 @@ method write(value: PoemStringValue, stream: FileStream) {.locks: "unknown".} =
 method write(value: PoemTupleValue, stream: FileStream) {.locks: "unknown".} =
   stream.write_type(value.tpe)
   stream.write_many(value.elements, write_value)
+
+method write(value: PoemFunctionValue, stream: FileStream) {.locks: "unknown".} =
+  quit("Please implement `write` for all PoemFunctionValues")
+
+proc write_function_value_commons(stream: FileStream, value: PoemFunctionValue, variant: PoemFunctionValueVariant) =
+  stream.write_type(value.tpe)
+  stream.write(cast[uint8](variant))
+  stream.write_string_with_length(value.name)
+
+method write(value: PoemFixedFunctionValue, stream: FileStream) {.locks: "unknown".} =
+  stream.write_function_value_commons(value, PoemFunctionValueVariant.Fixed)
+  stream.write_type(value.input_type)
+
+method write(value: PoemLambdaFunctionValue, stream: FileStream) {.locks: "unknown".} =
+  stream.write_function_value_commons(value, PoemFunctionValueVariant.Lambda)
+
+method write(value: PoemMultiFunctionValue, stream: FileStream) {.locks: "unknown".} =
+  stream.write_function_value_commons(value, PoemFunctionValueVariant.Multi)
 
 method write(value: PoemListValue, stream: FileStream) {.locks: "unknown".} =
   stream.write_type(value.tpe)

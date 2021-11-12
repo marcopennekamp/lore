@@ -5,8 +5,8 @@
 - Implement all kinds of values except maps, shapes, traits, and structs:
   - Tuples: ~~Values~~, ~~to string~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~operations~~, ~~test example~~.
   - Symbols: ~~Values~~, ~~to string~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~operations~~, ~~test example~~.
-  - Lists: ~~Values~~, ~~to string~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~operations~~, test example.
-  - Functions: Values, to string, poem reading, poem writing, universe resolution, call operation, multi-function values, fixed-function values, test example.
+  - Lists: ~~Values~~, ~~to string~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~operations~~, ~~test example~~.
+  - Functions: ~~Values (fixed, lambda, and multi-function values)~~, ~~to string~~, ~~poem reading~~, ~~poem writing~~, universe resolution, call operation, test example.
 - Figure out whether `seq` deep copying by default is a significant performance problem. For example, when we call `values.new_tuple`, how many times is a sequence deep-copied before it finds its place inside `elements`? This might be a big reason why value and type creation performance is suboptimal.
 - Implement global variables: Global variable definition (eager or lazy), poem reading, poem writing, universe resolution, referencing via constants table, getter and setter operations.
 - Implement intrinsics: Intrinsics definition, constants table intrinsics, universe resolution, intrinsics calls.
