@@ -58,6 +58,14 @@ type
   TupleValue* {.pure, shallow.} = ref object of Value
     elements*: seq[TaggedValue]
 
+  ## A FunctionValue is either a fixed function value (pointing to a fixed function or a lambda) or a multi-function
+  ## value. This is determined by the flag `is_fixed`. The implementation of the `target` is either a `Function` or a
+  ## `MultiFunction` reference. The actual type is hidden inside the module `functions` to avoid cyclic dependencies
+  ## between Nim modules.
+  FunctionValue* {.pure, shallow.} = ref object of Value
+    is_fixed: bool
+    target: pointer
+
   ListValue* {.pure, shallow.} = ref object of Value
     elements*: seq[TaggedValue]
 
@@ -109,6 +117,9 @@ proc new_tuple*(elements: seq[TaggedValue]): Value =
 
 proc new_tuple_tagged*(elements: seq[TaggedValue]): TaggedValue = tag_reference(new_tuple(elements))
 
+proc new_function*(is_fixed: bool, target: pointer, tpe: Type): Value = FunctionValue(tpe: tpe, is_fixed: is_fixed, target: target)
+proc new_function_tagged*(is_fixed: bool, target: pointer, tpe: Type): TaggedValue = tag_reference(new_function(is_fixed, target, tpe))
+
 proc new_list*(elements: seq[TaggedValue], tpe: Type): Value = ListValue(tpe: tpe, elements: elements)
 proc new_list_tagged*(elements: seq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_list(elements, tpe))
 
@@ -157,6 +168,13 @@ func `$`*(value: Value): string =
   of Kind.Tuple:
     let tpl = cast[TupleValue](value)
     "(" & $tpl.elements & ")"
+  of Kind.Function:
+    # TODO (vm): We should print the name instead of the target address, but this is non-trivial when avoiding cyclic dependencies.
+    let function = cast[FunctionValue](value)
+    if function.is_fixed:
+      "<fixed function: " & $cast[uint](function.target) & ">"
+    else:
+      "<multi-function: " & $cast[uint](function.target) & ">"
   of Kind.List:
     let list = cast[ListValue](value)
     "[" & $list.elements & "]"
