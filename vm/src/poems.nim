@@ -2,6 +2,7 @@ import binstreams
 import std/os
 import std/strformat
 
+from functions import Function
 from instructions import Operation, Instruction, new_instruction
 from types import Kind, Type
 
@@ -34,6 +35,9 @@ type
     is_abstract*: bool
     register_count*: uint16
     instructions*: seq[Instruction]
+
+    ## `resolved_function` is used to refer to the exact created function during multiple steps of universe resolution.
+    resolved_function*: Function
 
   ## An unresolved type.
   PoemType* = ref object of RootObj
@@ -75,12 +79,12 @@ type
     elements*: seq[PoemValue]
 
   PoemFunctionValue* = ref object of PoemValue
-    name: string
-    tpe: PoemType
+    name*: string
+    tpe*: PoemType
 
   PoemFixedFunctionValue* = ref object of PoemFunctionValue
     ## The desired input type that the fixed function should match.
-    input_type: PoemType
+    input_type*: PoemType
 
   ## A lambda function value is specially resolved from a multi-function that only has a single function, which is how
   ## lambdas are encoded in the VM's bytecode.

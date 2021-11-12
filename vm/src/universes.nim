@@ -10,51 +10,45 @@ from types import Kind, Type, TupleType
 from values import TaggedValue
 
 type
-  ## The Universe object represents all combined information available about the current Lore program.
+  ## The Universe object provides access to all top-level entities of the current Lore program.
   Universe* = ref object
     multi_functions*: Table[string, MultiFunction]
 
-proc resolve(universe: Universe, poem: Poem)
+proc resolve(universe: Universe, poem_function: PoemFunction)
 proc resolve(universe: Universe, poem_constants: PoemConstants): Constants
-proc resolve(universe: Universe, poem_function: PoemFunction, constants: Constants)
 proc resolve(universe: Universe, poem_type: PoemType): Type
 proc resolve(universe: Universe, poem_value: PoemValue): TaggedValue
 
-template resolve_many(universe, sequence): untyped =
-  sequence.map(o => universe.resolve(o))
+template resolve_many(universe, sequence): untyped = sequence.map(o => universe.resolve(o))
+
+proc attach_constants(universe: Universe, poem: Poem)
 
 ########################################################################################################################
 # Top-level resolution.                                                                                                #
 ########################################################################################################################
 
-proc ensure_multi_function(universe: Universe, name: string)
-
 ## Resolves a Universe from the given set of Poem definitions.
+##
+## Multi-functions have to be resolved right away such that constants tables for each Poem can point to multi-functions
+## and also fixed functions. Constants tables for all functions are then resolved in a separate step.
 proc resolve*(poems: seq[Poem]): Universe =
   var universe = Universe(multi_functions: init_table[string, MultiFunction]())
 
-  # We have to create empty multi-functions right away so that the constants tables for each Poem can contain the right
-  # multi-function references.
+  # Step 1: Resolve functions.
   for poem in poems:
     for poem_function in poem.functions:
-      universe.ensure_multi_function(poem_function.name)
+      universe.resolve(poem_function)
 
+  # Step 2: Resolve constants and attach them to all functions in each Poem.
   for poem in poems:
-    universe.resolve(poem)
+    universe.attach_constants(poem)
+
   universe
 
-## Ensures that the universe contains a multi-function with the given full name.
-proc ensure_multi_function(universe: Universe, name: string) =
-  if not (name in universe.multi_functions):
-    universe.multi_functions[name] = MultiFunction(
-      name: name,
-      functions: @[],
-    )
-
-proc resolve(universe: Universe, poem: Poem) =
+proc attach_constants(universe: Universe, poem: Poem) =
   let constants = universe.resolve(poem.constants)
   for poem_function in poem.functions:
-    universe.resolve(poem_function, constants)
+    poem_function.resolved_function.constants = constants
 
 proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
   let constants = new_constants()
@@ -75,8 +69,12 @@ proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
 # Function resolution.                                                                                                 #
 ########################################################################################################################
 
-proc resolve(universe: Universe, poem_function: PoemFunction, constants: Constants) =
-  let multi_function = universe.multi_functions[poem_function.name]
+proc get_or_register_multi_function(universe: Universe, name: string): MultiFunction
+
+## Resolves a PoemFunction. This function does not create the constants table, which must be resolved in a separate
+## step.
+proc resolve(universe: Universe, poem_function: PoemFunction) =
+  let multi_function = universe.get_or_register_multi_function(poem_function.name)
 
   let input_type_raw = universe.resolve(poem_function.input_type)
   if input_type_raw.kind != Kind.Tuple:
@@ -90,11 +88,20 @@ proc resolve(universe: Universe, poem_function: PoemFunction, constants: Constan
     output_type: output_type,
     register_count: poem_function.register_count,
     instructions: poem_function.instructions,
-    constants: constants,
   )
   init_frame_stats(function)
 
+  poem_function.resolved_function = function
   multi_function.functions.add(function)
+
+## Ensures that the universe contains a multi-function with the given full name, and returns it.
+proc get_or_register_multi_function(universe: Universe, name: string): MultiFunction =
+  if not (name in universe.multi_functions):
+    universe.multi_functions[name] = MultiFunction(
+      name: name,
+      functions: @[],
+    )
+  universe.multi_functions[name]
 
 ########################################################################################################################
 # Type resolution.                                                                                                     #
@@ -146,6 +153,26 @@ method resolve(poem_value: PoemTupleValue, universe: Universe): TaggedValue =
   assert(tpe.kind == Kind.Tuple)
   let elements = universe.resolve_many(poem_value.elements)
   values.new_tuple_tagged(elements, tpe)
+
+method resolve(poem_value: PoemFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
+  quit("Please implement `resolve` for all PoemFunctionValues.")
+
+method resolve(poem_value: PoemFixedFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
+  quit("Fixed function value resolution is not yet implemented.")
+
+method resolve(poem_value: PoemLambdaFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
+  let tpe = universe.resolve(poem_value.tpe)
+  assert(tpe.kind == Kind.Function)
+  let mf = universe.multi_functions[poem_value.name]
+  if mf.functions.len > 1:
+    quit(fmt"Cannot create a lambda value from multi-function `{mf.name}`, because it has more than one function.")
+  values.new_function_tagged(true, cast[pointer](mf.functions[0]), tpe)
+
+method resolve(poem_value: PoemMultiFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
+  let tpe = universe.resolve(poem_value.tpe)
+  assert(tpe.kind == Kind.Function)
+  let mf = universe.multi_functions[poem_value.name]
+  values.new_function_tagged(false, cast[pointer](mf), tpe)
 
 method resolve(poem_value: PoemListValue, universe: Universe): TaggedValue {.locks: "unknown".} =
   let tpe = universe.resolve(poem_value.tpe)
