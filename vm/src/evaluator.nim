@@ -1,5 +1,5 @@
 from dispatch import get_dispatch_target
-from functions import Function
+from functions import MultiFunction, Function
 import instructions
 import values
 from utils import when_debug
@@ -69,16 +69,39 @@ template list_append(new_tpe): untyped =
   new_elements.add(new_element)
   reg_set_ref_arg(0, new_list(new_elements, new_tpe))
 
-template dispatch_start(mf, target): FramePtr =
+template call_start(target): FramePtr =
   let target_frame_base = cast[pointer](cast[uint](frame) + frame.function.frame_size)
-  let target_frame = create_frame(target, target_frame_base)
-  when_debug: echo "Dispatch to target ", mf.name, " with frame ", cast[uint](target_frame)
-  target_frame
+  create_frame(target, target_frame_base)
 
-template dispatch_end(mf, target_frame): untyped =
+template call_end(target_frame): untyped =
   # After function evaluation has finished, it must guarantee that the return value is in the first register.
   reg_set_arg(0, target_frame.registers[0])
-  when_debug: echo "Finished dispatch to target ", mf.name, " with frame ", cast[uint](target_frame)
+
+## Calls a given Function target with one argument.
+template call1(target, argument0): untyped =
+  let target_frame = call_start(target)
+  target_frame.registers[0] = argument0
+  evaluate(target_frame)
+  call_end(target_frame)
+
+## Calls a given Function target with two arguments.
+template call2(target, argument0, argument1): untyped =
+  let target_frame = call_start(target)
+  target_frame.registers[0] = argument0
+  target_frame.registers[1] = argument1
+  evaluate(target_frame)
+  call_end(target_frame)
+
+template dispatch1(mf): untyped =
+  let argument0 = reg_get_arg(2)
+  let target = get_dispatch_target(mf, argument0)
+  call1(target, argument0)
+
+template dispatch2(mf): untyped =
+  let argument0 = reg_get_arg(2)
+  let argument1 = reg_get_arg(3)
+  let target = get_dispatch_target(mf, argument0, argument1)
+  call2(target, argument0, argument1)
 
 proc evaluate(frame: FramePtr) =
   when_debug: echo "Evaluating function ", frame.function.multi_function.name, " with frame ", cast[uint](frame)
@@ -159,6 +182,23 @@ proc evaluate(frame: FramePtr) =
       let tpl = reg_get_ref_arg(1, TupleValue)
       reg_set_arg(0, tpl.elements[instruction.arg(2)])
 
+    of Operation.FunctionCall1:
+      let function = reg_get_ref_arg(1, FunctionValue)
+      if function.is_fixed:
+        let argument0 = reg_get_arg(2)
+        call1(cast[Function](function.target), argument0)
+      else:
+        dispatch1(cast[MultiFunction](function.target))
+
+    of Operation.FunctionCall2:
+      let function = reg_get_ref_arg(1, FunctionValue)
+      if function.is_fixed:
+        let argument0 = reg_get_arg(2)
+        let argument1 = reg_get_arg(3)
+        call2(cast[Function](function.target), argument0, argument1)
+      else:
+        dispatch2(cast[MultiFunction](function.target))
+
     of Operation.ListAppend:
       let new_tpe = const_types_arg(3)
       list_append(new_tpe)
@@ -192,23 +232,11 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.Dispatch1:
       let mf = constants.multi_functions[instruction.arg(1)]
-      let argument0 = reg_get_arg(2)
-      let target = get_dispatch_target(mf, argument0)
-      let target_frame = dispatch_start(mf, target)
-      target_frame.registers[0] = argument0
-      evaluate(target_frame)
-      dispatch_end(mf, target_frame)
+      dispatch1(mf)
 
     of Operation.Dispatch2:
       let mf = constants.multi_functions[instruction.arg(1)]
-      let argument0 = reg_get_arg(2)
-      let argument1 = reg_get_arg(3)
-      let target = get_dispatch_target(mf, argument0, argument1)
-      let target_frame = dispatch_start(mf, target)
-      target_frame.registers[0] = argument0
-      target_frame.registers[1] = argument1
-      evaluate(target_frame)
-      dispatch_end(mf, target_frame)
+      dispatch2(mf)
 
     of Operation.Return:
       reg_set(0, reg_get_arg(0))

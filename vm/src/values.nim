@@ -63,8 +63,8 @@ type
   ## `MultiFunction` reference. The actual type is hidden inside the module `functions` to avoid cyclic dependencies
   ## between Nim modules.
   FunctionValue* {.pure, shallow.} = ref object of Value
-    is_fixed: bool
-    target: pointer
+    is_fixed*: bool
+    target*: pointer
 
   ListValue* {.pure, shallow.} = ref object of Value
     elements*: seq[TaggedValue]

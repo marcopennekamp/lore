@@ -5,6 +5,9 @@ type
   ##  - `tpe(x)`: The xth entry in the types constants table.
   ##  - `val(x)`: The xth entry in the value constants table.
   ##  - `mfs(x)`: The xth entry in the multi functions constants table.
+  ##
+  ## Please note that the `FunctionCall` and `Dispatch` operations must have the same argument registers, because of
+  ## the evaluator implementation.
   Operation* {.pure.} = enum
     ## reg(arg0) <- val(arg1)
     Const
@@ -46,6 +49,12 @@ type
 
     ## reg(arg0) <- reg(arg1).get(arg2)
     TupleGet
+
+    ## reg(arg0) <- reg(arg1)(reg(arg2))
+    FunctionCall1
+
+    ## reg(arg0) <- reg(arg1)(reg(arg2), reg(arg3))
+    FunctionCall2
 
     ## reg(arg0) <- reg(arg1) :+ reg(arg2), with type `tpe(arg3)`
     ListAppend
