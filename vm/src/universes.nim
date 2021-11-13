@@ -123,10 +123,13 @@ method resolve(poem_type: PoemXaryType, universe: Universe): Type =
       types.unit
     else:
       types.tpl(universe.resolve_many(poem_type.types))
+  elif poem_type.kind == Kind.Function:
+    let resolved_types = universe.resolve_many(poem_type.types)
+    types.function(resolved_types[0], resolved_types[1])
   elif poem_type.kind == Kind.List:
     types.list(universe.resolve(poem_type.types[0]))
   else:
-    quit("Xary types except for sums, tuples, and lists cannot be resolved yet.")
+    quit(fmt"Unsupported kind {poem_type.kind}.")
 
 method resolve(poem_type: PoemSymbolType, universe: Universe): Type {.locks: "unknown".} = types.symbol(poem_type.name)
 
