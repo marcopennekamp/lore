@@ -33,3 +33,4 @@
 - Implement fast persistent maps.
 - Support type introspection.
 - Clear all `TODO (vm)` entries.
+- Add a rudimentary form of instruction validation before execution, such as that no register indices are out of bounds, and possibly simple type checking for constants.

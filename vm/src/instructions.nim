@@ -27,6 +27,9 @@ type
     ## reg(arg0) <- reg(arg1) > arg2.int
     IntGtConst
 
+    ## reg(arg0) <- reg(arg1) + reg(arg2)
+    RealAdd
+
     ## Converts any TaggedValue to its native string representation. Reference values are not converted with
     ## `lore.core.to_string`. Rather, their pointer value is printed out. This operation is a fallback for `to_string`.
     ## reg(arg0) <- string_of(reg(arg1))
