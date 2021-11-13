@@ -38,7 +38,6 @@ let poem* = Poem(
         ),
       ),
     ],
-    multi_functions: @["increment"],
   ),
   functions: @[increment, test],
 )

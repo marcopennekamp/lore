@@ -18,6 +18,7 @@ from fib import nil
 from hello_name import nil
 from add_tuples import nil
 from lambdas import nil
+from multi_function_values import nil
 from list_appends import nil
 from stats import nil
 
@@ -39,6 +40,7 @@ let examples = @[
   Example(name: "hello_name", poem: hello_name.poem, main: "test", runs: 5_000_000),
   Example(name: "add_tuples", poem: add_tuples.poem, main: "test", runs: 5_000_000),
   Example(name: "lambdas", poem: lambdas.poem, main: "test", runs: 5_000_000),
+  Example(name: "multi_function_values", poem: multi_function_values.poem, main: "test", runs: 5_000_000),
   Example(name: "list_appends", poem: list_appends.poem, main: "test", runs: 5_000_000),
   Example(name: "stats", poem: stats.poem, main: "test", runs: 5_000_000),
 ]
