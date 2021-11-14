@@ -1,8 +1,14 @@
+from definitions import GlobalVariable, MultiFunction, Function
 from dispatch import get_dispatch_target
-from functions import MultiFunction, Function
 import instructions
 import values
 from utils import when_debug
+
+proc evaluate*(entry_function: Function, frame_mem: pointer): TaggedValue
+
+########################################################################################################################
+# Execution frames.                                                                                                    #
+########################################################################################################################
 
 type
   ## A frame represents the memory that the evaluation of a single function call requires. The memory for all frames is
@@ -27,6 +33,32 @@ proc create_frame(function: Function, frame_base: pointer): FramePtr {.inline.} 
 proc init_frame_stats*(function: Function) =
   const preamble_size = sizeof(Frame)
   function.frame_size = cast[uint16](preamble_size + sizeof(TaggedValue) * cast[int](function.register_count))
+
+########################################################################################################################
+# Global variable functions.                                                                                           #
+########################################################################################################################
+
+## Gets the global variable's `value`. If the variable hasn't been initialized yet, `get_global` performs the
+## initialization first and then returns the new value. `frame_mem` must be provided for the execution of the
+## initialization function.
+##
+## Note that `get_global` cannot be placed in the module `definitions` because of a mutual dependency with `evaluate`.
+proc get_global*(variable: GlobalVariable, frame_mem: pointer): TaggedValue =
+  if not variable.is_initialized:
+    variable.value = evaluate(variable.initializer, frame_mem)
+    variable.is_initialized = true
+  variable.value
+
+## Sets the global variable's `value`, overwriting any previous value. Also sets `is_initialized` to true.
+proc set_global*(variable: GlobalVariable, value: TaggedValue) =
+  variable.is_initialized = true
+  variable.value = value
+
+########################################################################################################################
+# Evaluator implementation.                                                                                            #
+########################################################################################################################
+
+proc evaluate(frame: FramePtr)
 
 template reg_get(index): untyped = frame.registers[index]
 template reg_get_arg(index): untyped = reg_get(instruction.arg(index))
@@ -69,8 +101,10 @@ template list_append(new_tpe): untyped =
   new_elements.add(new_element)
   reg_set_ref_arg(0, new_list(new_elements, new_tpe))
 
+template next_frame_base(): pointer = cast[pointer](cast[uint](frame) + frame.function.frame_size)
+
 template call_start(target): FramePtr =
-  let target_frame_base = cast[pointer](cast[uint](frame) + frame.function.frame_size)
+  let target_frame_base = next_frame_base()
   create_frame(target, target_frame_base)
 
 template call_end(target_frame): untyped =
@@ -234,6 +268,21 @@ proc evaluate(frame: FramePtr) =
       let predicate = reg_get_bool_arg(1)
       if (predicate):
         pc = instruction.arg(0)
+
+    of Operation.GlobalGetEager:
+      let gv = constants.global_variables[instruction.arg(1)]
+      reg_set_arg(0, gv.value)
+
+    of Operation.GlobalGetLazy:
+      let gv = constants.global_variables[instruction.arg(1)]
+      let frame_base = next_frame_base()
+      let value = get_global(gv, next_frame_base)
+      reg_set_arg(0, value)
+
+    of Operation.GlobalSet:
+      let gv = constants.global_variables[instruction.arg(0)]
+      let value = reg_get_arg(1)
+      set_global(gv, value)
 
     of Operation.Dispatch1:
       let mf = constants.multi_functions[instruction.arg(1)]

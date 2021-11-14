@@ -60,7 +60,7 @@ type
 
   ## A FunctionValue is either a fixed function value (pointing to a fixed function or a lambda) or a multi-function
   ## value. This is determined by the flag `is_fixed`. The implementation of the `target` is either a `Function` or a
-  ## `MultiFunction` reference. The actual type is hidden inside the module `functions` to avoid cyclic dependencies
+  ## `MultiFunction` reference. The actual type is hidden inside the module `definitions` to avoid cyclic dependencies
   ## between Nim modules.
   FunctionValue* {.pure, shallow.} = ref object of Value
     is_fixed*: bool

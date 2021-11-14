@@ -1,5 +1,5 @@
+from definitions import Function
 from evaluator import nil
-from functions import Function
 from values import `$`
 
 proc run_and_print*(target: Function, frame_mem: pointer) =

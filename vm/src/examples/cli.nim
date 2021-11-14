@@ -1,7 +1,7 @@
 import os, std/strformat, sugar, tables
 
+from "../definitions" import Function
 from "../evaluator" import nil
-from "../functions" import Function
 from "../poems" import Poem
 from "../universes" import nil
 from "../utils" import with_frame_mem, benchmark

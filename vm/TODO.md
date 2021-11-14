@@ -2,7 +2,7 @@
 
 #### Features
 
-- Implement global variables: Global variable definition (eager or lazy), poem reading, poem writing, universe resolution, referencing via constants table, getter and setter operations.
+- Implement global variables: ~~Global variable definition (eager or lazy)~~, poem reading, poem writing, universe resolution, ~~referencing via constants table~~, ~~getter and setter operations~~, test example.
 - Implement intrinsics: Intrinsics definition, constants table intrinsics, universe resolution, intrinsics calls.
   - Should we allow passing type arguments to intrinsics? This would allow us to implement the list append operation as an intrinsic.
 - Implement parametric functions:

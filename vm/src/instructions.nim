@@ -4,6 +4,7 @@ type
   ##  - `reg(x)`: Register x.
   ##  - `tpe(x)`: The xth entry in the types constants table.
   ##  - `val(x)`: The xth entry in the value constants table.
+  ##  - `glb(x)`: The xth entry in the global variables constants table.
   ##  - `mfs(x)`: The xth entry in the multi functions constants table.
   ##
   ## Please note that the `FunctionCall` and `Dispatch` operations must have the same argument registers, because of
@@ -79,6 +80,18 @@ type
 
     ## if reg(arg1): pc <- arg0
     JumpIfTrue
+
+    ## Immediately gets the value of the global variable without checking whether it is initialized. This must only be
+    ## used with eager global variables, or if it can be definitely proven that a lazy global variable must have been
+    ## initialized at the point the instruction is used.
+    ## reg(arg0) <- glb(arg1)
+    GlobalGetEager
+
+    ## reg(arg0) <- glb(arg1)
+    GlobalGetLazy
+
+    ## glb(arg0) <- reg(arg1)
+    GlobalSet
 
     ## reg(arg0) <- mfs(arg1)(reg(arg2))
     Dispatch1

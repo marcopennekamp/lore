@@ -3,8 +3,8 @@ import std/strformat
 import std/tables
 import sugar
 
+import definitions
 from evaluator import init_frame_stats
-from functions import MultiFunction, Function, Constants, new_constants
 import poems
 from types import Kind, Type, TupleType
 from values import TaggedValue

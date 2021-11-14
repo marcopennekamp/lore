@@ -2,7 +2,7 @@ import binstreams
 import std/os
 import std/strformat
 
-from functions import Function
+from definitions import Function
 from instructions import Operation, Instruction, new_instruction
 from types import Kind, Type
 

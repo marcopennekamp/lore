@@ -1,6 +1,6 @@
 import std/strformat
 
-import functions
+from definitions import MultiFunction, Function
 import types
 from values import TaggedValue
 

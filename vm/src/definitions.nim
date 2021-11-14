@@ -3,6 +3,19 @@ from types import Type, TupleType
 from values import TaggedValue
 
 type
+  ## A global variable is a uniquely named variable that is accessible from any function. A global variable may either
+  ## be eager or lazy. The former immediately receives a value, the latter is initialized only when its value is first
+  ## requested, using an initializing function.
+  GlobalVariable* = ref object
+    name*: string
+    value*: TaggedValue
+
+    ## Whether the global variable's `value` has already been initialized.
+    is_initialized*: bool
+
+    ## The function that is supposed to initialize the global variable. It is nil for eager global variables.
+    initializer*: Function
+
   MultiFunction* = ref object
     name*: string
     functions*: seq[Function]
@@ -38,6 +51,15 @@ type
   Constants* = ref object
     types*: seq[Type]
     values*: seq[TaggedValue]
+    global_variables*: seq[GlobalVariable]
     multi_functions*: seq[MultiFunction]
+
+## Creates an already initialized global variable from the given name and value.
+proc new_global_eager*(name: string, value: TaggedValue): GlobalVariable =
+  GlobalVariable(name: name, value: value, is_initialized: true, initializer: nil)
+
+## Creates a lazy global variable from the given name and initializer.
+proc new_global_lazy*(name: string, initializer: Function): GlobalVariable =
+  GlobalVariable(name: name, value: values.tag_reference(nil), is_initialized: false, initializer: initializer)
 
 proc new_constants*(): Constants = Constants(types: @[], values: @[], multi_functions: @[])
