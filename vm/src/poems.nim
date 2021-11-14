@@ -293,10 +293,12 @@ method write(global_variable: PoemGlobalVariable, stream: FileStream) {.base, lo
 
 method write(global_variable: PoemEagerGlobalVariable, stream: FileStream) {.locks: "unknown".} =
   stream.write_string_with_length(global_variable.name)
+  stream.write(false)
   stream.write_value(global_variable.value)
 
 method write(global_variable: PoemLazyGlobalVariable, stream: FileStream) {.locks: "unknown".} =
   stream.write_string_with_length(global_variable.name)
+  stream.write(true)
   stream.write_string_with_length(global_variable.initializer_name)
 
 ########################################################################################################################

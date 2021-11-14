@@ -46,8 +46,14 @@ type
     frame_size*: uint16
     frame_registers_offset*: uint16
 
-  ## A Constants object provides quick access to predefined types, values, and multi-functions. It may be shared across
-  ## multiple function definitions. All entries are separately accessed by a uint16.
+  # TODO (vm): To perhaps optimize constants access by removing one layer of indirection, we could make the uint16
+  #            index absolute and then turn the Constants table into a contiguous unchecked array of 8-byte values.
+  #            For example, if we have a constants table with 1 type, 2 values, and 1 global variable, 0 would access
+  #            the type, 1 and 2 the values, and 3 the global variable. The evaluator would have to cast the resulting
+  #            constant accordingly, but this is basically a no-op once optimized.
+
+  ## A Constants object provides quick access to predefined types, values, global variables, and multi-functions. It
+  ## may be shared across multiple function definitions. All entries are separately accessed by a uint16.
   Constants* = ref object
     types*: seq[Type]
     values*: seq[TaggedValue]

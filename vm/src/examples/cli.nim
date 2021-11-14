@@ -21,6 +21,7 @@ from lambdas import nil
 from multi_function_values import nil
 from list_appends import nil
 from stats import nil
+from tau import nil
 
 type Example* = ref object
   name*: string
@@ -38,11 +39,12 @@ let examples = @[
   Example(name: "add_five", poem: add_five.poem, main: "test", runs: 100_000_000),
   Example(name: "fib", poem: fib.poem, main: "test", runs: 1_000_000),
   Example(name: "hello_name", poem: hello_name.poem, main: "test", runs: 5_000_000),
-  Example(name: "add_tuples", poem: add_tuples.poem, main: "test", runs: 5_000_000),
-  Example(name: "lambdas", poem: lambdas.poem, main: "test", runs: 5_000_000),
+  Example(name: "add_tuples", poem: add_tuples.poem, main: "test", runs: 25_000_000),
+  Example(name: "lambdas", poem: lambdas.poem, main: "test", runs: 100_000_000),
   Example(name: "multi_function_values", poem: multi_function_values.poem, main: "test", runs: 5_000_000),
   Example(name: "list_appends", poem: list_appends.poem, main: "test", runs: 5_000_000),
   Example(name: "stats", poem: stats.poem, main: "test", runs: 5_000_000),
+  Example(name: "tau", poem: tau.poem, main: "test", runs: 25_000_000),
 ]
 
 proc prepare_example(example: Example): Function =
