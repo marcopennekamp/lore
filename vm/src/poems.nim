@@ -157,18 +157,9 @@ const
   fsMap = 2'u8
   fsSymbol = 3'u8
 
-# TODO (vm): Organize this file by domain (functions, types, values) instead of reading/writing.
-
 ########################################################################################################################
-# Reading bytecode.                                                                                                    #
+# Read and write helpers.                                                                                              #
 ########################################################################################################################
-
-proc read_constants(stream: FileStream): PoemConstants
-proc read_type(stream: FileStream): PoemType
-proc read_value(stream: FileStream): PoemValue
-proc read_function(stream: FileStream): PoemFunction
-proc read_instruction(stream: FileStream): Instruction
-proc read_string_with_length(stream: FileStream): string
 
 template read_many(stream: FileStream, result_type: untyped, count: uint, read_one): untyped =
   var results = new_seq_of_cap[result_type](count)
@@ -181,6 +172,36 @@ template read_many(stream: FileStream, result_type: untyped, count: uint, read_o
 template read_many_with_count(stream: FileStream, result_type: untyped, count_type, read_one): untyped =
   let count = stream.read(count_type)
   read_many(stream, result_type, count, read_one)
+
+template write_many(stream: FileStream, items, write_one): untyped =
+  for item in items:
+    write_one(stream, item)
+
+template write_many_with_count(stream: FileStream, items, count_type, write_one): untyped =
+  let count = count_type(items.len)
+  stream.write(count)
+  stream.write_many(items, write_one)
+
+########################################################################################################################
+# Poems (top-level).                                                                                                   #
+########################################################################################################################
+
+proc read_constants(stream: FileStream): PoemConstants
+proc read_function(stream: FileStream): PoemFunction
+proc read_instruction(stream: FileStream): Instruction
+proc read_type(stream: FileStream): PoemType
+proc read_value(stream: FileStream): PoemValue
+proc read_string_with_length(stream: FileStream): string
+
+proc write_constants(stream: FileStream, constants: PoemConstants)
+proc write_function(stream: FileStream, function: PoemFunction)
+proc write_instruction(stream: FileStream, instruction: Instruction)
+proc write_type(stream: FileStream, tpe: PoemType)
+proc write_value(stream: FileStream, value: PoemValue)
+proc write_string_with_length(stream: FileStream, string: string)
+
+method write(tpe: PoemType, stream: FileStream) {.base, locks: "unknown".}
+method write(value: PoemValue, stream: FileStream) {.base, locks: "unknown".}
 
 proc read*(path: string): Poem =
   if unlikely(not file_exists(path)):
@@ -201,6 +222,18 @@ proc read*(path: string): Poem =
     functions: functions,
   )
 
+proc write*(path: string, poem: Poem) =
+  let stream = new_file_stream(path, big_endian, fmWrite)
+  defer: stream.close()
+
+  stream.write_str("poem")
+  stream.write_constants(poem.constants)
+  stream.write_many_with_count(poem.functions, uint16, write_function)
+
+########################################################################################################################
+# Constants.                                                                                                           #
+########################################################################################################################
+
 proc read_constants(stream: FileStream): PoemConstants =
   let types = stream.read_many_with_count(PoemType, uint16, read_type)
   let values = stream.read_many_with_count(PoemValue, uint16, read_value)
@@ -211,6 +244,62 @@ proc read_constants(stream: FileStream): PoemConstants =
     values: values,
     multi_functions: multi_functions,
   )
+
+proc write_constants(stream: FileStream, constants: PoemConstants) =
+  stream.write_many_with_count(constants.types, uint16, write_type)
+  stream.write_many_with_count(constants.values, uint16, write_value)
+  stream.write_many_with_count(constants.multi_functions, uint16, write_string_with_length)
+
+########################################################################################################################
+# Functions.                                                                                                           #
+########################################################################################################################
+
+proc read_function(stream: FileStream): PoemFunction =
+  let name = stream.read_string_with_length()
+  let input_type = stream.read_type()
+  let output_type = stream.read_type()
+  let is_abstract = stream.read(bool)
+
+  var function = PoemFunction(
+    name: name,
+    input_type: input_type,
+    output_type: output_type,
+    is_abstract: is_abstract,
+  )
+
+  if not is_abstract:
+    function.register_count = stream.read(uint16)
+    function.instructions = stream.read_many_with_count(Instruction, uint16, read_instruction)
+
+  function
+
+proc read_instruction(stream: FileStream): Instruction =
+  new_instruction(
+    cast[Operation](stream.read(uint16)),
+    stream.read(uint16),
+    stream.read(uint16),
+    stream.read(uint16),
+    stream.read(uint16),
+  )
+
+proc write_function(stream: FileStream, function: PoemFunction) =
+  stream.write_string_with_length(function.name)
+  stream.write_type(function.input_type)
+  stream.write_type(function.output_type)
+  stream.write(function.is_abstract)
+
+  if not function.is_abstract:
+    stream.write(function.register_count)
+    stream.write_many_with_count(function.instructions, uint16, write_instruction)
+
+proc write_instruction(stream: FileStream, instruction: Instruction) =
+  stream.write(cast[uint16](instruction.operation))
+  for argument in instruction.arguments:
+    stream.write(argument.uint_value)
+
+########################################################################################################################
+# Types.                                                                                                               #
+########################################################################################################################
 
 template read_xary_type(stream: FileStream, xary_kind: Kind, metadata: uint8): untyped =
   let types = stream.read_many(PoemType, metadata, read_type)
@@ -266,6 +355,70 @@ proc read_type(stream: FileStream): PoemType =
 
   else: raise new_exception(IOError, fmt"Unknown type kind {kind}.")
 
+proc write_type(stream: FileStream, tpe: PoemType) =
+  tpe.write(stream)
+
+proc write_type_tag(stream: FileStream, tag_kind: uint8, tag_metadata: uint8) =
+  let tag: uint8 = (tag_kind shl 5) or tag_metadata
+  stream.write(tag)
+
+proc write_type_tag(stream: FileStream, kind: Kind, child_count: uint8) =
+  let (tag_kind, tag_metadata) = case kind
+  of Kind.TypeVariable: (tkNamed, 0'u8)
+  of Kind.Any: (tkBasic, btAny)
+  of Kind.Nothing: (tkBasic, btNothing)
+  of Kind.Int: (tkBasic, btInt)
+  of Kind.Real: (tkBasic, btReal)
+  of Kind.Boolean: (tkBasic, btBoolean)
+  of Kind.String: (tkBasic, btString)
+  of Kind.Sum: (tkSum, child_count)
+  of Kind.Intersection: (tkIntersection, child_count)
+  of Kind.Tuple: (tkTuple, child_count)
+  of Kind.Function: (tkFixedSize, fsFunction)
+  of Kind.List: (tkFixedSize, fsList)
+  of Kind.Map: (tkFixedSize, fsMap)
+  of Kind.Symbol: (tkFixedSize, fsSymbol)
+  of Kind.Shape: (tkShape, child_count)
+  of Kind.Trait: (tkNamed, child_count)
+  of Kind.Struct: (tkNamed, child_count)
+  stream.write_type_tag(tag_kind, tag_metadata)
+
+proc write_type_tag(stream: FileStream, kind: Kind) =
+  stream.write_type_tag(kind, 0)
+
+proc length_to_tag_metadata(length: int): uint8 =
+  if unlikely(length > 31):
+    fail(fmt"Types cannot have more than 31 type children.")
+  return cast[uint8](length)
+
+method write(tpe: PoemType, stream: FileStream) {.base, locks: "unknown".} =
+  quit("Please implement `write` for all PoemTypes.")
+
+# TODO (vm): Implement shape type writing.
+method write(tpe: PoemBasicType, stream: FileStream) {.locks: "unknown".} =
+  stream.write_type_tag(tpe.tpe.kind)
+
+method write(tpe: PoemXaryType, stream: FileStream) =
+  let child_count = uint64(tpe.types.len)
+  if child_count > 31:
+    fail(fmt"Types of kind {tpe.kind} cannot have more than 31 type children.")
+
+  stream.write_type_tag(tpe.kind, length_to_tag_metadata(tpe.types.len))
+  stream.write_many(tpe.types, write_type)
+
+method write(tpe: PoemSymbolType, stream: FileStream) {.locks: "unknown".} =
+  stream.write_type_tag(Kind.Symbol)
+  stream.write_string_with_length(tpe.name)
+
+method write(tpe: PoemNamedType, stream: FileStream) =
+  stream.write_type_tag(tkNamed, length_to_tag_metadata(tpe.arguments.len))
+  stream.write_string_with_length(tpe.name)
+  stream.write_many(tpe.arguments, write_type)
+
+########################################################################################################################
+# Values.                                                                                                              #
+########################################################################################################################
+
 proc read_value(stream: FileStream): PoemValue =
   let tpe = stream.read_type()
   if tpe of PoemBasicType:
@@ -311,158 +464,8 @@ proc read_value(stream: FileStream): PoemValue =
   else:
     fail("Named values aren't supported for now.")
 
-proc read_function(stream: FileStream): PoemFunction =
-  let name = stream.read_string_with_length()
-  let input_type = stream.read_type()
-  let output_type = stream.read_type()
-  let is_abstract = stream.read(bool)
-
-  var function = PoemFunction(
-    name: name,
-    input_type: input_type,
-    output_type: output_type,
-    is_abstract: is_abstract,
-  )
-
-  if not is_abstract:
-    function.register_count = stream.read(uint16)
-    function.instructions = stream.read_many_with_count(Instruction, uint16, read_instruction)
-
-  function
-
-proc read_instruction(stream: FileStream): Instruction =
-  new_instruction(
-    cast[Operation](stream.read(uint16)),
-    stream.read(uint16),
-    stream.read(uint16),
-    stream.read(uint16),
-    stream.read(uint16),
-  )
-
-proc read_string_with_length(stream: FileStream): string =
-  let size = stream.read(uint16)
-  stream.read_str(size)
-
-########################################################################################################################
-# Writing bytecode.                                                                                                    #
-########################################################################################################################
-
-proc write_constants(stream: FileStream, constants: PoemConstants)
-proc write_type(stream: FileStream, tpe: PoemType)
-proc write_value(stream: FileStream, value: PoemValue)
-proc write_function(stream: FileStream, function: PoemFunction)
-proc write_instruction(stream: FileStream, instruction: Instruction)
-proc write_string_with_length(stream: FileStream, string: string)
-
-method write(tpe: PoemType, stream: FileStream) {.base, locks: "unknown".}
-method write(value: PoemValue, stream: FileStream) {.base, locks: "unknown".}
-
-template write_many(stream: FileStream, items, write_one): untyped =
-  for item in items:
-    write_one(stream, item)
-
-template write_many_with_count(stream: FileStream, items, count_type, write_one): untyped =
-  let count = count_type(items.len)
-  stream.write(count)
-  stream.write_many(items, write_one)
-
-proc write*(path: string, poem: Poem) =
-  let stream = new_file_stream(path, big_endian, fmWrite)
-  defer: stream.close()
-
-  stream.write_str("poem")
-  stream.write_constants(poem.constants)
-  stream.write_many_with_count(poem.functions, uint16, write_function)
-
-proc write_constants(stream: FileStream, constants: PoemConstants) =
-  stream.write_many_with_count(constants.types, uint16, write_type)
-  stream.write_many_with_count(constants.values, uint16, write_value)
-  stream.write_many_with_count(constants.multi_functions, uint16, write_string_with_length)
-
-proc write_type(stream: FileStream, tpe: PoemType) =
-  tpe.write(stream)
-
 proc write_value(stream: FileStream, value: PoemValue) =
   value.write(stream)
-
-proc write_function(stream: FileStream, function: PoemFunction) =
-  stream.write_string_with_length(function.name)
-  stream.write_type(function.input_type)
-  stream.write_type(function.output_type)
-  stream.write(function.is_abstract)
-
-  if not function.is_abstract:
-    stream.write(function.register_count)
-    stream.write_many_with_count(function.instructions, uint16, write_instruction)
-
-proc write_instruction(stream: FileStream, instruction: Instruction) =
-  stream.write(cast[uint16](instruction.operation))
-  for argument in instruction.arguments:
-    stream.write(argument.uint_value)
-
-proc write_string_with_length(stream: FileStream, string: string) =
-  if string.len > cast[int](high(uint16)):
-    fail(fmt"Cannot write strings with more than {high(uint16)}")
-
-  stream.write(cast[uint16](string.len))
-  stream.write_str(string)
-
-proc write_type_tag(stream: FileStream, tag_kind: uint8, tag_metadata: uint8) =
-  let tag: uint8 = (tag_kind shl 5) or tag_metadata
-  stream.write(tag)
-
-proc write_type_tag(stream: FileStream, kind: Kind, child_count: uint8) =
-  let (tag_kind, tag_metadata) = case kind
-  of Kind.TypeVariable: (tkNamed, 0'u8)
-  of Kind.Any: (tkBasic, btAny)
-  of Kind.Nothing: (tkBasic, btNothing)
-  of Kind.Int: (tkBasic, btInt)
-  of Kind.Real: (tkBasic, btReal)
-  of Kind.Boolean: (tkBasic, btBoolean)
-  of Kind.String: (tkBasic, btString)
-  of Kind.Sum: (tkSum, child_count)
-  of Kind.Intersection: (tkIntersection, child_count)
-  of Kind.Tuple: (tkTuple, child_count)
-  of Kind.Function: (tkFixedSize, fsFunction)
-  of Kind.List: (tkFixedSize, fsList)
-  of Kind.Map: (tkFixedSize, fsMap)
-  of Kind.Symbol: (tkFixedSize, fsSymbol)
-  of Kind.Shape: (tkShape, child_count)
-  of Kind.Trait: (tkNamed, child_count)
-  of Kind.Struct: (tkNamed, child_count)
-  stream.write_type_tag(tag_kind, tag_metadata)
-
-proc write_type_tag(stream: FileStream, kind: Kind) =
-  stream.write_type_tag(kind, 0)
-
-method write(tpe: PoemType, stream: FileStream) {.base, locks: "unknown".} =
-  quit("Please implement `write` for all PoemTypes.")
-
-# TODO (vm): Implement shape type writing.
-method write(tpe: PoemBasicType, stream: FileStream) {.locks: "unknown".} =
-  stream.write_type_tag(tpe.tpe.kind)
-
-proc length_to_tag_metadata(length: int): uint8 =
-  if unlikely(length > 31):
-    fail(fmt"Types cannot have more than 31 type children.")
-  return cast[uint8](length)
-
-method write(tpe: PoemXaryType, stream: FileStream) =
-  let child_count = uint64(tpe.types.len)
-  if child_count > 31:
-    fail(fmt"Types of kind {tpe.kind} cannot have more than 31 type children.")
-
-  stream.write_type_tag(tpe.kind, length_to_tag_metadata(tpe.types.len))
-  stream.write_many(tpe.types, write_type)
-
-method write(tpe: PoemSymbolType, stream: FileStream) {.locks: "unknown".} =
-  stream.write_type_tag(Kind.Symbol)
-  stream.write_string_with_length(tpe.name)
-
-method write(tpe: PoemNamedType, stream: FileStream) =
-  stream.write_type_tag(tkNamed, length_to_tag_metadata(tpe.arguments.len))
-  stream.write_string_with_length(tpe.name)
-  stream.write_many(tpe.arguments, write_type)
 
 method write(value: PoemValue, stream: FileStream) {.base, locks: "unknown".} =
   quit("Please implement `write` for all PoemValues")
@@ -511,3 +514,18 @@ method write(value: PoemListValue, stream: FileStream) {.locks: "unknown".} =
 
 method write(value: PoemSymbolValue, stream: FileStream) {.locks: "unknown".} =
   stream.write_type(symbol_type(value.name))
+
+########################################################################################################################
+# Strings.                                                                                                             #
+########################################################################################################################
+
+proc read_string_with_length(stream: FileStream): string =
+  let size = stream.read(uint16)
+  stream.read_str(size)
+
+proc write_string_with_length(stream: FileStream, string: string) =
+  if string.len > cast[int](high(uint16)):
+    fail(fmt"Cannot write strings with more than {high(uint16)}")
+
+  stream.write(cast[uint16](string.len))
+  stream.write_str(string)
