@@ -19,13 +19,25 @@ type
   ## `.poem` files must be encoded in big endian.
   Poem* = ref object
     constants*: PoemConstants
+    global_variables*: seq[PoemGlobalVariable]
     functions*: seq[PoemFunction]
 
   ## An unresolved constants table.
   PoemConstants* = ref object
     types*: seq[PoemType]
     values*: seq[PoemValue]
+    global_variables*: seq[string]
     multi_functions*: seq[string]
+
+  ## An unresolved global variable.
+  PoemGlobalVariable* = ref object of RootObj
+    name*: string
+
+  PoemEagerGlobalVariable* = ref object of PoemGlobalVariable
+    value*: PoemValue
+
+  PoemLazyGlobalVariable* = ref object of PoemGlobalVariable
+    initializer_name*: string
 
   ## An unresolved function.
   PoemFunction* = ref object
@@ -187,6 +199,7 @@ template write_many_with_count(stream: FileStream, items, count_type, write_one)
 ########################################################################################################################
 
 proc read_constants(stream: FileStream): PoemConstants
+proc read_global_variable(stream: FileStream): PoemGlobalVariable
 proc read_function(stream: FileStream): PoemFunction
 proc read_instruction(stream: FileStream): Instruction
 proc read_type(stream: FileStream): PoemType
@@ -194,12 +207,14 @@ proc read_value(stream: FileStream): PoemValue
 proc read_string_with_length(stream: FileStream): string
 
 proc write_constants(stream: FileStream, constants: PoemConstants)
+proc write_global_variable(stream: FileStream, global_variable: PoemGlobalVariable)
 proc write_function(stream: FileStream, function: PoemFunction)
 proc write_instruction(stream: FileStream, instruction: Instruction)
 proc write_type(stream: FileStream, tpe: PoemType)
 proc write_value(stream: FileStream, value: PoemValue)
 proc write_string_with_length(stream: FileStream, string: string)
 
+method write(global_variable: PoemGlobalVariable, stream: FileStream) {.base, locks: "unknown".}
 method write(tpe: PoemType, stream: FileStream) {.base, locks: "unknown".}
 method write(value: PoemValue, stream: FileStream) {.base, locks: "unknown".}
 
@@ -216,9 +231,11 @@ proc read*(path: string): Poem =
     fail(fmt"""Poem file "{path}" has an illegal file header. The file must begin with the ASCII string `poem`.""")
 
   let constants = stream.read_constants()
+  let global_variables = stream.read_many_with_count(PoemGlobalVariable, uint16, read_global_variable)
   let functions = stream.read_many_with_count(PoemFunction, uint16, read_function)
   Poem(
     constants: constants,
+    global_variables: global_variables,
     functions: functions,
   )
 
@@ -228,6 +245,7 @@ proc write*(path: string, poem: Poem) =
 
   stream.write_str("poem")
   stream.write_constants(poem.constants)
+  stream.write_many_with_count(poem.global_variables, uint16, write_global_variable)
   stream.write_many_with_count(poem.functions, uint16, write_function)
 
 ########################################################################################################################
@@ -237,18 +255,49 @@ proc write*(path: string, poem: Poem) =
 proc read_constants(stream: FileStream): PoemConstants =
   let types = stream.read_many_with_count(PoemType, uint16, read_type)
   let values = stream.read_many_with_count(PoemValue, uint16, read_value)
+  let global_variables = stream.read_many_with_count(string, uint16, read_string_with_length)
   let multi_functions = stream.read_many_with_count(string, uint16, read_string_with_length)
 
   PoemConstants(
     types: types,
     values: values,
+    global_variables: global_variables,
     multi_functions: multi_functions,
   )
 
 proc write_constants(stream: FileStream, constants: PoemConstants) =
   stream.write_many_with_count(constants.types, uint16, write_type)
   stream.write_many_with_count(constants.values, uint16, write_value)
+  stream.write_many_with_count(constants.global_variables, uint16, write_string_with_length)
   stream.write_many_with_count(constants.multi_functions, uint16, write_string_with_length)
+
+########################################################################################################################
+# Global variables.                                                                                                    #
+########################################################################################################################
+
+proc read_global_variable(stream: FileStream): PoemGlobalVariable =
+  let name = stream.read_string_with_length()
+  let is_lazy = stream.read(bool)
+  if not is_lazy:
+    let value = stream.read_value()
+    PoemEagerGlobalVariable(name: name, value: value)
+  else:
+    let initializer_name = stream.read_string_with_length()
+    PoemLazyGlobalVariable(name: name, initializer_name: initializer_name)
+
+proc write_global_variable(stream: FileStream, global_variable: PoemGlobalVariable) =
+  global_variable.write(stream)
+
+method write(global_variable: PoemGlobalVariable, stream: FileStream) {.base, locks: "unknown".} =
+  quit("Please implement `write` for all PoemGlobalVariables.")
+
+method write(global_variable: PoemEagerGlobalVariable, stream: FileStream) {.locks: "unknown".} =
+  stream.write_string_with_length(global_variable.name)
+  stream.write_value(global_variable.value)
+
+method write(global_variable: PoemLazyGlobalVariable, stream: FileStream) {.locks: "unknown".} =
+  stream.write_string_with_length(global_variable.name)
+  stream.write_string_with_length(global_variable.initializer_name)
 
 ########################################################################################################################
 # Functions.                                                                                                           #

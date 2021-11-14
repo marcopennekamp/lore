@@ -11,9 +11,11 @@ Concretely, a Poem file has the following structure:
   - **Magic bytes** (char * 4): Always the string `poem` encoded in ASCII.
   - **Constants** (Constants)
   - **Type declaration count** (uint16)
-  - **Type declarations** (Type declaration)
+  - **Type declarations** (TypeDeclaration*)
+  - **Global variable count** (uint16)
+  - **Global variables** (GlobalVariable*)
   - **Function count** (uint16)
-  - **Functions** (Function)
+  - **Functions** (Function*)
 
 ### Constants
 
@@ -33,6 +35,19 @@ The Constants table has the following structure:
 A **Schema** describes a user-defined *trait* or *struct* with optional type parameters.
 
 TODO
+
+### Global Variables
+
+A **GlobalVariable** is represented as follows:
+
+  - **Name** (String)
+  - **Lazy** (bool)
+  - If *Lazy* is false:
+    - **Value** (Value)
+  - If *Lazy* is true:
+    - **Initializer Name** (String): The name of the function with which the lazy global variable should be initialized when it's first accessed.
+
+Note that global variables are currently *not* typed. It would only be needed for checking bytecode, because values carry their own types.
 
 ### Functions
 

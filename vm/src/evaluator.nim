@@ -276,7 +276,7 @@ proc evaluate(frame: FramePtr) =
     of Operation.GlobalGetLazy:
       let gv = constants.global_variables[instruction.arg(1)]
       let frame_base = next_frame_base()
-      let value = get_global(gv, next_frame_base)
+      let value = get_global(gv, frame_base)
       reg_set_arg(0, value)
 
     of Operation.GlobalSet:
