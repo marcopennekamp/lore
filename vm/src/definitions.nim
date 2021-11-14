@@ -55,11 +55,11 @@ type
     multi_functions*: seq[MultiFunction]
 
 ## Creates an already initialized global variable from the given name and value.
-proc new_global_eager*(name: string, value: TaggedValue): GlobalVariable =
+proc new_eager_global*(name: string, value: TaggedValue): GlobalVariable =
   GlobalVariable(name: name, value: value, is_initialized: true, initializer: nil)
 
 ## Creates a lazy global variable from the given name and initializer.
-proc new_global_lazy*(name: string, initializer: Function): GlobalVariable =
+proc new_lazy_global*(name: string, initializer: Function): GlobalVariable =
   GlobalVariable(name: name, value: values.tag_reference(nil), is_initialized: false, initializer: initializer)
 
-proc new_constants*(): Constants = Constants(types: @[], values: @[], multi_functions: @[])
+proc new_constants*(): Constants = Constants(types: @[], values: @[], global_variables: @[], multi_functions: @[])

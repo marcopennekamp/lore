@@ -45,7 +45,7 @@ A **GlobalVariable** is represented as follows:
   - If *Lazy* is false:
     - **Value** (Value)
   - If *Lazy* is true:
-    - **Initializer Name** (String): The name of the function with which the lazy global variable should be initialized when it's first accessed.
+    - **Initializer Name** (String): The name of the function with which the lazy global variable should be initialized when it's first accessed. The function name must refer to a multi-function with exactly one function definition.
 
 Note that global variables are currently *not* typed. It would only be needed for checking bytecode, because values carry their own types.
 

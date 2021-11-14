@@ -12,8 +12,10 @@ from values import TaggedValue
 type
   ## The Universe object provides access to all top-level entities of the current Lore program.
   Universe* = ref object
+    global_variables*: Table[string, GlobalVariable]
     multi_functions*: Table[string, MultiFunction]
 
+proc resolve(universe: Universe, poem_global_variable: PoemGlobalVariable)
 proc resolve(universe: Universe, poem_function: PoemFunction)
 proc resolve(universe: Universe, poem_constants: PoemConstants): Constants
 proc resolve(universe: Universe, poem_type: PoemType): Type
@@ -30,7 +32,8 @@ proc attach_constants(universe: Universe, poem: Poem)
 ## Resolves a Universe from the given set of Poem definitions.
 ##
 ## Multi-functions have to be resolved right away such that constants tables for each Poem can point to multi-functions
-## and also fixed functions. Constants tables for all functions are then resolved in a separate step.
+## and also fixed functions. Constants tables for all functions are then resolved in a separate step. Global variables
+## are resolved after functions, because lazy global variables point to a Function initializer.
 proc resolve*(poems: seq[Poem]): Universe =
   var universe = Universe(multi_functions: init_table[string, MultiFunction]())
 
@@ -39,7 +42,12 @@ proc resolve*(poems: seq[Poem]): Universe =
     for poem_function in poem.functions:
       universe.resolve(poem_function)
 
-  # Step 2: Resolve constants and attach them to all functions in each Poem.
+  # Step 2: Resolve global variables.
+  for poem in poems:
+    for poem_global_variable in poem.global_variables:
+      universe.resolve(poem_global_variable)
+
+  # Step 3: Resolve constants and attach them to all functions in each Poem.
   for poem in poems:
     universe.attach_constants(poem)
 
@@ -59,11 +67,43 @@ proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
   for poem_value in poem_constants.values:
     constants.values.add(universe.resolve(poem_value))
 
-  # At this point, all multi-functions will be known by reference, so we can immediately build the constants table.
+  for name in poem_constants.global_variables:
+    constants.global_variables.add(universe.global_variables[name])
+
   for name in poem_constants.multi_functions:
     constants.multi_functions.add(universe.multi_functions[name])
 
   constants
+
+########################################################################################################################
+# Global variable resolution.                                                                                          #
+########################################################################################################################
+
+method resolve(poem_global_variable: PoemGlobalVariable, universe: Universe): GlobalVariable {.base, locks: "unknown".} =
+  quit(fmt"Please implement `resolve` for all PoemGlobalVariables.")
+
+proc resolve(universe: Universe, poem_global_variable: PoemGlobalVariable) =
+  let name = poem_global_variable.name
+  if name in universe.global_variables:
+    quit(fmt"The global variable `{name}` is declared twice.")
+  universe.global_variables[name] = poem_global_variable.resolve(universe)
+
+method resolve(poem_global_variable: PoemEagerGlobalVariable, universe: Universe): GlobalVariable {.locks: "unknown".} =
+  let value = universe.resolve(poem_global_variable.value)
+  new_eager_global(poem_global_variable.name, value)
+
+method resolve(poem_global_variable: PoemLazyGlobalVariable, universe: Universe): GlobalVariable {.locks: "unknown".} =
+  let name = poem_global_variable.name
+  let initializer_name = poem_global_variable.initializer_name
+  if not (initializer_name in universe.multi_functions):
+    quit(fmt"The global variable `{name}` requires an initializer function `{initializer_name}`, but it does not exist.")
+
+  let mf = universe.multi_functions[initializer_name]
+  if mf.functions.len > 1:
+    quit(fmt"The global variable `{name}` requires an initializer function `{initializer_name}`, but the associated multi-function has multiple function definitions.")
+
+  let initializer = mf.functions[0]
+  new_lazy_global(name, initializer)
 
 ########################################################################################################################
 # Function resolution.                                                                                                 #
@@ -71,8 +111,7 @@ proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
 
 proc get_or_register_multi_function(universe: Universe, name: string): MultiFunction
 
-## Resolves a PoemFunction. This function does not create the constants table, which must be resolved in a separate
-## step.
+## Resolves a PoemFunction. Does not create the constants table, which must be resolved in a separate step.
 proc resolve(universe: Universe, poem_function: PoemFunction) =
   let multi_function = universe.get_or_register_multi_function(poem_function.name)
 
