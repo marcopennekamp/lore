@@ -132,8 +132,8 @@ type
     operation*: Operation
     arguments*: array[4, Argument]
 
-proc arg*(instruction: Instruction, index: uint16): uint16 = instruction.arguments[index].uint_value
-proc argi*(instruction: Instruction, index: uint16): int16 = instruction.arguments[index].int_value
+template arg*(instruction: Instruction, index: uint16): uint16 = instruction.arguments[index].uint_value
+template argi*(instruction: Instruction, index: uint16): int16 = instruction.arguments[index].int_value
 
 proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16, arg2: uint16, arg3: uint16): Instruction =
   Instruction(
