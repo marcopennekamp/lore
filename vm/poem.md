@@ -19,16 +19,18 @@ Concretely, a Poem file has the following structure:
 
 ### Constants
 
-The **Constants** table holds Poem-wide constant types, multi-functions, and values. Each kind of constant is indexed separately by a 16-bit unsigned integer.
+The **Constants** table holds Poem-wide constant types and values, as well as references to global variables and multi-functions. Each kind of constant is indexed separately by a 16-bit unsigned integer.
 
 The Constants table has the following structure:
 
-  - **Types count** (uint16): The number of type constants.
-  - **Types** (Type*): The type constants.
-  - **Values count** (uint16): The number of value constants.
-  - **Values** (Value*): The value constants.
-  - **Multi-functions count** (uint16): The number of multi-function constants.
-  - **Multi-functions** (String*): The full names of multi-function constants.
+  - **Types count** (uint16)
+  - **Types** (Type*)
+  - **Values count** (uint16)
+  - **Values** (Value*)
+  - **Global variables count** (uint16)
+  - **Global variables** (String*): The full names of the global variable references.
+  - **Multi-functions count** (uint16)
+  - **Multi-functions** (String*): The full names of the multi-function references.
 
 ### Schemas
 
