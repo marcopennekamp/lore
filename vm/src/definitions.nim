@@ -3,6 +3,31 @@ from types import Type, TupleType
 from values import TaggedValue
 
 type
+  ## A frame represents the memory that the evaluation of a single function call requires. The memory for all frames
+  ## must be preallocated before the evaluator is invoked.
+  ##
+  ## Frames are part of `definitions` because some intrinsics require access to frames.
+  Frame* = object
+    function*: Function
+    registers*: ptr UncheckedArray[TaggedValue]
+  FramePtr* = ptr Frame
+
+  ## An intrinsic is a function built into the virtual machine that can be called from bytecode. The type of the
+  ## underlying function varies based on the individual intrinsic. The intrinsics call operation then determines the
+  ## interpretation of `function`.
+  ##
+  ## To allow intrinsics to call Lore function values (e.g. a lambda for `lore.Enum.map`), there are special operations
+  ## which pass the current frame to a *frame-aware* intrinsic as the first argument.
+  Intrinsic* = ref object
+    name*: string
+    function*: IntrinsicFunction
+
+  IntrinsicFunction* {.union.} = object
+    unary*: proc (argument0: TaggedValue): TaggedValue {.nimcall.}
+    unary_fa*: proc (frame: FramePtr, argument0: TaggedValue): TaggedValue {.nimcall.}
+    binary*: proc (argument0: TaggedValue, argument1: TaggedValue): TaggedValue {.nimcall.}
+    binary_fa*: proc (frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue {.nimcall.}
+
   ## A global variable is a uniquely named variable that is accessible from any function. A global variable may either
   ## be eager or lazy. The former immediately receives a value, the latter is initialized only when its value is first
   ## requested, using an initializing function.
@@ -57,6 +82,7 @@ type
   Constants* = ref object
     types*: seq[Type]
     values*: seq[TaggedValue]
+    intrinsics*: seq[Intrinsic]
     global_variables*: seq[GlobalVariable]
     multi_functions*: seq[MultiFunction]
 
@@ -67,5 +93,10 @@ proc new_eager_global*(name: string, value: TaggedValue): GlobalVariable =
 ## Creates a lazy global variable from the given name and initializer.
 proc new_lazy_global*(name: string, initializer: Function): GlobalVariable =
   GlobalVariable(name: name, value: values.tag_reference(nil), is_initialized: false, initializer: initializer)
+
+## Initializes the `frame_*` size and offset stats of the given function.
+proc init_frame_stats*(function: Function) =
+  const preamble_size = sizeof(Frame)
+  function.frame_size = cast[uint16](preamble_size + sizeof(TaggedValue) * cast[int](function.register_count))
 
 proc new_constants*(): Constants = Constants(types: @[], values: @[], global_variables: @[], multi_functions: @[])

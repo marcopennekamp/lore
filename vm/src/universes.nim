@@ -4,14 +4,15 @@ import std/tables
 import sugar
 
 import definitions
-from evaluator import init_frame_stats
 import poems
+from pyramid import nil
 from types import Kind, Type, TupleType
 from values import TaggedValue
 
 type
   ## The Universe object provides access to all top-level entities of the current Lore program.
   Universe* = ref object
+    intrinsics*: Table[string, Intrinsic]
     global_variables*: Table[string, GlobalVariable]
     multi_functions*: Table[string, MultiFunction]
 
@@ -35,19 +36,23 @@ proc attach_constants(universe: Universe, poem: Poem)
 ## and also fixed functions. Constants tables for all functions are then resolved in a separate step. Global variables
 ## are resolved after functions, because lazy global variables point to a Function initializer.
 proc resolve*(poems: seq[Poem]): Universe =
-  var universe = Universe(multi_functions: init_table[string, MultiFunction]())
+  var universe = Universe()
 
-  # Step 1: Resolve functions.
+  # Step 1: Register intrinsics first, as they have no dependencies.
+  for intrinsic in pyramid.intrinsics:
+    universe.intrinsics[intrinsic.name] = intrinsic
+
+  # Step 2: Resolve functions.
   for poem in poems:
     for poem_function in poem.functions:
       universe.resolve(poem_function)
 
-  # Step 2: Resolve global variables.
+  # Step 3: Resolve global variables.
   for poem in poems:
     for poem_global_variable in poem.global_variables:
       universe.resolve(poem_global_variable)
 
-  # Step 3: Resolve constants and attach them to all functions in each Poem.
+  # Step 4: Resolve constants and attach them to all functions in each Poem.
   for poem in poems:
     universe.attach_constants(poem)
 
@@ -66,6 +71,11 @@ proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
 
   for poem_value in poem_constants.values:
     constants.values.add(universe.resolve(poem_value))
+
+  # TODO (vm): We should probably check whether the name exists and output an error. Same goes for global variables and
+  #            multi-functions.
+  for name in poem_constants.intrinsics:
+    constants.intrinsics.add(universe.intrinsics[name])
 
   for name in poem_constants.global_variables:
     constants.global_variables.add(universe.global_variables[name])

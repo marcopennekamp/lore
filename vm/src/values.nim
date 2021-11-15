@@ -117,6 +117,8 @@ proc new_tuple*(elements: seq[TaggedValue]): Value =
 
 proc new_tuple_tagged*(elements: seq[TaggedValue]): TaggedValue = tag_reference(new_tuple(elements))
 
+let unit*: TaggedValue = new_tuple_tagged(@[])
+
 proc new_function*(is_fixed: bool, target: pointer, tpe: Type): Value = FunctionValue(tpe: tpe, is_fixed: is_fixed, target: target)
 proc new_function_tagged*(is_fixed: bool, target: pointer, tpe: Type): TaggedValue = tag_reference(new_function(is_fixed, target, tpe))
 

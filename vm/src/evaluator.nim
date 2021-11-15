@@ -1,4 +1,4 @@
-from definitions import GlobalVariable, MultiFunction, Function
+import definitions
 from dispatch import get_dispatch_target
 import instructions
 import values
@@ -6,17 +6,13 @@ from utils import when_debug
 
 proc evaluate*(entry_function: Function, frame_mem: pointer): TaggedValue
 
+proc evaluate*(function_value: FunctionValue, frame: FramePtr): TaggedValue
+proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue
+proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue
+
 ########################################################################################################################
 # Execution frames.                                                                                                    #
 ########################################################################################################################
-
-type
-  ## A frame represents the memory that the evaluation of a single function call requires. The memory for all frames is
-  ## preallocated before `evaluate` is called.
-  Frame = object
-    function: Function
-    registers: ptr UncheckedArray[TaggedValue]
-  FramePtr = ptr Frame
 
 ## Don't move `create_frame` to a different module. GCC won't inline it.
 # TODO (vm): We should possibly clear a frame by nilling all references so that pointers left in registers aren't
@@ -28,11 +24,6 @@ proc create_frame(function: Function, frame_base: pointer): FramePtr {.inline.} 
   frame.function = function
   frame.registers = cast[ptr UncheckedArray[TaggedValue]](cast[uint](frame_base) + cast[uint](preamble_size))
   frame
-
-## Initializes the `frame_*` size and offset stats of the given function.
-proc init_frame_stats*(function: Function) =
-  const preamble_size = sizeof(Frame)
-  function.frame_size = cast[uint16](preamble_size + sizeof(TaggedValue) * cast[int](function.register_count))
 
 ########################################################################################################################
 # Global variable functions.                                                                                           #
@@ -93,6 +84,10 @@ template const_value_arg(index): untyped = const_value(instruction.arg(index))
 template const_value_ref(index, tpe): untyped = untag_reference(const_value(index), tpe)
 template const_value_ref_arg(index, tpe): untyped = const_value_ref(instruction.arg(index), tpe)
 
+template const_intrinsic_arg(index): untyped = constants.intrinsics[instruction.arg(index)]
+template const_global_variable_arg(index): untyped = constants.global_variables[instruction.arg(index)]
+template const_multi_function_arg(index): untyped = constants.multi_functions[instruction.arg(index)]
+
 template list_append(new_tpe): untyped =
   let list = reg_get_ref_arg(1, ListValue)
   let new_element = reg_get_arg(2)
@@ -107,33 +102,40 @@ template call_start(target): FramePtr =
   let target_frame_base = next_frame_base()
   create_frame(target, target_frame_base)
 
-template call_end(target_frame): untyped =
+template get_call_result(target_frame): untyped =
   # After function evaluation has finished, it must guarantee that the return value is in the first register.
-  reg_set_arg(0, target_frame.registers[0])
+  target_frame.registers[0]
+
+## Calls a given Function target with zero arguments.
+template call0(target): TaggedValue =
+  let target_frame = call_start(target)
+  evaluate(target_frame)
+  get_call_result(target_frame)
 
 ## Calls a given Function target with one argument.
-template call1(target, argument0): untyped =
+template call1(target, argument0): TaggedValue =
   let target_frame = call_start(target)
   target_frame.registers[0] = argument0
   evaluate(target_frame)
-  call_end(target_frame)
+  get_call_result(target_frame)
 
 ## Calls a given Function target with two arguments.
-template call2(target, argument0, argument1): untyped =
+template call2(target, argument0, argument1): TaggedValue =
   let target_frame = call_start(target)
   target_frame.registers[0] = argument0
   target_frame.registers[1] = argument1
   evaluate(target_frame)
-  call_end(target_frame)
+  get_call_result(target_frame)
 
-template dispatch1(mf): untyped =
-  let argument0 = reg_get_arg(2)
+template dispatch0(mf): TaggedValue =
+  let target = get_dispatch_target(mf)
+  call0(target)
+
+template dispatch1(mf, argument0): TaggedValue =
   let target = get_dispatch_target(mf, argument0)
   call1(target, argument0)
 
-template dispatch2(mf): untyped =
-  let argument0 = reg_get_arg(2)
-  let argument1 = reg_get_arg(3)
+template dispatch2(mf, argument0, argument1): TaggedValue =
   let target = get_dispatch_target(mf, argument0, argument1)
   call2(target, argument0, argument1)
 
@@ -221,22 +223,23 @@ proc evaluate(frame: FramePtr) =
       let tpl = reg_get_ref_arg(1, TupleValue)
       reg_set_arg(0, tpl.elements[instruction.arg(2)])
 
+    of Operation.FunctionCall0:
+      let function = reg_get_ref_arg(1, FunctionValue)
+      let res = evaluate(function, frame)
+      reg_set_arg(0, res)
+
     of Operation.FunctionCall1:
       let function = reg_get_ref_arg(1, FunctionValue)
-      if function.is_fixed:
-        let argument0 = reg_get_arg(2)
-        call1(cast[Function](function.target), argument0)
-      else:
-        dispatch1(cast[MultiFunction](function.target))
+      let argument0 = reg_get_arg(2)
+      let res = evaluate(function, frame, argument0)
+      reg_set_arg(0, res)
 
     of Operation.FunctionCall2:
       let function = reg_get_ref_arg(1, FunctionValue)
-      if function.is_fixed:
-        let argument0 = reg_get_arg(2)
-        let argument1 = reg_get_arg(3)
-        call2(cast[Function](function.target), argument0, argument1)
-      else:
-        dispatch2(cast[MultiFunction](function.target))
+      let argument0 = reg_get_arg(2)
+      let argument1 = reg_get_arg(3)
+      let res = evaluate(function, frame, argument0, argument1)
+      reg_set_arg(0, res)
 
     of Operation.ListAppend:
       let new_tpe = const_types_arg(3)
@@ -269,28 +272,63 @@ proc evaluate(frame: FramePtr) =
       if (predicate):
         pc = instruction.arg(0)
 
+    of Operation.Intrinsic1:
+      let intrinsic = const_intrinsic_arg(1)
+      let function = intrinsic.function.unary
+      let argument0 = reg_get_arg(2)
+      let res = function(argument0)
+      reg_set_arg(0, res)
+
+    of Operation.IntrinsicFa1:
+      let intrinsic = const_intrinsic_arg(1)
+      let function = intrinsic.function.unary_fa
+      let argument0 = reg_get_arg(2)
+      let res = function(frame, argument0)
+      reg_set_arg(0, res)
+
+    of Operation.Intrinsic2:
+      let intrinsic = const_intrinsic_arg(1)
+      let function = intrinsic.function.binary
+      let argument0 = reg_get_arg(2)
+      let argument1 = reg_get_arg(3)
+      let res = function(argument0, argument1)
+      reg_set_arg(0, res)
+
+    of Operation.IntrinsicFa2:
+      let intrinsic = const_intrinsic_arg(1)
+      let function = intrinsic.function.binary_fa
+      let argument0 = reg_get_arg(2)
+      let argument1 = reg_get_arg(3)
+      let res = function(frame, argument0, argument1)
+      reg_set_arg(0, res)
+
     of Operation.GlobalGetEager:
-      let gv = constants.global_variables[instruction.arg(1)]
+      let gv = const_global_variable_arg(1)
       reg_set_arg(0, gv.value)
 
     of Operation.GlobalGetLazy:
-      let gv = constants.global_variables[instruction.arg(1)]
+      let gv = const_global_variable_arg(1)
       let frame_base = next_frame_base()
       let value = get_global(gv, frame_base)
       reg_set_arg(0, value)
 
     of Operation.GlobalSet:
-      let gv = constants.global_variables[instruction.arg(0)]
+      let gv = const_global_variable_arg(0)
       let value = reg_get_arg(1)
       set_global(gv, value)
 
     of Operation.Dispatch1:
-      let mf = constants.multi_functions[instruction.arg(1)]
-      dispatch1(mf)
+      let mf = const_multi_function_arg(1)
+      let argument0 = reg_get_arg(2)
+      let res = dispatch1(mf, argument0)
+      reg_set_arg(0, res)
 
     of Operation.Dispatch2:
-      let mf = constants.multi_functions[instruction.arg(1)]
-      dispatch2(mf)
+      let mf = const_multi_function_arg(1)
+      let argument0 = reg_get_arg(2)
+      let argument1 = reg_get_arg(3)
+      let res = dispatch2(mf, argument0, argument1)
+      reg_set_arg(0, res)
 
     of Operation.Return:
       reg_set(0, reg_get_arg(0))
@@ -305,3 +343,24 @@ proc evaluate*(entry_function: Function, frame_mem: pointer): TaggedValue =
 
   # The bytecode must ensure that the result is in the first register.
   reg_get(0)
+
+## Evaluates a function value with a signature `() => Any`.
+proc evaluate*(function_value: FunctionValue, frame: FramePtr): TaggedValue =
+  if function_value.is_fixed:
+    call0(cast[Function](function_value.target))
+  else:
+    dispatch0(cast[MultiFunction](function_value.target))
+
+## Evaluates a function value with a signature `(Any) => Any`.
+proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue =
+  if function_value.is_fixed:
+    call1(cast[Function](function_value.target), argument0)
+  else:
+    dispatch1(cast[MultiFunction](function_value.target), argument0)
+
+## Evaluates a function value with a signature `(Any, Any) => Any`.
+proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue =
+  if function_value.is_fixed:
+    call2(cast[Function](function_value.target), argument0, argument1)
+  else:
+    dispatch2(cast[MultiFunction](function_value.target), argument0, argument1)

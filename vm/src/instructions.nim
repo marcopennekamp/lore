@@ -4,11 +4,9 @@ type
   ##  - `reg(x)`: Register x.
   ##  - `tpe(x)`: The xth entry in the types constants table.
   ##  - `val(x)`: The xth entry in the value constants table.
+  ##  - `intr(x)`: The xth entry in the intrinsics constants table.
   ##  - `glb(x)`: The xth entry in the global variables constants table.
   ##  - `mfs(x)`: The xth entry in the multi functions constants table.
-  ##
-  ## Please note that the `FunctionCall` and `Dispatch` operations must have the same argument registers, because of
-  ## the evaluator implementation.
   Operation* {.pure.} = enum
     ## reg(arg0) <- val(arg1)
     Const
@@ -54,6 +52,9 @@ type
     ## reg(arg0) <- reg(arg1).get(arg2)
     TupleGet
 
+    ## reg(arg0) <- reg(arg1)()
+    FunctionCall0
+
     ## reg(arg0) <- reg(arg1)(reg(arg2))
     FunctionCall1
 
@@ -80,6 +81,18 @@ type
 
     ## if reg(arg1): pc <- arg0
     JumpIfTrue
+
+    ## reg(arg0) <- intr(arg1)(reg(arg2))
+    Intrinsic1
+
+    ## reg(arg0) <- intr(arg1)(frame, reg(arg2))
+    IntrinsicFa1
+
+    ## reg(arg0) <- intr(arg1)(reg(arg2), reg(arg3))
+    Intrinsic2
+
+    ## reg(arg0) <- intr(arg1)(frame, reg(arg2), reg(arg3))
+    IntrinsicFa2
 
     ## Immediately gets the value of the global variable without checking whether it is initialized. This must only be
     ## used with eager global variables, or if it can be definitely proven that a lazy global variable must have been
