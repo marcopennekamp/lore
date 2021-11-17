@@ -2,7 +2,6 @@
 
 #### Features
 
-- Implement intrinsics: ~~Intrinsics definition~~, ~~constants table intrinsics~~, ~~universe resolution~~, ~~intrinsics calls~~, test example.
 - Implement parametric functions:
   - Type parameters: poem reading, poem writing, universe resolution, type variable resolution from function scopes, run-time assignments map.
   - Types: fit, type substitution, sum/intersection simplification.
