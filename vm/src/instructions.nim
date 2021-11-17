@@ -118,12 +118,6 @@ type
     ## return reg(0)
     Return0
 
-    # TODO (vm): Implement intrinsic calls to support native list functions and so on.
-    ## arg0: Target register.
-    ## arg1: Constants table ID of the intrinsic function.
-    ## arg2: Argument 1 register.
-    #CallIntrinsic1
-
   Argument {.union.} = object
     uint_value*: uint16
     int_value*: int16
