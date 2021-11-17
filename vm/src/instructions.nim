@@ -118,25 +118,23 @@ type
     ## return reg(0)
     Return0
 
-  Argument {.union.} = object
-    uint_value*: uint16
-    int_value*: int16
+  Argument = distinct uint16
 
   Instruction* = object
     operation*: Operation
     arguments*: array[4, Argument]
 
-template arg*(instruction: Instruction, index: uint16): uint16 = instruction.arguments[index].uint_value
-template argi*(instruction: Instruction, index: uint16): int16 = instruction.arguments[index].int_value
+template arg*(instruction: Instruction, index: uint16): uint16 = uint16(instruction.arguments[index])
+template argi*(instruction: Instruction, index: uint16): int16 = int16(instruction.arguments[index])
 
 proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16, arg2: uint16, arg3: uint16): Instruction =
   Instruction(
     operation: operation,
     arguments: [
-      Argument(uint_value: arg0),
-      Argument(uint_value: arg1),
-      Argument(uint_value: arg2),
-      Argument(uint_value: arg3),
+      Argument(arg0),
+      Argument(arg1),
+      Argument(arg2),
+      Argument(arg3),
     ],
   )
 

@@ -350,7 +350,7 @@ proc write_function(stream: FileStream, function: PoemFunction) =
 proc write_instruction(stream: FileStream, instruction: Instruction) =
   stream.write(cast[uint16](instruction.operation))
   for argument in instruction.arguments:
-    stream.write(argument.uint_value)
+    stream.write(uint16(argument))
 
 ########################################################################################################################
 # Types.                                                                                                               #
