@@ -11,22 +11,21 @@ type
   ##
   ## We can keep the size of TaggedValue to 8 bytes with a technique called pointer tagging. Essentially, on 64-bit
   ## systems the lower three bits of a pointer are always 0 due to alignment, so we can use these bits to tag Ints,
-  ## Reals, Booleans, and references. This reduces the range of an Int, for example, from 64 bits to 61 bits, but we
-  ## don't anticipate any issues with that in the foreseeable future. There are no plans to port Lore to 32-bit
-  ## systems.
+  ## Booleans, and references. This reduces the range of an Int, for example, from 64 bits to 61 bits, but we don't
+  ## anticipate any issues with that in the foreseeable future. There are no plans to port Lore to 32-bit systems.
   ##
-  ## There is a slight performance cost associated with TaggedValues, as every time we want to use an Int or a Real, we
-  ## have to untag it using a shift. Every time we want to create an Int or Real, we have to shift the value and OR the
-  ## tag bits. Reference access is free, as the reference tag is 0. Booleans we don't need shifts, because there are
-  ## only two possible values: `0b0011` for false and `0b1011` for true, which includes the tag bits.
+  ## There is a slight performance cost associated with TaggedValues, as every time we want to use an Int, we have to
+  ## untag it using a shift. Every time we want to create an Int, we have to shift the value and OR the tag bits.
+  ## Reference access is free, as the reference tag is 0. Booleans don't need shifts, because there are only two
+  ## possible values: `0b0011` for false and `0b1011` for true, which includes the tag bits.
   ##
   ## Strings must be represented as reference Values, because a string's reference must be discoverable by the garbage
   ## collector. If we tag a string, its reference is going to be obfuscated and the string might be collected
   ## prematurely.
-  TaggedValue* {.union.} = object
-    uint*: uint64
-    reference: Value
-    int: int64
+  ##
+  ## Reals are currently represented as Values, because the only technique for putting a 64-bit float into a 64-bit
+  ## value AND still be able to tag it is nan-boxing, which is not future-proof.
+  TaggedValue* = distinct uint64
 
   ## The pragmas `inheritable` and `pure` omit the `m_type` pointer from each value instance, as `tpe` already
   ## sufficiently distinguishes between value kinds.
@@ -78,8 +77,11 @@ const
   TagReference*: uint64 = 0b000
   TagInt*: uint64 = 0b001
   TagBoolean*: uint64 = 0b010
-  False*: uint64 = 0 or TagBoolean
-  True*: uint64 = (1 shl 3) or TagBoolean
+  False*: TaggedValue = TaggedValue(0 or TagBoolean)
+  True*: TaggedValue = TaggedValue((1 shl 3) or TagBoolean)
+
+proc `==`(v1: TaggedValue, v2: TaggedValue): bool =
+  uint64(v1) == uint64(v2)
 
 proc type_of*(value: TaggedValue): Type
 
@@ -89,15 +91,15 @@ proc is_reference*(value: TaggedValue): bool = get_tag(value) == TagReference
 proc is_int*(value: TaggedValue): bool = get_tag(value) == TagInt
 proc is_boolean*(value: TaggedValue): bool = get_tag(value) == TagBoolean
 
-proc tag_reference*(value: Value): TaggedValue = TaggedValue(reference: value)
-proc untag_reference*(value: TaggedValue): Value = value.reference
+proc tag_reference*(value: Value): TaggedValue = cast[TaggedValue](value)
+proc untag_reference*(value: TaggedValue): Value = cast[Value](value)
 template untag_reference*(value: TaggedValue, tpe: untyped): untyped = cast[tpe](untag_reference(value))
 
-proc tag_int*(value: int64): TaggedValue = TaggedValue(int: (value shl 3) or cast[int64](TagInt))
-proc untag_int*(value: TaggedValue): int64 = value.int shr 3
+proc tag_int*(value: int64): TaggedValue = cast[TaggedValue]((value shl 3) or cast[int64](TagInt))
+proc untag_int*(value: TaggedValue): int64 = cast[int64](value) shr 3
 
-proc tag_boolean*(value: bool): TaggedValue = TaggedValue(uint: if value: True else: False)
-proc untag_boolean*(value: TaggedValue): bool = value.uint == True
+proc tag_boolean*(value: bool): TaggedValue = (if value: True else: False)
+proc untag_boolean*(value: TaggedValue): bool = value == True
 
 proc new_real*(value: float64): Value = RealValue(tpe: types.real, real: value)
 proc new_real_tagged*(value: float64): TaggedValue = tag_reference(new_real(value))
@@ -156,7 +158,7 @@ func `$`*(tagged_value: TaggedValue): string =
   elif tag == TagInt:
     $untag_int(tagged_value)
   elif tag == TagBoolean:
-    if tagged_value.uint == True: "true"
+    if tagged_value == True: "true"
     else: "false"
   else:
     "unknown"
