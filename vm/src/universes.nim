@@ -174,7 +174,10 @@ method resolve(poem_type: PoemXaryType, universe: Universe): Type =
       types.tpl(universe.resolve_many(poem_type.types))
   elif poem_type.kind == Kind.Function:
     let resolved_types = universe.resolve_many(poem_type.types)
-    types.function(resolved_types[0], resolved_types[1])
+    let input = resolved_types[0]
+    if (input.kind != Kind.Tuple):
+      quit("Function type inputs must be tuple types.")
+    types.function(cast[TupleType](input), resolved_types[1])
   elif poem_type.kind == Kind.List:
     types.list(universe.resolve(poem_type.types[0]))
   else:

@@ -346,6 +346,7 @@ proc evaluate*(entry_function: Function, frame_mem: pointer): TaggedValue =
 
 ## Evaluates a function value with a signature `() => Any`.
 proc evaluate*(function_value: FunctionValue, frame: FramePtr): TaggedValue =
+  assert(arity(function_value) == 0)
   if function_value.is_fixed:
     call0(cast[Function](function_value.target))
   else:
@@ -353,6 +354,7 @@ proc evaluate*(function_value: FunctionValue, frame: FramePtr): TaggedValue =
 
 ## Evaluates a function value with a signature `(Any) => Any`.
 proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue =
+  assert(arity(function_value) == 1)
   if function_value.is_fixed:
     call1(cast[Function](function_value.target), argument0)
   else:
@@ -360,6 +362,7 @@ proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: Tagged
 
 ## Evaluates a function value with a signature `(Any, Any) => Any`.
 proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue =
+  assert(arity(function_value) == 2)
   if function_value.is_fixed:
     call2(cast[Function](function_value.target), argument0, argument1)
   else:

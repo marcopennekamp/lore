@@ -17,7 +17,7 @@ proc lists_each(frame: FramePtr, tagged_list: TaggedValue, tagged_function: Tagg
   let list = untag_reference(tagged_list, ListValue)
   let function = untag_reference(tagged_function, FunctionValue)
   for element in list.elements:
-    discard evaluator.evaluate(function, frame)
+    discard evaluator.evaluate(function, frame, element)
   values.unit
 
 proc io_println(value: TaggedValue): TaggedValue =

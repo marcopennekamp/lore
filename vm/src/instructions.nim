@@ -124,8 +124,8 @@ type
     operation*: Operation
     arguments*: array[4, Argument]
 
-template arg*(instruction: Instruction, index: uint16): uint16 = uint16(instruction.arguments[index])
-template argi*(instruction: Instruction, index: uint16): int16 = int16(instruction.arguments[index])
+template arg*(instruction: Instruction, index: uint16): uint16 = cast[uint16](instruction.arguments[index])
+template argi*(instruction: Instruction, index: uint16): int16 = cast[int16](instruction.arguments[index])
 
 proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16, arg2: uint16, arg3: uint16): Instruction =
   Instruction(

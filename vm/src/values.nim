@@ -1,6 +1,6 @@
 import std/strformat, std/strutils
 
-from types import Kind, Type
+from types import Kind, Type, FunctionType
 
 type
   ## A TaggedValue is a compact representation of a Lore value. Every Lore value needs to carry type information at run
@@ -123,6 +123,8 @@ let unit*: TaggedValue = new_tuple_tagged(@[])
 
 proc new_function*(is_fixed: bool, target: pointer, tpe: Type): Value = FunctionValue(tpe: tpe, is_fixed: is_fixed, target: target)
 proc new_function_tagged*(is_fixed: bool, target: pointer, tpe: Type): TaggedValue = tag_reference(new_function(is_fixed, target, tpe))
+
+proc arity*(function: FunctionValue): int = cast[FunctionType](function.tpe).input.elements.len
 
 proc new_list*(elements: seq[TaggedValue], tpe: Type): Value = ListValue(tpe: tpe, elements: elements)
 proc new_list_tagged*(elements: seq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_list(elements, tpe))

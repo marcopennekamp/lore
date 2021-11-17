@@ -40,7 +40,8 @@ type
     elements*: seq[Type]
 
   FunctionType* {.pure, acyclic.} = ref object of Type
-    input*, output*: Type
+    input*: TupleType
+    output*: Type
 
   ListType* {.pure, acyclic.} = ref object of Type
     element*: Type
@@ -67,7 +68,7 @@ let
 proc sum*(parts: open_array[Type]): SumType = SumType(kind: Kind.Sum, parts: @parts)
 proc intersection*(parts: open_array[Type]): IntersectionType = IntersectionType(kind: Kind.Intersection, parts: @parts)
 proc tpl*(elements: open_array[Type]): TupleType = TupleType(kind: Kind.Tuple, elements: @elements)
-proc function*(input: Type, output: Type): FunctionType = FunctionType(kind: Kind.Function, input: input, output: output)
+proc function*(input: TupleType, output: Type): FunctionType = FunctionType(kind: Kind.Function, input: input, output: output)
 proc list*(element: Type): ListType = ListType(kind: Kind.List, element: element)
 proc map*(key: Type, value: Type): MapType = MapType(kind: Kind.Map, key: key, value: value)
 
