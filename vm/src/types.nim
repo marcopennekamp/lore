@@ -77,8 +77,6 @@ proc map*(key: Type, value: Type): MapType = MapType(kind: Kind.Map, key: key, v
 # TODO (vm): Intern symbol types.
 proc symbol*(name: string): SymbolType = SymbolType(kind: Kind.Symbol, name: name)
 
-# TODO (vm): Implement type stringification.
-
 ########################################################################################################################
 # Type equality.                                                                                                       #
 ########################################################################################################################
@@ -305,6 +303,32 @@ proc tuple_subtypes_tuple(t1: TupleType, t2: TupleType): bool =
     if not is_subtype(es1[i], es2[i]):
       return false
   true
+
+########################################################################################################################
+# Stringification.                                                                                                     #
+########################################################################################################################
+
+proc `$`(tpe: Type): string =
+  case tpe.kind
+  of Kind.TypeVariable: quit("Type variable stringification is not yet implemented.")
+  of Kind.Any: "Any"
+  of Kind.Nothing: "Nothing"
+  of Kind.Real: "Real"
+  of Kind.Int: "Int"
+  of Kind.Boolean: "Boolean"
+  of Kind.String: "String"
+  of Kind.Sum: "(" & cast[SumType](tpe).parts.join(" | ") & ")"
+  of Kind.Intersection: "(" & cast[IntersectionType](tpe).parts.join(" & ") & ")"
+  of Kind.Tuple: "(" & cast[TupleType](tpe).elements.join(", ") & ")"
+  of Kind.Function:
+    let tpe = cast[FunctionType](tpe)
+    "(" & $tpe.input & " => " & $tpe.output & ")"
+  of Kind.List: "[" & $cast[ListType](tpe).element & "]"
+  of Kind.Map:
+    let tpe = cast[MapType](tpe)
+    "#[" & $tpe.key & " -> " & $tpe.value & "]"
+  of Kind.Symbol: "#" & cast[SymbolType](tpe).name
+  else: "unknown"
 
 ########################################################################################################################
 # Type benchmarks.                                                                                            #
