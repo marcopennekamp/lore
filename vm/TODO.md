@@ -2,6 +2,7 @@
 
 #### Features
 
+- Figure out whether `seq` and `string` deep copying by default is a significant performance problem. For example, when we call `values.new_tuple`, how many times is a sequence deep-copied before it finds its place inside `elements`? This might be a big reason why value and type creation performance is suboptimal.
 - Implement parametric functions:
   - Type parameters: poem reading, poem writing, universe resolution, type variable resolution from function scopes, run-time assignments map.
   - Types: fit, type substitution, sum/intersection simplification.
@@ -13,7 +14,6 @@
   - Schemas: Schema definition, poem reading, poem writing, universe resolution.
   - Types: Type definition, type equality, subtyping, type variable allocations, type substitution, to string, poem reading, poem writing, supertrait instantiation, open property types and `getPropertyType`, constructors, open type parameters and type paths.
   - Values: Struct values, struct memory layout, poem reading, poem writing, constructors, direct and indirect field access, constructor functions, interned objects.
-- Figure out whether `seq` deep copying by default is a significant performance problem. For example, when we call `values.new_tuple`, how many times is a sequence deep-copied before it finds its place inside `elements`? This might be a big reason why value and type creation performance is suboptimal.
 - Implement declared type interning:
   - Implement hashing for all types. 
   - Cache declared types within a schema.
