@@ -1,3 +1,5 @@
+import imseqs
+
 type
   Kind* {.pure.} = enum
     TypeVariable
@@ -31,13 +33,13 @@ type
     lower_bound*, upper_bound*: Type
 
   SumType* {.pure, shallow, acyclic.} = ref object of Type
-    parts*: seq[Type]
+    parts*: ImSeq[Type]
 
   IntersectionType* {.pure, shallow, acyclic.} = ref object of Type
-    parts*: seq[Type]
+    parts*: ImSeq[Type]
 
-  TupleType* {.pure, shallow, acyclic.} = ref object of Type
-    elements*: seq[Type]
+  TupleType* {.pure, acyclic.} = ref object of Type
+    elements*: ImSeq[Type]
 
   FunctionType* {.pure, acyclic.} = ref object of Type
     input*: TupleType
@@ -63,11 +65,11 @@ let
   real* = Type(kind: Real)
   boolean* = Type(kind: Boolean)
   string* = Type(kind: String)
-  unit* = TupleType(kind: Kind.Tuple, elements: @[])
+  unit* = TupleType(kind: Kind.Tuple, elements: empty_fixed_seq[Type]())
 
-proc sum*(parts: open_array[Type]): SumType = SumType(kind: Kind.Sum, parts: @parts)
-proc intersection*(parts: open_array[Type]): IntersectionType = IntersectionType(kind: Kind.Intersection, parts: @parts)
-proc tpl*(elements: open_array[Type]): TupleType = TupleType(kind: Kind.Tuple, elements: @elements)
+proc sum*(parts: open_array[Type]): SumType = SumType(kind: Kind.Sum, parts: new_fixed_seq(parts))
+proc intersection*(parts: open_array[Type]): IntersectionType = IntersectionType(kind: Kind.Intersection, parts: new_fixed_seq(parts))
+proc tpl*(elements: open_array[Type]): TupleType = TupleType(kind: Kind.Tuple, elements: new_fixed_seq(elements))
 proc function*(input: TupleType, output: Type): FunctionType = FunctionType(kind: Kind.Function, input: input, output: output)
 proc list*(element: Type): ListType = ListType(kind: Kind.List, element: element)
 proc map*(key: Type, value: Type): MapType = MapType(kind: Kind.Map, key: key, value: value)
@@ -84,8 +86,8 @@ proc symbol*(name: string): SymbolType = SymbolType(kind: Kind.Symbol, name: nam
 ## Checks the referential equality of the two types.
 proc `===`(a: Type, b: Type): bool = cast[pointer](a) == cast[pointer](b)
 
-proc has_equal_in(ts1: seq[Type], ts2: seq[Type]): bool
-proc are_exactly_equal(ts1: seq[Type], ts2: seq[Type]): bool
+proc has_equal_in(ts1: ImSeq[Type], ts2: ImSeq[Type]): bool
+proc are_exactly_equal(ts1: ImSeq[Type], ts2: ImSeq[Type]): bool
 
 proc are_equal*(t1: Type, t2: Type): bool =
   # If the two types are referentially equal, they are obviously the same!
@@ -141,7 +143,7 @@ proc are_equal*(t1: Type, t2: Type): bool =
 
   else: false
 
-proc has_equal_in(ts1: seq[Type], ts2: seq[Type]): bool =
+proc has_equal_in(ts1: ImSeq[Type], ts2: ImSeq[Type]): bool =
   for t1 in ts1:
     var found = false
     for t2 in ts2:
@@ -150,7 +152,7 @@ proc has_equal_in(ts1: seq[Type], ts2: seq[Type]): bool =
     if not found: return false
   true
 
-proc are_exactly_equal(ts1: seq[Type], ts2: seq[Type]): bool =
+proc are_exactly_equal(ts1: ImSeq[Type], ts2: ImSeq[Type]): bool =
   if ts1.len != ts2.len: return false
   for i in 0 ..< ts1.len:
     if not are_equal(ts1[i], ts2[i]):
@@ -305,7 +307,7 @@ proc tuple_subtypes_tuple(t1: TupleType, t2: TupleType): bool =
   true
 
 ########################################################################################################################
-# Type function benchmarks.                                                                                            #
+# Type benchmarks.                                                                                            #
 ########################################################################################################################
 
 when is_main_module:
@@ -320,10 +322,10 @@ when is_main_module:
     discard are_equal(sum1, sum1)
 
   echo are_equal(sum1, sum2)
-  benchmark("sum1 == sum2", 100_000_000):
+  benchmark("sum1 == sum2", 50_000_000):
     discard are_equal(sum1, sum2)
 
-  echo are_equal(sum1, sum2)
+  echo are_equal(sum1, sum3)
   benchmark("sum1 == sum3", 100_000_000):
     discard are_equal(sum1, sum3)
 
@@ -340,20 +342,20 @@ when is_main_module:
   ])
 
   echo are_equal(tuple1, tuple2)
-  benchmark("tuple1 == tuple2", 100_000_000):
+  benchmark("tuple1 == tuple2", 25_000_000):
     discard are_equal(tuple1, tuple2)
 
-  benchmark("tuple3 == tuple4 (+creation)", 10_000_000):
-    let tuple3 = tpl([
+  benchmark("tuple1 == tuple2 (+creation)", 10_000_000):
+    let tuple1 = tpl([
       sum([string, int, boolean]),
       intersection([string, int, boolean]),
       list(map(string, int)),
     ])
 
-    let tuple4 = tpl([
+    let tuple2 = tpl([
       sum([string, int, boolean]),
       intersection([string, int, boolean]),
       list(map(string, int)),
     ])
 
-    discard are_equal(tuple3, tuple4)
+    discard are_equal(tuple1, tuple2)
