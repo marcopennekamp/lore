@@ -2,6 +2,7 @@ import std/strformat
 
 from definitions import FramePtr, Intrinsic, IntrinsicFunction
 from evaluator import nil
+import imseqs
 import values
 
 proc lists_get(tagged_list: TaggedValue, tagged_index: TaggedValue): TaggedValue =

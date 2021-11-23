@@ -1,5 +1,6 @@
 import std/strformat, std/strutils
 
+import imseqs
 from types import Kind, Type, FunctionType
 
 type
@@ -55,7 +56,7 @@ type
   #            would be 24 and 32 bytes large due to alignment. This will remove one layer of pointer indirection and
   #            save an allocation, but obviously complicate the code.
   TupleValue* {.pure, shallow.} = ref object of Value
-    elements*: seq[TaggedValue]
+    elements*: ImSeq[TaggedValue]
 
   ## A FunctionValue is either a fixed function value (pointing to a fixed function or a lambda) or a multi-function
   ## value. This is determined by the flag `is_fixed`. The implementation of the `target` is either a `Function` or a
@@ -66,7 +67,7 @@ type
     target*: pointer
 
   ListValue* {.pure, shallow.} = ref object of Value
-    elements*: seq[TaggedValue]
+    elements*: ImSeq[TaggedValue]
 
   SymbolValue* {.pure, shallow.} = ref object of Value
     name*: string
@@ -108,26 +109,27 @@ proc new_string*(value: string): Value = StringValue(tpe: types.string, string: 
 proc new_string_tagged*(value: string): TaggedValue = tag_reference(new_string(value))
 
 ## Creates a new tuple, forcing its type to be `tpe` instead of taking the type from the elements.
-proc new_tuple*(elements: seq[TaggedValue], tpe: Type): Value = TupleValue(tpe: tpe, elements: elements)
-proc new_tuple_tagged*(elements: seq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_tuple(elements, tpe))
+proc new_tuple*(elements: ImSeq[TaggedValue], tpe: Type): Value = TupleValue(tpe: tpe, elements: elements)
+proc new_tuple_tagged*(elements: ImSeq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_tuple(elements, tpe))
 
-proc new_tuple*(elements: seq[TaggedValue]): Value =
-  var element_types = new_seq_of_cap[Type](elements.len)
-  for element in elements:
-    element_types.add(type_of(element))
+proc new_tuple*(elements: ImSeq[TaggedValue]): Value =
+  let length = elements.len
+  var element_types = new_immutable_seq[Type](length)
+  for i in 0 ..< length:
+    element_types.elements[i] = type_of(elements[i])
   new_tuple(elements, types.tpl(element_types))
 
-proc new_tuple_tagged*(elements: seq[TaggedValue]): TaggedValue = tag_reference(new_tuple(elements))
+proc new_tuple_tagged*(elements: ImSeq[TaggedValue]): TaggedValue = tag_reference(new_tuple(elements))
 
-let unit*: TaggedValue = new_tuple_tagged(@[])
+let unit*: TaggedValue = new_tuple_tagged(empty_immutable_seq[TaggedValue]())
 
 proc new_function*(is_fixed: bool, target: pointer, tpe: Type): Value = FunctionValue(tpe: tpe, is_fixed: is_fixed, target: target)
 proc new_function_tagged*(is_fixed: bool, target: pointer, tpe: Type): TaggedValue = tag_reference(new_function(is_fixed, target, tpe))
 
 proc arity*(function: FunctionValue): int = cast[FunctionType](function.tpe).input.elements.len
 
-proc new_list*(elements: seq[TaggedValue], tpe: Type): Value = ListValue(tpe: tpe, elements: elements)
-proc new_list_tagged*(elements: seq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_list(elements, tpe))
+proc new_list*(elements: ImSeq[TaggedValue], tpe: Type): Value = ListValue(tpe: tpe, elements: elements)
+proc new_list_tagged*(elements: ImSeq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_list(elements, tpe))
 
 proc new_symbol*(name: string): Value = SymbolValue(tpe: types.symbol(name), name: name)
 proc new_symbol_tagged*(name: string): TaggedValue = tag_reference(new_symbol(name))
@@ -173,7 +175,7 @@ func `$`*(value: Value): string =
   of Kind.String: cast[StringValue](value).string
   of Kind.Tuple:
     let tpl = cast[TupleValue](value)
-    "(" & $tpl.elements & ")"
+    "(" & $tpl.elements.join(", ") & ")"
   of Kind.Function:
     # TODO (vm): We should print the name instead of the target address, but this is non-trivial when avoiding cyclic dependencies.
     let function = cast[FunctionValue](value)
@@ -183,7 +185,7 @@ func `$`*(value: Value): string =
       "<multi-function: " & $cast[uint](function.target) & ">"
   of Kind.List:
     let list = cast[ListValue](value)
-    "[" & $list.elements & "]"
+    "[" & $list.elements.join(", ") & "]"
   of Kind.Symbol:
     let symbol = cast[SymbolValue](value)
     "#" & symbol.name

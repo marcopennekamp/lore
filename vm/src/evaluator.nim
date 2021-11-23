@@ -1,5 +1,6 @@
 import definitions
 from dispatch import get_dispatch_target
+import imseqs
 import instructions
 import values
 from utils import when_debug
@@ -91,9 +92,7 @@ template const_multi_function_arg(index): untyped = constants.multi_functions[in
 template list_append(new_tpe): untyped =
   let list = reg_get_ref_arg(1, ListValue)
   let new_element = reg_get_arg(2)
-  # This relies on `seq`'s deep copy semantics on assignment.
-  var new_elements = list.elements
-  new_elements.add(new_element)
+  var new_elements = list.elements.append(new_element)
   reg_set_ref_arg(0, new_list(new_elements, new_tpe))
 
 template next_frame_base(): pointer = cast[pointer](cast[uint](frame) + frame.function.frame_size)
@@ -207,16 +206,15 @@ proc evaluate(frame: FramePtr) =
     of Operation.Tuple:
       let first = instruction.arg(1)
       let last = instruction.arg(2)
-      var elements = new_seq_of_cap[TaggedValue](last - first + 1)
+      var elements = new_immutable_seq[TaggedValue](last - first + 1)
       for i in first .. last:
-        elements.add(reg_get(i))
+        elements.elements[i] = reg_get(i)
       reg_set_ref_arg(0, values.new_tuple(elements))
 
     of Operation.Tuple2:
-      var elements: seq[TaggedValue]
-      new_seq(elements, 2)
-      elements[0] = reg_get_arg(1)
-      elements[1] = reg_get_arg(2)
+      var elements = new_immutable_seq[TaggedValue](2)
+      elements.elements[0] = reg_get_arg(1)
+      elements.elements[1] = reg_get_arg(2)
       reg_set_ref_arg(0, values.new_tuple(elements))
 
     of Operation.TupleGet:

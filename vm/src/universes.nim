@@ -4,6 +4,7 @@ import std/tables
 import sugar
 
 import definitions
+import imseqs
 import poems
 from pyramid import nil
 from types import Kind, Type, TupleType
@@ -207,7 +208,7 @@ method resolve(poem_value: PoemTupleValue, universe: Universe): TaggedValue =
   let tpe = universe.resolve(poem_value.tpe)
   assert(tpe.kind == Kind.Tuple)
   let elements = universe.resolve_many(poem_value.elements)
-  values.new_tuple_tagged(elements, tpe)
+  values.new_tuple_tagged(new_immutable_seq(elements), tpe)
 
 method resolve(poem_value: PoemFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
   quit("Please implement `resolve` for all PoemFunctionValues.")
@@ -233,6 +234,6 @@ method resolve(poem_value: PoemListValue, universe: Universe): TaggedValue {.loc
   let tpe = universe.resolve(poem_value.tpe)
   assert(tpe.kind == Kind.List)
   let elements = universe.resolve_many(poem_value.elements)
-  values.new_list_tagged(elements, tpe)
+  values.new_list_tagged(new_immutable_seq(elements), tpe)
 
 method resolve(poem_value: PoemSymbolValue, universe: Universe): TaggedValue {.locks: "unknown".} = values.new_symbol_tagged(poem_value.name)
