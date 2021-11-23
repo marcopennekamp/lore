@@ -105,7 +105,13 @@ proc untag_boolean*(value: TaggedValue): bool = value == True
 proc new_real*(value: float64): Value = RealValue(tpe: types.real, real: value)
 proc new_real_tagged*(value: float64): TaggedValue = tag_reference(new_real(value))
 
-proc new_string*(value: string): Value = StringValue(tpe: types.string, string: value)
+## Note that the resulting StringValue's `string` will be a shallow copy of `value`. If `value` is subsequently
+## modified, `string` will change as well. This is a valid optimization because `new_string` will usually be called
+## with a fresh string value.
+proc new_string*(value: string): Value =
+  let string_value = StringValue(tpe: types.string)
+  shallow_copy(string_value.string, value)
+  string_value
 proc new_string_tagged*(value: string): TaggedValue = tag_reference(new_string(value))
 
 ## Creates a new tuple, forcing its type to be `tpe` instead of taking the type from the elements.
