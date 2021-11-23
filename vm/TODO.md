@@ -2,7 +2,6 @@
 
 #### Features
 
-- Figure out whether `seq` and `string` deep copying by default is a significant performance problem. For example, when we call `values.new_tuple`, how many times is a sequence deep-copied before it finds its place inside `elements`? This might be a big reason why value and type creation performance is suboptimal.
 - Implement parametric functions:
   - Type parameters: poem reading, poem writing, universe resolution, type variable resolution from function scopes, run-time assignments map.
   - Types: fit, type substitution, sum/intersection simplification.
