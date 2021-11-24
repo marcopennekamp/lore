@@ -3,7 +3,7 @@
 #### Features
 
 - Implement parametric functions:
-  - Type parameters: poem reading, poem writing, universe resolution, type variable resolution from function scopes, run-time assignments map.
+  - Type parameters: ~~type parameters and variables~~, poem reading, poem writing, universe resolution, type argument substitution into type and variable constants, executing function instances, `*Poly` operations.
   - Types: fit, type substitution, sum/intersection simplification.
   - We probably don't need to implement the functions from `polymorphy.ts`, because all functions will have a full list of their type variable declarations. Hence, we can always find out the variables and whether a function is polymorphic without looking at the input type.
 - Implement shapes:

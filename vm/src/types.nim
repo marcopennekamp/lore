@@ -29,8 +29,17 @@ type
   Type* {.inheritable, pure.} = ref object
     kind*: Kind
 
+  ## A type variable represents the application of a type argument in the current context at the exact index. For
+  ## example, if we have a function with two type parameters A and B, the type variable with index 1 would refer to B
+  ## and its corresponding type argument given a FunctionInstance.
   TypeVariable* {.pure, acyclic.} = ref object of Type
-    lower_bound*, upper_bound*: Type
+    index*: uint8
+    # TODO (vm): Do we need this? This will likely only be a cache. Yet, `is_subtype` relies on this. I suppose the
+    #            question comes down to whether we can/will always be able to link a type variable to its type
+    #            parameter. Perhaps this property will also only be defined for type variables contained in function
+    #            input types, where it's actually relevant for `is_subtype`. A type variable inside a type or value
+    #            constant should never "leak" out from the *Poly operations.
+    parameter*: TypeParameter
 
   SumType* {.pure, shallow, acyclic.} = ref object of Type
     parts*: ImSeq[Type]
@@ -57,6 +66,17 @@ type
     name*: string
 
   # TODO (vm): Implement trait and struct types.
+
+  TypeParameter* = ref object
+    name*: string
+    lower_bound*: Type
+    upper_bound*: Type
+    variance*: Variance
+
+  Variance* = enum
+    Covariant
+    Contravariant
+    Invariant
 
 let
   any* = Type(kind: Any)
@@ -182,7 +202,8 @@ proc is_subtype*(t1: Type, t2: Type): bool =
   case t1.kind
   of Kind.TypeVariable:
     let tv1 = cast[TypeVariable](t1)
-    if is_subtype(tv1.upper_bound, t2):
+    # TODO (vm): Make sure that `tv1.parameter` is defined!
+    if is_subtype(tv1.parameter.upper_bound, t2):
       return true
 
   of Kind.Nothing:
@@ -241,7 +262,8 @@ proc is_subtype*(t1: Type, t2: Type): bool =
   case t2.kind
   of Kind.TypeVariable:
     let tv2 = cast[TypeVariable](t2)
-    is_subtype(t1, tv2.lower_bound)
+    # TODO (vm): Make sure that `tv2.parameter` is defined!
+    is_subtype(t1, tv2.parameter.lower_bound)
 
   of Kind.Any:
     true

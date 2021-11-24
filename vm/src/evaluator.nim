@@ -156,6 +156,9 @@ proc evaluate(frame: FramePtr) =
     of Operation.Const:
       reg_set_arg(0, const_value_arg(1))
 
+    of Operation.ConstPoly:
+      quit("Operation ConstPoly is not yet implemented.")
+
     of Operation.IntConst:
       reg_set_int_arg(0, instruction.argi(1))
 
@@ -242,6 +245,9 @@ proc evaluate(frame: FramePtr) =
     of Operation.ListAppend:
       let new_tpe = const_types_arg(3)
       list_append(new_tpe)
+
+    of Operation.ListAppendPoly:
+      quit("Operation ListAppendPoly is not yet implemented.")
 
     of Operation.ListAppendUntyped:
       let list = reg_get_ref_arg(1, ListValue)

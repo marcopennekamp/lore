@@ -1,5 +1,6 @@
+import imseqs
 from instructions import Instruction
-from types import Type, TupleType
+from types import Type, TupleType, TypeParameter
 from values import TaggedValue
 
 type
@@ -51,9 +52,9 @@ type
     #            DispatchX operation so that we can quickly access the relevant subset of functions.
     #hierarchy: MultiFunctionHierarchy
 
-  # TODO (vm): Add type parameters.
   Function* = ref object
     multi_function*: MultiFunction
+    type_parameters*: ImSeq[TypeParameter]
     input_type*: TupleType
     output_type*: Type
 
@@ -71,6 +72,11 @@ type
     frame_size*: uint16
     frame_registers_offset*: uint16
 
+  ## A function instance is a function with assigned type arguments.
+  FunctionInstance* = ref object
+    function*: Function
+    type_arguments*: ImSeq[Type]
+
   # TODO (vm): To perhaps optimize constants access by removing one layer of indirection, we could make the uint16
   #            index absolute and then turn the Constants table into a contiguous unchecked array of 8-byte values.
   #            For example, if we have a constants table with 1 type, 2 values, and 1 global variable, 0 would access
@@ -79,6 +85,12 @@ type
 
   ## A Constants object provides quick access to predefined types, values, global variables, and multi-functions. It
   ## may be shared across multiple function definitions. All entries are separately accessed by a uint16.
+  ##
+  ## Types and values are implicitly separated into monomorphic and polymorphic entities. A monomorphic type/value is
+  ## guaranteed to contain no type variables can be used as is. A polymorphic type/value contains at least one type
+  ## variable. Such types/values must be fetched with the instruction `ConstPoly` (or related instructions containing
+  ## the word "Poly"). All type variables will be substituted using the current function instance's type arguments. In
+  ## case of a polymorphic value, types will be substituted recursively into the value's children as well.
   Constants* = ref object
     types*: seq[Type]
     values*: seq[TaggedValue]
