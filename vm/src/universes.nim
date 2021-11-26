@@ -7,7 +7,7 @@ import definitions
 import imseqs
 import poems
 from pyramid import nil
-from types import Kind, Type, TupleType
+from types import Kind, Type, TupleType, TypeParameter
 from values import TaggedValue
 
 type
@@ -114,7 +114,10 @@ method resolve(poem_global_variable: PoemLazyGlobalVariable, universe: Universe)
     quit(fmt"The global variable `{name}` requires an initializer function `{initializer_name}`, but the associated multi-function has multiple function definitions.")
 
   let initializer = mf.functions[0]
-  new_lazy_global(name, initializer)
+  if not initializer.is_monomorphic:
+    quit(fmt"The global variable `{name}` has a polymorphic initializer function `{initializer_name}`. Initializer functions must be monomorphic.")
+
+  new_lazy_global(name, initializer.monomorphic_instance)
 
 ########################################################################################################################
 # Function resolution.                                                                                                 #
@@ -126,6 +129,8 @@ proc get_or_register_multi_function(universe: Universe, name: string): MultiFunc
 proc resolve(universe: Universe, poem_function: PoemFunction) =
   let multi_function = universe.get_or_register_multi_function(poem_function.name)
 
+  let type_parameters = empty_immutable_seq[TypeParameter]() # TODO (vm/poly): Actually resolve the type parameters from the poem.
+
   let input_type_raw = universe.resolve(poem_function.input_type)
   if input_type_raw.kind != Kind.Tuple:
     quit(fmt"Functions must always have a tuple as their input type. Function name: {poem_function.name}.")
@@ -134,11 +139,16 @@ proc resolve(universe: Universe, poem_function: PoemFunction) =
   let output_type = universe.resolve(poem_function.output_type)
   let function = Function(
     multi_function: multi_function,
+    type_parameters: type_parameters,
     input_type: input_type,
     output_type: output_type,
     register_count: poem_function.register_count,
     instructions: poem_function.instructions,
   )
+
+  if function.is_monomorphic:
+    function.monomorphic_instance = FunctionInstance(function: function, type_arguments: empty_immutable_seq[Type]())
+
   init_frame_stats(function)
 
   poem_function.resolved_function = function
@@ -219,10 +229,16 @@ method resolve(poem_value: PoemFixedFunctionValue, universe: Universe): TaggedVa
 method resolve(poem_value: PoemLambdaFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
   let tpe = universe.resolve(poem_value.tpe)
   assert(tpe.kind == Kind.Function)
+
   let mf = universe.multi_functions[poem_value.name]
   if mf.functions.len > 1:
     quit(fmt"Cannot create a lambda value from multi-function `{mf.name}`, because it has more than one function.")
-  values.new_function_tagged(true, cast[pointer](mf.functions[0]), tpe)
+
+  let function = mf.functions[0]
+  if not function.is_monomorphic:
+    quit(fmt"Cannot create a lambda value from function `{mf.name}`, because the function is polymorphic.")
+
+  values.new_function_tagged(true, cast[pointer](function.monomorphic_instance), tpe)
 
 method resolve(poem_value: PoemMultiFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
   let tpe = universe.resolve(poem_value.tpe)

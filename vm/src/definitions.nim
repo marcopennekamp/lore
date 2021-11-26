@@ -4,12 +4,16 @@ from types import Type, TupleType, TypeParameter
 from values import TaggedValue
 
 type
-  ## A frame represents the memory that the evaluation of a single function call requires. The memory for all frames
-  ## must be preallocated before the evaluator is invoked.
+  ## A frame represents the memory that the evaluation of a single monomorphic or polymorphic function call requires.
+  ## The memory for all frames must be preallocated before the evaluator is invoked.
   ##
   ## Frames are part of `definitions` because some intrinsics require access to frames.
   Frame* = object
     function*: Function
+    type_arguments*: ImSeq[Type]
+    # TODO (vm): Isn't this pointer totally superfluous? `registers` could simply be an UncheckedArray with the correct
+    #            amount of space reserved. The pointer at address x essentially points to address x + 8 here (where the
+    #            first register is placed).
     registers*: ptr UncheckedArray[TaggedValue]
   FramePtr* = ptr Frame
 
@@ -39,8 +43,8 @@ type
     ## Whether the global variable's `value` has already been initialized.
     is_initialized*: bool
 
-    ## The function that is supposed to initialize the global variable. It is nil for eager global variables.
-    initializer*: Function
+    ## The function instance that is supposed to initialize the global variable. It is nil for eager global variables.
+    initializer*: FunctionInstance
 
   MultiFunction* = ref object
     name*: string
@@ -61,6 +65,11 @@ type
     ## An abstract function has no instructions and cannot be invoked.
     is_abstract*: bool
 
+    ## The monomorphic instance of a function is only defined if the function is monomorphic. This instance can be used
+    ## to bypass creating new function instances every time dispatch is resolved, even though the type argument list
+    ## will always be empty.
+    monomorphic_instance*: FunctionInstance
+
     register_count*: uint16
     instructions*: seq[Instruction]
 
@@ -73,9 +82,10 @@ type
     frame_registers_offset*: uint16
 
   ## A function instance is a function with assigned type arguments.
-  FunctionInstance* = ref object
+  FunctionInstanceObj* = object
     function*: Function
     type_arguments*: ImSeq[Type]
+  FunctionInstance* = ref FunctionInstanceObj
 
   # TODO (vm): To perhaps optimize constants access by removing one layer of indirection, we could make the uint16
   #            index absolute and then turn the Constants table into a contiguous unchecked array of 8-byte values.
@@ -103,7 +113,7 @@ proc new_eager_global*(name: string, value: TaggedValue): GlobalVariable =
   GlobalVariable(name: name, value: value, is_initialized: true, initializer: nil)
 
 ## Creates a lazy global variable from the given name and initializer.
-proc new_lazy_global*(name: string, initializer: Function): GlobalVariable =
+proc new_lazy_global*(name: string, initializer: FunctionInstance): GlobalVariable =
   GlobalVariable(name: name, value: values.tag_reference(nil), is_initialized: false, initializer: initializer)
 
 ## Initializes the `frame_*` size and offset stats of the given function.
@@ -112,3 +122,6 @@ proc init_frame_stats*(function: Function) =
   function.frame_size = cast[uint16](preamble_size + sizeof(TaggedValue) * cast[int](function.register_count))
 
 proc new_constants*(): Constants = Constants(types: @[], values: @[], global_variables: @[], multi_functions: @[])
+
+proc is_monomorphic*(function: Function): bool = function.type_parameters.len == 0
+proc is_polymorphic*(function: Function): bool = function.type_parameters.len > 0

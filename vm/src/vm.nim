@@ -1,9 +1,9 @@
-from definitions import Function
+from definitions import FunctionInstance, is_monomorphic
 from evaluator import nil
 from values import `$`
 
-proc run_and_print*(target: Function, frame_mem: pointer) =
-  let res = evaluator.evaluate(target, frame_mem)
+proc run_and_print*(function_instance: FunctionInstance, frame_mem: pointer) =
+  let res = evaluator.evaluate(function_instance, frame_mem)
   echo "Result: ", res
 
 when is_main_module:

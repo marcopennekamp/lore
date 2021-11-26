@@ -5,7 +5,7 @@ import instructions
 import values
 from utils import when_debug
 
-proc evaluate*(entry_function: Function, frame_mem: pointer): TaggedValue
+proc evaluate*(entry_function: FunctionInstance, frame_mem: pointer): TaggedValue
 
 proc evaluate*(function_value: FunctionValue, frame: FramePtr): TaggedValue
 proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue
@@ -16,13 +16,15 @@ proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: Tagged
 ########################################################################################################################
 
 ## Don't move `create_frame` to a different module. GCC won't inline it.
+# TODO (vm): GCC will inline it with LTO. We might be able to move this to `definitions`.
 # TODO (vm): We should possibly clear a frame by nilling all references so that pointers left in registers aren't
 #            causing memory leaks. However, this also incurs a big performance penalty, so we should probably rather
 #            verify first that this is a problem before fixing it.
-proc create_frame(function: Function, frame_base: pointer): FramePtr {.inline.} =
+proc create_frame(instance: FunctionInstance, frame_base: pointer): FramePtr {.inline.} =
   const preamble_size = sizeof(Frame)
   let frame = cast[FramePtr](frame_base)
-  frame.function = function
+  frame.function = instance.function
+  frame.type_arguments = instance.type_arguments
   frame.registers = cast[ptr UncheckedArray[TaggedValue]](cast[uint](frame_base) + cast[uint](preamble_size))
   frame
 
@@ -105,6 +107,7 @@ template get_call_result(target_frame): untyped =
   # After function evaluation has finished, it must guarantee that the return value is in the first register.
   target_frame.registers[0]
 
+# TODO (vm/poly): Do we have to pass type arguments of an owning multi-function to a lambda? Or how does this work?
 ## Calls a given Function target with zero arguments.
 template call0(target): TaggedValue =
   let target_frame = call_start(target)
@@ -157,6 +160,7 @@ proc evaluate(frame: FramePtr) =
       reg_set_arg(0, const_value_arg(1))
 
     of Operation.ConstPoly:
+      # Something like: `substitute_types(const_value_arg(1), frame.type_arguments)`
       quit("Operation ConstPoly is not yet implemented.")
 
     of Operation.IntConst:
@@ -341,7 +345,7 @@ proc evaluate(frame: FramePtr) =
     of Operation.Return0:
       break
 
-proc evaluate*(entry_function: Function, frame_mem: pointer): TaggedValue =
+proc evaluate*(entry_function: FunctionInstance, frame_mem: pointer): TaggedValue =
   let frame = create_frame(entry_function, frame_mem)
   evaluate(frame)
 
@@ -352,7 +356,7 @@ proc evaluate*(entry_function: Function, frame_mem: pointer): TaggedValue =
 proc evaluate*(function_value: FunctionValue, frame: FramePtr): TaggedValue =
   assert(arity(function_value) == 0)
   if function_value.is_fixed:
-    call0(cast[Function](function_value.target))
+    call0(cast[FunctionInstance](function_value.target))
   else:
     dispatch0(cast[MultiFunction](function_value.target))
 
@@ -360,7 +364,7 @@ proc evaluate*(function_value: FunctionValue, frame: FramePtr): TaggedValue =
 proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue =
   assert(arity(function_value) == 1)
   if function_value.is_fixed:
-    call1(cast[Function](function_value.target), argument0)
+    call1(cast[FunctionInstance](function_value.target), argument0)
   else:
     dispatch1(cast[MultiFunction](function_value.target), argument0)
 
@@ -368,6 +372,6 @@ proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: Tagged
 proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue =
   assert(arity(function_value) == 2)
   if function_value.is_fixed:
-    call2(cast[Function](function_value.target), argument0, argument1)
+    call2(cast[FunctionInstance](function_value.target), argument0, argument1)
   else:
     dispatch2(cast[MultiFunction](function_value.target), argument0, argument1)
