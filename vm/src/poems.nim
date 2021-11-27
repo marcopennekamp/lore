@@ -4,7 +4,7 @@ import std/strformat
 
 from definitions import Function
 from instructions import Operation, Instruction, new_instruction
-from types import Kind, Type
+from types import Kind, Type, Variance
 
 type
   ## A Poem is essentially a single unit of bytecode which contains type and multi-function definitions. A program may
@@ -43,6 +43,7 @@ type
   ## An unresolved function.
   PoemFunction* = ref object
     name*: string
+    type_parameters*: seq[PoemTypeParameter]
     input_type*: PoemType
     output_type*: PoemType
     is_abstract*: bool
@@ -52,9 +53,19 @@ type
     ## `resolved_function` is used to refer to the exact created function during multiple steps of universe resolution.
     resolved_function*: Function
 
+  ## An unresolved type parameter.
+  PoemTypeParameter* = ref object
+    name*: string
+    lower_bound*: PoemType
+    upper_bound*: PoemType
+    variance*: Variance
+
   ## An unresolved type.
   PoemType* = ref object of RootObj
     discard
+
+  PoemTypeVariable* = ref object of PoemType
+    index: uint8
 
   PoemBasicType* = ref object of PoemType
     tpe*: Type
@@ -147,8 +158,6 @@ proc list_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemListV
 proc symbol_type*(name: string): PoemType = PoemSymbolType(name: name)
 proc symbol_value*(name: string): PoemValue = PoemSymbolValue(name: name)
 
-proc fail(message: string) {.noreturn.} = raise new_exception(IOError, message)
-
 const
   tkBasic = 0'u8
   tkFixedSize = 1'u8
@@ -165,10 +174,21 @@ const
   btBoolean = 4'u8
   btString = 5'u8
 
-  fsFunction = 0'u8
-  fsList = 1'u8
-  fsMap = 2'u8
-  fsSymbol = 3'u8
+  fsVariable = 0'u8
+  fsFunction = 1'u8
+  fsList = 2'u8
+  fsMap = 3'u8
+  fsSymbol = 4'u8
+
+proc fail(message: string) {.noreturn.} = raise new_exception(IOError, message)
+
+## The maximum number of type parameters that a function may have is 32. This allows us to allocate certain ImSeqs on
+## the stack when checking for type fit.
+const max_type_parameters = 32
+
+proc ensure_type_parameter_count(function_name: string, type_parameter_count: int) =
+  if type_parameter_count > max_type_parameters:
+    fail(fmt"The function {function_name} has {type_parameter_count} type parameters, but the maximum is {max_type_parameters}.")
 
 ########################################################################################################################
 # Read and write helpers.                                                                                              #
@@ -203,6 +223,7 @@ proc read_constants(stream: FileStream): PoemConstants
 proc read_global_variable(stream: FileStream): PoemGlobalVariable
 proc read_function(stream: FileStream): PoemFunction
 proc read_instruction(stream: FileStream): Instruction
+proc read_type_parameter(stream: FileStream): PoemTypeParameter
 proc read_type(stream: FileStream): PoemType
 proc read_value(stream: FileStream): PoemValue
 proc read_string_with_length(stream: FileStream): string
@@ -211,6 +232,7 @@ proc write_constants(stream: FileStream, constants: PoemConstants)
 proc write_global_variable(stream: FileStream, global_variable: PoemGlobalVariable)
 proc write_function(stream: FileStream, function: PoemFunction)
 proc write_instruction(stream: FileStream, instruction: Instruction)
+proc write_type_parameter(stream: FileStream, parameter: PoemTypeParameter)
 proc write_type(stream: FileStream, tpe: PoemType)
 proc write_value(stream: FileStream, value: PoemValue)
 proc write_string_with_length(stream: FileStream, string: string)
@@ -311,12 +333,16 @@ method write(global_variable: PoemLazyGlobalVariable, stream: FileStream) {.lock
 
 proc read_function(stream: FileStream): PoemFunction =
   let name = stream.read_string_with_length()
+  let type_parameters = stream.read_many_with_count(PoemTypeParameter, uint8, read_type_parameter)
   let input_type = stream.read_type()
   let output_type = stream.read_type()
   let is_abstract = stream.read(bool)
 
+  ensure_type_parameter_count(name, type_parameters.len)
+
   var function = PoemFunction(
     name: name,
+    type_parameters: type_parameters,
     input_type: input_type,
     output_type: output_type,
     is_abstract: is_abstract,
@@ -338,7 +364,10 @@ proc read_instruction(stream: FileStream): Instruction =
   )
 
 proc write_function(stream: FileStream, function: PoemFunction) =
+  ensure_type_parameter_count(function.name, function.type_parameters.len)
+
   stream.write_string_with_length(function.name)
+  stream.write_many_with_count(function.type_parameters, uint8, write_type_parameter)
   stream.write_type(function.input_type)
   stream.write_type(function.output_type)
   stream.write(function.is_abstract)
@@ -351,6 +380,29 @@ proc write_instruction(stream: FileStream, instruction: Instruction) =
   stream.write(cast[uint16](instruction.operation))
   for argument in instruction.arguments:
     stream.write(uint16(argument))
+
+########################################################################################################################
+# Type parameters.                                                                                                     #
+########################################################################################################################
+
+proc read_type_parameter(stream: FileStream): PoemTypeParameter =
+  let name = stream.read_string_with_length()
+  let lower_bound = stream.read_type()
+  let upper_bound = stream.read_type()
+  let variance = Variance(stream.read(uint8))
+
+  PoemTypeParameter(
+    name: name,
+    lower_bound: lower_bound,
+    upper_bound: upper_bound,
+    variance: variance,
+  )
+
+proc write_type_parameter(stream: FileStream, parameter: PoemTypeParameter) =
+  stream.write_string_with_length(parameter.name)
+  stream.write_type(parameter.lower_bound)
+  stream.write_type(parameter.upper_bound)
+  stream.write(uint8(ord(parameter.variance)))
 
 ########################################################################################################################
 # Types.                                                                                                               #
@@ -379,6 +431,9 @@ proc read_type(stream: FileStream): PoemType =
 
   of tkFixedSize:
     case metadata
+    of fsVariable:
+      let index = stream.read(uint8)
+      PoemTypeVariable(index: index)
     of fsFunction:
       let input = stream.read_type()
       let output = stream.read_type()
@@ -419,7 +474,7 @@ proc write_type_tag(stream: FileStream, tag_kind: uint8, tag_metadata: uint8) =
 
 proc write_type_tag(stream: FileStream, kind: Kind, child_count: uint8) =
   let (tag_kind, tag_metadata) = case kind
-  of Kind.TypeVariable: (tkNamed, 0'u8)
+  of Kind.TypeVariable: (tkFixedSize, fsVariable)
   of Kind.Any: (tkBasic, btAny)
   of Kind.Nothing: (tkBasic, btNothing)
   of Kind.Int: (tkBasic, btInt)
@@ -448,6 +503,10 @@ proc length_to_tag_metadata(length: int): uint8 =
 
 method write(tpe: PoemType, stream: FileStream) {.base, locks: "unknown".} =
   quit("Please implement `write` for all PoemTypes.")
+
+method write(tpe: PoemTypeVariable, stream: FileStream) {.locks: "unknown".} =
+  stream.write_type_tag(Kind.TypeVariable)
+  stream.write(tpe.index)
 
 # TODO (vm): Implement shape type writing.
 method write(tpe: PoemBasicType, stream: FileStream) {.locks: "unknown".} =

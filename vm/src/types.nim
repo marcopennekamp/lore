@@ -73,7 +73,7 @@ type
     upper_bound*: Type
     variance*: Variance
 
-  Variance* = enum
+  Variance* {.pure.} = enum
     Covariant
     Contravariant
     Invariant

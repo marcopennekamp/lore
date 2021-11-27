@@ -58,7 +58,8 @@ Note that global variables are currently *not* typed. It would only be needed fo
 A **Function** represents a single function definition. Its structure is as follows:
 
   - **Name** (String)
-  - TODO (vm): Type parameters.
+  - **Type parameter count** (uint8): Maximum 32.
+  - **Type parameters** (TypeParameter*)
   - **Input type** (TupleType)
   - **Output type** (Type)
   - **Abstract** (bool)
@@ -74,6 +75,18 @@ Instructions are encoded as fixed-size instructions:
   - **Operation** (uint16)
   - **Arguments** (uint16 * 3)
 
+### Type Parameters
+
+**TypeParameter** declarations have the following structure:
+
+- **Name** (String)
+- **Lower bound** (Type)
+- **Upper bound** (Type)
+- **Variance** (uint8):
+  - Covariant
+  - Contravariant
+  - Invariant
+
 ### Types
 
 A **Type** is a particular instance of a type such as `Int`, `Real | Boolean`, or `(Position, Range)`. It has the following structure:
@@ -81,7 +94,7 @@ A **Type** is a particular instance of a type such as `Int`, `Real | Boolean`, o
   - **Type tag** (uint8): The kind of type and, possibly, metadata about its operands.
     - **Kind** (bits 0-2):
       - 000: Basic type (Any, Nothing, Int, Real, Boolean, String)
-      - 001: Fixed-size type (Function, List, Map, Symbol)
+      - 001: Fixed-size type (Variable, Function, List, Map, Symbol)
       - 010: Sum
       - 011: Intersection
       - 100: Tuple
@@ -96,15 +109,18 @@ A **Type** is a particular instance of a type such as `Int`, `Real | Boolean`, o
         - 00100: Boolean
         - 00101: String
       - Fixed-size type:
-        - 00000: Function
-        - 00001: List
-        - 00010: Map
-        - 00011: Symbol
+        - 00000: Variable
+        - 00001: Function
+        - 00010: List
+        - 00011: Map
+        - 00100: Symbol
       - Sum/Intersection/Tuple/Named: the number of operands (0 to 31)
       - Shape: the number of properties (0 to 31)
   - **Operands**:
     - Basic types:
       - *None.*
+    - Variable:
+      - **Index** (uint8)
     - Function:
       - **Input type** (Type)
       - **Output type** (Type)
@@ -124,16 +140,6 @@ A **Type** is a particular instance of a type such as `Int`, `Real | Boolean`, o
       - **Properties** (ShapeProperty*):
         - **Name** (String)
         - **Type** (Type)
-
-Note that **type variables** are represented as *Named* types and must be previously declared in a function definition or type declaration.
-
-### Type Variables
-
-**TypeVariables** are declarations of type variables and have the following structure:
- 
-  - **Name** (String)
-  - **Lower bound** (Type)
-  - **Upper bound** (Type)
 
 ### Values
 
