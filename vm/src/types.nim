@@ -34,11 +34,11 @@ type
   ## and its corresponding type argument given a FunctionInstance.
   TypeVariable* {.pure, acyclic.} = ref object of Type
     index*: uint8
-    # TODO (vm): Do we need this? This will likely only be a cache. Yet, `is_subtype` relies on this. I suppose the
-    #            question comes down to whether we can/will always be able to link a type variable to its type
-    #            parameter. Perhaps this property will also only be defined for type variables contained in function
-    #            input types, where it's actually relevant for `is_subtype`. A type variable inside a type or value
-    #            constant should never "leak" out from the *Poly operations.
+
+    ## Type variables contained in a function's input or output type have a corresponding parameter set for this
+    ## property. For all other kinds of type variables, this property is `nil`. The property is specifically used by
+    ## subtyping and fit when comparing two uninstantiated input types, such as when a multi-function hierarchy is
+    ## built.
     parameter*: TypeParameter
 
   SumType* {.pure, shallow, acyclic.} = ref object of Type
@@ -57,7 +57,7 @@ type
   ListType* {.pure, acyclic.} = ref object of Type
     element*: Type
 
-  MapType {.pure, acyclic.} = ref object of Type
+  MapType* {.pure, acyclic.} = ref object of Type
     key*, value*: Type
 
   # TODO (vm): Implement shape types.
@@ -87,6 +87,7 @@ let
   string* = Type(kind: String)
   unit* = TupleType(kind: Kind.Tuple, elements: empty_immutable_seq[Type]())
 
+proc variable*(index: uint8): TypeVariable = TypeVariable(index: index, parameter: nil)
 proc sum*(parts: ImSeq[Type]): SumType = SumType(kind: Kind.Sum, parts: parts)
 proc sum*(parts: open_array[Type]): SumType = sum(new_immutable_seq(parts))
 proc intersection*(parts: ImSeq[Type]): IntersectionType = IntersectionType(kind: Kind.Intersection, parts: parts)
@@ -119,7 +120,9 @@ proc are_equal*(t1: Type, t2: Type): bool =
     return false
 
   case t1.kind
-  of Kind.TypeVariable: false # Type variables can only be referentially equal.
+  # Type variables can only be referentially equal.
+  # TODO (vm/poly): Is this correct here as well?
+  of Kind.TypeVariable: false
   of Kind.Any: true
   of Kind.Nothing: true
   of Kind.Real: true
@@ -202,7 +205,7 @@ proc is_subtype*(t1: Type, t2: Type): bool =
   case t1.kind
   of Kind.TypeVariable:
     let tv1 = cast[TypeVariable](t1)
-    # TODO (vm): Make sure that `tv1.parameter` is defined!
+    assert(tv1.parameter != nil)
     if is_subtype(tv1.parameter.upper_bound, t2):
       return true
 
@@ -262,7 +265,7 @@ proc is_subtype*(t1: Type, t2: Type): bool =
   case t2.kind
   of Kind.TypeVariable:
     let tv2 = cast[TypeVariable](t2)
-    # TODO (vm): Make sure that `tv2.parameter` is defined!
+    assert(tv2.parameter != nil)
     is_subtype(t1, tv2.parameter.lower_bound)
 
   of Kind.Any:

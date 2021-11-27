@@ -65,7 +65,7 @@ type
     discard
 
   PoemTypeVariable* = ref object of PoemType
-    index: uint8
+    index*: uint8
 
   PoemBasicType* = ref object of PoemType
     tpe*: Type

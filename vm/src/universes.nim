@@ -7,7 +7,7 @@ import definitions
 import imseqs
 import poems
 from pyramid import nil
-from types import Kind, Type, TupleType, TypeParameter
+from types import Kind, Type, TypeVariable, SumType, IntersectionType, TupleType, FunctionType, ListType, MapType, TypeParameter
 from values import TaggedValue
 
 type
@@ -18,8 +18,9 @@ type
     multi_functions*: Table[string, MultiFunction]
 
 proc resolve(universe: Universe, poem_global_variable: PoemGlobalVariable)
-proc resolve(universe: Universe, poem_function: PoemFunction)
 proc resolve(universe: Universe, poem_constants: PoemConstants): Constants
+proc resolve(universe: Universe, poem_function: PoemFunction)
+proc resolve(universe: Universe, poem_type_parameter: PoemTypeParameter): TypeParameter
 proc resolve(universe: Universe, poem_type: PoemType): Type
 proc resolve(universe: Universe, poem_value: PoemValue): TaggedValue
 
@@ -124,19 +125,24 @@ method resolve(poem_global_variable: PoemLazyGlobalVariable, universe: Universe)
 ########################################################################################################################
 
 proc get_or_register_multi_function(universe: Universe, name: string): MultiFunction
+proc attach_type_parameters(tpe: Type, type_parameters: ImSeq[TypeParameter])
+proc attach_type_parameters(types: ImSeq[Type], type_parameters: ImSeq[TypeParameter])
 
 ## Resolves a PoemFunction. Does not create the constants table, which must be resolved in a separate step.
 proc resolve(universe: Universe, poem_function: PoemFunction) =
   let multi_function = universe.get_or_register_multi_function(poem_function.name)
-
-  let type_parameters = empty_immutable_seq[TypeParameter]() # TODO (vm/poly): Actually resolve the type parameters from the poem.
+  let type_parameters = new_immutable_seq(universe.resolve_many(poem_function.type_parameters))
 
   let input_type_raw = universe.resolve(poem_function.input_type)
   if input_type_raw.kind != Kind.Tuple:
     quit(fmt"Functions must always have a tuple as their input type. Function name: {poem_function.name}.")
   let input_type = cast[TupleType](input_type_raw)
-
   let output_type = universe.resolve(poem_function.output_type)
+
+  # We have to attach the type parameters to each type variable contained in the input and output types.
+  attach_type_parameters(input_type, type_parameters)
+  attach_type_parameters(output_type, type_parameters)
+
   let function = Function(
     multi_function: multi_function,
     type_parameters: type_parameters,
@@ -163,6 +169,50 @@ proc get_or_register_multi_function(universe: Universe, name: string): MultiFunc
     )
   universe.multi_functions[name]
 
+proc attach_type_parameters(tpe: Type, type_parameters: ImSeq[TypeParameter]) =
+  case tpe.kind
+  of Kind.TypeVariable:
+    let tv = cast[TypeVariable](tpe)
+    tv.parameter = type_parameters[tv.index]
+
+  of Kind.Sum: attach_type_parameters(cast[SumType](tpe).parts, type_parameters)
+  of Kind.Intersection: attach_type_parameters(cast[IntersectionType](tpe).parts, type_parameters)
+  of Kind.Tuple: attach_type_parameters(cast[TupleType](tpe).elements, type_parameters)
+
+  of Kind.Function:
+    let tpe = cast[FunctionType](tpe)
+    attach_type_parameters(tpe.input, type_parameters)
+    attach_type_parameters(tpe.output, type_parameters)
+
+  of Kind.List:
+    attach_type_parameters(cast[ListType](tpe).element, type_parameters)
+
+  of Kind.Map:
+    let tpe = cast[MapType](tpe)
+    attach_type_parameters(tpe.key, type_parameters)
+    attach_type_parameters(tpe.value, type_parameters)
+
+  else: discard
+
+proc attach_type_parameters(types: ImSeq[Type], type_parameters: ImSeq[TypeParameter]) =
+  for tpe in types:
+    attach_type_parameters(tpe, type_parameters)
+
+########################################################################################################################
+# Type parameter resolution.                                                                                           #
+########################################################################################################################
+
+proc resolve(universe: Universe, poem_type_parameter: PoemTypeParameter): TypeParameter =
+  let lower_bound = universe.resolve(poem_type_parameter.lower_bound)
+  let upper_bound = universe.resolve(poem_type_parameter.upper_bound)
+
+  TypeParameter(
+    name: poem_type_parameter.name,
+    lower_bound: lower_bound,
+    upper_bound: upper_bound,
+    variance: poem_type_parameter.variance,
+  )
+
 ########################################################################################################################
 # Type resolution.                                                                                                     #
 ########################################################################################################################
@@ -172,6 +222,8 @@ method resolve(poem_type: PoemType, universe: Universe): Type {.base, locks: "un
 
 proc resolve(universe: Universe, poem_type: PoemType): Type =
   poem_type.resolve(universe)
+
+method resolve(poem_type: PoemTypeVariable, universe: Universe): Type {.locks: "unknown".} = types.variable(poem_type.index)
 
 method resolve(poem_type: PoemBasicType, universe: Universe): Type {.locks: "unknown".} = poem_type.tpe
 

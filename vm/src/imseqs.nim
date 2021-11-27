@@ -18,18 +18,21 @@ proc new_immutable_seq*[T](length: int): ImSeq[T] =
 
 proc new_immutable_seq*[T](length: uint): ImSeq[T] = new_immutable_seq[T](int(length))
 
-## Creates a new immutable sequence from the given source.
-proc new_immutable_seq*[T](source: open_array[T]): ImSeq[T] =
-  let length = source.len
-  var seq = new_immutable_seq[T](length)
-  copy_mem(addr seq.elements, unsafe_addr source, length * sizeof(T))
-  seq
-
-let empty = new_immutable_seq[uint64]([])
+let empty = new_immutable_seq[uint64](0)
 
 ## Returns an empty immutable sequence for the given element type. This is backed by a single object reference so that
 ## reallocations do not have to occur.
 proc empty_immutable_seq*[T](): ImSeq[T] = cast[ImSeq[T]](empty)
+
+## Creates a new immutable sequence from the given source.
+proc new_immutable_seq*[T](source: open_array[T]): ImSeq[T] =
+  let length = source.len
+  if length == 0:
+    return empty_immutable_seq[T]()
+
+  var seq = new_immutable_seq[T](length)
+  copy_mem(addr seq.elements, unsafe_addr source, length * sizeof(T))
+  seq
 
 proc `[]`*[T](seq: ImSeq[T], index: int): T = seq.elements[index]
 proc `[]`*[T](seq: ImSeq[T], index: int64): T = seq.elements[index]
