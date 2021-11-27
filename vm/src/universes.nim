@@ -238,7 +238,7 @@ method resolve(poem_value: PoemLambdaFunctionValue, universe: Universe): TaggedV
   if not function.is_monomorphic:
     quit(fmt"Cannot create a lambda value from function `{mf.name}`, because the function is polymorphic.")
 
-  values.new_function_tagged(true, cast[pointer](function.monomorphic_instance), tpe)
+  values.new_function_tagged(true, cast[pointer](addr function.monomorphic_instance), tpe)
 
 method resolve(poem_value: PoemMultiFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
   let tpe = universe.resolve(poem_value.tpe)

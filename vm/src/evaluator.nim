@@ -1,11 +1,11 @@
 import definitions
-from dispatch import get_dispatch_target
+from dispatch import find_dispatch_target
 import imseqs
 import instructions
 import values
 from utils import when_debug
 
-proc evaluate*(entry_function: FunctionInstance, frame_mem: pointer): TaggedValue
+proc evaluate*(entry_function: ptr FunctionInstance, frame_mem: pointer): TaggedValue
 
 proc evaluate*(function_value: FunctionValue, frame: FramePtr): TaggedValue
 proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue
@@ -20,7 +20,7 @@ proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: Tagged
 # TODO (vm): We should possibly clear a frame by nilling all references so that pointers left in registers aren't
 #            causing memory leaks. However, this also incurs a big performance penalty, so we should probably rather
 #            verify first that this is a problem before fixing it.
-proc create_frame(instance: FunctionInstance, frame_base: pointer): FramePtr {.inline.} =
+proc create_frame(instance: ptr FunctionInstance, frame_base: pointer): FramePtr {.inline.} =
   const preamble_size = sizeof(Frame)
   let frame = cast[FramePtr](frame_base)
   frame.function = instance.function
@@ -39,7 +39,7 @@ proc create_frame(instance: FunctionInstance, frame_base: pointer): FramePtr {.i
 ## Note that `get_global` cannot be placed in the module `definitions` because of a mutual dependency with `evaluate`.
 proc get_global*(variable: GlobalVariable, frame_mem: pointer): TaggedValue =
   if not variable.is_initialized:
-    variable.value = evaluate(variable.initializer, frame_mem)
+    variable.value = evaluate(addr variable.initializer, frame_mem)
     variable.is_initialized = true
   variable.value
 
@@ -99,7 +99,7 @@ template list_append(new_tpe): untyped =
 
 template next_frame_base(): pointer = cast[pointer](cast[uint](frame) + frame.function.frame_size)
 
-template call_start(target): FramePtr =
+template call_start(target: ptr FunctionInstance): FramePtr =
   let target_frame_base = next_frame_base()
   create_frame(target, target_frame_base)
 
@@ -108,21 +108,21 @@ template get_call_result(target_frame): untyped =
   target_frame.registers[0]
 
 # TODO (vm/poly): Do we have to pass type arguments of an owning multi-function to a lambda? Or how does this work?
-## Calls a given Function target with zero arguments.
-template call0(target): TaggedValue =
+## Calls a given FunctionInstance target with zero arguments.
+template call0(target: ptr FunctionInstance): TaggedValue =
   let target_frame = call_start(target)
   evaluate(target_frame)
   get_call_result(target_frame)
 
-## Calls a given Function target with one argument.
-template call1(target, argument0): TaggedValue =
+## Calls a given FunctionInstance target with one argument.
+template call1(target: ptr FunctionInstance, argument0): TaggedValue =
   let target_frame = call_start(target)
   target_frame.registers[0] = argument0
   evaluate(target_frame)
   get_call_result(target_frame)
 
-## Calls a given Function target with two arguments.
-template call2(target, argument0, argument1): TaggedValue =
+## Calls a given FunctionInstance target with two arguments.
+template call2(target: ptr FunctionInstance, argument0, argument1): TaggedValue =
   let target_frame = call_start(target)
   target_frame.registers[0] = argument0
   target_frame.registers[1] = argument1
@@ -130,16 +130,19 @@ template call2(target, argument0, argument1): TaggedValue =
   get_call_result(target_frame)
 
 template dispatch0(mf): TaggedValue =
-  let target = get_dispatch_target(mf)
-  call0(target)
+  var target = FunctionInstance()
+  find_dispatch_target(mf, target)
+  call0(addr target)
 
 template dispatch1(mf, argument0): TaggedValue =
-  let target = get_dispatch_target(mf, argument0)
-  call1(target, argument0)
+  var target = FunctionInstance()
+  find_dispatch_target(mf, argument0, target)
+  call1(addr target, argument0)
 
 template dispatch2(mf, argument0, argument1): TaggedValue =
-  let target = get_dispatch_target(mf, argument0, argument1)
-  call2(target, argument0, argument1)
+  var target = FunctionInstance()
+  find_dispatch_target(mf, argument0, argument1, target)
+  call2(addr target, argument0, argument1)
 
 proc evaluate(frame: FramePtr) =
   when_debug: echo "Evaluating function ", frame.function.multi_function.name, " with frame ", cast[uint](frame)
@@ -345,7 +348,7 @@ proc evaluate(frame: FramePtr) =
     of Operation.Return0:
       break
 
-proc evaluate*(entry_function: FunctionInstance, frame_mem: pointer): TaggedValue =
+proc evaluate*(entry_function: ptr FunctionInstance, frame_mem: pointer): TaggedValue =
   let frame = create_frame(entry_function, frame_mem)
   evaluate(frame)
 
@@ -356,7 +359,7 @@ proc evaluate*(entry_function: FunctionInstance, frame_mem: pointer): TaggedValu
 proc evaluate*(function_value: FunctionValue, frame: FramePtr): TaggedValue =
   assert(arity(function_value) == 0)
   if function_value.is_fixed:
-    call0(cast[FunctionInstance](function_value.target))
+    call0(cast[ptr FunctionInstance](function_value.target))
   else:
     dispatch0(cast[MultiFunction](function_value.target))
 
@@ -364,7 +367,7 @@ proc evaluate*(function_value: FunctionValue, frame: FramePtr): TaggedValue =
 proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue =
   assert(arity(function_value) == 1)
   if function_value.is_fixed:
-    call1(cast[FunctionInstance](function_value.target), argument0)
+    call1(cast[ptr FunctionInstance](function_value.target), argument0)
   else:
     dispatch1(cast[MultiFunction](function_value.target), argument0)
 
@@ -372,6 +375,6 @@ proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: Tagged
 proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue =
   assert(arity(function_value) == 2)
   if function_value.is_fixed:
-    call2(cast[FunctionInstance](function_value.target), argument0, argument1)
+    call2(cast[ptr FunctionInstance](function_value.target), argument0, argument1)
   else:
     dispatch2(cast[MultiFunction](function_value.target), argument0, argument1)

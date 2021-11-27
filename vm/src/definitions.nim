@@ -43,7 +43,7 @@ type
     ## Whether the global variable's `value` has already been initialized.
     is_initialized*: bool
 
-    ## The function instance that is supposed to initialize the global variable. It is nil for eager global variables.
+    ## The function instance that is supposed to initialize the global variable. It's empty for eager global variables.
     initializer*: FunctionInstance
 
   MultiFunction* = ref object
@@ -81,11 +81,11 @@ type
     frame_size*: uint16
     frame_registers_offset*: uint16
 
-  ## A function instance is a function with assigned type arguments.
-  FunctionInstanceObj* = object
+  ## A function instance is a function with assigned type arguments. To avoid allocations on the heap, function
+  ## instances may sometimes be placed on the stack or passed by value.
+  FunctionInstance* = object
     function*: Function
     type_arguments*: ImSeq[Type]
-  FunctionInstance* = ref FunctionInstanceObj
 
   # TODO (vm): To perhaps optimize constants access by removing one layer of indirection, we could make the uint16
   #            index absolute and then turn the Constants table into a contiguous unchecked array of 8-byte values.
@@ -110,7 +110,7 @@ type
 
 ## Creates an already initialized global variable from the given name and value.
 proc new_eager_global*(name: string, value: TaggedValue): GlobalVariable =
-  GlobalVariable(name: name, value: value, is_initialized: true, initializer: nil)
+  GlobalVariable(name: name, value: value, is_initialized: true)
 
 ## Creates a lazy global variable from the given name and initializer.
 proc new_lazy_global*(name: string, initializer: FunctionInstance): GlobalVariable =

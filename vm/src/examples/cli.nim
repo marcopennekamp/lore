@@ -52,13 +52,13 @@ let examples = @[
   Example(name: "tau", poem: tau.poem, main: "test", runs: 25_000_000),
 ]
 
-proc prepare_example(example: Example): FunctionInstance =
+proc prepare_example(example: Example): ptr FunctionInstance =
   let poem = poems.read(fmt"target/{example.name}.poem")
   let universe = universes.resolve(@[poem])
   let function = universe.multi_functions[example.main].functions[0]
   if not function.is_monomorphic:
     quit(fmt"The example {example.name} must have a monomorphic entry function.")
-  function.monomorphic_instance
+  addr function.monomorphic_instance
 
 ########################################################################################################################
 # Example writing.                                                                                                     #
