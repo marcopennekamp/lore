@@ -122,7 +122,7 @@ proc new_tuple*(elements: ImSeq[TaggedValue]): Value =
   let length = elements.len
   var element_types = new_immutable_seq[Type](length)
   for i in 0 ..< length:
-    element_types.elements[i] = type_of(elements[i])
+    element_types[i] = type_of(elements[i])
   new_tuple(elements, types.tpl(element_types))
 
 proc new_tuple_tagged*(elements: ImSeq[TaggedValue]): TaggedValue = tag_reference(new_tuple(elements))

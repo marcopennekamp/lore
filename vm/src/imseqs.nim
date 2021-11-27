@@ -6,43 +6,59 @@ type
 
   ImSeqObj[T] = object
     len*: int
-    elements*: UncheckedArray[T]
+    elements: UncheckedArray[T]
 
-## Creates a new immutable sequence of the given length with zeroed entries. This can be used to efficiently initialize
-## an immutable sequence.
-proc new_immutable_seq*[T](length: int): ImSeq[T] =
+proc alloc_immutable_seq[T](length: int): ImSeq[T] =
   # Note that `sizeof` of an unchecked array is 0, so we can use `sizeof(ImSeqObj[T])` to get the size of the preamble.
-  var seq = cast[ImSeq[T]](alloc0(sizeof(ImSeqObj[T]) + length * sizeof(T)))
+  let seq = cast[ImSeq[T]](alloc0(sizeof(ImSeqObj[T]) + length * sizeof(T)))
   seq.len = length
   seq
 
-proc new_immutable_seq*[T](length: uint): ImSeq[T] = new_immutable_seq[T](int(length))
-
-let empty = new_immutable_seq[uint64](0)
+let empty = alloc_immutable_seq[uint64](0)
 
 ## Returns an empty immutable sequence for the given element type. This is backed by a single object reference so that
 ## reallocations do not have to occur.
 proc empty_immutable_seq*[T](): ImSeq[T] = cast[ImSeq[T]](empty)
 
+## Creates a new immutable sequence of the given length with zeroed entries. This can be used to efficiently initialize
+## an immutable sequence. If `length` is 0, the empty sequence is returned.
+proc new_immutable_seq*[T](length: int): ImSeq[T] =
+  if length == 0: empty_immutable_seq[T]()
+  else: alloc_immutable_seq[T](length)
+
+proc new_immutable_seq*[T](length: uint): ImSeq[T] = new_immutable_seq[T](int(length))
+
 ## Creates a new immutable sequence from the given source.
 proc new_immutable_seq*[T](source: open_array[T]): ImSeq[T] =
   let length = source.len
-  if length == 0:
-    return empty_immutable_seq[T]()
-
   var seq = new_immutable_seq[T](length)
   copy_mem(addr seq.elements, unsafe_addr source, length * sizeof(T))
+  seq
+
+## Creates a new immutable sequence from the given source.
+proc new_immutable_seq*[T](source: ImSeq[T]): ImSeq[T] =
+  let length = source.len
+  var seq = new_immutable_seq[T](length)
+  copy_mem(addr seq.elements, addr source.elements, length * sizeof(T))
   seq
 
 proc `[]`*[T](seq: ImSeq[T], index: int): T = seq.elements[index]
 proc `[]`*[T](seq: ImSeq[T], index: int64): T = seq.elements[index]
 proc `[]`*[T](seq: ImSeq[T], index: uint): T = seq.elements[index]
 
+## Replaces the sequence's element at the given index. This is an unsafe operation, as ImSeqs should be immutable, but
+## may be used to optimize initialization.
+proc `[]=`*[T](seq: var ImSeq[T], index: int, value: T) =
+  seq.elements[index] = value
+
+proc `[]=`*[T](seq: var ImSeq[T], index: uint, value: T) =
+  seq.elements[index] = value
+
 proc append*[T](old_seq: ImSeq[T], element: T): ImSeq[T] =
   let old_length = old_seq.len
   var new_seq = new_immutable_seq[T](old_length + 1)
   copy_mem(addr new_seq.elements, addr old_seq.elements, old_length * sizeof(T))
-  new_seq.elements[old_length] = element
+  new_seq[old_length] = element
   new_seq
 
 iterator items*[T](seq: ImSeq[T]): T {.inline.} =

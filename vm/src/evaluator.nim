@@ -218,13 +218,13 @@ proc evaluate(frame: FramePtr) =
       let last = instruction.arg(2)
       var elements = new_immutable_seq[TaggedValue](last - first + 1)
       for i in first .. last:
-        elements.elements[i] = reg_get(i)
+        elements[i] = reg_get(i)
       reg_set_ref_arg(0, values.new_tuple(elements))
 
     of Operation.Tuple2:
       var elements = new_immutable_seq[TaggedValue](2)
-      elements.elements[0] = reg_get_arg(1)
-      elements.elements[1] = reg_get_arg(2)
+      elements[0] = reg_get_arg(1)
+      elements[1] = reg_get_arg(2)
       reg_set_ref_arg(0, values.new_tuple(elements))
 
     of Operation.TupleGet:

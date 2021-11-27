@@ -1,3 +1,5 @@
+import std/strformat
+
 import imseqs
 
 type
@@ -95,6 +97,9 @@ proc intersection*(parts: open_array[Type]): IntersectionType = intersection(new
 proc tpl*(elements: ImSeq[Type]): TupleType = TupleType(kind: Kind.Tuple, elements: elements)
 proc tpl*(elements: open_array[Type]): TupleType = tpl(new_immutable_seq(elements))
 proc function*(input: TupleType, output: Type): FunctionType = FunctionType(kind: Kind.Function, input: input, output: output)
+proc function_unsafe(input: Type, output: Type): FunctionType =
+  assert(input.kind == Kind.Tuple)
+  FunctionType(kind: Kind.Function, input: cast[TupleType](input), output: output)
 proc list*(element: Type): ListType = ListType(kind: Kind.List, element: element)
 proc map*(key: Type, value: Type): MapType = MapType(kind: Kind.Map, key: key, value: value)
 
@@ -331,6 +336,90 @@ proc tuple_subtypes_tuple(t1: TupleType, t2: TupleType): bool =
     if not is_subtype(es1[i], es2[i]):
       return false
   true
+
+########################################################################################################################
+# Simplification.                                                                                                      #
+########################################################################################################################
+
+# TODO (vm/poly): Implement and document.
+proc sum_simplified*(parts: ImSeq[Type]): SumType =
+  quit(fmt"Sum simplification has not been implemented yet.")
+
+# TODO (vm/poly): Implement and document.
+proc intersection_simplified*(parts: ImSeq[Type]): IntersectionType =
+  quit(fmt"Intersection simplification has not been implemented yet.")
+
+########################################################################################################################
+# Substitution.                                                                                                        #
+########################################################################################################################
+
+proc substitute_optimized(tpe: Type, type_arguments: ImSeq[Type]): Type
+proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: ImSeq[Type]): ImSeq[Type]
+
+template substitute_unary_and_construct(child0: Type, type_arguments: ImSeq[Type], constructor): Type =
+  let result0 = substitute_optimized(child0, type_arguments)
+  if result0 != nil: constructor(result0)
+  else: nil
+
+template substitute_binary_and_construct(child0: Type, child1: Type, type_arguments: ImSeq[Type], constructor): Type =
+  var result0 = substitute_optimized(child0, type_arguments)
+  var result1 = substitute_optimized(child1, type_arguments)
+
+  if result0 != nil or result1 != nil:
+    if result0 == nil: result0 = child0
+    if result1 == nil: result1 = child1
+    constructor(result0, result1)
+  else: nil
+
+template substitute_xary_and_construct(children: ImSeq[Type], type_arguments: ImSeq[Type], constructor): Type =
+  let results = substitute_multiple_optimized(children, type_arguments)
+  if results != nil: constructor(results)
+  else: nil
+
+## Substitutes any type variables in `tpe` with the given type arguments, returning a new type and leaving `tpe` as is.
+proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type =
+  let res = substitute_optimized(tpe, type_arguments)
+  if res != nil: res
+  else: tpe
+
+## Substitutes any type variables in `tpe` with the given type arguments. If no substitutions occur, the function
+## returns `nil`. This allows it to only allocate new types should a child type have changed.
+proc substitute_optimized(tpe: Type, type_arguments: ImSeq[Type]): Type =
+  case tpe.kind
+  of Kind.TypeVariable:
+    let tv = cast[TypeVariable](tpe)
+    if cast[int](tv.index) < type_arguments.len: type_arguments[tv.index]
+    else: nil
+
+  of Kind.Sum: substitute_xary_and_construct(cast[SumType](tpe).parts, type_arguments, sum_simplified)
+  of Kind.Intersection: substitute_xary_and_construct(cast[IntersectionType](tpe).parts, type_arguments, intersection_simplified)
+  of Kind.Tuple: substitute_xary_and_construct(cast[TupleType](tpe).elements, type_arguments, tpl)
+
+  of Kind.Function:
+    let tpe = cast[FunctionType](tpe)
+    substitute_binary_and_construct(tpe.input, tpe.output, type_arguments, function_unsafe)
+
+  of Kind.List: substitute_unary_and_construct(cast[ListType](tpe).element, type_arguments, list)
+
+  of Kind.Map:
+    let tpe = cast[MapType](tpe)
+    substitute_binary_and_construct(tpe.key, tpe.value, type_arguments, map)
+
+  else:
+    quit(fmt"Type substitution has not been implemented for kind {tpe.kind}.")
+
+proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: ImSeq[Type]): ImSeq[Type] =
+  var result_types: ImSeq[Type] = nil
+
+  let length = types.len
+  for i in 0 ..< length:
+    let candidate = substitute_optimized(types[i], type_arguments)
+    if candidate != nil:
+      if result_types == nil:
+        result_types = new_immutable_seq(types)
+      result_types[i] = candidate
+
+  result_types
 
 ########################################################################################################################
 # Stringification.                                                                                                     #
