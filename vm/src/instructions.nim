@@ -7,12 +7,13 @@ type
   ##  - `intr(x)`: The xth entry in the intrinsics constants table.
   ##  - `glb(x)`: The xth entry in the global variables constants table.
   ##  - `mfs(x)`: The xth entry in the multi functions constants table.
-  ##  - `substitute(v)`: Substitutes the current function instance's type arguments into `v`.
+  ##  - `substitute(t)`: Substitutes the current function instance's type arguments into type `t`.
+  ##  - `substitute_types(v)`: Substitutes the current function instance's type arguments into value `v`.
   Operation* {.pure.} = enum
     ## reg(arg0) <- val(arg1)
     Const
 
-    ## reg(arg0) <- substitute(val(arg1))
+    ## reg(arg0) <- substitute_types(val(arg1))
     ConstPoly
 
     ## reg(arg0) <- arg1 as int64

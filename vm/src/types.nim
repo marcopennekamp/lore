@@ -343,12 +343,10 @@ proc tuple_subtypes_tuple(t1: TupleType, t2: TupleType): bool =
 ########################################################################################################################
 
 # TODO (vm/poly): Implement and document.
-proc sum_simplified*(parts: ImSeq[Type]): SumType =
-  quit(fmt"Sum simplification has not been implemented yet.")
+proc sum_simplified*(parts: ImSeq[Type]): SumType = sum(parts)
 
 # TODO (vm/poly): Implement and document.
-proc intersection_simplified*(parts: ImSeq[Type]): IntersectionType =
-  quit(fmt"Intersection simplification has not been implemented yet.")
+proc intersection_simplified*(parts: ImSeq[Type]): IntersectionType = intersection(parts)
 
 ########################################################################################################################
 # Substitution.                                                                                                        #

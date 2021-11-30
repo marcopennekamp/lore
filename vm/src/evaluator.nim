@@ -2,6 +2,7 @@ import definitions
 from dispatch import find_dispatch_target
 import imseqs
 import instructions
+from types import nil
 import values
 from utils import when_debug
 
@@ -163,8 +164,7 @@ proc evaluate(frame: FramePtr) =
       reg_set_arg(0, const_value_arg(1))
 
     of Operation.ConstPoly:
-      # Something like: `substitute_types(const_value_arg(1), frame.type_arguments)`
-      quit("Operation ConstPoly is not yet implemented.")
+      reg_set_arg(0, substitute_types(const_value_arg(1), frame.type_arguments))
 
     of Operation.IntConst:
       reg_set_int_arg(0, instruction.argi(1))
@@ -254,7 +254,8 @@ proc evaluate(frame: FramePtr) =
       list_append(new_tpe)
 
     of Operation.ListAppendPoly:
-      quit("Operation ListAppendPoly is not yet implemented.")
+      let new_tpe = types.substitute(const_types_arg(3), frame.type_arguments)
+      list_append(new_tpe)
 
     of Operation.ListAppendUntyped:
       let list = reg_get_ref_arg(1, ListValue)
