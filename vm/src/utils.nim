@@ -35,3 +35,12 @@ template benchmark*(benchmark_name: string, runs: int, code: untyped) =
     let elapsed_ns = elapsed * 1_000_000_000
     let per_run = uint(elapsed_ns / runs.float)
     echo benchmark_name, ": ", per_run, "ns/op"
+
+## Calls `function` with `arg1` and `arg2` if either is not `nil`. Any `nil` argument is replaced with the default.
+## Otherwise, returns the `default_result`.
+template call_if_any_exists*(function, arg0, default0, arg1, default1, default_result): untyped =
+  if arg0 != nil or arg1 != nil:
+    if arg0 == nil: arg0 = default0
+    if arg1 == nil: arg1 = default1
+    function(arg0, arg1)
+  else: default_result

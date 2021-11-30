@@ -1,6 +1,7 @@
 import std/strformat
 
 import imseqs
+from utils import call_if_any_exists
 
 type
   Kind* {.pure.} = enum
@@ -356,6 +357,12 @@ proc intersection_simplified*(parts: ImSeq[Type]): IntersectionType =
 proc substitute_optimized(tpe: Type, type_arguments: ImSeq[Type]): Type
 proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: ImSeq[Type]): ImSeq[Type]
 
+## Substitutes any type variables in `tpe` with the given type arguments, returning a new type and leaving `tpe` as is.
+proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type =
+  let res = substitute_optimized(tpe, type_arguments)
+  if res != nil: res
+  else: tpe
+
 template substitute_unary_and_construct(child0: Type, type_arguments: ImSeq[Type], constructor): Type =
   let result0 = substitute_optimized(child0, type_arguments)
   if result0 != nil: constructor(result0)
@@ -364,23 +371,12 @@ template substitute_unary_and_construct(child0: Type, type_arguments: ImSeq[Type
 template substitute_binary_and_construct(child0: Type, child1: Type, type_arguments: ImSeq[Type], constructor): Type =
   var result0 = substitute_optimized(child0, type_arguments)
   var result1 = substitute_optimized(child1, type_arguments)
-
-  if result0 != nil or result1 != nil:
-    if result0 == nil: result0 = child0
-    if result1 == nil: result1 = child1
-    constructor(result0, result1)
-  else: nil
+  call_if_any_exists(constructor, result0, child0, result1, child1, nil)
 
 template substitute_xary_and_construct(children: ImSeq[Type], type_arguments: ImSeq[Type], constructor): Type =
   let results = substitute_multiple_optimized(children, type_arguments)
   if results != nil: constructor(results)
   else: nil
-
-## Substitutes any type variables in `tpe` with the given type arguments, returning a new type and leaving `tpe` as is.
-proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type =
-  let res = substitute_optimized(tpe, type_arguments)
-  if res != nil: res
-  else: tpe
 
 ## Substitutes any type variables in `tpe` with the given type arguments. If no substitutions occur, the function
 ## returns `nil`. This allows it to only allocate new types should a child type have changed.
@@ -448,7 +444,7 @@ proc `$`(tpe: Type): string =
   else: "unknown"
 
 ########################################################################################################################
-# Type benchmarks.                                                                                            #
+# Type benchmarks.                                                                                                     #
 ########################################################################################################################
 
 when is_main_module:

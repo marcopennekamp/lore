@@ -2,6 +2,7 @@ import std/strformat, std/strutils
 
 import imseqs
 from types import Kind, Type, FunctionType
+from utils import call_if_any_exists
 
 type
   ## A TaggedValue is a compact representation of a Lore value. Every Lore value needs to carry type information at run
@@ -86,6 +87,10 @@ proc `==`(v1: TaggedValue, v2: TaggedValue): bool =
 
 proc type_of*(value: TaggedValue): Type
 
+########################################################################################################################
+# Primitives.                                                                                                          #
+########################################################################################################################
+
 proc get_tag*(value: TaggedValue): uint64 = value.uint and TagMask
 
 proc is_reference*(value: TaggedValue): bool = get_tag(value) == TagReference
@@ -105,6 +110,10 @@ proc untag_boolean*(value: TaggedValue): bool = value == True
 proc new_real*(value: float64): Value = RealValue(tpe: types.real, real: value)
 proc new_real_tagged*(value: float64): TaggedValue = tag_reference(new_real(value))
 
+########################################################################################################################
+# Strings.                                                                                                             #
+########################################################################################################################
+
 ## Note that the resulting StringValue's `string` will be a shallow copy of `value`. If `value` is subsequently
 ## modified, `string` will change as well. This is a valid optimization because `new_string` will usually be called
 ## with a fresh string value.
@@ -112,10 +121,16 @@ proc new_string*(value: string): Value =
   let string_value = StringValue(tpe: types.string)
   shallow_copy(string_value.string, value)
   string_value
+
 proc new_string_tagged*(value: string): TaggedValue = tag_reference(new_string(value))
+
+########################################################################################################################
+# Tuples.                                                                                                              #
+########################################################################################################################
 
 ## Creates a new tuple, forcing its type to be `tpe` instead of taking the type from the elements.
 proc new_tuple*(elements: ImSeq[TaggedValue], tpe: Type): Value = TupleValue(tpe: tpe, elements: elements)
+
 proc new_tuple_tagged*(elements: ImSeq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_tuple(elements, tpe))
 
 proc new_tuple*(elements: ImSeq[TaggedValue]): Value =
@@ -129,16 +144,35 @@ proc new_tuple_tagged*(elements: ImSeq[TaggedValue]): TaggedValue = tag_referenc
 
 let unit*: TaggedValue = new_tuple_tagged(empty_immutable_seq[TaggedValue]())
 
+########################################################################################################################
+# Functions.                                                                                                           #
+########################################################################################################################
+
 proc new_function*(is_fixed: bool, target: pointer, tpe: Type): Value = FunctionValue(tpe: tpe, is_fixed: is_fixed, target: target)
+
 proc new_function_tagged*(is_fixed: bool, target: pointer, tpe: Type): TaggedValue = tag_reference(new_function(is_fixed, target, tpe))
 
 proc arity*(function: FunctionValue): int = cast[FunctionType](function.tpe).input.elements.len
 
+########################################################################################################################
+# Lists.                                                                                                               #
+########################################################################################################################
+
 proc new_list*(elements: ImSeq[TaggedValue], tpe: Type): Value = ListValue(tpe: tpe, elements: elements)
+
 proc new_list_tagged*(elements: ImSeq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_list(elements, tpe))
 
+########################################################################################################################
+# Symbols.                                                                                                             #
+########################################################################################################################
+
 proc new_symbol*(name: string): Value = SymbolValue(tpe: types.symbol(name), name: name)
+
 proc new_symbol_tagged*(name: string): TaggedValue = tag_reference(new_symbol(name))
+
+########################################################################################################################
+# Type of.                                                                                                             #
+########################################################################################################################
 
 proc type_of*(value: TaggedValue): Type =
   let tag = get_tag(value)
@@ -150,6 +184,70 @@ proc type_of*(value: TaggedValue): Type =
     types.boolean
   else:
     quit(fmt"Unknown tag {tag}.")
+
+########################################################################################################################
+# Substitution.                                                                                                        #
+########################################################################################################################
+
+proc substitute_optimized(value: TaggedValue, type_arguments: ImSeq[Type]): TaggedValue
+proc substitute_multiple_optimized(values: ImSeq[TaggedValue], type_arguments: ImSeq[Type]): ImSeq[TaggedValue]
+
+## Substitutes any type variables in `value`'s type with the given type arguments, returning a new value and leaving
+## `value` as is. This applies recursively to any sub-values in `value`.
+proc substitute_types*(value: TaggedValue, type_arguments: ImSeq[Type]): TaggedValue =
+  let res = substitute_optimized(value, type_arguments)
+
+  # `substitute_optimized` will always return a reference. Hence, we can untag the reference here and check for `nil`.
+  # If `value` was a primitive, `nil` will also have been returned in this form.
+  if untag_reference(res) != nil: res
+  else: value
+
+## Substitutes any type variables in `value`'s type with the given type arguments. If no substitutions occur, the
+## function returns `nil`. This allows it to only allocate new values should a child value have changed.
+proc substitute_optimized(value: TaggedValue, type_arguments: ImSeq[Type]): TaggedValue =
+  if not is_reference(value):
+    return tag_reference(nil)
+
+  let reference = untag_reference(value)
+  let tpe = reference.tpe
+
+  case tpe.kind
+  of Kind.Real: tag_reference(nil)
+
+  of Kind.Tuple:
+    let value = cast[TupleValue](reference)
+    let new_elements = substitute_multiple_optimized(value.elements, type_arguments)
+    if new_elements != nil: new_tuple_tagged(new_elements)
+    else: tag_reference(nil)
+
+  of Kind.Function:
+    let value = cast[FunctionValue](reference)
+    let new_type = types.substitute(value.tpe, type_arguments)
+    if new_type != nil: new_function_tagged(value.is_fixed, value.target, new_type)
+    else: tag_reference(nil)
+
+  of Kind.List:
+    let value = cast[ListValue](reference)
+    var new_elements = substitute_multiple_optimized(value.elements, type_arguments)
+    var new_type = types.substitute(value.tpe, type_arguments)
+    call_if_any_exists(new_list_tagged, new_elements, value.elements, new_type, value.tpe, tag_reference(nil))
+
+  of Kind.Symbol: tag_reference(nil)
+
+  else: quit(fmt"Values of type kind {reference.tpe.kind} cannot exist.")
+
+proc substitute_multiple_optimized(values: ImSeq[TaggedValue], type_arguments: ImSeq[Type]): ImSeq[TaggedValue] =
+  var results: ImSeq[TaggedValue] = nil
+
+  let length = values.len
+  for i in 0 ..< length:
+    let candidate = substitute_optimized(values[i], type_arguments)
+    if untag_reference(candidate) != nil:
+      if results == nil:
+        results = new_immutable_seq(values)
+      results[i] = candidate
+
+  results
 
 ########################################################################################################################
 # Stringification.                                                                                                     #

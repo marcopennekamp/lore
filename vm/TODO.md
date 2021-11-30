@@ -4,7 +4,7 @@
 
 - Implement parametric functions:
   - Type parameters: ~~type parameters and variables~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~executing function instances~~, `*Poly` operations.
-  - Types: type substitution into ~~types~~ and values, fit, sum/intersection simplification.
+  - Types: ~~type substitution into types and values~~, fit, sum/intersection simplification.
   - Dispatch: handling polymorphic functions with `fit`.
     - Consider allocating an `ImSeq` with a maximum length on the stack of `fit` to save an allocation and only return a heap `ImSeq` when the fit is successful.
   - We probably don't need to implement the functions from `polymorphy.ts`, because all functions will have a full list of their type variable declarations. Hence, we can always find out the variables and whether a function is polymorphic without looking at the input type.
