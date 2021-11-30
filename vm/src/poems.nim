@@ -182,13 +182,9 @@ const
 
 proc fail(message: string) {.noreturn.} = raise new_exception(IOError, message)
 
-## The maximum number of type parameters that a function may have is 32. This allows us to allocate certain ImSeqs on
-## the stack when checking for type fit.
-const max_type_parameters = 32
-
 proc ensure_type_parameter_count(function_name: string, type_parameter_count: int) =
-  if type_parameter_count > max_type_parameters:
-    fail(fmt"The function {function_name} has {type_parameter_count} type parameters, but the maximum is {max_type_parameters}.")
+  if type_parameter_count > types.max_type_parameters:
+    fail(fmt"The function {function_name} has {type_parameter_count} type parameters, but the maximum is {types.max_type_parameters}.")
 
 ########################################################################################################################
 # Read and write helpers.                                                                                              #

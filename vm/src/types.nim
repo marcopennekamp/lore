@@ -81,6 +81,23 @@ type
     Contravariant
     Invariant
 
+## The maximum number of type parameters that a function may have is 32. This allows us to allocate certain arrays on
+## the stack when checking for type fit.
+const max_type_parameters* = 32
+
+proc substitute*(tpe: Type, type_arguments: open_array[Type]): Type
+proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type
+
+proc is_polymorphic(tpe: Type): bool
+
+proc bounds_contain*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool
+proc lower_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool
+proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool
+
+########################################################################################################################
+# Constructors.                                                                                                        #
+########################################################################################################################
+
 let
   any* = Type(kind: Any)
   nothing* = Type(kind: Nothing)
@@ -339,6 +356,152 @@ proc tuple_subtypes_tuple(t1: TupleType, t2: TupleType): bool =
   true
 
 ########################################################################################################################
+# Fit.                                                                                                                 #
+########################################################################################################################
+
+type
+  Assignments = array[max_type_parameters, Type]
+    ## Assignments are modeled as fixed-size arrays so that we can put type arguments on the stack before pushing them
+    ## into an allocated ImSeq should the fit be successful.
+
+proc assign(t1: Type, t2: Type, assignments: var Assignments): bool
+
+## Whether `t1` fits into `t2`. Returns the list of assigned type arguments if true, or `nil` otherwise. `parameters`
+## must contain all type parameters which variables in `t2` refer to, in the proper order.
+proc fits*(t1: Type, t2: Type, parameters: ImSeq[TypeParameter]): ImSeq[Type] = nil
+
+## Whether `ts1`, interpreted as the elements of a tuple type, fit into `ts2`. Returns the list of assigned type
+## arguments if true, or `nil` otherwise. `parameters` must contain all type parameters which variables in `t2` refer
+## to, in the proper order.
+proc fits*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeParameter]): ImSeq[Type] =
+  if ts1.len != ts2.len:
+    return nil
+
+  let length = ts1.len
+  assert(parameters.len == length)
+
+  var assignments: Assignments
+  for i in 0 ..< length:
+    let t1 = ts1[i]
+    let t2 = ts2[i]
+    if not assign(t1, t2, assignments):
+      # Consistency constraint: All variable assignments must be unique. (Baked into `assign`.)
+      return nil
+
+  # Consistency constraint: All variable must have an assignment.
+  for i in 0 ..< length:
+    if assignments[i] == nil:
+      return nil
+
+  # Consistency constraint: All bounds must be kept.
+  for i in 0 ..< length:
+    let parameter = parameters[i]
+    let tpe = assignments[i]
+    if not bounds_contain(parameter, tpe, assignments):
+      return nil
+
+  # Final check: `t1` must be a subtype of `t2` after substituting assignments into `t2`.
+  # TODO (vm/poly): As mentioned in the TODO file, we should implement a separate version of `is_subtype` that doesn't
+  #                 require allocating new types, instead taking the assignments into it.
+  for i in 0 ..< length:
+    let t1 = ts1[i]
+    let t2 = substitute(ts2[i], assignments)
+    if not is_subtype(t1, t2):
+      return nil
+
+  # So far, we've used an array on the stack for the type assignments. We have to convert these to a heap-allocated
+  # ImSeq now, so that they outlive the lifetime of this function call.
+  new_immutable_seq(assignments, length)
+
+proc assign(t1: Type, t2: Type, assignments: var Assignments): bool =
+  ## Assigns all matching types in `t1` to type variables in `t2`, saving them in `assignments`. If an assignment
+  ## already exists and the existing type and new type aren't equal, `assign` returns false to signal that `t1` cannot
+  ## fit into `t2`. This trivially covers one consistency check case: that assignments must be unique.
+  case t2.kind
+  of Kind.TypeVariable:
+    let index = cast[TypeVariable](t2).index
+    let existing_assignment = assignments[index]
+    if existing_assignment == nil:
+      assignments[index] = t1
+    else:
+      if not are_equal(existing_assignment, t1):
+        return false
+    true
+
+  of Kind.Sum:
+    if is_polymorphic(t2):
+      quit("Type variable assignment for sum types is not yet supported.")
+    true
+
+  of Kind.Intersection:
+    if is_polymorphic(t2):
+      quit("Type variable assignment for intersection types is not yet supported.")
+    true
+
+  of Kind.Tuple:
+    if t1.kind == Kind.Tuple:
+      let t1 = cast[TupleType](t1)
+      let t2 = cast[TupleType](t2)
+      if t1.elements.len == t2.elements.len:
+        let length = t1.elements.len
+        for i in 0 ..< length:
+          if not assign(t1.elements[i], t2.elements[i], assignments):
+            return false
+    true
+
+  of Kind.Function:
+    if t1.kind == Kind.Function:
+      let t1 = cast[FunctionType](t1)
+      let t2 = cast[FunctionType](t2)
+      if not assign(t1.input, t2.input, assignments):
+        return false
+      assign(t1.output, t2.output, assignments)
+    else: true
+
+  of Kind.List:
+    if t1.kind == Kind.List:
+      let t1 = cast[ListType](t1)
+      let t2 = cast[ListType](t2)
+      assign(t1.element, t2.element, assignments)
+    else: true
+
+  of Kind.Map:
+    if t1.kind == Kind.Map:
+      let t1 = cast[MapType](t1)
+      let t2 = cast[MapType](t2)
+      if not assign(t1.key, t2.key, assignments):
+        return false
+      assign(t1.value, t2.value, assignments)
+    else: true
+
+  else: true
+
+########################################################################################################################
+# Polymorphy.                                                                                                          #
+########################################################################################################################
+
+proc is_polymorphic(types: ImSeq[Type]): bool
+
+proc is_polymorphic(tpe: Type): bool =
+  ## Whether `tpe` is polymorphic. This can usually be decided based on the presence of type parameters, so this
+  ## function should only be used if polymorphy must be decided for subterms in types.
+  case tpe.kind
+  of Kind.TypeVariable: true
+  of Kind.Sum: is_polymorphic(cast[SumType](tpe).parts)
+  of Kind.Intersection: is_polymorphic(cast[IntersectionType](tpe).parts)
+  of Kind.Tuple: is_polymorphic(cast[TupleType](tpe).elements)
+  of Kind.Function: is_polymorphic(cast[FunctionType](tpe).input) or is_polymorphic(cast[FunctionType](tpe).output)
+  of Kind.List: is_polymorphic(cast[ListType](tpe).element)
+  of Kind.Map: is_polymorphic(cast[MapType](tpe).key) or is_polymorphic(cast[MapType](tpe).value)
+  else: false
+
+proc is_polymorphic(types: ImSeq[Type]): bool =
+  for tpe in types:
+    if is_polymorphic(tpe):
+      return true
+  false
+
+########################################################################################################################
 # Simplification.                                                                                                      #
 ########################################################################################################################
 
@@ -352,33 +515,36 @@ proc intersection_simplified*(parts: ImSeq[Type]): IntersectionType = intersecti
 # Substitution.                                                                                                        #
 ########################################################################################################################
 
-proc substitute_optimized(tpe: Type, type_arguments: ImSeq[Type]): Type
-proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: ImSeq[Type]): ImSeq[Type]
+proc substitute_optimized(tpe: Type, type_arguments: open_array[Type]): Type
+proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: open_array[Type]): ImSeq[Type]
 
 ## Substitutes any type variables in `tpe` with the given type arguments, returning a new type and leaving `tpe` as is.
-proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type =
+proc substitute*(tpe: Type, type_arguments: open_array[Type]): Type =
   let res = substitute_optimized(tpe, type_arguments)
   if res != nil: res
   else: tpe
 
-template substitute_unary_and_construct(child0: Type, type_arguments: ImSeq[Type], constructor): Type =
+## Substitutes any type variables in `tpe` with the given type arguments, returning a new type and leaving `tpe` as is.
+proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type = substitute(tpe, type_arguments.to_open_array)
+
+template substitute_unary_and_construct(child0: Type, type_arguments: open_array[Type], constructor): Type =
   let result0 = substitute_optimized(child0, type_arguments)
   if result0 != nil: constructor(result0)
   else: nil
 
-template substitute_binary_and_construct(child0: Type, child1: Type, type_arguments: ImSeq[Type], constructor): Type =
+template substitute_binary_and_construct(child0: Type, child1: Type, type_arguments: open_array[Type], constructor): Type =
   var result0 = substitute_optimized(child0, type_arguments)
   var result1 = substitute_optimized(child1, type_arguments)
   call_if_any_exists(constructor, result0, child0, result1, child1, nil)
 
-template substitute_xary_and_construct(children: ImSeq[Type], type_arguments: ImSeq[Type], constructor): Type =
+template substitute_xary_and_construct(children: ImSeq[Type], type_arguments: open_array[Type], constructor): Type =
   let results = substitute_multiple_optimized(children, type_arguments)
   if results != nil: constructor(results)
   else: nil
 
 ## Substitutes any type variables in `tpe` with the given type arguments. If no substitutions occur, the function
 ## returns `nil`. This allows it to only allocate new types should a child type have changed.
-proc substitute_optimized(tpe: Type, type_arguments: ImSeq[Type]): Type =
+proc substitute_optimized(tpe: Type, type_arguments: open_array[Type]): Type =
   case tpe.kind
   of Kind.TypeVariable:
     let tv = cast[TypeVariable](tpe)
@@ -402,7 +568,7 @@ proc substitute_optimized(tpe: Type, type_arguments: ImSeq[Type]): Type =
   else:
     quit(fmt"Type substitution has not been implemented for kind {tpe.kind}.")
 
-proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: ImSeq[Type]): ImSeq[Type] =
+proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: open_array[Type]): ImSeq[Type] =
   var result_types: ImSeq[Type] = nil
 
   let length = types.len
@@ -414,6 +580,30 @@ proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: ImSeq[Typ
       result_types[i] = candidate
 
   result_types
+
+########################################################################################################################
+# Type parameter bounds.                                                                                               #
+########################################################################################################################
+
+## Whether `parameter`'s lower and upper bound (instantiated via the given assignments) contain `type`.
+proc bounds_contain*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
+  lower_bound_contains(parameter, tpe, assignments) and upper_bound_contains(parameter, tpe, assignments)
+
+## Whether `parameter`'s lower bound (instantiated via the given assignments) contains `type`.
+proc lower_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
+  if parameter.lower_bound.kind != Kind.Nothing:
+    # TODO (vm/poly): Use allocation-less subtyping here, which uses the `assignments` instead.
+    let actual_bound = substitute(parameter.lower_bound, assignments)
+    return is_subtype(tpe, actual_bound)
+  true
+
+## Whether `parameter`'s upper bound (instantiated via the given assignments) contains `type`.
+proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
+  if parameter.upper_bound.kind != Kind.Any:
+    # TODO (vm/poly): Use allocation-less subtyping here, which uses the `assignments` instead.
+    let actual_bound = substitute(parameter.upper_bound, assignments)
+    return is_subtype(tpe, actual_bound)
+  true
 
 ########################################################################################################################
 # Stringification.                                                                                                     #

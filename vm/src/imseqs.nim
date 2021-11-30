@@ -6,7 +6,7 @@ type
 
   ImSeqObj[T] = object
     len*: int
-    elements: UncheckedArray[T]
+    elements*: UncheckedArray[T]
 
 proc alloc_immutable_seq[T](length: int): ImSeq[T] =
   # Note that `sizeof` of an unchecked array is 0, so we can use `sizeof(ImSeqObj[T])` to get the size of the preamble.
@@ -28,14 +28,18 @@ proc new_immutable_seq*[T](length: int): ImSeq[T] =
 
 proc new_immutable_seq*[T](length: uint): ImSeq[T] = new_immutable_seq[T](int(length))
 
-## Creates a new immutable sequence from the given source.
 proc new_immutable_seq*[T](source: open_array[T]): ImSeq[T] =
   let length = source.len
   var seq = new_immutable_seq[T](length)
   copy_mem(addr seq.elements, unsafe_addr source, length * sizeof(T))
   seq
 
-## Creates a new immutable sequence from the given source.
+## Creates a new immutable sequence from `source`, but taking only the first `length` elements.
+proc new_immutable_seq*[T](source: open_array[T], length: int): ImSeq[T] =
+  var seq = new_immutable_seq[T](length)
+  copy_mem(addr seq.elements, unsafe_addr source, length * sizeof(T))
+  seq
+
 proc new_immutable_seq*[T](source: ImSeq[T]): ImSeq[T] =
   let length = source.len
   var seq = new_immutable_seq[T](length)
@@ -53,6 +57,9 @@ proc `[]=`*[T](seq: var ImSeq[T], index: int, value: T) =
 
 proc `[]=`*[T](seq: var ImSeq[T], index: uint, value: T) =
   seq.elements[index] = value
+
+template to_open_array*[T](seq: ImSeq[T]): open_array[T] =
+  to_open_array(addr seq.elements, 0, seq.len)
 
 proc append*[T](old_seq: ImSeq[T], element: T): ImSeq[T] =
   let old_length = old_seq.len
