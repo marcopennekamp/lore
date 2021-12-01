@@ -59,7 +59,7 @@ proc `[]=`*[T](seq: var ImSeq[T], index: uint, value: T) =
   seq.elements[index] = value
 
 template to_open_array*[T](seq: ImSeq[T]): open_array[T] =
-  to_open_array(addr seq.elements, 0, seq.len)
+  to_open_array(addr seq.elements, 0, seq.len - 1)
 
 proc append*[T](old_seq: ImSeq[T], element: T): ImSeq[T] =
   let old_length = old_seq.len
