@@ -108,6 +108,10 @@ type
     global_variables*: seq[GlobalVariable]
     multi_functions*: seq[MultiFunction]
 
+########################################################################################################################
+# Global variables.                                                                                                    #
+########################################################################################################################
+
 ## Creates an already initialized global variable from the given name and value.
 proc new_eager_global*(name: string, value: TaggedValue): GlobalVariable =
   GlobalVariable(name: name, value: value, is_initialized: true)
@@ -116,12 +120,26 @@ proc new_eager_global*(name: string, value: TaggedValue): GlobalVariable =
 proc new_lazy_global*(name: string, initializer: FunctionInstance): GlobalVariable =
   GlobalVariable(name: name, value: values.tag_reference(nil), is_initialized: false, initializer: initializer)
 
+########################################################################################################################
+# Functions and instances.                                                                                             #
+########################################################################################################################
+
 ## Initializes the `frame_*` size and offset stats of the given function.
 proc init_frame_stats*(function: Function) =
   const preamble_size = sizeof(Frame)
   function.frame_size = cast[uint16](preamble_size + sizeof(TaggedValue) * cast[int](function.register_count))
 
-proc new_constants*(): Constants = Constants(types: @[], values: @[], global_variables: @[], multi_functions: @[])
-
 proc is_monomorphic*(function: Function): bool = function.type_parameters.len == 0
 proc is_polymorphic*(function: Function): bool = function.type_parameters.len > 0
+
+proc new_function_instance*(function: Function, type_arguments: ImSeq[Type]): ptr FunctionInstance =
+  let instance = cast[ptr FunctionInstance](alloc0(sizeof(FunctionInstance)))
+  instance.function = function
+  instance.type_arguments = type_arguments
+  instance
+
+########################################################################################################################
+# Constants.                                                                                                           #
+########################################################################################################################
+
+proc new_constants*(): Constants = Constants(types: @[], values: @[], global_variables: @[], multi_functions: @[])

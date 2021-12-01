@@ -94,6 +94,8 @@ proc bounds_contain*(parameter: TypeParameter, tpe: Type, assignments: open_arra
 proc lower_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool
 proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool
 
+proc `$`(tpe: Type): string
+
 ########################################################################################################################
 # Constructors.                                                                                                        #
 ########################################################################################################################
@@ -307,6 +309,16 @@ proc is_subtype*(t1: Type, t2: Type): bool =
     type_subtypes_intersection(t1, i2)
 
   else: false
+
+proc is_subtype*(ts1: open_array[Type], ts2: open_array[Type]): bool =
+  ## Whether a tuple type `tpl(ts1)` is a subtype of `tpl(ts2)`. This function does *not* allocate a new tuple type.
+  if ts1.len != ts2.len:
+    return false
+
+  for i in 0 ..< ts1.len:
+    if not is_subtype(ts1[i], ts2[i]):
+      return false
+  true
 
 proc sum_subtypes_sum(s1: SumType, s2: SumType): bool =
   for p1 in s1.parts:

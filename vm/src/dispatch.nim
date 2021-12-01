@@ -1,22 +1,26 @@
 import std/strformat
 
-from definitions import MultiFunction, FunctionInstance, is_monomorphic
+from definitions import MultiFunction, FunctionInstance, is_monomorphic, new_function_instance
+import imseqs
 import types
 from values import TaggedValue
 
-## Finds the dispatch target for the given multi-function and input type. The function uses an out variable `target` to
-## avoid unnecessary allocations of FunctionInstances.
-proc find_dispatch_target*(mf: MultiFunction, input_type: TupleType, target: var FunctionInstance) =
+proc find_dispatch_target*(mf: MultiFunction, input_types: open_array[Type], target: var FunctionInstance) =
+  ## Finds the dispatch target for the given multi-function and input types (expressed as an open array of tuple
+  ## elements). The function uses an out variable `target` to avoid unnecessary allocations of FunctionInstances.
   # TODO (vm): This is probably the slowest non-esoteric implementation of dispatch. However, it will suffice for now
   #            until we can spend more time making it fast.
   var candidates = new_seq_of_cap[ptr FunctionInstance](8)
   for function in mf.functions:
-    # TODO (vm): This should be the fit, of course. And we should be able to handle polymorphic functions.
-    # TODO (vm): This also shouldn't allocate any function instances once we've moved to a hierarchical dispatch
-    #            algorithm.
-    if is_subtype(input_type, function.input_type):
-      assert(function.is_monomorphic)
-      candidates.add(addr function.monomorphic_instance)
+    let function_input_types = function.input_type.elements
+    if function.is_monomorphic:
+      if is_subtype(input_types, function_input_types.to_open_array):
+        candidates.add(addr function.monomorphic_instance)
+    else:
+      let type_arguments = fits(input_types, function_input_types.to_open_array, function.type_parameters)
+      if type_arguments != nil:
+        # TODO (vm): This shouldn't need to allocate any function instances once we've moved to hierarchical dispatch.
+        candidates.add(new_function_instance(function, type_arguments))
 
   # Well, for this to be correct, we also have to filter out all the functions that aren't most specific, because we
   # haven't built a function hierarchy yet. This is very slow, but works.
@@ -41,24 +45,22 @@ proc find_dispatch_target*(mf: MultiFunction, input_type: TupleType, target: var
     # TODO (vm): Specify the exact offending function.
     quit(fmt"Cannot call multi-function {mf.name}: the chosen target function is abstract.")
 
-template find_dispatch_target_n(mf, tuple_type, target): untyped =
-  # TODO (vm): This optimization is not quite correct. We can assume that the compiler produces valid calls in the
-  #            bytecode, but we have to take lower bounds into account.
+template find_dispatch_target_n(mf, input_types, target): untyped =
   # TODO (vm): This is an optimization I would like to be carried out in a preprocessing phase which could for example
   #            replace `dispatch` with `call` instructions.
   let function0 = mf.functions[0]
   if mf.functions.len == 1 and function0.is_monomorphic:
     target = function0.monomorphic_instance
   else:
-    find_dispatch_target(mf, tuple_type, target)
+    find_dispatch_target(mf, input_types, target)
 
 proc find_dispatch_target*(mf: MultiFunction, target: var FunctionInstance) =
-  find_dispatch_target_n(mf, unit, target)
+  find_dispatch_target_n(mf, [], target)
 
 proc find_dispatch_target*(mf: MultiFunction, argument0: TaggedValue, target: var FunctionInstance) =
   # TODO (vm): We can allocate the tuple type on the stack.
-  find_dispatch_target_n(mf, tpl([values.type_of(argument0)]), target)
+  find_dispatch_target_n(mf, [values.type_of(argument0)], target)
 
 proc find_dispatch_target*(mf: MultiFunction, argument0: TaggedValue, argument1: TaggedValue, target: var FunctionInstance) =
   # TODO (vm): We can allocate the tuple type on the stack.
-  find_dispatch_target_n(mf, tpl([values.type_of(argument0), values.type_of(argument1)]), target)
+  find_dispatch_target_n(mf, [values.type_of(argument0), values.type_of(argument1)], target)
