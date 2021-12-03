@@ -1,8 +1,8 @@
 type
-  ## An ImSeq is an immutable sequence. It has shallow copying semantics and should thus be preferred over Nim's `seq`
-  ## when the elements are known exactly at sequence construction. Its `elements` are embedded in the object, so that
-  ## there is only need for a single allocation.
   ImSeq*[T] = ref ImSeqObj[T]
+    ## An ImSeq is an immutable sequence. It has shallow copying semantics and should thus be preferred over Nim's
+    ## `seq` when the elements are known exactly at sequence construction. Its `elements` are embedded in the object,
+    ## so that there is only need for a single allocation.
 
   ImSeqObj[T] = object
     len*: int
@@ -16,13 +16,13 @@ proc alloc_immutable_seq[T](length: int): ImSeq[T] =
 
 let empty = alloc_immutable_seq[uint64](0)
 
-## Returns an empty immutable sequence for the given element type. This is backed by a single object reference so that
-## reallocations do not have to occur.
 proc empty_immutable_seq*[T](): ImSeq[T] = cast[ImSeq[T]](empty)
+  ## Returns an empty immutable sequence for the given element type. This is backed by a single constant ImSeq so that
+  ## this function makes no allocations.
 
-## Creates a new immutable sequence of the given length with zeroed entries. This can be used to efficiently initialize
-## an immutable sequence. If `length` is 0, the empty sequence is returned.
 proc new_immutable_seq*[T](length: int): ImSeq[T] =
+  ## Creates a new immutable sequence of the given length with zeroed entries. This can be used to efficiently
+  ## initialize an immutable sequence. If `length` is 0, the empty sequence is returned.
   if length == 0: empty_immutable_seq[T]()
   else: alloc_immutable_seq[T](length)
 
@@ -34,8 +34,8 @@ proc new_immutable_seq*[T](source: open_array[T]): ImSeq[T] =
   copy_mem(addr seq.elements, unsafe_addr source, length * sizeof(T))
   seq
 
-## Creates a new immutable sequence from `source`, but taking only the first `length` elements.
 proc new_immutable_seq*[T](source: open_array[T], length: int): ImSeq[T] =
+  ## Creates a new immutable sequence from `source`, but taking only the first `length` elements.
   var seq = new_immutable_seq[T](length)
   copy_mem(addr seq.elements, unsafe_addr source, length * sizeof(T))
   seq
@@ -50,9 +50,9 @@ proc `[]`*[T](seq: ImSeq[T], index: int): T = seq.elements[index]
 proc `[]`*[T](seq: ImSeq[T], index: int64): T = seq.elements[index]
 proc `[]`*[T](seq: ImSeq[T], index: uint): T = seq.elements[index]
 
-## Replaces the sequence's element at the given index. This is an unsafe operation, as ImSeqs should be immutable, but
-## may be used to optimize initialization.
 proc `[]=`*[T](seq: var ImSeq[T], index: int, value: T) =
+  ## Replaces the sequence's element at the given index. This is an unsafe operation, as ImSeqs should be immutable,
+  ## but it may be used to optimize initialization.
   seq.elements[index] = value
 
 proc `[]=`*[T](seq: var ImSeq[T], index: uint, value: T) =

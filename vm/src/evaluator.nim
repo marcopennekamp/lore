@@ -16,8 +16,6 @@ proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: Tagged
 # Execution frames.                                                                                                    #
 ########################################################################################################################
 
-## Don't move `create_frame` to a different module. GCC won't inline it.
-# TODO (vm): GCC will inline it with LTO. We might be able to move this to `definitions`.
 # TODO (vm): We should possibly clear a frame by nilling all references so that pointers left in registers aren't
 #            causing memory leaks. However, this also incurs a big performance penalty, so we should probably rather
 #            verify first that this is a problem before fixing it.
@@ -33,19 +31,20 @@ proc create_frame(instance: ptr FunctionInstance, frame_base: pointer): FramePtr
 # Global variable functions.                                                                                           #
 ########################################################################################################################
 
-## Gets the global variable's `value`. If the variable hasn't been initialized yet, `get_global` performs the
-## initialization first and then returns the new value. `frame_mem` must be provided for the execution of the
-## initialization function.
-##
-## Note that `get_global` cannot be placed in the module `definitions` because of a mutual dependency with `evaluate`.
 proc get_global*(variable: GlobalVariable, frame_mem: pointer): TaggedValue =
+  ## Gets the global variable's `value`. If the variable hasn't been initialized yet, `get_global` performs the
+  ## initialization first and then returns the new value. `frame_mem` must be provided for the execution of the
+  ## initialization function.
+  ##
+  ## Note that `get_global` cannot be placed in the module `definitions` because of a mutual dependency with `evaluate`.
   if not variable.is_initialized:
     variable.value = evaluate(addr variable.initializer, frame_mem)
     variable.is_initialized = true
   variable.value
 
-## Sets the global variable's `value`, overwriting any previous value. Also sets `is_initialized` to true.
 proc set_global*(variable: GlobalVariable, value: TaggedValue) =
+  ## Sets the global variable's `value`, overwriting any previous value. Also sets `is_initialized` to true. This
+  ## function also works with lazy global variables.
   variable.is_initialized = true
   variable.value = value
 
@@ -109,20 +108,17 @@ template get_call_result(target_frame): untyped =
   target_frame.registers[0]
 
 # TODO (vm/poly): Do we have to pass type arguments of an owning multi-function to a lambda? Or how does this work?
-## Calls a given FunctionInstance target with zero arguments.
 template call0(target: ptr FunctionInstance): TaggedValue =
   let target_frame = call_start(target)
   evaluate(target_frame)
   get_call_result(target_frame)
 
-## Calls a given FunctionInstance target with one argument.
 template call1(target: ptr FunctionInstance, argument0): TaggedValue =
   let target_frame = call_start(target)
   target_frame.registers[0] = argument0
   evaluate(target_frame)
   get_call_result(target_frame)
 
-## Calls a given FunctionInstance target with two arguments.
 template call2(target: ptr FunctionInstance, argument0, argument1): TaggedValue =
   let target_frame = call_start(target)
   target_frame.registers[0] = argument0
@@ -356,24 +352,24 @@ proc evaluate*(entry_function: ptr FunctionInstance, frame_mem: pointer): Tagged
   # The bytecode must ensure that the result is in the first register.
   reg_get(0)
 
-## Evaluates a function value with a signature `() => Any`.
 proc evaluate*(function_value: FunctionValue, frame: FramePtr): TaggedValue =
+  ## Evaluates a function value with a signature `() => Any`.
   assert(arity(function_value) == 0)
   if function_value.is_fixed:
     call0(cast[ptr FunctionInstance](function_value.target))
   else:
     dispatch0(cast[MultiFunction](function_value.target))
 
-## Evaluates a function value with a signature `(Any) => Any`.
 proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue =
+  ## Evaluates a function value with a signature `(Any) => Any`.
   assert(arity(function_value) == 1)
   if function_value.is_fixed:
     call1(cast[ptr FunctionInstance](function_value.target), argument0)
   else:
     dispatch1(cast[MultiFunction](function_value.target), argument0)
 
-## Evaluates a function value with a signature `(Any, Any) => Any`.
 proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue =
+  ## Evaluates a function value with a signature `(Any, Any) => Any`.
   assert(arity(function_value) == 2)
   if function_value.is_fixed:
     call2(cast[ptr FunctionInstance](function_value.target), argument0, argument1)

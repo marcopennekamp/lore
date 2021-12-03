@@ -5,44 +5,44 @@ from types import Kind, Type, FunctionType
 from utils import call_if_any_exists
 
 type
-  ## A TaggedValue is a compact representation of a Lore value. Every Lore value needs to carry type information at run
-  ## time, including the primitives Int, Real, and Boolean. This is because at times, the compiler might encounter a
-  ## sum type such as `Int | Real` or `Real | #error`. Such a type might stand in a list, or as a parameter, or
-  ## anywhere else. Especially in storage situations (such as lists), we want to tag values as efficiently as possible
-  ## without the need to create separate List implementations for each primitive.
-  ##
-  ## We can keep the size of TaggedValue to 8 bytes with a technique called pointer tagging. Essentially, on 64-bit
-  ## systems the lower three bits of a pointer are always 0 due to alignment, so we can use these bits to tag Ints,
-  ## Booleans, and references. This reduces the range of an Int, for example, from 64 bits to 61 bits, but we don't
-  ## anticipate any issues with that in the foreseeable future. There are no plans to port Lore to 32-bit systems.
-  ##
-  ## There is a slight performance cost associated with TaggedValues, as every time we want to use an Int, we have to
-  ## untag it using a shift. Every time we want to create an Int, we have to shift the value and OR the tag bits.
-  ## Reference access is free, as the reference tag is 0. Booleans don't need shifts, because there are only two
-  ## possible values: `0b0011` for false and `0b1011` for true, which includes the tag bits.
-  ##
-  ## Strings must be represented as reference Values, because a string's reference must be discoverable by the garbage
-  ## collector. If we tag a string, its reference is going to be obfuscated and the string might be collected
-  ## prematurely.
-  ##
-  ## Reals are currently represented as Values, because the only technique for putting a 64-bit float into a 64-bit
-  ## value AND still be able to tag it is nan-boxing, which is not future-proof.
   TaggedValue* = distinct uint64
+    ## A TaggedValue is a compact representation of a Lore value. Every Lore value needs to carry type information at
+    ## run time, including the primitives Int, Real, and Boolean. This is because at times, the compiler might
+    ## encounter a sum type such as `Int | Real` or `Real | #error`. Such a type might stand in a list, or as a
+    ## parameter, or anywhere else. Especially in storage situations (such as lists), we want to tag values as
+    ## efficiently as possible without the need to create separate List implementations for each primitive.
+    ##
+    ## We can keep the size of TaggedValue to 8 bytes with a technique called pointer tagging. Essentially, on 64-bit
+    ## systems the lower three bits of a pointer are always 0 due to alignment, so we can use these bits to tag Ints,
+    ## Booleans, and references. This reduces the range of an Int, for example, from 64 bits to 61 bits, but we don't
+    ## anticipate any issues with that in the foreseeable future. There are no plans to port Lore to 32-bit systems.
+    ##
+    ## There is a slight performance cost associated with TaggedValues, as every time we want to use an Int, we have to
+    ## untag it using a shift. Every time we want to create an Int, we have to shift the value and OR the tag bits.
+    ## Reference access is free, as the reference tag is 0. Booleans don't need shifts, because there are only two
+    ## possible values: `0b0011` for false and `0b1011` for true, which includes the tag bits.
+    ##
+    ## Strings must be represented as reference Values, because a string's reference must be discoverable by the
+    ## garbage collector. If we tag a string, its reference is going to be obfuscated and the string might be collected
+    ## prematurely.
+    ##
+    ## Reals are currently represented as Values, because the only technique for putting a 64-bit float into a 64-bit
+    ## value AND still be able to tag it is nan-boxing, which is not future-proof.
 
-  ## The pragmas `inheritable` and `pure` omit the `m_type` pointer from each value instance, as `tpe` already
-  ## sufficiently distinguishes between value kinds.
   Value* {.inheritable, pure.} = ref object
+    ## The pragmas `inheritable` and `pure` omit the `m_type` pointer from each value instance, as `tpe` already
+    ## sufficiently distinguishes between value kinds.
     tpe*: Type
 
-  ## Real values are currently boxed, because a 64-bit float doesn't fit into a 64-bit tagged pointer. The technique to
-  ## use would be nanboxing, but that is not quite future-proof because it relies on pointers only using the lower 48
-  ## bits.
-  ##
-  ## There are other Real optimizations which we may try first. For example, we can introduce specific operations which
-  ## work with unboxed Reals. If a function parameter is definitely a Real, we also don't need to pass the boxed value
-  ## to it, nor require the function itself to work with a boxed value. These and other optimizations may relieve us of
-  ## the burden of nanboxing.
   RealValue* {.pure.} = ref object of Value
+    ## Real values are currently boxed, because a 64-bit float doesn't fit into a 64-bit tagged pointer. The technique
+    ## to use would be nanboxing, but that is not quite future-proof because it relies on pointers only using the lower
+    ## 48 bits.
+    ##
+    ## There are other Real optimizations which we may try first. For example, we can introduce specific operations
+    ## which work with unboxed Reals. If a function parameter is definitely a Real, we also don't need to pass the
+    ## boxed value to it, nor require the function itself to work with a boxed value. These and other optimizations may
+    ## relieve us of the burden of nanboxing.
     real*: float64
 
   # TODO (vm): Rethink string handling: Nim strings are mutable, so we can't just throw Nim strings around. We might
@@ -59,11 +59,11 @@ type
   TupleValue* {.pure, shallow.} = ref object of Value
     elements*: ImSeq[TaggedValue]
 
-  ## A FunctionValue is either a fixed function value (pointing to a fixed function or a lambda) or a multi-function
-  ## value. This is determined by the flag `is_fixed`. The implementation of the `target` is either a
-  ## `ptr FunctionInstance` or a `MultiFunction` reference. The actual type is hidden inside the module `definitions` to
-  ## avoid cyclic dependencies between Nim modules.
   FunctionValue* {.pure, shallow.} = ref object of Value
+    ## A FunctionValue is either a fixed function value (pointing to a fixed function or a lambda) or a multi-function
+    ## value. This is determined by the flag `is_fixed`. The implementation of the `target` is either a
+    ## `ptr FunctionInstance` or a `MultiFunction` reference. The actual type is hidden inside the module `definitions`
+    ## to avoid cyclic dependencies between Nim modules.
     is_fixed*: bool
     target*: pointer
 
@@ -74,8 +74,8 @@ type
     name*: string
 
 const
-  ## This mask can filter out the lowest three tag bits of a pointer.
   TagMask: uint64 = 0b111
+    ## This mask can filter out the lowest three tag bits of a pointer.
   TagReference*: uint64 = 0b000
   TagInt*: uint64 = 0b001
   TagBoolean*: uint64 = 0b010
@@ -114,10 +114,10 @@ proc new_real_tagged*(value: float64): TaggedValue = tag_reference(new_real(valu
 # Strings.                                                                                                             #
 ########################################################################################################################
 
-## Note that the resulting StringValue's `string` will be a shallow copy of `value`. If `value` is subsequently
-## modified, `string` will change as well. This is a valid optimization because `new_string` will usually be called
-## with a fresh string value.
 proc new_string*(value: string): Value =
+  ## Note that the resulting StringValue's `string` will be a shallow copy of `value`. If `value` is subsequently
+  ## modified, `string` will change as well. This is a valid optimization because `new_string` will usually be called
+  ## with a fresh string value.
   let string_value = StringValue(tpe: types.string)
   shallow_copy(string_value.string, value)
   string_value
@@ -128,8 +128,9 @@ proc new_string_tagged*(value: string): TaggedValue = tag_reference(new_string(v
 # Tuples.                                                                                                              #
 ########################################################################################################################
 
-## Creates a new tuple, forcing its type to be `tpe` instead of taking the type from the elements.
-proc new_tuple*(elements: ImSeq[TaggedValue], tpe: Type): Value = TupleValue(tpe: tpe, elements: elements)
+proc new_tuple*(elements: ImSeq[TaggedValue], tpe: Type): Value =
+  ## Creates a new tuple, forcing its type to be `tpe` instead of taking the type from the elements.
+  TupleValue(tpe: tpe, elements: elements)
 
 proc new_tuple_tagged*(elements: ImSeq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_tuple(elements, tpe))
 
@@ -192,9 +193,9 @@ proc type_of*(value: TaggedValue): Type =
 proc substitute_optimized(value: TaggedValue, type_arguments: ImSeq[Type]): TaggedValue
 proc substitute_multiple_optimized(values: ImSeq[TaggedValue], type_arguments: ImSeq[Type]): ImSeq[TaggedValue]
 
-## Substitutes any type variables in `value`'s type with the given type arguments, returning a new value and leaving
-## `value` as is. This applies recursively to any sub-values in `value`.
 proc substitute_types*(value: TaggedValue, type_arguments: ImSeq[Type]): TaggedValue =
+  ## Substitutes any type variables in `value`'s type with the given type arguments, returning a new value and leaving
+  ## `value` as is. This applies recursively to any sub-values in `value`.
   let res = substitute_optimized(value, type_arguments)
 
   # `substitute_optimized` will always return a reference. Hence, we can untag the reference here and check for `nil`.
@@ -202,9 +203,9 @@ proc substitute_types*(value: TaggedValue, type_arguments: ImSeq[Type]): TaggedV
   if untag_reference(res) != nil: res
   else: value
 
-## Substitutes any type variables in `value`'s type with the given type arguments. If no substitutions occur, the
-## function returns `nil`. This allows it to only allocate new values should a child value have changed.
 proc substitute_optimized(value: TaggedValue, type_arguments: ImSeq[Type]): TaggedValue =
+  ## Substitutes any type variables in `value`'s type with the given type arguments. If no substitutions occur, the
+  ## function returns `nil`. This allows it to only allocate new values should a child value have changed.
   if not is_reference(value):
     return tag_reference(nil)
 

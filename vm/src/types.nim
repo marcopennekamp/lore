@@ -23,31 +23,29 @@ type
     Trait
     Struct
 
-  ## Types are considered immutable and should never be mutated once they're attached to a value. Types must also be
-  ## acyclic, resembling a tree structure.
-  ## The pragmas `inheritable` and `pure` omit the `m_type` pointer from each type instance. This type tag is usually
-  ## used to discriminate between types at run time. However, `kind` already sufficiently distinguishes type instances.
-  ## A type which contains a sequence or string should be marked `shallow`, to optimize copying. Types which themselves
-  ## contain other types should be marked `acyclic`, to optimize garbage collection.
   Type* {.inheritable, pure.} = ref object
+    ## Types are considered immutable and should never be mutated once they're attached to a value. Types must also be
+    ## acyclic, resembling a tree structure.
+    ## The pragmas `inheritable` and `pure` omit the `m_type` pointer from each type instance. This type tag is usually
+    ## used to discriminate between types at run time. However, `kind` already sufficiently distinguishes type
+    ## instances. Types which themselves contain other types should be marked `acyclic`.
     kind*: Kind
 
-  ## A type variable represents the application of a type argument in the current context at the exact index. For
-  ## example, if we have a function with two type parameters A and B, the type variable with index 1 would refer to B
-  ## and its corresponding type argument given a FunctionInstance.
   TypeVariable* {.pure, acyclic.} = ref object of Type
+    ## A type variable represents the application of a type argument at the index. For example, if we have a function
+    ## with two type parameters A and B, the type variable with index 1 would refer to the second type argument, whose
+    ## parameter is B.
     index*: uint8
 
-    ## Type variables contained in a function's input or output type have a corresponding parameter set for this
-    ## property. For all other kinds of type variables, this property is `nil`. The property is specifically used by
-    ## subtyping and fit when comparing two uninstantiated input types, such as when a multi-function hierarchy is
-    ## built.
     parameter*: TypeParameter
+      ## `parameter` is only defined for type variables contained in a function's input or output type. For all other
+      ## kinds of type variables, `parameter` is `nil`. It is specifically used by subtyping and fit when comparing two
+      ## uninstantiated input types, such as when a multi-function hierarchy is built.
 
-  SumType* {.pure, shallow, acyclic.} = ref object of Type
+  SumType* {.pure, acyclic.} = ref object of Type
     parts*: ImSeq[Type]
 
-  IntersectionType* {.pure, shallow, acyclic.} = ref object of Type
+  IntersectionType* {.pure, acyclic.} = ref object of Type
     parts*: ImSeq[Type]
 
   TupleType* {.pure, acyclic.} = ref object of Type
@@ -65,7 +63,7 @@ type
 
   # TODO (vm): Implement shape types.
 
-  SymbolType* {.pure, shallow.} = ref object of Type
+  SymbolType* {.pure.} = ref object of Type
     name*: string
 
   # TODO (vm): Implement trait and struct types.
@@ -81,9 +79,11 @@ type
     Contravariant
     Invariant
 
-## The maximum number of type parameters that a function may have is 32. This allows us to allocate certain arrays on
-## the stack when checking for type fit.
 const max_type_parameters* = 32
+  ## The maximum number of type parameters that a function may have is 32. This allows us to allocate certain arrays on
+  ## the stack when checking for type fit.
+
+proc fits*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeParameter]): ImSeq[Type]
 
 proc substitute*(tpe: Type, type_arguments: open_array[Type]): Type
 proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type
@@ -130,8 +130,9 @@ proc symbol*(name: string): SymbolType = SymbolType(kind: Kind.Symbol, name: nam
 # Type equality.                                                                                                       #
 ########################################################################################################################
 
-## Checks the referential equality of the two types.
-proc `===`(a: Type, b: Type): bool = cast[pointer](a) == cast[pointer](b)
+proc `===`(a: Type, b: Type): bool =
+  ## Checks the referential equality of the two types.
+  cast[pointer](a) == cast[pointer](b)
 
 proc has_equal_in(ts1: ImSeq[Type], ts2: ImSeq[Type]): bool
 proc are_exactly_equal(ts1: ImSeq[Type], ts2: ImSeq[Type]): bool
@@ -378,14 +379,15 @@ type
 
 proc assign(t1: Type, t2: Type, assignments: var Assignments): bool
 
-## Whether `t1` fits into `t2`. Returns the list of assigned type arguments if true, or `nil` otherwise. `parameters`
-## must contain all type parameters which variables in `t2` refer to, in the proper order.
-proc fits*(t1: Type, t2: Type, parameters: ImSeq[TypeParameter]): ImSeq[Type] = nil
+proc fits*(t1: Type, t2: Type, parameters: ImSeq[TypeParameter]): ImSeq[Type] =
+  ## Whether `t1` fits into `t2`. `fits` returns the list of assigned type arguments if true, or `nil` otherwise.
+  ## `parameters` must contain all type parameters which variables in `t2` refer to, in the proper order.
+  fits([t1], [t2], parameters)
 
-## Whether `ts1`, interpreted as the elements of a tuple type, fit into `ts2`. Returns the list of assigned type
-## arguments if true, or `nil` otherwise. `parameters` must contain all type parameters which variables in `t2` refer
-## to, in the proper order.
 proc fits*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeParameter]): ImSeq[Type] =
+  ## Whether `ts1`, interpreted as the elements of a tuple type, fit into `ts2`. `fits` returns the list of assigned
+  ## type arguments if true, or `nil` otherwise. `parameters` must contain all type parameters which variables in `t2`
+  ## refer to, in the proper order.
   if ts1.len != ts2.len:
     return nil
 
@@ -530,14 +532,15 @@ proc intersection_simplified*(parts: ImSeq[Type]): IntersectionType = intersecti
 proc substitute_optimized(tpe: Type, type_arguments: open_array[Type]): Type
 proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: open_array[Type]): ImSeq[Type]
 
-## Substitutes any type variables in `tpe` with the given type arguments, returning a new type and leaving `tpe` as is.
 proc substitute*(tpe: Type, type_arguments: open_array[Type]): Type =
+  ## Substitutes any type variables in `tpe` with the given type arguments, creating a new type.
   let res = substitute_optimized(tpe, type_arguments)
   if res != nil: res
   else: tpe
 
-## Substitutes any type variables in `tpe` with the given type arguments, returning a new type and leaving `tpe` as is.
-proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type = substitute(tpe, type_arguments.to_open_array)
+proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type =
+  ## Substitutes any type variables in `tpe` with the given type arguments, creating a new type.
+  substitute(tpe, type_arguments.to_open_array)
 
 template substitute_unary_and_construct(child0: Type, type_arguments: open_array[Type], constructor): Type =
   let result0 = substitute_optimized(child0, type_arguments)
@@ -554,9 +557,9 @@ template substitute_xary_and_construct(children: ImSeq[Type], type_arguments: op
   if results != nil: constructor(results)
   else: nil
 
-## Substitutes any type variables in `tpe` with the given type arguments. If no substitutions occur, the function
-## returns `nil`. This allows it to only allocate new types should a child type have changed.
 proc substitute_optimized(tpe: Type, type_arguments: open_array[Type]): Type =
+  ## Substitutes any type variables in `tpe` with the given type arguments. If no substitutions occur, the function
+  ## returns `nil`. This allows it to only allocate new types should a child type have changed.
   case tpe.kind
   of Kind.TypeVariable:
     let tv = cast[TypeVariable](tpe)
@@ -597,20 +600,20 @@ proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: open_arra
 # Type parameter bounds.                                                                                               #
 ########################################################################################################################
 
-## Whether `parameter`'s lower and upper bound (instantiated via the given assignments) contain `type`.
 proc bounds_contain*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
+  ## Whether `parameter`'s lower and upper bound (instantiated via the given assignments) contain `type`.
   lower_bound_contains(parameter, tpe, assignments) and upper_bound_contains(parameter, tpe, assignments)
 
-## Whether `parameter`'s lower bound (instantiated via the given assignments) contains `type`.
 proc lower_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
+  ## Whether `parameter`'s lower bound (instantiated via the given assignments) contains `type`.
   if parameter.lower_bound.kind != Kind.Nothing:
     # TODO (vm/poly): Use allocation-less subtyping here, which uses the `assignments` instead.
     let actual_bound = substitute(parameter.lower_bound, assignments)
     return is_subtype(tpe, actual_bound)
   true
 
-## Whether `parameter`'s upper bound (instantiated via the given assignments) contains `type`.
 proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
+  ## Whether `parameter`'s upper bound (instantiated via the given assignments) contains `type`.
   if parameter.upper_bound.kind != Kind.Any:
     # TODO (vm/poly): Use allocation-less subtyping here, which uses the `assignments` instead.
     let actual_bound = substitute(parameter.upper_bound, assignments)

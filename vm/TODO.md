@@ -6,7 +6,7 @@
   - Type parameters: ~~type parameters and variables~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~executing function instances~~, ~~poly operations~~.
   - Types: ~~type substitution into types and values~~, ~~fit~~, sum/intersection simplification.
   - Dispatch: ~~handling polymorphic functions with `fit`.~~
-  - Move documentation comments into their respective blocks...
+  - ~~Move documentation comments into their respective blocks...~~
   - Implement a test example.
   - Clear all `TODO (vm/poly)` entries.
 - Implement shapes:

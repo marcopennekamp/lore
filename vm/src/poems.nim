@@ -7,22 +7,21 @@ from instructions import Operation, Instruction, new_instruction
 from types import Kind, Type, Variance
 
 type
-  ## A Poem is essentially a single unit of bytecode which contains type and multi-function definitions. A program may
-  ## consist of many Poems. An explicit structure is not prescribed. A Lore compiler may decide to put a whole program
-  ## into a single Poem (as long as the Constants table suffices), put each function and type definition into its own
-  ## Poem, or anything in between.
-  ##
-  ## After a Poem has been read, it contains mostly unresolved objects, such as unresolved types and functions.
-  ## Resolution entails creating objects in the right order (e.g. creating types first) and then building the required
-  ## structures with the correct pointers.
-  ##
-  ## `.poem` files must be encoded in big endian.
   Poem* = ref object
+    ## A Poem is essentially a single unit of bytecode which contains type and multi-function definitions. A program
+    ## may consist of many Poems. An explicit organisation of which items to put in which files is not prescribed. A
+    ## Lore compiler may decide to put a whole program into a single Poem (as long as the Constants table suffices),
+    ## put each function and type definition into its own Poem, or anything in between.
+    ##
+    ## After a Poem has been read, it contains mostly unresolved objects, such as unresolved types and functions.
+    ## Resolution entails creating objects in the right order (e.g. creating types first) and then building the
+    ## required structures with the correct pointers.
+    ##
+    ## `.poem` files must be encoded in big endian.
     constants*: PoemConstants
     global_variables*: seq[PoemGlobalVariable]
     functions*: seq[PoemFunction]
 
-  ## An unresolved constants table.
   PoemConstants* = ref object
     types*: seq[PoemType]
     values*: seq[PoemValue]
@@ -30,7 +29,6 @@ type
     global_variables*: seq[string]
     multi_functions*: seq[string]
 
-  ## An unresolved global variable.
   PoemGlobalVariable* = ref object of RootObj
     name*: string
 
@@ -40,7 +38,6 @@ type
   PoemLazyGlobalVariable* = ref object of PoemGlobalVariable
     initializer_name*: string
 
-  ## An unresolved function.
   PoemFunction* = ref object
     name*: string
     type_parameters*: seq[PoemTypeParameter]
@@ -50,17 +47,15 @@ type
     register_count*: uint16
     instructions*: seq[Instruction]
 
-    ## `resolved_function` is used to refer to the exact created function during multiple steps of universe resolution.
     resolved_function*: Function
+      ## This is used to refer to the corresponding Function object during multiple steps of universe resolution.
 
-  ## An unresolved type parameter.
   PoemTypeParameter* = ref object
     name*: string
     lower_bound*: PoemType
     upper_bound*: PoemType
     variance*: Variance
 
-  ## An unresolved type.
   PoemType* = ref object of RootObj
     discard
 
@@ -70,8 +65,8 @@ type
   PoemBasicType* = ref object of PoemType
     tpe*: Type
 
-  ## This unresolved type contains any number of child types and represents sums, functions, lists, etc.
   PoemXaryType* = ref object of PoemType
+    ## This unresolved type contains any number of child types and represents sums, functions, lists, etc.
     kind*: Kind
     types*: seq[PoemType]
 
@@ -82,7 +77,6 @@ type
     name*: string
     arguments*: seq[PoemType]
 
-  ## An unresolved value.
   PoemValue* = ref object of RootObj
     discard
 
@@ -110,16 +104,16 @@ type
     ## The desired input type that the fixed function should match.
     input_type*: PoemType
 
-  ## A lambda function value is specially resolved from a multi-function that only has a single function, which is how
-  ## lambdas are encoded in the VM's bytecode.
   PoemLambdaFunctionValue* = ref object of PoemFunctionValue
+    ## A lambda function value is specially resolved from a multi-function that only has a single function, which is how
+    ## lambdas are encoded in the VM's bytecode.
     discard
 
   PoemMultiFunctionValue* = ref object of PoemFunctionValue
     discard
 
-  ## This variant enum is used to encode the actual type of a function value in the bytecode.
   PoemFunctionValueVariant* {.pure.} = enum
+    ## This variant enum is used to encode the actual type of a function value in the bytecode.
     Fixed
     Lambda
     Multi

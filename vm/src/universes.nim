@@ -11,8 +11,8 @@ from types import Kind, Type, TypeVariable, SumType, IntersectionType, TupleType
 from values import TaggedValue
 
 type
-  ## The Universe object provides access to all top-level entities of the current Lore program.
   Universe* = ref object
+    ## The Universe object provides access to all top-level entities of the current Lore program.
     intrinsics*: Table[string, Intrinsic]
     global_variables*: Table[string, GlobalVariable]
     multi_functions*: Table[string, MultiFunction]
@@ -32,12 +32,12 @@ proc attach_constants(universe: Universe, poem: Poem)
 # Top-level resolution.                                                                                                #
 ########################################################################################################################
 
-## Resolves a Universe from the given set of Poem definitions.
-##
-## Multi-functions have to be resolved right away such that constants tables for each Poem can point to multi-functions
-## and also fixed functions. Constants tables for all functions are then resolved in a separate step. Global variables
-## are resolved after functions, because lazy global variables point to a Function initializer.
 proc resolve*(poems: seq[Poem]): Universe =
+  ## Resolves a Universe from the given set of Poem definitions.
+  ##
+  ## Multi-functions have to be resolved right away such that constants tables for each Poem can point to
+  ## multi-functions and also fixed functions. Constants tables for all functions are then resolved in a separate step.
+  ## Global variables are resolved after functions, because lazy global variables point to a Function initializer.
   var universe = Universe()
 
   # Step 1: Register intrinsics first, as they have no dependencies.
@@ -128,8 +128,8 @@ proc get_or_register_multi_function(universe: Universe, name: string): MultiFunc
 proc attach_type_parameters(tpe: Type, type_parameters: ImSeq[TypeParameter])
 proc attach_type_parameters(types: ImSeq[Type], type_parameters: ImSeq[TypeParameter])
 
-## Resolves a PoemFunction. Does not create the constants table, which must be resolved in a separate step.
 proc resolve(universe: Universe, poem_function: PoemFunction) =
+  ## Resolves a PoemFunction. Does not create the constants table, which must be resolved in a separate step.
   let multi_function = universe.get_or_register_multi_function(poem_function.name)
   let type_parameters = new_immutable_seq(universe.resolve_many(poem_function.type_parameters))
 
@@ -160,8 +160,8 @@ proc resolve(universe: Universe, poem_function: PoemFunction) =
   poem_function.resolved_function = function
   multi_function.functions.add(function)
 
-## Ensures that the universe contains a multi-function with the given full name, and returns it.
 proc get_or_register_multi_function(universe: Universe, name: string): MultiFunction =
+  ## Ensures that the universe contains a multi-function with the given full name, and returns it.
   if not (name in universe.multi_functions):
     universe.multi_functions[name] = MultiFunction(
       name: name,
