@@ -11,10 +11,7 @@ type
     ## Frames are part of `definitions` because some intrinsics require access to frames.
     function*: Function
     type_arguments*: ImSeq[Type]
-    # TODO (vm): Isn't this pointer totally superfluous? `registers` could simply be an UncheckedArray with the correct
-    #            amount of space reserved. The pointer at address x essentially points to address x + 8 here (where the
-    #            first register is placed).
-    registers*: ptr UncheckedArray[TaggedValue]
+    registers*: UncheckedArray[TaggedValue]
   FramePtr* = ptr Frame
 
   Intrinsic* = ref object

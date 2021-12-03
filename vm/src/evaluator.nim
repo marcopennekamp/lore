@@ -20,11 +20,9 @@ proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: Tagged
 #            causing memory leaks. However, this also incurs a big performance penalty, so we should probably rather
 #            verify first that this is a problem before fixing it.
 proc create_frame(instance: ptr FunctionInstance, frame_base: pointer): FramePtr {.inline.} =
-  const preamble_size = sizeof(Frame)
   let frame = cast[FramePtr](frame_base)
   frame.function = instance.function
   frame.type_arguments = instance.type_arguments
-  frame.registers = cast[ptr UncheckedArray[TaggedValue]](cast[uint](frame_base) + cast[uint](preamble_size))
   frame
 
 ########################################################################################################################
