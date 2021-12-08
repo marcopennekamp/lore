@@ -125,10 +125,10 @@ type
   PoemSymbolValue* = ref object of PoemValue
     name*: string
 
-let int_type*: PoemType = PoemBasicType(tpe: types.int)
-let real_type*: PoemType = PoemBasicType(tpe: types.real)
-let boolean_type*: PoemType = PoemBasicType(tpe: types.boolean)
-let string_type*: PoemType = PoemBasicType(tpe: types.string)
+let int_type*: PoemType = PoemBasicType(tpe: types.int_type)
+let real_type*: PoemType = PoemBasicType(tpe: types.real_type)
+let boolean_type*: PoemType = PoemBasicType(tpe: types.boolean_type)
+let string_type*: PoemType = PoemBasicType(tpe: types.string_type)
 let unit_type*: PoemType = PoemXaryType(kind: Kind.Tuple, types: @[])
 
 proc int_value*(value: int64): PoemValue = PoemIntValue(int: value)
@@ -410,12 +410,12 @@ proc read_type(stream: FileStream): PoemType =
   case kind
   of tkBasic:
     let tpe = case metadata
-    of btAny: types.any
-    of btNothing: types.nothing
-    of btInt: types.int
-    of btReal: types.real
-    of btBoolean: types.boolean
-    of btString: types.string
+    of btAny: types.any_type
+    of btNothing: types.nothing_type
+    of btInt: types.int_type
+    of btReal: types.real_type
+    of btBoolean: types.boolean_type
+    of btString: types.string_type
     else: raise new_exception(IOError, fmt"Unknown basic type {metadata}.")
     PoemBasicType(tpe: tpe)
 

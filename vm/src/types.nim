@@ -94,20 +94,20 @@ proc bounds_contain*(parameter: TypeParameter, tpe: Type, assignments: open_arra
 proc lower_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool
 proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool
 
-proc `$`(tpe: Type): string
+proc `$`*(tpe: Type): string
 
 ########################################################################################################################
 # Constructors.                                                                                                        #
 ########################################################################################################################
 
 let
-  any* = Type(kind: Any)
-  nothing* = Type(kind: Nothing)
-  int* = Type(kind: Int)
-  real* = Type(kind: Real)
-  boolean* = Type(kind: Boolean)
-  string* = Type(kind: String)
-  unit* = TupleType(kind: Kind.Tuple, elements: empty_immutable_seq[Type]())
+  any_type* = Type(kind: Any)
+  nothing_type* = Type(kind: Nothing)
+  int_type* = Type(kind: Int)
+  real_type* = Type(kind: Real)
+  boolean_type* = Type(kind: Boolean)
+  string_type* = Type(kind: String)
+  unit_type* = TupleType(kind: Kind.Tuple, elements: empty_immutable_seq[Type]())
 
 proc variable*(index: uint8): TypeVariable = TypeVariable(index: index, parameter: nil)
 proc sum*(parts: ImSeq[Type]): SumType = SumType(kind: Kind.Sum, parts: parts)
@@ -519,11 +519,184 @@ proc is_polymorphic(types: ImSeq[Type]): bool =
 # Simplification.                                                                                                      #
 ########################################################################################################################
 
-# TODO (vm/poly): Implement and document.
-proc sum_simplified*(parts: ImSeq[Type]): SumType = sum(parts)
+proc sum_simplified*(parts: ImSeq[Type]): Type
+proc intersection_simplified*(parts: ImSeq[Type]): Type
 
-# TODO (vm/poly): Implement and document.
-proc intersection_simplified*(parts: ImSeq[Type]): IntersectionType = intersection(parts)
+template simplify_construct_covariant(kind: Kind, parts: ImSeq[Type]): untyped =
+  if kind == Kind.Sum: sum_simplified(parts)
+  elif kind == Kind.Intersection: intersection_simplified(parts)
+  else: quit("Invalid kind for covariant construction.")
+
+template simplify_construct_contravariant(kind: Kind, parts: ImSeq[Type]): untyped =
+  if kind == Kind.Sum: intersection_simplified(parts)
+  elif kind == Kind.Intersection: sum_simplified(parts)
+  else: quit("Invalid kind for contravariant construction.")
+
+template simplify_categorize_type(tpe: Type) =
+  case tpe.kind
+  of Kind.Tuple:
+    let tuple_type = cast[TupleType](tpe)
+    case tuple_type.elements.len
+    of 0: results.add(tpe)
+    of 1: tuples1.add(tuple_type)
+    of 2: tuples2.add(tuple_type)
+    of 3: tuples3.add(tuple_type)
+    else: tuplesX.add(tuple_type)
+  of Kind.Function: functions.add(cast[FunctionType](tpe))
+  of Kind.List: lists.add(cast[ListType](tpe))
+  else: results.add(tpe)
+
+template simplify_flatten(tpe: Type, T: untyped, kind: Kind, expected_kind: Kind): untyped =
+  if kind == expected_kind:
+    let xary_type = cast[T](tpe)
+    for child in xary_type.parts:
+      simplify_categorize_type(child)
+  else:
+    results.add(tpe)
+
+proc simplify_tuples(
+  types: var StackSeq[8, TupleType],
+  results: var StackSeq[32, Type],
+  kind: Kind,
+) =
+  if types.len == 0:
+    return
+  elif types.len == 1:
+    results.add(types[0])
+    return
+
+  # (A, B) | (C, D) :=: (A | C, B | D)
+  # (A, B) & (C, D) :=: (A & C, B & D)
+  let size = types[0].elements.len
+  var elements = new_immutable_seq[Type](size)
+  for i in 0 ..< size:
+    var element_parts = new_immutable_seq[Type](types.len)
+    for j in 0 ..< types.len:
+      element_parts[j] = types[j].elements[i]
+    elements[i] = simplify_construct_covariant(kind, element_parts)
+
+  results.add(tpl(elements))
+
+proc simplify(kind: Kind, parts: ImSeq[Type]): Type {.inline.} =
+  ## Simplifies `parts` as if they were contained in a sum or intersection type, determined by `kind`. This operation
+  ## is very costly, so try to minimize its usage.
+  if parts.len == 1:
+    return parts[0]
+
+  # TODO (vm/poly): Ensure that `results` only contain unique types. We only have to ensure this for types which aren't
+  #                 combined, so NOT for tuples, functions, and lists.
+
+  # Step 1: Flatten.
+  # We want to allocate as many arrays on the stack as possible. However, a constructed sum/intersection type may have
+  # an arbitrary length. Hence, we are using StackSeq to avoid allocations for small sum/intersection types. To avoid
+  # two iterations over `parts`, we're immediately sorting types into boxes while flattening.
+  var tuples1: StackSeq[8, TupleType]
+  var tuples2: StackSeq[8, TupleType]
+  var tuples3: StackSeq[8, TupleType]
+  var tuplesX: StackSeq[8, TupleType]
+  var functions: StackSeq[8, FunctionType]
+  var lists: StackSeq[8, ListType]
+  var results: StackSeq[32, Type]
+
+  for part in parts:
+    case part.kind
+    of Kind.Sum: simplify_flatten(part, SumType, kind, Kind.Sum)
+    of Kind.Intersection: simplify_flatten(part, IntersectionType, kind, Kind.Intersection)
+    else: simplify_categorize_type(part)
+
+  # Step 2: Simplify tuples, functions, and lists.
+  if tuples1.len > 0: simplify_tuples(tuples1, results, kind)
+  if tuples2.len > 0: simplify_tuples(tuples2, results, kind)
+  if tuples3.len > 0: simplify_tuples(tuples3, results, kind)
+
+  if tuplesX.len > 0:
+    # To resolve tuples of length >= 4, we have to comb them out of `tuplesX` by size. For example, if we have four
+    # tuples in `tuplesX`, two with length 6 and two with length 9, we call `simplify_tuples` once with all tuples of
+    # length 6 and once with all tuples of length 9. We can reuse `tuples2` as a temporary storage.
+    tuples2.clear()
+    var last_size = 3
+    var left_to_process = tuplesX.len
+    while left_to_process > 0:
+      # We have to find out which size to comb out next without iterating through all possible tuple sizes from 4 to
+      # 31. That would just be wasteful. Hence, we want to find the smallest size larger than `last_size`. We can be
+      # sure that there is such a size because `left_to_process` is not yet 0.
+      var size = high(int)
+      for tpe in tuplesX:
+        let tpe_size = tpe.elements.len
+        if tpe_size > last_size and tpe_size < size:
+          size = tpe_size
+      last_size = size
+
+      for tpe in tuplesX:
+        if tpe.elements.len == size:
+          tuples2.add(tpe)
+
+      simplify_tuples(tuples2, results, kind)
+      left_to_process -= tuples2.len
+      tuples2.clear()
+
+  # (A => B) | (C => D) :=: (A & C) => (B | D)
+  # (A => B) & (C => D) :=: (A | C) => (B & D)
+  let functions_count = functions.len
+  if functions_count > 0:
+    var input_parts = new_immutable_seq[Type](functions_count)
+    var output_parts = new_immutable_seq[Type](functions_count)
+    for i in 0 ..< functions_count:
+      let function_type = functions[i]
+      input_parts[i] = function_type.input
+      output_parts[i] = function_type.output
+
+    # The combined input type must be a tuple type because all parts are tuples.
+    let input = cast[TupleType](simplify_construct_contravariant(kind, input_parts))
+    assert(input.kind == Kind.Tuple)
+    let output = simplify_construct_covariant(kind, output_parts)
+    results.add(function(input, output))
+
+  # [A] | [B] :=: [A | B]
+  # [A] & [B] :=: [A & B]
+  let lists_count = lists.len
+  if lists_count > 0:
+    var element_parts = new_immutable_seq[Type](lists_count)
+    for i in 0 ..< lists_count:
+      element_parts[i] = lists[i].element
+
+    let element = simplify_construct_covariant(kind, element_parts)
+    results.add(list(element))
+
+  # Step 3: Filter relevant types, i.e. only take the most general/specific types.
+  let results_count = results.len
+  var relevants: StackSeq[32, Type]
+  for i in 0 ..< results_count:
+    let self = results[i]
+
+    var j = 0
+    while j < results_count:
+      let other = results[j]
+      if i != j:
+        if kind == Kind.Intersection and is_subtype(self, other) and not are_equal(self, other): break
+        elif kind == Kind.Sum and is_subtype(other, self) and not are_equal(self, other): break
+      j += 1
+
+    if j == results_count:
+      relevants.add(self)
+
+  # Step 4: Allocate an ImSeq for the relevant parts and build the simplified xary type around them.
+  if relevants.len == 1:
+    return relevants[0]
+
+  var result_parts = new_immutable_seq[Type](relevants.len)
+  for i in 0 ..< relevants.len:
+    result_parts[i] = relevants[i]
+
+  if kind == Kind.Sum: sum(result_parts)
+  elif kind == Kind.Intersection: intersection(result_parts)
+  else: quit(fmt"Invalid kind {kind} for simplification.")
+
+# TODO (vm/poly): Document.
+proc sum_simplified*(parts: ImSeq[Type]): Type = simplify(Kind.Sum, parts)
+
+# TODO (vm/poly): Document.
+proc intersection_simplified*(parts: ImSeq[Type]): Type = simplify(Kind.Intersection, parts)
 
 ########################################################################################################################
 # Substitution.                                                                                                        #
@@ -624,7 +797,7 @@ proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: ope
 # Stringification.                                                                                                     #
 ########################################################################################################################
 
-proc `$`(tpe: Type): string =
+proc `$`*(tpe: Type): string =
   case tpe.kind
   of Kind.TypeVariable: quit("Type variable stringification is not yet implemented.")
   of Kind.Any: "Any"

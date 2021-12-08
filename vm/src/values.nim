@@ -107,7 +107,7 @@ proc untag_int*(value: TaggedValue): int64 = cast[int64](value) shr 3
 proc tag_boolean*(value: bool): TaggedValue = (if value: True else: False)
 proc untag_boolean*(value: TaggedValue): bool = value == True
 
-proc new_real*(value: float64): Value = RealValue(tpe: types.real, real: value)
+proc new_real*(value: float64): Value = RealValue(tpe: types.real_type, real: value)
 proc new_real_tagged*(value: float64): TaggedValue = tag_reference(new_real(value))
 
 ########################################################################################################################
@@ -118,7 +118,7 @@ proc new_string*(value: string): Value =
   ## Note that the resulting StringValue's `string` will be a shallow copy of `value`. If `value` is subsequently
   ## modified, `string` will change as well. This is a valid optimization because `new_string` will usually be called
   ## with a fresh string value.
-  let string_value = StringValue(tpe: types.string)
+  let string_value = StringValue(tpe: types.string_type)
   shallow_copy(string_value.string, value)
   string_value
 
@@ -180,9 +180,9 @@ proc type_of*(value: TaggedValue): Type =
   if tag == TagReference:
     untag_reference(value).tpe
   elif tag == TagInt:
-    types.int
+    types.int_type
   elif tag == TagBoolean:
-    types.boolean
+    types.boolean_type
   else:
     quit(fmt"Unknown tag {tag}.")
 

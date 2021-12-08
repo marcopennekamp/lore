@@ -232,7 +232,7 @@ method resolve(poem_type: PoemXaryType, universe: Universe): Type =
     types.sum(universe.resolve_many(poem_type.types))
   elif poem_type.kind == Kind.Tuple:
     if poem_type.types.len == 0:
-      types.unit
+      types.unit_type
     else:
       types.tpl(universe.resolve_many(poem_type.types))
   elif poem_type.kind == Kind.Function:
