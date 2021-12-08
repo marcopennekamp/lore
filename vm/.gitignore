@@ -1,2 +1,11 @@
+/nimcache
 target
 performance.txt
+
+# Testament generates a `testresults` folder which we don't want to include. It also generates test binaries (without a
+# file extension) in the test sources directory, so the following pattern excludes all non-nim files from the test
+# sources.
+/testresults
+/test/**/*
+!/test/**/
+!/test/**/*.nim
