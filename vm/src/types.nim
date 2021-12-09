@@ -127,6 +127,13 @@ proc map*(key: Type, value: Type): MapType = MapType(kind: Kind.Map, key: key, v
 # TODO (vm): Intern symbol types.
 proc symbol*(name: string): SymbolType = SymbolType(kind: Kind.Symbol, name: name)
 
+# These functions are workarounds when creating arrays of types.
+proc sum_as_type*(parts: open_array[Type]): Type = sum(parts)
+proc intersection_as_type*(parts: open_array[Type]): Type = intersection(parts)
+proc tpl_as_type*(elements: open_array[Type]): Type = tpl(elements)
+proc function_as_type*(input: TupleType, output: Type): Type = function(input, output)
+proc list_as_type*(element: Type): Type = list(element)
+
 ########################################################################################################################
 # Type equality.                                                                                                       #
 ########################################################################################################################
@@ -837,9 +844,9 @@ proc `$`*(tpe: Type): string =
 when is_main_module:
   from utils import benchmark
 
-  let sum1 = sum([string, int, boolean])
-  let sum2 = sum([string, int, boolean])
-  let sum3 = sum([real, boolean])
+  let sum1 = sum([string_type, int_type, boolean_type])
+  let sum2 = sum([string_type, int_type, boolean_type])
+  let sum3 = sum([real_type, boolean_type])
 
   echo are_equal(sum1, sum1)
   benchmark("sum1 == sum1", 100_000_000):
@@ -854,15 +861,15 @@ when is_main_module:
     discard are_equal(sum1, sum3)
 
   let tuple1 = tpl([
-    sum([string, int, boolean]),
-    intersection([string, int, boolean]),
-    list(map(string, int)),
+    sum([string_type, int_type, boolean_type]),
+    intersection([string_type, int_type, boolean_type]),
+    list(map(string_type, int_type)),
   ])
 
   let tuple2 = tpl([
-    sum([string, int, boolean]),
-    intersection([string, int, boolean]),
-    list(map(string, int)),
+    sum([string_type, int_type, boolean_type]),
+    intersection([string_type, int_type, boolean_type]),
+    list(map(string_type, int_type)),
   ])
 
   echo are_equal(tuple1, tuple2)
@@ -871,15 +878,35 @@ when is_main_module:
 
   benchmark("tuple1 == tuple2 (+creation)", 10_000_000):
     let tuple1 = tpl([
-      sum([string, int, boolean]),
-      intersection([string, int, boolean]),
-      list(map(string, int)),
+      sum([string_type, int_type, boolean_type]),
+      intersection([string_type, int_type, boolean_type]),
+      list(map(string_type, int_type)),
     ])
 
     let tuple2 = tpl([
-      sum([string, int, boolean]),
-      intersection([string, int, boolean]),
-      list(map(string, int)),
+      sum([string_type, int_type, boolean_type]),
+      intersection([string_type, int_type, boolean_type]),
+      list(map(string_type, int_type)),
     ])
 
     discard are_equal(tuple1, tuple2)
+
+  # These two simplfication examples are equal to the ones in `test/types/simplification.nim`.
+  let primitives2 = new_immutable_seq([int_type, real_type, intersection([int_type, string_type]), sum([boolean_type])])
+
+  benchmark("simplify sum of primitives", 10_000_000):
+    discard sum_simplified(primitives2)
+
+  let tuples2569 = new_immutable_seq([
+    tpl_as_type([int_type, int_type, int_type, int_type, int_type, real_type]),
+    tpl([int_type, real_type]),
+    tpl([int_type, int_type, real_type, int_type, int_type]),
+    tpl([int_type, int_type, int_type, int_type, real_type, int_type, int_type, int_type, int_type]),
+    tpl([int_type, real_type, int_type, int_type, int_type, int_type]),
+    tpl([real_type, real_type]),
+    tpl([int_type, int_type, int_type, int_type, int_type, int_type, int_type, int_type, int_type]),
+    tpl([int_type, int_type, int_type, real_type, int_type, int_type]),
+  ])
+
+  benchmark("simplify sum of tuples", 1_000_000):
+    discard sum_simplified(tuples2569)
