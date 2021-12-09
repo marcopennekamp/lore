@@ -533,19 +533,29 @@ template simplify_construct_contravariant(kind: Kind, parts: ImSeq[Type]): untyp
   elif kind == Kind.Intersection: sum_simplified(parts)
   else: quit("Invalid kind for contravariant construction.")
 
+proc add_unique(results: var StackSeq[32, Type], tpe: Type) =
+  var is_unique = true
+  for result_type in results:
+    if are_equal(result_type, tpe):
+      is_unique = false
+      break
+
+  if is_unique:
+    results.add(tpe)
+
 template simplify_categorize_type(tpe: Type) =
   case tpe.kind
   of Kind.Tuple:
     let tuple_type = cast[TupleType](tpe)
     case tuple_type.elements.len
-    of 0: results.add(tpe)
+    of 0: results.add_unique(tpe)
     of 1: tuples1.add(tuple_type)
     of 2: tuples2.add(tuple_type)
     of 3: tuples3.add(tuple_type)
     else: tuplesX.add(tuple_type)
   of Kind.Function: functions.add(cast[FunctionType](tpe))
   of Kind.List: lists.add(cast[ListType](tpe))
-  else: results.add(tpe)
+  else: results.add_unique(tpe)
 
 template simplify_flatten(tpe: Type, T: untyped, kind: Kind, expected_kind: Kind): untyped =
   if kind == expected_kind:
@@ -553,7 +563,7 @@ template simplify_flatten(tpe: Type, T: untyped, kind: Kind, expected_kind: Kind
     for child in xary_type.parts:
       simplify_categorize_type(child)
   else:
-    results.add(tpe)
+    results.add_unique(tpe)
 
 proc simplify_tuples(
   types: var StackSeq[8, TupleType],
@@ -563,6 +573,7 @@ proc simplify_tuples(
   if types.len == 0:
     return
   elif types.len == 1:
+    # This is guaranteed to be the only tuple of size 1, so we don't need `add_unique`.
     results.add(types[0])
     return
 
@@ -584,13 +595,12 @@ proc simplify(kind: Kind, parts: ImSeq[Type]): Type {.inline.} =
   if parts.len == 1:
     return parts[0]
 
-  # TODO (vm/poly): Ensure that `results` only contain unique types. We only have to ensure this for types which aren't
-  #                 combined, so NOT for tuples, functions, and lists.
-
   # Step 1: Flatten.
   # We want to allocate as many arrays on the stack as possible. However, a constructed sum/intersection type may have
   # an arbitrary length. Hence, we are using StackSeq to avoid allocations for small sum/intersection types. To avoid
   # two iterations over `parts`, we're immediately sorting types into boxes while flattening.
+  # We have to ensure that each type in `results` is unique. This does not apply to tuples, functions, and lists,
+  # because these types are later combined in such a way that each result type must be unique.
   var tuples1: StackSeq[8, TupleType]
   var tuples2: StackSeq[8, TupleType]
   var tuples3: StackSeq[8, TupleType]
