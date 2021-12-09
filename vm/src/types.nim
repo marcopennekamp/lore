@@ -1,6 +1,7 @@
 import std/strformat
 
 import imseqs
+import stackseqs
 from utils import call_if_any_exists
 
 type
@@ -673,8 +674,8 @@ proc simplify(kind: Kind, parts: ImSeq[Type]): Type {.inline.} =
     while j < results_count:
       let other = results[j]
       if i != j:
-        if kind == Kind.Intersection and is_subtype(self, other) and not are_equal(self, other): break
-        elif kind == Kind.Sum and is_subtype(other, self) and not are_equal(self, other): break
+        if kind == Kind.Sum and is_subtype(self, other): break
+        elif kind == Kind.Intersection and is_subtype(other, self): break
       j += 1
 
     if j == results_count:
