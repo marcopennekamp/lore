@@ -1,4 +1,3 @@
-# TODO (vm/poly): We should write some tests for StackSeq that verify stack/heap boundary behavior and edge cases.
 type StackSeq*[I: static int, T] = object
   ## A StackSeq is a growable sequence that is initially allocated on the stack (up to a maximum of `I`). Once its
   ## elements don't fit the stack anymore, an array is allocated on the heap to hold the remaining elements.

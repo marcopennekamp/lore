@@ -155,7 +155,6 @@ proc are_equal*(t1: Type, t2: Type): bool =
 
   case t1.kind
   # Type variables can only be referentially equal.
-  # TODO (vm/poly): Is this correct here as well?
   of Kind.TypeVariable: false
   of Kind.Any: true
   of Kind.Nothing: true
@@ -424,7 +423,7 @@ proc fits*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeP
 
   # Final check: `t1` must be a subtype of `t2` after substituting assignments into `t2`.
   # TODO (vm/poly): As mentioned in the TODO file, we should implement a separate version of `is_subtype` that doesn't
-  #                 require allocating new types, instead taking the assignments into it.
+  #                 require allocating new types via `substitute`, instead taking the assignments into it.
   for i in 0 ..< length:
     let t1 = ts1[i]
     let t2 = substitute(ts2[i], assignments)
@@ -710,11 +709,29 @@ proc simplify(kind: Kind, parts: ImSeq[Type]): Type {.inline.} =
   elif kind == Kind.Intersection: intersection(result_parts)
   else: quit(fmt"Invalid kind {kind} for simplification.")
 
-# TODO (vm/poly): Document.
-proc sum_simplified*(parts: ImSeq[Type]): Type = simplify(Kind.Sum, parts)
+proc sum_simplified*(parts: ImSeq[Type]): Type =
+  ## Constructs a sum type from the given parts. But first, `parts` are flattened, combined according to their
+  ## variance, and filtered for the most general/specific types.
+  ##
+  ## If a subterm is covariant, the type candidates are combined into a sum type. If a subterm is contravariant, the
+  ## intersection is used instead. Invariant subterms cannot be combined, meaning types with invariant subterms are
+  ## left as is.
+  ##
+  ## The following kinds of types will be simplified: Tuples of the same size, functions, lists, and declared types of
+  ## the same schema.
+  simplify(Kind.Sum, parts)
 
-# TODO (vm/poly): Document.
-proc intersection_simplified*(parts: ImSeq[Type]): Type = simplify(Kind.Intersection, parts)
+proc intersection_simplified*(parts: ImSeq[Type]): Type =
+  ## Constructs an intersection type from the given parts. But first, `parts` are flattened, combined according to
+  ## their variance, and filtered for the most general/specific types.
+  ##
+  ## If a subterm is covariant, the type candidates are combined into an intersection type. If a subterm is
+  ## contravariant, the sum is used instead. Invariant subterms cannot be combined, meaning types with invariant
+  ## subterms are left as is.
+  ##
+  ## The following kinds of types will be simplified: Tuples of the same size, functions, lists, shapes, and declared
+  ## types of the same schema.
+  simplify(Kind.Intersection, parts)
 
 ########################################################################################################################
 # Substitution.                                                                                                        #

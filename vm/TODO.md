@@ -4,7 +4,7 @@
 
 - Implement parametric functions:
   - Type parameters: ~~type parameters and variables~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~executing function instances~~, ~~poly operations~~.
-  - Types: ~~type substitution into types and values~~, ~~fit~~, sum/intersection simplification.
+  - Types: ~~type substitution into types and values~~, ~~fit~~, ~~sum/intersection simplification~~.
   - Dispatch: ~~handling polymorphic functions with `fit`.~~
   - ~~Move documentation comments into their respective blocks...~~
   - Implement a test example.
