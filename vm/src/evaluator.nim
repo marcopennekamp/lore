@@ -178,6 +178,16 @@ proc evaluate(frame: FramePtr) =
       let b = instruction.argi(2)
       reg_set_int_arg(0, a - b)
 
+    of Operation.IntLt:
+      let a = reg_get_int_arg(1)
+      let b = reg_get_int_arg(2)
+      reg_set_bool_arg(0, a < b)
+
+    of Operation.IntLtConst:
+      let a = reg_get_int_arg(1)
+      let b = instruction.argi(2)
+      reg_set_bool_arg(0, a < b)
+
     of Operation.IntGtConst:
       let a = reg_get_int_arg(1)
       let b = instruction.argi(2)
