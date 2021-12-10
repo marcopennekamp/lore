@@ -105,7 +105,7 @@ template get_call_result(target_frame): untyped =
   # After function evaluation has finished, it must guarantee that the return value is in the first register.
   target_frame.registers[0]
 
-# TODO (vm/poly): Do we have to pass type arguments of an owning multi-function to a lambda? Or how does this work?
+# TODO (vm): Do we have to pass type arguments of an owning multi-function to a lambda? Or how does this work?
 template call0(target: ptr FunctionInstance): TaggedValue =
   let target_frame = call_start(target)
   evaluate(target_frame)

@@ -2,13 +2,6 @@
 
 #### Features
 
-- Implement parametric functions:
-  - Type parameters: ~~type parameters and variables~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~executing function instances~~, ~~poly operations~~.
-  - Types: ~~type substitution into types and values~~, ~~fit~~, ~~sum/intersection simplification~~.
-  - Dispatch: ~~handling polymorphic functions with `fit`.~~
-  - ~~Move documentation comments into their respective blocks...~~
-  - Implement a test example.
-  - Clear all `TODO (vm/poly)` entries.
 - Implement shapes:
   - Shape types: Type definition, type equality, subtyping, type variable allocation, type substitution, to string, poem reading, poem writing, universe resolution.
   - Shape values: Value definition, to string, poem reading, poem writing, universe resolution, indirect field access.
@@ -16,6 +9,7 @@
   - Schemas: Schema definition, poem reading, poem writing, universe resolution.
   - Types: Type definition, type equality, subtyping, type variable allocations, type substitution, to string, poem reading, poem writing, supertrait instantiation, open property types and `getPropertyType`, constructors, open type parameters and type paths.
   - Values: Struct values, struct memory layout, poem reading, poem writing, constructors, direct and indirect field access, constructor functions, interned objects.
+- Figure out how to pass a surrounding function's type arguments to lambdas created within the function.
 - Implement declared type interning:
   - Implement hashing for all types. 
   - Cache declared types within a schema.

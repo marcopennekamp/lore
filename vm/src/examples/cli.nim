@@ -20,6 +20,7 @@ from add_tuples import nil
 from lambdas import nil
 from multi_function_values import nil
 from list_appends import nil
+from list_concat import nil
 from list_get import nil
 from list_print_each import nil
 from stats import nil
@@ -44,7 +45,8 @@ let examples = @[
   Example(name: "add_tuples", poem: add_tuples.poem, main: "test", runs: 25_000_000),
   Example(name: "lambdas", poem: lambdas.poem, main: "test", runs: 100_000_000),
   Example(name: "multi_function_values", poem: multi_function_values.poem, main: "test", runs: 5_000_000),
-  Example(name: "list_appends", poem: list_appends.poem, main: "test", runs: 5_000_000),
+  Example(name: "list_appends", poem: list_appends.poem, main: "test", runs: 25_000_000),
+  Example(name: "list_concat", poem: list_concat.poem, main: "test", runs: 5_000_000),
   Example(name: "list_get", poem: list_get.poem, main: "test", runs: 25_000_000),
   # `list_print_each` shouldn't be benchmarked because it prints to stdout.
   Example(name: "list_print_each", poem: list_print_each.poem, main: "test", runs: 0),

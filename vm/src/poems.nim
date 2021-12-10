@@ -125,6 +125,8 @@ type
   PoemSymbolValue* = ref object of PoemValue
     name*: string
 
+let any_type*: PoemType = PoemBasicType(tpe: types.any_type)
+let nothing_type*: PoemType = PoemBasicType(tpe: types.nothing_type)
 let int_type*: PoemType = PoemBasicType(tpe: types.int_type)
 let real_type*: PoemType = PoemBasicType(tpe: types.real_type)
 let boolean_type*: PoemType = PoemBasicType(tpe: types.boolean_type)
@@ -135,6 +137,8 @@ proc int_value*(value: int64): PoemValue = PoemIntValue(int: value)
 proc real_value*(value: float64): PoemValue = PoemRealValue(real: value)
 proc boolean_value(value: bool): PoemValue = PoemBooleanValue(boolean: value)
 proc string_value*(value: string): PoemValue = PoemStringValue(string: value)
+
+proc type_variable*(index: uint8): PoemType = PoemTypeVariable(index: index)
 
 proc sum_type*(types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.Sum, types: @types)
 
@@ -151,6 +155,12 @@ proc list_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemListV
 
 proc symbol_type*(name: string): PoemType = PoemSymbolType(name: name)
 proc symbol_value*(name: string): PoemValue = PoemSymbolValue(name: name)
+
+proc type_parameter*(name: string, lower_bound: PoemType, upper_bound: PoemType, variance: Variance): PoemTypeParameter =
+  PoemTypeParameter(name: name, lower_bound: lower_bound, upper_bound: upper_bound, variance: variance)
+proc type_parameter_upper*(name: string, upper_bound: PoemType): PoemTypeParameter = type_parameter(name, nothing_type, upper_bound, Variance.Invariant)
+proc type_parameter_lower*(name: string, lower_bound: PoemType): PoemTypeParameter = type_parameter(name, lower_bound, any_type, Variance.Invariant)
+proc type_parameter*(name: string): PoemTypeParameter = type_parameter_lower(name, nothing_type)
 
 const
   tkBasic = 0'u8
