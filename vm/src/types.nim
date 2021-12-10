@@ -899,7 +899,7 @@ proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: ope
 
 proc `$`*(tpe: Type): string =
   case tpe.kind
-  of Kind.TypeVariable: quit("Type variable stringification is not yet implemented.")
+  of Kind.TypeVariable: "tv" & $cast[TypeVariable](tpe).index
   of Kind.Any: "Any"
   of Kind.Nothing: "Nothing"
   of Kind.Real: "Real"
