@@ -1,10 +1,11 @@
 from definitions import FunctionInstance
 from evaluator import nil
-from values import `$`
+from types import `$`
+from values import `$`, get_type
 
 proc run_and_print*(function_instance: ptr FunctionInstance, frame_mem: pointer) =
   let res = evaluator.evaluate(function_instance, frame_mem)
-  echo "Result: ", res
+  echo "Result: ", res, " :: ", get_type(res)
 
 when is_main_module:
   import os, sugar, tables
