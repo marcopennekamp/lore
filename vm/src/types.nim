@@ -1,3 +1,4 @@
+import std/macros
 import std/strformat
 
 import imseqs
@@ -220,17 +221,103 @@ proc are_exactly_equal(ts1: ImSeq[Type], ts2: ImSeq[Type]): bool =
 # Subtyping.                                                                                                           #
 ########################################################################################################################
 
-proc sum_subtypes_sum(s1: SumType, s2: SumType): bool
-proc sum_subtypes_type(s1: SumType, t2: Type): bool
-proc type_subtypes_sum(t1: Type, s2: SumType): bool
+type IsSubtypeSubstitutionMode {.pure.} = enum
+  None
+    ## Checks subtyping without substituting any types from assignments.
+  T1
+    ## Checks subtyping by replacing type variables in `t1` with types from assignments.
+  T2
+    ## Checks subtyping by replacing type variables in `t2` with types from assignments.
 
-proc intersection_subtypes_intersection(i1: IntersectionType, i2: IntersectionType): bool
-proc intersection_subtypes_type(i1: IntersectionType, t2: Type): bool
-proc type_subtypes_intersection(t1: Type, i2: IntersectionType): bool
+macro is_subtype_rec(substitution_mode: static[IsSubtypeSubstitutionMode], t1: Type, t2: Type): bool =
+  case substitution_mode
+  of IsSubtypeSubstitutionMode.None:
+    quote do: is_subtype(`t1`, `t2`)
+  of IsSubtypeSubstitutionMode.T1:
+    quote do: is_subtype_substitute1(`t1`, `t2`, assignments)
+  of IsSubtypeSubstitutionMode.T2:
+    quote do: is_subtype_substitute2(`t1`, `t2`, assignments)
 
-proc tuple_subtypes_tuple(t1: TupleType, t2: TupleType): bool
+template type_subtypes_sum(substitution_mode: IsSubtypeSubstitutionMode, t1: Type, s2: SumType): bool =
+  for p2 in s2.parts:
+    if is_subtype_rec(substitution_mode, t1, p2):
+      return true
+  false
 
-proc is_subtype*(t1: Type, t2: Type): bool =
+template sum_subtypes_sum(substitution_mode: IsSubtypeSubstitutionMode, s1: SumType, s2: SumType): bool =
+  for p1 in s1.parts:
+    if not type_subtypes_sum(substitution_mode, p1, s2):
+      return false
+  true
+
+template sum_subtypes_type(substitution_mode: IsSubtypeSubstitutionMode, s1: SumType, t2: Type): bool =
+  for p1 in s1.parts:
+    if not is_subtype_rec(substitution_mode, p1, t2):
+      return false
+  true
+
+template intersection_subtypes_type(substitution_mode: IsSubtypeSubstitutionMode, i1: IntersectionType, t2: Type): bool =
+  for p1 in i1.parts:
+    if is_subtype_rec(substitution_mode, p1, t2):
+      return true
+  false
+
+template intersection_subtypes_intersection(substitution_mode: IsSubtypeSubstitutionMode, i1: IntersectionType, i2: IntersectionType): bool =
+  for p2 in i2.parts:
+    if not intersection_subtypes_type(substitution_mode, i1, p2):
+      return false
+  true
+
+template type_subtypes_intersection(substitution_mode: IsSubtypeSubstitutionMode, t1: Type, i2: IntersectionType): bool =
+  for p2 in i2.parts:
+    if not is_subtype_rec(substitution_mode, t1, p2):
+      return false
+  true
+
+template tuple_subtypes_tuple(substitution_mode: IsSubtypeSubstitutionMode, t1: TupleType, t2: TupleType): bool =
+  let es1 = t1.elements
+  let es2 = t2.elements
+  if es1.len != es2.len:
+    return false
+
+  for i in 0 ..< es1.len:
+    if not is_subtype_rec(substitution_mode, es1[i], es2[i]):
+      return false
+  true
+
+macro variable_subtypes_type(substitution_mode: static[IsSubtypeSubstitutionMode], tv1: TypeVariable, t2: Type): bool =
+  case substitution_mode
+  of IsSubtypeSubstitutionMode.None, IsSubtypeSubstitutionMode.T2:
+    quote do:
+      let tv1_evaluated = `tv1`
+      assert(tv1_evaluated.parameter != nil)
+      is_subtype(tv1_evaluated.parameter.upper_bound, `t2`)
+  of IsSubtypeSubstitutionMode.T1:
+    quote do:
+      let tv1_evaluated = `tv1`
+      let t1 = assignments[tv1_evaluated.index]
+      is_subtype_substitute1(t1, `t2`, assignments)
+
+macro type_subtypes_variable(substitution_mode: static[IsSubtypeSubstitutionMode], t1: Type, tv2: TypeVariable): bool =
+  case substitution_mode
+  of IsSubtypeSubstitutionMode.None, IsSubtypeSubstitutionMode.T1:
+    quote do:
+      let tv2_evaluated = `tv2`
+      assert(tv2_evaluated.parameter != nil)
+      is_subtype(`t1`, tv2_evaluated.parameter.lower_bound)
+  of IsSubtypeSubstitutionMode.T2:
+    quote do:
+      let tv2_evaluated = `tv2`
+      let t2 = assignments[tv2_evaluated.index]
+      is_subtype_substitute2(`t1`, t2, assignments)
+
+template is_subtype_impl(substitution_mode: IsSubtypeSubstitutionMode, t1: Type, t2: Type): bool =
+  ## `is_subtype` has two separate versions, both covered by this implementation template: the first being the regular
+  ## one, while the second one implicitly substitutes type variables in `t2` with types from an `assignments` array,
+  ## without allocating any new types. This allows subtyping in specific contexts (fit, type bounds checking) to be
+  ## decided without new allocations. This template assumes an implicit `assignments` variable to be in scope when
+  ## `has_assignments` is true.
+
   # Because basic types are interned, this case trivially covers all basic types without subtyping interactions.
   if t1 === t2:
     return true
@@ -238,9 +325,7 @@ proc is_subtype*(t1: Type, t2: Type): bool =
   case t1.kind
   of Kind.TypeVariable:
     let tv1 = cast[TypeVariable](t1)
-    assert(tv1.parameter != nil)
-    if is_subtype(tv1.parameter.upper_bound, t2):
-      return true
+    return variable_subtypes_type(substitution_mode, tv1, t2)
 
   of Kind.Nothing:
     return true
@@ -249,41 +334,42 @@ proc is_subtype*(t1: Type, t2: Type): bool =
     let s1 = cast[SumType](t1)
     if t2.kind == Kind.Sum:
       let s2 = cast[SumType](t2)
-      return sum_subtypes_sum(s1, s2)
+      return sum_subtypes_sum(substitution_mode, s1, s2)
     else:
-      if sum_subtypes_type(s1, t2):
+      if sum_subtypes_type(substitution_mode, s1, t2):
         return true
 
   of Kind.Intersection:
     let i1 = cast[IntersectionType](t1)
     if t2.kind == Kind.Intersection:
       let i2 = cast[IntersectionType](t2)
-      return intersection_subtypes_intersection(i1, i2)
+      return intersection_subtypes_intersection(substitution_mode, i1, i2)
     else:
-      if intersection_subtypes_type(i1, t2):
+      if intersection_subtypes_type(substitution_mode, i1, t2):
         return true
 
   of Kind.Tuple:
     if t2.kind == Kind.Tuple:
-      return tuple_subtypes_tuple(cast[TupleType](t1), cast[TupleType](t2))
+      return tuple_subtypes_tuple(substitution_mode, cast[TupleType](t1), cast[TupleType](t2))
 
   of Kind.Function:
     if t2.kind == Kind.Function:
       let f1 = cast[FunctionType](t1)
       let f2 = cast[FunctionType](t2)
-      return is_subtype(f2.input, f1.input) and is_subtype(f1.output, f2.output)
+      return is_subtype_rec(substitution_mode, f2.input, f1.input) and is_subtype_rec(substitution_mode, f1.output, f2.output)
 
   of Kind.List:
     if t2.kind == Kind.List:
       let l1 = cast[ListType](t1)
       let l2 = cast[ListType](t2)
-      return is_subtype(l1.element, l2.element)
+      return is_subtype_rec(substitution_mode, l1.element, l2.element)
 
   of Kind.Map:
     if t2.kind == Kind.Map:
       let m1 = cast[MapType](t1)
       let m2 = cast[MapType](t2)
       # TODO (vm): Variance for maps?
+      # TODO (vm/poly): If `has_assignments` is true, we should either substitute here or implement the same for `are_equal`.
       return are_equal(m1.key, m2.key) and are_equal(m1.value, m2.value)
 
   # TODO (vm): This case can be removed if symbol types are interned.
@@ -298,8 +384,7 @@ proc is_subtype*(t1: Type, t2: Type): bool =
   case t2.kind
   of Kind.TypeVariable:
     let tv2 = cast[TypeVariable](t2)
-    assert(tv2.parameter != nil)
-    is_subtype(t1, tv2.parameter.lower_bound)
+    type_subtypes_variable(substitution_mode, t1, tv2)
 
   of Kind.Any:
     true
@@ -308,15 +393,29 @@ proc is_subtype*(t1: Type, t2: Type): bool =
     # t1 is definitely NOT a sum type, because the case SumType/SumType immediately returns in the first `case of`
     # statement above. Hence, we can safely call `type_subtypes_sum`.
     let s2 = cast[SumType](t2)
-    type_subtypes_sum(t1, s2)
+    type_subtypes_sum(substitution_mode, t1, s2)
 
   of Kind.Intersection:
     # t1 is definitely NOT an intersection type, because the case IntersectionType/IntersectionType immediately returns
     # in the first `cast of` statement above. Hence, we can safely call `type_subtypes_intersection`.
     let i2 = cast[IntersectionType](t2)
-    type_subtypes_intersection(t1, i2)
+    type_subtypes_intersection(substitution_mode, t1, i2)
 
   else: false
+
+proc is_subtype*(t1: Type, t2: Type): bool =
+  ## Whether `t1` is a subtype of `t2`.
+  is_subtype_impl(IsSubtypeSubstitutionMode.None, t1, t2)
+
+proc is_subtype_substitute1*(t1: Type, t2: Type, assignments: open_array[Type]): bool =
+  ## Whether `t1` is a subtype of `t2` when type variables in `t1` are substituted with types from `assignments`. This
+  ## function does *not* allocate new types for the substitution.
+  is_subtype_impl(IsSubtypeSubstitutionMode.T1, t1, t2)
+
+proc is_subtype_substitute2*(t1: Type, t2: Type, assignments: open_array[Type]): bool =
+  ## Whether `t1` is a subtype of `t2` when type variables in `t2` are substituted with types from `assignments`. This
+  ## function does *not* allocate new types for the substitution.
+  is_subtype_impl(IsSubtypeSubstitutionMode.T2, t1, t2)
 
 proc is_subtype*(ts1: open_array[Type], ts2: open_array[Type]): bool =
   ## Whether a tuple type `tpl(ts1)` is a subtype of `tpl(ts2)`. This function does *not* allocate a new tuple type.
@@ -328,50 +427,25 @@ proc is_subtype*(ts1: open_array[Type], ts2: open_array[Type]): bool =
       return false
   true
 
-proc sum_subtypes_sum(s1: SumType, s2: SumType): bool =
-  for p1 in s1.parts:
-    if not type_subtypes_sum(p1, s2):
-      return false
-  true
-
-proc sum_subtypes_type(s1: SumType, t2: Type): bool =
-  for p1 in s1.parts:
-    if not is_subtype(p1, t2):
-      return false
-  true
-
-proc type_subtypes_sum(t1: Type, s2: SumType): bool =
-  for p2 in s2.parts:
-    if is_subtype(t1, p2):
-      return true
-  false
-
-proc intersection_subtypes_intersection(i1: IntersectionType, i2: IntersectionType): bool =
-  for p2 in i2.parts:
-    if not intersection_subtypes_type(i1, p2):
-      return false
-  true
-
-proc intersection_subtypes_type(i1: IntersectionType, t2: Type): bool =
-  for p1 in i1.parts:
-    if is_subtype(p1, t2):
-      return true
-  false
-
-proc type_subtypes_intersection(t1: Type, i2: IntersectionType): bool =
-  for p2 in i2.parts:
-    if not is_subtype(t1, p2):
-      return false
-  true
-
-proc tuple_subtypes_tuple(t1: TupleType, t2: TupleType): bool =
-  let es1 = t1.elements
-  let es2 = t2.elements
-  if es1.len != es2.len:
+proc is_subtype_substitute1*(ts1: open_array[Type], ts2: open_array[Type], assignments: open_array[Type]): bool =
+  ## Whether a tuple type `tpl(ts1)` is a subtype of `tpl(ts2)` when type variables in `ts1` are substituted with types
+  ## from `assignments`. This function does *not* allocate a new tuple type or any types for the substitution.
+  if ts1.len != ts2.len:
     return false
 
-  for i in 0 ..< es1.len:
-    if not is_subtype(es1[i], es2[i]):
+  for i in 0 ..< ts1.len:
+    if not is_subtype_substitute1(ts1[i], ts2[i], assignments):
+      return false
+  true
+
+proc is_subtype_substitute2*(ts1: open_array[Type], ts2: open_array[Type], assignments: open_array[Type]): bool =
+  ## Whether a tuple type `tpl(ts1)` is a subtype of `tpl(ts2)` when type variables in `ts2` are substituted with types
+  ## from `assignments`. This function does *not* allocate a new tuple type or any types for the substitution.
+  if ts1.len != ts2.len:
+    return false
+
+  for i in 0 ..< ts1.len:
+    if not is_subtype_substitute2(ts1[i], ts2[i], assignments):
       return false
   true
 
@@ -379,12 +453,11 @@ proc tuple_subtypes_tuple(t1: TupleType, t2: TupleType): bool =
 # Fit.                                                                                                                 #
 ########################################################################################################################
 
-type
-  Assignments = array[max_type_parameters, Type]
-    ## Assignments are modeled as fixed-size arrays so that we can put type arguments on the stack before pushing them
-    ## into an allocated ImSeq should the fit be successful.
+type FitsAssignments = array[max_type_parameters, Type]
+  ## Assignments are modeled as fixed-size arrays so that we can put type arguments on the stack before pushing them
+  ## into an allocated ImSeq should the fit be successful.
 
-proc assign(t1: Type, t2: Type, assignments: var Assignments): bool
+proc fits_assign(t1: Type, t2: Type, assignments: var FitsAssignments): bool
 
 proc fits*(t1: Type, t2: Type, parameters: ImSeq[TypeParameter]): ImSeq[Type] =
   ## Whether `t1` fits into `t2`. `fits` returns the list of assigned type arguments if true, or `nil` otherwise.
@@ -401,11 +474,11 @@ proc fits*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeP
   let length = ts1.len
   assert(parameters.len == length)
 
-  var assignments: Assignments
+  var assignments: FitsAssignments
   for i in 0 ..< length:
     let t1 = ts1[i]
     let t2 = ts2[i]
-    if not assign(t1, t2, assignments):
+    if not fits_assign(t1, t2, assignments):
       # Consistency constraint: All variable assignments must be unique. (Baked into `assign`.)
       return nil
 
@@ -421,20 +494,16 @@ proc fits*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeP
     if not bounds_contain(parameter, tpe, assignments):
       return nil
 
-  # Final check: `t1` must be a subtype of `t2` after substituting assignments into `t2`.
-  # TODO (vm/poly): As mentioned in the TODO file, we should implement a separate version of `is_subtype` that doesn't
-  #                 require allocating new types via `substitute`, instead taking the assignments into it.
+  # Final check: `t1` must be a subtype of `t2` when substituting assignments into `t2`.
   for i in 0 ..< length:
-    let t1 = ts1[i]
-    let t2 = substitute(ts2[i], assignments)
-    if not is_subtype(t1, t2):
+    if not is_subtype_substitute2(ts1[i], ts2[i], assignments):
       return nil
 
   # So far, we've used an array on the stack for the type assignments. We have to convert these to a heap-allocated
   # ImSeq now, so that they outlive the lifetime of this function call.
   new_immutable_seq(assignments, length)
 
-proc assign(t1: Type, t2: Type, assignments: var Assignments): bool =
+proc fits_assign(t1: Type, t2: Type, assignments: var FitsAssignments): bool =
   ## Assigns all matching types in `t1` to type variables in `t2`, saving them in `assignments`. If an assignment
   ## already exists and the existing type and new type aren't equal, `assign` returns false to signal that `t1` cannot
   ## fit into `t2`. This trivially covers one consistency check case: that assignments must be unique.
@@ -466,7 +535,7 @@ proc assign(t1: Type, t2: Type, assignments: var Assignments): bool =
       if t1.elements.len == t2.elements.len:
         let length = t1.elements.len
         for i in 0 ..< length:
-          if not assign(t1.elements[i], t2.elements[i], assignments):
+          if not fits_assign(t1.elements[i], t2.elements[i], assignments):
             return false
     true
 
@@ -474,25 +543,25 @@ proc assign(t1: Type, t2: Type, assignments: var Assignments): bool =
     if t1.kind == Kind.Function:
       let t1 = cast[FunctionType](t1)
       let t2 = cast[FunctionType](t2)
-      if not assign(t1.input, t2.input, assignments):
+      if not fits_assign(t1.input, t2.input, assignments):
         return false
-      assign(t1.output, t2.output, assignments)
+      fits_assign(t1.output, t2.output, assignments)
     else: true
 
   of Kind.List:
     if t1.kind == Kind.List:
       let t1 = cast[ListType](t1)
       let t2 = cast[ListType](t2)
-      assign(t1.element, t2.element, assignments)
+      fits_assign(t1.element, t2.element, assignments)
     else: true
 
   of Kind.Map:
     if t1.kind == Kind.Map:
       let t1 = cast[MapType](t1)
       let t2 = cast[MapType](t2)
-      if not assign(t1.key, t2.key, assignments):
+      if not fits_assign(t1.key, t2.key, assignments):
         return false
-      assign(t1.value, t2.value, assignments)
+      fits_assign(t1.value, t2.value, assignments)
     else: true
 
   else: true
@@ -815,18 +884,14 @@ proc bounds_contain*(parameter: TypeParameter, tpe: Type, assignments: open_arra
 proc lower_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
   ## Whether `parameter`'s lower bound (instantiated via the given assignments) contains `type`.
   if parameter.lower_bound.kind != Kind.Nothing:
-    # TODO (vm/poly): Use allocation-less subtyping here, which uses the `assignments` instead.
-    let actual_bound = substitute(parameter.lower_bound, assignments)
-    return is_subtype(tpe, actual_bound)
-  true
+    is_subtype_substitute1(parameter.lower_bound, tpe, assignments)
+  else: true
 
 proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
   ## Whether `parameter`'s upper bound (instantiated via the given assignments) contains `type`.
   if parameter.upper_bound.kind != Kind.Any:
-    # TODO (vm/poly): Use allocation-less subtyping here, which uses the `assignments` instead.
-    let actual_bound = substitute(parameter.upper_bound, assignments)
-    return is_subtype(tpe, actual_bound)
-  true
+    is_subtype_substitute2(tpe, parameter.upper_bound, assignments)
+  else: true
 
 ########################################################################################################################
 # Stringification.                                                                                                     #
