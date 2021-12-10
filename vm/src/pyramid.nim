@@ -5,6 +5,10 @@ from evaluator import nil
 import imseqs
 import values
 
+proc lists_length(tagged_list: TaggedValue): TaggedValue =
+  let list = untag_reference(tagged_list, ListValue)
+  tag_int(list.elements.len)
+
 proc lists_get(tagged_list: TaggedValue, tagged_index: TaggedValue): TaggedValue =
   let list = untag_reference(tagged_list, ListValue)
   let index = untag_int(tagged_index)
@@ -30,9 +34,9 @@ template unary_fa(arg_name, arg_function): untyped = Intrinsic(name: arg_name, f
 template binary(arg_name, arg_function): untyped = Intrinsic(name: arg_name, function: IntrinsicFunction(binary: arg_function))
 template binary_fa(arg_name, arg_function): untyped = Intrinsic(name: arg_name, function: IntrinsicFunction(binary_fa: arg_function))
 
-let
-  intrinsics*: seq[Intrinsic] = @[
-    binary("lore.lists.get", lists_get),
-    binary_fa("lore.lists.each", lists_each),
-    unary("lore.io.println", io_println),
-  ]
+let intrinsics*: seq[Intrinsic] = @[
+  unary("lore.lists.length", lists_length),
+  binary("lore.lists.get", lists_get),
+  binary_fa("lore.lists.each", lists_each),
+  unary("lore.io.println", io_println),
+]
