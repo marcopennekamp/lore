@@ -85,7 +85,8 @@ const
 proc `==`(v1: TaggedValue, v2: TaggedValue): bool =
   uint64(v1) == uint64(v2)
 
-proc type_of*(value: TaggedValue): Type
+# This is called `get_type` so it doesn't clash with Nim's system function `typeof`.
+proc get_type*(value: TaggedValue): Type
 
 ########################################################################################################################
 # Primitives.                                                                                                          #
@@ -138,7 +139,7 @@ proc new_tuple*(elements: ImSeq[TaggedValue]): Value =
   let length = elements.len
   var element_types = new_immutable_seq[Type](length)
   for i in 0 ..< length:
-    element_types[i] = type_of(elements[i])
+    element_types[i] = get_type(elements[i])
   new_tuple(elements, types.tpl(element_types))
 
 proc new_tuple_tagged*(elements: ImSeq[TaggedValue]): TaggedValue = tag_reference(new_tuple(elements))
@@ -172,13 +173,14 @@ proc new_symbol*(name: string): Value = SymbolValue(tpe: types.symbol(name), nam
 proc new_symbol_tagged*(name: string): TaggedValue = tag_reference(new_symbol(name))
 
 ########################################################################################################################
-# Type of.                                                                                                             #
+# Value types.                                                                                                         #
 ########################################################################################################################
 
-proc type_of*(value: TaggedValue): Type =
+proc get_type*(value: TaggedValue): Type =
   let tag = get_tag(value)
   if tag == TagReference:
-    untag_reference(value).tpe
+    let ref_value = untag_reference(value)
+    if ref_value != nil: ref_value.tpe else: types.any_type
   elif tag == TagInt:
     types.int_type
   elif tag == TagBoolean:

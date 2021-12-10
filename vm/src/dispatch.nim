@@ -59,8 +59,8 @@ proc find_dispatch_target*(mf: MultiFunction, target: var FunctionInstance) =
 
 proc find_dispatch_target*(mf: MultiFunction, argument0: TaggedValue, target: var FunctionInstance) =
   # TODO (vm): We can allocate the tuple type on the stack.
-  find_dispatch_target_n(mf, [values.type_of(argument0)], target)
+  find_dispatch_target_n(mf, [values.get_type(argument0)], target)
 
 proc find_dispatch_target*(mf: MultiFunction, argument0: TaggedValue, argument1: TaggedValue, target: var FunctionInstance) =
   # TODO (vm): We can allocate the tuple type on the stack.
-  find_dispatch_target_n(mf, [values.type_of(argument0), values.type_of(argument1)], target)
+  find_dispatch_target_n(mf, [values.get_type(argument0), values.get_type(argument1)], target)

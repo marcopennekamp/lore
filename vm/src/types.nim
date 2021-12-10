@@ -369,7 +369,7 @@ template is_subtype_impl(substitution_mode: IsSubtypeSubstitutionMode, t1: Type,
       let m1 = cast[MapType](t1)
       let m2 = cast[MapType](t2)
       # TODO (vm): Variance for maps?
-      # TODO (vm/poly): If `has_assignments` is true, we should either substitute here or implement the same for `are_equal`.
+      # TODO (vm): If `substitution_mode` is not None, we should either substitute here or implement the same for `are_equal`.
       return are_equal(m1.key, m2.key) and are_equal(m1.value, m2.value)
 
   # TODO (vm): This case can be removed if symbol types are interned.
