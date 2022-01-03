@@ -138,9 +138,20 @@ proc build_property_index(names: seq[string]): PropertyIndex =
   ##
   ## `names` must contain unique strings. The algorithm otherwise exhibits undefined behavior.
   # TODO (vm): Filter duplicate names instead of handling this edge case as undefined behavior?
-  var sorted_names = names
-  sort(sorted_names)
-  let root = build_index_node(0, sorted_names, 0, uint16(sorted_names.len - 1))
+  let root =
+    if names.len == 0:
+      alloc_index_node(0, 0)
+    elif names.len == 1:
+      # We handle this edge case separately, because there is no need to call `build_index_node`.
+      let name = names[0]
+      let root = alloc_index_node(0, 1)
+      root.edges[0] = new_result_edge(name.significant_at(0), 0)
+      root
+    else:
+      var sorted_names = names
+      sort(sorted_names)
+      build_index_node(0, sorted_names, 0, uint16(sorted_names.len - 1))
+
   PropertyIndex(root: root)
 
 ########################################################################################################################
@@ -193,6 +204,11 @@ proc test_property_index() =
   echo find_offset(property_index2, "abcf")
   echo find_offset(property_index2, "good")
   echo find_offset(property_index2, "goodwill")
+
+  # We have to make sure that a property index with a single name is built correctly and works well.
+  let property_index3 = build_property_index(@["foo"])
+
+  echo find_offset(property_index3, "foo")
 
 when is_main_module:
   test_property_index()
