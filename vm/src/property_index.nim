@@ -1,3 +1,5 @@
+from std/algorithm import sort
+
 type
   PropertyIndex* = ref object
     ## A property index maps a predetermined set of names to a contiguous range of property offsets. This is used to
@@ -44,6 +46,19 @@ type
     of false:
       target: IndexNode
 
+proc significant_at(name: open_array[char], position: uint16): char =
+  ## Returns the significant at `position` in `name`. If `position` is out of bounds, the null character `\0` is the
+  ## significant. This allows the build and find algorithms to properly process name sets such as "good" and
+  ## "goodwill", where one name is the prefix of another.
+  if cast[int](position) < name.len:
+    name[position]
+  else:
+    '\0'
+
+########################################################################################################################
+# Index building.                                                                                                      #
+########################################################################################################################
+
 proc alloc_index_node(position: uint16, edge_count: uint16): IndexNode =
   ## Allocates an IndexNode with space reserved for `edge_count` edges.
   let node = cast[IndexNode](alloc0(sizeof(IndexNode) + cast[int](edge_count) * sizeof(IndexEdge)))
@@ -57,12 +72,87 @@ proc new_result_edge(significant: char, res: uint16): IndexEdge {.inline.} =
 proc new_branch_edge(significant: char, target: IndexNode): IndexEdge {.inline.} =
   IndexEdge(significant: significant, is_result: false, target: target)
 
+proc count_unique_significants(position: uint16, names: open_array[string], first: uint16, last: uint16): uint16 =
+  ## Counts the number of unique significants at the given position in `names`, which must be sorted lexicographically.
+  if first == last:
+    return 0'u16
+
+  var count = 1'u16
+  for i in first + 1 .. last:
+    if names[i - 1].significant_at(position) != names[i].significant_at(position):
+      count += 1
+  count
+
+proc build_index_node(start_position: uint16, names: open_array[string], first: uint16, last: uint16): IndexNode =
+  ## Builds an index node from the sorted list of names starting at index `first` and ending at index `last`, with this
+  ## node's critical position possibly being `start_position` or a subsequent position. `names` isn't presented as a
+  ## slice so that we can assign the correct global index to a result edge.
+  # TODO (vm): How to deal with the edge case of `first` == `last`? Is this only the case when `names` has length 0 or 1?
+
+  # First we have to find a position at which two or more of the names differ.
+  var critical_position = start_position
+  var unique_significants_count = count_unique_significants(critical_position, names, first, last)
+  while unique_significants_count < 2:
+    critical_position += 1
+    unique_significants_count = count_unique_significants(critical_position, names, first, last)
+
+  # The number of edges of the node is the number of unique significants, as we need exactly this many edges to
+  # differentiate all possible significant differences.
+  let node = alloc_index_node(critical_position, unique_significants_count)
+  var next_free_index = first
+  for edge_index in 0'u16 ..< unique_significants_count:
+    assert next_free_index <= last
+
+    # For each edge, we have to find its first and last name index. This is basically a reiteration of
+    # `count_unique_significants`.
+    let edge_first = next_free_index
+    var edge_last = edge_first
+    while edge_last < last and names[edge_last].significant_at(critical_position) == names[edge_last + 1].significant_at(critical_position):
+      edge_last += 1
+
+    let significant = names[edge_first].significant_at(critical_position)
+    let edge =
+      if edge_first == edge_last:
+        # We have a single name, hence a result edge!
+        new_result_edge(significant, edge_first)
+      else:
+        let branch_node = build_index_node(critical_position + 1, names, edge_first, edge_last)
+        new_branch_edge(significant, branch_node)
+    node.edges[edge_index] = edge
+
+    next_free_index = edge_last + 1
+  node
+
+proc build_property_index(names: seq[string]): PropertyIndex =
+  ## Builds a property index for the given `names`. This algorithm recursively builds nodes by taking subranges of
+  ## `names` with the same critical byte into `build_index_node`. For example, for the "level" to "nature" example, the
+  ## call tree will look like this:
+  ##
+  ##  - build_index_node(0, ["level", "load", "name", "nature"], 0, 3)
+  ##    - build_index_node(1, ["level", "load", "name", "nature"], 0, 1)
+  ##    - build_index_node(1, ["level", "load", "name", "nature"], 2, 3)
+  ##
+  ## When `build_index_node` is called, the algorithm finds the first position after `position` at which some of the
+  ## `names` differ. At that position, `names` is divided into a number of segments, for which each `build_index_node`
+  ## is called once. If a segment only has a single name, a result edge is produced instead.
+  ##
+  ## `names` must contain unique strings. The algorithm otherwise exhibits undefined behavior.
+  # TODO (vm): Filter duplicate names instead of handling this edge case as undefined behavior?
+  var sorted_names = names
+  sort(sorted_names)
+  let root = build_index_node(0, sorted_names, 0, uint16(sorted_names.len - 1))
+  PropertyIndex(root: root)
+
+########################################################################################################################
+# Index querying.                                                                                                      #
+########################################################################################################################
+
 proc find_offset*(property_index: PropertyIndex, name: open_array[char]): uint16 =
   ## In the given PropertyIndex, finds the offset for `name`. This operation is undefined if `name` is not in the
   ## property index (including the possibility of a segfault).
   var current_node: IndexNode = property_index.root
   while true:
-    let significant = name[current_node.position]
+    let significant = name.significant_at(current_node.position)
     var i = 0'u16
     while i < current_node.edge_count:
       let edge = current_node.edges[i]
@@ -79,26 +169,19 @@ proc find_offset*(property_index: PropertyIndex, name: open_array[char]): uint16
     if i == current_node.edge_count:
       return 0
 
+########################################################################################################################
+# Index testing.                                                                                                       #
+########################################################################################################################
+
+# TODO (vm): Add a test for sets such as "good" and "goodwill", where one name is a prefix of another.
+
 proc test_property_index() =
-  ## Tests a property index for strings "level", "load", "name", and "nature".
-  let l0 = alloc_index_node(1, 2)
-  l0.edges[0] = new_result_edge('e', 0)
-  l0.edges[1] = new_result_edge('o', 1)
+  let property_index = build_property_index(@["nature", "load", "name", "level"])
 
-  let n0 = alloc_index_node(2, 2)
-  n0.edges[0] = new_result_edge('m', 2)
-  n0.edges[1] = new_result_edge('t', 3)
-
-  let root = alloc_index_node(0, 2)
-  root.edges[0] = new_branch_edge('l', l0)
-  root.edges[1] = new_branch_edge('n', n0)
-
-  let property_index = PropertyIndex(root: root)
-
-  echo get_index(property_index, "level")
-  echo get_index(property_index, "load")
-  echo get_index(property_index, "name")
-  echo get_index(property_index, "nature")
+  echo find_offset(property_index, "level")
+  echo find_offset(property_index, "load")
+  echo find_offset(property_index, "name")
+  echo find_offset(property_index, "nature")
 
 when is_main_module:
   test_property_index()
