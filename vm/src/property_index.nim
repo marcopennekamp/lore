@@ -173,8 +173,6 @@ proc find_offset*(property_index: PropertyIndex, name: open_array[char]): uint16
 # Index testing.                                                                                                       #
 ########################################################################################################################
 
-# TODO (vm): Add a test for sets such as "good" and "goodwill", where one name is a prefix of another.
-
 proc test_property_index() =
   let property_index = build_property_index(@["nature", "load", "name", "level"])
 
@@ -182,6 +180,19 @@ proc test_property_index() =
   echo find_offset(property_index, "load")
   echo find_offset(property_index, "name")
   echo find_offset(property_index, "nature")
+
+  # This tests that prefix substrings such as "good" vs. "goodwill" are handled correctly.
+  let property_index2 = build_property_index(@["abc", "abcd", "abcde", "good", "abcf", "abcdf", "abcdu", "abcdefgu", "goodwill"])
+
+  echo find_offset(property_index2, "abc")
+  echo find_offset(property_index2, "abcd")
+  echo find_offset(property_index2, "abcde")
+  echo find_offset(property_index2, "abcdefgu")
+  echo find_offset(property_index2, "abcdf")
+  echo find_offset(property_index2, "abcdu")
+  echo find_offset(property_index2, "abcf")
+  echo find_offset(property_index2, "good")
+  echo find_offset(property_index2, "goodwill")
 
 when is_main_module:
   test_property_index()
