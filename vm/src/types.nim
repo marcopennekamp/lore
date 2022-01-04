@@ -635,6 +635,17 @@ proc fits_assign(t1: Type, t2: Type, assignments: var FitsAssignments): bool =
       fits_assign(t1.value, t2.value, assignments)
     else: true
 
+  of Kind.Shape:
+    if t1.kind == Kind.Shape:
+      let s1 = cast[ShapeType](t1)
+      let s2 = cast[ShapeType](t2)
+      for property_name in s2.schema.property_names:
+        if property_name notin s1.schema.property_name_set:
+          return false
+        if not fits_assign(s1.get_property_type(property_name), s2.get_property_type(property_name), assignments):
+          return false
+    true
+
   else: true
 
 ########################################################################################################################
