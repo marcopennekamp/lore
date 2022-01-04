@@ -1,4 +1,5 @@
 import std/macros
+import std/sets
 import std/strformat
 import tables
 
@@ -69,7 +70,11 @@ type
     ## A shape schema is the portion of a shape type fixed at compile time. That is, the shape type's property names
     ## and the corresponding property index.
     property_names: ImSeq[string]
+      ## Property names are ordered lexicographically, in the same order as the property index prescribes.
     property_index: PropertyIndex
+    property_name_set: HashSet[string]
+      ## Because a property index cannot be used to determine whether a given name is part of the shape, we need an
+      ## additional name set for shape/shape subtyping and other operations.
 
   ShapeType* {.pure, acyclic.} = ref object of Type
     schema: ShapeSchema
@@ -109,7 +114,7 @@ proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: ope
 proc `$`*(tpe: Type): string
 
 ########################################################################################################################
-# Constructors.                                                                                                        #
+# Constructors and accessors.                                                                                          #
 ########################################################################################################################
 
 let
@@ -142,8 +147,11 @@ proc get_shape_schema*(property_names: ImSeq[string]): ShapeSchema =
   ## Creates a new shape schema from the given sorted and unique list of property names, or gets the interned version.
   var shape_schema = interned_shape_schemas.get_or_default(property_names)
   if shape_schema == nil:
-    let property_index = get_interned_property_index(to_open_array(property_names))
-    shape_schema = ShapeSchema(property_names: property_names, property_index: property_index)
+    shape_schema = ShapeSchema(
+      property_names: property_names,
+      property_index: get_interned_property_index(to_open_array(property_names)),
+      property_name_set: to_hash_set(to_open_array(property_names)),
+    )
     interned_shape_schemas[property_names] = shape_schema
   shape_schema
 
@@ -152,6 +160,10 @@ proc alloc_shape_type*(schema: ShapeSchema): ShapeType =
   let shape_type = cast[ShapeType](alloc0(sizeof(ShapeType) + schema.property_names.len * sizeof(Type)))
   shape_type.schema = schema
   shape_type
+
+proc get_property_type*(tpe: ShapeType, name: string): Type =
+  ## Gets the type of the property named `name`. The name must be a valid property name for the given shape type.
+  tpe.property_types[tpe.schema.property_index.find_offset(name)]
 
 # TODO (vm): Intern symbol types.
 proc symbol*(name: string): SymbolType = SymbolType(kind: Kind.Symbol, name: name)
@@ -328,6 +340,16 @@ template tuple_subtypes_tuple(substitution_mode: IsSubtypeSubstitutionMode, t1: 
       return false
   true
 
+template shape_subtypes_shape(substitution_mode: IsSubtypeSubstitutionMode, s1: ShapeType, s2: ShapeType): bool =
+  for property_name in s2.schema.property_names:
+    if property_name notin s1.schema.property_name_set:
+      return false
+    let p1_type = s1.get_property_type(property_name)
+    let p2_type = s2.get_property_type(property_name)
+    if not is_subtype_rec(substitution_mode, p1_type, p2_type):
+      return false
+  true
+
 macro variable_subtypes_type(substitution_mode: static[IsSubtypeSubstitutionMode], tv1: TypeVariable, t2: Type): bool =
   case substitution_mode
   of IsSubtypeSubstitutionMode.None, IsSubtypeSubstitutionMode.T2:
@@ -414,6 +436,12 @@ template is_subtype_impl(substitution_mode: IsSubtypeSubstitutionMode, t1: Type,
       # TODO (vm): Variance for maps?
       # TODO (vm): If `substitution_mode` is not None, we should either substitute here or implement the same for `are_equal`.
       return are_equal(m1.key, m2.key) and are_equal(m1.value, m2.value)
+
+  of Kind.Shape:
+    if t2.kind == Kind.Shape:
+      let s1 = cast[ShapeType](t1)
+      let s2 = cast[ShapeType](t2)
+      return shape_subtypes_shape(substitution_mode, s1, s2)
 
   # TODO (vm): This case can be removed if symbol types are interned.
   of Kind.Symbol:
