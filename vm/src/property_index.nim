@@ -1,5 +1,5 @@
 from std/algorithm import sort
-from std/sequtils import deduplicate
+from std/sequtils import deduplicate, to_seq
 import tables
 
 type
@@ -66,10 +66,10 @@ var interned_property_indices = new_table[seq[string], PropertyIndex]()
 
 proc build_property_index(names: seq[string]): PropertyIndex
 
-proc get_interned_property_index*(names: seq[string]): PropertyIndex =
+proc get_interned_property_index*(names: open_array[string]): PropertyIndex =
   ## Returns a property index for the given names if it's already been interned. Otherwise, creates such a property
   ## index and caches it.
-  var sorted_names = names
+  var sorted_names = to_seq(names)
   sort(sorted_names)
   let unique_names = deduplicate(sorted_names, is_sorted = true)
   var property_index = interned_property_indices.get_or_default(unique_names)

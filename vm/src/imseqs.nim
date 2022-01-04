@@ -1,3 +1,5 @@
+import std/hashes
+
 type
   ImSeq*[T] = ref ImSeqObj[T]
     ## An ImSeq is an immutable sequence. It has shallow copying semantics and should thus be preferred over Nim's
@@ -85,6 +87,8 @@ proc join*[T](seq: ImSeq[T], separator: string): string =
     str.add(separator)
     str.add($seq[i])
   str
+
+proc `hash`*[T](seq: ImSeq[T]): Hash = hash(to_open_array(seq))
 
 proc `$`*[T](seq: ImSeq[T]): string =
   "ImSeq[" & seq.join(", ") & "]"

@@ -1,7 +1,9 @@
 import std/macros
 import std/strformat
+import tables
 
 import imseqs
+import property_index
 import stackseqs
 from utils import call_if_any_exists
 
@@ -63,7 +65,15 @@ type
   MapType* {.pure, acyclic.} = ref object of Type
     key*, value*: Type
 
-  # TODO (vm): Implement shape types.
+  ShapeSchema* = ref object
+    ## A shape schema is the portion of a shape type fixed at compile time. That is, the shape type's property names
+    ## and the corresponding property index.
+    property_names: ImSeq[string]
+    property_index: PropertyIndex
+
+  ShapeType* {.pure, acyclic.} = ref object of Type
+    schema: ShapeSchema
+    property_types: UncheckedArray[Type]
 
   SymbolType* {.pure.} = ref object of Type
     name*: string
@@ -125,6 +135,24 @@ proc function_unsafe(input: Type, output: Type): FunctionType =
 proc list*(element: Type): ListType = ListType(kind: Kind.List, element: element)
 proc map*(key: Type, value: Type): MapType = MapType(kind: Kind.Map, key: key, value: value)
 
+# TODO (vm/parallel): This should be protected by a lock.
+var interned_shape_schemas = new_table[ImSeq[string], ShapeSchema]()
+
+proc get_shape_schema*(property_names: ImSeq[string]): ShapeSchema =
+  ## Creates a new shape schema from the given sorted and unique list of property names, or gets the interned version.
+  var shape_schema = interned_shape_schemas.get_or_default(property_names)
+  if shape_schema == nil:
+    let property_index = get_interned_property_index(to_open_array(property_names))
+    shape_schema = ShapeSchema(property_names: property_names, property_index: property_index)
+    interned_shape_schemas[property_names] = shape_schema
+  shape_schema
+
+proc alloc_shape_type*(schema: ShapeSchema): ShapeType =
+  ## Allocates a new shape type with the correct number of property types, which must be initialized after.
+  let shape_type = cast[ShapeType](alloc0(sizeof(ShapeType) + schema.property_names.len * sizeof(Type)))
+  shape_type.schema = schema
+  shape_type
+
 # TODO (vm): Intern symbol types.
 proc symbol*(name: string): SymbolType = SymbolType(kind: Kind.Symbol, name: name)
 
@@ -138,6 +166,10 @@ proc list_as_type*(element: Type): Type = list(element)
 ########################################################################################################################
 # Type equality.                                                                                                       #
 ########################################################################################################################
+
+proc `==`(a: ShapeSchema, b: ShapeSchema): bool =
+  ## Checks the equality of two interned shape schemas.
+  cast[pointer](a) == cast[pointer](b)
 
 proc `===`(a: Type, b: Type): bool =
   ## Checks the referential equality of the two types.
@@ -193,6 +225,17 @@ proc are_equal*(t1: Type, t2: Type): bool =
     let m1 = cast[MapType](t1)
     let m2 = cast[MapType](t2)
     are_equal(m1.key, m2.key) and are_equal(m1.value, m2.value)
+
+  of Kind.Shape:
+    let s1 = cast[ShapeType](t1)
+    let s2 = cast[ShapeType](t2)
+    if s1.schema == s2.schema:
+      for i in 0 ..< s1.schema.property_names.len:
+        if not are_equal(s1.property_types[i], s2.property_types[i]):
+          return false
+      true
+    else:
+      false
 
   of Kind.Symbol:
     let s1 = cast[SymbolType](t1)
