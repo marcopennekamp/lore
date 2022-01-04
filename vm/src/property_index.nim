@@ -1,4 +1,5 @@
 from std/algorithm import sort
+from std/sequtils import deduplicate
 
 type
   PropertyIndex* = ref object
@@ -87,7 +88,6 @@ proc build_index_node(start_position: uint16, names: open_array[string], first: 
   ## Builds an index node from the sorted list of names starting at index `first` and ending at index `last`, with this
   ## node's critical position possibly being `start_position` or a subsequent position. `names` isn't presented as a
   ## slice so that we can assign the correct global index to a result edge.
-  # TODO (vm): How to deal with the edge case of `first` == `last`? Is this only the case when `names` has length 0 or 1?
 
   # First we have to find a position at which two or more of the names differ.
   var critical_position = start_position
@@ -135,9 +135,6 @@ proc build_property_index(names: seq[string]): PropertyIndex =
   ## When `build_index_node` is called, the algorithm finds the first position after `position` at which some of the
   ## `names` differ. At that position, `names` is divided into a number of segments, for which each `build_index_node`
   ## is called once. If a segment only has a single name, a result edge is produced instead.
-  ##
-  ## `names` must contain unique strings. The algorithm otherwise exhibits undefined behavior.
-  # TODO (vm): Filter duplicate names instead of handling this edge case as undefined behavior?
   let root =
     if names.len == 0:
       alloc_index_node(0, 0)
@@ -150,7 +147,8 @@ proc build_property_index(names: seq[string]): PropertyIndex =
     else:
       var sorted_names = names
       sort(sorted_names)
-      build_index_node(0, sorted_names, 0, uint16(sorted_names.len - 1))
+      let unique_names = deduplicate(sorted_names, is_sorted = true)
+      build_index_node(0, unique_names, 0, uint16(unique_names.len - 1))
 
   PropertyIndex(root: root)
 
@@ -209,6 +207,14 @@ proc test_property_index() =
   let property_index3 = build_property_index(@["foo"])
 
   echo find_offset(property_index3, "foo")
+
+  # Duplicate names have to be filtered out correctly.
+  let property_index4 = build_property_index(@["nature", "load", "name", "nature", "level", "load"])
+
+  echo find_offset(property_index4, "level")
+  echo find_offset(property_index4, "load")
+  echo find_offset(property_index4, "name")
+  echo find_offset(property_index4, "nature")
 
 when is_main_module:
   test_property_index()
