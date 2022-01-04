@@ -1,5 +1,6 @@
 from std/algorithm import sort
 from std/sequtils import deduplicate
+import tables
 
 type
   PropertyIndex* = ref object
@@ -59,6 +60,23 @@ proc significant_at(name: open_array[char], position: uint16): char =
 ########################################################################################################################
 # Index building.                                                                                                      #
 ########################################################################################################################
+
+# TODO (vm/parallel): This should be protected by a lock.
+var interned_property_indices = new_table[seq[string], PropertyIndex]()
+
+proc build_property_index(names: seq[string]): PropertyIndex
+
+proc get_interned_property_index*(names: seq[string]): PropertyIndex =
+  ## Returns a property index for the given names if it's already been interned. Otherwise, creates such a property
+  ## index and caches it.
+  var sorted_names = names
+  sort(sorted_names)
+  let unique_names = deduplicate(sorted_names, is_sorted = true)
+  var property_index = interned_property_indices.get_or_default(unique_names)
+  if property_index == nil:
+    property_index = build_property_index(unique_names)
+    interned_property_indices[unique_names] = property_index
+  property_index
 
 proc alloc_index_node(position: uint16, edge_count: uint16): IndexNode =
   ## Allocates an IndexNode with space reserved for `edge_count` edges.
@@ -124,17 +142,18 @@ proc build_index_node(start_position: uint16, names: open_array[string], first: 
   node
 
 proc build_property_index(names: seq[string]): PropertyIndex =
-  ## Builds a property index for the given `names`. This algorithm recursively builds nodes by taking subranges of
-  ## `names` with the same critical byte into `build_index_node`. For example, for the "level" to "nature" example, the
-  ## call tree will look like this:
+  ## Builds a property index for the given `names`, which must be sorted and unique. This algorithm recursively builds
+  ## nodes by taking subranges of `names` with the same critical byte into `build_index_node`. For example, for the
+  ## "level" to "nature" example, the call tree will look like this:
   ##
   ##  - build_index_node(0, ["level", "load", "name", "nature"], 0, 3)
   ##    - build_index_node(1, ["level", "load", "name", "nature"], 0, 1)
   ##    - build_index_node(1, ["level", "load", "name", "nature"], 2, 3)
   ##
-  ## When `build_index_node` is called, the algorithm finds the first position after `position` at which some of the
-  ## `names` differ. At that position, `names` is divided into a number of segments, for which each `build_index_node`
-  ## is called once. If a segment only has a single name, a result edge is produced instead.
+  ## When `build_index_node` is called, the algorithm finds the first position after `start_position` at which some of
+  ## the `names` differ. At that position, `names` is divided into a number of segments, for which each
+  ## `build_index_node` is called once, creating a target edge. If a segment only has a single name, a result edge is
+  ## produced instead.
   let root =
     if names.len == 0:
       alloc_index_node(0, 0)
@@ -145,10 +164,7 @@ proc build_property_index(names: seq[string]): PropertyIndex =
       root.edges[0] = new_result_edge(name.significant_at(0), 0)
       root
     else:
-      var sorted_names = names
-      sort(sorted_names)
-      let unique_names = deduplicate(sorted_names, is_sorted = true)
-      build_index_node(0, unique_names, 0, uint16(unique_names.len - 1))
+      build_index_node(0, names, 0, uint16(names.len - 1))
 
   PropertyIndex(root: root)
 
@@ -183,15 +199,15 @@ proc find_offset*(property_index: PropertyIndex, name: open_array[char]): uint16
 ########################################################################################################################
 
 proc test_property_index() =
-  let property_index = build_property_index(@["nature", "load", "name", "level"])
+  let property_index1 = get_interned_property_index(@["nature", "load", "name", "level"])
 
-  echo find_offset(property_index, "level")
-  echo find_offset(property_index, "load")
-  echo find_offset(property_index, "name")
-  echo find_offset(property_index, "nature")
+  echo find_offset(property_index1, "level")
+  echo find_offset(property_index1, "load")
+  echo find_offset(property_index1, "name")
+  echo find_offset(property_index1, "nature")
 
   # This tests that prefix substrings such as "good" vs. "goodwill" are handled correctly.
-  let property_index2 = build_property_index(@["abc", "abcd", "abcde", "good", "abcf", "abcdf", "abcdu", "abcdefgu", "goodwill"])
+  let property_index2 = get_interned_property_index(@["abc", "abcd", "abcde", "good", "abcf", "abcdf", "abcdu", "abcdefgu", "goodwill"])
 
   echo find_offset(property_index2, "abc")
   echo find_offset(property_index2, "abcd")
@@ -204,17 +220,21 @@ proc test_property_index() =
   echo find_offset(property_index2, "goodwill")
 
   # We have to make sure that a property index with a single name is built correctly and works well.
-  let property_index3 = build_property_index(@["foo"])
+  let property_index3 = get_interned_property_index(@["foo"])
 
   echo find_offset(property_index3, "foo")
 
   # Duplicate names have to be filtered out correctly.
-  let property_index4 = build_property_index(@["nature", "load", "name", "nature", "level", "load"])
+  let property_index4 = get_interned_property_index(@["nature", "load", "name", "nature", "level", "load"])
 
   echo find_offset(property_index4, "level")
   echo find_offset(property_index4, "load")
   echo find_offset(property_index4, "name")
   echo find_offset(property_index4, "nature")
+
+  # property_index and property_index4 must have the same address, because they are represented by the same interned
+  # underlying instance.
+  echo "property_index1 == property_index4? ", cast[uint](cast[pointer](property_index1)) == cast[uint](cast[pointer](property_index4))
 
 when is_main_module:
   test_property_index()
