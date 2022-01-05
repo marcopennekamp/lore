@@ -161,9 +161,17 @@ proc alloc_shape_type*(schema: ShapeSchema): ShapeType =
   shape_type.schema = schema
   shape_type
 
+proc property_count*(tpe: ShapeType): int = tpe.schema.property_names.len
+
 proc get_property_type*(tpe: ShapeType, name: string): Type =
   ## Gets the type of the property named `name`. The name must be a valid property name for the given shape type.
   tpe.property_types[tpe.schema.property_index.find_offset(name)]
+
+proc copy_shape_type*(tpe: ShapeType): ShapeType =
+  let result_type = alloc_shape_type(tpe.schema)
+  for i in 0 ..< tpe.property_count:
+    result_type.property_types[i] = tpe.property_types[i]
+  result_type
 
 # TODO (vm): Intern symbol types.
 proc symbol*(name: string): SymbolType = SymbolType(kind: Kind.Symbol, name: name)
@@ -242,7 +250,7 @@ proc are_equal*(t1: Type, t2: Type): bool =
     let s1 = cast[ShapeType](t1)
     let s2 = cast[ShapeType](t2)
     if s1.schema == s2.schema:
-      for i in 0 ..< s1.schema.property_names.len:
+      for i in 0 ..< s1.property_count:
         if not are_equal(s1.property_types[i], s2.property_types[i]):
           return false
       true
@@ -665,6 +673,12 @@ proc is_polymorphic(tpe: Type): bool =
   of Kind.Function: is_polymorphic(cast[FunctionType](tpe).input) or is_polymorphic(cast[FunctionType](tpe).output)
   of Kind.List: is_polymorphic(cast[ListType](tpe).element)
   of Kind.Map: is_polymorphic(cast[MapType](tpe).key) or is_polymorphic(cast[MapType](tpe).value)
+  of Kind.Shape:
+    let tpe = cast[ShapeType](tpe)
+    for i in 0 ..< tpe.property_count:
+      if is_polymorphic(tpe.property_types[i]):
+        return true
+    false
   else: false
 
 proc is_polymorphic(types: ImSeq[Type]): bool =
@@ -938,6 +952,17 @@ proc substitute_optimized(tpe: Type, type_arguments: open_array[Type]): Type =
   of Kind.Map:
     let tpe = cast[MapType](tpe)
     substitute_binary_and_construct(tpe.key, tpe.value, type_arguments, map)
+
+  of Kind.Shape:
+    let tpe = cast[ShapeType](tpe)
+    var result_type: ShapeType = nil
+    for i in 0 ..< tpe.property_count:
+      let candidate = substitute_optimized(tpe.property_types[i], type_arguments)
+      if candidate != nil:
+        if result_type == nil:
+          result_type = copy_shape_type(tpe)
+        result_type.property_types[i] = candidate
+    result_type
 
   else:
     quit(fmt"Type substitution has not been implemented for kind {tpe.kind}.")

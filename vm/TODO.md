@@ -3,11 +3,11 @@
 #### Features
 
 - Implement shapes:
-  - Shape types: ~~Type definition~~, ~~type equality~~, ~~subtyping~~, type variable allocation, type substitution, to string, poem reading, poem writing, universe resolution.
+  - Shape types: ~~Type definition~~, ~~type equality~~, ~~subtyping~~, ~~type variable allocation~~, ~~type substitution~~, type simplification, to string, poem reading, poem writing, universe resolution.
   - Shape values: Value definition, to string, poem reading, poem writing, universe resolution, indirect field access.
 - Implement traits and structs:
   - Schemas: Schema definition, poem reading, poem writing, universe resolution.
-  - Types: Type definition, type equality, subtyping, type variable allocations, type substitution, to string, poem reading, poem writing, supertrait instantiation, open property types and `getPropertyType`, constructors, open type parameters and type paths.
+  - Types: Type definition, type equality, subtyping, type variable allocations, type substitution, type simplification, to string, poem reading, poem writing, supertrait instantiation, open property types and `getPropertyType`, constructors, open type parameters and type paths.
   - Values: Struct values, struct memory layout, poem reading, poem writing, constructors, direct and indirect field access, constructor functions, interned objects.
 - Figure out how to pass a surrounding function's type arguments to lambdas created within the function.
 - Implement declared type interning:
