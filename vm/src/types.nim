@@ -1,5 +1,7 @@
+from std/algorithm import sort
 import std/macros
 import std/sets
+from std/sequtils import deduplicate
 import std/strformat
 import tables
 
@@ -114,7 +116,7 @@ proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: ope
 proc `$`*(tpe: Type): string
 
 ########################################################################################################################
-# Constructors and accessors.                                                                                          #
+# Constructors.                                                                                                        #
 ########################################################################################################################
 
 let
@@ -140,6 +142,22 @@ proc function_unsafe(input: Type, output: Type): FunctionType =
 proc list*(element: Type): ListType = ListType(kind: Kind.List, element: element)
 proc map*(key: Type, value: Type): MapType = MapType(kind: Kind.Map, key: key, value: value)
 
+# TODO (vm): Intern symbol types.
+proc symbol*(name: string): SymbolType = SymbolType(kind: Kind.Symbol, name: name)
+
+# These functions are workarounds when creating arrays of types.
+proc sum_as_type*(parts: open_array[Type]): Type = sum(parts)
+proc intersection_as_type*(parts: open_array[Type]): Type = intersection(parts)
+proc tpl_as_type*(elements: open_array[Type]): Type = tpl(elements)
+proc function_as_type*(input: TupleType, output: Type): Type = function(input, output)
+proc list_as_type*(element: Type): Type = list(element)
+
+########################################################################################################################
+# Shapes.                                                                                                              #
+########################################################################################################################
+
+proc property_count*(tpe: ShapeType): int
+
 # TODO (vm/parallel): This should be protected by a lock.
 var interned_shape_schemas = new_table[ImSeq[string], ShapeSchema]()
 
@@ -155,17 +173,20 @@ proc get_shape_schema*(property_names: ImSeq[string]): ShapeSchema =
     interned_shape_schemas[property_names] = shape_schema
   shape_schema
 
+proc get_shape_schema_safe*(property_names: seq[string]): ShapeSchema =
+  ## Creates a new shape schema from the given property names, or gets the interned version. The property names do not
+  ## have to be sorted or unique.
+  var names = property_names
+  sort(names)
+  names = deduplicate(names, is_sorted = true)
+  get_shape_schema(new_immutable_seq(names))
+
 proc alloc_shape_type*(schema: ShapeSchema): ShapeType =
   ## Allocates a new shape type with the correct number of property types, which must be initialized after.
   let shape_type = cast[ShapeType](alloc0(sizeof(ShapeType) + schema.property_names.len * sizeof(Type)))
+  shape_type.kind = Kind.Shape
   shape_type.schema = schema
   shape_type
-
-proc property_count*(tpe: ShapeType): int = tpe.schema.property_names.len
-
-proc get_property_type*(tpe: ShapeType, name: string): Type =
-  ## Gets the type of the property named `name`. The name must be a valid property name for the given shape type.
-  tpe.property_types[tpe.schema.property_index.find_offset(name)]
 
 proc copy_shape_type*(tpe: ShapeType): ShapeType =
   let result_type = alloc_shape_type(tpe.schema)
@@ -173,15 +194,22 @@ proc copy_shape_type*(tpe: ShapeType): ShapeType =
     result_type.property_types[i] = tpe.property_types[i]
   result_type
 
-# TODO (vm): Intern symbol types.
-proc symbol*(name: string): SymbolType = SymbolType(kind: Kind.Symbol, name: name)
+proc new_shape_type*(schema: ShapeSchema, property_types: open_array[Type]): ShapeType =
+  ## Creates a new shape type, filling its property types from the given array of property types.
+  let shape_type = alloc_shape_type(schema)
+  for i in 0 ..< min(shape_type.property_count, property_types.len):
+    shape_type.property_types[i] = property_types[i]
+  shape_type
 
-# These functions are workarounds when creating arrays of types.
-proc sum_as_type*(parts: open_array[Type]): Type = sum(parts)
-proc intersection_as_type*(parts: open_array[Type]): Type = intersection(parts)
-proc tpl_as_type*(elements: open_array[Type]): Type = tpl(elements)
-proc function_as_type*(input: TupleType, output: Type): Type = function(input, output)
-proc list_as_type*(element: Type): Type = list(element)
+proc shape_as_type*(schema: ShapeSchema, property_types: open_array[Type]): Type = new_shape_type(schema, property_types)
+
+proc property_count*(tpe: ShapeType): int = tpe.schema.property_names.len
+
+proc get_property_type*(tpe: ShapeType, name: string): Type =
+  ## Gets the type of the property named `name`. The name must be a valid property name for the given shape type.
+  tpe.property_types[tpe.schema.property_index.find_offset(name)]
+
+proc has_property*(tpe: ShapeType, name: string): bool = name in tpe.schema.property_name_set
 
 ########################################################################################################################
 # Type equality.                                                                                                       #
@@ -350,7 +378,7 @@ template tuple_subtypes_tuple(substitution_mode: IsSubtypeSubstitutionMode, t1: 
 
 template shape_subtypes_shape(substitution_mode: IsSubtypeSubstitutionMode, s1: ShapeType, s2: ShapeType): bool =
   for property_name in s2.schema.property_names:
-    if property_name notin s1.schema.property_name_set:
+    if not s1.has_property(property_name):
       return false
     let p1_type = s1.get_property_type(property_name)
     let p2_type = s2.get_property_type(property_name)
@@ -648,7 +676,7 @@ proc fits_assign(t1: Type, t2: Type, assignments: var FitsAssignments): bool =
       let s1 = cast[ShapeType](t1)
       let s2 = cast[ShapeType](t2)
       for property_name in s2.schema.property_names:
-        if property_name notin s1.schema.property_name_set:
+        if not s1.has_property(property_name):
           return false
         if not fits_assign(s1.get_property_type(property_name), s2.get_property_type(property_name), assignments):
           return false
@@ -691,15 +719,18 @@ proc is_polymorphic(types: ImSeq[Type]): bool =
 # Simplification.                                                                                                      #
 ########################################################################################################################
 
-proc sum_simplified*(parts: ImSeq[Type]): Type
-proc intersection_simplified*(parts: ImSeq[Type]): Type
+proc sum_simplified*(parts: open_array[Type]): Type
+proc sum_simplified*(parts: ImSeq[Type]): Type = sum_simplified(to_open_array(parts))
 
-template simplify_construct_covariant(kind: Kind, parts: ImSeq[Type]): untyped =
+proc intersection_simplified*(parts: open_array[Type]): Type
+proc intersection_simplified*(parts: ImSeq[Type]): Type = intersection_simplified(to_open_array(parts))
+
+template simplify_construct_covariant(kind: Kind, parts: open_array[Type]): untyped =
   if kind == Kind.Sum: sum_simplified(parts)
   elif kind == Kind.Intersection: intersection_simplified(parts)
   else: quit("Invalid kind for covariant construction.")
 
-template simplify_construct_contravariant(kind: Kind, parts: ImSeq[Type]): untyped =
+template simplify_construct_contravariant(kind: Kind, parts: open_array[Type]): untyped =
   if kind == Kind.Sum: intersection_simplified(parts)
   elif kind == Kind.Intersection: sum_simplified(parts)
   else: quit("Invalid kind for contravariant construction.")
@@ -714,7 +745,7 @@ proc add_unique(results: var StackSeq[32, Type], tpe: Type) =
   if is_unique:
     results.add(tpe)
 
-template simplify_categorize_type(tpe: Type) =
+template simplify_categorize_type(tpe: Type, kind: Kind) =
   case tpe.kind
   of Kind.Tuple:
     let tuple_type = cast[TupleType](tpe)
@@ -726,13 +757,19 @@ template simplify_categorize_type(tpe: Type) =
     else: tuplesX.add(tuple_type)
   of Kind.Function: functions.add(cast[FunctionType](tpe))
   of Kind.List: lists.add(cast[ListType](tpe))
+  of Kind.Shape:
+    # Shape types are only simplified when they're part of an intersection type.
+    if kind == Kind.Intersection:
+      shapes.add(cast[ShapeType](tpe))
+    else:
+      results.add_unique(tpe)
   else: results.add_unique(tpe)
 
 template simplify_flatten(tpe: Type, T: untyped, kind: Kind, expected_kind: Kind): untyped =
   if kind == expected_kind:
     let xary_type = cast[T](tpe)
     for child in xary_type.parts:
-      simplify_categorize_type(child)
+      simplify_categorize_type(child, kind)
   else:
     results.add_unique(tpe)
 
@@ -752,17 +789,18 @@ proc simplify_tuples(
   # (A, B) & (C, D) :=: (A & C, B & D)
   let size = types[0].elements.len
   var elements = new_immutable_seq[Type](size)
+  # We can reuse `element_parts` for each iteration as it's treated as immutable by `simplify`.
+  var element_parts = new_immutable_seq[Type](types.len)
   for i in 0 ..< size:
-    var element_parts = new_immutable_seq[Type](types.len)
     for j in 0 ..< types.len:
       element_parts[j] = types[j].elements[i]
-    elements[i] = simplify_construct_covariant(kind, element_parts)
+    elements[i] = simplify_construct_covariant(kind, to_open_array(element_parts))
 
   results.add(tpl(elements))
 
-proc simplify(kind: Kind, parts: ImSeq[Type]): Type {.inline.} =
+proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
   ## Simplifies `parts` as if they were contained in a sum or intersection type, determined by `kind`. This operation
-  ## is very costly, so try to minimize its usage.
+  ## is very costly, so try to minimize its usage. `parts` won't be mutated by this function.
   if parts.len == 1:
     return parts[0]
 
@@ -770,21 +808,22 @@ proc simplify(kind: Kind, parts: ImSeq[Type]): Type {.inline.} =
   # We want to allocate as many arrays on the stack as possible. However, a constructed sum/intersection type may have
   # an arbitrary length. Hence, we are using StackSeq to avoid allocations for small sum/intersection types. To avoid
   # two iterations over `parts`, we're immediately sorting types into boxes while flattening.
-  # We have to ensure that each type in `results` is unique. This does not apply to tuples, functions, and lists,
-  # because these types are later combined in such a way that each result type must be unique.
+  # We have to ensure that each type in `results` is unique. This does not apply to tuples, functions, lists, and
+  # shapes because these types are later combined in such a way that each result type must be unique.
   var tuples1: StackSeq[8, TupleType]
   var tuples2: StackSeq[8, TupleType]
   var tuples3: StackSeq[8, TupleType]
   var tuplesX: StackSeq[8, TupleType]
   var functions: StackSeq[8, FunctionType]
   var lists: StackSeq[8, ListType]
+  var shapes: StackSeq[8, ShapeType]
   var results: StackSeq[32, Type]
 
   for part in parts:
     case part.kind
     of Kind.Sum: simplify_flatten(part, SumType, kind, Kind.Sum)
     of Kind.Intersection: simplify_flatten(part, IntersectionType, kind, Kind.Intersection)
-    else: simplify_categorize_type(part)
+    else: simplify_categorize_type(part, kind)
 
   # Step 2: Simplify tuples, functions, and lists.
   if tuples1.len > 0: simplify_tuples(tuples1, results, kind)
@@ -829,9 +868,9 @@ proc simplify(kind: Kind, parts: ImSeq[Type]): Type {.inline.} =
       output_parts[i] = function_type.output
 
     # The combined input type must be a tuple type because all parts are tuples.
-    let input = cast[TupleType](simplify_construct_contravariant(kind, input_parts))
+    let input = cast[TupleType](simplify_construct_contravariant(kind, to_open_array(input_parts)))
     assert(input.kind == Kind.Tuple)
-    let output = simplify_construct_covariant(kind, output_parts)
+    let output = simplify_construct_covariant(kind, to_open_array(output_parts))
     results.add(function(input, output))
 
   # [A] | [B] :=: [A | B]
@@ -842,8 +881,31 @@ proc simplify(kind: Kind, parts: ImSeq[Type]): Type {.inline.} =
     for i in 0 ..< lists_count:
       element_parts[i] = lists[i].element
 
-    let element = simplify_construct_covariant(kind, element_parts)
+    let element = simplify_construct_covariant(kind, to_open_array(element_parts))
     results.add(list(element))
+
+  # { name: A } & { name: B } & { health: Int } :=: { name: A & B, health: Int }
+  if shapes.len > 0:
+    # This is basically `ShapeType.combine`, but we have to work with the StackSeq, so it's harder to put this into a
+    # separate function.
+    var property_names = new_seq[string]()
+    for shape_type in shapes:
+      for name in shape_type.schema.property_names:
+        property_names.add(name)
+
+    let shape_schema = get_shape_schema_safe(property_names)
+    let result_type = alloc_shape_type(shape_schema)
+
+    var property_type_parts = new_seq_of_cap[Type](8)
+    for i in 0 ..< result_type.property_count:
+      let property_name = result_type.schema.property_names[i]
+      for shape_type in shapes:
+        if shape_type.has_property(property_name):
+          property_type_parts.add(shape_type.get_property_type(property_name))
+      result_type.property_types[i] = simplify_construct_covariant(kind, property_type_parts)
+      property_type_parts.set_len(0)
+
+    results.add(result_type)
 
   # Step 3: Filter relevant types, i.e. only take the most general/specific types.
   let results_count = results.len
@@ -874,7 +936,7 @@ proc simplify(kind: Kind, parts: ImSeq[Type]): Type {.inline.} =
   elif kind == Kind.Intersection: intersection(result_parts)
   else: quit(fmt"Invalid kind {kind} for simplification.")
 
-proc sum_simplified*(parts: ImSeq[Type]): Type =
+proc sum_simplified*(parts: open_array[Type]): Type =
   ## Constructs a sum type from the given parts. But first, `parts` are flattened, combined according to their
   ## variance, and filtered for the most general/specific types.
   ##
@@ -886,7 +948,7 @@ proc sum_simplified*(parts: ImSeq[Type]): Type =
   ## the same schema.
   simplify(Kind.Sum, parts)
 
-proc intersection_simplified*(parts: ImSeq[Type]): Type =
+proc intersection_simplified*(parts: open_array[Type]): Type =
   ## Constructs an intersection type from the given parts. But first, `parts` are flattened, combined according to
   ## their variance, and filtered for the most general/specific types.
   ##
