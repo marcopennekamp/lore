@@ -1023,6 +1023,12 @@ proc `$`*(tpe: Type): string =
   of Kind.Map:
     let tpe = cast[MapType](tpe)
     "#[" & $tpe.key & " -> " & $tpe.value & "]"
+  of Kind.Shape:
+    let tpe = cast[ShapeType](tpe)
+    var properties = new_immutable_seq[string](tpe.property_count)
+    for i in 0 ..< tpe.property_count:
+      properties[i] = tpe.schema.property_names[i] & ": " & $tpe.property_types[i]
+    "{ " & properties.join(", ") & " }"
   of Kind.Symbol: "#" & cast[SymbolType](tpe).name
   else: "unknown"
 
