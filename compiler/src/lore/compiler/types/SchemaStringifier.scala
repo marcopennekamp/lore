@@ -35,7 +35,7 @@ object SchemaStringifier {
         val propertyRepresentations = properties.values.map { property =>
           s"${property.name}: ${toString(property.tpe, verbose)}"
         }
-        s"{ ${propertyRepresentations.mkString(", ")} }"
+        s"%{ ${propertyRepresentations.mkString(", ")} }"
       case SymbolType(name) => s"#$name"
       case dt: DeclaredType =>
         val typeArguments = if (dt.typeArguments.nonEmpty) s"[${dt.typeArguments.map(toString(_, verbose)).mkString(", ")}]" else ""

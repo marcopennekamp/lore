@@ -45,7 +45,7 @@ export function stringify(type: Type): string {
     }
     case Kind.Shape: {
       const shape = <ShapeType> type
-      return '{ ' + stringifyPropertyTypes(shape.propertyTypes).join(', ') + ' }'
+      return '%{ ' + stringifyPropertyTypes(shape.propertyTypes).join(', ') + ' }'
     }
   }
 
