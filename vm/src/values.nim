@@ -1,7 +1,7 @@
 import std/strformat, std/strutils
 
 import imseqs
-from types import Kind, Type, FunctionType
+from types import Kind, MetaShape, Type, FunctionType, ShapeType
 from utils import call_if_any_exists
 
 type
@@ -69,6 +69,10 @@ type
 
   ListValue* {.pure, shallow.} = ref object of Value
     elements*: ImSeq[TaggedValue]
+
+  ShapeValue* {.pure, shallow.} = ref object of Value
+    meta*: MetaShape
+    property_values*: UncheckedArray[TaggedValue]
 
   SymbolValue* {.pure, shallow.} = ref object of Value
     name*: string
@@ -165,6 +169,40 @@ proc new_list*(elements: ImSeq[TaggedValue], tpe: Type): Value = ListValue(tpe: 
 proc new_list_tagged*(elements: ImSeq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_list(elements, tpe))
 
 ########################################################################################################################
+# Shapes.                                                                                                              #
+########################################################################################################################
+
+proc property_count*(shape: ShapeValue): int = shape.meta.property_names.len
+
+proc alloc_shape_value(meta_shape: MetaShape): ShapeValue =
+  ## Allocates a new shape value with the correct number of property values, which must be initialized after. The
+  ## value's type also must be set!
+  let shape_value = cast[ShapeValue](alloc0(sizeof(ShapeValue) + meta_shape.property_names.len * sizeof(TaggedValue)))
+  shape_value.meta = meta_shape
+  shape_value
+
+proc copy_shape_value(shape: ShapeValue): ShapeValue =
+  ## Copies a shape value AND its type. The type is copied because this operation is used to copy and then mutate a
+  ## a shape value and type. The type will have to change if property values are changed subsequently.
+  let res = alloc_shape_value(shape.meta)
+  res.tpe = types.copy_shape_type(cast[ShapeType](shape.tpe))
+  for i in 0 ..< shape.property_count:
+    res.property_values[i] = shape.property_values[i]
+  res
+
+proc new_shape_value*(meta_shape: MetaShape, property_values: open_array[TaggedValue]): ShapeValue =
+  ## Allocates a new shape value. The property values must be in the correct order as defined by the meta shape.
+  # TODO (vm/hash): Don't forget to hash the shape type after its property types are set!
+  let shape_value = alloc_shape_value(meta_shape)
+  let shape_type = types.alloc_shape_type(meta_shape)
+  for i in 0 ..< meta_shape.property_names.len:
+    let property_value = property_values[i]
+    shape_value.property_values[i] = property_value
+    shape_type.property_types[i] = get_type(property_value)
+  shape_value.tpe = shape_type
+  shape_value
+
+########################################################################################################################
 # Symbols.                                                                                                             #
 ########################################################################################################################
 
@@ -235,6 +273,23 @@ proc substitute_optimized(value: TaggedValue, type_arguments: ImSeq[Type]): Tagg
     var new_type = types.substitute(value.tpe, type_arguments)
     call_if_any_exists(new_list_tagged, new_elements, value.elements, new_type, value.tpe, tag_reference(nil))
 
+  of Kind.Shape:
+    let value = cast[ShapeValue](reference)
+
+    # TODO (vm/hash): Don't forget to hash the shape value's type after all its types have been assigned.
+    var result_value: ShapeValue = nil
+
+    for i in 0 ..< value.property_count:
+      let candidate = substitute_optimized(value.property_values[i], type_arguments)
+      if untag_reference(candidate) != nil:
+        if result_value == nil:
+          result_value = copy_shape_value(value)
+        result_value.property_values[i] = candidate
+        # `copy_shape_value` produces a copy of the shape's type, so this mutation is fine.
+        cast[ShapeType](result_value.tpe).property_types[i] = get_type(candidate)
+
+    tag_reference(result_value)
+
   of Kind.Symbol: tag_reference(nil)
 
   else: quit(fmt"Values of type kind {reference.tpe.kind} cannot exist.")
@@ -293,6 +348,12 @@ func `$`*(value: Value): string =
   of Kind.List:
     let list = cast[ListValue](value)
     "[" & $list.elements.join(", ") & "]"
+  of Kind.Shape:
+    let shape = cast[ShapeValue](value)
+    var properties = new_seq[string]()
+    for i in 0 ..< shape.property_count:
+      properties.add(shape.meta.property_names[i] & ": " & $shape.property_values[i])
+    "%{ " & properties.join(", ") & " }"
   of Kind.Symbol:
     let symbol = cast[SymbolValue](value)
     "#" & symbol.name

@@ -71,16 +71,16 @@ type
   MetaShape* = ref object
     ## A meta shape is the portion of a shape type fixed at compile time. That is, the shape type's property names and
     ## the corresponding property index.
-    property_names: ImSeq[string]
+    property_names*: ImSeq[string]
       ## Property names are ordered lexicographically, in the same order as the property index prescribes.
-    property_index: PropertyIndex
-    property_name_set: HashSet[string]
+    property_index*: PropertyIndex
+    property_name_set*: HashSet[string]
       ## Because a property index cannot be used to determine whether a given name is part of the shape, we need an
       ## additional name set for shape/shape subtyping and other operations.
 
   ShapeType* {.pure, acyclic.} = ref object of Type
-    meta: MetaShape
-    property_types: UncheckedArray[Type]
+    meta*: MetaShape
+    property_types*: UncheckedArray[Type]
 
   SymbolType* {.pure.} = ref object of Type
     name*: string
