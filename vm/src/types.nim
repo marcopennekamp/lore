@@ -68,9 +68,9 @@ type
   MapType* {.pure, acyclic.} = ref object of Type
     key*, value*: Type
 
-  ShapeSchema* = ref object
-    ## A shape schema is the portion of a shape type fixed at compile time. That is, the shape type's property names
-    ## and the corresponding property index.
+  MetaShape* = ref object
+    ## A meta shape is the portion of a shape type fixed at compile time. That is, the shape type's property names and
+    ## the corresponding property index.
     property_names: ImSeq[string]
       ## Property names are ordered lexicographically, in the same order as the property index prescribes.
     property_index: PropertyIndex
@@ -79,7 +79,7 @@ type
       ## additional name set for shape/shape subtyping and other operations.
 
   ShapeType* {.pure, acyclic.} = ref object of Type
-    schema: ShapeSchema
+    meta: MetaShape
     property_types: UncheckedArray[Type]
 
   SymbolType* {.pure.} = ref object of Type
@@ -159,64 +159,64 @@ proc list_as_type*(element: Type): Type = list(element)
 proc property_count*(tpe: ShapeType): int
 
 # TODO (vm/parallel): This should be protected by a lock.
-var interned_shape_schemas = new_table[ImSeq[string], ShapeSchema]()
+var interned_meta_shapes = new_table[ImSeq[string], MetaShape]()
 
-proc get_shape_schema*(property_names: ImSeq[string]): ShapeSchema =
-  ## Creates a new shape schema from the given sorted and unique list of property names, or gets the interned version.
-  var shape_schema = interned_shape_schemas.get_or_default(property_names)
-  if shape_schema == nil:
-    shape_schema = ShapeSchema(
+proc get_meta_shape*(property_names: ImSeq[string]): MetaShape =
+  ## Creates a new meta shape from the given sorted and unique list of property names, or gets the interned version.
+  var meta_shape = interned_meta_shapes.get_or_default(property_names)
+  if meta_shape == nil:
+    meta_shape = MetaShape(
       property_names: property_names,
       property_index: get_interned_property_index(to_open_array(property_names)),
       property_name_set: to_hash_set(to_open_array(property_names)),
     )
-    interned_shape_schemas[property_names] = shape_schema
-  shape_schema
+    interned_meta_shapes[property_names] = meta_shape
+  meta_shape
 
-proc get_shape_schema_safe*(property_names: seq[string]): ShapeSchema =
-  ## Creates a new shape schema from the given property names, or gets the interned version. The property names do not
+proc get_meta_shape_safe*(property_names: seq[string]): MetaShape =
+  ## Creates a new meta shape from the given property names, or gets the interned version. The property names do not
   ## have to be sorted or unique.
   var names = property_names
   sort(names)
   names = deduplicate(names, is_sorted = true)
-  get_shape_schema(new_immutable_seq(names))
+  get_meta_shape(new_immutable_seq(names))
 
-proc alloc_shape_type*(schema: ShapeSchema): ShapeType =
+proc alloc_shape_type*(meta_shape: MetaShape): ShapeType =
   ## Allocates a new shape type with the correct number of property types, which must be initialized after.
-  let shape_type = cast[ShapeType](alloc0(sizeof(ShapeType) + schema.property_names.len * sizeof(Type)))
+  let shape_type = cast[ShapeType](alloc0(sizeof(ShapeType) + meta_shape.property_names.len * sizeof(Type)))
   shape_type.kind = Kind.Shape
-  shape_type.schema = schema
+  shape_type.meta = meta_shape
   shape_type
 
 proc copy_shape_type*(tpe: ShapeType): ShapeType =
-  let result_type = alloc_shape_type(tpe.schema)
+  let result_type = alloc_shape_type(tpe.meta)
   for i in 0 ..< tpe.property_count:
     result_type.property_types[i] = tpe.property_types[i]
   result_type
 
-proc new_shape_type*(schema: ShapeSchema, property_types: open_array[Type]): ShapeType =
+proc new_shape_type*(meta_shape: MetaShape, property_types: open_array[Type]): ShapeType =
   ## Creates a new shape type, filling its property types from the given array of property types.
-  let shape_type = alloc_shape_type(schema)
+  let shape_type = alloc_shape_type(meta_shape)
   for i in 0 ..< min(shape_type.property_count, property_types.len):
     shape_type.property_types[i] = property_types[i]
   shape_type
 
-proc shape_as_type*(schema: ShapeSchema, property_types: open_array[Type]): Type = new_shape_type(schema, property_types)
+proc shape_as_type*(meta_shape: MetaShape, property_types: open_array[Type]): Type = new_shape_type(meta_shape, property_types)
 
-proc property_count*(tpe: ShapeType): int = tpe.schema.property_names.len
+proc property_count*(tpe: ShapeType): int = tpe.meta.property_names.len
 
 proc get_property_type*(tpe: ShapeType, name: string): Type =
   ## Gets the type of the property named `name`. The name must be a valid property name for the given shape type.
-  tpe.property_types[tpe.schema.property_index.find_offset(name)]
+  tpe.property_types[tpe.meta.property_index.find_offset(name)]
 
-proc has_property*(tpe: ShapeType, name: string): bool = name in tpe.schema.property_name_set
+proc has_property*(tpe: ShapeType, name: string): bool = name in tpe.meta.property_name_set
 
 ########################################################################################################################
 # Type equality.                                                                                                       #
 ########################################################################################################################
 
-proc `==`(a: ShapeSchema, b: ShapeSchema): bool =
-  ## Checks the equality of two interned shape schemas.
+proc `==`(a: MetaShape, b: MetaShape): bool =
+  ## Checks the equality of two interned meta shapes.
   cast[pointer](a) == cast[pointer](b)
 
 proc `===`(a: Type, b: Type): bool =
@@ -277,7 +277,7 @@ proc are_equal*(t1: Type, t2: Type): bool =
   of Kind.Shape:
     let s1 = cast[ShapeType](t1)
     let s2 = cast[ShapeType](t2)
-    if s1.schema == s2.schema:
+    if s1.meta == s2.meta:
       for i in 0 ..< s1.property_count:
         if not are_equal(s1.property_types[i], s2.property_types[i]):
           return false
@@ -377,7 +377,7 @@ template tuple_subtypes_tuple(substitution_mode: IsSubtypeSubstitutionMode, t1: 
   true
 
 template shape_subtypes_shape(substitution_mode: IsSubtypeSubstitutionMode, s1: ShapeType, s2: ShapeType): bool =
-  for property_name in s2.schema.property_names:
+  for property_name in s2.meta.property_names:
     if not s1.has_property(property_name):
       return false
     let p1_type = s1.get_property_type(property_name)
@@ -675,7 +675,7 @@ proc fits_assign(t1: Type, t2: Type, assignments: var FitsAssignments): bool =
     if t1.kind == Kind.Shape:
       let s1 = cast[ShapeType](t1)
       let s2 = cast[ShapeType](t2)
-      for property_name in s2.schema.property_names:
+      for property_name in s2.meta.property_names:
         if not s1.has_property(property_name):
           return false
         if not fits_assign(s1.get_property_type(property_name), s2.get_property_type(property_name), assignments):
@@ -890,15 +890,15 @@ proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
     # separate function.
     var property_names = new_seq[string]()
     for shape_type in shapes:
-      for name in shape_type.schema.property_names:
+      for name in shape_type.meta.property_names:
         property_names.add(name)
 
-    let shape_schema = get_shape_schema_safe(property_names)
-    let result_type = alloc_shape_type(shape_schema)
+    let meta_shape = get_meta_shape_safe(property_names)
+    let result_type = alloc_shape_type(meta_shape)
 
     var property_type_parts = new_seq_of_cap[Type](8)
     for i in 0 ..< result_type.property_count:
-      let property_name = result_type.schema.property_names[i]
+      let property_name = meta_shape.property_names[i]
       for shape_type in shapes:
         if shape_type.has_property(property_name):
           property_type_parts.add(shape_type.get_property_type(property_name))
@@ -1089,7 +1089,7 @@ proc `$`*(tpe: Type): string =
     let tpe = cast[ShapeType](tpe)
     var properties = new_immutable_seq[string](tpe.property_count)
     for i in 0 ..< tpe.property_count:
-      properties[i] = tpe.schema.property_names[i] & ": " & $tpe.property_types[i]
+      properties[i] = tpe.meta.property_names[i] & ": " & $tpe.property_types[i]
     "%{ " & properties.join(", ") & " }"
   of Kind.Symbol: "#" & cast[SymbolType](tpe).name
   else: "unknown"

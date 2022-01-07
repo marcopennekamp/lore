@@ -65,14 +65,14 @@ block:
   assert $sum_simplified(lists1) == "[((Boolean) | (Int, (Real | Int), (Real | String)))]"
   assert $intersection_simplified(lists1) == "[((Boolean) & (Int, (Real & Int), (Real & String)))]"
 
-  let shape_schema1 = get_shape_schema_safe(@["foo"])
-  let shape_schema2 = get_shape_schema_safe(@["bar", "baz"])
-  let shape_schema3 = get_shape_schema_safe(@["baz"])
+  let meta_shape1 = get_meta_shape_safe(@["foo"])
+  let meta_shape2 = get_meta_shape_safe(@["bar", "baz"])
+  let meta_shape3 = get_meta_shape_safe(@["baz"])
   let shapes1 = new_immutable_seq([
-    shape_as_type(shape_schema1, [real_type]),
-    shape_as_type(shape_schema1, [string_type]),
-    shape_as_type(shape_schema2, [string_type, int_type]),
-    shape_as_type(shape_schema3, [real_type]),
+    shape_as_type(meta_shape1, [real_type]),
+    shape_as_type(meta_shape1, [string_type]),
+    shape_as_type(meta_shape2, [string_type, int_type]),
+    shape_as_type(meta_shape3, [real_type]),
   ])
 
   assert $sum_simplified(shapes1) == "(%{ foo: Real } | %{ foo: String } | %{ bar: String, baz: Int } | %{ baz: Real })"
