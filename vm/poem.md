@@ -12,8 +12,6 @@ Concretely, a Poem file has the following structure:
   - **Constants** (Constants)
   - **Type declaration count** (uint16)
   - **Type declarations** (TypeDeclaration*)
-  - **Meta shape count** (uint16)
-  - **Meta shapes** (MetaShape*)
   - **Global variable count** (uint16)
   - **Global variables** (GlobalVariable*)
   - **Function count** (uint16)
@@ -21,7 +19,7 @@ Concretely, a Poem file has the following structure:
 
 ### Constants
 
-The **Constants** table holds Poem-wide constant types and values, as well as references to intrinsics, global variables, and multi-functions. Each kind of constant is indexed separately by a 16-bit unsigned integer.
+The **Constants** table holds Poem-wide constant types and values, as well as references to meta shapes, intrinsics, global variables, and multi-functions. Each kind of constant is indexed separately by a 16-bit unsigned integer.
 
 The Constants table has the following structure:
 
@@ -35,15 +33,8 @@ The Constants table has the following structure:
   - **Global variables** (String*): The full names of the global variable references.
   - **Multi-functions count** (uint16)
   - **Multi-functions** (String*): The full names of the multi-function references.
-
-### Meta Shapes
-
-A **MetaShape** describes the property names that a shape type may have:
-
-- **Property name count** (uint8)
-- **Property names** (String*)
-
-The property names must be ordered lexicographically and may not contain duplicates. A shape type and shape value must contain their property types/values in the order defined by the meta shape. The property name count of the meta shape directly determines the number of property types/values read for a shape type/value.
+  - **Meta shape count** (uint16)
+  - **Meta shapes** (MetaShape*): These meta shapes are exclusively used by instructions creating new shape instances. They are not referenced by constant types or values.
 
 ### Global Variables
 
@@ -79,6 +70,15 @@ Instructions are encoded as fixed-size instructions:
 
   - **Operation** (uint16)
   - **Arguments** (uint16 * 3)
+
+### Meta Shapes
+
+A **MetaShape** describes the property names that a shape may have:
+
+- **Property name count** (uint8)
+- **Property names** (String*)
+
+The property names must be ordered lexicographically and may not contain duplicates. Meta shapes for constant types and values are defined ad-hoc, to avoid complex dependencies within poems. This MetaShape structure is placed in the constants table and used by instructions that build shape values. 
 
 ### Schemas
 
@@ -138,9 +138,9 @@ A **Type** is a particular instance of a type such as `Int`, `Real | Boolean`, o
       - **Key** (Type)
       - **Value** (Type)
     - Shape:
-      - **Meta shape index** (uint16): An index into the poem's meta shape declarations, referring to the shape type's meta shape.
-      - **Property types count** (uint8): This count could be derived from the meta shape, but it would introduce data dependencies during reading which we want to avoid.
-      - **Property types** (Type*): The property types must be ordered in the manner prescribed by the meta shape.
+      - **Property count** (uint8)
+      - **Property names** (String*): The property names must be ordered lexicographically and may not contain duplicates.
+      - **Property types** (Type*): The property types must be in the same order as the property names.
     - Symbol:
       - **Name** (String)
     - Sum/Intersection/Tuple:

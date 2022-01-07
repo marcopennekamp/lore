@@ -1,6 +1,6 @@
 import imseqs
 from instructions import Instruction
-from types import Type, TupleType, TypeParameter
+from types import Type, TupleType, MetaShape, TypeParameter
 from values import TaggedValue
 
 type
@@ -89,8 +89,9 @@ type
   #            constant accordingly, but this is basically a no-op once optimized.
 
   Constants* = ref object
-    ## A Constants object provides quick access to predefined types, values, global variables, and multi-functions. It
-    ## may be shared across multiple function definitions. All entries are separately accessed by a uint16.
+    ## A Constants object provides quick access to predefined types, values, global variables, multi-functions, and
+    ## meta shapes. It may be shared across multiple function definitions. All entries are separately accessed by a
+    ## uint16.
     ##
     ## Types and values are implicitly separated into monomorphic and polymorphic entities. A monomorphic type/value is
     ## guaranteed to contain no type variables can be used as is. A polymorphic type/value contains at least one type
@@ -102,6 +103,9 @@ type
     intrinsics*: seq[Intrinsic]
     global_variables*: seq[GlobalVariable]
     multi_functions*: seq[MultiFunction]
+    meta_shapes*: seq[MetaShape]
+      ## A constant table's meta shapes are used to allocate new shape instances via the requisite instructions. They
+      ## are not referenced by constant table types or values, nor by any other type declarations.
 
 ########################################################################################################################
 # Global variables.                                                                                                    #
