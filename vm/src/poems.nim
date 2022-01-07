@@ -1,5 +1,7 @@
 import binstreams
+from std/algorithm import is_sorted
 import std/os
+from std/sequtils import deduplicate
 import std/strformat
 
 from definitions import Function
@@ -19,6 +21,7 @@ type
     ##
     ## `.poem` files must be encoded in big endian.
     constants*: PoemConstants
+    meta_shapes*: seq[PoemMetaShape]
     global_variables*: seq[PoemGlobalVariable]
     functions*: seq[PoemFunction]
 
@@ -28,6 +31,9 @@ type
     intrinsics*: seq[string]
     global_variables*: seq[string]
     multi_functions*: seq[string]
+
+  PoemMetaShape* = ref object
+    property_names*: seq[string]
 
   PoemGlobalVariable* = ref object of RootObj
     name*: string
@@ -69,6 +75,10 @@ type
     ## This unresolved type contains any number of child types and represents sums, functions, lists, etc.
     kind*: Kind
     types*: seq[PoemType]
+
+  PoemShapeType* = ref object of PoemType
+    meta_shape_index*: uint16
+    property_types*: seq[PoemType]
 
   PoemSymbolType* = ref object of PoemType
     name*: string
@@ -163,26 +173,24 @@ proc type_parameter_lower*(name: string, lower_bound: PoemType): PoemTypeParamet
 proc type_parameter*(name: string): PoemTypeParameter = type_parameter_lower(name, nothing_type)
 
 const
-  tkBasic = 0'u8
-  tkFixedSize = 1'u8
-  tkSum = 2'u8
-  tkIntersection = 3'u8
-  tkTuple = 4'u8
-  tkShape = 5'u8
-  tkNamed = 6'u8
+  tkMetadataKinded = 0'u8
+  tkSum = 1'u8
+  tkIntersection = 2'u8
+  tkTuple = 3'u8
+  tkNamed = 4'u8
 
-  btAny = 0'u8
-  btNothing = 1'u8
-  btInt = 2'u8
-  btReal = 3'u8
-  btBoolean = 4'u8
-  btString = 5'u8
-
-  fsVariable = 0'u8
-  fsFunction = 1'u8
-  fsList = 2'u8
-  fsMap = 3'u8
-  fsSymbol = 4'u8
+  mkAny = 0'u8
+  mkNothing = 1'u8
+  mkInt = 2'u8
+  mkReal = 3'u8
+  mkBoolean = 4'u8
+  mkString = 5'u8
+  mkVariable = 16'u8
+  mkFunction = 17'u8
+  mkList = 18'u8
+  mkMap = 19'u8
+  mkShape = 20'u8
+  mkSymbol = 21'u8
 
 proc fail(message: string) {.noreturn.} = raise new_exception(IOError, message)
 
@@ -220,6 +228,7 @@ template write_many_with_count(stream: FileStream, items, count_type, write_one)
 ########################################################################################################################
 
 proc read_constants(stream: FileStream): PoemConstants
+proc read_meta_shape(stream: FileStream): PoemMetaShape
 proc read_global_variable(stream: FileStream): PoemGlobalVariable
 proc read_function(stream: FileStream): PoemFunction
 proc read_instruction(stream: FileStream): Instruction
@@ -229,6 +238,7 @@ proc read_value(stream: FileStream): PoemValue
 proc read_string_with_length(stream: FileStream): string
 
 proc write_constants(stream: FileStream, constants: PoemConstants)
+proc write_meta_shape(stream: FileStream, meta_shape: PoemMetaShape)
 proc write_global_variable(stream: FileStream, global_variable: PoemGlobalVariable)
 proc write_function(stream: FileStream, function: PoemFunction)
 proc write_instruction(stream: FileStream, instruction: Instruction)
@@ -254,10 +264,12 @@ proc read*(path: string): Poem =
     fail(fmt"""Poem file "{path}" has an illegal file header. The file must begin with the ASCII string `poem`.""")
 
   let constants = stream.read_constants()
+  let meta_shapes = stream.read_many_with_count(PoemMetaShape, uint16, read_meta_shape)
   let global_variables = stream.read_many_with_count(PoemGlobalVariable, uint16, read_global_variable)
   let functions = stream.read_many_with_count(PoemFunction, uint16, read_function)
   Poem(
     constants: constants,
+    meta_shapes: meta_shapes,
     global_variables: global_variables,
     functions: functions,
   )
@@ -268,6 +280,7 @@ proc write*(path: string, poem: Poem) =
 
   stream.write_str("poem")
   stream.write_constants(poem.constants)
+  stream.write_many_with_count(poem.meta_shapes, uint16, write_meta_shape)
   stream.write_many_with_count(poem.global_variables, uint16, write_global_variable)
   stream.write_many_with_count(poem.functions, uint16, write_function)
 
@@ -296,6 +309,24 @@ proc write_constants(stream: FileStream, constants: PoemConstants) =
   stream.write_many_with_count(constants.intrinsics, uint16, write_string_with_length)
   stream.write_many_with_count(constants.global_variables, uint16, write_string_with_length)
   stream.write_many_with_count(constants.multi_functions, uint16, write_string_with_length)
+
+########################################################################################################################
+# Meta shapes.                                                                                                         #
+########################################################################################################################
+
+proc read_meta_shape(stream: FileStream): PoemMetaShape =
+  let property_names = stream.read_many_with_count(string, uint8, read_string_with_length)
+  PoemMetaShape(property_names: property_names)
+
+proc write_meta_shape(stream: FileStream, meta_shape: PoemMetaShape) =
+  if not meta_shape.property_names.is_sorted():
+    fail(fmt"The property names {meta_shape.property_names} in a meta shape must be sorted lexicographically.")
+
+  let unique_names = meta_shape.property_names.deduplicate(is_sorted = true)
+  if unique_names != meta_shape.property_names:
+    fail(fmt"The property names {meta_shape.property_names} in a meta shape may not contain duplicates.")
+
+  stream.write_many_with_count(meta_shape.property_names, uint8, write_string_with_length)
 
 ########################################################################################################################
 # Global variables.                                                                                                    #
@@ -418,45 +449,40 @@ proc read_type(stream: FileStream): PoemType =
   let metadata = tag and 0b11111
 
   case kind
-  of tkBasic:
-    let tpe = case metadata
-    of btAny: types.any_type
-    of btNothing: types.nothing_type
-    of btInt: types.int_type
-    of btReal: types.real_type
-    of btBoolean: types.boolean_type
-    of btString: types.string_type
-    else: raise new_exception(IOError, fmt"Unknown basic type {metadata}.")
-    PoemBasicType(tpe: tpe)
-
-  of tkFixedSize:
+  of tkMetadataKinded:
     case metadata
-    of fsVariable:
+    of mkAny: PoemBasicType(tpe: types.any_type)
+    of mkNothing: PoemBasicType(tpe: types.nothing_type)
+    of mkInt: PoemBasicType(tpe: types.int_type)
+    of mkReal: PoemBasicType(tpe: types.real_type)
+    of mkBoolean: PoemBasicType(tpe: types.boolean_type)
+    of mkString: PoemBasicType(tpe: types.string_type)
+    of mkVariable:
       let index = stream.read(uint8)
       PoemTypeVariable(index: index)
-    of fsFunction:
+    of mkFunction:
       let input = stream.read_type()
       let output = stream.read_type()
       PoemXaryType(kind: Kind.Function, types: @[input, output])
-    of fsList:
+    of mkList:
       let element = stream.read_type()
       PoemXaryType(kind: Kind.List, types: @[element])
-    of fsMap:
+    of mkMap:
       let key = stream.read_type()
       let value = stream.read_type()
       PoemXaryType(kind: Kind.Map, types: @[key, value])
-    of fsSymbol:
+    of mkShape:
+      let meta_shape_index = stream.read(uint16)
+      let property_types = stream.read_many_with_count(PoemType, uint8, read_type)
+      PoemShapeType(meta_shape_index: meta_shape_index, property_types: property_types)
+    of mkSymbol:
       let name = stream.read_string_with_length()
       PoemSymbolType(name: name)
-    else: raise new_exception(IOError, fmt"Unknown fixed-size type {metadata}.")
+    else: raise new_exception(IOError, fmt"Unknown metadata-kinded type {metadata}.")
 
   of tkSum: stream.read_xary_type(Kind.Sum, metadata)
   of tkIntersection: stream.read_xary_type(Kind.Intersection, metadata)
   of tkTuple: stream.read_xary_type(Kind.Tuple, metadata)
-
-  of tkShape:
-    # TODO (vm): Implement shape type reading.
-    raise new_exception(IOError, "Reading shape types is not yet implemented.")
 
   of tkNamed:
     let name = stream.read_string_with_length()
@@ -474,21 +500,21 @@ proc write_type_tag(stream: FileStream, tag_kind: uint8, tag_metadata: uint8) =
 
 proc write_type_tag(stream: FileStream, kind: Kind, child_count: uint8) =
   let (tag_kind, tag_metadata) = case kind
-  of Kind.TypeVariable: (tkFixedSize, fsVariable)
-  of Kind.Any: (tkBasic, btAny)
-  of Kind.Nothing: (tkBasic, btNothing)
-  of Kind.Int: (tkBasic, btInt)
-  of Kind.Real: (tkBasic, btReal)
-  of Kind.Boolean: (tkBasic, btBoolean)
-  of Kind.String: (tkBasic, btString)
+  of Kind.TypeVariable: (tkMetadataKinded, mkVariable)
+  of Kind.Any: (tkMetadataKinded, mkAny)
+  of Kind.Nothing: (tkMetadataKinded, mkNothing)
+  of Kind.Int: (tkMetadataKinded, mkInt)
+  of Kind.Real: (tkMetadataKinded, mkReal)
+  of Kind.Boolean: (tkMetadataKinded, mkBoolean)
+  of Kind.String: (tkMetadataKinded, mkString)
   of Kind.Sum: (tkSum, child_count)
   of Kind.Intersection: (tkIntersection, child_count)
   of Kind.Tuple: (tkTuple, child_count)
-  of Kind.Function: (tkFixedSize, fsFunction)
-  of Kind.List: (tkFixedSize, fsList)
-  of Kind.Map: (tkFixedSize, fsMap)
-  of Kind.Symbol: (tkFixedSize, fsSymbol)
-  of Kind.Shape: (tkShape, child_count)
+  of Kind.Function: (tkMetadataKinded, mkFunction)
+  of Kind.List: (tkMetadataKinded, mkList)
+  of Kind.Map: (tkMetadataKinded, mkMap)
+  of Kind.Shape: (tkMetadataKinded, mkShape)
+  of Kind.Symbol: (tkMetadataKinded, mkSymbol)
   of Kind.Trait: (tkNamed, child_count)
   of Kind.Struct: (tkNamed, child_count)
   stream.write_type_tag(tag_kind, tag_metadata)
@@ -519,6 +545,15 @@ method write(tpe: PoemXaryType, stream: FileStream) =
 
   stream.write_type_tag(tpe.kind, length_to_tag_metadata(tpe.types.len))
   stream.write_many(tpe.types, write_type)
+
+method write(tpe: PoemShapeType, stream: FileStream) =
+  let property_types_count = uint64(tpe.property_types.len)
+  if property_types_count > 255:
+    fail(fmt"Shape types cannot have more than 255 property types.")
+
+  stream.write_type_tag(Kind.Shape)
+  stream.write(tpe.meta_shape_index)
+  stream.write_many_with_count(tpe.property_types, uint8, write_type)
 
 method write(tpe: PoemSymbolType, stream: FileStream) {.locks: "unknown".} =
   stream.write_type_tag(Kind.Symbol)

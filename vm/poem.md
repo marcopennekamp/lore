@@ -12,6 +12,8 @@ Concretely, a Poem file has the following structure:
   - **Constants** (Constants)
   - **Type declaration count** (uint16)
   - **Type declarations** (TypeDeclaration*)
+  - **Meta shape count** (uint16)
+  - **Meta shapes** (MetaShape*)
   - **Global variable count** (uint16)
   - **Global variables** (GlobalVariable*)
   - **Function count** (uint16)
@@ -34,11 +36,14 @@ The Constants table has the following structure:
   - **Multi-functions count** (uint16)
   - **Multi-functions** (String*): The full names of the multi-function references.
 
-### Schemas
+### Meta Shapes
 
-A **Schema** describes a user-defined *trait* or *struct* with optional type parameters.
+A **MetaShape** describes the property names that a shape type may have:
 
-TODO
+- **Property name count** (uint8)
+- **Property names** (String*)
+
+The property names must be ordered lexicographically and may not contain duplicates. A shape type and shape value must contain their property types/values in the order defined by the meta shape. The property name count of the meta shape directly determines the number of property types/values read for a shape type/value.
 
 ### Global Variables
 
@@ -75,6 +80,12 @@ Instructions are encoded as fixed-size instructions:
   - **Operation** (uint16)
   - **Arguments** (uint16 * 3)
 
+### Schemas
+
+A **Schema** describes a user-defined *trait* or *struct* with optional type parameters.
+
+TODO
+
 ### Type Parameters
 
 **TypeParameter** declarations have the following structure:
@@ -91,33 +102,30 @@ Instructions are encoded as fixed-size instructions:
 
 A **Type** is a particular instance of a type such as `Int`, `Real | Boolean`, or `(Position, Range)`. It has the following structure:
 
-  - **Type tag** (uint8): The kind of type and, possibly, metadata about its operands.
+  - **Type tag** (uint8): The kind of type and, possibly, information about its operand count.
     - **Kind** (bits 0-2):
-      - 000: Basic type (Any, Nothing, Int, Real, Boolean, String)
-      - 001: Fixed-size type (Variable, Function, List, Map, Symbol)
-      - 010: Sum
-      - 011: Intersection
-      - 100: Tuple
-      - 101: Shape
-      - 110: Named
+      - 000: Metadata-kinded type (Any, Nothing, Int, Real, Boolean, String, Variable, Function, List, Map, Shape, Symbol)
+      - 001: Sum
+      - 010: Intersection
+      - 011: Tuple
+      - 100: Named
     - **Metadata** (bits 3-7):
-      - Basic type:
+      - Metadata-kinded type:
         - 00000: Any
         - 00001: Nothing
         - 00010: Int
         - 00011: Real
         - 00100: Boolean
         - 00101: String
-      - Fixed-size type:
-        - 00000: Variable
-        - 00001: Function
-        - 00010: List
-        - 00011: Map
-        - 00100: Symbol
+        - 10000: Variable
+        - 10001: Function
+        - 10010: List
+        - 10011: Map
+        - 10100: Shape
+        - 10101: Symbol
       - Sum/Intersection/Tuple/Named: the number of operands (0 to 31)
-      - Shape: the number of properties (0 to 31)
   - **Operands**:
-    - Basic types:
+    - Any/Nothing/Int/Real/Boolean/String:
       - *None.*
     - Variable:
       - **Index** (uint8)
@@ -129,6 +137,10 @@ A **Type** is a particular instance of a type such as `Int`, `Real | Boolean`, o
     - Map:
       - **Key** (Type)
       - **Value** (Type)
+    - Shape:
+      - **Meta shape index** (uint16): An index into the poem's meta shape declarations, referring to the shape type's meta shape.
+      - **Property types count** (uint8): This count could be derived from the meta shape, but it would introduce data dependencies during reading which we want to avoid.
+      - **Property types** (Type*): The property types must be ordered in the manner prescribed by the meta shape.
     - Symbol:
       - **Name** (String)
     - Sum/Intersection/Tuple:
@@ -136,10 +148,6 @@ A **Type** is a particular instance of a type such as `Int`, `Real | Boolean`, o
     - Named:
       - **Name** (String)
       - **Type arguments** (Type*)
-    - Shape:
-      - **Properties** (ShapeProperty*):
-        - **Name** (String)
-        - **Type** (Type)
 
 ### Values
 

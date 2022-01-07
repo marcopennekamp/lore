@@ -3,8 +3,8 @@
 #### Features
 
 - Implement shapes:
-  - Shape types: ~~Type definition~~, ~~type equality~~, ~~subtyping~~, ~~type variable allocation~~, ~~type substitution~~, ~~type simplification~~, ~~to string~~, poem reading, poem writing, universe resolution.
-  - Shape values: Value definition, to string, poem reading, poem writing, universe resolution, indirect field access.
+  - Shape types: ~~Type definition~~, ~~type equality~~, ~~subtyping~~, ~~type variable allocation~~, ~~type substitution~~, ~~type simplification~~, ~~to string~~, ~~poem reading~~, ~~poem writing~~, universe resolution.
+  - Shape values: Value definition, to string, poem reading, poem writing, universe resolution, value construction operations, indirect field access.
 - Implement traits and structs:
   - Schemas: Schema definition, poem reading, poem writing, universe resolution.
   - Types: Type definition, type equality, subtyping, type variable allocations, type substitution, type simplification, to string, poem reading, poem writing, supertrait instantiation, open property types and `getPropertyType`, constructors, open type parameters and type paths.
