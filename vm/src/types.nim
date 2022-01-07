@@ -173,13 +173,15 @@ proc get_meta_shape*(property_names: ImSeq[string]): MetaShape =
     interned_meta_shapes[property_names] = meta_shape
   meta_shape
 
+proc get_meta_shape*(property_names: open_array[string]): MetaShape = get_meta_shape(new_immutable_seq(property_names))
+
 proc get_meta_shape_safe*(property_names: seq[string]): MetaShape =
   ## Creates a new meta shape from the given property names, or gets the interned version. The property names do not
   ## have to be sorted or unique.
   var names = property_names
   sort(names)
   names = deduplicate(names, is_sorted = true)
-  get_meta_shape(new_immutable_seq(names))
+  get_meta_shape(names)
 
 proc alloc_shape_type*(meta_shape: MetaShape): ShapeType =
   ## Allocates a new shape type with the correct number of property types, which must be initialized after.

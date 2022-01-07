@@ -85,6 +85,9 @@ proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
   for name in poem_constants.multi_functions:
     constants.multi_functions.add(universe.multi_functions[name])
 
+  for poem_meta_shape in poem_constants.meta_shapes:
+    constants.meta_shapes.add(types.get_meta_shape(poem_meta_shape.property_names))
+
   constants
 
 ########################################################################################################################
@@ -245,6 +248,11 @@ method resolve(poem_type: PoemXaryType, universe: Universe): Type =
     types.list(universe.resolve(poem_type.types[0]))
   else:
     quit(fmt"Unsupported kind {poem_type.kind}.")
+
+method resolve(poem_type: PoemShapeType, universe: Universe): Type {.locks: "unknown".} =
+  let meta_shape = types.get_meta_shape(poem_type.property_names)
+  let property_types = universe.resolve_many(poem_type.property_types)
+  types.new_shape_type(meta_shape, property_types)
 
 method resolve(poem_type: PoemSymbolType, universe: Universe): Type {.locks: "unknown".} = types.symbol(poem_type.name)
 
