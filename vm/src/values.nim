@@ -202,6 +202,9 @@ proc new_shape_value*(meta_shape: MetaShape, property_values: open_array[TaggedV
   shape_value.tpe = shape_type
   shape_value
 
+proc new_shape_value_tagged*(meta_shape: MetaShape, property_values: open_array[TaggedValue]): TaggedValue =
+  tag_reference(new_shape_value(meta_shape, property_values))
+
 ########################################################################################################################
 # Symbols.                                                                                                             #
 ########################################################################################################################

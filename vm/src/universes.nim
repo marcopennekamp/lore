@@ -7,7 +7,7 @@ import definitions
 import imseqs
 import poems
 from pyramid import nil
-from types import Kind, Type, TypeVariable, SumType, IntersectionType, TupleType, FunctionType, ListType, MapType, TypeParameter
+from types import Kind, Type, TypeVariable, SumType, IntersectionType, TupleType, FunctionType, ListType, MapType, ShapeType, TypeParameter
 from values import TaggedValue
 
 type
@@ -311,5 +311,12 @@ method resolve(poem_value: PoemListValue, universe: Universe): TaggedValue {.loc
   assert(tpe.kind == Kind.List)
   let elements = universe.resolve_many(poem_value.elements)
   values.new_list_tagged(new_immutable_seq(elements), tpe)
+
+method resolve(poem_value: PoemShapeValue, universe: Universe): TaggedValue {.locks: "unknown".} =
+  let tpe = universe.resolve(poem_value.tpe)
+  assert(tpe.kind == Kind.Shape)
+  let shape_type = cast[ShapeType](tpe)
+  let property_values = universe.resolve_many(poem_value.property_values)
+  values.new_shape_value_tagged(shape_type.meta, property_values)
 
 method resolve(poem_value: PoemSymbolValue, universe: Universe): TaggedValue {.locks: "unknown".} = values.new_symbol_tagged(poem_value.name)
