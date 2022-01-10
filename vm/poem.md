@@ -177,6 +177,8 @@ A **Value** is encoded as follows:
     - List:
       - **Element count** (uint16) 
       - **Elements** (Value*)
+    - Shape:
+      - **Property values** (Value*): The property values must be in the same order as the type's property names.
     - Symbol:
       - *Type* already carries the name of the symbol value.
     - TODO (vm): Describe value encodings for more value kinds.
