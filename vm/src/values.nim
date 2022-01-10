@@ -1,6 +1,7 @@
 import std/strformat, std/strutils
 
 import imseqs
+import property_index
 from types import Kind, MetaShape, Type, FunctionType, ShapeType
 from utils import call_if_any_exists
 
@@ -204,6 +205,10 @@ proc new_shape_value*(meta_shape: MetaShape, property_values: open_array[TaggedV
 
 proc new_shape_value_tagged*(meta_shape: MetaShape, property_values: open_array[TaggedValue]): TaggedValue =
   tag_reference(new_shape_value(meta_shape, property_values))
+
+proc get_property_value*(shape: ShapeValue, name: string): TaggedValue =
+  ## Gets the value associated with the property named `name`. The name must be a valid property.
+  shape.property_values[shape.meta.property_index.find_offset(name)]
 
 ########################################################################################################################
 # Symbols.                                                                                                             #

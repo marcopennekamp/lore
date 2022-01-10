@@ -89,9 +89,9 @@ type
   #            constant accordingly, but this is basically a no-op once optimized.
 
   Constants* = ref object
-    ## A Constants object provides quick access to predefined types, values, global variables, multi-functions, and
-    ## meta shapes. It may be shared across multiple function definitions. All entries are separately accessed by a
-    ## uint16.
+    ## A Constants object provides quick access to predefined types, values, names, intrinsics, global variables,
+    ## multi-functions, and meta shapes. It may be shared across multiple function definitions. All entries are
+    ## separately accessed by a uint16 index.
     ##
     ## Types and values are implicitly separated into monomorphic and polymorphic entities. A monomorphic type/value is
     ## guaranteed to contain no type variables can be used as is. A polymorphic type/value contains at least one type
@@ -100,6 +100,8 @@ type
     ## case of a polymorphic value, types will be substituted recursively into the value's children as well.
     types*: seq[Type]
     values*: seq[TaggedValue]
+    names*: seq[string]
+      ## Constant names are used for accessing properties.
     intrinsics*: seq[Intrinsic]
     global_variables*: seq[GlobalVariable]
     multi_functions*: seq[MultiFunction]

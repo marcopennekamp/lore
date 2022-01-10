@@ -4,7 +4,8 @@ type
     ##  - `argx`: The xth uint16 argument of the instruction (starting with 0).
     ##  - `reg(x)`: Register x.
     ##  - `tpe(x)`: The xth entry in the types constants table.
-    ##  - `val(x)`: The xth entry in the value constants table.
+    ##  - `val(x)`: The xth entry in the values constants table.
+    ##  - `nam(x)`: The xth entry in the names constants table.
     ##  - `intr(x)`: The xth entry in the intrinsics constants table.
     ##  - `glb(x)`: The xth entry in the global variables constants table.
     ##  - `mfs(x)`: The xth entry in the multi functions constants table.
@@ -81,6 +82,9 @@ type
 
     ListAppendUntyped
       ## reg(arg0) <- reg(arg1) :+ reg(arg2), with type of `reg(arg1)`
+
+    ShapeGetProperty
+      ## reg(arg0) <- reg(arg1)[nam(arg2)]
 
     SymbolEq
       ## reg(arg0) <- reg(arg1) == reg(arg2)

@@ -85,6 +85,7 @@ template const_value_arg(index): untyped = const_value(instruction.arg(index))
 template const_value_ref(index, tpe): untyped = untag_reference(const_value(index), tpe)
 template const_value_ref_arg(index, tpe): untyped = const_value_ref(instruction.arg(index), tpe)
 
+template const_name_arg(index): untyped = constants.names[instruction.arg(index)]
 template const_intrinsic_arg(index): untyped = constants.intrinsics[instruction.arg(index)]
 template const_global_variable_arg(index): untyped = constants.global_variables[instruction.arg(index)]
 template const_multi_function_arg(index): untyped = constants.multi_functions[instruction.arg(index)]
@@ -264,6 +265,11 @@ proc evaluate(frame: FramePtr) =
     of Operation.ListAppendUntyped:
       let list = reg_get_ref_arg(1, ListValue)
       list_append(list.tpe)
+
+    of Operation.ShapeGetProperty:
+      let shape = reg_get_ref_arg(1, ShapeValue)
+      let name = const_name_arg(2)
+      reg_set_arg(0, shape.get_property_value(name))
 
     of Operation.SymbolEq:
       let a = reg_get_ref_arg(1, SymbolValue)

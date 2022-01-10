@@ -27,6 +27,7 @@ type
   PoemConstants* = ref object
     types*: seq[PoemType]
     values*: seq[PoemValue]
+    names*: seq[string]
     intrinsics*: seq[string]
     global_variables*: seq[string]
     multi_functions*: seq[string]
@@ -298,6 +299,7 @@ proc write*(path: string, poem: Poem) =
 proc read_constants(stream: FileStream): PoemConstants =
   let types = stream.read_many_with_count(PoemType, uint16, read_type)
   let values = stream.read_many_with_count(PoemValue, uint16, read_value)
+  let names = stream.read_many_with_count(string, uint16, read_string_with_length)
   let intrinsics = stream.read_many_with_count(string, uint16, read_string_with_length)
   let global_variables = stream.read_many_with_count(string, uint16, read_string_with_length)
   let multi_functions = stream.read_many_with_count(string, uint16, read_string_with_length)
@@ -306,6 +308,7 @@ proc read_constants(stream: FileStream): PoemConstants =
   PoemConstants(
     types: types,
     values: values,
+    names: names,
     intrinsics: intrinsics,
     global_variables: global_variables,
     multi_functions: multi_functions,
@@ -315,6 +318,7 @@ proc read_constants(stream: FileStream): PoemConstants =
 proc write_constants(stream: FileStream, constants: PoemConstants) =
   stream.write_many_with_count(constants.types, uint16, write_type)
   stream.write_many_with_count(constants.values, uint16, write_value)
+  stream.write_many_with_count(constants.names, uint16, write_string_with_length)
   stream.write_many_with_count(constants.intrinsics, uint16, write_string_with_length)
   stream.write_many_with_count(constants.global_variables, uint16, write_string_with_length)
   stream.write_many_with_count(constants.multi_functions, uint16, write_string_with_length)

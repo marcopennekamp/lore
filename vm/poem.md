@@ -27,6 +27,8 @@ The Constants table has the following structure:
   - **Types** (Type*)
   - **Values count** (uint16)
   - **Values** (Value*)
+  - **Names count** (uint16)
+  - **Names** (String*)
   - **Intrinsics count** (uint16)
   - **Intrinsics** (String*): The full names of the intrinsic references.
   - **Global variables count** (uint16)
