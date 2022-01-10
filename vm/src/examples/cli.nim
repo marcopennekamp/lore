@@ -23,6 +23,7 @@ from list_appends import nil
 from list_concat import nil
 from list_get import nil
 from list_print_each import nil
+from shape_constant import nil
 from stats import nil
 from tau import nil
 
@@ -50,6 +51,7 @@ let examples = @[
   Example(name: "list_get", poem: list_get.poem, main: "test", runs: 25_000_000),
   # `list_print_each` shouldn't be benchmarked because it prints to stdout.
   Example(name: "list_print_each", poem: list_print_each.poem, main: "test", runs: 0),
+  Example(name: "shape_constant", poem: shape_constant.poem, main: "test", runs: 25_000_000),
   Example(name: "stats", poem: stats.poem, main: "test", runs: 5_000_000),
   Example(name: "tau", poem: tau.poem, main: "test", runs: 25_000_000),
 ]
