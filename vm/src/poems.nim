@@ -170,6 +170,7 @@ proc list_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemListV
 
 proc shape_type*(property_names: seq[string], property_types: seq[PoemType]): PoemType = PoemShapeType(property_names: property_names, property_types: property_types)
 proc shape_value*(tpe: PoemShapeType, property_values: seq[PoemValue]): PoemValue = PoemShapeValue(tpe: tpe, property_values: property_values)
+proc shape_value_cast_type*(tpe: PoemType, property_values: seq[PoemValue]): PoemValue = PoemShapeValue(tpe: cast[PoemShapeType](tpe), property_values: property_values)
 proc shape_value*(property_names: seq[string], property_types: seq[PoemType], property_values: seq[PoemValue]): PoemValue =
   shape_value(cast[PoemShapeType](shape_type(property_names, property_types)), property_values)
 
