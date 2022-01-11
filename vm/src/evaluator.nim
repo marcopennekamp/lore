@@ -89,6 +89,7 @@ template const_name_arg(index): untyped = constants.names[instruction.arg(index)
 template const_intrinsic_arg(index): untyped = constants.intrinsics[instruction.arg(index)]
 template const_global_variable_arg(index): untyped = constants.global_variables[instruction.arg(index)]
 template const_multi_function_arg(index): untyped = constants.multi_functions[instruction.arg(index)]
+template const_meta_shape_arg(index): untyped = constants.meta_shapes[instruction.arg(1)]
 
 template list_append(new_tpe): untyped =
   let list = reg_get_ref_arg(1, ListValue)
@@ -265,6 +266,23 @@ proc evaluate(frame: FramePtr) =
     of Operation.ListAppendUntyped:
       let list = reg_get_ref_arg(1, ListValue)
       list_append(list.tpe)
+
+    of Operation.Shape:
+      let meta_shape = const_meta_shape_arg(1)
+      let first = instruction.arg(2)
+      let last = instruction.arg(3)
+
+      # We can just pass the register array with the correct first and last indices for shape creation. There is no
+      # need to allocate an intermediate sequence.
+      reg_set_ref_arg(0, values.new_shape_value(meta_shape, to_open_array(addr frame.registers, int(first), int(last))))
+
+    of Operation.Shape1:
+      let meta_shape = const_meta_shape_arg(1)
+      reg_set_ref_arg(0, values.new_shape_value(meta_shape, [reg_get_arg(2)]))
+
+    of Operation.Shape2:
+      let meta_shape = const_meta_shape_arg(1)
+      reg_set_ref_arg(0, values.new_shape_value(meta_shape, [reg_get_arg(2), reg_get_arg(3)]))
 
     of Operation.ShapeGetProperty:
       let shape = reg_get_ref_arg(1, ShapeValue)

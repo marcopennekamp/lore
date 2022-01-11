@@ -9,6 +9,7 @@ type
     ##  - `intr(x)`: The xth entry in the intrinsics constants table.
     ##  - `glb(x)`: The xth entry in the global variables constants table.
     ##  - `mfs(x)`: The xth entry in the multi functions constants table.
+    ##  - `mtsh(x)`: The xth entry in the meta shapes constants table.
     ##  - `substitute(t)`: Substitutes the current function instance's type arguments into type `t`.
     ##  - `substitute_types(v)`: Substitutes the current function instance's type arguments into value `v`.
 
@@ -82,6 +83,15 @@ type
 
     ListAppendUntyped
       ## reg(arg0) <- reg(arg1) :+ reg(arg2), with type of `reg(arg1)`
+
+    Shape
+      ## reg(arg0) <- shape(mtsh(arg1), reg(arg2), reg(arg2 + 1), ..., reg(arg3))
+
+    Shape1
+      ## reg(arg0) <- shape(mtsh(arg1), reg(arg2))
+
+    Shape2
+      ## reg(arg0) <- shape(mtsh(arg1), reg(arg2), reg(arg3))
 
     ShapeGetProperty
       ## reg(arg0) <- reg(arg1)[nam(arg2)]
