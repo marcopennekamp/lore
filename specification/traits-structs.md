@@ -106,25 +106,25 @@ object None extends Option[Nothing]
 // Accessing an object via its name.
 let option: Option[Int] = None
 
-// Objects (None) can be used in the properties of other objects (Game). Note that this particular example essentially
-// creates mutable global state, which should be avoided if possible. Handle mutability with care!
-object Game(mut name: String = 'Garfield')
+// Objects (None) can be used in the properties of other objects (Game). This particular example essentially creates 
+// mutable global state, which should be avoided if possible. Handle mutability with care!
 object Game do
+  name: String = 'Match Four'
   mut player: Option[Player] = None
 end
 ```
 
-Note that a **block-style** object requires the keyword `do`. This is because a very important form of objects, propertyless "empty" objects, can be declared without parentheses and the `end` keyword. The approachable syntax for this common case introduces an ambiguity for block-style objects regarding the `end` keyword. It is resolved with the `do`.
+Note that a **block-style** object requires the keyword `do`. This is because a very important form of objects, propertyless "empty" objects like `None` in the example, can be declared without parentheses and the `end` keyword. The approachable syntax for this common case introduces an ambiguity for block-style objects in the `end` keyword. It is resolved with the `do`.
 
 
 
 ### Inheritance
 
-Traits and structs can **inherit** from any number of traits and shapes. A trait or struct `A` inheriting from a trait or shape `B` will induce the strict subtyping relationship `A < B`.
+Traits and structs can **inherit** from any number of traits and shapes. A trait or struct `A` directly inheriting from a trait or shape `B` will induce the strict, direct subtyping relationship `A < B`.
 
-**Structs cannot be extended**. Traits are the mechanism for building type hierarchies, which has the huge advantage of cleanly separating the concerns of data representation (structs) and abstract structure/behavior (traits, shapes).
+**Structs cannot be extended**. Traits are the mechanism for building type hierarchies, which has the advantage of cleanly separating the concerns of data representation (structs) and abstract structure/behavior (traits, shapes).
 
-If a trait or struct inherits from a shape directly or indirectly, all properties declared in the shape will become members of the trait or struct. The combined properties of all extended shape types are called the **inherited shape type**. This type definitely specifies all properties of a trait. A struct, in contrast, treats the inherited shape type as a contract: it must specify all properties contained in the inherited shape type as struct properties, with compatible types.
+If a trait inherits from a shape directly or indirectly, all properties declared in the shape will become (virtual) members of the trait. The combination of all extended shape types is called the **inherited shape type**. This type definitely specifies all properties of a trait. A struct, in contrast, treats the inherited shape type as a contract: it must specify all properties contained in the inherited shape type as struct properties, with compatible types.
 
 Since a struct is always a concrete type, **all abstract functions** of the traits a struct extends will have to be implemented for the struct. This is implicitly handled by the constraints governing abstract functions and doesn't need to be handled specially for structs.
 
@@ -146,7 +146,7 @@ func hash(person: Person): Int = /* Compute the hash... */
 
 A trait or struct may be parameterized over any number of **type variables**. The presence of a type variable effectively turns the trait or struct into a *family of types*, called a **schema**. This has additional implications, especially for run-time type semantics.
 
-Type parameters are **declared** as such, the syntax mirroring multi-function type parameter declarations:
+Type parameters are **declared** as such, with the syntax mirroring other type parameter declarations:
 
 ```
 trait X[A, B <: A, C >: A]
@@ -220,7 +220,7 @@ If `A` is fixed at compile-time, `process(Some(animal))` will evaluate to "Maybe
 - Open type variables must be **uniquely deducible**. This means that the type variable may only occur in one position of a single property.
 - Properties typed with an open type variable must be **immutable**.
 
-The option examples demonstrates how open type variables can be **declared:**
+The option example demonstrates how open type variables can be **declared:**
 
 ```
 trait Option[+A]
