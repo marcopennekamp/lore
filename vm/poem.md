@@ -10,8 +10,8 @@ Concretely, a Poem file has the following structure:
 
   - **Magic bytes** (char * 4): Always the string `poem` encoded in ASCII.
   - **Constants** (Constants)
-  - **Type declaration count** (uint16)
-  - **Type declarations** (TypeDeclaration*)
+  - **Schema count** (uint16)
+  - **Schemas** (Schema*)
   - **Global variable count** (uint16)
   - **Global variables** (GlobalVariable*)
   - **Function count** (uint16)
@@ -37,6 +37,25 @@ The Constants table has the following structure:
   - **Multi-functions** (String*): The full names of the multi-function references.
   - **Meta shape count** (uint16)
   - **Meta shapes** (MetaShape*): These meta shapes are exclusively used by instructions creating new shape instances. They are not referenced by constant types or values.
+
+### Schemas
+
+A **Schema** describes a user-defined *trait* or *struct* with optional type parameters. It's represented as follows:
+
+  - **Kind** (uint8):
+    - 0: Trait
+    - 1: Struct
+  - **Name** (String)
+  - **Type parameter count** (uint8): Maximum 32.
+  - **Type parameters** (TypeParameter*)
+  - **Supertrait count** (uint8)
+  - **Supertraits** (NamedType*): The schema's directly extended supertraits.
+  - If `Trait`:
+    - **Inherited shape type** (ShapeType)
+  - If `Struct`:
+    - TODO
+
+Any types inside any of the schema's fields may contain type variables that refer to the schema's type parameters.
 
 ### Global Variables
 
@@ -80,13 +99,7 @@ A **MetaShape** describes the property names that a shape may have:
 - **Property name count** (uint8)
 - **Property names** (String*)
 
-The property names must be ordered lexicographically and may not contain duplicates. Meta shapes for constant types and values are defined ad-hoc, to avoid complex dependencies within poems. This MetaShape structure is placed in the constants table and used by instructions that build shape values. 
-
-### Schemas
-
-A **Schema** describes a user-defined *trait* or *struct* with optional type parameters.
-
-TODO
+The property names must be ordered lexicographically and may not contain duplicates. Meta shapes for constant types and values are defined ad-hoc, to avoid complex dependencies within poems. This MetaShape structure is placed in the constants table and used by instructions that build shape values.
 
 ### Type Parameters
 

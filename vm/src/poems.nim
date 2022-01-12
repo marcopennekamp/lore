@@ -21,6 +21,7 @@ type
     ##
     ## `.poem` files must be encoded in big endian.
     constants*: PoemConstants
+    schemas*: seq[PoemSchema]
     global_variables*: seq[PoemGlobalVariable]
     functions*: seq[PoemFunction]
 
@@ -32,6 +33,18 @@ type
     global_variables*: seq[string]
     multi_functions*: seq[string]
     meta_shapes*: seq[PoemMetaShape]
+
+  PoemSchema* = ref object of RootObj
+    kind: Kind
+    name: string
+    type_parameters: seq[PoemTypeParameter]
+    supertraits: seq[PoemNamedType]
+
+  PoemTraitSchema* = ref object of PoemSchema
+    inherited_shape_type: PoemShapeType
+
+  PoemStructSchema* = ref object of PoemSchema
+    discard
 
   PoemGlobalVariable* = ref object of RootObj
     name*: string
@@ -205,10 +218,6 @@ const
 
 proc fail(message: string) {.noreturn.} = raise new_exception(IOError, message)
 
-proc ensure_type_parameter_count(function_name: string, type_parameter_count: int) =
-  if type_parameter_count > types.max_type_parameters:
-    fail(fmt"The function {function_name} has {type_parameter_count} type parameters, but the maximum is {types.max_type_parameters}.")
-
 ########################################################################################################################
 # Read and write helpers.                                                                                              #
 ########################################################################################################################
@@ -231,6 +240,8 @@ template write_many(stream: FileStream, items, write_one): untyped =
 
 template write_many_with_count(stream: FileStream, items, count_type, write_one): untyped =
   let count = count_type(items.len)
+  if count > high(count_type):
+    raise new_exception(IOError, "Cannot write {count} elements: The count type is too small.")
   stream.write(count)
   stream.write_many(items, write_one)
 
@@ -239,22 +250,24 @@ template write_many_with_count(stream: FileStream, items, count_type, write_one)
 ########################################################################################################################
 
 proc read_constants(stream: FileStream): PoemConstants
+proc read_schema(stream: FileStream): PoemSchema
 proc read_global_variable(stream: FileStream): PoemGlobalVariable
 proc read_function(stream: FileStream): PoemFunction
 proc read_instruction(stream: FileStream): Instruction
 proc read_meta_shape(stream: FileStream): PoemMetaShape
-proc read_type_parameter(stream: FileStream): PoemTypeParameter
+proc read_type_parameters(stream: FileStream): seq[PoemTypeParameter]
 proc read_type(stream: FileStream): PoemType
 proc read_value(stream: FileStream): PoemValue
 proc read_string_with_length(stream: FileStream): string
 
 proc write_constants(stream: FileStream, constants: PoemConstants)
+proc write_schema(stream: FileStream, schema: PoemSchema)
 proc write_global_variable(stream: FileStream, global_variable: PoemGlobalVariable)
 proc write_function(stream: FileStream, function: PoemFunction)
 proc write_instruction(stream: FileStream, instruction: Instruction)
 proc write_meta_shape(stream: FileStream, meta_shape: PoemMetaShape)
 proc write_shape_property_names(stream: FileStream, property_names: seq[string], with_count: bool)
-proc write_type_parameter(stream: FileStream, parameter: PoemTypeParameter)
+proc write_type_parameters(stream: FileStream, type_parameters: seq[PoemTypeParameter])
 proc write_type(stream: FileStream, tpe: PoemType)
 proc write_value(stream: FileStream, value: PoemValue)
 proc write_string_with_length(stream: FileStream, string: string)
@@ -326,6 +339,56 @@ proc write_constants(stream: FileStream, constants: PoemConstants) =
   stream.write_many_with_count(constants.meta_shapes, uint16, write_meta_shape)
 
 ########################################################################################################################
+# Schemas.                                                                                                             #
+########################################################################################################################
+
+proc read_schema(stream: FileStream): PoemSchema =
+  let kind_code = stream.read(uint8)
+  let kind =
+    case kind_code
+    of 0: Kind.Trait
+    of 1: Kind.Struct
+    else: raise new_exception(IOError, fmt"Unknown schema kind {kind_code}.")
+  let name = stream.read_string_with_length()
+  let type_parameters = stream.read_type_parameters()
+  let supertraits = stream.read_many_with_count(PoemType, uint8, read_type)
+  for supertrait in supertraits:
+    if not (supertrait of PoemNamedType):
+      raise new_exception(IOError, fmt"The schema {name} has supertraits which are not NamedTypes. All supertraits must be NamedTypes.")
+
+  if kind == Kind.Trait:
+    let inherited_shape_type = stream.read_type()
+    if not (inherited_shape_type of PoemShapeType):
+      raise new_exception(IOError, fmt"The trait schema {name} has an inherited shape type which is not a ShapeType.")
+
+    PoemTraitSchema(
+      kind: kind,
+      name: name,
+      type_parameters: type_parameters,
+      supertraits: cast[seq[PoemNamedType]](supertraits),
+      inherited_shape_type: cast[PoemShapeType](inherited_shape_type),
+    )
+  else:
+    raise new_exception(IOError, "Struct schemas are not implemented yet.")
+
+proc write_schema(stream: FileStream, schema: PoemSchema) =
+  let kind_code: uint8 =
+    case schema.kind
+    of Kind.Trait: 0'u8
+    of Kind.Struct: 1'u8
+    else: raise new_exception(IOError, fmt"Invalid schema kind {schema.kind}.")
+  stream.write(kind_code)
+  stream.write_string_with_length(schema.name)
+  stream.write_type_parameters(schema.type_parameters)
+  stream.write_many_with_count(schema.supertraits, uint8, write_type)
+
+  if schema of PoemTraitSchema:
+    let schema = cast[PoemTraitSchema](schema)
+    stream.write_type(schema.inherited_shape_type)
+  else:
+    raise new_exception(IOError, "Struct schemas are not implemented yet.")
+
+########################################################################################################################
 # Global variables.                                                                                                    #
 ########################################################################################################################
 
@@ -361,12 +424,10 @@ method write(global_variable: PoemLazyGlobalVariable, stream: FileStream) {.lock
 
 proc read_function(stream: FileStream): PoemFunction =
   let name = stream.read_string_with_length()
-  let type_parameters = stream.read_many_with_count(PoemTypeParameter, uint8, read_type_parameter)
+  let type_parameters = stream.read_type_parameters()
   let input_type = stream.read_type()
   let output_type = stream.read_type()
   let is_abstract = stream.read(bool)
-
-  ensure_type_parameter_count(name, type_parameters.len)
 
   var function = PoemFunction(
     name: name,
@@ -392,10 +453,8 @@ proc read_instruction(stream: FileStream): Instruction =
   )
 
 proc write_function(stream: FileStream, function: PoemFunction) =
-  ensure_type_parameter_count(function.name, function.type_parameters.len)
-
   stream.write_string_with_length(function.name)
-  stream.write_many_with_count(function.type_parameters, uint8, write_type_parameter)
+  stream.write_type_parameters(function.type_parameters)
   stream.write_type(function.input_type)
   stream.write_type(function.output_type)
   stream.write(function.is_abstract)
@@ -437,6 +496,10 @@ proc write_shape_property_names(stream: FileStream, property_names: seq[string],
 # Type parameters.                                                                                                     #
 ########################################################################################################################
 
+proc ensure_type_parameter_count(type_parameter_count: int) =
+  if type_parameter_count > types.max_type_parameters:
+    fail(fmt"A schema or function has {type_parameter_count} type parameters, but the maximum is {types.max_type_parameters}.")
+
 proc read_type_parameter(stream: FileStream): PoemTypeParameter =
   let name = stream.read_string_with_length()
   let lower_bound = stream.read_type()
@@ -450,11 +513,20 @@ proc read_type_parameter(stream: FileStream): PoemTypeParameter =
     variance: variance,
   )
 
+proc read_type_parameters(stream: FileStream): seq[PoemTypeParameter] =
+  let type_parameters = stream.read_many_with_count(PoemTypeParameter, uint8, read_type_parameter)
+  ensure_type_parameter_count(type_parameters.len)
+  type_parameters
+
 proc write_type_parameter(stream: FileStream, parameter: PoemTypeParameter) =
   stream.write_string_with_length(parameter.name)
   stream.write_type(parameter.lower_bound)
   stream.write_type(parameter.upper_bound)
   stream.write(uint8(ord(parameter.variance)))
+
+proc write_type_parameters(stream: FileStream, type_parameters: seq[PoemTypeParameter]) =
+  ensure_type_parameter_count(type_parameters.len)
+  stream.write_many_with_count(type_parameters, uint8, write_type_parameter)
 
 ########################################################################################################################
 # Types.                                                                                                               #

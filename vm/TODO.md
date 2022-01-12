@@ -6,11 +6,13 @@
   - Schemas: Schema definition, poem reading, poem writing, universe resolution.
   - Types: Type definition, type equality, subtyping, type variable allocations, type substitution, type simplification, to string, poem reading, poem writing, supertrait instantiation, open property types and `getPropertyType`, constructors, open type parameters and type paths.
   - Values: Struct values, struct memory layout, poem reading, poem writing, constructors, direct and indirect property access, constructor functions, interned objects.
+  - Clear all `TODO (vm/schemas)` entries.
 - Figure out how to pass a surrounding function's type arguments to lambdas created within the function.
 - Implement declared type interning:
   - Implement hashing for all types.
     - Clear all `TODO (vm/hash)` entries.
   - Cache declared types within a schema.
+  - Clear all `TODO (vm/intern)` entries.
 - Implement symbol type/value interning.
   - Symbols can be represented by an integer into a symbol table that is resolved with the universe. We can use one of the unused tag bit patterns to avoid any allocations.
 - Implement a dispatch cache.
