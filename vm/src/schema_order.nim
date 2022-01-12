@@ -14,7 +14,7 @@ type
 
 proc new_schema_dependency_graph*(): SchemaDependencyGraph = SchemaDependencyGraph(table: new_table[string, HashSet[string]]())
 
-proc add_dependency*(graph: SchemaDependencyGraph, dependant: string, dependency: string) =
+proc add_dependency*(graph: var SchemaDependencyGraph, dependant: string, dependency: string) =
   discard graph.table.mget_or_put(dependant, init_hash_set[string]())
   graph.table.mget_or_put(dependency, init_hash_set[string]()).incl(dependant)
 

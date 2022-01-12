@@ -7,15 +7,20 @@ import definitions
 import imseqs
 import poems
 from pyramid import nil
-from types import Kind, Type, TypeVariable, SumType, IntersectionType, TupleType, FunctionType, ListType, MapType, ShapeType, TypeParameter
+import schema_order
+from types import Kind, Schema, Type, TypeParameter, TypeVariable, SumType, IntersectionType, TupleType, FunctionType,
+                  ListType, MapType, ShapeType, DeclaredType, TraitType
 from values import TaggedValue
 
 type
   Universe* = ref object
     ## The Universe object provides access to all top-level entities of the current Lore program.
-    intrinsics*: Table[string, Intrinsic]
-    global_variables*: Table[string, GlobalVariable]
-    multi_functions*: Table[string, MultiFunction]
+    intrinsics*: TableRef[string, Intrinsic]
+    schemas*: TableRef[string, Schema]
+    global_variables*: TableRef[string, GlobalVariable]
+    multi_functions*: TableRef[string, MultiFunction]
+
+proc resolve_schemas(universe: Universe, poems: seq[Poem])
 
 proc resolve(universe: Universe, poem_global_variable: PoemGlobalVariable)
 proc resolve(universe: Universe, poem_constants: PoemConstants): Constants
@@ -35,26 +40,41 @@ proc attach_constants(universe: Universe, poem: Poem)
 proc resolve*(poems: seq[Poem]): Universe =
   ## Resolves a Universe from the given set of Poem definitions.
   ##
-  ## Multi-functions have to be resolved right away such that constants tables for each Poem can point to
-  ## multi-functions and also fixed functions. Constants tables for all functions are then resolved in a separate step.
+  ## Schemas have to be resolved first, as types in global variables and functions may refer to any schema. Because
+  ## schemas can reference each other, we have to resolve them in a specific order based on their dependencies. In
+  ## addition, struct schema properties must be resolved in a second step because they may reference any type, and
+  ## after functions due to default values.
+  ##
+  ## Multi-functions have to be resolved before constants tables so that constants tables for each Poem can point to
+  ## multi-functions and fixed functions. Constants tables for all functions are then resolved in a separate step.
   ## Global variables are resolved after functions, because lazy global variables point to a Function initializer.
-  var universe = Universe()
+  var universe = Universe(
+    intrinsics: new_table[string, Intrinsic](),
+    schemas: new_table[string, Schema](),
+    global_variables: new_table[string, GlobalVariable](),
+    multi_functions: new_table[string, MultiFunction](),
+  )
+
+  # TODO (vm/schemas): Do we really have to resolve properties after functions?
 
   # Step 1: Register intrinsics first, as they have no dependencies.
   for intrinsic in pyramid.intrinsics:
     universe.intrinsics[intrinsic.name] = intrinsic
 
-  # Step 2: Resolve functions.
+  # Step 2: Resolve schemas.
+  universe.resolve_schemas(poems)
+
+  # Step 3: Resolve functions.
   for poem in poems:
     for poem_function in poem.functions:
       universe.resolve(poem_function)
 
-  # Step 3: Resolve global variables.
+  # Step 4: Resolve global variables.
   for poem in poems:
     for poem_global_variable in poem.global_variables:
       universe.resolve(poem_global_variable)
 
-  # Step 4: Resolve constants and attach them to all functions in each Poem.
+  # Step 5: Resolve constants and attach them to all functions in each Poem.
   for poem in poems:
     universe.attach_constants(poem)
 
@@ -91,6 +111,67 @@ proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
     constants.meta_shapes.add(types.get_meta_shape(poem_meta_shape.property_names))
 
   constants
+
+########################################################################################################################
+# Schema resolution.                                                                                                   #
+########################################################################################################################
+
+proc get_schema_dependencies(poem_schema: PoemSchema): seq[string] =
+  ## Collects the names of all schemas that `poem_schema` depends on.
+  var dependencies = new_seq[string]()
+
+  for parameter in poem_schema.type_parameters:
+    poems.collect_type_name_dependencies(parameter, dependencies)
+  for supertrait in poem_schema.supertraits:
+    poems.collect_type_name_dependencies(supertrait, dependencies)
+
+  if poem_schema.kind == Kind.Trait:
+    let poem_schema = cast[PoemTraitSchema](poem_schema)
+    poems.collect_type_name_dependencies(poem_schema.inherited_shape_type, dependencies)
+  else:
+    quit("`get_schema_dependencies` for struct schemas is not yet implemented.")
+
+  dependencies
+
+proc resolve_schema(universe: Universe, poem_schema: PoemSchema): Schema =
+  let type_parameters = new_immutable_seq(universe.resolve_many(poem_schema.type_parameters))
+
+  # The poem reader ensures that the supertraits are all named types, but we have to additionally rule out that some of
+  # these named types might be structs.
+  let supertypes = new_immutable_seq(universe.resolve_many(poem_schema.supertraits))
+  for supertype in supertypes:
+    if supertype.kind != Kind.Trait:
+      quit(fmt"The schema {poem_schema.name} has a supertrait which isn't a trait.")
+  let supertraits = cast[ImSeq[TraitType]](supertypes)
+
+  if poem_schema.kind == Kind.Trait:
+    let poem_schema = cast[PoemTraitSchema](poem_schema)
+    # The poem reader ensures that this is a shape type, so we can just cast!
+    let inherited_shape_type = cast[ShapeType](universe.resolve(poem_schema.inherited_shape_type))
+    types.new_trait_schema(poem_schema.name, type_parameters, supertraits, inherited_shape_type)
+  else:
+    quit("`resolve_schema` for struct schemas is not yet implemented.")
+
+proc resolve_schemas(universe: Universe, poems: seq[Poem]) =
+  ## Resolves all schemas in their resolution order.
+  # TODO (vm/schemas): Do we resolve properties here or do we wait until functions are resolved?
+  var poem_schemas = new_table[string, PoemSchema]()
+  for poem in poems:
+    for poem_schema in poem.schemas:
+      if poem_schema.name in poem_schemas:
+        quit(fmt"The poem schema {poem_schema.name} is declared twice. All schema names must be unique!")
+      poem_schemas[poem_schema.name] = poem_schema
+
+  var dependency_graph = new_schema_dependency_graph()
+  for poem_schema in poem_schemas.values():
+    let dependencies = get_schema_dependencies(poem_schema)
+    for dependency in dependencies:
+      dependency_graph.add_dependency(poem_schema.name, dependency)
+
+  let resolution_order = dependency_graph.sort_topological()
+  for name in resolution_order:
+    let schema = universe.resolve_schema(poem_schemas[name])
+    universe.schemas[name] = schema
 
 ########################################################################################################################
 # Global variable resolution.                                                                                          #

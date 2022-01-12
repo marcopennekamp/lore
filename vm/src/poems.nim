@@ -35,13 +35,13 @@ type
     meta_shapes*: seq[PoemMetaShape]
 
   PoemSchema* = ref object of RootObj
-    kind: Kind
-    name: string
-    type_parameters: seq[PoemTypeParameter]
-    supertraits: seq[PoemNamedType]
+    kind*: Kind
+    name*: string
+    type_parameters*: seq[PoemTypeParameter]
+    supertraits*: seq[PoemNamedType]
 
   PoemTraitSchema* = ref object of PoemSchema
-    inherited_shape_type: PoemShapeType
+    inherited_shape_type*: PoemShapeType
 
   PoemStructSchema* = ref object of PoemSchema
     discard
@@ -181,11 +181,14 @@ proc multi_function_value*(name: string, tpe: PoemType): PoemValue = PoemMultiFu
 proc list_type*(element_type: PoemType): PoemType = PoemXaryType(kind: Kind.List, types: @[element_type])
 proc list_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemListValue(tpe: tpe, elements: elements)
 
-proc shape_type*(property_names: seq[string], property_types: seq[PoemType]): PoemType = PoemShapeType(property_names: property_names, property_types: property_types)
+proc shape_type_concrete*(property_names: seq[string], property_types: seq[PoemType]): PoemShapeType = PoemShapeType(property_names: property_names, property_types: property_types)
+proc shape_type*(property_names: seq[string], property_types: seq[PoemType]): PoemType = shape_type_concrete(property_names, property_types)
 proc shape_value*(tpe: PoemShapeType, property_values: seq[PoemValue]): PoemValue = PoemShapeValue(tpe: tpe, property_values: property_values)
 proc shape_value_cast_type*(tpe: PoemType, property_values: seq[PoemValue]): PoemValue = PoemShapeValue(tpe: cast[PoemShapeType](tpe), property_values: property_values)
 proc shape_value*(property_names: seq[string], property_types: seq[PoemType], property_values: seq[PoemValue]): PoemValue =
-  shape_value(cast[PoemShapeType](shape_type(property_names, property_types)), property_values)
+  shape_value(shape_type_concrete(property_names, property_types), property_values)
+
+let empty_shape_type*: PoemShapeType = shape_type_concrete(@[], @[])
 
 proc symbol_type*(name: string): PoemType = PoemSymbolType(name: name)
 proc symbol_value*(name: string): PoemValue = PoemSymbolValue(name: name)
@@ -783,3 +786,30 @@ proc write_string_with_length(stream: FileStream, string: string) =
 
   stream.write(cast[uint16](string.len))
   stream.write_str(string)
+
+
+########################################################################################################################
+# Type names.                                                                                                          #
+########################################################################################################################
+
+method collect_type_name_dependencies*(tpe: PoemType, dependencies: var seq[string]) {.base, locks: "unknown".} =
+  ## Adds all type names which this type references to `dependencies`. May add duplicates.
+  discard
+
+method collect_type_name_dependencies*(tpe: PoemXaryType, dependencies: var seq[string]) {.locks: "unknown".} =
+  for t in tpe.types:
+    collect_type_name_dependencies(t, dependencies)
+
+method collect_type_name_dependencies*(tpe: PoemShapeType, dependencies: var seq[string]) {.locks: "unknown".} =
+  for t in tpe.property_types:
+    collect_type_name_dependencies(t, dependencies)
+
+method collect_type_name_dependencies*(tpe: PoemNamedType, dependencies: var seq[string]) {.locks: "unknown".} =
+  dependencies.add(tpe.name)
+  for t in tpe.arguments:
+    collect_type_name_dependencies(t, dependencies)
+
+proc collect_type_name_dependencies*(type_parameter: PoemTypeParameter, dependencies: var seq[string]) =
+  ## Adds all type names which the bounds of `type_parameter` reference to `dependencies`. May add duplicates.
+  collect_type_name_dependencies(type_parameter.lower_bound, dependencies)
+  collect_type_name_dependencies(type_parameter.upper_bound, dependencies)

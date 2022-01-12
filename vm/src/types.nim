@@ -38,6 +38,17 @@ type
     ## instances. Types which themselves contain other types should be marked `acyclic`.
     kind*: Kind
 
+  TypeParameter* = ref object
+    name*: string
+    lower_bound*: Type
+    upper_bound*: Type
+    variance*: Variance
+
+  Variance* {.pure.} = enum
+    Covariant
+    Contravariant
+    Invariant
+
   TypeVariable* {.pure, acyclic.} = ref object of Type
     ## A type variable represents the application of a type argument at the index. For example, if we have a function
     ## with two type parameters A and B, the type variable with index 1 would refer to the second type argument, whose
@@ -85,22 +96,51 @@ type
   SymbolType* {.pure.} = ref object of Type
     name*: string
 
+  Schema* {.inheritable, pure.} = ref object
+    kind: Kind
+      ## Either `Trait` or `Struct`.
+    name: string
+      ## The full name of the declared schema.
+    type_parameters: ImSeq[TypeParameter]
+    supertraits: ImSeq[TraitType]
+      ## A list of directly extended traits. Type variables within these trait types are uninstantiated and reference
+      ## this schema's type parameters.
+    representative: DeclaredType
+      ## The representative type of this schema, with uninstantiated type parameters.
+
+  DeclaredType* {.pure.} = ref object of Type
+    schema: Schema
+    type_arguments: ImSeq[Type]
+      ## The declared type's type arguments.
+    supertraits: ImSeq[TraitType]
+      ## The schema's direct supertraits instantiated with the given type arguments.
+
+  TraitSchema* {.pure.} = ref object of Schema
+    inherited_shape_type: ShapeType
+      ## As a trait may inherit directly and indirectly from shapes, each trait has an inherited shape type. This shape
+      ## type can be used to decide trait/shape subtyping. Since most values on the left side of subtyping will
+      ## actually be structs, the inherited shape type shouldn't be requested often, if at all.
+      ##
+      ## The inherited shape type may contain declared types that are placed later in the schema resolution order.
+      ## Hence, inherited shape types have to be added to a schema in a later resolution step.
+
+  TraitType* {.pure.} = ref object of DeclaredType
+    discard
+
+  StructSchema {.pure.} = ref object of Schema
+    discard
+
+  StructType* {.pure.} = ref object of DeclaredType
+    discard
+
   # TODO (vm): Implement trait and struct types.
-
-  TypeParameter* = ref object
-    name*: string
-    lower_bound*: Type
-    upper_bound*: Type
-    variance*: Variance
-
-  Variance* {.pure.} = enum
-    Covariant
-    Contravariant
-    Invariant
 
 const max_type_parameters* = 32
   ## The maximum number of type parameters that a function may have is 32. This allows us to allocate certain arrays on
   ## the stack when checking for type fit.
+
+proc is_subtype_substitute1*(t1: Type, t2: Type, assignments: open_array[Type]): bool
+proc is_subtype_substitute2*(t1: Type, t2: Type, assignments: open_array[Type]): bool
 
 proc fits*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeParameter]): ImSeq[Type]
 
@@ -108,10 +148,6 @@ proc substitute*(tpe: Type, type_arguments: open_array[Type]): Type
 proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type
 
 proc is_polymorphic(tpe: Type): bool
-
-proc bounds_contain*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool
-proc lower_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool
-proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool
 
 proc `$`*(tpe: Type): string
 
@@ -151,6 +187,34 @@ proc intersection_as_type*(parts: open_array[Type]): Type = intersection(parts)
 proc tpl_as_type*(elements: open_array[Type]): Type = tpl(elements)
 proc function_as_type*(input: TupleType, output: Type): Type = function(input, output)
 proc list_as_type*(element: Type): Type = list(element)
+
+########################################################################################################################
+# Type parameters.                                                                                               #
+########################################################################################################################
+
+proc lower_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
+  ## Whether `parameter`'s lower bound (instantiated via the given assignments) contains `type`.
+  if parameter.lower_bound.kind != Kind.Nothing:
+    is_subtype_substitute1(parameter.lower_bound, tpe, assignments)
+  else: true
+
+proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
+  ## Whether `parameter`'s upper bound (instantiated via the given assignments) contains `type`.
+  if parameter.upper_bound.kind != Kind.Any:
+    is_subtype_substitute2(tpe, parameter.upper_bound, assignments)
+  else: true
+
+proc bounds_contain*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
+  ## Whether `parameter`'s lower and upper bound (instantiated via the given assignments) contain `type`.
+  lower_bound_contains(parameter, tpe, assignments) and upper_bound_contains(parameter, tpe, assignments)
+
+proc as_type_arguments*(type_parameters: ImSeq[TypeParameter]): ImSeq[TypeVariable] =
+  ## Creates a list of type variables that reference the given type parameters exactly.
+  var type_arguments = new_immutable_seq[TypeVariable](type_parameters.len)
+  for i in 0 ..< type_parameters.len:
+    let parameter = type_parameters[i]
+    type_arguments[i] = TypeVariable(index: uint8(i), parameter: parameter)
+  type_arguments
 
 ########################################################################################################################
 # Shapes.                                                                                                              #
@@ -212,6 +276,81 @@ proc get_property_type*(tpe: ShapeType, name: string): Type =
   tpe.property_types[tpe.meta.property_index.find_offset(name)]
 
 proc has_property*(tpe: ShapeType, name: string): bool = name in tpe.meta.property_name_set
+
+########################################################################################################################
+# Traits and structs.                                                                                                  #
+########################################################################################################################
+
+proc new_trait_type(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType
+proc bounds_contain(schema: Schema, type_arguments: ImSeq[Type]): bool
+proc instantiate_supertraits(schema: Schema, type_arguments: ImSeq[Type]): ImSeq[TraitType]
+
+proc is_constant*(schema: Schema): bool = schema.type_parameters.len == 0
+
+proc get_representative*(schema: Schema): DeclaredType = schema.representative
+proc get_representative*(schema: TraitSchema): TraitType = cast[TraitType](schema.representative)
+proc get_representative*(schema: StructSchema): StructType = cast[StructType](schema.representative)
+
+proc new_trait_schema*(
+  name: string,
+  type_parameters: ImSeq[TypeParameter],
+  supertraits: ImSeq[TraitType],
+  inherited_shape_type: ShapeType,
+): TraitSchema =
+  let schema = TraitSchema(
+    kind: Kind.Trait,
+    name: name,
+    type_parameters: type_parameters,
+    supertraits: supertraits,
+    inherited_shape_type: inherited_shape_type,
+  )
+
+  let type_arguments = cast[ImSeq[Type]](type_parameters.as_type_arguments())
+  let representative = TraitType(schema: schema, type_arguments: type_arguments, supertraits: supertraits)
+  schema.representative = representative
+
+  schema
+
+proc get_trait_type*(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType =
+  ## Gets a trait type of `schema` with the given type arguments.
+  # TODO (vm/intern): This function is called `GET_trait_type` because declared types are supposed to be interned.
+  if schema.is_constant:
+    return schema.get_representative()
+  new_trait_type(schema, type_arguments)
+
+proc new_trait_type(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType =
+  let supertraits =
+    if schema.is_constant:
+      schema.supertraits
+    else:
+      if not bounds_contain(schema, type_arguments):
+        quit(fmt"Cannot instantiate schema {schema.name}: the type arguments {type_arguments} don't adhere to the bounds.")
+      instantiate_supertraits(schema, type_arguments)
+  TraitType(schema: schema, type_arguments: type_arguments, supertraits: supertraits)
+
+proc bounds_contain(schema: Schema, type_arguments: ImSeq[Type]): bool =
+  ## Whether the given type arguments fit into the schema's parameter bounds. Upper bounds for covariance and lower
+  ## bounds for contravariance must be guaranteed by the compiler, but we need to check lower/upper bounds for
+  ## covariant/contravariant type parameters.
+  for i in 0 ..< schema.type_parameters.len:
+    let parameter = schema.type_parameters[i]
+    let argument = type_arguments[i]
+    if parameter.variance == Variance.Covariant:
+      if not lower_bound_contains(parameter, argument, to_open_array(type_arguments)):
+        return false
+    elif parameter.variance == Variance.Contravariant:
+      if not upper_bound_contains(parameter, argument, to_open_array(type_arguments)):
+        return false
+  true
+
+proc instantiate_supertraits(schema: Schema, type_arguments: ImSeq[Type]): ImSeq[TraitType] =
+  if schema.supertraits.len == 0:
+    return schema.supertraits
+
+  var instantiated = new_immutable_seq[TraitType](schema.supertraits.len)
+  for i in 0 ..< schema.supertraits.len:
+    instantiated[i] = cast[TraitType](substitute(schema.supertraits[i], to_open_array(type_arguments)))
+  instantiated
 
 ########################################################################################################################
 # Type equality.                                                                                                       #
@@ -1043,26 +1182,6 @@ proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: open_arra
       result_types[i] = candidate
 
   result_types
-
-########################################################################################################################
-# Type parameter bounds.                                                                                               #
-########################################################################################################################
-
-proc bounds_contain*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
-  ## Whether `parameter`'s lower and upper bound (instantiated via the given assignments) contain `type`.
-  lower_bound_contains(parameter, tpe, assignments) and upper_bound_contains(parameter, tpe, assignments)
-
-proc lower_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
-  ## Whether `parameter`'s lower bound (instantiated via the given assignments) contains `type`.
-  if parameter.lower_bound.kind != Kind.Nothing:
-    is_subtype_substitute1(parameter.lower_bound, tpe, assignments)
-  else: true
-
-proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
-  ## Whether `parameter`'s upper bound (instantiated via the given assignments) contains `type`.
-  if parameter.upper_bound.kind != Kind.Any:
-    is_subtype_substitute2(tpe, parameter.upper_bound, assignments)
-  else: true
 
 ########################################################################################################################
 # Stringification.                                                                                                     #
