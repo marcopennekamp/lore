@@ -289,10 +289,12 @@ proc read*(path: string): Poem =
     fail(fmt"""Poem file "{path}" has an illegal file header. The file must begin with the ASCII string `poem`.""")
 
   let constants = stream.read_constants()
+  let schemas = stream.read_many_with_count(PoemSchema, uint16, read_schema)
   let global_variables = stream.read_many_with_count(PoemGlobalVariable, uint16, read_global_variable)
   let functions = stream.read_many_with_count(PoemFunction, uint16, read_function)
   Poem(
     constants: constants,
+    schemas: schemas,
     global_variables: global_variables,
     functions: functions,
   )
@@ -303,6 +305,7 @@ proc write*(path: string, poem: Poem) =
 
   stream.write_str("poem")
   stream.write_constants(poem.constants)
+  stream.write_many_with_count(poem.schemas, uint16, write_schema)
   stream.write_many_with_count(poem.global_variables, uint16, write_global_variable)
   stream.write_many_with_count(poem.functions, uint16, write_function)
 
@@ -628,7 +631,6 @@ method write(tpe: PoemTypeVariable, stream: FileStream) {.locks: "unknown".} =
   stream.write_type_tag(Kind.TypeVariable)
   stream.write(tpe.index)
 
-# TODO (vm): Implement shape type writing.
 method write(tpe: PoemBasicType, stream: FileStream) {.locks: "unknown".} =
   stream.write_type_tag(tpe.tpe.kind)
 
