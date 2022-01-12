@@ -340,7 +340,12 @@ method resolve(poem_type: PoemShapeType, universe: Universe): Type {.locks: "unk
 method resolve(poem_type: PoemSymbolType, universe: Universe): Type {.locks: "unknown".} = types.symbol(poem_type.name)
 
 method resolve(poem_type: PoemNamedType, universe: Universe): Type {.locks: "unknown".} =
-  quit(fmt"Cannot resolve named types yet. Name: {poem_type.name}.")
+  if poem_type.name notin universe.schemas:
+    quit(fmt"The schema for a named type {poem_type.name} hasn't been resolved yet or doesn't exist.")
+
+  let schema = universe.schemas[poem_type.name]
+  let type_arguments = new_immutable_seq(universe.resolve_many(poem_type.arguments))
+  types.instantiate_schema(schema, type_arguments)
 
 ########################################################################################################################
 # Value resolution.                                                                                                    #

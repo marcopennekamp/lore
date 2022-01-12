@@ -311,12 +311,16 @@ proc new_trait_schema*(
 
   schema
 
-proc get_trait_type*(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType =
-  ## Gets a trait type of `schema` with the given type arguments.
-  # TODO (vm/intern): This function is called `GET_trait_type` because declared types are supposed to be interned.
+proc instantiate_schema*(schema: Schema, type_arguments: ImSeq[Type]): DeclaredType =
+  ## Instantiates the `schema` with the given type arguments.
+  # TODO (vm/intern): This function should intern the declared types.
   if schema.is_constant:
     return schema.get_representative()
-  new_trait_type(schema, type_arguments)
+
+  if schema.kind == Kind.Trait:
+    new_trait_type(cast[TraitSchema](schema), type_arguments)
+  else:
+    quit(fmt"`instantiate_schema` is not implemented for struct schemas yet.")
 
 proc new_trait_type(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType =
   let supertraits =
