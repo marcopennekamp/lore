@@ -13,6 +13,6 @@ let empty = PoemFunction(
 )
 
 let poem* = Poem(
-  constants: PoemConstants(multi_functions: @[]),
+  constants: PoemConstants(),
   functions: @[empty],
 )

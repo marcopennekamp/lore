@@ -26,6 +26,7 @@ from list_print_each import nil
 from shape_constant import nil
 from shape_positions import nil
 from stats import nil
+from schema_options import nil
 from tau import nil
 
 type Example* = ref object
@@ -55,6 +56,7 @@ let examples = @[
   Example(name: "shape_constant", poem: shape_constant.poem, main: "test", runs: 25_000_000),
   Example(name: "shape_positions", poem: shape_positions.poem, main: "test", runs: 1_000_000),
   Example(name: "stats", poem: stats.poem, main: "test", runs: 5_000_000),
+  Example(name: "schema_options", poem: schema_options.poem, main: "test", runs: 1_000_000),
   Example(name: "tau", poem: tau.poem, main: "test", runs: 25_000_000),
 ]
 
