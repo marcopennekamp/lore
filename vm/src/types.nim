@@ -127,7 +127,9 @@ type
       ## `get_inherited_shape_type` only has to substitute type arguments when the inherited shape type is polymorphic.
 
   TraitType* {.pure.} = ref object of DeclaredType
-    discard
+    inherited_shape_type_cache: ShapeType
+      ## The schema's inherited shape type instantiated with the trait's type arguments. The cache is only populated on
+      ## demand and only when the schema's inherited shape type is polymorphic.
 
   StructSchema {.pure.} = ref object of Schema
     discard
@@ -295,6 +297,12 @@ proc get_representative*(schema: Schema): DeclaredType {.inline.} =
 proc get_representative*(schema: TraitSchema): TraitType {.inline.} = cast[TraitType](schema.representative)
 proc get_representative*(schema: StructSchema): StructType {.inline.} = cast[StructType](schema.representative)
 
+proc get_schema*(tpe: DeclaredType): Schema {.inline.} =
+  ## Correctly types the schema of the type based on the type's Nim type.
+  tpe.schema
+proc get_schema*(tpe: TraitType): TraitSchema {.inline.} = cast[TraitSchema](tpe.schema)
+proc get_schema*(tpe: StructType): StructSchema {.inline.} = cast[StructSchema](tpe.schema)
+
 proc new_trait_schema*(
   name: string,
   type_parameters: ImSeq[TypeParameter],
@@ -333,6 +341,19 @@ proc instantiate_schema*(schema: Schema, type_arguments: ImSeq[Type]): DeclaredT
   else:
     quit(fmt"`instantiate_schema` is not implemented for struct schemas yet.")
 
+proc get_inherited_shape_type*(tpe: TraitType): ShapeType =
+  let schema: TraitSchema = tpe.get_schema()
+
+  if not schema.is_inherited_shape_type_polymorphic:
+    return schema.inherited_shape_type
+
+  if tpe.inherited_shape_type_cache != nil:
+    return tpe.inherited_shape_type_cache
+
+  let shape_type = cast[ShapeType](schema.inherited_shape_type.substitute(tpe.type_arguments))
+  tpe.inherited_shape_type_cache = shape_type
+  shape_type
+
 proc new_trait_type(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType =
   let supertraits =
     if schema.is_constant:
@@ -341,7 +362,13 @@ proc new_trait_type(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType
       if not bounds_contain(schema, type_arguments):
         quit(fmt"Cannot instantiate schema {schema.name}: the type arguments {type_arguments} don't adhere to the bounds.")
       instantiate_supertraits(schema, type_arguments)
-  TraitType(schema: schema, type_arguments: type_arguments, supertraits: supertraits)
+
+  TraitType(
+    schema: schema,
+    type_arguments: type_arguments,
+    supertraits: supertraits,
+    inherited_shape_type_cache: nil
+  )
 
 proc bounds_contain(schema: Schema, type_arguments: ImSeq[Type]): bool =
   ## Whether the given type arguments fit into the schema's parameter bounds. Upper bounds for covariance and lower
