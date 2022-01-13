@@ -97,22 +97,22 @@ type
     name*: string
 
   Schema* {.inheritable, pure.} = ref object
-    kind: Kind
+    kind*: Kind
       ## Either `Trait` or `Struct`.
-    name: string
+    name*: string
       ## The full name of the declared schema.
-    type_parameters: ImSeq[TypeParameter]
-    supertraits: ImSeq[TraitType]
+    type_parameters*: ImSeq[TypeParameter]
+    supertraits*: ImSeq[TraitType]
       ## A list of directly extended traits. Type variables within these trait types are uninstantiated and reference
       ## this schema's type parameters.
     representative: DeclaredType
       ## The representative type of this schema, with uninstantiated type parameters.
 
   DeclaredType* {.pure.} = ref object of Type
-    schema: Schema
-    type_arguments: ImSeq[Type]
+    schema*: Schema
+    type_arguments*: ImSeq[Type]
       ## The declared type's type arguments.
-    supertraits: ImSeq[TraitType]
+    supertraits*: ImSeq[TraitType]
       ## The schema's direct supertraits instantiated with the given type arguments.
 
   TraitSchema* {.pure.} = ref object of Schema
@@ -123,6 +123,8 @@ type
       ##
       ## The inherited shape type may contain declared types that are placed later in the schema resolution order.
       ## Hence, inherited shape types have to be added to a schema in a later resolution step.
+    is_inherited_shape_type_polymorphic: bool
+      ## `get_inherited_shape_type` only has to substitute type arguments when the inherited shape type is polymorphic.
 
   TraitType* {.pure.} = ref object of DeclaredType
     discard
@@ -287,29 +289,38 @@ proc instantiate_supertraits(schema: Schema, type_arguments: ImSeq[Type]): ImSeq
 
 proc is_constant*(schema: Schema): bool = schema.type_parameters.len == 0
 
-proc get_representative*(schema: Schema): DeclaredType = schema.representative
-proc get_representative*(schema: TraitSchema): TraitType = cast[TraitType](schema.representative)
-proc get_representative*(schema: StructSchema): StructType = cast[StructType](schema.representative)
+proc get_representative*(schema: Schema): DeclaredType {.inline.} =
+  ## Correctly types the representative of the schema based on the schema's Nim type.
+  schema.representative
+proc get_representative*(schema: TraitSchema): TraitType {.inline.} = cast[TraitType](schema.representative)
+proc get_representative*(schema: StructSchema): StructType {.inline.} = cast[StructType](schema.representative)
 
 proc new_trait_schema*(
   name: string,
   type_parameters: ImSeq[TypeParameter],
   supertraits: ImSeq[TraitType],
-  inherited_shape_type: ShapeType,
 ): TraitSchema =
   let schema = TraitSchema(
     kind: Kind.Trait,
     name: name,
     type_parameters: type_parameters,
     supertraits: supertraits,
-    inherited_shape_type: inherited_shape_type,
+    # Inherited shape types are resolved in a second step.
+    inherited_shape_type: nil,
+    is_inherited_shape_type_polymorphic: false,
   )
 
   let type_arguments = cast[ImSeq[Type]](type_parameters.as_type_arguments())
   let representative = TraitType(schema: schema, type_arguments: type_arguments, supertraits: supertraits)
   schema.representative = representative
-
   schema
+
+proc attach_inherited_shape_type*(schema: TraitSchema, inherited_shape_type: ShapeType) =
+  if schema.inherited_shape_type != nil:
+    quit(fmt"An inherited shape type has already been attached to trait schema {schema.name}.")
+
+  schema.inherited_shape_type = inherited_shape_type
+  schema.is_inherited_shape_type_polymorphic = is_polymorphic(inherited_shape_type)
 
 proc instantiate_schema*(schema: Schema, type_arguments: ImSeq[Type]): DeclaredType =
   ## Instantiates the `schema` with the given type arguments.

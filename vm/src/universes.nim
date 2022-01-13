@@ -8,8 +8,8 @@ import imseqs
 import poems
 from pyramid import nil
 import schema_order
-from types import Kind, Schema, Type, TypeParameter, TypeVariable, SumType, IntersectionType, TupleType, FunctionType,
-                  ListType, MapType, ShapeType, DeclaredType, TraitType
+from types import Kind, Type, TypeParameter, TypeVariable, SumType, IntersectionType, TupleType, FunctionType,
+                  ListType, MapType, ShapeType, Schema, TraitSchema, DeclaredType, TraitType, attach_inherited_shape_type
 from values import TaggedValue
 
 type
@@ -117,7 +117,8 @@ proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
 ########################################################################################################################
 
 proc get_schema_dependencies(poem_schema: PoemSchema): seq[string] =
-  ## Collects the names of all schemas that `poem_schema` depends on.
+  ## Collects the names of all schemas that `poem_schema` depends on. Inherited shape types are resolved in a second
+  ## step and thus don't count as dependencies.
   var dependencies = new_seq[string]()
 
   for parameter in poem_schema.type_parameters:
@@ -125,10 +126,7 @@ proc get_schema_dependencies(poem_schema: PoemSchema): seq[string] =
   for supertrait in poem_schema.supertraits:
     poems.collect_type_name_dependencies(supertrait, dependencies)
 
-  if poem_schema.kind == Kind.Trait:
-    let poem_schema = cast[PoemTraitSchema](poem_schema)
-    poems.collect_type_name_dependencies(poem_schema.inherited_shape_type, dependencies)
-  else:
+  if poem_schema.kind == Kind.Struct:
     quit("`get_schema_dependencies` for struct schemas is not yet implemented.")
 
   dependencies
@@ -145,12 +143,17 @@ proc resolve_schema(universe: Universe, poem_schema: PoemSchema): Schema =
   let supertraits = cast[ImSeq[TraitType]](supertypes)
 
   if poem_schema.kind == Kind.Trait:
-    let poem_schema = cast[PoemTraitSchema](poem_schema)
-    # The poem reader ensures that this is a shape type, so we can just cast!
-    let inherited_shape_type = cast[ShapeType](universe.resolve(poem_schema.inherited_shape_type))
-    types.new_trait_schema(poem_schema.name, type_parameters, supertraits, inherited_shape_type)
+    types.new_trait_schema(poem_schema.name, type_parameters, supertraits)
   else:
     quit("`resolve_schema` for struct schemas is not yet implemented.")
+
+proc resolve_inherited_shape_types(universe: Universe, poem_schemas: TableRef[string, PoemSchema]) =
+  for name, schema in universe.schemas:
+    if schema.kind == Kind.Trait:
+      let schema = cast[TraitSchema](schema)
+      let poem_schema = cast[PoemTraitSchema](poem_schemas[name])
+      # The poem reader ensures that this is a shape type, so we can just cast!
+      schema.attach_inherited_shape_type(cast[ShapeType](universe.resolve(poem_schema.inherited_shape_type)))
 
 proc resolve_schemas(universe: Universe, poems: seq[Poem]) =
   ## Resolves all schemas in their resolution order.
@@ -172,6 +175,9 @@ proc resolve_schemas(universe: Universe, poems: seq[Poem]) =
   for name in resolution_order:
     let schema = universe.resolve_schema(poem_schemas[name])
     universe.schemas[name] = schema
+
+  # Now that all schemas have been registered, we can resolve inherited shape types.
+  universe.resolve_inherited_shape_types(poem_schemas)
 
 ########################################################################################################################
 # Global variable resolution.                                                                                          #
