@@ -6,7 +6,7 @@ import "../../src/schema_order.nim"
 
 # Objective: Create, sort, and validate a simple Option schema order.
 block:
-  let graph = new_schema_dependency_graph()
+  var graph = new_schema_dependency_graph()
   graph.add_dependency("Game", "Option")
   graph.add_dependency("Some", "Option")
   graph.add_dependency("Player", "Some")
