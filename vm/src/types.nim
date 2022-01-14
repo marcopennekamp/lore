@@ -148,9 +148,8 @@ type
 
   StructType* {.pure.} = ref object of DeclaredType
     property_types: ImSeq[Type]
-      ## The actual run-time types of the struct's properties. This sequence is defined if and only if the struct
-      ## schema is parameterized or has open properties. If the schema is/has neither, the schema's property types must
-      ## be used instead.
+      ## The actual run-time types of the struct's properties. This sequence is defined if and only if the schema is
+      ## parameterized or if it has open properties.
 
   # TODO (vm): Implement trait and struct types.
 
@@ -297,15 +296,10 @@ proc get_property_type*(tpe: ShapeType, name: string): Type =
 proc has_property*(tpe: ShapeType, name: string): bool = name in tpe.meta.property_name_set
 
 ########################################################################################################################
-# Traits and structs.                                                                                                  #
+# Declared types.                                                                                                      #
 ########################################################################################################################
 
-proc new_trait_type(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType
-proc bounds_contain(schema: Schema, type_arguments: ImSeq[Type]): bool
-proc instantiate_supertraits(schema: Schema, type_arguments: ImSeq[Type]): ImSeq[TraitType]
-
 proc is_constant*(schema: Schema): bool = schema.type_parameters.len == 0
-proc has_open_properties*(schema: StructSchema): bool = schema.open_property_indices.len > 0
 
 proc get_representative*(schema: Schema): DeclaredType {.inline.} =
   ## Correctly types the representative of the schema based on the schema's Nim type.
@@ -318,6 +312,38 @@ proc get_schema*(tpe: DeclaredType): Schema {.inline.} =
   tpe.schema
 proc get_schema*(tpe: TraitType): TraitSchema {.inline.} = cast[TraitSchema](tpe.schema)
 proc get_schema*(tpe: StructType): StructSchema {.inline.} = cast[StructSchema](tpe.schema)
+
+proc bounds_contain(schema: Schema, type_arguments: ImSeq[Type]): bool =
+  ## Whether the given type arguments fit into the schema's parameter bounds. Upper bounds for covariance and lower
+  ## bounds for contravariance must be guaranteed by the compiler, but we need to check lower/upper bounds for
+  ## covariant/contravariant type parameters.
+  for i in 0 ..< schema.type_parameters.len:
+    let parameter = schema.type_parameters[i]
+    let argument = type_arguments[i]
+    if parameter.variance == Variance.Covariant:
+      if not lower_bound_contains(parameter, argument, to_open_array(type_arguments)):
+        return false
+    elif parameter.variance == Variance.Contravariant:
+      if not upper_bound_contains(parameter, argument, to_open_array(type_arguments)):
+        return false
+  true
+
+proc check_type_parameter_bounds(schema: Schema, type_arguments: ImSeq[Type]) =
+  if not bounds_contain(schema, type_arguments):
+    quit(fmt"Cannot instantiate schema {schema.name}: the type arguments {type_arguments} don't adhere to their bounds.")
+
+proc instantiate_supertraits(schema: Schema, type_arguments: ImSeq[Type]): ImSeq[TraitType] =
+  if schema.is_constant or schema.supertraits.len == 0:
+    return schema.supertraits
+
+  var instantiated = new_immutable_seq[TraitType](schema.supertraits.len)
+  for i in 0 ..< schema.supertraits.len:
+    instantiated[i] = cast[TraitType](substitute(schema.supertraits[i], to_open_array(type_arguments)))
+  instantiated
+
+########################################################################################################################
+# Traits.                                                                                                              #
+########################################################################################################################
 
 proc new_trait_schema*(
   name: string,
@@ -346,16 +372,20 @@ proc attach_inherited_shape_type*(schema: TraitSchema, inherited_shape_type: Sha
   schema.inherited_shape_type = inherited_shape_type
   schema.is_inherited_shape_type_polymorphic = is_polymorphic(inherited_shape_type)
 
-proc instantiate_schema*(schema: Schema, type_arguments: ImSeq[Type]): DeclaredType =
-  ## Instantiates the `schema` with the given type arguments.
+proc instantiate_schema*(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType =
+  ## Instantiates `schema` with the given type arguments.
   # TODO (vm/intern): This function should intern the declared types.
   if schema.is_constant:
     return schema.get_representative()
 
-  if schema.kind == Kind.Trait:
-    new_trait_type(cast[TraitSchema](schema), type_arguments)
-  else:
-    quit(fmt"`instantiate_schema` is not implemented for struct schemas yet.")
+  check_type_parameter_bounds(schema, type_arguments)
+  let supertraits = instantiate_supertraits(schema, type_arguments)
+  TraitType(
+    schema: schema,
+    type_arguments: type_arguments,
+    supertraits: supertraits,
+    inherited_shape_type_cache: nil
+  )
 
 proc get_inherited_shape_type*(tpe: TraitType): ShapeType =
   let schema: TraitSchema = tpe.get_schema()
@@ -370,45 +400,62 @@ proc get_inherited_shape_type*(tpe: TraitType): ShapeType =
   tpe.inherited_shape_type_cache = shape_type
   shape_type
 
-proc new_trait_type(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType =
-  let supertraits =
-    if schema.is_constant:
-      schema.supertraits
-    else:
-      if not bounds_contain(schema, type_arguments):
-        quit(fmt"Cannot instantiate schema {schema.name}: the type arguments {type_arguments} don't adhere to the bounds.")
-      instantiate_supertraits(schema, type_arguments)
+########################################################################################################################
+# Structs.                                                                                                             #
+########################################################################################################################
 
-  TraitType(
+proc new_struct_type(schema: StructSchema, type_arguments: ImSeq[Type], property_types: ImSeq[Type]): StructType
+
+proc has_open_properties*(schema: StructSchema): bool = schema.open_property_indices.len > 0
+
+proc instantiate_schema*(schema: StructSchema, type_arguments: ImSeq[Type]): StructType =
+  ## Instantiates `schema` with the given type arguments without deviating open property types. This is used to
+  ## instantiate constant struct types that aren't associated with a value, such as in input and output types.
+  # TODO (vm/intern): This function should intern the declared types.
+  if schema.is_constant:
+    return schema.get_representative()
+
+  var property_types = new_immutable_seq[Type](schema.properties.len)
+  for i in 0 ..< schema.properties.len:
+    property_types[i] = substitute(schema.properties[i].tpe, type_arguments)
+
+  new_struct_type(schema, type_arguments, property_types)
+
+proc instantiate_schema*(schema: StructSchema, type_arguments: ImSeq[Type], open_property_types: ImSeq[Type]): DeclaredType =
+  ## Instantiates `schema` with the given type arguments and open property types. This is used to instantiate struct
+  ## types associated with a value.
+  # TODO (vm/intern): This function should intern the declared types.
+  if open_property_types.len != schema.open_property_indices.len:
+    quit(fmt"Cannot instantiate the struct schema {schema.name} with {open_property_types.len} open property types," &
+     " as the schema expects {schema.open_property_indices.len}.")
+
+  if schema.has_open_properties:
+    var property_types = new_immutable_seq[Type](schema.properties.len)
+    var open_counter = 0
+    for i in 0 ..< schema.properties.len:
+      if schema.properties[i].is_open:
+        property_types[i] = open_property_types[open_counter]
+        open_counter += 1
+      else:
+        property_types[i] =
+          if schema.is_constant:
+            schema.properties[i].tpe
+          else:
+            substitute(schema.properties[i].tpe, type_arguments)
+
+    new_struct_type(schema, type_arguments, property_types)
+  else:
+    instantiate_schema(schema, type_arguments)
+
+proc new_struct_type(schema: StructSchema, type_arguments: ImSeq[Type], property_types: ImSeq[Type]): StructType =
+  check_type_parameter_bounds(schema, type_arguments)
+  let supertraits = instantiate_supertraits(schema, type_arguments)
+  StructType(
     schema: schema,
     type_arguments: type_arguments,
     supertraits: supertraits,
-    inherited_shape_type_cache: nil
+    property_types: property_types,
   )
-
-proc bounds_contain(schema: Schema, type_arguments: ImSeq[Type]): bool =
-  ## Whether the given type arguments fit into the schema's parameter bounds. Upper bounds for covariance and lower
-  ## bounds for contravariance must be guaranteed by the compiler, but we need to check lower/upper bounds for
-  ## covariant/contravariant type parameters.
-  for i in 0 ..< schema.type_parameters.len:
-    let parameter = schema.type_parameters[i]
-    let argument = type_arguments[i]
-    if parameter.variance == Variance.Covariant:
-      if not lower_bound_contains(parameter, argument, to_open_array(type_arguments)):
-        return false
-    elif parameter.variance == Variance.Contravariant:
-      if not upper_bound_contains(parameter, argument, to_open_array(type_arguments)):
-        return false
-  true
-
-proc instantiate_supertraits(schema: Schema, type_arguments: ImSeq[Type]): ImSeq[TraitType] =
-  if schema.supertraits.len == 0:
-    return schema.supertraits
-
-  var instantiated = new_immutable_seq[TraitType](schema.supertraits.len)
-  for i in 0 ..< schema.supertraits.len:
-    instantiated[i] = cast[TraitType](substitute(schema.supertraits[i], to_open_array(type_arguments)))
-  instantiated
 
 ########################################################################################################################
 # Type equality.                                                                                                       #

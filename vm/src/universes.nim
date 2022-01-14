@@ -9,7 +9,8 @@ import poems
 from pyramid import nil
 import schema_order
 from types import Kind, Type, TypeParameter, TypeVariable, SumType, IntersectionType, TupleType, FunctionType,
-                  ListType, MapType, ShapeType, Schema, TraitSchema, DeclaredType, TraitType, attach_inherited_shape_type
+                  ListType, MapType, ShapeType, Schema,  DeclaredType, TraitSchema, TraitType, StructSchema,
+                  attach_inherited_shape_type
 from values import TaggedValue
 
 type
@@ -351,7 +352,10 @@ method resolve(poem_type: PoemNamedType, universe: Universe): Type {.locks: "unk
 
   let schema = universe.schemas[poem_type.name]
   let type_arguments = new_immutable_seq(universe.resolve_many(poem_type.arguments))
-  types.instantiate_schema(schema, type_arguments)
+  if schema.kind == Kind.Trait:
+    types.instantiate_schema(cast[TraitSchema](schema), type_arguments)
+  else:
+    types.instantiate_schema(cast[StructSchema](schema), type_arguments)
 
 ########################################################################################################################
 # Value resolution.                                                                                                    #
