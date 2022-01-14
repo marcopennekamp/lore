@@ -131,11 +131,26 @@ type
       ## The schema's inherited shape type instantiated with the trait's type arguments. The cache is only populated on
       ## demand and only when the schema's inherited shape type is polymorphic.
 
-  StructSchema {.pure.} = ref object of Schema
-    discard
+  StructSchema* {.pure.} = ref object of Schema
+    properties*: ImSeq[StructSchemaProperty]
+      ## The properties of a struct must be ordered by their name. This allows the property index to map names directly
+      ## to schema properties and property values. It also allows direct property access operations to fetch a property
+      ## value via its index if the value is a struct at compile time.
+    property_index*: PropertyIndex
+    open_property_indices*: ImSeq[uint16]
+      ## A list of indices where open properties occur. This can be used to quickly access all open property types when
+      ## they are specifically requested, such as during struct/struct equality or subtyping.
+
+  StructSchemaProperty* = object
+    name: string
+    is_open: bool
+    tpe: Type
 
   StructType* {.pure.} = ref object of DeclaredType
-    discard
+    property_types: ImSeq[Type]
+      ## The actual run-time types of the struct's properties. This sequence is defined if and only if the struct
+      ## schema is parameterized or has open properties. If the schema is/has neither, the schema's property types must
+      ## be used instead.
 
   # TODO (vm): Implement trait and struct types.
 
@@ -290,6 +305,7 @@ proc bounds_contain(schema: Schema, type_arguments: ImSeq[Type]): bool
 proc instantiate_supertraits(schema: Schema, type_arguments: ImSeq[Type]): ImSeq[TraitType]
 
 proc is_constant*(schema: Schema): bool = schema.type_parameters.len == 0
+proc has_open_properties*(schema: StructSchema): bool = schema.open_property_indices.len > 0
 
 proc get_representative*(schema: Schema): DeclaredType {.inline.} =
   ## Correctly types the representative of the schema based on the schema's Nim type.
