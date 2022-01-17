@@ -3,9 +3,14 @@
 #### Features
 
 - Implement traits and structs:
-  - Schemas: Schema definition, poem reading, poem writing, universe resolution.
-  - Types: Type definition, type equality, subtyping, type variable allocations, type substitution, type simplification, to string, poem reading, poem writing, supertrait instantiation, open property types and `getPropertyType`, constructors, open type parameters and type paths.
-  - Values: Struct values, struct memory layout, poem reading, poem writing, constructors, direct and indirect property access, constructor functions, objects.
+  - General:
+    - Types: ~~supertrait instantiation~~, `find_supertrait`.
+  - Traits: 
+    - Types: ~~Schema definition~~, ~~type definition~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, type equality, subtyping, type variable allocation, type substitution, type simplification, to string.
+  - Structs:
+    - Types: ~~Schema definition~~, ~~type definition~~, poem reading, poem writing, universe resolution, type equality, subtyping, type variable allocation, type substitution, type simplification, to string, open property types and `get_property_type`, constructor, open type parameters and type paths.
+    - Values: Struct values, poem reading, poem writing, direct and indirect property access, constructor, constructor functions.
+      - Objects can be represented by a (lazy?) global variable that contains the sole instance of the struct. This can all be checked and implemented by the compiler, so the VM might not even need to differentiate between objects and normal structs.
   - Clear all `TODO (vm/schemas)` entries.
 - Figure out how to pass a surrounding function's type arguments to lambdas created within the function.
 - Implement declared type interning:

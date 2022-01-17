@@ -151,8 +151,6 @@ type
       ## The actual run-time types of the struct's properties. This sequence is defined if and only if the schema is
       ## parameterized or if it has open properties.
 
-  # TODO (vm): Implement trait and struct types.
-
 const max_type_parameters* = 32
   ## The maximum number of type parameters that a function may have is 32. This allows us to allocate certain arrays on
   ## the stack when checking for type fit.
