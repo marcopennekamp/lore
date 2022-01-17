@@ -91,7 +91,7 @@ type
 
   ShapeType* {.pure, acyclic.} = ref object of Type
     meta*: MetaShape
-    property_types*: UncheckedArray[Type]
+    property_types*: ImSeq[Type]
 
   SymbolType* {.pure.} = ref object of Type
     name*: string
@@ -236,8 +236,6 @@ proc as_type_arguments*(type_parameters: ImSeq[TypeParameter]): ImSeq[TypeVariab
 # Shapes.                                                                                                              #
 ########################################################################################################################
 
-proc property_count*(tpe: ShapeType): int
-
 # TODO (vm/parallel): This should be protected by a lock.
 var interned_meta_shapes = new_table[ImSeq[string], MetaShape]()
 
@@ -263,35 +261,39 @@ proc get_meta_shape_safe*(property_names: seq[string]): MetaShape =
   names = deduplicate(names, is_sorted = true)
   get_meta_shape(names)
 
-proc alloc_shape_type*(meta_shape: MetaShape): ShapeType =
-  ## Allocates a new shape type with the correct number of property types, which must be initialized after.
-  let shape_type = cast[ShapeType](alloc0(sizeof(ShapeType) + meta_shape.property_names.len * sizeof(Type)))
-  shape_type.kind = Kind.Shape
-  shape_type.meta = meta_shape
-  shape_type
+proc `===`(a: MetaShape, b: MetaShape): bool {.inline.} =
+  ## Checks the equality of two interned meta shapes.
+  cast[pointer](a) == cast[pointer](b)
 
-proc copy_shape_type*(tpe: ShapeType): ShapeType =
-  let result_type = alloc_shape_type(tpe.meta)
-  for i in 0 ..< tpe.property_count:
-    result_type.property_types[i] = tpe.property_types[i]
-  result_type
+proc property_count*(meta_shape: MetaShape): int {.inline.} = meta_shape.property_names.len
+proc property_count*(tpe: ShapeType): int {.inline.} = tpe.meta.property_count
+
+proc has_property*(meta_shape: MetaShape, name: string): bool {.inline.} = name in meta_shape.property_name_set
+proc has_property*(tpe: ShapeType, name: string): bool {.inline.} = tpe.meta.has_property(name)
+
+proc new_shape_type*(meta_shape: MetaShape, property_types: ImSeq[Type]): ShapeType =
+  ## Creates a new shape type with the given property types. The property types must have the same length and order as
+  ## the meta shape's property names.
+  ShapeType(
+    kind: Kind.Shape,
+    meta: meta_shape,
+    property_types: property_types,
+  )
 
 proc new_shape_type*(meta_shape: MetaShape, property_types: open_array[Type]): ShapeType =
-  ## Creates a new shape type, filling its property types from the given array of property types.
-  let shape_type = alloc_shape_type(meta_shape)
-  for i in 0 ..< min(shape_type.property_count, property_types.len):
-    shape_type.property_types[i] = property_types[i]
-  shape_type
+  ## Creates a new shape type with the given property types. The property types must have the same length and order as
+  ## the meta shape's property names.
+  new_shape_type(meta_shape, new_immutable_seq(property_types))
+
+proc copy_shape_type*(tpe: ShapeType): ShapeType =
+  let property_types = new_immutable_seq(tpe.property_types)
+  new_shape_type(tpe.meta, property_types)
 
 proc shape_as_type*(meta_shape: MetaShape, property_types: open_array[Type]): Type = new_shape_type(meta_shape, property_types)
-
-proc property_count*(tpe: ShapeType): int = tpe.meta.property_names.len
 
 proc get_property_type*(tpe: ShapeType, name: string): Type =
   ## Gets the type of the property named `name`. The name must be a valid property name for the given shape type.
   tpe.property_types[tpe.meta.property_index.find_offset(name)]
-
-proc has_property*(tpe: ShapeType, name: string): bool = name in tpe.meta.property_name_set
 
 ########################################################################################################################
 # Declared types.                                                                                                      #
@@ -459,11 +461,7 @@ proc new_struct_type(schema: StructSchema, type_arguments: ImSeq[Type], property
 # Type equality.                                                                                                       #
 ########################################################################################################################
 
-proc `==`(a: MetaShape, b: MetaShape): bool =
-  ## Checks the equality of two interned meta shapes.
-  cast[pointer](a) == cast[pointer](b)
-
-proc `===`(a: Type, b: Type): bool =
+proc `===`(a: Type, b: Type): bool {.inline.} =
   ## Checks the referential equality of the two types.
   cast[pointer](a) == cast[pointer](b)
 
@@ -521,11 +519,8 @@ proc are_equal*(t1: Type, t2: Type): bool =
   of Kind.Shape:
     let s1 = cast[ShapeType](t1)
     let s2 = cast[ShapeType](t2)
-    if s1.meta == s2.meta:
-      for i in 0 ..< s1.property_count:
-        if not are_equal(s1.property_types[i], s2.property_types[i]):
-          return false
-      true
+    if s1.meta === s2.meta:
+      are_exactly_equal(s1.property_types, s2.property_types)
     else:
       false
 
@@ -945,12 +940,7 @@ proc is_polymorphic(tpe: Type): bool =
   of Kind.Function: is_polymorphic(cast[FunctionType](tpe).input) or is_polymorphic(cast[FunctionType](tpe).output)
   of Kind.List: is_polymorphic(cast[ListType](tpe).element)
   of Kind.Map: is_polymorphic(cast[MapType](tpe).key) or is_polymorphic(cast[MapType](tpe).value)
-  of Kind.Shape:
-    let tpe = cast[ShapeType](tpe)
-    for i in 0 ..< tpe.property_count:
-      if is_polymorphic(tpe.property_types[i]):
-        return true
-    false
+  of Kind.Shape: is_polymorphic(cast[ShapeType](tpe).property_types)
   else: false
 
 proc is_polymorphic(types: ImSeq[Type]): bool =
@@ -1138,18 +1128,17 @@ proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
         property_names.add(name)
 
     let meta_shape = get_meta_shape_safe(property_names)
-    let result_type = alloc_shape_type(meta_shape)
-
+    var property_types = new_immutable_seq[Type](meta_shape.property_count)
     var property_type_parts = new_seq_of_cap[Type](8)
-    for i in 0 ..< result_type.property_count:
+    for i in 0 ..< property_types.len:
       let property_name = meta_shape.property_names[i]
       for shape_type in shapes:
         if shape_type.has_property(property_name):
           property_type_parts.add(shape_type.get_property_type(property_name))
-      result_type.property_types[i] = simplify_construct_covariant(kind, property_type_parts)
+      property_types[i] = simplify_construct_covariant(kind, property_type_parts)
       property_type_parts.set_len(0)
 
-    results.add(result_type)
+    results.add(new_shape_type(meta_shape, property_types))
 
   # Step 3: Filter relevant types, i.e. only take the most general/specific types.
   let results_count = results.len
@@ -1261,14 +1250,9 @@ proc substitute_optimized(tpe: Type, type_arguments: open_array[Type]): Type =
 
   of Kind.Shape:
     let tpe = cast[ShapeType](tpe)
-    var result_type: ShapeType = nil
-    for i in 0 ..< tpe.property_count:
-      let candidate = substitute_optimized(tpe.property_types[i], type_arguments)
-      if candidate != nil:
-        if result_type == nil:
-          result_type = copy_shape_type(tpe)
-        result_type.property_types[i] = candidate
-    result_type
+    let property_types = substitute_multiple_optimized(tpe.property_types, type_arguments)
+    if property_types != nil: new_shape_type(tpe.meta, property_types)
+    else: nil
 
   else:
     quit(fmt"Type substitution has not been implemented for kind {tpe.kind}.")

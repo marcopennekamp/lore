@@ -32,4 +32,4 @@
   - Clear all `TODO (vm/parallel)` entries.
 - Clear all `TODO (vm)` entries.
 - Add a rudimentary form of instruction validation before execution, such as that no register indices are out of bounds, and possibly simple type checking for constants.
-- We can flatten many ImSeqs into UncheckedArrays or ImSeqObj for types and values (especially tuples, sum/intersection types, etc.). This will save a lot of allocations when creating values, but also make the VM's code a bit more complicated. We'll either have to pass around these embedded ImSeqObj as pointers, or write some glue code here and there.
+- We can flatten many ImSeqs into UncheckedArrays or ImSeqObj for types and values (especially tuples, shapes, sum/intersection types, etc.). This will save a lot of allocations when creating values, but also make the VM's code a bit more complicated. We'll either have to pass around these embedded ImSeqObj as pointers, or write some glue code here and there.

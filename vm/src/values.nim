@@ -2,8 +2,11 @@ import std/strformat, std/strutils
 
 import imseqs
 import property_index
-from types import Kind, MetaShape, Type, FunctionType, ShapeType
+from types import Kind, MetaShape, Type, FunctionType, ShapeType, property_count
 from utils import call_if_any_exists
+
+# TODO (vm/schemas): We should be able to just `import types`. I'm currently avoiding this because functions like `list`
+#                    and `map` are named too generally. We should rename these to `new_list_type` and `new_map_type`.
 
 type
   TaggedValue* = distinct uint64
@@ -195,12 +198,13 @@ proc new_shape_value*(meta_shape: MetaShape, property_values: open_array[TaggedV
   ## Allocates a new shape value. The property values must be in the correct order as defined by the meta shape.
   # TODO (vm/hash): Don't forget to hash the shape type after its property types are set!
   let shape_value = alloc_shape_value(meta_shape)
-  let shape_type = types.alloc_shape_type(meta_shape)
-  for i in 0 ..< meta_shape.property_names.len:
+  var property_types = new_immutable_seq[Type](meta_shape.property_count)
+  for i in 0 ..< meta_shape.property_count:
     let property_value = property_values[i]
     shape_value.property_values[i] = property_value
-    shape_type.property_types[i] = get_type(property_value)
-  shape_value.tpe = shape_type
+    property_types[i] = get_type(property_value)
+
+  shape_value.tpe = types.new_shape_type(meta_shape, property_types)
   shape_value
 
 proc new_shape_value_tagged*(meta_shape: MetaShape, property_values: open_array[TaggedValue]): TaggedValue =

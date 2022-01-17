@@ -5,6 +5,10 @@ type
     ## An ImSeq is an immutable sequence. It has shallow copying semantics and should thus be preferred over Nim's
     ## `seq` when the elements are known exactly at sequence construction. Its `elements` are embedded in the object,
     ## so that there is only need for a single allocation.
+    ##
+    ## Mutation of an immutable sequence is possible and ONLY allowed for *fresh* ImSeqs which have just been created
+    ## or copied. An immutable sequence which has already left its creator's scope, such as an object property, must
+    ## never be mutated.
 
   ImSeqObj[T] = object
     len*: int
@@ -43,10 +47,9 @@ proc new_immutable_seq*[T](source: open_array[T], length: int): ImSeq[T] =
   seq
 
 proc new_immutable_seq*[T](source: ImSeq[T]): ImSeq[T] =
-  let length = source.len
-  var seq = new_immutable_seq[T](length)
-  copy_mem(addr seq.elements, addr source.elements, length * sizeof(T))
-  seq
+  ## Copies all elements of `source` into a new immutable sequence with the same length. A copied immutable sequence is
+  ## guaranteed to be fresh and may thus be mutated for initialization.
+  new_immutable_seq(to_open_array(source))
 
 proc `[]`*[T](seq: ImSeq[T], index: int): T = seq.elements[index]
 proc `[]`*[T](seq: ImSeq[T], index: int64): T = seq.elements[index]
