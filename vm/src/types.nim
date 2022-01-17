@@ -616,13 +616,19 @@ template tuple_subtypes_tuple(substitution_mode: IsSubtypeSubstitutionMode, t1: 
   true
 
 template shape_subtypes_shape(substitution_mode: IsSubtypeSubstitutionMode, s1: ShapeType, s2: ShapeType): bool =
-  for property_name in s2.meta.property_names:
-    if not s1.has_property(property_name):
-      return false
-    let p1_type = s1.get_property_type(property_name)
-    let p2_type = s2.get_property_type(property_name)
-    if not is_subtype_rec(substitution_mode, p1_type, p2_type):
-      return false
+  if s1.meta === s2.meta:
+    for i in 0 ..< s2.property_count:
+      if not is_subtype_rec(substitution_mode, s1.property_types[i], s2.property_types[i]):
+        return false
+  else:
+    for i in 0 ..< s2.property_count:
+      let property_name = s2.meta.property_names[i]
+      if not s1.has_property(property_name):
+        return false
+      let p1_type = s1.get_property_type(property_name)
+      let p2_type = s2.property_types[i]
+      if not is_subtype_rec(substitution_mode, p1_type, p2_type):
+        return false
   true
 
 macro variable_subtypes_type(substitution_mode: static[IsSubtypeSubstitutionMode], tv1: TypeVariable, t2: Type): bool =
@@ -914,11 +920,17 @@ proc fits_assign(t1: Type, t2: Type, assignments: var FitsAssignments): bool =
     if t1.kind == Kind.Shape:
       let s1 = cast[ShapeType](t1)
       let s2 = cast[ShapeType](t2)
-      for property_name in s2.meta.property_names:
-        if not s1.has_property(property_name):
-          return false
-        if not fits_assign(s1.get_property_type(property_name), s2.get_property_type(property_name), assignments):
-          return false
+      if s1.meta == s2.meta:
+        for i in 0 ..< s2.property_count:
+          if not fits_assign(s1.property_types[i], s2.property_types[i], assignments):
+            return false
+      else:
+        for i in 0 ..< s2.property_count:
+          let property_name = s2.meta.property_names[i]
+          if not s1.has_property(property_name):
+            return false
+          if not fits_assign(s1.get_property_type(property_name), s2.property_types[i], assignments):
+            return false
     true
 
   else: true
