@@ -44,7 +44,12 @@ type
     inherited_shape_type*: PoemShapeType
 
   PoemStructSchema* = ref object of PoemSchema
-    discard
+    properties*: seq[PoemStructProperty]
+
+  PoemStructProperty* = ref object
+    name*: string
+    tpe*: PoemType
+    is_open*: bool
 
   PoemGlobalVariable* = ref object of RootObj
     name*: string
@@ -99,7 +104,7 @@ type
 
   PoemNamedType* = ref object of PoemType
     name*: string
-    arguments*: seq[PoemType]
+    type_arguments*: seq[PoemType]
 
   PoemValue* = ref object of RootObj
     discard
@@ -161,6 +166,14 @@ let boolean_type*: PoemType = PoemBasicType(tpe: types.boolean_type)
 let string_type*: PoemType = PoemBasicType(tpe: types.string_type)
 let unit_type*: PoemType = PoemXaryType(kind: Kind.Tuple, types: @[])
 
+proc struct_property*(name: string, tpe: PoemType, is_open: bool): PoemStructProperty = PoemStructProperty(name: name, tpe: tpe, is_open: is_open)
+
+proc type_parameter*(name: string, lower_bound: PoemType, upper_bound: PoemType, variance: Variance): PoemTypeParameter =
+  PoemTypeParameter(name: name, lower_bound: lower_bound, upper_bound: upper_bound, variance: variance)
+proc type_parameter_upper*(name: string, upper_bound: PoemType): PoemTypeParameter = type_parameter(name, nothing_type, upper_bound, Variance.Invariant)
+proc type_parameter_lower*(name: string, lower_bound: PoemType): PoemTypeParameter = type_parameter(name, lower_bound, any_type, Variance.Invariant)
+proc type_parameter*(name: string): PoemTypeParameter = type_parameter_lower(name, nothing_type)
+
 proc int_value*(value: int64): PoemValue = PoemIntValue(int: value)
 proc real_value*(value: float64): PoemValue = PoemRealValue(real: value)
 proc boolean_value(value: bool): PoemValue = PoemBooleanValue(boolean: value)
@@ -193,11 +206,8 @@ let empty_shape_type*: PoemShapeType = shape_type_concrete(@[], @[])
 proc symbol_type*(name: string): PoemType = PoemSymbolType(name: name)
 proc symbol_value*(name: string): PoemValue = PoemSymbolValue(name: name)
 
-proc type_parameter*(name: string, lower_bound: PoemType, upper_bound: PoemType, variance: Variance): PoemTypeParameter =
-  PoemTypeParameter(name: name, lower_bound: lower_bound, upper_bound: upper_bound, variance: variance)
-proc type_parameter_upper*(name: string, upper_bound: PoemType): PoemTypeParameter = type_parameter(name, nothing_type, upper_bound, Variance.Invariant)
-proc type_parameter_lower*(name: string, lower_bound: PoemType): PoemTypeParameter = type_parameter(name, lower_bound, any_type, Variance.Invariant)
-proc type_parameter*(name: string): PoemTypeParameter = type_parameter_lower(name, nothing_type)
+proc named_type_concrete*(name: string, type_arguments: seq[PoemType]): PoemNamedType = PoemNamedType(name: name, type_arguments: type_arguments)
+proc named_type*(name: string, type_arguments: seq[PoemType]): PoemType = named_type_concrete(name, type_arguments)
 
 const
   tkMetadataKinded = 0'u8
@@ -254,6 +264,7 @@ template write_many_with_count(stream: FileStream, items, count_type, write_one)
 
 proc read_constants(stream: FileStream): PoemConstants
 proc read_schema(stream: FileStream): PoemSchema
+proc read_struct_property(stream: FileStream): PoemStructProperty
 proc read_global_variable(stream: FileStream): PoemGlobalVariable
 proc read_function(stream: FileStream): PoemFunction
 proc read_instruction(stream: FileStream): Instruction
@@ -265,6 +276,7 @@ proc read_string_with_length(stream: FileStream): string
 
 proc write_constants(stream: FileStream, constants: PoemConstants)
 proc write_schema(stream: FileStream, schema: PoemSchema)
+proc write_struct_property(stream: FileStream, property: PoemStructProperty)
 proc write_global_variable(stream: FileStream, global_variable: PoemGlobalVariable)
 proc write_function(stream: FileStream, function: PoemFunction)
 proc write_instruction(stream: FileStream, instruction: Instruction)
@@ -362,20 +374,29 @@ proc read_schema(stream: FileStream): PoemSchema =
     if not (supertrait of PoemNamedType):
       raise new_exception(IOError, fmt"The schema {name} has supertraits which are not NamedTypes. All supertraits must be NamedTypes.")
 
-  if kind == Kind.Trait:
-    let inherited_shape_type = stream.read_type()
-    if not (inherited_shape_type of PoemShapeType):
-      raise new_exception(IOError, fmt"The trait schema {name} has an inherited shape type which is not a ShapeType.")
+  let schema =
+    if kind == Kind.Trait:
+      let inherited_shape_type = stream.read_type()
+      if not (inherited_shape_type of PoemShapeType):
+        raise new_exception(IOError, fmt"The trait schema {name} has an inherited shape type which is not a ShapeType.")
+      PoemTraitSchema(inherited_shape_type: cast[PoemShapeType](inherited_shape_type))
+    elif kind == Kind.Struct:
+      let properties = stream.read_many_with_count(PoemStructProperty, uint16, read_struct_property)
+      PoemStructSchema(properties: properties)
+    else:
+      raise new_exception(IOError, fmt"The schema kind {kind} is invalid.")
 
-    PoemTraitSchema(
-      kind: kind,
-      name: name,
-      type_parameters: type_parameters,
-      supertraits: cast[seq[PoemNamedType]](supertraits),
-      inherited_shape_type: cast[PoemShapeType](inherited_shape_type),
-    )
-  else:
-    raise new_exception(IOError, "Struct schemas are not implemented yet.")
+  schema.kind = kind
+  schema.name = name
+  schema.type_parameters = type_parameters
+  schema.supertraits = cast[seq[PoemNamedType]](supertraits)
+  schema
+
+proc read_struct_property(stream: FileStream): PoemStructProperty =
+  let name = stream.read_string_with_length()
+  let tpe = stream.read_type()
+  let is_open = stream.read(bool)
+  PoemStructProperty(name: name, tpe: tpe, is_open: is_open)
 
 proc write_schema(stream: FileStream, schema: PoemSchema) =
   let kind_code: uint8 =
@@ -391,8 +412,16 @@ proc write_schema(stream: FileStream, schema: PoemSchema) =
   if schema of PoemTraitSchema:
     let schema = cast[PoemTraitSchema](schema)
     stream.write_type(schema.inherited_shape_type)
+  elif schema of PoemStructSchema:
+    let schema = cast[PoemStructSchema](schema)
+    stream.write_many_with_count(schema.properties, uint16, write_struct_property)
   else:
-    raise new_exception(IOError, "Struct schemas are not implemented yet.")
+    raise new_exception(IOError, fmt"The schema type is invalid.")
+
+proc write_struct_property(stream: FileStream, property: PoemStructProperty) =
+  stream.write_string_with_length(property.name)
+  stream.write_type(property.tpe)
+  stream.write(property.is_open)
 
 ########################################################################################################################
 # Global variables.                                                                                                    #
@@ -586,8 +615,8 @@ proc read_type(stream: FileStream): PoemType =
 
   of tkNamed:
     let name = stream.read_string_with_length()
-    let arguments = stream.read_many(PoemType, metadata, read_type)
-    PoemNamedType(name: name, arguments: arguments)
+    let type_arguments = stream.read_many(PoemType, metadata, read_type)
+    PoemNamedType(name: name, type_arguments: type_arguments)
 
   else: raise new_exception(IOError, fmt"Unknown type kind {kind}.")
 
@@ -660,9 +689,9 @@ method write(tpe: PoemSymbolType, stream: FileStream) {.locks: "unknown".} =
   stream.write_string_with_length(tpe.name)
 
 method write(tpe: PoemNamedType, stream: FileStream) =
-  stream.write_type_tag(tkNamed, length_to_tag_metadata(tpe.arguments.len))
+  stream.write_type_tag(tkNamed, length_to_tag_metadata(tpe.type_arguments.len))
   stream.write_string_with_length(tpe.name)
-  stream.write_many(tpe.arguments, write_type)
+  stream.write_many(tpe.type_arguments, write_type)
 
 ########################################################################################################################
 # Values.                                                                                                              #
@@ -806,7 +835,7 @@ method collect_type_name_dependencies*(tpe: PoemShapeType, dependencies: var seq
 
 method collect_type_name_dependencies*(tpe: PoemNamedType, dependencies: var seq[string]) {.locks: "unknown".} =
   dependencies.add(tpe.name)
-  for t in tpe.arguments:
+  for t in tpe.type_arguments:
     collect_type_name_dependencies(t, dependencies)
 
 proc collect_type_name_dependencies*(type_parameter: PoemTypeParameter, dependencies: var seq[string]) =

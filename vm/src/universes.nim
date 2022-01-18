@@ -351,7 +351,7 @@ method resolve(poem_type: PoemNamedType, universe: Universe): Type {.locks: "unk
     quit(fmt"The schema for a named type {poem_type.name} hasn't been resolved yet or doesn't exist.")
 
   let schema = universe.schemas[poem_type.name]
-  let type_arguments = new_immutable_seq(universe.resolve_many(poem_type.arguments))
+  let type_arguments = new_immutable_seq(universe.resolve_many(poem_type.type_arguments))
   if schema.kind == Kind.Trait:
     types.instantiate_schema(cast[TraitSchema](schema), type_arguments)
   else:

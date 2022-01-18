@@ -140,8 +140,8 @@ type
 
   StructSchemaProperty* = object
     name: string
-    is_open: bool
     tpe: Type
+    is_open: bool
 
   StructType* {.pure.} = ref object of DeclaredType
     property_types: ImSeq[Type]

@@ -53,9 +53,18 @@ A **Schema** describes a user-defined *trait* or *struct* with optional type par
   - If `Trait`:
     - **Inherited shape type** (ShapeType)
   - If `Struct`:
-    - TODO
+    - **Property count** (uint16)
+    - **Properties**  (StructProperty*)
 
 Any types inside any of the schema's fields may contain type variables that refer to the schema's type parameters.
+
+### Struct Property
+
+A **StructProperty** describes a Schema struct property:
+
+  - **Name** (String)
+  - **Type** (Type): The property's type may contain type variables, which will reference the struct's type parameters.
+  - **Open** (bool): Whether the property is open.
 
 ### Global Variables
 
