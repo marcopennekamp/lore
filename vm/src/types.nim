@@ -85,9 +85,6 @@ type
     property_names*: ImSeq[string]
       ## Property names are ordered lexicographically, in the same order as the property index prescribes.
     property_index*: PropertyIndex
-    property_name_set*: HashSet[string]
-      ## Because a property index cannot be used to determine whether a given name is part of the shape, we need an
-      ## additional name set for shape/shape subtyping and other operations.
 
   ShapeType* {.pure, acyclic.} = ref object of Type
     meta*: MetaShape
@@ -246,7 +243,6 @@ proc get_meta_shape*(property_names: ImSeq[string]): MetaShape =
     meta_shape = MetaShape(
       property_names: property_names,
       property_index: get_interned_property_index(to_open_array(property_names)),
-      property_name_set: to_hash_set(to_open_array(property_names)),
     )
     interned_meta_shapes[property_names] = meta_shape
   meta_shape
@@ -267,9 +263,6 @@ proc `===`(a: MetaShape, b: MetaShape): bool {.inline.} =
 
 proc property_count*(meta_shape: MetaShape): int {.inline.} = meta_shape.property_names.len
 proc property_count*(tpe: ShapeType): int {.inline.} = tpe.meta.property_count
-
-proc has_property*(meta_shape: MetaShape, name: string): bool {.inline.} = name in meta_shape.property_name_set
-proc has_property*(tpe: ShapeType, name: string): bool {.inline.} = tpe.meta.has_property(name)
 
 proc new_shape_type*(meta_shape: MetaShape, property_types: ImSeq[Type]): ShapeType =
   ## Creates a new shape type with the given property types. The property types must have the same length and order as
@@ -292,8 +285,16 @@ proc copy_shape_type*(tpe: ShapeType): ShapeType =
 proc shape_as_type*(meta_shape: MetaShape, property_types: open_array[Type]): Type = new_shape_type(meta_shape, property_types)
 
 proc get_property_type*(tpe: ShapeType, name: string): Type =
-  ## Gets the type of the property named `name`. The name must be a valid property name for the given shape type.
+  ## Gets the type of the property `name`. The name must be a valid property name for the given shape type.
   tpe.property_types[tpe.meta.property_index.find_offset(name)]
+
+proc get_property_type_if_exists*(tpe: ShapeType, name: string): Type =
+  ## Gets the type of the property `name`. If the property does not exist, this function returns `nil`.
+  let offset = tpe.meta.property_index.find_offset_if_exists(name)
+  if offset >= 0:
+    tpe.property_types[offset]
+  else:
+    nil
 
 ########################################################################################################################
 # Declared types.                                                                                                      #
@@ -623,9 +624,9 @@ template shape_subtypes_shape(substitution_mode: IsSubtypeSubstitutionMode, s1: 
   else:
     for i in 0 ..< s2.property_count:
       let property_name = s2.meta.property_names[i]
-      if not s1.has_property(property_name):
+      let p1_type = s1.get_property_type_if_exists(property_name)
+      if p1_type == nil:
         return false
-      let p1_type = s1.get_property_type(property_name)
       let p2_type = s2.property_types[i]
       if not is_subtype_rec(substitution_mode, p1_type, p2_type):
         return false
@@ -927,9 +928,10 @@ proc fits_assign(t1: Type, t2: Type, assignments: var FitsAssignments): bool =
       else:
         for i in 0 ..< s2.property_count:
           let property_name = s2.meta.property_names[i]
-          if not s1.has_property(property_name):
+          let p1_type = s1.get_property_type_if_exists(property_name)
+          if p1_type == nil:
             return false
-          if not fits_assign(s1.get_property_type(property_name), s2.property_types[i], assignments):
+          if not fits_assign(p1_type, s2.property_types[i], assignments):
             return false
     true
 
@@ -1145,8 +1147,9 @@ proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
     for i in 0 ..< property_types.len:
       let property_name = meta_shape.property_names[i]
       for shape_type in shapes:
-        if shape_type.has_property(property_name):
-          property_type_parts.add(shape_type.get_property_type(property_name))
+        let property_type = shape_type.get_property_type_if_exists(property_name)
+        if property_type != nil:
+          property_type_parts.add(property_type)
       property_types[i] = simplify_construct_covariant(kind, property_type_parts)
       property_type_parts.set_len(0)
 

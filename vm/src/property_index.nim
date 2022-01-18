@@ -89,7 +89,7 @@ proc find_result_edge(property_index: PropertyIndex, name: open_array[char]): In
       return nil
 
 proc find_offset*(property_index: PropertyIndex, name: open_array[char]): uint16 =
-  ## In the given property index, finds the offset for `name`. This operation is undefined if `name` is not in the
+  ## Finds the offset for `name` in the given property index. This operation is undefined if `name` is not in the
   ## property index.
   let result_edge = find_result_edge(property_index, name)
   if result_edge != nil:
@@ -102,6 +102,15 @@ proc has_property*(property_index: PropertyIndex, name: open_array[char]): bool 
   ## Whether `name` is in the given property index.
   let result_edge = find_result_edge(property_index, name)
   result_edge != nil and result_edge.name == name
+
+proc find_offset_if_exists*(property_index: PropertyIndex, name: open_array[char]): int =
+  ## Finds the offset for `name` in the given property index. This operation checks for the existence of `name` and
+  ## returns -1 if `name` is not valid.
+  let result_edge = find_result_edge(property_index, name)
+  if result_edge != nil and result_edge.name == name:
+    int(result_edge.result)
+  else:
+    -1
 
 # TODO (vm/parallel): This should be protected by a lock.
 var interned_property_indices = new_table[seq[string], PropertyIndex]()
