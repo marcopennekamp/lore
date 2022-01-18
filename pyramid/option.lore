@@ -2,6 +2,15 @@ module lore
 
 use lore.core.panic
 
+// TODO (pyramid): Implement compile-time multi-function disambiguation, so that a function "lore.list.get" and a
+//                 function "lore.option.get" can both be imported and the specific multi-function to call is decided
+//                 at the call site. This will then allow us to move many option functions out of the Option companion
+//                 module. Option, Some, and None should be part of a module `lore.option`. `get` and cousins are moved
+//                 to `lore.option` as well. Then only functions like `some` which should be called like `Option.some`
+//                 remain in the companion module. Ultimately, such a change would allow a user to simply import
+//                 `lore.option` instead of importing `lore.Option` and then the rest via `lore.Option.Some` etc.,
+//                 which is super clunky.
+
 /**
   * An Option makes the absence of a value explicit. It can either be a `Some`, which wraps the present value, or a
   * None, which signifies the absence of a value.
