@@ -8,4 +8,6 @@ import "../../src/property_index.nim"
 block:
   let property_index = get_interned_property_index(@["foo"])
 
-  assert find_offset(property_index, "foo") == 0
+  assert property_index.find_offset("foo") == 0
+  assert property_index.has_property("foo")
+  assert not property_index.has_property("bar")

@@ -8,13 +8,13 @@ type
     ## store property types and values in an array, by accessing them via their offsets. Names are indexed in
     ## lexicographic order.
     ##
-    ## Property indices should be precomputed for shapes and structs, as their set of property names is always known
-    ## before evaluation. Property indices are also interned, so that the same name set found in different struct and
-    ## shape types can be shared in memory.
+    ## Property indices are precomputed for shapes and structs, as their set of property names is always known before
+    ## evaluation. Property indices are also interned, so that the same name set found in different struct and shape
+    ## types can be shared in memory.
     ##
-    ## Due to how property indices are optimized, they cannot be used to decide whether a property name is valid.
-    ## Asking a property index for the offset of a name which isn't valid is undefined behavior (including the
-    ## possibility of a segfault).
+    ## The `find_offset` operation cannot be used to decide whether a property name is valid. This is due to how the
+    ## operation is optimized. Asking a property index for the offset of a name which isn't valid is undefined
+    ## behavior. The `has_property` operation should be used instead.
     root: IndexNode
 
   IndexNode = ref object
@@ -26,15 +26,15 @@ type
     ##
     ##   - root { position: 0 }
     ##     - l --> node { position: 1 }
-    ##       - e --> result 0
-    ##       - o --> result 1
+    ##       - e --> result 0 ("level")
+    ##       - o --> result 1 ("load")
     ##     - n --> node { position: 2 }
-    ##       - m --> result 2
-    ##       - t --> result 3
+    ##       - m --> result 2 ("name")
+    ##       - t --> result 3 ("nature")
     ##
-    ## Notice how the index doesn't fully include the strings. This is intentional, because we can reasonably expect
-    ## that the index is only queried with valid property names. The Lore compiler can already guarantee this. This
-    ## keeps the structure light and fast to traverse.
+    ## To find an offset, we can follow the index structure to the result offset, which is a fast operation. Comparing
+    ## names is only necessary to decide `has_property`. Many times, the bytecode already guarantees by contract that a
+    ## name is valid, so `has_property` only needs to be used in some cases.
     position: uint16
     edge_count: uint16
     edges: UncheckedArray[IndexEdge]
@@ -45,8 +45,12 @@ type
     case is_result: bool
     of true:
       result: uint16
+      name: string
+        ## The full name of the result property. This is used by `has_property` to determine whether a given name is
+        ## contained in the property index.
     of false:
       target: IndexNode
+  IndexEdgePtr = ptr IndexEdge
 
 proc significant_at(name: open_array[char], position: uint16): char =
   ## Returns the significant at `position` in `name`. If `position` is out of bounds, the null character `\0` is the
@@ -57,14 +61,50 @@ proc significant_at(name: open_array[char], position: uint16): char =
   else:
     '\0'
 
+proc build_property_index(names: seq[string]): PropertyIndex
+
 ########################################################################################################################
-# Index building.                                                                                                      #
+# Index API.                                                                                                           #
 ########################################################################################################################
+
+proc find_result_edge(property_index: PropertyIndex, name: open_array[char]): IndexEdgePtr {.inline.} =
+  ## Finds a result edge in the given property index for the given name. `nil` may be returned if `name` is not in the
+  ## property index.
+  var current_node: IndexNode = property_index.root
+  while true:
+    let significant = name.significant_at(current_node.position)
+    var i = 0'u16
+    while i < current_node.edge_count:
+      let edge = current_node.edges[i]
+      if edge.significant == significant:
+        if edge.is_result:
+          return addr current_node.edges[i]
+        else:
+          current_node = edge.target
+          break
+      i += 1
+
+    # No edge corresponds to the current `significant`: the name isn't included in the property index.
+    if i == current_node.edge_count:
+      return nil
+
+proc find_offset*(property_index: PropertyIndex, name: open_array[char]): uint16 =
+  ## In the given property index, finds the offset for `name`. This operation is undefined if `name` is not in the
+  ## property index.
+  let result_edge = find_result_edge(property_index, name)
+  if result_edge != nil:
+    result_edge.result
+  else:
+    # We return 0 as a default offset. This is technically undefined behavior.
+    0
+
+proc has_property*(property_index: PropertyIndex, name: open_array[char]): bool =
+  ## Whether `name` is in the given property index.
+  let result_edge = find_result_edge(property_index, name)
+  result_edge != nil and result_edge.name == name
 
 # TODO (vm/parallel): This should be protected by a lock.
 var interned_property_indices = new_table[seq[string], PropertyIndex]()
-
-proc build_property_index(names: seq[string]): PropertyIndex
 
 proc get_interned_property_index*(names: open_array[string]): PropertyIndex =
   ## Returns a property index for the given names if it's already been interned. Otherwise, creates such a property
@@ -78,6 +118,10 @@ proc get_interned_property_index*(names: open_array[string]): PropertyIndex =
     interned_property_indices[unique_names] = property_index
   property_index
 
+########################################################################################################################
+# Index building.                                                                                                      #
+########################################################################################################################
+
 proc alloc_index_node(position: uint16, edge_count: uint16): IndexNode =
   ## Allocates an IndexNode with space reserved for `edge_count` edges.
   let node = cast[IndexNode](alloc0(sizeof(IndexNode) + cast[int](edge_count) * sizeof(IndexEdge)))
@@ -85,8 +129,8 @@ proc alloc_index_node(position: uint16, edge_count: uint16): IndexNode =
   node.edge_count = edge_count
   node
 
-proc new_result_edge(significant: char, res: uint16): IndexEdge {.inline.} =
-  IndexEdge(significant: significant, is_result: true, result: res)
+proc new_result_edge(significant: char, res: uint16, name: string): IndexEdge {.inline.} =
+  IndexEdge(significant: significant, is_result: true, result: res, name: name)
 
 proc new_branch_edge(significant: char, target: IndexNode): IndexEdge {.inline.} =
   IndexEdge(significant: significant, is_result: false, target: target)
@@ -128,11 +172,12 @@ proc build_index_node(start_position: uint16, names: open_array[string], first: 
     while edge_last < last and names[edge_last].significant_at(critical_position) == names[edge_last + 1].significant_at(critical_position):
       edge_last += 1
 
-    let significant = names[edge_first].significant_at(critical_position)
+    let name = names[edge_first]
+    let significant = name.significant_at(critical_position)
     let edge =
       if edge_first == edge_last:
         # We have a single name, hence a result edge!
-        new_result_edge(significant, edge_first)
+        new_result_edge(significant, edge_first, name)
       else:
         let branch_node = build_index_node(critical_position + 1, names, edge_first, edge_last)
         new_branch_edge(significant, branch_node)
@@ -161,35 +206,9 @@ proc build_property_index(names: seq[string]): PropertyIndex =
       # We handle this edge case separately, because there is no need to call `build_index_node`.
       let name = names[0]
       let root = alloc_index_node(0, 1)
-      root.edges[0] = new_result_edge(name.significant_at(0), 0)
+      root.edges[0] = new_result_edge(name.significant_at(0), 0, name)
       root
     else:
       build_index_node(0, names, 0, uint16(names.len - 1))
 
   PropertyIndex(root: root)
-
-########################################################################################################################
-# Index querying.                                                                                                      #
-########################################################################################################################
-
-proc find_offset*(property_index: PropertyIndex, name: open_array[char]): uint16 =
-  ## In the given PropertyIndex, finds the offset for `name`. This operation is undefined if `name` is not in the
-  ## property index (including the possibility of a segfault).
-  var current_node: IndexNode = property_index.root
-  while true:
-    let significant = name.significant_at(current_node.position)
-    var i = 0'u16
-    while i < current_node.edge_count:
-      let edge = current_node.edges[i]
-      if edge.significant == significant:
-        if edge.is_result:
-          return edge.result
-        else:
-          current_node = edge.target
-          break
-      i += 1
-
-    # No edge corresponds to the current `significant`: the name isn't included in the property index. We return 0 as a
-    # default result. This is technically undefined behavior.
-    if i == current_node.edge_count:
-      return 0
