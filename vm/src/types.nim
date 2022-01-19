@@ -440,7 +440,7 @@ proc new_struct_schema*(
   let property_index = get_interned_property_index(property_names)
   let open_property_indices = new_immutable_seq(open_property_indices_accumulator)
   let schema = StructSchema(
-    kind: Kind.Trait,
+    kind: Kind.Struct,
     name: name,
     type_parameters: type_parameters,
     supertraits: supertraits,
