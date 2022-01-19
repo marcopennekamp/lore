@@ -149,8 +149,9 @@ type
   StructType* {.pure.} = ref object of DeclaredType
     open_property_types*: ImSeq[Type]
       ## The run-time types of the struct's open properties. This sequence is only defined if the struct type has been
-      ## created with at least one open property type. Representatives of struct schemas never define open property
-      ## types, even if one of their properties is open.
+      ## created with open property types. Representatives of struct schemas never define open property types, even if
+      ## one of their properties is open. However, if one open property type is specified in this list, all open
+      ## property types need to be specified.
     property_type_cache*: FixedSeq[Type]
       ## Caches the actual run-time types of the struct's properties. The cache is always defined, even if the schema
       ## has no type parameters or open properties.
@@ -311,6 +312,9 @@ proc get_property_type_if_exists*(tpe: ShapeType, name: string): Type =
 # Declared types.                                                                                                      #
 ########################################################################################################################
 
+proc `===`(a: Schema, b: Schema): bool {.inline.} = cast[pointer](a) == cast[pointer](b)
+proc `!==`(a: Schema, b: Schema): bool {.inline.} = not (a === b)
+
 proc is_constant*(schema: Schema): bool = schema.type_parameters.len == 0
 
 proc get_representative*(schema: Schema): DeclaredType {.inline.} =
@@ -387,7 +391,7 @@ proc instantiate_schema*(schema: TraitSchema, type_arguments: ImSeq[Type]): Trai
   ## Instantiates `schema` with the given type arguments.
   # TODO (vm/intern): This function should intern the declared types.
   if schema.is_constant:
-    return schema.get_representative()
+    return schema.get_representative
 
   check_type_parameter_bounds(schema, type_arguments)
   let supertraits = instantiate_supertraits(schema, type_arguments)
@@ -400,7 +404,7 @@ proc instantiate_schema*(schema: TraitSchema, type_arguments: ImSeq[Type]): Trai
   )
 
 proc get_inherited_shape_type*(tpe: TraitType): ShapeType =
-  let schema: TraitSchema = tpe.get_schema()
+  let schema: TraitSchema = tpe.get_schema
 
   if not schema.is_inherited_shape_type_polymorphic:
     return schema.inherited_shape_type
@@ -467,7 +471,7 @@ proc instantiate_schema*(schema: StructSchema, type_arguments: ImSeq[Type], open
   ## if the struct type should have no concrete open property types.
   # TODO (vm/intern): This function should intern the declared types.
   if schema.is_constant and open_property_types == nil:
-    return schema.get_representative()
+    return schema.get_representative
 
   check_type_parameter_bounds(schema, type_arguments)
   let supertraits = instantiate_supertraits(schema, type_arguments)
@@ -496,7 +500,7 @@ proc get_property_type*(tpe: StructType, property_offset: uint16): Type =
   if cached_candidate != nil:
     return cached_candidate
 
-  let schema = tpe.get_schema()
+  let schema = tpe.get_schema
   let property = schema.properties[property_offset]
   let candidate_type =
     if property.is_open and tpe.open_property_types != nil:
@@ -523,9 +527,11 @@ proc `===`(a: Type, b: Type): bool {.inline.} =
 
 proc has_equal_in(ts1: ImSeq[Type], ts2: ImSeq[Type]): bool
 proc are_exactly_equal(ts1: ImSeq[Type], ts2: ImSeq[Type]): bool
+proc are_declared_types_equal(t1: DeclaredType, t2: DeclaredType): bool
+proc are_open_property_types_equal(t1: StructType, t2: StructType): bool
 
 proc are_equal*(t1: Type, t2: Type): bool =
-  # If the two types are referentially equal, they are obviously the same!
+  # If the two types are referentially equal, they are obviously the same.
   if t1 === t2:
     return true
 
@@ -585,7 +591,17 @@ proc are_equal*(t1: Type, t2: Type): bool =
     let s2 = cast[SymbolType](t2)
     s1.name == s2.name
 
-  else: false
+  of Kind.Trait:
+    let t1 = cast[TraitType](t1)
+    let t2 = cast[TraitType](t2)
+    are_declared_types_equal(t1, t2)
+
+  of Kind.Struct:
+    # Structs are only equal if all of their open property types are equal. This is especially crucial for the dispatch
+    # cache, where a single different open property type may change the target function.
+    let t1 = cast[StructType](t1)
+    let t2 = cast[StructType](t2)
+    are_declared_types_equal(t1, t2) and are_open_property_types_equal(t1, t2)
 
 proc has_equal_in(ts1: ImSeq[Type], ts2: ImSeq[Type]): bool =
   for t1 in ts1:
@@ -602,6 +618,41 @@ proc are_exactly_equal(ts1: ImSeq[Type], ts2: ImSeq[Type]): bool =
     if not are_equal(ts1[i], ts2[i]):
       return false
   true
+
+proc are_declared_types_equal(t1: DeclaredType, t2: DeclaredType): bool =
+  ## Checks whether the two given types are equal from the lens of declared types. This function does not take trait or
+  ## struct specifics into account, which have to be checked in addition.
+  if t1.schema !== t2.schema:
+    return false
+
+  if t1.schema.is_constant:
+    # The common schema is constant and thus we don't have to check the type arguments.
+    return true
+
+  for i in 0 ..< t1.type_arguments.len:
+    if not are_equal(t1.type_arguments[i], t2.type_arguments[i]):
+      return false
+  true
+
+proc are_open_property_types_equal(t1: StructType, t2: StructType): bool =
+  ## Checks whether `t1`'s open property types are equal to `t2`'s open property types. The struct types must have the
+  ## same schema.
+  if t1.open_property_types == nil and t2.open_property_types == nil:
+    true
+  elif t1.open_property_types != nil and t2.open_property_types != nil:
+    for i in 0 ..< t1.open_property_types.len:
+      if not are_equal(t1.open_property_types[i], t2.open_property_types[i]):
+        return false
+    true
+  else:
+    # One `open_property_types` is nil.
+    let open_property_indices = t1.get_schema.open_property_indices
+    for i in open_property_indices:
+      let p1 = t1.get_property_type(i)
+      let p2 = t2.get_property_type(i)
+      if not are_equal(p1, p2):
+        return false
+    true
 
 ########################################################################################################################
 # Subtyping.                                                                                                           #
