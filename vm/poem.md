@@ -58,6 +58,14 @@ A **Schema** describes a user-defined *trait* or *struct* with optional type par
 
 Any types inside any of the schema's fields may contain type variables that refer to the schema's type parameters.
 
+Some of Lore's struct features aren't directly implemented by the VM:
+
+  - **Constructors** are just parameterized functions. The construction operations for structs handle open property types due to their importance to the type system. **Open type parameters**, on the other hand, have to be implemented by adding the right bytecode instructions to the constructor.
+    - TODO (vm/schemas): This relies on a few additional instructions we'll have to add. Basically, there needs to be a way to call a single-function multi-function with explicitly specified type arguments, e.g. `CallSinglePolyX` instructions, placed below the `Dispatch` instructions. We'd also have to add `CallSingleX` instructions for structs without type parameters. And we need instructions to access subterms in types, i.e. type path querying, to implement open type parameters. An instruction to load a type argument of a specific type parameter index is also needed to pass type arguments from the constructor function to the struct construction instruction.
+  - **Constructor functions** are just properly instantiated function values.
+  - **Default values** are implemented in the constructor.
+  - An **object** can be represented by a global variable that contains the only instance of the struct. This can all be checked and implemented by the compiler, so the VM does not need to differentiate between objects and normal structs.
+
 ### Struct Property
 
 A **StructProperty** describes a Schema struct property:
