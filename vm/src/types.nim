@@ -373,7 +373,7 @@ proc new_trait_schema*(
   )
 
   let type_arguments = cast[ImSeq[Type]](type_parameters.as_type_arguments())
-  schema.representative = TraitType(schema: schema, type_arguments: type_arguments, supertraits: supertraits)
+  schema.representative = TraitType(kind: Kind.Trait, schema: schema, type_arguments: type_arguments, supertraits: supertraits)
   schema
 
 proc attach_inherited_shape_type*(schema: TraitSchema, inherited_shape_type: ShapeType) =
@@ -392,6 +392,7 @@ proc instantiate_schema*(schema: TraitSchema, type_arguments: ImSeq[Type]): Trai
   check_type_parameter_bounds(schema, type_arguments)
   let supertraits = instantiate_supertraits(schema, type_arguments)
   TraitType(
+    kind: Kind.Trait,
     schema: schema,
     type_arguments: type_arguments,
     supertraits: supertraits,
@@ -479,6 +480,7 @@ proc new_struct_type(
   open_property_types: ImSeq[Type],
 ): StructType =
   StructType(
+    kind: Kind.Struct,
     schema: schema,
     type_arguments: type_arguments,
     supertraits: supertraits,
