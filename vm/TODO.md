@@ -8,7 +8,7 @@
   - Traits: 
     - Types: ~~Schema definition~~, ~~type definition~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, type equality, subtyping, type variable allocation, type substitution, type simplification, to string.
   - Structs:
-    - Types: ~~Schema definition~~, ~~type definition~~, ~~poem reading~~, ~~poem writing~~, universe resolution, type equality, subtyping, type variable allocation, type substitution, type simplification, to string, open property types and `get_property_type`, constructor, open type parameters and type paths.
+    - Types: ~~Schema definition~~, ~~type definition~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, type equality, subtyping, type variable allocation, type substitution, type simplification, to string, open property types and `get_property_type`, constructor, open type parameters and type paths.
     - Values: Struct values, poem reading, poem writing, direct and indirect property access, constructor, constructor functions.
       - Objects can be represented by a (lazy?) global variable that contains the sole instance of the struct. This can all be checked and implemented by the compiler, so the VM might not even need to differentiate between objects and normal structs.
   - Clear all `TODO (vm/schemas)` entries.

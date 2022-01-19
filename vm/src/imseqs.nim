@@ -14,6 +14,10 @@ type
     len*: int
     elements*: UncheckedArray[T]
 
+  FixedSeq*[T] = ImSeq[T]
+    ## A FixedSeq is an ImSeq with no immutability guarantees. By contract, a FixedSeq may be mutated at any time and
+    ## its owner should treat it as such.
+
 proc alloc_immutable_seq[T](length: int): ImSeq[T] =
   # Note that `sizeof` of an unchecked array is 0, so we can use `sizeof(ImSeqObj[T])` to get the size of the preamble.
   let seq = cast[ImSeq[T]](alloc0(sizeof(ImSeqObj[T]) + length * sizeof(T)))

@@ -139,14 +139,25 @@ type
       ## they are specifically requested, such as during struct/struct equality or subtyping.
 
   StructSchemaProperty* = object
-    name: string
-    tpe: Type
-    is_open: bool
+    name*: string
+    tpe*: Type
+    is_open*: bool
+    open_index*: uint16
+      ## If the property is open, `open_index` contains the index at which the property's open type will be found in
+      ## a struct type's `open_property_types`.
 
   StructType* {.pure.} = ref object of DeclaredType
-    property_types: ImSeq[Type]
-      ## The actual run-time types of the struct's properties. This sequence is defined if and only if the schema is
-      ## parameterized or if it has open properties.
+    open_property_types*: ImSeq[Type]
+      ## The run-time types of the struct's open properties. This sequence is only defined if the struct type has been
+      ## created with at least one open property type. Representatives of struct schemas never define open property
+      ## types, even if one of their properties is open.
+    property_type_cache*: FixedSeq[Type]
+      ## Caches the actual run-time types of the struct's properties. The cache is always defined, even if the schema
+      ## has no type parameters or open properties.
+      ##
+      ## The cache cannot be filled during type creation, because property types do not follow the schema resolution
+      ## order. Hence, it would be impossible to directly compute a `property_types` sequence for the representative
+      ## type and "out-of-order" types created during schema resolution.
 
 const max_type_parameters* = 32
   ## The maximum number of type parameters that a function may have is 32. This allows us to allocate certain arrays on
@@ -362,8 +373,7 @@ proc new_trait_schema*(
   )
 
   let type_arguments = cast[ImSeq[Type]](type_parameters.as_type_arguments())
-  let representative = TraitType(schema: schema, type_arguments: type_arguments, supertraits: supertraits)
-  schema.representative = representative
+  schema.representative = TraitType(schema: schema, type_arguments: type_arguments, supertraits: supertraits)
   schema
 
 proc attach_inherited_shape_type*(schema: TraitSchema, inherited_shape_type: ShapeType) =
@@ -405,58 +415,101 @@ proc get_inherited_shape_type*(tpe: TraitType): ShapeType =
 # Structs.                                                                                                             #
 ########################################################################################################################
 
-proc new_struct_type(schema: StructSchema, type_arguments: ImSeq[Type], property_types: ImSeq[Type]): StructType
+proc new_struct_type(schema: StructSchema, type_arguments: ImSeq[Type], supertraits: ImSeq[TraitType], open_property_types: ImSeq[Type]): StructType
 
+proc property_count*(schema: StructSchema): int = schema.properties.len
 proc has_open_properties*(schema: StructSchema): bool = schema.open_property_indices.len > 0
 
-proc instantiate_schema*(schema: StructSchema, type_arguments: ImSeq[Type]): StructType =
-  ## Instantiates `schema` with the given type arguments without deviating open property types. This is used to
-  ## instantiate constant struct types that aren't associated with a value, such as in input and output types.
-  # TODO (vm/intern): This function should intern the declared types.
-  if schema.is_constant:
-    return schema.get_representative()
+proc new_struct_schema*(
+  name: string,
+  type_parameters: ImSeq[TypeParameter],
+  supertraits: ImSeq[TraitType],
+  properties: ImSeq[StructSchemaProperty],
+): StructSchema =
+  ## Creates a new struct schema from the given arguments. Property types in `properties` must be `nil`, as property
+  ## types are resolved in a second step. The properties must be ordered lexicographically by their name.
+  var property_names: seq[string] = @[]
+  var open_property_indices_accumulator: seq[uint16] = @[]
+  for i in 0 ..< properties.len:
+    let property = properties[i]
+    property_names.add(property.name)
+    if property.is_open:
+      open_property_indices_accumulator.add(uint16(i))
 
-  var property_types = new_immutable_seq[Type](schema.properties.len)
-  for i in 0 ..< schema.properties.len:
-    property_types[i] = substitute(schema.properties[i].tpe, type_arguments)
+  let property_index = get_interned_property_index(property_names)
+  let open_property_indices = new_immutable_seq(open_property_indices_accumulator)
+  let schema = StructSchema(
+    kind: Kind.Trait,
+    name: name,
+    type_parameters: type_parameters,
+    supertraits: supertraits,
+    properties: properties,
+    property_index: property_index,
+    open_property_indices: open_property_indices,
+  )
 
-  new_struct_type(schema, type_arguments, property_types)
+  let type_arguments = cast[ImSeq[Type]](type_parameters.as_type_arguments())
+  schema.representative = new_struct_type(schema, type_arguments, supertraits, nil)
+  schema
+
+proc attach_property_type*(schema: StructSchema, property_name: string, property_type: Type) =
+  let offset = schema.property_index.find_offset_if_exists(property_name)
+  if offset < 0:
+    quit(fmt"The struct schema {schema.name} has no property `{property_name}`.")
+
+  var property = schema.properties[offset]
+  property.tpe = property_type
+  schema.properties[offset] = property
 
 proc instantiate_schema*(schema: StructSchema, type_arguments: ImSeq[Type], open_property_types: ImSeq[Type]): DeclaredType =
-  ## Instantiates `schema` with the given type arguments and open property types. This is used to instantiate struct
-  ## types associated with a value.
+  ## Instantiates `schema` with the given type arguments and open property types. `open_property_types` must be `nil`
+  ## if the struct type should have no concrete open property types.
   # TODO (vm/intern): This function should intern the declared types.
-  if open_property_types.len != schema.open_property_indices.len:
-    quit(fmt"Cannot instantiate the struct schema {schema.name} with {open_property_types.len} open property types," &
-     " as the schema expects {schema.open_property_indices.len}.")
+  if schema.is_constant and open_property_types == nil:
+    return schema.get_representative()
 
-  if schema.has_open_properties:
-    var property_types = new_immutable_seq[Type](schema.properties.len)
-    var open_counter = 0
-    for i in 0 ..< schema.properties.len:
-      if schema.properties[i].is_open:
-        property_types[i] = open_property_types[open_counter]
-        open_counter += 1
-      else:
-        property_types[i] =
-          if schema.is_constant:
-            schema.properties[i].tpe
-          else:
-            substitute(schema.properties[i].tpe, type_arguments)
-
-    new_struct_type(schema, type_arguments, property_types)
-  else:
-    instantiate_schema(schema, type_arguments)
-
-proc new_struct_type(schema: StructSchema, type_arguments: ImSeq[Type], property_types: ImSeq[Type]): StructType =
   check_type_parameter_bounds(schema, type_arguments)
   let supertraits = instantiate_supertraits(schema, type_arguments)
+  new_struct_type(schema, type_arguments, supertraits, open_property_types)
+
+proc new_struct_type(
+  schema: StructSchema,
+  type_arguments: ImSeq[Type],
+  supertraits: ImSeq[TraitType],
+  open_property_types: ImSeq[Type],
+): StructType =
   StructType(
     schema: schema,
     type_arguments: type_arguments,
     supertraits: supertraits,
-    property_types: property_types,
+    open_property_types: open_property_types,
+    property_type_cache: new_immutable_seq[Type](schema.property_count),
   )
+
+proc get_property_type*(tpe: StructType, property_offset: uint16): Type =
+  ## Returns the type of the property at the given offset. The property type is either an open property type or the
+  ## schema's property type instantiated with the struct's type arguments. All results are cached in the struct type's
+  ## `property_type_cache`.
+  let cached_candidate = tpe.property_type_cache[property_offset]
+  if cached_candidate != nil:
+    return cached_candidate
+
+  let schema = tpe.get_schema()
+  let property = schema.properties[property_offset]
+  let candidate_type =
+    if property.is_open and tpe.open_property_types != nil:
+      tpe.open_property_types[property.open_index]
+    elif schema.is_constant:
+      property.tpe
+    else:
+      substitute(property.tpe, tpe.type_arguments)
+
+  tpe.property_type_cache[property_offset] = candidate_type
+  candidate_type
+
+proc get_property_type*(tpe: StructType, name: string): Type {.inline.} =
+  ## Returns the type of a property `name`, which must be a valid property name.
+  tpe.get_property_type(tpe.get_schema.property_index.find_offset(name))
 
 ########################################################################################################################
 # Type equality.                                                                                                       #
