@@ -64,5 +64,12 @@ proc add*[I, T](seq: var StackSeq[I, T], value: T) =
     seq.heap_data[heap_index] = value
   seq.len += 1
 
+proc pop*[I, T](seq: var StackSeq[I, T]): T =
+  ## Removes the last element from `seq` and returns it.
+  let index = seq.len - 1
+  let element = seq[index]
+  seq.len = index
+  element
+
 proc clear*[I, T](seq: var StackSeq[I, T]) =
   seq.len = 0
