@@ -120,13 +120,11 @@ type
       ##
       ## The inherited shape type may contain declared types that are placed later in the schema resolution order.
       ## Hence, inherited shape types have to be added to a schema in a later resolution step.
-    is_inherited_shape_type_polymorphic: bool
-      ## `get_inherited_shape_type` only has to substitute type arguments when the inherited shape type is polymorphic.
 
   TraitType* {.pure.} = ref object of DeclaredType
     inherited_shape_type_cache: ShapeType
-      ## The schema's inherited shape type instantiated with the trait's type arguments. The cache is only populated on
-      ## demand and only when the schema's inherited shape type is polymorphic.
+      ## The schema's inherited shape type instantiated with the trait's type arguments. The cache is always used, even
+      ## when the shape type contains no type variables.
 
   StructSchema* {.pure.} = ref object of Schema
     properties*: ImSeq[StructSchemaProperty]
@@ -160,12 +158,27 @@ type
       ## order. Hence, it would be impossible to directly compute a `property_types` sequence for the representative
       ## type and "out-of-order" types created during schema resolution.
 
+type SubstitutionMode {.pure.} = enum
+  None
+    ## Executes the operation without substituting any types from assignments.
+  T1
+    ## Executes the operation while replacing type variables in `t1` with types from assignments.
+  T2
+    ## Executes the operation while replacing type variables in `t2` with types from assignments.
+
 const max_type_parameters* = 32
   ## The maximum number of type parameters that a function may have is 32. This allows us to allocate certain arrays on
   ## the stack when checking for type fit.
 
+proc instantiate_schema*(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType
+
+proc are_equal*(t1: Type, t2: Type): bool
+proc are_all_equal(types: open_array[Type]): bool
+
+proc is_subtype*(t1: Type, t2: Type): bool
 proc is_subtype_substitute1*(t1: Type, t2: Type, assignments: open_array[Type]): bool
 proc is_subtype_substitute2*(t1: Type, t2: Type, assignments: open_array[Type]): bool
+proc is_subtype_substitute(substitution_mode: SubstitutionMode, t1: Type, t2: Type, assignments: open_array[Type]): bool
 
 proc fits*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeParameter]): ImSeq[Type]
 
@@ -173,6 +186,12 @@ proc substitute*(tpe: Type, type_arguments: open_array[Type]): Type
 proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type
 
 proc is_polymorphic(tpe: Type): bool
+
+proc sum_simplified*(parts: open_array[Type]): Type
+proc sum_simplified*(parts: ImSeq[Type]): Type
+
+proc intersection_simplified*(parts: open_array[Type]): Type
+proc intersection_simplified*(parts: ImSeq[Type]): Type
 
 proc `$`*(tpe: Type): string
 
@@ -312,8 +331,11 @@ proc get_property_type_if_exists*(tpe: ShapeType, name: string): Type =
 # Declared types.                                                                                                      #
 ########################################################################################################################
 
-proc `===`(a: Schema, b: Schema): bool {.inline.} = cast[pointer](a) == cast[pointer](b)
-proc `!==`(a: Schema, b: Schema): bool {.inline.} = not (a === b)
+proc find_first_supertrait(tpe: DeclaredType, supertrait_schema: TraitSchema): TraitType
+proc find_combined_supertrait(tpe: DeclaredType, supertrait_schema: TraitSchema): TraitType
+
+proc `===`*(a: Schema, b: Schema): bool {.inline.} = cast[pointer](a) == cast[pointer](b)
+proc `!==`*(a: Schema, b: Schema): bool {.inline.} = not (a === b)
 
 proc is_constant*(schema: Schema): bool = schema.type_parameters.len == 0
 
@@ -357,6 +379,107 @@ proc instantiate_supertraits(schema: Schema, type_arguments: ImSeq[Type]): ImSeq
     instantiated[i] = cast[TraitType](substitute(schema.supertraits[i], to_open_array(type_arguments)))
   instantiated
 
+# TODO: The current implementation of `find_supertrait` essentially scans the whole supertrait hierarchy. Is there any
+#       way in which we could improve performance?
+#          - Idea 1: Keep a flat hash map of Schema -> Type in d1's schema, with uninstantiated type
+#                    arguments. It contains a transitive closure of all supertypes. We can then quickly get
+#                    the correct type with the given schema, and instantiate it as i1, then check if i1 is
+#                    a subtype of t2. (The advantage is further that we probably don't need the more
+#                    complicated algorithm for when `hasMultipleParameterizedInheritance` is true. We can
+#                    combine these types at compile time when the Schema -> Type map is generated.)
+#                      - The reverse (having a subtype map in the supertrait) would not work because there
+#                        is no straight-forward way to handle type arguments directly.
+#          - Idea 2: Idea 1, but build the hash map slowly as a cache. This would require us to implement
+#                    all relevant algorithms (including the one for `hasMultipleParameterizedInheritance`),
+#                    but might save memory since not all subtype/supertype combinations will likely be
+#                    checked. For example, it is unlikely, albeit possible, that d1 is even a trait. So most
+#                    of the caching will happen in structs. If we have a struct Fox <: (Mammal <: (Animal
+#                    <: Hashable)) but we never check Fox <: Mammal and neither Fox <: Hashable, the cache
+#                    of Fox will only have one entry `Animal<schema> -> Animal<representative>`.
+#       The big downside here is memory. Suppose we have a type hierarchy where T1 has 10 map entries and T2
+#       has 12 map entries. A type T3 that extends both T1 and T2 will have 10 + 12 + 2 = 24 map entries,
+#       unless T1 and T2 share common supertraits.
+#       Note that such a caching mechanism will require us to traverse the SCHEMA'S supertrait hierarchy
+#       and instantiate type parameters as the last step. This might even render DeclaredType.supertraits
+#       obsolete, which would save a lot of memory. (Well, the first layer would be to get `type.schema.supertraits`,
+#       but from that point on, we need each trait TYPE's supertraits, so this would require substituting.
+#       However, for each subtype/supertype combination, this substitution would only happen once and only
+#       the result would be saved in the transitive supertype cache.)
+
+proc find_supertrait(tpe: DeclaredType, supertrait_schema: TraitSchema): TraitType =
+  ## Finds the supertrait with the given schema that `tpe` inherits from or `tpe` itself. If no such supertrait exists,
+  ## the function returns `nil`. The algorithm combines all occurrences of the supertrait if `tpe` inherits from it
+  ## multiple times.
+  if tpe.schema === supertrait_schema:
+    return cast[TraitType](tpe)
+
+  # TODO (vm/schemas): Implement `has_multiple_parameterized_inheritance`.
+  # TODO (vm): We can make `has_multiple_parameterized_inheritance` more fine-grained by listing the schemas which
+  #            occur multiple times in the supertrait hierarchy. This can be a simple pointer hash map. This is
+  #            important for the immediate performance impact of adding an inheritance relationship to a type that
+  #            would flip a whole supertype hierarchy to "on". ANY supertraits with type parameters would be negatively
+  #            affected by this simple change if `has_multiple_parameterized_inheritance` doesn't differentiate between
+  #            schemas.
+  #if supertrait_schema.is_constant or not tpe.schema.has_multiple_parameterized_inheritance:
+  if supertrait_schema.is_constant:
+    find_first_supertrait(tpe, supertrait_schema)
+  else:
+    find_combined_supertrait(tpe, supertrait_schema)
+
+iterator find_supertrait_candidates(tpe: DeclaredType, supertrait_schema: TraitSchema): TraitType =
+  ## Yields all supertraits in `tpe` which have the given schema.
+  var queue: StackSeq[32, TraitType]
+  for supertrait in tpe.supertraits:
+    queue.add(supertrait)
+
+  while queue.len > 0:
+    let candidate = queue.pop()
+    if candidate.schema === supertrait_schema:
+      yield candidate
+    for supertrait in candidate.supertraits:
+      queue.add(supertrait)
+
+proc find_first_supertrait(tpe: DeclaredType, supertrait_schema: TraitSchema): TraitType =
+  ## Finds the first occurrence of `supertrait_schema` in `tpe`'s supertraits.
+  for candidate in find_supertrait_candidates(tpe, supertrait_schema):
+    return candidate
+  nil
+
+proc find_combined_supertrait(tpe: DeclaredType, supertrait_schema: TraitSchema): TraitType =
+  ## Finds all occurrences of `supertrait_schema` in `tpe`'s supertraits and combines them. Returns `nil` if the
+  ## supertraits cannot be combined.
+  var candidates: StackSeq[8, TraitType]
+  for candidate in find_supertrait_candidates(tpe, supertrait_schema):
+    candidates.add(candidate)
+
+  if candidates.len == 0: return nil
+  if candidates.len == 1: return candidates[0]
+
+  let type_parameters = supertrait_schema.type_parameters
+  var combined_arguments = new_immutable_seq[Type](type_parameters.len)
+
+  # `argument_candidates` is reused for all iterations to save allocations.
+  var argument_candidates = new_immutable_seq[Type](candidates.len)
+  for i in 0 ..< type_parameters.len:
+    let type_parameter = type_parameters[i]
+    for j in 0 ..< candidates.len:
+      argument_candidates[j] = candidates[j].type_arguments[i]
+
+    case type_parameter.variance
+    of Variance.Covariant:
+      combined_arguments[i] = intersection_simplified(argument_candidates)
+    of Variance.Contravariant:
+      combined_arguments[i] = sum_simplified(argument_candidates)
+    of Variance.Invariant:
+      # This is a tricky one. The compiler MUST guarantee that invariant type arguments are equal across a supertype
+      # hierarchy. Hence, we can assume that all types in `combined_arguments` are equal. We normally wouldn't even
+      # have to collect all `argument_candidates` for this, but I want to keep the assertion for now.
+      if not are_all_equal(argument_candidates.to_open_array):
+        quit(fmt"The declared type {tpe.schema.name} has supertraits {supertrait_schema.name} which have conflicting invariant type arguments.")
+      combined_arguments[i] = argument_candidates[0]
+
+  supertrait_schema.instantiate_schema(combined_arguments)
+
 ########################################################################################################################
 # Traits.                                                                                                              #
 ########################################################################################################################
@@ -373,7 +496,6 @@ proc new_trait_schema*(
     supertraits: supertraits,
     # Inherited shape types are resolved in a second step.
     inherited_shape_type: nil,
-    is_inherited_shape_type_polymorphic: false,
   )
 
   let type_arguments = cast[ImSeq[Type]](type_parameters.as_type_arguments())
@@ -385,7 +507,6 @@ proc attach_inherited_shape_type*(schema: TraitSchema, inherited_shape_type: Sha
     quit(fmt"An inherited shape type has already been attached to trait schema {schema.name}.")
 
   schema.inherited_shape_type = inherited_shape_type
-  schema.is_inherited_shape_type_polymorphic = is_polymorphic(inherited_shape_type)
 
 proc instantiate_schema*(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType =
   ## Instantiates `schema` with the given type arguments.
@@ -404,15 +525,17 @@ proc instantiate_schema*(schema: TraitSchema, type_arguments: ImSeq[Type]): Trai
   )
 
 proc get_inherited_shape_type*(tpe: TraitType): ShapeType =
-  let schema: TraitSchema = tpe.get_schema
-
-  if not schema.is_inherited_shape_type_polymorphic:
-    return schema.inherited_shape_type
-
   if tpe.inherited_shape_type_cache != nil:
     return tpe.inherited_shape_type_cache
 
-  let shape_type = cast[ShapeType](schema.inherited_shape_type.substitute(tpe.type_arguments))
+  let schema: TraitSchema = tpe.get_schema
+  let shape_type =
+    if schema.is_constant:
+      schema.inherited_shape_type
+    else:
+      # The substitution will only create a new type if the shape type is polymorphic. This wastes no memory if the
+      # inherited shape type isn't polymorphic itself.
+      cast[ShapeType](schema.inherited_shape_type.substitute(tpe.type_arguments))
   tpe.inherited_shape_type_cache = shape_type
   shape_type
 
@@ -517,6 +640,14 @@ proc get_property_type*(tpe: StructType, name: string): Type {.inline.} =
   ## Returns the type of a property `name`, which must be a valid property name.
   tpe.get_property_type(tpe.get_schema.property_index.find_offset(name))
 
+proc get_property_type_if_exists*(tpe: StructType, name: string): Type {.inline.} =
+  ## Returns the type of a property `name`, or `nil` if it doesn't exist.
+  let offset = tpe.get_schema.property_index.find_offset_if_exists(name)
+  if offset >= 0:
+    tpe.get_property_type(uint16(offset))
+  else:
+    nil
+
 ########################################################################################################################
 # Type equality.                                                                                                       #
 ########################################################################################################################
@@ -603,6 +734,46 @@ proc are_equal*(t1: Type, t2: Type): bool =
     let t2 = cast[StructType](t2)
     are_declared_types_equal(t1, t2) and are_open_property_types_equal(t1, t2)
 
+macro are_equal_substitute_static(
+  substitution_mode: static[SubstitutionMode],
+  t1: Type,
+  t2: Type,
+  assignments: open_array[Type],
+): bool =
+  ## Checks whether `t1` and `t2` are equal types, if the `assignments` are substituted into either `t1`, `t2`, or
+  ## neither based on the `substitution_mode`.
+  # TODO (vm): We can optimize this similar to the implementation of `is_subtype` to avoid allocations and type tree
+  #            iterations.
+  case substitution_mode
+  of SubstitutionMode.None:
+    quote do: are_equal(`t1`, `t2`)
+  of SubstitutionMode.T1:
+    quote do: are_equal(substitute(`t1`, `assignments`), `t2`)
+  of SubstitutionMode.T2:
+    quote do: are_equal(`t1`, substitute(`t2`, `assignments`))
+
+proc are_equal_substitute(
+  substitution_mode: SubstitutionMode,
+  t1: Type,
+  t2: Type,
+  assignments: open_array[Type],
+): bool =
+  ## Checks whether `t1` and `t2` are equal types, if the `assignments` are substituted into either `t1`, `t2`, or
+  ## neither based on the `substitution_mode`.
+  # TODO (vm): We can optimize this similar to the implementation of `is_subtype` to avoid allocations and type tree
+  #            iterations.
+  case substitution_mode
+  of SubstitutionMode.None: are_equal(t1, t2)
+  of SubstitutionMode.T1: are_equal(substitute(t1, assignments), t2)
+  of SubstitutionMode.T2: are_equal(t1, substitute(t2, assignments))
+
+proc are_all_equal(types: open_array[Type]): bool =
+  ## Checks whether the types in the given open array are all equal, i.e. t1 == t2 == t3 == ..., and so on.
+  for i in 0 ..< types.len - 1:
+    if not are_equal(types[i], types[i + 1]):
+      return false
+  true
+
 proc has_equal_in(ts1: ImSeq[Type], ts2: ImSeq[Type]): bool =
   for t1 in ts1:
     var found = false
@@ -646,8 +817,7 @@ proc are_open_property_types_equal(t1: StructType, t2: StructType): bool =
     true
   else:
     # One `open_property_types` is nil.
-    let open_property_indices = t1.get_schema.open_property_indices
-    for i in open_property_indices:
+    for i in t1.get_schema.open_property_indices:
       let p1 = t1.get_property_type(i)
       let p2 = t2.get_property_type(i)
       if not are_equal(p1, p2):
@@ -658,60 +828,79 @@ proc are_open_property_types_equal(t1: StructType, t2: StructType): bool =
 # Subtyping.                                                                                                           #
 ########################################################################################################################
 
-type IsSubtypeSubstitutionMode {.pure.} = enum
-  None
-    ## Checks subtyping without substituting any types from assignments.
-  T1
-    ## Checks subtyping by replacing type variables in `t1` with types from assignments.
-  T2
-    ## Checks subtyping by replacing type variables in `t2` with types from assignments.
-
-macro is_subtype_rec(substitution_mode: static[IsSubtypeSubstitutionMode], t1: Type, t2: Type): bool =
+# TODO (vm/schemas): Rename to `is_subtype_substitute_static` to be in line with the naming convention.
+macro is_subtype_rec(substitution_mode: static[SubstitutionMode], t1: Type, t2: Type): bool =
   case substitution_mode
-  of IsSubtypeSubstitutionMode.None:
+  of SubstitutionMode.None:
     quote do: is_subtype(`t1`, `t2`)
-  of IsSubtypeSubstitutionMode.T1:
+  of SubstitutionMode.T1:
     quote do: is_subtype_substitute1(`t1`, `t2`, assignments)
-  of IsSubtypeSubstitutionMode.T2:
+  of SubstitutionMode.T2:
     quote do: is_subtype_substitute2(`t1`, `t2`, assignments)
 
-template type_subtypes_sum(substitution_mode: IsSubtypeSubstitutionMode, t1: Type, s2: SumType): bool =
+macro variable_subtypes_type(substitution_mode: static[SubstitutionMode], tv1: TypeVariable, t2: Type): bool =
+  case substitution_mode
+  of SubstitutionMode.None, SubstitutionMode.T2:
+    quote do:
+      let tv1_evaluated = `tv1`
+      assert(tv1_evaluated.parameter != nil)
+      is_subtype(tv1_evaluated.parameter.upper_bound, `t2`)
+  of SubstitutionMode.T1:
+    quote do:
+      let tv1_evaluated = `tv1`
+      let t1 = assignments[tv1_evaluated.index]
+      is_subtype_substitute1(t1, `t2`, assignments)
+
+macro type_subtypes_variable(substitution_mode: static[SubstitutionMode], t1: Type, tv2: TypeVariable): bool =
+  case substitution_mode
+  of SubstitutionMode.None, SubstitutionMode.T1:
+    quote do:
+      let tv2_evaluated = `tv2`
+      assert(tv2_evaluated.parameter != nil)
+      is_subtype(`t1`, tv2_evaluated.parameter.lower_bound)
+  of SubstitutionMode.T2:
+    quote do:
+      let tv2_evaluated = `tv2`
+      let t2 = assignments[tv2_evaluated.index]
+      is_subtype_substitute2(`t1`, t2, assignments)
+
+template type_subtypes_sum(substitution_mode: SubstitutionMode, t1: Type, s2: SumType): bool =
   for p2 in s2.parts:
     if is_subtype_rec(substitution_mode, t1, p2):
       return true
   false
 
-template sum_subtypes_sum(substitution_mode: IsSubtypeSubstitutionMode, s1: SumType, s2: SumType): bool =
+template sum_subtypes_sum(substitution_mode: SubstitutionMode, s1: SumType, s2: SumType): bool =
   for p1 in s1.parts:
     if not type_subtypes_sum(substitution_mode, p1, s2):
       return false
   true
 
-template sum_subtypes_type(substitution_mode: IsSubtypeSubstitutionMode, s1: SumType, t2: Type): bool =
+template sum_subtypes_type(substitution_mode: SubstitutionMode, s1: SumType, t2: Type): bool =
   for p1 in s1.parts:
     if not is_subtype_rec(substitution_mode, p1, t2):
       return false
   true
 
-template intersection_subtypes_type(substitution_mode: IsSubtypeSubstitutionMode, i1: IntersectionType, t2: Type): bool =
+template intersection_subtypes_type(substitution_mode: SubstitutionMode, i1: IntersectionType, t2: Type): bool =
   for p1 in i1.parts:
     if is_subtype_rec(substitution_mode, p1, t2):
       return true
   false
 
-template intersection_subtypes_intersection(substitution_mode: IsSubtypeSubstitutionMode, i1: IntersectionType, i2: IntersectionType): bool =
+template intersection_subtypes_intersection(substitution_mode: SubstitutionMode, i1: IntersectionType, i2: IntersectionType): bool =
   for p2 in i2.parts:
     if not intersection_subtypes_type(substitution_mode, i1, p2):
       return false
   true
 
-template type_subtypes_intersection(substitution_mode: IsSubtypeSubstitutionMode, t1: Type, i2: IntersectionType): bool =
+template type_subtypes_intersection(substitution_mode: SubstitutionMode, t1: Type, i2: IntersectionType): bool =
   for p2 in i2.parts:
     if not is_subtype_rec(substitution_mode, t1, p2):
       return false
   true
 
-template tuple_subtypes_tuple(substitution_mode: IsSubtypeSubstitutionMode, t1: TupleType, t2: TupleType): bool =
+template tuple_subtypes_tuple(substitution_mode: SubstitutionMode, t1: TupleType, t2: TupleType): bool =
   let es1 = t1.elements
   let es2 = t2.elements
   if es1.len != es2.len:
@@ -722,10 +911,16 @@ template tuple_subtypes_tuple(substitution_mode: IsSubtypeSubstitutionMode, t1: 
       return false
   true
 
-template shape_subtypes_shape(substitution_mode: IsSubtypeSubstitutionMode, s1: ShapeType, s2: ShapeType): bool =
+proc shape_subtypes_shape(
+  substitution_mode: SubstitutionMode,
+  s1: ShapeType,
+  s2: ShapeType,
+  assignments: open_array[Type],
+): bool =
+  ## This is a `proc` to avoid blowing up the code size of `is_subtype`.
   if s1.meta === s2.meta:
     for i in 0 ..< s2.property_count:
-      if not is_subtype_rec(substitution_mode, s1.property_types[i], s2.property_types[i]):
+      if not is_subtype_substitute(substitution_mode, s1.property_types[i], s2.property_types[i], assignments):
         return false
   else:
     for i in 0 ..< s2.property_count:
@@ -734,37 +929,76 @@ template shape_subtypes_shape(substitution_mode: IsSubtypeSubstitutionMode, s1: 
       if p1_type == nil:
         return false
       let p2_type = s2.property_types[i]
-      if not is_subtype_rec(substitution_mode, p1_type, p2_type):
+      if not is_subtype_substitute(substitution_mode, p1_type, p2_type, assignments):
         return false
   true
 
-macro variable_subtypes_type(substitution_mode: static[IsSubtypeSubstitutionMode], tv1: TypeVariable, t2: Type): bool =
-  case substitution_mode
-  of IsSubtypeSubstitutionMode.None, IsSubtypeSubstitutionMode.T2:
-    quote do:
-      let tv1_evaluated = `tv1`
-      assert(tv1_evaluated.parameter != nil)
-      is_subtype(tv1_evaluated.parameter.upper_bound, `t2`)
-  of IsSubtypeSubstitutionMode.T1:
-    quote do:
-      let tv1_evaluated = `tv1`
-      let t1 = assignments[tv1_evaluated.index]
-      is_subtype_substitute1(t1, `t2`, assignments)
+proc type_arguments_subtype_type_arguments(
+  substitution_mode: SubstitutionMode,
+  t1: DeclaredType,
+  t2: DeclaredType,
+  assignments: open_array[Type],
+): bool =
+  ## Whether `t1`'s type arguments subtype `t2`'s type arguments. Both types must have the same schema.
+  ##
+  ## This is a `proc` to avoid blowing up the code size of `is_subtype`.
+  if t1.schema.is_constant:
+    return true
 
-macro type_subtypes_variable(substitution_mode: static[IsSubtypeSubstitutionMode], t1: Type, tv2: TypeVariable): bool =
-  case substitution_mode
-  of IsSubtypeSubstitutionMode.None, IsSubtypeSubstitutionMode.T1:
-    quote do:
-      let tv2_evaluated = `tv2`
-      assert(tv2_evaluated.parameter != nil)
-      is_subtype(`t1`, tv2_evaluated.parameter.lower_bound)
-  of IsSubtypeSubstitutionMode.T2:
-    quote do:
-      let tv2_evaluated = `tv2`
-      let t2 = assignments[tv2_evaluated.index]
-      is_subtype_substitute2(`t1`, t2, assignments)
+  let type_parameters = t1.schema.type_parameters
+  for i in 0 ..< type_parameters.len:
+    let type_parameter = type_parameters[i]
+    let a1 = t1.type_arguments[i]
+    let a2 = t2.type_arguments[i]
 
-template is_subtype_impl(substitution_mode: IsSubtypeSubstitutionMode, t1: Type, t2: Type): bool =
+    case type_parameter.variance:
+    of Variance.Covariant:
+      if not is_subtype_substitute(substitution_mode, a1, a2, assignments):
+        return false
+    of Variance.Contravariant:
+      if not is_subtype_substitute(substitution_mode, a2, a1, assignments):
+        return false
+    of Variance.Invariant:
+      if not are_equal_substitute(substitution_mode, a1, a2, assignments):
+        return false
+
+  true
+
+template declared_type_subtypes_trait(substitution_mode: SubstitutionMode, t1: DeclaredType, t2: TraitType): bool =
+  if t1.schema === t2.schema:
+    type_arguments_subtype_type_arguments(substitution_mode, t1, t2, assignments)
+  else:
+    let supertrait = t1.find_supertrait(t2.get_schema)
+    supertrait != nil and is_subtype_rec(substitution_mode, supertrait, t2)
+
+template struct_subtypes_shape(substitution_mode: SubstitutionMode, t1: StructType, t2: ShapeType): bool =
+  for i in 0 ..< t2.property_count:
+    # TODO (vm/schemas): Does the string from `property_names` get copied when the function is called? Check out
+    #                    whether an allocation is hiding here.
+    let property_name = t2.meta.property_names[i]
+    let p1 = t1.get_property_type_if_exists(property_name)
+    if p1 == nil or not is_subtype_rec(substitution_mode, p1, t2.property_types[i]):
+      return false
+  true
+
+template struct_subtypes_struct(substitution_mode: SubstitutionMode, t1: StructType, t2: StructType): bool =
+  ## Checks whether `t1` is a subtype of `t2` by comparing type arguments and open property types.
+  if t1.schema === t2.schema and type_arguments_subtype_type_arguments(substitution_mode, t1, t2, assignments):
+    # If the open property types of t2 are empty, and t1 and t2 agree in their type arguments, t2 will always be a
+    # supertype of t1. Each property type of t2 is as general as possible.
+    if t2.open_property_types == nil:
+      return true
+
+    for i in t1.get_schema.open_property_indices:
+      let p1 = t1.get_property_type(i)
+      let p2 = t2.get_property_type(i)
+      if not is_subtype_rec(substitution_mode, p1, p2):
+        return false
+    true
+  else:
+    false
+
+template is_subtype_impl(substitution_mode: SubstitutionMode, t1: Type, t2: Type): bool =
   ## `is_subtype` has two separate versions, both covered by this implementation template: the first being the regular
   ## one, while the second one implicitly substitutes type variables in `t2` with types from an `assignments` array,
   ## without allocating any new types. This allows subtyping in specific contexts (fit, type bounds checking) to be
@@ -827,9 +1061,7 @@ template is_subtype_impl(substitution_mode: IsSubtypeSubstitutionMode, t1: Type,
 
   of Kind.Shape:
     if t2.kind == Kind.Shape:
-      let s1 = cast[ShapeType](t1)
-      let s2 = cast[ShapeType](t2)
-      return shape_subtypes_shape(substitution_mode, s1, s2)
+      return shape_subtypes_shape(substitution_mode, cast[ShapeType](t1), cast[ShapeType](t2), assignments)
 
   # TODO (vm): This case can be removed if symbol types are interned.
   of Kind.Symbol:
@@ -837,6 +1069,19 @@ template is_subtype_impl(substitution_mode: IsSubtypeSubstitutionMode, t1: Type,
       let s1 = cast[SymbolType](t1)
       let s2 = cast[SymbolType](t2)
       return s1.name == s2.name
+
+  of Kind.Trait, Kind.Struct:
+    if t2.kind == Kind.Trait:
+      return declared_type_subtypes_trait(substitution_mode, cast[DeclaredType](t1), cast[TraitType](t2))
+    elif t2.kind == Kind.Shape:
+      let s2 = cast[ShapeType](t2)
+      if t1.kind == Kind.Struct:
+        return struct_subtypes_shape(substitution_mode, cast[StructType](t1), s2)
+      else: # t1.kind == Kind.Trait
+        let tt1 = cast[TraitType](t1)
+        return shape_subtypes_shape(substitution_mode, tt1.get_inherited_shape_type, s2, assignments)
+    elif t2.kind == Kind.Struct and t1.kind == Kind.Struct:
+      return struct_subtypes_struct(substitution_mode, cast[StructType](t1), cast[StructType](t2))
 
   else: discard
 
@@ -851,30 +1096,31 @@ template is_subtype_impl(substitution_mode: IsSubtypeSubstitutionMode, t1: Type,
   of Kind.Sum:
     # t1 is definitely NOT a sum type, because the case SumType/SumType immediately returns in the first `case of`
     # statement above. Hence, we can safely call `type_subtypes_sum`.
-    let s2 = cast[SumType](t2)
-    type_subtypes_sum(substitution_mode, t1, s2)
+    type_subtypes_sum(substitution_mode, t1, cast[SumType](t2))
 
   of Kind.Intersection:
     # t1 is definitely NOT an intersection type, because the case IntersectionType/IntersectionType immediately returns
     # in the first `cast of` statement above. Hence, we can safely call `type_subtypes_intersection`.
-    let i2 = cast[IntersectionType](t2)
-    type_subtypes_intersection(substitution_mode, t1, i2)
+    type_subtypes_intersection(substitution_mode, t1, cast[IntersectionType](t2))
 
   else: false
 
 proc is_subtype*(t1: Type, t2: Type): bool =
   ## Whether `t1` is a subtype of `t2`.
-  is_subtype_impl(IsSubtypeSubstitutionMode.None, t1, t2)
+  # `assignments` is only defined to make `is_subtype_impl` compile. Assignments should never be accessed in this
+  # substitution mode.
+  let assignments: array[0, Type] = []
+  is_subtype_impl(SubstitutionMode.None, t1, t2)
 
 proc is_subtype_substitute1*(t1: Type, t2: Type, assignments: open_array[Type]): bool =
   ## Whether `t1` is a subtype of `t2` when type variables in `t1` are substituted with types from `assignments`. This
   ## function does *not* allocate new types for the substitution.
-  is_subtype_impl(IsSubtypeSubstitutionMode.T1, t1, t2)
+  is_subtype_impl(SubstitutionMode.T1, t1, t2)
 
 proc is_subtype_substitute2*(t1: Type, t2: Type, assignments: open_array[Type]): bool =
   ## Whether `t1` is a subtype of `t2` when type variables in `t2` are substituted with types from `assignments`. This
   ## function does *not* allocate new types for the substitution.
-  is_subtype_impl(IsSubtypeSubstitutionMode.T2, t1, t2)
+  is_subtype_impl(SubstitutionMode.T2, t1, t2)
 
 proc is_subtype*(ts1: open_array[Type], ts2: open_array[Type]): bool =
   ## Whether a tuple type `tpl(ts1)` is a subtype of `tpl(ts2)`. This function does *not* allocate a new tuple type.
@@ -907,6 +1153,12 @@ proc is_subtype_substitute2*(ts1: open_array[Type], ts2: open_array[Type], assig
     if not is_subtype_substitute2(ts1[i], ts2[i], assignments):
       return false
   true
+
+proc is_subtype_substitute(substitution_mode: SubstitutionMode, t1: Type, t2: Type, assignments: open_array[Type]): bool =
+  case substitution_mode
+  of SubstitutionMode.None: is_subtype(t1, t2)
+  of SubstitutionMode.T1: is_subtype_substitute1(t1, t2, assignments)
+  of SubstitutionMode.T2: is_subtype_substitute2(t1, t2, assignments)
 
 ########################################################################################################################
 # Fit.                                                                                                                 #
@@ -1073,12 +1325,6 @@ proc is_polymorphic(types: ImSeq[Type]): bool =
 # Simplification.                                                                                                      #
 ########################################################################################################################
 
-proc sum_simplified*(parts: open_array[Type]): Type
-proc sum_simplified*(parts: ImSeq[Type]): Type = sum_simplified(to_open_array(parts))
-
-proc intersection_simplified*(parts: open_array[Type]): Type
-proc intersection_simplified*(parts: ImSeq[Type]): Type = intersection_simplified(to_open_array(parts))
-
 template simplify_construct_covariant(kind: Kind, parts: open_array[Type]): untyped =
   if kind == Kind.Sum: sum_simplified(parts)
   elif kind == Kind.Intersection: intersection_simplified(parts)
@@ -1244,6 +1490,8 @@ proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
     # separate function.
     var property_names = new_seq[string]()
     for shape_type in shapes:
+      # TODO (vm/schemas): Does the string from `property_names` get copied into `name`? If so, all of these string
+      #                    loops would cause major performance issues due to allocations.
       for name in shape_type.meta.property_names:
         property_names.add(name)
 
@@ -1292,7 +1540,7 @@ proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
 
 proc sum_simplified*(parts: open_array[Type]): Type =
   ## Constructs a sum type from the given parts. But first, `parts` are flattened, combined according to their
-  ## variance, and filtered for the most general/specific types.
+  ## variance, and filtered for the most general/specific types. `parts` won't be mutated by this function.
   ##
   ## If a subterm is covariant, the type candidates are combined into a sum type. If a subterm is contravariant, the
   ## intersection is used instead. Invariant subterms cannot be combined, meaning types with invariant subterms are
@@ -1304,7 +1552,7 @@ proc sum_simplified*(parts: open_array[Type]): Type =
 
 proc intersection_simplified*(parts: open_array[Type]): Type =
   ## Constructs an intersection type from the given parts. But first, `parts` are flattened, combined according to
-  ## their variance, and filtered for the most general/specific types.
+  ## their variance, and filtered for the most general/specific types. `parts` won't be mutated by this function.
   ##
   ## If a subterm is covariant, the type candidates are combined into an intersection type. If a subterm is
   ## contravariant, the sum is used instead. Invariant subterms cannot be combined, meaning types with invariant
@@ -1314,6 +1562,9 @@ proc intersection_simplified*(parts: open_array[Type]): Type =
   ## types of the same schema.
   simplify(Kind.Intersection, parts)
 
+proc sum_simplified*(parts: ImSeq[Type]): Type = sum_simplified(to_open_array(parts))
+proc intersection_simplified*(parts: ImSeq[Type]): Type = intersection_simplified(to_open_array(parts))
+
 ########################################################################################################################
 # Substitution.                                                                                                        #
 ########################################################################################################################
@@ -1322,13 +1573,15 @@ proc substitute_optimized(tpe: Type, type_arguments: open_array[Type]): Type
 proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: open_array[Type]): ImSeq[Type]
 
 proc substitute*(tpe: Type, type_arguments: open_array[Type]): Type =
-  ## Substitutes any type variables in `tpe` with the given type arguments, creating a new type.
+  ## Substitutes any type variables in `tpe` with the given type arguments, creating a new type. If `tpe` contains no
+  ## variables to substitute, `tpe` itself is returned unchanged.
   let res = substitute_optimized(tpe, type_arguments)
   if res != nil: res
   else: tpe
 
 proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type =
-  ## Substitutes any type variables in `tpe` with the given type arguments, creating a new type.
+  ## Substitutes any type variables in `tpe` with the given type arguments, creating a new type. If `tpe` contains no
+  ## variables to substitute, `tpe` itself is returned unchanged.
   substitute(tpe, type_arguments.to_open_array)
 
 template substitute_unary_and_construct(child0: Type, type_arguments: open_array[Type], constructor): Type =
