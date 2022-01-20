@@ -1,0 +1,8 @@
+trait X[A]
+trait Y[A] extends X[A]
+
+// Error: Z inherits from X with conflicting type arguments Int and Real.
+struct Z() extends X[Int], Y[Real]
+
+// Error: W inherits from X with conflicting type arguments A and B.
+trait W[A, B] extends X[A], Y[B]

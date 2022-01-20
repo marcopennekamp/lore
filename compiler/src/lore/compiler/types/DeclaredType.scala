@@ -1,5 +1,6 @@
 package lore.compiler.types
 
+import lore.compiler.core.CompilationException
 import lore.compiler.semantics.NamePath
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.typing.InferenceVariable.Assignments
@@ -86,7 +87,16 @@ trait DeclaredType extends NamedType {
             parameter.variance match {
               case Variance.Covariant => IntersectionType.construct(arguments)
               case Variance.Contravariant => SumType.construct(arguments)
-              case Variance.Invariant => if (arguments.toSet.size == 1) arguments.head else return None
+              case Variance.Invariant =>
+                // TODO (invariant-inheritance): The else case requires an additional constraint check. Invariant
+                //                               arguments across a type hierarchy should never be incompatible like
+                //                               this.
+                val uniqueArguments = arguments.toSet
+                if (uniqueArguments.size == 1) arguments.head
+                else throw CompilationException(
+                  s"The declared type $name has supertraits ${supertypeSchema.name} which have conflicting invariant" +
+                    s" type arguments: $uniqueArguments."
+                )
             }
           }
           supertypeSchema.instantiate(combinedArguments).asInstanceOf[Option[DeclaredType]]

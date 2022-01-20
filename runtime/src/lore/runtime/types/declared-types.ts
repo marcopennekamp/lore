@@ -226,7 +226,10 @@ function getCombinedSupertrait(dt: DeclaredType, supertypeSchema: TraitSchema): 
         if (uniqueArguments.length == 1) {
           combinedArguments[i] = uniqueArguments[0]
         } else {
-          return undefined
+          throw new Error(
+            `The declared type ${dt.schema.name} has supertraits ${supertypeSchema.name} which have conflicting` +
+              ` type arguments: ${uniqueArguments}.`
+          )
         }
         break
       }
