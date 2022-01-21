@@ -1705,6 +1705,8 @@ proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: open_arra
 # Stringification.                                                                                                     #
 ########################################################################################################################
 
+proc stringify_open_properties(tpe: DeclaredType): string
+
 proc `$`*(tpe: Type): string =
   case tpe.kind
   of Kind.TypeVariable: "tv" & $cast[TypeVariable](tpe).index
@@ -1731,7 +1733,28 @@ proc `$`*(tpe: Type): string =
       properties[i] = tpe.meta.property_names[i] & ": " & $tpe.property_types[i]
     "%{ " & properties.join(", ") & " }"
   of Kind.Symbol: "#" & cast[SymbolType](tpe).name
-  else: "unknown"
+  of Kind.Trait, Kind.Struct:
+    let tpe = cast[DeclaredType](tpe)
+    let type_arguments = tpe.type_arguments.join(", ")
+    let open_properties = stringify_open_properties(tpe)
+    tpe.schema.name & "[" & type_arguments & "]" & open_properties
+
+proc stringify_open_properties(tpe: DeclaredType): string =
+  if tpe.kind != Kind.Struct:
+    return ""
+
+  let tpe = cast[StructType](tpe)
+  if tpe.open_property_types == nil:
+    return ""
+
+  let schema = tpe.get_schema
+  let open_property_count = schema.open_property_indices.len
+  var open_property_strings = new_immutable_seq[string](open_property_count)
+  for i in 0 ..< open_property_count:
+    let property_name = schema.properties[schema.open_property_indices[i]].name
+    let property_type = $tpe.open_property_types[i]
+    open_property_strings[i] = property_name & ": " & property_type
+  open_property_strings.join(", ")
 
 ########################################################################################################################
 # Type benchmarks.                                                                                                     #

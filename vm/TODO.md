@@ -6,9 +6,9 @@
   - General:
     - Types: ~~supertrait instantiation~~, ~~find supertrait~~.
   - Traits: 
-    - Types: ~~Schema definition~~, ~~type definition~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~type equality~~, ~~subtyping~~, ~~type variable allocation~~, ~~type substitution~~, type simplification, to string.
+    - Types: ~~Schema definition~~, ~~type definition~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~type equality~~, ~~subtyping~~, ~~type variable allocation~~, ~~type substitution~~, type simplification, ~~to string~~.
   - Structs:
-    - Types: ~~Schema definition~~, ~~type definition~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~type equality~~, ~~subtyping~~, ~~type variable allocation~~, ~~type substitution~~, type simplification, to string, ~~open property types and get_property_type~~.
+    - Types: ~~Schema definition~~, ~~type definition~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~type equality~~, ~~subtyping~~, ~~type variable allocation~~, ~~type substitution~~, type simplification, ~~to string~~, ~~open property types and get_property_type~~.
     - Values: Struct values, poem reading, poem writing, direct and indirect property access, construction operations.
   - Clear all `TODO (vm/schemas)` entries.
 - Figure out how to pass a surrounding function's type arguments to lambdas created within the function.
