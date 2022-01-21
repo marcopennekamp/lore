@@ -1637,6 +1637,14 @@ template substitute_xary_and_construct(children: ImSeq[Type], type_arguments: op
   if results != nil: constructor(results)
   else: nil
 
+template substitute_declared_type_arguments(tpe: Type, type_arguments: open_array[Type]): ImSeq[Type] =
+  ## Given `tpe`, substitutes `type_arguments` into `tpe`'s type arguments and returns them. Returns `nil` if no change
+  ## to the type arguments is needed.
+  let dt = cast[DeclaredType](tpe)
+  if dt.schema.is_constant:
+    return nil
+  substitute_multiple_optimized(dt.type_arguments, type_arguments)
+
 proc substitute_optimized(tpe: Type, type_arguments: open_array[Type]): Type =
   ## Substitutes any type variables in `tpe` with the given type arguments. If no substitutions occur, the function
   ## returns `nil`. This allows it to only allocate new types should a child type have changed.
@@ -1664,6 +1672,17 @@ proc substitute_optimized(tpe: Type, type_arguments: open_array[Type]): Type =
     let tpe = cast[ShapeType](tpe)
     let property_types = substitute_multiple_optimized(tpe.property_types, type_arguments)
     if property_types != nil: new_shape_type(tpe.meta, property_types)
+    else: nil
+
+  of Kind.Trait:
+    let type_arguments = substitute_declared_type_arguments(tpe, type_arguments)
+    if type_arguments != nil: instantiate_schema(cast[TraitType](tpe).get_schema, type_arguments)
+    else: nil
+
+  of Kind.Struct:
+    let tpe = cast[StructType](tpe)
+    let type_arguments = substitute_declared_type_arguments(tpe, type_arguments)
+    if type_arguments != nil: instantiate_schema(tpe.get_schema, type_arguments, tpe.open_property_types)
     else: nil
 
   else:
