@@ -379,6 +379,8 @@ proc instantiate_supertraits(schema: Schema, type_arguments: ImSeq[Type]): ImSeq
     instantiated[i] = cast[TraitType](substitute(schema.supertraits[i], to_open_array(type_arguments)))
   instantiated
 
+proc is_declared_type(tpe: Type): bool = tpe.kind == Kind.Trait or tpe.kind == Kind.Struct
+
 # TODO: The current implementation of `find_supertrait` essentially scans the whole supertrait hierarchy. Is there any
 #       way in which we could improve performance?
 #          - Idea 1: Keep a flat hash map of Schema -> Type in d1's schema, with uninstantiated type
@@ -1169,6 +1171,8 @@ type FitsAssignments = array[max_type_parameters, Type]
   ## into an allocated ImSeq should the fit be successful.
 
 proc fits_assign(t1: Type, t2: Type, assignments: var FitsAssignments): bool
+proc fits_assign_shape(t1: Type, t2: ShapeType, assignments: var FitsAssignments): bool
+proc fits_assign_declared_type(t1: DeclaredType, t2: DeclaredType, assignments: var FitsAssignments): bool
 
 proc fits*(t1: Type, t2: Type, parameters: ImSeq[TypeParameter]): ImSeq[Type] =
   ## Whether `t1` fits into `t2`. `fits` returns the list of assigned type arguments if true, or `nil` otherwise.
@@ -1218,6 +1222,10 @@ proc fits_assign(t1: Type, t2: Type, assignments: var FitsAssignments): bool =
   ## Assigns all matching types in `t1` to type variables in `t2`, saving them in `assignments`. If an assignment
   ## already exists and the existing type and new type aren't equal, `assign` returns false to signal that `t1` cannot
   ## fit into `t2`. This trivially covers one consistency check case: that assignments must be unique.
+  # TODO (vm): We can technically reject more cases than just "assignment already exists". For example, when tuple
+  #            lengths don't match up, we can be sure that the fit cannot be correct. Another example is when a shape
+  #            type t2 has a property which isn't in a shape type t1. We know that t1 in this case can never be a
+  #            subtype of t2.
   case t2.kind
   of Kind.TypeVariable:
     let index = cast[TypeVariable](t2).index
@@ -1276,24 +1284,54 @@ proc fits_assign(t1: Type, t2: Type, assignments: var FitsAssignments): bool =
     else: true
 
   of Kind.Shape:
-    if t1.kind == Kind.Shape:
-      let s1 = cast[ShapeType](t1)
-      let s2 = cast[ShapeType](t2)
-      if s1.meta == s2.meta:
-        for i in 0 ..< s2.property_count:
-          if not fits_assign(s1.property_types[i], s2.property_types[i], assignments):
-            return false
-      else:
-        for i in 0 ..< s2.property_count:
-          let property_name = s2.meta.property_names[i]
-          let p1_type = s1.get_property_type_if_exists(property_name)
-          if p1_type == nil:
-            return false
-          if not fits_assign(p1_type, s2.property_types[i], assignments):
-            return false
-    true
+    fits_assign_shape(t1, cast[ShapeType](t2), assignments)
+
+  of Kind.Trait, Kind.Struct:
+    if t1.is_declared_type:
+      fits_assign_declared_type(cast[DeclaredType](t1), cast[DeclaredType](t2), assignments)
+    else:
+      true
 
   else: true
+
+template fits_assign_shape_via_property_names(t1, t2, assignments): untyped =
+  ## This template is a common piece of code that works for both shapes and structs.
+  for i in 0 ..< t2.property_count:
+    let property_name = t2.meta.property_names[i]
+    let p1_type = t1.get_property_type_if_exists(property_name)
+    if p1_type != nil and not fits_assign(p1_type, t2.property_types[i], assignments):
+      return false
+
+proc fits_assign_shape(t1: Type, t2: ShapeType, assignments: var FitsAssignments): bool =
+  if t1.kind == Kind.Shape:
+    let t1 = cast[ShapeType](t1)
+    if t1.meta == t2.meta:
+      for i in 0 ..< t2.property_count:
+        if not fits_assign(t1.property_types[i], t2.property_types[i], assignments):
+          return false
+    else:
+      fits_assign_shape_via_property_names(t1, t2, assignments)
+  elif t1.kind == Kind.Struct:
+    let t1 = cast[StructType](t1)
+    fits_assign_shape_via_property_names(t1, t2, assignments)
+  true
+
+proc fits_assign_declared_type(t1: DeclaredType, t2: DeclaredType, assignments: var FitsAssignments): bool =
+  if not t2.schema.is_constant:
+    return true
+
+  let s1 =
+    if t1.schema === t2.schema:
+      t1
+    elif t2.kind == Kind.Trait:
+      t1.find_supertrait(cast[TraitSchema](t2.schema))
+    else:
+      return true
+
+  for i in 0 ..< t2.type_arguments.len:
+    if not fits_assign(s1.type_arguments[i], t2.type_arguments[i], assignments):
+      return false
+  true
 
 ########################################################################################################################
 # Polymorphy.                                                                                                          #
