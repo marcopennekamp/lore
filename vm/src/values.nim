@@ -2,7 +2,8 @@ import std/strformat, std/strutils
 
 import imseqs
 import property_index
-from types import Kind, MetaShape, Type, FunctionType, ShapeType, property_count
+from types import Kind, MetaShape, Type, FunctionType, ShapeType, StructSchema, StructType, property_count,
+                  open_property_count, has_open_properties, get_schema
 from utils import call_if_any_exists
 
 # TODO (vm/schemas): We should be able to just `import types`. I'm currently avoiding this because functions like `list`
@@ -80,6 +81,9 @@ type
 
   SymbolValue* {.pure, shallow.} = ref object of Value
     name*: string
+
+  StructValue* {.pure, shallow.} = ref object of Value
+    property_values*: UncheckedArray[TaggedValue]
 
 const
   TagMask: uint64 = 0b111
@@ -195,7 +199,7 @@ proc copy_shape_value(shape: ShapeValue): ShapeValue =
   res
 
 proc new_shape_value*(meta_shape: MetaShape, property_values: open_array[TaggedValue]): ShapeValue =
-  ## Allocates a new shape value. The property values must be in the correct order as defined by the meta shape.
+  ## Creates a new shape value. The property values must be in the correct order as defined by the meta shape.
   # TODO (vm/hash): Don't forget to hash the shape type after its property types are set!
   let shape_value = alloc_shape_value(meta_shape)
   var property_types = new_immutable_seq[Type](meta_shape.property_count)
@@ -221,6 +225,39 @@ proc get_property_value*(shape: ShapeValue, name: string): TaggedValue =
 proc new_symbol*(name: string): Value = SymbolValue(tpe: types.symbol(name), name: name)
 
 proc new_symbol_tagged*(name: string): TaggedValue = tag_reference(new_symbol(name))
+
+########################################################################################################################
+# Structs.                                                                                                             #
+########################################################################################################################
+
+proc alloc_struct_value(schema: StructSchema): StructValue =
+  ## Allocates a new struct value with the correct number of property values, which must be initialized after. The
+  ## value's type also must be set!
+  let shape_value = cast[StructValue](alloc0(sizeof(StructValue) + schema.property_count * sizeof(TaggedValue)))
+  shape_value
+
+proc new_struct_value*(schema: StructSchema, type_arguments: ImSeq[Type], property_values: open_array[TaggedValue]): StructValue =
+  ## Creates a new struct value. The property values must be in the correct order as defined by the struct's schema.
+  let value = alloc_struct_value(schema)
+  let open_property_types =
+    if schema.has_open_properties:
+      var types = new_immutable_seq[Type](schema.open_property_count)
+      for i in 0 ..< schema.open_property_count:
+        types[i] = get_type(property_values[schema.open_property_indices[i]])
+      types
+    else: nil
+
+  copy_mem(addr value.property_values, unsafe_addr property_values, schema.property_count * sizeof(TaggedValue))
+  value.tpe = types.instantiate_struct_schema(schema, type_arguments, open_property_types)
+  value
+
+proc new_struct_value_tagged*(schema: StructSchema, type_arguments: ImSeq[Type], property_values: open_array[TaggedValue]): TaggedValue =
+  tag_reference(new_struct_value(schema, type_arguments, property_values))
+
+proc get_property_value*(struct: StructValue, name: string): TaggedValue =
+  ## Gets the value associated with the property `name`. The name must be a valid property.
+  let tpe = cast[StructType](struct.tpe)
+  struct.property_values[tpe.get_schema.property_index.find_offset(name)]
 
 ########################################################################################################################
 # Value types.                                                                                                         #

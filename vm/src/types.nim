@@ -605,8 +605,9 @@ proc get_inherited_shape_type*(tpe: TraitType): ShapeType =
 
 proc new_struct_type(schema: StructSchema, type_arguments: ImSeq[Type], supertraits: ImSeq[TraitType], open_property_types: ImSeq[Type]): StructType
 
-proc property_count*(schema: StructSchema): int = schema.properties.len
-proc has_open_properties*(schema: StructSchema): bool = schema.open_property_indices.len > 0
+proc property_count*(schema: StructSchema): int {.inline.} = schema.properties.len
+proc open_property_count*(schema: StructSchema): int {.inline.} = schema.open_property_indices.len
+proc has_open_properties*(schema: StructSchema): bool {.inline.} = schema.open_property_count > 0
 
 proc new_struct_schema*(
   name: string,
