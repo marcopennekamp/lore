@@ -1,7 +1,7 @@
 from std/algorithm import sort
 import std/macros
 import std/sets
-from std/sequtils import deduplicate
+from std/sequtils import any_it, deduplicate
 import std/strformat
 import tables
 
@@ -104,6 +104,9 @@ type
       ## this schema's type parameters.
     representative: DeclaredType
       ## The representative type of this schema, with uninstantiated type parameters.
+    has_invariant_type_parameters: bool
+      ## Whether the schema has invariant type parameters, which determines the path to take for declared types during
+      ## type simplification.
 
   DeclaredType* {.pure.} = ref object of Type
     schema*: Schema
@@ -351,6 +354,22 @@ proc get_schema*(tpe: DeclaredType): Schema {.inline.} =
 proc get_schema*(tpe: TraitType): TraitSchema {.inline.} = cast[TraitSchema](tpe.schema)
 proc get_schema*(tpe: StructType): StructSchema {.inline.} = cast[StructSchema](tpe.schema)
 
+proc initialize(
+  schema: Schema,
+  kind: Kind,
+  name: string,
+  type_parameters: ImSeq[TypeParameter],
+  supertraits: ImSeq[TraitType],
+  representative: DeclaredType,
+) =
+  ## Initializes common properties of the given schema.
+  schema.kind = kind
+  schema.name = name
+  schema.type_parameters = type_parameters
+  schema.supertraits = supertraits
+  schema.representative = representative
+  schema.has_invariant_type_parameters = type_parameters.any_it(it.variance == Variance.Invariant)
+
 proc bounds_contain(schema: Schema, type_arguments: ImSeq[Type]): bool =
   ## Whether the given type arguments fit into the schema's parameter bounds. Upper bounds for covariance and lower
   ## bounds for contravariance must be guaranteed by the compiler, but we need to check lower/upper bounds for
@@ -492,16 +511,12 @@ proc new_trait_schema*(
   supertraits: ImSeq[TraitType],
 ): TraitSchema =
   let schema = TraitSchema(
-    kind: Kind.Trait,
-    name: name,
-    type_parameters: type_parameters,
-    supertraits: supertraits,
     # Inherited shape types are resolved in a second step.
     inherited_shape_type: nil,
   )
-
   let type_arguments = cast[ImSeq[Type]](type_parameters.as_type_arguments())
-  schema.representative = TraitType(kind: Kind.Trait, schema: schema, type_arguments: type_arguments, supertraits: supertraits)
+  let representative = TraitType(kind: Kind.Trait, schema: schema, type_arguments: type_arguments, supertraits: supertraits)
+  schema.initialize(Kind.Trait, name, type_parameters, supertraits, representative)
   schema
 
 proc attach_inherited_shape_type*(schema: TraitSchema, inherited_shape_type: ShapeType) =
@@ -556,8 +571,8 @@ proc new_struct_schema*(
   supertraits: ImSeq[TraitType],
   properties: ImSeq[StructSchemaProperty],
 ): StructSchema =
-  ## Creates a new struct schema from the given arguments. Property types in `properties` must be `nil`, as property
-  ## types are resolved in a second step. The properties must be ordered lexicographically by their name.
+  ## Creates a new struct schema from the given arguments. The properties must be ordered lexicographically by their
+  ## name. Property types must be `nil`, as they are resolved in a second step.
   var property_names: seq[string] = @[]
   var open_property_indices_accumulator: seq[uint16] = @[]
   for i in 0 ..< properties.len:
@@ -569,17 +584,13 @@ proc new_struct_schema*(
   let property_index = get_interned_property_index(property_names)
   let open_property_indices = new_immutable_seq(open_property_indices_accumulator)
   let schema = StructSchema(
-    kind: Kind.Struct,
-    name: name,
-    type_parameters: type_parameters,
-    supertraits: supertraits,
     properties: properties,
     property_index: property_index,
     open_property_indices: open_property_indices,
   )
-
   let type_arguments = cast[ImSeq[Type]](type_parameters.as_type_arguments())
-  schema.representative = new_struct_type(schema, type_arguments, supertraits, nil)
+  let representative = new_struct_type(schema, type_arguments, supertraits, nil)
+  schema.initialize(Kind.Struct, name, type_parameters, supertraits, representative)
   schema
 
 proc attach_property_type*(schema: StructSchema, property_name: string, property_type: Type) =
