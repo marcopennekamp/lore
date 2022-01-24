@@ -382,10 +382,7 @@ method resolve(poem_type: PoemNamedType, universe: Universe): Type {.locks: "unk
 
   let schema = universe.schemas[poem_type.name]
   let type_arguments = new_immutable_seq(universe.resolve_many(poem_type.type_arguments))
-  if schema.kind == Kind.Trait:
-    types.instantiate_schema(cast[TraitSchema](schema), type_arguments)
-  else:
-    types.instantiate_schema(cast[StructSchema](schema), type_arguments, nil)
+  types.force_instantiate_schema(schema, type_arguments)
 
 ########################################################################################################################
 # Value resolution.                                                                                                    #

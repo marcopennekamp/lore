@@ -173,7 +173,8 @@ const max_type_parameters* = 32
   ## The maximum number of type parameters that a function may have is 32. This allows us to allocate certain arrays on
   ## the stack when checking for type fit.
 
-proc instantiate_schema*(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType
+proc instantiate_trait_schema*(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType
+proc instantiate_struct_schema*(schema: StructSchema, type_arguments: ImSeq[Type], open_property_types: ImSeq[Type]): StructType
 
 proc are_equal*(t1: Type, t2: Type): bool
 proc are_all_equal(types: open_array[Type]): bool
@@ -370,6 +371,26 @@ proc initialize(
   schema.representative = representative
   schema.has_invariant_type_parameters = type_parameters.any_it(it.variance == Variance.Invariant)
 
+proc instantiate_schema*(schema: Schema, type_arguments: ImSeq[Type]): DeclaredType =
+  ## Instantiates `schema` with the given type arguments. This is a convenience function that will delegate to the
+  ## specific instantiation function. Struct open properties will be `nil`, so this function shouldn't be used with
+  ## struct types that describe concrete struct values.
+  ##
+  ## If `schema` cannot be instantiated with the type arguments, `nil` is returned.
+  if schema.kind == Kind.Trait:
+    instantiate_trait_schema(cast[TraitSchema](schema), type_arguments)
+  else:
+    instantiate_struct_schema(cast[StructSchema](schema), type_arguments, nil)
+
+template require_instantiated_schema[T](instantiate_type: T): T =
+  let tpe = instantiate_type
+  if tpe == nil:
+    quit(fmt"Cannot instantiate schema {schema.name}: the type arguments {type_arguments} don't adhere to their bounds.")
+  tpe
+
+proc force_instantiate_schema*(schema: Schema, type_arguments: ImSeq[Type]): DeclaredType =
+  require_instantiated_schema(instantiate_schema(schema, type_arguments))
+
 proc bounds_contain(schema: Schema, type_arguments: ImSeq[Type]): bool =
   ## Whether the given type arguments fit into the schema's parameter bounds. Upper bounds for covariance and lower
   ## bounds for contravariance must be guaranteed by the compiler, but we need to check lower/upper bounds for
@@ -384,10 +405,6 @@ proc bounds_contain(schema: Schema, type_arguments: ImSeq[Type]): bool =
       if not upper_bound_contains(parameter, argument, to_open_array(type_arguments)):
         return false
   true
-
-proc check_type_parameter_bounds(schema: Schema, type_arguments: ImSeq[Type]) =
-  if not bounds_contain(schema, type_arguments):
-    quit(fmt"Cannot instantiate schema {schema.name}: the type arguments {type_arguments} don't adhere to their bounds.")
 
 proc instantiate_supertraits(schema: Schema, type_arguments: ImSeq[Type]): ImSeq[TraitType] =
   if schema.is_constant or schema.supertraits.len == 0:
@@ -499,7 +516,7 @@ proc find_combined_supertrait(tpe: DeclaredType, supertrait_schema: TraitSchema)
         quit(fmt"The declared type {tpe.schema.name} has supertraits {supertrait_schema.name} which have conflicting invariant type arguments.")
       combined_arguments[i] = argument_candidates[0]
 
-  supertrait_schema.instantiate_schema(combined_arguments)
+  supertrait_schema.instantiate_trait_schema(type_arguments)
 
 ########################################################################################################################
 # Traits.                                                                                                              #
@@ -525,13 +542,16 @@ proc attach_inherited_shape_type*(schema: TraitSchema, inherited_shape_type: Sha
 
   schema.inherited_shape_type = inherited_shape_type
 
-proc instantiate_schema*(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType =
-  ## Instantiates `schema` with the given type arguments.
+proc instantiate_trait_schema*(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType =
+  ## Instantiates `schema` with the given type arguments. If `schema` cannot be instantiated with the type arguments,
+  ## `nil` is returned.
   # TODO (vm/intern): This function should intern the declared types.
   if schema.is_constant:
     return schema.get_representative
 
-  check_type_parameter_bounds(schema, type_arguments)
+  if not bounds_contain(schema, type_arguments):
+    return nil
+
   let supertraits = instantiate_supertraits(schema, type_arguments)
   TraitType(
     kind: Kind.Trait,
@@ -540,6 +560,9 @@ proc instantiate_schema*(schema: TraitSchema, type_arguments: ImSeq[Type]): Trai
     supertraits: supertraits,
     inherited_shape_type_cache: nil
   )
+
+proc force_instantiate_trait_schema*(schema: TraitSchema, type_arguments: ImSeq[Type]): TraitType =
+  require_instantiated_schema(instantiate_trait_schema(schema, type_arguments))
 
 proc get_inherited_shape_type*(tpe: TraitType): ShapeType =
   if tpe.inherited_shape_type_cache != nil:
@@ -602,16 +625,26 @@ proc attach_property_type*(schema: StructSchema, property_name: string, property
   property.tpe = property_type
   schema.properties[offset] = property
 
-proc instantiate_schema*(schema: StructSchema, type_arguments: ImSeq[Type], open_property_types: ImSeq[Type]): DeclaredType =
+proc instantiate_struct_schema*(
+  schema: StructSchema,
+  type_arguments: ImSeq[Type],
+  open_property_types: ImSeq[Type],
+): StructType =
   ## Instantiates `schema` with the given type arguments and open property types. `open_property_types` must be `nil`
-  ## if the struct type should have no concrete open property types.
+  ## if the struct type should have no concrete open property types. If `schema` cannot be instantiated with the type
+  ## arguments, `nil` is returned.
   # TODO (vm/intern): This function should intern the declared types.
   if schema.is_constant and open_property_types == nil:
     return schema.get_representative
 
-  check_type_parameter_bounds(schema, type_arguments)
+  if not bounds_contain(schema, type_arguments):
+    return nil
+
   let supertraits = instantiate_supertraits(schema, type_arguments)
   new_struct_type(schema, type_arguments, supertraits, open_property_types)
+
+proc force_instantiate_struct_schema*(schema: StructSchema, type_arguments: ImSeq[Type], open_property_types: ImSeq[Type]): StructType =
+  require_instantiated_schema(instantiate_struct_schema(schema, type_arguments, open_property_types))
 
 proc new_struct_type(
   schema: StructSchema,
@@ -1679,13 +1712,13 @@ proc substitute_optimized(tpe: Type, type_arguments: open_array[Type]): Type =
 
   of Kind.Trait:
     let type_arguments = substitute_declared_type_arguments(tpe, type_arguments)
-    if type_arguments != nil: instantiate_schema(cast[TraitType](tpe).get_schema, type_arguments)
+    if type_arguments != nil: force_instantiate_trait_schema(cast[TraitType](tpe).get_schema, type_arguments)
     else: nil
 
   of Kind.Struct:
     let tpe = cast[StructType](tpe)
     let type_arguments = substitute_declared_type_arguments(tpe, type_arguments)
-    if type_arguments != nil: instantiate_schema(tpe.get_schema, type_arguments, tpe.open_property_types)
+    if type_arguments != nil: force_instantiate_struct_schema(tpe.get_schema, type_arguments, tpe.open_property_types)
     else: nil
 
   else:
