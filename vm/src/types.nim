@@ -1438,6 +1438,7 @@ template simplify_construct_contravariant(kind: Kind, parts: open_array[Type]): 
   else: quit("Invalid kind for contravariant construction.")
 
 proc add_unique_type[I](types: var StackSeq[I, Type], tpe: Type) = types.add_unique(tpe, are_equal(a, b))
+proc add_unique_schema[I](schemas: var StackSeq[I, Schema], schema: Schema) = schemas.add_unique(schema, a === b)
 
 template simplify_categorize_type(tpe: Type, kind: Kind) =
   case tpe.kind
@@ -1455,6 +1456,13 @@ template simplify_categorize_type(tpe: Type, kind: Kind) =
     # Shape types are only simplified when they're part of an intersection type.
     if kind == Kind.Intersection:
       shapes.add(cast[ShapeType](tpe))
+    else:
+      results.add_unique_type(tpe)
+  of Kind.Trait, Kind.Struct:
+    let dt = cast[DeclaredType](tpe)
+    if not dt.schema.has_invariant_type_parameters:
+      schemas.add_unique_schema(dt.schema)
+      declared_types.add(dt)
     else:
       results.add_unique_type(tpe)
   else: results.add_unique_type(tpe)
@@ -1475,7 +1483,7 @@ proc simplify_tuples(
   if types.len == 0:
     return
   elif types.len == 1:
-    # This is guaranteed to be the only tuple of size 1, so we don't need `add_unique`.
+    # This is guaranteed to be the only tuple of size 1, so we don't need `add_unique_type`.
     results.add(types[0])
     return
 
@@ -1502,8 +1510,16 @@ proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
   # We want to allocate as many arrays on the stack as possible. However, a constructed sum/intersection type may have
   # an arbitrary length. Hence, we are using StackSeq to avoid allocations for small sum/intersection types. To avoid
   # two iterations over `parts`, we're immediately sorting types into boxes while flattening.
-  # We have to ensure that each type in `results` is unique. This does not apply to tuples, functions, lists, and
-  # shapes because these types are later combined in such a way that each result type must be unique.
+  #
+  # We have to ensure that each type in `results` is unique. This does not apply to tuples, functions, lists, shapes,
+  # and declared types of the same schema because these types are later combined in such a way that each result type
+  # must be unique.
+  #
+  # Declared types must be handled per schema, but keeping a hash map to separate the types into boxes would be too
+  # costly. We're assuming that usually no more than a handful of declared types will ever need to be simplified at
+  # once. Hence, we are keeping declared types together in a StackSeq, while schemas are saved in an additional
+  # StackSeq so that we know which schemas to iterate through. The declared types StackSeq will be iterated through
+  # once per schema, but this should still be faster than allocating a map.
   var tuples1: StackSeq[8, TupleType]
   var tuples2: StackSeq[8, TupleType]
   var tuples3: StackSeq[8, TupleType]
@@ -1511,6 +1527,8 @@ proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
   var functions: StackSeq[8, FunctionType]
   var lists: StackSeq[8, ListType]
   var shapes: StackSeq[8, ShapeType]
+  var schemas: StackSeq[8, Schema]
+  var declared_types: StackSeq[8, DeclaredType]
   var results: StackSeq[32, Type]
 
   for part in parts:
@@ -1602,6 +1620,40 @@ proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
       property_type_parts.set_len(0)
 
     results.add(new_shape_type(meta_shape, property_types))
+
+  # Given a declared type `D[+X, -Y]`:
+  # D[A, B] | D[C, D] :=: D[A | C, B & D]
+  # D[A, B] & D[C, D] :=: D[A & C, B | D]
+  if schemas.len > 0:
+    # `candidates` caches the declared types for each schema.
+    var candidates: StackSeq[8, DeclaredType]
+    for schema in schemas:
+      for dt in declared_types:
+        if dt.schema === schema:
+          candidates.add(dt)
+
+      let type_arguments = combine_type_arguments(
+        schema,
+        candidates,
+        simplify_construct_covariant(kind, to_open_array(type_argument_candidates)),
+        simplify_construct_contravariant(kind, to_open_array(type_argument_candidates)),
+        block:
+          quit(fmt"At this stage, a type parameter may not be invariant. Type schema: {schema.name}.")
+          nil
+      )
+
+      # Note that this instantiation ignores a struct type's open property types. This is okay, as simplified types
+      # shouldn't contain open property types anyway.
+      let declared_type = instantiate_schema(schema, type_arguments)
+      if declared_type != nil:
+        results.add(declared_type)
+      else:
+        # If the schema cannot be instantiated with the combined type arguments, default to the uncombined declared
+        # types.
+        for dt in candidates:
+          results.add_unique_type(dt)
+
+      candidates.clear()
 
   # Step 3: Filter relevant types, i.e. only take the most general/specific types.
   let results_count = results.len

@@ -77,3 +77,5 @@ block:
 
   assert $sum_simplified(shapes1) == "(%{ foo: Real } | %{ foo: String } | %{ bar: String, baz: Int } | %{ baz: Real })"
   assert $intersection_simplified(shapes1) == "%{ bar: String, baz: (Int & Real), foo: (Real & String) }"
+
+  # TODO (vm/schemas): Test declared type simplification.

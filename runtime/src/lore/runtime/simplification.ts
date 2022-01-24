@@ -65,21 +65,21 @@ function combine(parts: Array<Type>, kind: Kind): Array<Type> {
   for (const part of parts) {
     switch (part.kind) {
       case Kind.Tuple:
-        let tuple = <TupleType>part
+        let tuple = <TupleType> part
         appendInner(tuplesBySize, tuple.types.length, tuple)
         break
 
       case Kind.Function:
-        functions.push(<FunctionType>part)
+        functions.push(<FunctionType> part)
         break
 
       case Kind.List:
-        lists.push(<ListType>part)
+        lists.push(<ListType> part)
         break
 
       case Kind.Shape:
         if (kind == Kind.Intersection) {
-          shapes.push(<ShapeType>part)
+          shapes.push(<ShapeType> part)
         } else {
           result.push(part)
         }
@@ -87,7 +87,7 @@ function combine(parts: Array<Type>, kind: Kind): Array<Type> {
 
       case Kind.Trait:
       case Kind.Struct:
-        let dt = <DeclaredType>part
+        let dt = <DeclaredType> part
         if (!dt.schema.hasInvariantParameters) {
           appendInner(declaredTypesBySchema, dt.schema, dt)
         } else {
