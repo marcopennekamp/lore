@@ -4,6 +4,13 @@
 
 - Implement a minimum viable version of the VM.
 - Implement a compiler backend for producing Lore VM binaries.
+  - Rename `dynamic` to `intrinsic` calls.
+- Allow multiple multi-function imports with the same name from different modules and implement compile-time disambiguation of such multi-function calls.
+  - This would also allow us to introduce a `list.length`-style function call syntax. It might make type inference harder, though.
+- Syntax changes:
+  - Change `!`, `&&` and `||` to `not`, `and`, and `or`. Especially `!` is weird with the ability to put `?` or `!` into a function name: `!equal?(a, b) || !check?!(x)` vs. `not equal?(a, b) or not check?!(x)`.
+  - Implement iterators as a first-class feature with the keyword `iter`. Iterators should be able to be passed around as values or to be wrapped in another type (such as a Sequence or Stream type), which would also be able to wrap lists and maps. Iterators should also be able to be inlined, for example when directly used in a `for` loop. We'll have to see how to reconcile the concepts of a `yield` in an iterator and a `yield` in a for/while. Maybe we can combine these concepts somehow.
+  - Rename `act` to `proc`? This would be in line with `func` and `iter`.
 - Allow inherited shape type properties to reference declared types placed lower in the resolution order. The reasoning for this is simple: Struct properties are immune to the resolution order, because they are resolved in a second step. This allows structs to include each other as properties. Inherited shape types essentially specify the properties of a trait, so they should enjoy the same privileges. There is nothing but complexity that keeps us from realizing the resolution of inherited shape types in a second step.
   - The VM already handles this correctly.
 - Implement a new backend for lists.

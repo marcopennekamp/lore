@@ -63,6 +63,7 @@ module List do
     let mut result: [(A, A)] = []
     let len = length(list)
     let mut i = 0
+    // TODO (syntax): We really need iterators for this.
     while i < len
       let mut j = i
       while j < len
