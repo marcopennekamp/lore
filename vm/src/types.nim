@@ -417,6 +417,39 @@ proc instantiate_supertraits(schema: Schema, type_arguments: ImSeq[Type]): ImSeq
 
 proc is_declared_type(tpe: Type): bool = tpe.kind == Kind.Trait or tpe.kind == Kind.Struct
 
+template combine_type_arguments(
+  schema: Schema,
+  declared_types,
+  handle_covariant: untyped,
+  handle_contravariant: untyped,
+  handle_invariant: untyped,
+): ImSeq[Type] =
+  ## Combines the type arguments of the given declared types using one of the `handle_*` blocks depending on variance.
+  ## All handlers receive an injected variable `type_argument_candidates`, which is a REUSED `ImSeq[Type]`. Returns
+  ## `nil` if the type arguments cannot be combined.
+  if declared_types.len == 0: return nil
+  if declared_types.len == 1: return declared_types[0]
+
+  let type_parameters = schema.type_parameters
+  var combined_type_arguments = new_immutable_seq[Type](type_parameters.len)
+
+  # `argument_candidates` is reused for all iterations to save allocations.
+  var type_argument_candidates {.inject.} = new_immutable_seq[Type](declared_types.len)
+  for i in 0 ..< type_parameters.len:
+    let type_parameter = type_parameters[i]
+    for j in 0 ..< declared_types.len:
+      type_argument_candidates[j] = declared_types[j].type_arguments[i]
+
+    case type_parameter.variance
+    of Variance.Covariant:
+      combined_type_arguments[i] = handle_covariant
+    of Variance.Contravariant:
+      combined_type_arguments[i] = handle_contravariant
+    of Variance.Invariant:
+      combined_type_arguments[i] = handle_invariant
+
+  combined_type_arguments
+
 # TODO: The current implementation of `find_supertrait` essentially scans the whole supertrait hierarchy. Is there any
 #       way in which we could improve performance?
 #          - Idea 1: Keep a flat hash map of Schema -> Type in d1's schema, with uninstantiated type
@@ -490,32 +523,19 @@ proc find_combined_supertrait(tpe: DeclaredType, supertrait_schema: TraitSchema)
   for candidate in find_supertrait_candidates(tpe, supertrait_schema):
     candidates.add(candidate)
 
-  if candidates.len == 0: return nil
-  if candidates.len == 1: return candidates[0]
-
-  let type_parameters = supertrait_schema.type_parameters
-  var combined_arguments = new_immutable_seq[Type](type_parameters.len)
-
-  # `argument_candidates` is reused for all iterations to save allocations.
-  var argument_candidates = new_immutable_seq[Type](candidates.len)
-  for i in 0 ..< type_parameters.len:
-    let type_parameter = type_parameters[i]
-    for j in 0 ..< candidates.len:
-      argument_candidates[j] = candidates[j].type_arguments[i]
-
-    case type_parameter.variance
-    of Variance.Covariant:
-      combined_arguments[i] = intersection_simplified(argument_candidates)
-    of Variance.Contravariant:
-      combined_arguments[i] = sum_simplified(argument_candidates)
-    of Variance.Invariant:
+  let type_arguments = combine_type_arguments(
+    supertrait_schema,
+    candidates,
+    intersection_simplified(type_argument_candidates),
+    sum_simplified(type_argument_candidates),
+    block:
       # This is a tricky one. The compiler MUST guarantee that invariant type arguments are equal across a supertype
-      # hierarchy. Hence, we can assume that all types in `combined_arguments` are equal. We normally wouldn't even
-      # have to collect all `argument_candidates` for this, but I want to keep the assertion for now.
-      if not are_all_equal(argument_candidates.to_open_array):
+      # hierarchy. Hence, we can assume that all types in `type_argument_candidates` are equal. We normally wouldn't
+      # even have to collect all `type_argument_candidates` for this, but I want to keep the assertion for now.
+      if not are_all_equal(type_argument_candidates.to_open_array):
         quit(fmt"The declared type {tpe.schema.name} has supertraits {supertrait_schema.name} which have conflicting invariant type arguments.")
-      combined_arguments[i] = argument_candidates[0]
-
+      type_argument_candidates[0]
+  )
   supertrait_schema.instantiate_trait_schema(type_arguments)
 
 ########################################################################################################################
