@@ -64,6 +64,15 @@ proc add*[I, T](seq: var StackSeq[I, T], value: T) =
     seq.heap_data[heap_index] = value
   seq.len += 1
 
+template add_unique*[I, T](seq: var StackSeq[I, T], value: T, eq: untyped) =
+  ## Adds `value` to `seq` if `value` doesn't occur in `seq` yet based on the `eq` predicate. `eq` must be defined in
+  ## terms of two variables `a` and `b`, for example: `types.add_unique(tpe, are_equal(a, b))`.
+  let b {.inject.} = value
+  for a {.inject.} in seq:
+    if eq:
+      return
+  seq.add(value)
+
 proc pop*[I, T](seq: var StackSeq[I, T]): T =
   ## Removes the last element from `seq` and returns it.
   let index = seq.len - 1

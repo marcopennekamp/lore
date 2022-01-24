@@ -1384,22 +1384,14 @@ template simplify_construct_contravariant(kind: Kind, parts: open_array[Type]): 
   elif kind == Kind.Intersection: sum_simplified(parts)
   else: quit("Invalid kind for contravariant construction.")
 
-proc add_unique(results: var StackSeq[32, Type], tpe: Type) =
-  var is_unique = true
-  for result_type in results:
-    if are_equal(result_type, tpe):
-      is_unique = false
-      break
-
-  if is_unique:
-    results.add(tpe)
+proc add_unique_type[I](types: var StackSeq[I, Type], tpe: Type) = types.add_unique(tpe, are_equal(a, b))
 
 template simplify_categorize_type(tpe: Type, kind: Kind) =
   case tpe.kind
   of Kind.Tuple:
     let tuple_type = cast[TupleType](tpe)
     case tuple_type.elements.len
-    of 0: results.add_unique(tpe)
+    of 0: results.add_unique_type(tpe)
     of 1: tuples1.add(tuple_type)
     of 2: tuples2.add(tuple_type)
     of 3: tuples3.add(tuple_type)
@@ -1411,8 +1403,8 @@ template simplify_categorize_type(tpe: Type, kind: Kind) =
     if kind == Kind.Intersection:
       shapes.add(cast[ShapeType](tpe))
     else:
-      results.add_unique(tpe)
-  else: results.add_unique(tpe)
+      results.add_unique_type(tpe)
+  else: results.add_unique_type(tpe)
 
 template simplify_flatten(tpe: Type, T: untyped, kind: Kind, expected_kind: Kind): untyped =
   if kind == expected_kind:
@@ -1420,7 +1412,7 @@ template simplify_flatten(tpe: Type, T: untyped, kind: Kind, expected_kind: Kind
     for child in xary_type.parts:
       simplify_categorize_type(child, kind)
   else:
-    results.add_unique(tpe)
+    results.add_unique_type(tpe)
 
 proc simplify_tuples(
   types: var StackSeq[8, TupleType],
