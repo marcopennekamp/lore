@@ -111,17 +111,29 @@ type
     JumpIfTrue
       ## if reg(arg1): pc <- arg0
 
+    Intrinsic0
+      ## reg(arg0) <- intr(arg1)()
+
+    IntrinsicVoid0
+      ## intr(arg0)()
+
     Intrinsic1
       ## reg(arg0) <- intr(arg1)(reg(arg2))
 
     IntrinsicFa1
       ## reg(arg0) <- intr(arg1)(frame, reg(arg2))
 
+    IntrinsicVoid1
+      ## intr(arg0)(reg(arg1))
+
     Intrinsic2
       ## reg(arg0) <- intr(arg1)(reg(arg2), reg(arg3))
 
     IntrinsicFa2
       ## reg(arg0) <- intr(arg1)(frame, reg(arg2), reg(arg3))
+
+    IntrinsicVoidFa2
+      ## intr(arg0)(frame, reg(arg1), reg(arg2))
 
     GlobalGetEager
       ## Immediately gets the value of the global variable without checking whether it is initialized. This must only be
@@ -143,6 +155,9 @@ type
 
     Return
       ## return reg(arg0)
+
+    ReturnUnit
+      ## return unit
 
     Return0
       ## return reg(0)

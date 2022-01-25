@@ -6,9 +6,9 @@ let empty = PoemFunction(
   input_type: poems.unit_type,
   output_type: poems.unit_type,
   is_abstract: false,
-  register_count: 1,
+  register_count: 0,
   instructions: @[
-    new_instruction(Operation.Return, 0),
+    new_instruction(Operation.ReturnUnit),
   ],
 )
 
