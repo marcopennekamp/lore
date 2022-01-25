@@ -158,6 +158,10 @@ type
   PoemSymbolValue* = ref object of PoemValue
     name*: string
 
+  PoemStructValue* = ref object of PoemValue
+    tpe*: PoemNamedType
+    property_values*: seq[PoemValue]
+
 let any_type*: PoemType = PoemBasicType(tpe: types.any_type)
 let nothing_type*: PoemType = PoemBasicType(tpe: types.nothing_type)
 let int_type*: PoemType = PoemBasicType(tpe: types.int_type)
@@ -173,6 +177,13 @@ proc type_parameter*(name: string, lower_bound: PoemType, upper_bound: PoemType,
 proc type_parameter_upper*(name: string, upper_bound: PoemType): PoemTypeParameter = type_parameter(name, nothing_type, upper_bound, Variance.Invariant)
 proc type_parameter_lower*(name: string, lower_bound: PoemType): PoemTypeParameter = type_parameter(name, lower_bound, any_type, Variance.Invariant)
 proc type_parameter*(name: string): PoemTypeParameter = type_parameter_lower(name, nothing_type)
+
+proc type_parameter_upper*(name: string, upper_bound: PoemType, variance: Variance): PoemTypeParameter =
+  type_parameter(name, nothing_type, upper_bound, variance)
+proc type_parameter_lower*(name: string, lower_bound: PoemType, variance: Variance): PoemTypeParameter =
+  type_parameter(name, lower_bound, any_type, variance)
+proc type_parameter*(name: string, variance: Variance): PoemTypeParameter =
+  type_parameter_lower(name, nothing_type, variance)
 
 proc int_value*(value: int64): PoemValue = PoemIntValue(int: value)
 proc real_value*(value: float64): PoemValue = PoemRealValue(real: value)
@@ -207,7 +218,17 @@ proc symbol_type*(name: string): PoemType = PoemSymbolType(name: name)
 proc symbol_value*(name: string): PoemValue = PoemSymbolValue(name: name)
 
 proc named_type_concrete*(name: string, type_arguments: seq[PoemType]): PoemNamedType = PoemNamedType(name: name, type_arguments: type_arguments)
+proc named_type_concrete*(name: string): PoemNamedType = named_type_concrete(name, @[])
+
 proc named_type*(name: string, type_arguments: seq[PoemType]): PoemType = named_type_concrete(name, type_arguments)
+proc named_type*(name: string): PoemType = named_type(name, @[])
+
+proc struct_value*(tpe: PoemNamedType, property_values: seq[PoemValue]): PoemValue =
+  PoemStructValue(tpe: tpe, property_values: property_values)
+
+proc struct_value*(name: string, type_arguments: seq[PoemType], property_values: seq[PoemValue]): PoemValue =
+  let poem_type = named_type_concrete(name, type_arguments)
+  struct_value(poem_type, property_values)
 
 const
   tkMetadataKinded = 0'u8
@@ -743,8 +764,12 @@ proc read_value(stream: FileStream): PoemValue =
   elif tpe of PoemSymbolType:
     let symbol_type = cast[PoemSymbolType](tpe)
     symbol_value(symbol_type.name)
+  elif tpe of PoemNamedType:
+    let named_type = cast[PoemNamedType](tpe)
+    let property_values = stream.read_many_with_count(PoemValue, uint16, read_value)
+    struct_value(named_type, property_values)
   else:
-    fail("Named values aren't supported for now.")
+    fail(fmt"Unknown poem type.")
 
 proc write_value(stream: FileStream, value: PoemValue) =
   value.write(stream)
@@ -800,6 +825,10 @@ method write(value: PoemShapeValue, stream: FileStream) {.locks: "unknown".} =
 
 method write(value: PoemSymbolValue, stream: FileStream) {.locks: "unknown".} =
   stream.write_type(symbol_type(value.name))
+
+method write(value: PoemStructValue, stream: FileStream) {.locks: "unknown".} =
+  stream.write_type(value.tpe)
+  stream.write_many_with_count(value.property_values, uint16, write_value)
 
 ########################################################################################################################
 # Strings.                                                                                                             #

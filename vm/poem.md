@@ -212,7 +212,9 @@ A **Value** is encoded as follows:
       - **Property values** (Value*): The property values must be in the same order as the type's property names.
     - Symbol:
       - *Type* already carries the name of the symbol value.
-    - TODO (vm): Describe value encodings for more value kinds.
+    - Struct:
+      - **Property count** (uint16)
+      - **Property values** (Value*): The property values must be in the same order as the struct schema's property names, which is implicitly determined by the value's NamedType.
 
 ### Strings
 
