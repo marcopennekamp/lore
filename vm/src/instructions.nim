@@ -102,6 +102,16 @@ type
     SymbolEqConst
       ## reg(arg0) <- reg(arg1) == val(arg2)
 
+    StructGetProperty
+      ## Returns the struct property value at the index `arg2`. This is only possible when accessing a struct value
+      ## whose type is known at compile time. Otherwise, StructGetNamedProperty must be used.
+      ## reg(arg0) <- reg(arg1)[arg2]
+
+    StructGetNamedProperty
+      ## Returns the struct property value with the name `nam(arg2)`. This instruction must be used with a struct value
+      ## whose struct type isn't known at compile time.
+      ## reg(arg0) <- reg(arg1)[nam(arg2)]
+
     Jump
       ## pc <- arg0
 

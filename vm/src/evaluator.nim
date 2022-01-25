@@ -370,6 +370,15 @@ proc evaluate(frame: FramePtr) =
       let b = const_value_ref_arg(2, SymbolValue)
       reg_set_bool_arg(0, a.name == b.name)
 
+    of Operation.StructGetProperty:
+      let struct = reg_get_ref_arg(1, StructValue)
+      reg_set_arg(0, struct.property_values[instruction.arg(2)])
+
+    of Operation.StructGetNamedProperty:
+      let struct = reg_get_ref_arg(1, StructValue)
+      let name = const_name_arg(2)
+      reg_set_arg(0, struct.get_property_value(name))
+
     of Operation.Jump:
       pc = instruction.arg(0)
 
