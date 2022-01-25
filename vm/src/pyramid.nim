@@ -5,6 +5,9 @@ from evaluator import nil
 import imseqs
 import values
 
+proc core_panic(): TaggedValue =
+  quit("Panic: The Lore program was forced to terminate.")
+
 proc strings_length(tagged_string: TaggedValue): TaggedValue =
   let string = untag_reference(tagged_string, StringValue)
   tag_int(string.string.len)
@@ -33,12 +36,14 @@ proc io_println(value: TaggedValue): TaggedValue =
   echo value
   values.unit
 
+template nullary(arg_name, arg_function): untyped = Intrinsic(name: arg_name, function: IntrinsicFunction(nullary: arg_function))
 template unary(arg_name, arg_function): untyped = Intrinsic(name: arg_name, function: IntrinsicFunction(unary: arg_function))
 template unary_fa(arg_name, arg_function): untyped = Intrinsic(name: arg_name, function: IntrinsicFunction(unary_fa: arg_function))
 template binary(arg_name, arg_function): untyped = Intrinsic(name: arg_name, function: IntrinsicFunction(binary: arg_function))
 template binary_fa(arg_name, arg_function): untyped = Intrinsic(name: arg_name, function: IntrinsicFunction(binary_fa: arg_function))
 
 let intrinsics*: seq[Intrinsic] = @[
+  nullary("lore.core.panic", core_panic),
   unary("lore.strings.length", strings_length),
   unary("lore.lists.length", lists_length),
   binary("lore.lists.get", lists_get),

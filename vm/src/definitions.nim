@@ -25,6 +25,7 @@ type
     function*: IntrinsicFunction
 
   IntrinsicFunction* {.union.} = object
+    nullary*: proc (): TaggedValue {.nimcall.}
     unary*: proc (argument0: TaggedValue): TaggedValue {.nimcall.}
     unary_fa*: proc (frame: FramePtr, argument0: TaggedValue): TaggedValue {.nimcall.}
     binary*: proc (argument0: TaggedValue, argument1: TaggedValue): TaggedValue {.nimcall.}
