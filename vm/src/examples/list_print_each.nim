@@ -11,7 +11,7 @@ let test_lambda0 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    new_instruction(Operation.IntrinsicVoid1, 1, 0),
+    new_instruction(Operation.IntrinsicVoid1, 1, 0),  # lore.io.println
     new_instruction(Operation.ReturnUnit),
   ],
 )
@@ -25,7 +25,7 @@ let test = PoemFunction(
   instructions: @[
     new_instruction(Operation.Const, 0, 0),
     new_instruction(Operation.Const, 1, 1),
-    new_instruction(Operation.IntrinsicVoidFa2, 0, 0, 1),
+    new_instruction(Operation.IntrinsicVoidFa2, 0, 0, 1),  # lore.lists.each
     new_instruction(Operation.ReturnUnit),
   ],
 )

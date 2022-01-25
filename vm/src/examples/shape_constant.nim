@@ -13,7 +13,7 @@ let test = PoemFunction(
   instructions: @[
     new_instruction(Operation.Const, 1, 0),                # Get the constant shape value.
     new_instruction(Operation.ShapeGetProperty, 2, 1, 0),  # Get property zoo from the shape value.
-    new_instruction(Operation.Intrinsic1, 0, 0, 2),        # Put zoo's length into register 0.
+    new_instruction(Operation.Intrinsic1, 0, 0, 2),        # Put zoo's length (lore.strings.length) into register 0.
     new_instruction(Operation.ShapeGetProperty, 2, 1, 1),  # Get property foo from the shape value.
     new_instruction(Operation.IntAdd, 0, 0, 2),            # Finally add foo to register 0.
     new_instruction(Operation.Return0),

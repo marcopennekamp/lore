@@ -10,7 +10,7 @@ let test = PoemFunction(
   instructions: @[
     new_instruction(Operation.Const, 0, 0),
     new_instruction(Operation.IntConst, 1, 1),
-    new_instruction(Operation.Intrinsic2, 0, 0, 0, 1),
+    new_instruction(Operation.Intrinsic2, 0, 0, 0, 1),  # lore.lists.get
     new_instruction(Operation.Return0),
   ],
 )
