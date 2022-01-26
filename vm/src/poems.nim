@@ -500,13 +500,11 @@ proc read_function(stream: FileStream): PoemFunction =
   function
 
 proc read_instruction(stream: FileStream): Instruction =
-  new_instruction(
-    cast[Operation](stream.read(uint16)),
-    stream.read(uint16),
-    stream.read(uint16),
-    stream.read(uint16),
-    stream.read(uint16),
-  )
+  let operation = cast[Operation](stream.read(uint16))
+  var arguments: array[7, uint16]
+  for i in 0 ..< 7:
+    arguments[i] = stream.read(uint16)
+  new_instruction(operation, arguments)
 
 proc write_function(stream: FileStream, function: PoemFunction) =
   stream.write_string_with_length(function.name)

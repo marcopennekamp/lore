@@ -176,23 +176,41 @@ type
 
   Instruction* = object
     operation*: Operation
-    arguments*: array[4, Argument]
+    arguments*: array[7, Argument]
+      ## 7 arguments pad the size of Instruction to exactly 16 bytes.
+
+# TODO (vm/schemas): This should be a compilation warning instead of a runtime assertion.
+assert sizeof(Instruction) == 16
 
 template arg*(instruction: Instruction, index: uint16): uint16 = cast[uint16](instruction.arguments[index])
 template argi*(instruction: Instruction, index: uint16): int16 = cast[int16](instruction.arguments[index])
 
-proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16, arg2: uint16, arg3: uint16): Instruction =
-  Instruction(
-    operation: operation,
-    arguments: [
-      Argument(arg0),
-      Argument(arg1),
-      Argument(arg2),
-      Argument(arg3),
-    ],
-  )
+proc new_instruction*(operation: Operation, args: array[7, uint16]): Instruction =
+  var arguments: array[7, Argument]
+  for i in 0 ..< arguments.len:
+    arguments[i] = Argument(args[i])
+  Instruction(operation: operation, arguments: arguments)
 
-proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16, arg2: uint16): Instruction = new_instruction(operation, arg0, arg1, arg2, 0)
-proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16): Instruction = new_instruction(operation, arg0, arg1, 0)
-proc new_instruction*(operation: Operation, arg0: uint16): Instruction = new_instruction(operation, arg0, 0)
-proc new_instruction*(operation: Operation): Instruction = new_instruction(operation, 0)
+proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16, arg2: uint16, arg3: uint16, arg4: uint16, arg5: uint16, arg6: uint16): Instruction =
+  new_instruction(operation, [arg0, arg1, arg2, arg3, arg4, arg5, arg6])
+
+proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16, arg2: uint16, arg3: uint16, arg4: uint16, arg5: uint16): Instruction =
+  new_instruction(operation, arg0, arg1, arg2, arg3, arg4, arg5, 0)
+
+proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16, arg2: uint16, arg3: uint16, arg4: uint16): Instruction =
+  new_instruction(operation, arg0, arg1, arg2, arg3, arg4, 0, 0)
+
+proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16, arg2: uint16, arg3: uint16): Instruction =
+  new_instruction(operation, arg0, arg1, arg2, arg3, 0, 0, 0)
+
+proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16, arg2: uint16): Instruction =
+  new_instruction(operation, arg0, arg1, arg2, 0, 0, 0, 0)
+
+proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16): Instruction =
+  new_instruction(operation, arg0, arg1, 0, 0, 0, 0, 0)
+
+proc new_instruction*(operation: Operation, arg0: uint16): Instruction =
+  new_instruction(operation, arg0, 0, 0, 0, 0, 0, 0)
+
+proc new_instruction*(operation: Operation): Instruction =
+  new_instruction(operation, 0, 0, 0, 0, 0, 0, 0)
