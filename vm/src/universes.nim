@@ -97,10 +97,13 @@ proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
 
   constants.names = poem_constants.names
 
-  # TODO (vm): We should probably check whether the name exists and output an error. Same goes for global variables and
-  #            multi-functions.
+  # TODO (vm): We should probably check whether the name exists and output an error. Same goes for global variables,
+  #            schemas, and multi-functions.
   for name in poem_constants.intrinsics:
     constants.intrinsics.add(universe.intrinsics[name])
+
+  for name in poem_constants.schemas:
+    constants.schemas.add(universe.schemas[name])
 
   for name in poem_constants.global_variables:
     constants.global_variables.add(universe.global_variables[name])

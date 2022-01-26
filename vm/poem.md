@@ -31,6 +31,8 @@ The Constants table has the following structure:
   - **Names** (String*)
   - **Intrinsics count** (uint16)
   - **Intrinsics** (String*): The full names of the intrinsic references.
+  - **Schemas count** (uint16)
+  - **Schemas** (String*): The full names of the schema references.
   - **Global variables count** (uint16)
   - **Global variables** (String*): The full names of the global variable references.
   - **Multi-functions count** (uint16)

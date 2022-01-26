@@ -1,6 +1,6 @@
 import imseqs
 from instructions import Instruction
-from types import Type, TupleType, MetaShape, TypeParameter
+from types import TypeParameter, Type, TupleType, MetaShape, Schema
 from values import TaggedValue
 
 type
@@ -104,6 +104,7 @@ type
     names*: seq[string]
       ## Constant names are used for accessing properties.
     intrinsics*: seq[Intrinsic]
+    schemas*: seq[Schema]
     global_variables*: seq[GlobalVariable]
     multi_functions*: seq[MultiFunction]
     meta_shapes*: seq[MetaShape]
