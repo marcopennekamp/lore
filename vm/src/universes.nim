@@ -133,11 +133,21 @@ proc resolve_schemas(universe: Universe, poems: seq[Poem]) =
 
   var dependency_graph = new_schema_dependency_graph()
   for poem_schema in poem_schemas.values():
+    # A schema that has no dependencies and which isn't the dependency of another schema must be added to the graph
+    # manually to become part of the resolution order. We accomplish this by adding a dependency on "<root>".
     let dependencies = get_schema_dependencies(poem_schema)
-    for dependency in dependencies:
-      dependency_graph.add_dependency(poem_schema.name, dependency)
+    if dependencies.len > 0:
+      for dependency in dependencies:
+        dependency_graph.add_dependency(poem_schema.name, dependency)
+    else:
+      dependency_graph.add_dependency(poem_schema.name, "<root>")
 
-  let resolution_order = dependency_graph.sort_topological()
+  # "<root>" may have been added as a dependency to the graph. It must be the first element in the resolution order by
+  # nature of its definition, but it must not necessarily exist.
+  var resolution_order = dependency_graph.sort_topological()
+  if resolution_order.len > 0 and resolution_order[0] == "<root>":
+    resolution_order = resolution_order[1 ..< resolution_order.len]
+
   for name in resolution_order:
     let schema = universe.resolve_schema(poem_schemas[name])
     universe.schemas[name] = schema
