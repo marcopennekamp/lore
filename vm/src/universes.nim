@@ -455,3 +455,12 @@ method resolve(poem_value: PoemShapeValue, universe: Universe): TaggedValue {.lo
   values.new_shape_value_tagged(shape_type.meta, property_values)
 
 method resolve(poem_value: PoemSymbolValue, universe: Universe): TaggedValue {.locks: "unknown".} = values.new_symbol_tagged(poem_value.name)
+
+method resolve(poem_value: PoemStructValue, universe: Universe): TaggedValue {.locks: "unknown".} =
+  if poem_value.tpe.name notin universe.schemas:
+    quit(fmt"The schema {poem_value.tpe.name} for a struct value doesn't exist.")
+
+  let schema = universe.schemas[poem_value.tpe.name]
+  let type_arguments = new_immutable_seq(universe.resolve_many(poem_value.tpe.type_arguments))
+  let property_values = universe.resolve_many(poem_value.property_values)
+  values.new_struct_value_tagged(schema, type_arguments, property_values)

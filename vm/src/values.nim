@@ -2,7 +2,7 @@ import std/strformat, std/strutils
 
 import imseqs
 import property_index
-from types import Kind, MetaShape, Type, FunctionType, ShapeType, StructSchema, StructType, property_count,
+from types import Kind, MetaShape, Type, FunctionType, ShapeType, Schema, StructSchema, StructType, property_count,
                   open_property_count, has_open_properties, get_schema
 from utils import call_if_any_exists
 
@@ -251,8 +251,10 @@ proc new_struct_value*(schema: StructSchema, type_arguments: ImSeq[Type], proper
   value.tpe = types.instantiate_struct_schema(schema, type_arguments, open_property_types)
   value
 
-proc new_struct_value_tagged*(schema: StructSchema, type_arguments: ImSeq[Type], property_values: open_array[TaggedValue]): TaggedValue =
-  tag_reference(new_struct_value(schema, type_arguments, property_values))
+proc new_struct_value_tagged*(schema: Schema, type_arguments: ImSeq[Type], property_values: open_array[TaggedValue]): TaggedValue =
+  if schema.kind != Kind.Struct:
+    quit(fmt"Cannot construct a struct value from a trait schema {schema.name}.")
+  tag_reference(new_struct_value(cast[StructSchema](schema), type_arguments, property_values))
 
 proc get_property_value*(struct: StructValue, name: string): TaggedValue =
   ## Gets the value associated with the property `name`. The name must be a valid property.
