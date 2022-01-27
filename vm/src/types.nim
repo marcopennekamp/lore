@@ -1382,7 +1382,7 @@ proc fits_assign_shape(t1: Type, t2: ShapeType, assignments: var FitsAssignments
   true
 
 proc fits_assign_declared_type(t1: DeclaredType, t2: DeclaredType, assignments: var FitsAssignments): bool =
-  if not t2.schema.is_constant:
+  if t2.schema.is_constant:
     return true
 
   let s1 =
