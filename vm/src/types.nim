@@ -185,6 +185,7 @@ proc is_subtype_substitute2*(t1: Type, t2: Type, assignments: open_array[Type]):
 proc is_subtype_substitute(substitution_mode: SubstitutionMode, t1: Type, t2: Type, assignments: open_array[Type]): bool
 
 proc fits*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeParameter]): ImSeq[Type]
+proc fits_poly1*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeParameter]): ImSeq[Type]
 
 proc substitute*(tpe: Type, type_arguments: open_array[Type]): Type
 proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type
@@ -1071,6 +1072,12 @@ template is_subtype_impl(substitution_mode: SubstitutionMode, t1: Type, t2: Type
   ## without allocating any new types. This allows subtyping in specific contexts (fit, type bounds checking) to be
   ## decided without new allocations. This template assumes an implicit `assignments` variable to be in scope when
   ## `has_assignments` is true.
+  ##
+  ## If a substitution mode is set, `assignments` must NOT contain any type variables. This is because the algorithm
+  ## can't differentiate between type variables that should still be substituted and type variables that have come from
+  ## `assignments`, presumably from a different context. For example, when building the dispatch hierarchy, the
+  ## left-hand input type `t1` may contain type variables. In such a case, the assignments should be manually
+  ## substituted into `t1´ and `is_subtype` should be used without a substitution mode.
 
   # Because basic types are interned, this case trivially covers all basic types without subtyping interactions.
   if t1 === t2:
@@ -1181,12 +1188,14 @@ proc is_subtype*(t1: Type, t2: Type): bool =
 
 proc is_subtype_substitute1*(t1: Type, t2: Type, assignments: open_array[Type]): bool =
   ## Whether `t1` is a subtype of `t2` when type variables in `t1` are substituted with types from `assignments`. This
-  ## function does *not* allocate new types for the substitution.
+  ## function does *not* allocate new types for the substitution. As noted in `is_subtype_impl`, `assignments` may not
+  ## contain any type variables.
   is_subtype_impl(SubstitutionMode.T1, t1, t2)
 
 proc is_subtype_substitute2*(t1: Type, t2: Type, assignments: open_array[Type]): bool =
   ## Whether `t1` is a subtype of `t2` when type variables in `t2` are substituted with types from `assignments`. This
-  ## function does *not* allocate new types for the substitution.
+  ## function does *not* allocate new types for the substitution. As noted in `is_subtype_impl`, `assignments` may not
+  ## contain any type variables.
   is_subtype_impl(SubstitutionMode.T2, t1, t2)
 
 proc is_subtype*(ts1: open_array[Type], ts2: open_array[Type]): bool =
@@ -1201,7 +1210,8 @@ proc is_subtype*(ts1: open_array[Type], ts2: open_array[Type]): bool =
 
 proc is_subtype_substitute1*(ts1: open_array[Type], ts2: open_array[Type], assignments: open_array[Type]): bool =
   ## Whether a tuple type `tpl(ts1)` is a subtype of `tpl(ts2)` when type variables in `ts1` are substituted with types
-  ## from `assignments`. This function does *not* allocate a new tuple type or any types for the substitution.
+  ## from `assignments`. This function does *not* allocate a new tuple type or any types for the substitution. As noted
+  ## in `is_subtype_impl`, `assignments` may not contain any type variables.
   if ts1.len != ts2.len:
     return false
 
@@ -1212,7 +1222,8 @@ proc is_subtype_substitute1*(ts1: open_array[Type], ts2: open_array[Type], assig
 
 proc is_subtype_substitute2*(ts1: open_array[Type], ts2: open_array[Type], assignments: open_array[Type]): bool =
   ## Whether a tuple type `tpl(ts1)` is a subtype of `tpl(ts2)` when type variables in `ts2` are substituted with types
-  ## from `assignments`. This function does *not* allocate a new tuple type or any types for the substitution.
+  ## from `assignments`. This function does *not* allocate a new tuple type or any types for the substitution. As noted
+  ## in `is_subtype_impl`, `assignments` may not contain any type variables.
   if ts1.len != ts2.len:
     return false
 
@@ -1239,49 +1250,70 @@ proc fits_assign(t1: Type, t2: Type, assignments: var FitsAssignments): bool
 proc fits_assign_shape(t1: Type, t2: ShapeType, assignments: var FitsAssignments): bool
 proc fits_assign_declared_type(t1: DeclaredType, t2: DeclaredType, assignments: var FitsAssignments): bool
 
-proc fits*(t1: Type, t2: Type, parameters: ImSeq[TypeParameter]): ImSeq[Type] =
-  ## Whether `t1` fits into `t2`. `fits` returns the list of assigned type arguments if true, or `nil` otherwise.
-  ## `parameters` must contain all type parameters which variables in `t2` refer to, in the proper order.
-  fits([t1], [t2], parameters)
-
-proc fits*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeParameter]): ImSeq[Type] =
-  ## Whether `ts1`, interpreted as the elements of a tuple type, fit into `ts2`. `fits` returns the list of assigned
-  ## type arguments if true, or `nil` otherwise. `parameters` must contain all type parameters which variables in `t2`
-  ## refer to, in the proper order.
+template fits_impl(
+  is_poly1: bool,
+  ts1: open_array[Type],
+  ts2: open_array[Type],
+  parameters: ImSeq[TypeParameter],
+): ImSeq[Type] =
+  ## `ts1` may contain type variables if and only if `is_poly1` is true. This allows `fits_impl` to choose the right
+  ## subtyping strategy. Because subtyping `assignments` may not contain type variables, we have to substitute before
+  ## calling `is_subtype` if `ts1` contains type variables.
   if ts1.len != ts2.len:
     return nil
 
-  let length = ts1.len
-  assert(parameters.len == length)
-
   var assignments: FitsAssignments
-  for i in 0 ..< length:
+  for i in 0 ..< ts1.len:
     let t1 = ts1[i]
     let t2 = ts2[i]
     if not fits_assign(t1, t2, assignments):
       # Consistency constraint: All variable assignments must be unique. (Baked into `assign`.)
       return nil
 
-  # Consistency constraint: All variable must have an assignment.
-  for i in 0 ..< length:
+  # Consistency constraint: All variables must have an assignment.
+  for i in 0 ..< parameters.len:
     if assignments[i] == nil:
       return nil
 
   # Consistency constraint: All bounds must be kept.
-  for i in 0 ..< length:
+  for i in 0 ..< parameters.len:
     let parameter = parameters[i]
     let tpe = assignments[i]
     if not bounds_contain(parameter, tpe, assignments):
       return nil
 
   # Final check: `t1` must be a subtype of `t2` when substituting assignments into `t2`.
-  for i in 0 ..< length:
-    if not is_subtype_substitute2(ts1[i], ts2[i], assignments):
-      return nil
+  for i in 0 ..< ts1.len:
+    if is_poly1:
+      if not is_subtype(ts1[i], substitute(ts2[i], assignments)):
+        return nil
+    else:
+      if not is_subtype_substitute2(ts1[i], ts2[i], assignments):
+        return nil
 
   # So far, we've used an array on the stack for the type assignments. We have to convert these to a heap-allocated
   # ImSeq now, so that they outlive the lifetime of this function call.
-  new_immutable_seq(assignments, length)
+  new_immutable_seq(assignments, parameters.len)
+
+proc fits*(t1: Type, t2: Type, parameters: ImSeq[TypeParameter]): ImSeq[Type] {.inline.} =
+  ## Whether `t1` fits into `t2`. `fits` returns the list of assigned type arguments if true, or `nil` otherwise.
+  ## `parameters` must contain all type parameters which variables in `t2` refer to, in the proper order. `t1` may NOT
+  ## contain type variables.
+  fits([t1], [t2], parameters)
+
+proc fits_poly1(t1: Type, t2: Type, parameters: ImSeq[TypeParameter]): ImSeq[Type] {.inline.} =
+  ## Equivalent to `fits(t1, t2, parameters)`, but `t1` may contain type variables.
+  fits_poly1([t1], [t2], parameters)
+
+proc fits*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeParameter]): ImSeq[Type] =
+  ## Whether `ts1`, interpreted as the elements of a tuple type, fit into `ts2`. `fits` returns the list of assigned
+  ## type arguments if true, or `nil` otherwise. `parameters` must contain all type parameters which variables in `t2`
+  ## refer to, in the proper order. `ts1` may NOT contain type variables.
+  fits_impl(false, ts1, ts2, parameters)
+
+proc fits_poly1*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq[TypeParameter]): ImSeq[Type] =
+  ## Equivalent to `fits(ts1, ts2, parameters)`, but `ts1` may contain type variables.
+  fits_impl(true, ts1, ts2, parameters)
 
 proc fits_assign(t1: Type, t2: Type, assignments: var FitsAssignments): bool =
   ## Assigns all matching types in `t1` to type variables in `t2`, saving them in `assignments`. If an assignment

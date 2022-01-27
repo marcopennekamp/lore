@@ -29,7 +29,12 @@ proc find_dispatch_target*(mf: MultiFunction, input_types: open_array[Type], tar
     var is_most_specific = true
     for f2 in candidates:
       if cast[pointer](candidate) != cast[pointer](f2):
-        if is_subtype(f2.function.input_type, candidate.function.input_type):
+        let type_arguments = fits_poly1(
+          to_open_array(f2.function.input_type.elements),
+          to_open_array(candidate.function.input_type.elements),
+          candidate.function.type_parameters,
+        )
+        if type_arguments != nil:
           is_most_specific = false
           break
     if is_most_specific: most_specific.add(candidate)
