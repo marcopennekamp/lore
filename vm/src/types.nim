@@ -1826,8 +1826,7 @@ proc substitute_optimized(tpe: Type, type_arguments: open_array[Type]): Type =
     if type_arguments != nil: force_instantiate_struct_schema(tpe.get_schema, type_arguments, tpe.open_property_types)
     else: nil
 
-  else:
-    quit(fmt"Type substitution has not been implemented for kind {tpe.kind}.")
+  else: nil
 
 proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: open_array[Type]): ImSeq[Type] =
   var result_types: ImSeq[Type] = nil
