@@ -328,6 +328,11 @@ proc attach_type_parameters(tpe: Type, type_parameters: ImSeq[TypeParameter]) =
     attach_type_parameters(tpe.key, type_parameters)
     attach_type_parameters(tpe.value, type_parameters)
 
+  of Kind.Trait, Kind.Struct:
+    let tpe: DeclaredType = cast[DeclaredType](tpe)
+    attach_type_parameters(tpe.type_arguments, type_parameters)
+    attach_type_parameters(cast[ImSeq[Type]](tpe.supertraits), type_parameters)
+
   else: discard
 
 proc attach_type_parameters(types: ImSeq[Type], type_parameters: ImSeq[TypeParameter]) =
