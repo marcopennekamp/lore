@@ -4,7 +4,7 @@ import definitions
 from dispatch import find_dispatch_target
 import imseqs
 import instructions
-from types import nil
+from types import Type, StructSchema
 import values
 from utils import when_debug
 
@@ -49,34 +49,62 @@ proc set_global*(variable: GlobalVariable, value: TaggedValue) =
   variable.value = value
 
 ########################################################################################################################
-# Evaluator implementation.                                                                                            #
+# Register access: Values.                                                                                             #
 ########################################################################################################################
 
-proc evaluate(frame: FramePtr)
+template regv_get(index): untyped = cast[TaggedValue](frame.registers[index])
+template regv_get_arg(index): untyped = regv_get(instruction.arg(index))
 
-template reg_get(index): untyped = frame.registers[index]
-template reg_get_arg(index): untyped = reg_get(instruction.arg(index))
+template regv_get_ref(index, tpe): untyped = untag_reference(regv_get(index), tpe)
+template regv_get_int(index): untyped = untag_int(regv_get(index))
+template regv_get_bool(index): untyped = untag_boolean(regv_get(index))
 
-template reg_get_ref(index, tpe): untyped = untag_reference(reg_get(index), tpe)
-template reg_get_int(index): untyped = untag_int(reg_get(index))
-template reg_get_bool(index): untyped = untag_boolean(reg_get(index))
+template regv_get_ref_arg(index, tpe): untyped = regv_get_ref(instruction.arg(index), tpe)
+template regv_get_int_arg(index): untyped = regv_get_int(instruction.arg(index))
+template regv_get_bool_arg(index): untyped = regv_get_bool(instruction.arg(index))
 
-template reg_get_ref_arg(index, tpe): untyped = reg_get_ref(instruction.arg(index), tpe)
-template reg_get_int_arg(index): untyped = reg_get_int(instruction.arg(index))
-template reg_get_bool_arg(index): untyped = reg_get_bool(instruction.arg(index))
+template regv_set(target_index, tagged_value): untyped =
+  frame.registers[target_index] = cast[uint64](tagged_value)
 
-template reg_set(target_index, register_value): untyped =
-  frame.registers[target_index] = register_value
+template regv_set_arg(target_index, tagged_value): untyped = regv_set(instruction.arg(target_index), tagged_value)
 
-template reg_set_arg(index, register_value): untyped = reg_set(instruction.arg(index), register_value)
+template regv_set_ref(index, value): untyped = regv_set(index, tag_reference(value))
+template regv_set_int(index, value): untyped = regv_set(index, tag_int(value))
+template regv_set_bool(index, value): untyped = regv_set(index, tag_boolean(value))
 
-template reg_set_ref(index, value): untyped = reg_set(index, tag_reference(value))
-template reg_set_int(index, value): untyped = reg_set(index, tag_int(value))
-template reg_set_bool(index, value): untyped = reg_set(index, tag_boolean(value))
+template regv_set_ref_arg(index, value): untyped = regv_set_ref(instruction.arg(index), value)
+template regv_set_int_arg(index, value): untyped = regv_set_int(instruction.arg(index), value)
+template regv_set_bool_arg(index, value): untyped = regv_set_bool(instruction.arg(index), value)
 
-template reg_set_ref_arg(index, value): untyped = reg_set_ref(instruction.arg(index), value)
-template reg_set_int_arg(index, value): untyped = reg_set_int(instruction.arg(index), value)
-template reg_set_bool_arg(index, value): untyped = reg_set_bool(instruction.arg(index), value)
+template regv_get_open_array(first, last): untyped =
+  ## Allows passing a part of the frame's registers from `first` to `last` as an open array of TaggedValues.
+  to_open_array(cast[ptr UncheckedArray[TaggedValue]](addr frame.registers), first, last)
+
+template regv_get_open_array_arg(first_index, last_index): untyped =
+  regv_get_open_array(int(instruction.arg(first_index)), int(instruction.arg(last_index)))
+
+########################################################################################################################
+# Register access: Types.                                                                                              #
+########################################################################################################################
+
+template regt_get(index): untyped = cast[Type](frame.registers[index])
+template regt_get_arg(index): untyped = regt_get(instruction.arg(index))
+
+template regt_set(target_index, tpe): untyped =
+  frame.registers[target_index] = cast[uint64](tpe)
+
+template regt_set_arg(target_index, tpe): untyped = regt_set(instruction.arg(target_index), tpe)
+
+template regt_get_open_array(first, last): untyped =
+  ## Allows passing a part of the frame's registers from `first` to `last` as an open array of Types.
+  to_open_array(cast[ptr UncheckedArray[Type]](addr frame.registers), first, last)
+
+template regt_get_open_array_arg(first_index, last_index): untyped =
+  regt_get_open_array(int(instruction.arg(first_index)), int(instruction.arg(last_index)))
+
+########################################################################################################################
+# Constant table access.                                                                                               #
+########################################################################################################################
 
 template const_types(index): untyped = constants.types[index]
 template const_types_arg(index): untyped = const_types(instruction.arg(index))
@@ -89,15 +117,14 @@ template const_value_ref_arg(index, tpe): untyped = const_value_ref(instruction.
 
 template const_name_arg(index): untyped = constants.names[instruction.arg(index)]
 template const_intrinsic_arg(index): untyped = constants.intrinsics[instruction.arg(index)]
+template const_schema_arg(index): untyped = constants.schemas[instruction.arg(index)]
 template const_global_variable_arg(index): untyped = constants.global_variables[instruction.arg(index)]
 template const_multi_function_arg(index): untyped = constants.multi_functions[instruction.arg(index)]
 template const_meta_shape_arg(index): untyped = constants.meta_shapes[instruction.arg(1)]
 
-template list_append(new_tpe): untyped =
-  let list = reg_get_ref_arg(1, ListValue)
-  let new_element = reg_get_arg(2)
-  var new_elements = list.elements.append(new_element)
-  reg_set_ref_arg(0, new_list(new_elements, new_tpe))
+########################################################################################################################
+# Helpers: Function calls.                                                                                             #
+########################################################################################################################
 
 template next_frame_base(): pointer = cast[pointer](cast[uint](frame) + frame.function.frame_size)
 
@@ -107,7 +134,7 @@ template call_start(target: ptr FunctionInstance): FramePtr =
 
 template get_call_result(target_frame): untyped =
   # After function evaluation has finished, it must guarantee that the return value is in the first register.
-  target_frame.registers[0]
+  cast[TaggedValue](target_frame.registers[0])
 
 # TODO (vm): Do we have to pass type arguments of an owning multi-function to a lambda? Or how does this work?
 template call0(target: ptr FunctionInstance): TaggedValue =
@@ -117,14 +144,14 @@ template call0(target: ptr FunctionInstance): TaggedValue =
 
 template call1(target: ptr FunctionInstance, argument0): TaggedValue =
   let target_frame = call_start(target)
-  target_frame.registers[0] = argument0
+  target_frame.registers[0] = cast[uint64](argument0)
   evaluate(target_frame)
   get_call_result(target_frame)
 
 template call2(target: ptr FunctionInstance, argument0, argument1): TaggedValue =
   let target_frame = call_start(target)
-  target_frame.registers[0] = argument0
-  target_frame.registers[1] = argument1
+  target_frame.registers[0] = cast[uint64](argument0)
+  target_frame.registers[1] = cast[uint64](argument1)
   evaluate(target_frame)
   get_call_result(target_frame)
 
@@ -143,6 +170,16 @@ template dispatch2(mf, argument0, argument1): TaggedValue =
   find_dispatch_target(mf, argument0, argument1, target)
   call2(addr target, argument0, argument1)
 
+########################################################################################################################
+# Helpers: Other operations.                                                                                           #
+########################################################################################################################
+
+template list_append(new_tpe): untyped =
+  let list = regv_get_ref_arg(1, ListValue)
+  let new_element = regv_get_arg(2)
+  var new_elements = list.elements.append(new_element)
+  regv_set_ref_arg(0, new_list(new_elements, new_tpe))
+
 macro generate_intrisic_evaluation(
   is_void: static[bool],
   is_frame_aware: static[bool],
@@ -156,9 +193,9 @@ macro generate_intrisic_evaluation(
   ##
   ##    let intrinsic = const_intrinsic_arg(1)
   ##    let function = intrinsic.function.binary_fa
-  ##    let argument0 = reg_get_arg(2)
-  ##    let argument1 = reg_get_arg(3)
-  ##    reg_set_arg(0, function(frame, argument0, argument1))
+  ##    let argument0 = regv_get_arg(2)
+  ##    let argument1 = regv_get_arg(3)
+  ##    regv_set_arg(0, function(frame, argument0, argument1))
   var xary_name =
     case argument_count
     of 0: "nullary"
@@ -193,7 +230,7 @@ macro generate_intrisic_evaluation(
     let arg_index = macros.new_lit(i + argument_offset)
     statements.add(
       quote do:
-        let `argument_id` = reg_get_arg(`arg_index`)
+        let `argument_id` = regv_get_arg(`arg_index`)
     )
     function_arguments.add(argument_id)
 
@@ -207,10 +244,14 @@ macro generate_intrisic_evaluation(
     statements.add(
       quote do:
         let res = `function_call`
-        reg_set_arg(0, res)
+        regv_set_arg(0, res)
     )
 
   macros.new_stmt_list(statements)
+
+########################################################################################################################
+# Evaluate.                                                                                                            #
+########################################################################################################################
 
 proc evaluate(frame: FramePtr) =
   when_debug: echo "Evaluating function ", frame.function.multi_function.name, " with frame ", cast[uint](frame)
@@ -228,103 +269,103 @@ proc evaluate(frame: FramePtr) =
 
     case instruction.operation
     of Operation.Const:
-      reg_set_arg(0, const_value_arg(1))
+      regv_set_arg(0, const_value_arg(1))
 
     of Operation.ConstPoly:
-      reg_set_arg(0, substitute_types(const_value_arg(1), frame.type_arguments))
+      regv_set_arg(0, substitute_types(const_value_arg(1), frame.type_arguments))
 
     of Operation.IntConst:
-      reg_set_int_arg(0, instruction.argi(1))
+      regv_set_int_arg(0, instruction.argi(1))
 
     of Operation.IntAdd:
-      let a = reg_get_int_arg(1)
-      let b = reg_get_int_arg(2)
-      reg_set_int_arg(0, a + b)
+      let a = regv_get_int_arg(1)
+      let b = regv_get_int_arg(2)
+      regv_set_int_arg(0, a + b)
 
     of Operation.IntAddConst:
-      let a = reg_get_int_arg(1)
+      let a = regv_get_int_arg(1)
       let b = instruction.argi(2)
-      reg_set_int_arg(0, a + b)
+      regv_set_int_arg(0, a + b)
 
     of Operation.IntSubConst:
-      let a = reg_get_int_arg(1)
+      let a = regv_get_int_arg(1)
       let b = instruction.argi(2)
-      reg_set_int_arg(0, a - b)
+      regv_set_int_arg(0, a - b)
 
     of Operation.IntLt:
-      let a = reg_get_int_arg(1)
-      let b = reg_get_int_arg(2)
-      reg_set_bool_arg(0, a < b)
+      let a = regv_get_int_arg(1)
+      let b = regv_get_int_arg(2)
+      regv_set_bool_arg(0, a < b)
 
     of Operation.IntLtConst:
-      let a = reg_get_int_arg(1)
+      let a = regv_get_int_arg(1)
       let b = instruction.argi(2)
-      reg_set_bool_arg(0, a < b)
+      regv_set_bool_arg(0, a < b)
 
     of Operation.IntGtConst:
-      let a = reg_get_int_arg(1)
+      let a = regv_get_int_arg(1)
       let b = instruction.argi(2)
-      reg_set_bool_arg(0, a > b)
+      regv_set_bool_arg(0, a > b)
 
     of Operation.RealAdd:
-      let a = reg_get_ref_arg(1, RealValue)
-      let b = reg_get_ref_arg(2, RealValue)
-      reg_set_ref_arg(0, values.new_real(a.real + b.real))
+      let a = regv_get_ref_arg(1, RealValue)
+      let b = regv_get_ref_arg(2, RealValue)
+      regv_set_ref_arg(0, values.new_real(a.real + b.real))
 
     of Operation.StringOf:
-      let string = $reg_get_arg(1)
-      reg_set_ref_arg(0, values.new_string(string))
+      let string = $regv_get_arg(1)
+      regv_set_ref_arg(0, values.new_string(string))
 
     of Operation.StringConcat:
-      let a = reg_get_ref_arg(1, StringValue)
-      let b = reg_get_ref_arg(2, StringValue)
-      reg_set_ref_arg(0, values.new_string(a.string & b.string))
+      let a = regv_get_ref_arg(1, StringValue)
+      let b = regv_get_ref_arg(2, StringValue)
+      regv_set_ref_arg(0, values.new_string(a.string & b.string))
 
     of Operation.StringConcatConst:
-      let a = reg_get_ref_arg(1, StringValue)
+      let a = regv_get_ref_arg(1, StringValue)
       let b = const_value_ref_arg(2, StringValue)
-      reg_set_ref_arg(0, values.new_string(a.string & b.string))
+      regv_set_ref_arg(0, values.new_string(a.string & b.string))
 
     of Operation.StringConcatConstl:
       let a = const_value_ref_arg(1, StringValue)
-      let b = reg_get_ref_arg(2, StringValue)
-      reg_set_ref_arg(0, values.new_string(a.string & b.string))
+      let b = regv_get_ref_arg(2, StringValue)
+      regv_set_ref_arg(0, values.new_string(a.string & b.string))
 
     of Operation.Tuple:
       let first = instruction.arg(1)
       let last = instruction.arg(2)
       var elements = new_immutable_seq[TaggedValue](last - first + 1)
       for i in first .. last:
-        elements[i] = reg_get(i)
-      reg_set_ref_arg(0, values.new_tuple(elements))
+        elements[i] = regv_get(i)
+      regv_set_ref_arg(0, values.new_tuple(elements))
 
     of Operation.Tuple2:
       var elements = new_immutable_seq[TaggedValue](2)
-      elements[0] = reg_get_arg(1)
-      elements[1] = reg_get_arg(2)
-      reg_set_ref_arg(0, values.new_tuple(elements))
+      elements[0] = regv_get_arg(1)
+      elements[1] = regv_get_arg(2)
+      regv_set_ref_arg(0, values.new_tuple(elements))
 
     of Operation.TupleGet:
-      let tpl = reg_get_ref_arg(1, TupleValue)
-      reg_set_arg(0, tpl.elements[instruction.arg(2)])
+      let tpl = regv_get_ref_arg(1, TupleValue)
+      regv_set_arg(0, tpl.elements[instruction.arg(2)])
 
     of Operation.FunctionCall0:
-      let function = reg_get_ref_arg(1, FunctionValue)
+      let function = regv_get_ref_arg(1, FunctionValue)
       let res = evaluate(function, frame)
-      reg_set_arg(0, res)
+      regv_set_arg(0, res)
 
     of Operation.FunctionCall1:
-      let function = reg_get_ref_arg(1, FunctionValue)
-      let argument0 = reg_get_arg(2)
+      let function = regv_get_ref_arg(1, FunctionValue)
+      let argument0 = regv_get_arg(2)
       let res = evaluate(function, frame, argument0)
-      reg_set_arg(0, res)
+      regv_set_arg(0, res)
 
     of Operation.FunctionCall2:
-      let function = reg_get_ref_arg(1, FunctionValue)
-      let argument0 = reg_get_arg(2)
-      let argument1 = reg_get_arg(3)
+      let function = regv_get_ref_arg(1, FunctionValue)
+      let argument0 = regv_get_arg(2)
+      let argument1 = regv_get_arg(3)
       let res = evaluate(function, frame, argument0, argument1)
-      reg_set_arg(0, res)
+      regv_set_arg(0, res)
 
     of Operation.ListAppend:
       let new_tpe = const_types_arg(3)
@@ -335,60 +376,55 @@ proc evaluate(frame: FramePtr) =
       list_append(new_tpe)
 
     of Operation.ListAppendUntyped:
-      let list = reg_get_ref_arg(1, ListValue)
+      let list = regv_get_ref_arg(1, ListValue)
       list_append(list.tpe)
 
     of Operation.Shape:
       let meta_shape = const_meta_shape_arg(1)
-      let first = instruction.arg(2)
-      let last = instruction.arg(3)
-
-      # We can just pass the register array with the correct first and last indices for shape creation. There is no
-      # need to allocate an intermediate sequence.
-      reg_set_ref_arg(0, values.new_shape_value(meta_shape, to_open_array(addr frame.registers, int(first), int(last))))
+      regv_set_ref_arg(0, values.new_shape_value(meta_shape, regv_get_open_array_arg(2, 3)))
 
     of Operation.Shape1:
       let meta_shape = const_meta_shape_arg(1)
-      reg_set_ref_arg(0, values.new_shape_value(meta_shape, [reg_get_arg(2)]))
+      regv_set_ref_arg(0, values.new_shape_value(meta_shape, [regv_get_arg(2)]))
 
     of Operation.Shape2:
       let meta_shape = const_meta_shape_arg(1)
-      reg_set_ref_arg(0, values.new_shape_value(meta_shape, [reg_get_arg(2), reg_get_arg(3)]))
+      regv_set_ref_arg(0, values.new_shape_value(meta_shape, [regv_get_arg(2), regv_get_arg(3)]))
 
     of Operation.ShapeGetProperty:
-      let shape = reg_get_ref_arg(1, ShapeValue)
+      let shape = regv_get_ref_arg(1, ShapeValue)
       let name = const_name_arg(2)
-      reg_set_arg(0, shape.get_property_value(name))
+      regv_set_arg(0, shape.get_property_value(name))
 
     of Operation.SymbolEq:
-      let a = reg_get_ref_arg(1, SymbolValue)
-      let b = reg_get_ref_arg(2, SymbolValue)
-      reg_set_bool_arg(0, a.name == b.name)
+      let a = regv_get_ref_arg(1, SymbolValue)
+      let b = regv_get_ref_arg(2, SymbolValue)
+      regv_set_bool_arg(0, a.name == b.name)
 
     of Operation.SymbolEqConst:
-      let a = reg_get_ref_arg(1, SymbolValue)
+      let a = regv_get_ref_arg(1, SymbolValue)
       let b = const_value_ref_arg(2, SymbolValue)
-      reg_set_bool_arg(0, a.name == b.name)
+      regv_set_bool_arg(0, a.name == b.name)
 
     of Operation.StructGetProperty:
-      let struct = reg_get_ref_arg(1, StructValue)
-      reg_set_arg(0, struct.property_values[instruction.arg(2)])
+      let struct = regv_get_ref_arg(1, StructValue)
+      regv_set_arg(0, struct.property_values[instruction.arg(2)])
 
     of Operation.StructGetNamedProperty:
-      let struct = reg_get_ref_arg(1, StructValue)
+      let struct = regv_get_ref_arg(1, StructValue)
       let name = const_name_arg(2)
-      reg_set_arg(0, struct.get_property_value(name))
+      regv_set_arg(0, struct.get_property_value(name))
 
     of Operation.Jump:
       pc = instruction.arg(0)
 
     of Operation.JumpIfFalse:
-      let predicate = reg_get_bool_arg(1)
+      let predicate = regv_get_bool_arg(1)
       if (not predicate):
         pc = instruction.arg(0)
 
     of Operation.JumpIfTrue:
-      let predicate = reg_get_bool_arg(1)
+      let predicate = regv_get_bool_arg(1)
       if (predicate):
         pc = instruction.arg(0)
 
@@ -418,49 +454,55 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.GlobalGetEager:
       let gv = const_global_variable_arg(1)
-      reg_set_arg(0, gv.value)
+      regv_set_arg(0, gv.value)
 
     of Operation.GlobalGetLazy:
       let gv = const_global_variable_arg(1)
       let frame_base = next_frame_base()
       let value = get_global(gv, frame_base)
-      reg_set_arg(0, value)
+      regv_set_arg(0, value)
 
     of Operation.GlobalSet:
       let gv = const_global_variable_arg(0)
-      let value = reg_get_arg(1)
+      let value = regv_get_arg(1)
       set_global(gv, value)
 
     of Operation.Dispatch1:
       let mf = const_multi_function_arg(1)
-      let argument0 = reg_get_arg(2)
+      let argument0 = regv_get_arg(2)
       let res = dispatch1(mf, argument0)
-      reg_set_arg(0, res)
+      regv_set_arg(0, res)
 
     of Operation.Dispatch2:
       let mf = const_multi_function_arg(1)
-      let argument0 = reg_get_arg(2)
-      let argument1 = reg_get_arg(3)
+      let argument0 = regv_get_arg(2)
+      let argument1 = regv_get_arg(3)
       let res = dispatch2(mf, argument0, argument1)
-      reg_set_arg(0, res)
+      regv_set_arg(0, res)
 
     of Operation.Return:
-      reg_set(0, reg_get_arg(0))
+      regv_set(0, regv_get_arg(0))
       break
 
     of Operation.ReturnUnit:
-      reg_set(0, unit)
+      regv_set(0, unit)
       break
 
     of Operation.Return0:
       break
+
+    of Operation.TypeArg:
+      regt_set_arg(0, frame.type_arguments[instruction.arg(1)])
+
+    of Operation.TypeConst:
+      regt_set_arg(0, const_types_arg(1))
 
 proc evaluate*(entry_function: ptr FunctionInstance, frame_mem: pointer): TaggedValue =
   let frame = create_frame(entry_function, frame_mem)
   evaluate(frame)
 
   # The bytecode must ensure that the result is in the first register.
-  reg_get(0)
+  regv_get(0)
 
 proc evaluate*(function_value: FunctionValue, frame: FramePtr): TaggedValue =
   ## Evaluates a function value with a signature `() => Any`.

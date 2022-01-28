@@ -10,6 +10,7 @@ type
     ##  - `glb(x)`: The xth entry in the global variables constants table.
     ##  - `mfs(x)`: The xth entry in the multi functions constants table.
     ##  - `mtsh(x)`: The xth entry in the meta shapes constants table.
+    ##  - `targ(x)`: The xth entry in the current function instance's type arguments.
     ##  - `substitute(t)`: Substitutes the current function instance's type arguments into type `t`.
     ##  - `substitute_types(v)`: Substitutes the current function instance's type arguments into value `v`.
 
@@ -171,6 +172,12 @@ type
 
     Return0
       ## return reg(0)
+
+    TypeArg
+      ## reg(arg0) <- targ(reg1)
+
+    TypeConst
+      ## reg(arg0) <- tpe(reg1)
 
   Argument = distinct uint16
 

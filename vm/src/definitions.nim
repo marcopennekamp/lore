@@ -11,7 +11,9 @@ type
     ## Frames are part of `definitions` because some intrinsics require access to frames.
     function*: Function
     type_arguments*: ImSeq[Type]
-    registers*: UncheckedArray[TaggedValue]
+    registers*: UncheckedArray[uint64]
+      ## Registers may contain TaggedValues and Types. Whether a register currently contains a value or a type is
+      ## solely defined by the operations that act on the registers.
   FramePtr* = ptr Frame
 
   Intrinsic* = ref object
