@@ -406,6 +406,27 @@ proc evaluate(frame: FramePtr) =
       let b = const_value_ref_arg(2, SymbolValue)
       regv_set_bool_arg(0, a.name == b.name)
 
+    of Operation.Struct:
+      let schema = cast[StructSchema](const_schema_arg(1))
+      regv_set_ref_arg(0, values.new_struct_value(schema, empty_immutable_seq[Type](), regv_get_open_array_arg(2, 3)))
+
+    of Operation.Struct1:
+      let schema = cast[StructSchema](const_schema_arg(1))
+      let property_values = [regv_get_arg(2)]
+      let value = values.new_struct_value(schema, empty_immutable_seq[Type](), property_values)
+      regv_set_ref_arg(0, value)
+
+    of Operation.Struct2:
+      let schema = cast[StructSchema](const_schema_arg(1))
+      let property_values = [regv_get_arg(2), regv_get_arg(3)]
+      let value = values.new_struct_value(schema, empty_immutable_seq[Type](), property_values)
+      regv_set_ref_arg(0, value)
+
+    of Operation.StructPoly:
+      let schema = cast[StructSchema](const_schema_arg(1))
+      let type_arguments = new_immutable_seq(regt_get_open_array_arg(2, 3))
+      regv_set_ref_arg(0, values.new_struct_value(schema, type_arguments, regv_get_open_array_arg(4, 5)))
+
     of Operation.StructGetProperty:
       let struct = regv_get_ref_arg(1, StructValue)
       regv_set_arg(0, struct.property_values[instruction.arg(2)])
@@ -414,6 +435,11 @@ proc evaluate(frame: FramePtr) =
       let struct = regv_get_ref_arg(1, StructValue)
       let name = const_name_arg(2)
       regv_set_arg(0, struct.get_property_value(name))
+
+    of Operation.StructEq:
+      let a = regv_get_ref_arg(1, StructValue)
+      let b = regv_get_ref_arg(2, StructValue)
+      regv_set_bool_arg(0, cast[pointer](a) == cast[pointer](b))
 
     of Operation.Jump:
       pc = instruction.arg(0)

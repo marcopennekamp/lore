@@ -7,6 +7,7 @@ type
     ##  - `val(x)`: The xth entry in the values constants table.
     ##  - `nam(x)`: The xth entry in the names constants table.
     ##  - `intr(x)`: The xth entry in the intrinsics constants table.
+    ##  - `sch(x)`: The xth entry in the schemas constants table.
     ##  - `glb(x)`: The xth entry in the global variables constants table.
     ##  - `mfs(x)`: The xth entry in the multi functions constants table.
     ##  - `mtsh(x)`: The xth entry in the meta shapes constants table.
@@ -103,6 +104,18 @@ type
     SymbolEqConst
       ## reg(arg0) <- reg(arg1) == val(arg2)
 
+    Struct
+      ## reg(arg0) <- sch(arg1)(reg(arg2), reg(arg2 + 1), ..., reg(arg3))
+
+    Struct1
+      ## reg(arg0) <- sch(arg1)(reg(arg2))
+
+    Struct2
+      ## reg(arg0) <- sch(arg1)(reg(arg2), reg(arg3))
+
+    StructPoly
+      ## reg(arg0) <- sch(arg1)[reg(arg2), reg(arg2 + 1), ..., reg(arg3)](reg(arg4), reg(arg4 + 1), ..., reg(arg5))
+
     StructGetProperty
       ## Returns the struct property value at the index `arg2`. This is only possible when accessing a struct value
       ## whose type is known at compile time. Otherwise, StructGetNamedProperty must be used.
@@ -112,6 +125,10 @@ type
       ## Returns the struct property value with the name `nam(arg2)`. This instruction must be used with a struct value
       ## whose struct type isn't known at compile time.
       ## reg(arg0) <- reg(arg1)[nam(arg2)]
+
+    StructEq
+      ## Whether the two structs are referentially equal.
+      ## reg(arg0) <- reg(arg1) == reg(arg2)
 
     Jump
       ## pc <- arg0
