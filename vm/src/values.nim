@@ -256,10 +256,13 @@ proc new_struct_value_tagged*(schema: Schema, type_arguments: ImSeq[Type], prope
     quit(fmt"Cannot construct a struct value from a trait schema {schema.name}.")
   tag_reference(new_struct_value(cast[StructSchema](schema), type_arguments, property_values))
 
+proc struct_type*(struct: StructValue): StructType {.inline.} = cast[StructType](struct.tpe)
+
+proc property_count*(struct: StructValue): int {.inline.} = struct.struct_type.get_schema.properties.len
+
 proc get_property_value*(struct: StructValue, name: string): TaggedValue =
   ## Gets the value associated with the property `name`. The name must be a valid property.
-  let tpe = cast[StructType](struct.tpe)
-  struct.property_values[tpe.get_schema.property_index.find_offset(name)]
+  struct.property_values[struct.struct_type.get_schema.property_index.find_offset(name)]
 
 ########################################################################################################################
 # Value types.                                                                                                         #
@@ -385,7 +388,7 @@ func `$`*(tagged_values: seq[TaggedValue]): string = tagged_values.join(", ")
 func `$`*(value: Value): string =
   case value.tpe.kind
   of Kind.Real: $cast[RealValue](value).real
-  of Kind.String: cast[StringValue](value).string
+  of Kind.String: "'" & cast[StringValue](value).string & "'"
   of Kind.Tuple:
     let tpl = cast[TupleValue](value)
     "(" & $tpl.elements.join(", ") & ")"
@@ -408,4 +411,11 @@ func `$`*(value: Value): string =
   of Kind.Symbol:
     let symbol = cast[SymbolValue](value)
     "#" & symbol.name
+  of Kind.Struct:
+    let struct = cast[StructValue](value)
+    let schema = struct.struct_type.get_schema
+    var properties = new_seq[string]()
+    for i in 0 ..< struct.property_count:
+      properties.add($struct.property_values[i])
+    schema.name & "(" & properties.join(", ") & ")"
   else: "unknown"

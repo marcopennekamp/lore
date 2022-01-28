@@ -26,7 +26,7 @@ proc alloc_immutable_seq[T](length: int): ImSeq[T] =
 
 let empty = alloc_immutable_seq[uint64](0)
 
-proc empty_immutable_seq*[T](): ImSeq[T] = cast[ImSeq[T]](empty)
+proc empty_immutable_seq*[T](): ImSeq[T] {.inline.} = cast[ImSeq[T]](empty)
   ## Returns an empty immutable sequence for the given element type. This is backed by a single constant ImSeq so that
   ## this function makes no allocations.
 
@@ -98,4 +98,4 @@ proc join*[T](seq: ImSeq[T], separator: string): string =
 proc `hash`*[T](seq: ImSeq[T]): Hash = hash(to_open_array(seq))
 
 proc `$`*[T](seq: ImSeq[T]): string =
-  "ImSeq[" & seq.join(", ") & "]"
+  "[" & seq.join(", ") & "]"

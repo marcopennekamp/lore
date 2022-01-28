@@ -9,7 +9,8 @@
     - Types: ~~Schema definition~~, ~~type definition~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~type equality~~, ~~subtyping~~, ~~type variable allocation~~, ~~type substitution~~, ~~type simplification~~, ~~to string~~.
   - Structs:
     - Types: ~~Schema definition~~, ~~type definition~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~type equality~~, ~~subtyping~~, ~~type variable allocation~~, ~~type substitution~~, ~~type simplification~~, ~~to string~~, ~~open property types and get_property_type~~.
-    - Values: ~~Struct values~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, value substitution, to string, ~~direct and indirect property access~~, construction operations.
+    - Values: ~~Struct values~~, ~~poem reading~~, ~~poem writing~~, ~~universe resolution~~, ~~to string~~, ~~direct and indirect property access~~, construction operations.
+  - Remove value substitution. It's not currently used by any examples and quite unwieldy to implement. Specific value kinds such as lists and structs must then be built by bytecode instructions instead of being read as a value constant.
   - Clear all `TODO (vm/schemas)` entries.
 - Figure out how to pass a surrounding function's type arguments to lambdas created within the function.
 - Implement declared type interning:
