@@ -1875,9 +1875,13 @@ proc `$`*(tpe: Type): string =
   of Kind.Symbol: "#" & cast[SymbolType](tpe).name
   of Kind.Trait, Kind.Struct:
     let tpe = cast[DeclaredType](tpe)
-    let type_arguments = tpe.type_arguments.join(", ")
+    let type_arguments =
+      if not tpe.schema.is_constant:
+        "[" & tpe.type_arguments.join(", ") & "]"
+      else:
+        ""
     let open_properties = stringify_open_properties(tpe)
-    tpe.schema.name & "[" & type_arguments & "]" & open_properties
+    tpe.schema.name & type_arguments & open_properties
 
 proc stringify_open_properties(tpe: DeclaredType): string =
   if tpe.kind != Kind.Struct:
@@ -1894,7 +1898,7 @@ proc stringify_open_properties(tpe: DeclaredType): string =
     let property_name = schema.properties[schema.open_property_indices[i]].name
     let property_type = $tpe.open_property_types[i]
     open_property_strings[i] = property_name & ": " & property_type
-  open_property_strings.join(", ")
+  "(" & open_property_strings.join(", ") & ")"
 
 ########################################################################################################################
 # Type benchmarks.                                                                                                     #
