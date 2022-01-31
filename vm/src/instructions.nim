@@ -9,7 +9,7 @@ type
     ##  - `intr(x)`: The xth entry in the intrinsics constants table.
     ##  - `sch(x)`: The xth entry in the schemas constants table.
     ##  - `glb(x)`: The xth entry in the global variables constants table.
-    ##  - `mfs(x)`: The xth entry in the multi functions constants table.
+    ##  - `mf(x)`: The xth entry in the multi functions constants table.
     ##  - `mtsh(x)`: The xth entry in the meta shapes constants table.
     ##  - `targ(x)`: The xth entry in the current function instance's type arguments.
     ##  - `substitute(t)`: Substitutes the current function instance's type arguments into type `t`.
@@ -142,20 +142,20 @@ type
     Intrinsic0
       ## reg(arg0) <- intr(arg1)()
 
-    IntrinsicVoid0
-      ## intr(arg0)()
-
     Intrinsic1
       ## reg(arg0) <- intr(arg1)(reg(arg2))
 
-    IntrinsicFa1
-      ## reg(arg0) <- intr(arg1)(frame, reg(arg2))
+    Intrinsic2
+      ## reg(arg0) <- intr(arg1)(reg(arg2), reg(arg3))
+
+    IntrinsicVoid0
+      ## intr(arg0)()
 
     IntrinsicVoid1
       ## intr(arg0)(reg(arg1))
 
-    Intrinsic2
-      ## reg(arg0) <- intr(arg1)(reg(arg2), reg(arg3))
+    IntrinsicFa1
+      ## reg(arg0) <- intr(arg1)(frame, reg(arg2))
 
     IntrinsicFa2
       ## reg(arg0) <- intr(arg1)(frame, reg(arg2), reg(arg3))
@@ -176,10 +176,10 @@ type
       ## glb(arg0) <- reg(arg1)
 
     Dispatch1
-      ## reg(arg0) <- mfs(arg1)(reg(arg2))
+      ## reg(arg0) <- mf(arg1)(reg(arg2))
 
     Dispatch2
-      ## reg(arg0) <- mfs(arg1)(reg(arg2), reg(arg3))
+      ## reg(arg0) <- mf(arg1)(reg(arg2), reg(arg3))
 
     Return
       ## return reg(arg0)

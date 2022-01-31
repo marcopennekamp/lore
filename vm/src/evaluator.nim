@@ -457,20 +457,20 @@ proc evaluate(frame: FramePtr) =
     of Operation.Intrinsic0:
       generate_intrisic_evaluation(false, false, 0)
 
-    of Operation.IntrinsicVoid0:
-      generate_intrisic_evaluation(true, false, 0)
-
     of Operation.Intrinsic1:
       generate_intrisic_evaluation(false, false, 1)
 
-    of Operation.IntrinsicFa1:
-      generate_intrisic_evaluation(false, true, 1)
+    of Operation.Intrinsic2:
+      generate_intrisic_evaluation(false, false, 2)
+
+    of Operation.IntrinsicVoid0:
+      generate_intrisic_evaluation(true, false, 0)
 
     of Operation.IntrinsicVoid1:
       generate_intrisic_evaluation(true, false, 1)
 
-    of Operation.Intrinsic2:
-      generate_intrisic_evaluation(false, false, 2)
+    of Operation.IntrinsicFa1:
+      generate_intrisic_evaluation(false, true, 1)
 
     of Operation.IntrinsicFa2:
       generate_intrisic_evaluation(false, true, 2)

@@ -5,6 +5,7 @@
 - Implement a minimum viable version of the VM.
 - Implement a compiler backend for producing Lore VM binaries.
   - Rename `dynamic` to `intrinsic` calls.
+  - Clear all `TODO (bytecode)` entries.
 - Allow multiple multi-function imports with the same name from different modules and implement compile-time disambiguation of such multi-function calls.
   - This would also allow us to introduce a `list.length`-style function call syntax. It might make type inference harder, though.
 - Syntax changes:
