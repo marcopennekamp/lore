@@ -74,9 +74,9 @@ let add3 = PoemFunction(
     new_instruction(Operation.ShapeGetProperty, 3, 1, 2),
     new_instruction(Operation.RealAdd, 6, 2, 3),
 
-    # Create and return the new shape. Keep in mind that for the `Shape` operation, we need to have the property values
-    # in contiguous registers.
-    new_instruction(Operation.Shape, 0, 2, 4, 6),
+    # Create and return the new shape.
+    new_instruction(Operation.OplPush3, 0, 4, 5, 6),
+    new_instruction(Operation.Shape, 0, 2, 3),
     new_instruction(Operation.Return0),
   ],
 )

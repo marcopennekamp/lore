@@ -49,6 +49,13 @@ proc set_global*(variable: GlobalVariable, value: TaggedValue) =
   variable.value = value
 
 ########################################################################################################################
+# Register access: General.                                                                                            #
+########################################################################################################################
+
+template reg_get(index): untyped = frame.registers[index]
+template reg_get_arg(index): untyped = reg_get(instruction.arg(index))
+
+########################################################################################################################
 # Register access: Values.                                                                                             #
 ########################################################################################################################
 
@@ -76,13 +83,6 @@ template regv_set_ref_arg(index, value): untyped = regv_set_ref(instruction.arg(
 template regv_set_int_arg(index, value): untyped = regv_set_int(instruction.arg(index), value)
 template regv_set_bool_arg(index, value): untyped = regv_set_bool(instruction.arg(index), value)
 
-template regv_get_open_array(first, last): untyped =
-  ## Allows passing a part of the frame's registers from `first` to `last` as an open array of TaggedValues.
-  to_open_array(cast[ptr UncheckedArray[TaggedValue]](addr frame.registers), first, last)
-
-template regv_get_open_array_arg(first_index, last_index): untyped =
-  regv_get_open_array(int(instruction.arg(first_index)), int(instruction.arg(last_index)))
-
 ########################################################################################################################
 # Register access: Types.                                                                                              #
 ########################################################################################################################
@@ -94,13 +94,6 @@ template regt_set(target_index, tpe): untyped =
   frame.registers[target_index] = cast[uint64](tpe)
 
 template regt_set_arg(target_index, tpe): untyped = regt_set(instruction.arg(target_index), tpe)
-
-template regt_get_open_array(first, last): untyped =
-  ## Allows passing a part of the frame's registers from `first` to `last` as an open array of Types.
-  to_open_array(cast[ptr UncheckedArray[Type]](addr frame.registers), first, last)
-
-template regt_get_open_array_arg(first_index, last_index): untyped =
-  regt_get_open_array(int(instruction.arg(first_index)), int(instruction.arg(last_index)))
 
 ########################################################################################################################
 # Constant table access.                                                                                               #
@@ -121,6 +114,28 @@ template const_schema_arg(index): untyped = constants.schemas[instruction.arg(in
 template const_global_variable_arg(index): untyped = constants.global_variables[instruction.arg(index)]
 template const_multi_function_arg(index): untyped = constants.multi_functions[instruction.arg(index)]
 template const_meta_shape_arg(index): untyped = constants.meta_shapes[instruction.arg(1)]
+
+########################################################################################################################
+# Operand list support.                                                                                                #
+########################################################################################################################
+
+# TODO (vm/parallel): This needs to be unique per thread.
+var operand_list: array[256, uint64]
+
+template value_operand_list: untyped = cast[array[256, TaggedValue]](operand_list)
+template type_operand_list: untyped = cast[array[256, Type]](operand_list)
+
+template opl_set_arg(offset: uint16, register_index: uint16): untyped =
+  ## The base index is read from `arg0`. `offset` defines the offset from this base index.
+  let index = instruction.arg(0) + offset
+  operand_list[index] = reg_get_arg(register_index)
+
+template oplv_get_open_array_arg(count_arg_index): untyped =
+  to_open_array(value_operand_list(), 0, instruction.arg(count_arg_index) - 1)
+
+template opl_push_n(count: uint16): untyped =
+  for i in 0'u16 ..< count:
+    opl_set_arg(i, i + 1)
 
 ########################################################################################################################
 # Helpers: Function calls.                                                                                             #
@@ -332,11 +347,8 @@ proc evaluate(frame: FramePtr) =
       regv_set_ref_arg(0, values.new_string(a.string & b.string))
 
     of Operation.Tuple:
-      let first = instruction.arg(1)
-      let last = instruction.arg(2)
-      var elements = new_immutable_seq[TaggedValue](last - first + 1)
-      for i in first .. last:
-        elements[i] = regv_get(i)
+      let operand_count = instruction.arg(1)
+      var elements = new_immutable_seq(value_operand_list(), int(operand_count))
       regv_set_ref_arg(0, values.new_tuple(elements))
 
     of Operation.Tuple2:
@@ -381,7 +393,7 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.Shape:
       let meta_shape = const_meta_shape_arg(1)
-      regv_set_ref_arg(0, values.new_shape_value(meta_shape, regv_get_open_array_arg(2, 3)))
+      regv_set_ref_arg(0, values.new_shape_value(meta_shape, oplv_get_open_array_arg(2)))
 
     of Operation.Shape1:
       let meta_shape = const_meta_shape_arg(1)
@@ -408,7 +420,7 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.Struct:
       let schema = cast[StructSchema](const_schema_arg(1))
-      regv_set_ref_arg(0, values.new_struct_value(schema, empty_immutable_seq[Type](), regv_get_open_array_arg(2, 3)))
+      regv_set_ref_arg(0, values.new_struct_value(schema, empty_immutable_seq[Type](), oplv_get_open_array_arg(2)))
 
     of Operation.Struct1:
       let schema = cast[StructSchema](const_schema_arg(1))
@@ -423,9 +435,18 @@ proc evaluate(frame: FramePtr) =
       regv_set_ref_arg(0, value)
 
     of Operation.StructPoly:
-      let schema = cast[StructSchema](const_schema_arg(1))
-      let type_arguments = new_immutable_seq(regt_get_open_array_arg(2, 3))
-      regv_set_ref_arg(0, values.new_struct_value(schema, type_arguments, regv_get_open_array_arg(4, 5)))
+      # We have to translate the lengths of the type argument and value argument operands into workable indices.
+      let type_argument_count = instruction.arg(2)
+      let argument_count = instruction.arg(3)
+      let first_argument_index = type_argument_count
+      let last_argument_index = first_argument_index + argument_count - 1
+
+      let value = values.new_struct_value(
+        cast[StructSchema](const_schema_arg(1)),
+        new_immutable_seq(type_operand_list(), int(type_argument_count)),
+        to_open_array(value_operand_list(), first_argument_index, last_argument_index),
+      )
+      regv_set_ref_arg(0, value)
 
     of Operation.StructGetProperty:
       let struct = regv_get_ref_arg(1, StructValue)
@@ -454,29 +475,14 @@ proc evaluate(frame: FramePtr) =
       if (predicate):
         pc = instruction.arg(0)
 
-    of Operation.Intrinsic0:
-      generate_intrisic_evaluation(false, false, 0)
-
-    of Operation.Intrinsic1:
-      generate_intrisic_evaluation(false, false, 1)
-
-    of Operation.Intrinsic2:
-      generate_intrisic_evaluation(false, false, 2)
-
-    of Operation.IntrinsicVoid0:
-      generate_intrisic_evaluation(true, false, 0)
-
-    of Operation.IntrinsicVoid1:
-      generate_intrisic_evaluation(true, false, 1)
-
-    of Operation.IntrinsicFa1:
-      generate_intrisic_evaluation(false, true, 1)
-
-    of Operation.IntrinsicFa2:
-      generate_intrisic_evaluation(false, true, 2)
-
-    of Operation.IntrinsicVoidFa2:
-      generate_intrisic_evaluation(true, true, 2)
+    of Operation.Intrinsic0: generate_intrisic_evaluation(false, false, 0)
+    of Operation.Intrinsic1: generate_intrisic_evaluation(false, false, 1)
+    of Operation.Intrinsic2: generate_intrisic_evaluation(false, false, 2)
+    of Operation.IntrinsicVoid0: generate_intrisic_evaluation(true, false, 0)
+    of Operation.IntrinsicVoid1: generate_intrisic_evaluation(true, false, 1)
+    of Operation.IntrinsicFa1: generate_intrisic_evaluation(false, true, 1)
+    of Operation.IntrinsicFa2: generate_intrisic_evaluation(false, true, 2)
+    of Operation.IntrinsicVoidFa2: generate_intrisic_evaluation(true, true, 2)
 
     of Operation.GlobalGetEager:
       let gv = const_global_variable_arg(1)
@@ -522,6 +528,13 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.TypeConst:
       regt_set_arg(0, const_types_arg(1))
+
+    of Operation.OplPush1: opl_push_n(1)
+    of Operation.OplPush2: opl_push_n(2)
+    of Operation.OplPush3: opl_push_n(3)
+    of Operation.OplPush4: opl_push_n(4)
+    of Operation.OplPush5: opl_push_n(5)
+    of Operation.OplPush6: opl_push_n(6)
 
 proc evaluate*(entry_function: ptr FunctionInstance, frame_mem: pointer): TaggedValue =
   let frame = create_frame(entry_function, frame_mem)

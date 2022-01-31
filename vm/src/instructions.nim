@@ -3,6 +3,7 @@ type
     ## To describe an operation, you can use the following terms:
     ##  - `argx`: The xth uint16 argument of the instruction (starting with 0).
     ##  - `reg(x)`: Register x.
+    ##  - `opl(x)`: The xth entry in the operand list.
     ##  - `tpe(x)`: The xth entry in the types constants table.
     ##  - `val(x)`: The xth entry in the values constants table.
     ##  - `nam(x)`: The xth entry in the names constants table.
@@ -14,6 +15,14 @@ type
     ##  - `targ(x)`: The xth entry in the current function instance's type arguments.
     ##  - `substitute(t)`: Substitutes the current function instance's type arguments into type `t`.
     ##  - `substitute_types(v)`: Substitutes the current function instance's type arguments into value `v`.
+    ##
+    ## The operand list is used by instructions which require a number of operands that exceeds the instruction's size
+    ## limit. For example, to call a function with 8 arguments, we cannot pass 8 registers within the instruction,
+    ## because it can only take 5 arguments (and one argument each for target and function). The operand list contains
+    ## up to 256 entries and can be prepared using the `OplPushX` instructions. It is global to the evaluator and only
+    ## valid for a single consumption by an instruction. The general pattern is casting `OplPushX` with the correct
+    ## operand list target indices and then invoking the consuming instruction with the correct operand count. The
+    ## consuming instruction must assume that the first operand is `opl(0)`.
 
     Const
       ## reg(arg0) <- val(arg1)
@@ -60,7 +69,7 @@ type
       ## reg(arg0) <- concat(val(arg1), reg(arg2))
 
     Tuple
-      ## reg(arg0) <- tuple(reg(arg1), reg(arg1 + 1), ..., reg(arg2))
+      ## reg(arg0) <- tuple(opl(0), ..., opl(arg1 - 1))
 
     Tuple2
       ## reg(arg0) <- tuple(reg(arg1), reg(arg2))
@@ -87,7 +96,7 @@ type
       ## reg(arg0) <- reg(arg1) :+ reg(arg2), with type of `reg(arg1)`
 
     Shape
-      ## reg(arg0) <- shape(mtsh(arg1), reg(arg2), reg(arg2 + 1), ..., reg(arg3))
+      ## reg(arg0) <- shape(mtsh(arg1), opl(0), ..., opl(arg2 - 1))
 
     Shape1
       ## reg(arg0) <- shape(mtsh(arg1), reg(arg2))
@@ -105,7 +114,7 @@ type
       ## reg(arg0) <- reg(arg1) == val(arg2)
 
     Struct
-      ## reg(arg0) <- sch(arg1)(reg(arg2), reg(arg2 + 1), ..., reg(arg3))
+      ## reg(arg0) <- sch(arg1)(opl(0), ..., opl(arg2 - 1))
 
     Struct1
       ## reg(arg0) <- sch(arg1)(reg(arg2))
@@ -114,7 +123,7 @@ type
       ## reg(arg0) <- sch(arg1)(reg(arg2), reg(arg3))
 
     StructPoly
-      ## reg(arg0) <- sch(arg1)[reg(arg2), reg(arg2 + 1), ..., reg(arg3)](reg(arg4), reg(arg4 + 1), ..., reg(arg5))
+      ## reg(arg0) <- sch(arg1)[opl(0), ..., opl(arg2 - 1)](opl(arg2), ..., opl(arg2 + arg3 - 1))
 
     StructGetProperty
       ## Returns the struct property value at the index `arg2`. This is only possible when accessing a struct value
@@ -195,6 +204,33 @@ type
 
     TypeConst
       ## reg(arg0) <- tpe(reg1)
+
+    OplPush1
+      ## opl(arg0) <- reg(arg1)
+
+    OplPush2
+      ## opl(arg0) <- reg(arg1)
+      ## opl(arg0 + 1) <- reg(arg2)
+
+    OplPush3
+      ## opl(arg0) <- reg(arg1)
+      ## opl(arg0 + 1) <- reg(arg2)
+      ## opl(arg0 + 2) <- reg(arg3)
+
+    OplPush4
+      ## opl(arg0) <- reg(arg1)
+      ## ...
+      ## opl(arg0 + 3) <- reg(arg4)
+
+    OplPush5
+      ## opl(arg0) <- reg(arg1)
+      ## ...
+      ## opl(arg0 + 4) <- reg(arg5)
+
+    OplPush6
+      ## opl(arg0) <- reg(arg1)
+      ## ...
+      ## opl(arg0 + 5) <- reg(arg6)
 
   Argument = distinct uint16
 
