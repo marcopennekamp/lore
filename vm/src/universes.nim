@@ -5,6 +5,7 @@ import sugar
 
 import definitions
 import imseqs
+from instructions import Operation, Instruction, new_instruction
 import poems
 from pyramid import nil
 import schema_order
@@ -32,11 +33,16 @@ proc resolve(universe: Universe, poem_value: PoemValue): TaggedValue
 
 template resolve_many(universe, sequence): untyped = sequence.map(o => universe.resolve(o))
 
-proc attach_constants(universe: Universe, poem: Poem)
+proc resolve_instructions(poem_function: PoemFunction, universe: Universe)
+
+proc attach_type_parameters(tpe: Type, type_parameters: ImSeq[TypeParameter])
+proc attach_type_parameters(types: ImSeq[Type], type_parameters: ImSeq[TypeParameter])
 
 ########################################################################################################################
 # Top-level resolution.                                                                                                #
 ########################################################################################################################
+
+proc attach_constants(universe: Universe, poem: Poem)
 
 proc resolve*(poems: seq[Poem]): Universe =
   ## Resolves a Universe from the given set of Poem definitions.
@@ -85,6 +91,7 @@ proc attach_constants(universe: Universe, poem: Poem) =
   let constants = universe.resolve(poem.constants)
   for poem_function in poem.functions:
     poem_function.resolved_function.constants = constants
+    poem_function.resolve_instructions(universe)
 
 proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
   let constants = new_constants()
@@ -261,8 +268,6 @@ method resolve(poem_global_variable: PoemLazyGlobalVariable, universe: Universe)
 ########################################################################################################################
 
 proc get_or_register_multi_function(universe: Universe, name: string): MultiFunction
-proc attach_type_parameters(tpe: Type, type_parameters: ImSeq[TypeParameter])
-proc attach_type_parameters(types: ImSeq[Type], type_parameters: ImSeq[TypeParameter])
 
 proc resolve(universe: Universe, poem_function: PoemFunction) =
   ## Resolves a PoemFunction. Does not create the constants table, which must be resolved in a separate step.
@@ -279,13 +284,13 @@ proc resolve(universe: Universe, poem_function: PoemFunction) =
   attach_type_parameters(input_type, type_parameters)
   attach_type_parameters(output_type, type_parameters)
 
+  # Instructions are resolved when the constants table is attached.
   let function = Function(
     multi_function: multi_function,
     type_parameters: type_parameters,
     input_type: input_type,
     output_type: output_type,
     register_count: poem_function.register_count,
-    instructions: poem_function.instructions,
   )
 
   if function.is_monomorphic:
@@ -305,39 +310,240 @@ proc get_or_register_multi_function(universe: Universe, name: string): MultiFunc
     )
   universe.multi_functions[name]
 
-proc attach_type_parameters(tpe: Type, type_parameters: ImSeq[TypeParameter]) =
-  case tpe.kind
-  of Kind.TypeVariable:
-    let tv = cast[TypeVariable](tpe)
-    tv.parameter = type_parameters[tv.index]
+########################################################################################################################
+# Instruction resolution.                                                                                              #
+########################################################################################################################
 
-  of Kind.Sum: attach_type_parameters(cast[SumType](tpe).parts, type_parameters)
-  of Kind.Intersection: attach_type_parameters(cast[IntersectionType](tpe).parts, type_parameters)
-  of Kind.Tuple: attach_type_parameters(cast[TupleType](tpe).elements, type_parameters)
+type
+  InstructionResolutionContext = ref object
+    universe: Universe
+    poem_function: PoemFunction
+    pc_offset: int
+      ## The program counter offset grows when a PoemInstruction generates more than one Instruction. The target
+      ## locations of all following jump instructions must be incremented by this offset.
 
-  of Kind.Function:
-    let tpe = cast[FunctionType](tpe)
-    attach_type_parameters(tpe.input, type_parameters)
-    attach_type_parameters(tpe.output, type_parameters)
+  XaryApplicationOptions = ref object
+    operation_opl: Operation
+      ## This operation will be applied with `OplPushX`.
+    operation_x: array[3, Operation]
+      ## These operations will be applied with 0, 1, or 2 arguments.
+    prefix: seq[uint16]
+      ## Any instruction arguments before the actual xary arguments.
 
-  of Kind.List:
-    attach_type_parameters(cast[ListType](tpe).element, type_parameters)
+proc generate_xary_application(options: XaryApplicationOptions, arguments: seq[uint16]): seq[Instruction]
+proc generate_opl_pushes(arguments: seq[uint16]): seq[Instruction]
+proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operation
 
-  of Kind.Map:
-    let tpe = cast[MapType](tpe)
-    attach_type_parameters(tpe.key, type_parameters)
-    attach_type_parameters(tpe.value, type_parameters)
+proc get_function(context: InstructionResolutionContext): Function = context.poem_function.resolved_function
+proc get_constants(context: InstructionResolutionContext): Constants = context.get_function.constants
 
-  of Kind.Trait, Kind.Struct:
-    let tpe: DeclaredType = cast[DeclaredType](tpe)
-    attach_type_parameters(tpe.type_arguments, type_parameters)
-    attach_type_parameters(cast[ImSeq[Type]](tpe.supertraits), type_parameters)
+proc add_instructions(context: InstructionResolutionContext, instructions: open_array[Instruction]) =
+  ## Adds the given instructions to the resolved function. This function assumes that the given instructions were
+  ## spawned from a single PoemInstruction and increments the `pc_offset` accordingly.
+  for instruction in instructions:
+    context.get_function.instructions.add(instruction)
+  context.pc_offset += instructions.len - 1
 
-  else: discard
+method resolve_instruction(poem_instruction: PoemInstruction, context: InstructionResolutionContext): seq[Instruction] {.base, locks: "unknown".} =
+  quit("Please implement `resolve_instruction` for all poem instructions.")
 
-proc attach_type_parameters(types: ImSeq[Type], type_parameters: ImSeq[TypeParameter]) =
-  for tpe in types:
-    attach_type_parameters(tpe, type_parameters)
+proc resolve_instructions(poem_function: PoemFunction, universe: Universe) =
+  let context = InstructionResolutionContext(universe: universe, poem_function: poem_function, pc_offset: 0)
+  for poem_instruction in poem_function.instructions:
+    let instructions = poem_instruction.resolve_instruction(context)
+    context.add_instructions(instructions)
+
+method resolve_instruction(poem_instruction: PoemSimpleInstruction, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  # TODO (vm/instructions): Don't forget to add the `pc_offset` to all jump instructions!
+  let operation = simple_poem_operation_to_operation(poem_instruction.operation)
+  @[new_instruction(operation, poem_instruction.arguments)]
+
+method resolve_instruction(poem_instruction: PoemInstructionTuple, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  generate_xary_application(
+    XaryApplicationOptions(
+      operation_opl: Operation.Tuple,
+      operation_x: [Operation.Tuple0, Operation.Tuple1, Operation.Tuple2],
+      prefix: @[poem_instruction.target_reg],
+    ),
+    poem_instruction.arguments,
+  )
+
+method resolve_instruction(poem_instruction: PoemInstructionFunctionCall, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  generate_xary_application(
+    XaryApplicationOptions(
+      operation_opl: Operation.FunctionCall0, # TODO (vm/instructions): Implement `FunctionCall`.
+      operation_x: [Operation.FunctionCall0, Operation.FunctionCall1, Operation.FunctionCall2],
+      prefix: @[poem_instruction.target_reg, poem_instruction.function_reg],
+    ),
+    poem_instruction.arguments,
+  )
+
+method resolve_instruction(poem_instruction: PoemInstructionShape, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  generate_xary_application(
+    XaryApplicationOptions(
+      operation_opl: Operation.Shape,
+      operation_x: [Operation.Shape, Operation.Shape1, Operation.Shape2], # TODO (vm/instructions): Implement `Shape0`.
+      prefix: @[poem_instruction.target_reg, poem_instruction.meta_shape],
+    ),
+    poem_instruction.arguments,
+  )
+
+method resolve_instruction(poem_instruction: PoemInstructionStruct, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  # TODO (vm/instructions): Support type arguments.
+  if poem_instruction.type_arguments.len > 0:
+    quit(fmt"Struct type arguments are not supported yet.")
+
+  generate_xary_application(
+    XaryApplicationOptions(
+      operation_opl: Operation.Struct,
+      operation_x: [Operation.Struct1, Operation.Struct1, Operation.Struct2], # TODO (vm/instructions): Implement `Struct0`.
+      prefix: @[poem_instruction.target_reg, poem_instruction.schema],
+    ),
+    poem_instruction.value_arguments,
+  )
+
+method resolve_instruction(poem_instruction: PoemInstructionIntrinsic, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  let intrinsic: Intrinsic = context.get_constants.intrinsics[poem_instruction.intrinsic]
+  let operation_x =
+    if not intrinsic.is_frame_aware: [Operation.Intrinsic0, Operation.Intrinsic1, Operation.Intrinsic2]
+    else:
+      # Note that a frame-aware `Intrinsic0` is impossible. `Const` is a placeholder.
+      [Operation.Const, Operation.IntrinsicFa1, Operation.IntrinsicFa2]
+
+  generate_xary_application(
+    XaryApplicationOptions(
+      operation_opl: Operation.Intrinsic0, # TODO (vm/instructions): Implement `Intrinsic` and `IntrinsicFa`.
+      operation_x: operation_x,
+      prefix: @[poem_instruction.target_reg, poem_instruction.intrinsic],
+    ),
+    poem_instruction.arguments,
+  )
+
+method resolve_instruction(poem_instruction: PoemInstructionIntrinsicVoid, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  let intrinsic: Intrinsic = context.get_constants.intrinsics[poem_instruction.intrinsic]
+  let operation_x =
+    if not intrinsic.is_frame_aware: [Operation.IntrinsicVoid0, Operation.IntrinsicVoid1, Operation.IntrinsicVoid1] # TODO (vm/instructions): Implement `IntrinsicVoid2`.
+    else:
+      # Note that a frame-aware `IntrinsicVoid0` is impossible. `Const` is a placeholder.
+      [Operation.Const, Operation.IntrinsicFa1, Operation.IntrinsicVoidFa2] # TODO (vm/instructions): Implement `IntrinsicVoidFa1`.
+
+  generate_xary_application(
+    XaryApplicationOptions(
+      operation_opl: Operation.Intrinsic0, # TODO (vm/instructions): Implement `IntrinsicVoid` and `IntrinsicVoidFa`.
+      operation_x: operation_x,
+      prefix: @[poem_instruction.intrinsic],
+    ),
+    poem_instruction.arguments,
+  )
+
+method resolve_instruction(poem_instruction: PoemInstructionGlobalGet, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  let global = context.get_constants.global_variables[poem_instruction.global]
+  let operation = if global.is_initialized: Operation.GlobalGetEager else: Operation.GlobalGetLazy
+  @[new_instruction(operation, poem_instruction.target_reg, poem_instruction.global)]
+
+method resolve_instruction(poem_instruction: PoemInstructionDispatch, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  generate_xary_application(
+    XaryApplicationOptions(
+      operation_opl: Operation.Dispatch1, # TODO (vm/instructions): Implement `Dispatch`.
+      operation_x: [Operation.Dispatch1, Operation.Dispatch1, Operation.Dispatch2], # TODO (vm/instructions): Implement `Dispatch0`.
+      prefix: @[poem_instruction.target_reg, poem_instruction.mf],
+    ),
+    poem_instruction.arguments,
+  )
+
+proc generate_xary_application(options: XaryApplicationOptions, arguments: seq[uint16]): seq[Instruction] =
+  ## Generates an application of a xary operation that takes a list of register arguments.
+  # TODO (vm/instructions): Ensure that the prefix plus argument size doesn't exceed the maximum number of instruction args.
+  case arguments.len
+  of 0: @[new_instruction(options.operation_x[0], options.prefix)]
+  of 1: @[new_instruction(options.operation_x[1], options.prefix & @[arguments[0]])]
+  of 2: @[new_instruction(options.operation_x[2], options.prefix & @[arguments[0], arguments[1]])]
+  else:
+    let pushes = generate_opl_pushes(arguments)
+    let instruction = new_instruction(options.operation_opl, options.prefix & @[uint16(arguments.len)])
+    pushes & @[instruction]
+
+proc generate_opl_pushes(arguments: seq[uint16]): seq[Instruction] =
+  ## Slices `arguments` into a number of `OplPushX` instructions.
+  let max_push = 6
+  var instructions = new_seq[Instruction]()
+  var remaining = arguments.len
+
+  while remaining > max_push:
+    let base_index = arguments.len - remaining
+    let arguments_slice = arguments[base_index ..< base_index + max_push]
+    instructions.add(new_instruction(Operation.OplPush6, uint16(base_index), arguments_slice))
+    remaining -= max_push
+
+  if remaining == 0:
+    return instructions
+
+  block:
+    let base_index = arguments.len - remaining
+    let arguments_slice = arguments[base_index ..< base_index + remaining]
+    let operation = case remaining
+      of 1: Operation.OplPush1
+      of 2: Operation.OplPush2
+      of 3: Operation.OplPush3
+      of 4: Operation.OplPush4
+      of 5: Operation.OplPush5
+      else: quit("Impossible case.")
+    instructions.add(new_instruction(operation, uint16(base_index), arguments_slice))
+
+  instructions
+
+proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operation =
+  ## This is only defined for simple poem operations.
+  case poem_operation
+  of PoemOperation.Const: Operation.Const
+  of PoemOperation.ConstPoly: Operation.ConstPoly
+
+  of PoemOperation.IntConst: Operation.IntConst
+  of PoemOperation.IntAdd: Operation.IntAdd
+  of PoemOperation.IntAddConst: Operation.IntAddConst
+  of PoemOperation.IntSubConst: Operation.IntSubConst
+  of PoemOperation.IntLt: Operation.IntLt
+  of PoemOperation.IntLtConst: Operation.IntLtConst
+  of PoemOperation.IntGtConst: Operation.IntGtConst
+
+  of PoemOperation.RealAdd: Operation.RealAdd
+
+  of PoemOperation.StringOf: Operation.StringOf
+  of PoemOperation.StringConcat: Operation.StringConcat
+  of PoemOperation.StringConcatConst: Operation.StringConcatConst
+  of PoemOperation.StringConcatConstl: Operation.StringConcatConstl
+
+  of PoemOperation.TupleGet: Operation.TupleGet
+
+  of PoemOperation.ListAppend: Operation.ListAppend
+  of PoemOperation.ListAppendPoly: Operation.ListAppendPoly
+  of PoemOperation.ListAppendUntyped: Operation.ListAppendUntyped
+
+  of PoemOperation.ShapeGetProperty: Operation.ShapeGetProperty
+
+  of PoemOperation.SymbolEq: Operation.SymbolEq
+  of PoemOperation.SymbolEqConst: Operation.SymbolEqConst
+
+  of PoemOperation.StructGetProperty: Operation.StructGetProperty
+  of PoemOperation.StructGetNamedProperty: Operation.StructGetNamedProperty
+  of PoemOperation.StructEq: Operation.StructEq
+
+  of PoemOperation.Jump: Operation.Jump
+  of PoemOperation.JumpIfFalse: Operation.JumpIfFalse
+  of PoemOperation.JumpIfTrue: Operation.JumpIfTrue
+
+  of PoemOperation.GlobalSet: Operation.GlobalSet
+
+  of PoemOperation.Return: Operation.Return
+  of PoemOperation.ReturnUnit: Operation.ReturnUnit
+  of PoemOperation.Return0: Operation.Return0
+
+  of PoemOperation.TypeArg: Operation.TypeArg
+  of PoemOperation.TypeConst: Operation.TypeConst
+
+  of PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.Shape, PoemOperation.Struct,
+     PoemOperation.Intrinsic, PoemOperation.IntrinsicVoid, PoemOperation.GlobalGet, PoemOperation.Dispatch:
+    quit(fmt"The poem operation {poem_operation} is not simple!")
 
 ########################################################################################################################
 # Type parameter resolution.                                                                                           #
@@ -472,3 +678,41 @@ method resolve(poem_value: PoemStructValue, universe: Universe): TaggedValue {.l
   let type_arguments = new_immutable_seq(universe.resolve_many(poem_value.tpe.type_arguments))
   let property_values = universe.resolve_many(poem_value.property_values)
   values.new_struct_value_tagged(schema, type_arguments, property_values)
+
+########################################################################################################################
+# Helpers.                                                                                                             #
+########################################################################################################################
+
+proc attach_type_parameters(tpe: Type, type_parameters: ImSeq[TypeParameter]) =
+  case tpe.kind
+  of Kind.TypeVariable:
+    let tv = cast[TypeVariable](tpe)
+    tv.parameter = type_parameters[tv.index]
+
+  of Kind.Sum: attach_type_parameters(cast[SumType](tpe).parts, type_parameters)
+  of Kind.Intersection: attach_type_parameters(cast[IntersectionType](tpe).parts, type_parameters)
+  of Kind.Tuple: attach_type_parameters(cast[TupleType](tpe).elements, type_parameters)
+
+  of Kind.Function:
+    let tpe = cast[FunctionType](tpe)
+    attach_type_parameters(tpe.input, type_parameters)
+    attach_type_parameters(tpe.output, type_parameters)
+
+  of Kind.List:
+    attach_type_parameters(cast[ListType](tpe).element, type_parameters)
+
+  of Kind.Map:
+    let tpe = cast[MapType](tpe)
+    attach_type_parameters(tpe.key, type_parameters)
+    attach_type_parameters(tpe.value, type_parameters)
+
+  of Kind.Trait, Kind.Struct:
+    let tpe: DeclaredType = cast[DeclaredType](tpe)
+    attach_type_parameters(tpe.type_arguments, type_parameters)
+    attach_type_parameters(cast[ImSeq[Type]](tpe.supertraits), type_parameters)
+
+  else: discard
+
+proc attach_type_parameters(types: ImSeq[Type], type_parameters: ImSeq[TypeParameter]) =
+  for tpe in types:
+    attach_type_parameters(tpe, type_parameters)

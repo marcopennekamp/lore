@@ -105,10 +105,14 @@ A **Function** represents a single function definition. Its structure is as foll
 
 ### Instructions
 
-Instructions are encoded as fixed-size instructions:
+**Instructions** are encoded as variable size depending on the instruction. They correspond heavily to the actual instructions evaluated by the VM. The poem API makes some simplifications, such as providing a single dispatch operation instead of `Dispatch`, `Dispatch0`, `Dispatch1`, `Dispatch2`, and so on. A poem instruction may spawn multiple evaluator instructions, making it possible to hide operand lists behind the API.
 
-  - **Operation** (uint16)
-  - **Arguments** (uint16 * 3)
+Variable-size instructions have two big advantages compared to fixed-size instructions:
+
+  - They reduce the size of uncompressed binaries.
+  - They hide implementation-specific details of the evaluation, such as operands lists and frame-aware intrinsics.
+
+TODO (vm): Document instruction encoding in-depth.
 
 ### Meta Shapes
 

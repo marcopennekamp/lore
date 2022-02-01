@@ -36,11 +36,11 @@ proc io_println(value: TaggedValue): TaggedValue =
   echo value
   values.unit
 
-template nullary(arg_name, arg_function): untyped = Intrinsic(name: arg_name, function: IntrinsicFunction(nullary: arg_function))
-template unary(arg_name, arg_function): untyped = Intrinsic(name: arg_name, function: IntrinsicFunction(unary: arg_function))
-template unary_fa(arg_name, arg_function): untyped = Intrinsic(name: arg_name, function: IntrinsicFunction(unary_fa: arg_function))
-template binary(arg_name, arg_function): untyped = Intrinsic(name: arg_name, function: IntrinsicFunction(binary: arg_function))
-template binary_fa(arg_name, arg_function): untyped = Intrinsic(name: arg_name, function: IntrinsicFunction(binary_fa: arg_function))
+template nullary(arg_name, arg_function): untyped = Intrinsic(name: arg_name, is_frame_aware: false, function: IntrinsicFunction(nullary: arg_function))
+template unary(arg_name, arg_function): untyped = Intrinsic(name: arg_name, is_frame_aware: false, function: IntrinsicFunction(unary: arg_function))
+template unary_fa(arg_name, arg_function): untyped = Intrinsic(name: arg_name, is_frame_aware: true, function: IntrinsicFunction(unary_fa: arg_function))
+template binary(arg_name, arg_function): untyped = Intrinsic(name: arg_name, is_frame_aware: false, function: IntrinsicFunction(binary: arg_function))
+template binary_fa(arg_name, arg_function): untyped = Intrinsic(name: arg_name, is_frame_aware: true, function: IntrinsicFunction(binary_fa: arg_function))
 
 let intrinsics*: seq[Intrinsic] = @[
   nullary("lore.core.panic", core_panic),

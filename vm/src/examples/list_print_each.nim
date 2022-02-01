@@ -1,5 +1,4 @@
-from "../instructions" import Operation, Instruction, new_instruction
-from "../poems" import Poem, PoemConstants, PoemFunction
+from "../poems" import Poem, PoemConstants, PoemFunction, PoemOperation
 
 let int_or_string = poems.sum_type([poems.int_type, poems.string_type])
 let lambda_input = poems.tuple_type([int_or_string])
@@ -11,8 +10,8 @@ let test_lambda0 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    new_instruction(Operation.IntrinsicVoid1, 1, 0),  # lore.io.println
-    new_instruction(Operation.ReturnUnit),
+    poems.inst_intrinsic_void(1, 0),        # lore.io.println
+    poems.inst(PoemOperation.ReturnUnit),
   ],
 )
 
@@ -23,10 +22,10 @@ let test = PoemFunction(
   is_abstract: false,
   register_count: 2,
   instructions: @[
-    new_instruction(Operation.Const, 0, 0),
-    new_instruction(Operation.Const, 1, 1),
-    new_instruction(Operation.IntrinsicVoidFa2, 0, 0, 1),  # lore.lists.each
-    new_instruction(Operation.ReturnUnit),
+    poems.inst(PoemOperation.Const, 0, 0),
+    poems.inst(PoemOperation.Const, 1, 1),
+    poems.inst_intrinsic_void(0, 0, 1),     # lore.lists.each
+    poems.inst(PoemOperation.ReturnUnit),
   ],
 )
 

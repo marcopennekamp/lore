@@ -1,5 +1,4 @@
-from "../instructions" import Operation, Instruction, new_instruction
-from "../poems" import Poem, PoemConstants, PoemFunction
+from "../poems" import Poem, PoemConstants, PoemFunction, PoemOperation
 
 let handle_input = poems.tuple_type([poems.sum_type([poems.int_type, poems.real_type])])
 let handle_output = poems.sum_type([poems.int_type, poems.real_type])
@@ -18,8 +17,8 @@ let handle1 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    new_instruction(Operation.IntAddConst, 0, 0, 5),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.IntAddConst, 0, 0, 5),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
@@ -30,9 +29,9 @@ let handle2 = PoemFunction(
   is_abstract: false,
   register_count: 2,
   instructions: @[
-    new_instruction(Operation.Const, 1, 1),
-    new_instruction(Operation.RealAdd, 0, 0, 1),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.Const, 1, 1),
+    poems.inst(PoemOperation.RealAdd, 0, 0, 1),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
@@ -43,13 +42,13 @@ let test = PoemFunction(
   is_abstract: false,
   register_count: 3,
   instructions: @[
-    new_instruction(Operation.Const, 0, 2),
-    new_instruction(Operation.IntConst, 1, 14),
-    new_instruction(Operation.FunctionCall1, 1, 0, 1),
-    new_instruction(Operation.Const, 2, 0),
-    new_instruction(Operation.FunctionCall1, 2, 0, 2),
-    new_instruction(Operation.Tuple2, 0, 1, 2),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.Const, 0, 2),
+    poems.inst(PoemOperation.IntConst, 1, 14),
+    poems.inst_function_call(1, 0, 1),
+    poems.inst(PoemOperation.Const, 2, 0),
+    poems.inst_function_call(2, 0, 2),
+    poems.inst_tuple(0, 1, 2),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 

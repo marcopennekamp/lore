@@ -1,5 +1,4 @@
-from "../instructions" import Operation, Instruction, new_instruction
-from "../poems" import Poem, PoemConstants, PoemFunction
+from "../poems" import Poem, PoemConstants, PoemFunction, PoemOperation
 
 let attack_type = poems.symbol_type("attack")
 let defense_type = poems.symbol_type("defense")
@@ -21,8 +20,8 @@ let stat_1 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    new_instruction(Operation.IntConst, 0, 11),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.IntConst, 0, 11),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
@@ -33,8 +32,8 @@ let stat_2 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    new_instruction(Operation.IntConst, 0, 7),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.IntConst, 0, 7),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
@@ -45,8 +44,8 @@ let stat_3 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    new_instruction(Operation.IntConst, 0, 3),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.IntConst, 0, 3),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
@@ -57,15 +56,15 @@ let test = PoemFunction(
   is_abstract: false,
   register_count: 3,
   instructions: @[
-    new_instruction(Operation.Const, 0, 0),
-    new_instruction(Operation.Const, 1, 1),
-    new_instruction(Operation.Const, 2, 2),
-    new_instruction(Operation.Dispatch1, 0, 0, 0),
-    new_instruction(Operation.Dispatch1, 1, 0, 1),
-    new_instruction(Operation.Dispatch1, 2, 0, 2),
-    new_instruction(Operation.IntAdd, 0, 0, 1),
-    new_instruction(Operation.IntAdd, 0, 0, 2),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.Const, 0, 0),
+    poems.inst(PoemOperation.Const, 1, 1),
+    poems.inst(PoemOperation.Const, 2, 2),
+    poems.inst_dispatch(0, 0, 0),
+    poems.inst_dispatch(1, 0, 1),
+    poems.inst_dispatch(2, 0, 2),
+    poems.inst(PoemOperation.IntAdd, 0, 0, 1),
+    poems.inst(PoemOperation.IntAdd, 0, 0, 2),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 

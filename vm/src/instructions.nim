@@ -1,6 +1,7 @@
 type
   Operation* {.pure.} = enum
     ## To describe an operation, you can use the following terms:
+    ##
     ##  - `argx`: The xth uint16 argument of the instruction (starting with 0).
     ##  - `reg(x)`: Register x.
     ##  - `opl(x)`: The xth entry in the operand list.
@@ -70,6 +71,12 @@ type
 
     Tuple
       ## reg(arg0) <- tuple(opl(0), ..., opl(arg1 - 1))
+
+    Tuple0
+      ## reg(arg0) <- unit
+
+    Tuple1
+      ## reg(arg0) <- tuple(reg(arg1))
 
     Tuple2
       ## reg(arg0) <- tuple(reg(arg1), reg(arg2))
@@ -245,11 +252,13 @@ assert sizeof(Instruction) == 16
 template arg*(instruction: Instruction, index: uint16): uint16 = cast[uint16](instruction.arguments[index])
 template argi*(instruction: Instruction, index: uint16): int16 = cast[int16](instruction.arguments[index])
 
-proc new_instruction*(operation: Operation, args: array[7, uint16]): Instruction =
+proc new_instruction*(operation: Operation, args: open_array[uint16]): Instruction =
   var arguments: array[7, Argument]
-  for i in 0 ..< arguments.len:
+  for i in 0 ..< min(arguments.len, args.len):
     arguments[i] = Argument(args[i])
   Instruction(operation: operation, arguments: arguments)
+
+proc new_instruction*(operation: Operation, arg0: uint16, rest: open_array[uint16]): Instruction = new_instruction(operation, @[arg0] & @rest)
 
 proc new_instruction*(operation: Operation, arg0: uint16, arg1: uint16, arg2: uint16, arg3: uint16, arg4: uint16, arg5: uint16, arg6: uint16): Instruction =
   new_instruction(operation, [arg0, arg1, arg2, arg3, arg4, arg5, arg6])

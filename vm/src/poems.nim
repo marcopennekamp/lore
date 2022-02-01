@@ -5,7 +5,6 @@ from std/sequtils import deduplicate
 import std/strformat
 
 from definitions import Function
-from instructions import Operation, Instruction, new_instruction
 from types import Kind, Type, Variance
 
 type
@@ -68,10 +67,131 @@ type
     output_type*: PoemType
     is_abstract*: bool
     register_count*: uint16
-    instructions*: seq[Instruction]
+    instructions*: seq[PoemInstruction]
 
     resolved_function*: Function
       ## This is used to refer to the corresponding Function object during multiple steps of universe resolution.
+
+  PoemOperation* {.pure.} = enum
+    ## Most poem instructions are encoded as size-truncated versions of their corresponding evaluator instruction,
+    ## unless otherwise noted. Such operations are called "simple" poem operations. For example, `Const` is encoded as
+    ## `(target_reg: uint16, val1: uint16)` with `op: uint16` being implicit. All poem operations that deviate from
+    ## this norm are marked with comments.
+    Const
+    ConstPoly
+
+    IntConst
+    IntAdd
+    IntAddConst
+    IntSubConst
+    IntLt
+    IntLtConst
+    IntGtConst
+
+    RealAdd
+
+    StringOf
+    StringConcat
+    StringConcatConst
+    StringConcatConstl
+
+    Tuple
+      ## target_reg: uint16, n: uint8, reg0: uint16, ..., reg_n: uint16
+    TupleGet
+
+    FunctionCall
+      ## target_reg: uint16, function_reg: uint16, n: uint8, reg0: uint16, ..., reg_n: uint16
+
+    ListAppend
+    ListAppendPoly
+    ListAppendUntyped
+
+    Shape
+      ## target_reg: uint16, mtsh: uint16, n: uint8, reg0: uint16, ..., reg_n: uint16
+    ShapeGetProperty
+
+    SymbolEq
+    SymbolEqConst
+
+    Struct
+      ## target_reg: uint16, sch: uint16, nt: uint8, treg0: uint16, ..., treg_nt, nv: uint8, vreg0: uint16, ...,
+      ## vreg_nv: uint16
+      ## Struct construction takes two variable-length argument lists: types and values, expressed via `nt` and `nv`.
+    StructGetProperty
+    StructGetNamedProperty
+    StructEq
+
+    Jump
+    JumpIfFalse
+    JumpIfTrue
+
+    Intrinsic
+      ## target_reg: uint16, intr: uint16, n: uint8, reg0: uint16, ..., reg_n: uint16
+    IntrinsicVoid
+      ## intr: uint16, n: uint8, reg0: uint16, ..., reg_n: uint16
+
+    # TODO (assembly): Remember that this needs to be transformed into either `GlobalGetEager` or `GlobalGetLazy`.
+    GlobalGet
+      ## Whether this resolves to `GlobalGetEager` or `GlobalGetLazy` is determined by the laziness of the referenced
+      ## global variable.
+    GlobalSet
+
+    Dispatch
+      ## target_reg: uint16, mf: uint16, n: uint8, reg0: uint16, ..., reg_n: uint16
+
+    Return
+    ReturnUnit
+    Return0
+
+    TypeArg
+    TypeConst
+
+  PoemInstruction* = ref object of RootObj
+    discard
+
+  PoemSimpleInstruction* = ref object of PoemInstruction
+    ## A simple poem instruction is equal to its Instruction counterpart. The `operation` still has to be translated,
+    ## however.
+    operation*: PoemOperation
+    arguments*: seq[uint16]
+
+  PoemInstructionTuple* = ref object of PoemInstruction
+    target_reg*: uint16
+    arguments*: seq[uint16]
+
+  PoemInstructionFunctionCall* = ref object of PoemInstruction
+    target_reg*: uint16
+    function_reg*: uint16
+    arguments*: seq[uint16]
+
+  PoemInstructionShape* = ref object of PoemInstruction
+    target_reg*: uint16
+    meta_shape*: uint16
+    arguments*: seq[uint16]
+
+  PoemInstructionStruct* = ref object of PoemInstruction
+    target_reg*: uint16
+    schema*: uint16
+    type_arguments*: seq[uint16]
+    value_arguments*: seq[uint16]
+
+  PoemInstructionIntrinsic* = ref object of PoemInstruction
+    target_reg*: uint16
+    intrinsic*: uint16
+    arguments*: seq[uint16]
+
+  PoemInstructionIntrinsicVoid* = ref object of PoemInstruction
+    intrinsic*: uint16
+    arguments*: seq[uint16]
+
+  PoemInstructionGlobalGet* = ref object of PoemInstruction
+    target_reg*: uint16
+    global*: uint16
+
+  PoemInstructionDispatch* = ref object of PoemInstruction
+    target_reg*: uint16
+    mf*: uint16
+    arguments*: seq[uint16]
 
   PoemMetaShape* = ref object
     property_names*: seq[string]
@@ -231,6 +351,36 @@ proc struct_value*(name: string, type_arguments: seq[PoemType], property_values:
   let poem_type = named_type_concrete(name, type_arguments)
   struct_value(poem_type, property_values)
 
+# TODO (vm/instructions): Maybe turn these varargs into open_arrays for a clearer API. For example,
+#                         `inst_dispatch(1, 0, 2, 3)` vs. `inst_dispatch(1, 0, [2, 3])`.
+
+proc inst*(operation: PoemOperation, arguments: varargs[uint16]): PoemInstruction =
+  PoemSimpleInstruction(operation: operation, arguments: @arguments)
+
+proc inst_tuple*(target: uint16, arguments: varargs[uint16]): PoemInstruction =
+  PoemInstructionTuple(target_reg: target, arguments: @arguments)
+
+proc inst_function_call*(target: uint16, function: uint16, arguments: varargs[uint16]): PoemInstruction =
+  PoemInstructionFunctionCall(target_reg: target, function_reg: function, arguments: @arguments)
+
+proc inst_shape*(target: uint16, meta_shape: uint16, arguments: varargs[uint16]): PoemInstruction =
+  PoemInstructionShape(target_reg: target, meta_shape: meta_shape, arguments: @arguments)
+
+proc inst_struct*(target: uint16, schema: uint16, type_arguments: open_array[uint16], value_arguments: open_array[uint16]): PoemInstruction =
+  PoemInstructionStruct(target_reg: target, schema: schema, type_arguments: @type_arguments, value_arguments: @value_arguments)
+
+proc inst_intrinsic*(target: uint16, intrinsic: uint16, arguments: varargs[uint16]): PoemInstruction =
+  PoemInstructionIntrinsic(target_reg: target, intrinsic: intrinsic, arguments: @arguments)
+
+proc inst_intrinsic_void*(intrinsic: uint16, arguments: varargs[uint16]): PoemInstruction =
+  PoemInstructionIntrinsicVoid(intrinsic: intrinsic, arguments: @arguments)
+
+proc inst_global_get*(target: uint16, global: uint16): PoemInstruction =
+  PoemInstructionGlobalGet(target_reg: target, global: global)
+
+proc inst_dispatch*(target: uint16, mf: uint16, arguments: varargs[uint16]): PoemInstruction =
+  PoemInstructionDispatch(target_reg: target, mf: mf, arguments: @arguments)
+
 const
   tkMetadataKinded = 0'u8
   tkSum = 1'u8
@@ -280,6 +430,9 @@ template write_many_with_count(stream: FileStream, items, count_type, write_one)
   stream.write(count)
   stream.write_many(items, write_one)
 
+proc read_uint16(stream: FileStream): uint16 = stream.read(uint16)
+proc write_uint16(stream: FileStream, value: uint16) = stream.write(value)
+
 ########################################################################################################################
 # Poems (top-level).                                                                                                   #
 ########################################################################################################################
@@ -289,7 +442,8 @@ proc read_schema(stream: FileStream): PoemSchema
 proc read_struct_property(stream: FileStream): PoemStructProperty
 proc read_global_variable(stream: FileStream): PoemGlobalVariable
 proc read_function(stream: FileStream): PoemFunction
-proc read_instruction(stream: FileStream): Instruction
+proc read_instruction(stream: FileStream): PoemInstruction
+proc read_instruction_arguments_with_count(stream: FileStream): seq[uint16]
 proc read_meta_shape(stream: FileStream): PoemMetaShape
 proc read_type_parameters(stream: FileStream): seq[PoemTypeParameter]
 proc read_type(stream: FileStream): PoemType
@@ -301,7 +455,9 @@ proc write_schema(stream: FileStream, schema: PoemSchema)
 proc write_struct_property(stream: FileStream, property: PoemStructProperty)
 proc write_global_variable(stream: FileStream, global_variable: PoemGlobalVariable)
 proc write_function(stream: FileStream, function: PoemFunction)
-proc write_instruction(stream: FileStream, instruction: Instruction)
+proc write_instruction(stream: FileStream, instruction: PoemInstruction)
+proc write_operation(stream: FileStream, operation: PoemOperation)
+proc write_instruction_arguments_with_count(stream: FileStream, arguments: seq[uint16])
 proc write_meta_shape(stream: FileStream, meta_shape: PoemMetaShape)
 proc write_shape_property_names(stream: FileStream, property_names: seq[string], with_count: bool)
 proc write_type_parameters(stream: FileStream, type_parameters: seq[PoemTypeParameter])
@@ -309,6 +465,7 @@ proc write_type(stream: FileStream, tpe: PoemType)
 proc write_value(stream: FileStream, value: PoemValue)
 proc write_string_with_length(stream: FileStream, string: string)
 
+method write(instruction: PoemInstruction, stream: FileStream) {.base, locks: "unknown".}
 method write(global_variable: PoemGlobalVariable, stream: FileStream) {.base, locks: "unknown".}
 method write(tpe: PoemType, stream: FileStream) {.base, locks: "unknown".}
 method write(value: PoemValue, stream: FileStream) {.base, locks: "unknown".}
@@ -499,16 +656,9 @@ proc read_function(stream: FileStream): PoemFunction =
 
   if not is_abstract:
     function.register_count = stream.read(uint16)
-    function.instructions = stream.read_many_with_count(Instruction, uint16, read_instruction)
+    function.instructions = stream.read_many_with_count(PoemInstruction, uint16, read_instruction)
 
   function
-
-proc read_instruction(stream: FileStream): Instruction =
-  let operation = cast[Operation](stream.read(uint16))
-  var arguments: array[7, uint16]
-  for i in 0 ..< 7:
-    arguments[i] = stream.read(uint16)
-  new_instruction(operation, arguments)
 
 proc write_function(stream: FileStream, function: PoemFunction) =
   stream.write_string_with_length(function.name)
@@ -521,10 +671,155 @@ proc write_function(stream: FileStream, function: PoemFunction) =
     stream.write(function.register_count)
     stream.write_many_with_count(function.instructions, uint16, write_instruction)
 
-proc write_instruction(stream: FileStream, instruction: Instruction) =
-  stream.write(cast[uint16](instruction.operation))
-  for argument in instruction.arguments:
-    stream.write(uint16(argument))
+########################################################################################################################
+# Instructions.                                                                                                        #
+########################################################################################################################
+
+proc simple_argument_count(operation: PoemOperation): uint8
+
+proc read_instruction(stream: FileStream): PoemInstruction =
+  let operation = cast[PoemOperation](stream.read(uint16))
+  case operation
+  of PoemOperation.Tuple:
+    PoemInstructionTuple(
+      target_reg: stream.read(uint16),
+      arguments: stream.read_instruction_arguments_with_count(),
+    )
+
+  of FunctionCall:
+    PoemInstructionFunctionCall(
+      target_reg: stream.read(uint16),
+      function_reg: stream.read(uint16),
+      arguments: stream.read_instruction_arguments_with_count(),
+    )
+
+  of PoemOperation.Shape:
+    PoemInstructionShape(
+      target_reg: stream.read(uint16),
+      meta_shape: stream.read(uint16),
+      arguments: stream.read_instruction_arguments_with_count(),
+    )
+
+  of PoemOperation.Struct:
+    PoemInstructionStruct(
+      target_reg: stream.read(uint16),
+      schema: stream.read(uint16),
+      type_arguments: stream.read_instruction_arguments_with_count(),
+      value_arguments: stream.read_instruction_arguments_with_count(),
+    )
+
+  of Intrinsic:
+    PoemInstructionIntrinsic(
+      target_reg: stream.read(uint16),
+      intrinsic: stream.read(uint16),
+      arguments: stream.read_instruction_arguments_with_count(),
+    )
+
+  of IntrinsicVoid:
+    PoemInstructionIntrinsicVoid(
+      intrinsic: stream.read(uint16),
+      arguments: stream.read_instruction_arguments_with_count(),
+    )
+
+  of GlobalGet:
+    PoemInstructionGlobalGet(
+      target_reg: stream.read(uint16),
+      global: stream.read(uint16),
+    )
+
+  of Dispatch:
+    PoemInstructionDispatch(
+      target_reg: stream.read(uint16),
+      mf: stream.read(uint16),
+      arguments: stream.read_instruction_arguments_with_count(),
+    )
+
+  else:
+    let argument_count = operation.simple_argument_count
+    let arguments = stream.read_many(uint16, argument_count, read_uint16)
+    PoemSimpleInstruction(operation: operation, arguments: arguments)
+
+proc read_instruction_arguments_with_count(stream: FileStream): seq[uint16] =
+  stream.read_many_with_count(uint16, uint8, read_uint16)
+
+proc write_instruction(stream: FileStream, instruction: PoemInstruction) =
+  instruction.write(stream)
+
+proc write_operation(stream: FileStream, operation: PoemOperation) =
+  stream.write(cast[uint16](operation))
+
+proc write_instruction_arguments_with_count(stream: FileStream, arguments: seq[uint16]) =
+  stream.write_many_with_count(arguments, uint8, write_uint16)
+
+method write(instruction: PoemInstruction, stream: FileStream) {.base, locks: "unknown".} =
+  quit("Please implement `write` for all PoemInstructions")
+
+method write(instruction: PoemSimpleInstruction, stream: FileStream) {.locks: "unknown".} =
+  if int(instruction.operation.simple_argument_count) != instruction.arguments.len:
+    quit(fmt"The simple poem instruction's argument length must be equal to the expected argument length. Operation: {instruction.operation}.")
+
+  stream.write_operation(instruction.operation)
+  stream.write_many(instruction.arguments, write_uint16)
+  
+method write(instruction: PoemInstructionTuple, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.Tuple)
+  stream.write(instruction.target_reg)
+  stream.write_instruction_arguments_with_count(instruction.arguments)
+
+method write(instruction: PoemInstructionFunctionCall, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.FunctionCall)
+  stream.write(instruction.target_reg)
+  stream.write(instruction.function_reg)
+  stream.write_instruction_arguments_with_count(instruction.arguments)
+
+method write(instruction: PoemInstructionShape, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.Shape)
+  stream.write(instruction.target_reg)
+  stream.write(instruction.meta_shape)
+  stream.write_instruction_arguments_with_count(instruction.arguments)
+
+method write(instruction: PoemInstructionStruct, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.Struct)
+  stream.write(instruction.target_reg)
+  stream.write(instruction.schema)
+  stream.write_instruction_arguments_with_count(instruction.type_arguments)
+  stream.write_instruction_arguments_with_count(instruction.value_arguments)
+
+method write(instruction: PoemInstructionIntrinsic, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.Intrinsic)
+  stream.write(instruction.target_reg)
+  stream.write(instruction.intrinsic)
+  stream.write_instruction_arguments_with_count(instruction.arguments)
+
+method write(instruction: PoemInstructionIntrinsicVoid, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.IntrinsicVoid)
+  stream.write(instruction.intrinsic)
+  stream.write_instruction_arguments_with_count(instruction.arguments)
+
+method write(instruction: PoemInstructionGlobalGet, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.GlobalGet)
+  stream.write(instruction.target_reg)
+  stream.write(instruction.global)
+
+method write(instruction: PoemInstructionDispatch, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.Dispatch)
+  stream.write(instruction.target_reg)
+  stream.write(instruction.mf)
+  stream.write_instruction_arguments_with_count(instruction.arguments)
+
+proc simple_argument_count(operation: PoemOperation): uint8 =
+  ## Returns the argument length of `operation`, provided that it is a simple operation.
+  case operation
+  of ReturnUnit, Return0: 0
+  of Jump, Return: 1
+  of Const, ConstPoly, IntConst, StringOf, JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
+  of IntAdd, IntAddConst, IntSubConst, IntLt, IntLtConst, IntGtConst, RealAdd, StringConcat, StringConcatConst,
+     StringConcatConstl, TupleGet, ListAppendUntyped, ShapeGetProperty, SymbolEq, SymbolEqConst, StructGetProperty,
+     StructGetNamedProperty, StructEq: 3
+  of ListAppend, ListAppendPoly: 4
+  of PoemOperation.Tuple, FunctionCall, PoemOperation.Shape, PoemOperation.Struct, Intrinsic, IntrinsicVoid, GlobalGet,
+     Dispatch:
+    quit(fmt"Poem operation {operation} is not simple!")
 
 ########################################################################################################################
 # Meta shapes.                                                                                                         #

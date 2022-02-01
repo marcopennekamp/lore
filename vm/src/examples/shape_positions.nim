@@ -1,5 +1,7 @@
-from "../instructions" import Operation, Instruction, new_instruction
-from "../poems" import Poem, PoemConstants, PoemMetaShape, PoemType, PoemShapeType, PoemFunction
+from "../poems" import Poem, PoemConstants, PoemMetaShape, PoemType, PoemShapeType, PoemFunction, PoemOperation,
+                       PoemInstruction
+
+# TODO (vm/instructions): Verify that this example is still correct.
 
 # In this example, we are adding positions of different dimensions that are represented by shapes.
 
@@ -19,13 +21,13 @@ let add1 = PoemFunction(
   register_count: 4,
   instructions: @[
     # Add x coordinates.
-    new_instruction(Operation.ShapeGetProperty, 2, 0, 0),
-    new_instruction(Operation.ShapeGetProperty, 3, 1, 0),
-    new_instruction(Operation.RealAdd, 0, 2, 3),
+    poems.inst(PoemOperation.ShapeGetProperty, 2, 0, 0),
+    poems.inst(PoemOperation.ShapeGetProperty, 3, 1, 0),
+    poems.inst(PoemOperation.RealAdd, 0, 2, 3),
 
     # Create and return the new shape.
-    new_instruction(Operation.Shape1, 0, 0, 0),
-    new_instruction(Operation.Return0),
+    poems.inst_shape(0, 0, 0),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
@@ -37,18 +39,18 @@ let add2 = PoemFunction(
   register_count: 5,
   instructions: @[
     # Add x coordinates.
-    new_instruction(Operation.ShapeGetProperty, 2, 0, 0),
-    new_instruction(Operation.ShapeGetProperty, 3, 1, 0),
-    new_instruction(Operation.RealAdd, 4, 2, 3),
+    poems.inst(PoemOperation.ShapeGetProperty, 2, 0, 0),
+    poems.inst(PoemOperation.ShapeGetProperty, 3, 1, 0),
+    poems.inst(PoemOperation.RealAdd, 4, 2, 3),
 
     # Add y coordinates.
-    new_instruction(Operation.ShapeGetProperty, 2, 0, 1),
-    new_instruction(Operation.ShapeGetProperty, 3, 1, 1),
-    new_instruction(Operation.RealAdd, 0, 2, 3),
+    poems.inst(PoemOperation.ShapeGetProperty, 2, 0, 1),
+    poems.inst(PoemOperation.ShapeGetProperty, 3, 1, 1),
+    poems.inst(PoemOperation.RealAdd, 0, 2, 3),
 
     # Create and return the new shape.
-    new_instruction(Operation.Shape2, 0, 1, 4, 0),
-    new_instruction(Operation.Return0),
+    poems.inst_shape(0, 1, 4, 0),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
@@ -60,32 +62,31 @@ let add3 = PoemFunction(
   register_count: 7,
   instructions: @[
     # Add x coordinates.
-    new_instruction(Operation.ShapeGetProperty, 2, 0, 0),
-    new_instruction(Operation.ShapeGetProperty, 3, 1, 0),
-    new_instruction(Operation.RealAdd, 4, 2, 3),
+    poems.inst(PoemOperation.ShapeGetProperty, 2, 0, 0),
+    poems.inst(PoemOperation.ShapeGetProperty, 3, 1, 0),
+    poems.inst(PoemOperation.RealAdd, 4, 2, 3),
 
     # Add y coordinates.
-    new_instruction(Operation.ShapeGetProperty, 2, 0, 1),
-    new_instruction(Operation.ShapeGetProperty, 3, 1, 1),
-    new_instruction(Operation.RealAdd, 5, 2, 3),
+    poems.inst(PoemOperation.ShapeGetProperty, 2, 0, 1),
+    poems.inst(PoemOperation.ShapeGetProperty, 3, 1, 1),
+    poems.inst(PoemOperation.RealAdd, 5, 2, 3),
 
     # Add z coordinates.
-    new_instruction(Operation.ShapeGetProperty, 2, 0, 2),
-    new_instruction(Operation.ShapeGetProperty, 3, 1, 2),
-    new_instruction(Operation.RealAdd, 6, 2, 3),
+    poems.inst(PoemOperation.ShapeGetProperty, 2, 0, 2),
+    poems.inst(PoemOperation.ShapeGetProperty, 3, 1, 2),
+    poems.inst(PoemOperation.RealAdd, 6, 2, 3),
 
     # Create and return the new shape.
-    new_instruction(Operation.OplPush3, 0, 4, 5, 6),
-    new_instruction(Operation.Shape, 0, 2, 3),
-    new_instruction(Operation.Return0),
+    poems.inst_shape(0, 2, 4, 5, 6),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
-proc add_positions(index_1: uint16, index_2: uint16): seq[Instruction] = @[
-  new_instruction(Operation.Const, 1, index_1),
-  new_instruction(Operation.Const, 2, index_2),
-  new_instruction(Operation.Dispatch2, 1, 0, 1, 2),
-  new_instruction(Operation.ListAppendUntyped, 0, 0, 1),
+proc add_positions(index_1: uint16, index_2: uint16): seq[PoemInstruction] = @[
+  poems.inst(PoemOperation.Const, 1, index_1),
+  poems.inst(PoemOperation.Const, 2, index_2),
+  poems.inst_dispatch(1, 0, 1, 2),
+  poems.inst(PoemOperation.ListAppendUntyped, 0, 0, 1),
 ]
 
 let test = PoemFunction(
@@ -96,7 +97,7 @@ let test = PoemFunction(
   register_count: 3,
   instructions:
     # Prepare the result list.
-    @[new_instruction(Operation.Const, 0, 0)] &
+    @[poems.inst(PoemOperation.Const, 0, 0)] &
 
     # Add all position combinations to the list.
     add_positions(1, 2) &  # Add p1_1 and p1_2.
@@ -110,7 +111,7 @@ let test = PoemFunction(
     add_positions(5, 6) &  # Add p3_1 and p3_2.
 
     # Return the resulting list.
-    @[new_instruction(Operation.Return0)],
+    @[poems.inst(PoemOperation.Return0)],
 )
 
 let poem* = Poem(

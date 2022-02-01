@@ -1,5 +1,4 @@
-from "../instructions" import Operation, Instruction, new_instruction
-from "../poems" import Poem, PoemConstants, PoemFunction
+from "../poems" import Poem, PoemConstants, PoemFunction, PoemOperation
 
 # TODO (vm): For now, this implements a single-element version of "hello name", so that we don't have to implement the
 #            `lore.Enum.map` function just yet.
@@ -11,9 +10,9 @@ let hello_0 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    new_instruction(Operation.StringConcatConstl, 0, 0, 0),
-    new_instruction(Operation.StringConcatConst, 0, 0, 1),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.StringConcatConstl, 0, 0, 0),
+    poems.inst(PoemOperation.StringConcatConst, 0, 0, 1),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
@@ -24,10 +23,10 @@ let hello_1 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    new_instruction(Operation.StringOf, 0, 0),
-    new_instruction(Operation.StringConcatConstl, 0, 2, 0),
-    new_instruction(Operation.StringConcatConst, 0, 0, 1),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.StringOf, 0, 0),
+    poems.inst(PoemOperation.StringConcatConstl, 0, 2, 0),
+    poems.inst(PoemOperation.StringConcatConst, 0, 0, 1),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
@@ -39,15 +38,15 @@ let test = PoemFunction(
   register_count: 2,
   instructions: @[
     # Call `hello` with 'world' and with 42, then finally concat the two strings with a separating space.
-    new_instruction(Operation.Const, 0, 3),
-    new_instruction(Operation.Dispatch1, 0, 0, 0),
+    poems.inst(PoemOperation.Const, 0, 3),
+    poems.inst_dispatch(0, 0, 0),
 
-    new_instruction(Operation.IntConst, 1, 42),
-    new_instruction(Operation.Dispatch1, 1, 0, 1),
+    poems.inst(PoemOperation.IntConst, 1, 42),
+    poems.inst_dispatch(1, 0, 1),
 
-    new_instruction(Operation.StringConcatConst, 0, 0, 4),
-    new_instruction(Operation.StringConcat, 0, 0, 1),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.StringConcatConst, 0, 0, 4),
+    poems.inst(PoemOperation.StringConcat, 0, 0, 1),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 

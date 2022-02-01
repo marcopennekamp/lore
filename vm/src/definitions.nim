@@ -24,6 +24,7 @@ type
     ## To allow intrinsics to call Lore function values (e.g. a lambda for `lore.Enum.map`), there are special
     ## operations which pass the current frame to a *frame-aware* intrinsic as the first argument.
     name*: string
+    is_frame_aware*: bool
     function*: IntrinsicFunction
 
   IntrinsicFunction* {.union.} = object

@@ -1,5 +1,4 @@
-from "../instructions" import Operation, Instruction, new_instruction
-from "../poems" import Poem, PoemConstants, PoemFunction
+from "../poems" import Poem, PoemConstants, PoemFunction, PoemOperation
 
 let fib = PoemFunction(
   name: "fib",
@@ -8,16 +7,16 @@ let fib = PoemFunction(
   is_abstract: false,
   register_count: 3,
   instructions: @[
-    new_instruction(Operation.IntGtConst, 1, 0, 1),
-    new_instruction(Operation.JumpIfFalse, 7, 1),
+    poems.inst(PoemOperation.IntGtConst, 1, 0, 1),
+    poems.inst(PoemOperation.JumpIfFalse, 7, 1),
 
-    new_instruction(Operation.IntSubConst, 1, 0, 1),
-    new_instruction(Operation.Dispatch1, 1, 0, 1),
-    new_instruction(Operation.IntSubConst, 2, 0, 2),
-    new_instruction(Operation.Dispatch1, 2, 0, 2),
-    new_instruction(Operation.IntAdd, 0, 1, 2),
+    poems.inst(PoemOperation.IntSubConst, 1, 0, 1),
+    poems.inst_dispatch(1, 0, 1),
+    poems.inst(PoemOperation.IntSubConst, 2, 0, 2),
+    poems.inst_dispatch(2, 0, 2),
+    poems.inst(PoemOperation.IntAdd, 0, 1, 2),
 
-    new_instruction(Operation.Return0),               # 7
+    poems.inst(PoemOperation.Return0),               # 7
   ],
 )
 
@@ -28,9 +27,9 @@ let test = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    new_instruction(Operation.IntConst, 0, 10),
-    new_instruction(Operation.Dispatch1, 0, 0, 0),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.IntConst, 0, 10),
+    poems.inst_dispatch(0, 0, 0),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 

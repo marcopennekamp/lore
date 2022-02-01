@@ -1,5 +1,4 @@
-from "../instructions" import Operation, Instruction, new_instruction
-from "../poems" import Poem, PoemConstants, PoemFunction
+from "../poems" import Poem, PoemConstants, PoemFunction, PoemOperation
 
 let test = PoemFunction(
   name: "test",
@@ -8,10 +7,10 @@ let test = PoemFunction(
   is_abstract: false,
   register_count: 2,
   instructions: @[
-    new_instruction(Operation.Const, 0, 0),
-    new_instruction(Operation.IntConst, 1, 1),
-    new_instruction(Operation.Intrinsic2, 0, 0, 0, 1),  # lore.lists.get
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.Const, 0, 0),
+    poems.inst(PoemOperation.IntConst, 1, 1),
+    poems.inst_intrinsic(0, 0, 0, 1),           # lore.lists.get
+    poems.inst(PoemOperation.Return0),
   ],
 )
 

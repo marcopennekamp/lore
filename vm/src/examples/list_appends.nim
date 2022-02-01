@@ -1,5 +1,4 @@
-from "../instructions" import Operation, Instruction, new_instruction
-from "../poems" import Poem, PoemConstants, PoemFunction
+from "../poems" import Poem, PoemConstants, PoemFunction, PoemOperation
 
 let result_type = poems.list_type(
   poems.sum_type(@[poems.int_type, poems.string_type]),
@@ -12,12 +11,12 @@ let test = PoemFunction(
   is_abstract: false,
   register_count: 2,
   instructions: @[
-    new_instruction(Operation.Const, 0, 0),
-    new_instruction(Operation.Const, 1, 1),
-    new_instruction(Operation.ListAppend, 0, 0, 1, 0),
-    new_instruction(Operation.IntConst, 1, 5),
-    new_instruction(Operation.ListAppend, 0, 0, 1, 0),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.Const, 0, 0),
+    poems.inst(PoemOperation.Const, 1, 1),
+    poems.inst(PoemOperation.ListAppend, 0, 0, 1, 0),
+    poems.inst(PoemOperation.IntConst, 1, 5),
+    poems.inst(PoemOperation.ListAppend, 0, 0, 1, 0),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 

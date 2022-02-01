@@ -1,5 +1,4 @@
-from "../instructions" import Operation, Instruction, new_instruction
-from "../poems" import Poem, PoemConstants, PoemMetaShape, PoemFunction
+from "../poems" import Poem, PoemConstants, PoemMetaShape, PoemFunction, PoemOperation
 
 # In this example, a shape value is loaded as a constant, and the sum of its `foo` int property and the length of the
 # `zoo` string property is returned.
@@ -11,12 +10,12 @@ let test = PoemFunction(
   is_abstract: false,
   register_count: 3,
   instructions: @[
-    new_instruction(Operation.Const, 1, 0),                # Get the constant shape value.
-    new_instruction(Operation.ShapeGetProperty, 2, 1, 0),  # Get property zoo from the shape value.
-    new_instruction(Operation.Intrinsic1, 0, 0, 2),        # Put zoo's length (lore.strings.length) into register 0.
-    new_instruction(Operation.ShapeGetProperty, 2, 1, 1),  # Get property foo from the shape value.
-    new_instruction(Operation.IntAdd, 0, 0, 2),            # Finally add foo to register 0.
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.Const, 1, 0),                # Get the constant shape value.
+    poems.inst(PoemOperation.ShapeGetProperty, 2, 1, 0),  # Get property zoo from the shape value.
+    poems.inst_intrinsic(0, 0, 2),                        # Put zoo's length (lore.strings.length) into register 0.
+    poems.inst(PoemOperation.ShapeGetProperty, 2, 1, 1),  # Get property foo from the shape value.
+    poems.inst(PoemOperation.IntAdd, 0, 0, 2),            # Finally add foo to register 0.
+    poems.inst(PoemOperation.Return0),
   ],
 )
 

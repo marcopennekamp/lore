@@ -1,5 +1,4 @@
-from "../instructions" import Operation, Instruction, new_instruction
-from "../poems" import Poem, PoemConstants, PoemFunction
+from "../poems" import Poem, PoemConstants, PoemFunction, PoemOperation
 
 let add_five = PoemFunction(
   name: "add_five",
@@ -8,8 +7,8 @@ let add_five = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    new_instruction(Operation.IntAddConst, 0, 0, 5),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.IntAddConst, 0, 0, 5),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
@@ -20,9 +19,9 @@ let test = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    new_instruction(Operation.IntConst, 0, 7),
-    new_instruction(Operation.Dispatch1, 0, 0, 0),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.IntConst, 0, 7),
+    poems.inst_dispatch(0, 0, 0),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 

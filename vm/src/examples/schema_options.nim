@@ -1,6 +1,6 @@
-from "../instructions" import Operation, Instruction, new_instruction
 from "../poems" import Poem, PoemConstants, PoemSchema, PoemTraitSchema, PoemStructSchema, PoemStructProperty,
-                       PoemMetaShape, PoemFunction, PoemTypeParameter, PoemType, PoemNamedType, PoemValue
+                       PoemMetaShape, PoemFunction, PoemOperation, PoemTypeParameter, PoemType, PoemNamedType,
+                       PoemValue
 from "../types" import Kind, Variance
 
 # In this example, we declare option types and instantiate them with various sample data.
@@ -61,8 +61,8 @@ let ExampleResult_construct = PoemFunction(
   is_abstract: false,
   register_count: 2,
   instructions: @[
-    new_instruction(Operation.Struct2, 0, 0, 0, 1),
-    new_instruction(Operation.Return0),
+    poems.inst_struct(0, 0, [], [0'u16, 1]),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
@@ -82,8 +82,8 @@ let get1 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    new_instruction(Operation.StructGetProperty, 0, 0, 0),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.StructGetProperty, 0, 0, 0),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
@@ -94,7 +94,7 @@ let get2 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    new_instruction(Operation.IntrinsicVoid0, 0),  # lore.core.panic
+    poems.inst_intrinsic_void(0),  # lore.core.panic
   ],
 )
 
@@ -114,8 +114,8 @@ let flatten1 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    new_instruction(Operation.StructGetProperty, 0, 0, 0),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.StructGetProperty, 0, 0, 0),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
@@ -126,7 +126,7 @@ let flatten2 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
@@ -138,25 +138,25 @@ let test = PoemFunction(
   register_count: 3,
   instructions: @[
     # Assure that None is flattened to None. The VM panics if it isn't.
-    new_instruction(Operation.Const, 0, 0),
-    new_instruction(Operation.Dispatch1, 0, 1, 0),      # r0 = flatten(None)
-    new_instruction(Operation.Const, 1, 0),
-    new_instruction(Operation.StructEq, 0, 0, 1),       # r0 == None
-    new_instruction(Operation.JumpIfTrue, 6, 0),
-    new_instruction(Operation.IntrinsicVoid0, 0),       # panic()
+    poems.inst(PoemOperation.Const, 0, 0),
+    poems.inst_dispatch(0, 1, 0),                 # r0 = flatten(None)
+    poems.inst(PoemOperation.Const, 1, 0),
+    poems.inst(PoemOperation.StructEq, 0, 0, 1),  # r0 == None
+    poems.inst(PoemOperation.JumpIfTrue, 6, 0),
+    poems.inst_intrinsic_void(0),                 # panic()
 
     # Get `12` from the first Some constant.
-    new_instruction(Operation.Const, 0, 1),             # r0 = Some(12)
-    new_instruction(Operation.Dispatch1, 1, 0, 0),      # r1 = get!(r0)
+    poems.inst(PoemOperation.Const, 0, 1),        # r0 = Some(12)
+    poems.inst_dispatch(1, 0, 0),                 # r1 = get!(r0)
 
     # Get `"42"` from the second nested Some constant.
-    new_instruction(Operation.Const, 0, 2),             # r0 = Some(Some("42"))
-    new_instruction(Operation.Dispatch1, 0, 1, 0),      # r0 = flatten(r0)
-    new_instruction(Operation.Dispatch1, 2, 0, 0),      # r2 = get!(r0)
+    poems.inst(PoemOperation.Const, 0, 2),        # r0 = Some(Some("42"))
+    poems.inst_dispatch(0, 1, 0),                 # r0 = flatten(r0)
+    poems.inst_dispatch(2, 0, 0),                 # r2 = get!(r0)
 
     # Build an ExampleResult from `12` and `"42"`.
-    new_instruction(Operation.Dispatch2, 0, 2, 1, 2),   # r0 = ExampleResult$new(r1, r2)
-    new_instruction(Operation.Return0),
+    poems.inst_dispatch(0, 2, 1, 2),              # r0 = ExampleResult$new(r1, r2)
+    poems.inst(PoemOperation.Return0),
   ],
 )
 

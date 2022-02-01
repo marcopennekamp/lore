@@ -351,6 +351,14 @@ proc evaluate(frame: FramePtr) =
       var elements = new_immutable_seq(value_operand_list(), int(operand_count))
       regv_set_ref_arg(0, values.new_tuple(elements))
 
+    of Operation.Tuple0:
+      regv_set_arg(0, values.unit)
+
+    of Operation.Tuple1:
+      var elements = new_immutable_seq[TaggedValue](1)
+      elements[0] = regv_get_arg(1)
+      regv_set_ref_arg(0, values.new_tuple(elements))
+
     of Operation.Tuple2:
       var elements = new_immutable_seq[TaggedValue](2)
       elements[0] = regv_get_arg(1)
@@ -517,7 +525,7 @@ proc evaluate(frame: FramePtr) =
       break
 
     of Operation.ReturnUnit:
-      regv_set(0, unit)
+      regv_set(0, values.unit)
       break
 
     of Operation.Return0:

@@ -1,5 +1,4 @@
-from "../instructions" import Operation, Instruction, new_instruction
-from "../poems" import Poem, PoemConstants, PoemFunction
+from "../poems" import Poem, PoemConstants, PoemFunction, PoemOperation
 
 let int_tuple2 = poems.tuple_type([poems.int_type, poems.int_type])
 
@@ -13,14 +12,14 @@ let add_tuples = PoemFunction(
   is_abstract: false,
   register_count: 4,
   instructions: @[
-    new_instruction(Operation.TupleGet, 2, 0, 1),
-    new_instruction(Operation.TupleGet, 3, 1, 1),
-    new_instruction(Operation.TupleGet, 0, 0, 0),
-    new_instruction(Operation.TupleGet, 1, 1, 0),
-    new_instruction(Operation.IntAdd, 0, 0, 1),
-    new_instruction(Operation.IntAdd, 1, 2, 3),
-    new_instruction(Operation.Tuple2, 0, 0, 1),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.TupleGet, 2, 0, 1),
+    poems.inst(PoemOperation.TupleGet, 3, 1, 1),
+    poems.inst(PoemOperation.TupleGet, 0, 0, 0),
+    poems.inst(PoemOperation.TupleGet, 1, 1, 0),
+    poems.inst(PoemOperation.IntAdd, 0, 0, 1),
+    poems.inst(PoemOperation.IntAdd, 1, 2, 3),
+    poems.inst_tuple(0, 0, 1),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
@@ -31,10 +30,10 @@ let test = PoemFunction(
   is_abstract: false,
   register_count: 2,
   instructions: @[
-    new_instruction(Operation.Const, 0, 0),
-    new_instruction(Operation.Const, 1, 1),
-    new_instruction(Operation.Dispatch2, 0, 0, 0, 1),
-    new_instruction(Operation.Return0),
+    poems.inst(PoemOperation.Const, 0, 0),
+    poems.inst(PoemOperation.Const, 1, 1),
+    poems.inst_dispatch(0, 0, 0, 1),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 

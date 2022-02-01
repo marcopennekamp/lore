@@ -1,5 +1,5 @@
-from "../instructions" import Operation, Instruction, new_instruction
-import "../poems"
+from "../poems" import Poem, PoemConstants, PoemEagerGlobalVariable, PoemLazyGlobalVariable, PoemFunction,
+                       PoemOperation
 
 let pi = PoemEagerGlobalVariable(
   name: "pi",
@@ -18,9 +18,9 @@ let tau_initialize = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    new_instruction(Operation.GlobalGetEager, 0, 0),
-    new_instruction(Operation.RealAdd, 0, 0, 0),
-    new_instruction(Operation.Return0),
+    poems.inst_global_get(0, 0),
+    poems.inst(PoemOperation.RealAdd, 0, 0, 0),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 
@@ -31,10 +31,10 @@ let test = PoemFunction(
   is_abstract: false,
   register_count: 2,
   instructions: @[
-    new_instruction(Operation.GlobalGetEager, 0, 0),
-    new_instruction(Operation.GlobalGetLazy, 1, 1),
-    new_instruction(Operation.Tuple2, 0, 0, 1),
-    new_instruction(Operation.Return0),
+    poems.inst_global_get(0, 0),
+    poems.inst_global_get(1, 1),
+    poems.inst_tuple(0, 0, 1),
+    poems.inst(PoemOperation.Return0),
   ],
 )
 

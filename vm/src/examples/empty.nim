@@ -1,5 +1,4 @@
-from "../instructions" import Operation, Instruction, new_instruction
-from "../poems" import Poem, PoemConstants, PoemFunction
+from "../poems" import Poem, PoemConstants, PoemFunction, PoemOperation
 
 let empty = PoemFunction(
   name: "empty",
@@ -8,7 +7,7 @@ let empty = PoemFunction(
   is_abstract: false,
   register_count: 0,
   instructions: @[
-    new_instruction(Operation.ReturnUnit),
+    poems.inst(PoemOperation.ReturnUnit),
   ],
 )
 
