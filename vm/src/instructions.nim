@@ -129,13 +129,19 @@ type
     Struct
       ## reg(arg0) <- sch(arg1)(opl(0), ..., opl(arg2 - 1))
 
+    Struct0
+      ## reg(arg0) <- sch(arg1)()
+
     Struct1
       ## reg(arg0) <- sch(arg1)(reg(arg2))
 
     Struct2
       ## reg(arg0) <- sch(arg1)(reg(arg2), reg(arg3))
 
+    # TODO (vm): Add instructions like Struct2Poly1 for building simple polymorphic structs without the operand list.
     StructPoly
+      ## arg2: type argument count
+      ## arg3: value argument count
       ## reg(arg0) <- sch(arg1)[opl(0), ..., opl(arg2 - 1)](opl(arg2), ..., opl(arg2 + arg3 - 1))
 
     StructGetProperty

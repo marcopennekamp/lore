@@ -456,6 +456,12 @@ proc evaluate(frame: FramePtr) =
       let schema = cast[StructSchema](const_schema_arg(1))
       regv_set_ref_arg(0, values.new_struct_value(schema, empty_immutable_seq[Type](), oplv_get_open_array_arg(2)))
 
+    # TODO (vm): Implement StructX with a single macro.
+    of Operation.Struct0:
+      let schema = cast[StructSchema](const_schema_arg(1))
+      let value = values.new_struct_value(schema, empty_immutable_seq[Type](), [])
+      regv_set_ref_arg(0, value)
+
     of Operation.Struct1:
       let schema = cast[StructSchema](const_schema_arg(1))
       let property_values = [regv_get_arg(2)]

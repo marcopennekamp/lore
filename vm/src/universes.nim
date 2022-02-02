@@ -381,16 +381,26 @@ method resolve_instruction(poem_instruction: PoemInstructionShape, context: Inst
   )
 
 method resolve_instruction(poem_instruction: PoemInstructionStruct, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
-  # TODO (vm/instructions): Support type arguments.
-  if poem_instruction.type_arguments.len > 0:
-    quit(fmt"Struct type arguments are not supported yet.")
-
-  generate_xary_application(
-    Operation.Struct,
-    [Operation.Struct1, Operation.Struct1, Operation.Struct2], # TODO (vm/instructions): Implement `Struct0`.
-    [poem_instruction.target_reg, poem_instruction.schema],
-    poem_instruction.value_arguments,
-  )
+  if poem_instruction.type_arguments.len == 0:
+    generate_xary_application(
+      Operation.Struct,
+      [Operation.Struct0, Operation.Struct1, Operation.Struct2],
+      [poem_instruction.target_reg, poem_instruction.schema],
+      poem_instruction.value_arguments,
+    )
+  else:
+    # For now, if the struct construction has type arguments, we only have to generate a StructPoly instruction. Later,
+    # we might introduce operations such as Struct2Poly1, which will complicate this resolution.
+    let pushes = generate_opl_pushes(poem_instruction.type_arguments & poem_instruction.value_arguments)
+    let instruction = new_instruction(
+      Operation.StructPoly,
+      [
+        poem_instruction.schema,
+        uint16(poem_instruction.type_arguments.len),
+        uint16(poem_instruction.value_arguments.len),
+      ]
+    )
+    pushes & @[instruction]
 
 macro generate_intrinsic_instruction(
   has_target: static[bool],
