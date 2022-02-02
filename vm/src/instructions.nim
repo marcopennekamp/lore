@@ -249,8 +249,16 @@ type
 # TODO (vm/schemas): This should be a compilation warning instead of a runtime assertion.
 assert sizeof(Instruction) == 16
 
+proc is_jump_operation*(operation: Operation): bool =
+  case operation
+  of Operation.Jump, Operation.JumpIfFalse, Operation.JumpIfTrue: true
+  else: false
+
 template arg*(instruction: Instruction, index: uint16): uint16 = cast[uint16](instruction.arguments[index])
 template argi*(instruction: Instruction, index: uint16): int16 = cast[int16](instruction.arguments[index])
+
+proc set_arg*(instruction: var Instruction, index: uint16, value: uint16) {.inline.} =
+  instruction.arguments[index] = Argument(value)
 
 proc new_instruction*(operation: Operation, args: open_array[uint16]): Instruction =
   var arguments: array[7, Argument]

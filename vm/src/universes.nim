@@ -5,7 +5,7 @@ import sugar
 
 import definitions
 import imseqs
-from instructions import Operation, Instruction, new_instruction
+import instructions
 import poems
 from pyramid import nil
 import schema_order
@@ -354,9 +354,14 @@ proc resolve_instructions(poem_function: PoemFunction, universe: Universe) =
     context.add_instructions(instructions)
 
 method resolve_instruction(poem_instruction: PoemSimpleInstruction, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
-  # TODO (vm/instructions): Don't forget to add the `pc_offset` to all jump instructions!
   let operation = simple_poem_operation_to_operation(poem_instruction.operation)
-  @[new_instruction(operation, poem_instruction.arguments)]
+  var instruction = new_instruction(operation, poem_instruction.arguments)
+
+  # We have to add `pc_offset` to the `pc` of all jump instructions.
+  if operation.is_jump_operation:
+    instruction.set_arg(0, uint16(int(instruction.arg(0)) + context.pc_offset))
+
+  @[instruction]
 
 method resolve_instruction(poem_instruction: PoemInstructionTuple, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   generate_xary_application(
