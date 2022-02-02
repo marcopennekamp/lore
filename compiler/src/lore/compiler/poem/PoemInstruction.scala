@@ -1,7 +1,6 @@
 package lore.compiler.poem
 import lore.compiler.poem.Poem.PoemRegister
 import lore.compiler.poem.PoemOperation.PoemOperation
-import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.types.DeclaredSchema
@@ -13,232 +12,77 @@ import lore.compiler.types.DeclaredSchema
   * Hence, a PoemInstruction doesn't contain index references to the constant table entries, but the constants
   * themselves.
   *
-  * PoemInstructions are classes, not case classes, because their labels are guaranteed to be unique.
+  * PoemInstructions may exist in an unprocessed form where `PPc` doesn't refer to an absolute jump target, but a
+  * relative one. This will be resolved during assembly immediately after instructions for a function have been
+  * flattened.
   */
-class PoemInstruction(val operation: PoemOperation, val operands: Vector[PoemInstruction.Operand]) {
-  lazy val label: PoemLabel = new PoemLabel()
-}
-
-/**
-  * PoemLabels are referentially equal objects which are used to resolve program counter values of jump instructions.
-  */
-class PoemLabel {
-  override def equals(obj: Any): Boolean = obj match {
-    case other: PoemLabel => this eq other
-    case _ => false
-  }
-}
+abstract class PoemInstruction(val operation: PoemOperation)
 
 object PoemInstruction {
-  sealed trait Operand
-  object Operand {
-    case class Reg(id: PoemRegister) extends Operand
+  type PReg = PoemRegister
+  type PVal = PoemValue
+  type PTpe = PoemType
+  type PIntr = String
+  type PSch = DeclaredSchema
+  type PGlb = GlobalVariableDefinition
+  type PMf = MultiFunctionDefinition
+  type PMtsh = PoemMetaShape
+  type PPc = Int
 
-    /**
-      * A uint16 operand interpreted from the argument bits.
-      */
-    case class Usg(value: Int) extends Operand
+  case class Const(target: PReg, value: PVal) extends PoemInstruction(PoemOperation.Const)
+  case class ConstPoly(target: PReg, value: PVal) extends PoemInstruction(PoemOperation.ConstPoly)
 
-    /**
-      * An int16 operand interpreted from the argument bits.
-      */
-    case class Sig(value: Int) extends Operand
+  case class IntConst(target: PReg, value: Int) extends PoemInstruction(PoemOperation.IntConst)
+  case class IntAdd(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.IntAdd)
+  case class IntAddConst(target: PReg, a: PReg, b: Int) extends PoemInstruction(PoemOperation.IntAddConst)
+  case class IntSubConst(target: PReg, a: PReg, b: Int) extends PoemInstruction(PoemOperation.IntSubConst)
+  case class IntLt(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.IntLt)
+  case class IntLtConst(target: PReg, a: PReg, b: Int) extends PoemInstruction(PoemOperation.IntLtConst)
+  case class IntGtConst(target: PReg, a: PReg, b: Int) extends PoemInstruction(PoemOperation.IntGtConst)
 
-    case class Val(value: PoemValue) extends Operand
-    case class Tpe(tpe: PoemType) extends Operand
-    case class Nam(name: String) extends Operand
-    case class Intr(name: String) extends Operand
-    case class Sch(name: NamePath) extends Operand
-    case class Glb(name: NamePath) extends Operand
-    case class Mf(name: NamePath) extends Operand
-    case class Mtsh(metaShape: PoemMetaShape) extends Operand
-    case class Targ(id: Int) extends Operand
+  case class RealAdd(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.RealAdd)
 
-    /**
-      * A target label of a jump instruction. The actual target instruction index will be resolved once instructions
-      * are assembled in a flat list.
-      */
-    case class Lbl(label: PoemLabel) extends Operand
-  }
+  case class StringOf(target: PReg, value: PReg) extends PoemInstruction(PoemOperation.StringOf)
+  case class StringConcat(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.StringConcat)
 
-  def apply(operation: PoemOperation, operands: Operand*): PoemInstruction = new PoemInstruction(operation, operands.toVector)
+  case class Tuple(target: PReg, elements: Vector[PReg]) extends PoemInstruction(PoemOperation.Tuple)
+  case class TupleGet(target: PReg, tuple: PReg, index: Int) extends PoemInstruction(PoemOperation.TupleGet)
 
-  // Argument types for instruction creation that haven't been converted to Operands.
-  type AReg = PoemRegister
-  type AVal = PoemValue
-  type ATpe = PoemType
-  type ASch = DeclaredSchema
-  type AGlb = GlobalVariableDefinition
-  type AMf = MultiFunctionDefinition
-  type AMtsh = PoemMetaShape
+  case class FunctionCall(target: PReg, function: PReg, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.FunctionCall)
 
-  private def inst(operation: PoemOperation) =
-    PoemInstruction(operation)
+  // TODO (assembly): Can't we decide whether to use Poly right here? If `tpe` contains a type variable, it must be Poly, no?
+  //                  We could even decide this inside the VM... This might be an implementation detail that shouldn't
+  //                  be exposed by the API.
+  case class ListAppend(target: PReg, list: PReg, element: PReg, tpe: PTpe) extends PoemInstruction(PoemOperation.ListAppend)
+  case class ListAppendPoly(target: PReg, list: PReg, element: PReg, tpe: PTpe) extends PoemInstruction(PoemOperation.ListAppendPoly)
+  case class ListAppendUntyped(target: PReg, list: PReg, element: PReg) extends PoemInstruction(PoemOperation.ListAppendUntyped)
 
-  private def instReg(operation: PoemOperation, a1: AReg) =
-    PoemInstruction(operation, Operand.Reg(a1))
+  case class Shape(target: PReg, metaShape: PMtsh, properties: Vector[PReg]) extends PoemInstruction(PoemOperation.Shape)
+  case class ShapeGetProperty(target: PReg, shape: PReg, propertyName: String) extends PoemInstruction(PoemOperation.ShapeGetProperty)
 
-  private def instIntr(operation: PoemOperation, intrinsic: String) =
-    PoemInstruction(operation, Operand.Intr(intrinsic))
+  case class SymbolEq(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.SymbolEq)
 
-  private def instLbl(operation: PoemOperation, label: PoemLabel) =
-    PoemInstruction(operation, Operand.Lbl(label))
+  case class Struct(target: PReg, schema: PSch, typeArguments: Vector[PReg], valueArguments: Vector[PReg]) extends PoemInstruction(PoemOperation.Struct)
+  case class StructGetProperty(target: PReg, struct: PReg, index: Int) extends PoemInstruction(PoemOperation.StructGetProperty)
+  case class StructGetNamedProperty(target: PReg, struct: PReg, propertyName: String) extends PoemInstruction(PoemOperation.StructGetNamedProperty)
+  case class StructEq(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.StructEq)
 
-  private def instIntrReg(operation: PoemOperation, intrinsic: String, a1: AReg) =
-    PoemInstruction(operation, Operand.Intr(intrinsic), Operand.Reg(a1))
+  case class Jump(target: PPc) extends PoemInstruction(PoemOperation.Jump)
+  case class JumpIfFalse(target: PPc, predicate: PReg) extends PoemInstruction(PoemOperation.JumpIfFalse)
+  case class JumpIfTrue(target: PPc, predicate: PReg) extends PoemInstruction(PoemOperation.JumpIfTrue)
 
-  private def instGlbReg(operation: PoemOperation, globalVariable: AGlb, a1: AReg) =
-    PoemInstruction(operation, Operand.Glb(globalVariable.name), Operand.Reg(a1))
+  case class Intrinsic(target: PReg, intrinsic: PIntr, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.Intrinsic)
+  case class IntrinsicVoid(intrinsic: PIntr, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.IntrinsicVoid)
 
-  private def instLblReg(operation: PoemOperation, label: PoemLabel, a1: AReg) =
-    PoemInstruction(operation, Operand.Lbl(label), Operand.Reg(a1))
+  case class GlobalGet(target: PReg, global: PGlb) extends PoemInstruction(PoemOperation.GlobalGet)
+  case class GlobalSet(global: PGlb, value: PReg) extends PoemInstruction(PoemOperation.GlobalSet)
 
-  private def instIntrReg2(operation: PoemOperation, intrinsic: String, a1: AReg, a2: AReg) =
-    PoemInstruction(operation, Operand.Intr(intrinsic), Operand.Reg(a1), Operand.Reg(a2))
+  case class Dispatch(target: PReg, mf: PMf, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.Dispatch)
 
-  private def opReg(operation: PoemOperation, target: AReg, value: AReg) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Reg(value))
+  case class Return(value: PReg) extends PoemInstruction(PoemOperation.Return)
+  case class ReturnUnit() extends PoemInstruction(PoemOperation.ReturnUnit)
+  case class Return0() extends PoemInstruction(PoemOperation.Return0)
 
-  private def opSig(operation: PoemOperation, target: AReg, value: Int) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Sig(value))
-
-  private def opVal(operation: PoemOperation, target: AReg, value: AVal) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Val(value))
-
-  private def opTpe(operation: PoemOperation, target: AReg, tpe: ATpe) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Tpe(tpe))
-
-  private def opIntr(operation: PoemOperation, target: AReg, intrinsic: String) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Intr(intrinsic))
-
-  private def opGlb(operation: PoemOperation, target: AReg, globalVariable: AGlb) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Glb(globalVariable.name))
-
-  private def opTarg(operation: PoemOperation, target: AReg, index: Int) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Targ(index))
-
-  private def opReg2(operation: PoemOperation, target: AReg, a1: AReg, a2: AReg) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Reg(a1), Operand.Reg(a2))
-
-  private def opRegUsg(operation: PoemOperation, target: AReg, a1: AReg, a2: Int) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Reg(a1), Operand.Usg(a2))
-
-  private def opRegSig(operation: PoemOperation, target: AReg, a1: AReg, a2: Int) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Reg(a1), Operand.Sig(a2))
-
-  private def opRegVal(operation: PoemOperation, target: AReg, a1: AReg, a2: AVal) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Reg(a1), Operand.Val(a2))
-
-  private def opRegNam(operation: PoemOperation, target: AReg, a1: AReg, name: String) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Reg(a1), Operand.Nam(name))
-
-  private def opValReg(operation: PoemOperation, target: AReg, a1: AVal, a2: AReg) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Val(a1), Operand.Reg(a2))
-
-  private def opIntrReg(operation: PoemOperation, target: AReg, intrinsic: String, a1: AReg) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Intr(intrinsic), Operand.Reg(a1))
-
-  private def opSchReg(operation: PoemOperation, target: AReg, schema: ASch, a1: AReg) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Sch(schema.name), Operand.Reg(a1))
-
-  private def opMfReg(operation: PoemOperation, target: AReg, mf: AMf, a1: AReg) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Mf(mf.name), Operand.Reg(a1))
-
-  private def opMtshReg(operation: PoemOperation, target: AReg, mtsh: AMtsh, a1: AReg) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Mtsh(mtsh), Operand.Reg(a1))
-
-  private def opReg3(operation: PoemOperation, target: AReg, a1: AReg, a2: AReg, a3: AReg) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Reg(a1), Operand.Reg(a2), Operand.Reg(a3))
-
-  private def opReg2Tpe(operation: PoemOperation, target: AReg, a1: AReg, a2: AReg, a3: ATpe) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Reg(a1), Operand.Reg(a2), Operand.Tpe(a3))
-
-  private def opIntrReg2(operation: PoemOperation, target: AReg, intrinsic: String, a1: AReg, a2: AReg) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Intr(intrinsic), Operand.Reg(a1), Operand.Reg(a2))
-
-  private def opSchReg2(operation: PoemOperation, target: AReg, schema: ASch, a1: AReg, a2: AReg) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Sch(schema.name), Operand.Reg(a1), Operand.Reg(a2))
-
-  private def opMfReg2(operation: PoemOperation, target: AReg, mf: AMf, a1: AReg, a2: AReg) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Mf(mf.name), Operand.Reg(a1), Operand.Reg(a2))
-
-  private def opMtshReg2(operation: PoemOperation, target: AReg, mtsh: AMtsh, a1: AReg, a2: AReg) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Mtsh(mtsh), Operand.Reg(a1), Operand.Reg(a2))
-
-  private def opSchReg4(operation: PoemOperation, target: AReg, schema: ASch, a1: AReg, a2: AReg, a3: AReg, a4: AReg) =
-    PoemInstruction(operation, Operand.Reg(target), Operand.Sch(schema.name), Operand.Reg(a1), Operand.Reg(a2), Operand.Reg(a3), Operand.Reg(a4))
-
-  def const(target: AReg, value: AVal): PoemInstruction = opVal(PoemOperation.Const, target, value)
-  def constPoly(target: AReg, value: AVal): PoemInstruction = opVal(PoemOperation.ConstPoly, target, value)
-
-  def intConst(target: AReg, value: Int): PoemInstruction = opSig(PoemOperation.IntConst, target, value)
-  def intAdd(target: AReg, a: AReg, b: AReg): PoemInstruction = opReg2(PoemOperation.IntAdd, target, a, b)
-  def intAddConst(target: AReg, a: AReg, b: Int): PoemInstruction = opRegSig(PoemOperation.IntAddConst, target, a, b)
-  def intSubConst(target: AReg, a: AReg, b: Int): PoemInstruction = opRegSig(PoemOperation.IntSubConst, target, a, b)
-  def intLt(target: AReg, a: AReg, b: AReg): PoemInstruction = opReg2(PoemOperation.IntAdd, target, a, b)
-  def intLtConst(target: AReg, a: AReg, b: Int): PoemInstruction = opRegSig(PoemOperation.IntLtConst, target, a, b)
-  def intGtConst(target: AReg, a: AReg, b: Int): PoemInstruction = opRegSig(PoemOperation.IntGtConst, target, a, b)
-
-  def realAdd(target: AReg, a: AReg, b: AReg): PoemInstruction = opReg2(PoemOperation.IntAdd, target, a, b)
-
-  def stringOf(target: AReg, value: AReg): PoemInstruction = opReg(PoemOperation.StringOf, target, value)
-  def stringConcat(target: AReg, a: AReg, b: AReg): PoemInstruction = opReg2(PoemOperation.IntAdd, target, a, b)
-  def stringConcatConst(target: AReg, a: AReg, b: AVal): PoemInstruction = opRegVal(PoemOperation.StringConcatConst, target, a, b)
-  def stringConcatConstl(target: AReg, a: AVal, b: AReg): PoemInstruction = opValReg(PoemOperation.StringConcatConst, target, a, b)
-
-  def tuple(target: AReg, first: AReg, last: AReg): PoemInstruction = opReg2(PoemOperation.Tuple, target, first, last)
-  def tuple2(target: AReg, a: AReg, b: AReg): PoemInstruction = opReg2(PoemOperation.Tuple2, target, a, b)
-  def tupleGet(target: AReg, tuple: AReg, index: Int): PoemInstruction = opRegUsg(PoemOperation.TupleGet, target, tuple, index)
-
-  def functionCall0(target: AReg, function: AReg): PoemInstruction = opReg(PoemOperation.FunctionCall0, target, function)
-  def functionCall1(target: AReg, function: AReg, argument: AReg): PoemInstruction = opReg2(PoemOperation.FunctionCall1, target, function, argument)
-  def functionCall2(target: AReg, function: AReg, argument1: AReg, argument2: AReg): PoemInstruction = opReg3(PoemOperation.FunctionCall2, target, function, argument1, argument2)
-
-  // TODO (bytecode): Can't we decide whether to use Poly right here? If `tpe` contains a type variable, it must be Poly, no?
-  def listAppend(target: AReg, list: AReg, element: AReg, tpe: ATpe): PoemInstruction = opReg2Tpe(PoemOperation.ListAppend, target, list, element, tpe)
-  def listAppendPoly(target: AReg, list: AReg, element: AReg, tpe: ATpe): PoemInstruction = opReg2Tpe(PoemOperation.ListAppendPoly, target, list, element, tpe)
-  def listAppendUntyped(target: AReg, list: AReg, element: AReg): PoemInstruction = opReg2(PoemOperation.ListAppendUntyped, target, list, element)
-
-  def shape(target: AReg, metaShape: AMtsh, first: AReg, last: AReg): PoemInstruction = opMtshReg2(PoemOperation.Shape, target, metaShape, first, last)
-  def shape1(target: AReg, metaShape: AMtsh, a1: AReg): PoemInstruction = opMtshReg(PoemOperation.Shape, target, metaShape, a1)
-  def shape2(target: AReg, metaShape: AMtsh, a1: AReg, a2: AReg): PoemInstruction = opMtshReg2(PoemOperation.Shape, target, metaShape, a1, a2)
-  def shapeGetProperty(target: AReg, shape: AReg, propertyName: String): PoemInstruction = opRegNam(PoemOperation.ShapeGetProperty, target, shape, propertyName)
-
-  def symbolEq(target: AReg, a: AReg, b: AReg): PoemInstruction = opReg2(PoemOperation.SymbolEq, target, a, b)
-  def symbolEqConst(target: AReg, a: AReg, b: AVal): PoemInstruction = opRegVal(PoemOperation.SymbolEqConst, target, a, b)
-
-  def struct(target: AReg, schema: ASch, first: AReg, last: AReg): PoemInstruction = opSchReg2(PoemOperation.Struct, target, schema, first, last)
-  def struct1(target: AReg, schema: ASch, a1: AReg): PoemInstruction = opSchReg(PoemOperation.Struct1, target, schema, a1)
-  def struct2(target: AReg, schema: ASch, a1: AReg, a2: AReg): PoemInstruction = opSchReg2(PoemOperation.Struct2, target, schema, a1, a2)
-  def structPoly(target: AReg, schema: ASch, firstTarg: AReg, lastTarg: AReg, firstArg: AReg, lastArg: AReg): PoemInstruction = opSchReg4(PoemOperation.StructPoly, target, schema, firstTarg, lastTarg, firstArg, lastArg)
-  def structGetProperty(target: AReg, struct: AReg, index: Int): PoemInstruction = opRegUsg(PoemOperation.StructGetProperty, target, struct, index)
-  def structGetNamedProperty(target: AReg, struct: AReg, propertyName: String): PoemInstruction = opRegNam(PoemOperation.StructGetNamedProperty, target, struct, propertyName)
-  def structEq(target: AReg, a1: AReg, a2: AReg): PoemInstruction = opReg2(PoemOperation.StructEq, target, a1, a2)
-
-  def jump(target: PoemLabel): PoemInstruction = instLbl(PoemOperation.Jump, target)
-  def jumpIfFalse(target: PoemLabel, predicate: AReg): PoemInstruction = instLblReg(PoemOperation.JumpIfFalse, target, predicate)
-  def jumpIfTrue(target: PoemLabel, predicate: AReg): PoemInstruction = instLblReg(PoemOperation.JumpIfTrue, target, predicate)
-
-  def intrinsic0(target: AReg, intrinsic: String): PoemInstruction = opIntr(PoemOperation.Intrinsic0, target, intrinsic)
-  def intrinsic1(target: AReg, intrinsic: String, a1: AReg): PoemInstruction = opIntrReg(PoemOperation.Intrinsic1, target, intrinsic, a1)
-  def intrinsic2(target: AReg, intrinsic: String, a1: AReg, a2: AReg): PoemInstruction = opIntrReg2(PoemOperation.Intrinsic2, target, intrinsic, a1, a2)
-  def intrinsicVoid0(intrinsic: String): PoemInstruction = instIntr(PoemOperation.IntrinsicVoid0, intrinsic)
-  def intrinsicVoid1(intrinsic: String, a1: AReg): PoemInstruction = instIntrReg(PoemOperation.IntrinsicVoid1, intrinsic, a1)
-  def intrinsicFa1(target: AReg, intrinsic: String, a1: AReg): PoemInstruction = opIntrReg(PoemOperation.IntrinsicFa1, target, intrinsic, a1)
-  def intrinsicFa2(target: AReg, intrinsic: String, a1: AReg, a2: AReg): PoemInstruction = opIntrReg2(PoemOperation.IntrinsicFa2, target, intrinsic, a1, a2)
-  def intrinsicVoidFa2(intrinsic: String, a1: AReg, a2: AReg): PoemInstruction = instIntrReg2(PoemOperation.IntrinsicVoidFa2, intrinsic, a1, a2)
-
-  def globalGetEager(target: AReg, globalVariable: AGlb): PoemInstruction = opGlb(PoemOperation.GlobalGetEager, target, globalVariable)
-  def globalGetLazy(target: AReg, globalVariable: AGlb): PoemInstruction = opGlb(PoemOperation.GlobalGetLazy, target, globalVariable)
-  def globalSet(globalVariable: AGlb, value: AReg): PoemInstruction = instGlbReg(PoemOperation.GlobalSet, globalVariable, value)
-
-  def dispatch1(target: AReg, mf: AMf, a1: AReg): PoemInstruction = opMfReg(PoemOperation.Dispatch1, target, mf, a1)
-  def dispatch2(target: AReg, mf: AMf, a1: AReg, a2: AReg): PoemInstruction = opMfReg2(PoemOperation.Dispatch1, target, mf, a1, a2)
-
-  def `return`(value: AReg): PoemInstruction = instReg(PoemOperation.Return, value)
-  def returnUnit(): PoemInstruction = inst(PoemOperation.ReturnUnit)
-  def return0(): PoemInstruction = inst(PoemOperation.Return0)
-
-  def typeArg(target: AReg, index: Int): PoemInstruction = opTarg(PoemOperation.TypeArg, target, index)
-  def typeConst(target: AReg, tpe: ATpe): PoemInstruction = opTpe(PoemOperation.TypeConst, target, tpe)
+  case class TypeArg(target: PReg, index: Int) extends PoemInstruction(PoemOperation.TypeArg)
+  case class TypeConst(target: PReg, tpe: PTpe) extends PoemInstruction(PoemOperation.TypeConst)
 }

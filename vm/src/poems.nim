@@ -136,6 +136,7 @@ type
     Dispatch
       ## target_reg: uint16, mf: uint16, n: uint8, reg0: uint16, ..., reg_n: uint16
 
+    # TODO (vm): Do we need ReturnUnit and Return0 in the public API? Or can we do this as an optimization?
     Return
     ReturnUnit
     Return0
