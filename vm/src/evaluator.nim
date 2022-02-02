@@ -1,7 +1,7 @@
 import std/macros
 
 import definitions
-from dispatch import find_dispatch_target
+from dispatch import find_dispatch_target_from_arguments
 import imseqs
 import instructions
 from types import Type, StructSchema
@@ -10,6 +10,7 @@ from utils import when_debug
 
 proc evaluate*(entry_function: ptr FunctionInstance, frame_mem: pointer): TaggedValue
 
+proc evaluate*(function_value: FunctionValue, frame: FramePtr, arguments: open_array[TaggedValue]): TaggedValue
 proc evaluate*(function_value: FunctionValue, frame: FramePtr): TaggedValue
 proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue
 proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue
@@ -141,6 +142,8 @@ template opl_push_n(count: uint16): untyped =
 # Helpers: Function calls.                                                                                             #
 ########################################################################################################################
 
+# TODO (vm): We can merge the `generate_*` functions into macros.
+
 template next_frame_base(): pointer = cast[pointer](cast[uint](frame) + frame.function.frame_size)
 
 template call_start(target: ptr FunctionInstance): FramePtr =
@@ -151,45 +154,57 @@ template get_call_result(target_frame): untyped =
   # After function evaluation has finished, it must guarantee that the return value is in the first register.
   cast[TaggedValue](target_frame.registers[0])
 
+template generate_call(target: ptr FunctionInstance, arguments): TaggedValue =
+  let target_frame = call_start(target)
+  for i in 0 ..< arguments.len:
+    target_frame.registers[i] = cast[uint64](arguments[i])
+  evaluate(target_frame)
+  get_call_result(target_frame)
+
 # TODO (vm): Do we have to pass type arguments of an owning multi-function to a lambda? Or how does this work?
-template call0(target: ptr FunctionInstance): TaggedValue =
+template generate_call0(target: ptr FunctionInstance): TaggedValue =
   let target_frame = call_start(target)
   evaluate(target_frame)
   get_call_result(target_frame)
 
-template call1(target: ptr FunctionInstance, argument0): TaggedValue =
+template generate_call1(target: ptr FunctionInstance, argument0): TaggedValue =
   let target_frame = call_start(target)
   target_frame.registers[0] = cast[uint64](argument0)
   evaluate(target_frame)
   get_call_result(target_frame)
 
-template call2(target: ptr FunctionInstance, argument0, argument1): TaggedValue =
+template generate_call2(target: ptr FunctionInstance, argument0, argument1): TaggedValue =
   let target_frame = call_start(target)
   target_frame.registers[0] = cast[uint64](argument0)
   target_frame.registers[1] = cast[uint64](argument1)
   evaluate(target_frame)
   get_call_result(target_frame)
 
-template dispatch0(mf): TaggedValue =
+template generate_dispatch(mf, arguments): TaggedValue =
   var target = FunctionInstance()
-  find_dispatch_target(mf, target)
-  call0(addr target)
+  find_dispatch_target_from_arguments(mf, arguments, target)
+  generate_call(addr target, arguments)
 
-template dispatch1(mf, argument0): TaggedValue =
+template generate_dispatch0(mf): TaggedValue =
   var target = FunctionInstance()
-  find_dispatch_target(mf, argument0, target)
-  call1(addr target, argument0)
+  find_dispatch_target_from_arguments(mf, target)
+  generate_call0(addr target)
 
-template dispatch2(mf, argument0, argument1): TaggedValue =
+template generate_dispatch1(mf, argument0): TaggedValue =
   var target = FunctionInstance()
-  find_dispatch_target(mf, argument0, argument1, target)
-  call2(addr target, argument0, argument1)
+  find_dispatch_target_from_arguments(mf, argument0, target)
+  generate_call1(addr target, argument0)
+
+template generate_dispatch2(mf, argument0, argument1): TaggedValue =
+  var target = FunctionInstance()
+  find_dispatch_target_from_arguments(mf, argument0, argument1, target)
+  generate_call2(addr target, argument0, argument1)
 
 ########################################################################################################################
 # Helpers: Other operations.                                                                                           #
 ########################################################################################################################
 
-template list_append(new_tpe): untyped =
+template generate_list_append(new_tpe): untyped =
   let list = regv_get_ref_arg(1, ListValue)
   let new_element = regv_get_arg(2)
   var new_elements = list.elements.append(new_element)
@@ -351,6 +366,7 @@ proc evaluate(frame: FramePtr) =
       var elements = new_immutable_seq(value_operand_list(), int(operand_count))
       regv_set_ref_arg(0, values.new_tuple(elements))
 
+    # TODO (vm): Implement TupleX with a single macro.
     of Operation.Tuple0:
       regv_set_arg(0, values.unit)
 
@@ -369,6 +385,12 @@ proc evaluate(frame: FramePtr) =
       let tpl = regv_get_ref_arg(1, TupleValue)
       regv_set_arg(0, tpl.elements[instruction.arg(2)])
 
+    of Operation.FunctionCall:
+      let function = regv_get_ref_arg(1, FunctionValue)
+      let res = evaluate(function, frame, oplv_get_open_array_arg(2))
+      regv_set_arg(0, res)
+
+    # TODO (vm): Implement FunctionCallX with a single macro.
     of Operation.FunctionCall0:
       let function = regv_get_ref_arg(1, FunctionValue)
       let res = evaluate(function, frame)
@@ -389,20 +411,24 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.ListAppend:
       let new_tpe = const_types_arg(3)
-      list_append(new_tpe)
+      generate_list_append(new_tpe)
 
     of Operation.ListAppendPoly:
       let new_tpe = types.substitute(const_types_arg(3), frame.type_arguments)
-      list_append(new_tpe)
+      generate_list_append(new_tpe)
 
     of Operation.ListAppendUntyped:
       let list = regv_get_ref_arg(1, ListValue)
-      list_append(list.tpe)
+      generate_list_append(list.tpe)
 
     of Operation.Shape:
       let meta_shape = const_meta_shape_arg(1)
       regv_set_ref_arg(0, values.new_shape_value(meta_shape, oplv_get_open_array_arg(2)))
 
+    of Operation.Shape0:
+      regv_set_arg(0, values.empty_shape)
+
+    # TODO (vm): Implement ShapeX with a single macro.
     of Operation.Shape1:
       let meta_shape = const_meta_shape_arg(1)
       regv_set_ref_arg(0, values.new_shape_value(meta_shape, [regv_get_arg(2)]))
@@ -488,8 +514,10 @@ proc evaluate(frame: FramePtr) =
     of Operation.Intrinsic2: generate_intrisic_evaluation(false, false, 2)
     of Operation.IntrinsicVoid0: generate_intrisic_evaluation(true, false, 0)
     of Operation.IntrinsicVoid1: generate_intrisic_evaluation(true, false, 1)
+    of Operation.IntrinsicVoid2: generate_intrisic_evaluation(true, false, 2)
     of Operation.IntrinsicFa1: generate_intrisic_evaluation(false, true, 1)
     of Operation.IntrinsicFa2: generate_intrisic_evaluation(false, true, 2)
+    of Operation.IntrinsicVoidFa1: generate_intrisic_evaluation(true, true, 1)
     of Operation.IntrinsicVoidFa2: generate_intrisic_evaluation(true, true, 2)
 
     of Operation.GlobalGetEager:
@@ -507,17 +535,28 @@ proc evaluate(frame: FramePtr) =
       let value = regv_get_arg(1)
       set_global(gv, value)
 
+    of Operation.Dispatch:
+      let mf = const_multi_function_arg(1)
+      let res = generate_dispatch(mf, oplv_get_open_array_arg(2))
+      regv_set_arg(0, res)
+
+    # TODO (vm): Implement DispatchX with a single macro.
+    of Operation.Dispatch0:
+      let mf = const_multi_function_arg(1)
+      let res = generate_dispatch0(mf)
+      regv_set_arg(0, res)
+
     of Operation.Dispatch1:
       let mf = const_multi_function_arg(1)
       let argument0 = regv_get_arg(2)
-      let res = dispatch1(mf, argument0)
+      let res = generate_dispatch1(mf, argument0)
       regv_set_arg(0, res)
 
     of Operation.Dispatch2:
       let mf = const_multi_function_arg(1)
       let argument0 = regv_get_arg(2)
       let argument1 = regv_get_arg(3)
-      let res = dispatch2(mf, argument0, argument1)
+      let res = generate_dispatch2(mf, argument0, argument1)
       regv_set_arg(0, res)
 
     of Operation.Return:
@@ -554,26 +593,38 @@ proc evaluate*(entry_function: ptr FunctionInstance, frame_mem: pointer): Tagged
   # The bytecode must ensure that the result is in the first register.
   regv_get(0)
 
+# TODO (vm): These `evaluate` functions can be implemented with a macro. Also, the `generate_call` is already part of
+#            `generate_dispatch`, so the call code is being generated twice. We should rather first get the function
+#            instance (via `find_dispatch_target_from_arguments`) and then call `generate_call` once.
+
+proc evaluate*(function_value: FunctionValue, frame: FramePtr, arguments: open_array[TaggedValue]): TaggedValue =
+  ## Evaluates a function value with a signature `(...) => Any`.
+  assert(arity(function_value) == arguments.len)
+  if function_value.is_fixed:
+    generate_call(cast[ptr FunctionInstance](function_value.target), arguments)
+  else:
+    generate_dispatch(cast[MultiFunction](function_value.target), arguments)
+
 proc evaluate*(function_value: FunctionValue, frame: FramePtr): TaggedValue =
   ## Evaluates a function value with a signature `() => Any`.
   assert(arity(function_value) == 0)
   if function_value.is_fixed:
-    call0(cast[ptr FunctionInstance](function_value.target))
+    generate_call0(cast[ptr FunctionInstance](function_value.target))
   else:
-    dispatch0(cast[MultiFunction](function_value.target))
+    generate_dispatch0(cast[MultiFunction](function_value.target))
 
 proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue =
   ## Evaluates a function value with a signature `(Any) => Any`.
   assert(arity(function_value) == 1)
   if function_value.is_fixed:
-    call1(cast[ptr FunctionInstance](function_value.target), argument0)
+    generate_call1(cast[ptr FunctionInstance](function_value.target), argument0)
   else:
-    dispatch1(cast[MultiFunction](function_value.target), argument0)
+    generate_dispatch1(cast[MultiFunction](function_value.target), argument0)
 
 proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue =
   ## Evaluates a function value with a signature `(Any, Any) => Any`.
   assert(arity(function_value) == 2)
   if function_value.is_fixed:
-    call2(cast[ptr FunctionInstance](function_value.target), argument0, argument1)
+    generate_call2(cast[ptr FunctionInstance](function_value.target), argument0, argument1)
   else:
-    dispatch2(cast[MultiFunction](function_value.target), argument0, argument1)
+    generate_dispatch2(cast[MultiFunction](function_value.target), argument0, argument1)

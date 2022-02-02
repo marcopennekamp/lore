@@ -218,6 +218,10 @@ proc get_property_value*(shape: ShapeValue, name: string): TaggedValue =
   ## Gets the value associated with the property named `name`. The name must be a valid property.
   shape.property_values[shape.meta.property_index.find_offset(name)]
 
+let empty_meta_shape*: MetaShape = types.get_meta_shape([])
+
+let empty_shape*: TaggedValue = new_shape_value_tagged(empty_meta_shape, [])
+
 ########################################################################################################################
 # Symbols.                                                                                                             #
 ########################################################################################################################

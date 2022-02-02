@@ -84,6 +84,9 @@ type
     TupleGet
       ## reg(arg0) <- reg(arg1).get(arg2)
 
+    FunctionCall
+      ## reg(arg0) <- reg(arg1)(opl(0), ..., opl(arg2 - 1))
+
     FunctionCall0
       ## reg(arg0) <- reg(arg1)()
 
@@ -104,6 +107,9 @@ type
 
     Shape
       ## reg(arg0) <- shape(mtsh(arg1), opl(0), ..., opl(arg2 - 1))
+
+    Shape0
+      ## reg(arg0) <- empty_shape
 
     Shape1
       ## reg(arg0) <- shape(mtsh(arg1), reg(arg2))
@@ -170,11 +176,17 @@ type
     IntrinsicVoid1
       ## intr(arg0)(reg(arg1))
 
+    IntrinsicVoid2
+      ## intr(arg0)(reg(arg1), reg(arg2))
+
     IntrinsicFa1
       ## reg(arg0) <- intr(arg1)(frame, reg(arg2))
 
     IntrinsicFa2
       ## reg(arg0) <- intr(arg1)(frame, reg(arg2), reg(arg3))
+
+    IntrinsicVoidFa1
+      ## intr(arg0)(frame, reg(arg1))
 
     IntrinsicVoidFa2
       ## intr(arg0)(frame, reg(arg1), reg(arg2))
@@ -190,6 +202,12 @@ type
 
     GlobalSet
       ## glb(arg0) <- reg(arg1)
+
+    Dispatch
+      ## reg(arg0) <- mf(arg1)(opl(0), ..., opl(arg2 - 1))
+
+    Dispatch0
+      ## reg(arg0) <- mf(arg1)()
 
     Dispatch1
       ## reg(arg0) <- mf(arg1)(reg(arg2))

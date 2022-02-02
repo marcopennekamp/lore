@@ -8,6 +8,13 @@ from values import TaggedValue
 proc find_dispatch_target*(mf: MultiFunction, input_types: open_array[Type], target: var FunctionInstance) =
   ## Finds the dispatch target for the given multi-function and input types (expressed as an open array of tuple
   ## elements). The function uses an out variable `target` to avoid unnecessary allocations of FunctionInstances.
+  # TODO (vm): This is an optimization I would like to be carried out during poem instruction resolution which could
+  #            replace `dispatch` with `call` instructions.
+  let function0 = mf.functions[0]
+  if mf.functions.len == 1 and function0.is_monomorphic:
+    target = function0.monomorphic_instance
+    return
+
   # TODO (vm): This is probably the slowest non-esoteric implementation of dispatch. However, it will suffice for now
   #            until we can spend more time making it fast.
   var candidates = new_seq_of_cap[ptr FunctionInstance](8)
@@ -50,22 +57,18 @@ proc find_dispatch_target*(mf: MultiFunction, input_types: open_array[Type], tar
     # TODO (vm): Specify the exact offending function.
     quit(fmt"Cannot call multi-function {mf.name}: the chosen target function is abstract.")
 
-template find_dispatch_target_n(mf, input_types, target): untyped =
-  # TODO (vm): This is an optimization I would like to be carried out in a preprocessing phase which could for example
-  #            replace `dispatch` with `call` instructions.
-  let function0 = mf.functions[0]
-  if mf.functions.len == 1 and function0.is_monomorphic:
-    target = function0.monomorphic_instance
-  else:
-    find_dispatch_target(mf, input_types, target)
+proc find_dispatch_target_from_arguments*(mf: MultiFunction, target: var FunctionInstance) =
+  find_dispatch_target(mf, [], target)
 
-proc find_dispatch_target*(mf: MultiFunction, target: var FunctionInstance) =
-  find_dispatch_target_n(mf, [], target)
+proc find_dispatch_target_from_arguments*(mf: MultiFunction, argument0: TaggedValue, target: var FunctionInstance) =
+  find_dispatch_target(mf, [values.get_type(argument0)], target)
 
-proc find_dispatch_target*(mf: MultiFunction, argument0: TaggedValue, target: var FunctionInstance) =
-  # TODO (vm): We can allocate the tuple type on the stack.
-  find_dispatch_target_n(mf, [values.get_type(argument0)], target)
+proc find_dispatch_target_from_arguments*(mf: MultiFunction, argument0: TaggedValue, argument1: TaggedValue, target: var FunctionInstance) =
+  find_dispatch_target(mf, [values.get_type(argument0), values.get_type(argument1)], target)
 
-proc find_dispatch_target*(mf: MultiFunction, argument0: TaggedValue, argument1: TaggedValue, target: var FunctionInstance) =
-  # TODO (vm): We can allocate the tuple type on the stack.
-  find_dispatch_target_n(mf, [values.get_type(argument0), values.get_type(argument1)], target)
+proc find_dispatch_target_from_arguments*(mf: MultiFunction, arguments: open_array[TaggedValue], target: var FunctionInstance) =
+  # TODO (vm): We could avoid an allocation here for e.g. 16 or less arguments if we allocate the array on the stack.
+  var input_types = new_seq[Type](arguments.len)
+  for i in 0 ..< input_types.len:
+    input_types[i] = values.get_type(arguments[i])
+  find_dispatch_target(mf, input_types, target)

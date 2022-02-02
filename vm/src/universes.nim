@@ -323,10 +323,6 @@ type
       ## The program counter offset grows when a PoemInstruction generates more than one Instruction. The target
       ## locations of all following jump instructions must be incremented by this offset.
 
-proc generate_xary_application(operation_opl: Operation, operation_x: open_array[Operation], prefix: open_array[uint16], arguments: open_array[uint16]): seq[Instruction]
-proc generate_opl_pushes(arguments: open_array[uint16]): seq[Instruction]
-proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operation
-
 proc get_function(context: InstructionResolutionContext): Function = context.poem_function.resolved_function
 proc get_constants(context: InstructionResolutionContext): Constants = context.get_function.constants
 
@@ -336,6 +332,10 @@ proc add_instructions(context: InstructionResolutionContext, instructions: open_
   for instruction in instructions:
     context.get_function.instructions.add(instruction)
   context.pc_offset += instructions.len - 1
+
+proc generate_xary_application(operation_opl: Operation, operation_x: open_array[Operation], prefix: open_array[uint16], arguments: open_array[uint16]): seq[Instruction]
+proc generate_opl_pushes(arguments: open_array[uint16]): seq[Instruction]
+proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operation
 
 method resolve_instruction(poem_instruction: PoemInstruction, context: InstructionResolutionContext): seq[Instruction] {.base, locks: "unknown".} =
   quit("Please implement `resolve_instruction` for all poem instructions.")
@@ -366,7 +366,7 @@ method resolve_instruction(poem_instruction: PoemInstructionTuple, context: Inst
 
 method resolve_instruction(poem_instruction: PoemInstructionFunctionCall, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   generate_xary_application(
-    Operation.FunctionCall0, # TODO (vm/instructions): Implement `FunctionCall`.
+    Operation.FunctionCall,
     [Operation.FunctionCall0, Operation.FunctionCall1, Operation.FunctionCall2],
     [poem_instruction.target_reg, poem_instruction.function_reg],
     poem_instruction.arguments,
@@ -375,7 +375,7 @@ method resolve_instruction(poem_instruction: PoemInstructionFunctionCall, contex
 method resolve_instruction(poem_instruction: PoemInstructionShape, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   generate_xary_application(
     Operation.Shape,
-    [Operation.Shape, Operation.Shape1, Operation.Shape2], # TODO (vm/instructions): Implement `Shape0`.
+    [Operation.Shape0, Operation.Shape1, Operation.Shape2],
     [poem_instruction.target_reg, poem_instruction.meta_shape],
     poem_instruction.arguments,
   )
@@ -420,8 +420,8 @@ method resolve_instruction(poem_instruction: PoemInstructionIntrinsic, context: 
 method resolve_instruction(poem_instruction: PoemInstructionIntrinsicVoid, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   generate_intrinsic_instruction(
     false,
-    [Operation.IntrinsicVoid0, Operation.IntrinsicVoid1, Operation.IntrinsicVoid1], # TODO (vm/instructions): Implement `IntrinsicVoid2`.
-    [Operation.Invalid, Operation.IntrinsicFa1, Operation.IntrinsicVoidFa2], # TODO (vm/instructions): Implement `IntrinsicVoidFa1`.
+    [Operation.IntrinsicVoid0, Operation.IntrinsicVoid1, Operation.IntrinsicVoid2],
+    [Operation.Invalid, Operation.IntrinsicVoidFa1, Operation.IntrinsicVoidFa2],
   )
 
 method resolve_instruction(poem_instruction: PoemInstructionGlobalGet, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
@@ -431,8 +431,8 @@ method resolve_instruction(poem_instruction: PoemInstructionGlobalGet, context: 
 
 method resolve_instruction(poem_instruction: PoemInstructionDispatch, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   generate_xary_application(
-    Operation.Dispatch1, # TODO (vm/instructions): Implement `Dispatch`.
-    [Operation.Dispatch1, Operation.Dispatch1, Operation.Dispatch2], # TODO (vm/instructions): Implement `Dispatch0`.
+    Operation.Dispatch,
+    [Operation.Dispatch0, Operation.Dispatch1, Operation.Dispatch2],
     [poem_instruction.target_reg, poem_instruction.mf],
     poem_instruction.arguments,
   )
