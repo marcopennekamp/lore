@@ -530,7 +530,6 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.ShapeGetProperty: Operation.ShapeGetProperty
 
   of PoemOperation.SymbolEq: Operation.SymbolEq
-  of PoemOperation.SymbolEqConst: Operation.SymbolEqConst
 
   of PoemOperation.StructGetProperty: Operation.StructGetProperty
   of PoemOperation.StructGetNamedProperty: Operation.StructGetNamedProperty

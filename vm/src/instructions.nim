@@ -117,9 +117,6 @@ type
     SymbolEq
       ## reg(arg0) <- reg(arg1) == reg(arg2)
 
-    SymbolEqConst
-      ## reg(arg0) <- reg(arg1) == val(arg2)
-
     Struct
       ## reg(arg0) <- sch(arg1)(opl(0), ..., opl(arg2 - 1))
 

@@ -109,7 +109,6 @@ type
     ShapeGetProperty
 
     SymbolEq
-    SymbolEqConst
 
     Struct
       ## target_reg: uint16, sch: uint16, nt: uint8, treg0: uint16, ..., treg_nt, nv: uint8, vreg0: uint16, ...,
@@ -809,8 +808,7 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
   of Jump, Return: 1
   of Const, ConstPoly, IntConst, StringOf, JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
   of IntAdd, IntAddConst, IntSubConst, IntLt, IntLtConst, IntGtConst, RealAdd, StringConcat, TupleGet,
-     ListAppendUntyped, ShapeGetProperty, SymbolEq, SymbolEqConst, StructGetProperty, StructGetNamedProperty,
-     StructEq: 3
+     ListAppendUntyped, ShapeGetProperty, SymbolEq, StructGetProperty, StructGetNamedProperty, StructEq: 3
   of ListAppend, ListAppendPoly: 4
   of PoemOperation.Tuple, FunctionCall, PoemOperation.Shape, PoemOperation.Struct, Intrinsic, IntrinsicVoid, GlobalGet,
      Dispatch:

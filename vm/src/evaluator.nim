@@ -437,11 +437,6 @@ proc evaluate(frame: FramePtr) =
       let b = regv_get_ref_arg(2, SymbolValue)
       regv_set_bool_arg(0, a.name == b.name)
 
-    of Operation.SymbolEqConst:
-      let a = regv_get_ref_arg(1, SymbolValue)
-      let b = const_value_ref_arg(2, SymbolValue)
-      regv_set_bool_arg(0, a.name == b.name)
-
     of Operation.Struct:
       let schema = cast[StructSchema](const_schema_arg(1))
       regv_set_ref_arg(0, values.new_struct_value(schema, empty_immutable_seq[Type](), oplv_get_open_array_arg(2)))
