@@ -239,6 +239,10 @@ type
       ## ...
       ## opl(arg0 + 5) <- reg(arg6)
 
+    Invalid
+      ## Panics the VM due to an invalid state. This operation can stand in if an Operation is expected but not
+      ## desired.
+
   Argument = distinct uint16
 
   Instruction* = object
@@ -248,6 +252,8 @@ type
 
 # TODO (vm/schemas): This should be a compilation warning instead of a runtime assertion.
 assert sizeof(Instruction) == 16
+
+let maximum_instruction_arguments*: int = 7
 
 proc is_jump_operation*(operation: Operation): bool =
   case operation

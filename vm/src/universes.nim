@@ -1,3 +1,4 @@
+import std/macros
 import std/sequtils
 import std/strformat
 import std/tables
@@ -322,16 +323,8 @@ type
       ## The program counter offset grows when a PoemInstruction generates more than one Instruction. The target
       ## locations of all following jump instructions must be incremented by this offset.
 
-  XaryApplicationOptions = ref object
-    operation_opl: Operation
-      ## This operation will be applied with `OplPushX`.
-    operation_x: array[3, Operation]
-      ## These operations will be applied with 0, 1, or 2 arguments.
-    prefix: seq[uint16]
-      ## Any instruction arguments before the actual xary arguments.
-
-proc generate_xary_application(options: XaryApplicationOptions, arguments: seq[uint16]): seq[Instruction]
-proc generate_opl_pushes(arguments: seq[uint16]): seq[Instruction]
+proc generate_xary_application(operation_opl: Operation, operation_x: open_array[Operation], prefix: open_array[uint16], arguments: open_array[uint16]): seq[Instruction]
+proc generate_opl_pushes(arguments: open_array[uint16]): seq[Instruction]
 proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operation
 
 proc get_function(context: InstructionResolutionContext): Function = context.poem_function.resolved_function
@@ -365,31 +358,25 @@ method resolve_instruction(poem_instruction: PoemSimpleInstruction, context: Ins
 
 method resolve_instruction(poem_instruction: PoemInstructionTuple, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   generate_xary_application(
-    XaryApplicationOptions(
-      operation_opl: Operation.Tuple,
-      operation_x: [Operation.Tuple0, Operation.Tuple1, Operation.Tuple2],
-      prefix: @[poem_instruction.target_reg],
-    ),
+    Operation.Tuple,
+    [Operation.Tuple0, Operation.Tuple1, Operation.Tuple2],
+    [poem_instruction.target_reg],
     poem_instruction.arguments,
   )
 
 method resolve_instruction(poem_instruction: PoemInstructionFunctionCall, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   generate_xary_application(
-    XaryApplicationOptions(
-      operation_opl: Operation.FunctionCall0, # TODO (vm/instructions): Implement `FunctionCall`.
-      operation_x: [Operation.FunctionCall0, Operation.FunctionCall1, Operation.FunctionCall2],
-      prefix: @[poem_instruction.target_reg, poem_instruction.function_reg],
-    ),
+    Operation.FunctionCall0, # TODO (vm/instructions): Implement `FunctionCall`.
+    [Operation.FunctionCall0, Operation.FunctionCall1, Operation.FunctionCall2],
+    [poem_instruction.target_reg, poem_instruction.function_reg],
     poem_instruction.arguments,
   )
 
 method resolve_instruction(poem_instruction: PoemInstructionShape, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   generate_xary_application(
-    XaryApplicationOptions(
-      operation_opl: Operation.Shape,
-      operation_x: [Operation.Shape, Operation.Shape1, Operation.Shape2], # TODO (vm/instructions): Implement `Shape0`.
-      prefix: @[poem_instruction.target_reg, poem_instruction.meta_shape],
-    ),
+    Operation.Shape,
+    [Operation.Shape, Operation.Shape1, Operation.Shape2], # TODO (vm/instructions): Implement `Shape0`.
+    [poem_instruction.target_reg, poem_instruction.meta_shape],
     poem_instruction.arguments,
   )
 
@@ -399,46 +386,42 @@ method resolve_instruction(poem_instruction: PoemInstructionStruct, context: Ins
     quit(fmt"Struct type arguments are not supported yet.")
 
   generate_xary_application(
-    XaryApplicationOptions(
-      operation_opl: Operation.Struct,
-      operation_x: [Operation.Struct1, Operation.Struct1, Operation.Struct2], # TODO (vm/instructions): Implement `Struct0`.
-      prefix: @[poem_instruction.target_reg, poem_instruction.schema],
-    ),
+    Operation.Struct,
+    [Operation.Struct1, Operation.Struct1, Operation.Struct2], # TODO (vm/instructions): Implement `Struct0`.
+    [poem_instruction.target_reg, poem_instruction.schema],
     poem_instruction.value_arguments,
   )
 
-method resolve_instruction(poem_instruction: PoemInstructionIntrinsic, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
-  let intrinsic: Intrinsic = context.get_constants.intrinsics[poem_instruction.intrinsic]
-  let operation_x =
-    if not intrinsic.is_frame_aware: [Operation.Intrinsic0, Operation.Intrinsic1, Operation.Intrinsic2]
-    else:
-      # Note that a frame-aware `Intrinsic0` is impossible. `Const` is a placeholder.
-      [Operation.Const, Operation.IntrinsicFa1, Operation.IntrinsicFa2]
+macro generate_intrinsic_instruction(
+  has_target: static[bool],
+  operation_x_notfa: open_array[Operation],
+  operation_x_fa: open_array[Operation],
+): seq[Instruction] =
+  let prefix_node =
+    if has_target: quote do: @[poem_instruction.target_reg, poem_instruction.intrinsic]
+    else: quote do: @[poem_instruction.intrinsic]
 
-  generate_xary_application(
-    XaryApplicationOptions(
-      operation_opl: Operation.Intrinsic0, # TODO (vm/instructions): Implement `Intrinsic` and `IntrinsicFa`.
-      operation_x: operation_x,
-      prefix: @[poem_instruction.target_reg, poem_instruction.intrinsic],
-    ),
-    poem_instruction.arguments,
+  quote do:
+    let intrinsic = context.get_constants.intrinsics[poem_instruction.intrinsic]
+    let arguments = poem_instruction.arguments
+    if intrinsic.is_frame_aware and arguments.len == 0:
+      quit(fmt"A frame-aware intrinsic with arity 0 cannot exist.")
+
+    let operation_x = if not intrinsic.is_frame_aware: `operation_x_notfa` else: `operation_x_fa`
+    generate_xary_application(Operation.Invalid, operation_x, `prefix_node`, arguments)
+
+method resolve_instruction(poem_instruction: PoemInstructionIntrinsic, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  generate_intrinsic_instruction(
+    true,
+    [Operation.Intrinsic0, Operation.Intrinsic1, Operation.Intrinsic2],
+    [Operation.Invalid, Operation.IntrinsicFa1, Operation.IntrinsicFa2],
   )
 
 method resolve_instruction(poem_instruction: PoemInstructionIntrinsicVoid, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
-  let intrinsic: Intrinsic = context.get_constants.intrinsics[poem_instruction.intrinsic]
-  let operation_x =
-    if not intrinsic.is_frame_aware: [Operation.IntrinsicVoid0, Operation.IntrinsicVoid1, Operation.IntrinsicVoid1] # TODO (vm/instructions): Implement `IntrinsicVoid2`.
-    else:
-      # Note that a frame-aware `IntrinsicVoid0` is impossible. `Const` is a placeholder.
-      [Operation.Const, Operation.IntrinsicFa1, Operation.IntrinsicVoidFa2] # TODO (vm/instructions): Implement `IntrinsicVoidFa1`.
-
-  generate_xary_application(
-    XaryApplicationOptions(
-      operation_opl: Operation.Intrinsic0, # TODO (vm/instructions): Implement `IntrinsicVoid` and `IntrinsicVoidFa`.
-      operation_x: operation_x,
-      prefix: @[poem_instruction.intrinsic],
-    ),
-    poem_instruction.arguments,
+  generate_intrinsic_instruction(
+    false,
+    [Operation.IntrinsicVoid0, Operation.IntrinsicVoid1, Operation.IntrinsicVoid1], # TODO (vm/instructions): Implement `IntrinsicVoid2`.
+    [Operation.Invalid, Operation.IntrinsicFa1, Operation.IntrinsicVoidFa2], # TODO (vm/instructions): Implement `IntrinsicVoidFa1`.
   )
 
 method resolve_instruction(poem_instruction: PoemInstructionGlobalGet, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
@@ -448,27 +431,39 @@ method resolve_instruction(poem_instruction: PoemInstructionGlobalGet, context: 
 
 method resolve_instruction(poem_instruction: PoemInstructionDispatch, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   generate_xary_application(
-    XaryApplicationOptions(
-      operation_opl: Operation.Dispatch1, # TODO (vm/instructions): Implement `Dispatch`.
-      operation_x: [Operation.Dispatch1, Operation.Dispatch1, Operation.Dispatch2], # TODO (vm/instructions): Implement `Dispatch0`.
-      prefix: @[poem_instruction.target_reg, poem_instruction.mf],
-    ),
+    Operation.Dispatch1, # TODO (vm/instructions): Implement `Dispatch`.
+    [Operation.Dispatch1, Operation.Dispatch1, Operation.Dispatch2], # TODO (vm/instructions): Implement `Dispatch0`.
+    [poem_instruction.target_reg, poem_instruction.mf],
     poem_instruction.arguments,
   )
 
-proc generate_xary_application(options: XaryApplicationOptions, arguments: seq[uint16]): seq[Instruction] =
+proc generate_xary_application(
+  operation_opl: Operation,
+  operation_x: open_array[Operation],
+  prefix: open_array[uint16],
+  arguments: open_array[uint16],
+): seq[Instruction] =
   ## Generates an application of a xary operation that takes a list of register arguments.
-  # TODO (vm/instructions): Ensure that the prefix plus argument size doesn't exceed the maximum number of instruction args.
-  case arguments.len
-  of 0: @[new_instruction(options.operation_x[0], options.prefix)]
-  of 1: @[new_instruction(options.operation_x[1], options.prefix & @[arguments[0]])]
-  of 2: @[new_instruction(options.operation_x[2], options.prefix & @[arguments[0], arguments[1]])]
+  ##
+  ## `operation_opl`: This operation will be applied with `OplPushX`.
+  ## `operation_x`: These operations will be applied without using the operand list. At index `x`, the operation has
+  ##                arity `x`.
+  ## `prefix`: Any instruction arguments before the actual xary arguments.
+  ##
+  ## You may set `operation_opl` to `Operation.Invalid` to disable operand lists for this xary application. The VM will
+  ## quit when it cannot generate a fixed-arity instruction.
+  let arity = arguments.len
+  let maximum_direct_arguments = maximum_instruction_arguments - prefix.len
+  if arity <= maximum_direct_arguments and arity in 0 .. operation_x.high:
+    @[new_instruction(operation_x[arity], @prefix & @arguments)]
   else:
+    if operation_opl == Operation.Invalid:
+      quit("Operand lists are not supported for the given operation. Fixed-arity operations: {operand_x}.")
     let pushes = generate_opl_pushes(arguments)
-    let instruction = new_instruction(options.operation_opl, options.prefix & @[uint16(arguments.len)])
+    let instruction = new_instruction(operation_opl, @prefix & @[uint16(arguments.len)])
     pushes & @[instruction]
 
-proc generate_opl_pushes(arguments: seq[uint16]): seq[Instruction] =
+proc generate_opl_pushes(arguments: open_array[uint16]): seq[Instruction] =
   ## Slices `arguments` into a number of `OplPushX` instructions.
   let max_push = 6
   var instructions = new_seq[Instruction]()

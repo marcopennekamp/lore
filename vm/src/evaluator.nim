@@ -544,6 +544,9 @@ proc evaluate(frame: FramePtr) =
     of Operation.OplPush5: opl_push_n(5)
     of Operation.OplPush6: opl_push_n(6)
 
+    of Operation.Invalid:
+      quit("The VM encountered an `Invalid` operation. This was likely caused by faulty bytecode or bytecode resolution.")
+
 proc evaluate*(entry_function: ptr FunctionInstance, frame_mem: pointer): TaggedValue =
   let frame = create_frame(entry_function, frame_mem)
   evaluate(frame)

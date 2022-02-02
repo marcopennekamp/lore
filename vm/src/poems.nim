@@ -351,9 +351,6 @@ proc struct_value*(name: string, type_arguments: seq[PoemType], property_values:
   let poem_type = named_type_concrete(name, type_arguments)
   struct_value(poem_type, property_values)
 
-# TODO (vm/instructions): Maybe turn these varargs into open_arrays for a clearer API. For example,
-#                         `inst_dispatch(1, 0, 2, 3)` vs. `inst_dispatch(1, 0, [2, 3])`.
-
 proc inst*(operation: PoemOperation, arguments: varargs[uint16]): PoemInstruction =
   PoemSimpleInstruction(operation: operation, arguments: @arguments)
 

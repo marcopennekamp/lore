@@ -1,8 +1,6 @@
 from "../poems" import Poem, PoemConstants, PoemMetaShape, PoemType, PoemShapeType, PoemFunction, PoemOperation,
                        PoemInstruction
 
-# TODO (vm/instructions): Verify that this example is still correct.
-
 # In this example, we are adding positions of different dimensions that are represented by shapes.
 
 let meta_position_1D = PoemMetaShape(property_names: @["x"])
