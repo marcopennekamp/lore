@@ -520,8 +520,6 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
 
   of PoemOperation.StringOf: Operation.StringOf
   of PoemOperation.StringConcat: Operation.StringConcat
-  of PoemOperation.StringConcatConst: Operation.StringConcatConst
-  of PoemOperation.StringConcatConstl: Operation.StringConcatConstl
 
   of PoemOperation.TupleGet: Operation.TupleGet
 

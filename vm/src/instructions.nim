@@ -63,12 +63,6 @@ type
     StringConcat
       ## reg(arg0) <- concat(reg(arg1), reg(arg2))
 
-    StringConcatConst
-      ## reg(arg0) <- concat(reg(arg1), val(arg2))
-
-    StringConcatConstl
-      ## reg(arg0) <- concat(val(arg1), reg(arg2))
-
     Tuple
       ## reg(arg0) <- tuple(opl(0), ..., opl(arg1 - 1))
 

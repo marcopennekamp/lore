@@ -351,16 +351,6 @@ proc evaluate(frame: FramePtr) =
       let b = regv_get_ref_arg(2, StringValue)
       regv_set_ref_arg(0, values.new_string(a.string & b.string))
 
-    of Operation.StringConcatConst:
-      let a = regv_get_ref_arg(1, StringValue)
-      let b = const_value_ref_arg(2, StringValue)
-      regv_set_ref_arg(0, values.new_string(a.string & b.string))
-
-    of Operation.StringConcatConstl:
-      let a = const_value_ref_arg(1, StringValue)
-      let b = regv_get_ref_arg(2, StringValue)
-      regv_set_ref_arg(0, values.new_string(a.string & b.string))
-
     of Operation.Tuple:
       let operand_count = instruction.arg(1)
       var elements = new_immutable_seq(value_operand_list(), int(operand_count))

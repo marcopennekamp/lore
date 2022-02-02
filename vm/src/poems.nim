@@ -92,8 +92,6 @@ type
 
     StringOf
     StringConcat
-    StringConcatConst
-    StringConcatConstl
 
     Tuple
       ## target_reg: uint16, n: uint8, reg0: uint16, ..., reg_n: uint16
@@ -810,9 +808,9 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
   of ReturnUnit, Return0: 0
   of Jump, Return: 1
   of Const, ConstPoly, IntConst, StringOf, JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
-  of IntAdd, IntAddConst, IntSubConst, IntLt, IntLtConst, IntGtConst, RealAdd, StringConcat, StringConcatConst,
-     StringConcatConstl, TupleGet, ListAppendUntyped, ShapeGetProperty, SymbolEq, SymbolEqConst, StructGetProperty,
-     StructGetNamedProperty, StructEq: 3
+  of IntAdd, IntAddConst, IntSubConst, IntLt, IntLtConst, IntGtConst, RealAdd, StringConcat, TupleGet,
+     ListAppendUntyped, ShapeGetProperty, SymbolEq, SymbolEqConst, StructGetProperty, StructGetNamedProperty,
+     StructEq: 3
   of ListAppend, ListAppendPoly: 4
   of PoemOperation.Tuple, FunctionCall, PoemOperation.Shape, PoemOperation.Struct, Intrinsic, IntrinsicVoid, GlobalGet,
      Dispatch:
