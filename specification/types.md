@@ -87,7 +87,8 @@ A **basic type** is one of the following, built-in *named types:*
 
 - `Any` is the supertype of all types, including itself.
 - `Nothing` is the subtype of all types, including itself.
-- `Number` represents numeric values.
+- `Int` represents integer values.
+- `Real` represents floating-point values.
 - `Boolean` represents boolean values.
 - `String` represents string values.
 

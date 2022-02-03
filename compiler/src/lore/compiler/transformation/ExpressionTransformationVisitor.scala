@@ -40,12 +40,12 @@ class ExpressionTransformationVisitor(
         .transform(BindingProcessors.accessCoercion(position))(namePathNode)
         .getOrElse(Expression.Hole(BasicType.Nothing, position))
 
-    case RealLiteralNode(value, position) => Expression.Literal(value, BasicType.Number, position)
     case node@IntLiteralNode(value, position) =>
-      if (value < BasicType.Number.minSafeInteger || BasicType.Number.maxSafeInteger < value) {
+      if (value < BasicType.Int.minSafeInteger || BasicType.Int.maxSafeInteger < value) {
         reporter.error(ExpressionFeedback.UnsafeInteger(node))
       }
-      Expression.Literal(value.toDouble, BasicType.Number, position)
+      Expression.Literal(value, BasicType.Int, position)
+    case RealLiteralNode(value, position) => Expression.Literal(value, BasicType.Real, position)
     case BoolLiteralNode(value, position) => Expression.Literal(value, BasicType.Boolean, position)
     case StringLiteralNode(value, position) => Expression.Literal(value, BasicType.String, position)
 

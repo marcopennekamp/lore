@@ -33,7 +33,7 @@ type StringFunction[A] = A => String
 module Math do
   let pi: Real = 3.14159
 
-  func absolute(x: Number): Number = if x < 0 then -x else x
+  func absolute(x: Int): Int = if x < 0 then -x else x
 end
 
 domain zombie: Zombie

@@ -46,7 +46,8 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   override def visit(literal: Literal): Chunk = {
     val result = literal.tpe match {
-      case BasicType.Number => Target.NumberLiteral(literal.value.asInstanceOf[Double])
+      case BasicType.Int => Target.NumberLiteral(literal.value.asInstanceOf[Long].toDouble)
+      case BasicType.Real => Target.NumberLiteral(literal.value.asInstanceOf[Double])
       case BasicType.Boolean => Target.BooleanLiteral(literal.value.asInstanceOf[Boolean])
       case BasicType.String => Target.StringLiteral(literal.value.asInstanceOf[String])
     }

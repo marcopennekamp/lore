@@ -83,9 +83,10 @@ object TypeEncoder {
       val args: Byte = tpe match {
         case BasicType.Any => 0
         case BasicType.Nothing => 1
-        case BasicType.Number => 2
-        case BasicType.Boolean => 3
-        case BasicType.String => 4
+        case BasicType.Int => 2
+        case BasicType.Real => 3
+        case BasicType.Boolean => 4
+        case BasicType.String => 5
       }
       Tag(Kind.basic, args)
     }

@@ -127,14 +127,12 @@ Blocks also give you the luxury of **lexical scoping**, so make sure you declare
 
 ### Numbers
 
-Lore only has a single numeric data type, **Number**. This is because the underlying Javascript runtime only knows a single numeric type as well. 
-
-Pyramid's preamble defines the **type aliases** `Int` and `Real` as both `Number`. They can be used to properly signify semantic intent when declaring numeric variables or properties. In the far future, the plan is to move to a different runtime system, one which should support distinct integer and floating point values. At that point, `Int` and `Real` will become properly distinct types. You are thus encouraged to use `Int` and `Real` for type declarations exclusively.
+Lore has two numeric data types, **Int** and **Real**. Neither is a subtype of the other.   
 
 For now, we want to keep literal grammar to a minimum. Hence, we do not support scientific notation and only support decimal numbers. Here are the **valid number formats:**
 
-- **Integers:** `x` or `-x`, x being any number from 0 to MAX_SAFE_INTEGER.
-- **Reals:** `x.y` or `-x.y`, with both x and y being numbers. We do not allow notations such as `.0` or `1.`.
+- **Int:** `x` or `-x`, x being any number from 0 to MAX_SAFE_INTEGER.
+- **Real:** `x.y` or `-x.y`, with both x and y being numbers. We do not allow notations such as `.0` or `1.`.
 
 ##### Arithmetic Operators
 
@@ -147,6 +145,8 @@ a * b  // Multiplication
 a / b  // Division
 -a     // Negation
 ```
+
+If `a` or `b` is a `Real` and the other is an `Int`, the `Int` will be implicitly converted to `Real`.
 
 ##### Equality and Order
 
@@ -210,7 +210,7 @@ Two strings are equal if they have the same length and characters. Strings are o
 
 ### Tuples
 
-Lore supports **tuples**. As described by tuple types, tuples are fixed-size, heterogenous lists of values. Tuples are simply created by putting parentheses around comma-separated values: `(a, b, c)`. A tuple value's type is the tuple type of the respective element types.
+Lore supports **tuples**. As described by tuple types, tuples are fixed-size, heterogeneous lists of values. Tuples are simply created by putting parentheses around comma-separated values: `(a, b, c)`. A tuple value's type is the tuple type of the respective element types.
 
 ###### Example
 
@@ -271,7 +271,7 @@ We can define a map from strings to integers:
 
 ```
 let points = #['Ameela' -> 120, 'Bart' -> 14, 'Morrigan' -> 50]
-// points: #[String -> Number]
+// points: #[String -> Int]
 ```
 
 ##### Equality and Order
@@ -375,7 +375,9 @@ a > b    // Greater than
 a >= b   // Greater than or equal
 ```
 
-To **define equality** for a given type, you can specialize the function `equal?(a, b)`. Inequality is strictly defined as `!equal?(a, b)`.
+Comparisons of `Real` and `Int` implicitly convert the `Int` to `Real`.
+
+To **define equality** for a non-basic type, you can specialize the function `equal?(a, b)`. Inequality is strictly defined as `!equal?(a, b)`.
 
 ```
 func equal?(c1: Car, c2: Car): Boolean = ...

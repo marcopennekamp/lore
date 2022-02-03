@@ -22,8 +22,10 @@ object BasicType {
     */
   case object Nothing extends BasicType(NamePath("Nothing"))
 
-  case object Number extends BasicType(NamePath("Number")) {
+  case object Int extends BasicType(NamePath("Int")) {
     override def isPrimitive: Boolean = true
+
+    // TODO (assembly): The safety limits need to be changed for the new VM.
 
     /**
       * The maximum safe run-time integer value supported by Javascript.
@@ -34,6 +36,10 @@ object BasicType {
       * The minimum safe run-time integer value supported by Javascript.
       */
     val minSafeInteger: Long = -9007199254740991L
+  }
+
+  case object Real extends BasicType(NamePath("Real")) {
+    override def isPrimitive: Boolean = true
   }
 
   case object Boolean extends BasicType(NamePath("Boolean")) {

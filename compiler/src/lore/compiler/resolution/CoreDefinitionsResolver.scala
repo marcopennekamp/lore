@@ -22,7 +22,7 @@ object CoreDefinitionsResolver {
       equal = resolveMultiFunction("equal?", inputAnyAny, BasicType.Boolean),
       less_than = resolveMultiFunction("less_than?", inputAnyAny, BasicType.Boolean),
       less_than_equal = resolveMultiFunction("less_than_equal?", inputAnyAny, BasicType.Boolean),
-      hash = resolveMultiFunction("hash", inputAny, BasicType.Number),
+      hash = resolveMultiFunction("hash", inputAny, BasicType.Int),
       to_string = resolveMultiFunction("to_string", inputAny, BasicType.String),
       type_of = resolveMultiFunction("type_of", inputAny, Type.typeOrAny),
       subtype = resolveMultiFunction("subtype?", TupleType(Type.typeOrNothing, Type.typeOrNothing), BasicType.Boolean),

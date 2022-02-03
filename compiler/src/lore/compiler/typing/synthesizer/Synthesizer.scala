@@ -110,7 +110,7 @@ object Synthesizer {
         def checkOperand(t1: Type) = checker.check(value, t1, assignments)
 
         operator match {
-          case Negation => checkOperand(BasicType.Number).flatMap(assignOperationResult(_, expression, BasicType.Number))
+          case Negation => ArithmeticSynthesizer.infer(expression, Vector(value), assignments)
           case LogicalNot => checkOperand(BasicType.Boolean).flatMap(assignOperationResult(_, expression, BasicType.Boolean))
         }
 
@@ -120,9 +120,7 @@ object Synthesizer {
 
         operator match {
           case Addition | Subtraction | Multiplication | Division =>
-            checkOperands(BasicType.Number, BasicType.Number).flatMap(
-              assignOperationResult(_, expression, BasicType.Number)
-            )
+            ArithmeticSynthesizer.infer(expression, Vector(left, right), assignments)
 
           case Equals | LessThan | LessThanEquals =>
             checkOperands(BasicType.Any, BasicType.Any)
@@ -220,8 +218,9 @@ object Synthesizer {
   }
 
   /**
-    * Unifies `resultType` with `operation.tpe` such that `operation.tpe` is a subtype of `resultType`, unless
-    * `resultType` is not a subtype of `upperBound`, in which case `upperBound` is unified with `operationType`.
+    * Unifies `resultType` with `operation.tpe` such that `operation.tpe` is a subtype of `resultType`.
+    *
+    * TODO (assembly): We can inline this function. The instantiation functionality isn't even used.
     *
     * @param resultType The result type will be instantiated by this function, so it is possible to pass an
     *                   uninstantiated type.

@@ -80,7 +80,8 @@ object TypeTranspiler {
       case tv: TypeVariable => transpileTypeVariable(tv)
       case BasicType.Any => api.any
       case BasicType.Nothing => api.nothing
-      case BasicType.Number => api.number
+      case BasicType.Int => api.number
+      case BasicType.Real => api.number
       case BasicType.Boolean => api.boolean
       case BasicType.String => api.string
       case TupleType.UnitType => RuntimeApi.tuples.unitType

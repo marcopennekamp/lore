@@ -166,11 +166,11 @@ let v2 = Some[Animal](Fox())  // --> Some[Animal]
 The compiler will try its best to infer all type variables from the given properties, but this is not always possible. The same applies to **constructor function values**. Consider the following example:
 
 ```
-map([1, 2, 3], Some[Number])  // --> [Some[Number]]
-map([1, 2, 3], Some)          // --> [Some[Number]]
+map([1, 2, 3], Some[Int])  // --> [Some[Int]]
+map([1, 2, 3], Some)       // --> [Some[Int]]
 ```
 
-Both of these variants should work, as the compiler has enough context to infer that `A = Number` for the second `Some`.
+Both of these variants should work, as the compiler has enough context to infer that `A = Int` for the second `Some`.
 
 ##### Variance 
 
