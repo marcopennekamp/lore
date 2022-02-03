@@ -29,6 +29,8 @@ object PoemInstruction {
   type PMtsh = PoemMetaShape
   type PPc = Poem.Location
 
+  case class Assign(target: PReg, source: PReg) extends PoemInstruction(PoemOperation.Assign)
+
   case class Const(target: PReg, value: PVal) extends PoemInstruction(PoemOperation.Const)
   case class ConstPoly(target: PReg, value: PVal) extends PoemInstruction(PoemOperation.ConstPoly)
 

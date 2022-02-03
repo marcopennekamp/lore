@@ -56,11 +56,15 @@ proc set_global*(variable: GlobalVariable, value: TaggedValue) =
 template reg_get(index): untyped = frame.registers[index]
 template reg_get_arg(index): untyped = reg_get(instruction.arg(index))
 
+template reg_set(target_index, value): untyped =
+  frame.registers[target_index] = value
+template reg_set_arg(target_index, value): untyped = reg_set(instruction.arg(target_index), value)
+
 ########################################################################################################################
 # Register access: Values.                                                                                             #
 ########################################################################################################################
 
-template regv_get(index): untyped = cast[TaggedValue](frame.registers[index])
+template regv_get(index): untyped = cast[TaggedValue](reg_get(index))
 template regv_get_arg(index): untyped = regv_get(instruction.arg(index))
 
 template regv_get_ref(index, tpe): untyped = untag_reference(regv_get(index), tpe)
@@ -71,9 +75,7 @@ template regv_get_ref_arg(index, tpe): untyped = regv_get_ref(instruction.arg(in
 template regv_get_int_arg(index): untyped = regv_get_int(instruction.arg(index))
 template regv_get_bool_arg(index): untyped = regv_get_bool(instruction.arg(index))
 
-template regv_set(target_index, tagged_value): untyped =
-  frame.registers[target_index] = cast[uint64](tagged_value)
-
+template regv_set(target_index, tagged_value): untyped = reg_set(target_index, cast[uint64](tagged_value))
 template regv_set_arg(target_index, tagged_value): untyped = regv_set(instruction.arg(target_index), tagged_value)
 
 template regv_set_ref(index, value): untyped = regv_set(index, tag_reference(value))
@@ -88,12 +90,10 @@ template regv_set_bool_arg(index, value): untyped = regv_set_bool(instruction.ar
 # Register access: Types.                                                                                              #
 ########################################################################################################################
 
-template regt_get(index): untyped = cast[Type](frame.registers[index])
+template regt_get(index): untyped = cast[Type](reg_get(index))
 template regt_get_arg(index): untyped = regt_get(instruction.arg(index))
 
-template regt_set(target_index, tpe): untyped =
-  frame.registers[target_index] = cast[uint64](tpe)
-
+template regt_set(target_index, tpe): untyped = reg_set(target_index, cast[uint64](tpe))
 template regt_set_arg(target_index, tpe): untyped = regt_set(instruction.arg(target_index), tpe)
 
 ########################################################################################################################
@@ -143,6 +143,7 @@ template opl_push_n(count: uint16): untyped =
 ########################################################################################################################
 
 # TODO (vm): We can merge the `generate_*` functions into macros.
+# TODO (vm): Maybe these should also be inline procs to cut down on too excessive eval-loop size.
 
 template next_frame_base(): pointer = cast[pointer](cast[uint](frame) + frame.function.frame_size)
 
@@ -209,6 +210,8 @@ template generate_list_append(new_tpe): untyped =
   let new_element = regv_get_arg(2)
   var new_elements = list.elements.append(new_element)
   regv_set_ref_arg(0, new_list(new_elements, new_tpe))
+
+# TODO (vm): Maybe intrinsics should be inline procs to cut down on too excessive eval-loop size.
 
 macro generate_intrisic_evaluation(
   is_void: static[bool],
@@ -298,6 +301,9 @@ proc evaluate(frame: FramePtr) =
     pc += 1
 
     case instruction.operation
+    of Operation.Assign:
+      reg_set_arg(0, reg_get_arg(1))
+
     of Operation.Const:
       regv_set_arg(0, const_value_arg(1))
 

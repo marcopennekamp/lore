@@ -7,6 +7,7 @@ package lore.compiler.poem
 object PoemOperation extends Enumeration {
   type PoemOperation = Value
 
+  val Assign = Value
   val Const, ConstPoly = Value
   val IntConst, IntAdd, IntAddConst, IntSubConst, IntLt, IntLtConst, IntGtConst = Value
   val RealAdd = Value

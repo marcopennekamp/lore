@@ -520,6 +520,8 @@ proc generate_opl_pushes(arguments: open_array[uint16]): seq[Instruction] =
 proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operation =
   ## This is only defined for simple poem operations.
   case poem_operation
+  of PoemOperation.Assign: Operation.Assign
+
   of PoemOperation.Const: Operation.Const
   of PoemOperation.ConstPoly: Operation.ConstPoly
 

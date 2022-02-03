@@ -25,6 +25,9 @@ type
     ## operand list target indices and then invoking the consuming instruction with the correct operand count. The
     ## consuming instruction must assume that the first operand is `opl(0)`.
 
+    Assign
+      ## reg(arg0) <- reg(arg1)
+
     Const
       ## reg(arg0) <- val(arg1)
 

@@ -77,6 +77,8 @@ type
     ## unless otherwise noted. Such operations are called "simple" poem operations. For example, `Const` is encoded as
     ## `(target_reg: uint16, val1: uint16)` with `op: uint16` being implicit. All poem operations that deviate from
     ## this norm are marked with comments.
+    Assign
+
     Const
     ConstPoly
 
@@ -870,7 +872,7 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
   case operation
   of ReturnUnit, Return0: 0
   of Jump, Return: 1
-  of Const, ConstPoly, IntConst, StringOf, JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
+  of Assign, Const, ConstPoly, IntConst, StringOf, JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
   of IntAdd, IntAddConst, IntSubConst, IntLt, IntLtConst, IntGtConst, RealAdd, StringConcat, TupleGet,
      ListAppendUntyped, SymbolEq, StructEq: 3
   of ListAppend, ListAppendPoly: 4
