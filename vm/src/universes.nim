@@ -535,6 +535,8 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
 
   of PoemOperation.RealAdd: Operation.RealAdd
 
+  of PoemOperation.BooleanConst: Operation.BooleanConst
+
   of PoemOperation.StringOf: Operation.StringOf
   of PoemOperation.StringConcat: Operation.StringConcat
 

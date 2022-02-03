@@ -348,6 +348,9 @@ proc evaluate(frame: FramePtr) =
       let b = regv_get_ref_arg(2, RealValue)
       regv_set_ref_arg(0, values.new_real(a.real + b.real))
 
+    of Operation.BooleanConst:
+      regv_set_bool_arg(0, instruction.argb(1))
+
     of Operation.StringOf:
       let string = $regv_get_arg(1)
       regv_set_ref_arg(0, values.new_string(string))

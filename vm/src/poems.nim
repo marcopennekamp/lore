@@ -92,6 +92,8 @@ type
 
     RealAdd
 
+    BooleanConst
+
     StringOf
     StringConcat
 
@@ -280,8 +282,8 @@ type
     input_type*: PoemType
 
   PoemLambdaFunctionValue* = ref object of PoemFunctionValue
-    ## A lambda function value is specially resolved from a multi-function that only has a single function, which is how
-    ## lambdas are encoded in the VM's bytecode.
+    ## A lambda function value is specially resolved from a multi-function that only has a single function, which is
+    ## how lambdas are encoded in the VM's bytecode.
     discard
 
   PoemMultiFunctionValue* = ref object of PoemFunctionValue
@@ -872,7 +874,8 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
   case operation
   of ReturnUnit, Return0: 0
   of Jump, Return: 1
-  of Assign, Const, ConstPoly, IntConst, StringOf, JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
+  of Assign, Const, ConstPoly, IntConst, BooleanConst, StringOf, JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg,
+     TypeConst: 2
   of IntAdd, IntAddConst, IntSubConst, IntLt, IntLtConst, IntGtConst, RealAdd, StringConcat, TupleGet,
      ListAppendUntyped, SymbolEq, StructEq: 3
   of ListAppend, ListAppendPoly: 4

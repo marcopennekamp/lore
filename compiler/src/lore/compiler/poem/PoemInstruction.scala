@@ -44,6 +44,8 @@ object PoemInstruction {
 
   case class RealAdd(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.RealAdd)
 
+  case class BooleanConst(target: PReg, value: Boolean) extends PoemInstruction(PoemOperation.BooleanConst)
+
   case class StringOf(target: PReg, value: PReg) extends PoemInstruction(PoemOperation.StringOf)
   case class StringConcat(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.StringConcat)
 

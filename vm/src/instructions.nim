@@ -58,6 +58,9 @@ type
     RealAdd
       ## reg(arg0) <- reg(arg1) + reg(arg2)
 
+    BooleanConst
+      ## reg(arg0) <- arg1.boolean
+
     StringOf
       ## Converts any TaggedValue to its native string representation. Reference values are not converted with
       ## `lore.core.to_string`. Rather, their pointer value is printed out. This operation is a fallback for `to_string`.
@@ -287,6 +290,7 @@ proc is_jump_operation*(operation: Operation): bool =
 
 template arg*(instruction: Instruction, index: uint16): uint16 = cast[uint16](instruction.arguments[index])
 template argi*(instruction: Instruction, index: uint16): int16 = cast[int16](instruction.arguments[index])
+template argb*(instruction: Instruction, index: uint16): bool = instruction.arg(index) == 1
 
 proc set_arg*(instruction: var Instruction, index: uint16, value: uint16) {.inline.} =
   instruction.arguments[index] = Argument(value)
