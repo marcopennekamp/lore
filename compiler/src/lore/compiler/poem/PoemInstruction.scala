@@ -1,5 +1,4 @@
 package lore.compiler.poem
-import lore.compiler.poem.Poem.PoemRegister
 import lore.compiler.poem.PoemOperation.PoemOperation
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
@@ -19,7 +18,8 @@ import lore.compiler.types.DeclaredSchema
 abstract class PoemInstruction(val operation: PoemOperation)
 
 object PoemInstruction {
-  type PReg = PoemRegister
+  // These types are merely used to keep the following case class declarations short.
+  type PReg = Poem.Register
   type PVal = PoemValue
   type PTpe = PoemType
   type PIntr = String
@@ -27,7 +27,7 @@ object PoemInstruction {
   type PGlb = GlobalVariableDefinition
   type PMf = MultiFunctionDefinition
   type PMtsh = PoemMetaShape
-  type PPc = Int
+  type PPc = Poem.Location
 
   case class Const(target: PReg, value: PVal) extends PoemInstruction(PoemOperation.Const)
   case class ConstPoly(target: PReg, value: PVal) extends PoemInstruction(PoemOperation.ConstPoly)
