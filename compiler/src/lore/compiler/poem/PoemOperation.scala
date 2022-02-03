@@ -14,9 +14,10 @@ object PoemOperation extends Enumeration {
   val Tuple, TupleGet = Value
   val FunctionCall = Value
   val ListAppend, ListAppendPoly, ListAppendUntyped = Value
-  val Shape, ShapeGetProperty = Value
+  val Shape = Value
   val SymbolEq = Value
-  val Struct, StructGetProperty, StructGetNamedProperty, StructEq = Value
+  val Struct, StructEq = Value
+  val PropertyGet = Value
   val Jump, JumpIfFalse, JumpIfTrue = Value
   val Intrinsic, IntrinsicVoid = Value
   val GlobalGet, GlobalSet = Value

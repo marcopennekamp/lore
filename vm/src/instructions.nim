@@ -111,7 +111,9 @@ type
     Shape2
       ## reg(arg0) <- shape(mtsh(arg1), reg(arg2), reg(arg3))
 
-    ShapeGetProperty
+    ShapePropertyGetNamed
+      ## Returns the shape property value with the name `nam(arg2)`. This is only possible when accessing a value which
+      ## is guaranteed to be a shape. Otherwise, PropertyGetNamed must be used.
       ## reg(arg0) <- reg(arg1)[nam(arg2)]
 
     SymbolEq
@@ -135,19 +137,24 @@ type
       ## arg3: value argument count
       ## reg(arg0) <- sch(arg1)[opl(0), ..., opl(arg2 - 1)](opl(arg2), ..., opl(arg2 + arg3 - 1))
 
-    StructGetProperty
+    StructPropertyGet
       ## Returns the struct property value at the index `arg2`. This is only possible when accessing a struct value
-      ## whose type is known at compile time. Otherwise, StructGetNamedProperty must be used.
+      ## whose type is known at compile time. Otherwise, StructPropertyGetNamed or PropertyGetNamed must be used.
       ## reg(arg0) <- reg(arg1)[arg2]
 
-    StructGetNamedProperty
-      ## Returns the struct property value with the name `nam(arg2)`. This instruction must be used with a struct value
-      ## whose struct type isn't known at compile time.
+    StructPropertyGetNamed
+      ## Returns the struct property value with the name `nam(arg2)`. This is only possible when accessing a value which
+      ## is guaranteed to be a struct (though it may be a trait at compile time). Otherwise, PropertyGetNamed must be
+      ## used.
       ## reg(arg0) <- reg(arg1)[nam(arg2)]
 
     StructEq
       ## Whether the two structs are referentially equal.
       ## reg(arg0) <- reg(arg1) == reg(arg2)
+
+    PropertyGetNamed
+      ## Returns the struct or shape property value with the name `nam(arg2)`.
+      ## reg(arg0) <- reg(arg1)[nam(arg2)]
 
     Jump
       ## pc <- arg0

@@ -427,7 +427,7 @@ proc evaluate(frame: FramePtr) =
       let meta_shape = const_meta_shape_arg(1)
       regv_set_ref_arg(0, values.new_shape_value(meta_shape, [regv_get_arg(2), regv_get_arg(3)]))
 
-    of Operation.ShapeGetProperty:
+    of Operation.ShapePropertyGetNamed:
       let shape = regv_get_ref_arg(1, ShapeValue)
       let name = const_name_arg(2)
       regv_set_arg(0, shape.get_property_value(name))
@@ -473,11 +473,11 @@ proc evaluate(frame: FramePtr) =
       )
       regv_set_ref_arg(0, value)
 
-    of Operation.StructGetProperty:
+    of Operation.StructPropertyGet:
       let struct = regv_get_ref_arg(1, StructValue)
       regv_set_arg(0, struct.property_values[instruction.arg(2)])
 
-    of Operation.StructGetNamedProperty:
+    of Operation.StructPropertyGetNamed:
       let struct = regv_get_ref_arg(1, StructValue)
       let name = const_name_arg(2)
       regv_set_arg(0, struct.get_property_value(name))
@@ -486,6 +486,12 @@ proc evaluate(frame: FramePtr) =
       let a = regv_get_ref_arg(1, StructValue)
       let b = regv_get_ref_arg(2, StructValue)
       regv_set_bool_arg(0, cast[pointer](a) == cast[pointer](b))
+
+    of Operation.PropertyGetNamed:
+      let instance = regv_get_arg(1)
+      let name = const_name_arg(2)
+      let value = instance.get_property_value(name)
+      regv_set_arg(0, value)
 
     of Operation.Jump:
       pc = instruction.arg(0)

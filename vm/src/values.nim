@@ -269,6 +269,19 @@ proc get_property_value*(struct: StructValue, name: string): TaggedValue =
   struct.property_values[struct.struct_type.get_schema.property_index.find_offset(name)]
 
 ########################################################################################################################
+# Combined property functions.                                                                                         #
+########################################################################################################################
+
+proc get_property_value*(instance: TaggedValue, name: string): TaggedValue =
+  ## Gets the value associated with the property `name`. The name must be a valid property. If `instance` is not a
+  ## shape or struct, the function will panic.
+  let tpe = instance.get_type
+  case tpe.kind
+  of Kind.Shape: untag_reference(instance, ShapeValue).get_property_value(name)
+  of Kind.Struct: untag_reference(instance, StructValue).get_property_value(name)
+  else: quit(fmt"Cannot get a property {name} from a value with kind {tpe.kind}.")
+
+########################################################################################################################
 # Value types.                                                                                                         #
 ########################################################################################################################
 

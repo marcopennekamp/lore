@@ -8,6 +8,7 @@ import definitions
 import imseqs
 import instructions
 import poems
+from property_index import find_offset
 from pyramid import nil
 import schema_order
 from types import Kind, Type, TypeParameter, TypeVariable, SumType, IntersectionType, TupleType, FunctionType,
@@ -402,6 +403,20 @@ method resolve_instruction(poem_instruction: PoemInstructionStruct, context: Ins
     )
     pushes & @[instruction]
 
+method resolve_instruction(poem_instruction: PoemInstructionPropertyGet, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  let (operation, property_id) =
+    case poem_instruction.instance_kind
+    of PropertyGetInstanceKind.Any: (Operation.PropertyGetNamed, poem_instruction.name)
+    of PropertyGetInstanceKind.Shape: (Operation.ShapePropertyGetNamed, poem_instruction.name)
+    of PropertyGetInstanceKind.Trait: (Operation.StructPropertyGetNamed, poem_instruction.name)
+    of PropertyGetInstanceKind.Struct:
+      let constants = context.get_constants
+      let schema = cast[StructSchema](constants.schemas[poem_instruction.instance_schema])
+      let name = constants.names[poem_instruction.name]
+      let offset = schema.property_index.find_offset(name)
+      (Operation.StructPropertyGet, offset)
+  @[new_instruction(operation, poem_instruction.target_reg, poem_instruction.instance_reg, property_id)]
+
 macro generate_intrinsic_instruction(
   has_target: static[bool],
   operation_x_notfa: open_array[Operation],
@@ -527,12 +542,8 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.ListAppendPoly: Operation.ListAppendPoly
   of PoemOperation.ListAppendUntyped: Operation.ListAppendUntyped
 
-  of PoemOperation.ShapeGetProperty: Operation.ShapeGetProperty
-
   of PoemOperation.SymbolEq: Operation.SymbolEq
 
-  of PoemOperation.StructGetProperty: Operation.StructGetProperty
-  of PoemOperation.StructGetNamedProperty: Operation.StructGetNamedProperty
   of PoemOperation.StructEq: Operation.StructEq
 
   of PoemOperation.Jump: Operation.Jump
@@ -549,7 +560,8 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.TypeConst: Operation.TypeConst
 
   of PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.Shape, PoemOperation.Struct,
-     PoemOperation.Intrinsic, PoemOperation.IntrinsicVoid, PoemOperation.GlobalGet, PoemOperation.Dispatch:
+     PoemOperation.PropertyGet, PoemOperation.Intrinsic, PoemOperation.IntrinsicVoid, PoemOperation.GlobalGet,
+     PoemOperation.Dispatch:
     quit(fmt"The poem operation {poem_operation} is not simple!")
 
 ########################################################################################################################

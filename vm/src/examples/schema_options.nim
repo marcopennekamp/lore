@@ -82,7 +82,7 @@ let get1 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    poems.inst(PoemOperation.StructGetProperty, 0, 0, 0),
+    poems.inst_struct_property_get(0, 0, 1, 0),
     poems.inst(PoemOperation.Return0),
   ],
 )
@@ -114,7 +114,7 @@ let flatten1 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    poems.inst(PoemOperation.StructGetProperty, 0, 0, 0),
+    poems.inst_struct_property_get(0, 0, 1, 0),
     poems.inst(PoemOperation.Return0),
   ],
 )
@@ -170,8 +170,9 @@ let poem* = Poem(
         new_some_value(poems.string_type, poems.string_value("42")),
       ),
     ],
+    names: @["value"],
     intrinsics: @["lore.core.panic"],
-    schemas: @["ExampleResult"],
+    schemas: @["ExampleResult", "lore.option.Some"],
     multi_functions: @["lore.option.get!", "lore.option.flatten", "ExampleResult$new"],
   ),
   schemas: @[Option, Some, None, ExampleResult],

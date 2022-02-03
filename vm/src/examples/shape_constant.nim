@@ -11,9 +11,9 @@ let test = PoemFunction(
   register_count: 3,
   instructions: @[
     poems.inst(PoemOperation.Const, 1, 0),                # Get the constant shape value.
-    poems.inst(PoemOperation.ShapeGetProperty, 2, 1, 0),  # Get property zoo from the shape value.
+    poems.inst_shape_property_get(2, 1, 0),               # Get property zoo from the shape value.
     poems.inst_intrinsic(0, 0, 2),                        # Put zoo's length (lore.strings.length) into register 0.
-    poems.inst(PoemOperation.ShapeGetProperty, 2, 1, 1),  # Get property foo from the shape value.
+    poems.inst_shape_property_get(2, 1, 1),               # Get property foo from the shape value.
     poems.inst(PoemOperation.IntAdd, 0, 0, 2),            # Finally add foo to register 0.
     poems.inst(PoemOperation.Return0),
   ],

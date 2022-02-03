@@ -19,8 +19,8 @@ let add1 = PoemFunction(
   register_count: 4,
   instructions: @[
     # Add x coordinates.
-    poems.inst(PoemOperation.ShapeGetProperty, 2, 0, 0),
-    poems.inst(PoemOperation.ShapeGetProperty, 3, 1, 0),
+    poems.inst_shape_property_get(2, 0, 0),
+    poems.inst_shape_property_get(3, 1, 0),
     poems.inst(PoemOperation.RealAdd, 0, 2, 3),
 
     # Create and return the new shape.
@@ -37,13 +37,13 @@ let add2 = PoemFunction(
   register_count: 5,
   instructions: @[
     # Add x coordinates.
-    poems.inst(PoemOperation.ShapeGetProperty, 2, 0, 0),
-    poems.inst(PoemOperation.ShapeGetProperty, 3, 1, 0),
+    poems.inst_shape_property_get(2, 0, 0),
+    poems.inst_shape_property_get(3, 1, 0),
     poems.inst(PoemOperation.RealAdd, 4, 2, 3),
 
     # Add y coordinates.
-    poems.inst(PoemOperation.ShapeGetProperty, 2, 0, 1),
-    poems.inst(PoemOperation.ShapeGetProperty, 3, 1, 1),
+    poems.inst_shape_property_get(2, 0, 1),
+    poems.inst_shape_property_get(3, 1, 1),
     poems.inst(PoemOperation.RealAdd, 0, 2, 3),
 
     # Create and return the new shape.
@@ -60,18 +60,18 @@ let add3 = PoemFunction(
   register_count: 7,
   instructions: @[
     # Add x coordinates.
-    poems.inst(PoemOperation.ShapeGetProperty, 2, 0, 0),
-    poems.inst(PoemOperation.ShapeGetProperty, 3, 1, 0),
+    poems.inst_shape_property_get(2, 0, 0),
+    poems.inst_shape_property_get(3, 1, 0),
     poems.inst(PoemOperation.RealAdd, 4, 2, 3),
 
     # Add y coordinates.
-    poems.inst(PoemOperation.ShapeGetProperty, 2, 0, 1),
-    poems.inst(PoemOperation.ShapeGetProperty, 3, 1, 1),
+    poems.inst_shape_property_get(2, 0, 1),
+    poems.inst_shape_property_get(3, 1, 1),
     poems.inst(PoemOperation.RealAdd, 5, 2, 3),
 
     # Add z coordinates.
-    poems.inst(PoemOperation.ShapeGetProperty, 2, 0, 2),
-    poems.inst(PoemOperation.ShapeGetProperty, 3, 1, 2),
+    poems.inst_shape_property_get(2, 0, 2),
+    poems.inst_shape_property_get(3, 1, 2),
     poems.inst(PoemOperation.RealAdd, 6, 2, 3),
 
     # Create and return the new shape.

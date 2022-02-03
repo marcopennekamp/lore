@@ -58,18 +58,30 @@ object PoemInstruction {
   case class ListAppendUntyped(target: PReg, list: PReg, element: PReg) extends PoemInstruction(PoemOperation.ListAppendUntyped)
 
   case class Shape(target: PReg, metaShape: PMtsh, properties: Vector[PReg]) extends PoemInstruction(PoemOperation.Shape)
-  case class ShapeGetProperty(target: PReg, shape: PReg, propertyName: String) extends PoemInstruction(PoemOperation.ShapeGetProperty)
 
   case class SymbolEq(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.SymbolEq)
 
   case class Struct(target: PReg, schema: PSch, typeArguments: Vector[PReg], valueArguments: Vector[PReg]) extends PoemInstruction(PoemOperation.Struct)
-  case class StructGetProperty(target: PReg, struct: PReg, index: Int) extends PoemInstruction(PoemOperation.StructGetProperty)
-  case class StructGetNamedProperty(target: PReg, struct: PReg, propertyName: String) extends PoemInstruction(PoemOperation.StructGetNamedProperty)
   case class StructEq(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.StructEq)
 
-  case class Jump(target: PPc) extends PoemInstruction(PoemOperation.Jump)
-  case class JumpIfFalse(target: PPc, predicate: PReg) extends PoemInstruction(PoemOperation.JumpIfFalse)
-  case class JumpIfTrue(target: PPc, predicate: PReg) extends PoemInstruction(PoemOperation.JumpIfTrue)
+  trait PropertyGetInstanceKind
+  object PropertyGetInstanceKind {
+    case object Any extends PropertyGetInstanceKind
+    case object Shape extends PropertyGetInstanceKind
+    case object Trait extends PropertyGetInstanceKind
+    case class Struct(instanceSchema: PSch) extends PropertyGetInstanceKind
+  }
+
+  case class PropertyGet(
+    target: PReg,
+    instanceKind: PropertyGetInstanceKind,
+    instance: PReg,
+    propertyName: String,
+  ) extends PoemInstruction(PoemOperation.PropertyGet)
+
+  case class Jump(target: PLoc) extends PoemInstruction(PoemOperation.Jump)
+  case class JumpIfFalse(target: PLoc, predicate: PReg) extends PoemInstruction(PoemOperation.JumpIfFalse)
+  case class JumpIfTrue(target: PLoc, predicate: PReg) extends PoemInstruction(PoemOperation.JumpIfTrue)
 
   case class Intrinsic(target: PReg, intrinsic: PIntr, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.Intrinsic)
   case class IntrinsicVoid(intrinsic: PIntr, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.IntrinsicVoid)

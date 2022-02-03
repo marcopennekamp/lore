@@ -106,17 +106,33 @@ type
 
     Shape
       ## target_reg: uint16, mtsh: uint16, n: uint8, reg0: uint16, ..., reg_n: uint16
-    ShapeGetProperty
 
     SymbolEq
 
     Struct
       ## target_reg: uint16, sch: uint16, nt: uint8, treg0: uint16, ..., treg_nt, nv: uint8, vreg0: uint16, ...,
       ## vreg_nv: uint16
+      ##
       ## Struct construction takes two variable-length argument lists: types and values, expressed via `nt` and `nv`.
-    StructGetProperty
-    StructGetNamedProperty
     StructEq
+
+    PropertyGet
+      ## target_reg: uint16, instance_kind: uint8, instance_schema: uint16, instance_reg: uint16, nam: uint16
+      ##
+      ## Depending on `instance_kind`, this instruction is resolved to a different evaluator instruction:
+      ##    - 0 (Any): PropertyGetNamed
+      ##    - 1 (Shape): ShapePropertyGetNamed
+      ##    - 2 (Trait): StructPropertyGetNamed
+      ##    - 3 (Struct): StructPropertyGet
+      ##
+      ## This allows a compiler to generate just one instruction for getting a property, while still allowing the VM to
+      ## optimize these accesses given some type information from the compiler. `Any` can always be chosen if the type
+      ## of the value isn't clear at compile time.
+      ##
+      ## The compiler does not need to be aware of the memory layout of struct properties to take advantage of direct,
+      ## index-based property accesses. To resolve this instruction to an index-based access, the VM needs to know the
+      ## struct schema, which is passed via `instance_schema`. `instance_schema` exists if and only if `instance_kind`
+      ## is `Struct`.
 
     Jump
     JumpIfFalse
@@ -172,6 +188,15 @@ type
     schema*: uint16
     type_arguments*: seq[uint16]
     value_arguments*: seq[uint16]
+
+  PoemInstructionPropertyGet* = ref object of PoemInstruction
+    target_reg*: uint16
+    instance_kind*: PropertyGetInstanceKind
+    instance_schema*: uint16
+    instance_reg*: uint16
+    name*: uint16
+
+  PropertyGetInstanceKind* {.pure.} = enum Any, Shape, Trait, Struct
 
   PoemInstructionIntrinsic* = ref object of PoemInstruction
     target_reg*: uint16
@@ -363,6 +388,18 @@ proc inst_shape*(target: uint16, meta_shape: uint16, arguments: varargs[uint16])
 
 proc inst_struct*(target: uint16, schema: uint16, type_arguments: open_array[uint16], value_arguments: open_array[uint16]): PoemInstruction =
   PoemInstructionStruct(target_reg: target, schema: schema, type_arguments: @type_arguments, value_arguments: @value_arguments)
+
+proc inst_any_property_get*(target: uint16, instance: uint16, name: uint16): PoemInstruction =
+  PoemInstructionPropertyGet(target_reg: target, instance_kind: PropertyGetInstanceKind.Any, instance_reg: instance, name: name)
+
+proc inst_shape_property_get*(target: uint16, instance: uint16, name: uint16): PoemInstruction =
+  PoemInstructionPropertyGet(target_reg: target, instance_kind: PropertyGetInstanceKind.Shape, instance_reg: instance, name: name)
+
+proc inst_trait_property_get*(target: uint16, instance: uint16, name: uint16): PoemInstruction =
+  PoemInstructionPropertyGet(target_reg: target, instance_kind: PropertyGetInstanceKind.Trait, instance_reg: instance, name: name)
+
+proc inst_struct_property_get*(target: uint16, instance: uint16, schema: uint16, name: uint16): PoemInstruction =
+  PoemInstructionPropertyGet(target_reg: target, instance_kind: PropertyGetInstanceKind.Struct, instance_schema: schema, instance_reg: instance, name: name)
 
 proc inst_intrinsic*(target: uint16, intrinsic: uint16, arguments: varargs[uint16]): PoemInstruction =
   PoemInstructionIntrinsic(target_reg: target, intrinsic: intrinsic, arguments: @arguments)
@@ -703,6 +740,23 @@ proc read_instruction(stream: FileStream): PoemInstruction =
       value_arguments: stream.read_instruction_arguments_with_count(),
     )
 
+  of PropertyGet:
+    let target_reg = stream.read(uint16)
+    let instance_kind = cast[PropertyGetInstanceKind](stream.read(uint8))
+    let instance_schema =
+      if instance_kind == PropertyGetInstanceKind.Struct: stream.read(uint16)
+      else: 0'u16
+    let instance_reg = stream.read(uint16)
+    let name = stream.read(uint16)
+
+    PoemInstructionPropertyGet(
+      target_reg: target_reg,
+      instance_kind: instance_kind,
+      instance_schema: instance_schema,
+      instance_reg: instance_reg,
+      name: name,
+    )
+
   of Intrinsic:
     PoemInstructionIntrinsic(
       target_reg: stream.read(uint16),
@@ -780,6 +834,15 @@ method write(instruction: PoemInstructionStruct, stream: FileStream) {.locks: "u
   stream.write_instruction_arguments_with_count(instruction.type_arguments)
   stream.write_instruction_arguments_with_count(instruction.value_arguments)
 
+method write(instruction: PoemInstructionPropertyGet, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.PropertyGet)
+  stream.write(instruction.target_reg)
+  stream.write(cast[uint8](instruction.instance_kind))
+  if instruction.instance_kind == PropertyGetInstanceKind.Struct:
+    stream.write(instruction.instance_schema)
+  stream.write(instruction.instance_reg)
+  stream.write(instruction.name)
+
 method write(instruction: PoemInstructionIntrinsic, stream: FileStream) {.locks: "unknown".} =
   stream.write_operation(PoemOperation.Intrinsic)
   stream.write(instruction.target_reg)
@@ -809,10 +872,10 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
   of Jump, Return: 1
   of Const, ConstPoly, IntConst, StringOf, JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
   of IntAdd, IntAddConst, IntSubConst, IntLt, IntLtConst, IntGtConst, RealAdd, StringConcat, TupleGet,
-     ListAppendUntyped, ShapeGetProperty, SymbolEq, StructGetProperty, StructGetNamedProperty, StructEq: 3
+     ListAppendUntyped, SymbolEq, StructEq: 3
   of ListAppend, ListAppendPoly: 4
-  of PoemOperation.Tuple, FunctionCall, PoemOperation.Shape, PoemOperation.Struct, Intrinsic, IntrinsicVoid, GlobalGet,
-     Dispatch:
+  of PoemOperation.Tuple, FunctionCall, PoemOperation.Shape, PoemOperation.Struct, PropertyGet, Intrinsic,
+     IntrinsicVoid, GlobalGet, Dispatch:
     quit(fmt"Poem operation {operation} is not simple!")
 
 ########################################################################################################################
