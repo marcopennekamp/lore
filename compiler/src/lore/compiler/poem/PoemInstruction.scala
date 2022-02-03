@@ -11,7 +11,7 @@ import lore.compiler.types.DeclaredSchema
   * Hence, a PoemInstruction doesn't contain index references to the constant table entries, but the constants
   * themselves.
   *
-  * PoemInstructions may exist in an unprocessed form where `PPc` doesn't refer to an absolute jump target, but a
+  * PoemInstructions may exist in an unprocessed form where `PLoc` doesn't refer to an absolute jump target, but a
   * relative one. This will be resolved during assembly immediately after instructions for a function have been
   * flattened.
   */
@@ -27,7 +27,7 @@ object PoemInstruction {
   type PGlb = GlobalVariableDefinition
   type PMf = MultiFunctionDefinition
   type PMtsh = PoemMetaShape
-  type PPc = Poem.Location
+  type PLoc = Poem.Location
 
   case class Assign(target: PReg, source: PReg) extends PoemInstruction(PoemOperation.Assign)
 

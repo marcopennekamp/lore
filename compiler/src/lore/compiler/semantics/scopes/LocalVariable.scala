@@ -39,12 +39,12 @@ case class LocalVariable(
 }
 
 object LocalVariable {
-  type UniqueKey = Long
+  case class UniqueKey(id: Long) extends AnyVal
 
   private val uniqueKeyCounter: AtomicLong = new AtomicLong()
 
   def apply(name: String, tpe: Type, isMutable: Boolean): LocalVariable = {
-    LocalVariable(uniqueKeyCounter.getAndIncrement(), name, tpe, isMutable)
+    LocalVariable(UniqueKey(uniqueKeyCounter.getAndIncrement()), name, tpe, isMutable)
   }
 
   /**
