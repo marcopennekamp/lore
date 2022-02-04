@@ -15,7 +15,7 @@ import lore.compiler.types.DeclaredSchema
   * relative one. This will be resolved during assembly immediately after instructions for a function have been
   * flattened.
   */
-abstract class PoemInstruction(val operation: PoemOperation)
+sealed abstract class PoemInstruction(val operation: PoemOperation)
 
 object PoemInstruction {
   // These types are merely used to keep the following case class declarations short.
@@ -68,7 +68,7 @@ object PoemInstruction {
   case class Struct(target: PReg, schema: PSch, typeArguments: Vector[PReg], valueArguments: Vector[PReg]) extends PoemInstruction(PoemOperation.Struct)
   case class StructEq(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.StructEq)
 
-  trait PropertyGetInstanceKind
+  sealed trait PropertyGetInstanceKind
   object PropertyGetInstanceKind {
     case object Any extends PropertyGetInstanceKind
     case object Shape extends PropertyGetInstanceKind
