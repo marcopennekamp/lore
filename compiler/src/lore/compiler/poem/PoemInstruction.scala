@@ -29,6 +29,9 @@ object PoemInstruction {
   type PMtsh = PoemMetaShape
   type PLoc = Poem.Location
 
+  case class UnaryOperation(override val operation: PoemOperation, target: PReg, value: PReg) extends PoemInstruction(operation)
+  case class BinaryOperation(override val operation: PoemOperation, target: PReg, a: PReg, b: PReg) extends PoemInstruction(operation)
+
   case class Assign(target: PReg, source: PReg) extends PoemInstruction(PoemOperation.Assign)
 
   case class Const(target: PReg, value: PVal) extends PoemInstruction(PoemOperation.Const)
@@ -38,9 +41,11 @@ object PoemInstruction {
   case class IntAdd(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.IntAdd)
   case class IntAddConst(target: PReg, a: PReg, b: Int) extends PoemInstruction(PoemOperation.IntAddConst)
   case class IntSubConst(target: PReg, a: PReg, b: Int) extends PoemInstruction(PoemOperation.IntSubConst)
+  case class IntNeg(target: PReg, value: PReg) extends PoemInstruction(PoemOperation.IntNeg)
   case class IntLt(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.IntLt)
   case class IntLtConst(target: PReg, a: PReg, b: Int) extends PoemInstruction(PoemOperation.IntLtConst)
   case class IntGtConst(target: PReg, a: PReg, b: Int) extends PoemInstruction(PoemOperation.IntGtConst)
+  case class IntToReal(target: PReg, value: PReg) extends PoemInstruction(PoemOperation.IntToReal)
 
   case class RealAdd(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.RealAdd)
 

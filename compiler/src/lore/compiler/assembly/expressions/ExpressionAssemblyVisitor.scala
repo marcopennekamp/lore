@@ -189,36 +189,20 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
     AsmChunk(target, instruction)
   }
 
-  override def visit(expression: UnaryOperation)(value: AsmChunk): AsmChunk = {
-//    val operator = expression.operator match {
-//      case UnaryOperator.Negation => TargetOperator.Negation
-//      case UnaryOperator.LogicalNot => TargetOperator.Not
-//    }
-//    AsmChunk.operation(operator, value)
-    ???
+  override def visit(expression: UnaryOperation)(valueChunk: AsmChunk): AsmChunk = {
+    PrimitiveOperationAssembler.generateUnaryOperation(expression, valueChunk)
   }
 
-  override def visit(expression: BinaryOperation)(left: AsmChunk, right: AsmChunk): AsmChunk = {
-//    // Filter those cases first that can't simply be translated to a binary Javascript operator.
-//    expression.operator match {
-//      case BinaryOperator.Append => transpileListAppends(left, right, expression.tpe)
-//      case _ =>
-//        val operator = expression.operator match {
-//          case BinaryOperator.Addition => TargetOperator.Addition
-//          case BinaryOperator.Subtraction => TargetOperator.Subtraction
-//          case BinaryOperator.Multiplication => TargetOperator.Multiplication
-//          case BinaryOperator.Division => TargetOperator.Division
-//          // All the complex cases have been filtered already and we can apply simple comparison.
-//          case BinaryOperator.Equals => TargetOperator.Equals
-//          case BinaryOperator.LessThan => TargetOperator.LessThan
-//          case BinaryOperator.LessThanEquals => TargetOperator.LessThanEquals
-//        }
-//        AsmChunk.operation(operator, left, right)
-//    }
-    ???
+  override def visit(expression: BinaryOperation)(leftChunk: AsmChunk, rightChunk: AsmChunk): AsmChunk = {
+    // Operators which cannot be translated as primitives are filtered first. All the non-primitive cases for Equals,
+    // LessThan, and LessThanEquals have been filtered already.
+    expression.operator match {
+      case BinaryOperator.Append => transpileListAppends(expression, leftChunk, rightChunk)
+      case _ => PrimitiveOperationAssembler.generateBinaryOperation(expression, leftChunk, rightChunk)
+    }
   }
 
-  private def transpileListAppends(list: AsmChunk, element: AsmChunk, resultType: Type): AsmChunk = {
+  private def transpileListAppends(expression: BinaryOperation, listChunk: AsmChunk, elementChunk: AsmChunk): AsmChunk = {
 //    val tpe = TypeTranspiler.transpileSubstitute(resultType)
 //    AsmChunk.combine(list, element) { case Vector(list, element) =>
 //      // We might be tempted to use `appendUntyped` here if the element type is already a subtype of the list's element
@@ -232,13 +216,7 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
   }
 
   override def visit(expression: XaryOperation)(operands: Vector[AsmChunk]): AsmChunk = {
-//    val operator = expression.operator match {
-//      case XaryOperator.Conjunction => TargetOperator.And
-//      case XaryOperator.Disjunction => TargetOperator.Or
-//      case XaryOperator.Concatenation => TargetOperator.Concat
-//    }
-//    AsmChunk.operation(operator, operands: _*)
-    ???
+    PrimitiveOperationAssembler.generateXaryOperation(expression, operands)
   }
 
   override def visit(expression: Call)(target: Option[AsmChunk], arguments: Vector[AsmChunk]): AsmChunk = {

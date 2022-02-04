@@ -82,20 +82,42 @@ type
     Const
     ConstPoly
 
+    # TODO (assembly): Allow IntConst to store up to 64 bits by using 4 uint16 arguments to store the integer.
     IntConst
+    IntNeg
     IntAdd
     IntAddConst
+    IntSub
     IntSubConst
+    IntMul
+    IntDiv
+    IntEq
     IntLt
     IntLtConst
+    IntLte
     IntGtConst
+    IntToReal
 
+    # TODO (assembly): Add RealConst, which can use 4 uint16 arguments to store the double value.
+    RealNeg
     RealAdd
+    RealSub
+    RealMul
+    RealDiv
+    RealEq
+    RealLt
+    RealLte
 
     BooleanConst
+    BooleanNot
+    BooleanOr
+    BooleanAnd
 
     StringOf
     StringConcat
+    StringEq
+    StringLt
+    StringLte
 
     Tuple
       ## target_reg: uint16, n: uint8, reg0: uint16, ..., reg_n: uint16
