@@ -367,7 +367,7 @@ proc evaluate(frame: FramePtr) =
 
     # TODO (vm): Implement TupleX with a single macro.
     of Operation.Tuple0:
-      regv_set_arg(0, values.unit)
+      regv_set_arg(0, values.unit_tagged)
 
     of Operation.Tuple1:
       var elements = new_immutable_seq[TaggedValue](1)

@@ -141,8 +141,13 @@ proc new_string_tagged*(value: string): TaggedValue = tag_reference(new_string(v
 # Tuples.                                                                                                              #
 ########################################################################################################################
 
+let unit*: Value = TupleValue(tpe: types.unit_type, elements: empty_immutable_seq[TaggedValue]())
+let unit_tagged*: TaggedValue = tag_reference(unit)
+
 proc new_tuple*(elements: ImSeq[TaggedValue], tpe: Type): Value =
   ## Creates a new tuple, forcing its type to be `tpe` instead of taking the type from the elements.
+  if elements.len == 0:
+    return unit
   TupleValue(tpe: tpe, elements: elements)
 
 proc new_tuple_tagged*(elements: ImSeq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_tuple(elements, tpe))
@@ -155,8 +160,6 @@ proc new_tuple*(elements: ImSeq[TaggedValue]): Value =
   new_tuple(elements, types.tpl(element_types))
 
 proc new_tuple_tagged*(elements: ImSeq[TaggedValue]): TaggedValue = tag_reference(new_tuple(elements))
-
-let unit*: TaggedValue = new_tuple_tagged(empty_immutable_seq[TaggedValue]())
 
 ########################################################################################################################
 # Functions.                                                                                                           #
