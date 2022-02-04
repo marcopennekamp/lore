@@ -1,16 +1,11 @@
 package lore.compiler.assembly.expressions
 
-import lore.compiler.assembly.{AsmChunk, RegisterProvider}
+import lore.compiler.assembly.{AsmChunk, PropertyOrder, RegisterProvider}
 import lore.compiler.core.CompilationException
 import lore.compiler.poem.PoemInstruction.PropertyGetInstanceKind
 import lore.compiler.poem._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
-import lore.compiler.semantics.functions.CallTarget
-import lore.compiler.target.TargetDsl._
-import lore.compiler.target.{Target, TargetOperator}
-import lore.compiler.transpilation._
-import lore.compiler.transpilation.structures.InstantiationTranspiler
 import lore.compiler.types._
 
 import scala.collection.immutable.HashMap
@@ -20,6 +15,9 @@ import scala.collection.immutable.HashMap
 class ExpressionAssemblyVisitor()(implicit registry: Registry) extends ExpressionVisitor[AsmChunk, AsmChunk] {
   import Expression._
 
+  // TODO (assembly): We have to make sure that the first N registers of the function are reserved for the parameters.
+  //                  This also has to be taken into account by the register allocator, who may not reassign these
+  //                  registers.
   private implicit val registerProvider: RegisterProvider = new RegisterProvider
   private implicit var variableRegisterMap: VariableRegisterMap = HashMap.empty
 
@@ -175,19 +173,21 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
   }
 
   override def visit(expression: ShapeValue)(propertyChunks: Vector[AsmChunk]): AsmChunk = {
-//    // The property types of the shape's type are determined at run-time, so we don't have to transpile the type here.
-//    AsmChunk.combine(propertyChunks) { values =>
-//      val dictionary = Target.Dictionary(
-//        expression.properties.zip(values).map { case (property, value) =>
-//          Target.Property(property.name, value)
-//        }
-//      )
-//      AsmChunk.expression(RuntimeApi.shapes.value(dictionary))
-//    }
-    ???
+    val target = registerProvider.fresh()
+    PoemValueAssembler.generateConst(expression, target).getOrElse {
+      val (sortedNames, sortedChunks) = PropertyOrder.sort(expression.properties.map(_.name).zip(propertyChunks))(_._1).unzip
+      val metaShape = PoemMetaShape.build(sortedNames)
+      val propertyRegisters = sortedChunks.map(_.forceResult(expression.position))
+      val instruction = PoemInstruction.Shape(target, metaShape, propertyRegisters)
+      AsmChunk.concat(sortedChunks) ++ AsmChunk(target, instruction)
+    }
   }
 
-  override def visit(symbol: Symbol): AsmChunk = ???
+  override def visit(symbol: Symbol): AsmChunk = {
+    val target = registerProvider.fresh()
+    val instruction = PoemInstruction.Const(target, PoemSymbolValue(symbol.name))
+    AsmChunk(target, instruction)
+  }
 
   override def visit(expression: UnaryOperation)(value: AsmChunk): AsmChunk = {
 //    val operator = expression.operator match {
