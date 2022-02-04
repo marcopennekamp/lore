@@ -13,17 +13,18 @@ object TypeVariableResolver {
   def resolve(nodes: Vector[DeclNode.TypeVariableNode], parentScope: TypeScope)(implicit bindingScope: BindingScope, reporter: Reporter): Vector[TypeVariable] = {
     nodes.foldLeft(Vector.empty[TypeVariable]) { case (typeVariables, node) =>
       implicit val typeScope: TypeScope = ImmutableTypeScope.from(typeVariables, parentScope)
-      typeVariables :+ resolve(node)
+      val index = typeVariables.length
+      typeVariables :+ resolve(node, index)
     }
   }
 
   /**
     * Resolves a single type variable declaration in the context of the given type scope.
     */
-  private def resolve(node: DeclNode.TypeVariableNode)(implicit typeScope: TypeScope, bindingScope: BindingScope, reporter: Reporter): TypeVariable = {
+  private def resolve(node: DeclNode.TypeVariableNode, index: Int)(implicit typeScope: TypeScope, bindingScope: BindingScope, reporter: Reporter): TypeVariable = {
     val lowerBound = node.lowerBound.flatMap(TypeExpressionEvaluator.evaluate).getOrElse(BasicType.Nothing)
     val upperBound = node.upperBound.flatMap(TypeExpressionEvaluator.evaluate).getOrElse(BasicType.Any)
-    new TypeVariable(node.name, lowerBound, upperBound, node.variance, node.isOpen)
+    new TypeVariable(node.name, lowerBound, upperBound, node.variance, node.isOpen, index)
   }
 
 }

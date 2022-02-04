@@ -17,7 +17,7 @@ trait TypeSyntax {
   val string: BasicType = BasicType.String
 
   def typeVariable(name: String, lowerBound: Type = BasicType.Nothing, upperBound: Type = BasicType.Any): TypeVariable = {
-    new TypeVariable(name, lowerBound, upperBound, Variance.Invariant, false)
+    new TypeVariable(name, lowerBound, upperBound, Variance.Invariant, false, 0)
   }
 
   implicit def toType(name: String)(implicit registry: Registry): Type = registry.types.schemas(NamePath(name)).representative
