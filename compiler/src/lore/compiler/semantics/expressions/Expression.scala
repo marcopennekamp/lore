@@ -2,6 +2,7 @@ package lore.compiler.semantics.expressions
 
 import lore.compiler.core.{CompilationException, Position, Positioned}
 import lore.compiler.semantics.analysis.LocalizedExpression
+import lore.compiler.semantics.expressions.Expression.Literal.LiteralValue
 import lore.compiler.semantics.functions.{CallTarget, FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
 import lore.compiler.semantics.scopes.{LocalVariable, StructConstructorBinding, TypedBinding}
@@ -94,7 +95,39 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Literals and Value Constructors.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  case class Literal(value: Any, tpe: BasicType, position: Position) extends Expression
+  case class Literal(value: LiteralValue, position: Position) extends Expression.Apply(value.tpe)
+
+  object Literal {
+    /**
+      * We use this two-tiered approach to represent literals instead of distinct expressions (IntLiteral, RealLiteral,
+      * etc.) because regardless of the type, a literal is treated in the same way across the compiler. This is similar
+      * to operations, which are also implemented in two tiers, and cuts down on the number of Expressions.
+      */
+    trait LiteralValue {
+      def tpe: Type
+    }
+
+    case class IntValue(value: Long) extends LiteralValue {
+      override def tpe: Type = BasicType.Int
+    }
+
+    case class RealValue(value: Double) extends LiteralValue {
+      override def tpe: Type = BasicType.Real
+    }
+
+    case class BooleanValue(value: Boolean) extends LiteralValue {
+      override def tpe: Type = BasicType.Boolean
+    }
+
+    case class StringValue(value: String) extends LiteralValue {
+      override def tpe: Type = BasicType.String
+    }
+
+    def integer(value: Long, position: Position): Literal = Literal(IntValue(value), position)
+    def real(value: Double, position: Position): Literal = Literal(RealValue(value), position)
+    def boolean(value: Boolean, position: Position): Literal = Literal(BooleanValue(value), position)
+    def string(value: String, position: Position): Literal = Literal(StringValue(value), position)
+  }
 
   case class Tuple(values: Vector[Expression], position: Position) extends Expression {
     override val tpe: TupleType = if (values.isEmpty) TupleType.UnitType else TupleType(values.map(_.tpe))
@@ -250,7 +283,7 @@ object Expression {
 
   case class CondCase(condition: Expression, body: Expression) {
     val isTotalCase: Boolean = condition match {
-      case Literal(true, BasicType.Boolean, _) => true
+      case Literal(Literal.BooleanValue(true), _) => true
       case _ => false
     }
   }

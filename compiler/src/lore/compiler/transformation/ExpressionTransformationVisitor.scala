@@ -44,10 +44,10 @@ class ExpressionTransformationVisitor(
       if (value < BasicType.Int.minSafeInteger || BasicType.Int.maxSafeInteger < value) {
         reporter.error(ExpressionFeedback.UnsafeInteger(node))
       }
-      Expression.Literal(value, BasicType.Int, position)
-    case RealLiteralNode(value, position) => Expression.Literal(value, BasicType.Real, position)
-    case BoolLiteralNode(value, position) => Expression.Literal(value, BasicType.Boolean, position)
-    case StringLiteralNode(value, position) => Expression.Literal(value, BasicType.String, position)
+      Expression.Literal.integer(value, position)
+    case RealLiteralNode(value, position) => Expression.Literal.real(value, position)
+    case BoolLiteralNode(value, position) => Expression.Literal.boolean(value, position)
+    case StringLiteralNode(value, position) => Expression.Literal.string(value, position)
 
     case FixedFunctionNode(namePathNode, typeExpressions, position) =>
       scopeContext.currentScope.resolveStatic(namePathNode.namePath, namePathNode.position).flatMap {
@@ -143,7 +143,7 @@ class ExpressionTransformationVisitor(
     case IfElseNode(_, _, _, position) =>
       val cases = Vector(
         CondCase(argument1, argument2),
-        CondCase(Expression.Literal(true, BasicType.Boolean, Position.internal), argument3)
+        CondCase(Expression.Literal.boolean(true, Position.internal), argument3)
       )
       Expression.Cond(cases, position)
   }

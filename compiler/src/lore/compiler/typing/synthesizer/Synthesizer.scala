@@ -58,7 +58,7 @@ object Synthesizer {
           }
         }
 
-      case Expression.Literal(_, _, _) => Some(assignments)
+      case Expression.Literal(_, _) => Some(assignments)
 
       case Expression.Tuple(values, _) => infer(values, assignments)
 

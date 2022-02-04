@@ -67,7 +67,7 @@ object ExpressionVisitor {
       case node@BindingAccess(_, _) => visitor.visit(node)
       case node@MemberAccess(instance, _, _) => visitor.visit(node)(rec(instance))
       case node@UnresolvedMemberAccess(instance, _, _, _) => visitor.visit(node)(rec(instance))
-      case node@Literal(_, _, _) => visitor.visit(node)
+      case node@Literal(_, _) => visitor.visit(node)
       case node@Tuple(values, _) => visitor.visit(node)(values.map(rec))
       case node@AnonymousFunction(_, body, _) => visitor.visit(node)(rec(body))
       case node@MultiFunctionValue(_, _, _) => visitor.visit(node)
