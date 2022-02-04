@@ -27,7 +27,7 @@ object LocalizedExpression {
       case Expression.BindingAccess(binding, _) => binding match {
         case _: GlobalVariableDefinition => setFalse()
         case StructObjectBinding(_, _) => setFalse()
-        case LocalVariable(_, _, _) =>
+        case LocalVariable(_, _, _, _) =>
       }
       case _: Expression.MultiFunctionValue => setFalse()
       case _: Expression.FixedFunctionValue => setFalse()

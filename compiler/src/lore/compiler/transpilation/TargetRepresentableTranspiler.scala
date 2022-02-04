@@ -29,7 +29,7 @@ object TargetRepresentableTranspiler {
       case variable: GlobalVariableDefinition => supportLazy(RuntimeNames.globalVariable(variable), !variable.value.isLocalized)
       case mf: MultiFunctionDefinition => RuntimeNames.multiFunction(mf)
       case function: FunctionDefinition => RuntimeNames.functionDefinition(function)
-      case LocalVariable(name, _, _) => RuntimeNames.localVariable(name)
+      case LocalVariable(_, name, _, _) => RuntimeNames.localVariable(name)
 
       case structObject: StructObjectBinding =>
         val definition = structObject.tpe.schema.definition
