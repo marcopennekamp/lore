@@ -37,21 +37,68 @@ type
     IntConst
       ## reg(arg0) <- arg1 as int64
 
+    IntNeg
+      ## reg(arg0) <- -reg(arg1)
+
     IntAdd
       ## reg(arg0) <- reg(arg1) + reg(arg2)
 
+    IntSub
+      ## reg(arg0) <- reg(arg1) - reg(arg2)
 
+    IntMul
+      ## reg(arg0) <- reg(arg1) * reg(arg2)
+
+    IntDiv
+      ## reg(arg0) <- reg(arg1) / reg(arg2)
+
+    IntEq
+      ## reg(arg0) <- reg(arg1) == reg(arg2)
 
     IntLt
       ## reg(arg0) <- reg(arg1) < reg(arg2)
 
+    IntLte
+      ## reg(arg0) <- reg(arg1) <= reg(arg2)
 
+    IntToReal
+      ## reg(arg0) <- reg(arg1) as Real
+
+    RealNeg
+      ## reg(arg0) <- -reg(arg1)
 
     RealAdd
       ## reg(arg0) <- reg(arg1) + reg(arg2)
 
+    RealSub
+      ## reg(arg0) <- reg(arg1) - reg(arg2)
+
+    RealMul
+      ## reg(arg0) <- reg(arg1) * reg(arg2)
+
+    RealDiv
+      ## reg(arg0) <- reg(arg1) / reg(arg2)
+
+    RealEq
+      ## reg(arg0) <- reg(arg1) == reg(arg2)
+
+    RealLt
+      ## reg(arg0) <- reg(arg1) < reg(arg2)
+
+    RealLte
+      ## reg(arg0) <- reg(arg1) <= reg(arg2)
+
     BooleanConst
       ## reg(arg0) <- arg1.boolean
+
+    BooleanNot
+      ## reg(arg0) <- not reg(arg1)
+
+    BooleanOr
+      ## reg(arg0) <- reg(arg1) or reg(arg2)
+
+    BooleanAnd
+      ## reg(arg0) <- reg(arg1) and reg(arg2)
 
     StringOf
       ## Converts any TaggedValue to its native string representation. Reference values are not converted with
@@ -60,6 +107,17 @@ type
 
     StringConcat
       ## reg(arg0) <- concat(reg(arg1), reg(arg2))
+
+    StringEq
+      ## reg(arg0) <- reg(arg1) == reg(arg2)
+
+    StringLt
+      ## Compares two strings lexicographically.
+      ## reg(arg0) <- reg(arg1) < reg(arg2)
+
+    StringLte
+      ## Compares two strings lexicographically.
+      ## reg(arg0) <- reg(arg1) <= reg(arg2)
 
     Tuple
       ## reg(arg0) <- tuple(opl(0), ..., opl(arg1 - 1))

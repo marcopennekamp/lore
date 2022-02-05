@@ -139,6 +139,51 @@ template opl_push_n(count: uint16): untyped =
     opl_set_arg(i, i + 1)
 
 ########################################################################################################################
+# Helpers: Unary, binary, and xary operators.                                                                          #
+########################################################################################################################
+
+macro generate_operand_get(index_node: int, kind: static[string]): untyped =
+  case kind
+  of "int":
+    quote do:
+      regv_get_int_arg(`index_node`)
+  of "real":
+    quote do:
+      regv_get_ref_arg(`index_node`, RealValue).real
+  of "bool":
+    quote do:
+      regv_get_bool_arg(`index_node`)
+  else: macros.error("Unsupported kind."); nil
+
+macro generate_operation_set_result(index_node: int, result_node: untyped, kind: static[string]): untyped =
+  case kind
+  of "int":
+    quote do:
+      regv_set_int_arg(`index_node`, `result_node`)
+  of "real":
+    quote do:
+      regv_set_ref_arg(`index_node`, values.new_real(`result_node`))
+  of "bool":
+    quote do:
+      regv_set_bool_arg(`index_node`, `result_node`)
+  else: macros.error("Unsupported kind."); nil
+
+macro generate_unary_operator(source_kind: static[string], result_kind: static[string], op_node) =
+  ## Generates a unary operator which takes `reg(arg1)` as an operand and puts the result in `reg(arg0)`. The `op_node`
+  ## should be defined in terms of an untagged value `v`, e.g. `not v`.
+  quote do:
+    let v {.inject.} = generate_operand_get(1, `source_kind`)
+    generate_operation_set_result(0, `op_node`, `result_kind`)
+
+macro generate_binary_operator(source_kind: static[string], result_kind: static[string], op_node) =
+  ## Generates a binary operator which takes `reg(arg1)` and `reg(arg2)` as operands and puts the result in
+  ## `reg(arg0)`. The `op_node` should be defined in terms of two untagged values `a` and `b`, e.g. `a + b`.
+  quote do:
+    let a {.inject.} = generate_operand_get(1, `source_kind`)
+    let b {.inject.} = generate_operand_get(2, `source_kind`)
+    generate_operation_set_result(0, `op_node`, `result_kind`)
+
+########################################################################################################################
 # Helpers: Function calls.                                                                                             #
 ########################################################################################################################
 
@@ -313,23 +358,31 @@ proc evaluate(frame: FramePtr) =
     of Operation.IntConst:
       regv_set_int_arg(0, instruction.argi(1))
 
-    of Operation.IntAdd:
-      let a = regv_get_int_arg(1)
-      let b = regv_get_int_arg(2)
-      regv_set_int_arg(0, a + b)
+    of Operation.IntNeg: generate_unary_operator("int", "int", -v)
+    of Operation.IntAdd: generate_binary_operator("int", "int", a + b)
+    of Operation.IntSub: generate_binary_operator("int", "int", a - b)
+    of Operation.IntMul: generate_binary_operator("int", "int", a * b)
+    of Operation.IntDiv: generate_binary_operator("int", "int", a div b)
+    of Operation.IntEq: generate_binary_operator("int", "bool", a == b)
+    of Operation.IntLt: generate_binary_operator("int", "bool", a < b)
+    of Operation.IntLte: generate_binary_operator("int", "bool", a <= b)
+    of Operation.IntToReal: generate_unary_operator("int", "real", float64(v))
 
-    of Operation.IntLt:
-      let a = regv_get_int_arg(1)
-      let b = regv_get_int_arg(2)
-      regv_set_bool_arg(0, a < b)
-
-    of Operation.RealAdd:
-      let a = regv_get_ref_arg(1, RealValue)
-      let b = regv_get_ref_arg(2, RealValue)
-      regv_set_ref_arg(0, values.new_real(a.real + b.real))
+    of Operation.RealNeg: generate_unary_operator("real", "real", -v)
+    of Operation.RealAdd: generate_binary_operator("real", "real", a + b)
+    of Operation.RealSub: generate_binary_operator("real", "real", a - b)
+    of Operation.RealMul: generate_binary_operator("real", "real", a * b)
+    of Operation.RealDiv: generate_binary_operator("real", "real", a / b)
+    of Operation.RealEq: generate_binary_operator("real", "bool", a == b)
+    of Operation.RealLt: generate_binary_operator("real", "bool", a < b)
+    of Operation.RealLte: generate_binary_operator("real", "bool", a <= b)
 
     of Operation.BooleanConst:
       regv_set_bool_arg(0, instruction.argb(1))
+
+    of Operation.BooleanNot: generate_unary_operator("bool", "bool", not v)
+    of Operation.BooleanOr: generate_binary_operator("bool", "bool", a or b)
+    of Operation.BooleanAnd: generate_binary_operator("bool", "bool", a and b)
 
     of Operation.StringOf:
       let string = $regv_get_arg(1)
@@ -339,6 +392,14 @@ proc evaluate(frame: FramePtr) =
       let a = regv_get_ref_arg(1, StringValue)
       let b = regv_get_ref_arg(2, StringValue)
       regv_set_ref_arg(0, values.new_string(a.string & b.string))
+
+    of Operation.StringEq:
+      let a = regv_get_ref_arg(1, StringValue)
+      let b = regv_get_ref_arg(2, StringValue)
+      regv_set_bool_arg(0, a.string == b.string)
+
+    of Operation.StringLt: quit("StringLt is not yet implemented.")
+    of Operation.StringLte: quit("StringLte is not yet implemented.")
 
     of Operation.Tuple:
       let operand_count = instruction.arg(1)

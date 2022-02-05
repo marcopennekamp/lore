@@ -526,15 +526,35 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.ConstPoly: Operation.ConstPoly
 
   of PoemOperation.IntConst: Operation.IntConst
+  of PoemOperation.IntNeg: Operation.IntNeg
   of PoemOperation.IntAdd: Operation.IntAdd
+  of PoemOperation.IntSub: Operation.IntSub
+  of PoemOperation.IntMul: Operation.IntMul
+  of PoemOperation.IntDiv: Operation.IntDiv
+  of PoemOperation.IntEq: Operation.IntEq
   of PoemOperation.IntLt: Operation.IntLt
+  of PoemOperation.IntLte: Operation.IntLte
+  of PoemOperation.IntToReal: Operation.IntToReal
 
+  of PoemOperation.RealNeg: Operation.RealNeg
   of PoemOperation.RealAdd: Operation.RealAdd
+  of PoemOperation.RealSub: Operation.RealSub
+  of PoemOperation.RealMul: Operation.RealMul
+  of PoemOperation.RealDiv: Operation.RealDiv
+  of PoemOperation.RealEq: Operation.RealEq
+  of PoemOperation.RealLt: Operation.RealLt
+  of PoemOperation.RealLte: Operation.RealLte
 
   of PoemOperation.BooleanConst: Operation.BooleanConst
+  of PoemOperation.BooleanNot: Operation.BooleanNot
+  of PoemOperation.BooleanOr: Operation.BooleanOr
+  of PoemOperation.BooleanAnd: Operation.BooleanAnd
 
   of PoemOperation.StringOf: Operation.StringOf
   of PoemOperation.StringConcat: Operation.StringConcat
+  of PoemOperation.StringEq: Operation.StringEq
+  of PoemOperation.StringLt: Operation.StringLt
+  of PoemOperation.StringLte: Operation.StringLte
 
   of PoemOperation.TupleGet: Operation.TupleGet
 
