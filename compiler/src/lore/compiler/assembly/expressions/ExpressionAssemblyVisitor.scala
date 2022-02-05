@@ -1,17 +1,24 @@
 package lore.compiler.assembly.expressions
 
+import lore.compiler.assembly.types.PoemTypeAssembler
 import lore.compiler.assembly.{AsmChunk, PropertyOrder, RegisterProvider}
 import lore.compiler.core.CompilationException
+import lore.compiler.poem
 import lore.compiler.poem.PoemInstruction.PropertyGetInstanceKind
 import lore.compiler.poem._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
+import lore.compiler.types.Type.isPolymorphic
 import lore.compiler.types._
 
 import scala.collection.immutable.HashMap
 
 // TODO (assembly): Remember to insert implicit conversions from Int to Real values for arithmetic and comparison expressions.
 
+/**
+  * The visitor should generate Jump instructions with <i>relative</i> locations. They will later be converted to
+  * absolute locations when instructions are flattened.
+  */
 class ExpressionAssemblyVisitor()(implicit registry: Registry) extends ExpressionVisitor[AsmChunk, AsmChunk] {
   import Expression._
 
@@ -203,16 +210,18 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
   }
 
   private def transpileListAppends(expression: BinaryOperation, listChunk: AsmChunk, elementChunk: AsmChunk): AsmChunk = {
-//    val tpe = TypeTranspiler.transpileSubstitute(resultType)
-//    AsmChunk.combine(list, element) { case Vector(list, element) =>
-//      // We might be tempted to use `appendUntyped` here if the element type is already a subtype of the list's element
-//      // type, but that would be incorrect. Though we can be sure that the given list has AT MOST some type `[t1]` at
-//      // run time, it might also be typed as a subtype `[t2]` of `[t1]`. If at run time the list is of type `[t2]` and
-//      // the element has the type `t1`, the append should result in a list of type `[t1]`. appendUntyped would result
-//      // in a list of type `[t2]`.
-//      AsmChunk.expression(RuntimeApi.lists.append(list, element, tpe))
-//    }
-    ???
+    // We might be tempted to use `ListAppendUntyped` if `expression.element.tpe` is a subtype of
+    // `expression.list.tpe`, but that would be incorrect. Though we can be sure that the given list has at most some
+    // type `[t1]` at run time, it might also be typed as a subtype `[t2]` of `[t1]`. If at run time the list is of
+    // type `[t2]` and the element has the type `t1`, the append should result in a list of type `[t1]`.
+    // `ListAppendUntyped` would result in a list of type `[t2]`.
+    val operation = if (isPolymorphic(expression.tpe)) PoemOperation.ListAppendPoly else PoemOperation.ListAppend
+    val target = registerProvider.fresh()
+    val list = listChunk.forceResult(expression.position)
+    val element = elementChunk.forceResult(expression.position)
+    val tpe = PoemTypeAssembler.generate(expression.tpe)
+    val instruction = PoemInstruction.ListAppend(operation, target, list, element, tpe)
+    listChunk ++ elementChunk ++ AsmChunk(target, instruction)
   }
 
   override def visit(expression: XaryOperation)(operands: Vector[AsmChunk]): AsmChunk = {
