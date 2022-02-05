@@ -318,30 +318,10 @@ proc evaluate(frame: FramePtr) =
       let b = regv_get_int_arg(2)
       regv_set_int_arg(0, a + b)
 
-    of Operation.IntAddConst:
-      let a = regv_get_int_arg(1)
-      let b = instruction.argi(2)
-      regv_set_int_arg(0, a + b)
-
-    of Operation.IntSubConst:
-      let a = regv_get_int_arg(1)
-      let b = instruction.argi(2)
-      regv_set_int_arg(0, a - b)
-
     of Operation.IntLt:
       let a = regv_get_int_arg(1)
       let b = regv_get_int_arg(2)
       regv_set_bool_arg(0, a < b)
-
-    of Operation.IntLtConst:
-      let a = regv_get_int_arg(1)
-      let b = instruction.argi(2)
-      regv_set_bool_arg(0, a < b)
-
-    of Operation.IntGtConst:
-      let a = regv_get_int_arg(1)
-      let b = instruction.argi(2)
-      regv_set_bool_arg(0, a > b)
 
     of Operation.RealAdd:
       let a = regv_get_ref_arg(1, RealValue)

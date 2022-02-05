@@ -28,6 +28,8 @@
   - An alternative idea might be to implement an `is_subtype` proc specifically for the fit which uses the type variable assignments instead of substituting these assignments into a newly allocated type. This would keep the phases separate, but still save all allocations.
   - In general, `fit` should only make a single allocation of an ImSeq in case the fit is successful. All other allocations should technically be avoidable, with type variable assignments initially placed on the stack.
 - Support type introspection.
+- Instructions such as `IntAddConst` are currently not exposed by the poem API for simplicity. The VM doesn't currently optimize constant operands, but it could certainly transform a sequence `IntConst, IntAdd` into `IntAddConst` down the line, or simply leave it up to the JIT even further down.
+  - We might also revisit the decision not to expose `*Const` operations as poem operations.
 - Support parallel execution.
   - Clear all `TODO (vm/parallel)` entries.
 - Clear all `TODO (vm)` entries.

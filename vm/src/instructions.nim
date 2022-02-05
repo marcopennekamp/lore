@@ -40,20 +40,12 @@ type
     IntAdd
       ## reg(arg0) <- reg(arg1) + reg(arg2)
 
-    IntAddConst
-      ## reg(arg0) <- reg(arg1) + arg2.int
 
-    IntSubConst
-      ## reg(arg0) <- reg(arg1) - arg2.int
 
     IntLt
       ## reg(arg0) <- reg(arg1) < reg(arg2)
 
-    IntLtConst
-      ## reg(arg0) <- reg(arg1) < arg2.int
 
-    IntGtConst
-      ## reg(arg0) <- reg(arg1) > arg2.int
 
     RealAdd
       ## reg(arg0) <- reg(arg1) + reg(arg2)

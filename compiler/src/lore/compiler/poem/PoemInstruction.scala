@@ -38,16 +38,7 @@ object PoemInstruction {
   case class ConstPoly(target: PReg, value: PVal) extends PoemInstruction(PoemOperation.ConstPoly)
 
   case class IntConst(target: PReg, value: Int) extends PoemInstruction(PoemOperation.IntConst)
-  case class IntAdd(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.IntAdd)
-  case class IntAddConst(target: PReg, a: PReg, b: Int) extends PoemInstruction(PoemOperation.IntAddConst)
-  case class IntSubConst(target: PReg, a: PReg, b: Int) extends PoemInstruction(PoemOperation.IntSubConst)
-  case class IntNeg(target: PReg, value: PReg) extends PoemInstruction(PoemOperation.IntNeg)
-  case class IntLt(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.IntLt)
-  case class IntLtConst(target: PReg, a: PReg, b: Int) extends PoemInstruction(PoemOperation.IntLtConst)
-  case class IntGtConst(target: PReg, a: PReg, b: Int) extends PoemInstruction(PoemOperation.IntGtConst)
   case class IntToReal(target: PReg, value: PReg) extends PoemInstruction(PoemOperation.IntToReal)
-
-  case class RealAdd(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.RealAdd)
 
   case class BooleanConst(target: PReg, value: Boolean) extends PoemInstruction(PoemOperation.BooleanConst)
 

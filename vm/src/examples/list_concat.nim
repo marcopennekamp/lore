@@ -13,15 +13,16 @@ let concat = PoemFunction(
   is_abstract: false,
   register_count: 6,
   instructions: @[
-    # input: list1 in register 0, list2 at register 1
+    # input: list1 in reg0, list2 in reg1
     poems.inst(PoemOperation.IntConst, 2, 0),              # i = 0
     poems.inst_intrinsic(3, 0, 1),                         # list2_len = lore.lists.length(list2)
 
     poems.inst(PoemOperation.IntLt, 4, 2, 3),              # continue? = i < list2_len
-    poems.inst(PoemOperation.JumpIfFalse, 8, 4),           # if !continue?: jump to end
+    poems.inst(PoemOperation.JumpIfFalse, 9, 4),           # if !continue?: jump to end
     poems.inst_intrinsic(5, 1, 1, 2),                      # element = lore.lists.get(list2, i)
     poems.inst(PoemOperation.ListAppendPoly, 0, 0, 5, 0),  # list1 = list1 :+ element
-    poems.inst(PoemOperation.IntAddConst, 2, 2, 1),        # i += 1
+    poems.inst(PoemOperation.IntConst, 5, 1),
+    poems.inst(PoemOperation.IntAdd, 2, 2, 5),             # i += 1
     poems.inst(PoemOperation.Jump, 2),                     # jump to loop start
 
     poems.inst(PoemOperation.Return0),

@@ -527,11 +527,7 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
 
   of PoemOperation.IntConst: Operation.IntConst
   of PoemOperation.IntAdd: Operation.IntAdd
-  of PoemOperation.IntAddConst: Operation.IntAddConst
-  of PoemOperation.IntSubConst: Operation.IntSubConst
   of PoemOperation.IntLt: Operation.IntLt
-  of PoemOperation.IntLtConst: Operation.IntLtConst
-  of PoemOperation.IntGtConst: Operation.IntGtConst
 
   of PoemOperation.RealAdd: Operation.RealAdd
 

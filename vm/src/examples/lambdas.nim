@@ -5,9 +5,10 @@ let increment = PoemFunction(
   input_type: poems.tuple_type([poems.int_type]),
   output_type: poems.int_type,
   is_abstract: false,
-  register_count: 1,
+  register_count: 2,
   instructions: @[
-    poems.inst(PoemOperation.IntAddConst, 0, 0, 1),
+    poems.inst(PoemOperation.IntConst, 1, 1),
+    poems.inst(PoemOperation.IntAdd, 0, 0, 1),
     poems.inst(PoemOperation.Return0),
   ],
 )

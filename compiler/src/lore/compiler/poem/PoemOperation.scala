@@ -9,8 +9,7 @@ object PoemOperation extends Enumeration {
 
   val Assign = Value
   val Const, ConstPoly = Value
-  val IntConst, IntNeg, IntAdd, IntAddConst, IntSub, IntSubConst, IntMul, IntDiv, IntEq, IntLt, IntLtConst, IntLte,
-      IntGtConst, IntToReal = Value
+  val IntConst, IntNeg, IntAdd, IntSub, IntMul, IntDiv, IntEq, IntLt, IntLte, IntToReal = Value
   val RealNeg, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte = Value
   val BooleanConst, BooleanNot, BooleanOr, BooleanAnd = Value
   val StringOf, StringConcat, StringEq, StringLt, StringLte = Value

@@ -86,16 +86,12 @@ type
     IntConst
     IntNeg
     IntAdd
-    IntAddConst
     IntSub
-    IntSubConst
     IntMul
     IntDiv
     IntEq
     IntLt
-    IntLtConst
     IntLte
-    IntGtConst
     IntToReal
 
     # TODO (assembly): Add RealConst, which can use 4 uint16 arguments to store the double value.
@@ -896,10 +892,11 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
   case operation
   of ReturnUnit, Return0: 0
   of Jump, Return: 1
-  of Assign, Const, ConstPoly, IntConst, BooleanConst, StringOf, JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg,
-     TypeConst: 2
-  of IntAdd, IntAddConst, IntSubConst, IntLt, IntLtConst, IntGtConst, RealAdd, StringConcat, TupleGet,
-     ListAppendUntyped, SymbolEq, StructEq: 3
+  of Assign, Const, ConstPoly, IntConst, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, JumpIfFalse,
+     JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
+  of IntAdd, IntSub, IntMul, IntDiv, IntEq, IntLt, IntLte, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte,
+     BooleanOr, BooleanAnd, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped, SymbolEq,
+     StructEq: 3
   of ListAppend, ListAppendPoly: 4
   of PoemOperation.Tuple, FunctionCall, PoemOperation.Shape, PoemOperation.Struct, PropertyGet, Intrinsic,
      IntrinsicVoid, GlobalGet, Dispatch:
