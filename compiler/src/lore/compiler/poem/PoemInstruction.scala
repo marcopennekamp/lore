@@ -48,6 +48,8 @@ object PoemInstruction {
   case class Tuple(target: PReg, elements: Vector[PReg]) extends PoemInstruction(PoemOperation.Tuple)
   case class TupleGet(target: PReg, tuple: PReg, index: Int) extends PoemInstruction(PoemOperation.TupleGet)
 
+  def tupleUnit(target: PReg): PoemInstruction = Tuple(target, Vector.empty)
+
   case class FunctionCall(target: PReg, function: PReg, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.FunctionCall)
 
   /**
