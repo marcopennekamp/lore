@@ -449,6 +449,11 @@ proc evaluate(frame: FramePtr) =
       let res = evaluate(function, frame, argument0, argument1)
       regv_set_arg(0, res)
 
+    of Operation.ListPoly0:
+      let tpe = types.substitute(const_types_arg(1), frame.type_arguments)
+      let list = values.new_list(empty_immutable_seq[TaggedValue](), tpe)
+      regv_set_ref_arg(0, list)
+
     of Operation.ListAppend:
       let new_tpe = const_types_arg(3)
       generate_list_append(new_tpe)

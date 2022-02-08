@@ -558,6 +558,7 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
 
   of PoemOperation.TupleGet: Operation.TupleGet
 
+  of PoemOperation.ListPoly: Operation.ListPoly0
   of PoemOperation.ListAppend: Operation.ListAppend
   of PoemOperation.ListAppendPoly: Operation.ListAppendPoly
   of PoemOperation.ListAppendUntyped: Operation.ListAppendUntyped

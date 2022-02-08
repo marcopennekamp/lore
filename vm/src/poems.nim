@@ -122,6 +122,14 @@ type
     FunctionCall
       ## target_reg: uint16, function_reg: uint16, n: uint8, reg0: uint16, ..., reg_n: uint16
 
+    ListPoly
+      ## target_reg: uint16, tpe: uint16
+      ##
+      ## Creates an empty list with the given type. `tpe` may contain type variables, which will be substituted. This
+      ## instruction is intended to be used in conjunction with `ListAppendUntyped` to append quickly to a list without
+      ## rebuilding the list type every time.
+      ##
+      ## For now, ListPoly can only be used to build an empty list.
     ListAppend
     ListAppendPoly
     ListAppendUntyped
@@ -892,8 +900,8 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
   case operation
   of ReturnUnit, Return0: 0
   of Jump, Return: 1
-  of Assign, Const, ConstPoly, IntConst, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, JumpIfFalse,
-     JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
+  of Assign, Const, ConstPoly, IntConst, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, ListPoly,
+     JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
   of IntAdd, IntSub, IntMul, IntDiv, IntEq, IntLt, IntLte, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte,
      BooleanOr, BooleanAnd, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped, SymbolEq,
      StructEq: 3
