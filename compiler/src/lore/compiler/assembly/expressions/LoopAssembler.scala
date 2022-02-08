@@ -30,7 +30,7 @@ object LoopAssembler {
     // 1:     <cond 2>
     // 2:     JumpIfFalse --> 6 = rel +4  (bodyInstructionCount(3) + 1 = 4)
     // 3:     <body 1>
-    // 4:     Assign
+    // 4:     ListAppendUntyped
     // 5:     Jump --> abs 0 = rel -5  (1 - bodyInstructionCount(3) - conditionInstructionCount(3) = -5)
     // 6:     <after loop>
     val bodyInstructionCount = bodyChunk.instructions.length + (if (!ignoreResult) 2 else 1)
@@ -45,7 +45,7 @@ object LoopAssembler {
     )
 
     val bodyResultInstructions = if (!ignoreResult) Vector(
-      PoemInstruction.Assign(target, bodyChunk.forceResult(loop.body.position)),
+      PoemInstruction.ListAppendUntyped(target, target, bodyChunk.forceResult(loop.body.position)),
     ) else Vector.empty
     val postBodyInstructions = Vector(
       // We have to jump back to the beginning of the loop.
