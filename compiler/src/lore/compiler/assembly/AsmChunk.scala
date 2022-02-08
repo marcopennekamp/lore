@@ -1,7 +1,7 @@
 package lore.compiler.assembly
 
 import lore.compiler.core.{CompilationException, Position}
-import lore.compiler.poem.{Poem, PoemInstruction}
+import lore.compiler.poem.{Poem, PoemInstruction, PoemRealValue}
 
 // TODO (assembly): Rename this to Chunk once we've deleted the `transpilation` stuff.
 
@@ -27,7 +27,8 @@ case class AsmChunk(result: Option[Poem.Register], instructions: Vector[PoemInst
 object AsmChunk {
   val empty: AsmChunk = AsmChunk()
 
-  def apply(result: Poem.Register, instructions: PoemInstruction*): AsmChunk = AsmChunk(Some(result), instructions.toVector)
+  def apply(result: Poem.Register, instructions: Vector[PoemInstruction]): AsmChunk = AsmChunk(Some(result), instructions)
+  def apply(result: Poem.Register, instructions: PoemInstruction*): AsmChunk = AsmChunk(result, instructions.toVector)
 
   /**
     * Creates a new Chunk without a result register.

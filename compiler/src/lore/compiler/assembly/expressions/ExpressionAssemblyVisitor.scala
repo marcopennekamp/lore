@@ -15,6 +15,14 @@ import scala.collection.immutable.HashMap
 
 // TODO (assembly): Remember to insert implicit conversions from Int to Real values for arithmetic and comparison expressions.
 
+// TODO (assembly): There is a difference between an expression returning Unit and an expression's result not being
+//                  used. In the case of a loop, Unit incidentally also expresses that the result is not being used,
+//                  but only due to a "hack" inside Expression.Loop. In other cases, e.g. for Cond, without an "unused
+//                  expression" analysis, we have to assume that the Cond should always result in a target, so we at
+//                  least have to assign Unit to a target register if its result type is Unit. So, introducing a
+//                  separate "unused expression" analysis would improve our ability to generate more optimal code
+//                  without resorting to result type hacks.
+
 /**
   * The visitor should generate Jump instructions with <i>relative</i> locations. They will later be converted to
   * absolute locations when instructions are flattened.
@@ -160,7 +168,7 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
       //                  is the current upper bound for operand lists. To support this, we can have the VM generate
       //                  `ListAppendUntyped` instructions from the `List` instruction to handle the overflow in those
       //                  extremely rare cases.
-      val instruction = ??? // PoemInstruction.List(target, values.map(_.forceResult(expression.position)))
+      val instruction: PoemInstruction = ??? // PoemInstruction.List(target, values.map(_.forceResult(expression.position)))
       AsmChunk.concat(values) ++ AsmChunk(target, instruction)
     }
   }
@@ -262,7 +270,7 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
 
   override def visit(expression: Cond)(cases: Vector[(AsmChunk, AsmChunk)]): AsmChunk = ??? // ConditionalTranspiler.transpile(expression, cases)
 
-  override def visit(loop: WhileLoop)(condition: AsmChunk, body: AsmChunk): AsmChunk = ??? // LoopTranspiler().transpile(loop, condition, body)
+  override def visit(loop: WhileLoop)(condition: AsmChunk, body: AsmChunk): AsmChunk = LoopAssembler.generate(loop, condition, body)
 
   override def visit(loop: ForLoop)(collections: Vector[AsmChunk], body: AsmChunk): AsmChunk = ??? // LoopTranspiler().transpile(loop, collections, body)
 

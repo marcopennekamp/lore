@@ -52,6 +52,8 @@ object PoemInstruction {
 
   case class FunctionCall(target: PReg, function: PReg, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.FunctionCall)
 
+  case class ListPoly(target: PReg, tpe: PTpe) extends PoemInstruction(PoemOperation.ListPoly)
+
   /**
     * Represents both `ListAppend` and `ListAppendPoly`.
     *
