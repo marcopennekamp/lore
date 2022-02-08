@@ -8,5 +8,5 @@ import lore.compiler.assembly.PropertyOrder
 case class PoemMetaShape(names: Vector[String])
 
 object PoemMetaShape {
-  def build(names: Vector[String]): PoemMetaShape = PoemMetaShape(PropertyOrder.sort(names, identity))
+  def build(names: Vector[String]): PoemMetaShape = PoemMetaShape(PropertyOrder.sort(names)(identity))
 }
