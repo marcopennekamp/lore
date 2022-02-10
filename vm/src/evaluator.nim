@@ -121,10 +121,10 @@ template const_meta_shape_arg(index): untyped = constants.meta_shapes[instructio
 ########################################################################################################################
 
 # TODO (vm/parallel): This needs to be unique per thread.
-var operand_list: array[256, uint64]
+var operand_list: array[operand_list_limit, uint64]
 
-template value_operand_list: untyped = cast[array[256, TaggedValue]](operand_list)
-template type_operand_list: untyped = cast[array[256, Type]](operand_list)
+template value_operand_list: untyped = cast[array[operand_list_limit, TaggedValue]](operand_list)
+template type_operand_list: untyped = cast[array[operand_list_limit, Type]](operand_list)
 
 template opl_set_arg(offset: uint16, register_index: uint16): untyped =
   ## The base index is read from `arg0`. `offset` defines the offset from this base index.

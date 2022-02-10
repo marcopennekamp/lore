@@ -114,6 +114,8 @@ type
       ## A constant table's meta shapes are used to allocate new shape instances via the requisite instructions. They
       ## are not referenced by constant table types or values, nor by any other type declarations.
 
+const operand_list_limit*: int = 256
+
 ########################################################################################################################
 # Global variables.                                                                                                    #
 ########################################################################################################################
