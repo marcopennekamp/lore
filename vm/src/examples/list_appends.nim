@@ -11,11 +11,12 @@ let test = PoemFunction(
   is_abstract: false,
   register_count: 2,
   instructions: @[
-    poems.inst(PoemOperation.Const, 0, 0),
-    poems.inst(PoemOperation.Const, 1, 1),
-    poems.inst_list_append(0, 0, 1, 0),
+    poems.inst(PoemOperation.IntConst, 0, 1),
+    poems.inst_list(0, 0, 0),
+    poems.inst(PoemOperation.Const, 1, 0),
+    poems.inst_list_append(0, 0, 1, 1),
     poems.inst(PoemOperation.IntConst, 1, 5),
-    poems.inst_list_append(0, 0, 1, 0),
+    poems.inst_list_append(0, 0, 1, 1),
     poems.inst(PoemOperation.Return0),
   ],
 )
@@ -23,13 +24,10 @@ let test = PoemFunction(
 let poem* = Poem(
   constants: PoemConstants(
     types: @[
+      poems.list_type(poems.int_type),
       result_type,
     ],
     values: @[
-      poems.list_value(
-        @[poems.int_value(1)],
-        poems.list_type(poems.int_type),
-      ),
       poems.string_value("foo"),
     ],
   ),

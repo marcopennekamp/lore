@@ -146,11 +146,23 @@ type
     FunctionCall2
       ## reg(arg0) <- reg(arg1)(reg(arg2), reg(arg3))
 
+    List
+      ## reg(arg0) <- list(opl(0), ..., opl(arg2 - 1)), with type `tpe(arg1)`
+
     List0
       ## reg(arg0) <- empty_list, with type `tpe(arg1)`
 
+    List1
+      ## reg(arg0) <- list(reg(arg2)), with type `tpe(arg1)`
+
+    ListPoly
+      ## reg(arg0) <- list(opl(0), ..., opl(arg2 - 1)), with type `substitute(tpe(arg1))`
+
     ListPoly0
       ## reg(arg0) <- empty_list, with type `substitute(tpe(arg1))`
+
+    ListPoly1
+      ## reg(arg0) <- list(reg(arg2)), with type `substitute(tpe(arg1))`
 
     ListAppend
       ## reg(arg0) <- reg(arg1) :+ reg(arg2), with type `tpe(arg3)`

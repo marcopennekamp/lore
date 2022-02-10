@@ -402,8 +402,7 @@ proc evaluate(frame: FramePtr) =
     of Operation.StringLte: quit("StringLte is not yet implemented.")
 
     of Operation.Tuple:
-      let operand_count = instruction.arg(1)
-      var elements = new_immutable_seq(value_operand_list(), int(operand_count))
+      var elements = new_immutable_seq(value_operand_list(), instruction.argi(1))
       regv_set_ref_arg(0, values.new_tuple(elements))
 
     # TODO (vm): Implement TupleX with a single macro.
@@ -449,14 +448,33 @@ proc evaluate(frame: FramePtr) =
       let res = evaluate(function, frame, argument0, argument1)
       regv_set_arg(0, res)
 
+    of Operation.List:
+      let elements = new_immutable_seq(value_operand_list(), instruction.argi(2))
+      let list = values.new_list(elements, const_types_arg(1))
+      regv_set_ref_arg(0, list)
+
     of Operation.List0:
-      let tpe = const_types_arg(1)
-      let list = values.new_list(empty_immutable_seq[TaggedValue](), tpe)
-      regv_set_arg(0, list)
+      let list = values.new_list(empty_immutable_seq[TaggedValue](), const_types_arg(1))
+      regv_set_ref_arg(0, list)
+
+    of Operation.List1:
+      let list = values.new_list(new_immutable_seq([regv_get_arg(2)]), const_types_arg(1))
+      regv_set_ref_arg(0, list)
+
+    of Operation.ListPoly:
+      let tpe = types.substitute(const_types_arg(1), frame.type_arguments)
+      let elements = new_immutable_seq(value_operand_list(), instruction.argi(2))
+      let list = values.new_list(elements, tpe)
+      regv_set_ref_arg(0, list)
 
     of Operation.ListPoly0:
       let tpe = types.substitute(const_types_arg(1), frame.type_arguments)
       let list = values.new_list(empty_immutable_seq[TaggedValue](), tpe)
+      regv_set_ref_arg(0, list)
+
+    of Operation.ListPoly1:
+      let tpe = types.substitute(const_types_arg(1), frame.type_arguments)
+      let list = values.new_list(new_immutable_seq([regv_get_arg(2)]), tpe)
       regv_set_ref_arg(0, list)
 
     of Operation.ListAppend:

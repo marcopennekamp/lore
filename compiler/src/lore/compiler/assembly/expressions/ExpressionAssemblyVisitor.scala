@@ -163,11 +163,8 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
   override def visit(expression: ListConstruction)(values: Vector[AsmChunk]): AsmChunk = {
     val target = registerProvider.fresh()
     PoemValueAssembler.generateConst(expression, target).getOrElse {
-      // TODO (assembly): Expand the `List` instructions to accept elements. It should support more than 256 arguments,
-      //                  which is the current upper bound for operand lists. To support this, we can have the VM
-      //                  generate `ListAppendUntyped` instructions from the `List` instruction to handle the overflow
-      //                  in those extremely rare cases.
-      val instruction: PoemInstruction = ??? // PoemInstruction.List(target, tpe, values.map(_.forceResult(expression.position)))
+      val tpe = PoemTypeAssembler.generate(expression.tpe)
+      val instruction = PoemInstruction.List(target, tpe, values.map(_.forceResult(expression.position)))
       AsmChunk.concat(values) ++ AsmChunk(target, instruction)
     }
   }

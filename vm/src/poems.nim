@@ -209,7 +209,7 @@ type
   PoemInstructionList* = ref object of PoemInstruction
     target_reg*: uint16
     tpe*: uint16
-    #elements*: seq[uint16]
+    elements*: seq[uint16]
 
   PoemInstructionListAppend* = ref object of PoemInstruction
     target_reg*: uint16
@@ -422,8 +422,8 @@ proc inst_tuple*(target: uint16, arguments: varargs[uint16]): PoemInstruction =
 proc inst_function_call*(target: uint16, function: uint16, arguments: varargs[uint16]): PoemInstruction =
   PoemInstructionFunctionCall(target_reg: target, function_reg: function, arguments: @arguments)
 
-proc inst_list*(target: uint16, tpe: uint16): PoemInstruction =
-  PoemInstructionList(target_reg: target, tpe: tpe)
+proc inst_list*(target: uint16, tpe: uint16, elements: varargs[uint16]): PoemInstruction =
+  PoemInstructionList(target_reg: target, tpe: tpe, elements: @elements)
 
 proc inst_list_append*(target: uint16, list: uint16, element: uint16, tpe: uint16): PoemInstruction =
   PoemInstructionListAppend(target_reg: target, list_reg: list, element_reg: element, tpe: tpe)
@@ -774,6 +774,7 @@ proc read_instruction(stream: FileStream): PoemInstruction =
     PoemInstructionList(
       target_reg: stream.read(uint16),
       tpe: stream.read(uint16),
+      elements: stream.read_many_with_count(uint16, uint16, read_uint16),
     )
 
   of PoemOperation.ListAppend:
@@ -884,6 +885,7 @@ method write(instruction: PoemInstructionList, stream: FileStream) {.locks: "unk
   stream.write_operation(PoemOperation.List)
   stream.write(instruction.target_reg)
   stream.write(instruction.tpe)
+  stream.write_many_with_count(instruction.elements, uint16, write_uint16)
 
 method write(instruction: PoemInstructionListAppend, stream: FileStream) {.locks: "unknown".} =
   stream.write_operation(PoemOperation.ListAppend)
