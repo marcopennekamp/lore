@@ -146,6 +146,9 @@ type
     FunctionCall2
       ## reg(arg0) <- reg(arg1)(reg(arg2), reg(arg3))
 
+    List0
+      ## reg(arg0) <- empty_list, with type `tpe(arg1)`
+
     ListPoly0
       ## reg(arg0) <- empty_list, with type `substitute(tpe(arg1))`
 

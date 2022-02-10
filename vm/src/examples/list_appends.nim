@@ -13,9 +13,9 @@ let test = PoemFunction(
   instructions: @[
     poems.inst(PoemOperation.Const, 0, 0),
     poems.inst(PoemOperation.Const, 1, 1),
-    poems.inst(PoemOperation.ListAppend, 0, 0, 1, 0),
+    poems.inst_list_append(0, 0, 1, 0),
     poems.inst(PoemOperation.IntConst, 1, 5),
-    poems.inst(PoemOperation.ListAppend, 0, 0, 1, 0),
+    poems.inst_list_append(0, 0, 1, 0),
     poems.inst(PoemOperation.Return0),
   ],
 )

@@ -13,7 +13,7 @@ from pyramid import nil
 import schema_order
 from types import Kind, Type, TypeParameter, TypeVariable, SumType, IntersectionType, TupleType, FunctionType,
                   ListType, MapType, ShapeType, Schema,  DeclaredType, TraitSchema, TraitType, StructSchema,
-                  StructSchemaProperty, attach_inherited_shape_type, attach_property_type
+                  StructSchemaProperty, attach_inherited_shape_type, attach_property_type, is_polymorphic
 from values import TaggedValue
 
 type
@@ -373,6 +373,16 @@ method resolve_instruction(poem_instruction: PoemInstructionFunctionCall, contex
     poem_instruction.arguments,
   )
 
+method resolve_instruction(poem_instruction: PoemInstructionList, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  let tpe = context.get_constants.types[poem_instruction.tpe]
+  let operation = if tpe.is_polymorphic: Operation.List0 else: Operation.ListPoly0
+  @[new_instruction(operation, poem_instruction.target_reg, poem_instruction.tpe)]
+
+method resolve_instruction(poem_instruction: PoemInstructionListAppend, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  let tpe = context.get_constants.types[poem_instruction.tpe]
+  let operation = if tpe.is_polymorphic: Operation.ListAppend else: Operation.ListAppendPoly
+  @[new_instruction(operation, poem_instruction.target_reg, poem_instruction.list_reg, poem_instruction.element_reg, poem_instruction.tpe)]
+
 method resolve_instruction(poem_instruction: PoemInstructionShape, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   generate_xary_application(
     Operation.Shape,
@@ -558,9 +568,6 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
 
   of PoemOperation.TupleGet: Operation.TupleGet
 
-  of PoemOperation.ListPoly: Operation.ListPoly0
-  of PoemOperation.ListAppend: Operation.ListAppend
-  of PoemOperation.ListAppendPoly: Operation.ListAppendPoly
   of PoemOperation.ListAppendUntyped: Operation.ListAppendUntyped
 
   of PoemOperation.SymbolEq: Operation.SymbolEq
@@ -580,9 +587,9 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.TypeArg: Operation.TypeArg
   of PoemOperation.TypeConst: Operation.TypeConst
 
-  of PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.Shape, PoemOperation.Struct,
-     PoemOperation.PropertyGet, PoemOperation.Intrinsic, PoemOperation.IntrinsicVoid, PoemOperation.GlobalGet,
-     PoemOperation.Dispatch:
+  of PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.Shape, PoemOperation.List,
+     PoemOperation.ListAppend, PoemOperation.Struct, PoemOperation.PropertyGet, PoemOperation.Intrinsic,
+     PoemOperation.IntrinsicVoid, PoemOperation.GlobalGet, PoemOperation.Dispatch:
     quit(fmt"The poem operation {poem_operation} is not simple!")
 
 ########################################################################################################################

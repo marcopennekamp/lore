@@ -190,7 +190,7 @@ proc fits_poly1*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq
 proc substitute*(tpe: Type, type_arguments: open_array[Type]): Type
 proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type
 
-proc is_polymorphic(tpe: Type): bool
+proc is_polymorphic*(tpe: Type): bool
 
 proc sum_simplified*(parts: open_array[Type]): Type
 proc sum_simplified*(parts: ImSeq[Type]): Type
@@ -1436,7 +1436,7 @@ proc fits_assign_declared_type(t1: DeclaredType, t2: DeclaredType, assignments: 
 
 proc is_polymorphic(types: ImSeq[Type]): bool
 
-proc is_polymorphic(tpe: Type): bool =
+proc is_polymorphic*(tpe: Type): bool =
   ## Whether `tpe` is polymorphic. This can usually be decided based on the presence of type parameters, so this
   ## function should only be used if polymorphy must be decided for subterms in types.
   case tpe.kind

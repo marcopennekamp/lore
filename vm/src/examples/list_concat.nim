@@ -20,7 +20,7 @@ let concat = PoemFunction(
     poems.inst(PoemOperation.IntLt, 4, 2, 3),              # continue? = i < list2_len
     poems.inst(PoemOperation.JumpIfFalse, 9, 4),           # if !continue?: jump to end
     poems.inst_intrinsic(5, 1, 1, 2),                      # element = lore.lists.get(list2, i)
-    poems.inst(PoemOperation.ListAppendPoly, 0, 0, 5, 0),  # list1 = list1 :+ element
+    poems.inst_list_append(0, 0, 5, 0),                    # list1 = list1 :+ element
     poems.inst(PoemOperation.IntConst, 5, 1),
     poems.inst(PoemOperation.IntAdd, 2, 2, 5),             # i += 1
     poems.inst(PoemOperation.Jump, 2),                     # jump to loop start

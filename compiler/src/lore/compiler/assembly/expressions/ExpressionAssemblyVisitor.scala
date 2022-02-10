@@ -163,11 +163,11 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
   override def visit(expression: ListConstruction)(values: Vector[AsmChunk]): AsmChunk = {
     val target = registerProvider.fresh()
     PoemValueAssembler.generateConst(expression, target).getOrElse {
-      // TODO (assembly): Expand the ListPoly instruction to accept elements. It should support more than 256
-      //                  arguments, which is the current upper bound for operand lists. To support this, we can have
-      //                  the VM generate `ListAppendUntyped` instructions from the `ListPoly` instruction to handle
-      //                  the overflow in those extremely rare cases.
-      val instruction: PoemInstruction = ??? // PoemInstruction.ListPoly(target, tpe, values.map(_.forceResult(expression.position)))
+      // TODO (assembly): Expand the `List` instructions to accept elements. It should support more than 256 arguments,
+      //                  which is the current upper bound for operand lists. To support this, we can have the VM
+      //                  generate `ListAppendUntyped` instructions from the `List` instruction to handle the overflow
+      //                  in those extremely rare cases.
+      val instruction: PoemInstruction = ??? // PoemInstruction.List(target, tpe, values.map(_.forceResult(expression.position)))
       AsmChunk.concat(values) ++ AsmChunk(target, instruction)
     }
   }
@@ -222,12 +222,11 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
     // type `[t1]` at run time, it might also be typed as a subtype `[t2]` of `[t1]`. If at run time the list is of
     // type `[t2]` and the element has the type `t1`, the append should result in a list of type `[t1]`.
     // `ListAppendUntyped` would result in a list of type `[t2]`.
-    val operation = if (isPolymorphic(expression.tpe)) PoemOperation.ListAppendPoly else PoemOperation.ListAppend
     val target = registerProvider.fresh()
     val list = listChunk.forceResult(expression.position)
     val element = elementChunk.forceResult(expression.position)
     val tpe = PoemTypeAssembler.generate(expression.tpe)
-    val instruction = PoemInstruction.ListAppend(operation, target, list, element, tpe)
+    val instruction = PoemInstruction.ListAppend(PoemOperation.ListAppend, target, list, element, tpe)
     listChunk ++ elementChunk ++ AsmChunk(target, instruction)
   }
 

@@ -52,14 +52,7 @@ object PoemInstruction {
 
   case class FunctionCall(target: PReg, function: PReg, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.FunctionCall)
 
-  case class ListPoly(target: PReg, tpe: PTpe) extends PoemInstruction(PoemOperation.ListPoly)
-
-  /**
-    * Represents both `ListAppend` and `ListAppendPoly`.
-    *
-    * TODO (assembly): Can't the VM decide whether to use Poly? If `tpe` contains a type variable, it must be Poly, no?
-    *                  This might be an implementation detail that shouldn't be exposed by the API.
-    */
+  case class List(target: PReg, tpe: PTpe) extends PoemInstruction(PoemOperation.List)
   case class ListAppend(override val operation: PoemOperation, target: PReg, list: PReg, element: PReg, tpe: PTpe) extends PoemInstruction(operation)
   case class ListAppendUntyped(target: PReg, list: PReg, element: PReg) extends PoemInstruction(PoemOperation.ListAppendUntyped)
 

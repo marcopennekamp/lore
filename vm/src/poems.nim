@@ -122,16 +122,14 @@ type
     FunctionCall
       ## target_reg: uint16, function_reg: uint16, n: uint8, reg0: uint16, ..., reg_n: uint16
 
-    ListPoly
-      ## target_reg: uint16, tpe: uint16
+    List
+      ## target_reg: uint16, tpe: uint16, n: uint16, element0_reg: uint16, ..., element_n_reg: uint16
       ##
-      ## Creates an empty list with the given type. `tpe` may contain type variables, which will be substituted. This
-      ## instruction is intended to be used in conjunction with `ListAppendUntyped` to append quickly to a list without
-      ## rebuilding the list type every time.
-      ##
-      ## For now, ListPoly can only be used to build an empty list.
+      ## Creates an empty list with the given type and elements. Type variables in `tpe` will be substituted.
     ListAppend
-    ListAppendPoly
+      ## target_reg: uint16, list_reg: uint16, element_reg: uint16, tpe: uint16
+      ##
+      ## Appends `element` to `list`, giving it the new type `tpe`. Type variables in `tpe` will be substituted.
     ListAppendUntyped
 
     Shape
@@ -207,6 +205,17 @@ type
     target_reg*: uint16
     function_reg*: uint16
     arguments*: seq[uint16]
+
+  PoemInstructionList* = ref object of PoemInstruction
+    target_reg*: uint16
+    tpe*: uint16
+    #elements*: seq[uint16]
+
+  PoemInstructionListAppend* = ref object of PoemInstruction
+    target_reg*: uint16
+    list_reg*: uint16
+    element_reg*: uint16
+    tpe*: uint16
 
   PoemInstructionShape* = ref object of PoemInstruction
     target_reg*: uint16
@@ -412,6 +421,12 @@ proc inst_tuple*(target: uint16, arguments: varargs[uint16]): PoemInstruction =
 
 proc inst_function_call*(target: uint16, function: uint16, arguments: varargs[uint16]): PoemInstruction =
   PoemInstructionFunctionCall(target_reg: target, function_reg: function, arguments: @arguments)
+
+proc inst_list*(target: uint16, tpe: uint16): PoemInstruction =
+  PoemInstructionList(target_reg: target, tpe: tpe)
+
+proc inst_list_append*(target: uint16, list: uint16, element: uint16, tpe: uint16): PoemInstruction =
+  PoemInstructionListAppend(target_reg: target, list_reg: list, element_reg: element, tpe: tpe)
 
 proc inst_shape*(target: uint16, meta_shape: uint16, arguments: varargs[uint16]): PoemInstruction =
   PoemInstructionShape(target_reg: target, meta_shape: meta_shape, arguments: @arguments)
@@ -755,6 +770,20 @@ proc read_instruction(stream: FileStream): PoemInstruction =
       arguments: stream.read_instruction_arguments_with_count(),
     )
 
+  of PoemOperation.List:
+    PoemInstructionList(
+      target_reg: stream.read(uint16),
+      tpe: stream.read(uint16),
+    )
+
+  of PoemOperation.ListAppend:
+    PoemInstructionListAppend(
+      target_reg: stream.read(uint16),
+      list_reg: stream.read(uint16),
+      element_reg: stream.read(uint16),
+      tpe: stream.read(uint16),
+    )
+
   of PoemOperation.Shape:
     PoemInstructionShape(
       target_reg: stream.read(uint16),
@@ -851,6 +880,18 @@ method write(instruction: PoemInstructionFunctionCall, stream: FileStream) {.loc
   stream.write(instruction.function_reg)
   stream.write_instruction_arguments_with_count(instruction.arguments)
 
+method write(instruction: PoemInstructionList, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.List)
+  stream.write(instruction.target_reg)
+  stream.write(instruction.tpe)
+
+method write(instruction: PoemInstructionListAppend, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.ListAppend)
+  stream.write(instruction.target_reg)
+  stream.write(instruction.list_reg)
+  stream.write(instruction.element_reg)
+  stream.write(instruction.tpe)
+
 method write(instruction: PoemInstructionShape, stream: FileStream) {.locks: "unknown".} =
   stream.write_operation(PoemOperation.Shape)
   stream.write(instruction.target_reg)
@@ -900,14 +941,13 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
   case operation
   of ReturnUnit, Return0: 0
   of Jump, Return: 1
-  of Assign, Const, ConstPoly, IntConst, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, ListPoly,
-     JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
+  of Assign, Const, ConstPoly, IntConst, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, JumpIfFalse,
+     JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
   of IntAdd, IntSub, IntMul, IntDiv, IntEq, IntLt, IntLte, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte,
      BooleanOr, BooleanAnd, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped, SymbolEq,
      StructEq: 3
-  of ListAppend, ListAppendPoly: 4
-  of PoemOperation.Tuple, FunctionCall, PoemOperation.Shape, PoemOperation.Struct, PropertyGet, Intrinsic,
-     IntrinsicVoid, GlobalGet, Dispatch:
+  of PoemOperation.Tuple, FunctionCall, PoemOperation.Shape, PoemOperation.List, ListAppend, PoemOperation.Struct,
+     PropertyGet, Intrinsic, IntrinsicVoid, GlobalGet, Dispatch:
     quit(fmt"Poem operation {operation} is not simple!")
 
 ########################################################################################################################
