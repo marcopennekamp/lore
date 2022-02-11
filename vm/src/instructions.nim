@@ -173,6 +173,12 @@ type
     ListAppendUntyped
       ## reg(arg0) <- reg(arg1) :+ reg(arg2), with type of `reg(arg1)`
 
+    ListLength
+      ## reg(arg0) <- reg(arg1).length
+
+    ListGet
+      ## reg(arg0) <- reg(arg1)[reg(arg2)]
+
     Shape
       ## reg(arg0) <- shape(mtsh(arg1), opl(0), ..., opl(arg2 - 1))
 

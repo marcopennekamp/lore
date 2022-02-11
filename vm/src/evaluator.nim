@@ -489,6 +489,15 @@ proc evaluate(frame: FramePtr) =
       let list = regv_get_ref_arg(1, ListValue)
       generate_list_append(list.tpe)
 
+    of Operation.ListLength:
+      let list = regv_get_ref_arg(1, ListValue)
+      regv_set_int_arg(0, list.elements.len)
+
+    of Operation.ListGet:
+      let list = regv_get_ref_arg(1, ListValue)
+      let index = regv_get_int_arg(2)
+      regv_set_arg(0, list.elements[index])
+
     of Operation.Shape:
       let meta_shape = const_meta_shape_arg(1)
       regv_set_ref_arg(0, values.new_shape_value(meta_shape, oplv_get_open_array_arg(2)))

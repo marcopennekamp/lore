@@ -12,7 +12,7 @@ let test = PoemFunction(
     poems.inst(PoemOperation.IntConst, 2, 3),
     poems.inst_list(0, 0, 0, 1, 2),
     poems.inst(PoemOperation.IntConst, 1, 1),
-    poems.inst_intrinsic(0, 0, 0, 1),           # lore.lists.get
+    poems.inst(PoemOperation.ListGet, 0, 0, 1),
     poems.inst(PoemOperation.Return0),
   ],
 )
@@ -22,7 +22,6 @@ let poem* = Poem(
     types: @[
       poems.list_type(poems.int_type),
     ],
-    intrinsics: @["lore.lists.get"],
   ),
   functions: @[test],
 )

@@ -55,6 +55,8 @@ object PoemInstruction {
   case class List(target: PReg, tpe: PTpe, elements: Vector[PReg]) extends PoemInstruction(PoemOperation.List)
   case class ListAppend(override val operation: PoemOperation, target: PReg, list: PReg, element: PReg, tpe: PTpe) extends PoemInstruction(operation)
   case class ListAppendUntyped(target: PReg, list: PReg, element: PReg) extends PoemInstruction(PoemOperation.ListAppendUntyped)
+  case class ListLength(target: PReg, list: PReg) extends PoemInstruction(PoemOperation.ListLength)
+  case class ListGet(target: PReg, list: PReg, index: PReg) extends PoemInstruction(PoemOperation.ListGet)
 
   case class Shape(target: PReg, metaShape: PMtsh, properties: Vector[PReg]) extends PoemInstruction(PoemOperation.Shape)
 

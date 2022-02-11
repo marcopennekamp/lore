@@ -15,11 +15,11 @@ let concat = PoemFunction(
   instructions: @[
     # input: list1 in reg0, list2 in reg1
     poems.inst(PoemOperation.IntConst, 2, 0),              # i = 0
-    poems.inst_intrinsic(3, 0, 1),                         # list2_len = lore.lists.length(list2)
+    poems.inst(PoemOperation.ListLength, 3, 1),            # list2_len = list2.length
 
     poems.inst(PoemOperation.IntLt, 4, 2, 3),              # continue? = i < list2_len
     poems.inst(PoemOperation.JumpIfFalse, 9, 4),           # if !continue?: jump to end
-    poems.inst_intrinsic(5, 1, 1, 2),                      # element = lore.lists.get(list2, i)
+    poems.inst(PoemOperation.ListGet, 5, 1, 2),            # element = list2.get(i)
     poems.inst_list_append(0, 0, 5, 0),                    # list1 = list1 :+ element
     poems.inst(PoemOperation.IntConst, 5, 1),
     poems.inst(PoemOperation.IntAdd, 2, 2, 5),             # i += 1
@@ -61,7 +61,6 @@ let poem* = Poem(
         poems.list_type(poems.string_type),
       ),
     ],
-    intrinsics: @["lore.lists.length", "lore.lists.get"],
     multi_functions: @["concat"],
   ),
   functions: @[concat, test],

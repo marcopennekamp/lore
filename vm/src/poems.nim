@@ -131,6 +131,9 @@ type
       ##
       ## Appends `element` to `list`, giving it the new type `tpe`. Type variables in `tpe` will be substituted.
     ListAppendUntyped
+    ListLength
+    ListGet
+      ## `ListGet` does not perform bounds checks, so only use this operation if bounds have been ensured beforehand.
 
     Shape
       ## target_reg: uint16, mtsh: uint16, n: uint8, reg0: uint16, ..., reg_n: uint16
@@ -943,11 +946,11 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
   case operation
   of ReturnUnit, Return0: 0
   of Jump, Return: 1
-  of Assign, Const, ConstPoly, IntConst, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, JumpIfFalse,
-     JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
+  of Assign, Const, ConstPoly, IntConst, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, ListLength,
+     JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
   of IntAdd, IntSub, IntMul, IntDiv, IntEq, IntLt, IntLte, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte,
-     BooleanOr, BooleanAnd, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped, SymbolEq,
-     StructEq: 3
+     BooleanOr, BooleanAnd, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped, ListGet,
+     SymbolEq, StructEq: 3
   of PoemOperation.Tuple, FunctionCall, PoemOperation.Shape, PoemOperation.List, ListAppend, PoemOperation.Struct,
      PropertyGet, Intrinsic, IntrinsicVoid, GlobalGet, Dispatch:
     quit(fmt"Poem operation {operation} is not simple!")
