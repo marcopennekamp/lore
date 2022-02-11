@@ -106,18 +106,24 @@ proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
 
   constants.names = poem_constants.names
 
-  # TODO (vm): We should probably check whether the name exists and output an error. Same goes for global variables,
-  #            schemas, and multi-functions.
   for name in poem_constants.intrinsics:
+    if name notin universe.intrinsics:
+      quit(fmt"The intrinsic `{name}` doesn't exist.")
     constants.intrinsics.add(universe.intrinsics[name])
 
   for name in poem_constants.schemas:
+    if name notin universe.schemas:
+      quit(fmt"The schema `{name}` doesn't exist.")
     constants.schemas.add(universe.schemas[name])
 
   for name in poem_constants.global_variables:
+    if name notin universe.global_variables:
+      quit(fmt"The global variable `{name}` doesn't exist.")
     constants.global_variables.add(universe.global_variables[name])
 
   for name in poem_constants.multi_functions:
+    if name notin universe.multi_functions:
+      quit(fmt"The multi-function `{name}` doesn't exist.")
     constants.multi_functions.add(universe.multi_functions[name])
 
   for poem_meta_shape in poem_constants.meta_shapes:
