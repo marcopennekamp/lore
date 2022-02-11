@@ -1,4 +1,5 @@
 package lore.compiler.poem
+
 import lore.compiler.poem.PoemOperation.PoemOperation
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
@@ -11,11 +12,26 @@ import lore.compiler.types.DeclaredSchema
   * Hence, a PoemInstruction doesn't contain index references to the constant table entries, but the constants
   * themselves.
   *
-  * PoemInstructions may exist in an unprocessed form where `PLoc` doesn't refer to an absolute jump target, but a
-  * relative one. This will be resolved during assembly immediately after instructions for a function have been
+  * PoemInstructions may exist in an unprocessed form where `PLoc` doesn't refer to an absolute jump target, but an
+  * instruction label. This will be resolved during assembly immediately after instructions for a function have been
   * flattened.
   */
-sealed abstract class PoemInstruction(val operation: PoemOperation)
+sealed abstract class PoemInstruction(val operation: PoemOperation) {
+  /**
+    * All labels that have been attached to the instruction. The instruction's ultimate position will determine the
+    * location of the label.
+    */
+  var labels: Vector[Poem.Label] = Vector.empty
+
+  def addLabel(label: Poem.Label): Unit = {
+    labels = labels :+ label
+  }
+
+  def withLabel(label: Poem.Label): PoemInstruction = {
+    addLabel(label)
+    this
+  }
+}
 
 object PoemInstruction {
   // These types are merely used to keep the following case class declarations short.
@@ -48,7 +64,7 @@ object PoemInstruction {
   case class Tuple(target: PReg, elements: Vector[PReg]) extends PoemInstruction(PoemOperation.Tuple)
   case class TupleGet(target: PReg, tuple: PReg, index: Int) extends PoemInstruction(PoemOperation.TupleGet)
 
-  def tupleUnit(target: PReg): PoemInstruction = Tuple(target, Vector.empty)
+  def unit(target: PReg): PoemInstruction = Tuple(target, Vector.empty)
 
   case class FunctionCall(target: PReg, function: PReg, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.FunctionCall)
 

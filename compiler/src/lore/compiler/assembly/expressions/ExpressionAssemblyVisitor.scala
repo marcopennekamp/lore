@@ -24,7 +24,7 @@ import scala.collection.immutable.HashMap
 //                  without resorting to result type hacks.
 
 /**
-  * The visitor should generate Jump instructions with <i>relative</i> locations. They will later be converted to
+  * The visitor should generate Jump instructions with <i>label</i> locations. They will later be converted to
   * absolute locations when instructions are flattened.
   */
 class ExpressionAssemblyVisitor()(implicit registry: Registry) extends ExpressionVisitor[AsmChunk, AsmChunk] {

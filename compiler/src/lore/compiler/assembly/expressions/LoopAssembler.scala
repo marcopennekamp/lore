@@ -3,57 +3,50 @@ package lore.compiler.assembly.expressions
 import lore.compiler.assembly.types.PoemTypeAssembler
 import lore.compiler.assembly.{AsmChunk, RegisterProvider}
 import lore.compiler.poem.{Poem, PoemInstruction}
-import lore.compiler.semantics.expressions.Expression.WhileLoop
+import lore.compiler.semantics.expressions.Expression
 import lore.compiler.types.TupleType
 
 object LoopAssembler {
 
   def generate(
-    loop: WhileLoop,
+    loop: Expression.WhileLoop,
     conditionChunk: AsmChunk,
     bodyChunk: AsmChunk,
   )(implicit registerProvider: RegisterProvider): AsmChunk = {
     val ignoreResult = loop.tpe == TupleType.UnitType
     val target = registerProvider.fresh()
 
-    val initializeTargetInstruction = if (!ignoreResult) {
-      PoemInstruction.ListPoly(target, PoemTypeAssembler.generate(loop.tpe))
-    } else {
-      PoemInstruction.tupleUnit(target)
-    }
+    // We need two labels. One label for jumping from the body back to the condition for the next iteration, and one
+    // label to skip past the body.
+    val conditionLabel = new Poem.Label
+    val postBodyLabel = new Poem.Label(isPost = true)
 
-    // We have to prepare instruction counts because we need mutual relative jump targets from body to condition and
-    // from the condition past the body. These counts have to be kept up-to-date with their actual instructions.
-    //
-    // Jump target example:
-    // 0:     <cond 1>
-    // 1:     <cond 2>
-    // 2:     JumpIfFalse --> 6 = rel +4  (bodyInstructionCount(3) + 1 = 4)
-    // 3:     <body 1>
-    // 4:     ListAppendUntyped
-    // 5:     Jump --> abs 0 = rel -5  (1 - bodyInstructionCount(3) - conditionInstructionCount(3) = -5)
-    // 6:     <after loop>
-    val bodyInstructionCount = bodyChunk.instructions.length + (if (!ignoreResult) 2 else 1)
-    val conditionInstructionCount = conditionChunk.instructions.length + 1
+    val initializationChunk = AsmChunk(
+      if (!ignoreResult) PoemInstruction.List(target, PoemTypeAssembler.generate(loop.tpe), Vector.empty)
+      else PoemInstruction.unit(target)
+    )
 
-    val conditionInstructions = conditionChunk.instructions ++ Vector(
-      // The `+1` is necessary to jump past all body instructions.
+    val checkConditionChunk = AsmChunk(
+      conditionChunk.instructions,
       PoemInstruction.JumpIfFalse(
-        Poem.Location(bodyInstructionCount + 1),
+        Poem.LabelLocation(postBodyLabel),
         conditionChunk.forceResult(loop.condition.position)
-      )
+      ),
     )
 
-    val bodyResultInstructions = if (!ignoreResult) Vector(
-      PoemInstruction.ListAppendUntyped(target, target, bodyChunk.forceResult(loop.body.position)),
-    ) else Vector.empty
-    val postBodyInstructions = Vector(
+    val fullBodyChunk = bodyChunk ++ AsmChunk(
+      if (!ignoreResult) Vector(
+        PoemInstruction.ListAppendUntyped(target, target, bodyChunk.forceResult(loop.body.position)),
+      ) else Vector.empty,
+
       // We have to jump back to the beginning of the loop.
-      PoemInstruction.Jump(Poem.Location(1 - bodyInstructionCount - conditionInstructionCount)),
+      PoemInstruction.Jump(Poem.LabelLocation(conditionLabel)),
     )
-    val bodyInstructions = bodyChunk.instructions ++ bodyResultInstructions ++ postBodyInstructions
 
-    AsmChunk(target, Vector(initializeTargetInstruction) ++ conditionInstructions ++ bodyInstructions)
+    checkConditionChunk.labelFirst(conditionLabel)
+    fullBodyChunk.labelLast(postBodyLabel)
+
+    initializationChunk ++ checkConditionChunk ++ fullBodyChunk ++ AsmChunk(target)
   }
 
 }
