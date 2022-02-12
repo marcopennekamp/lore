@@ -8,9 +8,16 @@ func ceil(x: Real): Int = dynamic[Int]('Lore.math.ceil', x)
 
 func remainder(a: Int, b: Int): Int = dynamic[Int]('Lore.math.remainder', a, b)
 
-func min(x: Number, y: Number): Number = if x < y then x else y
-func max(x: Number, y: Number): Number = if x > y then x else y
+//func min(x: Number, y: Number): Number = if x < y then x else y
+//func max(x: Number, y: Number): Number = if x > y then x else y
 
-func absolute(x: Number): Number = if x < 0 then -x else x
+func min(x: Int, y: Int): Int = if x < y then x else y
+func max(x: Int, y: Int): Int = if x > y then x else y
+func min(x: Real, y: Real): Real = if x < y then x else y
+func max(x: Real, y: Real): Real = if x > y then x else y
+
+//func absolute(x: Number): Number = if x < 0 then -x else x
+func absolute(x: Int): Int = if x < 0 then -x else x
+func absolute(x: Real): Real = if x < 0 then -x else x
 
 func pow(base: Real, exponent: Real): Real = dynamic[Real]('Lore.math.pow', base, exponent)

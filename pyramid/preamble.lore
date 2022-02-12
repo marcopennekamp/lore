@@ -31,5 +31,5 @@ type Unit = ()
   * issue in practice and should be remedied once we switch to a different runtime (such as LLVM, WASM, or another
   * target language).
   */
-type Int = Number
-type Real = Number
+//type Int = Number
+//type Real = Number
