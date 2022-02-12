@@ -1,7 +1,7 @@
 package lore.compiler.assembly
 
 import lore.compiler.core.{CompilationException, Position}
-import lore.compiler.poem.{Poem, PoemInstruction, PoemRealValue}
+import lore.compiler.poem.{Poem, PoemInstruction}
 
 // TODO (assembly): Rename this to Chunk once we've deleted the `transpilation` stuff.
 

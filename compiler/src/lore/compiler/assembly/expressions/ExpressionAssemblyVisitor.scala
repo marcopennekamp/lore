@@ -265,9 +265,21 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
 
   override def visit(expression: Cond)(cases: Vector[(AsmChunk, AsmChunk)]): AsmChunk = ??? // ConditionalTranspiler.transpile(expression, cases)
 
-  override def visit(loop: WhileLoop)(condition: AsmChunk, body: AsmChunk): AsmChunk = LoopAssembler.generate(loop, condition, body)
 
-  override def visit(loop: ForLoop)(collections: Vector[AsmChunk], body: AsmChunk): AsmChunk = ??? // LoopTranspiler().transpile(loop, collections, body)
+
+  override def visit(loop: WhileLoop)(conditionChunk: AsmChunk, bodyChunk: AsmChunk): AsmChunk = LoopAssembler.generate(loop, conditionChunk, bodyChunk)
+
+  override def visit(loop: ForLoop)(collectionChunks: Vector[AsmChunk], bodyChunk: AsmChunk): AsmChunk = LoopAssembler.generate(loop, collectionChunks, bodyChunk)
 
   override def visit(expression: Ascription)(value: AsmChunk): AsmChunk = value
+
+  override def before: PartialFunction[Expression, Unit] = {
+    case expression: ForLoop =>
+      // We have to assign registers to all extractor element variables so that the loop's body can access them.
+      expression.extractors.foreach { extractor =>
+        variableRegisterMap += (extractor.variable.uniqueKey -> registerProvider.fresh())
+      }
+
+    case _ =>
+  }
 }
