@@ -231,35 +231,21 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
   }
 
   override def visit(expression: Call)(target: Option[AsmChunk], arguments: Vector[AsmChunk]): AsmChunk = {
-//    def withArguments(f: Vector[Target.TargetExpression] => Target.TargetExpression) = {
-//      AsmChunk.combine(arguments) { arguments => AsmChunk.expression(f(arguments)) }
-//    }
-//    def functionValueCall(function: Target.TargetExpression) = withArguments(RuntimeApi.functions.call(function, _))
-//    def directCall(expression: Target.TargetExpression) = withArguments(Target.Call(expression, _))
-//
-//    expression.target match {
-//      case CallTarget.Value(ConstructorValue(_, structType, _)) =>
-//        // Optimization: If we're directly calling a constructor value, the function call boils down to calling the
-//        // `construct` function. This allows us to bypass a run-time call to `getConstructor` for structs with type
-//        // parameters.
-//        withArguments(arguments => InstantiationTranspiler.transpileStructInstantiation(structType, arguments))
-//
-//      case CallTarget.Value(_) => target.get.flatMap(functionValueCall)
-//
-//      case CallTarget.MultiFunction(mf) => directCall(TargetRepresentableTranspiler.transpile(mf))
-//
-//      case CallTarget.Constructor(_) =>
-//        // The result type of the constructor call is the struct with instantiated type parameters. Hence, we can take
-//        // it here for transpilation.
-//        val structType = expression.tpe match {
-//          case structType: StructType => structType
-//          case _ => throw CompilationException(s"The result type of a constructor must be a struct. Position: ${expression.position}.")
-//        }
-//        withArguments(arguments => InstantiationTranspiler.transpileStructInstantiation(structType, arguments))
-//
-//      case CallTarget.Dynamic(name) => directCall(name.asVariable)
-//    }
-    ???
+    val regResult = registerProvider.fresh()
+    val argumentRegs = arguments.map(_.forceResult(expression.position))
+
+    val callChunk = expression.target match {
+      case CallTarget.MultiFunction(mf) => AsmChunk(regResult, PoemInstruction.Dispatch(regResult, mf, argumentRegs))
+
+      case CallTarget.Value(expression) => ???
+      case CallTarget.Constructor(binding) => ???
+
+      case CallTarget.Dynamic(intrinsic) =>
+        // TODO (assembly): If the Call has been analyzed to be unused, we can use `IntrinsicVoid`.
+        AsmChunk(regResult, PoemInstruction.Intrinsic(regResult, intrinsic, argumentRegs))
+    }
+
+    AsmChunk.concat(arguments) ++ callChunk
   }
 
   override def visit(cond: Cond)(caseChunks: Vector[(AsmChunk, AsmChunk)]): AsmChunk = CondAssembler.generate(cond, caseChunks)

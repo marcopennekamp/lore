@@ -23,7 +23,8 @@ object StructTransformer {
           registry.getBindingScope(struct.localModule),
           s"${struct.name}.${property.name}",
         )
-        val callTarget = CallTarget.Dynamic(RuntimeNames.struct.defaultValue(struct.schema, property).toString)
+        //val callTarget = CallTarget.Dynamic(RuntimeNames.struct.defaultValue(struct.schema, property).toString)
+        val callTarget = ???
         StructPropertyDefinition.DefaultValue(expression, callTarget)
       }
     }

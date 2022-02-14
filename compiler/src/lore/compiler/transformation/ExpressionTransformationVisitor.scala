@@ -2,6 +2,7 @@ package lore.compiler.transformation
 
 import lore.compiler.core._
 import lore.compiler.feedback.{ExpressionFeedback, MultiFunctionFeedback, Reporter, StructFeedback}
+import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.resolution.TypeExpressionEvaluator
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
@@ -213,9 +214,22 @@ class ExpressionTransformationVisitor(
         expression => Some(handleValueCall(expression)),
       )(namePathNode).getOrElse(Expression.Hole(BasicType.Nothing, position))
 
-    case DynamicCallNode(nameLiteral, resultTypeNode, _, position) =>
+    case node@DynamicCallNode(nameLiteral, resultTypeNode, _, position) =>
+      val name = nameLiteral.value
       val resultType = TypeExpressionEvaluator.evaluate(resultTypeNode).getOrElse(BasicType.Nothing)
-      Expression.Call(CallTarget.Dynamic(nameLiteral.value), expressions, resultType, position)
+
+      // We have to check the existence and arity of the invoked intrinsic before we can create the Call expression.
+      PoemIntrinsic.intrinsicsMap.get(name) match {
+        case Some(intrinsic) =>
+          if (intrinsic.arity != expressions.length) {
+            reporter.error(ExpressionFeedback.Intrinsic.IllegalArity(node, intrinsic, expressions.length))
+          }
+          Expression.Call(CallTarget.Dynamic(intrinsic), expressions, resultType, position)
+
+        case None =>
+          reporter.error(ExpressionFeedback.Intrinsic.NotFound(node, name))
+          Expression.Hole(resultType, position)
+      }
   }
 
   override def visitAnonymousFunction(node: AnonymousFunctionNode)(visitBody: () => Expression): Expression = {

@@ -1,6 +1,7 @@
 package lore.compiler.feedback
 
 import lore.compiler.core.Position
+import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.modules.GlobalModule
@@ -30,6 +31,17 @@ object ExpressionFeedback {
   case class InvalidTotalCase(node: ExprNode.CondNode) extends Feedback.Error(node) {
     override def message: String = s"Cond expressions may only have a single total case (`true => ...`) as the last" +
       s" case. Mixing in total cases is not allowed because any subsequent cases are dead code."
+  }
+
+  object Intrinsic {
+    case class NotFound(node: ExprNode.DynamicCallNode, name: String) extends Feedback.Error(node) {
+      override def message: String = s"The intrinsic `$name` does not exist."
+    }
+
+    case class IllegalArity(node: ExprNode.DynamicCallNode, intrinsic: PoemIntrinsic, argumentCount: Int) extends Feedback.Error(node) {
+      override def message: String = s"The intrinsic `${intrinsic.name}` expects ${intrinsic.arity} arguments, but got" +
+        s" $argumentCount arguments."
+    }
   }
 
   object FixedFunction {

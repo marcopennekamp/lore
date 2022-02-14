@@ -38,7 +38,7 @@ object PoemInstruction {
   type PReg = Poem.Register
   type PVal = PoemValue
   type PTpe = PoemType
-  type PIntr = String
+  type PIntr = PoemIntrinsic
   type PSch = DeclaredSchema
   type PGlb = GlobalVariableDefinition
   type PMf = MultiFunctionDefinition

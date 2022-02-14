@@ -1,8 +1,8 @@
 package lore.compiler.semantics.functions
 
+import lore.compiler.poem.PoemIntrinsic
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.scopes.StructConstructorBinding
-import lore.compiler.semantics.structures.StructDefinition
 
 /**
   * A call target models the callable entity in a [[Expression.Call]].
@@ -39,11 +39,13 @@ object CallTarget {
   }
 
   /**
+    * TODO (assembly): Rename this to Intrinsic.
+    *
     * A dynamic call target, meaning that we trust in the runtime to provide the correct bindings. We don't know
     * anything about the input type.
     */
-  case class Dynamic(name: String) extends CallTarget {
-    override def toString: String = name
+  case class Dynamic(intrinsic: PoemIntrinsic) extends CallTarget {
+    override def toString: String = intrinsic.name
   }
 
 }
