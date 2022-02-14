@@ -1,6 +1,6 @@
 package lore.compiler.assembly.expressions
 
-import lore.compiler.assembly.types.PoemTypeAssembler
+import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.{AsmChunk, RegisterProvider}
 import lore.compiler.poem.{Poem, PoemInstruction, PoemOperation}
 import lore.compiler.semantics.expressions.Expression
@@ -169,7 +169,7 @@ object LoopAssembler {
 
   private def generateResultInitialization(loop: Expression.Loop, regResult: Poem.Register): AsmChunk = {
     AsmChunk(
-      if (!shouldIgnoreResult(loop)) PoemInstruction.List(regResult, PoemTypeAssembler.generate(loop.tpe), Vector.empty)
+      if (!shouldIgnoreResult(loop)) PoemInstruction.List(regResult, TypeAssembler.generate(loop.tpe), Vector.empty)
       else PoemInstruction.unit(regResult)
     )
   }

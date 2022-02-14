@@ -1,14 +1,14 @@
 package lore.compiler.assembly.expressions
 
 import lore.compiler.assembly.AsmChunk
-import lore.compiler.assembly.types.PoemTypeAssembler
+import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.poem._
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, Literal, UnaryOperator, XaryOperator}
 import lore.compiler.types.Type.isPolymorphic
 import lore.compiler.utils.CollectionExtensions.{OptionVectorExtension, VectorExtension}
 
-object PoemValueAssembler {
+object ValueAssembler {
 
   /**
     * Generates a PoemValue representation of the given expression IF it can be represented as a constant value. Poem
@@ -36,7 +36,7 @@ object PoemValueAssembler {
       if (isPolymorphic(expression.tpe)) {
         return None
       }
-      generate(values).map(values => PoemTupleValue(values, PoemTypeAssembler.generate(expression.tpe)))
+      generate(values).map(values => PoemTupleValue(values, TypeAssembler.generate(expression.tpe)))
 
     // TODO (assembly): Can we turn these into constant poem values?
     case _: Expression.AnonymousFunction => None
@@ -50,7 +50,7 @@ object PoemValueAssembler {
       if (values.exists(v => isPolymorphic(v.tpe))) {
         return None
       }
-      generate(values).map(values => PoemListValue(values, PoemTypeAssembler.generate(expression.tpe)))
+      generate(values).map(values => PoemListValue(values, TypeAssembler.generate(expression.tpe)))
 
     // TODO (maps): Implement map poem values.
     case Expression.MapConstruction(_, _) => None
@@ -62,7 +62,7 @@ object PoemValueAssembler {
 
       properties
         .map(p => generate(p.value).map(p.name -> _)).sequence
-        .map(properties => PoemShapeValue(properties.toMap, PoemTypeAssembler.generate(expression.tpe)))
+        .map(properties => PoemShapeValue(properties.toMap, TypeAssembler.generate(expression.tpe)))
 
     case Expression.Symbol(name, _) => Some(PoemSymbolValue(name))
 

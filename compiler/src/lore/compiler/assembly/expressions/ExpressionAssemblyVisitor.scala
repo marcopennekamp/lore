@@ -1,12 +1,13 @@
 package lore.compiler.assembly.expressions
 
-import lore.compiler.assembly.types.PoemTypeAssembler
+import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.{AsmChunk, PropertyOrder, RegisterProvider}
 import lore.compiler.core.CompilationException
 import lore.compiler.poem.PoemInstruction.PropertyGetInstanceKind
 import lore.compiler.poem._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
+import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.types._
 
 import scala.collection.immutable.HashMap
@@ -105,7 +106,7 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
 
   override def visit(expression: Tuple)(values: Vector[AsmChunk]): AsmChunk = {
     val target = registerProvider.fresh()
-    PoemValueAssembler.generateConst(expression, target).getOrElse {
+    ValueAssembler.generateConst(expression, target).getOrElse {
       val instruction = PoemInstruction.Tuple(target, values.map(_.forceResult(expression.position)))
       AsmChunk.concat(values) ++ AsmChunk(target, instruction)
     }
@@ -160,8 +161,8 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
 
   override def visit(expression: ListConstruction)(values: Vector[AsmChunk]): AsmChunk = {
     val target = registerProvider.fresh()
-    PoemValueAssembler.generateConst(expression, target).getOrElse {
-      val tpe = PoemTypeAssembler.generate(expression.tpe)
+    ValueAssembler.generateConst(expression, target).getOrElse {
+      val tpe = TypeAssembler.generate(expression.tpe)
       val instruction = PoemInstruction.List(target, tpe, values.map(_.forceResult(expression.position)))
       AsmChunk.concat(values) ++ AsmChunk(target, instruction)
     }
@@ -183,7 +184,7 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
 
   override def visit(expression: ShapeValue)(propertyChunks: Vector[AsmChunk]): AsmChunk = {
     val target = registerProvider.fresh()
-    PoemValueAssembler.generateConst(expression, target).getOrElse {
+    ValueAssembler.generateConst(expression, target).getOrElse {
       val (sortedNames, sortedChunks) = PropertyOrder.sort(expression.properties.map(_.name).zip(propertyChunks))(_._1).unzip
       val metaShape = PoemMetaShape.build(sortedNames)
       val propertyRegisters = sortedChunks.map(_.forceResult(expression.position))
@@ -220,7 +221,7 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
     val target = registerProvider.fresh()
     val list = listChunk.forceResult(expression.position)
     val element = elementChunk.forceResult(expression.position)
-    val tpe = PoemTypeAssembler.generate(expression.tpe)
+    val tpe = TypeAssembler.generate(expression.tpe)
     val instruction = PoemInstruction.ListAppend(PoemOperation.ListAppend, target, list, element, tpe)
     listChunk ++ elementChunk ++ AsmChunk(target, instruction)
   }

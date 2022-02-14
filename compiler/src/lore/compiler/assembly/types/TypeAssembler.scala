@@ -3,7 +3,7 @@ package lore.compiler.assembly.types
 import lore.compiler.poem._
 import lore.compiler.types._
 
-object PoemTypeAssembler {
+object TypeAssembler {
 
   def generate(tpe: Type): PoemType = tpe match {
     case tv: TypeVariable => PoemTypeVariable(tv.index)
@@ -17,6 +17,15 @@ object PoemTypeAssembler {
     case ShapeType(properties) => PoemShapeType(properties.map { case (name, property) => name -> generate(property.tpe) })
     case SymbolType(name) => PoemSymbolType(name)
     case dt: DeclaredType => PoemNamedType(dt.schema, dt.typeArguments.map(generate))
+  }
+
+  def generateParameter(tv: TypeVariable): PoemTypeParameter = {
+    PoemTypeParameter(
+      tv.name.toString,
+      TypeAssembler.generate(tv.lowerBound),
+      TypeAssembler.generate(tv.upperBound),
+      tv.variance,
+    )
   }
 
 }
