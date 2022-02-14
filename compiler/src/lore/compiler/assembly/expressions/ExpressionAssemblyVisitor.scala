@@ -3,12 +3,10 @@ package lore.compiler.assembly.expressions
 import lore.compiler.assembly.types.PoemTypeAssembler
 import lore.compiler.assembly.{AsmChunk, PropertyOrder, RegisterProvider}
 import lore.compiler.core.CompilationException
-import lore.compiler.poem
 import lore.compiler.poem.PoemInstruction.PropertyGetInstanceKind
 import lore.compiler.poem._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
-import lore.compiler.types.Type.isPolymorphic
 import lore.compiler.types._
 
 import scala.collection.immutable.HashMap
@@ -263,9 +261,7 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
     ???
   }
 
-  override def visit(expression: Cond)(cases: Vector[(AsmChunk, AsmChunk)]): AsmChunk = ??? // ConditionalTranspiler.transpile(expression, cases)
-
-
+  override def visit(cond: Cond)(caseChunks: Vector[(AsmChunk, AsmChunk)]): AsmChunk = CondAssembler.generate(cond, caseChunks)
 
   override def visit(loop: WhileLoop)(conditionChunk: AsmChunk, bodyChunk: AsmChunk): AsmChunk = LoopAssembler.generate(loop, conditionChunk, bodyChunk)
 
