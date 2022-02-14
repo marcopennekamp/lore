@@ -99,7 +99,7 @@ object TypeDependencies {
   private def buildDependencyGraph(infos: Vector[TypeDeclarationInfo]): DependencyGraph = {
     val edges = infos.flatMap(buildDependencyEdges)
     implicit val config: Graph.Config = CoreConfig()
-    Graph.from(edges)
+    Graph.from(Vector(BasicType.Any.name), edges)
   }
 
   private def buildDependencyEdges(info: TypeDeclarationInfo): Vector[DiEdge[NamePath]] = {
@@ -180,7 +180,7 @@ object TypeDependencies {
       order => order.toVector.map(_.value)
     )
 
-    if (order.head != BasicType.Any.name) {
+    if (!order.headOption.contains(BasicType.Any.name)) {
       throw CompilationException("The first element in the type resolution order must be the root type Any.")
     }
 
