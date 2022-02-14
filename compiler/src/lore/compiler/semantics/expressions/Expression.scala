@@ -264,19 +264,14 @@ object Expression {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   // Conditional and loop expressions.
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  /**
+    * A `cond` expression must always be total. If the code doesn't have a total case, the transformation must generate
+    * a last, total case which evaluates to unit. This guarantee simplifies typing and assembly.
+    *
+    * The transformation phase will also ensure that a `cond` only has a single total case in the last position.
+    */
   case class Cond(cases: Vector[CondCase], position: Position) extends Expression {
-    /**
-      * Whether the `cond` evaluates to a value in all cases. This is true if one case's condition is simply `true`,
-      * which is the "else" branch of the cond.
-      */
-    val isTotal: Boolean = cases.exists(_.isTotalCase)
-
-    override val tpe: Type = {
-      // If there is no `true` case, we have to assume that the `cond` won't lead to a value in all instances. Hence,
-      // we have to assume that Unit may be a result type.
-      val bodyTypes = cases.map(_.body.tpe) ++ (if (!isTotal) Vector(TupleType.UnitType) else Vector.empty)
-      SumType.construct(bodyTypes)
-    }
+    override val tpe: Type = SumType.construct(cases.map(_.body.tpe))
 
     def withCases(pairs: Vector[(Expression, Expression)]): Cond = this.copy(pairs.map(CondCase.tupled))
   }

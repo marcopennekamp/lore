@@ -27,6 +27,11 @@ object ExpressionFeedback {
       s" store and process integers this large."
   }
 
+  case class InvalidTotalCase(node: ExprNode.CondNode) extends Feedback.Error(node) {
+    override def message: String = s"Cond expressions may only have a single total case (`true => ...`) as the last" +
+      s" case. Mixing in total cases is not allowed because any subsequent cases are dead code."
+  }
+
   object FixedFunction {
     case class MultiFunctionExpected(name: NamePath, override val position: Position) extends Feedback.Error(position) {
       override def message = s"The binding $name must be a multi-function to be fixed."

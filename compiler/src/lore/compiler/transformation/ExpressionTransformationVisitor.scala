@@ -247,7 +247,19 @@ class ExpressionTransformationVisitor(
   }
 
   override def visitCond(node: CondNode)(rawCases: Vector[(Expression, Expression)]): Expression = {
-    val cases = rawCases.map(CondCase.tupled)
+    var cases = rawCases.map(CondCase.tupled)
+    if (cases.init.exists(_.isTotalCase)) {
+      reporter.error(ExpressionFeedback.InvalidTotalCase(node))
+    }
+
+    // If the last case isn't total, we have to add a default case `true => ()`.
+    if (!cases.lastOption.exists(_.isTotalCase)) {
+      cases = cases :+ CondCase(
+        Expression.Literal(Expression.Literal.BooleanValue(true), node.position),
+        Expression.Tuple(Vector.empty, node.position),
+      )
+    }
+
     Expression.Cond(cases, node.position)
   }
 

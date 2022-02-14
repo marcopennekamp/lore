@@ -32,15 +32,9 @@ object ConditionalTranspiler {
       Chunk.unit(condition.statements :+ ifElse: _*)
     }
 
-    val (lastCondition, lastBody) = cases.last
-    val lastChunk = if (expression.cases.last.isTotalCase) {
-      // If the last case is total, we can simply transpile it as a block without an `if` part.
-      Chunk.unit(wrapBody(lastBody))
-    } else {
-      // If the `cond` isn't total, we have to assign the unit value to the result variable.
-      val elsePart = if (!expression.isTotal) varResult.map(_.assign(RuntimeApi.tuples.unitValue)).getOrElse(Target.Empty) else Target.Empty
-      caseToChunk(lastCondition, lastBody, elsePart)
-    }
+    // The last case must be a total case.
+    val (_, lastBody) = cases.last
+    val lastChunk = Chunk.unit(wrapBody(lastBody))
 
     val combinedChunk = cases.init.foldRight(lastChunk) {
       case ((condition, body), chunk) =>

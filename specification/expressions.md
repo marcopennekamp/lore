@@ -509,13 +509,16 @@ Does the `else` belong to the outer or inner `if`? With the restriction, it belo
 
 ##### Cond
 
-The `cond` expression is more suitable than an `if` expression when many cases are involved. A `cond` case consists of a condition and a single top-level expression. The `true => ...` case simulates an `else` branch. Any case after the `true` case will be disregarded at run time, but may influence the result type of the `cond` expression.
+The `cond` expression is more suitable than an `if` expression when many cases are involved. A `cond` case consists of a condition and a body, which is a single top-level expression. A `cond` expression evaluates to the body of the first case whose condition is true. 
+
+The `true => ...` case simulates an `else` branch and is called the *total* case. A total case is optional, but it must always be the last case. If omitted, the "else" branch of the `cond` evaluates to `()` (unit).
 
 ```
 cond
   condition1 => tle1
   condition2 => tle2
   ...
+  true => tlen
 end
 ```
 
