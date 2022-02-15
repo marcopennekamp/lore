@@ -18,7 +18,7 @@ case class BuildOptions(
   sdk: Path = Path.of(BuildOptions.defaultSdk),
 
   /**
-    * The file that the generated Javascript code is written to, the default being `lore-program.js`.
+    * The folder that the generated poem bytecode is written to, the default being `lore_target`.
     */
   target: Path = Path.of(BuildOptions.defaultTarget),
 
@@ -40,5 +40,5 @@ case class BuildOptions(
 
 object BuildOptions {
   val defaultSdk = "."
-  val defaultTarget = "lore-program.js"
+  val defaultTarget = "lore_target"
 }

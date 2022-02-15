@@ -24,6 +24,7 @@ object BuildApi {
     val (_, optionalCode) = compile(options)
     val compilationEndTime = System.nanoTime()
 
+    // TODO (assembly): We need to delete the old .poem files first.
     logCompilationFeedback(reporter, compilationStartTime, compilationEndTime)(options.compilerOptions)
     optionalCode.foreach(writeResult(_)(options))
   }
