@@ -160,7 +160,8 @@ object PoemInstruction {
       case TypeConst(target, _) => target.id
     }
 
-    instructions.map(maximumRegister).max + 1
+    if (instructions.isEmpty) 0
+    else instructions.map(maximumRegister).max + 1
   }
 
 }
