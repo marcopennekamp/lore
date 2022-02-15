@@ -62,12 +62,12 @@ trait Type
 /**
   * Returns the run-time type of the given Lore value.
   */
-func type_of(value: Any): Type = panic('Not supported yet.') // dynamic[Type]('Lore.types.introspection.typeOf', value)
+//func type_of(value: Any): Type = panic('Not supported yet.') // dynamic[Type]('Lore.types.introspection.typeOf', value)
 
 /**
   * Whether `t1` is a subtype of `t2`.
   */
-func subtype?(t1: Type, t2: Type): Boolean = panic('Not supported yet.') // dynamic[Boolean]('Lore.types.introspection.isSubtype', t1, t2)
+//func subtype?(t1: Type, t2: Type): Boolean = panic('Not supported yet.') // dynamic[Boolean]('Lore.types.introspection.isSubtype', t1, t2)
 
 /**
   * Terminates the Lore program with the given message.
