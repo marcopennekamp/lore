@@ -1,16 +1,14 @@
 package lore.compiler.semantics.scopes
 
+import lore.compiler.core.UniqueKey
 import lore.compiler.target.Target
 import lore.compiler.transpilation.RuntimeNames
 import lore.compiler.types.Type
 
-import java.util.concurrent.atomic.AtomicLong
-
 /**
   * A LocalVariable is a variable declared in a local scope.
   *
-  * The unique key is used to differentiate between local variables defined in nested local scopes. The unique key is
-  * global to the current compiler run.
+  * The [[UniqueKey]] is used to differentiate between local variables defined in nested local scopes.
   *
   * Example:
   *
@@ -30,7 +28,7 @@ import java.util.concurrent.atomic.AtomicLong
   * the first `x` would receive key 0, `y` key 1, and the second `x` key 2.
   */
 case class LocalVariable(
-  uniqueKey: LocalVariable.UniqueKey,
+  uniqueKey: UniqueKey,
   name: String,
   tpe: Type,
   override val isMutable: Boolean,
@@ -39,12 +37,8 @@ case class LocalVariable(
 }
 
 object LocalVariable {
-  case class UniqueKey(id: Long) extends AnyVal
-
-  private val uniqueKeyCounter: AtomicLong = new AtomicLong()
-
   def apply(name: String, tpe: Type, isMutable: Boolean): LocalVariable = {
-    LocalVariable(UniqueKey(uniqueKeyCounter.getAndIncrement()), name, tpe, isMutable)
+    LocalVariable(UniqueKey.fresh(), name, tpe, isMutable)
   }
 
   /**

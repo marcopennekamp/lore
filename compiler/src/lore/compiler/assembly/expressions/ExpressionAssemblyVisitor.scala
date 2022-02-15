@@ -2,12 +2,14 @@ package lore.compiler.assembly.expressions
 
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.{AsmChunk, PropertyOrder, RegisterProvider}
-import lore.compiler.core.CompilationException
+import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.poem.PoemInstruction.PropertyGetInstanceKind
 import lore.compiler.poem._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
-import lore.compiler.semantics.functions.CallTarget
+import lore.compiler.semantics.functions.ParameterDefinition.NamedParameterView
+import lore.compiler.semantics.functions.{CallTarget, ParameterDefinition}
+import lore.compiler.semantics.scopes.LocalVariable
 import lore.compiler.types._
 
 import scala.collection.immutable.HashMap
@@ -26,14 +28,37 @@ import scala.collection.immutable.HashMap
   * The visitor should generate Jump instructions with <i>label</i> locations. They will later be converted to
   * absolute locations when instructions are flattened.
   */
-class ExpressionAssemblyVisitor()(implicit registry: Registry) extends ExpressionVisitor[AsmChunk, AsmChunk] {
+class ExpressionAssemblyVisitor(
+  parameters: Vector[ParameterDefinition],
+  rootPosition: Position,
+)(implicit registry: Registry) extends ExpressionVisitor[AsmChunk, AsmChunk] {
   import Expression._
 
-  // TODO (assembly): We have to make sure that the first N registers of the function are reserved for the parameters.
-  //                  This also has to be taken into account by the register allocator, who may not reassign these
-  //                  registers.
   private implicit val registerProvider: RegisterProvider = new RegisterProvider
   private implicit var variableRegisterMap: VariableRegisterMap = HashMap.empty
+
+  private def declare(variable: LocalVariable, position: Position): Poem.Register = {
+    if (variableRegisterMap.contains(variable.uniqueKey)) {
+      throw CompilationException(s"The variable ${variable.name} at $position is already declared somewhere else.")
+    }
+
+    val register = registerProvider.fresh()
+    variableRegisterMap += (variable.uniqueKey -> register)
+    register
+  }
+
+  // The first N registers of the function are reserved for the parameters.
+  // TODO (assembly): We have to ensure that the register allocator assigns the exact expected register numbers for the
+  //                  parameters.
+  parameters.foreach { parameter =>
+    parameter.name match {
+      case Some(_) => declare(NamedParameterView(parameter).asVariable, rootPosition)
+      case None =>
+        // This register won't be used, but calling `fresh` is still important so that the register IDs are counted up,
+        // which have to match for subsequent parameters.
+        registerProvider.fresh()
+    }
+  }
 
   override def visit(expression: Return)(valueChunk: AsmChunk): AsmChunk = {
     val instruction = PoemInstruction.Return(valueChunk.forceResult(expression.position))
@@ -41,16 +66,9 @@ class ExpressionAssemblyVisitor()(implicit registry: Registry) extends Expressio
   }
 
   override def visit(expression: VariableDeclaration)(valueChunk: AsmChunk): AsmChunk = {
-    val variable = expression.variable
-    if (variableRegisterMap.contains(variable.uniqueKey)) {
-      throw CompilationException(s"The variable ${variable.name} at ${expression.position} is already declared somewhere else.")
-    }
-
-    val variableRegister = registerProvider.fresh()
-    variableRegisterMap += (variable.uniqueKey -> variableRegister)
-
-    val valueRegister = valueChunk.forceResult(expression.position)
-    val assignment = PoemInstruction.Assign(variableRegister, valueRegister)
+    val regVariable = declare(expression.variable, expression.position)
+    val regValue = valueChunk.forceResult(expression.position)
+    val assignment = PoemInstruction.Assign(regVariable, regValue)
     valueChunk ++ AsmChunk(assignment)
   }
 

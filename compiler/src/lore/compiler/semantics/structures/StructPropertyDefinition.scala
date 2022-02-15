@@ -1,6 +1,6 @@
 package lore.compiler.semantics.structures
 
-import lore.compiler.core.{Position, Positioned}
+import lore.compiler.core.{Position, Positioned, UniqueKey}
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.{CallTarget, ParameterDefinition}
 import lore.compiler.semantics.members.Member
@@ -20,6 +20,8 @@ class StructPropertyDefinition(
   val defaultValueNode: Option[ExprNode],
   override val position: Position,
 ) extends Positioned {
+
+  val uniqueKey: UniqueKey = UniqueKey.fresh()
 
   /**
     * This is a variable because it may be transformed during the course of the compilation.
@@ -45,7 +47,7 @@ object StructPropertyDefinition {
   }
 
   case class Instance(definition: StructPropertyDefinition, tpe: Type) {
-    def asParameter: ParameterDefinition = ParameterDefinition(Some(definition.name), tpe, definition.position)
+    def asParameter: ParameterDefinition = ParameterDefinition(definition.uniqueKey, Some(definition.name), tpe, definition.position)
     def asMember: Member = Member(definition.name, tpe, isAssignable = definition.isMutable, definition.isMutable)
   }
 }

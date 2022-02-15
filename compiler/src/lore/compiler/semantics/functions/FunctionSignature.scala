@@ -2,7 +2,7 @@ package lore.compiler.semantics.functions
 
 import lore.compiler.core.{Position, Positioned}
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.functions.ParameterDefinition.NamedParameterDefinition
+import lore.compiler.semantics.functions.ParameterDefinition.NamedParameterView
 import lore.compiler.types._
 
 import scala.util.hashing.MurmurHash3
@@ -14,7 +14,7 @@ case class FunctionSignature(
   outputType: Type,
   position: Position,
 ) extends Positioned {
-  val namedParameters: Vector[NamedParameterDefinition] = parameters.filter(_.name.isDefined).map(NamedParameterDefinition)
+  val namedParameters: Vector[NamedParameterView] = parameters.filter(_.name.isDefined).map(NamedParameterView)
   val inputType: TupleType = TupleType(parameters.map(_.tpe))
   val isPolymorphic: Boolean = typeParameters.nonEmpty
   val isMonomorphic: Boolean = !isPolymorphic
@@ -32,7 +32,7 @@ case class FunctionSignature(
 
     val substitutedParameters = parameters.map { parameter =>
       val substitutedType = Type.substitute(parameter.tpe, assignments)
-      ParameterDefinition(parameter.name, substitutedType, parameter.position)
+      parameter.copy(tpe = substitutedType)
     }
     val substitutedOutputType = Type.substitute(outputType, assignments)
     FunctionSignature(name, Vector.empty, substitutedParameters, substitutedOutputType, position)
