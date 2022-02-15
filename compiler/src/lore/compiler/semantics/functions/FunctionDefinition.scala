@@ -40,7 +40,7 @@ class FunctionDefinition(
   /**
     * This is a variable because it may be transformed during the course of the compilation.
     */
-  var body: Option[Expression] = _
+  var body: Option[Expression] = None
 
   /**
     * Attempts to instantiate the function definition with the given argument type. If this is not possible, reports a
