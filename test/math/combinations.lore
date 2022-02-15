@@ -1,5 +1,5 @@
-func combinations(list: [Real]): [(Real, Real)] = do
+func combinations(list: [Int]): [(Int, Int)] = do
   for a <- list, b <- list yield (a, b)
 end
 
-func test(): [(Real, Real)] = combinations([1, 2, 3, 4])
+func test(): [(Int, Int)] = combinations([1, 2, 3, 4])

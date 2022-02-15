@@ -6,6 +6,7 @@
 - Implement a compiler backend for producing Lore VM binaries.
   - Rename `dynamic` to `intrinsic` calls.
   - Clear all `TODO (assembly)` entries.
+- A list like `[0, -2, 2.5, 6, 22]` should be typed as `[Real]`. Even a list `[1, 2, 3]` may be typed as `[Real]` if a `Real` list is expected in context.
 - Allow multiple multi-function imports with the same name from different modules and implement compile-time disambiguation of such multi-function calls.
   - This would also allow us to introduce a `list.length`-style function call syntax. It might make type inference harder, though.
 - Syntax changes:
