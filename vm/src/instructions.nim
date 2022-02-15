@@ -132,7 +132,7 @@ type
       ## reg(arg0) <- tuple(reg(arg1), reg(arg2))
 
     TupleGet
-      ## reg(arg0) <- reg(arg1).get(arg2)
+      ## reg(arg0) <- reg(arg1)[arg2]
 
     FunctionCall
       ## reg(arg0) <- reg(arg1)(opl(0), ..., opl(arg2 - 1))
@@ -309,10 +309,10 @@ type
       ## return reg(0)
 
     TypeArg
-      ## reg(arg0) <- targ(reg1)
+      ## reg(arg0) <- targ(arg1)
 
     TypeConst
-      ## reg(arg0) <- tpe(reg1)
+      ## reg(arg0) <- tpe(arg1)
 
     OplPush1
       ## opl(arg0) <- reg(arg1)

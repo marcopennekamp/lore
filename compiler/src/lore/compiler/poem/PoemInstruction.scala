@@ -32,6 +32,8 @@ sealed abstract class PoemInstruction(val operation: PoemOperation) {
     addLabel(label)
     this
   }
+
+  override def toString: String = PoemInstruction.stringify(this)
 }
 
 object PoemInstruction {
@@ -135,7 +137,7 @@ object PoemInstruction {
       case Tuple(target, elements) => Register.max(target, elements)
       case TupleGet(target, tuple, _) => Register.max(target, tuple)
       case FunctionCall(target, function, arguments) => Register.max(target, function, arguments)
-      case List(target, tpe, elements) => Register.max(target, elements)
+      case List(target, _, elements) => Register.max(target, elements)
       case ListAppend(_, target, list, element, _) => Register.max(target, list, element)
       case ListAppendUntyped(target, list, element) => Register.max(target, list, element)
       case ListLength(target, list) => Register.max(target, list)
@@ -162,6 +164,50 @@ object PoemInstruction {
 
     if (instructions.isEmpty) 0
     else instructions.map(maximumRegister).max + 1
+  }
+
+  /**
+    * Returns a human-readable representation of the instruction for debugging.
+    */
+  def stringify(instruction: PoemInstruction): String = {
+    s"${instruction.operation} " + (instruction match {
+      case UnaryOperation(_, target, value) => s"$target <- $value"
+      case BinaryOperation(_, target, a, b) => s"$target <- $a $b"
+      case Assign(target, source) => s"$target <- $source"
+      case Const(target, value) => s"$target <- $value"
+      case ConstPoly(target, value) => s"$target <- $value"
+      case IntConst(target, value) => s"$target <- $value"
+      case IntToReal(target, value) => s"$target <- $value as Real"
+      case BooleanConst(target, value) => s"$target <- $value"
+      case StringOf(target, value) => s"$target <- string_of($value)"
+      case StringConcat(target, a, b) => s"$target <- concat($a, $b)"
+      case Tuple(target, elements) => s"$target <- tuple(${elements.mkString(", ")})"
+      case TupleGet(target, tuple, index) => s"$target <- $tuple[$index]"
+      case FunctionCall(target, function, arguments) => s"$target <- $function(${arguments.mkString(", ")})"
+      case List(target, tpe, elements) => s"$target <- list(${elements.mkString(", ")}) with type $tpe"
+      case ListAppend(_, target, list, element, tpe) => s"$target <- $list :+ $element with type $tpe"
+      case ListAppendUntyped(target, list, element) => s"$target <- $list :+ $element"
+      case ListLength(target, list) => s"$target <- $list.length"
+      case ListGet(target, list, index) => s"$target <- $list[$index]"
+      case Shape(target, metaShape, properties) => s"$target <- shape($metaShape, ${properties.mkString(", ")})"
+      case SymbolEq(target, a, b) => s"$target <- $a $b"
+      case Struct(target, schema, typeArguments, valueArguments) => s"$target <- ${schema.name}[${typeArguments.mkString(", ")}](${valueArguments.mkString(", ")})"
+      case StructEq(target, a, b) => s"$target <- $a $b"
+      case PropertyGet(target, _, instance, propertyName) => s"$target <- $instance[$propertyName]"
+      case Jump(target) => s"$target"
+      case JumpIfFalse(target, predicate) => s"$target if !$predicate"
+      case JumpIfTrue(target, predicate) => s"$target if $predicate"
+      case Intrinsic(target, intrinsic, arguments) => s"$target <- ${intrinsic.name}(${arguments.mkString(", ")})"
+      case IntrinsicVoid(intrinsic, arguments) => s"${intrinsic.name}(${arguments.mkString(", ")})"
+      case GlobalGet(target, global) => s"$target <- ${global.name}"
+      case GlobalSet(global, value) => s"${global.name} <- $value"
+      case Dispatch(target, mf, arguments) => s"$target <- ${mf.name}(${arguments.mkString(", ")})"
+      case Return(value) => s"$value"
+      case ReturnUnit() => s""
+      case Return0() => s""
+      case TypeArg(target, index) => s"$target <- targ($index)"
+      case TypeConst(target, tpe) => s"$target <- $tpe"
+    })
   }
 
 }

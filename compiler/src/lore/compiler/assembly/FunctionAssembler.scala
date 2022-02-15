@@ -15,6 +15,14 @@ object FunctionAssembler {
     ).getOrElse(Vector.empty)
     val registerCount = PoemInstruction.registerCount(instructions)
 
+    if (!function.isAbstract) {
+      println(s"Instructions for function ${function.name}:")
+      instructions.zipWithIndex.foreach { case (instruction, index) =>
+        println(s"$index: " + instruction)
+      }
+      println()
+    }
+
     PoemFunction(
       function.name.toString,
       typeParameters,

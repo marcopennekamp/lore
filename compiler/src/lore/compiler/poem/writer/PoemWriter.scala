@@ -104,7 +104,6 @@ object PoemWriter {
   }
 
   def writeManyWithCount16[A](values: Vector[A], write: A => Unit)(implicit writer: BytecodeWriter): Unit = {
-    println("Write " + values)
     writer.writeUInt16(values.length)
     values.foreach(write)
   }

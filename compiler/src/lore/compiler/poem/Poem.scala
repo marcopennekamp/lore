@@ -1,7 +1,9 @@
 package lore.compiler.poem
 
 object Poem {
-  case class Register(id: Int) extends AnyVal
+  case class Register(id: Int) extends AnyVal {
+    override def toString: String = s"reg$id"
+  }
 
   object Register {
     /**
@@ -26,8 +28,14 @@ object Poem {
     * [[lore.compiler.assembly.expressions.LabelResolver]] and turned into absolute locations.
     */
   sealed trait Location
-  case class LabelLocation(label: Label) extends Location
-  case class AbsoluteLocation(pc: Int) extends Location
+
+  case class LabelLocation(label: Label) extends Location {
+    override def toString: String = s"<$label>"
+  }
+
+  case class AbsoluteLocation(pc: Int) extends Location {
+    override def toString: String = pc.toString
+  }
 
   /**
     * The lowest integer value that may be passed through a `*Const` operation such as `IntConst`.
