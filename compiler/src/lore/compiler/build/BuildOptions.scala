@@ -25,6 +25,8 @@ case class BuildOptions(
   /**
     * Whether the generated Javascript code should be beautified with prettier. This incurs an additional compile-time
     * cost of a few hundred milliseconds.
+    *
+    * TODO (assembly): Remove this.
     */
   enablePrettier: Boolean = true,
 

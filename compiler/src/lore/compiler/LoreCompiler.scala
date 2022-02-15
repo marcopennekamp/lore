@@ -1,9 +1,9 @@
 package lore.compiler
 
+import lore.compiler.assembly.{AssembledFragment, AssemblyPhase}
 import lore.compiler.constraints.ConstraintsPhase
 import lore.compiler.core.{CompilerOptions, Fragment}
 import lore.compiler.feedback.{Feedback, MemoReporter, Reporter}
-import lore.compiler.generation.GenerationPhase
 import lore.compiler.parsing.ParsingPhase
 import lore.compiler.resolution.ResolutionPhase
 import lore.compiler.semantics.Registry
@@ -11,9 +11,7 @@ import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.structures.{AliasDefinition, DeclaredSchemaDefinition}
 import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.transformation.TransformationPhase
-import lore.compiler.transpilation.TranspilationPhase
 import lore.compiler.types.{AliasSchema, DeclaredSchema}
-import lore.compiler.utils.CollectionExtensions.VectorExtension
 import lore.compiler.utils.Timer.timed
 
 object LoreCompiler {
@@ -22,17 +20,17 @@ object LoreCompiler {
     * Compiles the given fragments, resulting in a registry, the generated code if no errors have been found, and a
     * list of feedback.
     */
-  def compile(fragments: Vector[Fragment], options: CompilerOptions)(implicit reporter: Reporter): (Option[Registry], Option[String]) = {
+  def compile(fragments: Vector[Fragment], options: CompilerOptions)(implicit reporter: Reporter): (Option[Registry], Vector[AssembledFragment]) = {
     Feedback.loggerBlank.debug("")
 
     // Only continue the compilation if analysis is an explicit success. We don't want to generate code from an
     // erroneous program.
     val registry = analyze(fragments, exitEarly = true)
-    val code = registry.flatMap {
+    val assembledFragments = registry.flatMap {
       registry => if (!reporter.hasErrors) Some(generate(registry, options)) else None
-    }
+    }.getOrElse(Vector.empty)
 
-    (registry, code)
+    (registry, assembledFragments)
   }
 
   /**
@@ -101,14 +99,10 @@ object LoreCompiler {
   }
 
   /**
-    * Generates code for the Lore program specified by the Registry, combining the transpilation and generation phases:
-    *
-    *   - Phase 5: Transpile the Lore program to our target representation.
-    *   - Phase 6: Generate Javascript code from the target representation.
+    * Phase 5: Generates poem bytecode for the Lore program specified by the Registry.
     */
-  def generate(registry: Registry, options: CompilerOptions): String = {
-    val target = timed("Transpilation")(TranspilationPhase.process(options, registry))
-    timed("Generation")(GenerationPhase.process(target))
+  def generate(registry: Registry, options: CompilerOptions): Vector[AssembledFragment] = {
+    timed("Assembly")(AssemblyPhase.process(options, registry))
   }
 
 }

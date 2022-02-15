@@ -3,6 +3,16 @@ package lore.compiler.poem
 object Poem {
   case class Register(id: Int) extends AnyVal
 
+  object Register {
+    /**
+      * Returns the maximum ID of the given registers.
+      */
+    def max(registers: Vector[Register]): Int = registers.map(_.id).max
+    def max(registers: Register*): Int = max(registers.toVector)
+    def max(reg0: Register, registers: Vector[Register]): Int = max(reg0 +: registers: _*)
+    def max(reg0: Register, reg1: Register, registers: Vector[Register]): Int = max(reg0 +: reg1 +: registers: _*)
+  }
+
   /**
     * A label refers to a specific [[PoemInstruction]] and is used to resolve label locations into absolute locations.
     *
