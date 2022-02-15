@@ -19,7 +19,7 @@ when is_main_module:
   if param_count() >= 2:
     let poem = poems.read(param_str(1))
     let universe = universes.resolve(@[poem])
-    let target = universe.multi_functions[param_str(2)].functions[0]
+    let target = addr universe.multi_functions[param_str(2)].functions[0].monomorphic_instance
     with_frame_mem((frame_mem: pointer) => run_and_print(target, frame_mem))
   else:
     echo help
