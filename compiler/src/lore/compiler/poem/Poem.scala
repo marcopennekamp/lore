@@ -38,4 +38,15 @@ object Poem {
     * The highest integer value that may be passed through a `*Const` operation such as `IntConst`.
     */
   val maxDirectInteger: Long = Short.MaxValue
+
+  /**
+    * This can be used to attach sorted property fields to a poem entity.
+    */
+  trait SortedProperties[A] {
+    def properties: Map[String, A]
+
+    private lazy val sortedEntries: Vector[(String, A)] = properties.toVector.sortBy(_._1)
+    lazy val sortedNames: Vector[String] = sortedEntries.map(_._1)
+    lazy val sortedProperties: Vector[A] = sortedEntries.map(_._2)
+  }
 }

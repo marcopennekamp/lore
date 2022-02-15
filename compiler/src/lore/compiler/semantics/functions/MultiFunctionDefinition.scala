@@ -5,7 +5,7 @@ import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.scopes.Binding
 import lore.compiler.types.TupleType
 
-case class MultiFunctionDefinition(name: NamePath, functions: Vector[FunctionDefinition]) extends Binding {
+class MultiFunctionDefinition(val name: NamePath, val functions: Vector[FunctionDefinition]) extends Binding {
 
   val hierarchy: DispatchHierarchy = DispatchHierarchyBuilder.build(this)
 

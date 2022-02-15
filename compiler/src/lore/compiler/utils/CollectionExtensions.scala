@@ -1,5 +1,7 @@
 package lore.compiler.utils
 
+import scalaz.syntax.std.BooleanOps
+
 import scala.reflect.ClassTag
 
 object CollectionExtensions {
@@ -65,6 +67,14 @@ object CollectionExtensions {
       */
     def foldSome[B](initial: B)(f: (B, A) => Option[B]): Option[B] = {
       vector.foldLeft(Some(initial): Option[B]) { case (option, element) => option.flatMap(f(_, element)) }
+    }
+
+    /**
+      * Checks whether the vector is sorted.
+      */
+    def isSorted(implicit ev: A => Ordered[A]): Boolean = {
+      if (vector.length < 2) true
+      else vector.sliding(2).forall { case Vector(a, b) => a < b }
     }
   }
 

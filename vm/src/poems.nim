@@ -1271,7 +1271,7 @@ proc read_string_with_length(stream: FileStream): string =
 
 proc write_string_with_length(stream: FileStream, string: string) =
   if string.len > cast[int](high(uint16)):
-    fail(fmt"Cannot write strings with more than {high(uint16)}")
+    fail(fmt"Cannot write strings with more than {high(uint16)} bytes.")
 
   stream.write(cast[uint16](string.len))
   stream.write_str(string)

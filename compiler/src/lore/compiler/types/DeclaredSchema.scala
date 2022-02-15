@@ -9,6 +9,11 @@ trait DeclaredSchema extends NamedSchema {
   override def representative: DeclaredType = super.representative.asInstanceOf[DeclaredType]
 
   /**
+    * The declared schema's kind is either `Trait` or `Struct`.
+    */
+  def kind: Kind
+
+  /**
     * The definition associated with this schema.
     */
   def definition: DeclaredSchemaDefinition

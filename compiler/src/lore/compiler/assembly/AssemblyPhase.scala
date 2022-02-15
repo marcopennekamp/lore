@@ -1,7 +1,8 @@
 package lore.compiler.assembly
 
 import lore.compiler.core.CompilerOptions
-import lore.compiler.poem.{PoemFragment, PoemWriter}
+import lore.compiler.poem.PoemFragment
+import lore.compiler.poem.writer.PoemWriter
 import lore.compiler.semantics.Registry
 
 import java.nio.file.Path
@@ -29,7 +30,7 @@ object AssemblyPhase {
       )
     } */
 
-    Vector(AssembledFragment(Path.of("lore_program.poem"), PoemWriter.write(poemFragment)))
+    Vector(AssembledFragment(Path.of("binary.poem"), PoemWriter.writeFragment(poemFragment)))
   }
 
 }

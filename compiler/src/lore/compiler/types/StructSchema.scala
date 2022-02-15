@@ -8,6 +8,8 @@ class StructSchema(
   override val parameters: Vector[TypeVariable],
   override val supertypes: Vector[Type],
 ) extends DeclaredSchema with DeclaredSchema.DefinitionProperty[StructDefinition] {
+  override val kind: Kind = Kind.Struct
+
   val openParameters: Vector[TypeVariable] = parameters.filter(_.isOpen)
 
   /**

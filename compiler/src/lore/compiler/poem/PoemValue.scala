@@ -48,10 +48,10 @@ case class PoemMultiFunctionValue(mf: MultiFunctionDefinition, tpe: PoemType) ex
 
 case class PoemListValue(elements: Vector[PoemValue], tpe: PoemType) extends PoemValue
 
-case class PoemShapeValue(properties: Map[String, PoemValue], tpe: PoemType) extends PoemValue
+case class PoemShapeValue(properties: Map[String, PoemValue], tpe: PoemType) extends PoemValue with Poem.SortedProperties[PoemValue]
 
 case class PoemSymbolValue(name: String) extends PoemValue {
   override lazy val tpe: PoemType = PoemSymbolType(name)
 }
 
-case class PoemStructValue(properties: Map[String, PoemValue], schema: StructSchema, tpe: PoemType) extends PoemValue
+case class PoemStructValue(properties: Map[String, PoemValue], tpe: PoemType) extends PoemValue with Poem.SortedProperties[PoemValue]
