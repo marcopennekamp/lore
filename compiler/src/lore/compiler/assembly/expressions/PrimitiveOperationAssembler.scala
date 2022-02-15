@@ -6,7 +6,7 @@ import lore.compiler.poem.{Poem, PoemInstruction, PoemOperation}
 import lore.compiler.poem.PoemOperation.PoemOperation
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.expressions.Expression.{BinaryOperator, UnaryOperator, XaryOperator}
-import lore.compiler.types.BasicType
+import lore.compiler.types.{BasicType, Type}
 
 /**
   * The OperationAssembler handles operation assembly for <b>primitive</b> types.
@@ -17,8 +17,9 @@ object PrimitiveOperationAssembler {
     operation: Expression.UnaryOperation,
     valueChunk: AsmChunk,
   )(implicit registerProvider: RegisterProvider): AsmChunk = {
-    val c1 = if (operation.tpe == BasicType.Real) convertToReal(operation.value, valueChunk) else valueChunk
-    val poemOperation = getPoemOperation(operation.tpe.asInstanceOf[BasicType], operation.operator)
+    val domainType = getDomainType(operation.value.tpe)
+    val c1 = if (domainType == BasicType.Real) convertToReal(operation.value, valueChunk) else valueChunk
+    val poemOperation = getPoemOperation(domainType, operation.operator)
     val target = registerProvider.fresh()
     val instruction = PoemInstruction.UnaryOperation(poemOperation, target, c1.forceResult(operation.position))
 
@@ -30,11 +31,12 @@ object PrimitiveOperationAssembler {
     leftChunk: AsmChunk,
     rightChunk: AsmChunk,
   )(implicit registerProvider: RegisterProvider): AsmChunk = {
-    val (c1, c2) = if (operation.tpe == BasicType.Real) {
+    val domainType = getDomainType(operation.left.tpe, operation.right.tpe)
+    val (c1, c2) = if (domainType == BasicType.Real) {
       (convertToReal(operation.left, leftChunk), convertToReal(operation.right, rightChunk))
     } else (leftChunk, rightChunk)
 
-    val poemOperation = getPoemOperation(operation.tpe.asInstanceOf[BasicType], operation.operator)
+    val poemOperation = getPoemOperation(domainType, operation.operator)
     val target = registerProvider.fresh()
     buildBinaryInstruction(poemOperation, target, c1, c2, operation.position)
   }
@@ -43,16 +45,29 @@ object PrimitiveOperationAssembler {
     operation: Expression.XaryOperation,
     operandChunks: Vector[AsmChunk],
   )(implicit registerProvider: RegisterProvider): AsmChunk = {
-    val cs = if (operation.tpe == BasicType.Real) {
+    val domainType = getDomainType(operation.expressions.map(_.tpe): _*)
+    val cs = if (domainType == BasicType.Real) {
       operation.expressions.zip(operandChunks).map((convertToReal _).tupled)
     } else operandChunks
 
     // We can use the same `target` register for all steps as it's legal to consume and overwrite in a single step.
-    val poemOperation = getPoemOperation(operation.tpe.asInstanceOf[BasicType], operation.operator)
+    val poemOperation = getPoemOperation(domainType, operation.operator)
     val target = registerProvider.fresh()
     cs.tail.foldLeft(cs.head) { (c1, c2) =>
       buildBinaryInstruction(poemOperation, target, c1, c2, operation.position)
     }
+  }
+
+  /**
+    * Computes the basic type which represents the domain of the operation. This determines the exact operation code
+    * used, such as RealAdd if the domain type is Real, or IntAdd if the domain type is Int.
+    */
+  private def getDomainType(operandTypes: Type*): BasicType = {
+    if (operandTypes.forall(_ == BasicType.Boolean)) BasicType.Boolean
+    else if (operandTypes.forall(_ == BasicType.String)) BasicType.String
+    else if (operandTypes.forall(_ == BasicType.Int)) BasicType.Int
+    else if (operandTypes.forall(t => t == BasicType.Real || t == BasicType.Int)) BasicType.Real
+    else throw CompilationException(s"Invalid operand types combination to compute domain type: $operandTypes.")
   }
 
   /**
@@ -82,7 +97,7 @@ object PrimitiveOperationAssembler {
     c1 ++ c2 ++ AsmChunk(target, instruction)
   }
 
-  private def getPoemOperation(resultType: BasicType, operator: UnaryOperator): PoemOperation = resultType match {
+  private def getPoemOperation(domainType: BasicType, operator: UnaryOperator): PoemOperation = domainType match {
     case BasicType.Int => operator match {
       case UnaryOperator.Negation => PoemOperation.IntNeg
     }
@@ -96,7 +111,7 @@ object PrimitiveOperationAssembler {
     }
   }
 
-  private def getPoemOperation(resultType: BasicType, operator: BinaryOperator): PoemOperation = resultType match {
+  private def getPoemOperation(domainType: BasicType, operator: BinaryOperator): PoemOperation = domainType match {
     case BasicType.Int => operator match {
       case BinaryOperator.Addition => PoemOperation.IntAdd
       case BinaryOperator.Subtraction => PoemOperation.IntSub
