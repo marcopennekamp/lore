@@ -51,7 +51,7 @@ func hash(value: Any): Int = panic('Not supported yet.') // dynamic[Int]('Lore.v
  * stringify your own custom types. This function is used by library functions such as `println`, as well as string
  * interpolation.
  */
-func to_string(value: Any): String = panic('Not supported yet.') // dynamic[String]('Lore.values.toString', value)
+func to_string(value: Any): String = dynamic[String]('lore.core.to_string', value)
 
 /**
   * A run-time type. The struct type that backs this trait is defined ad-hoc in the runtime. Various introspection

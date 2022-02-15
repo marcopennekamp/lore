@@ -6,6 +6,7 @@ object PoemIntrinsic {
   // This should be kept in sync with `pyramid.nim`.
   val intrinsics = Vector(
     PoemIntrinsic("lore.core.panic", 0),
+    PoemIntrinsic("lore.core.to_string", 1),
     PoemIntrinsic("lore.strings.length", 1),
     PoemIntrinsic("lore.lists.each", 2),
     PoemIntrinsic("lore.io.println", 1),

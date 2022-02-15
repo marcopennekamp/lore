@@ -6,6 +6,9 @@ import values
 proc core_panic(): TaggedValue =
   quit("Panic: The Lore program was forced to terminate.")
 
+proc core_to_string(value: TaggedValue): TaggedValue =
+  values.new_string_tagged($value)
+
 proc strings_length(tagged_string: TaggedValue): TaggedValue =
   let string = untag_reference(tagged_string, StringValue)
   tag_int(string.string.len)
@@ -29,6 +32,7 @@ template binary_fa(arg_name, arg_function): untyped = Intrinsic(name: arg_name, 
 
 let intrinsics*: seq[Intrinsic] = @[
   nullary("lore.core.panic", core_panic),
+  unary("lore.core.to_string", core_to_string),
   unary("lore.strings.length", strings_length),
   binary_fa("lore.lists.each", lists_each),
   unary("lore.io.println", io_println),
