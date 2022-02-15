@@ -64,7 +64,9 @@ object CondAssembler {
       caseChunk
     }
 
-    AsmChunk.concat(fullCaseChunks) ++ AsmChunk(regResult)
+    val fullChunk = AsmChunk.concat(fullCaseChunks) ++ AsmChunk(regResult)
+    fullChunk.labelLast(endLabel)
+    fullChunk
   }
 
 }
