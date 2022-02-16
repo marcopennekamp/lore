@@ -148,10 +148,7 @@ object PoemInstructionWriter {
     write(operands: _*)
   }
 
-  private def write(location: Poem.Location)(implicit writer: BytecodeWriter): Unit = location match {
-    case Poem.LabelLocation(_) => throw CompilationException("All label locations should have been resolved.")
-    case Poem.AbsoluteLocation(pc) => writer.writeUInt16(pc)
-  }
+  private def write(location: Poem.Location)(implicit writer: BytecodeWriter): Unit = writer.writeUInt16(location.forcePc)
 
   private def writeConstantValue(value: PoemValue)(implicit writer: BytecodeWriter, constantsTable: ConstantsTable): Unit = {
     writer.writeUInt16(constantsTable.value(value))

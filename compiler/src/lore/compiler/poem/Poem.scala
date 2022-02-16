@@ -1,5 +1,7 @@
 package lore.compiler.poem
 
+import lore.compiler.core.CompilationException
+
 object Poem {
   case class Register(id: Int) extends AnyVal {
     override def toString: String = s"reg$id"
@@ -27,7 +29,12 @@ object Poem {
     * A Location is either an unresolved label or an absolute program counter position. Label locations are resolved by
     * [[lore.compiler.assembly.expressions.LabelResolver]] and turned into absolute locations.
     */
-  sealed trait Location
+  sealed trait Location {
+    def forcePc: Int = this match {
+      case Poem.AbsoluteLocation(pc) => pc
+      case Poem.LabelLocation(_) => throw CompilationException("All label locations should have been resolved by now.")
+    }
+  }
 
   case class LabelLocation(label: Label) extends Location {
     override def toString: String = s"<$label>"
