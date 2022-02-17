@@ -20,7 +20,7 @@ object ExpressionAssembler {
     var instructions = initialChunk.instructions :+ PoemInstruction.Return(initialChunk.forceResult(expression.position))
     instructions = LabelResolver.resolve(instructions, expression.position)
     instructions = ConstSmasher.optimize(instructions)
-    instructions = RegisterAllocator.optimize(instructions)
+    instructions = RegisterAllocator.optimize(instructions, parameters.length)
     instructions
   }
 

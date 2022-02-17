@@ -120,6 +120,23 @@ object PoemInstruction {
   case class TypeConst(target: PReg, tpe: PTpe) extends PoemInstruction(PoemOperation.TypeConst)
 
   /**
+    * Returns the instruction's jump target if it's a jump.
+    */
+  def getJumpTarget(instruction: PoemInstruction): Option[Poem.Location] = instruction match {
+    case Jump(location) => Some(location)
+    case JumpIfFalse(location, _) => Some(location)
+    case JumpIfTrue(location, _) => Some(location)
+    case _ => None
+  }
+
+  def isReturn(instruction: PoemInstruction): Boolean = instruction match {
+    case Return(_) => true
+    case ReturnUnit() => true
+    case Return0() => true
+    case _ => false
+  }
+
+  /**
     * Returns the number of registers that `instructions` require. This is simply the maximum accessed register + 1.
     */
   def registerCount(instructions: Vector[PoemInstruction]): Int = {
@@ -164,6 +181,103 @@ object PoemInstruction {
 
     if (instructions.isEmpty) 0
     else instructions.map(maximumRegister).max + 1
+  }
+
+  def mapRegisters(
+    instruction: PoemInstruction,
+    applyTarget: Poem.Register => Poem.Register,
+    applySource: Poem.Register => Poem.Register,
+  ): PoemInstruction = instruction match {
+    case instruction@UnaryOperation(_, target, value) => instruction.copy(target = applyTarget(target), value = applySource(value))
+    case instruction@BinaryOperation(_, target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
+    case instruction@Assign(target, source) => instruction.copy(target = applyTarget(target), source = applySource(source))
+    case instruction@Const(target, _) => instruction.copy(target = applyTarget(target))
+    case instruction@ConstPoly(target, _) => instruction.copy(target = applyTarget(target))
+    case instruction@IntConst(target, _) => instruction.copy(target = applyTarget(target))
+    case instruction@IntToReal(target, value) => instruction.copy(target = applyTarget(target), value = applySource(value))
+    case instruction@BooleanConst(target, _) => instruction.copy(target = applyTarget(target))
+    case instruction@StringOf(target, value) => instruction.copy(target = applyTarget(target), value = applySource(value))
+    case instruction@StringConcat(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
+    case instruction@Tuple(target, elements) => instruction.copy(target = applyTarget(target), elements = elements.map(applySource))
+    case instruction@TupleGet(target, tuple, _) => instruction.copy(target = applyTarget(target), tuple = applySource(tuple))
+    case instruction@FunctionCall(target, function, arguments) => instruction.copy(target = applyTarget(target), function = applySource(function), arguments = arguments.map(applySource))
+    case instruction@List(target, _, elements) => instruction.copy(target = applyTarget(target), elements = elements.map(applySource))
+    case instruction@ListAppend(_, target, list, element, _) => instruction.copy(target = applyTarget(target), list = applySource(list), element = applySource(element))
+    case instruction@ListAppendUntyped(target, list, element) => instruction.copy(target = applyTarget(target), list = applySource(list), element = applySource(element))
+    case instruction@ListLength(target, list) => instruction.copy(target = applyTarget(target), list = applySource(list))
+    case instruction@ListGet(target, list, index) => instruction.copy(target = applyTarget(target), list = applySource(list), index = applySource(index))
+    case instruction@Shape(target, _, properties) => instruction.copy(target = applyTarget(target), properties = properties.map(applySource))
+    case instruction@SymbolEq(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
+    case instruction@Struct(target, _, typeArguments, valueArguments) => instruction.copy(target = applyTarget(target), typeArguments = typeArguments.map(applySource), valueArguments = valueArguments.map(applySource))
+    case instruction@StructEq(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
+    case instruction@PropertyGet(target, _, instance, _) => instruction.copy(target = applyTarget(target), instance = applySource(instance))
+    case instruction@Jump(_) => instruction
+    case instruction@JumpIfFalse(_, predicate) => instruction.copy(predicate = applySource(predicate))
+    case instruction@JumpIfTrue(_, predicate) => instruction.copy(predicate = applySource(predicate))
+    case instruction@Intrinsic(target, _, arguments) => instruction.copy(target = applyTarget(target), arguments = arguments.map(applySource))
+    case instruction@IntrinsicVoid(_, arguments) => instruction.copy(arguments = arguments.map(applySource))
+    case instruction@GlobalGet(target, _) => instruction.copy(target = applyTarget(target))
+    case instruction@GlobalSet(_, value) => instruction.copy(value = applySource(value))
+    case instruction@Dispatch(target, _, arguments) => instruction.copy(target = applyTarget(target), arguments = arguments.map(applySource))
+    case instruction@Return(value) => instruction.copy(value = applySource(value))
+    case instruction@ReturnUnit() => instruction
+    case instruction@Return0() => instruction
+    case instruction@TypeArg(target, _) => instruction.copy(target = applyTarget(target))
+    case instruction@TypeConst(target, _) => instruction.copy(target = applyTarget(target))
+  }
+
+  case class DefUseInfo(definitions: Vector[Poem.Register], uses: Vector[Poem.Register])
+
+  /**
+    * Returns the register definition and use sets for the given instruction.
+    *
+    *   - `r in def(inst)`: The instruction `inst` assigns a new value to register `r`.
+    *   - `r in use(inst)`: The instruction `inst` uses the register `r`.
+    *
+    * This is used by liveness analysis during register allocation.
+    *
+    * TODO (assembly): Rename this to target and source sets? (Still call it def/use in liveliness.)
+    */
+  def defUseInfo(instruction: PoemInstruction): DefUseInfo = {
+    val (defList, useList) = instruction match {
+      case UnaryOperation(_, target, value) => (Vector(target), Vector(value))
+      case BinaryOperation(_, target, a, b) => (Vector(target), Vector(a, b))
+      case Assign(target, source) => (Vector(target), Vector(source))
+      case Const(target, _) => (Vector(target), Vector.empty)
+      case ConstPoly(target, _) => (Vector(target), Vector.empty)
+      case IntConst(target, _) => (Vector(target), Vector.empty)
+      case IntToReal(target, value) => (Vector(target), Vector(value))
+      case BooleanConst(target, _) => (Vector(target), Vector.empty)
+      case StringOf(target, value) => (Vector(target), Vector(value))
+      case StringConcat(target, a, b) => (Vector(target), Vector(a, b))
+      case Tuple(target, elements) => (Vector(target), elements)
+      case TupleGet(target, tuple, _) => (Vector(target), Vector(tuple))
+      case FunctionCall(target, function, arguments) => (Vector(target), function +: arguments)
+      case List(target, _, elements) => (Vector(target), elements)
+      case ListAppend(_, target, list, element, _) => (Vector(target), Vector(list, element))
+      case ListAppendUntyped(target, list, element) => (Vector(target), Vector(list, element))
+      case ListLength(target, list) => (Vector(target), Vector(list))
+      case ListGet(target, list, index) => (Vector(target), Vector(list, index))
+      case Shape(target, _, properties) => (Vector(target), properties)
+      case SymbolEq(target, a, b) => (Vector(target), Vector(a, b))
+      case Struct(target, _, typeArguments, valueArguments) => (Vector(target), typeArguments ++ valueArguments)
+      case StructEq(target, a, b) => (Vector(target), Vector(a, b))
+      case PropertyGet(target, _, instance, _) => (Vector(target), Vector(instance))
+      case Jump(_) => (Vector.empty, Vector.empty)
+      case JumpIfFalse(_, predicate) => (Vector.empty, Vector(predicate))
+      case JumpIfTrue(_, predicate) => (Vector.empty, Vector(predicate))
+      case Intrinsic(target, _, arguments) => (Vector(target), arguments)
+      case IntrinsicVoid(_, arguments) => (Vector.empty, arguments)
+      case GlobalGet(target, _) => (Vector(target), Vector.empty)
+      case GlobalSet(_, value) => (Vector.empty, Vector(value))
+      case Dispatch(target, _, arguments) => (Vector(target), arguments)
+      case Return(value) => (Vector.empty, Vector(value))
+      case ReturnUnit() => (Vector.empty, Vector.empty)
+      case Return0() => (Vector.empty, Vector(Poem.Register(0)))
+      case TypeArg(target, _) => (Vector(target), Vector.empty)
+      case TypeConst(target, _) => (Vector(target), Vector.empty)
+    }
+    DefUseInfo(defList.distinct, useList.distinct)
   }
 
   /**
