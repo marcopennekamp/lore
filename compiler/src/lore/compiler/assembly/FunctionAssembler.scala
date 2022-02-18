@@ -16,6 +16,7 @@ object FunctionAssembler {
     val registerCount = PoemInstruction.registerCount(instructions)
 
     if (!function.isAbstract) {
+      // TODO (assembly): Turn this into a trace log.
       println(s"Instructions for function ${function.name}:")
       instructions.zipWithIndex.foreach { case (instruction, index) =>
         println(s"$index: " + instruction)

@@ -5,6 +5,9 @@
 - Implement a minimum viable version of the VM.
 - Implement a compiler backend for producing Lore VM binaries.
   - Rename `dynamic` to `intrinsic` calls.
+  - Implement simple optimizations:
+    - Squash assignments to the same register such as `Assign reg0 <- reg0`, which is very common when assigning a constant to a variable (e.g. `IntConst reg0 <- 5, Assign reg0 <- reg0`).
+    - Remove jumps that just skip to the next line, i.e. `Jump 23` on line 22. Such instructions are sometimes generated when compiling `if`/`cond` expressions.
   - Clear all `TODO (assembly)` entries.
 - A list like `[0, -2, 2.5, 6, 22]` should be typed as `[Real]`. Even a list `[1, 2, 3]` may be typed as `[Real]` if a `Real` list is expected in context.
 - Allow multiple multi-function imports with the same name from different modules and implement compile-time disambiguation of such multi-function calls.

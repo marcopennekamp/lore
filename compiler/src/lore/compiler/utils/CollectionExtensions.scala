@@ -1,7 +1,5 @@
 package lore.compiler.utils
 
-import scalaz.syntax.std.BooleanOps
-
 import scala.reflect.ClassTag
 
 object CollectionExtensions {
@@ -93,6 +91,17 @@ object CollectionExtensions {
       * Returns this set or, if this set is empty, a default set.
       */
     def withDefault(default: => Set[A]): Set[A] = if (set.nonEmpty) set else default
+  }
+
+  implicit class MapExtension[K, V](map: Map[K, V]) {
+    /**
+      * Inverts the map, turning keys into values and values into keys.
+      */
+    def invert: Map[V, Vector[K]] = {
+      map.foldLeft(Map.empty[V, Vector[K]]) {
+        case (result, (key, value)) => result.appended(value, key)
+      }
+    }
   }
 
   implicit class MapVectorExtension[K, V](vector: Vector[Map[K, V]]) {

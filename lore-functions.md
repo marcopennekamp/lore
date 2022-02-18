@@ -10,6 +10,7 @@ List functions:
 
 Map functions:
 - Merge two maps that contain lists such that the lists are merged when keys exist in both maps.
+- Invert maps (`K -> V` to `V -> [K]`).
 
 Math functions:
 - increment
