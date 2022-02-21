@@ -129,8 +129,8 @@ template const_meta_shape_arg(index): untyped = constants.meta_shapes[instructio
 # TODO (vm/parallel): This needs to be unique per thread.
 var operand_list: array[operand_list_limit, uint64]
 
-template value_operand_list: untyped = cast[array[operand_list_limit, TaggedValue]](operand_list)
-template type_operand_list: untyped = cast[array[operand_list_limit, Type]](operand_list)
+let value_operand_list = cast[ptr UncheckedArray[TaggedValue]](addr operand_list)
+let type_operand_list = cast[ptr UncheckedArray[Type]](addr operand_list)
 
 template opl_set_arg(offset: uint16, register_index: uint16): untyped =
   ## The base index is read from `arg0`. `offset` defines the offset from this base index.
@@ -138,10 +138,10 @@ template opl_set_arg(offset: uint16, register_index: uint16): untyped =
   operand_list[index] = reg_get_arg(register_index)
 
 template oplv_get_open_array_arg(count_arg_index): untyped =
-  to_open_array(value_operand_list(), 0, instruction.arg(count_arg_index) - 1)
+  to_open_array(value_operand_list, 0, int(instruction.arg(count_arg_index) - 1))
 
 template oplv_get_imseq_arg(count_arg_index): untyped =
-  new_immutable_seq(value_operand_list(), int(instruction.arg(count_arg_index)))
+  new_immutable_seq(value_operand_list, int(instruction.arg(count_arg_index)))
 
 template opl_push_n(count: uint16): untyped =
   for i in 0'u16 ..< count:
@@ -605,8 +605,8 @@ proc evaluate(frame: FramePtr) =
 
       let value = values.new_struct_value(
         cast[StructSchema](const_schema_arg(1)),
-        new_immutable_seq(type_operand_list(), int(type_argument_count)),
-        to_open_array(value_operand_list(), first_argument_index, last_argument_index),
+        new_immutable_seq(type_operand_list, int(type_argument_count)),
+        to_open_array(value_operand_list, int(first_argument_index), int(last_argument_index)),
       )
       regv_set_ref_arg(0, value)
 

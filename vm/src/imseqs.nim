@@ -38,22 +38,23 @@ proc new_immutable_seq*[T](length: int): ImSeq[T] =
 
 proc new_immutable_seq*[T](length: uint): ImSeq[T] = new_immutable_seq[T](int(length))
 
-proc new_immutable_seq*[T](source: open_array[T]): ImSeq[T] =
-  let length = source.len
+proc new_immutable_seq[T](source: pointer, length: int): ImSeq[T] =
   var seq = new_immutable_seq[T](length)
-  copy_mem(addr seq.elements, unsafe_addr source, length * sizeof(T))
+  copy_mem(addr seq.elements, source, length * sizeof(T))
   seq
+
+proc new_immutable_seq*[T](source: ptr UncheckedArray[T], length: int): ImSeq[T] = new_immutable_seq[T](cast[pointer](source), length)
+
+proc new_immutable_seq*[T](source: open_array[T]): ImSeq[T] = new_immutable_seq[T](unsafe_addr source, source.len)
 
 proc new_immutable_seq*[T](source: open_array[T], length: int): ImSeq[T] =
   ## Creates a new immutable sequence from `source`, but taking only the first `length` elements.
-  var seq = new_immutable_seq[T](length)
-  copy_mem(addr seq.elements, unsafe_addr source, length * sizeof(T))
-  seq
+  new_immutable_seq[T](unsafe_addr source, length)
 
 proc new_immutable_seq*[T](source: ImSeq[T]): ImSeq[T] =
   ## Copies all elements of `source` into a new immutable sequence with the same length. A copied immutable sequence is
   ## guaranteed to be fresh and may thus be mutated for initialization.
-  new_immutable_seq(to_open_array(source))
+  new_immutable_seq[T](addr source.elements, source.len)
 
 proc `[]`*[T](seq: ImSeq[T], index: int): T = seq.elements[index]
 proc `[]`*[T](seq: ImSeq[T], index: int64): T = seq.elements[index]
