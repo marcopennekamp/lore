@@ -727,38 +727,56 @@ proc evaluate*(entry_function: ptr FunctionInstance, frame_mem: pointer): Tagged
   # The bytecode must ensure that the result is in the first register.
   regv_get(0)
 
-# TODO (vm): These `evaluate` functions can be implemented with a macro. Also, the `generate_call` is already part of
-#            `generate_dispatch`, so the call code is being generated twice. We should rather first get the function
-#            instance (via `find_dispatch_target_from_arguments`) and then call `generate_call` once.
+# TODO (vm): `evaluate_function_value` can be implemented with a macro.
 
 proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, arguments: open_array[TaggedValue]): TaggedValue =
   ## Evaluates a function value with a signature `(...) => Any`.
   assert(arity(function_value) == arguments.len)
-  if function_value.variant == FunctionValueVariant.Multi:
-    generate_dispatch(cast[MultiFunction](function_value.target), arguments)
-  else:
-    generate_call(cast[ptr FunctionInstance](function_value.target), function_value.context, arguments)
+
+  var function_instance = FunctionInstance()
+  let target =
+    if function_value.variant == FunctionValueVariant.Multi:
+      find_dispatch_target_from_arguments(cast[MultiFunction](function_value.target), arguments, function_instance)
+      addr function_instance
+    else:
+      cast[ptr FunctionInstance](function_value.target)
+  generate_call(target, function_value.context, arguments)
 
 proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr): TaggedValue =
   ## Evaluates a function value with a signature `() => Any`.
   assert(arity(function_value) == 0)
-  if function_value.variant == FunctionValueVariant.Multi:
-    generate_dispatch0(cast[MultiFunction](function_value.target))
-  else:
-    generate_call0(cast[ptr FunctionInstance](function_value.target), function_value.context)
+
+  var function_instance = FunctionInstance()
+  let target =
+    if function_value.variant == FunctionValueVariant.Multi:
+      find_dispatch_target_from_arguments(cast[MultiFunction](function_value.target), function_instance)
+      addr function_instance
+    else:
+      cast[ptr FunctionInstance](function_value.target)
+  generate_call0(target, function_value.context)
 
 proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue =
   ## Evaluates a function value with a signature `(Any) => Any`.
   assert(arity(function_value) == 1)
-  if function_value.variant == FunctionValueVariant.Multi:
-    generate_dispatch1(cast[MultiFunction](function_value.target), argument0)
-  else:
-    generate_call1(cast[ptr FunctionInstance](function_value.target), function_value.context, argument0)
+
+  var function_instance = FunctionInstance()
+  let target =
+    if function_value.variant == FunctionValueVariant.Multi:
+      find_dispatch_target_from_arguments(cast[MultiFunction](function_value.target), argument0, function_instance)
+      addr function_instance
+    else:
+      cast[ptr FunctionInstance](function_value.target)
+  generate_call1(target, function_value.context, argument0)
 
 proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue =
   ## Evaluates a function value with a signature `(Any, Any) => Any`.
   assert(arity(function_value) == 2)
-  if function_value.variant == FunctionValueVariant.Multi:
-    generate_dispatch2(cast[MultiFunction](function_value.target), argument0, argument1)
-  else:
-    generate_call2(cast[ptr FunctionInstance](function_value.target), function_value.context, argument0, argument1)
+
+  var function_instance = FunctionInstance()
+  let target =
+    if function_value.variant == FunctionValueVariant.Multi:
+      find_dispatch_target_from_arguments(cast[MultiFunction](function_value.target), argument0, argument1, function_instance)
+      addr function_instance
+    else:
+      cast[ptr FunctionInstance](function_value.target)
+  generate_call2(target, function_value.context, argument0, argument1)
