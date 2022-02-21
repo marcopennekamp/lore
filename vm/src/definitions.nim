@@ -97,11 +97,10 @@ type
     ## multi-functions, and meta shapes. It may be shared across multiple function definitions. All entries are
     ## separately accessed by a uint16 index.
     ##
-    ## Types and values are implicitly separated into monomorphic and polymorphic entities. A monomorphic type/value is
-    ## guaranteed to contain no type variables can be used as is. A polymorphic type/value contains at least one type
-    ## variable. Such types/values must be fetched with the instruction `ConstPoly` (or related instructions containing
-    ## the word "Poly"). All type variables will be substituted using the current function instance's type arguments. In
-    ## case of a polymorphic value, types will be substituted recursively into the value's children as well.
+    ## Types are implicitly separated into monomorphic and polymorphic entities. A monomorphic type is guaranteed to
+    ## contain no type variables and can be used as is. A polymorphic type contains at least one type variable. Such
+    ## types must be used with instructions containing the word `Poly`. All type variables are substituted using the
+    ## current function instance's type arguments.
     types*: seq[Type]
     values*: seq[TaggedValue]
     names*: seq[string]

@@ -8,7 +8,7 @@ object PoemOperation extends Enumeration {
   type PoemOperation = Value
 
   val Assign = Value
-  val Const, ConstPoly = Value
+  val Const = Value
   val IntConst, IntNeg, IntAdd, IntSub, IntMul, IntDiv, IntEq, IntLt, IntLte, IntToReal = Value
   val RealNeg, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte = Value
   val BooleanConst, BooleanNot, BooleanOr, BooleanAnd = Value

@@ -55,7 +55,6 @@ object PoemInstruction {
   case class Assign(target: PReg, source: PReg) extends PoemInstruction(PoemOperation.Assign)
 
   case class Const(target: PReg, value: PVal) extends PoemInstruction(PoemOperation.Const)
-  case class ConstPoly(target: PReg, value: PVal) extends PoemInstruction(PoemOperation.ConstPoly)
 
   case class IntConst(target: PReg, value: Int) extends PoemInstruction(PoemOperation.IntConst)
   case class IntToReal(target: PReg, value: PReg) extends PoemInstruction(PoemOperation.IntToReal)
@@ -145,7 +144,6 @@ object PoemInstruction {
       case BinaryOperation(_, target, a, b) => Register.max(target, a, b)
       case Assign(target, source) => Register.max(target, source)
       case Const(target, _) => target.id
-      case ConstPoly(target, _) => target.id
       case IntConst(target, _) => target.id
       case IntToReal(target, value) => Register.max(target, value)
       case BooleanConst(target, _) => target.id
@@ -192,7 +190,6 @@ object PoemInstruction {
     case instruction@BinaryOperation(_, target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
     case instruction@Assign(target, source) => instruction.copy(target = applyTarget(target), source = applySource(source))
     case instruction@Const(target, _) => instruction.copy(target = applyTarget(target))
-    case instruction@ConstPoly(target, _) => instruction.copy(target = applyTarget(target))
     case instruction@IntConst(target, _) => instruction.copy(target = applyTarget(target))
     case instruction@IntToReal(target, value) => instruction.copy(target = applyTarget(target), value = applySource(value))
     case instruction@BooleanConst(target, _) => instruction.copy(target = applyTarget(target))
@@ -244,7 +241,6 @@ object PoemInstruction {
       case BinaryOperation(_, target, a, b) => (Vector(target), Vector(a, b))
       case Assign(target, source) => (Vector(target), Vector(source))
       case Const(target, _) => (Vector(target), Vector.empty)
-      case ConstPoly(target, _) => (Vector(target), Vector.empty)
       case IntConst(target, _) => (Vector(target), Vector.empty)
       case IntToReal(target, value) => (Vector(target), Vector(value))
       case BooleanConst(target, _) => (Vector(target), Vector.empty)
@@ -289,7 +285,6 @@ object PoemInstruction {
       case BinaryOperation(_, target, a, b) => s"$target <- $a $b"
       case Assign(target, source) => s"$target <- $source"
       case Const(target, value) => s"$target <- $value"
-      case ConstPoly(target, value) => s"$target <- $value"
       case IntConst(target, value) => s"$target <- $value"
       case IntToReal(target, value) => s"$target <- $value as Real"
       case BooleanConst(target, value) => s"$target <- $value"

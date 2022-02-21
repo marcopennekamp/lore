@@ -80,7 +80,6 @@ type
     Assign
 
     Const
-    ConstPoly
 
     # TODO (assembly): Allow IntConst to store up to 64 bits by using 4 uint16 arguments to store the integer.
     IntConst
@@ -946,8 +945,8 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
   case operation
   of ReturnUnit, Return0: 0
   of Jump, Return: 1
-  of Assign, Const, ConstPoly, IntConst, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, ListLength,
-     JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
+  of Assign, Const, IntConst, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, ListLength, JumpIfFalse,
+     JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
   of IntAdd, IntSub, IntMul, IntDiv, IntEq, IntLt, IntLte, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte,
      BooleanOr, BooleanAnd, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped, ListGet,
      SymbolEq, StructEq: 3
@@ -1275,7 +1274,6 @@ proc write_string_with_length(stream: FileStream, string: string) =
 
   stream.write(cast[uint16](string.len))
   stream.write_str(string)
-
 
 ########################################################################################################################
 # Type names.                                                                                                          #

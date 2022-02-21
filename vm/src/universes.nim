@@ -545,7 +545,6 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.Assign: Operation.Assign
 
   of PoemOperation.Const: Operation.Const
-  of PoemOperation.ConstPoly: Operation.ConstPoly
 
   of PoemOperation.IntConst: Operation.IntConst
   of PoemOperation.IntNeg: Operation.IntNeg

@@ -20,8 +20,6 @@ object PoemInstructionWriter {
         write(target)
         writeConstantValue(value)
 
-      case PoemInstruction.ConstPoly(target, value) => ???
-
       case PoemInstruction.IntConst(target, value) =>
         write(target)
         writer.writeInt16(value)

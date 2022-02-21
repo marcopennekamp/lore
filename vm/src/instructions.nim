@@ -15,7 +15,6 @@ type
     ##  - `mtsh(x)`: The xth entry in the meta shapes constants table.
     ##  - `targ(x)`: The xth entry in the current function instance's type arguments.
     ##  - `substitute(t)`: Substitutes the current function instance's type arguments into type `t`.
-    ##  - `substitute_types(v)`: Substitutes the current function instance's type arguments into value `v`.
     ##
     ## The operand list is used by instructions which require a number of operands that exceeds the instruction's size
     ## limit. For example, to call a function with 8 arguments, we cannot pass 8 registers within the instruction,
@@ -30,9 +29,6 @@ type
 
     Const
       ## reg(arg0) <- val(arg1)
-
-    ConstPoly
-      ## reg(arg0) <- substitute_types(val(arg1))
 
     IntConst
       ## reg(arg0) <- arg1 as int64
