@@ -70,6 +70,8 @@ object PoemInstruction {
   def unit(target: PReg): PoemInstruction = Tuple(target, Vector.empty)
 
   case class FunctionCall(target: PReg, function: PReg, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.FunctionCall)
+  case class Lambda(target: PReg, mf: PMf, tpe: PTpe, capturedRegisters: Vector[PReg]) extends PoemInstruction(PoemOperation.Lambda)
+  case class LambdaLocal(target: PReg, index: Int) extends PoemInstruction(PoemOperation.LambdaLocal)
 
   case class List(target: PReg, tpe: PTpe, elements: Vector[PReg]) extends PoemInstruction(PoemOperation.List)
   case class ListAppend(override val operation: PoemOperation, target: PReg, list: PReg, element: PReg, tpe: PTpe) extends PoemInstruction(operation)
@@ -152,6 +154,8 @@ object PoemInstruction {
       case Tuple(target, elements) => Register.max(target, elements)
       case TupleGet(target, tuple, _) => Register.max(target, tuple)
       case FunctionCall(target, function, arguments) => Register.max(target, function, arguments)
+      case Lambda(target, _, _, capturedRegisters) => Register.max(target, capturedRegisters)
+      case LambdaLocal(target, _) => target.id
       case List(target, _, elements) => Register.max(target, elements)
       case ListAppend(_, target, list, element, _) => Register.max(target, list, element)
       case ListAppendUntyped(target, list, element) => Register.max(target, list, element)
@@ -198,6 +202,8 @@ object PoemInstruction {
     case instruction@Tuple(target, elements) => instruction.copy(target = applyTarget(target), elements = elements.map(applySource))
     case instruction@TupleGet(target, tuple, _) => instruction.copy(target = applyTarget(target), tuple = applySource(tuple))
     case instruction@FunctionCall(target, function, arguments) => instruction.copy(target = applyTarget(target), function = applySource(function), arguments = arguments.map(applySource))
+    case instruction@Lambda(target, _, _, capturedRegisters) => instruction.copy(target = applyTarget(target), capturedRegisters = capturedRegisters.map(applySource))
+    case instruction@LambdaLocal(target, _) => instruction.copy(target = applyTarget(target))
     case instruction@List(target, _, elements) => instruction.copy(target = applyTarget(target), elements = elements.map(applySource))
     case instruction@ListAppend(_, target, list, element, _) => instruction.copy(target = applyTarget(target), list = applySource(list), element = applySource(element))
     case instruction@ListAppendUntyped(target, list, element) => instruction.copy(target = applyTarget(target), list = applySource(list), element = applySource(element))
@@ -249,6 +255,8 @@ object PoemInstruction {
       case Tuple(target, elements) => (Vector(target), elements)
       case TupleGet(target, tuple, _) => (Vector(target), Vector(tuple))
       case FunctionCall(target, function, arguments) => (Vector(target), function +: arguments)
+      case Lambda(target, _, _, capturedRegisters) => (Vector(target), capturedRegisters)
+      case LambdaLocal(target, _) => (Vector(target), Vector.empty)
       case List(target, _, elements) => (Vector(target), elements)
       case ListAppend(_, target, list, element, _) => (Vector(target), Vector(list, element))
       case ListAppendUntyped(target, list, element) => (Vector(target), Vector(list, element))
@@ -293,6 +301,8 @@ object PoemInstruction {
       case Tuple(target, elements) => s"$target <- tuple(${elements.mkString(", ")})"
       case TupleGet(target, tuple, index) => s"$target <- $tuple[$index]"
       case FunctionCall(target, function, arguments) => s"$target <- $function(${arguments.mkString(", ")})"
+      case Lambda(target, mf, tpe, capturedRegisters) => s"$target <- lambda($mf, $tpe, ${capturedRegisters.mkString(", ")})"
+      case LambdaLocal(target, index) => s"$target <- lctx($index)"
       case List(target, tpe, elements) => s"$target <- list(${elements.mkString(", ")}) with type $tpe"
       case ListAppend(_, target, list, element, tpe) => s"$target <- $list :+ $element with type $tpe"
       case ListAppendUntyped(target, list, element) => s"$target <- $list :+ $element"

@@ -1,6 +1,5 @@
 package lore.compiler.poem.writer
 
-import lore.compiler.core.CompilationException
 import lore.compiler.poem.PoemInstruction.PropertyGetInstanceKind
 import lore.compiler.poem.{Poem, PoemInstruction, PoemIntrinsic, PoemMetaShape, PoemType, PoemValue}
 import lore.compiler.semantics.NamePath
@@ -44,6 +43,16 @@ object PoemInstructionWriter {
       case PoemInstruction.FunctionCall(target, function, arguments) =>
         write(target, function)
         writeOperandsWithLength8(arguments)
+
+      case PoemInstruction.Lambda(target, mf, tpe, capturedRegisters) =>
+        write(target)
+        writeConstantMultiFunction(mf.name)
+        writeConstantType(tpe)
+        writeOperandsWithLength16(capturedRegisters)
+
+      case PoemInstruction.LambdaLocal(target, index) =>
+        write(target)
+        writer.writeUInt16(index)
 
       case PoemInstruction.List(target, tpe, elements) =>
         write(target)
