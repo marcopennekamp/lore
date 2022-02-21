@@ -1,4 +1,4 @@
-package lore.compiler.assembly.expressions
+package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.AsmChunk
 import lore.compiler.assembly.types.TypeAssembler

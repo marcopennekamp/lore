@@ -1,4 +1,4 @@
-package lore.compiler.assembly.expressions
+package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.optimization.{ConstSmasher, RegisterAllocator}
 import lore.compiler.poem.PoemInstruction

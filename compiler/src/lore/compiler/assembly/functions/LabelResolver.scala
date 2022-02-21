@@ -1,4 +1,4 @@
-package lore.compiler.assembly.expressions
+package lore.compiler.assembly.functions
 
 import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.poem.{Poem, PoemInstruction}

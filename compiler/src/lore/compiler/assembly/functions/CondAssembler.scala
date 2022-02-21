@@ -1,4 +1,4 @@
-package lore.compiler.assembly.expressions
+package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.{AsmChunk, RegisterProvider}
 import lore.compiler.core.CompilationException

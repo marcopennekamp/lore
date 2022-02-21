@@ -1,4 +1,4 @@
-package lore.compiler.assembly.expressions
+package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.{AsmChunk, RegisterProvider}

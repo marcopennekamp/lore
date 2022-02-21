@@ -27,7 +27,7 @@ object Poem {
 
   /**
     * A Location is either an unresolved label or an absolute program counter position. Label locations are resolved by
-    * [[lore.compiler.assembly.expressions.LabelResolver]] and turned into absolute locations.
+    * [[lore.compiler.assembly.functions.LabelResolver]] and turned into absolute locations.
     */
   sealed trait Location {
     def forcePc: Int = this match {

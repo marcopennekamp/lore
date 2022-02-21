@@ -1,5 +1,6 @@
 package lore.compiler.assembly
 
+import lore.compiler.assembly.functions.FunctionAssembler
 import lore.compiler.core.CompilerOptions
 import lore.compiler.poem.PoemFragment
 import lore.compiler.poem.writer.PoemWriter

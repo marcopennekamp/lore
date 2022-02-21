@@ -1,6 +1,5 @@
-package lore.compiler.assembly
+package lore.compiler.assembly.functions
 
-import lore.compiler.assembly.expressions.ExpressionAssembler
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.poem.{PoemFunction, PoemInstruction}
 import lore.compiler.semantics.Registry
@@ -11,7 +10,7 @@ object FunctionAssembler {
   def generate(function: FunctionDefinition)(implicit registry: Registry): PoemFunction = {
     val typeParameters = function.typeParameters.map(TypeAssembler.generateParameter)
     val instructions = function.body.map(
-      body => ExpressionAssembler.generate(function.signature.parameters, body)
+      body => ExpressionAssembler.generate(function.signature.parameters, body),
     ).getOrElse(Vector.empty)
     val registerCount = PoemInstruction.registerCount(instructions)
 
