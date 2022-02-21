@@ -205,9 +205,10 @@ A **Value** is encoded as follows:
       - The element count is given by *Type*.
     - Function:
       - **Variant** (uint8):
-        - Fixed: A fixed function with a fixed input type resolved during universe resolution.
-        - Lambda: A lambda function. The VM's bytecode encodes lambda functions as single-function multi-functions. We could technically access lambdas as fixed functions, but this variant allows the compiler to omit the fixed input type from the bytecode, saving space.
         - Multi: A multi-function value.
+        - Fixed: A fixed function with a fixed input type resolved during universe resolution.
+        - Lambda: A lambda function, which are backed by a single-function multi-function. Lambda functions are distinct from fixed functions as lambdas don't need an explicitly specified input type.
+          - Only lambdas that are created inside monomorphic functions and capture no variables can be represented as Lambda function value constants. All other lambdas must be created at run-time using the `Lamdba` operation. 
       - **Name** (string): The name of the targeted multi-function.
       - If `Fixed`:
         - **Input type** (Type): The desired input type that the fixed function should match.

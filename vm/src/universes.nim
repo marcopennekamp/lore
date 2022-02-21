@@ -14,7 +14,7 @@ import schema_order
 from types import Kind, Type, TypeParameter, TypeVariable, SumType, IntersectionType, TupleType, FunctionType,
                   ListType, MapType, ShapeType, Schema,  DeclaredType, TraitSchema, TraitType, StructSchema,
                   StructSchemaProperty, attach_inherited_shape_type, attach_property_type, is_monomorphic
-from values import TaggedValue
+from values import TaggedValue, LambdaContext
 
 type
   Universe* = ref object
@@ -379,6 +379,17 @@ method resolve_instruction(poem_instruction: PoemInstructionFunctionCall, contex
     poem_instruction.arguments,
   )
 
+method resolve_instruction(poem_instruction: PoemInstructionLambda, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  if poem_instruction.captured_registers.len > operand_list_limit:
+    quit(fmt"The `Lambda` operation cannot yet handle more than {operand_list_limit} captured registers.")
+
+  let tpe = context.get_constants.types[poem_instruction.tpe]
+  let prefix = [poem_instruction.target_reg, poem_instruction.mf, poem_instruction.tpe]
+  if tpe.is_monomorphic:
+    generate_xary_application(Operation.Lambda, [Operation.Lambda0], prefix, poem_instruction.captured_registers)
+  else:
+    generate_xary_application(Operation.LambdaPoly, [Operation.LambdaPoly0], prefix, poem_instruction.captured_registers)
+
 method resolve_instruction(poem_instruction: PoemInstructionList, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   if poem_instruction.elements.len > operand_list_limit:
     quit(fmt"The `List` operation cannot yet handle more than {operand_list_limit} elements.")
@@ -579,6 +590,8 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
 
   of PoemOperation.TupleGet: Operation.TupleGet
 
+  of PoemOperation.LambdaLocal: Operation.LambdaLocal
+
   of PoemOperation.ListAppendUntyped: Operation.ListAppendUntyped
   of PoemOperation.ListLength: Operation.ListLength
   of PoemOperation.ListGet: Operation.ListGet
@@ -600,9 +613,9 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.TypeArg: Operation.TypeArg
   of PoemOperation.TypeConst: Operation.TypeConst
 
-  of PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.Shape, PoemOperation.List,
-     PoemOperation.ListAppend, PoemOperation.Struct, PoemOperation.PropertyGet, PoemOperation.Intrinsic,
-     PoemOperation.IntrinsicVoid, PoemOperation.GlobalGet, PoemOperation.Dispatch:
+  of PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.Lambda, PoemOperation.List,
+     PoemOperation.ListAppend, PoemOperation.Shape, PoemOperation.Struct, PoemOperation.PropertyGet,
+     PoemOperation.Intrinsic, PoemOperation.IntrinsicVoid, PoemOperation.GlobalGet, PoemOperation.Dispatch:
     quit(fmt"The poem operation {poem_operation} is not simple!")
 
 ########################################################################################################################
@@ -692,6 +705,12 @@ method resolve(poem_value: PoemTupleValue, universe: Universe): TaggedValue =
 method resolve(poem_value: PoemFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
   quit("Please implement `resolve` for all PoemFunctionValues.")
 
+method resolve(poem_value: PoemMultiFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
+  let tpe = universe.resolve(poem_value.tpe)
+  assert(tpe.kind == Kind.Function)
+  let mf = universe.multi_functions[poem_value.name]
+  values.tag_reference(values.new_multi_function_value(cast[pointer](mf), tpe))
+
 method resolve(poem_value: PoemFixedFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
   quit("Fixed function value resolution is not yet implemented.")
 
@@ -700,20 +719,20 @@ method resolve(poem_value: PoemLambdaFunctionValue, universe: Universe): TaggedV
   assert(tpe.kind == Kind.Function)
 
   let mf = universe.multi_functions[poem_value.name]
-  if mf.functions.len > 1:
-    quit(fmt"Cannot create a lambda value from multi-function `{mf.name}`, because it has more than one function.")
+  if not mf.is_single_function:
+    quit(fmt"A multi-function backing a lambda must be a single function. Multi-function name: {mf.name}.")
 
   let function = mf.functions[0]
   if not function.is_monomorphic:
-    quit(fmt"Cannot create a lambda value from function `{mf.name}`, because the function is polymorphic.")
+    quit(fmt"Cannot create a constant lambda function value from function `{mf.name}`, because the function is polymorphic.")
 
-  values.new_function_tagged(true, cast[pointer](addr function.monomorphic_instance), tpe)
-
-method resolve(poem_value: PoemMultiFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
-  let tpe = universe.resolve(poem_value.tpe)
-  assert(tpe.kind == Kind.Function)
-  let mf = universe.multi_functions[poem_value.name]
-  values.new_function_tagged(false, cast[pointer](mf), tpe)
+  values.tag_reference(
+    values.new_lambda_function_value(
+      cast[pointer](addr function.monomorphic_instance),
+      LambdaContext(empty_immutable_seq[TaggedValue]()),
+      tpe,
+    )
+  )
 
 method resolve(poem_value: PoemListValue, universe: Universe): TaggedValue {.locks: "unknown".} =
   let tpe = universe.resolve(poem_value.tpe)

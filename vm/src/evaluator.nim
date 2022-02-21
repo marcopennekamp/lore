@@ -1,4 +1,5 @@
 import std/macros
+import std/strformat
 
 import definitions
 from dispatch import find_dispatch_target_from_arguments
@@ -8,12 +9,13 @@ from types import Type, StructSchema
 import values
 from utils import when_debug
 
+proc evaluate(frame: FramePtr)
 proc evaluate*(entry_function: ptr FunctionInstance, frame_mem: pointer): TaggedValue
 
-proc evaluate*(function_value: FunctionValue, frame: FramePtr, arguments: open_array[TaggedValue]): TaggedValue
-proc evaluate*(function_value: FunctionValue, frame: FramePtr): TaggedValue
-proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue
-proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue
+proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, arguments: open_array[TaggedValue]): TaggedValue
+proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr): TaggedValue
+proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue
+proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue
 
 ########################################################################################################################
 # Execution frames.                                                                                                    #
@@ -22,10 +24,11 @@ proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: Tagged
 # TODO (vm): We should possibly clear a frame by nilling all references so that pointers left in registers aren't
 #            causing memory leaks. However, this also incurs a big performance penalty, so we should probably rather
 #            verify first that this is a problem before fixing it.
-proc create_frame(instance: ptr FunctionInstance, frame_base: pointer): FramePtr {.inline.} =
+proc create_frame(instance: ptr FunctionInstance, lambda_context: LambdaContext, frame_base: pointer): FramePtr {.inline.} =
   let frame = cast[FramePtr](frame_base)
   frame.function = instance.function
   frame.type_arguments = instance.type_arguments
+  frame.lambda_context = lambda_context
   frame
 
 ########################################################################################################################
@@ -100,6 +103,9 @@ template regt_set_arg(target_index, tpe): untyped = regt_set(instruction.arg(tar
 # Constant table access.                                                                                               #
 ########################################################################################################################
 
+# TODO (vm): Using `constants` directly becomes awkward when procs are involved. The macros should instead access
+#            `frame.function.constants`, but we have to make sure that this doesn't adversely affect performance.
+
 template const_types(index): untyped = constants.types[index]
 template const_types_arg(index): untyped = const_types(instruction.arg(index))
 
@@ -134,12 +140,15 @@ template opl_set_arg(offset: uint16, register_index: uint16): untyped =
 template oplv_get_open_array_arg(count_arg_index): untyped =
   to_open_array(value_operand_list(), 0, instruction.arg(count_arg_index) - 1)
 
+template oplv_get_imseq_arg(count_arg_index): untyped =
+  new_immutable_seq(value_operand_list(), int(instruction.arg(count_arg_index)))
+
 template opl_push_n(count: uint16): untyped =
   for i in 0'u16 ..< count:
     opl_set_arg(i, i + 1)
 
 ########################################################################################################################
-# Helpers: Unary, binary, and xary operators.                                                                          #
+# Unary, binary, and xary operators.                                                                                   #
 ########################################################################################################################
 
 macro generate_operand_get(index_node: int, kind: static[string]): untyped =
@@ -184,43 +193,46 @@ macro generate_binary_operator(source_kind: static[string], result_kind: static[
     generate_operation_set_result(0, `op_node`, `result_kind`)
 
 ########################################################################################################################
-# Helpers: Function calls.                                                                                             #
+# Function calls.                                                                                                      #
 ########################################################################################################################
 
 # TODO (vm): We can merge the `generate_*` functions into macros.
 # TODO (vm): Maybe these should also be inline procs to cut down on too excessive eval-loop size.
 
+# The `function_call` functions are procs to avoid overusing templates. The compiler should decide on its own whether
+# to inline these calls.
+
 template next_frame_base(): pointer = cast[pointer](cast[uint](frame) + frame.function.frame_size)
 
-template call_start(target: ptr FunctionInstance): FramePtr =
+template call_start(target: ptr FunctionInstance, lambda_context: LambdaContext): FramePtr =
   let target_frame_base = next_frame_base()
-  create_frame(target, target_frame_base)
+  create_frame(target, lambda_context, target_frame_base)
 
 template get_call_result(target_frame): untyped =
   # After function evaluation has finished, it must guarantee that the return value is in the first register.
   cast[TaggedValue](target_frame.registers[0])
 
-template generate_call(target: ptr FunctionInstance, arguments): TaggedValue =
-  let target_frame = call_start(target)
+template generate_call(target: ptr FunctionInstance, lambda_context: LambdaContext, arguments): TaggedValue =
+  let target_frame = call_start(target, lambda_context)
   for i in 0 ..< arguments.len:
     target_frame.registers[i] = cast[uint64](arguments[i])
   evaluate(target_frame)
   get_call_result(target_frame)
 
 # TODO (vm): Do we have to pass type arguments of an owning multi-function to a lambda? Or how does this work?
-template generate_call0(target: ptr FunctionInstance): TaggedValue =
-  let target_frame = call_start(target)
+template generate_call0(target: ptr FunctionInstance, lambda_context: LambdaContext): TaggedValue =
+  let target_frame = call_start(target, lambda_context)
   evaluate(target_frame)
   get_call_result(target_frame)
 
-template generate_call1(target: ptr FunctionInstance, argument0): TaggedValue =
-  let target_frame = call_start(target)
+template generate_call1(target: ptr FunctionInstance, lambda_context: LambdaContext, argument0): TaggedValue =
+  let target_frame = call_start(target, lambda_context)
   target_frame.registers[0] = cast[uint64](argument0)
   evaluate(target_frame)
   get_call_result(target_frame)
 
-template generate_call2(target: ptr FunctionInstance, argument0, argument1): TaggedValue =
-  let target_frame = call_start(target)
+template generate_call2(target: ptr FunctionInstance, lambda_context: LambdaContext, argument0, argument1): TaggedValue =
+  let target_frame = call_start(target, lambda_context)
   target_frame.registers[0] = cast[uint64](argument0)
   target_frame.registers[1] = cast[uint64](argument1)
   evaluate(target_frame)
@@ -229,25 +241,52 @@ template generate_call2(target: ptr FunctionInstance, argument0, argument1): Tag
 template generate_dispatch(mf, arguments): TaggedValue =
   var target = FunctionInstance()
   find_dispatch_target_from_arguments(mf, arguments, target)
-  generate_call(addr target, arguments)
+  generate_call(addr target, LambdaContext(nil), arguments)
 
 template generate_dispatch0(mf): TaggedValue =
   var target = FunctionInstance()
   find_dispatch_target_from_arguments(mf, target)
-  generate_call0(addr target)
+  generate_call0(addr target, LambdaContext(nil))
 
 template generate_dispatch1(mf, argument0): TaggedValue =
   var target = FunctionInstance()
   find_dispatch_target_from_arguments(mf, argument0, target)
-  generate_call1(addr target, argument0)
+  generate_call1(addr target, LambdaContext(nil), argument0)
 
 template generate_dispatch2(mf, argument0, argument1): TaggedValue =
   var target = FunctionInstance()
   find_dispatch_target_from_arguments(mf, argument0, argument1, target)
-  generate_call2(addr target, argument0, argument1)
+  generate_call2(addr target, LambdaContext(nil), argument0, argument1)
 
 ########################################################################################################################
-# Helpers: Other operations.                                                                                           #
+# Function values.                                                                                                     #
+########################################################################################################################
+
+proc lambda_get_function_instance(frame: FramePtr, instruction: Instruction, arg_index: uint16): ptr FunctionInstance {.inline.} =
+  let constants = frame.function.constants
+  let mf = const_multi_function_arg(arg_index)
+  if not mf.is_single_function:
+    quit(fmt"A multi-function backing a lambda must be a single function. Multi-function name: {mf.name}.")
+  let function = mf.functions[0]
+  if function.is_monomorphic: addr function.monomorphic_instance
+  else: new_function_instance(function, frame.type_arguments)
+
+template generate_lambda(is_poly: bool) =
+  let function_instance = lambda_get_function_instance(frame, instruction, 1)
+  let tpe = if is_poly: types.substitute(const_types_arg(2), frame.type_arguments) else: const_types_arg(2)
+  let context = LambdaContext(oplv_get_imseq_arg(3))
+  let value = values.new_lambda_function_value(function_instance, context, tpe)
+  regv_set_ref_arg(0, value)
+
+template generate_lambda0(is_poly: bool) =
+  let function_instance = lambda_get_function_instance(frame, instruction, 1)
+  let tpe = if is_poly: types.substitute(const_types_arg(2), frame.type_arguments) else: const_types_arg(2)
+  let context = LambdaContext(empty_immutable_seq[TaggedValue]())
+  let value = values.new_lambda_function_value(function_instance, context, tpe)
+  regv_set_ref_arg(0, value)
+
+########################################################################################################################
+# Lists.                                                                                                               #
 ########################################################################################################################
 
 template generate_list_append(new_tpe): untyped =
@@ -256,7 +295,11 @@ template generate_list_append(new_tpe): untyped =
   var new_elements = list.elements.append(new_element)
   regv_set_ref_arg(0, new_list(new_elements, new_tpe))
 
-# TODO (vm): Maybe intrinsics should be inline procs to cut down on too excessive eval-loop size.
+########################################################################################################################
+# Intrinsics.                                                                                                          #
+########################################################################################################################
+
+# TODO (vm): Maybe intrinsic calls should be inline procs to cut down on too excessive eval-loop size.
 
 macro generate_intrisic_evaluation(
   is_void: static[bool],
@@ -399,7 +442,7 @@ proc evaluate(frame: FramePtr) =
     of Operation.StringLte: quit("StringLte is not yet implemented.")
 
     of Operation.Tuple:
-      var elements = new_immutable_seq(value_operand_list(), instruction.argi(1))
+      var elements = oplv_get_imseq_arg(1)
       regv_set_ref_arg(0, values.new_tuple(elements))
 
     # TODO (vm): Implement TupleX with a single macro.
@@ -423,30 +466,40 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.FunctionCall:
       let function = regv_get_ref_arg(1, FunctionValue)
-      let res = evaluate(function, frame, oplv_get_open_array_arg(2))
+      let res = evaluate_function_value(function, frame, oplv_get_open_array_arg(2))
       regv_set_arg(0, res)
 
     # TODO (vm): Implement FunctionCallX with a single macro.
     of Operation.FunctionCall0:
       let function = regv_get_ref_arg(1, FunctionValue)
-      let res = evaluate(function, frame)
+      let res = evaluate_function_value(function, frame)
       regv_set_arg(0, res)
 
     of Operation.FunctionCall1:
       let function = regv_get_ref_arg(1, FunctionValue)
       let argument0 = regv_get_arg(2)
-      let res = evaluate(function, frame, argument0)
+      let res = evaluate_function_value(function, frame, argument0)
       regv_set_arg(0, res)
 
     of Operation.FunctionCall2:
       let function = regv_get_ref_arg(1, FunctionValue)
       let argument0 = regv_get_arg(2)
       let argument1 = regv_get_arg(3)
-      let res = evaluate(function, frame, argument0, argument1)
+      let res = evaluate_function_value(function, frame, argument0, argument1)
       regv_set_arg(0, res)
 
+    of Operation.Lambda: generate_lambda(false)
+    of Operation.Lambda0: generate_lambda0(false)
+    of Operation.LambdaPoly: generate_lambda(true)
+    of Operation.LambdaPoly0: generate_lambda0(true)
+
+    of Operation.LambdaLocal:
+      if ImSeq[TaggedValue](frame.lambda_context) == nil:
+        quit(fmt"`LambdaLocal` cannot be executed because the lambda context is `nil`.")
+      regv_set_arg(0, frame.lambda_context[instruction.arg(1)])
+
     of Operation.List:
-      let elements = new_immutable_seq(value_operand_list(), instruction.argi(2))
+      let elements = oplv_get_imseq_arg(2)
       let list = values.new_list(elements, const_types_arg(1))
       regv_set_ref_arg(0, list)
 
@@ -460,7 +513,7 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.ListPoly:
       let tpe = types.substitute(const_types_arg(1), frame.type_arguments)
-      let elements = new_immutable_seq(value_operand_list(), instruction.argi(2))
+      let elements = oplv_get_imseq_arg(2)
       let list = values.new_list(elements, tpe)
       regv_set_ref_arg(0, list)
 
@@ -668,7 +721,7 @@ proc evaluate(frame: FramePtr) =
       quit("The VM encountered an `Invalid` operation. This was likely caused by faulty bytecode or bytecode resolution.")
 
 proc evaluate*(entry_function: ptr FunctionInstance, frame_mem: pointer): TaggedValue =
-  let frame = create_frame(entry_function, frame_mem)
+  let frame = create_frame(entry_function, LambdaContext(nil), frame_mem)
   evaluate(frame)
 
   # The bytecode must ensure that the result is in the first register.
@@ -678,34 +731,34 @@ proc evaluate*(entry_function: ptr FunctionInstance, frame_mem: pointer): Tagged
 #            `generate_dispatch`, so the call code is being generated twice. We should rather first get the function
 #            instance (via `find_dispatch_target_from_arguments`) and then call `generate_call` once.
 
-proc evaluate*(function_value: FunctionValue, frame: FramePtr, arguments: open_array[TaggedValue]): TaggedValue =
+proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, arguments: open_array[TaggedValue]): TaggedValue =
   ## Evaluates a function value with a signature `(...) => Any`.
   assert(arity(function_value) == arguments.len)
-  if function_value.is_fixed:
-    generate_call(cast[ptr FunctionInstance](function_value.target), arguments)
-  else:
+  if function_value.variant == FunctionValueVariant.Multi:
     generate_dispatch(cast[MultiFunction](function_value.target), arguments)
+  else:
+    generate_call(cast[ptr FunctionInstance](function_value.target), function_value.context, arguments)
 
-proc evaluate*(function_value: FunctionValue, frame: FramePtr): TaggedValue =
+proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr): TaggedValue =
   ## Evaluates a function value with a signature `() => Any`.
   assert(arity(function_value) == 0)
-  if function_value.is_fixed:
-    generate_call0(cast[ptr FunctionInstance](function_value.target))
-  else:
+  if function_value.variant == FunctionValueVariant.Multi:
     generate_dispatch0(cast[MultiFunction](function_value.target))
+  else:
+    generate_call0(cast[ptr FunctionInstance](function_value.target), function_value.context)
 
-proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue =
+proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue =
   ## Evaluates a function value with a signature `(Any) => Any`.
   assert(arity(function_value) == 1)
-  if function_value.is_fixed:
-    generate_call1(cast[ptr FunctionInstance](function_value.target), argument0)
-  else:
+  if function_value.variant == FunctionValueVariant.Multi:
     generate_dispatch1(cast[MultiFunction](function_value.target), argument0)
+  else:
+    generate_call1(cast[ptr FunctionInstance](function_value.target), function_value.context, argument0)
 
-proc evaluate*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue =
+proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue =
   ## Evaluates a function value with a signature `(Any, Any) => Any`.
   assert(arity(function_value) == 2)
-  if function_value.is_fixed:
-    generate_call2(cast[ptr FunctionInstance](function_value.target), argument0, argument1)
-  else:
+  if function_value.variant == FunctionValueVariant.Multi:
     generate_dispatch2(cast[MultiFunction](function_value.target), argument0, argument1)
+  else:
+    generate_call2(cast[ptr FunctionInstance](function_value.target), function_value.context, argument0, argument1)

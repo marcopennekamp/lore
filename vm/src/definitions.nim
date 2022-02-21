@@ -1,7 +1,7 @@
 import imseqs
 from instructions import Instruction
 from types import TypeParameter, Type, TupleType, MetaShape, Schema
-from values import TaggedValue
+from values import TaggedValue, LambdaContext
 
 type
   Frame* = object
@@ -11,6 +11,7 @@ type
     ## Frames are part of `definitions` because some intrinsics require access to frames.
     function*: Function
     type_arguments*: ImSeq[Type]
+    lambda_context*: LambdaContext
     registers*: UncheckedArray[uint64]
       ## Registers may contain TaggedValues and Types. Whether a register currently contains a value or a type is
       ## solely defined by the operations that act on the registers.
@@ -128,6 +129,8 @@ proc new_lazy_global*(name: string, initializer: FunctionInstance): GlobalVariab
 ########################################################################################################################
 # Functions and instances.                                                                                             #
 ########################################################################################################################
+
+proc is_single_function*(mf: MultiFunction): bool = mf.functions.len == 1
 
 proc init_frame_stats*(function: Function) =
   const preamble_size = sizeof(Frame)

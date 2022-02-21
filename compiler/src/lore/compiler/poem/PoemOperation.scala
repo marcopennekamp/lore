@@ -14,7 +14,7 @@ object PoemOperation extends Enumeration {
   val BooleanConst, BooleanNot, BooleanOr, BooleanAnd = Value
   val StringOf, StringConcat, StringEq, StringLt, StringLte = Value
   val Tuple, TupleGet = Value
-  val FunctionCall = Value
+  val FunctionCall, Lambda, LambdaLocal = Value
   val List, ListAppend, ListAppendUntyped, ListLength, ListGet = Value
   val Shape = Value
   val SymbolEq = Value

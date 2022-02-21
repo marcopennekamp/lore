@@ -65,12 +65,19 @@ type
     elements*: ImSeq[TaggedValue]
 
   FunctionValue* {.pure, shallow.} = ref object of Value
-    ## A FunctionValue is either a fixed function value (pointing to a fixed function or a lambda) or a multi-function
-    ## value. This is determined by the flag `is_fixed`. The implementation of the `target` is either a
-    ## `ptr FunctionInstance` or a `MultiFunction` reference. The actual type is hidden inside the module `definitions`
-    ## to avoid cyclic dependencies between Nim modules.
-    is_fixed*: bool
+    variant*: FunctionValueVariant
     target*: pointer
+      ## A `MultiFunction` reference if `variant` is `Multi` and a `ptr FunctionInstance` otherwise. The actual type is
+      ## hidden inside the module `definitions` to avoid cyclic dependencies between Nim modules.
+    context*: LambdaContext
+
+  FunctionValueVariant* {.pure.} = enum
+    Multi
+    Fixed
+    Lambda
+
+  LambdaContext* = distinct ImSeq[TaggedValue]
+    ## A LambdaContext bundles the values of captured variables for a lambda function.
 
   ListValue* {.pure, shallow.} = ref object of Value
     elements*: ImSeq[TaggedValue]
@@ -165,11 +172,23 @@ proc new_tuple_tagged*(elements: ImSeq[TaggedValue]): TaggedValue = tag_referenc
 # Functions.                                                                                                           #
 ########################################################################################################################
 
-proc new_function*(is_fixed: bool, target: pointer, tpe: Type): Value = FunctionValue(tpe: tpe, is_fixed: is_fixed, target: target)
+proc new_function_value*(variant: FunctionValueVariant, target: pointer, context: LambdaContext, tpe: Type): Value =
+  FunctionValue(tpe: tpe, variant: variant, target: target, context: context)
 
-proc new_function_tagged*(is_fixed: bool, target: pointer, tpe: Type): TaggedValue = tag_reference(new_function(is_fixed, target, tpe))
+proc new_multi_function_value*(target: pointer, tpe: Type): Value =
+  new_function_value(FunctionValueVariant.Multi, target, LambdaContext(nil), tpe)
+
+proc new_fixed_function_value*(target: pointer, tpe: Type): Value =
+  new_function_value(FunctionValueVariant.Fixed, target, LambdaContext(nil), tpe)
+
+proc new_lambda_function_value*(target: pointer, context: LambdaContext, tpe: Type): Value =
+  new_function_value(FunctionValueVariant.Lambda, target, context, tpe)
 
 proc arity*(function: FunctionValue): int = cast[FunctionType](function.tpe).input.elements.len
+
+proc `[]`*(context: LambdaContext, index: int): TaggedValue {.borrow.}
+proc `[]`*(context: LambdaContext, index: int64): TaggedValue {.borrow.}
+proc `[]`*(context: LambdaContext, index: uint): TaggedValue {.borrow.}
 
 ########################################################################################################################
 # Lists.                                                                                                               #
@@ -334,10 +353,10 @@ func `$`*(value: Value): string =
   of Kind.Function:
     # TODO (vm): We should print the name instead of the target address, but this is non-trivial when avoiding cyclic dependencies.
     let function = cast[FunctionValue](value)
-    if function.is_fixed:
-      "<fixed function: " & $cast[uint](function.target) & ">"
-    else:
-      "<multi-function: " & $cast[uint](function.target) & ">"
+    case function.variant
+    of FunctionValueVariant.Multi: "<multi-function: " & $cast[uint](function.target) & ">"
+    of FunctionValueVariant.Fixed: "<fixed function: " & $cast[uint](function.target) & ">"
+    of FunctionValueVariant.Lambda: "<lambda function: " & $cast[uint](function.target) & ">"
   of Kind.List:
     let list = cast[ListValue](value)
     "[" & $list.elements.join(", ") & "]"

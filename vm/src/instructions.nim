@@ -14,6 +14,7 @@ type
     ##  - `mf(x)`: The xth entry in the multi functions constants table.
     ##  - `mtsh(x)`: The xth entry in the meta shapes constants table.
     ##  - `targ(x)`: The xth entry in the current function instance's type arguments.
+    ##  - `lctx(x)`: The xth value in the lambda context.
     ##  - `substitute(t)`: Substitutes the current function instance's type arguments into type `t`.
     ##
     ## The operand list is used by instructions which require a number of operands that exceeds the instruction's size
@@ -141,6 +142,24 @@ type
 
     FunctionCall2
       ## reg(arg0) <- reg(arg1)(reg(arg2), reg(arg3))
+
+    Lambda
+      ## Creates a new lambda function value with `targ` as type arguments and the given registers as captured values.
+      ## The multi-function the lambda is derived from must be a single function. The function must have the same
+      ## number of type parameters, which must be unbounded.
+      ## reg(arg0) <- lambda(mf(arg1), targ, opl(0), ..., opl(arg3 - 1)), with type `tpe(arg2)`
+
+    Lambda0
+      ## reg(arg0) <- lambda(mf(arg1), targ), with type `tpe(arg2)`
+
+    LambdaPoly
+      ## reg(arg0) <- lambda(mf(arg1), targ, opl(0), ..., opl(arg3 - 1)), with type `substitute(tpe(arg2))`
+
+    LambdaPoly0
+      ## reg(arg0) <- lambda(mf(arg1), targ), with type `substitute(tpe(arg2))`
+
+    LambdaLocal
+      ## reg(arg0) <- lctx(arg1)
 
     List
       ## reg(arg0) <- list(opl(0), ..., opl(arg2 - 1)), with type `tpe(arg1)`

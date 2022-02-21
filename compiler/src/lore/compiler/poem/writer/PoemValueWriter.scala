@@ -28,9 +28,9 @@ object PoemValueWriter {
 
     case value: PoemFunctionValue =>
       value match {
+        case PoemMultiFunctionValue(mf, tpe) => ???
         case PoemFixedFunctionValue(mf, inputType, tpe) => ???
         case PoemLambdaFunctionValue(mf, tpe) => ???
-        case PoemMultiFunctionValue(mf, tpe) => ???
       }
 
     case PoemListValue(elements, tpe) =>

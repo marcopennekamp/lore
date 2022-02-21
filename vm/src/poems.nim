@@ -6,6 +6,7 @@ import std/strformat
 
 from definitions import Function
 from types import Kind, Type, Variance
+from values import FunctionValueVariant
 
 type
   Poem* = ref object
@@ -120,6 +121,13 @@ type
 
     FunctionCall
       ## target_reg: uint16, function_reg: uint16, n: uint8, reg0: uint16, ..., reg_n: uint16
+    Lambda
+      ## target_reg: uint16, mf: uint16, tpe: uint16, n: uint16, reg0: uint16, ..., reg_n: uint16
+      ##
+      ## Creates a new lambda function value from the creating function's type arguments. From the given `n` registers,
+      ## a lambda function context is created, which can subsequently be queried with `LambdaLocal`. Type variables in
+      ## `tpe` will be substituted.
+    LambdaLocal
 
     List
       ## target_reg: uint16, tpe: uint16, n: uint16, element0_reg: uint16, ..., element_n_reg: uint16
@@ -207,6 +215,12 @@ type
     target_reg*: uint16
     function_reg*: uint16
     arguments*: seq[uint16]
+
+  PoemInstructionLambda* = ref object of PoemInstruction
+    target_reg*: uint16
+    mf*: uint16
+    tpe*: uint16
+    captured_registers*: seq[uint16]
 
   PoemInstructionList* = ref object of PoemInstruction
     target_reg*: uint16
@@ -326,12 +340,6 @@ type
   PoemMultiFunctionValue* = ref object of PoemFunctionValue
     discard
 
-  PoemFunctionValueVariant* {.pure.} = enum
-    ## This variant enum is used to encode the actual type of a function value in the bytecode.
-    Fixed
-    Lambda
-    Multi
-
   PoemListValue* = ref object of PoemValue
     tpe*: PoemType
     elements*: seq[PoemValue]
@@ -383,9 +391,9 @@ proc tuple_type*(types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kin
 proc tuple_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemTupleValue(tpe: tpe, elements: elements)
 
 proc function_type*(input: PoemType, output: PoemType): PoemType = PoemXaryType(kind: Kind.Function, types: @[input, output])
+proc multi_function_value*(name: string, tpe: PoemType): PoemValue = PoemMultiFunctionValue(name: name, tpe: tpe)
 proc fixed_function_value*(name: string, input_type: PoemType, tpe: PoemType): PoemValue = PoemFixedFunctionValue(name: name, input_type: input_type, tpe: tpe)
 proc lambda_function_value*(name: string, tpe: PoemType): PoemValue = PoemLambdaFunctionValue(name: name, tpe: tpe)
-proc multi_function_value*(name: string, tpe: PoemType): PoemValue = PoemMultiFunctionValue(name: name, tpe: tpe)
 
 proc list_type*(element_type: PoemType): PoemType = PoemXaryType(kind: Kind.List, types: @[element_type])
 proc list_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemListValue(tpe: tpe, elements: elements)
@@ -423,6 +431,9 @@ proc inst_tuple*(target: uint16, arguments: varargs[uint16]): PoemInstruction =
 
 proc inst_function_call*(target: uint16, function: uint16, arguments: varargs[uint16]): PoemInstruction =
   PoemInstructionFunctionCall(target_reg: target, function_reg: function, arguments: @arguments)
+
+proc inst_lambda*(target: uint16, mf: uint16, tpe: uint16, captured_registers: varargs[uint16]): PoemInstruction =
+  PoemInstructionLambda(target_reg: target, mf: mf, tpe: tpe, captured_registers: @captured_registers)
 
 proc inst_list*(target: uint16, tpe: uint16, elements: varargs[uint16]): PoemInstruction =
   PoemInstructionList(target_reg: target, tpe: tpe, elements: @elements)
@@ -772,6 +783,14 @@ proc read_instruction(stream: FileStream): PoemInstruction =
       arguments: stream.read_instruction_arguments_with_count(),
     )
 
+  of PoemOperation.Lambda:
+    PoemInstructionLambda(
+      target_reg: stream.read(uint16),
+      mf: stream.read(uint16),
+      tpe: stream.read(uint16),
+      captured_registers: stream.read_many_with_count(uint16, uint16, read_uint16),
+    )
+
   of PoemOperation.List:
     PoemInstructionList(
       target_reg: stream.read(uint16),
@@ -883,6 +902,13 @@ method write(instruction: PoemInstructionFunctionCall, stream: FileStream) {.loc
   stream.write(instruction.function_reg)
   stream.write_instruction_arguments_with_count(instruction.arguments)
 
+method write(instruction: PoemInstructionLambda, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.Lambda)
+  stream.write(instruction.target_reg)
+  stream.write(instruction.mf)
+  stream.write(instruction.tpe)
+  stream.write_many_with_count(instruction.captured_registers, uint16, write_uint16)
+
 method write(instruction: PoemInstructionList, stream: FileStream) {.locks: "unknown".} =
   stream.write_operation(PoemOperation.List)
   stream.write(instruction.target_reg)
@@ -945,13 +971,13 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
   case operation
   of ReturnUnit, Return0: 0
   of Jump, Return: 1
-  of Assign, Const, IntConst, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, ListLength, JumpIfFalse,
-     JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
+  of Assign, Const, IntConst, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, LambdaLocal, ListLength,
+     JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
   of IntAdd, IntSub, IntMul, IntDiv, IntEq, IntLt, IntLte, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte,
      BooleanOr, BooleanAnd, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped, ListGet,
      SymbolEq, StructEq: 3
-  of PoemOperation.Tuple, FunctionCall, PoemOperation.Shape, PoemOperation.List, ListAppend, PoemOperation.Struct,
-     PropertyGet, Intrinsic, IntrinsicVoid, GlobalGet, Dispatch:
+  of PoemOperation.Tuple, FunctionCall, PoemOperation.Lambda, PoemOperation.Shape, PoemOperation.List, ListAppend,
+     PoemOperation.Struct, PropertyGet, Intrinsic, IntrinsicVoid, GlobalGet, Dispatch:
     quit(fmt"Poem operation {operation} is not simple!")
 
 ########################################################################################################################
@@ -1172,16 +1198,16 @@ proc read_value(stream: FileStream): PoemValue =
       let elements = stream.read_many(PoemValue, cast[uint](xary.types.len), read_value)
       tuple_value(elements, tpe)
     of Kind.Function:
-      let variant = cast[PoemFunctionValueVariant](stream.read(uint8))
+      let variant = cast[FunctionValueVariant](stream.read(uint8))
       let name = stream.read_string_with_length()
       case variant
-      of PoemFunctionValueVariant.Fixed:
+      of FunctionValueVariant.Multi:
+        multi_function_value(name, tpe)
+      of FunctionValueVariant.Fixed:
         let input_type = stream.read_type()
         fixed_function_value(name, input_type, tpe)
-      of PoemFunctionValueVariant.Lambda:
+      of FunctionValueVariant.Lambda:
         lambda_function_value(name, tpe)
-      of PoemFunctionValueVariant.Multi:
-        multi_function_value(name, tpe)
     of Kind.List:
       let elements = stream.read_many_with_count(PoemValue, uint16, read_value)
       list_value(elements, tpe)
@@ -1230,20 +1256,20 @@ method write(value: PoemTupleValue, stream: FileStream) {.locks: "unknown".} =
 method write(value: PoemFunctionValue, stream: FileStream) {.locks: "unknown".} =
   quit("Please implement `write` for all PoemFunctionValues")
 
-proc write_function_value_commons(stream: FileStream, value: PoemFunctionValue, variant: PoemFunctionValueVariant) =
+proc write_function_value_commons(stream: FileStream, value: PoemFunctionValue, variant: FunctionValueVariant) =
   stream.write_type(value.tpe)
   stream.write(cast[uint8](variant))
   stream.write_string_with_length(value.name)
 
+method write(value: PoemMultiFunctionValue, stream: FileStream) {.locks: "unknown".} =
+  stream.write_function_value_commons(value, FunctionValueVariant.Multi)
+
 method write(value: PoemFixedFunctionValue, stream: FileStream) {.locks: "unknown".} =
-  stream.write_function_value_commons(value, PoemFunctionValueVariant.Fixed)
+  stream.write_function_value_commons(value, FunctionValueVariant.Fixed)
   stream.write_type(value.input_type)
 
 method write(value: PoemLambdaFunctionValue, stream: FileStream) {.locks: "unknown".} =
-  stream.write_function_value_commons(value, PoemFunctionValueVariant.Lambda)
-
-method write(value: PoemMultiFunctionValue, stream: FileStream) {.locks: "unknown".} =
-  stream.write_function_value_commons(value, PoemFunctionValueVariant.Multi)
+  stream.write_function_value_commons(value, FunctionValueVariant.Lambda)
 
 method write(value: PoemListValue, stream: FileStream) {.locks: "unknown".} =
   stream.write_type(value.tpe)

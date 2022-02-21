@@ -34,6 +34,8 @@ sealed trait PoemFunctionValue extends PoemValue {
   def tpe: PoemType
 }
 
+case class PoemMultiFunctionValue(mf: MultiFunctionDefinition, tpe: PoemType) extends PoemFunctionValue
+
 case class PoemFixedFunctionValue(mf: MultiFunctionDefinition, inputType: PoemType, tpe: PoemType) extends PoemFunctionValue
 
 case class PoemLambdaFunctionValue(mf: MultiFunctionDefinition, tpe: PoemType) extends PoemFunctionValue {
@@ -43,8 +45,6 @@ case class PoemLambdaFunctionValue(mf: MultiFunctionDefinition, tpe: PoemType) e
     throw CompilationException(s"A poem lambda function value's multi-function must have exactly one function. Name: ${mf.name}.")
   }
 }
-
-case class PoemMultiFunctionValue(mf: MultiFunctionDefinition, tpe: PoemType) extends PoemFunctionValue
 
 case class PoemListValue(elements: Vector[PoemValue], tpe: PoemType) extends PoemValue
 
