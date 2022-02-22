@@ -2,11 +2,11 @@ package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.{AsmChunk, PropertyOrder, RegisterProvider}
-import lore.compiler.core.{CompilationException, Position, UniqueKey}
+import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.poem.PoemInstruction.PropertyGetInstanceKind
 import lore.compiler.poem._
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
+import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.ParameterDefinition.NamedParameterView
 import lore.compiler.semantics.functions.{CallTarget, FunctionSignature, ParameterDefinition}
 import lore.compiler.semantics.scopes.LocalVariable
@@ -14,8 +14,6 @@ import lore.compiler.types._
 
 import java.util.UUID
 import scala.collection.immutable.HashMap
-
-// TODO (assembly): Remember to insert implicit conversions from Int to Real values for arithmetic and comparison expressions.
 
 // TODO (assembly): There is a difference between an expression returning Unit and an expression's result not being
 //                  used. In the case of a loop, Unit incidentally also expresses that the result is not being used,
@@ -25,20 +23,18 @@ import scala.collection.immutable.HashMap
 //                  separate "unused expression" analysis would improve our ability to generate more optimal code
 //                  without resorting to result type hacks.
 
-// TODO (assembly): Rename visitor to assembler.
-
 /**
-  * The expression assembler is not an [[ExpressionVisitor]] because select expressions either don't need their child
+  * The expression assembler is not an ExpressionVisitor because select expressions either don't need their child
   * chunks in certain situations (e.g. when a list can be turned into a [[PoemListValue]]), or generating a child chunk
   * is even nonsensical (in the case of anonymous functions).
   *
-  * To support anonymous function expressions, the visitor keeps a list of additionally generated functions, which must
-  * be included in the [[FunctionAssembler]]'s result.
+  * To support anonymous function expressions, the assembler keeps a list of additionally generated functions, which
+  * must be included in the [[FunctionAssembler]]'s result.
   *
-  * The visitor generates Jump instructions with <i>label</i> locations. They will later be converted to absolute
+  * The assembler generates Jump instructions with <i>label</i> locations. They will later be converted to absolute
   * locations when instructions are flattened.
   */
-class ExpressionAssemblyVisitor(
+class ExpressionAssembler(
   signature: FunctionSignature,
   capturedVariables: CapturedVariableMap,
 )(implicit registry: Registry) {

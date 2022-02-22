@@ -4,7 +4,7 @@ import lore.compiler.assembly.optimization.{ConstSmasher, RegisterAllocator}
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.poem.{PoemFunction, PoemInstruction}
 import lore.compiler.semantics.Registry
-import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
+import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature}
 
 object FunctionAssembler {
@@ -29,7 +29,7 @@ object FunctionAssembler {
     val typeParameters = signature.typeParameters.map(TypeAssembler.generateParameter)
     val (instructions, additionalPoemFunctions) = body match {
       case Some(body) =>
-        val expressionAssembler = new ExpressionAssemblyVisitor(signature, capturedVariables)
+        val expressionAssembler = new ExpressionAssembler(signature, capturedVariables)
         val bodyChunk = expressionAssembler.generate(body)
         // TODO (assembly): Maybe use `Return0` and `ReturnUnit` if possible.
         var instructions = bodyChunk.instructions :+ PoemInstruction.Return(bodyChunk.forceResult(body.position))

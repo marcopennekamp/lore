@@ -107,7 +107,6 @@ object LoopAssembler {
     case class ExtractorPart(preBodyChunk: AsmChunk, postBodyChunk: AsmChunk)
 
     // This label will point to an instruction after the whole `loop` expression.
-    // TODO (assembly): Don't forget to attach this label.
     val postExpressionLabel = new Poem.Label(isPost = true)
 
     var extractorParts = Vector.empty[ExtractorPart]
@@ -123,7 +122,7 @@ object LoopAssembler {
         val regListLength = registerProvider.fresh()
         val regFlag = registerProvider.fresh()
 
-        // The element variable is pre-registered in the ExpressionAssemblyVisitor so that the body chunk can use it.
+        // The element variable is pre-registered in the ExpressionAssembler so that the body chunk can use it.
         val regElement = variableRegisterMap(expressionExtractor.variable.uniqueKey)
 
         // We have to add the collection chunk to the initialization of its corresponding loop. Say we have a loop

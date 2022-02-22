@@ -5,8 +5,6 @@ import lore.compiler.poem.{Poem, PoemInstruction}
 
 import scala.collection.immutable.HashMap
 
-// TODO (assembly): Remember to actually use this after instructions have been linearized.
-
 object LabelResolver {
 
   /**
