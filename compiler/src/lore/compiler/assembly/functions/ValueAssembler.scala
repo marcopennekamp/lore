@@ -40,7 +40,9 @@ object ValueAssembler {
 
     // TODO (assembly): Can we turn these into constant poem values?
     case _: Expression.AnonymousFunction => None
-    case _: Expression.MultiFunctionValue => None
+
+    case Expression.MultiFunctionValue(mf, tpe, _) => Some(PoemMultiFunctionValue(mf, TypeAssembler.generate(tpe)))
+
     case _: Expression.FixedFunctionValue => None
     case _: Expression.ConstructorValue => None
 
@@ -130,6 +132,12 @@ object ValueAssembler {
   def generate(expressions: Vector[Expression]): Option[Vector[PoemValue]] = expressions.map(generate).sequence
 
   /**
+    * The forced cousin of [[generate]]. Use this if it's certain that the given expression always results in a
+    * PoemValue.
+    */
+  def generateForced(expression: Expression): PoemValue = generate(expression).get
+
+  /**
     * Generates a chunked `Const` instruction from the given expression if a constant poem value can be generated from
     * it.
     */
@@ -139,6 +147,12 @@ object ValueAssembler {
       AsmChunk(target, instruction)
     }
   }
+
+  /**
+    * The forced cousin of [[generateConst]]. Use this if it's certain that the given expression always results in a
+    * PoemValue.
+    */
+  def generateConstForced(expression: Expression, target: Poem.Register): AsmChunk = generateConst(expression, target).get
 
   private def evaluateArithmeticOperation(
     left: PoemValue,

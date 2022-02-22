@@ -128,7 +128,7 @@ class ExpressionAssembler(
 
   private def handle(expression: Block): AsmChunk = AsmChunk.concat(generate(expression.expressions))
 
-  private def handle(expression: BindingAccess): AsmChunk = TargetRepresentableAssembler.generate(expression.binding)
+  private def handle(expression: BindingAccess): AsmChunk = TypedBindingAssembler.generate(expression.binding)
 
   private def handle(expression: MemberAccess): AsmChunk = {
     val instanceChunk = generate(expression.instance)
@@ -148,19 +148,16 @@ class ExpressionAssembler(
   }
 
   private def handle(literal: Literal): AsmChunk = {
-    val target = registerProvider.fresh()
-    val instruction = literal.value match {
-      case Literal.IntValue(value) =>
-        if (Poem.minDirectInteger <= value && value <= Poem.maxDirectInteger) {
-          PoemInstruction.IntConst(target, value.toInt)
-        } else {
-          PoemInstruction.Const(target, PoemIntValue(value))
-        }
-      case Literal.RealValue(value) => PoemInstruction.Const(target, PoemRealValue(value))
-      case Literal.BooleanValue(value) => PoemInstruction.BooleanConst(target, value)
-      case Literal.StringValue(value) => PoemInstruction.Const(target, PoemStringValue(value))
+    val regResult = registerProvider.fresh()
+    literal.value match {
+      case Literal.IntValue(value) if Poem.minDirectInteger <= value && value <= Poem.maxDirectInteger =>
+        AsmChunk(regResult, PoemInstruction.IntConst(regResult, value.toInt))
+
+      case Literal.BooleanValue(value) =>
+        AsmChunk(regResult, PoemInstruction.BooleanConst(regResult, value))
+
+      case _ => ValueAssembler.generateConstForced(literal, regResult)
     }
-    AsmChunk(target, instruction)
   }
 
   // TODO (assembly): Perhaps converting Const(_, PoemIntValue(x)) to IntConst(x) should be a separate optimization
@@ -212,10 +209,7 @@ class ExpressionAssembler(
   }
 
   private def handle(expression: MultiFunctionValue): AsmChunk = {
-//    val target = TargetRepresentableTranspiler.transpile(expression.mf)
-//    val tpe = TypeTranspiler.transpileSubstitute(expression.tpe)
-//    AsmChunk.expression(RuntimeApi.functions.value(target, tpe))
-    ???
+    ValueAssembler.generateConstForced(expression, registerProvider.fresh())
   }
 
   private def handle(expression: FixedFunctionValue): AsmChunk = {
@@ -277,9 +271,7 @@ class ExpressionAssembler(
   }
 
   private def handle(symbol: Symbol): AsmChunk = {
-    val target = registerProvider.fresh()
-    val instruction = PoemInstruction.Const(target, PoemSymbolValue(symbol.name))
-    AsmChunk(target, instruction)
+    ValueAssembler.generateConstForced(symbol, registerProvider.fresh())
   }
 
   private def handle(expression: UnaryOperation): AsmChunk = {

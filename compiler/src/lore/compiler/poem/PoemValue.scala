@@ -1,8 +1,9 @@
 package lore.compiler.poem
 
 import lore.compiler.core.CompilationException
+import lore.compiler.poem.PoemFunctionValueVariant.PoemFunctionValueVariant
 import lore.compiler.semantics.functions.MultiFunctionDefinition
-import lore.compiler.types.{BasicType, StructSchema}
+import lore.compiler.types.BasicType
 
 sealed trait PoemValue {
   def tpe: PoemType
@@ -26,17 +27,27 @@ case class PoemStringValue(value: String) extends PoemValue {
 
 case class PoemTupleValue(elements: Vector[PoemValue], tpe: PoemType) extends PoemValue
 
+object PoemFunctionValueVariant extends Enumeration {
+  type PoemFunctionValueVariant = Value
+  val Multi, Fixed, Lambda = Value
+}
+
 /**
   * A function value always references an underlying multi-function.
   */
 sealed trait PoemFunctionValue extends PoemValue {
+  def variant: PoemFunctionValueVariant
   def mf: MultiFunctionDefinition
   def tpe: PoemType
 }
 
-case class PoemMultiFunctionValue(mf: MultiFunctionDefinition, tpe: PoemType) extends PoemFunctionValue
+case class PoemMultiFunctionValue(mf: MultiFunctionDefinition, tpe: PoemType) extends PoemFunctionValue {
+  override val variant: PoemFunctionValueVariant = PoemFunctionValueVariant.Multi
+}
 
-case class PoemFixedFunctionValue(mf: MultiFunctionDefinition, inputType: PoemType, tpe: PoemType) extends PoemFunctionValue
+case class PoemFixedFunctionValue(mf: MultiFunctionDefinition, inputType: PoemType, tpe: PoemType) extends PoemFunctionValue {
+  override val variant: PoemFunctionValueVariant = PoemFunctionValueVariant.Fixed
+}
 
 case class PoemLambdaFunctionValue(mf: MultiFunctionDefinition, tpe: PoemType) extends PoemFunctionValue {
   // The multi-function referenced by a lambda function value may only contain a SINGLE function. If not, the VM does
@@ -44,6 +55,8 @@ case class PoemLambdaFunctionValue(mf: MultiFunctionDefinition, tpe: PoemType) e
   if (mf.functions.length != 1) {
     throw CompilationException(s"A poem lambda function value's multi-function must have exactly one function. Name: ${mf.name}.")
   }
+
+  override val variant: PoemFunctionValueVariant = PoemFunctionValueVariant.Lambda
 }
 
 case class PoemListValue(elements: Vector[PoemValue], tpe: PoemType) extends PoemValue

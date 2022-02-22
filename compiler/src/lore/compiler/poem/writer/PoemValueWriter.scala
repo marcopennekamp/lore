@@ -27,10 +27,10 @@ object PoemValueWriter {
       elements.foreach(write)
 
     case value: PoemFunctionValue =>
+      writeFunctionValueCommons(value)
       value match {
-        case PoemMultiFunctionValue(mf, tpe) => ???
-        case PoemFixedFunctionValue(mf, inputType, tpe) => ???
-        case PoemLambdaFunctionValue(mf, tpe) => ???
+        case PoemFixedFunctionValue(_, inputType, _) => PoemTypeWriter.write(inputType)
+        case _ =>
       }
 
     case PoemListValue(elements, tpe) =>
@@ -47,6 +47,12 @@ object PoemValueWriter {
     case value@PoemStructValue(_, tpe) =>
       PoemTypeWriter.write(tpe)
       PoemWriter.writeManyWithCount16(value.sortedProperties, write)
+  }
+
+  private def writeFunctionValueCommons(value: PoemFunctionValue)(implicit writer: BytecodeWriter): Unit = {
+    PoemTypeWriter.write(value.tpe)
+    writer.writeUInt8(value.variant.id)
+    PoemWriter.writeNamePath(value.mf.name)
   }
 
 }
