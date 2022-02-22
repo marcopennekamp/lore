@@ -1,11 +1,11 @@
 package lore.compiler.types
 
+import lore.compiler.core.UniqueKey
 import lore.compiler.semantics.NamePath
 import lore.compiler.types.TypeVariable.Variance
 
 /**
-  * Type variables are strictly reference-equal. If you create two type variable objects with the same names and
-  * bounds, they will NOT be equal.
+  * Type variables are strictly equal based on their unique key.
   *
   * @param variance Variance is specified for all type variables, but only taken into account in traits and structs.
   *                 Variance has no bearing on type parameters of alias types and functions.
@@ -13,20 +13,25 @@ import lore.compiler.types.TypeVariable.Variance
   *               functions.
   * @param index The type variable's position in its type parameter list. This is used during poem type generation.
   */
-class TypeVariable(
-  val simpleName: String,
-  val lowerBound: Type,
-  val upperBound: Type,
-  val variance: Variance,
-  val isOpen: Boolean,
-  val index: Int,
+case class TypeVariable(
+  uniqueKey: UniqueKey,
+  simpleName: String,
+  lowerBound: Type,
+  upperBound: Type,
+  variance: Variance,
+  isOpen: Boolean,
+  index: Int,
 ) extends NamedType {
   override val name: NamePath = NamePath(simpleName)
 
+  def withoutBounds: TypeVariable = this.copy(lowerBound = BasicType.Nothing, upperBound = BasicType.Any)
+
   override def equals(obj: Any): Boolean = obj match {
-    case var2: TypeVariable => this eq var2
+    case other: TypeVariable => this.uniqueKey == other.uniqueKey
     case _ => false
   }
+
+  override def hashCode(): Int = uniqueKey.hashCode()
 }
 
 object TypeVariable {

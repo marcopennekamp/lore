@@ -2,6 +2,7 @@ package lore.compiler.poem
 
 import lore.compiler.poem.Poem.Register
 import lore.compiler.poem.PoemOperation.PoemOperation
+import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.types.DeclaredSchema
@@ -70,7 +71,7 @@ object PoemInstruction {
   def unit(target: PReg): PoemInstruction = Tuple(target, Vector.empty)
 
   case class FunctionCall(target: PReg, function: PReg, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.FunctionCall)
-  case class Lambda(target: PReg, mf: PMf, tpe: PTpe, capturedRegisters: Vector[PReg]) extends PoemInstruction(PoemOperation.Lambda)
+  case class Lambda(target: PReg, mf: NamePath, tpe: PTpe, capturedRegisters: Vector[PReg]) extends PoemInstruction(PoemOperation.Lambda)
   case class LambdaLocal(target: PReg, index: Int) extends PoemInstruction(PoemOperation.LambdaLocal)
 
   case class List(target: PReg, tpe: PTpe, elements: Vector[PReg]) extends PoemInstruction(PoemOperation.List)

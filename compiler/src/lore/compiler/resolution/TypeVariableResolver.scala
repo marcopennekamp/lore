@@ -1,5 +1,6 @@
 package lore.compiler.resolution
 
+import lore.compiler.core.UniqueKey
 import lore.compiler.feedback.Reporter
 import lore.compiler.semantics.scopes.{BindingScope, ImmutableTypeScope, TypeScope}
 import lore.compiler.syntax.DeclNode
@@ -24,7 +25,7 @@ object TypeVariableResolver {
   private def resolve(node: DeclNode.TypeVariableNode, index: Int)(implicit typeScope: TypeScope, bindingScope: BindingScope, reporter: Reporter): TypeVariable = {
     val lowerBound = node.lowerBound.flatMap(TypeExpressionEvaluator.evaluate).getOrElse(BasicType.Nothing)
     val upperBound = node.upperBound.flatMap(TypeExpressionEvaluator.evaluate).getOrElse(BasicType.Any)
-    new TypeVariable(node.name, lowerBound, upperBound, node.variance, node.isOpen, index)
+    new TypeVariable(UniqueKey.fresh(), node.name, lowerBound, upperBound, node.variance, node.isOpen, index)
   }
 
 }

@@ -13,6 +13,11 @@ case class NamePath(segments: Vector[String]) {
   def +(name: String): NamePath = NamePath(segments :+ name)
 
   /**
+    * Appends the given string to the last segment of the name path.
+    */
+  def appendToLastSegment(string: String): NamePath = NamePath(segments.init :+ (segments.last + string))
+
+  /**
     * Returns a new NamePath with the last segment removed, essentially creating the parent of this name path. If this
     * name path is already the empty path (i.e. the root), this function returns None.
     */

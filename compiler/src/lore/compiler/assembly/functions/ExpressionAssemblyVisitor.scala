@@ -2,16 +2,17 @@ package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.{AsmChunk, PropertyOrder, RegisterProvider}
-import lore.compiler.core.{CompilationException, Position}
+import lore.compiler.core.{CompilationException, Position, UniqueKey}
 import lore.compiler.poem.PoemInstruction.PropertyGetInstanceKind
 import lore.compiler.poem._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.{Expression, ExpressionVisitor}
 import lore.compiler.semantics.functions.ParameterDefinition.NamedParameterView
-import lore.compiler.semantics.functions.{CallTarget, ParameterDefinition}
+import lore.compiler.semantics.functions.{CallTarget, FunctionSignature, ParameterDefinition}
 import lore.compiler.semantics.scopes.LocalVariable
 import lore.compiler.types._
 
+import java.util.UUID
 import scala.collection.immutable.HashMap
 
 // TODO (assembly): Remember to insert implicit conversions from Int to Real values for arithmetic and comparison expressions.
@@ -24,18 +25,30 @@ import scala.collection.immutable.HashMap
 //                  separate "unused expression" analysis would improve our ability to generate more optimal code
 //                  without resorting to result type hacks.
 
+// TODO (assembly): Rename visitor to assembler.
+
 /**
-  * The visitor should generate Jump instructions with <i>label</i> locations. They will later be converted to
-  * absolute locations when instructions are flattened.
+  * The expression assembler is not an [[ExpressionVisitor]] because select expressions either don't need their child
+  * chunks in certain situations (e.g. when a list can be turned into a [[PoemListValue]]), or generating a child chunk
+  * is even nonsensical (in the case of anonymous functions).
+  *
+  * To support anonymous function expressions, the visitor keeps a list of additionally generated functions, which must
+  * be included in the [[FunctionAssembler]]'s result.
+  *
+  * The visitor generates Jump instructions with <i>label</i> locations. They will later be converted to absolute
+  * locations when instructions are flattened.
   */
 class ExpressionAssemblyVisitor(
-  parameters: Vector[ParameterDefinition],
-  rootPosition: Position,
-)(implicit registry: Registry) extends ExpressionVisitor[AsmChunk, AsmChunk] {
+  signature: FunctionSignature,
+  capturedVariables: CapturedVariableMap,
+)(implicit registry: Registry) {
   import Expression._
+
+  var generatedPoemFunctions: Vector[PoemFunction] = Vector.empty
 
   private implicit val registerProvider: RegisterProvider = new RegisterProvider
   private implicit var variableRegisterMap: VariableRegisterMap = HashMap.empty
+  private implicit val capturedVariableMap: CapturedVariableMap = capturedVariables
 
   private def declare(variable: LocalVariable, position: Position): Poem.Register = {
     if (variableRegisterMap.contains(variable.uniqueKey)) {
@@ -48,11 +61,9 @@ class ExpressionAssemblyVisitor(
   }
 
   // The first N registers of the function are reserved for the parameters.
-  // TODO (assembly): We have to ensure that the register allocator assigns the exact expected register numbers for the
-  //                  parameters.
-  parameters.foreach { parameter =>
+  signature.parameters.foreach { parameter =>
     parameter.name match {
-      case Some(_) => declare(NamedParameterView(parameter).asVariable, rootPosition)
+      case Some(_) => declare(NamedParameterView(parameter).asVariable, parameter.position)
       case None =>
         // This register won't be used, but calling `fresh` is still important so that the register IDs are counted up,
         // which have to match for subsequent parameters.
@@ -60,19 +71,58 @@ class ExpressionAssemblyVisitor(
     }
   }
 
-  override def visit(expression: Return)(valueChunk: AsmChunk): AsmChunk = {
+  def generate(expression: Expression): AsmChunk = {
+    expression match {
+      case _: Hole => throw CompilationException("Expression.Hole cannot be assembled.")
+      case node: Return => handle(node)
+      case node: VariableDeclaration => handle(node)
+      case node: Assignment => handle(node)
+      case node: Block => handle(node)
+      case node: BindingAccess => handle(node)
+      case node: MemberAccess => handle(node)
+      case _: UnresolvedMemberAccess => throw CompilationException("Expression.UnresolvedMemberAccess cannot be assembled.")
+      case node: Literal => handle(node)
+      case node: Tuple => handle(node)
+      case node: AnonymousFunction => handle(node)
+      case node: MultiFunctionValue => handle(node)
+      case node: FixedFunctionValue => handle(node)
+      case node: ConstructorValue => handle(node)
+      case _: UntypedConstructorValue => throw CompilationException("Expression.UntypedConstructorValue cannot be assembled.")
+      case node: ListConstruction => handle(node)
+      case node: MapConstruction => handle(node)
+      case node: ShapeValue => handle(node)
+      case node: Symbol => handle(node)
+      case node: UnaryOperation => handle(node)
+      case node: BinaryOperation => handle(node)
+      case node: XaryOperation => handle(node)
+      case node: Call => handle(node)
+      case node: Cond => handle(node)
+      case node: WhileLoop => handle(node)
+      case node: ForLoop => handle(node)
+      case node: Ascription => handle(node)
+    }
+  }
+
+  def generate(expressions: Vector[Expression]): Vector[AsmChunk] = expressions.map(generate)
+
+  private def handle(expression: Return): AsmChunk = {
+    val valueChunk = generate(expression.value)
     val instruction = PoemInstruction.Return(valueChunk.forceResult(expression.position))
     valueChunk ++ AsmChunk(instruction)
   }
 
-  override def visit(expression: VariableDeclaration)(valueChunk: AsmChunk): AsmChunk = {
+  private def handle(expression: VariableDeclaration): AsmChunk = {
+    val valueChunk = generate(expression.value)
     val regVariable = declare(expression.variable, expression.position)
     val regValue = valueChunk.forceResult(expression.position)
     val assignment = PoemInstruction.Assign(regVariable, regValue)
     valueChunk ++ AsmChunk(assignment)
   }
 
-  override def visit(expression: Assignment)(targetChunk: AsmChunk, valueChunk: AsmChunk): AsmChunk = {
+  private def handle(expression: Assignment): AsmChunk = {
+    val targetChunk = generate(expression.target)
+    val valueChunk = generate(expression.value)
+
     val instruction = PoemInstruction.Assign(
       targetChunk.forceResult(expression.position),
       valueChunk.forceResult(expression.position)
@@ -80,11 +130,13 @@ class ExpressionAssemblyVisitor(
     targetChunk ++ valueChunk ++ AsmChunk(instruction)
   }
 
-  override def visit(expression: Block)(expressionChunks: Vector[AsmChunk]): AsmChunk = AsmChunk.concat(expressionChunks)
+  private def handle(expression: Block): AsmChunk = AsmChunk.concat(generate(expression.expressions))
 
-  override def visit(expression: BindingAccess): AsmChunk = TargetRepresentableAssembler.generate(expression.binding)
+  private def handle(expression: BindingAccess): AsmChunk = TargetRepresentableAssembler.generate(expression.binding)
 
-  override def visit(expression: MemberAccess)(instanceChunk: AsmChunk): AsmChunk = {
+  private def handle(expression: MemberAccess): AsmChunk = {
+    val instanceChunk = generate(expression.instance)
+
     // TODO (assembly): This doesn't cover all types optimally. For example, an intersection or sum type of two traits
     //                  could be classified as `.Trait`, but is currently classified as `.Any`.
     val instanceKind = expression.tpe match {
@@ -99,7 +151,7 @@ class ExpressionAssemblyVisitor(
     instanceChunk ++ AsmChunk(target, instruction)
   }
 
-  override def visit(literal: Literal): AsmChunk = {
+  private def handle(literal: Literal): AsmChunk = {
     val target = registerProvider.fresh()
     val instruction = literal.value match {
       case Literal.IntValue(value) =>
@@ -118,52 +170,66 @@ class ExpressionAssemblyVisitor(
   // TODO (assembly): Perhaps converting Const(_, PoemIntValue(x)) to IntConst(x) should be a separate optimization
   //                  step, because PoemValueAssembler.generateConst will otherwise generate instructions such as
   //                  Const(_, PoemIntValue(x)). Bonus points: We can call this "const smashing".
-  // TODO (assembly): If PoemValueAssembler can generate the Const instruction here, `values` has been built completely
-  //                  needlessly. If this happens in a lot of cases, we might have to move from a visitor approach to
-  //                  pattern matching to better steer control flow.
 
-  override def visit(expression: Tuple)(values: Vector[AsmChunk]): AsmChunk = {
+  private def handle(expression: Tuple): AsmChunk = {
     val target = registerProvider.fresh()
     ValueAssembler.generateConst(expression, target).getOrElse {
-      val instruction = PoemInstruction.Tuple(target, values.map(_.forceResult(expression.position)))
-      AsmChunk.concat(values) ++ AsmChunk(target, instruction)
+      val valueChunks = generate(expression.values)
+      val instruction = PoemInstruction.Tuple(target, valueChunks.map(_.forceResult(expression.position)))
+      AsmChunk.concat(valueChunks) ++ AsmChunk(target, instruction)
     }
   }
 
-  override def visit(expression: AnonymousFunction)(body: AsmChunk): AsmChunk = {
-    // TODO (assembly): This is gonna be complex, man.
+  private def handle(expression: AnonymousFunction): AsmChunk = {
+    // TODO (assembly): Make this a PoemLambdaFunctionValue constant if the lambda has neither type arguments nor
+    //                  captured variables. This is especially the case for simple mapping functions and will allow
+    //                  passing such functions as constants without ever having to recreate them.
 
-    /*
-    val lambdaParameters = expression.parameters.map(p => Target.Parameter(RuntimeNames.localVariable(p.name).name))
-    val lambdaBody = if (body.statements.nonEmpty) {
-      Target.Block(body.statements ++ Vector(Target.Return(body.expression)))
-    } else body.expression
+    // To generate an anonymous function, we have to first perform capture analysis, then compile its body as a
+    // single-function multi-function, and finally generate the appropriate `Lambda` instruction.
+    // TODO (assembly): Capture analysis.
+    val capturedVariables: CapturedVariableMap = Map.empty
+    val capturedRegisters = Vector.empty
 
-    AsmChunk.expression(
-      RuntimeApi.functions.value(
-        Target.Lambda(lambdaParameters, lambdaBody),
-        TypeTranspiler.transpileSubstitute(expression.tpe),
-      )
+    // We need to be careful with the name, because any function called `signature.name` can have lambdas which will
+    // be global to the VM's universe. For example, we can't simply call these functions `lambda0`, `lambda1`, etc.,
+    // because if there are two functions of the same name, their lambda names will clash. As the names are local to
+    // the current function, there is no need to have names stable across compilation runs, so a UUID suffices.
+    // The `Lambda` instruction passes type arguments to the lambda implicitly, so we have to declare the lambda with
+    // the same type parameters. However, we can and should remove the bounds, as these bounds will never be checked.
+    val lambdaName = signature.name.appendToLastSegment("$lambda-" + UUID.randomUUID().toString)
+    val lambdaParameters = expression.parameters.map {
+      parameter => ParameterDefinition(parameter.uniqueKey, Some(parameter.name), parameter.tpe, parameter.position)
+    }
+    val lambdaSignature = FunctionSignature(
+      lambdaName,
+      signature.typeParameters.map(_.withoutBounds),
+      lambdaParameters,
+      expression.tpe.output,
+      expression.position,
     )
-    */
-    ???
+    generatedPoemFunctions ++= FunctionAssembler.generate(lambdaSignature, Some(expression.body), capturedVariables)
+
+    val regResult = registerProvider.fresh()
+    val poemType = TypeAssembler.generate(expression.tpe)
+    AsmChunk(regResult, PoemInstruction.Lambda(regResult, lambdaName, poemType, capturedRegisters))
   }
 
-  override def visit(expression: MultiFunctionValue): AsmChunk = {
+  private def handle(expression: MultiFunctionValue): AsmChunk = {
 //    val target = TargetRepresentableTranspiler.transpile(expression.mf)
 //    val tpe = TypeTranspiler.transpileSubstitute(expression.tpe)
 //    AsmChunk.expression(RuntimeApi.functions.value(target, tpe))
     ???
   }
 
-  override def visit(expression: FixedFunctionValue): AsmChunk = {
+  private def handle(expression: FixedFunctionValue): AsmChunk = {
 //    val target = TargetRepresentableTranspiler.transpile(expression.instance.definition)
 //    val tpe = TypeTranspiler.transpile(expression.tpe)
 //    AsmChunk.expression(RuntimeApi.functions.value(target, tpe))
     ???
   }
 
-  override def visit(expression: ConstructorValue): AsmChunk = {
+  private def handle(expression: ConstructorValue): AsmChunk = {
 //    val schema = expression.structType.schema
 //    val value = if (schema.isConstant) {
 //      RuntimeNames.struct.constructor(schema)
@@ -177,16 +243,18 @@ class ExpressionAssemblyVisitor(
     ???
   }
 
-  override def visit(expression: ListConstruction)(values: Vector[AsmChunk]): AsmChunk = {
+  private def handle(expression: ListConstruction): AsmChunk = {
     val target = registerProvider.fresh()
     ValueAssembler.generateConst(expression, target).getOrElse {
+      val valueChunks = generate(expression.values)
       val tpe = TypeAssembler.generate(expression.tpe)
-      val instruction = PoemInstruction.List(target, tpe, values.map(_.forceResult(expression.position)))
-      AsmChunk.concat(values) ++ AsmChunk(target, instruction)
+      val instruction = PoemInstruction.List(target, tpe, valueChunks.map(_.forceResult(expression.position)))
+      AsmChunk.concat(valueChunks) ++ AsmChunk(target, instruction)
     }
   }
 
-  override def visit(expression: MapConstruction)(entryChunks: Vector[(AsmChunk, AsmChunk)]): AsmChunk = {
+  private def handle(expression: MapConstruction): AsmChunk = {
+    val entryChunks = expression.entries.map(entry => (generate(entry.key), generate(entry.value)))
 //    val tpe = TypeTranspiler.transpileSubstitute(expression.tpe)
 //    val entries = entryChunks.map { case (key, value) =>
 //      AsmChunk.combine(key, value)(elements => AsmChunk.expression(Target.List(elements)))
@@ -200,10 +268,11 @@ class ExpressionAssemblyVisitor(
     ???
   }
 
-  override def visit(expression: ShapeValue)(propertyChunks: Vector[AsmChunk]): AsmChunk = {
+  private def handle(expression: ShapeValue): AsmChunk = {
     val target = registerProvider.fresh()
     ValueAssembler.generateConst(expression, target).getOrElse {
-      val (sortedNames, sortedChunks) = PropertyOrder.sort(expression.properties.map(_.name).zip(propertyChunks))(_._1).unzip
+      val propertyChunks = expression.properties.map(property => property.name -> generate(property.value))
+      val (sortedNames, sortedChunks) = PropertyOrder.sort(propertyChunks)(_._1).unzip
       val metaShape = PoemMetaShape.build(sortedNames)
       val propertyRegisters = sortedChunks.map(_.forceResult(expression.position))
       val instruction = PoemInstruction.Shape(target, metaShape, propertyRegisters)
@@ -211,17 +280,21 @@ class ExpressionAssemblyVisitor(
     }
   }
 
-  override def visit(symbol: Symbol): AsmChunk = {
+  private def handle(symbol: Symbol): AsmChunk = {
     val target = registerProvider.fresh()
     val instruction = PoemInstruction.Const(target, PoemSymbolValue(symbol.name))
     AsmChunk(target, instruction)
   }
 
-  override def visit(expression: UnaryOperation)(valueChunk: AsmChunk): AsmChunk = {
+  private def handle(expression: UnaryOperation): AsmChunk = {
+    val valueChunk = generate(expression.value)
     PrimitiveOperationAssembler.generateUnaryOperation(expression, valueChunk)
   }
 
-  override def visit(expression: BinaryOperation)(leftChunk: AsmChunk, rightChunk: AsmChunk): AsmChunk = {
+  private def handle(expression: BinaryOperation): AsmChunk = {
+    val leftChunk = generate(expression.left)
+    val rightChunk = generate(expression.right)
+
     // Operators which cannot be translated as primitives are filtered first. All the non-primitive cases for Equals,
     // LessThan, and LessThanEquals have been filtered already.
     expression.operator match {
@@ -244,18 +317,25 @@ class ExpressionAssemblyVisitor(
     listChunk ++ elementChunk ++ AsmChunk(target, instruction)
   }
 
-  override def visit(expression: XaryOperation)(operands: Vector[AsmChunk]): AsmChunk = {
-    PrimitiveOperationAssembler.generateXaryOperation(expression, operands)
+  private def handle(expression: XaryOperation): AsmChunk = {
+    val operandChunks = generate(expression.expressions)
+    PrimitiveOperationAssembler.generateXaryOperation(expression, operandChunks)
   }
 
-  override def visit(expression: Call)(target: Option[AsmChunk], arguments: Vector[AsmChunk]): AsmChunk = {
+  private def handle(expression: Call): AsmChunk = {
+    val argumentChunks = generate(expression.arguments)
+
     val regResult = registerProvider.fresh()
-    val argumentRegs = arguments.map(_.forceResult(expression.position))
+    val argumentRegs = argumentChunks.map(_.forceResult(expression.position))
 
     val callChunk = expression.target match {
       case CallTarget.MultiFunction(mf) => AsmChunk(regResult, PoemInstruction.Dispatch(regResult, mf, argumentRegs))
 
-      case CallTarget.Value(expression) => ???
+      case CallTarget.Value(function) =>
+        val functionChunk = generate(function)
+        val regFunction = functionChunk.forceResult(function.position)
+        functionChunk ++ AsmChunk(regResult, PoemInstruction.FunctionCall(regResult, regFunction, argumentRegs))
+
       case CallTarget.Constructor(binding) => ???
 
       case CallTarget.Dynamic(intrinsic) =>
@@ -263,24 +343,30 @@ class ExpressionAssemblyVisitor(
         AsmChunk(regResult, PoemInstruction.Intrinsic(regResult, intrinsic, argumentRegs))
     }
 
-    AsmChunk.concat(arguments) ++ callChunk
+    AsmChunk.concat(argumentChunks) ++ callChunk
   }
 
-  override def visit(cond: Cond)(caseChunks: Vector[(AsmChunk, AsmChunk)]): AsmChunk = CondAssembler.generate(cond, caseChunks)
-
-  override def visit(loop: WhileLoop)(conditionChunk: AsmChunk, bodyChunk: AsmChunk): AsmChunk = LoopAssembler.generate(loop, conditionChunk, bodyChunk)
-
-  override def visit(loop: ForLoop)(collectionChunks: Vector[AsmChunk], bodyChunk: AsmChunk): AsmChunk = LoopAssembler.generate(loop, collectionChunks, bodyChunk)
-
-  override def visit(expression: Ascription)(value: AsmChunk): AsmChunk = value
-
-  override def before: PartialFunction[Expression, Unit] = {
-    case expression: ForLoop =>
-      // We have to assign registers to all extractor element variables so that the loop's body can access them.
-      expression.extractors.foreach { extractor =>
-        variableRegisterMap += (extractor.variable.uniqueKey -> registerProvider.fresh())
-      }
-
-    case _ =>
+  private def handle(cond: Cond): AsmChunk = {
+    val caseChunks = cond.cases.map(condCase => (generate(condCase.condition), generate(condCase.body)))
+    CondAssembler.generate(cond, caseChunks)
   }
+
+  private def handle(loop: WhileLoop): AsmChunk = {
+    val conditionChunk = generate(loop.condition)
+    val bodyChunk = generate(loop.body)
+    LoopAssembler.generate(loop, conditionChunk, bodyChunk)
+  }
+
+  private def handle(loop: ForLoop): AsmChunk = {
+    // We have to assign registers to all extractor element variables so that the loop's body can access them.
+    loop.extractors.foreach { extractor =>
+      variableRegisterMap += (extractor.variable.uniqueKey -> registerProvider.fresh())
+    }
+
+    val collectionChunks = generate(loop.extractors.map(_.collection))
+    val bodyChunk = generate(loop.body)
+    LoopAssembler.generate(loop, collectionChunks, bodyChunk)
+  }
+
+  private def handle(expression: Ascription): AsmChunk = generate(expression.value)
 }

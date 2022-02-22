@@ -243,7 +243,7 @@ class ExpressionTransformationVisitor(
           .getOrElse(new InferenceVariable)
         val variable = LocalVariable(nameNode.value, tpe, isMutable = false)
         scopeContext.currentScope.register(variable, nameNode.position)
-        Expression.AnonymousFunctionParameter(variable.name, variable.tpe, position)
+        Expression.AnonymousFunctionParameter(variable.uniqueKey, variable.name, variable.tpe, position)
     }
 
     val body = visitBody()

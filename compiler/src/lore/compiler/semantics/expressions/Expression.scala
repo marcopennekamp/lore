@@ -1,6 +1,6 @@
 package lore.compiler.semantics.expressions
 
-import lore.compiler.core.{CompilationException, Position, Positioned}
+import lore.compiler.core.{CompilationException, Position, Positioned, UniqueKey}
 import lore.compiler.semantics.analysis.LocalizedExpression
 import lore.compiler.semantics.expressions.Expression.Literal.LiteralValue
 import lore.compiler.semantics.functions.{CallTarget, FunctionInstance, MultiFunctionDefinition}
@@ -147,7 +147,7 @@ object Expression {
     override val tpe: FunctionType = FunctionType(TupleType(parameters.map(_.tpe)), body.tpe)
   }
 
-  case class AnonymousFunctionParameter(name: String, tpe: Type, position: Position) {
+  case class AnonymousFunctionParameter(uniqueKey: UniqueKey, name: String, tpe: Type, position: Position) {
     /**
       * Whether the parameter has a type annotation. Unannotated parameters always have an inference variable as their
       * type.

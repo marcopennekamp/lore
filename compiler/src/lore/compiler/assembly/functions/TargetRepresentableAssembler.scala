@@ -14,6 +14,7 @@ object TargetRepresentableAssembler {
   def generate(targetRepresentable: TargetRepresentable)(
     implicit registerProvider: RegisterProvider,
     variableRegisterMap: VariableRegisterMap,
+    capturedVariableMap: CapturedVariableMap,
   ): AsmChunk = {
     targetRepresentable match {
       case module: GlobalModule =>
@@ -30,7 +31,16 @@ object TargetRepresentableAssembler {
       // TODO (assembly): Implement.
       case _: FunctionDefinition => ???
 
-      case variable: LocalVariable => AsmChunk(variableRegisterMap(variable.uniqueKey))
+      case variable: LocalVariable =>
+        // If the variable is a captured variable, we need to load its value from the lambda context via `LambdaLocal`.
+        capturedVariableMap.get(variable.uniqueKey) match {
+          case Some(index) =>
+            val target = registerProvider.fresh()
+            AsmChunk(target, PoemInstruction.LambdaLocal(target, index))
+
+          case None =>
+            AsmChunk(variableRegisterMap(variable.uniqueKey))
+        }
 
       // TODO (assembly): Implement. Struct objects aren't directly supported by the VM. Instead, we have to define a
       //                  lazy global variable. The target representation would then be a `GlobalGet` instruction.
