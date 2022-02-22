@@ -189,6 +189,7 @@ proc fits_poly1*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq
 
 proc substitute*(tpe: Type, type_arguments: open_array[Type]): Type
 proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type
+proc flipped*(substitution_mode: SubstitutionMode): SubstitutionMode
 
 proc is_polymorphic*(tpe: Type): bool
 
@@ -1024,7 +1025,7 @@ proc type_arguments_subtype_type_arguments(
       if not is_subtype_substitute(substitution_mode, a1, a2, assignments):
         return false
     of Variance.Contravariant:
-      if not is_subtype_substitute(substitution_mode, a2, a1, assignments):
+      if not is_subtype_substitute(substitution_mode.flipped, a2, a1, assignments):
         return false
     of Variance.Invariant:
       if not are_equal_substitute(substitution_mode, a1, a2, assignments):
@@ -1117,7 +1118,9 @@ template is_subtype_impl(substitution_mode: SubstitutionMode, t1: Type, t2: Type
     if t2.kind == Kind.Function:
       let f1 = cast[FunctionType](t1)
       let f2 = cast[FunctionType](t2)
-      return is_subtype_rec(substitution_mode, f2.input, f1.input) and is_subtype_rec(substitution_mode, f1.output, f2.output)
+      return
+        is_subtype_substitute(substitution_mode.flipped, f2.input, f1.input, assignments) and
+        is_subtype_rec(substitution_mode, f1.output, f2.output)
 
   of Kind.List:
     if t2.kind == Kind.List:
@@ -1842,6 +1845,12 @@ proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: open_arra
       result_types[i] = candidate
 
   result_types
+
+proc flipped*(substitution_mode: SubstitutionMode): SubstitutionMode =
+  case substitution_mode
+  of SubstitutionMode.None: SubstitutionMode.None
+  of SubstitutionMode.T1: SubstitutionMode.T2
+  of SubstitutionMode.T2: SubstitutionMode.T1
 
 ########################################################################################################################
 # Stringification.                                                                                                     #
