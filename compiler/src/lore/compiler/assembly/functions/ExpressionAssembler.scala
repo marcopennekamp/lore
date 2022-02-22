@@ -1,6 +1,7 @@
 package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.types.TypeAssembler
+import lore.compiler.assembly.values.ValueAssembler
 import lore.compiler.assembly.{AsmChunk, PropertyOrder, RegisterProvider}
 import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.poem.PoemInstruction.PropertyGetInstanceKind
