@@ -34,13 +34,18 @@ class FunctionDefinition(
   val isPolymorphic: Boolean = signature.isPolymorphic
   val isMonomorphic: Boolean = signature.isMonomorphic
 
-  def getTypeScope(implicit registry: Registry): TypeScope = FunctionDefinition.typeScope(typeParameters, registry.getTypeScope(localModule))
-  def getBindingScope(implicit registry: Registry): BindingScope = FunctionBindingScope(signature, registry.getBindingScope(localModule))
+  /**
+    * The multi-function this function is a part of. This is immediately initialized after the multi-function is created.
+    */
+  var multiFunction: MultiFunctionDefinition = _
 
   /**
     * This is a variable because it may be transformed during the course of the compilation.
     */
   var body: Option[Expression] = None
+
+  def getTypeScope(implicit registry: Registry): TypeScope = FunctionDefinition.typeScope(typeParameters, registry.getTypeScope(localModule))
+  def getBindingScope(implicit registry: Registry): BindingScope = FunctionBindingScope(signature, registry.getBindingScope(localModule))
 
   /**
     * Attempts to instantiate the function definition with the given argument type. If this is not possible, reports a

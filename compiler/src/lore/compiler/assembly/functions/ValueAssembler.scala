@@ -43,7 +43,11 @@ object ValueAssembler {
 
     case Expression.MultiFunctionValue(mf, tpe, _) => Some(PoemMultiFunctionValue(mf, TypeAssembler.generate(tpe)))
 
-    case _: Expression.FixedFunctionValue => None
+    case Expression.FixedFunctionValue(instance, _) =>
+      val inputType = TypeAssembler.generate(instance.signature.inputType)
+      val tpe = TypeAssembler.generate(instance.signature.functionType)
+      Some(PoemFixedFunctionValue(instance.definition.multiFunction, inputType, tpe))
+
     case _: Expression.ConstructorValue => None
 
     case Expression.ListConstruction(values, _) =>

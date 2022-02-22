@@ -213,10 +213,7 @@ class ExpressionAssembler(
   }
 
   private def handle(expression: FixedFunctionValue): AsmChunk = {
-//    val target = TargetRepresentableTranspiler.transpile(expression.instance.definition)
-//    val tpe = TypeTranspiler.transpile(expression.tpe)
-//    AsmChunk.expression(RuntimeApi.functions.value(target, tpe))
-    ???
+    ValueAssembler.generateConstForced(expression, registerProvider.fresh())
   }
 
   private def handle(expression: ConstructorValue): AsmChunk = {

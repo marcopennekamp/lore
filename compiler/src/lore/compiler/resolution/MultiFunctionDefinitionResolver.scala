@@ -19,7 +19,9 @@ object MultiFunctionDefinitionResolver {
     val name = functionNodes.head.fullName
     val functions = functionNodes.map(resolveFunction)
     val uniqueFunctions = filterDuplicateFunctions(functions)
-    new MultiFunctionDefinition(name, uniqueFunctions)
+    val multiFunction = new MultiFunctionDefinition(name, uniqueFunctions)
+    multiFunction.functions.foreach(_.multiFunction = multiFunction)
+    multiFunction
   }
 
   private def resolveFunction(node: DeclNode.FunctionNode)(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): FunctionDefinition = {
