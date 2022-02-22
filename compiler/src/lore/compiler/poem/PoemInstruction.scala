@@ -3,7 +3,6 @@ package lore.compiler.poem
 import lore.compiler.poem.Poem.Register
 import lore.compiler.poem.PoemOperation.PoemOperation
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.functions.MultiFunctionDefinition
 import lore.compiler.semantics.variables.GlobalVariableDefinition
 import lore.compiler.types.DeclaredSchema
 
@@ -39,14 +38,16 @@ sealed abstract class PoemInstruction(val operation: PoemOperation) {
 
 object PoemInstruction {
 
-  // These types are merely used to keep the following case class declarations short.
+  // These types are merely used to keep the following case class declarations short. `PMf` refers to a NamePath and
+  // not a MultiFunctionDefinition because the assembly phase may generate additional functions which haven't been
+  // resolved as MultiFunctionDefinitions from the beginning, such as functions backing lambda values.
   type PReg = Poem.Register
   type PVal = PoemValue
   type PTpe = PoemType
   type PIntr = PoemIntrinsic
   type PSch = DeclaredSchema
   type PGlb = GlobalVariableDefinition
-  type PMf = MultiFunctionDefinition
+  type PMf = NamePath
   type PMtsh = PoemMetaShape
   type PLoc = Poem.Location
 
@@ -71,7 +72,7 @@ object PoemInstruction {
   def unit(target: PReg): PoemInstruction = Tuple(target, Vector.empty)
 
   case class FunctionCall(target: PReg, function: PReg, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.FunctionCall)
-  case class Lambda(target: PReg, mf: NamePath, tpe: PTpe, capturedRegisters: Vector[PReg]) extends PoemInstruction(PoemOperation.Lambda)
+  case class Lambda(target: PReg, mf: PMf, tpe: PTpe, capturedRegisters: Vector[PReg]) extends PoemInstruction(PoemOperation.Lambda)
   case class LambdaLocal(target: PReg, index: Int) extends PoemInstruction(PoemOperation.LambdaLocal)
 
   case class List(target: PReg, tpe: PTpe, elements: Vector[PReg]) extends PoemInstruction(PoemOperation.List)
@@ -321,7 +322,7 @@ object PoemInstruction {
       case IntrinsicVoid(intrinsic, arguments) => s"${intrinsic.name}(${arguments.mkString(", ")})"
       case GlobalGet(target, global) => s"$target <- ${global.name}"
       case GlobalSet(global, value) => s"${global.name} <- $value"
-      case Dispatch(target, mf, arguments) => s"$target <- ${mf.name}(${arguments.mkString(", ")})"
+      case Dispatch(target, mf, arguments) => s"$target <- $mf(${arguments.mkString(", ")})"
       case Return(value) => s"$value"
       case ReturnUnit() => s""
       case Return0() => s""

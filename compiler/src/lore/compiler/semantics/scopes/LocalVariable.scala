@@ -34,6 +34,13 @@ case class LocalVariable(
   override val isMutable: Boolean,
 ) extends TypedBinding {
   lazy val targetVariable: Target.Variable = RuntimeNames.localVariable(name)
+
+  override def equals(obj: Any): Boolean = obj match {
+    case other: LocalVariable => this.uniqueKey == other.uniqueKey
+    case _ => false
+  }
+
+  override def hashCode(): Int = uniqueKey.hashCode()
 }
 
 object LocalVariable {

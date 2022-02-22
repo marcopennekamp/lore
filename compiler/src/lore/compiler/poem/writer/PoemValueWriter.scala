@@ -52,7 +52,7 @@ object PoemValueWriter {
   private def writeFunctionValueCommons(value: PoemFunctionValue)(implicit writer: BytecodeWriter): Unit = {
     PoemTypeWriter.write(value.tpe)
     writer.writeUInt8(value.variant.id)
-    PoemWriter.writeNamePath(value.mf.name)
+    PoemWriter.writeNamePath(value.mf)
   }
 
 }

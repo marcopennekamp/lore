@@ -1,7 +1,7 @@
 package lore.compiler.semantics.expressions
 
 import lore.compiler.core.{CompilationException, Position, Positioned, UniqueKey}
-import lore.compiler.semantics.analysis.LocalizedExpression
+import lore.compiler.semantics.analysis.{CapturedVariables, LocalizedExpression}
 import lore.compiler.semantics.expressions.Expression.Literal.LiteralValue
 import lore.compiler.semantics.functions.{CallTarget, FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
@@ -138,13 +138,18 @@ object Expression {
     body: Expression,
     position: Position,
   ) extends Expression {
+    override val tpe: FunctionType = FunctionType(TupleType(parameters.map(_.tpe)), body.tpe)
+
     /**
       * Whether the anonymous function only has annotated parameters. This allows the inference algorithm to infer the
       * type of the anonymous function directly.
       */
     lazy val isFullyAnnotated: Boolean = parameters.forall(_.isAnnotated)
 
-    override val tpe: FunctionType = FunctionType(TupleType(parameters.map(_.tpe)), body.tpe)
+    /**
+      * All local variables that this anonymous function must capture.
+      */
+    lazy val capturedVariables: Vector[LocalVariable] = CapturedVariables.findCapturedVariables(this).toVector
   }
 
   case class AnonymousFunctionParameter(uniqueKey: UniqueKey, name: String, tpe: Type, position: Position) {

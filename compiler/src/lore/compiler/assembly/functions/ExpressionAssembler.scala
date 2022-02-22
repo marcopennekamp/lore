@@ -9,11 +9,10 @@ import lore.compiler.poem._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.ParameterDefinition.NamedParameterView
-import lore.compiler.semantics.functions.{CallTarget, FunctionSignature, ParameterDefinition}
+import lore.compiler.semantics.functions.{CallTarget, FunctionSignature}
 import lore.compiler.semantics.scopes.LocalVariable
 import lore.compiler.types._
 
-import java.util.UUID
 import scala.collection.immutable.HashMap
 
 // TODO (assembly): There is a difference between an expression returning Unit and an expression's result not being
@@ -175,38 +174,9 @@ class ExpressionAssembler(
   }
 
   private def handle(expression: AnonymousFunction): AsmChunk = {
-    // TODO (assembly): Make this a PoemLambdaFunctionValue constant if the lambda has neither type arguments nor
-    //                  captured variables. This is especially the case for simple mapping functions and will allow
-    //                  passing such functions as constants without ever having to recreate them.
-
-    // To generate an anonymous function, we have to first perform capture analysis, then compile its body as a
-    // single-function multi-function, and finally generate the appropriate `Lambda` instruction.
-    // TODO (assembly): Capture analysis.
-    val capturedVariables: CapturedVariableMap = Map.empty
-    val capturedRegisters = Vector.empty
-
-    // We need to be careful with the name, because any function called `signature.name` can have lambdas which will
-    // be global to the VM's universe. For example, we can't simply call these functions `lambda0`, `lambda1`, etc.,
-    // because if there are two functions of the same name, their lambda names will clash. As the names are local to
-    // the current function, there is no need to have names stable across compilation runs, so a UUID suffices.
-    // The `Lambda` instruction passes type arguments to the lambda implicitly, so we have to declare the lambda with
-    // the same type parameters. However, we can and should remove the bounds, as these bounds will never be checked.
-    val lambdaName = signature.name.appendToLastSegment("$lambda-" + UUID.randomUUID().toString)
-    val lambdaParameters = expression.parameters.map {
-      parameter => ParameterDefinition(parameter.uniqueKey, Some(parameter.name), parameter.tpe, parameter.position)
-    }
-    val lambdaSignature = FunctionSignature(
-      lambdaName,
-      signature.typeParameters.map(_.withoutBounds),
-      lambdaParameters,
-      expression.tpe.output,
-      expression.position,
-    )
-    generatedPoemFunctions ++= FunctionAssembler.generate(lambdaSignature, Some(expression.body), capturedVariables)
-
-    val regResult = registerProvider.fresh()
-    val poemType = TypeAssembler.generate(expression.tpe)
-    AsmChunk(regResult, PoemInstruction.Lambda(regResult, lambdaName, poemType, capturedRegisters))
+    val (chunk, poemFunctions) = LambdaAssembler.generate(expression, signature)
+    generatedPoemFunctions ++= poemFunctions
+    chunk
   }
 
   private def handle(expression: MultiFunctionValue): AsmChunk = {
@@ -315,7 +285,7 @@ class ExpressionAssembler(
     val argumentRegs = argumentChunks.map(_.forceResult(expression.position))
 
     val callChunk = expression.target match {
-      case CallTarget.MultiFunction(mf) => AsmChunk(regResult, PoemInstruction.Dispatch(regResult, mf, argumentRegs))
+      case CallTarget.MultiFunction(mf) => AsmChunk(regResult, PoemInstruction.Dispatch(regResult, mf.name, argumentRegs))
 
       case CallTarget.Value(function) =>
         val functionChunk = generate(function)

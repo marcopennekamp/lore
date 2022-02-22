@@ -38,16 +38,28 @@ object ValueAssembler {
       }
       generate(values).map(values => PoemTupleValue(values, TypeAssembler.generate(expression.tpe)))
 
-    // TODO (assembly): Can we turn these into constant poem values?
-    case _: Expression.AnonymousFunction => None
+    case _: Expression.AnonymousFunction =>
+      // It is technically possible to turn anonymous functions into constant poem values, but this would complicate
+      // the ValueAssembler as it'd have to generate PoemFunctions. If a value cannot be generated due to some other
+      // reason, the PoemFunction would be needlessly assembled before being thrown away. In addition, we'd have to
+      // carry a FunctionSignature into the ValueAssembler to decide whether the lambda can be a constant value.
+      //
+      // These two disadvantages are not worth the tradeoff of implementing the constant value semantics for anonymous
+      // functions here. Instead, the ExpressionAssembler directly creates such a constant function value if it
+      // encounters an AnonymousFunction expression. The disadvantage of this approach is that, for example, a list
+      // containing anonymous functions such as `[x => x + 3, x => x * 2]` would not be compiled as a constant value.
+      // The major use case, constant lambda values passed as arguments or assigned to a variable, is covered by the
+      // semantics of the ExpressionAssembler.
+      None
 
-    case Expression.MultiFunctionValue(mf, tpe, _) => Some(PoemMultiFunctionValue(mf, TypeAssembler.generate(tpe)))
+    case Expression.MultiFunctionValue(mf, tpe, _) => Some(PoemMultiFunctionValue(mf.name, TypeAssembler.generate(tpe)))
 
     case Expression.FixedFunctionValue(instance, _) =>
       val inputType = TypeAssembler.generate(instance.signature.inputType)
       val tpe = TypeAssembler.generate(instance.signature.functionType)
-      Some(PoemFixedFunctionValue(instance.definition.multiFunction, inputType, tpe))
+      Some(PoemFixedFunctionValue(instance.definition.multiFunction.name, inputType, tpe))
 
+    // TODO (assembly): Can we turn constructor values into constant poem values?
     case _: Expression.ConstructorValue => None
 
     case Expression.ListConstruction(values, _) =>

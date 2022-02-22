@@ -124,7 +124,7 @@ object PoemInstructionWriter {
 
       case PoemInstruction.Dispatch(target, mf, arguments) =>
         write(target)
-        writeConstantMultiFunction(mf.name)
+        writeConstantMultiFunction(mf)
         writeOperandsWithLength8(arguments)
 
       case PoemInstruction.Return(value) => write(value)
