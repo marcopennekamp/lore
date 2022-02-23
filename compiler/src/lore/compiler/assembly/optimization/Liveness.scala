@@ -1,6 +1,5 @@
 package lore.compiler.assembly.optimization
 
-import lore.compiler.poem.PoemInstruction.DefUseInfo
 import lore.compiler.poem.{Poem, PoemInstruction}
 
 import scala.collection.immutable.HashMap
@@ -26,23 +25,13 @@ case class LivenessPoint(line: Int, phase: LivenessPhase) {
   def <=(other: LivenessPoint): Boolean = this == other || this < other
 }
 
-case class LivenessInterval(variable: Poem.Register, from: LivenessPoint, to: LivenessPoint) {
-  // TODO (assembly): Do we even need this?
-  def overlaps(other: LivenessInterval): Boolean = from <= other.to && other.from <= to
-}
-
 case class Liveness(startPoints: Map[Poem.Register, LivenessPoint], endPoints: Map[Poem.Register, LivenessPoint])
 
 object Liveness {
 
-  // TODO (assembly): Maybe we should make DefUseInfo into a lazy val of a PoemInstruction.
-
-  def compute(
-    instructions: Vector[PoemInstruction],
-    defUseInfos: Vector[DefUseInfo],
-  ): Liveness = {
-    val (liveInSets, liveOutSets) = computeLiveInOutSets(instructions, defUseInfos)
-    computeIntervals(instructions, defUseInfos, liveInSets, liveOutSets)
+  def compute(instructions: Vector[PoemInstruction]): Liveness = {
+    val (liveInSets, liveOutSets) = computeLiveInOutSets(instructions)
+    computeIntervals(instructions, liveInSets, liveOutSets)
   }
 
   // The live-in and live-out sets can be accessed by index for the ith instruction. The live-in set determines which
@@ -54,16 +43,13 @@ object Liveness {
   /**
     * Computes the live-in/live-out sets for all instructions with a backwards algorithm.
     */
-  private def computeLiveInOutSets(
-    instructions: Vector[PoemInstruction],
-    defUseInfos: Vector[DefUseInfo],
-  ): (LiveInSets, LiveOutSets) = {
+  private def computeLiveInOutSets(instructions: Vector[PoemInstruction]): (LiveInSets, LiveOutSets) = {
     val liveInSets = instructions.map(_ => mutable.HashSet[Poem.Register]())
     val liveOutSets = instructions.map(_ => mutable.HashSet[Poem.Register]())
 
-    // The live-in set always includes the instructions uses, so we can add them before starting the main loop.
+    // The live-in set always includes the instruction's register usage, so we can add them before the main loop.
     for (i <- instructions.indices) {
-      liveInSets(i).addAll(defUseInfos(i).uses)
+      liveInSets(i).addAll(instructions(i).targetSourceInfo.sources)
     }
 
     // We compute the live-in and live-out sets with a fixed-point algorithm that iterates until no changes have been
@@ -88,14 +74,13 @@ object Liveness {
 
       for (line <- instructions.indices.reverse) {
         val instruction = instructions(line)
-        val defUseInfo = defUseInfos(line)
         val liveIn = liveInSets(line)
         val liveOut = liveOutSets(line)
 
-        // The live-in set is computed as follows: `liveIn[i] = uses[i] union (liveOut[i] without defs[i])`. However,
-        // the instruction's uses have already been included.
+        // The live-in set is computed as follows: `liveIn[i] = sources[i] union (liveOut[i] without targets[i])`.
+        // However, the instruction's sources have already been included.
         for (variable <- liveOut) {
-          if (!defUseInfo.definitions.contains(variable)) {
+          if (!instruction.targetSourceInfo.targets.contains(variable)) {
             addVariable(liveIn, variable)
           }
         }
@@ -136,7 +121,6 @@ object Liveness {
     */
   private def computeIntervals(
     instructions: Vector[PoemInstruction],
-    defUseInfos: Vector[DefUseInfo],
     liveInSets: LiveInSets,
     liveOutSets: LiveOutSets,
   ): Liveness = {
@@ -144,13 +128,15 @@ object Liveness {
     val endPoints = new LivenessPointAccumulator
 
     for (line <- instructions.indices) {
+      val instruction = instructions(line)
+
       liveInSets(line).foreach(startPoints.register(_, line, LivenessPhase.Use))
       liveOutSets(line).foreach(startPoints.register(_, line, LivenessPhase.Def))
 
       // If a variable is unused, it won't be contained in the live-out set of the instruction where it is defined.
       // This is a problem, because the register allocator still has to assign a register to the variable. Hence, we
-      // have to consider the `def` set as well.
-      defUseInfos(line).definitions.foreach(startPoints.register(_, line, LivenessPhase.Def))
+      // have to consider the `target` set as well.
+      instruction.targetSourceInfo.targets.foreach(startPoints.register(_, line, LivenessPhase.Def))
     }
 
     for (line <- instructions.indices.reverse) {

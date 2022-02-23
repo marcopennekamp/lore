@@ -1,6 +1,7 @@
 package lore.compiler.poem
 
 import lore.compiler.poem.Poem.Register
+import lore.compiler.poem.PoemInstruction.TargetSourceInfo
 import lore.compiler.poem.PoemOperation.PoemOperation
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.variables.GlobalVariableDefinition
@@ -18,6 +19,9 @@ import lore.compiler.types.DeclaredSchema
   * flattened.
   */
 sealed abstract class PoemInstruction(val operation: PoemOperation) {
+
+  lazy val targetSourceInfo: TargetSourceInfo = PoemInstruction.getTargetSourceInfo(this)
+
   /**
     * All labels that have been attached to the instruction. The instruction's ultimate position will determine the
     * location of the label.
@@ -34,6 +38,7 @@ sealed abstract class PoemInstruction(val operation: PoemOperation) {
   }
 
   override def toString: String = PoemInstruction.stringify(this)
+
 }
 
 object PoemInstruction {
@@ -223,20 +228,18 @@ object PoemInstruction {
     case instruction@TypeConst(target, _) => instruction.copy(target = applyTarget(target))
   }
 
-  case class DefUseInfo(definitions: Vector[Poem.Register], uses: Vector[Poem.Register])
+  case class TargetSourceInfo(targets: Vector[Poem.Register], sources: Vector[Poem.Register])
 
   /**
-    * Returns the register definition and use sets for the given instruction.
+    * Returns the register target and source sets for the given instruction.
     *
-    *   - `r in def(inst)`: The instruction `inst` assigns a new value to register `r`.
-    *   - `r in use(inst)`: The instruction `inst` uses the register `r`.
+    *   - `r in target(inst)`: The instruction `inst` assigns a new value to register `r`.
+    *   - `r in source(inst)`: The instruction `inst` uses the register `r`.
     *
     * This is used by liveness analysis during register allocation.
-    *
-    * TODO (assembly): Rename this to target and source sets? (Still call it def/use in liveliness.)
     */
-  def defUseInfo(instruction: PoemInstruction): DefUseInfo = {
-    val (defList, useList) = instruction match {
+  def getTargetSourceInfo(instruction: PoemInstruction): TargetSourceInfo = {
+    val (targetList, sourceList) = instruction match {
       case UnaryOperation(_, target, value) => (Vector(target), Vector(value))
       case BinaryOperation(_, target, a, b) => (Vector(target), Vector(a, b))
       case Assign(target, source) => (Vector(target), Vector(source))
@@ -273,7 +276,7 @@ object PoemInstruction {
       case TypeArg(target, _) => (Vector(target), Vector.empty)
       case TypeConst(target, _) => (Vector(target), Vector.empty)
     }
-    DefUseInfo(defList.distinct, useList.distinct)
+    TargetSourceInfo(targetList.distinct, sourceList.distinct)
   }
 
   /**

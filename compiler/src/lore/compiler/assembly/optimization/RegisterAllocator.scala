@@ -1,7 +1,6 @@
 package lore.compiler.assembly.optimization
 
 import lore.compiler.core.CompilationException
-import lore.compiler.poem.PoemInstruction.DefUseInfo
 import lore.compiler.poem.{Poem, PoemInstruction}
 import lore.compiler.utils.CollectionExtensions.MapExtension
 
@@ -22,8 +21,7 @@ object RegisterAllocator {
     * Because the VM offers an unlimited number of registers, we don't have to implement variable spills.
     */
   def optimize(instructions: Vector[PoemInstruction], parameterCount: Int): Vector[PoemInstruction] = {
-    val defUseInfos = instructions.map(PoemInstruction.defUseInfo)
-    val liveness = Liveness.compute(instructions, defUseInfos)
+    val liveness = Liveness.compute(instructions)
     assignRegisters(instructions, parameterCount, liveness)
   }
 
