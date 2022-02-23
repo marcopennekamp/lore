@@ -149,20 +149,8 @@ class ExpressionAssembler(
 
   private def handle(literal: Literal): AsmChunk = {
     val regResult = registerProvider.fresh()
-    literal.value match {
-      case Literal.IntValue(value) if Poem.minDirectInteger <= value && value <= Poem.maxDirectInteger =>
-        AsmChunk(regResult, PoemInstruction.IntConst(regResult, value.toInt))
-
-      case Literal.BooleanValue(value) =>
-        AsmChunk(regResult, PoemInstruction.BooleanConst(regResult, value))
-
-      case _ => ValueAssembler.generateConstForced(literal, regResult)
-    }
+    ValueAssembler.generateConstForced(literal, regResult)
   }
-
-  // TODO (assembly): Perhaps converting Const(_, PoemIntValue(x)) to IntConst(x) should be a separate optimization
-  //                  step, because PoemValueAssembler.generateConst will otherwise generate instructions such as
-  //                  Const(_, PoemIntValue(x)). Bonus points: We can call this "const smashing".
 
   private def handle(expression: Tuple): AsmChunk = {
     val target = registerProvider.fresh()

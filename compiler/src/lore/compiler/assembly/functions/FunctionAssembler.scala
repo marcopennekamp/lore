@@ -28,16 +28,7 @@ object FunctionAssembler {
   )(implicit registry: Registry): Vector[PoemFunction] = {
     val typeParameters = signature.typeParameters.map(TypeAssembler.generateParameter)
     val (instructions, additionalPoemFunctions) = body match {
-      case Some(body) =>
-        val expressionAssembler = new ExpressionAssembler(signature, capturedVariables)
-        val bodyChunk = expressionAssembler.generate(body)
-        // TODO (assembly): Maybe use `Return0` and `ReturnUnit` if possible.
-        var instructions = bodyChunk.instructions :+ PoemInstruction.Return(bodyChunk.forceResult(body.position))
-        instructions = LabelResolver.resolve(instructions, body.position)
-        instructions = ConstSmasher.optimize(instructions)
-        instructions = RegisterAllocator.optimize(instructions, signature.parameters.length)
-        (instructions, expressionAssembler.generatedPoemFunctions)
-
+      case Some(body) => generateInstructions(signature, body, capturedVariables)
       case None => (Vector.empty, Vector.empty)
     }
     val registerCount = PoemInstruction.registerCount(instructions)
@@ -60,6 +51,22 @@ object FunctionAssembler {
       registerCount,
       instructions,
     ) +: additionalPoemFunctions
+  }
+
+  private def generateInstructions(
+    signature: FunctionSignature,
+    body: Expression,
+    capturedVariables: CapturedVariableMap,
+  )(implicit registry: Registry): (Vector[PoemInstruction], Vector[PoemFunction]) = {
+    val expressionAssembler = new ExpressionAssembler(signature, capturedVariables)
+    val bodyChunk = expressionAssembler.generate(body)
+
+    var instructions = bodyChunk.instructions :+ PoemInstruction.Return(bodyChunk.forceResult(body.position))
+    instructions = LabelResolver.resolve(instructions, body.position)
+    instructions = ConstSmasher.optimize(instructions)
+    instructions = RegisterAllocator.optimize(instructions, signature.parameters.length)
+
+    (instructions, expressionAssembler.generatedPoemFunctions)
   }
 
 }
