@@ -7,7 +7,7 @@ proc core_panic(): TaggedValue =
   quit("Panic: The Lore program was forced to terminate.")
 
 proc core_to_string(value: TaggedValue): TaggedValue =
-  values.new_string_tagged($value)
+  values.new_string_value_tagged($value)
 
 proc strings_length(tagged_string: TaggedValue): TaggedValue =
   let string = untag_reference(tagged_string, StringValue)
@@ -18,11 +18,11 @@ proc lists_each(frame: FramePtr, tagged_list: TaggedValue, tagged_function: Tagg
   let function = untag_reference(tagged_function, FunctionValue)
   for element in list.elements:
     discard evaluator.evaluate_function_value(function, frame, element)
-  values.unit_tagged
+  values.unit_value_tagged
 
 proc io_println(value: TaggedValue): TaggedValue =
   echo value
-  values.unit_tagged
+  values.unit_value_tagged
 
 template nullary(arg_name, arg_function): untyped = Intrinsic(name: arg_name, is_frame_aware: false, function: IntrinsicFunction(nullary: arg_function))
 template unary(arg_name, arg_function): untyped = Intrinsic(name: arg_name, is_frame_aware: false, function: IntrinsicFunction(unary: arg_function))

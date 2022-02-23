@@ -5,7 +5,7 @@ import definitions
 from dispatch import find_dispatch_target_from_arguments
 import imseqs
 import instructions
-from types import Type, StructSchema
+from types import Type, StructSchema, substitute
 import values
 from utils import when_debug
 
@@ -171,7 +171,7 @@ macro generate_operation_set_result(index_node: int, result_node: untyped, kind:
       regv_set_int_arg(`index_node`, `result_node`)
   of "real":
     quote do:
-      regv_set_ref_arg(`index_node`, values.new_real(`result_node`))
+      regv_set_ref_arg(`index_node`, values.new_real_value(`result_node`))
   of "bool":
     quote do:
       regv_set_bool_arg(`index_node`, `result_node`)
@@ -273,14 +273,14 @@ proc lambda_get_function_instance(frame: FramePtr, instruction: Instruction, arg
 
 template generate_lambda(is_poly: bool) =
   let function_instance = lambda_get_function_instance(frame, instruction, 1)
-  let tpe = if is_poly: types.substitute(const_types_arg(2), frame.type_arguments) else: const_types_arg(2)
+  let tpe = if is_poly: substitute(const_types_arg(2), frame.type_arguments) else: const_types_arg(2)
   let context = LambdaContext(oplv_get_imseq_arg(3))
   let value = values.new_lambda_function_value(function_instance, context, tpe)
   regv_set_ref_arg(0, value)
 
 template generate_lambda0(is_poly: bool) =
   let function_instance = lambda_get_function_instance(frame, instruction, 1)
-  let tpe = if is_poly: types.substitute(const_types_arg(2), frame.type_arguments) else: const_types_arg(2)
+  let tpe = if is_poly: substitute(const_types_arg(2), frame.type_arguments) else: const_types_arg(2)
   let context = LambdaContext(empty_immutable_seq[TaggedValue]())
   let value = values.new_lambda_function_value(function_instance, context, tpe)
   regv_set_ref_arg(0, value)
@@ -293,7 +293,7 @@ template generate_list_append(new_tpe): untyped =
   let list = regv_get_ref_arg(1, ListValue)
   let new_element = regv_get_arg(2)
   var new_elements = list.elements.append(new_element)
-  regv_set_ref_arg(0, new_list(new_elements, new_tpe))
+  regv_set_ref_arg(0, new_list_value(new_elements, new_tpe))
 
 ########################################################################################################################
 # Intrinsics.                                                                                                          #
@@ -426,12 +426,12 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.StringOf:
       let string = $regv_get_arg(1)
-      regv_set_ref_arg(0, values.new_string(string))
+      regv_set_ref_arg(0, values.new_string_value(string))
 
     of Operation.StringConcat:
       let a = regv_get_ref_arg(1, StringValue)
       let b = regv_get_ref_arg(2, StringValue)
-      regv_set_ref_arg(0, values.new_string(a.string & b.string))
+      regv_set_ref_arg(0, values.new_string_value(a.string & b.string))
 
     of Operation.StringEq:
       let a = regv_get_ref_arg(1, StringValue)
@@ -443,22 +443,22 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.Tuple:
       var elements = oplv_get_imseq_arg(1)
-      regv_set_ref_arg(0, values.new_tuple(elements))
+      regv_set_ref_arg(0, values.new_tuple_value(elements))
 
     # TODO (vm): Implement TupleX with a single macro.
     of Operation.Tuple0:
-      regv_set_arg(0, values.unit_tagged)
+      regv_set_arg(0, values.unit_value_tagged)
 
     of Operation.Tuple1:
       var elements = new_immutable_seq[TaggedValue](1)
       elements[0] = regv_get_arg(1)
-      regv_set_ref_arg(0, values.new_tuple(elements))
+      regv_set_ref_arg(0, values.new_tuple_value(elements))
 
     of Operation.Tuple2:
       var elements = new_immutable_seq[TaggedValue](2)
       elements[0] = regv_get_arg(1)
       elements[1] = regv_get_arg(2)
-      regv_set_ref_arg(0, values.new_tuple(elements))
+      regv_set_ref_arg(0, values.new_tuple_value(elements))
 
     of Operation.TupleGet:
       let tpl = regv_get_ref_arg(1, TupleValue)
@@ -500,31 +500,31 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.List:
       let elements = oplv_get_imseq_arg(2)
-      let list = values.new_list(elements, const_types_arg(1))
+      let list = values.new_list_value(elements, const_types_arg(1))
       regv_set_ref_arg(0, list)
 
     of Operation.List0:
-      let list = values.new_list(empty_immutable_seq[TaggedValue](), const_types_arg(1))
+      let list = values.new_list_value(empty_immutable_seq[TaggedValue](), const_types_arg(1))
       regv_set_ref_arg(0, list)
 
     of Operation.List1:
-      let list = values.new_list(new_immutable_seq([regv_get_arg(2)]), const_types_arg(1))
+      let list = values.new_list_value(new_immutable_seq([regv_get_arg(2)]), const_types_arg(1))
       regv_set_ref_arg(0, list)
 
     of Operation.ListPoly:
-      let tpe = types.substitute(const_types_arg(1), frame.type_arguments)
+      let tpe = substitute(const_types_arg(1), frame.type_arguments)
       let elements = oplv_get_imseq_arg(2)
-      let list = values.new_list(elements, tpe)
+      let list = values.new_list_value(elements, tpe)
       regv_set_ref_arg(0, list)
 
     of Operation.ListPoly0:
-      let tpe = types.substitute(const_types_arg(1), frame.type_arguments)
-      let list = values.new_list(empty_immutable_seq[TaggedValue](), tpe)
+      let tpe = substitute(const_types_arg(1), frame.type_arguments)
+      let list = values.new_list_value(empty_immutable_seq[TaggedValue](), tpe)
       regv_set_ref_arg(0, list)
 
     of Operation.ListPoly1:
-      let tpe = types.substitute(const_types_arg(1), frame.type_arguments)
-      let list = values.new_list(new_immutable_seq([regv_get_arg(2)]), tpe)
+      let tpe = substitute(const_types_arg(1), frame.type_arguments)
+      let list = values.new_list_value(new_immutable_seq([regv_get_arg(2)]), tpe)
       regv_set_ref_arg(0, list)
 
     of Operation.ListAppend:
@@ -532,7 +532,7 @@ proc evaluate(frame: FramePtr) =
       generate_list_append(new_tpe)
 
     of Operation.ListAppendPoly:
-      let new_tpe = types.substitute(const_types_arg(3), frame.type_arguments)
+      let new_tpe = substitute(const_types_arg(3), frame.type_arguments)
       generate_list_append(new_tpe)
 
     of Operation.ListAppendUntyped:

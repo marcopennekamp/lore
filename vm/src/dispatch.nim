@@ -3,7 +3,7 @@ import std/strformat
 from definitions import MultiFunction, FunctionInstance, is_monomorphic, new_function_instance
 import imseqs
 import types
-from values import TaggedValue
+import values
 
 proc find_dispatch_target*(mf: MultiFunction, input_types: open_array[Type], target: var FunctionInstance) =
   ## Finds the dispatch target for the given multi-function and input types (expressed as an open array of tuple
@@ -61,14 +61,14 @@ proc find_dispatch_target_from_arguments*(mf: MultiFunction, target: var Functio
   find_dispatch_target(mf, [], target)
 
 proc find_dispatch_target_from_arguments*(mf: MultiFunction, argument0: TaggedValue, target: var FunctionInstance) =
-  find_dispatch_target(mf, [values.get_type(argument0)], target)
+  find_dispatch_target(mf, [argument0.get_type], target)
 
 proc find_dispatch_target_from_arguments*(mf: MultiFunction, argument0: TaggedValue, argument1: TaggedValue, target: var FunctionInstance) =
-  find_dispatch_target(mf, [values.get_type(argument0), values.get_type(argument1)], target)
+  find_dispatch_target(mf, [argument0.get_type, argument1.get_type], target)
 
 proc find_dispatch_target_from_arguments*(mf: MultiFunction, arguments: open_array[TaggedValue], target: var FunctionInstance) =
   # TODO (vm): We could avoid an allocation here for e.g. 16 or less arguments if we allocate the array on the stack.
   var input_types = new_seq[Type](arguments.len)
   for i in 0 ..< input_types.len:
-    input_types[i] = values.get_type(arguments[i])
+    input_types[i] = arguments[i].get_type
   find_dispatch_target(mf, input_types, target)

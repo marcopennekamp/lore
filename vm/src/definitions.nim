@@ -1,7 +1,7 @@
 import imseqs
 from instructions import Instruction
 from types import TypeParameter, Type, TupleType, MetaShape, Schema
-from values import TaggedValue, LambdaContext
+from values import TaggedValue, LambdaContext, tag_reference
 
 type
   Frame* = object
@@ -124,7 +124,7 @@ proc new_eager_global*(name: string, value: TaggedValue): GlobalVariable =
   GlobalVariable(name: name, value: value, is_initialized: true)
 
 proc new_lazy_global*(name: string, initializer: FunctionInstance): GlobalVariable =
-  GlobalVariable(name: name, value: values.tag_reference(nil), is_initialized: false, initializer: initializer)
+  GlobalVariable(name: name, value: tag_reference(nil), is_initialized: false, initializer: initializer)
 
 ########################################################################################################################
 # Functions and instances.                                                                                             #

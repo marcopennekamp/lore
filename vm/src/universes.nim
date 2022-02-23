@@ -11,10 +11,8 @@ import poems
 from property_index import find_offset
 from pyramid import nil
 import schema_order
-from types import Kind, Type, TypeParameter, TypeVariable, SumType, IntersectionType, TupleType, FunctionType,
-                  ListType, MapType, ShapeType, Schema,  DeclaredType, TraitSchema, TraitType, StructSchema,
-                  StructSchemaProperty, attach_inherited_shape_type, attach_property_type, is_monomorphic
-from values import TaggedValue, LambdaContext
+import types
+import values
 
 type
   Universe* = ref object
@@ -127,7 +125,7 @@ proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
     constants.multi_functions.add(universe.multi_functions[name])
 
   for poem_meta_shape in poem_constants.meta_shapes:
-    constants.meta_shapes.add(types.get_meta_shape(poem_meta_shape.property_names))
+    constants.meta_shapes.add(get_meta_shape(poem_meta_shape.property_names))
 
   constants
 
@@ -198,11 +196,11 @@ proc resolve_schema(universe: Universe, poem_schema: PoemSchema): Schema =
   let supertraits = cast[ImSeq[TraitType]](supertypes)
 
   if poem_schema.kind == Kind.Trait:
-    types.new_trait_schema(poem_schema.name, type_parameters, supertraits)
+    new_trait_schema(poem_schema.name, type_parameters, supertraits)
   else:
     let poem_schema = cast[PoemStructSchema](poem_schema)
     let properties = universe.resolve_struct_properties(poem_schema.properties)
-    types.new_struct_schema(poem_schema.name, type_parameters, supertraits, properties)
+    new_struct_schema(poem_schema.name, type_parameters, supertraits, properties)
 
 proc resolve_struct_properties(universe: Universe, poem_properties: seq[PoemStructProperty]): ImSeq[StructSchemaProperty] =
   ## Resolves struct properties from the given list of poem struct properties. Property types won't be added, as they
@@ -646,35 +644,35 @@ method resolve(poem_type: PoemType, universe: Universe): Type {.base, locks: "un
 proc resolve(universe: Universe, poem_type: PoemType): Type =
   poem_type.resolve(universe)
 
-method resolve(poem_type: PoemTypeVariable, universe: Universe): Type {.locks: "unknown".} = types.variable(poem_type.index)
+method resolve(poem_type: PoemTypeVariable, universe: Universe): Type {.locks: "unknown".} = new_type_variable(poem_type.index)
 
 method resolve(poem_type: PoemBasicType, universe: Universe): Type {.locks: "unknown".} = poem_type.tpe
 
 method resolve(poem_type: PoemXaryType, universe: Universe): Type =
   if poem_type.kind == Kind.Sum:
-    types.sum(universe.resolve_many(poem_type.types))
+    new_sum_type(universe.resolve_many(poem_type.types))
   elif poem_type.kind == Kind.Tuple:
     if poem_type.types.len == 0:
-      types.unit_type
+      unit_type
     else:
-      types.tpl(universe.resolve_many(poem_type.types))
+      new_tuple_type(universe.resolve_many(poem_type.types))
   elif poem_type.kind == Kind.Function:
     let resolved_types = universe.resolve_many(poem_type.types)
     let input = resolved_types[0]
     if (input.kind != Kind.Tuple):
       quit("Function type inputs must be tuple types.")
-    types.function(cast[TupleType](input), resolved_types[1])
+    new_function_type(cast[TupleType](input), resolved_types[1])
   elif poem_type.kind == Kind.List:
-    types.list(universe.resolve(poem_type.types[0]))
+    new_list_type(universe.resolve(poem_type.types[0]))
   else:
     quit(fmt"Unsupported kind {poem_type.kind}.")
 
 method resolve(poem_type: PoemShapeType, universe: Universe): Type {.locks: "unknown".} =
-  let meta_shape = types.get_meta_shape(poem_type.property_names)
+  let meta_shape = get_meta_shape(poem_type.property_names)
   let property_types = universe.resolve_many(poem_type.property_types)
-  types.new_shape_type(meta_shape, property_types)
+  new_shape_type(meta_shape, property_types)
 
-method resolve(poem_type: PoemSymbolType, universe: Universe): Type {.locks: "unknown".} = types.symbol(poem_type.name)
+method resolve(poem_type: PoemSymbolType, universe: Universe): Type {.locks: "unknown".} = new_symbol_type(poem_type.name)
 
 method resolve(poem_type: PoemNamedType, universe: Universe): Type {.locks: "unknown".} =
   if poem_type.name notin universe.schemas:
@@ -682,7 +680,7 @@ method resolve(poem_type: PoemNamedType, universe: Universe): Type {.locks: "unk
 
   let schema = universe.schemas[poem_type.name]
   let type_arguments = new_immutable_seq(universe.resolve_many(poem_type.type_arguments))
-  types.force_instantiate_schema(schema, type_arguments)
+  force_instantiate_schema(schema, type_arguments)
 
 ########################################################################################################################
 # Value resolution.                                                                                                    #
@@ -694,16 +692,16 @@ method resolve(poem_value: PoemValue, universe: Universe): TaggedValue {.base, l
 proc resolve(universe: Universe, poem_value: PoemValue): TaggedValue =
   poem_value.resolve(universe)
 
-method resolve(poem_value: PoemIntValue, universe: Universe): TaggedValue {.locks: "unknown".} = values.tag_int(poem_value.int)
-method resolve(poem_value: PoemRealValue, universe: Universe): TaggedValue {.locks: "unknown".} = values.new_real_tagged(poem_value.real)
-method resolve(poem_value: PoemBooleanValue, universe: Universe): TaggedValue {.locks: "unknown".} = values.tag_boolean(poem_value.boolean)
-method resolve(poem_value: PoemStringValue, universe: Universe): TaggedValue {.locks: "unknown".} = values.new_string_tagged(poem_value.string)
+method resolve(poem_value: PoemIntValue, universe: Universe): TaggedValue {.locks: "unknown".} = tag_int(poem_value.int)
+method resolve(poem_value: PoemRealValue, universe: Universe): TaggedValue {.locks: "unknown".} = new_real_value_tagged(poem_value.real)
+method resolve(poem_value: PoemBooleanValue, universe: Universe): TaggedValue {.locks: "unknown".} = tag_boolean(poem_value.boolean)
+method resolve(poem_value: PoemStringValue, universe: Universe): TaggedValue {.locks: "unknown".} = new_string_value_tagged(poem_value.string)
 
 method resolve(poem_value: PoemTupleValue, universe: Universe): TaggedValue =
   let tpe = universe.resolve(poem_value.tpe)
   assert(tpe.kind == Kind.Tuple)
   let elements = universe.resolve_many(poem_value.elements)
-  values.new_tuple_tagged(new_immutable_seq(elements), tpe)
+  new_tuple_value_tagged(new_immutable_seq(elements), tpe)
 
 method resolve(poem_value: PoemFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
   quit("Please implement `resolve` for all PoemFunctionValues.")
@@ -712,7 +710,7 @@ method resolve(poem_value: PoemMultiFunctionValue, universe: Universe): TaggedVa
   let tpe = universe.resolve(poem_value.tpe)
   assert(tpe.kind == Kind.Function)
   let mf = universe.multi_functions[poem_value.name]
-  values.tag_reference(values.new_multi_function_value(cast[pointer](mf), tpe))
+  tag_reference(new_multi_function_value(cast[pointer](mf), tpe))
 
 method resolve(poem_value: PoemFixedFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
   quit("Fixed function value resolution is not yet implemented.")
@@ -729,8 +727,8 @@ method resolve(poem_value: PoemLambdaFunctionValue, universe: Universe): TaggedV
   if not function.is_monomorphic:
     quit(fmt"Cannot create a constant lambda function value from function `{mf.name}`, because the function is polymorphic.")
 
-  values.tag_reference(
-    values.new_lambda_function_value(
+  tag_reference(
+    new_lambda_function_value(
       cast[pointer](addr function.monomorphic_instance),
       LambdaContext(empty_immutable_seq[TaggedValue]()),
       tpe,
@@ -741,16 +739,16 @@ method resolve(poem_value: PoemListValue, universe: Universe): TaggedValue {.loc
   let tpe = universe.resolve(poem_value.tpe)
   assert(tpe.kind == Kind.List)
   let elements = universe.resolve_many(poem_value.elements)
-  values.new_list_tagged(new_immutable_seq(elements), tpe)
+  new_list_value_tagged(new_immutable_seq(elements), tpe)
 
 method resolve(poem_value: PoemShapeValue, universe: Universe): TaggedValue {.locks: "unknown".} =
   let tpe = universe.resolve(poem_value.tpe)
   assert(tpe.kind == Kind.Shape)
   let shape_type = cast[ShapeType](tpe)
   let property_values = universe.resolve_many(poem_value.property_values)
-  values.new_shape_value_tagged(shape_type.meta, property_values)
+  new_shape_value_tagged(shape_type.meta, property_values)
 
-method resolve(poem_value: PoemSymbolValue, universe: Universe): TaggedValue {.locks: "unknown".} = values.new_symbol_tagged(poem_value.name)
+method resolve(poem_value: PoemSymbolValue, universe: Universe): TaggedValue {.locks: "unknown".} = new_symbol_value_tagged(poem_value.name)
 
 method resolve(poem_value: PoemStructValue, universe: Universe): TaggedValue {.locks: "unknown".} =
   if poem_value.tpe.name notin universe.schemas:
@@ -759,7 +757,7 @@ method resolve(poem_value: PoemStructValue, universe: Universe): TaggedValue {.l
   let schema = universe.schemas[poem_value.tpe.name]
   let type_arguments = new_immutable_seq(universe.resolve_many(poem_value.tpe.type_arguments))
   let property_values = universe.resolve_many(poem_value.property_values)
-  values.new_struct_value_tagged(schema, type_arguments, property_values)
+  new_struct_value_tagged(schema, type_arguments, property_values)
 
 ########################################################################################################################
 # Helpers.                                                                                                             #

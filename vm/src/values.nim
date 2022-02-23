@@ -2,12 +2,8 @@ import std/strformat, std/strutils
 
 import imseqs
 import property_index
-from types import Kind, MetaShape, Type, FunctionType, ShapeType, Schema, StructSchema, StructType, property_count,
-                  open_property_count, has_open_properties, get_schema
+import types
 from utils import call_if_any_exists
-
-# TODO (vm/schemas): We should be able to just `import types`. I'm currently avoiding this because functions like `list`
-#                    and `map` are named too generally. We should rename these to `new_list_type` and `new_map_type`.
 
 type
   TaggedValue* = distinct uint64
@@ -95,11 +91,11 @@ type
 const
   TagMask: uint64 = 0b111
     ## This mask can filter out the lowest three tag bits of a pointer.
-  TagReference*: uint64 = 0b000
-  TagInt*: uint64 = 0b001
-  TagBoolean*: uint64 = 0b010
-  False*: TaggedValue = TaggedValue(0 or TagBoolean)
-  True*: TaggedValue = TaggedValue((1 shl 3) or TagBoolean)
+  TagReference: uint64 = 0b000
+  TagInt: uint64 = 0b001
+  TagBoolean: uint64 = 0b010
+  False: TaggedValue = TaggedValue(0 or TagBoolean)
+  True: TaggedValue = TaggedValue((1 shl 3) or TagBoolean)
 
 proc `==`(v1: TaggedValue, v2: TaggedValue): bool =
   uint64(v1) == uint64(v2)
@@ -127,14 +123,14 @@ proc untag_int*(value: TaggedValue): int64 = cast[int64](value) shr 3
 proc tag_boolean*(value: bool): TaggedValue = (if value: True else: False)
 proc untag_boolean*(value: TaggedValue): bool = value == True
 
-proc new_real*(value: float64): Value = RealValue(tpe: types.real_type, real: value)
-proc new_real_tagged*(value: float64): TaggedValue = tag_reference(new_real(value))
+proc new_real_value*(value: float64): Value = RealValue(tpe: types.real_type, real: value)
+proc new_real_value_tagged*(value: float64): TaggedValue = tag_reference(new_real_value(value))
 
 ########################################################################################################################
 # Strings.                                                                                                             #
 ########################################################################################################################
 
-proc new_string*(value: string): Value =
+proc new_string_value*(value: string): Value =
   ## Note that the resulting StringValue's `string` will be a shallow copy of `value`. If `value` is subsequently
   ## modified, `string` will change as well. This is a valid optimization because `new_string` will usually be called
   ## with a fresh string value.
@@ -142,31 +138,31 @@ proc new_string*(value: string): Value =
   shallow_copy(string_value.string, value)
   string_value
 
-proc new_string_tagged*(value: string): TaggedValue = tag_reference(new_string(value))
+proc new_string_value_tagged*(value: string): TaggedValue = tag_reference(new_string_value(value))
 
 ########################################################################################################################
 # Tuples.                                                                                                              #
 ########################################################################################################################
 
-let unit*: Value = TupleValue(tpe: types.unit_type, elements: empty_immutable_seq[TaggedValue]())
-let unit_tagged*: TaggedValue = tag_reference(unit)
+let unit_value*: Value = TupleValue(tpe: types.unit_type, elements: empty_immutable_seq[TaggedValue]())
+let unit_value_tagged*: TaggedValue = tag_reference(unit_value)
 
-proc new_tuple*(elements: ImSeq[TaggedValue], tpe: Type): Value =
+proc new_tuple_value*(elements: ImSeq[TaggedValue], tpe: Type): Value =
   ## Creates a new tuple, forcing its type to be `tpe` instead of taking the type from the elements.
   if elements.len == 0:
-    return unit
+    return unit_value
   TupleValue(tpe: tpe, elements: elements)
 
-proc new_tuple_tagged*(elements: ImSeq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_tuple(elements, tpe))
+proc new_tuple_value_tagged*(elements: ImSeq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_tuple_value(elements, tpe))
 
-proc new_tuple*(elements: ImSeq[TaggedValue]): Value =
+proc new_tuple_value*(elements: ImSeq[TaggedValue]): Value =
   let length = elements.len
   var element_types = new_immutable_seq[Type](length)
   for i in 0 ..< length:
     element_types[i] = get_type(elements[i])
-  new_tuple(elements, types.tpl(element_types))
+  new_tuple_value(elements, types.new_tuple_type(element_types))
 
-proc new_tuple_tagged*(elements: ImSeq[TaggedValue]): TaggedValue = tag_reference(new_tuple(elements))
+proc new_tuple_value_tagged*(elements: ImSeq[TaggedValue]): TaggedValue = tag_reference(new_tuple_value(elements))
 
 ########################################################################################################################
 # Functions.                                                                                                           #
@@ -194,9 +190,9 @@ proc `[]`*(context: LambdaContext, index: uint): TaggedValue {.borrow.}
 # Lists.                                                                                                               #
 ########################################################################################################################
 
-proc new_list*(elements: ImSeq[TaggedValue], tpe: Type): Value = ListValue(tpe: tpe, elements: elements)
+proc new_list_value*(elements: ImSeq[TaggedValue], tpe: Type): Value = ListValue(tpe: tpe, elements: elements)
 
-proc new_list_tagged*(elements: ImSeq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_list(elements, tpe))
+proc new_list_value_tagged*(elements: ImSeq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_list_value(elements, tpe))
 
 ########################################################################################################################
 # Shapes.                                                                                                              #
@@ -248,9 +244,9 @@ let empty_shape*: TaggedValue = new_shape_value_tagged(empty_meta_shape, [])
 # Symbols.                                                                                                             #
 ########################################################################################################################
 
-proc new_symbol*(name: string): Value = SymbolValue(tpe: types.symbol(name), name: name)
+proc new_symbol_value*(name: string): Value = SymbolValue(tpe: types.new_symbol_type(name), name: name)
 
-proc new_symbol_tagged*(name: string): TaggedValue = tag_reference(new_symbol(name))
+proc new_symbol_value_tagged*(name: string): TaggedValue = tag_reference(new_symbol_value(name))
 
 ########################################################################################################################
 # Structs.                                                                                                             #

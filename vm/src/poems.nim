@@ -5,7 +5,7 @@ from std/sequtils import deduplicate
 import std/strformat
 
 from definitions import Function
-from types import Kind, Type, Variance
+import types
 from values import FunctionValueVariant
 
 type
@@ -356,123 +356,123 @@ type
     tpe*: PoemNamedType
     property_values*: seq[PoemValue]
 
-let any_type*: PoemType = PoemBasicType(tpe: types.any_type)
-let nothing_type*: PoemType = PoemBasicType(tpe: types.nothing_type)
-let int_type*: PoemType = PoemBasicType(tpe: types.int_type)
-let real_type*: PoemType = PoemBasicType(tpe: types.real_type)
-let boolean_type*: PoemType = PoemBasicType(tpe: types.boolean_type)
-let string_type*: PoemType = PoemBasicType(tpe: types.string_type)
-let unit_type*: PoemType = PoemXaryType(kind: Kind.Tuple, types: @[])
+let poem_any_type*: PoemType = PoemBasicType(tpe: any_type)
+let poem_nothing_type*: PoemType = PoemBasicType(tpe: nothing_type)
+let poem_int_type*: PoemType = PoemBasicType(tpe: int_type)
+let poem_real_type*: PoemType = PoemBasicType(tpe: real_type)
+let poem_boolean_type*: PoemType = PoemBasicType(tpe: boolean_type)
+let poem_string_type*: PoemType = PoemBasicType(tpe: string_type)
+let poem_unit_type*: PoemType = PoemXaryType(kind: Kind.Tuple, types: @[])
 
-proc struct_property*(name: string, tpe: PoemType, is_open: bool): PoemStructProperty = PoemStructProperty(name: name, tpe: tpe, is_open: is_open)
+proc poem_struct_property*(name: string, tpe: PoemType, is_open: bool): PoemStructProperty = PoemStructProperty(name: name, tpe: tpe, is_open: is_open)
 
-proc type_parameter*(name: string, lower_bound: PoemType, upper_bound: PoemType, variance: Variance): PoemTypeParameter =
+proc poem_type_parameter*(name: string, lower_bound: PoemType, upper_bound: PoemType, variance: Variance): PoemTypeParameter =
   PoemTypeParameter(name: name, lower_bound: lower_bound, upper_bound: upper_bound, variance: variance)
-proc type_parameter_upper*(name: string, upper_bound: PoemType): PoemTypeParameter = type_parameter(name, nothing_type, upper_bound, Variance.Invariant)
-proc type_parameter_lower*(name: string, lower_bound: PoemType): PoemTypeParameter = type_parameter(name, lower_bound, any_type, Variance.Invariant)
-proc type_parameter*(name: string): PoemTypeParameter = type_parameter_lower(name, nothing_type)
+proc poem_type_parameter_upper*(name: string, upper_bound: PoemType): PoemTypeParameter = poem_type_parameter(name, poem_nothing_type, upper_bound, Variance.Invariant)
+proc poem_type_parameter_lower*(name: string, lower_bound: PoemType): PoemTypeParameter = poem_type_parameter(name, lower_bound, poem_any_type, Variance.Invariant)
+proc poem_type_parameter*(name: string): PoemTypeParameter = poem_type_parameter_lower(name, poem_nothing_type)
 
-proc type_parameter_upper*(name: string, upper_bound: PoemType, variance: Variance): PoemTypeParameter =
-  type_parameter(name, nothing_type, upper_bound, variance)
-proc type_parameter_lower*(name: string, lower_bound: PoemType, variance: Variance): PoemTypeParameter =
-  type_parameter(name, lower_bound, any_type, variance)
-proc type_parameter*(name: string, variance: Variance): PoemTypeParameter =
-  type_parameter_lower(name, nothing_type, variance)
+proc poem_type_parameter_upper*(name: string, upper_bound: PoemType, variance: Variance): PoemTypeParameter =
+  poem_type_parameter(name, poem_nothing_type, upper_bound, variance)
+proc poem_type_parameter_lower*(name: string, lower_bound: PoemType, variance: Variance): PoemTypeParameter =
+  poem_type_parameter(name, lower_bound, poem_any_type, variance)
+proc poem_type_parameter*(name: string, variance: Variance): PoemTypeParameter =
+  poem_type_parameter_lower(name, poem_nothing_type, variance)
 
-proc int_value*(value: int64): PoemValue = PoemIntValue(int: value)
-proc real_value*(value: float64): PoemValue = PoemRealValue(real: value)
-proc boolean_value(value: bool): PoemValue = PoemBooleanValue(boolean: value)
-proc string_value*(value: string): PoemValue = PoemStringValue(string: value)
+proc poem_int_value*(value: int64): PoemValue = PoemIntValue(int: value)
+proc poem_real_value*(value: float64): PoemValue = PoemRealValue(real: value)
+proc poem_boolean_value(value: bool): PoemValue = PoemBooleanValue(boolean: value)
+proc poem_string_value*(value: string): PoemValue = PoemStringValue(string: value)
 
-proc type_variable*(index: uint8): PoemType = PoemTypeVariable(index: index)
+proc poem_type_variable*(index: uint8): PoemType = PoemTypeVariable(index: index)
 
-proc sum_type*(types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.Sum, types: @types)
+proc poem_sum_type*(types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.Sum, types: @types)
 
-proc tuple_type*(types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.Tuple, types: @types)
-proc tuple_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemTupleValue(tpe: tpe, elements: elements)
+proc poem_tuple_type*(types: open_array[PoemType]): PoemType = PoemXaryType(kind: Kind.Tuple, types: @types)
+proc poem_tuple_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemTupleValue(tpe: tpe, elements: elements)
 
-proc function_type*(input: PoemType, output: PoemType): PoemType = PoemXaryType(kind: Kind.Function, types: @[input, output])
-proc multi_function_value*(name: string, tpe: PoemType): PoemValue = PoemMultiFunctionValue(name: name, tpe: tpe)
-proc fixed_function_value*(name: string, input_type: PoemType, tpe: PoemType): PoemValue = PoemFixedFunctionValue(name: name, input_type: input_type, tpe: tpe)
-proc lambda_function_value*(name: string, tpe: PoemType): PoemValue = PoemLambdaFunctionValue(name: name, tpe: tpe)
+proc poem_function_type*(input: PoemType, output: PoemType): PoemType = PoemXaryType(kind: Kind.Function, types: @[input, output])
+proc poem_multi_function_value*(name: string, tpe: PoemType): PoemValue = PoemMultiFunctionValue(name: name, tpe: tpe)
+proc poem_fixed_function_value*(name: string, input_type: PoemType, tpe: PoemType): PoemValue = PoemFixedFunctionValue(name: name, input_type: input_type, tpe: tpe)
+proc poem_lambda_function_value*(name: string, tpe: PoemType): PoemValue = PoemLambdaFunctionValue(name: name, tpe: tpe)
 
-proc list_type*(element_type: PoemType): PoemType = PoemXaryType(kind: Kind.List, types: @[element_type])
-proc list_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemListValue(tpe: tpe, elements: elements)
+proc poem_list_type*(element_type: PoemType): PoemType = PoemXaryType(kind: Kind.List, types: @[element_type])
+proc poem_list_value*(elements: seq[PoemValue], tpe: PoemType): PoemValue = PoemListValue(tpe: tpe, elements: elements)
 
-proc shape_type_concrete*(property_names: seq[string], property_types: seq[PoemType]): PoemShapeType = PoemShapeType(property_names: property_names, property_types: property_types)
-proc shape_type*(property_names: seq[string], property_types: seq[PoemType]): PoemType = shape_type_concrete(property_names, property_types)
-proc shape_value*(tpe: PoemShapeType, property_values: seq[PoemValue]): PoemValue = PoemShapeValue(tpe: tpe, property_values: property_values)
-proc shape_value_cast_type*(tpe: PoemType, property_values: seq[PoemValue]): PoemValue = PoemShapeValue(tpe: cast[PoemShapeType](tpe), property_values: property_values)
-proc shape_value*(property_names: seq[string], property_types: seq[PoemType], property_values: seq[PoemValue]): PoemValue =
-  shape_value(shape_type_concrete(property_names, property_types), property_values)
+proc poem_shape_type_concrete*(property_names: seq[string], property_types: seq[PoemType]): PoemShapeType = PoemShapeType(property_names: property_names, property_types: property_types)
+proc poem_shape_type*(property_names: seq[string], property_types: seq[PoemType]): PoemType = poem_shape_type_concrete(property_names, property_types)
+proc poem_shape_value*(tpe: PoemShapeType, property_values: seq[PoemValue]): PoemValue = PoemShapeValue(tpe: tpe, property_values: property_values)
+proc poem_shape_value_cast_type*(tpe: PoemType, property_values: seq[PoemValue]): PoemValue = PoemShapeValue(tpe: cast[PoemShapeType](tpe), property_values: property_values)
+proc poem_shape_value*(property_names: seq[string], property_types: seq[PoemType], property_values: seq[PoemValue]): PoemValue =
+  poem_shape_value(poem_shape_type_concrete(property_names, property_types), property_values)
 
-let empty_shape_type*: PoemShapeType = shape_type_concrete(@[], @[])
+let poem_empty_shape_type*: PoemShapeType = poem_shape_type_concrete(@[], @[])
 
-proc symbol_type*(name: string): PoemType = PoemSymbolType(name: name)
-proc symbol_value*(name: string): PoemValue = PoemSymbolValue(name: name)
+proc poem_symbol_type*(name: string): PoemType = PoemSymbolType(name: name)
+proc poem_symbol_value*(name: string): PoemValue = PoemSymbolValue(name: name)
 
-proc named_type_concrete*(name: string, type_arguments: seq[PoemType]): PoemNamedType = PoemNamedType(name: name, type_arguments: type_arguments)
-proc named_type_concrete*(name: string): PoemNamedType = named_type_concrete(name, @[])
+proc poem_named_type_concrete*(name: string, type_arguments: seq[PoemType]): PoemNamedType = PoemNamedType(name: name, type_arguments: type_arguments)
+proc poem_named_type_concrete*(name: string): PoemNamedType = poem_named_type_concrete(name, @[])
 
-proc named_type*(name: string, type_arguments: seq[PoemType]): PoemType = named_type_concrete(name, type_arguments)
-proc named_type*(name: string): PoemType = named_type(name, @[])
+proc poem_named_type*(name: string, type_arguments: seq[PoemType]): PoemType = poem_named_type_concrete(name, type_arguments)
+proc poem_named_type*(name: string): PoemType = poem_named_type(name, @[])
 
-proc struct_value*(tpe: PoemNamedType, property_values: seq[PoemValue]): PoemValue =
+proc poem_struct_value*(tpe: PoemNamedType, property_values: seq[PoemValue]): PoemValue =
   PoemStructValue(tpe: tpe, property_values: property_values)
 
-proc struct_value*(name: string, type_arguments: seq[PoemType], property_values: seq[PoemValue]): PoemValue =
-  let poem_type = named_type_concrete(name, type_arguments)
-  struct_value(poem_type, property_values)
+proc poem_struct_value*(name: string, type_arguments: seq[PoemType], property_values: seq[PoemValue]): PoemValue =
+  let poem_type = poem_named_type_concrete(name, type_arguments)
+  poem_struct_value(poem_type, property_values)
 
-proc inst*(operation: PoemOperation, arguments: varargs[uint16]): PoemInstruction =
+proc poem_inst*(operation: PoemOperation, arguments: varargs[uint16]): PoemInstruction =
   PoemSimpleInstruction(operation: operation, arguments: @arguments)
 
-proc inst_tuple*(target: uint16, arguments: varargs[uint16]): PoemInstruction =
+proc poem_inst_tuple*(target: uint16, arguments: varargs[uint16]): PoemInstruction =
   PoemInstructionTuple(target_reg: target, arguments: @arguments)
 
-proc inst_function_call*(target: uint16, function: uint16, arguments: varargs[uint16]): PoemInstruction =
+proc poem_inst_function_call*(target: uint16, function: uint16, arguments: varargs[uint16]): PoemInstruction =
   PoemInstructionFunctionCall(target_reg: target, function_reg: function, arguments: @arguments)
 
-proc inst_lambda*(target: uint16, mf: uint16, tpe: uint16, captured_registers: varargs[uint16]): PoemInstruction =
+proc poem_inst_lambda*(target: uint16, mf: uint16, tpe: uint16, captured_registers: varargs[uint16]): PoemInstruction =
   PoemInstructionLambda(target_reg: target, mf: mf, tpe: tpe, captured_registers: @captured_registers)
 
-proc inst_list*(target: uint16, tpe: uint16, elements: varargs[uint16]): PoemInstruction =
+proc poem_inst_list*(target: uint16, tpe: uint16, elements: varargs[uint16]): PoemInstruction =
   PoemInstructionList(target_reg: target, tpe: tpe, elements: @elements)
 
-proc inst_list_append*(target: uint16, list: uint16, element: uint16, tpe: uint16): PoemInstruction =
+proc poem_inst_list_append*(target: uint16, list: uint16, element: uint16, tpe: uint16): PoemInstruction =
   PoemInstructionListAppend(target_reg: target, list_reg: list, element_reg: element, tpe: tpe)
 
-proc inst_shape*(target: uint16, meta_shape: uint16, arguments: varargs[uint16]): PoemInstruction =
+proc poem_inst_shape*(target: uint16, meta_shape: uint16, arguments: varargs[uint16]): PoemInstruction =
   PoemInstructionShape(target_reg: target, meta_shape: meta_shape, arguments: @arguments)
 
-proc inst_struct*(target: uint16, schema: uint16, type_arguments: open_array[uint16], value_arguments: open_array[uint16]): PoemInstruction =
+proc poem_inst_struct*(target: uint16, schema: uint16, type_arguments: open_array[uint16], value_arguments: open_array[uint16]): PoemInstruction =
   PoemInstructionStruct(target_reg: target, schema: schema, type_arguments: @type_arguments, value_arguments: @value_arguments)
 
-proc inst_any_property_get*(target: uint16, instance: uint16, name: uint16): PoemInstruction =
+proc poem_inst_any_property_get*(target: uint16, instance: uint16, name: uint16): PoemInstruction =
   PoemInstructionPropertyGet(target_reg: target, instance_kind: PropertyGetInstanceKind.Any, instance_reg: instance, name: name)
 
-proc inst_shape_property_get*(target: uint16, instance: uint16, name: uint16): PoemInstruction =
+proc poem_inst_shape_property_get*(target: uint16, instance: uint16, name: uint16): PoemInstruction =
   PoemInstructionPropertyGet(target_reg: target, instance_kind: PropertyGetInstanceKind.Shape, instance_reg: instance, name: name)
 
-proc inst_trait_property_get*(target: uint16, instance: uint16, name: uint16): PoemInstruction =
+proc poem_inst_trait_property_get*(target: uint16, instance: uint16, name: uint16): PoemInstruction =
   PoemInstructionPropertyGet(target_reg: target, instance_kind: PropertyGetInstanceKind.Trait, instance_reg: instance, name: name)
 
-proc inst_struct_property_get*(target: uint16, instance: uint16, schema: uint16, name: uint16): PoemInstruction =
+proc poem_inst_struct_property_get*(target: uint16, instance: uint16, schema: uint16, name: uint16): PoemInstruction =
   PoemInstructionPropertyGet(target_reg: target, instance_kind: PropertyGetInstanceKind.Struct, instance_schema: schema, instance_reg: instance, name: name)
 
-proc inst_intrinsic*(target: uint16, intrinsic: uint16, arguments: varargs[uint16]): PoemInstruction =
+proc poem_inst_intrinsic*(target: uint16, intrinsic: uint16, arguments: varargs[uint16]): PoemInstruction =
   PoemInstructionIntrinsic(target_reg: target, intrinsic: intrinsic, arguments: @arguments)
 
-proc inst_intrinsic_void*(intrinsic: uint16, arguments: varargs[uint16]): PoemInstruction =
+proc poem_inst_intrinsic_void*(intrinsic: uint16, arguments: varargs[uint16]): PoemInstruction =
   PoemInstructionIntrinsicVoid(intrinsic: intrinsic, arguments: @arguments)
 
-proc inst_global_get*(target: uint16, global: uint16): PoemInstruction =
+proc poem_inst_global_get*(target: uint16, global: uint16): PoemInstruction =
   PoemInstructionGlobalGet(target_reg: target, global: global)
 
-proc inst_dispatch*(target: uint16, mf: uint16, arguments: varargs[uint16]): PoemInstruction =
+proc poem_inst_dispatch*(target: uint16, mf: uint16, arguments: varargs[uint16]): PoemInstruction =
   PoemInstructionDispatch(target_reg: target, mf: mf, arguments: @arguments)
 
-proc inst_return*(value: uint16): PoemInstruction =
+proc poem_inst_return*(value: uint16): PoemInstruction =
   PoemInstructionReturn(value_reg: value)
 
 const
@@ -564,7 +564,7 @@ method write(global_variable: PoemGlobalVariable, stream: FileStream) {.base, lo
 method write(tpe: PoemType, stream: FileStream) {.base, locks: "unknown".}
 method write(value: PoemValue, stream: FileStream) {.base, locks: "unknown".}
 
-proc read*(path: string): Poem =
+proc read_poem*(path: string): Poem =
   if unlikely(not file_exists(path)):
     fail(fmt"""Poem file "{path}" does not exist.""")
 
@@ -587,7 +587,7 @@ proc read*(path: string): Poem =
     functions: functions,
   )
 
-proc write*(path: string, poem: Poem) =
+proc write_poem*(path: string, poem: Poem) =
   let stream = new_file_stream(path, big_endian, fmWrite)
   defer: stream.close()
 
@@ -1021,8 +1021,8 @@ proc write_shape_property_names(stream: FileStream, property_names: seq[string],
 ########################################################################################################################
 
 proc ensure_type_parameter_count(type_parameter_count: int) =
-  if type_parameter_count > types.max_type_parameters:
-    fail(fmt"A schema or function has {type_parameter_count} type parameters, but the maximum is {types.max_type_parameters}.")
+  if type_parameter_count > max_type_parameters:
+    fail(fmt"A schema or function has {type_parameter_count} type parameters, but the maximum is {max_type_parameters}.")
 
 proc read_type_parameter(stream: FileStream): PoemTypeParameter =
   let name = stream.read_string_with_length()
@@ -1068,22 +1068,22 @@ proc read_type(stream: FileStream): PoemType =
   case kind
   of tkMetadataKinded:
     case metadata
-    of mkAny: PoemBasicType(tpe: types.any_type)
-    of mkNothing: PoemBasicType(tpe: types.nothing_type)
-    of mkInt: PoemBasicType(tpe: types.int_type)
-    of mkReal: PoemBasicType(tpe: types.real_type)
-    of mkBoolean: PoemBasicType(tpe: types.boolean_type)
-    of mkString: PoemBasicType(tpe: types.string_type)
+    of mkAny: poem_any_type
+    of mkNothing: poem_nothing_type
+    of mkInt: poem_int_type
+    of mkReal: poem_real_type
+    of mkBoolean: poem_boolean_type
+    of mkString: poem_string_type
     of mkVariable:
       let index = stream.read(uint8)
-      PoemTypeVariable(index: index)
+      poem_type_variable(index)
     of mkFunction:
       let input = stream.read_type()
       let output = stream.read_type()
-      PoemXaryType(kind: Kind.Function, types: @[input, output])
+      poem_function_type(input, output)
     of mkList:
       let element = stream.read_type()
-      PoemXaryType(kind: Kind.List, types: @[element])
+      poem_list_type(element)
     of mkMap:
       let key = stream.read_type()
       let value = stream.read_type()
@@ -1092,10 +1092,10 @@ proc read_type(stream: FileStream): PoemType =
       let property_count = stream.read(uint8)
       let property_names = stream.read_many(string, property_count, read_string_with_length)
       let property_types = stream.read_many(PoemType, property_count, read_type)
-      PoemShapeType(property_names: property_names, property_types: property_types)
+      poem_shape_type(property_names, property_types)
     of mkSymbol:
       let name = stream.read_string_with_length()
-      PoemSymbolType(name: name)
+      poem_symbol_type(name)
     else: raise new_exception(IOError, fmt"Unknown metadata-kinded type {metadata}.")
 
   of tkSum: stream.read_xary_type(Kind.Sum, metadata)
@@ -1192,50 +1192,50 @@ proc read_value(stream: FileStream): PoemValue =
     case cast[PoemBasicType](tpe).tpe.kind
     of Kind.Int:
       let value = stream.read(int64)
-      int_value(value)
+      poem_int_value(value)
     of Kind.Real:
       let value = stream.read(float64)
-      real_value(value)
+      poem_real_value(value)
     of Kind.Boolean:
       let value = stream.read(bool)
-      boolean_value(value)
+      poem_boolean_value(value)
     of Kind.String:
       let value = stream.read_string_with_length()
-      string_value(value)
+      poem_string_value(value)
     else: fail("Invalid kind for basic type value.")
   elif tpe of PoemXaryType:
     let xary = cast[PoemXaryType](tpe)
     case xary.kind
     of Kind.Tuple:
       let elements = stream.read_many(PoemValue, cast[uint](xary.types.len), read_value)
-      tuple_value(elements, tpe)
+      poem_tuple_value(elements, tpe)
     of Kind.Function:
       let variant = cast[FunctionValueVariant](stream.read(uint8))
       let name = stream.read_string_with_length()
       case variant
       of FunctionValueVariant.Multi:
-        multi_function_value(name, tpe)
+        poem_multi_function_value(name, tpe)
       of FunctionValueVariant.Fixed:
         let input_type = stream.read_type()
-        fixed_function_value(name, input_type, tpe)
+        poem_fixed_function_value(name, input_type, tpe)
       of FunctionValueVariant.Lambda:
-        lambda_function_value(name, tpe)
+        poem_lambda_function_value(name, tpe)
     of Kind.List:
       let elements = stream.read_many_with_count(PoemValue, uint16, read_value)
-      list_value(elements, tpe)
+      poem_list_value(elements, tpe)
     else:
       fail("Only tuple, function, and list values are supported for now.")
   elif tpe of PoemShapeType:
     let shape_type = cast[PoemShapeType](tpe)
     let property_values = stream.read_many(PoemValue, uint(shape_type.property_names.len), read_value)
-    shape_value(shape_type, property_values)
+    poem_shape_value(shape_type, property_values)
   elif tpe of PoemSymbolType:
     let symbol_type = cast[PoemSymbolType](tpe)
-    symbol_value(symbol_type.name)
+    poem_symbol_value(symbol_type.name)
   elif tpe of PoemNamedType:
     let named_type = cast[PoemNamedType](tpe)
     let property_values = stream.read_many_with_count(PoemValue, uint16, read_value)
-    struct_value(named_type, property_values)
+    poem_struct_value(named_type, property_values)
   else:
     fail(fmt"Unknown poem type.")
 
@@ -1246,19 +1246,19 @@ method write(value: PoemValue, stream: FileStream) {.base, locks: "unknown".} =
   quit("Please implement `write` for all PoemValues")
 
 method write(value: PoemIntValue, stream: FileStream) {.locks: "unknown".} =
-  stream.write_type(int_type)
+  stream.write_type(poem_int_type)
   stream.write(value.int)
 
 method write(value: PoemRealValue, stream: FileStream) {.locks: "unknown".} =
-  stream.write_type(real_type)
+  stream.write_type(poem_real_type)
   stream.write(value.real)
 
 method write(value: PoemBooleanValue, stream: FileStream) {.locks: "unknown".} =
-  stream.write_type(boolean_type)
+  stream.write_type(poem_boolean_type)
   stream.write(value.boolean)
 
 method write(value: PoemStringValue, stream: FileStream) {.locks: "unknown".} =
-  stream.write_type(string_type)
+  stream.write_type(poem_string_type)
   stream.write_string_with_length(value.string)
 
 method write(value: PoemTupleValue, stream: FileStream) {.locks: "unknown".} =
@@ -1292,7 +1292,7 @@ method write(value: PoemShapeValue, stream: FileStream) {.locks: "unknown".} =
   stream.write_many(value.property_values, write_value)
 
 method write(value: PoemSymbolValue, stream: FileStream) {.locks: "unknown".} =
-  stream.write_type(symbol_type(value.name))
+  stream.write_type(poem_symbol_type(value.name))
 
 method write(value: PoemStructValue, stream: FileStream) {.locks: "unknown".} =
   stream.write_type(value.tpe)

@@ -1,14 +1,14 @@
-from "../poems" import Poem, PoemConstants, PoemFunction, PoemOperation
+import "../poems"
 
 let empty = PoemFunction(
   name: "empty",
-  input_type: poems.unit_type,
-  output_type: poems.unit_type,
+  input_type: poem_unit_type,
+  output_type: poem_unit_type,
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    poems.inst_tuple(0),
-    poems.inst_return(0),
+    poem_inst_tuple(0),
+    poem_inst_return(0),
   ],
 )
 

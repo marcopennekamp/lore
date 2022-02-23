@@ -189,7 +189,7 @@ proc fits_poly1*(ts1: open_array[Type], ts2: open_array[Type], parameters: ImSeq
 
 proc substitute*(tpe: Type, type_arguments: open_array[Type]): Type
 proc substitute*(tpe: Type, type_arguments: ImSeq[Type]): Type
-proc flipped*(substitution_mode: SubstitutionMode): SubstitutionMode
+proc flipped(substitution_mode: SubstitutionMode): SubstitutionMode
 
 proc is_polymorphic*(tpe: Type): bool
 
@@ -214,29 +214,29 @@ let
   string_type* = Type(kind: String)
   unit_type* = TupleType(kind: Kind.Tuple, elements: empty_immutable_seq[Type]())
 
-proc variable*(index: uint8): TypeVariable = TypeVariable(index: index, parameter: nil)
-proc sum*(parts: ImSeq[Type]): SumType = SumType(kind: Kind.Sum, parts: parts)
-proc sum*(parts: open_array[Type]): SumType = sum(new_immutable_seq(parts))
-proc intersection*(parts: ImSeq[Type]): IntersectionType = IntersectionType(kind: Kind.Intersection, parts: parts)
-proc intersection*(parts: open_array[Type]): IntersectionType = intersection(new_immutable_seq(parts))
-proc tpl*(elements: ImSeq[Type]): TupleType = TupleType(kind: Kind.Tuple, elements: elements)
-proc tpl*(elements: open_array[Type]): TupleType = tpl(new_immutable_seq(elements))
-proc function*(input: TupleType, output: Type): FunctionType = FunctionType(kind: Kind.Function, input: input, output: output)
-proc function_unsafe(input: Type, output: Type): FunctionType =
+proc new_type_variable*(index: uint8): TypeVariable = TypeVariable(index: index, parameter: nil)
+proc new_sum_type*(parts: ImSeq[Type]): SumType = SumType(kind: Kind.Sum, parts: parts)
+proc new_sum_type*(parts: open_array[Type]): SumType = new_sum_type(new_immutable_seq(parts))
+proc new_intersection_type*(parts: ImSeq[Type]): IntersectionType = IntersectionType(kind: Kind.Intersection, parts: parts)
+proc new_intersection_type*(parts: open_array[Type]): IntersectionType = new_intersection_type(new_immutable_seq(parts))
+proc new_tuple_type*(elements: ImSeq[Type]): TupleType = TupleType(kind: Kind.Tuple, elements: elements)
+proc new_tuple_type*(elements: open_array[Type]): TupleType = new_tuple_type(new_immutable_seq(elements))
+proc new_function_type*(input: TupleType, output: Type): FunctionType = FunctionType(kind: Kind.Function, input: input, output: output)
+proc new_function_type_unsafe(input: Type, output: Type): FunctionType =
   assert(input.kind == Kind.Tuple)
   FunctionType(kind: Kind.Function, input: cast[TupleType](input), output: output)
-proc list*(element: Type): ListType = ListType(kind: Kind.List, element: element)
-proc map*(key: Type, value: Type): MapType = MapType(kind: Kind.Map, key: key, value: value)
+proc new_list_type*(element: Type): ListType = ListType(kind: Kind.List, element: element)
+proc new_map_type*(key: Type, value: Type): MapType = MapType(kind: Kind.Map, key: key, value: value)
 
 # TODO (vm): Intern symbol types.
-proc symbol*(name: string): SymbolType = SymbolType(kind: Kind.Symbol, name: name)
+proc new_symbol_type*(name: string): SymbolType = SymbolType(kind: Kind.Symbol, name: name)
 
 # These functions are workarounds when creating arrays of types.
-proc sum_as_type*(parts: open_array[Type]): Type = sum(parts)
-proc intersection_as_type*(parts: open_array[Type]): Type = intersection(parts)
-proc tpl_as_type*(elements: open_array[Type]): Type = tpl(elements)
-proc function_as_type*(input: TupleType, output: Type): Type = function(input, output)
-proc list_as_type*(element: Type): Type = list(element)
+proc sum_as_type*(parts: open_array[Type]): Type = new_sum_type(parts)
+proc intersection_as_type*(parts: open_array[Type]): Type = new_intersection_type(parts)
+proc tuple_as_type*(elements: open_array[Type]): Type = new_tuple_type(elements)
+proc function_as_type*(input: TupleType, output: Type): Type = new_function_type(input, output)
+proc list_as_type*(element: Type): Type = new_list_type(element)
 
 ########################################################################################################################
 # Type parameters.                                                                                               #
@@ -1536,7 +1536,7 @@ proc simplify_tuples(
       element_parts[j] = types[j].elements[i]
     elements[i] = simplify_construct_covariant(kind, to_open_array(element_parts))
 
-  results.add(tpl(elements))
+  results.add(new_tuple_type(elements))
 
 proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
   ## Simplifies `parts` as if they were contained in a sum or intersection type, determined by `kind`. This operation
@@ -1621,7 +1621,7 @@ proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
     let input = cast[TupleType](simplify_construct_contravariant(kind, to_open_array(input_parts)))
     assert(input.kind == Kind.Tuple)
     let output = simplify_construct_covariant(kind, to_open_array(output_parts))
-    results.add(function(input, output))
+    results.add(new_function_type(input, output))
 
   # [A] | [B] :=: [A | B]
   # [A] & [B] :=: [A & B]
@@ -1632,7 +1632,7 @@ proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
       element_parts[i] = lists[i].element
 
     let element = simplify_construct_covariant(kind, to_open_array(element_parts))
-    results.add(list(element))
+    results.add(new_list_type(element))
 
   # { name: A } & { name: B } & { health: Int } :=: { name: A & B, health: Int }
   if shapes.len > 0:
@@ -1718,8 +1718,8 @@ proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
   for i in 0 ..< relevants.len:
     result_parts[i] = relevants[i]
 
-  if kind == Kind.Sum: sum(result_parts)
-  elif kind == Kind.Intersection: intersection(result_parts)
+  if kind == Kind.Sum: new_sum_type(result_parts)
+  elif kind == Kind.Intersection: new_intersection_type(result_parts)
   else: quit(fmt"Invalid kind {kind} for simplification.")
 
 proc sum_simplified*(parts: open_array[Type]): Type =
@@ -1802,17 +1802,17 @@ proc substitute_optimized(tpe: Type, type_arguments: open_array[Type]): Type =
 
   of Kind.Sum: substitute_xary_and_construct(cast[SumType](tpe).parts, type_arguments, sum_simplified)
   of Kind.Intersection: substitute_xary_and_construct(cast[IntersectionType](tpe).parts, type_arguments, intersection_simplified)
-  of Kind.Tuple: substitute_xary_and_construct(cast[TupleType](tpe).elements, type_arguments, tpl)
+  of Kind.Tuple: substitute_xary_and_construct(cast[TupleType](tpe).elements, type_arguments, new_tuple_type)
 
   of Kind.Function:
     let tpe = cast[FunctionType](tpe)
-    substitute_binary_and_construct(tpe.input, tpe.output, type_arguments, function_unsafe)
+    substitute_binary_and_construct(tpe.input, tpe.output, type_arguments, new_function_type_unsafe)
 
-  of Kind.List: substitute_unary_and_construct(cast[ListType](tpe).element, type_arguments, list)
+  of Kind.List: substitute_unary_and_construct(cast[ListType](tpe).element, type_arguments, new_list_type)
 
   of Kind.Map:
     let tpe = cast[MapType](tpe)
-    substitute_binary_and_construct(tpe.key, tpe.value, type_arguments, map)
+    substitute_binary_and_construct(tpe.key, tpe.value, type_arguments, new_map_type)
 
   of Kind.Shape:
     let tpe = cast[ShapeType](tpe)
@@ -1846,7 +1846,7 @@ proc substitute_multiple_optimized(types: ImSeq[Type], type_arguments: open_arra
 
   result_types
 
-proc flipped*(substitution_mode: SubstitutionMode): SubstitutionMode =
+proc flipped(substitution_mode: SubstitutionMode): SubstitutionMode =
   case substitution_mode
   of SubstitutionMode.None: SubstitutionMode.None
   of SubstitutionMode.T1: SubstitutionMode.T2
@@ -1918,9 +1918,9 @@ proc stringify_open_properties(tpe: DeclaredType): string =
 when is_main_module:
   from utils import benchmark
 
-  let sum1 = sum([string_type, int_type, boolean_type])
-  let sum2 = sum([string_type, int_type, boolean_type])
-  let sum3 = sum([real_type, boolean_type])
+  let sum1 = new_sum_type([string_type, int_type, boolean_type])
+  let sum2 = new_sum_type([string_type, int_type, boolean_type])
+  let sum3 = new_sum_type([real_type, boolean_type])
 
   echo are_equal(sum1, sum1)
   benchmark("sum1 == sum1", 100_000_000):
@@ -1934,16 +1934,16 @@ when is_main_module:
   benchmark("sum1 == sum3", 100_000_000):
     discard are_equal(sum1, sum3)
 
-  let tuple1 = tpl([
-    sum([string_type, int_type, boolean_type]),
-    intersection([string_type, int_type, boolean_type]),
-    list(map(string_type, int_type)),
+  let tuple1 = new_tuple_type([
+    new_sum_type([string_type, int_type, boolean_type]),
+    new_intersection_type([string_type, int_type, boolean_type]),
+    new_list_type(new_map_type(string_type, int_type)),
   ])
 
-  let tuple2 = tpl([
-    sum([string_type, int_type, boolean_type]),
-    intersection([string_type, int_type, boolean_type]),
-    list(map(string_type, int_type)),
+  let tuple2 = new_tuple_type([
+    new_sum_type([string_type, int_type, boolean_type]),
+    new_intersection_type([string_type, int_type, boolean_type]),
+    new_list_type(new_map_type(string_type, int_type)),
   ])
 
   echo are_equal(tuple1, tuple2)
@@ -1951,35 +1951,35 @@ when is_main_module:
     discard are_equal(tuple1, tuple2)
 
   benchmark("tuple1 == tuple2 (+creation)", 10_000_000):
-    let tuple1 = tpl([
-      sum([string_type, int_type, boolean_type]),
-      intersection([string_type, int_type, boolean_type]),
-      list(map(string_type, int_type)),
+    let tuple1 = new_tuple_type([
+      new_sum_type([string_type, int_type, boolean_type]),
+      new_intersection_type([string_type, int_type, boolean_type]),
+      new_list_type(new_map_type(string_type, int_type)),
     ])
 
-    let tuple2 = tpl([
-      sum([string_type, int_type, boolean_type]),
-      intersection([string_type, int_type, boolean_type]),
-      list(map(string_type, int_type)),
+    let tuple2 = new_tuple_type([
+      new_sum_type([string_type, int_type, boolean_type]),
+      new_intersection_type([string_type, int_type, boolean_type]),
+      new_list_type(new_map_type(string_type, int_type)),
     ])
 
     discard are_equal(tuple1, tuple2)
 
   # These two simplfication examples are equal to the ones in `test/types/simplification.nim`.
-  let primitives2 = new_immutable_seq([int_type, real_type, intersection([int_type, string_type]), sum([boolean_type])])
+  let primitives2 = new_immutable_seq([int_type, real_type, new_intersection_type([int_type, string_type]), new_sum_type([boolean_type])])
 
   benchmark("simplify sum of primitives", 10_000_000):
     discard sum_simplified(primitives2)
 
   let tuples2569 = new_immutable_seq([
-    tpl_as_type([int_type, int_type, int_type, int_type, int_type, real_type]),
-    tpl([int_type, real_type]),
-    tpl([int_type, int_type, real_type, int_type, int_type]),
-    tpl([int_type, int_type, int_type, int_type, real_type, int_type, int_type, int_type, int_type]),
-    tpl([int_type, real_type, int_type, int_type, int_type, int_type]),
-    tpl([real_type, real_type]),
-    tpl([int_type, int_type, int_type, int_type, int_type, int_type, int_type, int_type, int_type]),
-    tpl([int_type, int_type, int_type, real_type, int_type, int_type]),
+    tuple_as_type([int_type, int_type, int_type, int_type, int_type, real_type]),
+    new_tuple_type([int_type, real_type]),
+    new_tuple_type([int_type, int_type, real_type, int_type, int_type]),
+    new_tuple_type([int_type, int_type, int_type, int_type, real_type, int_type, int_type, int_type, int_type]),
+    new_tuple_type([int_type, real_type, int_type, int_type, int_type, int_type]),
+    new_tuple_type([real_type, real_type]),
+    new_tuple_type([int_type, int_type, int_type, int_type, int_type, int_type, int_type, int_type, int_type]),
+    new_tuple_type([int_type, int_type, int_type, real_type, int_type, int_type]),
   ])
 
   benchmark("simplify sum of tuples", 1_000_000):

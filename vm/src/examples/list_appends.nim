@@ -1,34 +1,34 @@
-from "../poems" import Poem, PoemConstants, PoemFunction, PoemOperation
+import "../poems"
 
-let result_type = poems.list_type(
-  poems.sum_type(@[poems.int_type, poems.string_type]),
+let result_type = poem_list_type(
+  poem_sum_type(@[poem_int_type, poem_string_type]),
 )
 
 let test = PoemFunction(
   name: "test",
-  input_type: poems.unit_type,
+  input_type: poem_unit_type,
   output_type: result_type,
   is_abstract: false,
   register_count: 2,
   instructions: @[
-    poems.inst(PoemOperation.IntConst, 0, 1),
-    poems.inst_list(0, 0, 0),
-    poems.inst(PoemOperation.Const, 1, 0),
-    poems.inst_list_append(0, 0, 1, 1),
-    poems.inst(PoemOperation.IntConst, 1, 5),
-    poems.inst_list_append(0, 0, 1, 1),
-    poems.inst_return(0),
+    poem_inst(PoemOperation.IntConst, 0, 1),
+    poem_inst_list(0, 0, 0),
+    poem_inst(PoemOperation.Const, 1, 0),
+    poem_inst_list_append(0, 0, 1, 1),
+    poem_inst(PoemOperation.IntConst, 1, 5),
+    poem_inst_list_append(0, 0, 1, 1),
+    poem_inst_return(0),
   ],
 )
 
 let poem* = Poem(
   constants: PoemConstants(
     types: @[
-      poems.list_type(poems.int_type),
+      poem_list_type(poem_int_type),
       result_type,
     ],
     values: @[
-      poems.string_value("foo"),
+      poem_string_value("foo"),
     ],
   ),
   functions: @[test],

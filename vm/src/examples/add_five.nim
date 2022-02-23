@@ -1,28 +1,28 @@
-from "../poems" import Poem, PoemConstants, PoemFunction, PoemOperation
+import "../poems"
 
 let add_five = PoemFunction(
   name: "add_five",
-  input_type: poems.tuple_type([poems.int_type]),
-  output_type: poems.int_type,
+  input_type: poem_tuple_type([poem_int_type]),
+  output_type: poem_int_type,
   is_abstract: false,
   register_count: 2,
   instructions: @[
-    poems.inst(PoemOperation.IntConst, 1, 5),
-    poems.inst(PoemOperation.IntAdd, 0, 0, 1),
-    poems.inst_return(0),
+    poem_inst(PoemOperation.IntConst, 1, 5),
+    poem_inst(PoemOperation.IntAdd, 0, 0, 1),
+    poem_inst_return(0),
   ],
 )
 
 let test = PoemFunction(
   name: "test",
-  input_type: poems.unit_type,
-  output_type: poems.int_type,
+  input_type: poem_unit_type,
+  output_type: poem_int_type,
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    poems.inst(PoemOperation.IntConst, 0, 7),
-    poems.inst_dispatch(0, 0, 0),
-    poems.inst_return(0),
+    poem_inst(PoemOperation.IntConst, 0, 7),
+    poem_inst_dispatch(0, 0, 0),
+    poem_inst_return(0),
   ],
 )
 

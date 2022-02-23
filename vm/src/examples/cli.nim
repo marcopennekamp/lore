@@ -61,7 +61,7 @@ let examples = @[
 ]
 
 proc prepare_example(example: Example): ptr FunctionInstance =
-  let poem = poems.read(fmt"target/{example.name}.poem")
+  let poem = poems.read_poem(fmt"target/{example.name}.poem")
   let universe = universes.resolve(@[poem])
   let function = universe.multi_functions[example.main].functions[0]
   if not function.is_monomorphic:
@@ -74,7 +74,7 @@ proc prepare_example(example: Example): ptr FunctionInstance =
 
 proc write_all() =
   for example in examples:
-    poems.write(fmt"target/{example.name}.poem", example.poem)
+    poems.write_poem(fmt"target/{example.name}.poem", example.poem)
 
 ########################################################################################################################
 # Running all examples.                                                                                                #

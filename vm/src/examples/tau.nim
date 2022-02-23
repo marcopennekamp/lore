@@ -1,9 +1,8 @@
-from "../poems" import Poem, PoemConstants, PoemEagerGlobalVariable, PoemLazyGlobalVariable, PoemFunction,
-                       PoemOperation
+import "../poems"
 
 let pi = PoemEagerGlobalVariable(
   name: "pi",
-  value: poems.real_value(3.14),
+  value: poem_real_value(3.14),
 )
 
 let tau = PoemLazyGlobalVariable(
@@ -13,28 +12,28 @@ let tau = PoemLazyGlobalVariable(
 
 let tau_initialize = PoemFunction(
   name: "tau/initialize",
-  input_type: poems.unit_type,
-  output_type: poems.real_type,
+  input_type: poem_unit_type,
+  output_type: poem_real_type,
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    poems.inst_global_get(0, 0),
-    poems.inst(PoemOperation.RealAdd, 0, 0, 0),
-    poems.inst_return(0),
+    poem_inst_global_get(0, 0),
+    poem_inst(PoemOperation.RealAdd, 0, 0, 0),
+    poem_inst_return(0),
   ],
 )
 
 let test = PoemFunction(
   name: "test",
-  input_type: poems.unit_type,
-  output_type: poems.tuple_type([poems.real_type, poems.real_type]),
+  input_type: poem_unit_type,
+  output_type: poem_tuple_type([poem_real_type, poem_real_type]),
   is_abstract: false,
   register_count: 2,
   instructions: @[
-    poems.inst_global_get(0, 0),
-    poems.inst_global_get(1, 1),
-    poems.inst_tuple(0, 0, 1),
-    poems.inst_return(0),
+    poem_inst_global_get(0, 0),
+    poem_inst_global_get(1, 1),
+    poem_inst_tuple(0, 0, 1),
+    poem_inst_return(0),
   ],
 )
 
