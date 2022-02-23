@@ -1,7 +1,9 @@
 package lore.compiler.poem
 
+import lore.compiler.semantics.NamePath
+
 case class PoemFunction(
-  name: String,
+  name: NamePath,
   typeParameters: Vector[PoemTypeParameter],
   inputType: PoemType,
   outputType: PoemType,

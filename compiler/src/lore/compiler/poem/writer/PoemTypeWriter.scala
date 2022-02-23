@@ -1,7 +1,7 @@
 package lore.compiler.poem.writer
 
 import lore.compiler.core.CompilationException
-import lore.compiler.poem.{PoemBasicType, PoemNamedType, PoemShapeType, PoemSymbolType, PoemType, PoemTypeVariable, PoemXaryType}
+import lore.compiler.poem._
 import lore.compiler.types.Kind
 
 object PoemTypeWriter {
@@ -53,7 +53,7 @@ object PoemTypeWriter {
 
     case PoemNamedType(schema, typeArguments) =>
       writeTypeTag(schema.kind, typeArguments.length)
-      PoemWriter.writeNamePath(schema.name)
+      writer.writeNamePath(schema.name)
       typeArguments.foreach(write)
   }
 

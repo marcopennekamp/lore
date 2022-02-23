@@ -20,7 +20,7 @@ object AssemblyPhase {
     } */
     // val globalVariables = registry.bindings.globalVariables.values.toVector.flatMap(GlobalVariableTranspiler.transpile(_) :+ Target.Divider)
     val poemFunctions = registry.bindings.multiFunctions.values.toVector.flatMap(_.functions).flatMap(FunctionAssembler.generate)
-    val poemFragment = PoemFragment(poemFunctions)
+    val poemFragment = PoemFragment(Vector.empty, Vector.empty, poemFunctions)
 
     // TODO (assembly): Support introspection (probably needs VM support).
     /* val introspectionInitialization = {

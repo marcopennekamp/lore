@@ -43,7 +43,7 @@ object FunctionAssembler {
     }
 
     PoemFunction(
-      signature.name.toString,
+      signature.name,
       typeParameters,
       TypeAssembler.generate(signature.inputType),
       TypeAssembler.generate(signature.outputType),

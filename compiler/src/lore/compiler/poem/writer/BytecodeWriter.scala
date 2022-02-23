@@ -1,6 +1,7 @@
 package lore.compiler.poem.writer
 
 import lore.compiler.core.CompilationException
+import lore.compiler.semantics.NamePath
 
 import java.io.ByteArrayOutputStream
 import java.nio.{ByteBuffer, ByteOrder}
@@ -52,6 +53,20 @@ class BytecodeWriter {
     val bytes = string.getBytes(Charset.forName("UTF-8"))
     writeUInt16(bytes.length)
     output.writeBytes(bytes)
+  }
+
+  def writeNamePath(namePath: NamePath): Unit = {
+    writeStringWithLength(namePath.toString)
+  }
+
+  def writeManyWithCount8[A](values: Vector[A], write: A => Unit): Unit = {
+    writeUInt8(values.length)
+    values.foreach(write)
+  }
+
+  def writeManyWithCount16[A](values: Vector[A], write: A => Unit): Unit = {
+    writeUInt16(values.length)
+    values.foreach(write)
   }
 
   private def newBuffer(capacity: Int): ByteBuffer = ByteBuffer.allocate(capacity).order(ByteOrder.BIG_ENDIAN)

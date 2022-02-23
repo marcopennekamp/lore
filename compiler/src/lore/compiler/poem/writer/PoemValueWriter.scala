@@ -1,6 +1,6 @@
 package lore.compiler.poem.writer
 
-import lore.compiler.poem.{PoemBasicType, PoemBooleanValue, PoemFixedFunctionValue, PoemFunctionValue, PoemIntValue, PoemLambdaFunctionValue, PoemListValue, PoemMultiFunctionValue, PoemRealValue, PoemShapeValue, PoemStringValue, PoemStructValue, PoemSymbolType, PoemSymbolValue, PoemTupleValue, PoemValue}
+import lore.compiler.poem._
 import lore.compiler.types.BasicType
 
 object PoemValueWriter {
@@ -35,7 +35,7 @@ object PoemValueWriter {
 
     case PoemListValue(elements, tpe) =>
       PoemTypeWriter.write(tpe)
-      PoemWriter.writeManyWithCount16(elements, write)
+      writer.writeManyWithCount16(elements, write)
 
     case value@PoemShapeValue(_, tpe) =>
       PoemTypeWriter.write(tpe)
@@ -46,13 +46,13 @@ object PoemValueWriter {
 
     case value@PoemStructValue(_, tpe) =>
       PoemTypeWriter.write(tpe)
-      PoemWriter.writeManyWithCount16(value.sortedProperties, write)
+      writer.writeManyWithCount16(value.sortedProperties, write)
   }
 
   private def writeFunctionValueCommons(value: PoemFunctionValue)(implicit writer: BytecodeWriter): Unit = {
     PoemTypeWriter.write(value.tpe)
     writer.writeUInt8(value.variant.id)
-    PoemWriter.writeNamePath(value.mf)
+    writer.writeNamePath(value.mf)
   }
 
 }

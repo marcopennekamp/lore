@@ -1,16 +1,8 @@
 package lore.compiler.poem.writer
 
-import lore.compiler.core.CompilationException
-import lore.compiler.poem.{PoemFragment, PoemFunction, PoemMetaShape, PoemTypeParameter}
-import lore.compiler.semantics.NamePath
-import lore.compiler.types.TypeVariable.Variance
+import lore.compiler.poem.{PoemFragment, PoemMetaShape}
 
 object PoemWriter {
-
-  /**
-    * The VM supports a maximum of 32 type parameters.
-    */
-  val maximumTypeParameters = 32
 
   def writeFragment(poemFragment: PoemFragment): Array[Byte] = {
     implicit val constantsTable: ConstantsTable = new ConstantsTable
@@ -32,37 +24,27 @@ object PoemWriter {
     implicit val writer: BytecodeWriter = new BytecodeWriter()
 
     // No schemas and global variables yet.
-    writer.writeUInt16(0)
-    writer.writeUInt16(0)
+    writer.writeUInt16(poemFragment.schemas.length)
+    poemFragment.schemas.foreach(PoemSchemaWriter.write)
+
+    writer.writeUInt16(poemFragment.globalVariables.length)
+    poemFragment.globalVariables.foreach(PoemGlobalVariableWriter.write)
 
     writer.writeUInt16(poemFragment.functions.length)
-    poemFragment.functions.foreach(writeFunction)
+    poemFragment.functions.foreach(PoemFunctionWriter.write)
 
     writer
   }
 
   private def writeConstantsTable(constantsTable: ConstantsTable)(implicit writer: BytecodeWriter): Unit = {
-    writeManyWithCount16(constantsTable.types, PoemTypeWriter.write)
-    writeManyWithCount16(constantsTable.values, PoemValueWriter.write)
-    writeManyWithCount16(constantsTable.names, writer.writeStringWithLength)
-    writeManyWithCount16(constantsTable.intrinsics.map(_.name), writer.writeStringWithLength)
-    writeManyWithCount16(constantsTable.schemas, writeNamePath)
-    writeManyWithCount16(constantsTable.globalVariables, writeNamePath)
-    writeManyWithCount16(constantsTable.multiFunctions, writeNamePath)
-    writeManyWithCount16(constantsTable.metaShapes, writeMetaShape)
-  }
-
-  private def writeFunction(function: PoemFunction)(implicit writer: BytecodeWriter, constantsTable: ConstantsTable): Unit = {
-    writer.writeStringWithLength(function.name)
-    writeTypeParameters(function.typeParameters)
-    PoemTypeWriter.write(function.inputType)
-    PoemTypeWriter.write(function.outputType)
-    writer.writeBoolean(function.isAbstract)
-
-    if (!function.isAbstract) {
-      writer.writeUInt16(function.registerCount)
-      writeManyWithCount16(function.instructions, PoemInstructionWriter.write)
-    }
+    writer.writeManyWithCount16(constantsTable.types, PoemTypeWriter.write)
+    writer.writeManyWithCount16(constantsTable.values, PoemValueWriter.write)
+    writer.writeManyWithCount16(constantsTable.names, writer.writeStringWithLength)
+    writer.writeManyWithCount16(constantsTable.intrinsics.map(_.name), writer.writeStringWithLength)
+    writer.writeManyWithCount16(constantsTable.schemas, writer.writeNamePath)
+    writer.writeManyWithCount16(constantsTable.globalVariables, writer.writeNamePath)
+    writer.writeManyWithCount16(constantsTable.multiFunctions, writer.writeNamePath)
+    writer.writeManyWithCount16(constantsTable.metaShapes, writeMetaShape)
   }
 
   private def writeMetaShape(metaShape: PoemMetaShape)(implicit writer: BytecodeWriter): Unit = {
@@ -70,42 +52,8 @@ object PoemWriter {
   }
 
   def writeShapePropertyNames(names: Vector[String], withCount: Boolean)(implicit writer: BytecodeWriter): Unit = {
-    if (withCount) writeManyWithCount16(names, writer.writeStringWithLength)
+    if (withCount) writer.writeManyWithCount16(names, writer.writeStringWithLength)
     else names.foreach(writer.writeStringWithLength)
-  }
-
-  private def writeTypeParameters(typeParameters: Vector[PoemTypeParameter])(implicit writer: BytecodeWriter): Unit = {
-    if (typeParameters.length > maximumTypeParameters) {
-      throw CompilationException(s"A schema or function has ${typeParameters.length} type parameters, but the maximum is $maximumTypeParameters.")
-    }
-    writeManyWithCount8(typeParameters, writeTypeParameter)
-  }
-
-  private def writeTypeParameter(typeParameter: PoemTypeParameter)(implicit writer: BytecodeWriter): Unit = {
-    writer.writeStringWithLength(typeParameter.name)
-    PoemTypeWriter.write(typeParameter.lowerBound)
-    PoemTypeWriter.write(typeParameter.upperBound)
-
-    val varianceId = typeParameter.variance match {
-      case Variance.Covariant => 0
-      case Variance.Contravariant => 1
-      case Variance.Invariant => 2
-    }
-    writer.writeUInt8(varianceId)
-  }
-
-  def writeNamePath(namePath: NamePath)(implicit writer: BytecodeWriter): Unit = {
-    writer.writeStringWithLength(namePath.toString)
-  }
-
-  def writeManyWithCount8[A](values: Vector[A], write: A => Unit)(implicit writer: BytecodeWriter): Unit = {
-    writer.writeUInt8(values.length)
-    values.foreach(write)
-  }
-
-  def writeManyWithCount16[A](values: Vector[A], write: A => Unit)(implicit writer: BytecodeWriter): Unit = {
-    writer.writeUInt16(values.length)
-    values.foreach(write)
   }
 
 }
