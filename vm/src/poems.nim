@@ -181,7 +181,6 @@ type
     IntrinsicVoid
       ## intr: uint16, n: uint8, reg0: uint16, ..., reg_n: uint16
 
-    # TODO (assembly): Remember that this needs to be transformed into either `GlobalGetEager` or `GlobalGetLazy`.
     GlobalGet
       ## Whether this resolves to `GlobalGetEager` or `GlobalGetLazy` is determined by the laziness of the referenced
       ## global variable.
