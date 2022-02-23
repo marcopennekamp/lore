@@ -5,9 +5,10 @@ let empty = PoemFunction(
   input_type: poems.unit_type,
   output_type: poems.unit_type,
   is_abstract: false,
-  register_count: 0,
+  register_count: 1,
   instructions: @[
-    poems.inst(PoemOperation.ReturnUnit),
+    poems.inst_tuple(0),
+    poems.inst_return(0),
   ],
 )
 

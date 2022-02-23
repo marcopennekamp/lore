@@ -17,7 +17,7 @@ let test = PoemFunction(
     poems.inst_list_append(0, 0, 1, 1),
     poems.inst(PoemOperation.IntConst, 1, 5),
     poems.inst_list_append(0, 0, 1, 1),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 

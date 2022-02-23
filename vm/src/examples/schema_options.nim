@@ -62,7 +62,7 @@ let ExampleResult_construct = PoemFunction(
   register_count: 2,
   instructions: @[
     poems.inst_struct(0, 0, [], [0'u16, 1]),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -83,7 +83,7 @@ let get1 = PoemFunction(
   register_count: 1,
   instructions: @[
     poems.inst_struct_property_get(0, 0, 1, 0),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -115,7 +115,7 @@ let flatten1 = PoemFunction(
   register_count: 1,
   instructions: @[
     poems.inst_struct_property_get(0, 0, 1, 0),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -126,7 +126,7 @@ let flatten2 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -156,7 +156,7 @@ let test = PoemFunction(
 
     # Build an ExampleResult from `12` and `"42"`.
     poems.inst_dispatch(0, 2, 1, 2),              # r0 = ExampleResult$new(r1, r2)
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 

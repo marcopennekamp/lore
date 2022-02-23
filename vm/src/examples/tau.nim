@@ -20,7 +20,7 @@ let tau_initialize = PoemFunction(
   instructions: @[
     poems.inst_global_get(0, 0),
     poems.inst(PoemOperation.RealAdd, 0, 0, 0),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -34,7 +34,7 @@ let test = PoemFunction(
     poems.inst_global_get(0, 0),
     poems.inst_global_get(1, 1),
     poems.inst_tuple(0, 0, 1),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 

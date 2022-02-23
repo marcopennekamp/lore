@@ -190,10 +190,8 @@ type
     Dispatch
       ## target_reg: uint16, mf: uint16, n: uint8, reg0: uint16, ..., reg_n: uint16
 
-    # TODO (vm): Do we need ReturnUnit and Return0 in the public API? Or can we do this as an optimization?
     Return
-    ReturnUnit
-    Return0
+      ## value_reg: uint16
 
     TypeArg
     TypeConst
@@ -270,6 +268,9 @@ type
     target_reg*: uint16
     mf*: uint16
     arguments*: seq[uint16]
+
+  PoemInstructionReturn* = ref object of PoemInstruction
+    value_reg*: uint16
 
   PoemMetaShape* = ref object
     property_names*: seq[string]
@@ -470,6 +471,9 @@ proc inst_global_get*(target: uint16, global: uint16): PoemInstruction =
 
 proc inst_dispatch*(target: uint16, mf: uint16, arguments: varargs[uint16]): PoemInstruction =
   PoemInstructionDispatch(target_reg: target, mf: mf, arguments: @arguments)
+
+proc inst_return*(value: uint16): PoemInstruction =
+  PoemInstructionReturn(value_reg: value)
 
 const
   tkMetadataKinded = 0'u8
@@ -864,6 +868,11 @@ proc read_instruction(stream: FileStream): PoemInstruction =
       arguments: stream.read_instruction_arguments_with_count(),
     )
 
+  of Return:
+    PoemInstructionReturn(
+      value_reg: stream.read(uint16),
+    )
+
   else:
     let argument_count = operation.simple_argument_count
     let arguments = stream.read_many(uint16, argument_count, read_uint16)
@@ -966,18 +975,21 @@ method write(instruction: PoemInstructionDispatch, stream: FileStream) {.locks: 
   stream.write(instruction.mf)
   stream.write_instruction_arguments_with_count(instruction.arguments)
 
+method write(instruction: PoemInstructionReturn, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.Return)
+  stream.write(instruction.value_reg)
+
 proc simple_argument_count(operation: PoemOperation): uint8 =
   ## Returns the argument length of `operation`, provided that it is a simple operation.
   case operation
-  of ReturnUnit, Return0: 0
-  of Jump, Return: 1
+  of Jump: 1
   of Assign, Const, IntConst, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, LambdaLocal, ListLength,
      JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
   of IntAdd, IntSub, IntMul, IntDiv, IntEq, IntLt, IntLte, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte,
      BooleanOr, BooleanAnd, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped, ListGet,
      SymbolEq, StructEq: 3
   of PoemOperation.Tuple, FunctionCall, PoemOperation.Lambda, PoemOperation.Shape, PoemOperation.List, ListAppend,
-     PoemOperation.Struct, PropertyGet, Intrinsic, IntrinsicVoid, GlobalGet, Dispatch:
+     PoemOperation.Struct, PropertyGet, Intrinsic, IntrinsicVoid, GlobalGet, Dispatch, Return:
     quit(fmt"Poem operation {operation} is not simple!")
 
 ########################################################################################################################

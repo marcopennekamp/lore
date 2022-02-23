@@ -24,6 +24,6 @@ object PoemOperation extends Enumeration {
   val Intrinsic, IntrinsicVoid = Value
   val GlobalGet, GlobalSet = Value
   val Dispatch = Value
-  val Return, ReturnUnit, Return0 = Value
+  val Return = Value
   val TypeArg, TypeConst = Value
 }

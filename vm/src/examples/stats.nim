@@ -21,7 +21,7 @@ let stat_1 = PoemFunction(
   register_count: 1,
   instructions: @[
     poems.inst(PoemOperation.IntConst, 0, 11),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -33,7 +33,7 @@ let stat_2 = PoemFunction(
   register_count: 1,
   instructions: @[
     poems.inst(PoemOperation.IntConst, 0, 7),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -45,7 +45,7 @@ let stat_3 = PoemFunction(
   register_count: 1,
   instructions: @[
     poems.inst(PoemOperation.IntConst, 0, 3),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -64,7 +64,7 @@ let test = PoemFunction(
     poems.inst_dispatch(2, 0, 2),
     poems.inst(PoemOperation.IntAdd, 0, 0, 1),
     poems.inst(PoemOperation.IntAdd, 0, 0, 2),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 

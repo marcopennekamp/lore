@@ -317,9 +317,6 @@ type
     Return
       ## return reg(arg0)
 
-    ReturnUnit
-      ## return unit
-
     Return0
       ## return reg(0)
 

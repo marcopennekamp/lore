@@ -9,7 +9,7 @@ let add_five = PoemFunction(
   instructions: @[
     poems.inst(PoemOperation.IntConst, 1, 5),
     poems.inst(PoemOperation.IntAdd, 0, 0, 1),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -22,7 +22,7 @@ let test = PoemFunction(
   instructions: @[
     poems.inst(PoemOperation.IntConst, 0, 7),
     poems.inst_dispatch(0, 0, 0),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 

@@ -25,7 +25,7 @@ let concat = PoemFunction(
     poems.inst(PoemOperation.IntAdd, 2, 2, 5),             # i += 1
     poems.inst(PoemOperation.Jump, 2),                     # jump to loop start
 
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -40,7 +40,7 @@ let test = PoemFunction(
     poems.inst(PoemOperation.Const, 0, 0),
     poems.inst(PoemOperation.Const, 1, 1),
     poems.inst_dispatch(0, 0, 0, 1),        # list1 = concat(list1, list2)
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 

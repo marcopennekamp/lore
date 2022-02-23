@@ -25,7 +25,7 @@ let add1 = PoemFunction(
 
     # Create and return the new shape.
     poems.inst_shape(0, 0, 0),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -48,7 +48,7 @@ let add2 = PoemFunction(
 
     # Create and return the new shape.
     poems.inst_shape(0, 1, 4, 0),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -76,7 +76,7 @@ let add3 = PoemFunction(
 
     # Create and return the new shape.
     poems.inst_shape(0, 2, 4, 5, 6),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -109,7 +109,7 @@ let test = PoemFunction(
     add_positions(5, 6) &  # Add p3_1 and p3_2.
 
     # Return the resulting list.
-    @[poems.inst(PoemOperation.Return0)],
+    @[poems.inst_return(0)],
 )
 
 let poem* = Poem(

@@ -16,7 +16,7 @@ let nine = PoemFunction(
     poems.inst(PoemOperation.IntAdd, 0, 0, 1),
     poems.inst(PoemOperation.IntConst, 1, 0xffff), # 0xffff is -1 as an int16.
     poems.inst(PoemOperation.IntAdd, 0, 0, 1),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 

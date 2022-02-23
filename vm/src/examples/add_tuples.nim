@@ -19,7 +19,7 @@ let add_tuples = PoemFunction(
     poems.inst(PoemOperation.IntAdd, 0, 0, 1),
     poems.inst(PoemOperation.IntAdd, 1, 2, 3),
     poems.inst_tuple(0, 0, 1),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -33,7 +33,7 @@ let test = PoemFunction(
     poems.inst(PoemOperation.Const, 0, 0),
     poems.inst(PoemOperation.Const, 1, 1),
     poems.inst_dispatch(0, 0, 0, 1),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 

@@ -14,7 +14,7 @@ let hello_0 = PoemFunction(
     poems.inst(PoemOperation.StringConcat, 0, 1, 0),
     poems.inst(PoemOperation.Const, 1, 1),
     poems.inst(PoemOperation.StringConcat, 0, 0, 1),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -30,7 +30,7 @@ let hello_1 = PoemFunction(
     poems.inst(PoemOperation.StringConcat, 0, 1, 0),
     poems.inst(PoemOperation.Const, 1, 1),
     poems.inst(PoemOperation.StringConcat, 0, 0, 1),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -51,7 +51,7 @@ let test = PoemFunction(
     poems.inst(PoemOperation.Const, 2, 4),
     poems.inst(PoemOperation.StringConcat, 0, 0, 2),
     poems.inst(PoemOperation.StringConcat, 0, 0, 1),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 

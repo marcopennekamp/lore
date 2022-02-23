@@ -128,8 +128,6 @@ object PoemInstructionWriter {
         writeOperandsWithLength8(arguments)
 
       case PoemInstruction.Return(value) => write(value)
-      case PoemInstruction.ReturnUnit() =>
-      case PoemInstruction.Return0() =>
 
       case PoemInstruction.TypeArg(target, index) =>
         write(target)

@@ -116,8 +116,6 @@ object PoemInstruction {
   case class Dispatch(target: PReg, mf: PMf, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.Dispatch)
 
   case class Return(value: PReg) extends PoemInstruction(PoemOperation.Return)
-  case class ReturnUnit() extends PoemInstruction(PoemOperation.ReturnUnit)
-  case class Return0() extends PoemInstruction(PoemOperation.Return0)
 
   case class TypeArg(target: PReg, index: Int) extends PoemInstruction(PoemOperation.TypeArg)
   case class TypeConst(target: PReg, tpe: PTpe) extends PoemInstruction(PoemOperation.TypeConst)
@@ -134,8 +132,6 @@ object PoemInstruction {
 
   def isReturn(instruction: PoemInstruction): Boolean = instruction match {
     case Return(_) => true
-    case ReturnUnit() => true
-    case Return0() => true
     case _ => false
   }
 
@@ -177,8 +173,6 @@ object PoemInstruction {
       case GlobalSet(_, value) => value.id
       case Dispatch(target, _, arguments) => Register.max(target, arguments)
       case Return(value) => value.id
-      case ReturnUnit() => -1
-      case Return0() => 0
       case TypeArg(target, _) => target.id
       case TypeConst(target, _) => target.id
     }
@@ -225,8 +219,6 @@ object PoemInstruction {
     case instruction@GlobalSet(_, value) => instruction.copy(value = applySource(value))
     case instruction@Dispatch(target, _, arguments) => instruction.copy(target = applyTarget(target), arguments = arguments.map(applySource))
     case instruction@Return(value) => instruction.copy(value = applySource(value))
-    case instruction@ReturnUnit() => instruction
-    case instruction@Return0() => instruction
     case instruction@TypeArg(target, _) => instruction.copy(target = applyTarget(target))
     case instruction@TypeConst(target, _) => instruction.copy(target = applyTarget(target))
   }
@@ -278,8 +270,6 @@ object PoemInstruction {
       case GlobalSet(_, value) => (Vector.empty, Vector(value))
       case Dispatch(target, _, arguments) => (Vector(target), arguments)
       case Return(value) => (Vector.empty, Vector(value))
-      case ReturnUnit() => (Vector.empty, Vector.empty)
-      case Return0() => (Vector.empty, Vector(Poem.Register(0)))
       case TypeArg(target, _) => (Vector(target), Vector.empty)
       case TypeConst(target, _) => (Vector(target), Vector.empty)
     }
@@ -324,8 +314,6 @@ object PoemInstruction {
       case GlobalSet(global, value) => s"${global.name} <- $value"
       case Dispatch(target, mf, arguments) => s"$target <- $mf(${arguments.mkString(", ")})"
       case Return(value) => s"$value"
-      case ReturnUnit() => s""
-      case Return0() => s""
       case TypeArg(target, index) => s"$target <- targ($index)"
       case TypeConst(target, tpe) => s"$target <- $tpe"
     })

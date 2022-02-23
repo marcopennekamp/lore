@@ -697,10 +697,6 @@ proc evaluate(frame: FramePtr) =
       regv_set(0, regv_get_arg(0))
       break
 
-    of Operation.ReturnUnit:
-      regv_set(0, values.unit)
-      break
-
     of Operation.Return0:
       break
 

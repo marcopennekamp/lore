@@ -13,7 +13,7 @@ let test = PoemFunction(
     poems.inst_list(0, 0, 0, 1, 2),
     poems.inst(PoemOperation.IntConst, 1, 1),
     poems.inst(PoemOperation.ListGet, 0, 0, 1),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 

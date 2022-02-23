@@ -19,7 +19,7 @@ let fib = PoemFunction(
     poems.inst_dispatch(2, 0, 2),
     poems.inst(PoemOperation.IntAdd, 0, 1, 2),
 
-    poems.inst(PoemOperation.Return0),               # 10
+    poems.inst_return(0),                            # 10
   ],
 )
 
@@ -32,7 +32,7 @@ let test = PoemFunction(
   instructions: @[
     poems.inst(PoemOperation.IntConst, 0, 10),
     poems.inst_dispatch(0, 0, 0),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 

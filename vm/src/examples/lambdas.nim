@@ -9,7 +9,7 @@ let increment = PoemFunction(
   instructions: @[
     poems.inst(PoemOperation.IntConst, 1, 1),
     poems.inst(PoemOperation.IntAdd, 0, 0, 1),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -23,7 +23,7 @@ let test = PoemFunction(
     poems.inst(PoemOperation.IntConst, 0, 41),
     poems.inst(PoemOperation.Const, 1, 0),
     poems.inst_function_call(0, 1, 0),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 

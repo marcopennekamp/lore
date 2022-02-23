@@ -19,7 +19,7 @@ let handle1 = PoemFunction(
   instructions: @[
     poems.inst(PoemOperation.IntConst, 1, 5),
     poems.inst(PoemOperation.IntAdd, 0, 0, 1),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -32,7 +32,7 @@ let handle2 = PoemFunction(
   instructions: @[
     poems.inst(PoemOperation.Const, 1, 1),
     poems.inst(PoemOperation.RealAdd, 0, 0, 1),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 
@@ -49,7 +49,7 @@ let test = PoemFunction(
     poems.inst(PoemOperation.Const, 2, 0),
     poems.inst_function_call(2, 0, 2),
     poems.inst_tuple(0, 1, 2),
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 

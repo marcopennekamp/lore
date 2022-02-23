@@ -15,7 +15,7 @@ let test = PoemFunction(
     poems.inst_intrinsic(0, 0, 2),                        # Put zoo's length (lore.strings.length) into register 0.
     poems.inst_shape_property_get(2, 1, 1),               # Get property foo from the shape value.
     poems.inst(PoemOperation.IntAdd, 0, 0, 2),            # Finally add foo to register 0.
-    poems.inst(PoemOperation.Return0),
+    poems.inst_return(0),
   ],
 )
 

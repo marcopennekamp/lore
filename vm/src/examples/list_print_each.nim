@@ -11,7 +11,8 @@ let test_lambda0 = PoemFunction(
   register_count: 1,
   instructions: @[
     poems.inst_intrinsic_void(1, 0),        # lore.io.println
-    poems.inst(PoemOperation.ReturnUnit),
+    poems.inst_tuple(0),
+    poems.inst_return(0),
   ],
 )
 
@@ -25,7 +26,8 @@ let test = PoemFunction(
     poems.inst(PoemOperation.Const, 0, 0),
     poems.inst(PoemOperation.Const, 1, 1),
     poems.inst_intrinsic_void(0, 0, 1),     # lore.lists.each
-    poems.inst(PoemOperation.ReturnUnit),
+    poems.inst_tuple(0),
+    poems.inst_return(0),
   ],
 )
 

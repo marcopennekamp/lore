@@ -495,6 +495,12 @@ method resolve_instruction(poem_instruction: PoemInstructionDispatch, context: I
     poem_instruction.arguments,
   )
 
+method resolve_instruction(poem_instruction: PoemInstructionReturn, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  if poem_instruction.value_reg == 0:
+    @[new_instruction(Operation.Return0)]
+  else:
+    @[new_instruction(Operation.Return, poem_instruction.value_reg)]
+
 proc generate_xary_application(
   operation_opl: Operation,
   operation_x: open_array[Operation],
@@ -606,16 +612,13 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
 
   of PoemOperation.GlobalSet: Operation.GlobalSet
 
-  of PoemOperation.Return: Operation.Return
-  of PoemOperation.ReturnUnit: Operation.ReturnUnit
-  of PoemOperation.Return0: Operation.Return0
-
   of PoemOperation.TypeArg: Operation.TypeArg
   of PoemOperation.TypeConst: Operation.TypeConst
 
   of PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.Lambda, PoemOperation.List,
      PoemOperation.ListAppend, PoemOperation.Shape, PoemOperation.Struct, PoemOperation.PropertyGet,
-     PoemOperation.Intrinsic, PoemOperation.IntrinsicVoid, PoemOperation.GlobalGet, PoemOperation.Dispatch:
+     PoemOperation.Intrinsic, PoemOperation.IntrinsicVoid, PoemOperation.GlobalGet, PoemOperation.Dispatch,
+     PoemOperation.Return:
     quit(fmt"The poem operation {poem_operation} is not simple!")
 
 ########################################################################################################################
