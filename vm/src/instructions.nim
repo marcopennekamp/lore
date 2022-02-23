@@ -364,8 +364,8 @@ type
     arguments*: array[7, Argument]
       ## 7 arguments pad the size of Instruction to exactly 16 bytes.
 
-# TODO (vm/schemas): This should be a compilation warning instead of a runtime assertion.
-assert sizeof(Instruction) == 16
+when sizeof(Instruction) != 16:
+  {.error: "Instructions must be exactly 16 bytes wide.".}
 
 let maximum_instruction_arguments*: int = 7
 

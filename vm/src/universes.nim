@@ -62,8 +62,6 @@ proc resolve*(poems: seq[Poem]): Universe =
     multi_functions: new_table[string, MultiFunction](),
   )
 
-  # TODO (vm/schemas): Do we really have to resolve properties after functions?
-
   # Step 1: Register intrinsics first, as they have no dependencies.
   for intrinsic in pyramid.intrinsics:
     universe.intrinsics[intrinsic.name] = intrinsic

@@ -486,7 +486,7 @@ proc find_supertrait(tpe: DeclaredType, supertrait_schema: TraitSchema): TraitTy
   if tpe.schema === supertrait_schema:
     return cast[TraitType](tpe)
 
-  # TODO (vm/schemas): Implement `has_multiple_parameterized_inheritance`.
+  # TODO (vm): Implement `has_multiple_parameterized_inheritance`.
   # TODO (vm): We can make `has_multiple_parameterized_inheritance` more fine-grained by listing the schemas which
   #            occur multiple times in the supertrait hierarchy. This can be a simple pointer hash map. This is
   #            important for the immediate performance impact of adding an inheritance relationship to a type that
@@ -897,8 +897,7 @@ proc are_open_property_types_equal(t1: StructType, t2: StructType): bool =
 # Subtyping.                                                                                                           #
 ########################################################################################################################
 
-# TODO (vm/schemas): Rename to `is_subtype_substitute_static` to be in line with the naming convention.
-macro is_subtype_rec(substitution_mode: static[SubstitutionMode], t1: Type, t2: Type): bool =
+macro is_subtype_substitute_static(substitution_mode: static[SubstitutionMode], t1: Type, t2: Type): bool =
   case substitution_mode
   of SubstitutionMode.None:
     quote do: is_subtype(`t1`, `t2`)
@@ -935,7 +934,7 @@ macro type_subtypes_variable(substitution_mode: static[SubstitutionMode], t1: Ty
 
 template type_subtypes_sum(substitution_mode: SubstitutionMode, t1: Type, s2: SumType): bool =
   for p2 in s2.parts:
-    if is_subtype_rec(substitution_mode, t1, p2):
+    if is_subtype_substitute_static(substitution_mode, t1, p2):
       return true
   false
 
@@ -947,13 +946,13 @@ template sum_subtypes_sum(substitution_mode: SubstitutionMode, s1: SumType, s2: 
 
 template sum_subtypes_type(substitution_mode: SubstitutionMode, s1: SumType, t2: Type): bool =
   for p1 in s1.parts:
-    if not is_subtype_rec(substitution_mode, p1, t2):
+    if not is_subtype_substitute_static(substitution_mode, p1, t2):
       return false
   true
 
 template intersection_subtypes_type(substitution_mode: SubstitutionMode, i1: IntersectionType, t2: Type): bool =
   for p1 in i1.parts:
-    if is_subtype_rec(substitution_mode, p1, t2):
+    if is_subtype_substitute_static(substitution_mode, p1, t2):
       return true
   false
 
@@ -965,7 +964,7 @@ template intersection_subtypes_intersection(substitution_mode: SubstitutionMode,
 
 template type_subtypes_intersection(substitution_mode: SubstitutionMode, t1: Type, i2: IntersectionType): bool =
   for p2 in i2.parts:
-    if not is_subtype_rec(substitution_mode, t1, p2):
+    if not is_subtype_substitute_static(substitution_mode, t1, p2):
       return false
   true
 
@@ -976,7 +975,7 @@ template tuple_subtypes_tuple(substitution_mode: SubstitutionMode, t1: TupleType
     return false
 
   for i in 0 ..< es1.len:
-    if not is_subtype_rec(substitution_mode, es1[i], es2[i]):
+    if not is_subtype_substitute_static(substitution_mode, es1[i], es2[i]):
       return false
   true
 
@@ -1038,15 +1037,15 @@ template declared_type_subtypes_trait(substitution_mode: SubstitutionMode, t1: D
     type_arguments_subtype_type_arguments(substitution_mode, t1, t2, assignments)
   else:
     let supertrait = t1.find_supertrait(t2.get_schema)
-    supertrait != nil and is_subtype_rec(substitution_mode, supertrait, t2)
+    supertrait != nil and is_subtype_substitute_static(substitution_mode, supertrait, t2)
 
 template struct_subtypes_shape(substitution_mode: SubstitutionMode, t1: StructType, t2: ShapeType): bool =
   for i in 0 ..< t2.property_count:
-    # TODO (vm/schemas): Does the string from `property_names` get copied when the function is called? Check out
-    #                    whether an allocation is hiding here.
+    # TODO (vm): Does the string from `property_names` get copied when the function is called? Check out whether an
+    #            allocation is hiding here.
     let property_name = t2.meta.property_names[i]
     let p1 = t1.get_property_type_if_exists(property_name)
-    if p1 == nil or not is_subtype_rec(substitution_mode, p1, t2.property_types[i]):
+    if p1 == nil or not is_subtype_substitute_static(substitution_mode, p1, t2.property_types[i]):
       return false
   true
 
@@ -1061,7 +1060,7 @@ template struct_subtypes_struct(substitution_mode: SubstitutionMode, t1: StructT
     for i in t1.get_schema.open_property_indices:
       let p1 = t1.get_property_type(i)
       let p2 = t2.get_property_type(i)
-      if not is_subtype_rec(substitution_mode, p1, p2):
+      if not is_subtype_substitute_static(substitution_mode, p1, p2):
         return false
     true
   else:
@@ -1120,13 +1119,13 @@ template is_subtype_impl(substitution_mode: SubstitutionMode, t1: Type, t2: Type
       let f2 = cast[FunctionType](t2)
       return
         is_subtype_substitute(substitution_mode.flipped, f2.input, f1.input, assignments) and
-        is_subtype_rec(substitution_mode, f1.output, f2.output)
+        is_subtype_substitute_static(substitution_mode, f1.output, f2.output)
 
   of Kind.List:
     if t2.kind == Kind.List:
       let l1 = cast[ListType](t1)
       let l2 = cast[ListType](t2)
-      return is_subtype_rec(substitution_mode, l1.element, l2.element)
+      return is_subtype_substitute_static(substitution_mode, l1.element, l2.element)
 
   of Kind.Map:
     if t2.kind == Kind.Map:
@@ -1640,8 +1639,8 @@ proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
     # separate function.
     var property_names = new_seq[string]()
     for shape_type in shapes:
-      # TODO (vm/schemas): Does the string from `property_names` get copied into `name`? If so, all of these string
-      #                    loops would cause major performance issues due to allocations.
+      # TODO (vm): Does the string from `property_names` get copied into `name`? If so, all of these string loops would
+      #            cause major performance issues due to allocations.
       for name in shape_type.meta.property_names:
         property_names.add(name)
 
