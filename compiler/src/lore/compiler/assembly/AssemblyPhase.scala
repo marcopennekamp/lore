@@ -1,6 +1,7 @@
 package lore.compiler.assembly
 
 import lore.compiler.assembly.functions.FunctionAssembler
+import lore.compiler.assembly.globals.GlobalVariableAssembler
 import lore.compiler.core.CompilerOptions
 import lore.compiler.poem.PoemFragment
 import lore.compiler.poem.writer.PoemWriter
@@ -18,9 +19,13 @@ object AssemblyPhase {
       case (_, schema: DeclaredSchema) => DeclaredSchemaTranspiler.transpile(schema) :+ Target.Divider
       case _ => Vector.empty
     } */
-    // val globalVariables = registry.bindings.globalVariables.values.toVector.flatMap(GlobalVariableTranspiler.transpile(_) :+ Target.Divider)
-    val poemFunctions = registry.bindings.multiFunctions.values.toVector.flatMap(_.functions).flatMap(FunctionAssembler.generate)
-    val poemFragment = PoemFragment(Vector.empty, Vector.empty, poemFunctions)
+
+    val globalVariables = registry.bindings.globalVariables.values.toVector
+    val functions = registry.bindings.multiFunctions.values.toVector.flatMap(_.functions)
+
+    val (poemGlobalVariables, poemGlobalVariableInitializers) = globalVariables.map(GlobalVariableAssembler.generate).unzip
+    val poemFunctions = functions.flatMap(FunctionAssembler.generate) ++ poemGlobalVariableInitializers.flatten
+    val poemFragment = PoemFragment(Vector.empty, poemGlobalVariables, poemFunctions)
 
     // TODO (assembly): Support introspection (probably needs VM support).
     /* val introspectionInitialization = {
