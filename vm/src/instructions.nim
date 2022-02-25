@@ -24,6 +24,12 @@ type
     ## valid for a single consumption by an instruction. The general pattern is casting `OplPushX` with the correct
     ## operand list target indices and then invoking the consuming instruction with the correct operand count. The
     ## consuming instruction must assume that the first operand is `opl(0)`.
+    ##
+    ## There are further terms for convenience:
+    ##
+    ##  - `opl(a .. b)`: All operands in the operand list from `a` to `b`, exclusive.
+    ##  - `arg(a .. b)`: All instruction arguments from `a` to `b`, exclusive.
+    ##  - `reg_arg(x)` is the same as `reg(arg(x))`.
 
     Assign
       ## reg(arg0) <- reg(arg1)
@@ -117,7 +123,7 @@ type
       ## reg(arg0) <- reg(arg1) <= reg(arg2)
 
     Tuple
-      ## reg(arg0) <- tuple(opl(0), ..., opl(arg1 - 1))
+      ## reg(arg0) <- tuple(opl(0 .. arg1))
 
     Tuple0
       ## reg(arg0) <- unit
@@ -132,7 +138,7 @@ type
       ## reg(arg0) <- reg(arg1)[arg2]
 
     FunctionCall
-      ## reg(arg0) <- reg(arg1)(opl(0), ..., opl(arg2 - 1))
+      ## reg(arg0) <- reg(arg1)(opl(0 .. arg2))
 
     FunctionCall0
       ## reg(arg0) <- reg(arg1)()
@@ -147,13 +153,13 @@ type
       ## Creates a new lambda function value with `targ` as type arguments and the given registers as captured values.
       ## The multi-function the lambda is derived from must be a single function. The function must have the same
       ## number of type parameters, which must be unbounded.
-      ## reg(arg0) <- lambda(mf(arg1), targ, opl(0), ..., opl(arg3 - 1)), with type `tpe(arg2)`
+      ## reg(arg0) <- lambda(mf(arg1), targ, opl(0 .. arg3)), with type `tpe(arg2)`
 
     Lambda0
       ## reg(arg0) <- lambda(mf(arg1), targ), with type `tpe(arg2)`
 
     LambdaPoly
-      ## reg(arg0) <- lambda(mf(arg1), targ, opl(0), ..., opl(arg3 - 1)), with type `substitute(tpe(arg2))`
+      ## reg(arg0) <- lambda(mf(arg1), targ, opl(0 .. arg3)), with type `substitute(tpe(arg2))`
 
     LambdaPoly0
       ## reg(arg0) <- lambda(mf(arg1), targ), with type `substitute(tpe(arg2))`
@@ -162,7 +168,7 @@ type
       ## reg(arg0) <- lctx(arg1)
 
     List
-      ## reg(arg0) <- list(opl(0), ..., opl(arg2 - 1)), with type `tpe(arg1)`
+      ## reg(arg0) <- list(opl(0 .. arg2)), with type `tpe(arg1)`
 
     List0
       ## reg(arg0) <- empty_list, with type `tpe(arg1)`
@@ -171,7 +177,7 @@ type
       ## reg(arg0) <- list(reg(arg2)), with type `tpe(arg1)`
 
     ListPoly
-      ## reg(arg0) <- list(opl(0), ..., opl(arg2 - 1)), with type `substitute(tpe(arg1))`
+      ## reg(arg0) <- list(opl(0 .. arg2)), with type `substitute(tpe(arg1))`
 
     ListPoly0
       ## reg(arg0) <- empty_list, with type `substitute(tpe(arg1))`
@@ -195,7 +201,7 @@ type
       ## reg(arg0) <- reg(arg1)[reg(arg2)]
 
     Shape
-      ## reg(arg0) <- shape(mtsh(arg1), opl(0), ..., opl(arg2 - 1))
+      ## reg(arg0) <- shape(mtsh(arg1), opl(0 .. arg2))
 
     Shape0
       ## reg(arg0) <- empty_shape
@@ -215,22 +221,16 @@ type
       ## reg(arg0) <- reg(arg1) == reg(arg2)
 
     Struct
-      ## reg(arg0) <- sch(arg1)(opl(0), ..., opl(arg2 - 1))
-
-    Struct0
-      ## reg(arg0) <- sch(arg1)()
-
-    Struct1
-      ## reg(arg0) <- sch(arg1)(reg(arg2))
-
-    Struct2
-      ## reg(arg0) <- sch(arg1)(reg(arg2), reg(arg3))
-
-    # TODO (vm): Add instructions like Struct2Poly1 for building simple polymorphic structs without the operand list.
-    StructPoly
       ## arg2: type argument count
       ## arg3: value argument count
-      ## reg(arg0) <- sch(arg1)[opl(0), ..., opl(arg2 - 1)](opl(arg2), ..., opl(arg2 + arg3 - 1))
+      ## reg(arg0) <- sch(arg1)[opl(0 .. arg2)](opl(arg2 .. arg2 + arg3))
+
+    StructDirect
+      ## arg2 (composite):
+      ##  - nt: uint8 (type argument count)
+      ##  - nv: uint8 (value argument count)
+      ##
+      ## reg(arg0) <- sch(arg1)[reg_arg(3 .. 3 + nt)](reg_arg(3 + nt, 3 + nt + nv))
 
     StructPropertyGet
       ## Returns the struct property value at the index `arg2`. This is only possible when accessing a struct value
@@ -374,9 +374,21 @@ proc is_jump_operation*(operation: Operation): bool =
   of Operation.Jump, Operation.JumpIfFalse, Operation.JumpIfTrue: true
   else: false
 
+template arg*(instruction: Instruction, index: int): uint16 = cast[uint16](instruction.arguments[index])
 template arg*(instruction: Instruction, index: uint16): uint16 = cast[uint16](instruction.arguments[index])
 template argi*(instruction: Instruction, index: uint16): int16 = cast[int16](instruction.arguments[index])
 template argb*(instruction: Instruction, index: uint16): bool = instruction.arg(index) == 1
+
+template argu8l*(instruction: Instruction, index: uint16): uint8 =
+  ## Gets the left uint8 from a composite argument.
+  cast[uint8](instruction.arg(index) shr 8)
+
+template argu8r*(instruction: Instruction, index: uint16): uint8 =
+  ## Gets the right uint8 from a composite argument.
+  cast[uint8](instruction.arg(index))
+
+template arguments_unchecked*(instruction: Instruction): ptr UncheckedArray[Argument] =
+  cast[ptr UncheckedArray[Argument]](unsafe_addr instruction.arguments)
 
 proc set_arg*(instruction: var Instruction, index: uint16, value: uint16) {.inline.} =
   instruction.arguments[index] = Argument(value)
@@ -412,3 +424,9 @@ proc new_instruction*(operation: Operation, arg0: uint16): Instruction =
 
 proc new_instruction*(operation: Operation): Instruction =
   new_instruction(operation, 0, 0, 0, 0, 0, 0, 0)
+
+proc `$`*(argument: Argument): string = $uint16(argument)
+
+proc `$`*(instruction: Instruction): string =
+  let arguments = @(instruction.arguments)
+  $instruction.operation & "[" & $arguments & "]"

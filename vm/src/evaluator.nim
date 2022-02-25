@@ -576,37 +576,33 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.Struct:
       let schema = cast[StructSchema](const_schema_arg(1))
-      regv_set_ref_arg(0, values.new_struct_value(schema, empty_immutable_seq[Type](), oplv_get_open_array_arg(2)))
-
-    # TODO (vm): Implement StructX with a single macro.
-    of Operation.Struct0:
-      let schema = cast[StructSchema](const_schema_arg(1))
-      let value = values.new_struct_value(schema, empty_immutable_seq[Type](), [])
-      regv_set_ref_arg(0, value)
-
-    of Operation.Struct1:
-      let schema = cast[StructSchema](const_schema_arg(1))
-      let property_values = [regv_get_arg(2)]
-      let value = values.new_struct_value(schema, empty_immutable_seq[Type](), property_values)
-      regv_set_ref_arg(0, value)
-
-    of Operation.Struct2:
-      let schema = cast[StructSchema](const_schema_arg(1))
-      let property_values = [regv_get_arg(2), regv_get_arg(3)]
-      let value = values.new_struct_value(schema, empty_immutable_seq[Type](), property_values)
-      regv_set_ref_arg(0, value)
-
-    of Operation.StructPoly:
-      # We have to translate the lengths of the type argument and value argument operands into workable indices.
-      let type_argument_count = instruction.arg(2)
-      let argument_count = instruction.arg(3)
-      let first_argument_index = type_argument_count
-      let last_argument_index = first_argument_index + argument_count - 1
+      let type_argument_count = int(instruction.arg(2))
+      let value_argument_count = int(instruction.arg(3))
 
       let value = values.new_struct_value(
-        cast[StructSchema](const_schema_arg(1)),
-        new_immutable_seq(type_operand_list, int(type_argument_count)),
-        to_open_array(value_operand_list, int(first_argument_index), int(last_argument_index)),
+        schema,
+        new_immutable_seq(type_operand_list, type_argument_count),
+        to_open_array(value_operand_list, type_argument_count, type_argument_count + value_argument_count - 1),
+      )
+      regv_set_ref_arg(0, value)
+
+    of Operation.StructDirect:
+      let schema = cast[StructSchema](const_schema_arg(1))
+      let nt = int(instruction.argu8l(2))
+      let nv = int(instruction.argu8r(2))
+
+      var type_arguments = new_immutable_seq[Type](nt)
+      for i in 0 ..< nt:
+        type_arguments[i] = regt_get_arg(3 + i)
+
+      var value_arguments: array[4, TaggedValue]
+      for i in 0 ..< nv:
+        value_arguments[i] = regv_get_arg(3 + nt + i)
+
+      let value = values.new_struct_value(
+        schema,
+        type_arguments,
+        to_open_array(value_arguments, 0, nv - 1),
       )
       regv_set_ref_arg(0, value)
 

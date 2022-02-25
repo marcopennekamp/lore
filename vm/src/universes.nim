@@ -336,8 +336,23 @@ proc add_instructions(context: InstructionResolutionContext, instructions: open_
     context.get_function.instructions.add(instruction)
   context.pc_offset += instructions.len - 1
 
-proc generate_xary_application(operation_opl: Operation, operation_x: open_array[Operation], prefix: open_array[uint16], arguments: open_array[uint16]): seq[Instruction]
+proc generate_xary_application(
+  operation_opl: Operation,
+  operation_x: open_array[Operation],
+  prefix: open_array[uint16],
+  arguments: open_array[uint16],
+): seq[Instruction]
+
+proc generate_opl_or_direct2(
+  operation_opl: Operation,
+  operation_direct: Operation,
+  prefix: open_array[uint16],
+  arguments1: open_array[uint16],
+  arguments2: open_array[uint16],
+): seq[Instruction]
+
 proc generate_opl_pushes(arguments: open_array[uint16]): seq[Instruction]
+
 proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operation
 
 method resolve_instruction(poem_instruction: PoemInstruction, context: InstructionResolutionContext): seq[Instruction] {.base, locks: "unknown".} =
@@ -364,7 +379,7 @@ method resolve_instruction(poem_instruction: PoemInstructionTuple, context: Inst
     Operation.Tuple,
     [Operation.Tuple0, Operation.Tuple1, Operation.Tuple2],
     [poem_instruction.target_reg],
-    poem_instruction.arguments,
+    poem_instruction.element_regs,
   )
 
 method resolve_instruction(poem_instruction: PoemInstructionFunctionCall, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
@@ -372,30 +387,30 @@ method resolve_instruction(poem_instruction: PoemInstructionFunctionCall, contex
     Operation.FunctionCall,
     [Operation.FunctionCall0, Operation.FunctionCall1, Operation.FunctionCall2],
     [poem_instruction.target_reg, poem_instruction.function_reg],
-    poem_instruction.arguments,
+    poem_instruction.argument_regs,
   )
 
 method resolve_instruction(poem_instruction: PoemInstructionLambda, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
-  if poem_instruction.captured_registers.len > operand_list_limit:
+  if poem_instruction.captured_regs.len > operand_list_limit:
     quit(fmt"The `Lambda` operation cannot yet handle more than {operand_list_limit} captured registers.")
 
   let tpe = context.get_constants.types[poem_instruction.tpe]
   let prefix = [poem_instruction.target_reg, poem_instruction.mf, poem_instruction.tpe]
   if tpe.is_monomorphic:
-    generate_xary_application(Operation.Lambda, [Operation.Lambda0], prefix, poem_instruction.captured_registers)
+    generate_xary_application(Operation.Lambda, [Operation.Lambda0], prefix, poem_instruction.captured_regs)
   else:
-    generate_xary_application(Operation.LambdaPoly, [Operation.LambdaPoly0], prefix, poem_instruction.captured_registers)
+    generate_xary_application(Operation.LambdaPoly, [Operation.LambdaPoly0], prefix, poem_instruction.captured_regs)
 
 method resolve_instruction(poem_instruction: PoemInstructionList, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
-  if poem_instruction.elements.len > operand_list_limit:
+  if poem_instruction.element_regs.len > operand_list_limit:
     quit(fmt"The `List` operation cannot yet handle more than {operand_list_limit} elements.")
 
   let tpe = context.get_constants.types[poem_instruction.tpe]
   let prefix = [poem_instruction.target_reg, poem_instruction.tpe]
   if tpe.is_monomorphic:
-    generate_xary_application(Operation.List, [Operation.List0, Operation.List1], prefix, poem_instruction.elements)
+    generate_xary_application(Operation.List, [Operation.List0, Operation.List1], prefix, poem_instruction.element_regs)
   else:
-    generate_xary_application(Operation.ListPoly, [Operation.ListPoly0, Operation.ListPoly1], prefix, poem_instruction.elements)
+    generate_xary_application(Operation.ListPoly, [Operation.ListPoly0, Operation.ListPoly1], prefix, poem_instruction.element_regs)
 
 method resolve_instruction(poem_instruction: PoemInstructionListAppend, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   let tpe = context.get_constants.types[poem_instruction.tpe]
@@ -407,30 +422,17 @@ method resolve_instruction(poem_instruction: PoemInstructionShape, context: Inst
     Operation.Shape,
     [Operation.Shape0, Operation.Shape1, Operation.Shape2],
     [poem_instruction.target_reg, poem_instruction.meta_shape],
-    poem_instruction.arguments,
+    poem_instruction.property_value_regs,
   )
 
 method resolve_instruction(poem_instruction: PoemInstructionStruct, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
-  if poem_instruction.type_arguments.len == 0:
-    generate_xary_application(
-      Operation.Struct,
-      [Operation.Struct0, Operation.Struct1, Operation.Struct2],
-      [poem_instruction.target_reg, poem_instruction.schema],
-      poem_instruction.value_arguments,
-    )
-  else:
-    # For now, if the struct construction has type arguments, we only have to generate a StructPoly instruction. Later,
-    # we might introduce operations such as Struct2Poly1, which will complicate this resolution.
-    let pushes = generate_opl_pushes(poem_instruction.type_arguments & poem_instruction.value_arguments)
-    let instruction = new_instruction(
-      Operation.StructPoly,
-      [
-        poem_instruction.schema,
-        uint16(poem_instruction.type_arguments.len),
-        uint16(poem_instruction.value_arguments.len),
-      ]
-    )
-    pushes & @[instruction]
+  generate_opl_or_direct2(
+    Operation.Struct,
+    Operation.StructDirect,
+    [poem_instruction.target_reg, poem_instruction.schema],
+    poem_instruction.type_argument_regs,
+    poem_instruction.value_argument_regs,
+  )
 
 method resolve_instruction(poem_instruction: PoemInstructionPropertyGet, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   let (operation, property_id) =
@@ -457,7 +459,7 @@ macro generate_intrinsic_instruction(
 
   quote do:
     let intrinsic = context.get_constants.intrinsics[poem_instruction.intrinsic]
-    let arguments = poem_instruction.arguments
+    let arguments = poem_instruction.argument_regs
     if intrinsic.is_frame_aware and arguments.len == 0:
       quit(fmt"A frame-aware intrinsic with arity 0 cannot exist.")
 
@@ -488,7 +490,7 @@ method resolve_instruction(poem_instruction: PoemInstructionDispatch, context: I
     Operation.Dispatch,
     [Operation.Dispatch0, Operation.Dispatch1, Operation.Dispatch2],
     [poem_instruction.target_reg, poem_instruction.mf],
-    poem_instruction.arguments,
+    poem_instruction.argument_regs,
   )
 
 method resolve_instruction(poem_instruction: PoemInstructionReturn, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
@@ -522,6 +524,30 @@ proc generate_xary_application(
     let pushes = generate_opl_pushes(arguments)
     let instruction = new_instruction(operation_opl, @prefix & @[uint16(arguments.len)])
     pushes & @[instruction]
+
+proc generate_opl_or_direct2(
+  operation_opl: Operation,
+  operation_direct: Operation,
+  prefix: open_array[uint16],
+  arguments1: open_array[uint16],
+  arguments2: open_array[uint16],
+): seq[Instruction] =
+  ## Generates a direct instruction if the operand count is small enough, or an operand list-based instruction
+  ## otherwise. This generation function supports two distinct argument lists. When generating a direct instruction, a
+  ## composite count is used to represent both argument lists' lengths in a single instruction argument.
+  let operand_count = arguments1.len + arguments2.len
+
+  # The `-1` takes the composite count argument into account.
+  let maximum_direct_arguments = maximum_instruction_arguments - prefix.len - 1
+
+  if operand_count <= maximum_direct_arguments:
+    let composite_count = uint16(((arguments1.len shl 8) and 0xFF00) or (arguments2.len and 0xFF))
+    @[new_instruction(operation_direct, @prefix & @[composite_count] & @arguments1 & @arguments2)]
+  else:
+    let pushes = generate_opl_pushes(@arguments1 & @arguments2)
+    pushes & @[
+      new_instruction(operation_opl, @prefix & @[uint16(arguments1.len), uint16(arguments2.len)]),
+    ]
 
 proc generate_opl_pushes(arguments: open_array[uint16]): seq[Instruction] =
   ## Slices `arguments` into a number of `OplPushX` instructions.
@@ -614,7 +640,7 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.Lambda, PoemOperation.List,
      PoemOperation.ListAppend, PoemOperation.Shape, PoemOperation.Struct, PoemOperation.PropertyGet,
      PoemOperation.Intrinsic, PoemOperation.IntrinsicVoid, PoemOperation.GlobalGet, PoemOperation.Dispatch,
-     PoemOperation.Return:
+     PoemOperation.Call, PoemOperation.Return:
     quit(fmt"The poem operation {poem_operation} is not simple!")
 
 ########################################################################################################################
