@@ -5,7 +5,7 @@ import definitions
 from dispatch import find_dispatch_target_from_arguments
 import imseqs
 import instructions
-from types import Type, StructSchema, substitute
+from types import Type, StructSchema, StructType, substitute
 import values
 from utils import when_debug
 
@@ -575,6 +575,23 @@ proc evaluate(frame: FramePtr) =
       regv_set_bool_arg(0, a.name == b.name)
 
     of Operation.Struct:
+      let tpe = cast[StructType](const_types_arg(1))
+      let value_argument_count = int(instruction.arg(2))
+      let value = new_struct_value(tpe, to_open_array(value_operand_list, 0, value_argument_count - 1))
+      regv_set_ref_arg(0, value)
+
+    of Operation.StructDirect:
+      let tpe = cast[StructType](const_types_arg(1))
+      let value_argument_count = int(instruction.arg(2))
+
+      var value_arguments: array[maximum_instruction_arguments - 3, TaggedValue]
+      for i in 0 ..< value_argument_count:
+        value_arguments[i] = regv_get_arg(3 + i)
+
+      let value = new_struct_value(tpe, to_open_array(value_arguments, 0, value_argument_count - 1))
+      regv_set_ref_arg(0, value)
+
+    of Operation.StructPoly:
       let schema = cast[StructSchema](const_schema_arg(1))
       let type_argument_count = int(instruction.arg(2))
       let value_argument_count = int(instruction.arg(3))
@@ -586,7 +603,7 @@ proc evaluate(frame: FramePtr) =
       )
       regv_set_ref_arg(0, value)
 
-    of Operation.StructDirect:
+    of Operation.StructPolyDirect:
       let schema = cast[StructSchema](const_schema_arg(1))
       let nt = int(instruction.argu8l(2))
       let nv = int(instruction.argu8r(2))
@@ -595,7 +612,7 @@ proc evaluate(frame: FramePtr) =
       for i in 0 ..< nt:
         type_arguments[i] = regt_get_arg(3 + i)
 
-      var value_arguments: array[4, TaggedValue]
+      var value_arguments: array[maximum_instruction_arguments - 3, TaggedValue]
       for i in 0 ..< nv:
         value_arguments[i] = regv_get_arg(3 + nt + i)
 

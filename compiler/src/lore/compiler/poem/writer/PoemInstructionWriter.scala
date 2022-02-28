@@ -74,7 +74,12 @@ object PoemInstructionWriter {
 
       case PoemInstruction.SymbolEq(target, a, b) => write(target, a, b)
 
-      case PoemInstruction.Struct(target, schema, typeArguments, valueArguments) =>
+      case PoemInstruction.Struct(target, tpe, valueArguments) =>
+        write(target)
+        writeConstantType(tpe)
+        writeOperandsWithLength8(valueArguments)
+
+      case PoemInstruction.StructPoly(target, schema, typeArguments, valueArguments) =>
         write(target)
         writeConstantSchema(schema.name)
         writeOperandsWithLength8(typeArguments)

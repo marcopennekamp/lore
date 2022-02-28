@@ -343,6 +343,13 @@ proc generate_xary_application(
   arguments: open_array[uint16],
 ): seq[Instruction]
 
+proc generate_opl_or_direct(
+  operation_opl: Operation,
+  operation_direct: Operation,
+  prefix: open_array[uint16],
+  arguments: open_array[uint16],
+): seq[Instruction]
+
 proc generate_opl_or_direct2(
   operation_opl: Operation,
   operation_direct: Operation,
@@ -426,9 +433,17 @@ method resolve_instruction(poem_instruction: PoemInstructionShape, context: Inst
   )
 
 method resolve_instruction(poem_instruction: PoemInstructionStruct, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
-  generate_opl_or_direct2(
+  generate_opl_or_direct(
     Operation.Struct,
     Operation.StructDirect,
+    [poem_instruction.target_reg, poem_instruction.tpe],
+    poem_instruction.value_argument_regs,
+  )
+
+method resolve_instruction(poem_instruction: PoemInstructionStructPoly, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  generate_opl_or_direct2(
+    Operation.StructPoly,
+    Operation.StructPolyDirect,
     [poem_instruction.target_reg, poem_instruction.schema],
     poem_instruction.type_argument_regs,
     poem_instruction.value_argument_regs,
@@ -524,6 +539,24 @@ proc generate_xary_application(
     let pushes = generate_opl_pushes(arguments)
     let instruction = new_instruction(operation_opl, @prefix & @[uint16(arguments.len)])
     pushes & @[instruction]
+
+proc generate_opl_or_direct(
+  operation_opl: Operation,
+  operation_direct: Operation,
+  prefix: open_array[uint16],
+  arguments: open_array[uint16],
+): seq[Instruction] =
+  ## Generates a direct instruction if the operand count is small enough, or an operand list-based instruction
+  ## otherwise.
+  # The `-1` takes the argument count into account.
+  let maximum_direct_arguments = maximum_instruction_arguments - prefix.len - 1
+  if arguments.len <= maximum_direct_arguments:
+    @[new_instruction(operation_direct, @prefix & @[uint16(arguments.len)] & @arguments)]
+  else:
+    let pushes = generate_opl_pushes(@arguments)
+    pushes & @[
+      new_instruction(operation_opl, @prefix & @[uint16(arguments.len)]),
+    ]
 
 proc generate_opl_or_direct2(
   operation_opl: Operation,
@@ -638,9 +671,9 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.TypeConst: Operation.TypeConst
 
   of PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.Lambda, PoemOperation.List,
-     PoemOperation.ListAppend, PoemOperation.Shape, PoemOperation.Struct, PoemOperation.PropertyGet,
-     PoemOperation.Intrinsic, PoemOperation.IntrinsicVoid, PoemOperation.GlobalGet, PoemOperation.Dispatch,
-     PoemOperation.Call, PoemOperation.Return:
+     PoemOperation.ListAppend, PoemOperation.Shape, PoemOperation.Struct, PoemOperation.StructPoly,
+     PoemOperation.PropertyGet, PoemOperation.Intrinsic, PoemOperation.IntrinsicVoid, PoemOperation.GlobalGet,
+     PoemOperation.Dispatch, PoemOperation.Call, PoemOperation.CallPoly, PoemOperation.Return:
     quit(fmt"The poem operation {poem_operation} is not simple!")
 
 ########################################################################################################################

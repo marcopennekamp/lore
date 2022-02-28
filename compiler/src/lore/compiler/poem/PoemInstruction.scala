@@ -90,7 +90,8 @@ object PoemInstruction {
 
   case class SymbolEq(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.SymbolEq)
 
-  case class Struct(target: PReg, schema: PSch, typeArguments: Vector[PReg], valueArguments: Vector[PReg]) extends PoemInstruction(PoemOperation.Struct)
+  case class Struct(target: PReg, tpe: PTpe, valueArguments: Vector[PReg]) extends PoemInstruction(PoemOperation.Struct)
+  case class StructPoly(target: PReg, schema: PSch, typeArguments: Vector[PReg], valueArguments: Vector[PReg]) extends PoemInstruction(PoemOperation.StructPoly)
   case class StructEq(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.StructEq)
 
   sealed trait PropertyGetInstanceKind
@@ -166,7 +167,8 @@ object PoemInstruction {
       case ListGet(target, list, index) => Register.max(target, list, index)
       case Shape(target, _, properties) => Register.max(target, properties)
       case SymbolEq(target, a, b) => Register.max(target, a, b)
-      case Struct(target, _, typeArguments, valueArguments) => Register.max(target, typeArguments ++ valueArguments)
+      case Struct(target, _, valueArguments) => Register.max(target, valueArguments)
+      case StructPoly(target, _, typeArguments, valueArguments) => Register.max(target, typeArguments ++ valueArguments)
       case StructEq(target, a, b) => Register.max(target, a, b)
       case PropertyGet(target, _, instance, _) => Register.max(target, instance)
       case Jump(_) => -1
@@ -211,8 +213,9 @@ object PoemInstruction {
     case instruction@ListLength(target, list) => instruction.copy(target = applyTarget(target), list = applySource(list))
     case instruction@ListGet(target, list, index) => instruction.copy(target = applyTarget(target), list = applySource(list), index = applySource(index))
     case instruction@Shape(target, _, properties) => instruction.copy(target = applyTarget(target), properties = properties.map(applySource))
-    case instruction@SymbolEq(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
-    case instruction@Struct(target, _, typeArguments, valueArguments) => instruction.copy(target = applyTarget(target), typeArguments = typeArguments.map(applySource), valueArguments = valueArguments.map(applySource))
+    case instruction@SymbolEq(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))    case instruction@StructPoly(target, _, typeArguments, valueArguments) => instruction.copy(target = applyTarget(target), typeArguments = typeArguments.map(applySource), valueArguments = valueArguments.map(applySource))
+    case instruction@Struct(target, _, valueArguments) => instruction.copy(target = applyTarget(target), valueArguments = valueArguments.map(applySource))
+    case instruction@StructPoly(target, _, typeArguments, valueArguments) => instruction.copy(target = applyTarget(target), typeArguments = typeArguments.map(applySource), valueArguments = valueArguments.map(applySource))
     case instruction@StructEq(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
     case instruction@PropertyGet(target, _, instance, _) => instruction.copy(target = applyTarget(target), instance = applySource(instance))
     case instruction@Jump(_) => instruction
@@ -261,7 +264,8 @@ object PoemInstruction {
       case ListGet(target, list, index) => (Vector(target), Vector(list, index))
       case Shape(target, _, properties) => (Vector(target), properties)
       case SymbolEq(target, a, b) => (Vector(target), Vector(a, b))
-      case Struct(target, _, typeArguments, valueArguments) => (Vector(target), typeArguments ++ valueArguments)
+      case Struct(target, _, valueArguments) => (Vector(target), valueArguments)
+      case StructPoly(target, _, typeArguments, valueArguments) => (Vector(target), typeArguments ++ valueArguments)
       case StructEq(target, a, b) => (Vector(target), Vector(a, b))
       case PropertyGet(target, _, instance, _) => (Vector(target), Vector(instance))
       case Jump(_) => (Vector.empty, Vector.empty)
@@ -305,7 +309,8 @@ object PoemInstruction {
       case ListGet(target, list, index) => s"$target <- $list[$index]"
       case Shape(target, metaShape, properties) => s"$target <- shape($metaShape, ${properties.mkString(", ")})"
       case SymbolEq(target, a, b) => s"$target <- $a $b"
-      case Struct(target, schema, typeArguments, valueArguments) => s"$target <- ${schema.name}[${typeArguments.mkString(", ")}](${valueArguments.mkString(", ")})"
+      case Struct(target, tpe, valueArguments) => s"$target <- $tpe(${valueArguments.mkString(", ")})"
+      case StructPoly(target, schema, typeArguments, valueArguments) => s"$target <- ${schema.name}[${typeArguments.mkString(", ")}](${valueArguments.mkString(", ")})"
       case StructEq(target, a, b) => s"$target <- $a $b"
       case PropertyGet(target, _, instance, propertyName) => s"$target <- $instance[$propertyName]"
       case Jump(target) => s"$target"

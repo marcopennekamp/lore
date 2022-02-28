@@ -152,7 +152,20 @@ type
     SymbolEq
 
     Struct
+      ## target_reg: uint16, tpe: uint16, value_argument_regs: uint8 * uint16
+      ##
+      ## `tpe` refers to the compile-time struct type which will become the new value's run-time type. This operation
+      ## can be used if none of the struct's type arguments are determined at run time. Otherwise, `StructPoly` must be
+      ## used.
+      ##
+      ## `Struct` can be used if the struct has open properties, but a new struct type will be created.
+
+    StructPoly
       ## target_reg: uint16, sch: uint16, type_argument_regs: uint8 * uint16, value_argument_regs: uint8 * uint16
+      ##
+      ## Creates a struct with type arguments that are unknown or partially unknown at compile time. Type bounds of the
+      ## struct will be checked and the VM will quit if the check fails.
+
     StructEq
 
     PropertyGet
@@ -237,6 +250,11 @@ type
     property_value_regs*: seq[uint16]
 
   PoemInstructionStruct* = ref object of PoemInstruction
+    target_reg*: uint16
+    tpe*: uint16
+    value_argument_regs*: seq[uint16]
+
+  PoemInstructionStructPoly* = ref object of PoemInstruction
     target_reg*: uint16
     schema*: uint16
     type_argument_regs*: seq[uint16]
@@ -445,8 +463,11 @@ proc poem_inst_list_append*(target: uint16, list: uint16, element: uint16, tpe: 
 proc poem_inst_shape*(target: uint16, meta_shape: uint16, property_value_regs: varargs[uint16]): PoemInstruction =
   PoemInstructionShape(target_reg: target, meta_shape: meta_shape, property_value_regs: @property_value_regs)
 
-proc poem_inst_struct*(target: uint16, schema: uint16, type_argument_regs: open_array[uint16], value_argument_regs: open_array[uint16]): PoemInstruction =
-  PoemInstructionStruct(target_reg: target, schema: schema, type_argument_regs: @type_argument_regs, value_argument_regs: @value_argument_regs)
+proc poem_inst_struct*(target: uint16, tpe: uint16, value_argument_regs: open_array[uint16]): PoemInstruction =
+  PoemInstructionStruct(target_reg: target, tpe: tpe, value_argument_regs: @value_argument_regs)
+
+proc poem_inst_struct_poly*(target: uint16, schema: uint16, type_argument_regs: open_array[uint16], value_argument_regs: open_array[uint16]): PoemInstruction =
+  PoemInstructionStructPoly(target_reg: target, schema: schema, type_argument_regs: @type_argument_regs, value_argument_regs: @value_argument_regs)
 
 proc poem_inst_any_property_get*(target: uint16, instance: uint16, name: uint16): PoemInstruction =
   PoemInstructionPropertyGet(target_reg: target, instance_kind: PropertyGetInstanceKind.Any, instance_reg: instance, name: name)
@@ -818,6 +839,13 @@ proc read_instruction(stream: FileStream): PoemInstruction =
   of PoemOperation.Struct:
     PoemInstructionStruct(
       target_reg: stream.read(uint16),
+      tpe: stream.read(uint16),
+      value_argument_regs: stream.read_many_with_count(uint16, uint8, read_uint16),
+    )
+
+  of StructPoly:
+    PoemInstructionStructPoly(
+      target_reg: stream.read(uint16),
       schema: stream.read(uint16),
       type_argument_regs: stream.read_many_with_count(uint16, uint8, read_uint16),
       value_argument_regs: stream.read_many_with_count(uint16, uint8, read_uint16),
@@ -935,6 +963,12 @@ method write(instruction: PoemInstructionShape, stream: FileStream) {.locks: "un
 method write(instruction: PoemInstructionStruct, stream: FileStream) {.locks: "unknown".} =
   stream.write_operation(PoemOperation.Struct)
   stream.write(instruction.target_reg)
+  stream.write(instruction.tpe)
+  stream.write_many_with_count(instruction.value_argument_regs, uint8, write_uint16)
+
+method write(instruction: PoemInstructionStructPoly, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.StructPoly)
+  stream.write(instruction.target_reg)
   stream.write(instruction.schema)
   stream.write_many_with_count(instruction.type_argument_regs, uint8, write_uint16)
   stream.write_many_with_count(instruction.value_argument_regs, uint8, write_uint16)
@@ -984,7 +1018,8 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
      BooleanOr, BooleanAnd, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped, ListGet,
      SymbolEq, StructEq: 3
   of PoemOperation.Tuple, FunctionCall, PoemOperation.Lambda, PoemOperation.Shape, PoemOperation.List, ListAppend,
-     PoemOperation.Struct, PropertyGet, Intrinsic, IntrinsicVoid, GlobalGet, Dispatch, Call, Return:
+     PoemOperation.Struct, StructPoly, PropertyGet, Intrinsic, IntrinsicVoid, GlobalGet, Dispatch, Call, CallPoly,
+     Return:
     quit(fmt"Poem operation {operation} is not simple!")
 
 ########################################################################################################################

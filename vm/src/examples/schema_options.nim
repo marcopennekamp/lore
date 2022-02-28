@@ -59,7 +59,7 @@ let ExampleResult_construct = PoemFunction(
   is_abstract: false,
   register_count: 2,
   instructions: @[
-    poem_inst_struct(0, 0, [], [0'u16, 1]),
+    poem_inst_struct(0, 0, [0'u16, 1]),
     poem_inst_return(0),
   ],
 )
@@ -160,6 +160,9 @@ let test = PoemFunction(
 
 let poem* = Poem(
   constants: PoemConstants(
+    types: @[
+      poem_named_type("ExampleResult"),
+    ],
     values: @[
       poem_struct_value("lore.option.None", @[], @[]),
       new_some_value(poem_int_type, poem_int_value(12)),

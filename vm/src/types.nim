@@ -669,6 +669,12 @@ proc instantiate_struct_schema*(
 proc force_instantiate_struct_schema*(schema: StructSchema, type_arguments: ImSeq[Type], open_property_types: ImSeq[Type]): StructType =
   require_instantiated_schema(instantiate_struct_schema(schema, type_arguments, open_property_types))
 
+proc instantiate_struct_schema*(tpe: StructType, open_property_types: ImSeq[Type]): StructType =
+  ## Instantiates a version of the struct type with new open property types. The struct type's type arguments remain
+  ## the same. This is used by the `Struct` operations.
+  # TODO (vm/intern): This function should intern the declared types.
+  new_struct_type(tpe.get_schema, tpe.type_arguments, tpe.supertraits, open_property_types)
+
 proc new_struct_type(
   schema: StructSchema,
   type_arguments: ImSeq[Type],

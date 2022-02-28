@@ -252,31 +252,58 @@ proc new_symbol_value_tagged*(name: string): TaggedValue = tag_reference(new_sym
 # Structs.                                                                                                             #
 ########################################################################################################################
 
+proc get_open_property_types*(schema: StructSchema, property_values: open_array[TaggedValue]): ImSeq[Type]
+
 proc alloc_struct_value(schema: StructSchema): StructValue =
   ## Allocates a new struct value with the correct number of property values, which must be initialized after. The
   ## value's type also must be set!
   let shape_value = cast[StructValue](alloc0(sizeof(StructValue) + schema.property_count * sizeof(TaggedValue)))
   shape_value
 
+proc copy_struct_properties(value: StructValue, schema: StructSchema, property_values: open_array[TaggedValue]) =
+  ## Copies the given property values into the struct value.
+  copy_mem(
+    addr value.property_values,
+    unsafe_addr property_values,
+    schema.property_count * sizeof(TaggedValue),
+  )
+
 proc new_struct_value*(schema: StructSchema, type_arguments: ImSeq[Type], property_values: open_array[TaggedValue]): StructValue =
   ## Creates a new struct value. The property values must be in the correct order as defined by the struct's schema.
+  let open_property_types = get_open_property_types(schema, property_values)
   let value = alloc_struct_value(schema)
-  let open_property_types =
-    if schema.has_open_properties:
-      var types = new_immutable_seq[Type](schema.open_property_count)
-      for i in 0 ..< schema.open_property_count:
-        types[i] = get_type(property_values[schema.open_property_indices[i]])
-      types
-    else: nil
-
-  copy_mem(addr value.property_values, unsafe_addr property_values, schema.property_count * sizeof(TaggedValue))
-  value.tpe = types.instantiate_struct_schema(schema, type_arguments, open_property_types)
+  value.tpe = instantiate_struct_schema(schema, type_arguments, open_property_types)
+  copy_struct_properties(value, schema, property_values)
   value
 
 proc new_struct_value_tagged*(schema: Schema, type_arguments: ImSeq[Type], property_values: open_array[TaggedValue]): TaggedValue =
   if schema.kind != Kind.Struct:
     quit(fmt"Cannot construct a struct value from a trait schema {schema.name}.")
   tag_reference(new_struct_value(cast[StructSchema](schema), type_arguments, property_values))
+
+proc new_struct_value*(tpe: StructType, property_values: open_array[TaggedValue]): StructValue =
+  ## Creates a new struct value from the given struct type and property values. If the struct has open properties, a
+  ## new struct type will be instantiated. Otherwise, `tpe` will directly be used as the struct value's type.
+  let schema = tpe.get_schema
+  let open_property_types = get_open_property_types(schema, property_values)
+  let new_type =
+    if open_property_types != nil: instantiate_struct_schema(tpe, open_property_types)
+    else: tpe
+
+  let value = alloc_struct_value(schema)
+  value.tpe = new_type
+  copy_struct_properties(value, schema, property_values)
+  value
+
+proc get_open_property_types*(schema: StructSchema, property_values: open_array[TaggedValue]): ImSeq[Type] =
+  ## Returns the open property types for the given schema and property values, or `nil` if the schema has no open
+  ## properties.
+  if schema.has_open_properties:
+    var types = new_immutable_seq[Type](schema.open_property_count)
+    for i in 0 ..< schema.open_property_count:
+      types[i] = get_type(property_values[schema.open_property_indices[i]])
+    types
+  else: nil
 
 proc struct_type*(struct: StructValue): StructType {.inline.} = cast[StructType](struct.tpe)
 

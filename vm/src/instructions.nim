@@ -221,11 +221,19 @@ type
       ## reg(arg0) <- reg(arg1) == reg(arg2)
 
     Struct
+      ## arg2: value argument count
+      ## reg(arg0) <- tpe(arg1).new_struct(opl(0 .. arg2))
+
+    StructDirect
+      ## arg2: value argument count
+      ## reg(arg0) <- tpe(arg1).new_struct(reg_arg(3 .. 3 + arg2))
+
+    StructPoly
       ## arg2: type argument count
       ## arg3: value argument count
       ## reg(arg0) <- sch(arg1)[opl(0 .. arg2)](opl(arg2 .. arg2 + arg3))
 
-    StructDirect
+    StructPolyDirect
       ## arg2 (composite):
       ##  - nt: uint8 (type argument count)
       ##  - nv: uint8 (value argument count)
@@ -367,7 +375,7 @@ type
 when sizeof(Instruction) != 16:
   {.error: "Instructions must be exactly 16 bytes wide.".}
 
-let maximum_instruction_arguments*: int = 7
+const maximum_instruction_arguments*: int = 7
 
 proc is_jump_operation*(operation: Operation): bool =
   case operation
