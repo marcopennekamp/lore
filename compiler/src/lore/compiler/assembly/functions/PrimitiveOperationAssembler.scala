@@ -97,61 +97,88 @@ object PrimitiveOperationAssembler {
     c1 ++ c2 ++ AsmChunk(target, instruction)
   }
 
-  private def getPoemOperation(domainType: BasicType, operator: UnaryOperator): PoemOperation = domainType match {
-    case BasicType.Int => operator match {
-      case UnaryOperator.Negation => PoemOperation.IntNeg
-    }
+  private def getPoemOperation(domainType: BasicType, operator: UnaryOperator): PoemOperation = {
+    def invalidOperator: Nothing = throw CompilationException(s"Invalid operator $operator for unary $domainType operation.")
 
-    case BasicType.Real => operator match {
-      case UnaryOperator.Negation => PoemOperation.RealNeg
-    }
+    domainType match {
+      case BasicType.Int => operator match {
+        case UnaryOperator.Negation => PoemOperation.IntNeg
+        case _ => invalidOperator
+      }
 
-    case BasicType.Boolean => operator match {
-      case UnaryOperator.LogicalNot => PoemOperation.BooleanNot
-    }
-  }
+      case BasicType.Real => operator match {
+        case UnaryOperator.Negation => PoemOperation.RealNeg
+        case _ => invalidOperator
+      }
 
-  private def getPoemOperation(domainType: BasicType, operator: BinaryOperator): PoemOperation = domainType match {
-    case BasicType.Int => operator match {
-      case BinaryOperator.Addition => PoemOperation.IntAdd
-      case BinaryOperator.Subtraction => PoemOperation.IntSub
-      case BinaryOperator.Multiplication => PoemOperation.IntMul
-      case BinaryOperator.Division => PoemOperation.IntDiv
-      case BinaryOperator.Equals => PoemOperation.IntEq
-      case BinaryOperator.LessThan => PoemOperation.IntLt
-      case BinaryOperator.LessThanEquals => PoemOperation.IntLte
-    }
+      case BasicType.Boolean => operator match {
+        case UnaryOperator.LogicalNot => PoemOperation.BooleanNot
+        case _ => invalidOperator
+      }
 
-    case BasicType.Real => operator match {
-      case BinaryOperator.Addition => PoemOperation.RealAdd
-      case BinaryOperator.Subtraction => PoemOperation.RealSub
-      case BinaryOperator.Multiplication => PoemOperation.RealMul
-      case BinaryOperator.Division => PoemOperation.RealDiv
-      case BinaryOperator.Equals => PoemOperation.RealEq
-      case BinaryOperator.LessThan => PoemOperation.RealLt
-      case BinaryOperator.LessThanEquals => PoemOperation.RealLte
-    }
-
-    case BasicType.Boolean => operator match {
-      // TODO (assembly): Ensure that Boolean comparisons (including LT/LTE) never reach the assembly phase.
-      case BinaryOperator.Equals => throw CompilationException("Boolean equality can be resolved statically.")
-    }
-
-    case BasicType.String => operator match {
-      case BinaryOperator.Equals => PoemOperation.StringEq
-      case BinaryOperator.LessThan => PoemOperation.StringLt
-      case BinaryOperator.LessThanEquals => PoemOperation.StringLte
+      case _ => throw CompilationException(s"Invalid domain type $domainType for unary operator $operator.")
     }
   }
 
-  private def getPoemOperation(resultType: BasicType, operator: XaryOperator): PoemOperation = resultType match {
-    case BasicType.Boolean => operator match {
-      case XaryOperator.Disjunction => PoemOperation.BooleanOr
-      case XaryOperator.Conjunction => PoemOperation.BooleanAnd
-    }
+  private def getPoemOperation(domainType: BasicType, operator: BinaryOperator): PoemOperation = {
+    def invalidOperator: Nothing = throw CompilationException(s"Invalid operator $operator for binary $domainType operation.")
 
-    case BasicType.String => operator match {
-      case XaryOperator.Concatenation => PoemOperation.StringConcat
+    domainType match {
+      case BasicType.Int => operator match {
+        case BinaryOperator.Addition => PoemOperation.IntAdd
+        case BinaryOperator.Subtraction => PoemOperation.IntSub
+        case BinaryOperator.Multiplication => PoemOperation.IntMul
+        case BinaryOperator.Division => PoemOperation.IntDiv
+        case BinaryOperator.Equals => PoemOperation.IntEq
+        case BinaryOperator.LessThan => PoemOperation.IntLt
+        case BinaryOperator.LessThanEquals => PoemOperation.IntLte
+        case _ => invalidOperator
+      }
+
+      case BasicType.Real => operator match {
+        case BinaryOperator.Addition => PoemOperation.RealAdd
+        case BinaryOperator.Subtraction => PoemOperation.RealSub
+        case BinaryOperator.Multiplication => PoemOperation.RealMul
+        case BinaryOperator.Division => PoemOperation.RealDiv
+        case BinaryOperator.Equals => PoemOperation.RealEq
+        case BinaryOperator.LessThan => PoemOperation.RealLt
+        case BinaryOperator.LessThanEquals => PoemOperation.RealLte
+        case _ => invalidOperator
+      }
+
+      case BasicType.Boolean => operator match {
+        // TODO (assembly): Ensure that Boolean comparisons (including LT/LTE) never reach the assembly phase.
+        case BinaryOperator.Equals => throw CompilationException("Boolean equality can be resolved statically.")
+        case _ => invalidOperator
+      }
+
+      case BasicType.String => operator match {
+        case BinaryOperator.Equals => PoemOperation.StringEq
+        case BinaryOperator.LessThan => PoemOperation.StringLt
+        case BinaryOperator.LessThanEquals => PoemOperation.StringLte
+        case _ => invalidOperator
+      }
+
+      case _ => throw CompilationException(s"Invalid domain type $domainType for binary operator $operator.")
+    }
+  }
+
+  private def getPoemOperation(domainType: BasicType, operator: XaryOperator): PoemOperation = {
+    def invalidOperator: Nothing = throw CompilationException(s"Invalid operator $operator for xary $domainType operation.")
+
+    domainType match {
+      case BasicType.Boolean => operator match {
+        case XaryOperator.Disjunction => PoemOperation.BooleanOr
+        case XaryOperator.Conjunction => PoemOperation.BooleanAnd
+        case _ => invalidOperator
+      }
+
+      case BasicType.String => operator match {
+        case XaryOperator.Concatenation => PoemOperation.StringConcat
+        case _ => invalidOperator
+      }
+
+      case _ => throw CompilationException(s"Invalid domain type $domainType for xary operator $operator.")
     }
   }
 
