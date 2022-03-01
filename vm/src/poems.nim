@@ -4,7 +4,7 @@ import std/os
 from std/sequtils import deduplicate
 import std/strformat
 
-from definitions import Function
+from definitions import Function, FunctionInstance
 import types
 from values import FunctionValueVariant
 
@@ -33,6 +33,7 @@ type
     schemas*: seq[string]
     global_variables*: seq[string]
     multi_functions*: seq[string]
+    function_instances*: seq[PoemFunctionInstance]
     meta_shapes*: seq[PoemMetaShape]
 
   PoemSchema* = ref object of RootObj
@@ -123,6 +124,9 @@ type
       ## target_reg: uint16, element_regs: uint8 * uint16
     TupleGet
 
+    # TODO (assembly): Rename Lambda to FunctionLambda to bring it in line with FunctionSingle and FunctionCall.
+    #                  LambdaLocal should not be renamed.
+
     FunctionCall
       ## target_reg: uint16, function_reg: uint16, argument_regs: uint8 * uint16
     Lambda
@@ -203,10 +207,24 @@ type
     Dispatch
       ## target_reg: uint16, mf: uint16, argument_regs: uint8 * uint16
 
+    Call
+      ## target_reg: uint16, fin: uint16, argument_regs: uint8 * uint16
+      ##
+      ## Calls a constant function instance with the given value arguments. This instruction should be preferred over
+      ## `CallPoly` if the type arguments are known at compile time.
+
+    CallPoly
+      ## target_reg: uint16, mf: uint16, type_argument_regs: uint8 * uint16, value_argument_regs: uint8 * uint16
+      ##
+      ## Calls a single-function multi-function with the given type arguments and value arguments. Type bounds of the
+      ## function will be checked and the VM will quit if the check fails.
+
     Return
       ## value_reg: uint16
 
     TypeArg
+    # TODO (assembly): TypeConst needs to substitute type variables. As always, split it into a normal and a Poly
+    #                  operation.
     TypeConst
 
   PoemInstruction* = ref object of RootObj
@@ -287,8 +305,25 @@ type
     mf*: uint16
     argument_regs*: seq[uint16]
 
+  PoemInstructionCall* = ref object of PoemInstruction
+    target_reg*: uint16
+    fin*: uint16
+    value_argument_regs*: seq[uint16]
+
+  PoemInstructionCallPoly* = ref object of PoemInstruction
+    target_reg*: uint16
+    mf*: uint16
+    type_argument_regs*: seq[uint16]
+    value_argument_regs*: seq[uint16]
+
   PoemInstructionReturn* = ref object of PoemInstruction
     value_reg*: uint16
+
+  PoemFunctionInstance* = ref object of PoemInstruction
+    ## A poem function instance is used when a single-function multi-function is called directly and the types are
+    ## known at compile time.
+    name*: string
+    type_arguments*: seq[PoemType]
 
   PoemMetaShape* = ref object
     property_names*: seq[string]
@@ -383,6 +418,9 @@ let poem_string_type*: PoemType = PoemBasicType(tpe: string_type)
 let poem_unit_type*: PoemType = PoemXaryType(kind: Kind.Tuple, types: @[])
 
 proc poem_struct_property*(name: string, tpe: PoemType, is_open: bool): PoemStructProperty = PoemStructProperty(name: name, tpe: tpe, is_open: is_open)
+
+proc poem_function_instance*(name: string): PoemFunctionInstance = PoemFunctionInstance(name: name, type_arguments: @[])
+proc poem_function_instance*(name: string, type_arguments: seq[PoemType]): PoemFunctionInstance = PoemFunctionInstance(name: name, type_arguments: type_arguments)
 
 proc poem_type_parameter*(name: string, lower_bound: PoemType, upper_bound: PoemType, variance: Variance): PoemTypeParameter =
   PoemTypeParameter(name: name, lower_bound: lower_bound, upper_bound: upper_bound, variance: variance)
@@ -493,6 +531,12 @@ proc poem_inst_global_get*(target: uint16, global: uint16): PoemInstruction =
 proc poem_inst_dispatch*(target: uint16, mf: uint16, argument_regs: varargs[uint16]): PoemInstruction =
   PoemInstructionDispatch(target_reg: target, mf: mf, argument_regs: @argument_regs)
 
+proc poem_inst_call*(target: uint16, fin: uint16, value_argument_regs: varargs[uint16]): PoemInstruction =
+  PoemInstructionCall(target_reg: target, fin: fin, value_argument_regs: @value_argument_regs)
+
+proc poem_inst_call_poly*(target: uint16, mf: uint16, type_argument_regs: open_array[uint16], value_argument_regs: open_array[uint16]): PoemInstruction =
+  PoemInstructionCallPoly(target_reg: target, mf: mf, type_argument_regs: @type_argument_regs, value_argument_regs: @value_argument_regs)
+
 proc poem_inst_return*(value: uint16): PoemInstruction =
   PoemInstructionReturn(value_reg: value)
 
@@ -558,6 +602,7 @@ proc read_struct_property(stream: FileStream): PoemStructProperty
 proc read_global_variable(stream: FileStream): PoemGlobalVariable
 proc read_function(stream: FileStream): PoemFunction
 proc read_instruction(stream: FileStream): PoemInstruction
+proc read_function_instance(stream: FileStream): PoemFunctionInstance
 proc read_meta_shape(stream: FileStream): PoemMetaShape
 proc read_type_parameters(stream: FileStream): seq[PoemTypeParameter]
 proc read_type(stream: FileStream): PoemType
@@ -571,6 +616,7 @@ proc write_global_variable(stream: FileStream, global_variable: PoemGlobalVariab
 proc write_function(stream: FileStream, function: PoemFunction)
 proc write_instruction(stream: FileStream, instruction: PoemInstruction)
 proc write_operation(stream: FileStream, operation: PoemOperation)
+proc write_function_instance(stream: FileStream, instance: PoemFunctionInstance)
 proc write_meta_shape(stream: FileStream, meta_shape: PoemMetaShape)
 proc write_shape_property_names(stream: FileStream, property_names: seq[string], with_count: bool)
 proc write_type_parameters(stream: FileStream, type_parameters: seq[PoemTypeParameter])
@@ -628,6 +674,7 @@ proc read_constants(stream: FileStream): PoemConstants =
   let schemas = stream.read_many_with_count(string, uint16, read_string_with_length)
   let global_variables = stream.read_many_with_count(string, uint16, read_string_with_length)
   let multi_functions = stream.read_many_with_count(string, uint16, read_string_with_length)
+  let function_instances = stream.read_many_with_count(PoemFunctionInstance, uint16, read_function_instance)
   let meta_shapes = stream.read_many_with_count(PoemMetaShape, uint16, read_meta_shape)
 
   PoemConstants(
@@ -638,6 +685,7 @@ proc read_constants(stream: FileStream): PoemConstants =
     schemas: schemas,
     global_variables: global_variables,
     multi_functions: multi_functions,
+    function_instances: function_instances,
     meta_shapes: meta_shapes,
   )
 
@@ -649,6 +697,7 @@ proc write_constants(stream: FileStream, constants: PoemConstants) =
   stream.write_many_with_count(constants.schemas, uint16, write_string_with_length)
   stream.write_many_with_count(constants.global_variables, uint16, write_string_with_length)
   stream.write_many_with_count(constants.multi_functions, uint16, write_string_with_length)
+  stream.write_many_with_count(constants.function_instances, uint16, write_function_instance)
   stream.write_many_with_count(constants.meta_shapes, uint16, write_meta_shape)
 
 ########################################################################################################################
@@ -894,6 +943,21 @@ proc read_instruction(stream: FileStream): PoemInstruction =
       argument_regs: stream.read_many_with_count(uint16, uint8, read_uint16),
     )
 
+  of Call:
+    PoemInstructionCall(
+      target_reg: stream.read(uint16),
+      fin: stream.read(uint16),
+      value_argument_regs: stream.read_many_with_count(uint16, uint8, read_uint16),
+    )
+
+  of CallPoly:
+    PoemInstructionCallPoly(
+      target_reg: stream.read(uint16),
+      mf: stream.read(uint16),
+      type_argument_regs: stream.read_many_with_count(uint16, uint8, read_uint16),
+      value_argument_regs: stream.read_many_with_count(uint16, uint8, read_uint16),
+    )
+
   of Return:
     PoemInstructionReturn(
       value_reg: stream.read(uint16),
@@ -1004,6 +1068,19 @@ method write(instruction: PoemInstructionDispatch, stream: FileStream) {.locks: 
   stream.write(instruction.mf)
   stream.write_many_with_count(instruction.argument_regs, uint8, write_uint16)
 
+method write(instruction: PoemInstructionCall, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.Call)
+  stream.write(instruction.target_reg)
+  stream.write(instruction.fin)
+  stream.write_many_with_count(instruction.value_argument_regs, uint8, write_uint16)
+
+method write(instruction: PoemInstructionCallPoly, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.CallPoly)
+  stream.write(instruction.target_reg)
+  stream.write(instruction.mf)
+  stream.write_many_with_count(instruction.type_argument_regs, uint8, write_uint16)
+  stream.write_many_with_count(instruction.value_argument_regs, uint8, write_uint16)
+
 method write(instruction: PoemInstructionReturn, stream: FileStream) {.locks: "unknown".} =
   stream.write_operation(PoemOperation.Return)
   stream.write(instruction.value_reg)
@@ -1021,6 +1098,19 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
      PoemOperation.Struct, StructPoly, PropertyGet, Intrinsic, IntrinsicVoid, GlobalGet, Dispatch, Call, CallPoly,
      Return:
     quit(fmt"Poem operation {operation} is not simple!")
+
+########################################################################################################################
+# Function instances.                                                                                                  #
+########################################################################################################################
+
+proc read_function_instance(stream: FileStream): PoemFunctionInstance =
+  let name = stream.read_string_with_length()
+  let type_arguments = stream.read_many_with_count(PoemType, uint8, read_type)
+  PoemFunctionInstance(name: name, type_arguments: type_arguments)
+
+proc write_function_instance(stream: FileStream, instance: PoemFunctionInstance) =
+  stream.write_string_with_length(instance.name)
+  stream.write_many_with_count(instance.type_arguments, uint8, write_type)
 
 ########################################################################################################################
 # Meta shapes.                                                                                                         #

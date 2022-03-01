@@ -37,6 +37,8 @@ The Constants table has the following structure:
   - **Global variables** (String*): The full names of the global variable references.
   - **Multi-functions count** (uint16)
   - **Multi-functions** (String*): The full names of the multi-function references.
+  - **Function instances count** (uint16)
+  - **Function instances** (FunctionInstance*): Function instance constants are used by `Call` instructions to directly call a function instance, without the need to create a function instance or a constant function value.
   - **Meta shape count** (uint16)
   - **Meta shapes** (MetaShape*): These meta shapes are exclusively used by instructions creating new shape instances. They are not referenced by constant types or values.
 
@@ -113,6 +115,14 @@ Variable-size instructions have two big advantages compared to fixed-size instru
   - They hide implementation-specific details of the evaluation, such as operands lists and frame-aware intrinsics.
 
 TODO (vm): Document instruction encoding in-depth.
+
+### Function Instances
+
+A poem **FunctionInstance** represents the constant instantiation of a single-function multi-function. It has the following structure:
+
+- **Name** (String)
+- **Type argument count** (uint8)
+- **Type arguments** (Type*)
 
 ### Meta Shapes
 

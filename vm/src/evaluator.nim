@@ -120,6 +120,7 @@ template const_intrinsic_arg(index): untyped = constants.intrinsics[instruction.
 template const_schema_arg(index): untyped = constants.schemas[instruction.arg(index)]
 template const_global_variable_arg(index): untyped = constants.global_variables[instruction.arg(index)]
 template const_multi_function_arg(index): untyped = constants.multi_functions[instruction.arg(index)]
+template const_function_instance_arg(index): untyped = constants.function_instances[instruction.arg(index)]
 template const_meta_shape_arg(index): untyped = constants.meta_shapes[instruction.arg(1)]
 
 ########################################################################################################################
@@ -138,7 +139,10 @@ template opl_set_arg(offset: uint16, register_index: uint16): untyped =
   operand_list[index] = reg_get_arg(register_index)
 
 template oplv_get_open_array_arg(count_arg_index): untyped =
-  to_open_array(value_operand_list, 0, int(instruction.arg(count_arg_index) - 1))
+  to_open_array(value_operand_list, 0, int(instruction.arg(count_arg_index)) - 1)
+
+template oplv_get_open_array_arg_range(count_arg_index, start): untyped =
+  to_open_array(value_operand_list, start, start + int(instruction.arg(count_arg_index)) - 1)
 
 template oplv_get_imseq_arg(count_arg_index): untyped =
   new_immutable_seq(value_operand_list, int(instruction.arg(count_arg_index)))
@@ -294,11 +298,7 @@ template generate_dispatch2(mf, argument0, argument1): TaggedValue =
 proc lambda_get_function_instance(frame: FramePtr, instruction: Instruction, arg_index: uint16): ptr FunctionInstance {.inline.} =
   let constants = frame.function.constants
   let mf = const_multi_function_arg(arg_index)
-  if not mf.is_single_function:
-    quit(fmt"A multi-function backing a lambda must be a single function. Multi-function name: {mf.name}.")
-  let function = mf.functions[0]
-  if function.is_monomorphic: addr function.monomorphic_instance
-  else: new_function_instance(function, frame.type_arguments)
+  mf.instantiate_single_function(frame.type_arguments)
 
 template generate_lambda(is_poly: bool) =
   let function_instance = lambda_get_function_instance(frame, instruction, 1)
@@ -617,12 +617,10 @@ proc evaluate(frame: FramePtr) =
     of Operation.StructPoly:
       let schema = cast[StructSchema](const_schema_arg(1))
       let nt = int(instruction.arg(2))
-      let nv = int(instruction.arg(3))
-
       let value = values.new_struct_value(
         schema,
         new_immutable_seq(type_operand_list, nt),
-        to_open_array(value_operand_list, nt, nt + nv - 1),
+        oplv_get_open_array_arg_range(3, nt),
       )
       regv_set_ref_arg(0, value)
 
@@ -630,7 +628,6 @@ proc evaluate(frame: FramePtr) =
       let schema = cast[StructSchema](const_schema_arg(1))
       let nt = int(instruction.argu8l(2))
       let nv = int(instruction.argu8r(2))
-
       let value = values.new_struct_value(
         schema,
         get_direct_type_arguments(nt, 3),
@@ -720,6 +717,32 @@ proc evaluate(frame: FramePtr) =
       let argument1 = regv_get_arg(3)
       let res = generate_dispatch2(mf, argument0, argument1)
       regv_set_arg(0, res)
+
+    of Operation.Call:
+      let function_instance = const_function_instance_arg(1)
+      let value = generate_call(function_instance, LambdaContext(nil), oplv_get_open_array_arg(2))
+      regv_set_arg(0, value)
+
+    of Operation.CallDirect:
+      let function_instance = const_function_instance_arg(1)
+      let nv = int(instruction.arg(2))
+      let value = generate_call(function_instance, LambdaContext(nil), get_direct_value_arguments_open_array(nv, 3))
+      regv_set_arg(0, value)
+
+    of Operation.CallPoly:
+      let mf = const_multi_function_arg(1)
+      let nt = int(instruction.arg(2))
+      let function_instance = mf.instantiate_single_function(new_immutable_seq(type_operand_list, nt))
+      let value = generate_call(function_instance, LambdaContext(nil), oplv_get_open_array_arg_range(3, nt))
+      regv_set_arg(0, value)
+
+    of Operation.CallPolyDirect:
+      let mf = const_multi_function_arg(1)
+      let nt = int(instruction.argu8l(2))
+      let nv = int(instruction.argu8r(2))
+      let function_instance = mf.instantiate_single_function(get_direct_type_arguments(nt, 3))
+      let value = generate_call(function_instance, LambdaContext(nil), get_direct_value_arguments_open_array(nv, 3 + nt))
+      regv_set_arg(0, value)
 
     of Operation.Return:
       regv_set(0, regv_get_arg(0))

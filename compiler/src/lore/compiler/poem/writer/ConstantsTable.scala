@@ -2,7 +2,7 @@ package lore.compiler.poem.writer
 
 import lore.compiler.core.CompilationException
 import lore.compiler.poem.writer.ConstantsTable.{ConstantsIndex, IndexMap}
-import lore.compiler.poem.{PoemIntrinsic, PoemMetaShape, PoemType, PoemValue}
+import lore.compiler.poem.{PoemFunctionInstance, PoemIntrinsic, PoemMetaShape, PoemType, PoemValue}
 import lore.compiler.semantics.NamePath
 
 import scala.collection.immutable.HashMap
@@ -20,6 +20,7 @@ class ConstantsTable {
   private val schemasIndex = new IndexMap[NamePath]
   private val globalVariablesIndex = new IndexMap[NamePath]
   private val multiFunctionsIndex = new IndexMap[NamePath]
+  private val functionInstancesIndex = new IndexMap[PoemFunctionInstance]
   private val metaShapesIndex = new IndexMap[PoemMetaShape]
 
   def tpe(poemType: PoemType): ConstantsIndex = typesIndex.getOrInsert(poemType)
@@ -29,6 +30,7 @@ class ConstantsTable {
   def schema(schema: NamePath): ConstantsIndex = schemasIndex.getOrInsert(schema)
   def globalVariable(globalVariable: NamePath): ConstantsIndex = globalVariablesIndex.getOrInsert(globalVariable)
   def multiFunction(multiFunction: NamePath): ConstantsIndex = multiFunctionsIndex.getOrInsert(multiFunction)
+  def functionInstance(instance: PoemFunctionInstance): ConstantsIndex = functionInstancesIndex.getOrInsert(instance)
   def metaShape(metaShape: PoemMetaShape): ConstantsIndex = metaShapesIndex.getOrInsert(metaShape)
 
   def types: Vector[PoemType] = typesIndex.entries
@@ -38,6 +40,7 @@ class ConstantsTable {
   def schemas: Vector[NamePath] = schemasIndex.entries
   def globalVariables: Vector[NamePath] = globalVariablesIndex.entries
   def multiFunctions: Vector[NamePath] = multiFunctionsIndex.entries
+  def functionInstances: Vector[PoemFunctionInstance] = functionInstancesIndex.entries
   def metaShapes: Vector[PoemMetaShape] = metaShapesIndex.entries
 
 }

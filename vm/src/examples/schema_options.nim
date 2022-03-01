@@ -153,7 +153,7 @@ let test = PoemFunction(
     poem_inst_dispatch(2, 0, 0),                 # r2 = get!(r0)
 
     # Build an ExampleResult from `12` and `"42"`.
-    poem_inst_dispatch(0, 2, 1, 2),              # r0 = ExampleResult$new(r1, r2)
+    poem_inst_call(0, 0, 1, 2),                  # r0 = ExampleResult$new(r1, r2)
     poem_inst_return(0),
   ],
 )
@@ -174,7 +174,8 @@ let poem* = Poem(
     names: @["value"],
     intrinsics: @["lore.core.panic"],
     schemas: @["ExampleResult", "lore.option.Some"],
-    multi_functions: @["lore.option.get!", "lore.option.flatten", "ExampleResult$new"],
+    multi_functions: @["lore.option.get!", "lore.option.flatten"],
+    function_instances: @[poem_function_instance("ExampleResult$new")],
   ),
   schemas: @[Option, Some, None, ExampleResult],
   functions: @[ExampleResult_construct, get0, get1, get2, flatten0, flatten1, flatten2, test],

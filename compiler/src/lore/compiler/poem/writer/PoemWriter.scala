@@ -1,6 +1,6 @@
 package lore.compiler.poem.writer
 
-import lore.compiler.poem.{PoemFragment, PoemMetaShape}
+import lore.compiler.poem.{PoemFragment, PoemFunctionInstance, PoemMetaShape}
 
 object PoemWriter {
 
@@ -44,7 +44,13 @@ object PoemWriter {
     writer.writeManyWithCount16(constantsTable.schemas, writer.writeNamePath)
     writer.writeManyWithCount16(constantsTable.globalVariables, writer.writeNamePath)
     writer.writeManyWithCount16(constantsTable.multiFunctions, writer.writeNamePath)
+    writer.writeManyWithCount16(constantsTable.functionInstances, writeFunctionInstance)
     writer.writeManyWithCount16(constantsTable.metaShapes, writeMetaShape)
+  }
+
+  private def writeFunctionInstance(instance: PoemFunctionInstance)(implicit writer: BytecodeWriter): Unit = {
+    writer.writeNamePath(instance.name)
+    writer.writeManyWithCount8(instance.typeArguments, PoemTypeWriter.write)
   }
 
   private def writeMetaShape(metaShape: PoemMetaShape)(implicit writer: BytecodeWriter): Unit = {

@@ -27,6 +27,7 @@ proc resolve_schemas(universe: Universe, poems: seq[Poem])
 proc resolve(universe: Universe, poem_global_variable: PoemGlobalVariable)
 proc resolve(universe: Universe, poem_constants: PoemConstants): Constants
 proc resolve(universe: Universe, poem_function: PoemFunction)
+proc resolve(universe: Universe, poem_function_instance: PoemFunctionInstance): ptr FunctionInstance
 proc resolve(universe: Universe, poem_type_parameter: PoemTypeParameter): TypeParameter
 proc resolve(universe: Universe, poem_type: PoemType): Type
 proc resolve(universe: Universe, poem_value: PoemValue): TaggedValue
@@ -121,6 +122,9 @@ proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
     if name notin universe.multi_functions:
       quit(fmt"The multi-function `{name}` doesn't exist.")
     constants.multi_functions.add(universe.multi_functions[name])
+
+  for poem_function_instance in poem_constants.function_instances:
+    constants.function_instances.add(universe.resolve(poem_function_instance))
 
   for poem_meta_shape in poem_constants.meta_shapes:
     constants.meta_shapes.add(get_meta_shape(poem_meta_shape.property_names))
@@ -508,6 +512,23 @@ method resolve_instruction(poem_instruction: PoemInstructionDispatch, context: I
     poem_instruction.argument_regs,
   )
 
+method resolve_instruction(poem_instruction: PoemInstructionCall, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  generate_opl_or_direct(
+    Operation.Call,
+    Operation.CallDirect,
+    [poem_instruction.target_reg, poem_instruction.fin],
+    poem_instruction.value_argument_regs,
+  )
+
+method resolve_instruction(poem_instruction: PoemInstructionCallPoly, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  generate_opl_or_direct2(
+    Operation.CallPoly,
+    Operation.CallPolyDirect,
+    [poem_instruction.target_reg, poem_instruction.mf],
+    poem_instruction.type_argument_regs,
+    poem_instruction.value_argument_regs,
+  )
+
 method resolve_instruction(poem_instruction: PoemInstructionReturn, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   if poem_instruction.value_reg == 0:
     @[new_instruction(Operation.Return0)]
@@ -675,6 +696,18 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
      PoemOperation.PropertyGet, PoemOperation.Intrinsic, PoemOperation.IntrinsicVoid, PoemOperation.GlobalGet,
      PoemOperation.Dispatch, PoemOperation.Call, PoemOperation.CallPoly, PoemOperation.Return:
     quit(fmt"The poem operation {poem_operation} is not simple!")
+
+########################################################################################################################
+# Function instance resolution.                                                                                        #
+########################################################################################################################
+
+proc resolve(universe: Universe, poem_function_instance: PoemFunctionInstance): ptr FunctionInstance =
+  if poem_function_instance.name notin universe.multi_functions:
+    quit(fmt"The multi-function `{poem_function_instance.name}` doesn't exist.")
+
+  let mf = universe.multi_functions[poem_function_instance.name]
+  let type_arguments = new_immutable_seq(universe.resolve_many(poem_function_instance.type_arguments))
+  mf.instantiate_single_function(type_arguments)
 
 ########################################################################################################################
 # Type parameter resolution.                                                                                           #

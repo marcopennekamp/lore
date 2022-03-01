@@ -53,6 +53,7 @@ object PoemInstruction {
   type PSch = DeclaredSchema
   type PGlb = GlobalVariableDefinition
   type PMf = NamePath
+  type PFin = PoemFunctionInstance
   type PMtsh = PoemMetaShape
   type PLoc = Poem.Location
 
@@ -121,6 +122,9 @@ object PoemInstruction {
 
   case class Dispatch(target: PReg, mf: PMf, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.Dispatch)
 
+  case class Call(target: PReg, functionInstance: PFin, valueArguments: Vector[PReg]) extends PoemInstruction(PoemOperation.Call)
+  case class CallPoly(target: PReg, mf: PMf, typeArguments: Vector[PReg], valueArguments: Vector[PReg]) extends PoemInstruction(PoemOperation.CallPoly)
+
   case class Return(value: PReg) extends PoemInstruction(PoemOperation.Return)
 
   case class TypeArg(target: PReg, index: Int) extends PoemInstruction(PoemOperation.TypeArg)
@@ -179,6 +183,8 @@ object PoemInstruction {
       case GlobalGet(target, _) => target.id
       case GlobalSet(_, value) => value.id
       case Dispatch(target, _, arguments) => Register.max(target, arguments)
+      case Call(target, _, valueArguments) => Register.max(target, valueArguments)
+      case CallPoly(target, _, typeArguments, valueArguments) => Register.max(target, typeArguments ++ valueArguments)
       case Return(value) => value.id
       case TypeArg(target, _) => target.id
       case TypeConst(target, _) => target.id
@@ -213,7 +219,7 @@ object PoemInstruction {
     case instruction@ListLength(target, list) => instruction.copy(target = applyTarget(target), list = applySource(list))
     case instruction@ListGet(target, list, index) => instruction.copy(target = applyTarget(target), list = applySource(list), index = applySource(index))
     case instruction@Shape(target, _, properties) => instruction.copy(target = applyTarget(target), properties = properties.map(applySource))
-    case instruction@SymbolEq(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))    case instruction@StructPoly(target, _, typeArguments, valueArguments) => instruction.copy(target = applyTarget(target), typeArguments = typeArguments.map(applySource), valueArguments = valueArguments.map(applySource))
+    case instruction@SymbolEq(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
     case instruction@Struct(target, _, valueArguments) => instruction.copy(target = applyTarget(target), valueArguments = valueArguments.map(applySource))
     case instruction@StructPoly(target, _, typeArguments, valueArguments) => instruction.copy(target = applyTarget(target), typeArguments = typeArguments.map(applySource), valueArguments = valueArguments.map(applySource))
     case instruction@StructEq(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
@@ -226,6 +232,8 @@ object PoemInstruction {
     case instruction@GlobalGet(target, _) => instruction.copy(target = applyTarget(target))
     case instruction@GlobalSet(_, value) => instruction.copy(value = applySource(value))
     case instruction@Dispatch(target, _, arguments) => instruction.copy(target = applyTarget(target), arguments = arguments.map(applySource))
+    case instruction@Call(target, _, valueArguments) => instruction.copy(target = applyTarget(target), valueArguments = valueArguments.map(applySource))
+    case instruction@CallPoly(target, _, typeArguments, valueArguments) => instruction.copy(target = applyTarget(target), typeArguments = typeArguments.map(applySource), valueArguments = valueArguments.map(applySource))
     case instruction@Return(value) => instruction.copy(value = applySource(value))
     case instruction@TypeArg(target, _) => instruction.copy(target = applyTarget(target))
     case instruction@TypeConst(target, _) => instruction.copy(target = applyTarget(target))
@@ -276,6 +284,8 @@ object PoemInstruction {
       case GlobalGet(target, _) => (Vector(target), Vector.empty)
       case GlobalSet(_, value) => (Vector.empty, Vector(value))
       case Dispatch(target, _, arguments) => (Vector(target), arguments)
+      case Call(target, _, valueArguments) => (Vector(target), valueArguments)
+      case CallPoly(target, _, typeArguments, valueArguments) => (Vector(target), typeArguments ++ valueArguments)
       case Return(value) => (Vector.empty, Vector(value))
       case TypeArg(target, _) => (Vector(target), Vector.empty)
       case TypeConst(target, _) => (Vector(target), Vector.empty)
@@ -321,6 +331,8 @@ object PoemInstruction {
       case GlobalGet(target, global) => s"$target <- ${global.name}"
       case GlobalSet(global, value) => s"${global.name} <- $value"
       case Dispatch(target, mf, arguments) => s"$target <- $mf(${arguments.mkString(", ")})"
+      case Call(target, functionInstance, valueArguments) => s"$target <- $functionInstance(${valueArguments.mkString(", ")})"
+      case CallPoly(target, mf, typeArguments, valueArguments) => s"$target <- $mf[${typeArguments.mkString(", ")}](${valueArguments.mkString(", ")})"
       case Return(value) => s"$value"
       case TypeArg(target, index) => s"$target <- targ($index)"
       case TypeConst(target, tpe) => s"$target <- $tpe"

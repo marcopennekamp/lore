@@ -1,3 +1,5 @@
+import std/strformat
+
 import imseqs
 from instructions import Instruction
 from types import TypeParameter, Type, TupleType, MetaShape, Schema
@@ -110,6 +112,7 @@ type
     schemas*: seq[Schema]
     global_variables*: seq[GlobalVariable]
     multi_functions*: seq[MultiFunction]
+    function_instances*: seq[ptr FunctionInstance]
     meta_shapes*: seq[MetaShape]
       ## A constant table's meta shapes are used to allocate new shape instances via the requisite instructions. They
       ## are not referenced by constant table types or values, nor by any other type declarations.
@@ -130,20 +133,27 @@ proc new_lazy_global*(name: string, initializer: FunctionInstance): GlobalVariab
 # Functions and instances.                                                                                             #
 ########################################################################################################################
 
-proc is_single_function*(mf: MultiFunction): bool = mf.functions.len == 1
+proc is_single_function*(mf: MultiFunction): bool {.inline.} = mf.functions.len == 1
 
-proc init_frame_stats*(function: Function) =
-  const preamble_size = sizeof(Frame)
-  function.frame_size = cast[uint16](preamble_size + sizeof(TaggedValue) * cast[int](function.register_count))
-
-proc is_monomorphic*(function: Function): bool = function.type_parameters.len == 0
-proc is_polymorphic*(function: Function): bool = function.type_parameters.len > 0
+proc is_monomorphic*(function: Function): bool {.inline.} = function.type_parameters.len == 0
+proc is_polymorphic*(function: Function): bool {.inline.} = function.type_parameters.len > 0
 
 proc new_function_instance*(function: Function, type_arguments: ImSeq[Type]): ptr FunctionInstance =
   let instance = cast[ptr FunctionInstance](alloc0(sizeof(FunctionInstance)))
   instance.function = function
   instance.type_arguments = type_arguments
   instance
+
+proc init_frame_stats*(function: Function) =
+  const preamble_size = sizeof(Frame)
+  function.frame_size = cast[uint16](preamble_size + sizeof(TaggedValue) * cast[int](function.register_count))
+
+proc instantiate_single_function*(mf: MultiFunction, type_arguments: ImSeq[Type]): ptr FunctionInstance =
+  if not mf.is_single_function:
+    quit(fmt"The multi-function `{mf.name}` is expected to be a single function.")
+  let function = mf.functions[0]
+  if function.is_monomorphic: addr function.monomorphic_instance
+  else: new_function_instance(function, type_arguments)
 
 ########################################################################################################################
 # Constants.                                                                                                           #

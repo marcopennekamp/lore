@@ -1,7 +1,7 @@
 package lore.compiler.poem.writer
 
 import lore.compiler.poem.PoemInstruction.PropertyGetInstanceKind
-import lore.compiler.poem.{Poem, PoemInstruction, PoemIntrinsic, PoemMetaShape, PoemType, PoemValue}
+import lore.compiler.poem.{Poem, PoemFunctionInstance, PoemInstruction, PoemIntrinsic, PoemMetaShape, PoemType, PoemValue}
 import lore.compiler.semantics.NamePath
 
 object PoemInstructionWriter {
@@ -132,6 +132,17 @@ object PoemInstructionWriter {
         writeConstantMultiFunction(mf)
         writeOperandsWithLength8(arguments)
 
+      case PoemInstruction.Call(target, functionInstance, valueArguments) =>
+        write(target)
+        writeConstantFunctionInstance(functionInstance)
+        writeOperandsWithLength8(valueArguments)
+
+      case PoemInstruction.CallPoly(target, mf, typeArguments, valueArguments) =>
+        write(target)
+        writeConstantMultiFunction(mf)
+        writeOperandsWithLength8(typeArguments)
+        writeOperandsWithLength8(valueArguments)
+
       case PoemInstruction.Return(value) => write(value)
 
       case PoemInstruction.TypeArg(target, index) =>
@@ -186,6 +197,10 @@ object PoemInstructionWriter {
 
   private def writeConstantMultiFunction(name: NamePath)(implicit writer: BytecodeWriter, constantsTable: ConstantsTable): Unit = {
     writer.writeUInt16(constantsTable.multiFunction(name))
+  }
+
+  private def writeConstantFunctionInstance(instance: PoemFunctionInstance)(implicit writer: BytecodeWriter, constantsTable: ConstantsTable): Unit = {
+    writer.writeUInt16(constantsTable.functionInstance(instance))
   }
 
   private def writeConstantMetaShape(metaShape: PoemMetaShape)(implicit writer: BytecodeWriter, constantsTable: ConstantsTable): Unit = {

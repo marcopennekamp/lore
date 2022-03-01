@@ -12,6 +12,7 @@ type
     ##  - `sch(x)`: The xth entry in the schemas constants table.
     ##  - `glb(x)`: The xth entry in the global variables constants table.
     ##  - `mf(x)`: The xth entry in the multi functions constants table.
+    ##  - `fin(x)`: The xth entry in the function instances constants table.
     ##  - `mtsh(x)`: The xth entry in the meta shapes constants table.
     ##  - `targ(x)`: The xth entry in the current function instance's type arguments.
     ##  - `lctx(x)`: The xth value in the lambda context.
@@ -321,6 +322,26 @@ type
 
     Dispatch2
       ## reg(arg0) <- mf(arg1)(reg(arg2), reg(arg3))
+
+    Call
+      ## arg2: value argument count
+      ## reg(arg0) <- fin(arg1)(opl(0 .. arg2))
+
+    CallDirect
+      ## arg2: value argument count
+      ## reg(arg0) <- fin(arg1)(reg_arg(3 .. 3 + arg2))
+
+    CallPoly
+      ## arg2: type argument count
+      ## arg3: value argument count
+      ## reg(arg0) <- mf(arg1).single_function[opl(0 .. arg2)](opl(arg2 .. arg2 + arg3))
+
+    CallPolyDirect
+      ## arg2 (composite):
+      ##  - nt: uint8 (type argument count)
+      ##  - nv: uint8 (value argument count)
+      ##
+      ## reg(arg0) <- mf(arg1).single_function[reg_arg(3 .. 3 + nt)](reg_arg(3 + nt, 3 + nt + nv))
 
     Return
       ## return reg(arg0)
