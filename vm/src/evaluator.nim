@@ -193,6 +193,35 @@ macro generate_binary_operator(source_kind: static[string], result_kind: static[
     generate_operation_set_result(0, `op_node`, `result_kind`)
 
 ########################################################################################################################
+# Operations with direct type and value arguments.                                                                     #
+########################################################################################################################
+
+type DirectValueArgumentArray = array[maximum_instruction_arguments, TaggedValue]
+
+template get_direct_type_arguments(argument_count: int, base_index: int): ImSeq[Type] =
+  ## Generates a procedure which gets the direct type arguments from the instruction. The argument count is the actual
+  ## number of direct arguments. The base index determines the first argument index. Because types are usually expected
+  ## in an ImSeq, we're creating an ImSeq right away.
+  var type_arguments = new_immutable_seq[Type](argument_count)
+  for i in 0 ..< argument_count:
+    type_arguments[i] = regt_get_arg(base_index + i)
+  type_arguments
+
+template get_direct_value_arguments_open_array(argument_count_node: int, base_index_node: int): untyped =
+  ## Generates a procedure which gets the direct value arguments from the instruction. The argument count is the actual
+  ## number of direct arguments. The base index determines the first argument index.
+  # To simplify this template for different prefix lengths, we set the maximum number of possible direct arguments to
+  # `maximum_instruction_arguments`. This will never be reached, but is a safe assumption. If, for example, the prefix
+  # length of the instruction is 2 (for example a target register and the argument count), `value_arguments` would have
+  # to be at least 5 elements wide.
+  let argument_count = argument_count_node
+  let base_index = base_index_node
+  var value_arguments: DirectValueArgumentArray
+  for i in 0 ..< argument_count:
+    value_arguments[i] = regv_get_arg(base_index + i)
+  to_open_array(value_arguments, 0, argument_count - 1)
+
+########################################################################################################################
 # Function calls.                                                                                                      #
 ########################################################################################################################
 
@@ -576,30 +605,24 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.Struct:
       let tpe = cast[StructType](const_types_arg(1))
-      let value_argument_count = int(instruction.arg(2))
-      let value = new_struct_value(tpe, to_open_array(value_operand_list, 0, value_argument_count - 1))
+      let value = new_struct_value(tpe, oplv_get_open_array_arg(2))
       regv_set_ref_arg(0, value)
 
     of Operation.StructDirect:
       let tpe = cast[StructType](const_types_arg(1))
-      let value_argument_count = int(instruction.arg(2))
-
-      var value_arguments: array[maximum_instruction_arguments - 3, TaggedValue]
-      for i in 0 ..< value_argument_count:
-        value_arguments[i] = regv_get_arg(3 + i)
-
-      let value = new_struct_value(tpe, to_open_array(value_arguments, 0, value_argument_count - 1))
+      let nv = int(instruction.arg(2))
+      let value = new_struct_value(tpe, get_direct_value_arguments_open_array(nv, 3))
       regv_set_ref_arg(0, value)
 
     of Operation.StructPoly:
       let schema = cast[StructSchema](const_schema_arg(1))
-      let type_argument_count = int(instruction.arg(2))
-      let value_argument_count = int(instruction.arg(3))
+      let nt = int(instruction.arg(2))
+      let nv = int(instruction.arg(3))
 
       let value = values.new_struct_value(
         schema,
-        new_immutable_seq(type_operand_list, type_argument_count),
-        to_open_array(value_operand_list, type_argument_count, type_argument_count + value_argument_count - 1),
+        new_immutable_seq(type_operand_list, nt),
+        to_open_array(value_operand_list, nt, nt + nv - 1),
       )
       regv_set_ref_arg(0, value)
 
@@ -608,18 +631,10 @@ proc evaluate(frame: FramePtr) =
       let nt = int(instruction.argu8l(2))
       let nv = int(instruction.argu8r(2))
 
-      var type_arguments = new_immutable_seq[Type](nt)
-      for i in 0 ..< nt:
-        type_arguments[i] = regt_get_arg(3 + i)
-
-      var value_arguments: array[maximum_instruction_arguments - 3, TaggedValue]
-      for i in 0 ..< nv:
-        value_arguments[i] = regv_get_arg(3 + nt + i)
-
       let value = values.new_struct_value(
         schema,
-        type_arguments,
-        to_open_array(value_arguments, 0, nv - 1),
+        get_direct_type_arguments(nt, 3),
+        get_direct_value_arguments_open_array(nv, 3 + nt),
       )
       regv_set_ref_arg(0, value)
 
