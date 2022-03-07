@@ -2,7 +2,7 @@ import std/strformat
 
 import imseqs
 from instructions import Instruction
-from types import TypeParameter, Type, TupleType, MetaShape, Schema
+from types import TypeParameter, Type, TupleType, MetaShape, Schema, bounds_contain
 from values import TaggedValue, LambdaContext, tag_reference
 
 type
@@ -119,6 +119,8 @@ type
 
 const operand_list_limit*: int = 256
 
+proc `$`*(function: Function): string
+
 ########################################################################################################################
 # Global variables.                                                                                                    #
 ########################################################################################################################
@@ -144,16 +146,40 @@ proc new_function_instance*(function: Function, type_arguments: ImSeq[Type]): pt
   instance.type_arguments = type_arguments
   instance
 
+proc instantiate*(function: Function, type_arguments: ImSeq[Type]): ptr FunctionInstance =
+  # TODO (vm): When using this function, we technically only need to check lower bounds of covariant parameters and
+  #            upper bounds of contravariant parameters, as we can reasonably assume that the compiler has covered the
+  #            other direction. This could be an optimization specifically for instantiations from instructions such
+  #            as `CallPoly`.
+  if function.is_monomorphic: addr function.monomorphic_instance
+  else:
+    let type_parameters = function.type_parameters
+    for i in 0 ..< type_parameters.len:
+      if not bounds_contain(type_parameters[i], type_arguments[i], to_open_array(type_arguments)):
+        quit(fmt"Cannot instantiate function `{function}` with type arguments `{type_arguments}`.")
+    new_function_instance(function, type_arguments)
+
 proc init_frame_stats*(function: Function) =
   const preamble_size = sizeof(Frame)
   function.frame_size = cast[uint16](preamble_size + sizeof(TaggedValue) * cast[int](function.register_count))
 
-proc instantiate_single_function*(mf: MultiFunction, type_arguments: ImSeq[Type]): ptr FunctionInstance =
+proc get_single_function*(mf: MultiFunction): Function {.inline.} =
   if not mf.is_single_function:
     quit(fmt"The multi-function `{mf.name}` is expected to be a single function.")
-  let function = mf.functions[0]
+  mf.functions[0]
+
+proc instantiate_single_function*(mf: MultiFunction, type_arguments: ImSeq[Type]): ptr FunctionInstance =
+  mf.get_single_function().instantiate(type_arguments)
+
+proc instantiate_single_function_unchecked*(mf: MultiFunction, type_arguments: ImSeq[Type]): ptr FunctionInstance =
+  let function = mf.get_single_function()
   if function.is_monomorphic: addr function.monomorphic_instance
   else: new_function_instance(function, type_arguments)
+
+proc `$`*(function: Function): string =
+  # TODO (assembly): Expand this so that the whole function signature is printed. This is crucial for pointing to the
+  #                  correct function when the VM errors out, e.g. during dispatch or function instantiation.
+  fmt"{function.multi_function.name}"
 
 ########################################################################################################################
 # Constants.                                                                                                           #

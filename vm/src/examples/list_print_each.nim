@@ -38,7 +38,7 @@ let poem* = Poem(
         @[poem_int_value(-5), poem_string_value("I'm a string!"), poem_int_value(7)],
         poem_list_type(int_or_string),
       ),
-      poem_lambda_function_value("test/lambda0", poem_function_type(lambda_input, poem_unit_type)),
+      poem_single_function_value("test/lambda0", @[], poem_function_type(lambda_input, poem_unit_type)),
     ],
     intrinsics: @["lore.lists.each", "lore.io.println"],
   ),

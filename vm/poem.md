@@ -105,6 +105,8 @@ A **Function** represents a single function definition. Its structure is as foll
     - **Instruction count** (uint16)
     - **Instructions** (Instruction*)
 
+Note that functions backing lambdas (used with the `Lambda` instruction) may not have type parameter *bounds*. The VM expects all type parameters to have the bounds `Nothing` and `Any`.
+
 ### Instructions
 
 **Instructions** are encoded as variable size depending on the instruction. They correspond heavily to the actual instructions evaluated by the VM. The poem API makes some simplifications, such as providing a single dispatch operation instead of `Dispatch`, `Dispatch0`, `Dispatch1`, `Dispatch2`, and so on. A poem instruction may spawn multiple evaluator instructions, making it possible to hide operand lists behind the API.
@@ -216,10 +218,13 @@ A **Value** is encoded as follows:
     - Function:
       - **Variant** (uint8):
         - Multi: A multi-function value.
+        - Single: A single function is backed by a single-function multi-function, with its type arguments specified. 
+          - Single function values can be used to represent lambdas as constant values, but only those that are created inside monomorphic functions and capture no variables. All other lambdas must be created at run-time using the `Lamdba` operation.
         - Fixed: A fixed function with a fixed input type resolved during universe resolution.
-        - Lambda: A lambda function, which are backed by a single-function multi-function. Lambda functions are distinct from fixed functions as lambdas don't need an explicitly specified input type.
-          - Only lambdas that are created inside monomorphic functions and capture no variables can be represented as Lambda function value constants. All other lambdas must be created at run-time using the `Lamdba` operation. 
       - **Name** (string): The name of the targeted multi-function.
+      - If `Single`:
+        - **Type argument count** (uint8) 
+        - **Type arguments** (Type*) 
       - If `Fixed`:
         - **Input type** (Type): The desired input type that the fixed function should match.
     - List:

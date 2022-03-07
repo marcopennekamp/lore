@@ -242,20 +242,18 @@ proc list_as_type*(element: Type): Type = new_list_type(element)
 # Type parameters.                                                                                               #
 ########################################################################################################################
 
-proc lower_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
-  ## Whether `parameter`'s lower bound (instantiated via the given assignments) contains `type`.
-  if parameter.lower_bound.kind != Kind.Nothing:
-    is_subtype_substitute1(parameter.lower_bound, tpe, assignments)
+proc lower_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
+  ## Whether `parameter`'s lower bound (instantiated via the given assignments) contains `tpe`.
+  if parameter.lower_bound.kind != Kind.Nothing: is_subtype_substitute1(parameter.lower_bound, tpe, assignments)
   else: true
 
-proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
-  ## Whether `parameter`'s upper bound (instantiated via the given assignments) contains `type`.
-  if parameter.upper_bound.kind != Kind.Any:
-    is_subtype_substitute2(tpe, parameter.upper_bound, assignments)
+proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
+  ## Whether `parameter`'s upper bound (instantiated via the given assignments) contains `tpe`.
+  if parameter.upper_bound.kind != Kind.Any: is_subtype_substitute2(tpe, parameter.upper_bound, assignments)
   else: true
 
-proc bounds_contain*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool =
-  ## Whether `parameter`'s lower and upper bound (instantiated via the given assignments) contain `type`.
+proc bounds_contain*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
+  ## Whether `parameter`'s lower and upper bound (instantiated via the given assignments) contain `tpe`.
   lower_bound_contains(parameter, tpe, assignments) and upper_bound_contains(parameter, tpe, assignments)
 
 proc as_type_arguments*(type_parameters: ImSeq[TypeParameter]): ImSeq[TypeVariable] =

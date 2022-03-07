@@ -66,11 +66,14 @@ type
       ## A `MultiFunction` reference if `variant` is `Multi` and a `ptr FunctionInstance` otherwise. The actual type is
       ## hidden inside the module `definitions` to avoid cyclic dependencies between Nim modules.
     context*: LambdaContext
+      ## The lambda context may be `nil` if no variables have been captured. Lambda function values may or may not have
+      ## an associated context.
 
   FunctionValueVariant* {.pure.} = enum
     Multi
-    Fixed
-    Lambda
+    Single
+      ## A single function value can represent a direct single function, a fixed function, or a lambda function. A
+      ## lambda function may additionally have an associated context if it captures any variables.
 
   LambdaContext* = distinct ImSeq[TaggedValue]
     ## A LambdaContext bundles the values of captured variables for a lambda function.
@@ -174,11 +177,8 @@ proc new_function_value*(variant: FunctionValueVariant, target: pointer, context
 proc new_multi_function_value*(target: pointer, tpe: Type): Value =
   new_function_value(FunctionValueVariant.Multi, target, LambdaContext(nil), tpe)
 
-proc new_fixed_function_value*(target: pointer, tpe: Type): Value =
-  new_function_value(FunctionValueVariant.Fixed, target, LambdaContext(nil), tpe)
-
-proc new_lambda_function_value*(target: pointer, context: LambdaContext, tpe: Type): Value =
-  new_function_value(FunctionValueVariant.Lambda, target, context, tpe)
+proc new_single_function_value*(target: pointer, context: LambdaContext, tpe: Type): Value =
+  new_function_value(FunctionValueVariant.Single, target, context, tpe)
 
 proc arity*(function: FunctionValue): int = cast[FunctionType](function.tpe).input.elements.len
 
@@ -378,8 +378,7 @@ func `$`*(value: Value): string =
     let function = cast[FunctionValue](value)
     case function.variant
     of FunctionValueVariant.Multi: "<multi-function: " & $cast[uint](function.target) & ">"
-    of FunctionValueVariant.Fixed: "<fixed function: " & $cast[uint](function.target) & ">"
-    of FunctionValueVariant.Lambda: "<lambda function: " & $cast[uint](function.target) & ">"
+    of FunctionValueVariant.Single: "<single function: " & $cast[uint](function.target) & ">"
   of Kind.List:
     let list = cast[ListValue](value)
     "[" & $list.elements.join(", ") & "]"

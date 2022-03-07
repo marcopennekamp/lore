@@ -707,6 +707,9 @@ proc resolve(universe: Universe, poem_function_instance: PoemFunctionInstance): 
 
   let mf = universe.multi_functions[poem_function_instance.name]
   let type_arguments = new_immutable_seq(universe.resolve_many(poem_function_instance.type_arguments))
+
+  # As the type arguments are static, their bound conformity has already been checked at compile time. However, as
+  # universe resolution isn't performance-critical, the added redundancy of a bounds check doesn't hurt.
   mf.instantiate_single_function(type_arguments)
 
 ########################################################################################################################
@@ -802,10 +805,7 @@ method resolve(poem_value: PoemMultiFunctionValue, universe: Universe): TaggedVa
   let mf = universe.multi_functions[poem_value.name]
   tag_reference(new_multi_function_value(cast[pointer](mf), tpe))
 
-method resolve(poem_value: PoemFixedFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
-  quit("Fixed function value resolution is not yet implemented.")
-
-method resolve(poem_value: PoemLambdaFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
+method resolve(poem_value: PoemSingleFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
   let tpe = universe.resolve(poem_value.tpe)
   assert(tpe.kind == Kind.Function)
 
@@ -814,16 +814,12 @@ method resolve(poem_value: PoemLambdaFunctionValue, universe: Universe): TaggedV
     quit(fmt"A multi-function backing a lambda must be a single function. Multi-function name: {mf.name}.")
 
   let function = mf.functions[0]
-  if not function.is_monomorphic:
-    quit(fmt"Cannot create a constant lambda function value from function `{mf.name}`, because the function is polymorphic.")
+  let type_arguments = new_immutable_seq(universe.resolve_many(poem_value.type_arguments))
+  let instance = function.instantiate(type_arguments)
+  tag_reference(new_single_function_value(cast[pointer](instance), LambdaContext(nil), tpe))
 
-  tag_reference(
-    new_lambda_function_value(
-      cast[pointer](addr function.monomorphic_instance),
-      LambdaContext(empty_immutable_seq[TaggedValue]()),
-      tpe,
-    )
-  )
+method resolve(poem_value: PoemFixedFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
+  quit("Fixed function value resolution is not yet implemented.")
 
 method resolve(poem_value: PoemListValue, universe: Universe): TaggedValue {.locks: "unknown".} =
   let tpe = universe.resolve(poem_value.tpe)

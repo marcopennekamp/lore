@@ -30,8 +30,9 @@ let test = PoemFunction(
 let poem* = Poem(
   constants: PoemConstants(
     values: @[
-      poem_lambda_function_value(
+      poem_single_function_value(
         "increment",
+        @[],
         poem_function_type(
           poem_tuple_type([poem_int_type]),
           poem_int_type,

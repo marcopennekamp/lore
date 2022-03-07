@@ -298,20 +298,21 @@ template generate_dispatch2(mf, argument0, argument1): TaggedValue =
 proc lambda_get_function_instance(frame: FramePtr, instruction: Instruction, arg_index: uint16): ptr FunctionInstance {.inline.} =
   let constants = frame.function.constants
   let mf = const_multi_function_arg(arg_index)
-  mf.instantiate_single_function(frame.type_arguments)
+
+  # We don't have to check the bounds of the type parameters, because a lambda function's must be boundless.
+  mf.instantiate_single_function_unchecked(frame.type_arguments)
 
 template generate_lambda(is_poly: bool) =
   let function_instance = lambda_get_function_instance(frame, instruction, 1)
   let tpe = if is_poly: substitute(const_types_arg(2), frame.type_arguments) else: const_types_arg(2)
   let context = LambdaContext(oplv_get_imseq_arg(3))
-  let value = values.new_lambda_function_value(function_instance, context, tpe)
+  let value = values.new_single_function_value(function_instance, context, tpe)
   regv_set_ref_arg(0, value)
 
 template generate_lambda0(is_poly: bool) =
   let function_instance = lambda_get_function_instance(frame, instruction, 1)
   let tpe = if is_poly: substitute(const_types_arg(2), frame.type_arguments) else: const_types_arg(2)
-  let context = LambdaContext(empty_immutable_seq[TaggedValue]())
-  let value = values.new_lambda_function_value(function_instance, context, tpe)
+  let value = values.new_single_function_value(function_instance, LambdaContext(nil), tpe)
   regv_set_ref_arg(0, value)
 
 ########################################################################################################################
