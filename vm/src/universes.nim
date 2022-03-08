@@ -690,6 +690,7 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
 
   of PoemOperation.TypeArg: Operation.TypeArg
   of PoemOperation.TypeConst: Operation.TypeConst
+  of PoemOperation.TypeOf: Operation.TypeOf
   of PoemOperation.TypePathIndex: Operation.TypePathIndex
   of PoemOperation.TypePathProperty: Operation.TypePathProperty
   of PoemOperation.TypePathTypeArgument: Operation.TypePathTypeArgument

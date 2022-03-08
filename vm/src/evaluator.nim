@@ -758,6 +758,9 @@ proc evaluate(frame: FramePtr) =
     of Operation.TypeConst:
       regt_set_arg(0, const_types_arg(1))
 
+    of Operation.TypeOf:
+      regt_set_arg(0, regv_get_arg(0).get_type)
+
     # TODO (vm): It's probably a good idea to write a test for the `TypePath` instructions.
     of Operation.TypePathIndex:
       let tpe = regt_get_arg(1)

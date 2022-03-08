@@ -355,6 +355,9 @@ type
     TypeConst
       ## reg(arg0) <- tpe(arg1)
 
+    TypeOf
+      ## reg(arg0) <- type_of(reg(arg1))
+
     TypePathIndex
       ## Gets the type at index `arg2` from the tuple, function, list, or map type `reg(arg1)`. For function and map
       ## types, indices 0 and 1 refer to the input/output and key/value types, respectively.

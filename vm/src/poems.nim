@@ -225,6 +225,7 @@ type
     # TODO (assembly): TypeConst needs to substitute type variables. As always, split it into a normal and a Poly
     #                  operation.
     TypeConst
+    TypeOf
     TypePathIndex
     TypePathProperty
     TypePathTypeArgument
@@ -1097,7 +1098,7 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
   case operation
   of Jump: 1
   of Assign, Const, IntConst, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, LambdaLocal, ListLength,
-     JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
+     JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst, TypeOf: 2
   of IntAdd, IntSub, IntMul, IntDiv, IntEq, IntLt, IntLte, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte,
      BooleanOr, BooleanAnd, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped, ListGet,
      SymbolEq, StructEq, TypePathIndex, TypePathProperty: 3

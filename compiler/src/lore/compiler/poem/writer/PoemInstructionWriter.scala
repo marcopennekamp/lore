@@ -153,6 +153,10 @@ object PoemInstructionWriter {
         write(target)
         writeConstantType(tpe)
 
+      case PoemInstruction.TypeOf(target, value) =>
+        write(target)
+        write(value)
+
       case PoemInstruction.TypePathIndex(target, tpe, index) =>
         write(target)
         write(tpe)
