@@ -355,6 +355,19 @@ type
     TypeConst
       ## reg(arg0) <- tpe(arg1)
 
+    TypePathIndex
+      ## Gets the type at index `arg2` from the tuple, function, list, or map type `reg(arg1)`. For function and map
+      ## types, indices 0 and 1 refer to the input/output and key/value types, respectively.
+      ## reg(arg0) <- reg(arg1)[arg2]
+
+    TypePathProperty
+      ## Gets the property type named `nam(arg2)` of the shape, struct or trait type `reg(arg1)`.
+      ## reg(arg0) <- reg(arg1).property_types[nam(arg2)]
+
+    TypePathTypeArgument
+      ## Gets the type argument at index `arg3` of schema `sch(arg2)` of the trait or struct type `reg(arg1)`.
+      ## reg(arg0) <- find_supertype(reg(arg1), sch(arg2)).type_arguments[arg3]
+
     OplPush1
       ## opl(arg0) <- reg(arg1)
 

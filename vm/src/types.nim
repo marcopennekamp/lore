@@ -538,6 +538,15 @@ proc find_combined_supertrait(tpe: DeclaredType, supertrait_schema: TraitSchema)
   )
   supertrait_schema.instantiate_trait_schema(type_arguments)
 
+proc find_supertype*(tpe: DeclaredType, schema: Schema): DeclaredType =
+  ## Finds the supertrait with the given schema that `tpe` inherits from or `tpe` itself. If no such supertype exists,
+  ## the function returns `nil`. In constrast to `find_supertrait`, `find_supertype` handles struct schemas.
+  if schema.kind == Kind.Struct:
+    if tpe.schema === schema: tpe
+    else: nil
+  else:
+    tpe.find_supertrait(cast[TraitSchema](schema))
+
 ########################################################################################################################
 # Traits.                                                                                                              #
 ########################################################################################################################
@@ -598,6 +607,10 @@ proc get_inherited_shape_type*(tpe: TraitType): ShapeType =
       cast[ShapeType](schema.inherited_shape_type.substitute(tpe.type_arguments))
   tpe.inherited_shape_type_cache = shape_type
   shape_type
+
+proc get_property_type*(tpe: TraitType, name: string): Type {.inline.} =
+  ## Returns the type of a property `name`, which must be a valid property name.
+  tpe.get_inherited_shape_type.get_property_type(name)
 
 ########################################################################################################################
 # Structs.                                                                                                             #
@@ -720,6 +733,17 @@ proc get_property_type_if_exists*(tpe: StructType, name: string): Type {.inline.
     tpe.get_property_type(uint16(offset))
   else:
     nil
+
+########################################################################################################################
+# Combined property functions.                                                                                         #
+########################################################################################################################
+
+proc get_property_type*(tpe: Type, name: string): Type =
+  case tpe.kind
+  of Kind.Shape: cast[ShapeType](tpe).get_property_type(name)
+  of Kind.Struct: cast[StructType](tpe).get_property_type(name)
+  of Kind.Trait: cast[TraitType](tpe).get_property_type(name)
+  else: quit(fmt"Cannot get property type `{name}` of a type with kind {tpe.kind}.")
 
 ########################################################################################################################
 # Type equality.                                                                                                       #

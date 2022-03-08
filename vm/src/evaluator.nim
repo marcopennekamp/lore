@@ -5,7 +5,7 @@ import definitions
 from dispatch import find_dispatch_target_from_arguments
 import imseqs
 import instructions
-from types import Type, StructSchema, StructType, substitute
+import types
 import values
 from utils import when_debug
 
@@ -93,8 +93,8 @@ template regv_set_bool_arg(index, value): untyped = regv_set_bool(instruction.ar
 # Register access: Types.                                                                                              #
 ########################################################################################################################
 
-template regt_get(index): untyped = cast[Type](reg_get(index))
-template regt_get_arg(index): untyped = regt_get(instruction.arg(index))
+template regt_get(index): Type = cast[Type](reg_get(index))
+template regt_get_arg(index): Type = regt_get(instruction.arg(index))
 
 template regt_set(target_index, tpe): untyped = reg_set(target_index, cast[uint64](tpe))
 template regt_set_arg(target_index, tpe): untyped = regt_set(instruction.arg(target_index), tpe)
@@ -757,6 +757,39 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.TypeConst:
       regt_set_arg(0, const_types_arg(1))
+
+    # TODO (vm): It's probably a good idea to write a test for the `TypePath` instructions.
+    of Operation.TypePathIndex:
+      let tpe = regt_get_arg(1)
+      let index = instruction.arg(2)
+      let result_type =
+        case tpe.kind
+        of Kind.Tuple: cast[TupleType](tpe).elements[index]
+        of Kind.Function:
+          let tpe = cast[FunctionType](tpe)
+          if index == 0: tpe.input
+          else: tpe.output
+        of Kind.List: cast[ListType](tpe).element
+        of Kind.Map:
+          let tpe = cast[MapType](tpe)
+          if index == 0: tpe.key
+          else: tpe.value
+        else: quit(fmt"Cannot perform operation `TypePathIndex` on type of kind {tpe.kind}.")
+      regt_set_arg(0, result_type)
+
+    of Operation.TypePathProperty:
+      let tpe = regt_get_arg(1)
+      let name = const_name_arg(2)
+      regt_set_arg(0, tpe.get_property_type(name))
+
+    of Operation.TypePathTypeArgument:
+      let tpe = cast[DeclaredType](regt_get_arg(1))
+      let schema = const_schema_arg(2)
+      let index = instruction.arg(3)
+      let target_type = tpe.find_supertype(schema)
+      if unlikely(target_type == nil):
+        quit(fmt"Cannot perform operation `TypePathTypeArgument` given schema `{schema.name}` on type `{tpe.schema.name}`, because `find_supertype` is nil.")
+      regt_set_arg(0, target_type.type_arguments[index])
 
     of Operation.OplPush1: opl_push_n(1)
     of Operation.OplPush2: opl_push_n(2)

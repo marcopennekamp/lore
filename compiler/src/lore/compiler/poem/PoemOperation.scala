@@ -25,5 +25,5 @@ object PoemOperation extends Enumeration {
   val GlobalGet, GlobalSet = Value
   val Dispatch, Call, CallPoly = Value
   val Return = Value
-  val TypeArg, TypeConst = Value
+  val TypeArg, TypeConst, TypePathIndex, TypePathProperty, TypePathTypeArgument = Value
 }

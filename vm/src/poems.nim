@@ -225,6 +225,9 @@ type
     # TODO (assembly): TypeConst needs to substitute type variables. As always, split it into a normal and a Poly
     #                  operation.
     TypeConst
+    TypePathIndex
+    TypePathProperty
+    TypePathTypeArgument
 
   PoemInstruction* = ref object of RootObj
     discard
@@ -1097,10 +1100,10 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
      JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst: 2
   of IntAdd, IntSub, IntMul, IntDiv, IntEq, IntLt, IntLte, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte,
      BooleanOr, BooleanAnd, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped, ListGet,
-     SymbolEq, StructEq: 3
+     SymbolEq, StructEq, TypePathIndex, TypePathProperty: 3
   of PoemOperation.Tuple, FunctionCall, PoemOperation.Lambda, PoemOperation.Shape, PoemOperation.List, ListAppend,
      PoemOperation.Struct, StructPoly, PropertyGet, Intrinsic, IntrinsicVoid, GlobalGet, Dispatch, Call, CallPoly,
-     Return:
+     Return, TypePathTypeArgument:
     quit(fmt"Poem operation {operation} is not simple!")
 
 ########################################################################################################################

@@ -152,6 +152,22 @@ object PoemInstructionWriter {
       case PoemInstruction.TypeConst(target, tpe) =>
         write(target)
         writeConstantType(tpe)
+
+      case PoemInstruction.TypePathIndex(target, tpe, index) =>
+        write(target)
+        write(tpe)
+        writer.writeUInt16(index)
+
+      case PoemInstruction.TypePathProperty(target, tpe, propertyName) =>
+        write(target)
+        write(tpe)
+        writeConstantName(propertyName)
+
+      case PoemInstruction.TypePathTypeArgument(target, tpe, schema, index) =>
+        write(target)
+        write(tpe)
+        writeConstantSchema(schema.name)
+        writer.writeUInt16(index)
     }
   }
 

@@ -690,6 +690,9 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
 
   of PoemOperation.TypeArg: Operation.TypeArg
   of PoemOperation.TypeConst: Operation.TypeConst
+  of PoemOperation.TypePathIndex: Operation.TypePathIndex
+  of PoemOperation.TypePathProperty: Operation.TypePathProperty
+  of PoemOperation.TypePathTypeArgument: Operation.TypePathTypeArgument
 
   of PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.Lambda, PoemOperation.List,
      PoemOperation.ListAppend, PoemOperation.Shape, PoemOperation.Struct, PoemOperation.StructPoly,

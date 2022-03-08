@@ -129,6 +129,9 @@ object PoemInstruction {
 
   case class TypeArg(target: PReg, index: Int) extends PoemInstruction(PoemOperation.TypeArg)
   case class TypeConst(target: PReg, tpe: PTpe) extends PoemInstruction(PoemOperation.TypeConst)
+  case class TypePathIndex(target: PReg, tpe: PReg, index: Int) extends PoemInstruction(PoemOperation.TypePathIndex)
+  case class TypePathProperty(target: PReg, tpe: PReg, propertyName: String) extends PoemInstruction(PoemOperation.TypePathProperty)
+  case class TypePathTypeArgument(target: PReg, tpe: PReg, schema: PSch, index: Int) extends PoemInstruction(PoemOperation.TypePathTypeArgument)
 
   /**
     * Returns the instruction's jump target if it's a jump.
@@ -188,6 +191,9 @@ object PoemInstruction {
       case Return(value) => value.id
       case TypeArg(target, _) => target.id
       case TypeConst(target, _) => target.id
+      case TypePathIndex(target, tpe, _) => Register.max(target, tpe)
+      case TypePathProperty(target, tpe, _) => Register.max(target, tpe)
+      case TypePathTypeArgument(target, tpe, _, _) => Register.max(target, tpe)
     }
 
     if (instructions.isEmpty) 0
@@ -237,6 +243,9 @@ object PoemInstruction {
     case instruction@Return(value) => instruction.copy(value = applySource(value))
     case instruction@TypeArg(target, _) => instruction.copy(target = applyTarget(target))
     case instruction@TypeConst(target, _) => instruction.copy(target = applyTarget(target))
+    case instruction@TypePathIndex(target, tpe, _) => instruction.copy(target = applyTarget(target), tpe = applySource(tpe))
+    case instruction@TypePathProperty(target, tpe, _) => instruction.copy(target = applyTarget(target), tpe = applySource(tpe))
+    case instruction@TypePathTypeArgument(target, tpe, _, _) => instruction.copy(target = applyTarget(target), tpe = applySource(tpe))
   }
 
   case class TargetSourceInfo(targets: Vector[Poem.Register], sources: Vector[Poem.Register])
@@ -289,6 +298,9 @@ object PoemInstruction {
       case Return(value) => (Vector.empty, Vector(value))
       case TypeArg(target, _) => (Vector(target), Vector.empty)
       case TypeConst(target, _) => (Vector(target), Vector.empty)
+      case TypePathIndex(target, tpe, _) => (Vector(target), Vector(tpe))
+      case TypePathProperty(target, tpe, _) => (Vector(target), Vector(tpe))
+      case TypePathTypeArgument(target, tpe, _, _) => (Vector(target), Vector(tpe))
     }
     TargetSourceInfo(targetList.distinct, sourceList.distinct)
   }
@@ -336,6 +348,9 @@ object PoemInstruction {
       case Return(value) => s"$value"
       case TypeArg(target, index) => s"$target <- targ($index)"
       case TypeConst(target, tpe) => s"$target <- $tpe"
+      case TypePathIndex(target, tpe, index) => s"$target <- $tpe[$index]"
+      case TypePathProperty(target, tpe, propertyName) => s"$target <- $tpe[$propertyName]"
+      case TypePathTypeArgument(target, tpe, schema, index) => s"$target <- ($tpe as schema ${schema.name}).type_argument$index"
     })
   }
 
