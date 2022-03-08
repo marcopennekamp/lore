@@ -2,7 +2,7 @@ package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.{AsmChunk, RegisterProvider}
 import lore.compiler.assembly.types.TypeAssembler
-import lore.compiler.poem.{PoemFunction, PoemInstruction, PoemLambdaFunctionValue}
+import lore.compiler.poem.{PoemFunction, PoemInstruction, PoemSingleFunctionValue}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression.AnonymousFunction
 import lore.compiler.semantics.functions.{FunctionSignature, ParameterDefinition}
@@ -44,12 +44,12 @@ object LambdaAssembler {
     )
     val generatedPoemFunctions = FunctionAssembler.generate(signature, Some(expression.body), capturedVariableMap)
 
-    // If the lambda has neither type arguments nor captured variables, we can represent it as a constant lambda
+    // If the lambda has neither type arguments nor captured variables, we can represent it as a constant single
     // function value.
     val regResult = registerProvider.fresh()
     val poemType = TypeAssembler.generate(expression.tpe)
     val instruction = if (signature.isMonomorphic && capturedVariables.isEmpty) {
-      PoemInstruction.Const(regResult, PoemLambdaFunctionValue(name, poemType))
+      PoemInstruction.Const(regResult, PoemSingleFunctionValue(name, Vector.empty, poemType))
     } else {
       PoemInstruction.Lambda(regResult, name, poemType, capturedRegisters)
     }

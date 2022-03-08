@@ -28,7 +28,7 @@ case class PoemTupleValue(elements: Vector[PoemValue], tpe: PoemType) extends Po
 
 object PoemFunctionValueVariant extends Enumeration {
   type PoemFunctionValueVariant = Value
-  val Multi, Fixed, Lambda = Value
+  val Multi, Single, Fixed = Value
 }
 
 /**
@@ -46,12 +46,12 @@ case class PoemMultiFunctionValue(mf: NamePath, tpe: PoemType) extends PoemFunct
   override val variant: PoemFunctionValueVariant = PoemFunctionValueVariant.Multi
 }
 
-case class PoemFixedFunctionValue(mf: NamePath, inputType: PoemType, tpe: PoemType) extends PoemFunctionValue {
-  override val variant: PoemFunctionValueVariant = PoemFunctionValueVariant.Fixed
+case class PoemSingleFunctionValue(mf: NamePath, typeArguments: Vector[PoemType], tpe: PoemType) extends PoemFunctionValue {
+  override val variant: PoemFunctionValueVariant = PoemFunctionValueVariant.Single
 }
 
-case class PoemLambdaFunctionValue(mf: NamePath, tpe: PoemType) extends PoemFunctionValue {
-  override val variant: PoemFunctionValueVariant = PoemFunctionValueVariant.Lambda
+case class PoemFixedFunctionValue(mf: NamePath, inputType: PoemType, tpe: PoemType) extends PoemFunctionValue {
+  override val variant: PoemFunctionValueVariant = PoemFunctionValueVariant.Fixed
 }
 
 case class PoemListValue(elements: Vector[PoemValue], tpe: PoemType) extends PoemValue

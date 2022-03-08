@@ -29,6 +29,7 @@ object PoemValueWriter {
     case value: PoemFunctionValue =>
       writeFunctionValueCommons(value)
       value match {
+        case PoemSingleFunctionValue(_, typeArguments, _) => writer.writeManyWithCount8(typeArguments, PoemTypeWriter.write)
         case PoemFixedFunctionValue(_, inputType, _) => PoemTypeWriter.write(inputType)
         case _ =>
       }
