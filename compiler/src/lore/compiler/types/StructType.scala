@@ -14,11 +14,12 @@ case class StructType(
   lazy val properties: Vector[StructPropertyDefinition.Instance] = schema.definition.properties.map(_.instantiate(assignments))
 
   /**
-    * The struct constructor signature with all type parameters instantiated.
+    * The struct constructor signature with all type parameters instantiated. The corresponding signature type
+    * parameters are thus empty.
     */
   lazy val constructorSignature: FunctionSignature = FunctionSignature(
     name,
-    properties.map(_.tpe).flatMap(Type.variables).distinct,
+    Vector.empty,
     properties.map(_.asParameter),
     this,
     schema.definition.position,

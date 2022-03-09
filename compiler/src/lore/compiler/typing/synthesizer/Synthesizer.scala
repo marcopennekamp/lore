@@ -89,7 +89,7 @@ object Synthesizer {
 
       case expression@Expression.UntypedConstructorValue(binding, tpe, _) =>
         if (binding.isConstant) {
-          InferenceVariable.assign(tpe, binding.asSchema.representative, assignments)
+          InferenceVariable.assign(tpe, binding.underlyingType, assignments)
         } else {
           reporter.report(TypingFeedback.ConstructorValues.TypeContextExpected(expression))
           None

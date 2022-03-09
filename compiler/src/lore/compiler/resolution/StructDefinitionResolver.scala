@@ -22,6 +22,7 @@ object StructDefinitionResolver {
         val properties = node.properties.map(resolveProperty)
         val companionModule = bindings.modules.get(node.fullName)
         val definition = new StructDefinition(node.fullName, schema, properties, node.isObject, companionModule, node.localModule, node.nameNode.position)
+        properties.foreach(_.structDefinition = definition)
         schema.initialize(definition)
         definition
     }

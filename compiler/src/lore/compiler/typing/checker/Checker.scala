@@ -152,7 +152,11 @@ case class Checker(returnType: Type) {
             ParametricFunctionSynthesizer.inferTypeArguments(binding.signature, input.elements, assignments)
               .flatMap {
                 case (typeParameterAssignments, assignments2) =>
-                  InferenceVariable.assign(tpe, binding.asSchema.instantiate(typeParameterAssignments).constructorSignature.functionType, assignments2)
+                  InferenceVariable.assign(
+                    tpe,
+                    binding.instantiateStructType(typeParameterAssignments).constructorSignature.functionType,
+                    assignments2
+                  )
               }
 
           case _ => fallback

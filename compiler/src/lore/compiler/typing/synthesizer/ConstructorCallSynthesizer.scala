@@ -43,9 +43,9 @@ object ConstructorCallSynthesizer {
     assignments: Assignments,
   )(implicit checker: Checker, reporter: Reporter): Option[Assignments] = {
     ParametricFunctionSynthesizer
-      .inferArgumentTypes(binding.signature.typeParameters, typeParameterAssignments, parameterTypes, expression.arguments, knownArgumentTypes, assignments)
+      .inferArgumentTypes(binding.typeParameters, typeParameterAssignments, parameterTypes, expression.arguments, knownArgumentTypes, assignments)
       .flatMap { argumentCandidate =>
-        val resultType = binding.asSchema.instantiate(argumentCandidate.typeParameterAssignments).constructorSignature.outputType
+        val resultType = binding.instantiateStructType(argumentCandidate.typeParameterAssignments)
         InferenceVariable.assign(expression.tpe.asInstanceOf[InferenceVariable], resultType, argumentCandidate.assignments)
       }
   }

@@ -12,6 +12,6 @@ import lore.compiler.types.{BasicType, TraitSchema, Type, TypeSchema}
 class CoreTrait(val name: NamePath, val schema: Option[TraitSchema]) {
   val schemaOrNothing: TypeSchema = schema.getOrElse(BasicType.Nothing)
   val schemaOrAny: TypeSchema = schema.getOrElse(BasicType.Any)
-  val typeOrNothing: Type = schema.map(_.representative).getOrElse(BasicType.Nothing)
-  val typeOrAny: Type = schema.map(_.representative).getOrElse(BasicType.Any)
+  val typeOrNothing: Type = schema.map(_.constantType).getOrElse(BasicType.Nothing)
+  val typeOrAny: Type = schema.map(_.constantType).getOrElse(BasicType.Any)
 }

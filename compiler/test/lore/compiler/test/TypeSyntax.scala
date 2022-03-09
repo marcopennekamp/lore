@@ -20,7 +20,7 @@ trait TypeSyntax {
     new TypeVariable(name, lowerBound, upperBound, Variance.Invariant, false, 0)
   }
 
-  implicit def toType(name: String)(implicit registry: Registry): Type = registry.types.schemas(NamePath(name)).representative
+  implicit def toType(name: String)(implicit registry: Registry): Type = registry.types.schemas(NamePath(name)).constantType
 
   def tuple(elements: Type*): TupleType = TupleType(elements.toVector)
 

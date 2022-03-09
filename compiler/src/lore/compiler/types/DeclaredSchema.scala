@@ -6,7 +6,7 @@ import lore.compiler.utils.CollectionExtensions.VectorExtension
 
 trait DeclaredSchema extends NamedSchema {
 
-  override def representative: DeclaredType = super.representative.asInstanceOf[DeclaredType]
+  override def constantType: DeclaredType = super.constantType.asInstanceOf[DeclaredType]
 
   /**
     * The declared schema's kind is either `Trait` or `Struct`.
@@ -49,7 +49,7 @@ trait DeclaredSchema extends NamedSchema {
     * instantiated with the type parameters of this schema where applicable. Does not contain duplicates, but may
     * contain multiple types of the same schema with different type arguments.
     */
-  lazy val indirectDeclaredSupertypes: Set[DeclaredType] = representative.indirectDeclaredSupertypes
+  lazy val indirectDeclaredSupertypes: Set[DeclaredType] = DeclaredType.getIndirectDeclaredSupertypes(declaredSupertypes)
 
   /**
     * If a declared type inherits from the same parameterized declared type `T[A]` multiple times, but not all

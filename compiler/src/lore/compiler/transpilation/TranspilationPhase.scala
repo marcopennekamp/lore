@@ -29,7 +29,7 @@ object TranspilationPhase {
     }
 
     val introspectionInitialization = {
-      val tpe = TypeTranspiler.transpile(registry.core.Type.schema.get.representative)(Map.empty, symbolHistory)
+      val tpe = TypeTranspiler.transpile(registry.core.Type.schema.get.constantType)(Map.empty, symbolHistory)
       Vector(
         RuntimeApi.types.introspection.initialize(tpe),
         Target.Divider,

@@ -135,24 +135,23 @@ object DeclarationResolver {
     * with the correct struct type given the type alias's type parameters.
     */
   def resolveStructBindings()(implicit types: Registry.Types, bindings: Registry.Bindings, reporter: Reporter): Registry.StructBindings = {
-    def getByType(name: NamePath, tpe: StructType, typeParameters: Vector[TypeVariable]): Option[(NamePath, StructBinding)] = {
-      val binding = if (tpe.schema.definition.isObject) {
-        if (typeParameters.nonEmpty) {
-          throw CompilationException(s"Objects cannot have type parameters. Violated by object ${tpe.name}.")
-        }
-        StructObjectBinding(name, tpe)
-      } else {
-        StructConstructorBinding(name, typeParameters, tpe)
-      }
-      Some(name -> binding)
-    }
-
     types.schemas.flatMap {
-      case (name, schema: StructSchema) => getByType(name, schema.representative, schema.parameters)
+      case (name, schema: StructSchema) =>
+        if (schema.definition.isObject) {
+          Some(name -> StructObjectBinding(name, schema.constantType))
+        } else {
+          Some(name -> StructConstructorBinding(name, schema.parameters, schema.instantiate(schema.identityAssignments)))
+        }
+
       case (name, schema: AliasSchema) if schema.definition.isStructAlias =>
-        Some(schema.representative)
-          .filterType[StructType]
-          .flatMap(tpe => getByType(name, tpe, schema.parameters))
+        Some(schema.originalType).filterType[StructType].map { tpe =>
+          if (tpe.schema.definition.isObject) {
+            name -> StructObjectBinding(name, tpe)
+          } else {
+            name -> StructConstructorBinding(name, schema.parameters, tpe)
+          }
+        }
+
       case _ => None
     }
   }

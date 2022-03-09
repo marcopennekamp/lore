@@ -78,7 +78,7 @@ object StructConstraints {
         reporter.error(StructFeedback.OpenTypeParameter.IllegalLowerBound(typeParameter, definition.position))
       }
 
-      definition.schema.derivingProperties.get(typeParameter) match {
+      definition.schema.openParameterDerivations.get(typeParameter) match {
         case None => reporter.error(StructFeedback.OpenTypeParameter.NotUniquelyDeducible(typeParameter, definition.position))
         case Some(property) =>
           if (property.isMutable) {

@@ -24,6 +24,12 @@ class StructPropertyDefinition(
   val uniqueKey: UniqueKey = UniqueKey.fresh()
 
   /**
+    * The struct definition this property is attached to. This is immediately initialized during the resolution of
+    * struct definitions.
+    */
+  var structDefinition: StructDefinition = _
+
+  /**
     * This is a variable because it may be transformed during the course of the compilation.
     */
   var defaultValue: Option[StructPropertyDefinition.DefaultValue] = _
@@ -38,6 +44,12 @@ class StructPropertyDefinition(
   }
 
   override def toString: String = name
+
+  override def equals(obj: Any): Boolean = obj match {
+    case other: StructPropertyDefinition => uniqueKey == other.uniqueKey
+  }
+
+  override val hashCode: Int = uniqueKey.hashCode()
 
 }
 

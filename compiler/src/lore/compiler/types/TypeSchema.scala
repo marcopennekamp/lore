@@ -1,6 +1,6 @@
 package lore.compiler.types
 
-import lore.compiler.core.Position
+import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.feedback.{Feedback, Reporter}
 import lore.compiler.semantics.scopes.{ImmutableTypeScope, TypeScope}
 import lore.compiler.types.TypeVariable.Variance
@@ -28,17 +28,31 @@ trait TypeSchema {
   lazy val hasInvariantParameters: Boolean = parameters.exists(_.variance == Variance.Invariant)
 
   /**
-    * The representative of a type schema is the type that contains the schema's type parameters as type arguments.
-    *
-    * If the type schema is constant, the representative is equal to the constant type.
+    * The constant type only exists if the schema is constant and is simply its constant representative. Before
+    * accessing `constantType`, make sure that the schema is constant, otherwise a CompilationException will be thrown.
     */
-  def representative: Type = _representative
-  private lazy val _representative: Type = instantiate(parameters.map(tv => (tv, tv)).toMap)
+  def constantType: Type = _constantType
+
+  private lazy val _constantType: Type = {
+    if (isConstant) instantiate(Map.empty)
+    else throw CompilationException(s"Cannot get the constant type of a non-constant schema. Schema: $this.")
+  }
 
   /**
-    * Creates an immutable type scope that allows access to the type schema's type parameters.
+    * These assignments can be used to instantiate the type schema with the parameters themselves as type arguments.
+    * This is beneficial in a few select use cases.
     */
-  def getTypeScope(parentScope: TypeScope): TypeScope = ImmutableTypeScope.from(parameters, parentScope)
+  lazy val identityAssignments: TypeVariable.Assignments = parameters.zip(parameters).toMap
+
+  /**
+    * Instantiates the schema with the given type variable assignments, which are already fully checked by the above
+    * variant of the `instantiate` method, or otherwise deemed to be legal.
+    *
+    * For example, when a schema is instantiated for type inference, we do not necessarily know all types at the point
+    * of instantiation. Instead of checking bounds like the `instantiate` method above, the schema's type variable
+    * bounds are taken into account as typing judgments.
+    */
+  def instantiate(assignments: TypeVariable.Assignments): Type
 
   /**
     * Instantiates the schema with the given type argument list, which must be in the order of declaration of the
@@ -82,7 +96,7 @@ trait TypeSchema {
     }
 
     if (isConstant) {
-      return representative
+      return constantType
     }
 
     val assignments = parameters.zipWithIndex.foldLeft(Map.empty: TypeVariable.Assignments) { case (assignments, (parameter, index)) =>
@@ -110,14 +124,9 @@ trait TypeSchema {
   }
 
   /**
-    * Instantiates the schema with the given type variable assignments, which are already fully checked by the above
-    * variant of the `instantiate` method, or otherwise deemed to be legal.
-    *
-    * For example, when a schema is instantiated for type inference, we do not necessarily know all types at the point
-    * of instantiation. Instead of checking bounds like the `instantiate` method above, the schema's type variable
-    * bounds are taken into account as typing judgments.
+    * Creates an immutable type scope that allows access to the type schema's type parameters.
     */
-  def instantiate(assignments: TypeVariable.Assignments): Type
+  def getTypeScope(parentScope: TypeScope): TypeScope = ImmutableTypeScope.from(parameters, parentScope)
 
   override def toString: String = SchemaStringifier.toString(this)
 

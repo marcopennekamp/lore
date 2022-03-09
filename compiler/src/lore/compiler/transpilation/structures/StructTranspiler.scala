@@ -108,7 +108,7 @@ case class StructTranspiler(schema: StructSchema)(
     varProperties: Target.Variable,
     varTypeArguments: Target.Variable,
   )(typeParameter: TypeVariable, index: Int): TargetStatement = {
-    val property = schema.derivingProperties(typeParameter)
+    val property = schema.openParameterDerivations(typeParameter)
     val typePath = TypePath.of(property.tpe, typeParameter) match {
       case Vector(path) => path
       case _ => throw CompilationException(s"The type path to the open type parameter $typeParameter must exist and be unique. This is not the case. Schema: $schema.")
@@ -189,7 +189,7 @@ case class StructTranspiler(schema: StructSchema)(
 
     val varConstruct = RuntimeNames.struct.construct(schema)
     val varConstructor = RuntimeNames.struct.constructor(schema)
-    val functionType = schema.representative.constructorSignature.functionType
+    val functionType = schema.constructorSignature.functionType
 
     Vector(
       Target.VariableDeclaration(

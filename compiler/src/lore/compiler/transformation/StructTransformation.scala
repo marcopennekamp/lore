@@ -40,7 +40,7 @@ object StructTransformation {
     position: Position,
   )(implicit bindingScope: BindingScope, typeScope: TypeScope, reporter: Reporter): Expression.ConstructorValue = {
     val typeArguments = typeArgumentNodes.map(TypeExpressionEvaluator.evaluate)
-    val structType = binding.asSchema.instantiate(typeArguments, position)
+    val structType = binding.instantiateStructType(typeArguments, position)
     Expression.ConstructorValue(binding, structType, position)
   }
 
@@ -100,6 +100,8 @@ object StructTransformation {
         case None =>
           property.defaultValue match {
             case Some(defaultValue) =>
+              // TODO (assembly): This needs to be changed to a PropertyDefaultValue expression, because this being a
+              //                  call is an assembly detail.
               val expression = Expression.Call(defaultValue.callTarget, Vector.empty, defaultValue.tpe, position)
               arguments = arguments :+ expression
 

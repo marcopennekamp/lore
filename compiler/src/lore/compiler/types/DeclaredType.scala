@@ -2,6 +2,7 @@ package lore.compiler.types
 
 import lore.compiler.core.CompilationException
 import lore.compiler.semantics.NamePath
+import lore.compiler.types.DeclaredType.getIndirectDeclaredSupertypes
 import lore.compiler.types.TypeVariable.Variance
 import lore.compiler.typing.InferenceVariable.Assignments
 import lore.compiler.typing.unification.SubtypingUnification
@@ -47,9 +48,7 @@ trait DeclaredType extends NamedType {
     * A set of <i>all</i> the type's direct and indirect supertypes. Does not contain duplicates, but may contain
     * multiple types of the same schema with different type arguments.
     */
-  lazy val indirectDeclaredSupertypes: Set[DeclaredType] = {
-    declaredSupertypes.toSet.flatMap((supertype: DeclaredType) => Set(supertype) ++ supertype.indirectDeclaredSupertypes)
-  }
+  lazy val indirectDeclaredSupertypes: Set[DeclaredType] = getIndirectDeclaredSupertypes(declaredSupertypes)
 
   /**
     * Finds a supertype of this type (or this type itself) that has the given schema.
@@ -301,6 +300,14 @@ trait DeclaredType extends NamedType {
       case Variance.Contravariant => Some(SumType.construct(candidates))
       case Variance.Invariant => None
     }
+  }
+
+}
+
+object DeclaredType {
+
+  def getIndirectDeclaredSupertypes(directSupertypes: Vector[DeclaredType]): Set[DeclaredType] = {
+    directSupertypes.toSet.flatMap((supertype: DeclaredType) => Set(supertype) ++ supertype.indirectDeclaredSupertypes)
   }
 
 }
