@@ -1,5 +1,6 @@
 package lore.compiler.assembly.globals
 
+import lore.compiler.assembly.AsmRuntimeNames
 import lore.compiler.assembly.functions.FunctionAssembler
 import lore.compiler.assembly.values.ValueAssembler
 import lore.compiler.poem.{PoemEagerGlobalVariable, PoemFunction, PoemGlobalVariable, PoemLazyGlobalVariable}
@@ -20,7 +21,7 @@ object GlobalVariableAssembler {
       case Some(poemValue) => (PoemEagerGlobalVariable(variable.name, poemValue), Vector.empty)
 
       case None =>
-        val initializerName = variable.name.appendToLastSegment("/init")
+        val initializerName = AsmRuntimeNames.globalVariable.initializer(variable)
         val signature = FunctionSignature(
           initializerName,
           Vector.empty,

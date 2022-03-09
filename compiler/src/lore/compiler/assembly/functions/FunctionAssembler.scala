@@ -1,5 +1,6 @@
 package lore.compiler.assembly.functions
 
+import lore.compiler.assembly.AsmChunk
 import lore.compiler.assembly.optimization.{ConstSmasher, RegisterAllocator}
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.poem.{PoemFunction, PoemInstruction}
@@ -26,47 +27,58 @@ object FunctionAssembler {
     body: Option[Expression],
     capturedVariables: CapturedVariableMap,
   )(implicit registry: Registry): Vector[PoemFunction] = {
+    val (bodyChunk, additionalPoemFunctions) = body match {
+      case Some(body) =>
+        val expressionAssembler = new ExpressionAssembler(signature, capturedVariables)
+        val bodyChunk = expressionAssembler.generate(body)
+        (Some(bodyChunk), expressionAssembler.generatedPoemFunctions)
+
+      case None => (None, Vector.empty)
+    }
+
+    generate(signature, bodyChunk) +: additionalPoemFunctions
+  }
+
+  /**
+    * Generate a PoemFunction from the given function signature and body chunk. This can be used in cases where a body
+    * [[Expression]] is not available, such as with constructor functions.
+    */
+  def generate(signature: FunctionSignature, bodyChunk: Option[AsmChunk])(implicit registry: Registry): PoemFunction = {
+    val instructions = bodyChunk match {
+      case Some(bodyChunk) =>
+        val instructions = finalizeBody(signature, bodyChunk)
+
+        // TODO (assembly): Turn this into a trace log.
+        println(s"Instructions for function ${signature.name}:")
+        instructions.zipWithIndex.foreach { case (instruction, index) =>
+          println(s"$index: " + instruction)
+        }
+        println()
+
+        instructions
+
+      case None => Vector.empty
+    }
+
     val typeParameters = signature.typeParameters.map(TypeAssembler.generateParameter)
-    val (instructions, additionalPoemFunctions) = body match {
-      case Some(body) => generateInstructions(signature, body, capturedVariables)
-      case None => (Vector.empty, Vector.empty)
-    }
     val registerCount = PoemInstruction.registerCount(instructions)
-
-    if (body.isDefined) {
-      // TODO (assembly): Turn this into a trace log.
-      println(s"Instructions for function ${signature.name}:")
-      instructions.zipWithIndex.foreach { case (instruction, index) =>
-        println(s"$index: " + instruction)
-      }
-      println()
-    }
-
     PoemFunction(
       signature.name,
       typeParameters,
       TypeAssembler.generate(signature.inputType),
       TypeAssembler.generate(signature.outputType),
-      body.isEmpty,
+      bodyChunk.isEmpty,
       registerCount,
       instructions,
-    ) +: additionalPoemFunctions
+    )
   }
 
-  private def generateInstructions(
-    signature: FunctionSignature,
-    body: Expression,
-    capturedVariables: CapturedVariableMap,
-  )(implicit registry: Registry): (Vector[PoemInstruction], Vector[PoemFunction]) = {
-    val expressionAssembler = new ExpressionAssembler(signature, capturedVariables)
-    val bodyChunk = expressionAssembler.generate(body)
-
-    var instructions = bodyChunk.instructions :+ PoemInstruction.Return(bodyChunk.forceResult(body.position))
-    instructions = LabelResolver.resolve(instructions, body.position)
+  private def finalizeBody(signature: FunctionSignature, bodyChunk: AsmChunk): Vector[PoemInstruction] = {
+    var instructions = bodyChunk.instructions :+ PoemInstruction.Return(bodyChunk.forceResult(signature.position))
+    instructions = LabelResolver.resolve(instructions, signature.position)
     instructions = ConstSmasher.optimize(instructions)
     instructions = RegisterAllocator.optimize(instructions, signature.parameters.length)
-
-    (instructions, expressionAssembler.generatedPoemFunctions)
+    instructions
   }
 
 }

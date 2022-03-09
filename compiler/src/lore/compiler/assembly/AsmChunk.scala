@@ -12,6 +12,8 @@ import lore.compiler.poem.{Poem, PoemInstruction}
 case class AsmChunk(result: Option[Poem.Register], instructions: Vector[PoemInstruction]) {
   /**
     * Gets `result` or throws a CompilationException. This should be used when a result has to exist.
+    *
+    * TODO (assembly): Can we work this into the type system, e.g. having a ResultAsmChunk and an AsmChunk?
     */
   def forceResult(position: Position): Poem.Register = result match {
     case Some(value) => value
