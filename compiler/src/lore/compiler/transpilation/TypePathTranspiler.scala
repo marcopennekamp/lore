@@ -12,8 +12,6 @@ object TypePathTranspiler {
   def transpileAccess(origin: TargetExpression, typePath: TypePath): TargetExpression = {
     typePath.steps.foldLeft(origin) { case (expression, step) =>
       step match {
-        case TypePath.Identity => expression
-        case TypePath.Part(_) => throw CompilationException("Cannot transpile `TypePath.Part` steps.")
         case TypePath.TupleElement(index) => RuntimeApi.types.typePaths.tupleElement(expression, index)
         case TypePath.FunctionInput => RuntimeApi.types.typePaths.functionInput(expression)
         case TypePath.FunctionOutput => RuntimeApi.types.typePaths.functionOutput(expression)
