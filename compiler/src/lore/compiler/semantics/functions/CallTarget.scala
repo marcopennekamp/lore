@@ -15,19 +15,19 @@ sealed trait CallTarget {
 object CallTarget {
 
   /**
+    * Represents multi-functions as call targets.
+    */
+  case class MultiFunction(mf: MultiFunctionDefinition) extends CallTarget {
+    override def toString: String = mf.name.toString
+  }
+
+  /**
     * Represents calling any kind of function value.
     */
   case class Value(expression: Expression) extends CallTarget {
     override def getExpression: Option[Expression] = Some(expression)
     override def withExpression(expression: Option[Expression]): CallTarget = this.copy(expression = expression.get)
     override def toString: String = expression.toString
-  }
-
-  /**
-    * Represents multi-functions as call targets.
-    */
-  case class MultiFunction(mf: MultiFunctionDefinition) extends CallTarget {
-    override def toString: String = mf.name.toString
   }
 
   /**

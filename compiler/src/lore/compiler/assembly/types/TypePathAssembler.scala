@@ -15,7 +15,7 @@ object TypePathAssembler {
     val target = registerProvider.fresh()
     typePath.steps.foldLeft(AsmChunk(origin)) {
       case (chunk, step) =>
-        val source = chunk.result.get
+        val source = chunk.forceResult
         val instruction = step match {
           case TypePath.TupleElement(index) => PoemInstruction.TypePathIndex(target, source, index)
           case TypePath.FunctionInput => PoemInstruction.TypePathIndex(target, source, 0)

@@ -33,8 +33,8 @@ object LocalizedExpression {
       case _: Expression.FixedFunctionValue => setFalse()
       case _: Expression.ConstructorValue => setFalse()
       case Expression.Call(target, _, _, _) => target match {
-        case CallTarget.Value(_) =>
         case CallTarget.MultiFunction(_) => setFalse()
+        case CallTarget.Value(_) =>
         case CallTarget.Constructor(_) => setFalse()
         case CallTarget.Dynamic(_) => setFalse()
       }

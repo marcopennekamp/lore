@@ -43,9 +43,9 @@ object StructSchemaAssembler {
     * declaration, while the `Struct` instruction expects the property values in their name order. Hence, the
     * constructor function has to translate between these two orders.
     *
-    * TODO (assembly): If the resulting instructions are a simple `Struct`, we can inline the constructor in the
-    *                  ExpressionAssembler, when it's used directly. This is true if the struct has no default values
-    *                  and open type parameters.
+    * TODO (assembly): If the resulting instructions are a simple `Struct` or `StructPoly`, we can inline the
+    *                  constructor in the ExpressionAssembler, when it's used directly. This is true if the struct has
+    *                  no open type parameters.
     */
   private def generateConstructor(
     schema: StructSchema,

@@ -198,6 +198,8 @@ private[transpilation] class ExpressionTranspilationVisitor()(
     def directCall(expression: Target.TargetExpression) = withArguments(Target.Call(expression, _))
 
     expression.target match {
+      case CallTarget.MultiFunction(mf) => directCall(TargetRepresentableTranspiler.transpile(mf))
+
       case CallTarget.Value(ConstructorValue(_, structType, _)) =>
         // Optimization: If we're directly calling a constructor value, the function call boils down to calling the
         // `construct` function. This allows us to bypass a run-time call to `getConstructor` for structs with type
@@ -205,8 +207,6 @@ private[transpilation] class ExpressionTranspilationVisitor()(
         withArguments(arguments => InstantiationTranspiler.transpileStructInstantiation(structType, arguments))
 
       case CallTarget.Value(_) => target.get.flatMap(functionValueCall)
-
-      case CallTarget.MultiFunction(mf) => directCall(TargetRepresentableTranspiler.transpile(mf))
 
       case CallTarget.Constructor(_) =>
         // The result type of the constructor call is the struct with instantiated type parameters. Hence, we can take

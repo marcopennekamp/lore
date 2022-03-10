@@ -20,6 +20,11 @@ case class AsmChunk(result: Option[Poem.Register], instructions: Vector[PoemInst
     case None => throw CompilationException(s"This Chunk must have a result. Position: $position.")
   }
 
+  def forceResult: Poem.Register = result match {
+    case Some(value) => value
+    case None => throw CompilationException(s"This Chunk must have a result.")
+  }
+
   /**
     * Concatenates this chunk with `other`, concatenating instructions and preserving the `result` of `other`.
     */

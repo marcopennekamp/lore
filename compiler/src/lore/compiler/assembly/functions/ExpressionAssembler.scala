@@ -2,7 +2,7 @@ package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.values.ValueAssembler
-import lore.compiler.assembly.{AsmChunk, PropertyOrder, RegisterProvider}
+import lore.compiler.assembly.{AsmChunk, AsmRuntimeNames, PropertyOrder, RegisterProvider}
 import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.poem.PoemInstruction.PropertyGetInstanceKind
 import lore.compiler.poem._
@@ -11,6 +11,8 @@ import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.ParameterDefinition.NamedParameterView
 import lore.compiler.semantics.functions.{CallTarget, FunctionSignature}
 import lore.compiler.semantics.scopes.LocalVariable
+import lore.compiler.transpilation.structures.InstantiationTranspiler
+import lore.compiler.types.Type.isPolymorphic
 import lore.compiler.types._
 
 import scala.collection.immutable.HashMap
@@ -270,21 +272,28 @@ class ExpressionAssembler(
     val argumentChunks = generate(expression.arguments)
 
     val regResult = registerProvider.fresh()
-    val argumentRegs = argumentChunks.map(_.forceResult(expression.position))
+    val valueArgumentRegs = argumentChunks.map(_.forceResult(expression.position))
 
+    // TODO (assembly): Handle direct constructor value calls.
     val callChunk = expression.target match {
-      case CallTarget.MultiFunction(mf) => AsmChunk(regResult, PoemInstruction.Dispatch(regResult, mf.name, argumentRegs))
+      case CallTarget.MultiFunction(mf) => AsmChunk(regResult, PoemInstruction.Dispatch(regResult, mf.name, valueArgumentRegs))
+
+      case CallTarget.Value(ConstructorValue(_, structType, _)) =>
+        // Optimization: We can treat a direct constructor value call as a constructor call.
+        ConstructorCallAssembler.generate(structType, regResult, valueArgumentRegs)
 
       case CallTarget.Value(function) =>
         val functionChunk = generate(function)
         val regFunction = functionChunk.forceResult(function.position)
-        functionChunk ++ AsmChunk(regResult, PoemInstruction.FunctionCall(regResult, regFunction, argumentRegs))
+        functionChunk ++ AsmChunk(regResult, PoemInstruction.FunctionCall(regResult, regFunction, valueArgumentRegs))
 
-      case CallTarget.Constructor(binding) => ???
+      case CallTarget.Constructor(_) =>
+        val structType = expression.tpe.asInstanceOf[StructType]
+        ConstructorCallAssembler.generate(structType, regResult, valueArgumentRegs)
 
       case CallTarget.Dynamic(intrinsic) =>
         // TODO (assembly): If the Call has been analyzed to be unused, we can use `IntrinsicVoid`.
-        AsmChunk(regResult, PoemInstruction.Intrinsic(regResult, intrinsic, argumentRegs))
+        AsmChunk(regResult, PoemInstruction.Intrinsic(regResult, intrinsic, valueArgumentRegs))
     }
 
     AsmChunk.concat(argumentChunks) ++ callChunk

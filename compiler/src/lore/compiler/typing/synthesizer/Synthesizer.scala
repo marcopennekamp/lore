@@ -167,6 +167,8 @@ object Synthesizer {
 
       case expression@Expression.Call(target, arguments, tpe, _) =>
         target match {
+          case CallTarget.MultiFunction(mf) => MultiFunctionCallSynthesizer.infer(mf, expression, assignments)
+
           case CallTarget.Value(target) =>
             infer(target, assignments).flatMap { targetAssignments =>
               val argumentsResult = InferenceVariable.instantiateCandidate(target, targetAssignments) match {
@@ -190,8 +192,6 @@ object Synthesizer {
                 case (argumentAssignments, output) => Unification.unifyEquals(tpe, output, argumentAssignments)
               }
             }
-
-          case CallTarget.MultiFunction(mf) => MultiFunctionCallSynthesizer.infer(mf, expression, assignments)
 
           case CallTarget.Constructor(structBinding) => ConstructorCallSynthesizer.infer(structBinding, expression, assignments)
 
