@@ -16,7 +16,7 @@ object PoemValueWriter {
 
     case PoemBooleanValue(value) =>
       PoemTypeWriter.write(PoemBasicType(BasicType.Boolean))
-      writer.writeBoolean(value)
+      writer.writeBoolean8(value)
 
     case PoemStringValue(value) =>
       PoemTypeWriter.write(PoemBasicType(BasicType.String))

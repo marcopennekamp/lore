@@ -9,7 +9,7 @@ object PoemFunctionWriter {
     PoemTypeParameterWriter.write(function.typeParameters)
     PoemTypeWriter.write(function.inputType)
     PoemTypeWriter.write(function.outputType)
-    writer.writeBoolean(function.isAbstract)
+    writer.writeBoolean8(function.isAbstract)
 
     if (!function.isAbstract) {
       writer.writeUInt16(function.registerCount)

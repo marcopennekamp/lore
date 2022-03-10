@@ -43,7 +43,9 @@ class BytecodeWriter {
 
   def writeFloat64(value: Double): Unit = output.writeBytes(newBuffer(8).putDouble(value).array())
 
-  def writeBoolean(value: Boolean): Unit = writeUInt8(if (value) 1 else 0)
+  def writeBoolean8(value: Boolean): Unit = writeUInt8(if (value) 1 else 0)
+
+  def writeBoolean16(value: Boolean): Unit = writeUInt16(if (value) 1 else 0)
 
   def writeString(string: String): Unit = {
     output.writeBytes(string.getBytes(Charset.forName("UTF-8")))

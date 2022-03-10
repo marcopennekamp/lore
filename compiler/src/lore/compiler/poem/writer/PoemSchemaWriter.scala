@@ -29,7 +29,7 @@ object PoemSchemaWriter {
   private def writeStructProperty(property: PoemStructProperty)(implicit writer: BytecodeWriter): Unit = {
     writer.writeStringWithLength(property.name)
     PoemTypeWriter.write(property.tpe)
-    writer.writeBoolean(property.isOpen)
+    writer.writeBoolean8(property.isOpen)
   }
 
 }

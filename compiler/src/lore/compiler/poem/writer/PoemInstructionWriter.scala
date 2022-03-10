@@ -27,7 +27,7 @@ object PoemInstructionWriter {
 
       case PoemInstruction.BooleanConst(target, value) =>
         write(target)
-        writer.writeBoolean(value)
+        writer.writeBoolean16(value)
 
       case PoemInstruction.StringOf(target, value) => write(target, value)
       case PoemInstruction.StringConcat(target, a, b) => write(target, a, b)
