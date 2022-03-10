@@ -993,9 +993,6 @@ proc write_instruction(stream: FileStream, instruction: PoemInstruction) =
 proc write_operation(stream: FileStream, operation: PoemOperation) =
   stream.write(cast[uint16](operation))
 
-proc write_instruction_arguments_with_count(stream: FileStream, arguments: seq[uint16]) =
-  stream.write_many_with_count(arguments, uint8, write_uint16)
-
 method write(instruction: PoemInstruction, stream: FileStream) {.base, locks: "unknown".} =
   quit("Please implement `write` for all PoemInstructions")
 

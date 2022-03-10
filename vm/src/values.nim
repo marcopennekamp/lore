@@ -3,7 +3,6 @@ import std/strformat, std/strutils
 import imseqs
 import property_index
 import types
-from utils import call_if_any_exists
 
 type
   TaggedValue* = distinct uint64
@@ -206,15 +205,6 @@ proc alloc_shape_value(meta_shape: MetaShape): ShapeValue =
   let shape_value = cast[ShapeValue](alloc0(sizeof(ShapeValue) + meta_shape.property_names.len * sizeof(TaggedValue)))
   shape_value.meta = meta_shape
   shape_value
-
-proc copy_shape_value(shape: ShapeValue): ShapeValue =
-  ## Copies a shape value AND its type. The type is copied because this operation is used to copy and then mutate a
-  ## a shape value and type. The type will have to change if property values are changed subsequently.
-  let res = alloc_shape_value(shape.meta)
-  res.tpe = types.copy_shape_type(cast[ShapeType](shape.tpe))
-  for i in 0 ..< shape.property_count:
-    res.property_values[i] = shape.property_values[i]
-  res
 
 proc new_shape_value*(meta_shape: MetaShape, property_values: open_array[TaggedValue]): ShapeValue =
   ## Creates a new shape value. The property values must be in the correct order as defined by the meta shape.
