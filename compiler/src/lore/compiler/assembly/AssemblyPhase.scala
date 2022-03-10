@@ -41,7 +41,7 @@ object AssemblyPhase {
       poemFunctions ++= FunctionAssembler.generate(function)
     }
 
-    val poemFragment = PoemFragment(Vector.empty, poemGlobalVariables, poemFunctions)
+    val poemFragment = PoemFragment(poemSchemas, poemGlobalVariables, poemFunctions)
 
     // TODO (assembly): Support introspection (probably needs VM support).
     /* val introspectionInitialization = {
