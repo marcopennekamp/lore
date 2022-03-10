@@ -90,6 +90,7 @@ class ExpressionAssembler(
       case node: MapConstruction => handle(node)
       case node: ShapeValue => handle(node)
       case node: Symbol => handle(node)
+      case node: PropertyDefaultValue => handle(node)
       case node: UnaryOperation => handle(node)
       case node: BinaryOperation => handle(node)
       case node: XaryOperation => handle(node)
@@ -230,6 +231,13 @@ class ExpressionAssembler(
 
   private def handle(symbol: Symbol): AsmChunk = {
     ValueAssembler.generateConstForced(symbol, registerProvider.fresh())
+  }
+
+  private def handle(expression: PropertyDefaultValue): AsmChunk = {
+    val functionName = AsmRuntimeNames.struct.defaultPropertyValue(expression.property)
+    val regResult = registerProvider.fresh()
+    val functionInstance = PoemFunctionInstance(functionName, Vector.empty)
+    AsmChunk(regResult, PoemInstruction.Call(regResult, functionInstance, Vector.empty))
   }
 
   private def handle(expression: UnaryOperation): AsmChunk = {

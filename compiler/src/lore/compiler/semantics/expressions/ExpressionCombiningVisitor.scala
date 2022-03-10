@@ -25,6 +25,7 @@ trait ExpressionCombiningVisitor[A, B] extends ExpressionVisitor[A, B] {
   override def visit(expression: Expression.MapConstruction)(entries: Vector[(A, A)]): B = combinePairs(entries)
   override def visit(expression: Expression.ShapeValue)(properties: Vector[A]): B = combine(properties)
   override def visit(expression: Expression.Symbol): B = combine()
+  override def visit(expression: Expression.PropertyDefaultValue): B = combine()
   override def visit(expression: Expression.UnaryOperation)(value: A): B = combine(value)
   override def visit(expression: Expression.BinaryOperation)(left: A, right: A): B = combine(left, right)
   override def visit(expression: Expression.XaryOperation)(operands: Vector[A]): B = combine(operands)

@@ -24,7 +24,7 @@ class StructDefinition(
     * the object's instance must be initialized lazily.
     */
   lazy val allDefaultsLocalized: Boolean = {
-    properties.forall(_.defaultValue.forall(_.expression.isLocalized))
+    properties.forall(_.defaultValue.forall(_.isLocalized))
   }
 
 }

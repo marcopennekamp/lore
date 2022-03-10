@@ -10,8 +10,8 @@ end
 
 
 func test(): [Position] = [
-  Position(1, 2, 3),
-  Position { y = 5 },
-  from_2D(20, 10),
-  from_1D(7),
+  Position(1.0, 2.0, 3.0),
+  Position { y = 5.0 },
+  from_2D(20.0, 10.0),
+  from_1D(7.0),
 ]

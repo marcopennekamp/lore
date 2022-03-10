@@ -2,6 +2,7 @@ package lore.compiler.transpilation.structures
 
 import lore.compiler.core.CompilationException
 import lore.compiler.semantics.Registry
+import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.target.Target
 import lore.compiler.target.Target.{TargetExpression, TargetStatement}
@@ -151,10 +152,10 @@ case class StructTranspiler(schema: StructSchema)(
 
   private def transpileDefaultValue(
     property: StructPropertyDefinition,
-    defaultValue: StructPropertyDefinition.DefaultValue,
+    defaultValue: Expression,
   )(implicit runtimeTypeVariables: RuntimeTypeVariables, registry: Registry): TargetStatement = {
     val varDefaultValue = RuntimeNames.struct.defaultValue(schema, property)
-    val chunk = ExpressionTranspiler.transpile(defaultValue.expression)
+    val chunk = ExpressionTranspiler.transpile(defaultValue)
     Target.Function(varDefaultValue.name, Vector.empty, chunk.asBody)
   }
 

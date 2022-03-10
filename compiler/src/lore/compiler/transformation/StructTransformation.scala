@@ -97,16 +97,11 @@ object StructTransformation {
         case Some(expression) =>
           arguments = arguments :+ expression
 
-        case None =>
-          property.defaultValue match {
-            case Some(defaultValue) =>
-              // TODO (assembly): This needs to be changed to a PropertyDefaultValue expression, because this being a
-              //                  call is an assembly detail.
-              val expression = Expression.Call(defaultValue.callTarget, Vector.empty, defaultValue.tpe, position)
-              arguments = arguments :+ expression
+        case None if property.hasDefault =>
+          val expression = Expression.PropertyDefaultValue(property, position)
+          arguments = arguments :+ expression
 
-            case None => missing = missing :+ property.name
-          }
+        case None => missing = missing :+ property.name
       }
     }
 

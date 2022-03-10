@@ -6,6 +6,7 @@ import lore.compiler.semantics.expressions.Expression.Literal.LiteralValue
 import lore.compiler.semantics.functions.{CallTarget, FunctionInstance, MultiFunctionDefinition}
 import lore.compiler.semantics.members.Member
 import lore.compiler.semantics.scopes.{LocalVariable, StructConstructorBinding, TypedBinding}
+import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.types._
 import lore.compiler.typing.InferenceVariable
 
@@ -227,6 +228,14 @@ object Expression {
 
   case class Symbol(name: String, position: Position) extends Expression {
     override def tpe: SymbolType = SymbolType(name)
+  }
+
+  case class PropertyDefaultValue(property: StructPropertyDefinition, position: Position) extends Expression {
+    if (!property.hasDefault) {
+      throw CompilationException("A PropertyDefaultValue expression must receive a property with a default value.")
+    }
+
+    override def tpe: Type = property.tpe
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

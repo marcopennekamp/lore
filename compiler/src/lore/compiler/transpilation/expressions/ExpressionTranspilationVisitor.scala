@@ -142,6 +142,8 @@ private[transpilation] class ExpressionTranspilationVisitor()(
 
   override def visit(symbol: Symbol): Chunk = Chunk.expression(symbolHistory.targetValue(symbol.name))
 
+  override def visit(expression: PropertyDefaultValue): Chunk = ???
+
   override def visit(expression: UnaryOperation)(value: Chunk): Chunk = {
     val operator = expression.operator match {
       case UnaryOperator.Negation => TargetOperator.Negation

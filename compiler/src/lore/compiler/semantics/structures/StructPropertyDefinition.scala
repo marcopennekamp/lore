@@ -32,7 +32,7 @@ class StructPropertyDefinition(
   /**
     * This is a variable because it may be transformed during the course of the compilation.
     */
-  var defaultValue: Option[StructPropertyDefinition.DefaultValue] = _
+  var defaultValue: Option[Expression] = _
 
   def hasDefault: Boolean = defaultValueNode.nonEmpty
 
@@ -54,10 +54,6 @@ class StructPropertyDefinition(
 }
 
 object StructPropertyDefinition {
-  case class DefaultValue(expression: Expression, callTarget: CallTarget.Dynamic) {
-    val tpe: Type = expression.tpe
-  }
-
   case class Instance(definition: StructPropertyDefinition, tpe: Type) {
     def asParameter: ParameterDefinition = ParameterDefinition(definition.uniqueKey, Some(definition.name), tpe, definition.position)
     def asMember: Member = Member(definition.name, tpe, isAssignable = definition.isMutable, definition.isMutable)

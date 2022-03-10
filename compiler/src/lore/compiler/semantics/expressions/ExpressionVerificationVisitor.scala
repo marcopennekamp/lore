@@ -26,6 +26,7 @@ trait ExpressionVerificationVisitor extends ExpressionVisitor[Unit, Unit] {
   override def visit(expression: MapConstruction)(entries: Vector[(Unit, Unit)]): Result = verify(expression)
   override def visit(expression: ShapeValue)(arguments: Vector[Unit]): Result = verify(expression)
   override def visit(expression: Symbol): Result = verify(expression)
+  override def visit(expression: PropertyDefaultValue): Unit = verify(expression)
   override def visit(expression: UnaryOperation)(value: Unit): Result = verify(expression)
   override def visit(expression: BinaryOperation)(left: Unit, right: Unit): Result = verify(expression)
   override def visit(expression: XaryOperation)(expressions: Vector[Unit]): Result = verify(expression)

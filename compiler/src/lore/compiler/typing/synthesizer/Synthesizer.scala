@@ -105,6 +105,8 @@ object Synthesizer {
 
       case Expression.Symbol(_, _) => Some(assignments)
 
+      case Expression.PropertyDefaultValue(_, _) => Some(assignments)
+
       case expression@Expression.UnaryOperation(operator, value, _, _) =>
         import UnaryOperator._
         def checkOperand(t1: Type) = checker.check(value, t1, assignments)

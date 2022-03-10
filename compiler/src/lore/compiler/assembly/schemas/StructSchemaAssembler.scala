@@ -31,10 +31,6 @@ object StructSchemaAssembler {
     val poemObject = if (schema.definition.isObject) Some(generateObject(schema)) else None
     val poemPropertyDefaultValueFunctions = generatePropertyDefaultValueFunctions(schema)
 
-    if (schema.definition.properties.exists(_.hasDefault)) {
-      throw CompilationException(s"Default values aren't supported yet. Schema: ${schema.name}.")
-    }
-
     (poemSchema, poemConstructor +: poemPropertyDefaultValueFunctions, poemObject)
   }
 
@@ -130,9 +126,9 @@ object StructSchemaAssembler {
             Vector.empty,
             Vector.empty,
             defaultValue.tpe,
-            defaultValue.expression.position,
+            defaultValue.position,
           )
-          FunctionAssembler.generate(signature, Some(defaultValue.expression), Map.empty)
+          FunctionAssembler.generate(signature, Some(defaultValue), Map.empty)
 
         case None => Vector.empty
       }
