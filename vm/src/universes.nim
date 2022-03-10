@@ -535,6 +535,11 @@ method resolve_instruction(poem_instruction: PoemInstructionReturn, context: Ins
   else:
     @[new_instruction(Operation.Return, poem_instruction.value_reg)]
 
+method resolve_instruction(poem_instruction: PoemInstructionTypeConst, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  let tpe = context.get_constants.types[poem_instruction.tpe]
+  let operation = if tpe.is_monomorphic: Operation.TypeConst else: Operation.TypeConstPoly
+  @[new_instruction(operation, poem_instruction.target_reg, poem_instruction.tpe)]
+
 proc generate_xary_application(
   operation_opl: Operation,
   operation_x: open_array[Operation],
@@ -689,7 +694,6 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.GlobalSet: Operation.GlobalSet
 
   of PoemOperation.TypeArg: Operation.TypeArg
-  of PoemOperation.TypeConst: Operation.TypeConst
   of PoemOperation.TypeOf: Operation.TypeOf
   of PoemOperation.TypePathIndex: Operation.TypePathIndex
   of PoemOperation.TypePathProperty: Operation.TypePathProperty
@@ -698,7 +702,7 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.Lambda, PoemOperation.List,
      PoemOperation.ListAppend, PoemOperation.Shape, PoemOperation.Struct, PoemOperation.StructPoly,
      PoemOperation.PropertyGet, PoemOperation.Intrinsic, PoemOperation.IntrinsicVoid, PoemOperation.GlobalGet,
-     PoemOperation.Dispatch, PoemOperation.Call, PoemOperation.CallPoly, PoemOperation.Return:
+     PoemOperation.Dispatch, PoemOperation.Call, PoemOperation.CallPoly, PoemOperation.Return, PoemOperation.TypeConst:
     quit(fmt"The poem operation {poem_operation} is not simple!")
 
 ########################################################################################################################

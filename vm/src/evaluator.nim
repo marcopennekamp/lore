@@ -758,6 +758,9 @@ proc evaluate(frame: FramePtr) =
     of Operation.TypeConst:
       regt_set_arg(0, const_types_arg(1))
 
+    of Operation.TypeConstPoly:
+      regt_set_arg(0, substitute(const_types_arg(1), frame.type_arguments))
+
     of Operation.TypeOf:
       regt_set_arg(0, regv_get_arg(0).get_type)
 

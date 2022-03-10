@@ -355,6 +355,9 @@ type
     TypeConst
       ## reg(arg0) <- tpe(arg1)
 
+    TypeConstPoly
+      ## reg(arg0) <- substitute(tpe(arg1))
+
     TypeOf
       ## reg(arg0) <- type_of(reg(arg1))
 

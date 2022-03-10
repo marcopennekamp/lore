@@ -222,9 +222,10 @@ type
       ## value_reg: uint16
 
     TypeArg
-    # TODO (assembly): TypeConst needs to substitute type variables. As always, split it into a normal and a Poly
-    #                  operation.
     TypeConst
+      ## target_reg: uint16, tpe: uint16
+      ##
+      ## Assigns the constant type to the target register. Type variables in `tpe` will be substituted.
     TypeOf
     TypePathIndex
     TypePathProperty
@@ -321,6 +322,10 @@ type
 
   PoemInstructionReturn* = ref object of PoemInstruction
     value_reg*: uint16
+
+  PoemInstructionTypeConst* = ref object of PoemInstruction
+    target_reg*: uint16
+    tpe*: uint16
 
   PoemFunctionInstance* = ref object of PoemInstruction
     ## A poem function instance is used when a single-function multi-function is called directly and the types are
@@ -971,6 +976,12 @@ proc read_instruction(stream: FileStream): PoemInstruction =
       value_reg: stream.read(uint16),
     )
 
+  of TypeConst:
+    PoemInstructionTypeConst(
+      target_reg: stream.read(uint16),
+      tpe: stream.read(uint16),
+    )
+
   else:
     let argument_count = operation.simple_argument_count
     let arguments = stream.read_many(uint16, argument_count, read_uint16)
@@ -1093,18 +1104,24 @@ method write(instruction: PoemInstructionReturn, stream: FileStream) {.locks: "u
   stream.write_operation(PoemOperation.Return)
   stream.write(instruction.value_reg)
 
+method write(instruction: PoemInstructionTypeConst, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.TypeConst)
+  stream.write(instruction.target_reg)
+  stream.write(instruction.tpe)
+
 proc simple_argument_count(operation: PoemOperation): uint8 =
   ## Returns the argument length of `operation`, provided that it is a simple operation.
   case operation
   of Jump: 1
   of Assign, Const, IntConst, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, LambdaLocal, ListLength,
-     JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeConst, TypeOf: 2
+     JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeOf: 2
   of IntAdd, IntSub, IntMul, IntDiv, IntEq, IntLt, IntLte, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte,
      BooleanOr, BooleanAnd, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped, ListGet,
      SymbolEq, StructEq, TypePathIndex, TypePathProperty: 3
+  of TypePathTypeArgument: 4
   of PoemOperation.Tuple, FunctionCall, PoemOperation.Lambda, PoemOperation.Shape, PoemOperation.List, ListAppend,
      PoemOperation.Struct, StructPoly, PropertyGet, Intrinsic, IntrinsicVoid, GlobalGet, Dispatch, Call, CallPoly,
-     Return, TypePathTypeArgument:
+     Return, TypeConst:
     quit(fmt"Poem operation {operation} is not simple!")
 
 ########################################################################################################################
