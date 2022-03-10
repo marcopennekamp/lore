@@ -1,6 +1,6 @@
 package lore.compiler.assembly.functions
 
-import lore.compiler.assembly.{AsmChunk, RegisterProvider}
+import lore.compiler.assembly.{AsmChunk, AsmRuntimeNames, RegisterProvider}
 import lore.compiler.poem.PoemInstruction
 import lore.compiler.semantics.scopes.{LocalVariable, StructObjectBinding, TypedBinding}
 import lore.compiler.semantics.variables.GlobalVariableDefinition
@@ -15,8 +15,7 @@ object TypedBindingAssembler {
     binding match {
       case global: GlobalVariableDefinition =>
         val target = registerProvider.fresh()
-        val instruction = PoemInstruction.GlobalGet(target, global)
-        AsmChunk(target, instruction)
+        AsmChunk(target, PoemInstruction.GlobalGet(target, global.name))
 
       case variable: LocalVariable =>
         // If the variable is a captured variable, we need to load its value from the lambda context via `LambdaLocal`.
@@ -29,11 +28,10 @@ object TypedBindingAssembler {
             AsmChunk(variableRegisterMap(variable.uniqueKey))
         }
 
-      // TODO (assembly): Implement. Struct objects aren't directly supported by the VM. Instead, we have to define a
-      //                  lazy global variable. The target representation would then be a `GlobalGet` instruction.
-      //                  However, we could even go as far as rolling StructObjectBindings into GlobalVariableDefinitions
-      //                  in the compiler. This might simplify the whole StructBinding business.
-      case _: StructObjectBinding => ???
+      case binding: StructObjectBinding =>
+        val target = registerProvider.fresh()
+        val objectName = AsmRuntimeNames.struct.`object`(binding.definition.schema)
+        AsmChunk(target, PoemInstruction.GlobalGet(target, objectName))
     }
   }
 

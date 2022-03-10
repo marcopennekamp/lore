@@ -121,10 +121,10 @@ object PoemInstructionWriter {
 
       case PoemInstruction.GlobalGet(target, global) =>
         write(target)
-        writeConstantGlobalVariable(global.name)
+        writeConstantGlobalVariable(global)
 
       case PoemInstruction.GlobalSet(global, value) =>
-        writeConstantGlobalVariable(global.name)
+        writeConstantGlobalVariable(global)
         write(value)
 
       case PoemInstruction.Dispatch(target, mf, arguments) =>

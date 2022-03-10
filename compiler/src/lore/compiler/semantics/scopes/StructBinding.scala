@@ -9,6 +9,9 @@ import lore.compiler.semantics.structures.StructDefinition
 import lore.compiler.types.TypeVariable.Assignments
 import lore.compiler.types.{NamedSchema, StructType, Type, TypeVariable}
 
+// TODO (assembly): We could roll StructObjectBindings into GlobalVariableDefinitions, that is, generating a semantic
+//                  global variable for each struct object. This might simplify the whole StructBinding business.
+
 sealed trait StructBinding extends Binding {
   def definition: StructDefinition
 }

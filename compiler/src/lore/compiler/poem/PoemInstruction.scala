@@ -51,7 +51,7 @@ object PoemInstruction {
   type PTpe = PoemType
   type PIntr = PoemIntrinsic
   type PSch = DeclaredSchema
-  type PGlb = GlobalVariableDefinition
+  type PGlb = NamePath
   type PMf = NamePath
   type PFin = PoemFunctionInstance
   type PMtsh = PoemMetaShape
@@ -344,8 +344,8 @@ object PoemInstruction {
       case JumpIfTrue(target, predicate) => s"$target if $predicate"
       case Intrinsic(target, intrinsic, arguments) => s"$target <- ${intrinsic.name}(${arguments.mkString(", ")})"
       case IntrinsicVoid(intrinsic, arguments) => s"${intrinsic.name}(${arguments.mkString(", ")})"
-      case GlobalGet(target, global) => s"$target <- ${global.name}"
-      case GlobalSet(global, value) => s"${global.name} <- $value"
+      case GlobalGet(target, global) => s"$target <- $global"
+      case GlobalSet(global, value) => s"$global <- $value"
       case Dispatch(target, mf, arguments) => s"$target <- $mf(${arguments.mkString(", ")})"
       case Call(target, functionInstance, valueArguments) => s"$target <- $functionInstance(${valueArguments.mkString(", ")})"
       case CallPoly(target, mf, typeArguments, valueArguments) => s"$target <- $mf[${typeArguments.mkString(", ")}](${valueArguments.mkString(", ")})"
