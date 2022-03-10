@@ -6,6 +6,7 @@ import lore.compiler.assembly.{AsmChunk, AsmRuntimeNames, PropertyOrder, Registe
 import lore.compiler.core.CompilationException
 import lore.compiler.poem._
 import lore.compiler.semantics.Registry
+import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.types.{StructSchema, TypePath}
 
@@ -28,12 +29,13 @@ object StructSchemaAssembler {
     val poemSchema = PoemStructSchema(schema.kind, schema.name, poemTypeParameters, poemSupertraits, poemProperties)
     val poemConstructor = generateConstructor(schema, orderedProperties)
     val poemObject = if (schema.definition.isObject) Some(generateObject(schema)) else None
+    val poemPropertyDefaultValueFunctions = generatePropertyDefaultValueFunctions(schema)
 
     if (schema.definition.properties.exists(_.hasDefault)) {
       throw CompilationException(s"Default values aren't supported yet. Schema: ${schema.name}.")
     }
 
-    (poemSchema, Vector(poemConstructor), poemObject)
+    (poemSchema, poemConstructor +: poemPropertyDefaultValueFunctions, poemObject)
   }
 
   private def generateProperty(property: StructPropertyDefinition): PoemStructProperty = {
@@ -106,11 +108,34 @@ object StructSchemaAssembler {
       val poemValue = PoemStructValue(Map.empty, poemType)
       PoemEagerGlobalVariable(name, poemValue)
     } else {
+      // TODO (assembly): Implement.
       throw CompilationException("Objects with properties aren't supported yet.")
       // Remember that all properties of an object must have a default value.
 //      schema.definition.properties.map {
 //        property => property.defaultValue.get
 //      }
+    }
+  }
+
+  /**
+    * Generates the poem functions that compute default property values.
+    */
+  private def generatePropertyDefaultValueFunctions(schema: StructSchema)(implicit registry: Registry): Vector[PoemFunction] = {
+    schema.definition.properties.flatMap { property =>
+      property.defaultValue match {
+        case Some(defaultValue) =>
+          val functionName = AsmRuntimeNames.struct.defaultPropertyValue(property)
+          val signature = FunctionSignature(
+            functionName,
+            Vector.empty,
+            Vector.empty,
+            defaultValue.tpe,
+            defaultValue.expression.position,
+          )
+          FunctionAssembler.generate(signature, Some(defaultValue.expression), Map.empty)
+
+        case None => Vector.empty
+      }
     }
   }
 
