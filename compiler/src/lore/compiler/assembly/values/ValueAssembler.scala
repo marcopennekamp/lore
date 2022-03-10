@@ -14,6 +14,16 @@ object ValueAssembler {
     * Generates a PoemValue representation of the given expression IF it can be represented as a constant value. Poem
     * values whose types contain type variables cannot be constant.
     *
+    * An important requirement for constant values is that they are immutable. This is trivial for the built-in values
+    * such as tuples and lists, as they are inherently immutable if their elements are also immutable. A struct,
+    * however, may or may not have mutable properties. We cannot, for example, generate a constant list of mutable
+    * structs, because while the list might be immutable, its contents can be mutated, and this would be enough to
+    * cause weird errors at run time. This is complicated by shallowly immutable structs containing mutable structs as
+    * properties. And sometimes, the mutability might be hidden behind a trait. All in all, we could certainly prove
+    * some structs to be immutable, such as those having no struct or trait properties themselves, but not all structs.
+    * For now, no structs are generated as constant values, but this could feasibly change in the future to contain a
+    * subset of structs.
+    *
     * For now, the algorithm is very simple, only taking literals and some operations into account. We can expand this
     * to be as complex as we want, as far as building an interpreter into the compiler that tries to compute the
     * constant value.

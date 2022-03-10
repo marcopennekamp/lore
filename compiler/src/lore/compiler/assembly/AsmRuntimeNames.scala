@@ -8,6 +8,7 @@ object AsmRuntimeNames {
 
   object struct {
     def construct(schema: StructSchema): NamePath = schema.name.appendToLastSegment("/construct")
+    def `object`(schema: StructSchema): NamePath = schema.name.appendToLastSegment("/object")
   }
 
   object globalVariable {
