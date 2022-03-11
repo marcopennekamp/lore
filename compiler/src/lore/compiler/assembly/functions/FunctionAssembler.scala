@@ -19,6 +19,21 @@ object FunctionAssembler {
   }
 
   /**
+    * Generates PoemFunctions from the given function signature and body. `capturedVariableMap` is only used if `body`
+    * is an [[Expression]].
+    */
+  def generate(
+    signature: FunctionSignature,
+    body: Either[Expression, AsmChunk],
+    capturedVariables: CapturedVariableMap = Map.empty,
+  )(implicit registry: Registry): Vector[PoemFunction] = {
+    body match {
+      case Left(body) => generate(signature, Some(body), capturedVariables)
+      case Right(bodyChunk) => Vector(generate(signature, Some(bodyChunk)))
+    }
+  }
+
+  /**
     * Generates PoemFunctions from the given function signature and body. `capturedVariables` will contain entries if
     * the current function to be compiled is a lambda function with captured variables.
     */

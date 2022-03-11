@@ -14,7 +14,8 @@ object AsmRuntimeNames {
   }
 
   object globalVariable {
-    def initializer(variable: GlobalVariableDefinition): NamePath = variable.name.appendToLastSegment("/init")
+    def initializer(name: NamePath): NamePath = name.appendToLastSegment("/init")
+    def initializer(variable: GlobalVariableDefinition): NamePath = initializer(variable.name)
   }
 
 }

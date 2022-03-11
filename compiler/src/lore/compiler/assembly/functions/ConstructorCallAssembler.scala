@@ -3,9 +3,17 @@ package lore.compiler.assembly.functions
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.{AsmChunk, AsmRuntimeNames, RegisterProvider}
 import lore.compiler.poem.{Poem, PoemFunctionInstance, PoemInstruction}
+import lore.compiler.semantics.structures.StructPropertyDefinition
 import lore.compiler.types.{StructType, Type, TypeVariable}
 
 object ConstructorCallAssembler {
+
+  def generate(
+    structType: StructType,
+    valueArgumentRegs: Vector[Poem.Register],
+  )(implicit registerProvider: RegisterProvider): AsmChunk = {
+    generate(structType, registerProvider.fresh(), valueArgumentRegs)
+  }
 
   def generate(
     structType: StructType,
@@ -45,6 +53,13 @@ object ConstructorCallAssembler {
       )
       AsmChunk.concat(typeArgumentChunks) ++ AsmChunk(regResult, callInstruction)
     }
+  }
+
+  def generateDefaultPropertyCall(property: StructPropertyDefinition)(implicit registerProvider: RegisterProvider): AsmChunk = {
+    val functionName = AsmRuntimeNames.struct.defaultPropertyValue(property)
+    val regResult = registerProvider.fresh()
+    val functionInstance = PoemFunctionInstance(functionName, Vector.empty)
+    AsmChunk(regResult, PoemInstruction.Call(regResult, functionInstance, Vector.empty))
   }
 
 }

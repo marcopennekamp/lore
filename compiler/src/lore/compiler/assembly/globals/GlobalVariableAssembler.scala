@@ -1,12 +1,15 @@
 package lore.compiler.assembly.globals
 
-import lore.compiler.assembly.AsmRuntimeNames
 import lore.compiler.assembly.functions.FunctionAssembler
 import lore.compiler.assembly.values.ValueAssembler
+import lore.compiler.assembly.{AsmChunk, AsmRuntimeNames}
+import lore.compiler.core.Position
 import lore.compiler.poem.{PoemEagerGlobalVariable, PoemFunction, PoemGlobalVariable, PoemLazyGlobalVariable}
-import lore.compiler.semantics.Registry
+import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.FunctionSignature
 import lore.compiler.semantics.variables.GlobalVariableDefinition
+import lore.compiler.semantics.{NamePath, Registry}
+import lore.compiler.types.Type
 
 object GlobalVariableAssembler {
 
@@ -19,20 +22,31 @@ object GlobalVariableAssembler {
     // Otherwise, we need an initializing function and a lazy global variable.
     ValueAssembler.generate(variable.value) match {
       case Some(poemValue) => (PoemEagerGlobalVariable(variable.name, poemValue), Vector.empty)
-
-      case None =>
-        val initializerName = AsmRuntimeNames.globalVariable.initializer(variable)
-        val signature = FunctionSignature(
-          initializerName,
-          Vector.empty,
-          Vector.empty,
-          variable.tpe,
-          variable.position,
-        )
-        val generatedPoemFunctions = FunctionAssembler.generate(signature, Some(variable.value), Map.empty)
-
-        (PoemLazyGlobalVariable(variable.name, initializerName), generatedPoemFunctions)
+      case None => generateLazyGlobalVariable(variable.name, variable.tpe, Left(variable.value), variable.position)
     }
+  }
+
+  /**
+    * Generates a lazy global variable and its initializer function from the given variable `name`, `tpe`, and `value`.
+    * This function doesn't take a GlobalVariableDefinition because it is also used to generate poem global variables
+    * that aren't available as GlobalVariableDefinitions.
+    */
+  def generateLazyGlobalVariable(
+    name: NamePath,
+    tpe: Type,
+    value: Either[Expression, AsmChunk],
+    position: Position,
+  )(implicit registry: Registry): (PoemLazyGlobalVariable, Vector[PoemFunction]) = {
+    val initializerName = AsmRuntimeNames.globalVariable.initializer(name)
+    val signature = FunctionSignature(
+      initializerName,
+      Vector.empty,
+      Vector.empty,
+      tpe,
+      position,
+    )
+    val generatedPoemFunctions = FunctionAssembler.generate(signature, value)
+    (PoemLazyGlobalVariable(name, initializerName), generatedPoemFunctions)
   }
 
 }

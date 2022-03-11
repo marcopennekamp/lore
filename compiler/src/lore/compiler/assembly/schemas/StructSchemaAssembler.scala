@@ -1,6 +1,7 @@
 package lore.compiler.assembly.schemas
 
-import lore.compiler.assembly.functions.FunctionAssembler
+import lore.compiler.assembly.functions.{ConstructorCallAssembler, FunctionAssembler}
+import lore.compiler.assembly.globals.GlobalVariableAssembler
 import lore.compiler.assembly.types.{TypeAssembler, TypePathAssembler}
 import lore.compiler.assembly.{AsmChunk, AsmRuntimeNames, PropertyOrder, RegisterProvider}
 import lore.compiler.core.CompilationException
@@ -28,10 +29,13 @@ object StructSchemaAssembler {
 
     val poemSchema = PoemStructSchema(schema.kind, schema.name, poemTypeParameters, poemSupertraits, poemProperties)
     val poemConstructor = generateConstructor(schema, orderedProperties)
-    val poemObject = if (schema.definition.isObject) Some(generateObject(schema)) else None
+    val (poemObject, poemObjectFunctions) = if (schema.definition.isObject) {
+      val (poemGlobalVariable, poemFunctions) = generateObject(schema)
+      (Some(poemGlobalVariable), poemFunctions)
+    } else (None, Vector.empty)
     val poemPropertyDefaultValueFunctions = generatePropertyDefaultValueFunctions(schema)
 
-    (poemSchema, poemConstructor +: poemPropertyDefaultValueFunctions, poemObject)
+    (poemSchema, poemConstructor +: (poemObjectFunctions ++ poemPropertyDefaultValueFunctions), poemObject)
   }
 
   private def generateProperty(property: StructPropertyDefinition): PoemStructProperty = {
@@ -95,21 +99,22 @@ object StructSchemaAssembler {
     * variables. This allows us to utilize the schema's constructor to build the object. Some objects might only have
     * constant default values, though, and could be initialized as eager global variables in the future.
     */
-  private def generateObject(schema: StructSchema): PoemGlobalVariable = {
+  private def generateObject(schema: StructSchema)(implicit registry: Registry): (PoemGlobalVariable, Vector[PoemFunction]) = {
     val name = AsmRuntimeNames.struct.`object`(schema)
 
     if (schema.definition.properties.isEmpty) {
       // Remember that objects cannot have type parameters.
       val poemType = PoemNamedType(schema, Vector.empty)
       val poemValue = PoemStructValue(Map.empty, poemType)
-      PoemEagerGlobalVariable(name, poemValue)
+      (PoemEagerGlobalVariable(name, poemValue), Vector.empty)
     } else {
-      // TODO (assembly): Implement.
-      throw CompilationException("Objects with properties aren't supported yet.")
+      implicit val registerProvider: RegisterProvider = new RegisterProvider
+
       // Remember that all properties of an object must have a default value.
-//      schema.definition.properties.map {
-//        property => property.defaultValue.get
-//      }
+      val propertyChunks = schema.definition.properties.map(ConstructorCallAssembler.generateDefaultPropertyCall)
+      val constructorCallChunk = ConstructorCallAssembler.generate(schema.constantType, Vector.empty)
+      val bodyChunk = AsmChunk.concat(propertyChunks) ++ constructorCallChunk
+      GlobalVariableAssembler.generateLazyGlobalVariable(name, schema.constantType, Right(bodyChunk), schema.definition.position)
     }
   }
 

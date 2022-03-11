@@ -2,7 +2,7 @@ package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.values.ValueAssembler
-import lore.compiler.assembly.{AsmChunk, AsmRuntimeNames, PropertyOrder, RegisterProvider}
+import lore.compiler.assembly.{AsmChunk, PropertyOrder, RegisterProvider}
 import lore.compiler.core.{CompilationException, Position}
 import lore.compiler.poem.PoemInstruction.PropertyGetInstanceKind
 import lore.compiler.poem._
@@ -11,8 +11,6 @@ import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.ParameterDefinition.NamedParameterView
 import lore.compiler.semantics.functions.{CallTarget, FunctionSignature}
 import lore.compiler.semantics.scopes.LocalVariable
-import lore.compiler.transpilation.structures.InstantiationTranspiler
-import lore.compiler.types.Type.isPolymorphic
 import lore.compiler.types._
 
 import scala.collection.immutable.HashMap
@@ -234,10 +232,7 @@ class ExpressionAssembler(
   }
 
   private def handle(expression: PropertyDefaultValue): AsmChunk = {
-    val functionName = AsmRuntimeNames.struct.defaultPropertyValue(expression.property)
-    val regResult = registerProvider.fresh()
-    val functionInstance = PoemFunctionInstance(functionName, Vector.empty)
-    AsmChunk(regResult, PoemInstruction.Call(regResult, functionInstance, Vector.empty))
+    ConstructorCallAssembler.generateDefaultPropertyCall(expression.property)
   }
 
   private def handle(expression: UnaryOperation): AsmChunk = {
