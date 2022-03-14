@@ -112,7 +112,7 @@ object StructSchemaAssembler {
 
       // Remember that all properties of an object must have a default value.
       val propertyChunks = schema.definition.properties.map(ConstructorCallAssembler.generateDefaultPropertyCall)
-      val constructorCallChunk = ConstructorCallAssembler.generate(schema.constantType, Vector.empty)
+      val constructorCallChunk = ConstructorCallAssembler.generate(schema.constantType, propertyChunks.map(_.forceResult))
       val bodyChunk = AsmChunk.concat(propertyChunks) ++ constructorCallChunk
       GlobalVariableAssembler.generateLazyGlobalVariable(name, schema.constantType, Right(bodyChunk), schema.definition.position)
     }
