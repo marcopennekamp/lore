@@ -149,7 +149,7 @@ class ExpressionAssembler(
 
   private def handle(expression: MemberAccess): AsmChunk = {
     val target = registerProvider.fresh()
-    val instanceKind = InstanceKind.of(expression.tpe)
+    val instanceKind = InstanceKind.of(expression.instance.tpe)
     val instanceChunk = generate(expression.instance)
     val regInstance = instanceChunk.forceResult(expression.position)
     val instruction = PoemInstruction.PropertyGet(target, instanceKind, regInstance, expression.member.name)
