@@ -137,6 +137,9 @@ proc new_lazy_global*(name: string, initializer: FunctionInstance): GlobalVariab
 
 proc is_single_function*(mf: MultiFunction): bool {.inline.} = mf.functions.len == 1
 
+proc name*(function: Function): string {.inline.} = function.multi_function.name
+proc arity*(function: Function): int {.inline.} = function.input_type.elements.len
+
 proc is_monomorphic*(function: Function): bool {.inline.} = function.type_parameters.len == 0
 proc is_polymorphic*(function: Function): bool {.inline.} = function.type_parameters.len > 0
 

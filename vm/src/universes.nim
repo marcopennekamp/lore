@@ -527,7 +527,15 @@ method resolve_instruction(poem_instruction: PoemInstructionDispatch, context: I
     poem_instruction.argument_regs,
   )
 
+proc check_call_function_arity(function: Function, argument_count: int) =
+  ## Ensures that the given function has the required arity. If not, the VM quits with an error. This catches bytecode
+  ## where a function is called with the wrong arity, which is hard to catch once it reaches the evaluator.
+  if function.arity != argument_count:
+    quit(fmt"The function {function.name} with arity {function.arity} cannot be called with {argument_count} arguments.")
+
 method resolve_instruction(poem_instruction: PoemInstructionCall, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  let function_instance = context.get_constants.function_instances[poem_instruction.fin]
+  check_call_function_arity(function_instance.function, poem_instruction.value_argument_regs.len)
   generate_opl_or_direct(
     Operation.Call,
     Operation.CallDirect,
@@ -536,6 +544,8 @@ method resolve_instruction(poem_instruction: PoemInstructionCall, context: Instr
   )
 
 method resolve_instruction(poem_instruction: PoemInstructionCallPoly, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  let mf = context.get_constants.multi_functions[poem_instruction.mf]
+  check_call_function_arity(mf.get_single_function, poem_instruction.value_argument_regs.len)
   generate_opl_or_direct2(
     Operation.CallPoly,
     Operation.CallPolyDirect,
