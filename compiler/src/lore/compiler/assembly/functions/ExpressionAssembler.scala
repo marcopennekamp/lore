@@ -4,7 +4,7 @@ import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.values.ValueAssembler
 import lore.compiler.assembly.{AsmChunk, PropertyOrder, RegisterProvider}
 import lore.compiler.core.{CompilationException, Position}
-import lore.compiler.poem.PoemInstruction.PropertyGetInstanceKind
+import lore.compiler.poem.PoemInstruction.InstanceKind
 import lore.compiler.poem._
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
@@ -117,14 +117,30 @@ class ExpressionAssembler(
   }
 
   private def handle(expression: Assignment): AsmChunk = {
-    val targetChunk = generate(expression.target)
     val valueChunk = generate(expression.value)
+    val regValue = valueChunk.forceResult(expression.value.position)
+    expression.target match {
+      case Expression.BindingAccess(binding, position) =>
+        val regVariable = binding match {
+          case variable: LocalVariable => variableRegisterMap(variable.uniqueKey)
+          case _ => throw CompilationException(s"Binding $binding cannot be mutable. Position: $position.")
+        }
+        valueChunk ++ AsmChunk(PoemInstruction.Assign(regVariable, regValue))
 
-    val instruction = PoemInstruction.Assign(
-      targetChunk.forceResult(expression.position),
-      valueChunk.forceResult(expression.position)
-    )
-    targetChunk ++ valueChunk ++ AsmChunk(instruction)
+      case Expression.MemberAccess(instance, member, position) =>
+        if (!instance.tpe.isInstanceOf[StructType]) {
+          throw CompilationException(s"Only struct members may be mutated directly, but the instance's type is ${instance.tpe}. Position: $position.")
+        }
+
+        val instanceKind = InstanceKind.of(instance.tpe)
+        val instanceChunk = generate(instance)
+        val regInstance = instanceChunk.forceResult(position)
+        valueChunk ++ instanceChunk ++ AsmChunk(
+          PoemInstruction.PropertySet(instanceKind, regInstance, member.name, regValue),
+        )
+
+      case _ => throw CompilationException(s"Invalid assignment target. Position: ${expression.target.position}.")
+    }
   }
 
   private def handle(expression: Block): AsmChunk = AsmChunk.concat(generate(expression.expressions))
@@ -132,19 +148,11 @@ class ExpressionAssembler(
   private def handle(expression: BindingAccess): AsmChunk = TypedBindingAssembler.generate(expression.binding)
 
   private def handle(expression: MemberAccess): AsmChunk = {
-    val instanceChunk = generate(expression.instance)
-
-    // TODO (assembly): This doesn't cover all types optimally. For example, an intersection or sum type of two traits
-    //                  could be classified as `.Trait`, but is currently classified as `.Any`.
-    val instanceKind = expression.tpe match {
-      case _: ShapeType => PropertyGetInstanceKind.Shape
-      case _: TraitType => PropertyGetInstanceKind.Trait
-      case tpe: StructType => PropertyGetInstanceKind.Struct(tpe.schema)
-      case _ => PropertyGetInstanceKind.Any
-    }
     val target = registerProvider.fresh()
-    val instance = instanceChunk.forceResult(expression.position)
-    val instruction = PoemInstruction.PropertyGet(target, instanceKind, instance, expression.member.name)
+    val instanceKind = InstanceKind.of(expression.tpe)
+    val instanceChunk = generate(expression.instance)
+    val regInstance = instanceChunk.forceResult(expression.position)
+    val instruction = PoemInstruction.PropertyGet(target, instanceKind, regInstance, expression.member.name)
     instanceChunk ++ AsmChunk(target, instruction)
   }
 
