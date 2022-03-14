@@ -32,27 +32,6 @@ proc create_frame(instance: ptr FunctionInstance, lambda_context: LambdaContext,
   frame
 
 ########################################################################################################################
-# Global variable functions.                                                                                           #
-########################################################################################################################
-
-proc get_global*(variable: GlobalVariable, frame_mem: pointer): TaggedValue =
-  ## Gets the global variable's `value`. If the variable hasn't been initialized yet, `get_global` performs the
-  ## initialization first and then returns the new value. `frame_mem` must be provided for the execution of the
-  ## initialization function.
-  ##
-  ## Note that `get_global` cannot be placed in the module `definitions` because of a mutual dependency with `evaluate`.
-  if not variable.is_initialized:
-    variable.value = evaluate(addr variable.initializer, frame_mem)
-    variable.is_initialized = true
-  variable.value
-
-proc set_global*(variable: GlobalVariable, value: TaggedValue) =
-  ## Sets the global variable's `value`, overwriting any previous value. Also sets `is_initialized` to true. This
-  ## function also works with lazy global variables.
-  variable.is_initialized = true
-  variable.value = value
-
-########################################################################################################################
 # Register access: General.                                                                                            #
 ########################################################################################################################
 
@@ -401,6 +380,36 @@ macro generate_intrisic_evaluation(
   macros.new_stmt_list(statements)
 
 ########################################################################################################################
+# Global variable functions.                                                                                           #
+########################################################################################################################
+
+proc get_global*(variable: GlobalVariable, frame: FramePtr): TaggedValue =
+  ## Gets the global variable's `value`. If the variable hasn't been initialized yet, `get_global` performs the
+  ## initialization first and then returns the new value. `frame_mem` must be provided for the execution of the
+  ## initialization function.
+  ##
+  ## Note that `get_global` cannot be placed in the module `definitions` because of a mutual dependency with `evaluate`.
+  if not variable.is_initialized:
+    variable.value = generate_call0(addr variable.initializer, LambdaContext(nil))
+    variable.is_initialized = true
+    when_debug: echo "Initialized lazy global variable `", variable.name, "` to value `", variable.value, "`"
+  variable.value
+
+proc set_global*(variable: GlobalVariable, value: TaggedValue) =
+  ## Sets the global variable's `value`, overwriting any previous value. Also sets `is_initialized` to true. This
+  ## function also works with lazy global variables.
+  variable.is_initialized = true
+  variable.value = value
+
+########################################################################################################################
+# Debugging and tracing.                                                                                               #
+########################################################################################################################
+
+template trace_return_value(value: TaggedValue) =
+  when_debug:
+    echo "Return value: ", $value, " (raw: ", cast[uint64](value), ")"
+
+########################################################################################################################
 # Evaluate.                                                                                                            #
 ########################################################################################################################
 
@@ -695,8 +704,7 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.GlobalGetLazy:
       let gv = const_global_variable_arg(1)
-      let frame_base = next_frame_base()
-      let value = get_global(gv, frame_base)
+      let value = get_global(gv, frame)
       regv_set_arg(0, value)
 
     of Operation.GlobalSet:
@@ -755,10 +763,12 @@ proc evaluate(frame: FramePtr) =
       regv_set_arg(0, value)
 
     of Operation.Return:
+      trace_return_value(regv_get_arg(0))
       regv_set(0, regv_get_arg(0))
       break
 
     of Operation.Return0:
+      trace_return_value(regv_get(0))
       break
 
     of Operation.TypeArg:
@@ -821,7 +831,7 @@ proc evaluate*(entry_function: ptr FunctionInstance, frame_mem: pointer): Tagged
   evaluate(frame)
 
   # The bytecode must ensure that the result is in the first register.
-  regv_get(0)
+  get_call_result(frame)
 
 # TODO (vm): `evaluate_function_value` can be implemented with a macro.
 

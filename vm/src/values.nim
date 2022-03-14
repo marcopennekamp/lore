@@ -105,6 +105,9 @@ proc `==`(v1: TaggedValue, v2: TaggedValue): bool =
 # This is called `get_type` so it doesn't clash with Nim's system function `typeof`.
 proc get_type*(value: TaggedValue): Type
 
+func `$`*(tagged_value: TaggedValue): string
+func `$`*(value: Value): string
+
 ########################################################################################################################
 # Primitives.                                                                                                          #
 ########################################################################################################################
@@ -247,8 +250,7 @@ proc get_open_property_types*(schema: StructSchema, property_values: open_array[
 proc alloc_struct_value(schema: StructSchema): StructValue =
   ## Allocates a new struct value with the correct number of property values, which must be initialized after. The
   ## value's type also must be set!
-  let shape_value = cast[StructValue](alloc0(sizeof(StructValue) + schema.property_count * sizeof(TaggedValue)))
-  shape_value
+  cast[StructValue](alloc0(sizeof(StructValue) + schema.property_count * sizeof(TaggedValue)))
 
 proc copy_struct_properties(value: StructValue, schema: StructSchema, property_values: open_array[TaggedValue]) =
   ## Copies the given property values into the struct value.
@@ -341,8 +343,6 @@ proc get_type*(value: TaggedValue): Type =
 # Stringification.                                                                                                     #
 ########################################################################################################################
 
-func `$`*(value: Value): string
-
 func `$`*(tagged_value: TaggedValue): string =
   let tag = get_tag(tagged_value)
   if tag == TagReference:
@@ -364,6 +364,8 @@ func `$`*(tagged_values: seq[TaggedValue]): string = tagged_values.join(", ")
 func `$`*(value: Value): string =
   case value.tpe.kind
   of Kind.Real: $cast[RealValue](value).real
+  # TODO (assembly): This function is also used as the default implementation of `lore.core.to_string`, so the single
+  #                  quotes should be removed again.
   of Kind.String: "'" & cast[StringValue](value).string & "'"
   of Kind.Tuple:
     let tpl = cast[TupleValue](value)
