@@ -8,7 +8,7 @@ import definitions
 import imseqs
 import instructions
 import poems
-from property_index import find_offset
+import property_index
 from pyramid import nil
 import schema_order
 import types
@@ -480,7 +480,10 @@ proc get_struct_property_offset(instance_schema: uint16, name: uint16, context: 
   let constants = context.get_constants
   let schema = cast[StructSchema](constants.schemas[instance_schema])
   let name = constants.names[name]
-  schema.property_index.find_offset(name)
+  let offset = schema.property_index.find_offset_if_exists(name)
+  if offset < 0:
+    quit(fmt"Cannot access property `{name}` of schema {schema.name}: the property doesn't exist.")
+  cast[uint16](offset)
 
 macro generate_intrinsic_instruction(
   has_target: static[bool],
