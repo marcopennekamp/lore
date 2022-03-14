@@ -645,6 +645,15 @@ proc evaluate(frame: FramePtr) =
       let name = const_name_arg(2)
       regv_set_arg(0, struct.get_property_value(name))
 
+    of Operation.StructPropertySet:
+      let struct = regv_get_ref_arg(0, StructValue)
+      struct.property_values[instruction.arg(1)] = regv_get_arg(2)
+
+    of Operation.StructPropertySetNamed:
+      let struct = regv_get_ref_arg(0, StructValue)
+      let name = const_name_arg(1)
+      struct.set_property_value(name, regv_get_arg(2))
+
     of Operation.StructEq:
       let a = regv_get_ref_arg(1, StructValue)
       let b = regv_get_ref_arg(2, StructValue)

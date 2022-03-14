@@ -303,6 +303,11 @@ proc get_property_value*(struct: StructValue, name: string): TaggedValue =
   ## Gets the value associated with the property `name`. The name must be a valid property.
   struct.property_values[struct.struct_type.get_schema.property_index.find_offset(name)]
 
+proc set_property_value*(struct: StructValue, name: string, value: TaggedValue) =
+  ## Sets the value of the property `name` to `value`. The name must be a valid property. Open properties should NOT be
+  ## mutated, but this is not enforced by `set_property_value`.
+  struct.property_values[struct.struct_type.get_schema.property_index.find_offset(name)] = value
+
 ########################################################################################################################
 # Combined property functions.                                                                                         #
 ########################################################################################################################

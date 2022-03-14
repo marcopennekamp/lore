@@ -5,7 +5,7 @@ import lore.compiler.poem.PoemInstruction.TargetSourceInfo
 import lore.compiler.poem.PoemOperation.PoemOperation
 import lore.compiler.semantics.NamePath
 import lore.compiler.semantics.variables.GlobalVariableDefinition
-import lore.compiler.types.DeclaredSchema
+import lore.compiler.types.{DeclaredSchema, ShapeType, StructType, TraitType, Type}
 
 /**
   * A PoemInstruction is a representation of all possible VM instructions.
@@ -95,20 +95,36 @@ object PoemInstruction {
   case class StructPoly(target: PReg, schema: PSch, typeArguments: Vector[PReg], valueArguments: Vector[PReg]) extends PoemInstruction(PoemOperation.StructPoly)
   case class StructEq(target: PReg, a: PReg, b: PReg) extends PoemInstruction(PoemOperation.StructEq)
 
-  sealed trait PropertyGetInstanceKind
-  object PropertyGetInstanceKind {
-    case object Any extends PropertyGetInstanceKind
-    case object Shape extends PropertyGetInstanceKind
-    case object Trait extends PropertyGetInstanceKind
-    case class Struct(instanceSchema: PSch) extends PropertyGetInstanceKind
+  sealed trait InstanceKind
+  object InstanceKind {
+    case object Any extends InstanceKind
+    case object Shape extends InstanceKind
+    case object Trait extends InstanceKind
+    case class Struct(instanceSchema: PSch) extends InstanceKind
+
+    def of(tpe: Type): InstanceKind = tpe match {
+      // TODO (assembly): This doesn't cover all types optimally. For example, an intersection or sum type of two
+      //                  traits could be classified as `.Trait`, but is currently classified as `.Any`.
+      case _: ShapeType => InstanceKind.Shape
+      case _: TraitType => InstanceKind.Trait
+      case tpe: StructType => InstanceKind.Struct(tpe.schema)
+      case _ => InstanceKind.Any
+    }
   }
 
   case class PropertyGet(
     target: PReg,
-    instanceKind: PropertyGetInstanceKind,
+    instanceKind: InstanceKind,
     instance: PReg,
     propertyName: String,
   ) extends PoemInstruction(PoemOperation.PropertyGet)
+
+  case class PropertySet(
+    instanceKind: InstanceKind,
+    instance: PReg,
+    propertyName: String,
+    value: PReg,
+  ) extends PoemInstruction(PoemOperation.PropertySet)
 
   case class Jump(target: PLoc) extends PoemInstruction(PoemOperation.Jump)
   case class JumpIfFalse(target: PLoc, predicate: PReg) extends PoemInstruction(PoemOperation.JumpIfFalse)
@@ -179,6 +195,7 @@ object PoemInstruction {
       case StructPoly(target, _, typeArguments, valueArguments) => Register.max(target, typeArguments ++ valueArguments)
       case StructEq(target, a, b) => Register.max(target, a, b)
       case PropertyGet(target, _, instance, _) => Register.max(target, instance)
+      case PropertySet(_, instance, _, value) => Register.max(instance, value)
       case Jump(_) => -1
       case JumpIfFalse(_, predicate) => predicate.id
       case JumpIfTrue(_, predicate) => predicate.id
@@ -232,6 +249,7 @@ object PoemInstruction {
     case instruction@StructPoly(target, _, typeArguments, valueArguments) => instruction.copy(target = applyTarget(target), typeArguments = typeArguments.map(applySource), valueArguments = valueArguments.map(applySource))
     case instruction@StructEq(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
     case instruction@PropertyGet(target, _, instance, _) => instruction.copy(target = applyTarget(target), instance = applySource(instance))
+    case instruction@PropertySet(_, instance, _, value) => instruction.copy(instance = applySource(instance), value = applySource(value))
     case instruction@Jump(_) => instruction
     case instruction@JumpIfFalse(_, predicate) => instruction.copy(predicate = applySource(predicate))
     case instruction@JumpIfTrue(_, predicate) => instruction.copy(predicate = applySource(predicate))
@@ -288,6 +306,7 @@ object PoemInstruction {
       case StructPoly(target, _, typeArguments, valueArguments) => (Vector(target), typeArguments ++ valueArguments)
       case StructEq(target, a, b) => (Vector(target), Vector(a, b))
       case PropertyGet(target, _, instance, _) => (Vector(target), Vector(instance))
+      case PropertySet(_, instance, _, value) => (Vector.empty, Vector(instance, value))
       case Jump(_) => (Vector.empty, Vector.empty)
       case JumpIfFalse(_, predicate) => (Vector.empty, Vector(predicate))
       case JumpIfTrue(_, predicate) => (Vector.empty, Vector(predicate))
@@ -339,6 +358,7 @@ object PoemInstruction {
       case StructPoly(target, schema, typeArguments, valueArguments) => s"$target <- ${schema.name}[${typeArguments.mkString(", ")}](${valueArguments.mkString(", ")})"
       case StructEq(target, a, b) => s"$target <- $a $b"
       case PropertyGet(target, _, instance, propertyName) => s"$target <- $instance[$propertyName]"
+      case PropertySet(_, instance, propertyName, value) => s"$instance.$propertyName <- $value"
       case Jump(target) => s"$target"
       case JumpIfFalse(target, predicate) => s"$target if !$predicate"
       case JumpIfTrue(target, predicate) => s"$target if $predicate"

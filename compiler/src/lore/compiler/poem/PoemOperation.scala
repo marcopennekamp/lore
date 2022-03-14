@@ -19,7 +19,7 @@ object PoemOperation extends Enumeration {
   val Shape = Value
   val SymbolEq = Value
   val Struct, StructPoly, StructEq = Value
-  val PropertyGet = Value
+  val PropertyGet, PropertySet = Value
   val Jump, JumpIfFalse, JumpIfTrue = Value
   val Intrinsic, IntrinsicVoid = Value
   val GlobalGet, GlobalSet = Value

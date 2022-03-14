@@ -188,6 +188,16 @@ type
       ## index-based property accesses. To resolve this instruction to an index-based access, the VM needs to know the
       ## struct schema, which is passed via `instance_schema`. `instance_schema` exists if and only if `instance_kind`
       ## is `Struct`.
+    PropertySet
+      ## instance_kind: uint8, instance_schema: uint16, instance_reg: uint16, nam: uint16, value_reg: uint16
+      ##
+      ## Depending on `instance_kind`, this instruction is resolved to a different evaluator instruction:
+      ##    - 2 (Trait): StructPropertySetNamed
+      ##    - 3 (Struct): StructPropertySet
+      ##
+      ## As shapes are immutable, their properties cannot be set. Open properties may also not be mutated, but this
+      ## is not enforced by the VM and must be checked by the compiler. Apart from that, all specifics of `PropertyGet`
+      ## apply here as well.
 
     Jump
     JumpIfFalse
@@ -284,12 +294,19 @@ type
 
   PoemInstructionPropertyGet* = ref object of PoemInstruction
     target_reg*: uint16
-    instance_kind*: PropertyGetInstanceKind
+    instance_kind*: InstanceKind
     instance_schema*: uint16
     instance_reg*: uint16
     name*: uint16
 
-  PropertyGetInstanceKind* {.pure.} = enum Any, Shape, Trait, Struct
+  PoemInstructionPropertySet* = ref object of PoemInstruction
+    instance_kind*: InstanceKind
+    instance_schema*: uint16
+    instance_reg*: uint16
+    name*: uint16
+    value_reg*: uint16
+
+  InstanceKind* {.pure.} = enum Any, Shape, Trait, Struct
 
   PoemInstructionIntrinsic* = ref object of PoemInstruction
     target_reg*: uint16
@@ -521,16 +538,22 @@ proc poem_inst_struct_poly*(target: uint16, schema: uint16, type_argument_regs: 
   PoemInstructionStructPoly(target_reg: target, schema: schema, type_argument_regs: @type_argument_regs, value_argument_regs: @value_argument_regs)
 
 proc poem_inst_any_property_get*(target: uint16, instance: uint16, name: uint16): PoemInstruction =
-  PoemInstructionPropertyGet(target_reg: target, instance_kind: PropertyGetInstanceKind.Any, instance_reg: instance, name: name)
+  PoemInstructionPropertyGet(target_reg: target, instance_kind: InstanceKind.Any, instance_reg: instance, name: name)
 
 proc poem_inst_shape_property_get*(target: uint16, instance: uint16, name: uint16): PoemInstruction =
-  PoemInstructionPropertyGet(target_reg: target, instance_kind: PropertyGetInstanceKind.Shape, instance_reg: instance, name: name)
+  PoemInstructionPropertyGet(target_reg: target, instance_kind: InstanceKind.Shape, instance_reg: instance, name: name)
 
 proc poem_inst_trait_property_get*(target: uint16, instance: uint16, name: uint16): PoemInstruction =
-  PoemInstructionPropertyGet(target_reg: target, instance_kind: PropertyGetInstanceKind.Trait, instance_reg: instance, name: name)
+  PoemInstructionPropertyGet(target_reg: target, instance_kind: InstanceKind.Trait, instance_reg: instance, name: name)
 
 proc poem_inst_struct_property_get*(target: uint16, instance: uint16, schema: uint16, name: uint16): PoemInstruction =
-  PoemInstructionPropertyGet(target_reg: target, instance_kind: PropertyGetInstanceKind.Struct, instance_schema: schema, instance_reg: instance, name: name)
+  PoemInstructionPropertyGet(target_reg: target, instance_kind: InstanceKind.Struct, instance_schema: schema, instance_reg: instance, name: name)
+
+proc poem_inst_trait_property_set*(instance: uint16, name: uint16, value: uint16): PoemInstruction =
+  PoemInstructionPropertySet(instance_kind: InstanceKind.Trait, instance_reg: instance, name: name, value_reg: value)
+
+proc poem_inst_struct_property_set*(instance: uint16, schema: uint16, name: uint16, value: uint16): PoemInstruction =
+  PoemInstructionPropertySet(instance_kind: InstanceKind.Trait, instance_reg: instance, instance_schema: schema, name: name, value_reg: value)
 
 proc poem_inst_intrinsic*(target: uint16, intrinsic: uint16, argument_regs: varargs[uint16]): PoemInstruction =
   PoemInstructionIntrinsic(target_reg: target, intrinsic: intrinsic, argument_regs: @argument_regs)
@@ -915,9 +938,9 @@ proc read_instruction(stream: FileStream): PoemInstruction =
 
   of PropertyGet:
     let target_reg = stream.read(uint16)
-    let instance_kind = cast[PropertyGetInstanceKind](stream.read(uint8))
+    let instance_kind = cast[InstanceKind](stream.read(uint8))
     let instance_schema =
-      if instance_kind == PropertyGetInstanceKind.Struct: stream.read(uint16)
+      if instance_kind == InstanceKind.Struct: stream.read(uint16)
       else: 0'u16
     let instance_reg = stream.read(uint16)
     let name = stream.read(uint16)
@@ -928,6 +951,26 @@ proc read_instruction(stream: FileStream): PoemInstruction =
       instance_schema: instance_schema,
       instance_reg: instance_reg,
       name: name,
+    )
+
+  of PropertySet:
+    let instance_kind = cast[InstanceKind](stream.read(uint8))
+    if instance_kind != InstanceKind.Trait and instance_kind != InstanceKind.Struct:
+      quit(fmt"Instance kind {instance_kind} is not allowed for `PropertySet`.")
+
+    let instance_schema =
+      if instance_kind == InstanceKind.Struct: stream.read(uint16)
+      else: 0'u16
+    let instance_reg = stream.read(uint16)
+    let name = stream.read(uint16)
+    let value_reg = stream.read(uint16)
+
+    PoemInstructionPropertySet(
+      instance_kind: instance_kind,
+      instance_schema: instance_schema,
+      instance_reg: instance_reg,
+      name: name,
+      value_reg: value_reg,
     )
 
   of Intrinsic:
@@ -1057,10 +1100,19 @@ method write(instruction: PoemInstructionPropertyGet, stream: FileStream) {.lock
   stream.write_operation(PoemOperation.PropertyGet)
   stream.write(instruction.target_reg)
   stream.write(cast[uint8](instruction.instance_kind))
-  if instruction.instance_kind == PropertyGetInstanceKind.Struct:
+  if instruction.instance_kind == InstanceKind.Struct:
     stream.write(instruction.instance_schema)
   stream.write(instruction.instance_reg)
   stream.write(instruction.name)
+
+method write(instruction: PoemInstructionPropertySet, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.PropertySet)
+  stream.write(cast[uint8](instruction.instance_kind))
+  if instruction.instance_kind == InstanceKind.Struct:
+    stream.write(instruction.instance_schema)
+  stream.write(instruction.instance_reg)
+  stream.write(instruction.name)
+  stream.write(instruction.value_reg)
 
 method write(instruction: PoemInstructionIntrinsic, stream: FileStream) {.locks: "unknown".} =
   stream.write_operation(PoemOperation.Intrinsic)
@@ -1117,8 +1169,8 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
      SymbolEq, StructEq, TypePathIndex, TypePathProperty: 3
   of TypePathTypeArgument: 4
   of PoemOperation.Tuple, FunctionCall, PoemOperation.Lambda, PoemOperation.Shape, PoemOperation.List, ListAppend,
-     PoemOperation.Struct, StructPoly, PropertyGet, Intrinsic, IntrinsicVoid, GlobalGet, Dispatch, Call, CallPoly,
-     Return, TypeConst:
+     PoemOperation.Struct, StructPoly, PropertyGet, PropertySet, Intrinsic, IntrinsicVoid, GlobalGet, Dispatch, Call,
+     CallPoly, Return, TypeConst:
     quit(fmt"Poem operation {operation} is not simple!")
 
 ########################################################################################################################

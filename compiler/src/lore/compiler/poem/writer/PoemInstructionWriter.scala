@@ -1,6 +1,6 @@
 package lore.compiler.poem.writer
 
-import lore.compiler.poem.PoemInstruction.PropertyGetInstanceKind
+import lore.compiler.poem.PoemInstruction.InstanceKind
 import lore.compiler.poem.{Poem, PoemFunctionInstance, PoemInstruction, PoemIntrinsic, PoemMetaShape, PoemType, PoemValue}
 import lore.compiler.semantics.NamePath
 
@@ -89,16 +89,15 @@ object PoemInstructionWriter {
 
       case PoemInstruction.PropertyGet(target, instanceKind, instance, propertyName) =>
         write(target)
-        instanceKind match {
-          case PropertyGetInstanceKind.Any => writer.writeUInt8(0)
-          case PropertyGetInstanceKind.Shape => writer.writeUInt8(1)
-          case PropertyGetInstanceKind.Trait => writer.writeUInt8(2)
-          case PropertyGetInstanceKind.Struct(instanceSchema) =>
-            writer.writeUInt8(3)
-            writeConstantSchema(instanceSchema.name)
-        }
+        write(instanceKind)
         write(instance)
         writeConstantName(propertyName)
+
+      case PoemInstruction.PropertySet(instanceKind, instance, propertyName, value) =>
+        write(instanceKind)
+        write(instance)
+        writeConstantName(propertyName)
+        write(value)
 
       case PoemInstruction.Jump(target) => write(target)
 
@@ -225,6 +224,15 @@ object PoemInstructionWriter {
 
   private def writeConstantMetaShape(metaShape: PoemMetaShape)(implicit writer: BytecodeWriter, constantsTable: ConstantsTable): Unit = {
     writer.writeUInt16(constantsTable.metaShape(metaShape))
+  }
+
+  private def write(instanceKind: InstanceKind)(implicit writer: BytecodeWriter, constantsTable: ConstantsTable): Unit = instanceKind match {
+    case InstanceKind.Any => writer.writeUInt8(0)
+    case InstanceKind.Shape => writer.writeUInt8(1)
+    case InstanceKind.Trait => writer.writeUInt8(2)
+    case InstanceKind.Struct(instanceSchema) =>
+      writer.writeUInt8(3)
+      writeConstantSchema(instanceSchema.name)
   }
 
 }

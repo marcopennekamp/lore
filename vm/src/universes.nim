@@ -453,19 +453,34 @@ method resolve_instruction(poem_instruction: PoemInstructionStructPoly, context:
     poem_instruction.value_argument_regs,
   )
 
+proc get_struct_property_offset(instance_schema: uint16, name: uint16, context: InstructionResolutionContext): uint16
+
 method resolve_instruction(poem_instruction: PoemInstructionPropertyGet, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   let (operation, property_id) =
     case poem_instruction.instance_kind
-    of PropertyGetInstanceKind.Any: (Operation.PropertyGetNamed, poem_instruction.name)
-    of PropertyGetInstanceKind.Shape: (Operation.ShapePropertyGetNamed, poem_instruction.name)
-    of PropertyGetInstanceKind.Trait: (Operation.StructPropertyGetNamed, poem_instruction.name)
-    of PropertyGetInstanceKind.Struct:
-      let constants = context.get_constants
-      let schema = cast[StructSchema](constants.schemas[poem_instruction.instance_schema])
-      let name = constants.names[poem_instruction.name]
-      let offset = schema.property_index.find_offset(name)
+    of InstanceKind.Any: (Operation.PropertyGetNamed, poem_instruction.name)
+    of InstanceKind.Shape: (Operation.ShapePropertyGetNamed, poem_instruction.name)
+    of InstanceKind.Trait: (Operation.StructPropertyGetNamed, poem_instruction.name)
+    of InstanceKind.Struct:
+      let offset = get_struct_property_offset(poem_instruction.instance_schema, poem_instruction.name, context)
       (Operation.StructPropertyGet, offset)
   @[new_instruction(operation, poem_instruction.target_reg, poem_instruction.instance_reg, property_id)]
+
+method resolve_instruction(poem_instruction: PoemInstructionPropertySet, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  let (operation, property_id) =
+    case poem_instruction.instance_kind
+    of InstanceKind.Trait: (Operation.StructPropertySetNamed, poem_instruction.name)
+    of InstanceKind.Struct:
+      let offset = get_struct_property_offset(poem_instruction.instance_schema, poem_instruction.name, context)
+      (Operation.StructPropertySet, offset)
+    else: quit(fmt"Instance kind {poem_instruction.instance_kind} is not allowed for `PropertySet`.")
+  @[new_instruction(operation, poem_instruction.instance_reg, property_id, poem_instruction.value_reg)]
+
+proc get_struct_property_offset(instance_schema: uint16, name: uint16, context: InstructionResolutionContext): uint16 =
+  let constants = context.get_constants
+  let schema = cast[StructSchema](constants.schemas[instance_schema])
+  let name = constants.names[name]
+  schema.property_index.find_offset(name)
 
 macro generate_intrinsic_instruction(
   has_target: static[bool],
@@ -701,8 +716,9 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
 
   of PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.Lambda, PoemOperation.List,
      PoemOperation.ListAppend, PoemOperation.Shape, PoemOperation.Struct, PoemOperation.StructPoly,
-     PoemOperation.PropertyGet, PoemOperation.Intrinsic, PoemOperation.IntrinsicVoid, PoemOperation.GlobalGet,
-     PoemOperation.Dispatch, PoemOperation.Call, PoemOperation.CallPoly, PoemOperation.Return, PoemOperation.TypeConst:
+     PoemOperation.PropertyGet, PoemOperation.PropertySet, PoemOperation.Intrinsic, PoemOperation.IntrinsicVoid,
+     PoemOperation.GlobalGet, PoemOperation.Dispatch, PoemOperation.Call, PoemOperation.CallPoly, PoemOperation.Return,
+     PoemOperation.TypeConst:
     quit(fmt"The poem operation {poem_operation} is not simple!")
 
 ########################################################################################################################

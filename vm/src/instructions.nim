@@ -242,15 +242,24 @@ type
       ## reg(arg0) <- sch(arg1)[reg_arg(3 .. 3 + nt)](reg_arg(3 + nt, 3 + nt + nv))
 
     StructPropertyGet
-      ## Returns the struct property value at the index `arg2`. This is only possible when accessing a struct value
+      ## Returns the struct property value at the index `arg2`. This is only possible when accessing a struct instance
       ## whose type is known at compile time. Otherwise, StructPropertyGetNamed or PropertyGetNamed must be used.
       ## reg(arg0) <- reg(arg1)[arg2]
 
     StructPropertyGetNamed
-      ## Returns the struct property value with the name `nam(arg2)`. This is only possible when accessing a value which
-      ## is guaranteed to be a struct (though it may be a trait at compile time). Otherwise, PropertyGetNamed must be
-      ## used.
+      ## Returns the struct property value with the name `nam(arg2)`. This is only possible when accessing a struct
+      ## instance which is guaranteed to be a struct (though it may be a trait at compile time). Otherwise,
+      ## PropertyGetNamed must be used.
       ## reg(arg0) <- reg(arg1)[nam(arg2)]
+
+    StructPropertySet
+      ## Sets the struct property at the index `arg1` to `reg(arg2)`. This is only possible when accessing a struct
+      ## instance whose type is known at compile time. Otherwise, StructPropertySetNamed must be used.
+      ## reg(arg0)[arg1] <- reg(arg2)
+
+    StructPropertySetNamed
+      ## Sets the struct property with the name `nam(arg2)` to `reg(arg2)`.
+      ## reg(arg0)[nam(arg1)] <- reg(arg2)
 
     StructEq
       ## Whether the two structs are referentially equal.
