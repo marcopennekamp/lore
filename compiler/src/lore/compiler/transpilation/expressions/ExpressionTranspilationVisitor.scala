@@ -219,7 +219,7 @@ private[transpilation] class ExpressionTranspilationVisitor()(
         }
         withArguments(arguments => InstantiationTranspiler.transpileStructInstantiation(structType, arguments))
 
-      case CallTarget.Dynamic(intrinsic) => directCall(intrinsic.name.asVariable)
+      case CallTarget.Intrinsic(intrinsic) => directCall(intrinsic.name.asVariable)
     }
   }
 

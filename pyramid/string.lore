@@ -1,6 +1,6 @@
 module lore
 
-use lore.core.to_string
+use lore.core.[to_string, panic]
 use lore.List
 use lore.Enum
 use lore.Enum.[map, fold]
@@ -16,21 +16,22 @@ module String do
   /**
     * Returns the number of code units in the UTF-16 string.
     */
-  func length(string: String): Int = dynamic[Int]('Lore.strings.length', string)
+  func length(string: String): Int = intrinsic[Int]('lore.string.length', string)
 
   /**
     * Returns the code unit at the given position in the UTF-16 string. If `position` is out of range, the result is
     * the empty string.
     */
-  func at!(string: String, index: Int): String = dynamic[String]('Lore.strings.at', string, index)
+  func at!(string: String, index: Int): String = intrinsic[String]('lore.string.at!', string, index)
 
   /**
     * Returns the code unit at the given position in the UTF-16 string. If `position` is out of range, the result is
     * `None`.
     */
   func at(string: String, index: Int): Option[String] = do
-    let result = dynamic[String]('Lore.strings.at', string, index)
-    if present?(result) then Some(result) else None
+    //let result = intrinsic[String]('lore.string.at', string, index)
+    //if present?(result) then Some(result) else None
+    panic('Not supported yet.')
   end
 
   /**
@@ -51,7 +52,7 @@ module String do
   /**
     * Concatenates all strings in the given list.
     *
-    * TODO (pyramid): This could perhaps benefit from the performance of a dynamic implementation.
+    * TODO (pyramid): This could perhaps benefit from the performance of an intrinsic implementation.
     */
   func concat(strings: [String]): String = fold(strings, '', concat)
 

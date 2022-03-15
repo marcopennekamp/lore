@@ -197,7 +197,7 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
     * All expressions immediately accessible via postfix dot notation.
     */
   private def accessible[_: P]: P[ExprNode] = {
-    P(literal | dynamicCall | simpleCall | call | objectMap | constructor | fixedFunction | variable | block | list | map | shape | symbol | enclosed)
+    P(literal | intrinsicCall | simpleCall | call | objectMap | constructor | fixedFunction | variable | block | list | map | shape | symbol | enclosed)
   }
 
   /**
@@ -215,12 +215,12 @@ class ExpressionParser(nameParser: NameParser)(implicit fragment: Fragment, whit
     P(real | int | booleanLiteral | string)
   }
 
-  private def dynamicCall[_: P]: P[ExprNode] = {
-    def prefix = P("dynamic" ~~ Space.WS ~~ singleTypeArgument)
+  private def intrinsicCall[_: P]: P[ExprNode] = {
+    def prefix = P("intrinsic" ~~ Space.WS ~~ singleTypeArgument)
     def arguments = P(("," ~ expression.rep(1, ",") ~ ",".?).?.map(_.getOrElse(Vector.empty)))
     P(Index ~~ prefix ~~ Space.WS ~~ "(" ~ plainString ~ arguments ~ ")" ~~ Index)
       .map { case (startIndex, resultType, name, arguments, endIndex) => (startIndex, name, resultType, arguments.toVector, endIndex) }
-      .map(withPosition(ExprNode.DynamicCallNode))
+      .map(withPosition(ExprNode.IntrinsicCallNode))
   }
 
   private def constructor[_: P]: P[ExprNode] = P(Index ~~ namePath ~ Space.WS ~~ typeArguments ~~ Index).map(withPosition(ExprNode.ConstructorNode))

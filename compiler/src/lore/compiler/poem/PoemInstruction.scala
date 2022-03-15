@@ -4,8 +4,7 @@ import lore.compiler.poem.Poem.Register
 import lore.compiler.poem.PoemInstruction.TargetSourceInfo
 import lore.compiler.poem.PoemOperation.PoemOperation
 import lore.compiler.semantics.NamePath
-import lore.compiler.semantics.variables.GlobalVariableDefinition
-import lore.compiler.types.{DeclaredSchema, ShapeType, StructType, TraitType, Type}
+import lore.compiler.types._
 
 /**
   * A PoemInstruction is a representation of all possible VM instructions.

@@ -68,7 +68,13 @@ object BuildApi {
 
     // TODO (assembly): Turn this back to include all of Pyramid.
     //val sources = options.sources :+ options.sdk.resolve("pyramid")
-    val sources = options.sources :+ options.sdk.resolve("pyramid").resolve("core2.lore")
+    val sources = options.sources ++ Vector(
+      options.sdk.resolve("pyramid").resolve("core.lore"),
+      options.sdk.resolve("pyramid").resolve("function.lore"),
+      options.sdk.resolve("pyramid").resolve("option.lore"),
+      options.sdk.resolve("pyramid").resolve("tuple.lore"),
+    )
+
     sources
       .flatMap(SourceFiles.of)
       .filterDuplicates(_.name, DuplicateFragmentName)

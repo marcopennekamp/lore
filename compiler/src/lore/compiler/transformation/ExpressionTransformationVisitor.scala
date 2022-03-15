@@ -214,7 +214,7 @@ class ExpressionTransformationVisitor(
         expression => Some(handleValueCall(expression)),
       )(namePathNode).getOrElse(Expression.Hole(BasicType.Nothing, position))
 
-    case node@DynamicCallNode(nameLiteral, resultTypeNode, _, position) =>
+    case node@IntrinsicCallNode(nameLiteral, resultTypeNode, _, position) =>
       val name = nameLiteral.value
       val resultType = TypeExpressionEvaluator.evaluate(resultTypeNode).getOrElse(BasicType.Nothing)
 
@@ -224,7 +224,7 @@ class ExpressionTransformationVisitor(
           if (intrinsic.arity != expressions.length) {
             reporter.error(ExpressionFeedback.Intrinsic.IllegalArity(node, intrinsic, expressions.length))
           }
-          Expression.Call(CallTarget.Dynamic(intrinsic), expressions, resultType, position)
+          Expression.Call(CallTarget.Intrinsic(intrinsic), expressions, resultType, position)
 
         case None =>
           reporter.error(ExpressionFeedback.Intrinsic.NotFound(node, name))

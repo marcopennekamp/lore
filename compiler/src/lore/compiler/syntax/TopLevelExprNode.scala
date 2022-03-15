@@ -193,9 +193,9 @@ object ExprNode {
   ) extends XaryNode(arguments) with ExprNode with PathNamedNode
 
   /**
-    * The name of the dynamic function must be the first argument, as a string.
+    * The name of the intrinsic function must be the first argument, as a string.
     */
-  case class DynamicCallNode(
+  case class IntrinsicCallNode(
     nameLiteral: StringLiteralNode,
     resultType: TypeExprNode,
     arguments: Vector[ExprNode],
@@ -210,7 +210,7 @@ object ExprNode {
       case VariableNode(name, position) => SimpleCallNode(name, Vector(argument), position)
       case CallNode(target, arguments, position) => CallNode(target, argument +: arguments, position)
       case SimpleCallNode(nameNode, arguments, position) => SimpleCallNode(nameNode, argument +: arguments, position)
-      case DynamicCallNode(nameLiteral, resultType, arguments, position) => DynamicCallNode(nameLiteral, resultType, argument +: arguments, position)
+      case IntrinsicCallNode(nameLiteral, resultType, arguments, position) => IntrinsicCallNode(nameLiteral, resultType, argument +: arguments, position)
       case expression => CallNode(expression, Vector(argument), expression.position)
     }
   }

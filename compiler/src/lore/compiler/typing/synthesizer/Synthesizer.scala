@@ -197,7 +197,7 @@ object Synthesizer {
 
           case CallTarget.Constructor(structBinding) => ConstructorCallSynthesizer.infer(structBinding, expression, assignments)
 
-          case CallTarget.Dynamic(_) => infer(arguments, assignments)
+          case CallTarget.Intrinsic(_) => infer(arguments, assignments)
         }
 
       case Expression.Cond(cases, _) =>

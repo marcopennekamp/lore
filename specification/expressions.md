@@ -453,19 +453,17 @@ The expression evaluates to a **function value** which may be subsequently invok
 
 
 
-### Dynamic Function Calls
+### Intrinsic Function Calls
 
-Many functions in the Lore standard library, especially the most fundamental ones, defer their implementation to **dynamic function calls**. Since the underlying runtime is a Javascript environment, when defining a function implementation, we can also call functions defined in Javascript.
+Many functions in the Lore standard library, especially the most fundamental ones, defer their implementation to **intrinsic function calls**. Intrinsics are functions built into the Lore VM.
 
-The **syntax** of a dynamic function call is as follows:
+The **syntax** of an intrinsic function call is as follows:
 
 ```
-dynamic[ResultType]('f', a1, a2, ...)
+intrinsic[ResultType]('f', a1, a2, ...)
 ```
 
-The first argument is the name of the function to call. For now, the Lore compiler will **trust** the programmer that, when named, such a function is actually available, takes the given arguments, and returns a value that conforms to the required type bounds. The name of the function doesn't have to be a simple name, but may be valid Javascript, such as accessing a namespace: `'Lore.list.push'`. However, the name is required to be a string literal (that doesn't include interpolation).
-
-In the long term, we want to be able to use, for example, TypeScript declaration files to provide more **type safety** when interfacing with Javascript or TypeScript code. Also note that, as of now, special Lore objects are passed to a native function, which are Javascript values additionally wrapped in an object to provide type information at run-time. Only primitives such as numbers and strings are unwrapped. A dynamic function will have to deal with these idiosyncrasies until we have come up with a native unwrapping solution.
+The first argument is the name of the intrinsic. These are statically defined by the VM and cannot be added or removed by a Lore user. The compiler checks the existence and the arity of the intrinsic, but trusts the programmer about the argument types. Unless you're absolutely sure what you're doing, avoid using intrinsics.
 
 
 

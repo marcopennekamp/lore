@@ -29,7 +29,7 @@ Instead of **accessing the underlying value** directly, the envelope type is use
 
   What if we invoke `foo(X(b))` with `b` being a subtype of `B`? If an envelope merely subtypes its value type, multiple dispatch would choose to invoke `foo(A)`. So the subtyping relationship would have to be extended to `E < B` iff `E` contains a value that subtypes `B`. This would lead to `foo(B)` becoming the call target.
 
-- Ultimately, we can't solve the problem with subtyping, because at run-time, accessing a value `v` is different than accessing `e.v`. We would have to wrap any kind of value access (passing to a dynamic function, member access, printing, equality, etc.) in a function that checks whether the current value is the expected value or still wrapped in an envelope.
+- Ultimately, we can't solve the problem with subtyping, because at run-time, accessing a value `v` is different than accessing `e.v`. We would have to wrap any kind of value access (passing to an intrinsic function, member access, printing, equality, etc.) in a function that checks whether the current value is the expected value or still wrapped in an envelope.
 
 Envelope types have two important **advantages:**
 

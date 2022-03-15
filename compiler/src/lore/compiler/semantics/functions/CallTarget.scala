@@ -39,12 +39,9 @@ object CallTarget {
   }
 
   /**
-    * TODO (assembly): Rename this to Intrinsic.
-    *
-    * A dynamic call target, meaning that we trust in the runtime to provide the correct bindings. We don't know
-    * anything about the input type.
+    * An intrinsic call target, which is a built-in function provided by the VM.
     */
-  case class Dynamic(intrinsic: PoemIntrinsic) extends CallTarget {
+  case class Intrinsic(intrinsic: PoemIntrinsic) extends CallTarget {
     override def toString: String = intrinsic.name
   }
 

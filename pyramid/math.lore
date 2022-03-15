@@ -1,23 +1,24 @@
 module lore.Math
 
+use lore.core.panic
+
 let pi: Real = 3.14159265359
 
-func floor(x: Real): Int = dynamic[Int]('Lore.math.floor', x)
-func round(x: Real): Int = dynamic[Int]('Lore.math.round', x)
-func ceil(x: Real): Int = dynamic[Int]('Lore.math.ceil', x)
+func floor(x: Real): Int = intrinsic[Int]('lore.math.floor', x)
 
-func remainder(a: Int, b: Int): Int = dynamic[Int]('Lore.math.remainder', a, b)
+func ceil(x: Real): Int = intrinsic[Int]('lore.math.ceil', x)
 
-//func min(x: Number, y: Number): Number = if x < y then x else y
-//func max(x: Number, y: Number): Number = if x > y then x else y
+func round(x: Real): Int = intrinsic[Int]('lore.math.round', x)
+
+func remainder(a: Int, b: Int): Int = panic('Not supported yet.') //intrinsic[Int]('lore.math.remainder_int', x)
 
 func min(x: Int, y: Int): Int = if x < y then x else y
-func max(x: Int, y: Int): Int = if x > y then x else y
 func min(x: Real, y: Real): Real = if x < y then x else y
+
+func max(x: Int, y: Int): Int = if x > y then x else y
 func max(x: Real, y: Real): Real = if x > y then x else y
 
-//func absolute(x: Number): Number = if x < 0 then -x else x
 func absolute(x: Int): Int = if x < 0 then -x else x
 func absolute(x: Real): Real = if x < 0 then -x else x
 
-func pow(base: Real, exponent: Real): Real = dynamic[Real]('Lore.math.pow', base, exponent)
+func pow(base: Real, exponent: Real): Real = intrinsic[Real]('lore.math.pow', base, exponent)

@@ -115,7 +115,7 @@ object CombiningNodeVisitor {
       case ExprNode.ObjectMapNode(_, typeArguments, entries, _) => visitor.visit(node, concat(visit(typeArguments.toVector.flatten), visit(entries)))
       case ExprNode.ShapeValueNode(properties, _) => visitor.visit(node, concat(visit(properties)))
       case ExprNode.CallNode(target, arguments, _) => visitor.visit(node, concat(visit(target), visit(arguments)))
-      case ExprNode.DynamicCallNode(nameLiteral, resultType, arguments, _) => visitor.visit(node, concat(visit(nameLiteral), visit(resultType), visit(arguments)))
+      case ExprNode.IntrinsicCallNode(nameLiteral, resultType, arguments, _) => visitor.visit(node, concat(visit(nameLiteral), visit(resultType), visit(arguments)))
       case ExprNode.CondNode(cases, _) => visitor.visit(node, concat(visit(cases)))
       case ExprNode.ForNode(extractors, body, _) => visitor.visit(node, concat(visit(extractors), visit(body)))
       case ExprNode.AscriptionNode(value, expectedType, _) => visitor.visit(node, concat(visit(value), visit(expectedType)))

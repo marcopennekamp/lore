@@ -4,12 +4,12 @@ module List do
   use Enum._
 
   @where A
-  func get!(list: [A], index: Int): A = dynamic[A]('Lore.lists.get', list, index)
+  func get!(list: [A], index: Int): A = intrinsic[A]('lore.list.get!', list, index)
 
-  func length(list: [Any]): Int = dynamic[Int]('Lore.lists.length', list)
+  func length(list: [Any]): Int = intrinsic[Int]('lore.list.length', list)
 
   @where A, B
-  func concat(as: [A], bs: [B]): [A | B] = dynamic[[A | B]]('Lore.lists.concat', as, bs)
+  func concat(as: [A], bs: [B]): [A | B] = intrinsic[[A | B]]('lore.list.concat', as, bs)
 
   /**
     * Returns the first element of the list. Results in an error if the list is empty.
@@ -45,7 +45,7 @@ module List do
     * Creates a slice of `list` from the start index, taking `length` elements if available.
     */
   @where A
-  func slice(list: [A], startIndex: Int, length: Int): [A] = dynamic[[A]]('Lore.lists.slice', list, startIndex, length)
+  func slice(list: [A], startIndex: Int, length: Int): [A] = intrinsic[[A]]('lore.list.slice', list, startIndex, length)
 
   /**
     * Creates a slice of `list` from the start index until the end of the list.
@@ -102,13 +102,13 @@ module Enum do
   func present?(list: [Any]): Boolean = !empty?(list)
 
   @where A
-  func flatten(lists: [[A]]): [A] = dynamic[[A]]('Lore.lists.flatten', lists)
+  func flatten(lists: [[A]]): [A] = intrinsic[[A]]('lore.list.flatten', lists)
 
   @where A, B >: A, C
-  func map(list: [A], f: B => C): [C] = dynamic[[C]]('Lore.lists.map', list, f)
+  func map(list: [A], f: B => C): [C] = intrinsic[[C]]('lore.list.map', list, f)
 
   @where A, B >: A, C
-  func flat_map(list: [A], f: B => [C]): [C] = dynamic[[C]]('Lore.lists.flatMap', list, f)
+  func flat_map(list: [A], f: B => [C]): [C] = intrinsic[[C]]('lore.list.flatMap', list, f)
 
   @where A, B >: A
   act each(list: [A], f: B => Unit) do
@@ -116,7 +116,7 @@ module Enum do
   end
 
   @where A, B >: A
-  func filter(list: [A], predicate: B => Boolean): [A] = dynamic[[A]]('Lore.lists.filter', list, predicate)
+  func filter(list: [A], predicate: B => Boolean): [A] = intrinsic[[A]]('lore.list.filter', list, predicate)
 
   @where A, B >: A, I, R >: I
   func fold(list: [A], initial: I, f: (R, B) => R): R = do

@@ -34,11 +34,11 @@ object ExpressionFeedback {
   }
 
   object Intrinsic {
-    case class NotFound(node: ExprNode.DynamicCallNode, name: String) extends Feedback.Error(node) {
+    case class NotFound(node: ExprNode.IntrinsicCallNode, name: String) extends Feedback.Error(node) {
       override def message: String = s"The intrinsic `$name` does not exist."
     }
 
-    case class IllegalArity(node: ExprNode.DynamicCallNode, intrinsic: PoemIntrinsic, argumentCount: Int) extends Feedback.Error(node) {
+    case class IllegalArity(node: ExprNode.IntrinsicCallNode, intrinsic: PoemIntrinsic, argumentCount: Int) extends Feedback.Error(node) {
       override def message: String = s"The intrinsic `${intrinsic.name}` expects ${intrinsic.arity} arguments, but got" +
         s" $argumentCount arguments."
     }

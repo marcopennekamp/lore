@@ -10,20 +10,20 @@ module lore.core
 
 /**
   * The default "equals" function used by the compiler for comparing complex types. This function is invoked when using
-  * the == and != operators.
+  * the == and != operators with at least one non-primitive, non-symbol operand.
   */
-func equal?(a: Any, b: Any): Boolean = dynamic[Boolean]('Lore.values.areEqual', a, b)
+func equal?(a: Any, b: Any): Boolean = intrinsic[Boolean]('lore.core.equal?', a, b)
 
 /**
  * The default "less than" function used by the compiler for comparing complex types. This function is invoked when
- * using the < and > operators.
+ * using the < and > operators with at least one non-primitive, non-symbol operand.
  */
-func less_than?(a: Any, b: Any): Boolean = dynamic[Boolean]('Lore.values.isLessThan', a, b)
+func less_than?(a: Any, b: Any): Boolean = intrinsic[Boolean]('lore.core.less_than?', a, b)
 
 /**
  * The default "less than or equal" function used by the compiler for comparing complex types. This function is invoked
- * when using the <= and >= operators. By default, `less_than?` and `equal?` are used to test the values, but this
- * behavior can be implemented more efficiently for specialized types.
+ * when using the <= and >= operators with at least one non-primitive, non-symbol operand. By default, `less_than?` and
+ * `equal?` are used to test the values, but this behavior can be implemented more efficiently for specialized types.
  */
 func less_than_equal?(a: Any, b: Any): Boolean = less_than?(a, b) || equal?(a, b)
 
@@ -33,23 +33,22 @@ func less_than_equal?(a: Any, b: Any): Boolean = less_than?(a, b) || equal?(a, b
 //                 declare hash-ability.
 
 /**
- * Computes a hash from any given value. This is used by the compiler to implement maps. The standard implementation
- * defers the computation to the Javascript runtime and works for any sort of value.
+ * Computes a hash from any given value. This is used by Lore to implement maps. The standard implementation defers the
+ * computation to the VM and works for any sort of value.
  *
  * TODO (pyramid): Consider adding a second parameter that represents partially computed hashes or hash state, a
  *                 technique which Julia and Rust seem to follow.
  */
-func hash(value: Any): Int = dynamic[Int]('Lore.values.hash', value)
+func hash(value: Any): Int = panic('Not supported yet.') //intrinsic[Int]('lore.core.hash', value)
 
 // TODO (pyramid): Restrict `to_string` to a Showable/ToString label type so that only types for which `to_string` is
 //                 explicitly implemented can be used in string interpolation.
 
 /**
- * Converts any Lore value to a string using Javascript's native stringifier. You can specialize this function to
- * stringify your own custom types. This function is used by library functions such as `println`, as well as string
- * interpolation.
+ * Converts any Lore value to a string using the VM's native stringifier. You should specialize this function for your
+ * own types. `to_string` is used by library functions such as `lore.io.println`, as well as string interpolation.
  */
-func to_string(value: Any): String = dynamic[String]('Lore.values.toString', value)
+func to_string(value: Any): String = intrinsic[String]('lore.core.to_string', value)
 
 /**
   * A run-time type. The struct type that backs this trait is defined ad-hoc in the runtime. Various introspection
@@ -60,16 +59,16 @@ trait Type
 /**
   * Returns the run-time type of the given Lore value.
   */
-func type_of(value: Any): Type = dynamic[Type]('Lore.types.introspection.typeOf', value)
+func type_of(value: Any): Type = panic('Not supported yet.') //intrinsic[Type]('lore.core.type_of', value)
 
 /**
   * Whether `t1` is a subtype of `t2`.
   */
-func subtype?(t1: Type, t2: Type): Boolean = dynamic[Boolean]('Lore.types.introspection.isSubtype', t1, t2)
+func subtype?(t1: Type, t2: Type): Boolean = panic('Not supported yet.') //intrinsic[Boolean]('lore.core.subtype?', t1, t2)
 
 /**
   * Terminates the Lore program with the given message.
   *
   * This is a TEMPORARY measure as long as Lore doesn't support exception handling.
   */
-func panic(message: String): Nothing = dynamic[Nothing]('Lore.utils.error.panic', message)
+func panic(message: String): Nothing = intrinsic[Nothing]('lore.core.panic', message)

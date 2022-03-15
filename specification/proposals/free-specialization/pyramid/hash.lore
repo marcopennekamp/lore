@@ -12,7 +12,7 @@ end
 // TODO: The Hash protocol should require the Equality protocol to be implemented as well! A hash code is useless
 //       (for our purposes) without a corresponding notion of equality.
 protocol Hash[A]
-  func hash(value: A): Int = dynamic[Int]('Lore.values.hash', value)
+  func hash(value: A): Int = intrinsic[Int]('lore.core.hash', value)
 end
 
 impl Hash[Person]

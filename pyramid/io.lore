@@ -3,5 +3,5 @@ module lore.IO
 use lore.core.to_string
 
 act println(value: Any) do
-  dynamic[()]('Lore.io.println', to_string(value))
+  intrinsic[Unit]('lore.io.println', to_string(value))
 end

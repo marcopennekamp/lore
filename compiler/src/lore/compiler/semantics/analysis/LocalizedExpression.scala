@@ -36,7 +36,7 @@ object LocalizedExpression {
         case CallTarget.MultiFunction(_) => setFalse()
         case CallTarget.Value(_) =>
         case CallTarget.Constructor(_) => setFalse()
-        case CallTarget.Dynamic(_) => setFalse()
+        case CallTarget.Intrinsic(_) => setFalse()
       }
       case _ =>
     }

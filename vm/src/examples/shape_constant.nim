@@ -29,7 +29,7 @@ let poem* = Poem(
       ),
     ],
     names: @["zoo", "foo"],
-    intrinsics: @["lore.strings.length"],
+    intrinsics: @["lore.string.length"],
   ),
   functions: @[test],
 )

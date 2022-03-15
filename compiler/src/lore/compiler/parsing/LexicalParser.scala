@@ -30,8 +30,8 @@ object LexicalParser {
     * being possible in a declaration but not as a simple expression, as the parser will prefer to read `return` as a
     * return top-level expression.
     *
-    * Another example concerns the `dynamic` keyword: Declaring a function named "dynamic" would be possible, but
-    * calling said function is impossible since `dynamic` gets parsed as a dynamic call.
+    * Another example concerns the `intrinsic` keyword: Declaring a function named "intrinsic" would be possible, but
+    * calling said function is impossible since `intrinsic` gets parsed as an intrinsic call.
     *
     * The underscore (`_`) is a keyword because it acts as a wildcard in imports. It will also be used in pattern
     * matching as the "don't care" marker, which shouldn't be an actual variable name.
@@ -40,7 +40,7 @@ object LexicalParser {
     * the ambiguity in all instances. These words are: act, extends, func, mut, struct, trait, type, and where.
     */
   val keywords: Vector[String] = Vector(
-    "_", "do", "dynamic", "else", "end", "false", "fixed", "for", "if", "let", "return", "then", "true", "while", "yield",
+    "_", "do", "else", "end", "false", "fixed", "for", "if", "intrinsic", "let", "return", "then", "true", "while", "yield",
   )
 
   def identifier[_: P]: P[String] = P((letter | "_") ~ (letter | digit | "_" | identifierSpecialCharacter).rep).!.filter(!keywords.contains(_))

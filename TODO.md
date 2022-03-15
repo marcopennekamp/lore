@@ -2,9 +2,7 @@
 
 #### Features
 
-- Implement a minimum viable version of the VM.
 - Implement a compiler backend for producing Lore VM binaries.
-  - Rename `dynamic` to `intrinsic` calls.
   - Implement simple optimizations:
     - Squash assignments to the same register such as `Assign reg0 <- reg0`, which is very common when assigning a constant to a variable (e.g. `IntConst reg0 <- 5, Assign reg0 <- reg0`).
     - Remove jumps that just skip to the next line, i.e. `Jump 23` on line 22. Such instructions are sometimes generated when compiling `if`/`cond` expressions.

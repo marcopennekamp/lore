@@ -290,9 +290,7 @@ class ExpressionAssembler(
         val structType = expression.tpe.asInstanceOf[StructType]
         ConstructorAssembler.generateCall(structType, regResult, valueArgumentRegs)
 
-      case CallTarget.Dynamic(intrinsic) =>
-        // TODO (assembly): If the Call has been analyzed to be unused, we can use `IntrinsicVoid`.
-        AsmChunk(regResult, PoemInstruction.Intrinsic(regResult, intrinsic, valueArgumentRegs))
+      case CallTarget.Intrinsic(intrinsic) => IntrinsicAssembler.generate(expression, intrinsic, regResult, valueArgumentRegs)
     }
 
     AsmChunk.concat(argumentChunks) ++ callChunk

@@ -40,7 +40,7 @@ let poem* = Poem(
       ),
       poem_single_function_value("test/lambda0", @[], poem_function_type(lambda_input, poem_unit_type)),
     ],
-    intrinsics: @["lore.lists.each", "lore.io.println"],
+    intrinsics: @["lore.list.each", "lore.io.println"],
   ),
   functions: @[test_lambda0, test],
 )
