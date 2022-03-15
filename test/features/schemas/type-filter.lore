@@ -1,5 +1,27 @@
 use lore.Enum._
 
+// TODO: The need for TypeFilter as a struct opens up a bigger discussion about explicit type argument passing.
+//       Multiple dispatch is nice, but if we need these kinds of workarounds to implement such utility functions, and
+//       with such verbosity, we might need to additionally introduce direct functions that don't have any dispatch
+//       mechanics.
+//
+//       `filterType` could be declared as follows: `def filterType[A](list: [Any]): [A]`. Inference and calling would
+//       work the same as with constructors and we could reuse parts of the existing code that handles constructors.
+//       Single functions and multi-functions cannot have the same name, and only a single single function of the same
+//       name can exist. The most contentious part of this idea is probably the keyword, because it cannot be `func` or
+//       `proc`. `def` seems like a nice extension of `let`, or we just go `let abc[A](a: A)` and let the compiler
+//       handle any ambiguities. The idea is that a single function is a procedural extension of a variable, hence
+//       `let` being appropriate in my eyes.
+//
+//       An alternative could be to define `filterType` in terms of type introspection:
+//          `func filterType(list: [Any], tpe: Type[A]): [A] where A`.
+//
+//       Usage: `list |> filterType(type[Int])`
+//
+//       But of course, this only moves the goalpost to a function `type`, which would then need to be implemented as a
+//       compiler built-in. If we had single functions with explicit type arguments, we could even implement this
+//       function `type` as a single function backed by an intrinsic.
+
 struct TypeFilter[A]()
 
 @where A
