@@ -105,9 +105,11 @@ type
       ## reg(arg0) <- reg(arg1) and reg(arg2)
 
     StringOf
-      ## Converts any TaggedValue to its native string representation. Reference values are not converted with
-      ## `lore.core.to_string`. Rather, their pointer value is printed out. This operation is a fallback for `to_string`.
       ## reg(arg0) <- string_of(reg(arg1))
+      ##
+      ## Converts any TaggedValue to its native string representation. Values are not converted with
+      ## `lore.core.to_string`, but rather the VM's native stringification capabilities. Hence, this operation should
+      ## be used to cheaply stringify primitives.
 
     StringConcat
       ## reg(arg0) <- concat(reg(arg1), reg(arg2))
@@ -116,12 +118,14 @@ type
       ## reg(arg0) <- reg(arg1) == reg(arg2)
 
     StringLt
-      ## Compares two strings lexicographically.
       ## reg(arg0) <- reg(arg1) < reg(arg2)
+      ##
+      ## Compares two strings lexicographically.
 
     StringLte
-      ## Compares two strings lexicographically.
       ## reg(arg0) <- reg(arg1) <= reg(arg2)
+      ##
+      ## Compares two strings lexicographically.
 
     Tuple
       ## reg(arg0) <- tuple(opl(0 .. arg1))
@@ -151,10 +155,11 @@ type
       ## reg(arg0) <- reg(arg1)(reg(arg2), reg(arg3))
 
     Lambda
+      ## reg(arg0) <- lambda(mf(arg1), targ, opl(0 .. arg3)), with type `tpe(arg2)`
+      ##
       ## Creates a new lambda function value with `targ` as type arguments and the given registers as captured values.
       ## The multi-function the lambda is derived from must be a single function. The function must have the same
       ## number of type parameters, which must be unbounded.
-      ## reg(arg0) <- lambda(mf(arg1), targ, opl(0 .. arg3)), with type `tpe(arg2)`
 
     Lambda0
       ## reg(arg0) <- lambda(mf(arg1), targ), with type `tpe(arg2)`
@@ -214,9 +219,10 @@ type
       ## reg(arg0) <- shape(mtsh(arg1), reg(arg2), reg(arg3))
 
     ShapePropertyGetNamed
+      ## reg(arg0) <- reg(arg1)[nam(arg2)]
+      ##
       ## Returns the shape property value with the name `nam(arg2)`. This is only possible when accessing a value which
       ## is guaranteed to be a shape. Otherwise, PropertyGetNamed must be used.
-      ## reg(arg0) <- reg(arg1)[nam(arg2)]
 
     SymbolEq
       ## reg(arg0) <- reg(arg1) == reg(arg2)
@@ -242,32 +248,38 @@ type
       ## reg(arg0) <- sch(arg1)[reg_arg(3 .. 3 + nt)](reg_arg(3 + nt, 3 + nt + nv))
 
     StructPropertyGet
+      ## reg(arg0) <- reg(arg1)[arg2]
+      ##
       ## Returns the struct property value at the index `arg2`. This is only possible when accessing a struct instance
       ## whose type is known at compile time. Otherwise, StructPropertyGetNamed or PropertyGetNamed must be used.
-      ## reg(arg0) <- reg(arg1)[arg2]
 
     StructPropertyGetNamed
+      ## reg(arg0) <- reg(arg1)[nam(arg2)]
+      ##
       ## Returns the struct property value with the name `nam(arg2)`. This is only possible when accessing a struct
       ## instance which is guaranteed to be a struct (though it may be a trait at compile time). Otherwise,
       ## PropertyGetNamed must be used.
-      ## reg(arg0) <- reg(arg1)[nam(arg2)]
 
     StructPropertySet
+      ## reg(arg0)[arg1] <- reg(arg2)
+      ##
       ## Sets the struct property at the index `arg1` to `reg(arg2)`. This is only possible when accessing a struct
       ## instance whose type is known at compile time. Otherwise, StructPropertySetNamed must be used.
-      ## reg(arg0)[arg1] <- reg(arg2)
 
     StructPropertySetNamed
-      ## Sets the struct property with the name `nam(arg2)` to `reg(arg2)`.
       ## reg(arg0)[nam(arg1)] <- reg(arg2)
+      ##
+      ## Sets the struct property with the name `nam(arg2)` to `reg(arg2)`.
 
     StructEq
-      ## Whether the two structs are referentially equal.
       ## reg(arg0) <- reg(arg1) == reg(arg2)
+      ##
+      ## Whether the two structs are referentially equal.
 
     PropertyGetNamed
-      ## Returns the struct or shape property value with the name `nam(arg2)`.
       ## reg(arg0) <- reg(arg1)[nam(arg2)]
+      ##
+      ## Returns the struct or shape property value with the name `nam(arg2)`.
 
     Jump
       ## pc <- arg0
@@ -309,10 +321,11 @@ type
       ## intr(arg0)(frame, reg(arg1), reg(arg2))
 
     GlobalGetEager
-      ## Immediately gets the value of the global variable without checking whether it is initialized. This must only be
-      ## used with eager global variables, or if it can be definitely proven that a lazy global variable must have been
-      ## initialized at the point the instruction is used.
       ## reg(arg0) <- glb(arg1)
+      ##
+      ## Immediately gets the value of the global variable without checking whether it is initialized. This must only
+      ## be used with eager global variables, or if it can be definitely proven that a lazy global variable must have
+      ## been initialized at the point the instruction is used.
 
     GlobalGetLazy
       ## reg(arg0) <- glb(arg1)
@@ -371,17 +384,20 @@ type
       ## reg(arg0) <- type_of(reg(arg1))
 
     TypePathIndex
+      ## reg(arg0) <- reg(arg1)[arg2]
+      ##
       ## Gets the type at index `arg2` from the tuple, function, list, or map type `reg(arg1)`. For function and map
       ## types, indices 0 and 1 refer to the input/output and key/value types, respectively.
-      ## reg(arg0) <- reg(arg1)[arg2]
 
     TypePathProperty
-      ## Gets the property type named `nam(arg2)` of the shape, struct or trait type `reg(arg1)`.
       ## reg(arg0) <- reg(arg1).property_types[nam(arg2)]
+      ##
+      ## Gets the property type named `nam(arg2)` of the shape, struct or trait type `reg(arg1)`.
 
     TypePathTypeArgument
-      ## Gets the type argument at index `arg3` of schema `sch(arg2)` of the trait or struct type `reg(arg1)`.
       ## reg(arg0) <- find_supertype(reg(arg1), sch(arg2)).type_arguments[arg3]
+      ##
+      ## Gets the type argument at index `arg3` of schema `sch(arg2)` of the trait or struct type `reg(arg1)`.
 
     OplPush1
       ## opl(arg0) <- reg(arg1)
