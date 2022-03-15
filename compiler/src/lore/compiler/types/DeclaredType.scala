@@ -26,6 +26,8 @@ trait DeclaredType extends NamedType {
 
   lazy val typeArguments: Vector[Type] = schema.parameters.map(Type.substitute(_, assignments))
 
+  lazy val hasPolymorphicTypeArguments: Boolean = typeArguments.exists(Type.isPolymorphic)
+
   /**
     * All direct declared supertypes of the declared type. Any type arguments of the declared type are found in their
     * instantiated versions.

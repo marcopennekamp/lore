@@ -1,6 +1,6 @@
 package lore.compiler.assembly.values
 
-import lore.compiler.assembly.AsmChunk
+import lore.compiler.assembly.{AsmChunk, AsmRuntimeNames}
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.poem._
 import lore.compiler.semantics.expressions.Expression
@@ -69,8 +69,18 @@ object ValueAssembler {
       val tpe = TypeAssembler.generate(instance.signature.functionType)
       Some(PoemFixedFunctionValue(instance.definition.multiFunction.name, inputType, tpe))
 
-    // TODO (assembly): Can we turn constructor values into constant poem values?
-    case _: Expression.ConstructorValue => None
+    case expression: Expression.ConstructorValue =>
+      // If the struct type doesn't have polymorphic type arguments, we can create a PoemSingleFunctionValue.
+      val structType = expression.structType
+      if (!structType.hasPolymorphicTypeArguments) {
+        val constructorSignature = structType.constructorSignature
+        val poemValue = PoemSingleFunctionValue(
+          AsmRuntimeNames.struct.construct(structType.schema),
+          structType.typeArguments.map(TypeAssembler.generate),
+          TypeAssembler.generate(constructorSignature.functionType),
+        )
+        Some(poemValue)
+      } else None
 
     case Expression.ListConstruction(values, _) =>
       // In contrast to tuples, a list constant's type isn't guaranteed to contain the types of all its elements. For
@@ -167,10 +177,10 @@ object ValueAssembler {
     * Generates a chunked `Const` instruction from the given expression if a constant poem value can be generated from
     * it.
     */
-  def generateConst(expression: Expression, target: Poem.Register): Option[AsmChunk] = {
+  def generateConst(expression: Expression, regResult: Poem.Register): Option[AsmChunk] = {
     generate(expression).map { constant =>
-      val instruction = PoemInstruction.Const(target, constant)
-      AsmChunk(target, instruction)
+      val instruction = PoemInstruction.Const(regResult, constant)
+      AsmChunk(regResult, instruction)
     }
   }
 
@@ -178,7 +188,7 @@ object ValueAssembler {
     * The forced cousin of [[generateConst]]. Use this if it's certain that the given expression always results in a
     * PoemValue.
     */
-  def generateConstForced(expression: Expression, target: Poem.Register): AsmChunk = generateConst(expression, target).get
+  def generateConstForced(expression: Expression, regResult: Poem.Register): AsmChunk = generateConst(expression, regResult).get
 
   private def evaluateArithmeticOperation(
     left: PoemValue,

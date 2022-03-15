@@ -4,7 +4,7 @@ import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.assembly.{AsmChunk, AsmRuntimeNames, RegisterProvider}
 import lore.compiler.poem.{Poem, PoemFunctionInstance, PoemInstruction}
 import lore.compiler.semantics.structures.StructPropertyDefinition
-import lore.compiler.types.{StructType, Type, TypeVariable}
+import lore.compiler.types.{StructType, TypeVariable}
 
 object ConstructorCallAssembler {
 
@@ -26,8 +26,7 @@ object ConstructorCallAssembler {
 
     // If the call has polymorphic type arguments, i.e. a type argument contains type variables, we have to use the
     // `CallPoly` instruction. Otherwise, we can use the simpler `Call` instruction with a constant function instance.
-    val hasPolymorphicTypeArguments = structType.typeArguments.exists(Type.isPolymorphic)
-    if (!hasPolymorphicTypeArguments) {
+    if (!structType.hasPolymorphicTypeArguments) {
       val poemTypeArguments = structType.typeArguments.map(TypeAssembler.generate)
       val poemFunctionInstance = PoemFunctionInstance(constructorName, poemTypeArguments)
       AsmChunk(regResult, PoemInstruction.Call(regResult, poemFunctionInstance, valueArgumentRegs))

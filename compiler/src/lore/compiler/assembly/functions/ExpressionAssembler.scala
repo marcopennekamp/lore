@@ -185,26 +185,19 @@ class ExpressionAssembler(
   }
 
   private def handle(expression: ConstructorValue): AsmChunk = {
-//    val schema = expression.structType.schema
-//    val value = if (schema.isConstant) {
-//      RuntimeNames.struct.constructor(schema)
-//    } else {
-//      val varSchema = RuntimeNames.schema(schema)
-//      val typeArguments = expression.structType.typeArguments.map(TypeTranspiler.transpile)
-//      val varConstruct = RuntimeNames.struct.construct(schema)
-//      RuntimeApi.structs.getConstructor(varSchema, Target.List(typeArguments), varConstruct)
-//    }
-//    AsmChunk.expression(value)
-    ???
+    val regResult = registerProvider.fresh()
+    ValueAssembler.generateConst(expression, regResult).getOrElse {
+      ???
+    }
   }
 
   private def handle(expression: ListConstruction): AsmChunk = {
-    val target = registerProvider.fresh()
-    ValueAssembler.generateConst(expression, target).getOrElse {
+    val regResult = registerProvider.fresh()
+    ValueAssembler.generateConst(expression, regResult).getOrElse {
       val valueChunks = generate(expression.values)
       val tpe = TypeAssembler.generate(expression.tpe)
-      val instruction = PoemInstruction.List(target, tpe, valueChunks.map(_.forceResult(expression.position)))
-      AsmChunk.concat(valueChunks) ++ AsmChunk(target, instruction)
+      val instruction = PoemInstruction.List(regResult, tpe, valueChunks.map(_.forceResult(expression.position)))
+      AsmChunk.concat(valueChunks) ++ AsmChunk(regResult, instruction)
     }
   }
 
