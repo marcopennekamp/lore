@@ -642,7 +642,7 @@ proc generate_opl_pushes(arguments: open_array[uint16]): seq[Instruction] =
   var instructions = new_seq[Instruction]()
   var remaining = arguments.len
 
-  while remaining > max_push:
+  while remaining >= max_push:
     let base_index = arguments.len - remaining
     let arguments_slice = arguments[base_index ..< base_index + max_push]
     instructions.add(new_instruction(Operation.OplPush6, uint16(base_index), arguments_slice))
@@ -660,7 +660,7 @@ proc generate_opl_pushes(arguments: open_array[uint16]): seq[Instruction] =
       of 3: Operation.OplPush3
       of 4: Operation.OplPush4
       of 5: Operation.OplPush5
-      else: quit("Impossible case.")
+      else: quit("The remaining number of operands to push with OplPushX must be 5 or less.")
     instructions.add(new_instruction(operation, uint16(base_index), arguments_slice))
 
   instructions
