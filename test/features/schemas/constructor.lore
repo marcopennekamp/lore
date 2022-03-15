@@ -34,12 +34,17 @@ func cereal(container: (Cereal, Int) => A): A where A = container(Cereal, 4)
 func blood(container: (Blood, Int) => A): A where A = container(Blood, 1)
 func pudding(container: (Pudding, Int) => A): A where A = container(Pudding, 9)
 
+// This function creates a constructor value dependent on the function's type arguments, which is different than the
+// constructor values created in `test`. In real world code, the function is basically an identity function and `Bowl`
+// could be used directly.
+@where A <: Content
+func bowl_constructor(content: A): (A, Int) => Bowl[A] = Bowl
 
 func test(): [String] = do
   let containers = [
-    cereal(Bowl), cereal(Cup),
-    blood(Bowl), blood(Cup),
-    pudding(Bowl), pudding(Cup),
+    cereal(Bowl), cereal(Cup), bowl_constructor(Cereal)(Cereal, 2),
+    blood(Bowl), blood(Cup), bowl_constructor(Blood)(Blood, 0),
+    pudding(Bowl), pudding(Cup), bowl_constructor(Pudding)(Pudding, 6),
   ]
   containers |> map(to_string)
 end

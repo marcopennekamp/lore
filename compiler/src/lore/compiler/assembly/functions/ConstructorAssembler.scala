@@ -1,28 +1,30 @@
 package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.types.TypeAssembler
+import lore.compiler.assembly.values.ValueAssembler
 import lore.compiler.assembly.{AsmChunk, AsmRuntimeNames, RegisterProvider}
 import lore.compiler.poem.{Poem, PoemFunctionInstance, PoemInstruction}
+import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.structures.StructPropertyDefinition
-import lore.compiler.types.{StructType, TypeVariable}
+import lore.compiler.types.StructType
 
-object ConstructorCallAssembler {
+object ConstructorAssembler {
 
-  def generate(
+  def generateCall(
     structType: StructType,
     valueArgumentRegs: Vector[Poem.Register],
   )(implicit registerProvider: RegisterProvider): AsmChunk = {
-    generate(structType, registerProvider.fresh(), valueArgumentRegs)
+    generateCall(structType, registerProvider.fresh(), valueArgumentRegs)
   }
 
-  def generate(
+  def generateCall(
     structType: StructType,
     regResult: Poem.Register,
     valueArgumentRegs: Vector[Poem.Register],
   )(implicit registerProvider: RegisterProvider): AsmChunk = {
     // TODO (assembly): We can inline the `Struct` instruction if the struct doesn't need a constructor function, which
     //                  is the case when it has no open type parameters.
-    val constructorName = AsmRuntimeNames.struct.construct(structType.schema)
+    val constructorName = AsmRuntimeNames.struct.constructor(structType.schema)
 
     // If the call has polymorphic type arguments, i.e. a type argument contains type variables, we have to use the
     // `CallPoly` instruction. Otherwise, we can use the simpler `Call` instruction with a constant function instance.
@@ -31,19 +33,7 @@ object ConstructorCallAssembler {
       val poemFunctionInstance = PoemFunctionInstance(constructorName, poemTypeArguments)
       AsmChunk(regResult, PoemInstruction.Call(regResult, poemFunctionInstance, valueArgumentRegs))
     } else {
-      val typeArgumentChunks = structType.typeArguments.map { typeArgument =>
-        val regTypeArgument = registerProvider.fresh()
-
-        // `TypeConst` will substitute type variables in `typeArgument` if it contains any. Using `TypeArg` is a simple
-        // optimization that isn't necessary for correctness.
-        val instruction = typeArgument match {
-          case tv: TypeVariable => PoemInstruction.TypeArg(regTypeArgument, tv.index)
-          case _ => PoemInstruction.TypeConst(regTypeArgument, TypeAssembler.generate(typeArgument))
-        }
-
-        AsmChunk(regTypeArgument, instruction)
-      }
-
+      val typeArgumentChunks = structType.typeArguments.map(TypeAssembler.generateTypeConst)
       val callInstruction = PoemInstruction.CallPoly(
         regResult,
         constructorName,
@@ -54,7 +44,17 @@ object ConstructorCallAssembler {
     }
   }
 
-  def generateDefaultPropertyCall(property: StructPropertyDefinition)(implicit registerProvider: RegisterProvider): AsmChunk = {
+  def generateValue(expression: Expression.ConstructorValue)(implicit registerProvider: RegisterProvider): AsmChunk = {
+    val regResult = registerProvider.fresh()
+    ValueAssembler.generateConst(expression, regResult).getOrElse {
+      val constructorName = AsmRuntimeNames.struct.constructor(expression.structType.schema)
+      val typeArgumentChunks = expression.structType.typeArguments.map(TypeAssembler.generateTypeConst)
+      val instruction = PoemInstruction.FunctionSingle(regResult, constructorName, typeArgumentChunks.map(_.forceResult))
+      AsmChunk.concat(typeArgumentChunks) ++ AsmChunk(regResult, instruction)
+    }
+  }
+
+  def generatePropertyDefault(property: StructPropertyDefinition)(implicit registerProvider: RegisterProvider): AsmChunk = {
     val functionName = AsmRuntimeNames.struct.defaultPropertyValue(property)
     val regResult = registerProvider.fresh()
     val functionInstance = PoemFunctionInstance(functionName, Vector.empty)

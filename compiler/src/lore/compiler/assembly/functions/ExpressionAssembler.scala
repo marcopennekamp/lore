@@ -184,12 +184,7 @@ class ExpressionAssembler(
     ValueAssembler.generateConstForced(expression, registerProvider.fresh())
   }
 
-  private def handle(expression: ConstructorValue): AsmChunk = {
-    val regResult = registerProvider.fresh()
-    ValueAssembler.generateConst(expression, regResult).getOrElse {
-      ???
-    }
-  }
+  private def handle(expression: ConstructorValue): AsmChunk = ConstructorAssembler.generateValue(expression)
 
   private def handle(expression: ListConstruction): AsmChunk = {
     val regResult = registerProvider.fresh()
@@ -233,7 +228,7 @@ class ExpressionAssembler(
   }
 
   private def handle(expression: PropertyDefaultValue): AsmChunk = {
-    ConstructorCallAssembler.generateDefaultPropertyCall(expression.property)
+    ConstructorAssembler.generatePropertyDefault(expression.property)
   }
 
   private def handle(expression: UnaryOperation): AsmChunk = {
@@ -284,7 +279,7 @@ class ExpressionAssembler(
 
       case CallTarget.Value(ConstructorValue(_, structType, _)) =>
         // Optimization: We can treat a direct constructor value call as a constructor call.
-        ConstructorCallAssembler.generate(structType, regResult, valueArgumentRegs)
+        ConstructorAssembler.generateCall(structType, regResult, valueArgumentRegs)
 
       case CallTarget.Value(function) =>
         val functionChunk = generate(function)
@@ -293,7 +288,7 @@ class ExpressionAssembler(
 
       case CallTarget.Constructor(_) =>
         val structType = expression.tpe.asInstanceOf[StructType]
-        ConstructorCallAssembler.generate(structType, regResult, valueArgumentRegs)
+        ConstructorAssembler.generateCall(structType, regResult, valueArgumentRegs)
 
       case CallTarget.Dynamic(intrinsic) =>
         // TODO (assembly): If the Call has been analyzed to be unused, we can use `IntrinsicVoid`.

@@ -1,5 +1,6 @@
 package lore.compiler.assembly.types
 
+import lore.compiler.assembly.{AsmChunk, RegisterProvider}
 import lore.compiler.poem._
 import lore.compiler.types._
 
@@ -26,6 +27,20 @@ object TypeAssembler {
       TypeAssembler.generate(tv.upperBound),
       tv.variance,
     )
+  }
+
+  /**
+    * Generates a `TypeConst` or `TypeArg` instruction to load the given type into a register. `TypeConst` will
+    * substitute type variables in `tpe` if it contains any. Using `TypeArg` is a simple optimization that isn't
+    * necessary for correctness.
+    */
+  def generateTypeConst(tpe: Type)(implicit registerProvider: RegisterProvider): AsmChunk = {
+    val regResult = registerProvider.fresh()
+    val instruction = tpe match {
+      case tv: TypeVariable => PoemInstruction.TypeArg(regResult, tv.index)
+      case _ => PoemInstruction.TypeConst(regResult, TypeAssembler.generate(tpe))
+    }
+    AsmChunk(regResult, instruction)
   }
 
 }

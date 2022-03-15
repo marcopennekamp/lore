@@ -8,7 +8,7 @@ import lore.compiler.types.StructSchema
 object AsmRuntimeNames {
 
   object struct {
-    def construct(schema: StructSchema): NamePath = schema.name.appendToLastSegment("/construct")
+    def constructor(schema: StructSchema): NamePath = schema.name.appendToLastSegment("/construct")
     def `object`(schema: StructSchema): NamePath = schema.name.appendToLastSegment("/object")
     def defaultPropertyValue(property: StructPropertyDefinition): NamePath = property.structDefinition.name.appendToLastSegment(s"/default:${property.name}")
   }

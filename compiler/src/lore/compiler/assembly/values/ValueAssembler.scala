@@ -75,7 +75,7 @@ object ValueAssembler {
       if (!structType.hasPolymorphicTypeArguments) {
         val constructorSignature = structType.constructorSignature
         val poemValue = PoemSingleFunctionValue(
-          AsmRuntimeNames.struct.construct(structType.schema),
+          AsmRuntimeNames.struct.constructor(structType.schema),
           structType.typeArguments.map(TypeAssembler.generate),
           TypeAssembler.generate(constructorSignature.functionType),
         )

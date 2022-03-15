@@ -1,6 +1,6 @@
 package lore.compiler.assembly.schemas
 
-import lore.compiler.assembly.functions.{ConstructorCallAssembler, FunctionAssembler}
+import lore.compiler.assembly.functions.{ConstructorAssembler, FunctionAssembler}
 import lore.compiler.assembly.globals.GlobalVariableAssembler
 import lore.compiler.assembly.types.{TypeAssembler, TypePathAssembler}
 import lore.compiler.assembly.{AsmChunk, AsmRuntimeNames, PropertyOrder, RegisterProvider}
@@ -88,7 +88,7 @@ object StructSchemaAssembler {
       AsmChunk.concat(typeArgumentChunks) ++ instanceChunk
     }
 
-    val signature = schema.constructorSignature.copy(name = AsmRuntimeNames.struct.construct(schema))
+    val signature = schema.constructorSignature.copy(name = AsmRuntimeNames.struct.constructor(schema))
     FunctionAssembler.generate(signature, Some(bodyChunk))
   }
 
@@ -111,8 +111,8 @@ object StructSchemaAssembler {
       implicit val registerProvider: RegisterProvider = new RegisterProvider
 
       // Remember that all properties of an object must have a default value.
-      val propertyChunks = schema.definition.properties.map(ConstructorCallAssembler.generateDefaultPropertyCall)
-      val constructorCallChunk = ConstructorCallAssembler.generate(schema.constantType, propertyChunks.map(_.forceResult))
+      val propertyChunks = schema.definition.properties.map(ConstructorAssembler.generatePropertyDefault)
+      val constructorCallChunk = ConstructorAssembler.generateCall(schema.constantType, propertyChunks.map(_.forceResult))
       val bodyChunk = AsmChunk.concat(propertyChunks) ++ constructorCallChunk
       GlobalVariableAssembler.generateLazyGlobalVariable(name, schema.constantType, Right(bodyChunk), schema.definition.position)
     }
