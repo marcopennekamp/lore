@@ -44,6 +44,11 @@ object PoemInstructionWriter {
         write(target, function)
         writeOperandsWithLength8(arguments)
 
+      case PoemInstruction.FunctionSingle(target, mf, typeArguments) =>
+        write(target)
+        writeConstantMultiFunction(mf)
+        writeOperandsWithLength8(typeArguments)
+
       case PoemInstruction.Lambda(target, mf, tpe, capturedRegisters) =>
         write(target)
         writeConstantMultiFunction(mf)

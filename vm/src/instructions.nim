@@ -154,6 +154,15 @@ type
     FunctionCall2
       ## reg(arg0) <- reg(arg1)(reg(arg2), reg(arg3))
 
+    FunctionSingle
+      ## reg(arg0) <- mf(arg1).instantiate_single_function(opl(0 .. arg2))
+      ##
+      ## Creates a new single function value from the given single-function multi-function and the type arguments from
+      ## the operand list.
+      ##
+      ## `FunctionSingle` will be used rarely. It's only needed when the type arguments contain type variables (a value
+      ## constant can be used in other cases), so there are no optimized instructions such as `FunctionSingle1`.
+
     Lambda
       ## reg(arg0) <- lambda(mf(arg1), targ, opl(0 .. arg3)), with type `tpe(arg2)`
       ##

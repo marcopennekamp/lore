@@ -2,7 +2,8 @@ import std/strformat
 
 import imseqs
 from instructions import Instruction
-from types import TypeParameter, Type, TupleType, MetaShape, Schema, bounds_contain
+from types import TypeParameter, Type, TupleType, FunctionType, MetaShape, Schema, new_function_type, bounds_contain,
+                  substitute
 from values import TaggedValue, LambdaContext, tag_reference
 
 type
@@ -158,9 +159,15 @@ proc instantiate*(function: Function, type_arguments: ImSeq[Type]): ptr Function
   else:
     let type_parameters = function.type_parameters
     for i in 0 ..< type_parameters.len:
-      if not bounds_contain(type_parameters[i], type_arguments[i], to_open_array(type_arguments)):
+      if not bounds_contain(type_parameters[i], type_arguments[i], type_arguments.to_open_array):
         quit(fmt"Cannot instantiate function `{function}` with type arguments `{type_arguments}`.")
     new_function_instance(function, type_arguments)
+
+proc get_function_type*(instance: ptr FunctionInstance): FunctionType =
+  ## Constructs a new function type from the given function instance.
+  let input_type = instance.function.input_type.substitute(instance.type_arguments.to_open_array)
+  let output_type = instance.function.output_type.substitute(instance.type_arguments.to_open_array)
+  new_function_type(cast[TupleType](input_type), output_type)
 
 proc init_frame_stats*(function: Function) =
   const preamble_size = sizeof(Frame)
@@ -172,10 +179,10 @@ proc get_single_function*(mf: MultiFunction): Function {.inline.} =
   mf.functions[0]
 
 proc instantiate_single_function*(mf: MultiFunction, type_arguments: ImSeq[Type]): ptr FunctionInstance =
-  mf.get_single_function().instantiate(type_arguments)
+  mf.get_single_function.instantiate(type_arguments)
 
 proc instantiate_single_function_unchecked*(mf: MultiFunction, type_arguments: ImSeq[Type]): ptr FunctionInstance =
-  let function = mf.get_single_function()
+  let function = mf.get_single_function
   if function.is_monomorphic: addr function.monomorphic_instance
   else: new_function_instance(function, type_arguments)
 

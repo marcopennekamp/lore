@@ -126,6 +126,9 @@ template oplv_get_open_array_arg_range(count_arg_index, start): untyped =
 template oplv_get_imseq_arg(count_arg_index): untyped =
   new_immutable_seq(value_operand_list, int(instruction.arg(count_arg_index)))
 
+template oplt_get_imseq_arg(count_arg_index): untyped =
+  new_immutable_seq(type_operand_list, int(instruction.arg(count_arg_index)))
+
 template opl_push_n(count: uint16): untyped =
   for i in 0'u16 ..< count:
     opl_set_arg(i, i + 1)
@@ -527,6 +530,12 @@ proc evaluate(frame: FramePtr) =
       let res = evaluate_function_value(function, frame, argument0, argument1)
       regv_set_arg(0, res)
 
+    of Operation.FunctionSingle:
+      let function_instance = const_multi_function_arg(1).instantiate_single_function(oplt_get_imseq_arg(2))
+      let tpe = function_instance.get_function_type()
+      let value = new_single_function_value(cast[pointer](function_instance), LambdaContext(nil), tpe)
+      regv_set_arg(0, value)
+
     of Operation.Lambda: generate_lambda(false)
     of Operation.Lambda0: generate_lambda0(false)
     of Operation.LambdaPoly: generate_lambda(true)
@@ -750,6 +759,8 @@ proc evaluate(frame: FramePtr) =
     of Operation.CallPoly:
       let mf = const_multi_function_arg(1)
       let nt = int(instruction.arg(2))
+      # TODO (assembly): Do we need to instantiate the function here? Can't we immediately create a new frame with the
+      #                  function and type arguments? This would save at least an allocation.
       let function_instance = mf.instantiate_single_function(new_immutable_seq(type_operand_list, nt))
       let value = generate_call(function_instance, LambdaContext(nil), oplv_get_open_array_arg_range(3, nt))
       regv_set_arg(0, value)

@@ -128,12 +128,26 @@ type
 
     FunctionCall
       ## target_reg: uint16, function_reg: uint16, argument_regs: uint8 * uint16
+    FunctionSingle
+      ## target_reg: uint16, mf: uint16, type_argument_regs: uint8 * uint16
+      ##
+      ## Creates a new single function value from the given single-function multi-function and type arguments. Only use
+      ## this instruction if at least one of the type arguments contains a type variable. Otherwise, creating a direct
+      ## single function value constant is more effective.
+      ##
+      ## The type of the function value will be constructed from the function and the type arguments.
     Lambda
       ## target_reg: uint16, mf: uint16, tpe: uint16, captured_regs: uint16 * uint16
       ##
       ## Creates a new lambda function value from the creating function's type arguments. From the given `n` registers,
       ## a lambda function context is created, which can subsequently be queried with `LambdaLocal`. Type variables in
       ## `tpe` will be substituted.
+      ##
+      ## The `tpe` of the lambda function value could be determined from the function and the type arguments, but if
+      ## `tpe` contains no type variables, it can be used as a constant and there will be no need to construct a new
+      ## type. Hence, an explicit `tpe` is an intentional optimization. This is in contrast to `FuctionSingle`, which
+      ## expects to always receive at least one type argument with a type variable, as otherwise a constant single
+      ## function value could be used instead of the instruction.
     LambdaLocal
 
     List
@@ -258,6 +272,11 @@ type
     target_reg*: uint16
     function_reg*: uint16
     argument_regs*: seq[uint16]
+
+  PoemInstructionFunctionSingle* = ref object of PoemInstruction
+    target_reg*: uint16
+    mf*: uint16
+    type_argument_regs*: seq[uint16]
 
   PoemInstructionLambda* = ref object of PoemInstruction
     target_reg*: uint16
@@ -518,6 +537,9 @@ proc poem_inst_tuple*(target: uint16, element_regs: varargs[uint16]): PoemInstru
 
 proc poem_inst_function_call*(target: uint16, function: uint16, argument_regs: varargs[uint16]): PoemInstruction =
   PoemInstructionFunctionCall(target_reg: target, function_reg: function, argument_regs: @argument_regs)
+
+proc poem_inst_function_single*(target_reg: uint16, mf: uint16, type_argument_regs: varargs[uint16]): PoemInstruction =
+  PoemInstructionFunctionSingle(target_reg: target_reg, mf: mf, type_argument_regs: @type_argument_regs)
 
 proc poem_inst_lambda*(target: uint16, mf: uint16, tpe: uint16, captured_regs: varargs[uint16]): PoemInstruction =
   PoemInstructionLambda(target_reg: target, mf: mf, tpe: tpe, captured_regs: @captured_regs)
@@ -891,6 +913,13 @@ proc read_instruction(stream: FileStream): PoemInstruction =
       argument_regs: stream.read_many_with_count(uint16, uint8, read_uint16),
     )
 
+  of FunctionSingle:
+    PoemInstructionFunctionSingle(
+      target_reg: stream.read(uint16),
+      mf: stream.read(uint16),
+      type_argument_regs: stream.read_many_with_count(uint16, uint8, read_uint16),
+    )
+
   of PoemOperation.Lambda:
     PoemInstructionLambda(
       target_reg: stream.read(uint16),
@@ -1057,6 +1086,12 @@ method write(instruction: PoemInstructionFunctionCall, stream: FileStream) {.loc
   stream.write(instruction.function_reg)
   stream.write_many_with_count(instruction.argument_regs, uint8, write_uint16)
 
+method write(instruction: PoemInstructionFunctionSingle, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.FunctionSingle)
+  stream.write(instruction.target_reg)
+  stream.write(instruction.mf)
+  stream.write_many_with_count(instruction.type_argument_regs, uint8, write_uint16)
+
 method write(instruction: PoemInstructionLambda, stream: FileStream) {.locks: "unknown".} =
   stream.write_operation(PoemOperation.Lambda)
   stream.write(instruction.target_reg)
@@ -1168,9 +1203,9 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
      BooleanOr, BooleanAnd, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped, ListGet,
      SymbolEq, StructEq, TypePathIndex, TypePathProperty: 3
   of TypePathTypeArgument: 4
-  of PoemOperation.Tuple, FunctionCall, PoemOperation.Lambda, PoemOperation.Shape, PoemOperation.List, ListAppend,
-     PoemOperation.Struct, StructPoly, PropertyGet, PropertySet, Intrinsic, IntrinsicVoid, GlobalGet, Dispatch, Call,
-     CallPoly, Return, TypeConst:
+  of PoemOperation.Tuple, FunctionCall, FunctionSingle, PoemOperation.Lambda, PoemOperation.Shape, PoemOperation.List,
+     ListAppend, PoemOperation.Struct, StructPoly, PropertyGet, PropertySet, Intrinsic, IntrinsicVoid, GlobalGet,
+     Dispatch, Call, CallPoly, Return, TypeConst:
     quit(fmt"Poem operation {operation} is not simple!")
 
 ########################################################################################################################

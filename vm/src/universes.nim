@@ -401,6 +401,14 @@ method resolve_instruction(poem_instruction: PoemInstructionFunctionCall, contex
     poem_instruction.argument_regs,
   )
 
+method resolve_instruction(poem_instruction: PoemInstructionFunctionSingle, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  generate_xary_application(
+    Operation.FunctionSingle,
+    [],
+    [poem_instruction.target_reg, poem_instruction.mf],
+    poem_instruction.type_argument_regs,
+  )
+
 method resolve_instruction(poem_instruction: PoemInstructionLambda, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   if poem_instruction.captured_regs.len > operand_list_limit:
     quit(fmt"The `Lambda` operation cannot yet handle more than {operand_list_limit} captured registers.")
@@ -727,8 +735,8 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.TypePathProperty: Operation.TypePathProperty
   of PoemOperation.TypePathTypeArgument: Operation.TypePathTypeArgument
 
-  of PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.Lambda, PoemOperation.List,
-     PoemOperation.ListAppend, PoemOperation.Shape, PoemOperation.Struct, PoemOperation.StructPoly,
+  of PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.FunctionSingle, PoemOperation.Lambda,
+     PoemOperation.List, PoemOperation.ListAppend, PoemOperation.Shape, PoemOperation.Struct, PoemOperation.StructPoly,
      PoemOperation.PropertyGet, PoemOperation.PropertySet, PoemOperation.Intrinsic, PoemOperation.IntrinsicVoid,
      PoemOperation.GlobalGet, PoemOperation.Dispatch, PoemOperation.Call, PoemOperation.CallPoly, PoemOperation.Return,
      PoemOperation.TypeConst:

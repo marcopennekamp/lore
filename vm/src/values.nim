@@ -59,6 +59,9 @@ type
   TupleValue* {.pure, shallow.} = ref object of Value
     elements*: ImSeq[TaggedValue]
 
+  # TODO (assembly): We can actually pull the LambdaContext into the FunctionInstance. This would simplify the code
+  #                  across the board. It would also make sense that the instance of a function can carry an optional
+  #                  lambda context.
   FunctionValue* {.pure, shallow.} = ref object of Value
     variant*: FunctionValueVariant
     target*: pointer
