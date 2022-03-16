@@ -1,0 +1,16 @@
+module lore.Real
+
+use lore.Option
+use lore.Option.[Some, None]
+
+/**
+  * Converts the given Real value to an Int by truncating the fractional part.
+  */
+func to_int(value: Real): Int = intrinsic[Int]('lore.real.to_int', value)
+
+func parse(string: String): Option[Real] = do
+  let result = intrinsic[Real]('lore.real.parse', string)
+  if !nan?(result) then Some(result) else None
+end
+
+func nan?(number: Real): Boolean = intrinsic[Boolean]('lore.real.nan?', number)

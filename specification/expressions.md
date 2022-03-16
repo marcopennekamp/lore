@@ -134,9 +134,11 @@ For now, we want to keep literal grammar to a minimum. Hence, we do not support 
 - **Int:** `x` or `-x`, x being any number from 0 to MAX_SAFE_INTEGER.
 - **Real:** `x.y` or `-x.y`, with both x and y being numbers. We do not allow notations such as `.0` or `1.`.
 
+Conversions between integers and reals can be done with the functions `lore.core.to_int` and `lore.core.to_real`.
+
 ##### Arithmetic Operators
 
-The following **arithmetic operators** can be used on numbers. Note that the remainder operator is implemented as a function.
+The following **arithmetic operators** can be used on numbers. Note that the remainder operator is implemented as a function `lore.Math.remainder`.
 
 ```
 a + b  // Addition
@@ -147,6 +149,8 @@ a / b  // Division
 ```
 
 If `a` or `b` is a `Real` and the other is an `Int`, the `Int` will be implicitly converted to `Real`.
+
+Divisions of two integers is explicitly defined as integer division, so `10 / 4` will result in `2` not `2.5`.
 
 ##### Equality and Order
 

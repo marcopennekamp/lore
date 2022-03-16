@@ -12,24 +12,3 @@
   * types are part of the root module, Unit deserves this position as well.
   */
 type Unit = ()
-
-/**
-  * Lore only has one numeric type, `Number`. This is due to the underlying Javascript runtime, which also only knows
-  * a single (basic) numeric type. Because the runtime must have access to the types of all values, there are only two
-  * options: (1) let Int and Real be distinct, but tag Int or Real values with their type, or (2) only have a single
-  * numeric type. Option 1 comes with a significant runtime overhead.
-  *
-  * However, using a type Int or Real conveys additional semantic information which isn't carried by Number. Hence,
-  * you're encouraged to mainly use Int and Real in type declarations. They will be the same type under the hood,
-  * including in multiple dispatch, but the semantic intent will be clear. The long-term goal is to have a distinction
-  * between Int and Real and to remove the Number type altogether. Using Int and Real can thus be considered
-  * future-proofing.
-  *
-  * Please note that an Int value may still have a fractional part, as it's just a number. For example, you can easily
-  * assign `5.5` to an Int variable. The assignments `let x: Int = 5 / 2` will result in `x = 2.5`, even if `x` is
-  * typed as Int. This is, of course, inconsistent with what you'd expect an Int to be. This should not usually be an
-  * issue in practice and should be remedied once we switch to a different runtime (such as LLVM, WASM, or another
-  * target language).
-  */
-//type Int = Number
-//type Real = Number
