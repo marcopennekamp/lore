@@ -18,7 +18,11 @@ object PoemIntrinsic {
     unary("lore.core.to_string"),
     unary("lore.core.panic"),
 
-    binary("lore.int.to_real"),
+    unary("lore.int.to_real"),
+
+    unary("lore.real.to_int"),
+    unary("lore.real.parse"),
+    unary("lore.real.nan?"),
 
     unary("lore.string.length"),
 
@@ -27,6 +31,8 @@ object PoemIntrinsic {
     binary("lore.list.get!", isVirtual = true),
     unary("lore.list.length", isVirtual = true),
     binary("lore.list.each"),
+
+    unary("lore.symbol.name"),
 
     unary("lore.io.println"),
   )
