@@ -66,24 +66,7 @@ object BuildApi {
   def getFragments(options: BuildOptions)(implicit reporter: Reporter): Vector[Fragment] = {
     SdkDirectory.verify(options.sdk)
 
-    // TODO (assembly): Turn this back to include all of Pyramid.
-    //val sources = options.sources :+ options.sdk.resolve("pyramid")
-    val sources = options.sources ++ Vector(
-      options.sdk.resolve("pyramid").resolve("core.lore"),
-      options.sdk.resolve("pyramid").resolve("function.lore"),
-      options.sdk.resolve("pyramid").resolve("int.lore"),
-      options.sdk.resolve("pyramid").resolve("io.lore"),
-      options.sdk.resolve("pyramid").resolve("list.lore"),
-      options.sdk.resolve("pyramid").resolve("map.lore"),
-      options.sdk.resolve("pyramid").resolve("math.lore"),
-      options.sdk.resolve("pyramid").resolve("option.lore"),
-      options.sdk.resolve("pyramid").resolve("preamble.lore"),
-      options.sdk.resolve("pyramid").resolve("real.lore"),
-      options.sdk.resolve("pyramid").resolve("string.lore"),
-      options.sdk.resolve("pyramid").resolve("symbol.lore"),
-      options.sdk.resolve("pyramid").resolve("tuple.lore"),
-    )
-
+    val sources = options.sources :+ options.sdk.resolve("pyramid")
     sources
       .flatMap(SourceFiles.of)
       .filterDuplicates(_.name, DuplicateFragmentName)

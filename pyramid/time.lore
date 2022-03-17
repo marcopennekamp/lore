@@ -1,3 +1,0 @@
-module lore.Time
-
-func now(): Int = intrinsic[Int]('lore.time.now')
