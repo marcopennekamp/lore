@@ -12,8 +12,8 @@ use lore.core.panic
 //                 which is super clunky.
 
 /**
-  * An Option makes the absence of a value explicit. It can either be a `Some`, which wraps the present value, or a
-  * None, which signifies the absence of a value.
+  * An Option makes the presence or absence of a value explicit. It can either be a `Some`, which wraps the present
+  * value, or a None, which signifies the absence of a value.
   */
 trait Option[+A]
 
@@ -34,12 +34,15 @@ module Option do
   func some(value: A): Option[A] = Some(value)
 
   /**
-    * An Option with an absent value.
+    * An Option signifying an absent value.
     */
   object None extends Option[Nothing]
 
   /**
     * Returns the option's value if it is something, or otherwise the alternative.
+    *
+    * TODO (pyramid): Maybe rename to `get_or_else` because `option |> get('alternative')` is confusing, as the
+    *                 alternative value isn't clearly marked.
     */
   @where A, B
   func get(Option[A], alternative: B): A | B

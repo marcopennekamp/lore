@@ -4,12 +4,24 @@ use lore.core.panic
 
 let pi: Real = 3.14159265359
 
+/**
+  * Returns the largest integer that is less than or equal to `x`.
+  */
 func floor(x: Real): Int = intrinsic[Int]('lore.math.floor', x)
 
+/**
+  * Rounds `x` to the nearest integer, with half-way values rounding up.
+  */
 func ceil(x: Real): Int = intrinsic[Int]('lore.math.ceil', x)
 
+/**
+  * Returns the smallest integer that is greater than or equal to `x`.
+  */
 func round(x: Real): Int = intrinsic[Int]('lore.math.round', x)
 
+/**
+  * Computes the integer remainder of `a` and `b`.
+  */
 func remainder(a: Int, b: Int): Int = panic('Not supported yet.') //intrinsic[Int]('lore.math.remainder_int', x)
 
 func min(x: Int, y: Int): Int = if x < y then x else y

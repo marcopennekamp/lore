@@ -11,6 +11,13 @@ use lore.Option.[Some, None]
   * Please note: This version of string handling is currently bound to the way that our target language, Javascript,
   * handles strings. In particular, the `length` of a string doesn't necessarily correspond to the number of graphemes
   * in the string, and neither does `at` always return a grapheme.
+  *
+  * TODO (assembly): We need to completely rewrite this module again as strings have changed going from JS to the VM.
+  *                  `length` and `at!` need to work on code points, but we should also provide functions `byte_size`,
+  *                  `byte_get!`, and `byte_at!` (next code point starting from the given byte index, which is a hybrid
+  *                  of `at!` and `byte_get!`), as well as provide an iterator that can be used to efficiently iterate
+  *                  through a string. The iterator itself can be written in Lore and should use `byte_size` and
+  *                  `byte_at!`. The string's length should be cached by the VM.
   */
 module String do
   /**
@@ -101,12 +108,15 @@ module String do
 
   /**
     * Whether the given string consists entirely of whitespace characters.
+    *
+    * TODO (pyramid): Rename to `all_whitespace?`.
     */
   func whitespace?(string: String): Boolean = string |> all?(c => c == ' ' || c == '\t' || c == '\n' || c == '\r')
 
   /**
     * Whether the given string consists entirely of digits from 0 to 9.
     *
+    * TODO (pyramid): Rename to `all_digits?`.
     * TODO (pyramid): This is obviously not optimized.
     */
   func digits?(string: String): Boolean = string |> all?(c => c == '0' || c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9')
