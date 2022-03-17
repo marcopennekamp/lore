@@ -308,81 +308,6 @@ template generate_list_append(new_tpe): untyped =
   regv_set_ref_arg(0, new_list_value(new_elements, new_tpe))
 
 ########################################################################################################################
-# Intrinsics.                                                                                                          #
-########################################################################################################################
-
-# TODO (vm): Maybe intrinsic calls should be inline procs to cut down on too excessive eval-loop size.
-
-macro generate_intrisic_evaluation(
-  is_void: static[bool],
-  is_frame_aware: static[bool],
-  argument_count: static[int],
-) =
-  ## Generates an evaluation of an intrinsic call based on the given parameters. The three options are essentially
-  ## orthogonal, which means that to implement intrinsic evaluation for voidness, frame awareness, and `0, 1, 2, n`
-  ## arguments, we'd need 4 * 2 * 2 = 16 implementations. Hence, the macro seems preferable.
-  ##
-  ## The macro generates code such as this (is_void = false, frame-aware = true, arguments = 2):
-  ##
-  ##    let intrinsic = const_intrinsic_arg(1)
-  ##    let function = intrinsic.function.binary_fa
-  ##    let argument0 = regv_get_arg(2)
-  ##    let argument1 = regv_get_arg(3)
-  ##    regv_set_arg(0, function(frame, argument0, argument1))
-  var xary_name =
-    case argument_count
-    of 0: "nullary"
-    of 1: "unary"
-    of 2: "binary"
-    else:
-      macros.error("An intrinsic argument count greater than 2 is not supported yet.")
-      ""
-  if is_frame_aware:
-    xary_name = xary_name & "_fa"
-
-  let xary_id = macros.ident(xary_name)
-  let intrinsic_id = macros.ident("intrinsic")
-  let function_id = macros.ident("function")
-
-  let intrinsic_arg_index = macros.new_lit(if not is_void: 1 else: 0)
-  var statements: seq[NimNode] = @[
-    quote do:
-      let `intrinsic_id` = const_intrinsic_arg(`intrinsic_arg_index`)
-    ,
-    quote do:
-      let `function_id` = `intrinsic_id`.function.`xary_id`
-  ]
-
-  var function_arguments: seq[NimNode] = @[]
-  if is_frame_aware:
-    function_arguments.add(macros.ident("frame"))
-
-  let argument_offset = if not is_void: 2 else: 1
-  for i in 0 ..< argument_count:
-    let argument_id = macros.ident("argument" & $i)
-    let arg_index = macros.new_lit(i + argument_offset)
-    statements.add(
-      quote do:
-        let `argument_id` = regv_get_arg(`arg_index`)
-    )
-    function_arguments.add(argument_id)
-
-  let function_call = macros.new_call(function_id, function_arguments)
-  if is_void:
-    statements.add(
-      quote do:
-        discard `function_call`
-    )
-  else:
-    statements.add(
-      quote do:
-        let res = `function_call`
-        regv_set_arg(0, res)
-    )
-
-  macros.new_stmt_list(statements)
-
-########################################################################################################################
 # Global variable functions.                                                                                           #
 ########################################################################################################################
 
@@ -696,16 +621,16 @@ proc evaluate(frame: FramePtr) =
       if (predicate):
         pc = instruction.arg(0)
 
-    of Operation.Intrinsic0: generate_intrisic_evaluation(false, false, 0)
-    of Operation.Intrinsic1: generate_intrisic_evaluation(false, false, 1)
-    of Operation.Intrinsic2: generate_intrisic_evaluation(false, false, 2)
-    of Operation.IntrinsicVoid0: generate_intrisic_evaluation(true, false, 0)
-    of Operation.IntrinsicVoid1: generate_intrisic_evaluation(true, false, 1)
-    of Operation.IntrinsicVoid2: generate_intrisic_evaluation(true, false, 2)
-    of Operation.IntrinsicFa1: generate_intrisic_evaluation(false, true, 1)
-    of Operation.IntrinsicFa2: generate_intrisic_evaluation(false, true, 2)
-    of Operation.IntrinsicVoidFa1: generate_intrisic_evaluation(true, true, 1)
-    of Operation.IntrinsicVoidFa2: generate_intrisic_evaluation(true, true, 2)
+    of Operation.Intrinsic:
+      let intrinsic = const_intrinsic_arg(1)
+      let value = intrinsic.function(frame, oplv_get_open_array_arg(2))
+      regv_set_arg(0, value)
+
+    of Operation.IntrinsicDirect:
+      let intrinsic = const_intrinsic_arg(1)
+      let nv = int(instruction.arg(2))
+      let value = intrinsic.function(frame, get_direct_value_arguments_open_array(nv, 3))
+      regv_set_arg(0, value)
 
     of Operation.GlobalGetEager:
       let gv = const_global_variable_arg(1)

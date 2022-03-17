@@ -299,35 +299,13 @@ type
     JumpIfTrue
       ## if reg(arg1): pc <- arg0
 
-    Intrinsic0
-      ## reg(arg0) <- intr(arg1)()
+    Intrinsic
+      ## arg1: argument count
+      ## reg(arg0) <- intr(arg1)(frame, [opl(0 .. arg2)])
 
-    Intrinsic1
-      ## reg(arg0) <- intr(arg1)(reg(arg2))
-
-    Intrinsic2
-      ## reg(arg0) <- intr(arg1)(reg(arg2), reg(arg3))
-
-    IntrinsicVoid0
-      ## intr(arg0)()
-
-    IntrinsicVoid1
-      ## intr(arg0)(reg(arg1))
-
-    IntrinsicVoid2
-      ## intr(arg0)(reg(arg1), reg(arg2))
-
-    IntrinsicFa1
-      ## reg(arg0) <- intr(arg1)(frame, reg(arg2))
-
-    IntrinsicFa2
-      ## reg(arg0) <- intr(arg1)(frame, reg(arg2), reg(arg3))
-
-    IntrinsicVoidFa1
-      ## intr(arg0)(frame, reg(arg1))
-
-    IntrinsicVoidFa2
-      ## intr(arg0)(frame, reg(arg1), reg(arg2))
+    IntrinsicDirect
+      ## arg1: argument count
+      ## reg(arg0) <- intr(arg1)(frame, [reg_arg(3 .. 3 + arg2)])
 
     GlobalGetEager
       ## reg(arg0) <- glb(arg1)

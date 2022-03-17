@@ -119,10 +119,6 @@ object PoemInstructionWriter {
         writeConstantIntrinsic(intrinsic)
         writeOperandsWithLength8(arguments)
 
-      case PoemInstruction.IntrinsicVoid(intrinsic, arguments) =>
-        writeConstantIntrinsic(intrinsic)
-        writeOperandsWithLength8(arguments)
-
       case PoemInstruction.GlobalGet(target, global) =>
         write(target)
         writeConstantGlobalVariable(global)

@@ -33,8 +33,6 @@ object IntrinsicAssembler {
         if (intrinsic.isVirtual) {
           throw CompilationException(s"Virtual intrinsic ${intrinsic.name} must be handled specially.")
         }
-
-        // TODO (assembly): If the Call has been analyzed to be unused, we can use `IntrinsicVoid`.
         PoemInstruction.Intrinsic(regResult, intrinsic, valueArgumentRegs)
     }
     AsmChunk(regResult, instruction)

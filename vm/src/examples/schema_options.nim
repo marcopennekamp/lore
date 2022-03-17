@@ -92,7 +92,8 @@ let get2 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    poem_inst_intrinsic_void(0),  # lore.core.panic
+    poem_inst(PoemOperation.Const, 0, 4),
+    poem_inst_intrinsic(0, 0, 0),  # lore.core.panic('Cannot `get!` a `None` value.')
   ],
 )
 
@@ -140,8 +141,9 @@ let test = PoemFunction(
     poem_inst_dispatch(0, 1, 0),                 # r0 = flatten(None)
     poem_inst(PoemOperation.Const, 1, 0),
     poem_inst(PoemOperation.StructEq, 0, 0, 1),  # r0 == None
-    poem_inst(PoemOperation.JumpIfTrue, 6, 0),
-    poem_inst_intrinsic_void(0),                 # panic()
+    poem_inst(PoemOperation.JumpIfTrue, 7, 0),
+    poem_inst(PoemOperation.Const, 0, 3),        # r0 = '`None` must be flattened to `None`.'
+    poem_inst_intrinsic(0, 0, 0),                # lore.core.panic(r0)
 
     # Get `12` from the first Some constant.
     poem_inst(PoemOperation.Const, 0, 1),        # r0 = Some(12)
@@ -170,6 +172,8 @@ let poem* = Poem(
         new_some_type(poem_string_type),
         new_some_value(poem_string_type, poem_string_value("42")),
       ),
+      poem_string_value("`None` must be flattened to `None`."),
+      poem_string_value("Cannot `get!` a `None` value."),
     ],
     names: @["value"],
     intrinsics: @["lore.core.panic"],

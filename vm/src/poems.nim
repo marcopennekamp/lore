@@ -219,8 +219,6 @@ type
 
     Intrinsic
       ## target_reg: uint16, intr: uint16, argument_regs: uint8 * uint16
-    IntrinsicVoid
-      ## intr: uint16, argument_regs: uint8 * uint16
 
     GlobalGet
       ## Whether this resolves to `GlobalGetEager` or `GlobalGetLazy` is determined by the laziness of the referenced
@@ -329,10 +327,6 @@ type
 
   PoemInstructionIntrinsic* = ref object of PoemInstruction
     target_reg*: uint16
-    intrinsic*: uint16
-    argument_regs*: seq[uint16]
-
-  PoemInstructionIntrinsicVoid* = ref object of PoemInstruction
     intrinsic*: uint16
     argument_regs*: seq[uint16]
 
@@ -579,9 +573,6 @@ proc poem_inst_struct_property_set*(instance: uint16, schema: uint16, name: uint
 
 proc poem_inst_intrinsic*(target: uint16, intrinsic: uint16, argument_regs: varargs[uint16]): PoemInstruction =
   PoemInstructionIntrinsic(target_reg: target, intrinsic: intrinsic, argument_regs: @argument_regs)
-
-proc poem_inst_intrinsic_void*(intrinsic: uint16, argument_regs: varargs[uint16]): PoemInstruction =
-  PoemInstructionIntrinsicVoid(intrinsic: intrinsic, argument_regs: @argument_regs)
 
 proc poem_inst_global_get*(target: uint16, global: uint16): PoemInstruction =
   PoemInstructionGlobalGet(target_reg: target, global: global)
@@ -1009,12 +1000,6 @@ proc read_instruction(stream: FileStream): PoemInstruction =
       argument_regs: stream.read_many_with_count(uint16, uint8, read_uint16),
     )
 
-  of IntrinsicVoid:
-    PoemInstructionIntrinsicVoid(
-      intrinsic: stream.read(uint16),
-      argument_regs: stream.read_many_with_count(uint16, uint8, read_uint16),
-    )
-
   of GlobalGet:
     PoemInstructionGlobalGet(
       target_reg: stream.read(uint16),
@@ -1155,11 +1140,6 @@ method write(instruction: PoemInstructionIntrinsic, stream: FileStream) {.locks:
   stream.write(instruction.intrinsic)
   stream.write_many_with_count(instruction.argument_regs, uint8, write_uint16)
 
-method write(instruction: PoemInstructionIntrinsicVoid, stream: FileStream) {.locks: "unknown".} =
-  stream.write_operation(PoemOperation.IntrinsicVoid)
-  stream.write(instruction.intrinsic)
-  stream.write_many_with_count(instruction.argument_regs, uint8, write_uint16)
-
 method write(instruction: PoemInstructionGlobalGet, stream: FileStream) {.locks: "unknown".} =
   stream.write_operation(PoemOperation.GlobalGet)
   stream.write(instruction.target_reg)
@@ -1204,8 +1184,8 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
      SymbolEq, StructEq, TypePathIndex, TypePathProperty: 3
   of TypePathTypeArgument: 4
   of PoemOperation.Tuple, FunctionCall, FunctionSingle, PoemOperation.Lambda, PoemOperation.Shape, PoemOperation.List,
-     ListAppend, PoemOperation.Struct, StructPoly, PropertyGet, PropertySet, Intrinsic, IntrinsicVoid, GlobalGet,
-     Dispatch, Call, CallPoly, Return, TypeConst:
+     ListAppend, PoemOperation.Struct, StructPoly, PropertyGet, PropertySet, Intrinsic, GlobalGet, Dispatch, Call,
+     CallPoly, Return, TypeConst:
     quit(fmt"Poem operation {operation} is not simple!")
 
 ########################################################################################################################

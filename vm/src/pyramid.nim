@@ -6,6 +6,10 @@ from evaluator import nil
 import imseqs
 import values
 
+type Arguments = open_array[TaggedValue]
+
+template arg(index: int): TaggedValue = arguments[index]
+
 var error_symbol: TaggedValue = TaggedValue(cast[uint64](nil))
 
 proc get_error_symbol(): TaggedValue =
@@ -15,84 +19,81 @@ proc get_error_symbol(): TaggedValue =
     error_symbol = new_symbol_value_tagged("error")
   error_symbol
 
-proc core_equal(a: TaggedValue, b: TaggedValue): TaggedValue =
+proc core_equal(frame: FramePtr, arguments: Arguments): TaggedValue =
   # TODO (assembly): Implement.
   quit("`core_equal` is not yet implemented.")
 
-proc core_less_than(a: TaggedValue, b: TaggedValue): TaggedValue =
+proc core_less_than(frame: FramePtr, arguments: Arguments): TaggedValue =
   # TODO (assembly): Implement.
   quit("`core_less_than` is not yet implemented.")
 
-proc core_to_string(value: TaggedValue): TaggedValue =
-  values.new_string_value_tagged($value)
+proc core_to_string(frame: FramePtr, arguments: Arguments): TaggedValue =
+  values.new_string_value_tagged($arg(0))
 
-proc core_panic(message: TaggedValue): TaggedValue =
-  quit(fmt"Panic: {message}")
+proc core_panic(frame: FramePtr, arguments: Arguments): TaggedValue =
+  quit(fmt"Panic: {arg(0)}")
 
-proc int_to_real(value: TaggedValue): TaggedValue =
-  let value = untag_int(value)
+proc int_to_real(frame: FramePtr, arguments: Arguments): TaggedValue =
+  let value = untag_int(arg(0))
   new_real_value_tagged(float64(value))
 
-proc real_to_int(value: TaggedValue): TaggedValue =
+proc real_to_int(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## real_to_int(value: Real): Int
-  let value = untag_reference(value, RealValue)
+  let value = untag_reference(arg(0), RealValue)
   tag_int(int64(value.real))
 
-proc real_parse(value: TaggedValue): TaggedValue =
+proc real_parse(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## real_parse(value: String): Real | #error
-  let string = untag_reference(value, StringValue).string
+  let string = untag_reference(arg(0), StringValue).string
   try:
     new_real_value_tagged(parse_float(string))
   except ValueError:
     get_error_symbol()
 
-proc real_is_nan(value: TaggedValue): TaggedValue =
-  let value = untag_reference(value, RealValue)
+proc real_is_nan(frame: FramePtr, arguments: Arguments): TaggedValue =
+  let value = untag_reference(arg(0), RealValue)
   tag_boolean(value.real == NaN)
 
-proc string_length(string: TaggedValue): TaggedValue =
-  let string = untag_reference(string, StringValue)
+proc string_length(frame: FramePtr, arguments: Arguments): TaggedValue =
+  let string = untag_reference(arg(0), StringValue)
   tag_int(string.string.len)
 
-proc list_each(frame: FramePtr, list: TaggedValue, function: TaggedValue): TaggedValue =
-  let list = untag_reference(list, ListValue)
-  let function = untag_reference(function, FunctionValue)
+proc list_each(frame: FramePtr, arguments: Arguments): TaggedValue =
+  let list = untag_reference(arg(0), ListValue)
+  let function = untag_reference(arg(1), FunctionValue)
   for element in list.elements:
     discard evaluator.evaluate_function_value(function, frame, element)
   values.unit_value_tagged
 
-proc symbol_name(value: TaggedValue): TaggedValue =
-  let symbol = untag_reference(value, SymbolValue)
+proc symbol_name(frame: FramePtr, arguments: Arguments): TaggedValue =
+  let symbol = untag_reference(arg(0), SymbolValue)
   new_string_value_tagged(symbol.name)
 
-proc io_println(value: TaggedValue): TaggedValue =
-  echo value
+proc io_println(frame: FramePtr, arguments: Arguments): TaggedValue =
+  echo arg(0)
   values.unit_value_tagged
 
-template nullary(arg_name, arg_function): untyped = Intrinsic(name: arg_name, is_frame_aware: false, function: IntrinsicFunction(nullary: arg_function))
-template unary(arg_name, arg_function): untyped = Intrinsic(name: arg_name, is_frame_aware: false, function: IntrinsicFunction(unary: arg_function))
-template unary_fa(arg_name, arg_function): untyped = Intrinsic(name: arg_name, is_frame_aware: true, function: IntrinsicFunction(unary_fa: arg_function))
-template binary(arg_name, arg_function): untyped = Intrinsic(name: arg_name, is_frame_aware: false, function: IntrinsicFunction(binary: arg_function))
-template binary_fa(arg_name, arg_function): untyped = Intrinsic(name: arg_name, is_frame_aware: true, function: IntrinsicFunction(binary_fa: arg_function))
+proc intr(name: string, function: IntrinsicFunction, arity: int): Intrinsic {.inline.} =
+  Intrinsic(name: name, function: function, arity: arity)
 
 let intrinsics*: seq[Intrinsic] = @[
-  binary("lore.core.equal?", core_equal),
-  binary("lore.core.less_than?", core_less_than),
-  unary("lore.core.to_string", core_to_string),
-  unary("lore.core.panic", core_panic),
+  intr("lore.core.equal?", core_equal, 2),
+  intr("lore.core.less_than?", core_less_than, 2),
+  intr("lore.core.to_string", core_to_string, 1),
+  intr("lore.core.panic", core_panic, 1),
 
-  unary("lore.int.to_real", int_to_real),
+  intr("lore.int.to_real", int_to_real, 1),
 
-  unary("lore.real.to_int", real_to_int),
-  unary("lore.real.parse", real_parse),
-  unary("lore.real.nan?", real_is_nan),
+  intr("lore.real.to_int", real_to_int, 1),
+  intr("lore.real.parse", real_parse, 1),
+  intr("lore.real.nan?", real_is_nan, 1),
 
   #binary("lore.string.at", string_at),
-  unary("lore.string.length", string_length),
+  intr("lore.string.length", string_length, 1),
 
-  binary_fa("lore.list.each", list_each),
+  intr("lore.list.each", list_each, 2),
 
-  unary("lore.symbol.name", symbol_name),
+  intr("lore.symbol.name", symbol_name, 1),
 
-  unary("lore.io.println", io_println),
+  intr("lore.io.println", io_println, 1),
 ]

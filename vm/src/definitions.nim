@@ -21,22 +21,16 @@ type
   FramePtr* = ptr Frame
 
   Intrinsic* = ref object
-    ## An intrinsic is a function built into the virtual machine that can be called from bytecode. The type of the
-    ## underlying function varies based on the individual intrinsic. The intrinsic's call operation then determines the
-    ## interpretation of `function`.
+    ## An intrinsic is a function built into the virtual machine that can be called from bytecode. Every intrinsic
+    ## expects the current frame and a list of arguments.
     ##
-    ## To allow intrinsics to call Lore function values (e.g. a lambda for `lore.Enum.map`), there are special
-    ## operations which pass the current frame to a *frame-aware* intrinsic as the first argument.
+    ## To allow intrinsics to call Lore function values (e.g. a lambda for `lore.list.map`), intrinsics are
+    ## *frame-aware* as they receive the frame as their first argument.
     name*: string
-    is_frame_aware*: bool
     function*: IntrinsicFunction
+    arity*: int
 
-  IntrinsicFunction* {.union.} = object
-    nullary*: proc (): TaggedValue {.nimcall.}
-    unary*: proc (argument0: TaggedValue): TaggedValue {.nimcall.}
-    unary_fa*: proc (frame: FramePtr, argument0: TaggedValue): TaggedValue {.nimcall.}
-    binary*: proc (argument0: TaggedValue, argument1: TaggedValue): TaggedValue {.nimcall.}
-    binary_fa*: proc (frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue {.nimcall.}
+  IntrinsicFunction* = proc (frame: FramePtr, arguments: open_array[TaggedValue]): TaggedValue {.nimcall.}
 
   GlobalVariable* = ref object
     ## A global variable is a uniquely named variable that is accessible from any function. A global variable may

@@ -1,4 +1,3 @@
-import std/macros
 import std/sequtils
 import std/strformat
 import std/tables
@@ -493,36 +492,17 @@ proc get_struct_property_offset(instance_schema: uint16, name: uint16, context: 
     quit(fmt"Cannot access property `{name}` of schema {schema.name}: the property doesn't exist.")
   cast[uint16](offset)
 
-macro generate_intrinsic_instruction(
-  has_target: static[bool],
-  operation_x_notfa: open_array[Operation],
-  operation_x_fa: open_array[Operation],
-): seq[Instruction] =
-  let prefix_node =
-    if has_target: quote do: @[poem_instruction.target_reg, poem_instruction.intrinsic]
-    else: quote do: @[poem_instruction.intrinsic]
-
-  quote do:
-    let intrinsic = context.get_constants.intrinsics[poem_instruction.intrinsic]
-    let arguments = poem_instruction.argument_regs
-    if intrinsic.is_frame_aware and arguments.len == 0:
-      quit(fmt"A frame-aware intrinsic with arity 0 cannot exist.")
-
-    let operation_x = if not intrinsic.is_frame_aware: `operation_x_notfa` else: `operation_x_fa`
-    generate_xary_application(Operation.Invalid, operation_x, `prefix_node`, arguments)
-
 method resolve_instruction(poem_instruction: PoemInstructionIntrinsic, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
-  generate_intrinsic_instruction(
-    true,
-    [Operation.Intrinsic0, Operation.Intrinsic1, Operation.Intrinsic2],
-    [Operation.Invalid, Operation.IntrinsicFa1, Operation.IntrinsicFa2],
-  )
+  let intrinsic = context.get_constants.intrinsics[poem_instruction.intrinsic]
+  let argument_count = poem_instruction.argument_regs.len
+  if intrinsic.arity != argument_count:
+    quit(fmt"The intrinsic `{intrinsic.name}` with arity {intrinsic.arity} cannot be called with {argument_count} arguments.")
 
-method resolve_instruction(poem_instruction: PoemInstructionIntrinsicVoid, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
-  generate_intrinsic_instruction(
-    false,
-    [Operation.IntrinsicVoid0, Operation.IntrinsicVoid1, Operation.IntrinsicVoid2],
-    [Operation.Invalid, Operation.IntrinsicVoidFa1, Operation.IntrinsicVoidFa2],
+  generate_opl_or_direct(
+    Operation.Intrinsic,
+    Operation.IntrinsicDirect,
+    [poem_instruction.target_reg, poem_instruction.intrinsic],
+    poem_instruction.argument_regs,
   )
 
 method resolve_instruction(poem_instruction: PoemInstructionGlobalGet, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
@@ -542,7 +522,7 @@ proc check_call_function_arity(function: Function, argument_count: int) =
   ## Ensures that the given function has the required arity. If not, the VM quits with an error. This catches bytecode
   ## where a function is called with the wrong arity, which is hard to catch once it reaches the evaluator.
   if function.arity != argument_count:
-    quit(fmt"The function {function.name} with arity {function.arity} cannot be called with {argument_count} arguments.")
+    quit(fmt"The function `{function.name}` with arity {function.arity} cannot be called with {argument_count} arguments.")
 
 method resolve_instruction(poem_instruction: PoemInstructionCall, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   let function_instance = context.get_constants.function_instances[poem_instruction.fin]
@@ -737,9 +717,8 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
 
   of PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.FunctionSingle, PoemOperation.Lambda,
      PoemOperation.List, PoemOperation.ListAppend, PoemOperation.Shape, PoemOperation.Struct, PoemOperation.StructPoly,
-     PoemOperation.PropertyGet, PoemOperation.PropertySet, PoemOperation.Intrinsic, PoemOperation.IntrinsicVoid,
-     PoemOperation.GlobalGet, PoemOperation.Dispatch, PoemOperation.Call, PoemOperation.CallPoly, PoemOperation.Return,
-     PoemOperation.TypeConst:
+     PoemOperation.PropertyGet, PoemOperation.PropertySet, PoemOperation.Intrinsic, PoemOperation.GlobalGet,
+     PoemOperation.Dispatch, PoemOperation.Call, PoemOperation.CallPoly, PoemOperation.Return, PoemOperation.TypeConst:
     quit(fmt"The poem operation {poem_operation} is not simple!")
 
 ########################################################################################################################

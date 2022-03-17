@@ -131,7 +131,6 @@ object PoemInstruction {
   case class JumpIfTrue(target: PLoc, predicate: PReg) extends PoemInstruction(PoemOperation.JumpIfTrue)
 
   case class Intrinsic(target: PReg, intrinsic: PIntr, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.Intrinsic)
-  case class IntrinsicVoid(intrinsic: PIntr, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.IntrinsicVoid)
 
   case class GlobalGet(target: PReg, global: PGlb) extends PoemInstruction(PoemOperation.GlobalGet)
   case class GlobalSet(global: PGlb, value: PReg) extends PoemInstruction(PoemOperation.GlobalSet)
@@ -201,7 +200,6 @@ object PoemInstruction {
       case JumpIfFalse(_, predicate) => predicate.id
       case JumpIfTrue(_, predicate) => predicate.id
       case Intrinsic(target, _, arguments) => Register.max(target, arguments)
-      case IntrinsicVoid(_, arguments) => Register.max(arguments)
       case GlobalGet(target, _) => target.id
       case GlobalSet(_, value) => value.id
       case Dispatch(target, _, arguments) => Register.max(target, arguments)
@@ -256,7 +254,6 @@ object PoemInstruction {
     case instruction@JumpIfFalse(_, predicate) => instruction.copy(predicate = applySource(predicate))
     case instruction@JumpIfTrue(_, predicate) => instruction.copy(predicate = applySource(predicate))
     case instruction@Intrinsic(target, _, arguments) => instruction.copy(target = applyTarget(target), arguments = arguments.map(applySource))
-    case instruction@IntrinsicVoid(_, arguments) => instruction.copy(arguments = arguments.map(applySource))
     case instruction@GlobalGet(target, _) => instruction.copy(target = applyTarget(target))
     case instruction@GlobalSet(_, value) => instruction.copy(value = applySource(value))
     case instruction@Dispatch(target, _, arguments) => instruction.copy(target = applyTarget(target), arguments = arguments.map(applySource))
@@ -314,7 +311,6 @@ object PoemInstruction {
       case JumpIfFalse(_, predicate) => (Vector.empty, Vector(predicate))
       case JumpIfTrue(_, predicate) => (Vector.empty, Vector(predicate))
       case Intrinsic(target, _, arguments) => (Vector(target), arguments)
-      case IntrinsicVoid(_, arguments) => (Vector.empty, arguments)
       case GlobalGet(target, _) => (Vector(target), Vector.empty)
       case GlobalSet(_, value) => (Vector.empty, Vector(value))
       case Dispatch(target, _, arguments) => (Vector(target), arguments)
@@ -367,7 +363,6 @@ object PoemInstruction {
       case JumpIfFalse(target, predicate) => s"$target if !$predicate"
       case JumpIfTrue(target, predicate) => s"$target if $predicate"
       case Intrinsic(target, intrinsic, arguments) => s"$target <- ${intrinsic.name}(${arguments.mkString(", ")})"
-      case IntrinsicVoid(intrinsic, arguments) => s"${intrinsic.name}(${arguments.mkString(", ")})"
       case GlobalGet(target, global) => s"$target <- $global"
       case GlobalSet(global, value) => s"$global <- $value"
       case Dispatch(target, mf, arguments) => s"$target <- $mf(${arguments.mkString(", ")})"
