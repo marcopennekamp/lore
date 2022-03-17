@@ -1,3 +1,4 @@
+from std/math import nil
 import std/strformat
 import std/strutils
 
@@ -10,6 +11,12 @@ import values
 type Arguments = open_array[TaggedValue]
 
 template arg(index: int): TaggedValue = arguments[index]
+template arg_int(index: int): int64 = untag_int(arg(index))
+template arg_real(index: int): float64 = untag_reference(arg(index), RealValue).real
+template arg_string(index: int): string = untag_reference(arg(index), StringValue).string
+template arg_function(index: int): FunctionValue = untag_reference(arg(index), FunctionValue)
+template arg_list(index: int): ListValue = untag_reference(arg(index), ListValue)
+template arg_symbol(index: int): SymbolValue = untag_reference(arg(index), SymbolValue)
 
 var error_symbol: TaggedValue = TaggedValue(cast[uint64](nil))
 
@@ -35,34 +42,30 @@ proc core_panic(frame: FramePtr, arguments: Arguments): TaggedValue =
   quit(fmt"Panic: {arg(0)}")
 
 proc int_to_real(frame: FramePtr, arguments: Arguments): TaggedValue =
-  let value = untag_int(arg(0))
+  let value = arg_int(0)
   new_real_value_tagged(float64(value))
 
 proc real_to_int(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## to_int(value: Real): Int
-  let value = untag_reference(arg(0), RealValue)
-  tag_int(int64(value.real))
+  tag_int(int64(arg_real(0)))
 
 proc real_parse(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## parse(value: String): Real | #error
-  let string = untag_reference(arg(0), StringValue).string
   try:
-    new_real_value_tagged(parse_float(string))
+    new_real_value_tagged(parse_float(arg_string(0)))
   except ValueError:
     get_error_symbol()
 
 proc real_is_nan(frame: FramePtr, arguments: Arguments): TaggedValue =
-  let value = untag_reference(arg(0), RealValue)
-  tag_boolean(value.real == NaN)
+  tag_boolean(arg_real(0) == NaN)
 
 proc string_length(frame: FramePtr, arguments: Arguments): TaggedValue =
-  let string = untag_reference(arg(0), StringValue)
-  tag_int(string.string.len)
+  tag_int(arg_string(0).len)
 
 proc list_concat(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## concat(list1: [A], list2: [B]): [A | B]
-  let list1 = untag_reference(arg(0), ListValue)
-  let list2 = untag_reference(arg(1), ListValue)
+  let list1 = arg_list(0)
+  let list2 = arg_list(1)
   let elements = concat(list1.elements, list2.elements)
   let tpe =
     # TODO (vm): This kind of optimization should be baked into `sum_simplified`.
@@ -72,30 +75,30 @@ proc list_concat(frame: FramePtr, arguments: Arguments): TaggedValue =
 
 proc list_slice(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## slice(list: [A], start: Int, length: Int): [A]
-  let list = untag_reference(arg(0), ListValue)
-  let start = untag_int(arg(1))
-  let length = untag_int(arg(2))
+  let list = arg_list(0)
+  let start = arg_int(1)
+  let length = arg_int(2)
   let elements = list.elements.slice(int(start), int(length))
   new_list_value_tagged(elements, list.tpe)
 
 proc list_flatten(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## flatten(lists: [[A]]): [A]
-  let lists = untag_reference(arg(0), ListValue)
+  let lists = arg_list(0)
   let elements = lists.elements.flatten_it(TaggedValue, cast[ListValue](it).elements)
   new_list_value_tagged(elements, lists.element_type)
 
 proc list_map(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## map(list: [A], f: B => C): [C] where A, B >: A, C
-  let list = untag_reference(arg(0), ListValue)
-  let function = untag_reference(arg(1), FunctionValue)
+  let list = arg_list(0)
+  let function = arg_function(1)
   let elements = list.elements.map_it(TaggedValue, evaluator.evaluate_function_value(function, frame, it))
   let tpe = new_list_type(cast[FunctionType](function.tpe).output)
   new_list_value_tagged(elements, tpe)
 
 proc list_flat_map(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## flat_map(list: [A], f: B => [C]): [C] where A, B >: A, C
-  let list = untag_reference(arg(0), ListValue)
-  let function = untag_reference(arg(1), FunctionValue)
+  let list = arg_list(0)
+  let function = arg_function(1)
   let elements = list.elements.flat_map_it(
     TaggedValue,
     cast[ListValue](evaluator.evaluate_function_value(function, frame, it)).elements,
@@ -105,26 +108,43 @@ proc list_flat_map(frame: FramePtr, arguments: Arguments): TaggedValue =
 
 proc list_each(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## each(list: [A], f: B => Unit): Unit
-  let list = untag_reference(arg(0), ListValue)
-  let function = untag_reference(arg(1), FunctionValue)
+  let list = arg_list(0)
+  let function = arg_function(1)
   for element in list.elements:
     discard evaluator.evaluate_function_value(function, frame, element)
   values.unit_value_tagged
 
 proc list_filter(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## filter(list: [A], predicate: B => Boolean): [A] where A, B >: A
-  let list = untag_reference(arg(0), ListValue)
-  let predicate = untag_reference(arg(1), FunctionValue)
+  let list = arg_list(0)
+  let predicate = arg_function(1)
   let elements = list.elements.filter_it(untag_boolean(evaluator.evaluate_function_value(predicate, frame, it)))
   new_list_value_tagged(elements, list.tpe)
 
 proc symbol_name(frame: FramePtr, arguments: Arguments): TaggedValue =
-  let symbol = untag_reference(arg(0), SymbolValue)
-  new_string_value_tagged(symbol.name)
+  new_string_value_tagged(arg_symbol(0).name)
 
 proc io_println(frame: FramePtr, arguments: Arguments): TaggedValue =
   echo arg(0)
   values.unit_value_tagged
+
+proc math_floor(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## floor(x: Real): Int
+  tag_int(math.floor(arg_real(0)).int64)
+
+proc math_ceil(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## ceil(x: Real): Int
+  tag_int(math.ceil(arg_real(0)).int64)
+
+proc math_round(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## round(x: Real): Int
+  tag_int(math.round(arg_real(0)).int64)
+
+proc math_pow(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## pow(base: Real, exponent: Real): Real
+  let base = arg_real(0)
+  let exponent = arg_real(1)
+  new_real_value_tagged(math.pow(base, exponent))
 
 proc intr(name: string, function: IntrinsicFunction, arity: int): Intrinsic {.inline.} =
   Intrinsic(name: name, function: function, arity: arity)
@@ -155,4 +175,9 @@ let intrinsics*: seq[Intrinsic] = @[
   intr("lore.symbol.name", symbol_name, 1),
 
   intr("lore.io.println", io_println, 1),
+
+  intr("lore.math.floor", math_floor, 1),
+  intr("lore.math.ceil", math_ceil, 1),
+  intr("lore.math.round", math_round, 1),
+  intr("lore.math.pow", math_pow, 2),
 ]

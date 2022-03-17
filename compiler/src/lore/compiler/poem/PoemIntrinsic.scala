@@ -40,6 +40,11 @@ object PoemIntrinsic {
     intr("lore.symbol.name", 1),
 
     intr("lore.io.println", 1),
+
+    intr("lore.math.floor", 1),
+    intr("lore.math.ceil", 1),
+    intr("lore.math.round", 1),
+    intr("lore.math.pow", 2),
   )
 
   val intrinsicsMap: Map[String, PoemIntrinsic] = intrinsics.map(intrinsic => (intrinsic.name, intrinsic)).toMap

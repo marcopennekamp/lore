@@ -75,6 +75,7 @@ object BuildApi {
       options.sdk.resolve("pyramid").resolve("io.lore"),
       options.sdk.resolve("pyramid").resolve("list.lore"),
       options.sdk.resolve("pyramid").resolve("map.lore"),
+      options.sdk.resolve("pyramid").resolve("math.lore"),
       options.sdk.resolve("pyramid").resolve("option.lore"),
       options.sdk.resolve("pyramid").resolve("preamble.lore"),
       options.sdk.resolve("pyramid").resolve("real.lore"),
