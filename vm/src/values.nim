@@ -199,6 +199,8 @@ proc new_list_value*(elements: ImSeq[TaggedValue], tpe: Type): Value = ListValue
 
 proc new_list_value_tagged*(elements: ImSeq[TaggedValue], tpe: Type): TaggedValue = tag_reference(new_list_value(elements, tpe))
 
+proc element_type*(list: ListValue): Type = cast[ListType](list.tpe).element
+
 ########################################################################################################################
 # Shapes.                                                                                                              #
 ########################################################################################################################

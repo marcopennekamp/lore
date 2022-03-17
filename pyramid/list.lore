@@ -42,16 +42,16 @@ module List do
   func tail(list: [A]): [A] = slice(list, 1)
 
   /**
-    * Creates a slice of `list` from the start index, taking `length` elements if available.
+    * Creates a slice of `list` from index `start`, taking `length` elements if available.
     */
   @where A
-  func slice(list: [A], startIndex: Int, length: Int): [A] = intrinsic[[A]]('lore.list.slice', list, startIndex, length)
+  func slice(list: [A], start: Int, length: Int): [A] = intrinsic[[A]]('lore.list.slice', list, start, length)
 
   /**
-    * Creates a slice of `list` from the start index until the end of the list.
+    * Creates a slice of `list` from index `start` until the end of the list.
     */
   @where A
-  func slice(list: [A], startIndex: Int): [A] = slice(list, startIndex, length(list))
+  func slice(list: [A], start: Int): [A] = slice(list, start, length(list))
 
   /**
     * Creates pairs with elements from the given list of <i>distinct</i> elements. The function assumes that pairs are
@@ -108,11 +108,11 @@ module Enum do
   func map(list: [A], f: B => C): [C] = intrinsic[[C]]('lore.list.map', list, f)
 
   @where A, B >: A, C
-  func flat_map(list: [A], f: B => [C]): [C] = intrinsic[[C]]('lore.list.flatMap', list, f)
+  func flat_map(list: [A], f: B => [C]): [C] = intrinsic[[C]]('lore.list.flat_map', list, f)
 
   @where A, B >: A
   act each(list: [A], f: B => Unit) do
-    for a <- list yield f(a)
+    intrinsic[Unit]('lore.list.each', list, f)
   end
 
   @where A, B >: A

@@ -1,5 +1,7 @@
 import std/hashes
 
+from utils import offset_addr
+
 type
   ImSeq*[T] = ref ImSeqObj[T]
     ## An ImSeq is an immutable sequence. It has shallow copying semantics and should thus be preferred over Nim's
@@ -71,19 +73,76 @@ proc `[]=`*[T](seq: var ImSeq[T], index: uint, value: T) =
 template to_open_array*[T](seq: ImSeq[T]): open_array[T] =
   to_open_array(addr seq.elements, 0, seq.len - 1)
 
-proc append*[T](old_seq: ImSeq[T], element: T): ImSeq[T] =
-  let old_length = old_seq.len
-  var new_seq = new_immutable_seq[T](old_length + 1)
-  copy_mem(addr new_seq.elements, addr old_seq.elements, old_length * sizeof(T))
-  new_seq[old_length] = element
-  new_seq
-
 iterator items*[T](seq: ImSeq[T]): T {.inline.} =
   var i = 0
   let length = seq.len
   while i < length:
     yield seq[i]
     i += 1
+
+proc append*[T](seq: ImSeq[T], element: T): ImSeq[T] =
+  let old_length = seq.len
+  var new_seq = new_immutable_seq[T](old_length + 1)
+  copy_mem(addr new_seq.elements, addr seq.elements, old_length * sizeof(T))
+  new_seq[old_length] = element
+  new_seq
+
+template flatten_it*(seqs, element_type, operation: untyped): untyped =
+  ## Flattens `seqs`. For every element of `seqs`, `operation` must return the corresponding ImSeq. Inside `operation`,
+  ## `it` refers to each element sequence.
+  var total_length = 0
+  for element in seqs:
+    let it {.inject.} = element
+    total_length += operation.len
+  var new_seq = new_immutable_seq[element_type](total_length)
+
+  # Copy the given sequences into the new sequence by keeping a running offset.
+  var byte_offset = 0
+  for element in seqs:
+    let it {.inject.} = element
+    let seq = operation
+    let byte_size = seq.len * sizeof(element_type)
+    copy_mem(offset_addr(new_seq.elements, byte_offset), addr seq.elements, byte_size)
+    byte_offset += byte_size
+  new_seq
+
+proc flatten*[T](seqs: open_array[ImSeq[T]]): ImSeq[T] = flatten_it(seqs, T, it)
+
+proc flatten*[T](seqs: ImSeq[ImSeq[T]]): ImSeq[T] = flatten(seqs.to_open_array)
+
+proc concat*[T](s1: ImSeq[T], s2: ImSeq[T]): ImSeq[T] = flatten([s1, s2])
+
+proc slice*[T](seq: ImSeq[T], start: int, length: int): ImSeq[T] =
+  ## Creates a slice of `seq` from index `start`, taking `length` elements if available.
+  let new_length = min(seq.len - start, length)
+  var new_seq = new_immutable_seq[T](new_length)
+  copy_mem(addr new_seq.elements, offset_addr(seq.elements, start * sizeof(T)), new_length * sizeof(T))
+  new_seq
+
+template map_it*[T](seq: ImSeq[T], result_type: untyped, operation: untyped): untyped =
+  ## Maps `seq` with `operation`. Inside `operation`, `it` refers to each element.
+  var new_seq = new_immutable_seq[result_type](seq.len)
+  for i in 0 ..< seq.len:
+    let it {.inject.} = seq[i]
+    new_seq[i] = operation
+  new_seq
+
+template flat_map_it*[T](seq: ImSeq[T], result_type: untyped, operation: untyped): untyped =
+  ## Flat maps `seq` with `operation`. Inside `operation`, `it` refers to each element.
+  var result_seqs = new_immutable_seq[ImSeq[result_type]](seq.len)
+  for i in 0 ..< seq.len:
+    let it {.inject.} = seq[i]
+    result_seqs[i] = operation
+  result_seqs.flatten()
+
+template filter_it*[T](seq: ImSeq[T], predicate: untyped): untyped =
+  ## Filters `seq` with `predicate`. Inside `predicate`, `it` refers to each element.
+  var buffer = new_seq_of_cap[T](seq.len)
+  for element in seq:
+    let it {.inject.} = element
+    if predicate:
+      buffer.add(element)
+  new_immutable_seq(buffer)
 
 proc join*[T](seq: ImSeq[T], separator: string): string =
   let length = seq.len

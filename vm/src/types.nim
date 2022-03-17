@@ -1571,6 +1571,11 @@ proc simplify(kind: Kind, parts: open_array[Type]): Type {.inline.} =
   if parts.len == 1:
     return parts[0]
 
+  # TODO (vm): We should optimize the case `parts.len == 2`, because it's probably the most likely case, perhaps with
+  #            80% or higher prevalance. This could eliminate a lot of looping. When there are only two parts, it's
+  #            very feasible that both types are equal, so we can add an additional `are_equal` check. This only
+  #            applies to parts that aren't `kind` itself, of course.
+
   # Step 1: Flatten.
   # We want to allocate as many arrays on the stack as possible. However, a constructed sum/intersection type may have
   # an arbitrary length. Hence, we are using StackSeq to avoid allocations for small sum/intersection types. To avoid

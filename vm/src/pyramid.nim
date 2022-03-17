@@ -4,6 +4,7 @@ import std/strutils
 from definitions import FramePtr, Intrinsic, IntrinsicFunction
 from evaluator import nil
 import imseqs
+import types
 import values
 
 type Arguments = open_array[TaggedValue]
@@ -38,12 +39,12 @@ proc int_to_real(frame: FramePtr, arguments: Arguments): TaggedValue =
   new_real_value_tagged(float64(value))
 
 proc real_to_int(frame: FramePtr, arguments: Arguments): TaggedValue =
-  ## real_to_int(value: Real): Int
+  ## to_int(value: Real): Int
   let value = untag_reference(arg(0), RealValue)
   tag_int(int64(value.real))
 
 proc real_parse(frame: FramePtr, arguments: Arguments): TaggedValue =
-  ## real_parse(value: String): Real | #error
+  ## parse(value: String): Real | #error
   let string = untag_reference(arg(0), StringValue).string
   try:
     new_real_value_tagged(parse_float(string))
@@ -58,12 +59,64 @@ proc string_length(frame: FramePtr, arguments: Arguments): TaggedValue =
   let string = untag_reference(arg(0), StringValue)
   tag_int(string.string.len)
 
+proc list_concat(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## concat(list1: [A], list2: [B]): [A | B]
+  let list1 = untag_reference(arg(0), ListValue)
+  let list2 = untag_reference(arg(1), ListValue)
+  let elements = concat(list1.elements, list2.elements)
+  let tpe =
+    # TODO (vm): This kind of optimization should be baked into `sum_simplified`.
+    if are_equal(list1.tpe, list2.tpe): list1.tpe
+    else: new_list_type(sum_simplified([list1.element_type, list2.element_type]))
+  new_list_value_tagged(elements, tpe)
+
+proc list_slice(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## slice(list: [A], start: Int, length: Int): [A]
+  let list = untag_reference(arg(0), ListValue)
+  let start = untag_int(arg(1))
+  let length = untag_int(arg(2))
+  let elements = list.elements.slice(int(start), int(length))
+  new_list_value_tagged(elements, list.tpe)
+
+proc list_flatten(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## flatten(lists: [[A]]): [A]
+  let lists = untag_reference(arg(0), ListValue)
+  let elements = lists.elements.flatten_it(TaggedValue, cast[ListValue](it).elements)
+  new_list_value_tagged(elements, lists.element_type)
+
+proc list_map(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## map(list: [A], f: B => C): [C] where A, B >: A, C
+  let list = untag_reference(arg(0), ListValue)
+  let function = untag_reference(arg(1), FunctionValue)
+  let elements = list.elements.map_it(TaggedValue, evaluator.evaluate_function_value(function, frame, it))
+  let tpe = new_list_type(cast[FunctionType](function.tpe).output)
+  new_list_value_tagged(elements, tpe)
+
+proc list_flat_map(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## flat_map(list: [A], f: B => [C]): [C] where A, B >: A, C
+  let list = untag_reference(arg(0), ListValue)
+  let function = untag_reference(arg(1), FunctionValue)
+  let elements = list.elements.flat_map_it(
+    TaggedValue,
+    cast[ListValue](evaluator.evaluate_function_value(function, frame, it)).elements,
+  )
+  let tpe = cast[FunctionType](function.tpe).output
+  new_list_value_tagged(elements, tpe)
+
 proc list_each(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## each(list: [A], f: B => Unit): Unit
   let list = untag_reference(arg(0), ListValue)
   let function = untag_reference(arg(1), FunctionValue)
   for element in list.elements:
     discard evaluator.evaluate_function_value(function, frame, element)
   values.unit_value_tagged
+
+proc list_filter(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## filter(list: [A], predicate: B => Boolean): [A] where A, B >: A
+  let list = untag_reference(arg(0), ListValue)
+  let predicate = untag_reference(arg(1), FunctionValue)
+  let elements = list.elements.filter_it(untag_boolean(evaluator.evaluate_function_value(predicate, frame, it)))
+  new_list_value_tagged(elements, list.tpe)
 
 proc symbol_name(frame: FramePtr, arguments: Arguments): TaggedValue =
   let symbol = untag_reference(arg(0), SymbolValue)
@@ -91,7 +144,13 @@ let intrinsics*: seq[Intrinsic] = @[
   #binary("lore.string.at", string_at),
   intr("lore.string.length", string_length, 1),
 
+  intr("lore.list.concat", list_concat, 2),
+  intr("lore.list.slice", list_slice, 3),
+  intr("lore.list.flatten", list_flatten, 1),
+  intr("lore.list.map", list_map, 2),
+  intr("lore.list.flat_map", list_flat_map, 2),
   intr("lore.list.each", list_each, 2),
+  intr("lore.list.filter", list_filter, 2),
 
   intr("lore.symbol.name", symbol_name, 1),
 

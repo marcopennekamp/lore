@@ -8,33 +8,38 @@ case class PoemIntrinsic(name: String, arity: Int, isVirtual: Boolean = false)
 
 object PoemIntrinsic {
 
-  private def unary(name: String, isVirtual: Boolean = false) = PoemIntrinsic(name, 1, isVirtual)
-  private def binary(name: String, isVirtual: Boolean = false) = PoemIntrinsic(name, 2, isVirtual)
+  private def intr(name: String, arity: Int, isVirtual: Boolean = false) = PoemIntrinsic(name, arity)
 
   // This should be kept in sync with `pyramid.nim`. (Except for virtual intrinsics.)
   val intrinsics = Vector(
-    binary("lore.core.equal?"),
-    binary("lore.core.less_than?"),
-    unary("lore.core.to_string"),
-    unary("lore.core.panic"),
+    intr("lore.core.equal?", 2),
+    intr("lore.core.less_than?", 2),
+    intr("lore.core.to_string", 1),
+    intr("lore.core.panic", 1),
 
-    unary("lore.int.to_real"),
+    intr("lore.int.to_real", 1),
 
-    unary("lore.real.to_int"),
-    unary("lore.real.parse"),
-    unary("lore.real.nan?"),
+    intr("lore.real.to_int", 1),
+    intr("lore.real.parse", 1),
+    intr("lore.real.nan?", 1),
 
-    unary("lore.string.length"),
+    intr("lore.string.length", 1),
 
-    binary("lore.tuple.get!", isVirtual = true),
+    intr("lore.tuple.get!", 2, isVirtual = true),
 
-    binary("lore.list.get!", isVirtual = true),
-    unary("lore.list.length", isVirtual = true),
-    binary("lore.list.each"),
+    intr("lore.list.get!", 2, isVirtual = true),
+    intr("lore.list.length", 1, isVirtual = true),
+    intr("lore.list.concat", 2),
+    intr("lore.list.slice", 3),
+    intr("lore.list.flatten", 1),
+    intr("lore.list.map", 2),
+    intr("lore.list.flat_map", 2),
+    intr("lore.list.each", 2),
+    intr("lore.list.filter", 2),
 
-    unary("lore.symbol.name"),
+    intr("lore.symbol.name", 1),
 
-    unary("lore.io.println"),
+    intr("lore.io.println", 1),
   )
 
   val intrinsicsMap: Map[String, PoemIntrinsic] = intrinsics.map(intrinsic => (intrinsic.name, intrinsic)).toMap

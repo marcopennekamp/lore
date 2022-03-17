@@ -44,3 +44,5 @@ template call_if_any_exists*(function, arg0, default0, arg1, default1, default_r
     if arg1 == nil: arg1 = default1
     function(arg0, arg1)
   else: default_result
+
+template offset_addr*(value: untyped, offset: int): pointer = cast[pointer](cast[int](addr value) +% offset)
