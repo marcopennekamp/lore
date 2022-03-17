@@ -3,7 +3,9 @@ use lore.Enum._
 
 let default_name: String = 'John Doe'
 
-let complex_variable: [Int] = do
+let lazy_variable: [Int] = complex_lazy_variable |> filter(n => n >= 3)
+
+let complex_lazy_variable: [Int] = do
   let a = 5
   let b = 2
   let mut i = b
@@ -14,9 +16,7 @@ let complex_variable: [Int] = do
   end
 end
 
-let lazy_variable: [Int] = complex_variable |> filter(n => n >= 3)
-
-let crazy_variable: [String | [Int]] = [default_name, complex_variable, lazy_variable]
+let crazy_variable: [String | [Int]] = [default_name, complex_lazy_variable, lazy_variable]
 
 
 func test(): [String] = do
