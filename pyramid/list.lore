@@ -2,9 +2,15 @@ module lore
 
 module List do
   use Enum._
+  use Option._
 
   @where A
   func get!(list: [A], index: Int): A = intrinsic[A]('lore.list.get!', list, index)
+
+  @where A
+  func get(list: [A], index: Int): Option[A] = do
+    if index >= 0 && index < length(list) then Some(list |> get!(index)) else None
+  end
 
   func length(list: [Any]): Int = intrinsic[Int]('lore.list.length', list)
 
