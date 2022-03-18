@@ -1,6 +1,6 @@
 import std/strformat
 
-from definitions import MultiFunction, FunctionInstance, is_monomorphic, new_function_instance
+import definitions
 import imseqs
 import types
 import values

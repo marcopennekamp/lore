@@ -3,7 +3,7 @@ import std/strformat
 import imseqs
 from instructions import Instruction
 from types import TypeParameter, Type, TupleType, FunctionType, MetaShape, Schema, new_function_type, bounds_contain,
-                  substitute
+                  substitute, `$`
 from values import TaggedValue, LambdaContext, tag_reference
 
 type
@@ -185,10 +185,7 @@ proc instantiate_single_function_unchecked*(mf: MultiFunction, type_arguments: I
   if function.is_monomorphic: addr function.monomorphic_instance
   else: new_function_instance(function, type_arguments)
 
-proc `$`*(function: Function): string =
-  # TODO (assembly): Expand this so that the whole function signature is printed. This is crucial for pointing to the
-  #                  correct function when the VM errors out, e.g. during dispatch or function instantiation.
-  fmt"{function.multi_function.name}"
+proc `$`*(function: Function): string = fmt"{function.multi_function.name}{function.input_type}: {function.output_type}"
 
 ########################################################################################################################
 # Constants.                                                                                                           #
