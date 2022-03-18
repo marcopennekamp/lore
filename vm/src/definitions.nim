@@ -144,6 +144,11 @@ proc new_function_instance*(function: Function, type_arguments: ImSeq[Type]): pt
   instance.type_arguments = type_arguments
   instance
 
+proc new_function_instance*(): ptr FunctionInstance =
+  ## Allocates an uninitialized function instance. The fields `function` and `type_arguments` must be initialized
+  ## manually.
+  new_function_instance(nil, nil)
+
 proc instantiate*(function: Function, type_arguments: ImSeq[Type]): ptr FunctionInstance =
   # TODO (vm): When using this function, we technically only need to check lower bounds of covariant parameters and
   #            upper bounds of contravariant parameters, as we can reasonably assume that the compiler has covered the

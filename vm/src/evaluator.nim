@@ -294,7 +294,7 @@ template generate_lambda(is_poly: bool) =
 template generate_lambda0(is_poly: bool) =
   let function_instance = lambda_get_function_instance(frame, instruction, 1)
   let tpe = if is_poly: substitute(const_types_arg(2), frame.type_arguments) else: const_types_arg(2)
-  let value = values.new_single_function_value(function_instance, LambdaContext(nil), tpe)
+  let value = values.new_single_function_value(function_instance, tpe)
   regv_set_ref_arg(0, value)
 
 ########################################################################################################################
@@ -458,7 +458,7 @@ proc evaluate(frame: FramePtr) =
     of Operation.FunctionSingle:
       let function_instance = const_multi_function_arg(1).instantiate_single_function(oplt_get_imseq_arg(2))
       let tpe = function_instance.get_function_type()
-      let value = new_single_function_value(cast[pointer](function_instance), LambdaContext(nil), tpe)
+      let value = new_single_function_value(cast[pointer](function_instance), tpe)
       regv_set_arg(0, value)
 
     of Operation.Lambda: generate_lambda(false)

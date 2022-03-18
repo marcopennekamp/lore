@@ -4,6 +4,7 @@ import std/tables
 import sugar
 
 import definitions
+from dispatch import find_dispatch_target
 import imseqs
 import instructions
 import poems
@@ -842,10 +843,21 @@ method resolve(poem_value: PoemSingleFunctionValue, universe: Universe): TaggedV
   let function = mf.functions[0]
   let type_arguments = new_immutable_seq(universe.resolve_many(poem_value.type_arguments))
   let instance = function.instantiate(type_arguments)
-  tag_reference(new_single_function_value(cast[pointer](instance), LambdaContext(nil), tpe))
+  tag_reference(new_single_function_value(cast[pointer](instance), tpe))
 
 method resolve(poem_value: PoemFixedFunctionValue, universe: Universe): TaggedValue {.locks: "unknown".} =
-  quit("Fixed function value resolution is not yet implemented.")
+  let tpe = universe.resolve(poem_value.tpe)
+  assert(tpe.kind == Kind.Function)
+
+  let mf = universe.multi_functions[poem_value.name]
+  let input_type = universe.resolve(poem_value.input_type)
+  assert(input_type.kind == Kind.Tuple)
+  let input_types = cast[TupleType](universe.resolve(poem_value.input_type)).elements
+
+  var target = new_function_instance()
+  find_dispatch_target(mf, input_types.to_open_array, target[])
+
+  tag_reference(new_single_function_value(target, tpe))
 
 method resolve(poem_value: PoemListValue, universe: Universe): TaggedValue {.locks: "unknown".} =
   let tpe = universe.resolve(poem_value.tpe)

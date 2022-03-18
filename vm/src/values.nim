@@ -185,6 +185,9 @@ proc new_multi_function_value*(target: pointer, tpe: Type): Value =
 proc new_single_function_value*(target: pointer, context: LambdaContext, tpe: Type): Value =
   new_function_value(FunctionValueVariant.Single, target, context, tpe)
 
+proc new_single_function_value*(target: pointer, tpe: Type): Value =
+  new_single_function_value(target, LambdaContext(nil), tpe)
+
 proc arity*(function: FunctionValue): int = cast[FunctionType](function.tpe).input.elements.len
 
 proc `[]`*(context: LambdaContext, index: int): TaggedValue {.borrow.}
