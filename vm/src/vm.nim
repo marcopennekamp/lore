@@ -12,7 +12,7 @@ when is_main_module:
 
   from poems import nil
   from universes import nil
-  from utils import with_frame_mem
+  from utils import with_frame_mem, benchmark
 
   let help = "Please run `vm.nim` with a `.poem` file as the first and the entry function's name as the second argument." &
     " The entry function should be a single function."
@@ -20,6 +20,7 @@ when is_main_module:
     let poem = poems.read_poem(param_str(1))
     let universe = universes.resolve(@[poem])
     let target = addr universe.multi_functions[param_str(2)].functions[0].monomorphic_instance
-    with_frame_mem((frame_mem: pointer) => run_and_print(target, frame_mem))
+    benchmark("Execution time", 1):
+      with_frame_mem((frame_mem: pointer) => run_and_print(target, frame_mem))
   else:
     echo help
