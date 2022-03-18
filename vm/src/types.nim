@@ -925,85 +925,71 @@ proc are_open_property_types_equal(t1: StructType, t2: StructType): bool =
 # Subtyping.                                                                                                           #
 ########################################################################################################################
 
-macro is_subtype_substitute_static(substitution_mode: static[SubstitutionMode], t1: Type, t2: Type): bool =
-  case substitution_mode
-  of SubstitutionMode.None:
-    quote do: is_subtype(`t1`, `t2`)
-  of SubstitutionMode.T1:
-    quote do: is_subtype_substitute1(`t1`, `t2`, assignments)
-  of SubstitutionMode.T2:
-    quote do: is_subtype_substitute2(`t1`, `t2`, assignments)
-
-macro variable_subtypes_type(substitution_mode: static[SubstitutionMode], tv1: TypeVariable, t2: Type): bool =
+proc variable_subtypes_type(substitution_mode: SubstitutionMode, tv1: TypeVariable, t2: Type, assignments: open_array[Type]): bool =
   case substitution_mode
   of SubstitutionMode.None, SubstitutionMode.T2:
-    quote do:
-      let tv1_evaluated = `tv1`
-      assert(tv1_evaluated.parameter != nil)
-      is_subtype(tv1_evaluated.parameter.upper_bound, `t2`)
+    assert(tv1.parameter != nil)
+    is_subtype(tv1.parameter.upper_bound, t2)
   of SubstitutionMode.T1:
-    quote do:
-      let tv1_evaluated = `tv1`
-      let t1 = assignments[tv1_evaluated.index]
-      is_subtype_substitute1(t1, `t2`, assignments)
+    let t1 = assignments[tv1.index]
+    is_subtype_substitute1(t1, t2, assignments)
 
-macro type_subtypes_variable(substitution_mode: static[SubstitutionMode], t1: Type, tv2: TypeVariable): bool =
+proc type_subtypes_variable(substitution_mode: SubstitutionMode, t1: Type, tv2: TypeVariable, assignments: open_array[Type]): bool =
   case substitution_mode
   of SubstitutionMode.None, SubstitutionMode.T1:
-    quote do:
-      let tv2_evaluated = `tv2`
-      assert(tv2_evaluated.parameter != nil)
-      is_subtype(`t1`, tv2_evaluated.parameter.lower_bound)
+    assert(tv2.parameter != nil)
+    is_subtype(t1, tv2.parameter.lower_bound)
   of SubstitutionMode.T2:
-    quote do:
-      let tv2_evaluated = `tv2`
-      let t2 = assignments[tv2_evaluated.index]
-      is_subtype_substitute2(`t1`, t2, assignments)
+    let t2 = assignments[tv2.index]
+    is_subtype_substitute2(t1, t2, assignments)
 
-template type_subtypes_sum(substitution_mode: SubstitutionMode, t1: Type, s2: SumType): bool =
+proc type_subtypes_sum(substitution_mode: SubstitutionMode, t1: Type, s2: SumType, assignments: open_array[Type]): bool =
   for p2 in s2.parts:
-    if is_subtype_substitute_static(substitution_mode, t1, p2):
+    if is_subtype_substitute(substitution_mode, t1, p2, assignments):
       return true
   false
 
-template sum_subtypes_sum(substitution_mode: SubstitutionMode, s1: SumType, s2: SumType): bool =
+proc sum_subtypes_sum(substitution_mode: SubstitutionMode, s1: SumType, s2: SumType, assignments: open_array[Type]): bool =
   for p1 in s1.parts:
-    if not type_subtypes_sum(substitution_mode, p1, s2):
+    if not type_subtypes_sum(substitution_mode, p1, s2, assignments):
       return false
   true
 
-template sum_subtypes_type(substitution_mode: SubstitutionMode, s1: SumType, t2: Type): bool =
+proc sum_subtypes_type(substitution_mode: SubstitutionMode, s1: SumType, t2: Type, assignments: open_array[Type]): bool =
   for p1 in s1.parts:
-    if not is_subtype_substitute_static(substitution_mode, p1, t2):
+    if not is_subtype_substitute(substitution_mode, p1, t2, assignments):
       return false
   true
 
-template intersection_subtypes_type(substitution_mode: SubstitutionMode, i1: IntersectionType, t2: Type): bool =
+proc intersection_subtypes_type(substitution_mode: SubstitutionMode, i1: IntersectionType, t2: Type, assignments: open_array[Type]): bool =
   for p1 in i1.parts:
-    if is_subtype_substitute_static(substitution_mode, p1, t2):
+    if is_subtype_substitute(substitution_mode, p1, t2, assignments):
+      #echo p1, " subtypes ", t2
       return true
   false
 
-template intersection_subtypes_intersection(substitution_mode: SubstitutionMode, i1: IntersectionType, i2: IntersectionType): bool =
+proc intersection_subtypes_intersection(substitution_mode: SubstitutionMode, i1: IntersectionType, i2: IntersectionType, assignments: open_array[Type]): bool =
   for p2 in i2.parts:
-    if not intersection_subtypes_type(substitution_mode, i1, p2):
+    #echo "Check part ", p2, " of ", i2.parts
+    #echo "Result: ", intersection_subtypes_type(substitution_mode, i1, p2)
+    if not intersection_subtypes_type(substitution_mode, i1, p2, assignments):
       return false
   true
 
-template type_subtypes_intersection(substitution_mode: SubstitutionMode, t1: Type, i2: IntersectionType): bool =
+proc type_subtypes_intersection(substitution_mode: SubstitutionMode, t1: Type, i2: IntersectionType, assignments: open_array[Type]): bool =
   for p2 in i2.parts:
-    if not is_subtype_substitute_static(substitution_mode, t1, p2):
+    if not is_subtype_substitute(substitution_mode, t1, p2, assignments):
       return false
   true
 
-template tuple_subtypes_tuple(substitution_mode: SubstitutionMode, t1: TupleType, t2: TupleType): bool =
+proc tuple_subtypes_tuple(substitution_mode: SubstitutionMode, t1: TupleType, t2: TupleType, assignments: open_array[Type]): bool {.inline.} =
   let es1 = t1.elements
   let es2 = t2.elements
   if es1.len != es2.len:
     return false
 
   for i in 0 ..< es1.len:
-    if not is_subtype_substitute_static(substitution_mode, es1[i], es2[i]):
+    if not is_subtype_substitute(substitution_mode, es1[i], es2[i], assignments):
       return false
   true
 
@@ -1060,24 +1046,24 @@ proc type_arguments_subtype_type_arguments(
 
   true
 
-template declared_type_subtypes_trait(substitution_mode: SubstitutionMode, t1: DeclaredType, t2: TraitType): bool =
+proc declared_type_subtypes_trait(substitution_mode: SubstitutionMode, t1: DeclaredType, t2: TraitType, assignments: open_array[Type]): bool =
   if t1.schema === t2.schema:
     type_arguments_subtype_type_arguments(substitution_mode, t1, t2, assignments)
   else:
     let supertrait = t1.find_supertrait(t2.get_schema)
-    supertrait != nil and is_subtype_substitute_static(substitution_mode, supertrait, t2)
+    supertrait != nil and is_subtype_substitute(substitution_mode, supertrait, t2, assignments)
 
-template struct_subtypes_shape(substitution_mode: SubstitutionMode, t1: StructType, t2: ShapeType): bool =
+proc struct_subtypes_shape(substitution_mode: SubstitutionMode, t1: StructType, t2: ShapeType, assignments: open_array[Type]): bool =
   for i in 0 ..< t2.property_count:
     # TODO (vm): Does the string from `property_names` get copied when the function is called? Check out whether an
     #            allocation is hiding here.
     let property_name = t2.meta.property_names[i]
     let p1 = t1.get_property_type_if_exists(property_name)
-    if p1 == nil or not is_subtype_substitute_static(substitution_mode, p1, t2.property_types[i]):
+    if p1 == nil or not is_subtype_substitute(substitution_mode, p1, t2.property_types[i], assignments):
       return false
   true
 
-template struct_subtypes_struct(substitution_mode: SubstitutionMode, t1: StructType, t2: StructType): bool =
+proc struct_subtypes_struct(substitution_mode: SubstitutionMode, t1: StructType, t2: StructType, assignments: open_array[Type]): bool =
   ## Checks whether `t1` is a subtype of `t2` by comparing type arguments and open property types.
   if t1.schema === t2.schema and type_arguments_subtype_type_arguments(substitution_mode, t1, t2, assignments):
     # If the open property types of t2 are empty, and t1 and t2 agree in their type arguments, t2 will always be a
@@ -1088,24 +1074,32 @@ template struct_subtypes_struct(substitution_mode: SubstitutionMode, t1: StructT
     for i in t1.get_schema.open_property_indices:
       let p1 = t1.get_property_type(i)
       let p2 = t2.get_property_type(i)
-      if not is_subtype_substitute_static(substitution_mode, p1, p2):
+      if not is_subtype_substitute(substitution_mode, p1, p2, assignments):
         return false
     true
   else:
     false
 
-template is_subtype_impl(substitution_mode: SubstitutionMode, t1: Type, t2: Type): bool =
-  ## `is_subtype` has two separate versions, both covered by this implementation template: the first being the regular
-  ## one, while the second one implicitly substitutes type variables in `t2` with types from an `assignments` array,
-  ## without allocating any new types. This allows subtyping in specific contexts (fit, type bounds checking) to be
-  ## decided without new allocations. This template assumes an implicit `assignments` variable to be in scope when
-  ## `has_assignments` is true.
+proc is_subtype_impl(
+  substitution_mode: SubstitutionMode,
+  t1: Type,
+  t2: Type,
+  assignments: open_array[Type],
+): bool {.codegen_decl: "__attribute__((always_inline)) $# $#$#".} =
+  ## `is_subtype` has two separate versions, both covered by this implementation: the first being the regular one,
+  ## while the second one implicitly substitutes type variables in `t2` with types from an `assignments` array, without
+  ## allocating any new types. This allows subtyping in specific contexts (fit, type bounds checking) to be decided
+  ## without new allocations.
   ##
   ## If a substitution mode is set, `assignments` must NOT contain any type variables. This is because the algorithm
   ## can't differentiate between type variables that should still be substituted and type variables that have come from
   ## `assignments`, presumably from a different context. For example, when building the dispatch hierarchy, the
   ## left-hand input type `t1` may contain type variables. In such a case, the assignments should be manually
   ## substituted into `t1´ and `is_subtype` should be used without a substitution mode.
+  ##
+  ## `always inline` is used to force the compiler to inline `is_subtype_impl`, which has a measurable performance
+  ## benefit. `is_subtype_impl` is only used by the one-liner functions `is_subtype`, `is_subtype_substitute1`, and
+  ## `is_subtype_substitute2`, which is why we can force the inline here.
 
   # Because basic types are interned, this case trivially covers all basic types without subtyping interactions.
   if t1 === t2:
@@ -1114,7 +1108,7 @@ template is_subtype_impl(substitution_mode: SubstitutionMode, t1: Type, t2: Type
   case t1.kind
   of Kind.TypeVariable:
     let tv1 = cast[TypeVariable](t1)
-    return variable_subtypes_type(substitution_mode, tv1, t2)
+    return variable_subtypes_type(substitution_mode, tv1, t2, assignments)
 
   of Kind.Nothing:
     return true
@@ -1123,23 +1117,23 @@ template is_subtype_impl(substitution_mode: SubstitutionMode, t1: Type, t2: Type
     let s1 = cast[SumType](t1)
     if t2.kind == Kind.Sum:
       let s2 = cast[SumType](t2)
-      return sum_subtypes_sum(substitution_mode, s1, s2)
+      return sum_subtypes_sum(substitution_mode, s1, s2, assignments)
     else:
-      if sum_subtypes_type(substitution_mode, s1, t2):
+      if sum_subtypes_type(substitution_mode, s1, t2, assignments):
         return true
 
   of Kind.Intersection:
     let i1 = cast[IntersectionType](t1)
     if t2.kind == Kind.Intersection:
       let i2 = cast[IntersectionType](t2)
-      return intersection_subtypes_intersection(substitution_mode, i1, i2)
+      return intersection_subtypes_intersection(substitution_mode, i1, i2, assignments)
     else:
-      if intersection_subtypes_type(substitution_mode, i1, t2):
+      if intersection_subtypes_type(substitution_mode, i1, t2, assignments):
         return true
 
   of Kind.Tuple:
     if t2.kind == Kind.Tuple:
-      return tuple_subtypes_tuple(substitution_mode, cast[TupleType](t1), cast[TupleType](t2))
+      return tuple_subtypes_tuple(substitution_mode, cast[TupleType](t1), cast[TupleType](t2), assignments)
 
   of Kind.Function:
     if t2.kind == Kind.Function:
@@ -1147,13 +1141,13 @@ template is_subtype_impl(substitution_mode: SubstitutionMode, t1: Type, t2: Type
       let f2 = cast[FunctionType](t2)
       return
         is_subtype_substitute(substitution_mode.flipped, f2.input, f1.input, assignments) and
-        is_subtype_substitute_static(substitution_mode, f1.output, f2.output)
+        is_subtype_substitute(substitution_mode, f1.output, f2.output, assignments)
 
   of Kind.List:
     if t2.kind == Kind.List:
       let l1 = cast[ListType](t1)
       let l2 = cast[ListType](t2)
-      return is_subtype_substitute_static(substitution_mode, l1.element, l2.element)
+      return is_subtype_substitute(substitution_mode, l1.element, l2.element, assignments)
 
   of Kind.Map:
     if t2.kind == Kind.Map:
@@ -1176,23 +1170,23 @@ template is_subtype_impl(substitution_mode: SubstitutionMode, t1: Type, t2: Type
 
   of Kind.Trait, Kind.Struct:
     if t2.kind == Kind.Trait:
-      return declared_type_subtypes_trait(substitution_mode, cast[DeclaredType](t1), cast[TraitType](t2))
+      return declared_type_subtypes_trait(substitution_mode, cast[DeclaredType](t1), cast[TraitType](t2), assignments)
     elif t2.kind == Kind.Shape:
       let s2 = cast[ShapeType](t2)
       if t1.kind == Kind.Struct:
-        return struct_subtypes_shape(substitution_mode, cast[StructType](t1), s2)
+        return struct_subtypes_shape(substitution_mode, cast[StructType](t1), s2, assignments)
       else: # t1.kind == Kind.Trait
         let tt1 = cast[TraitType](t1)
         return shape_subtypes_shape(substitution_mode, tt1.get_inherited_shape_type, s2, assignments)
     elif t2.kind == Kind.Struct and t1.kind == Kind.Struct:
-      return struct_subtypes_struct(substitution_mode, cast[StructType](t1), cast[StructType](t2))
+      return struct_subtypes_struct(substitution_mode, cast[StructType](t1), cast[StructType](t2), assignments)
 
   else: discard
 
   case t2.kind
   of Kind.TypeVariable:
     let tv2 = cast[TypeVariable](t2)
-    type_subtypes_variable(substitution_mode, t1, tv2)
+    type_subtypes_variable(substitution_mode, t1, tv2, assignments)
 
   of Kind.Any:
     true
@@ -1200,12 +1194,12 @@ template is_subtype_impl(substitution_mode: SubstitutionMode, t1: Type, t2: Type
   of Kind.Sum:
     # t1 is definitely NOT a sum type, because the case SumType/SumType immediately returns in the first `case of`
     # statement above. Hence, we can safely call `type_subtypes_sum`.
-    type_subtypes_sum(substitution_mode, t1, cast[SumType](t2))
+    type_subtypes_sum(substitution_mode, t1, cast[SumType](t2), assignments)
 
   of Kind.Intersection:
     # t1 is definitely NOT an intersection type, because the case IntersectionType/IntersectionType immediately returns
     # in the first `cast of` statement above. Hence, we can safely call `type_subtypes_intersection`.
-    type_subtypes_intersection(substitution_mode, t1, cast[IntersectionType](t2))
+    type_subtypes_intersection(substitution_mode, t1, cast[IntersectionType](t2), assignments)
 
   else: false
 
@@ -1213,20 +1207,26 @@ proc is_subtype*(t1: Type, t2: Type): bool =
   ## Whether `t1` is a subtype of `t2`.
   # `assignments` is only defined to make `is_subtype_impl` compile. Assignments should never be accessed in this
   # substitution mode.
-  let assignments: array[0, Type] = []
-  is_subtype_impl(SubstitutionMode.None, t1, t2)
+  #let assignments: array[0, Type] = []
+  is_subtype_impl(SubstitutionMode.None, t1, t2, [])
 
 proc is_subtype_substitute1*(t1: Type, t2: Type, assignments: open_array[Type]): bool =
   ## Whether `t1` is a subtype of `t2` when type variables in `t1` are substituted with types from `assignments`. This
   ## function does *not* allocate new types for the substitution. As noted in `is_subtype_impl`, `assignments` may not
   ## contain any type variables.
-  is_subtype_impl(SubstitutionMode.T1, t1, t2)
+  is_subtype_impl(SubstitutionMode.T1, t1, t2, assignments)
 
 proc is_subtype_substitute2*(t1: Type, t2: Type, assignments: open_array[Type]): bool =
   ## Whether `t1` is a subtype of `t2` when type variables in `t2` are substituted with types from `assignments`. This
   ## function does *not* allocate new types for the substitution. As noted in `is_subtype_impl`, `assignments` may not
   ## contain any type variables.
-  is_subtype_impl(SubstitutionMode.T2, t1, t2)
+  is_subtype_impl(SubstitutionMode.T2, t1, t2, assignments)
+
+proc is_subtype_substitute(substitution_mode: SubstitutionMode, t1: Type, t2: Type, assignments: open_array[Type]): bool =
+  case substitution_mode
+  of SubstitutionMode.None: is_subtype(t1, t2)
+  of SubstitutionMode.T1: is_subtype_substitute1(t1, t2, assignments)
+  of SubstitutionMode.T2: is_subtype_substitute2(t1, t2, assignments)
 
 proc is_subtype*(ts1: open_array[Type], ts2: open_array[Type]): bool =
   ## Whether a tuple type `tpl(ts1)` is a subtype of `tpl(ts2)`. This function does *not* allocate a new tuple type.
@@ -1261,12 +1261,6 @@ proc is_subtype_substitute2*(ts1: open_array[Type], ts2: open_array[Type], assig
     if not is_subtype_substitute2(ts1[i], ts2[i], assignments):
       return false
   true
-
-proc is_subtype_substitute(substitution_mode: SubstitutionMode, t1: Type, t2: Type, assignments: open_array[Type]): bool =
-  case substitution_mode
-  of SubstitutionMode.None: is_subtype(t1, t2)
-  of SubstitutionMode.T1: is_subtype_substitute1(t1, t2, assignments)
-  of SubstitutionMode.T2: is_subtype_substitute2(t1, t2, assignments)
 
 ########################################################################################################################
 # Fit.                                                                                                                 #
