@@ -1451,7 +1451,10 @@ proc fits_assign_declared_type(t1: DeclaredType, t2: DeclaredType, assignments: 
     if t1.schema === t2.schema:
       t1
     elif t2.kind == Kind.Trait:
-      t1.find_supertrait(cast[TraitSchema](t2.schema))
+      let supertrait = t1.find_supertrait(cast[TraitSchema](t2.schema))
+      if supertrait == nil:
+        return false
+      supertrait
     else:
       return true
 
