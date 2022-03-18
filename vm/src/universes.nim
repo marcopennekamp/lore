@@ -768,6 +768,8 @@ method resolve(poem_type: PoemBasicType, universe: Universe): Type {.locks: "unk
 method resolve(poem_type: PoemXaryType, universe: Universe): Type =
   if poem_type.kind == Kind.Sum:
     new_sum_type(universe.resolve_many(poem_type.types))
+  elif poem_type.kind == Kind.Intersection:
+    new_intersection_type(universe.resolve_many(poem_type.types))
   elif poem_type.kind == Kind.Tuple:
     if poem_type.types.len == 0:
       unit_type
