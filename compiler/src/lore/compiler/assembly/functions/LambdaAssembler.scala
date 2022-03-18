@@ -18,12 +18,17 @@ object LambdaAssembler {
     implicit registry: Registry,
     registerProvider: RegisterProvider,
     variableRegisterMap: VariableRegisterMap,
+    parentCapturedVariableMap: CapturedVariableMap,
   ): (AsmChunk, Vector[PoemFunction]) = {
     // To generate an anonymous function, we have to first perform capture analysis, then compile its body as a
     // single-function multi-function, and finally generate the appropriate `Lambda` instruction.
     val capturedVariables = expression.capturedVariables
     val capturedVariableMap = capturedVariables.zipWithIndex.map { case (variable, index) => variable.uniqueKey -> index }.toMap
-    val capturedRegisters = capturedVariables.map(variable => variableRegisterMap(variable.uniqueKey))
+
+    // We can't just map captured variables to registers, because some variables may actually themselves be captured
+    // variables, which have to be loaded with `LambdaLocal`. Instead, we have to properly assemble the variables as
+    // bindings, just like the ExpressionAssembler does.
+    val capturedVariableChunks = capturedVariables.map(TypedBindingAssembler.generate)
 
     // We need to be careful with the name, because any function called `signature.name` can have lambdas which will
     // be global to the VM's universe. For example, we can't simply call these functions `lambda0`, `lambda1`, etc.,
@@ -51,9 +56,10 @@ object LambdaAssembler {
     val instruction = if (signature.isMonomorphic && capturedVariables.isEmpty) {
       PoemInstruction.Const(regResult, PoemSingleFunctionValue(name, Vector.empty, poemType))
     } else {
-      PoemInstruction.Lambda(regResult, name, poemType, capturedRegisters)
+      PoemInstruction.Lambda(regResult, name, poemType, capturedVariableChunks.map(_.forceResult))
     }
-    (AsmChunk(regResult, instruction), generatedPoemFunctions)
+    val resultChunk = AsmChunk.concat(capturedVariableChunks) ++ AsmChunk(regResult, instruction)
+    (resultChunk, generatedPoemFunctions)
   }
 
 }
