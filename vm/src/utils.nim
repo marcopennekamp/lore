@@ -1,4 +1,7 @@
-import times, os, sugar
+import std/times
+import std/os
+import std/monotimes
+import std/sugar
 
 const is_release* = defined(release) or defined(danger)
 
@@ -26,15 +29,15 @@ proc with_frame_mem*(f: (pointer) -> void) =
 
 template benchmark*(benchmark_name: string, runs: int, code: untyped) =
   block:
-    let t0 = epoch_time()
+    let t0 = get_mono_time()
     var i: int = 0
     while i < runs:
       code
       i += 1
-    let elapsed = epoch_time() - t0
-    let elapsed_ns = elapsed * 1_000_000_000
-    let per_run = uint(elapsed_ns / runs.float)
-    echo benchmark_name, ": ", per_run, "ns/op"
+    let elapsed_ns = in_nanoseconds(get_mono_time() - t0)
+    let per_run = uint(elapsed_ns div runs)
+    let unit = if runs > 1: "ns/op" else: "ns"
+    echo benchmark_name, ": ", per_run, unit
 
 template call_if_any_exists*(function, arg0, default0, arg1, default1, default_result): untyped =
   ## Calls `function` with `arg1` and `arg2` if either is not `nil`. Any `nil` argument is replaced with the default.
