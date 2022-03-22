@@ -3,10 +3,12 @@ package lore.compiler.assembly.functions
 import lore.compiler.assembly.AsmChunk
 import lore.compiler.assembly.optimization.{ConstSmasher, RegisterAllocator}
 import lore.compiler.assembly.types.TypeAssembler
-import lore.compiler.poem.{PoemFunction, PoemInstruction}
+import lore.compiler.core.CompilationException
+import lore.compiler.poem.{Poem, PoemFunction, PoemInstruction}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature}
+import lore.compiler.types.TupleType
 
 object FunctionAssembler {
 
@@ -89,7 +91,27 @@ object FunctionAssembler {
   }
 
   private def finalizeBody(signature: FunctionSignature, bodyChunk: AsmChunk): Vector[PoemInstruction] = {
-    var instructions = bodyChunk.instructions :+ PoemInstruction.Return(bodyChunk.forceResult(signature.position))
+    // We have to either return the result of `bodyChunk` from the function, or return the unit value if `bodyChunk`
+    // has no result.
+    val returnInstructions = bodyChunk.result match {
+      case Some(regValue) => Vector(PoemInstruction.Return(regValue))
+
+      case None =>
+        if (TupleType.UnitType </= signature.outputType) {
+          throw CompilationException("A block with a unit result can only be returned from a function that has a Unit" +
+            s" or Any output type. Position: ${signature.position}.")
+        }
+
+        // We can always use register 0, because we're at the end of the function and we have no meaningful live
+        // variables.
+        val regResult = Poem.Register(0)
+        Vector(
+          PoemInstruction.Tuple(regResult, Vector.empty),
+          PoemInstruction.Return(regResult)
+        )
+    }
+
+    var instructions = bodyChunk.instructions ++ returnInstructions
     instructions = LabelResolver.resolve(instructions, signature.position)
     instructions = ConstSmasher.optimize(instructions)
     instructions = RegisterAllocator.optimize(instructions, signature.parameters.length)
