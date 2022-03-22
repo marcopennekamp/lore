@@ -3,6 +3,7 @@ use lore.Enum.map
 trait Animal
 struct Cat(fame: Real) extends Animal
 struct Dog(fame: Real) extends Animal
+//struct Dog[A <: Real](fame: A) extends Animal
 
 trait Vehicle
 struct Car() extends Vehicle
@@ -14,8 +15,20 @@ func coolness(Animal): Real
 func coolness(cat: Cat): Real = 5.0 * cat.fame
 func coolness(dog: Dog): Real = 3.0 * dog.fame
 
+// TODO (assembly): We should be able to define `A` like this. However, the assembler for the multiplication craps out
+//                  because it cannot connect the type variable `A` to an operation domain of Real.
+//func coolness(dog: Dog[A]): Real where A <: Real = 3.0 * dog.fame
+
 func coolness(Vehicle): Real
 func coolness(Car): Real = 2.7
 func coolness(Bicycle): Real = 5.2
 
-func test(): [Real] = [Cat(1.2), Dog(5), Dog(3.50), Cat(7.7)] |> map(coolness)
+// TODO (inference): Writing `[Cat(1.2), Dog(5), Dog(3.50), Cat(7.7)] |> map(coolness)` (notice the integer in Dog)
+//                   results in an error that `map` has an empty fit for the argument types `([Any], Any)`. However, we
+//                   know not only that the list cannot be synthesized, but it actually has typing errors which should
+//                   be reported instead. (The problem is that `preprocessArgument` cannot differentiate between a
+//                   typing error that occurred because the argument cannot be inferred without context, and a typing
+//                   error that occurred due to a legitimate error. I think this requires a refactoring of the typing
+//                   algorithm so that we can differentiate a legitimate error and a "context missing" error.)
+
+func test(): [Real] = [Cat(1.2), Dog(5.0), Dog(3.50), Cat(7.7)] |> map(coolness)

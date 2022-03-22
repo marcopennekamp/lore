@@ -6,7 +6,7 @@ import lore.compiler.semantics.scopes.StructConstructorBinding
 import lore.compiler.types.{DeclaredType, StructType}
 import lore.compiler.typing.InferenceVariable.Assignments
 import lore.compiler.typing.Typing
-import lore.compiler.typing.synthesizer.{ConstructorCallSynthesizer, ParametricFunctionSynthesizer}
+import lore.compiler.typing.synthesizer.{ConstructorCallSynthesizer, ArgumentSynthesizer}
 import lore.compiler.typing.unification.Unification
 import lore.compiler.utils.CollectionExtensions.OptionExtension
 
@@ -37,20 +37,20 @@ object ConstructorCallChecker {
         }
       }
 
-      val (typeParameterAssignments, parameterTypes) = ParametricFunctionSynthesizer.prepareParameterTypes(binding.signature)
+      val (typeParameterAssignments, parameterTypes) = ArgumentSynthesizer.prepareParameterTypes(binding.signature)
 
-      // Given that we have an expected struct type, we must unify the expected constructor's parameters with the actual
-      // parameter types so that any inference variables already known can be preassigned. For example, let's say we have
-      // an expected struct type `Wrapper[Int, Any]` from the test case `features/inference/wrapper.lore`. That is, we
-      // know the input type of the wrapper's function property. The expected constructor parameter is thus typed as
-      // `Int => Any`. The unification takes care that the inference variable for `A` is assigned `Int` as an upper
-      // bound.
+      // Given that we have an expected struct type, we must unify the expected constructor's parameters with the
+      // actual parameter types so that any inference variables already known can be preassigned. For example, let's
+      // say we have an expected struct type `Wrapper[Int, Any]` from the test case `features/inference/wrapper.lore`.
+      // That is, we know the input type of the wrapper's function property. The expected constructor parameter is thus
+      // typed as `Int => Any`. The unification takes care that the inference variable for `A` is assigned `Int` as an
+      // upper bound.
       val expectedParameterTypes = expectedStructType.constructorSignature.parameters.map(_.tpe)
       val assignments2 = Unification.unifySubtypes(parameterTypes, expectedParameterTypes, assignments).getOrElse {
         return None
       }
 
-      val (knownArgumentTypes, assignments3) = ParametricFunctionSynthesizer.preprocessArguments(expression.arguments, assignments2)
+      val (knownArgumentTypes, assignments3) = ArgumentSynthesizer.preprocessArguments(expression.arguments, assignments2)
       ConstructorCallSynthesizer.inferAndAssign(binding, expression, typeParameterAssignments, parameterTypes, knownArgumentTypes, assignments3)
     }
   }

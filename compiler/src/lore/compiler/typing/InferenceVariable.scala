@@ -181,17 +181,17 @@ object InferenceVariable {
   }
 
   /**
+    * Instantiates all inference variables in all `types` with their candidate types.
+    */
+  def instantiateCandidate(types: Vector[Type], assignments: Assignments): Vector[Type] = {
+    types.map(instantiateCandidate(_, assignments))
+  }
+
+  /**
     * Instantiates all inference variables in the type of `expression` with their candidate types.
     */
   def instantiateCandidate(expression: Expression, assignments: Assignments): Type = {
     instantiateCandidate(expression.tpe, assignments)
-  }
-
-  /**
-    * Instantiates all inference variables in all types of `expressions` with their candidate types.
-    */
-  def instantiateCandidate(expressions: Vector[Expression], assignments: Assignments): Vector[Type] = {
-    expressions.map(instantiateCandidate(_, assignments))
   }
 
   /**

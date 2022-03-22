@@ -19,6 +19,22 @@ object TypingFeedback {
     }
   }
 
+  object Functions {
+    case class IllegalArity(argumentCount: Int, parameterCount: Int, context: Positioned) extends Feedback.Error(context) {
+      override def message: String = s"A function with $parameterCount parameters received $argumentCount arguments."
+    }
+
+    case class IllegalArgumentTypes(argumentTypes: Vector[Type], parameterTypes: Vector[Type], context: Positioned) extends Feedback.Error(context) {
+      override def message: String = s"The argument types (${argumentTypes.mkString(", ")}) don't fit into the expected" +
+        s" parameter types (${parameterTypes.mkString(", ")})."
+    }
+
+    case class IllegalTypeArguments(typeArguments: Vector[Type], typeParameters: Vector[Type], context: Positioned) extends Feedback.Error(context) {
+      override def message: String = s"The type arguments ${typeArguments.mkString(", ")} don't fit the type" +
+        s" parameters ${typeParameters.mkString(", ")}."
+    }
+  }
+
   object AnonymousFunctions {
     case class FunctionTypeExpected(expression: Expression.AnonymousFunction, expectedType: Type) extends Feedback.Error(expression) {
       override def message: String = s"The type of the anonymous function cannot be inferred from a type $expectedType." +
@@ -84,10 +100,6 @@ object TypingFeedback {
   object ValueCalls {
     case class FunctionExpected(expression: Expression.Call, actualType: Type) extends Feedback.Error(expression) {
       override def message: String = s"Only functions may be called. You are trying to call a value of type $actualType."
-    }
-
-    case class IllegalArity(expression: Expression.Call, inputType: TupleType) extends Feedback.Error(expression) {
-      override def message: String = s"A function of arity ${inputType.elements.length} cannot be called with ${expression.arguments.length} arguments."
     }
   }
 

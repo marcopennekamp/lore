@@ -6,8 +6,8 @@ import lore.compiler.semantics.functions.{FunctionDefinition, MultiFunctionDefin
 import lore.compiler.types.{TupleType, Type}
 import lore.compiler.typing.InferenceVariable.Assignments
 import lore.compiler.typing.{InferenceVariable, Typing}
-import lore.compiler.typing.synthesizer.ParametricFunctionSynthesizer
-import lore.compiler.typing.synthesizer.ParametricFunctionSynthesizer.{ArgumentCandidate, KnownArgumentTypes}
+import lore.compiler.typing.synthesizer.ArgumentSynthesizer
+import lore.compiler.typing.synthesizer.ArgumentSynthesizer.KnownArgumentTypes
 import lore.compiler.typing.unification.Unification
 import lore.compiler.utils.CollectionExtensions.OptionVectorExtension
 
@@ -53,7 +53,7 @@ object MultiFunctionCallChecker {
     Typing.logger.trace(s"$modeLabel of multi-function call `${expression.position.truncatedCode}`$expectedTypeInfo:")
     Typing.indentationLogger.indented {
       // Step 1: Try to infer as many argument types as possible.
-      val (knownArgumentTypes, assignments2) = ParametricFunctionSynthesizer.preprocessArguments(expression.arguments, assignments)
+      val (knownArgumentTypes, assignments2) = ArgumentSynthesizer.preprocessArguments(expression.arguments, assignments)
 
       // If all argument types were inferred, we can simply perform dispatch.
       knownArgumentTypes.sequence.foreach { argumentTypes =>
@@ -91,6 +91,14 @@ object MultiFunctionCallChecker {
     }
   }
 
+  /**
+    * An argument candidate represents a candidate typing of a multi-function call's arguments.
+    *
+    * @param tpe The instantiated type of all arguments.
+    * @param assignments The assignments as a result of typing the arguments.
+    */
+  case class ArgumentCandidate(tpe: TupleType, assignments: Assignments)
+
   private def handleFunctionCandidate(
     function: FunctionDefinition,
     expression: Expression.Call,
@@ -98,7 +106,7 @@ object MultiFunctionCallChecker {
     expectedType: Option[Type],
     assignments: Assignments,
   )(implicit checker: Checker): (Option[ArgumentCandidate], Vector[Feedback]) = {
-    val (typeParameterAssignments, parameterTypes) = ParametricFunctionSynthesizer.prepareParameterTypes(function.signature)
+    val (typeParameterAssignments, parameterTypes) = ArgumentSynthesizer.prepareParameterTypes(function.signature)
 
     // As mentioned in the documentation comment, if we have an expected (output) type, we can unify this type
     // with the candidate's output type to potentially assign type arguments right away.
@@ -109,23 +117,29 @@ object MultiFunctionCallChecker {
     val outputTypeAssignments = expectedType match {
       case Some(expectedType) =>
         val outputType = Type.substitute(function.signature.outputType, typeParameterAssignments)
-        Unification.unifySubtypes(outputType, expectedType, assignments)
-          .getOrElse(assignments)
+        Unification.unifySubtypes(outputType, expectedType, assignments).getOrElse(assignments)
 
       case None => assignments
     }
 
     implicit val reporter: MemoReporter = MemoReporter()
-    val result = ParametricFunctionSynthesizer.inferArgumentTypes(
+    val argumentCandidate = ArgumentSynthesizer.inferArgumentTypes(
       function.signature.typeParameters,
       typeParameterAssignments,
       parameterTypes,
       expression.arguments,
       knownArgumentTypes,
       outputTypeAssignments,
-    )
+      expression,
+    ).map { result =>
+      val tpe = InferenceVariable.instantiateCandidate(
+        TupleType(expression.arguments.map(_.tpe)),
+        result.assignments,
+      ).asInstanceOf[TupleType]
+      ArgumentCandidate(tpe, result.assignments)
+    }
 
-    (result, reporter.feedback)
+    (argumentCandidate, reporter.feedback)
   }
 
   private def chooseArgumentCandidate(

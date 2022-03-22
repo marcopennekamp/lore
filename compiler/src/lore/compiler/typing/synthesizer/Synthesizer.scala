@@ -182,7 +182,7 @@ object Synthesizer {
                     }
                     assignments3.map((_, output))
                   } else {
-                    reporter.error(TypingFeedback.ValueCalls.IllegalArity(expression, input))
+                    reporter.error(TypingFeedback.Functions.IllegalArity(expression.arguments.length, input.elements.length, expression))
                     None
                   }
 

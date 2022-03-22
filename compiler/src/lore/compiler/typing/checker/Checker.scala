@@ -6,7 +6,7 @@ import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.CallTarget
 import lore.compiler.types._
 import lore.compiler.typing.InferenceVariable.Assignments
-import lore.compiler.typing.synthesizer.{MultiFunctionValueSynthesizer, ParametricFunctionSynthesizer, Synthesizer}
+import lore.compiler.typing.synthesizer.{MultiFunctionValueSynthesizer, ArgumentSynthesizer, Synthesizer}
 import lore.compiler.typing.unification.Unification
 import lore.compiler.typing.{InferenceVariable, Typing}
 import lore.compiler.utils.CollectionExtensions.VectorExtension
@@ -149,15 +149,14 @@ case class Checker(returnType: Type) {
       case Expression.UntypedConstructorValue(binding, tpe, _) =>
         expectedType match {
           case FunctionType(input, _) =>
-            ParametricFunctionSynthesizer.inferTypeArguments(binding.signature, input.elements, assignments)
-              .flatMap {
-                case (typeParameterAssignments, assignments2) =>
-                  InferenceVariable.assign(
-                    tpe,
-                    binding.instantiateStructType(typeParameterAssignments).constructorSignature.functionType,
-                    assignments2
-                  )
-              }
+            ArgumentSynthesizer.inferTypeArguments(binding.signature, input.elements, assignments, expression).flatMap {
+              case ArgumentSynthesizer.Result(assignments2, typeArguments) =>
+                InferenceVariable.assign(
+                  tpe,
+                  binding.instantiateStructType(typeArguments).constructorSignature.functionType,
+                  assignments2,
+                )
+            }
 
           case _ => fallback
         }
