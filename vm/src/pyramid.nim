@@ -140,6 +140,10 @@ proc math_round(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## round(x: Real): Int
   tag_int(math.round(arg_real(0)).int64)
 
+proc math_remainder_int(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## remainder(a: Int, b: Int): Int
+  tag_int(arg_int(0) mod arg_int(1))
+
 proc math_pow(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## pow(base: Real, exponent: Real): Real
   let base = arg_real(0)
@@ -179,5 +183,6 @@ let intrinsics*: seq[Intrinsic] = @[
   intr("lore.math.floor", math_floor, 1),
   intr("lore.math.ceil", math_ceil, 1),
   intr("lore.math.round", math_round, 1),
+  intr("lore.math.remainder[int]", math_remainder_int, 2),
   intr("lore.math.pow", math_pow, 2),
 ]

@@ -39,7 +39,7 @@ func less_than_equal?(a: Any, b: Any): Boolean = less_than?(a, b) || equal?(a, b
  * TODO (pyramid): Consider adding a second parameter that represents partially computed hashes or hash state, a
  *                 technique which Julia and Rust seem to follow.
  */
-func hash(value: Any): Int = panic('Not supported yet.') //intrinsic[Int]('lore.core.hash', value)
+func hash(value: Any): Int = panic('`lore.core.hash` is not supported yet.')
 
 // TODO (pyramid): Restrict `to_string` to a Showable/ToString label type so that only types for which `to_string` is
 //                 explicitly implemented can be used in string interpolation.
@@ -59,12 +59,12 @@ trait Type
 /**
   * Returns the run-time type of the given Lore value.
   */
-func type_of(value: Any): Type = panic('Not supported yet.') //intrinsic[Type]('lore.core.type_of', value)
+func type_of(value: Any): Type = panic('`lore.core.type_of` is not supported yet.')
 
 /**
   * Whether `t1` is a subtype of `t2`.
   */
-func subtype?(t1: Type, t2: Type): Boolean = panic('Not supported yet.') //intrinsic[Boolean]('lore.core.subtype?', t1, t2)
+func subtype?(t1: Type, t2: Type): Boolean = panic('`lore.core.subtype?` is not supported yet.')
 
 /**
   * Terminates the Lore program with the given message.

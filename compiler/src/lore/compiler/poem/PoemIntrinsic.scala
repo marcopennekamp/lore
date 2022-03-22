@@ -44,6 +44,7 @@ object PoemIntrinsic {
     intr("lore.math.floor", 1),
     intr("lore.math.ceil", 1),
     intr("lore.math.round", 1),
+    intr("lore.math.remainder[int]", 2),
     intr("lore.math.pow", 2),
   )
 

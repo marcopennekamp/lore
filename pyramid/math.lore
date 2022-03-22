@@ -22,7 +22,7 @@ func round(x: Real): Int = intrinsic[Int]('lore.math.round', x)
 /**
   * Computes the integer remainder of `a` and `b`.
   */
-func remainder(a: Int, b: Int): Int = panic('Not supported yet.') //intrinsic[Int]('lore.math.remainder_int', x)
+func remainder(a: Int, b: Int): Int = intrinsic[Int]('lore.math.remainder[int]', a, b)
 
 func min(x: Int, y: Int): Int = if x < y then x else y
 func min(x: Real, y: Real): Real = if x < y then x else y

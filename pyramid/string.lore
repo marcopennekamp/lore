@@ -23,13 +23,13 @@ module String do
   /**
     * Returns the number of code units in the UTF-16 string.
     */
-  func length(string: String): Int = panic('Not supported yet.') //intrinsic[Int]('lore.string.length', string)
+  func length(string: String): Int = panic('`lore.String.length` is not supported yet.')
 
   /**
     * Returns the code unit at the given position in the UTF-16 string. If `position` is out of range, the result is
     * the empty string.
     */
-  func at!(string: String, index: Int): String = panic('Not supported yet.') //intrinsic[String]('lore.string.at!', string, index)
+  func at!(string: String, index: Int): String = panic('`lore.String.at!` is not supported yet.')
 
   /**
     * Returns the code unit at the given position in the UTF-16 string. If `position` is out of range, the result is
@@ -38,7 +38,7 @@ module String do
   func at(string: String, index: Int): Option[String] = do
     //let result = intrinsic[String]('lore.string.at', string, index)
     //if present?(result) then Some(result) else None
-    panic('Not supported yet.')
+    panic('`lore.String.at` is not supported yet.')
   end
 
   /**
