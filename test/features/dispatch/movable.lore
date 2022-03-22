@@ -1,4 +1,4 @@
-struct Position(x: Real = 0, y: Real = 0, z: Real = 0)
+struct Position(x: Real = 0.0, y: Real = 0.0, z: Real = 0.0)
 
 
 // TODO: Make it so that we can work directly on +Position instead of having to declare a Movable trait. This
@@ -36,12 +36,12 @@ func update(a: A): A where A = a
 // have a concrete type at compile-time.
 @where A <: Movable
 func update(a: A): A = do
-  move(a, 1.7, 1.5, 0)
+  move(a, 1.7, 1.5, 0.0)
   a
 end
 
 func test(): Zombie = do
-  let zombie = Zombie { name = 'Fred', position = Position(0, 1.0, 0.5) }
+  let zombie = Zombie { name = 'Fred', position = Position(0.0, 1.0, 0.5) }
   let updated_zombie = update(zombie)
   updated_zombie
 end
