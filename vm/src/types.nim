@@ -243,18 +243,35 @@ proc list_as_type*(element: Type): Type = new_list_type(element)
 ########################################################################################################################
 
 proc lower_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
-  ## Whether `parameter`'s lower bound (instantiated via the given assignments) contains `tpe`.
+  ## Whether `parameter`'s lower bound (instantiated via the given assignments) contains `tpe`. `assignments` may not
+  ## contain type variables due to subtyping optimizations.
   if parameter.lower_bound.kind != Kind.Nothing: is_subtype_substitute1(parameter.lower_bound, tpe, assignments)
   else: true
 
 proc upper_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
-  ## Whether `parameter`'s upper bound (instantiated via the given assignments) contains `tpe`.
+  ## Whether `parameter`'s upper bound (instantiated via the given assignments) contains `tpe`. `assignments` may not
+  ## contain type variables due to subtyping optimizations.
   if parameter.upper_bound.kind != Kind.Any: is_subtype_substitute2(tpe, parameter.upper_bound, assignments)
   else: true
 
 proc bounds_contain*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
-  ## Whether `parameter`'s lower and upper bound (instantiated via the given assignments) contain `tpe`.
+  ## Whether `parameter`'s lower and upper bound (instantiated via the given assignments) contain `tpe`. `assignments`
+  ## may not contain type variables due to subtyping optimizations.
   lower_bound_contains(parameter, tpe, assignments) and upper_bound_contains(parameter, tpe, assignments)
+
+proc lower_bound_contains_polyassign*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
+  ## Like `lower_bound_contains`, but `assignments` may contain type variables.
+  if parameter.lower_bound.kind != Kind.Nothing: is_subtype(substitute(parameter.lower_bound, assignments), tpe)
+  else: true
+
+proc upper_bound_contains_polyassign*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
+  ## Like `upper_bound_contains`, but `assignments` may contain type variables.
+  if parameter.upper_bound.kind != Kind.Any: is_subtype(tpe, substitute(parameter.upper_bound, assignments))
+  else: true
+
+proc bounds_contain_polyassign*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
+  ## Like `bounds_contain`, but `assignments` may contain type variables.
+  lower_bound_contains_polyassign(parameter, tpe, assignments) and upper_bound_contains_polyassign(parameter, tpe, assignments)
 
 proc as_type_arguments*(type_parameters: ImSeq[TypeParameter]): ImSeq[TypeVariable] =
   ## Creates a list of type variables that reference the given type parameters exactly.
@@ -1094,8 +1111,8 @@ proc is_subtype_impl(
   ## If a substitution mode is set, `assignments` must NOT contain any type variables. This is because the algorithm
   ## can't differentiate between type variables that should still be substituted and type variables that have come from
   ## `assignments`, presumably from a different context. For example, when building the dispatch hierarchy, the
-  ## left-hand input type `t1` may contain type variables. In such a case, the assignments should be manually
-  ## substituted into `t1´ and `is_subtype` should be used without a substitution mode.
+  ## left-hand input type `t1` may contain type variables. In such a case, the assignments, derived from fitting `t1`
+  ## into `t2`, should be manually substituted into `t2´ and `is_subtype` should be used without a substitution mode.
   ##
   ## `always inline` is used to force the compiler to inline `is_subtype_impl`, which has a measurable performance
   ## benefit. `is_subtype_impl` is only used by the one-liner functions `is_subtype`, `is_subtype_substitute1`, and
@@ -1205,9 +1222,6 @@ proc is_subtype_impl(
 
 proc is_subtype*(t1: Type, t2: Type): bool =
   ## Whether `t1` is a subtype of `t2`.
-  # `assignments` is only defined to make `is_subtype_impl` compile. Assignments should never be accessed in this
-  # substitution mode.
-  #let assignments: array[0, Type] = []
   is_subtype_impl(SubstitutionMode.None, t1, t2, [])
 
 proc is_subtype_substitute1*(t1: Type, t2: Type, assignments: open_array[Type]): bool =
@@ -1281,8 +1295,8 @@ template fits_impl(
   parameters: ImSeq[TypeParameter],
 ): ImSeq[Type] =
   ## `ts1` may contain type variables if and only if `is_poly1` is true. This allows `fits_impl` to choose the right
-  ## subtyping strategy. Because subtyping `assignments` may not contain type variables, we have to substitute before
-  ## calling `is_subtype` if `ts1` contains type variables.
+  ## subtyping strategy. Because when subtyping with a substitution mode, `assignments` may not contain type variables,
+  ## we have to substitute before calling `is_subtype` if `ts1` can contain type variables.
   if ts1.len != ts2.len:
     return nil
 
@@ -1303,8 +1317,12 @@ template fits_impl(
   for i in 0 ..< parameters.len:
     let parameter = parameters[i]
     let tpe = assignments[i]
-    if not bounds_contain(parameter, tpe, assignments):
-      return nil
+    if is_poly1:
+      if not bounds_contain_polyassign(parameter, tpe, assignments):
+        return nil
+    else:
+      if not bounds_contain(parameter, tpe, assignments):
+        return nil
 
   # Final check: `t1` must be a subtype of `t2` when substituting assignments into `t2`.
   for i in 0 ..< ts1.len:
