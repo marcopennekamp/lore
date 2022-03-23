@@ -717,7 +717,7 @@ proc evaluate(frame: FramePtr) =
       regt_set_arg(0, substitute(const_types_arg(1), frame.type_arguments))
 
     of Operation.TypeOf:
-      regt_set_arg(0, regv_get_arg(0).get_type)
+      regt_set_arg(0, regv_get_arg(1).get_type)
 
     # TODO (vm): It's probably a good idea to write a test for the `TypePath` instructions.
     of Operation.TypePathIndex:
