@@ -760,6 +760,17 @@ proc resolve(universe: Universe, poem_type_parameter: PoemTypeParameter): TypePa
 # Type resolution.                                                                                                     #
 ########################################################################################################################
 
+# TODO (assembly): Type variables are currently not resolved so that the same type variable is referentially equal
+# across all its uses. This makes type variable equality hard to define. Another issue is that we have to attach type
+# parameters after the fact, which is sloppy and can lead to errors. In fact, one such error occurred because we forgot
+# to attach type parameters to type variables contained in type parameter bounds.
+#
+# The solution would be to carry a parameter `type_variables: open_array[TypeVariable]` throughout type resolution so
+# that type variables with the same index get the same type variable instance. The major blocker that keeps us from
+# changing this is that the constants table can contain type variables, which we can't associate with a single function
+# type parameter context. The most elegant solution would probably be to associate a new constants table with every
+# function instead of a whole poem file. This would also simplify resolution in general.
+
 method resolve(poem_type: PoemType, universe: Universe): Type {.base, locks: "unknown".} =
   quit("Please implement `resolve` for all PoemTypes.")
 

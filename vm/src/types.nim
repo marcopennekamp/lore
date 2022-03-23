@@ -242,6 +242,10 @@ proc list_as_type*(element: Type): Type = new_list_type(element)
 # Type parameters.                                                                                               #
 ########################################################################################################################
 
+proc `===`(a: TypeParameter, b: TypeParameter): bool {.inline.} =
+  ## Checks the referential equality of the two type parameters.
+  cast[pointer](a) == cast[pointer](b)
+
 proc lower_bound_contains*(parameter: TypeParameter, tpe: Type, assignments: open_array[Type]): bool {.inline.} =
   ## Whether `parameter`'s lower bound (instantiated via the given assignments) contains `tpe`. `assignments` may not
   ## contain type variables due to subtyping optimizations.
@@ -784,8 +788,16 @@ proc are_equal*(t1: Type, t2: Type): bool =
     return false
 
   case t1.kind
-  # Type variables can only be referentially equal.
-  of Kind.TypeVariable: false
+  of Kind.TypeVariable:
+    # Type variables with associated parameters can be checked for equality beyond referential equality. This is
+    # especially crucial because during resolution each occurrence of a type variable gets a new allocated instance.
+    # TODO (assembly): This is a bandaid fix. We should ultimately achieve the referential equality of equal type
+    #                  variables.
+    let tv1 = cast[TypeVariable](t1)
+    let tv2 = cast[TypeVariable](t2)
+    if tv1.parameter != nil and tv2.parameter != nil: tv1.parameter === tv2.parameter
+    else: false # Referential equality has already been checked.
+
   of Kind.Any: true
   of Kind.Nothing: true
   of Kind.Real: true
@@ -943,6 +955,11 @@ proc are_open_property_types_equal(t1: StructType, t2: StructType): bool =
 ########################################################################################################################
 
 proc variable_subtypes_type(substitution_mode: SubstitutionMode, tv1: TypeVariable, t2: Type, assignments: open_array[Type]): bool =
+  # TODO (assembly): This equality check is a bandaid fix that should be caught by referential equality. We'll be able
+  #                  to change this after the referential equality of type variables has been ensured.
+  if t2.kind == Kind.TypeVariable and are_equal(tv1, t2):
+    return true
+
   case substitution_mode
   of SubstitutionMode.None, SubstitutionMode.T2:
     assert(tv1.parameter != nil)
