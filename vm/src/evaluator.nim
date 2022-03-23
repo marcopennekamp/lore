@@ -335,7 +335,7 @@ proc set_global*(variable: GlobalVariable, value: TaggedValue) =
 
 template trace_return_value(value: TaggedValue) =
   when_debug:
-    echo "Return value: ", $value, " (raw: ", cast[uint64](value), ")"
+    echo "Return value: ", $value, " :: ", value.get_type, " (raw: ", cast[uint64](value), ")"
 
 ########################################################################################################################
 # Evaluate.                                                                                                            #
