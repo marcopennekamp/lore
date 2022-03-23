@@ -1907,7 +1907,10 @@ proc stringify_open_properties(tpe: DeclaredType): string
 
 proc `$`*(tpe: Type): string =
   case tpe.kind
-  of Kind.TypeVariable: "tv" & $cast[TypeVariable](tpe).index
+  of Kind.TypeVariable:
+    let tv = cast[TypeVariable](tpe)
+    if tv.parameter != nil: tv.parameter.name & "(" & $tv.index & ")"
+    else: "tv" & $tv.index
   of Kind.Any: "Any"
   of Kind.Nothing: "Nothing"
   of Kind.Real: "Real"
