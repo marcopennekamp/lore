@@ -22,7 +22,7 @@ module bin.ban do
   func baz(): Int = 8
 end
 
-func test(): [Real] = [
+func test(): [Int | Real] = [
   foo.bar.test() + foo.bar.baz(),
   foo.bar.west() + foo.bar.east(),
   foo.doo(),
