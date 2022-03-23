@@ -1,9 +1,9 @@
 use lore.List
 
 func print_list(list: [A]): String where A = 'Generic list: $list'
-func print_list(list: [Number]): String = 'Number list: $list'
-func print_list(list: [String | Number]): String = 'String/Number list: $list'
-func print_list(list: [String | Number | Boolean]): String = 'String/Number/Boolean list: $list'
+func print_list(list: [Int]): String = 'Int list: $list'
+func print_list(list: [String | Int]): String = 'String/Int list: $list'
+func print_list(list: [String | Int | Boolean]): String = 'String/Int/Boolean list: $list'
 
 func test(): [String] = do
   let mut results: [String] = []

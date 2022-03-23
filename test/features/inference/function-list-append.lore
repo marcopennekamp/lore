@@ -4,13 +4,13 @@ use lore.Function
 struct Thing(x: Real)
 
 func test(): [Boolean] = do
-  let fs1: [Thing => Boolean] = [v => v.x == 4]
+  let fs1: [Thing => Boolean] = [v => v.x == 4.0]
   let fs2 = fs1 :+ (v => v.x < 3.4)
   let data = [
-    Thing(1),
-    Thing(4),
-    Thing(5),
-    Thing(-2),
+    Thing(1.0),
+    Thing(4.0),
+    Thing(5.0),
+    Thing(-2.0),
   ]
   data |> flat_map(t => fs2 |> map(f => f(t)))
 end
