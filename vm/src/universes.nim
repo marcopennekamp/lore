@@ -288,7 +288,11 @@ proc resolve(universe: Universe, poem_function: PoemFunction) =
   let input_type = cast[TupleType](input_type_raw)
   let output_type = universe.resolve(poem_function.output_type)
 
-  # We have to attach the type parameters to each type variable contained in the input and output types.
+  # We have to attach the type parameters to each type variable contained in the type parameters' bounds and the input
+  # and output types.
+  for type_parameter in type_parameters:
+    attach_type_parameters(type_parameter.lower_bound, type_parameters)
+    attach_type_parameters(type_parameter.upper_bound, type_parameters)
   attach_type_parameters(input_type, type_parameters)
   attach_type_parameters(output_type, type_parameters)
 
@@ -911,7 +915,7 @@ proc attach_type_parameters(tpe: Type, type_parameters: ImSeq[TypeParameter]) =
     attach_type_parameters(tpe.value, type_parameters)
 
   of Kind.Trait, Kind.Struct:
-    let tpe: DeclaredType = cast[DeclaredType](tpe)
+    let tpe = cast[DeclaredType](tpe)
     attach_type_parameters(tpe.type_arguments, type_parameters)
     attach_type_parameters(cast[ImSeq[Type]](tpe.supertraits), type_parameters)
 
