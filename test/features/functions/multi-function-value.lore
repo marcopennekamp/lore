@@ -3,7 +3,6 @@ use lore.Enum.map
 trait Animal
 struct Cat(fame: Real) extends Animal
 struct Dog(fame: Real) extends Animal
-//struct Dog[A <: Real](fame: A) extends Animal
 
 trait Vehicle
 struct Car() extends Vehicle
@@ -14,10 +13,6 @@ func coolness(Real): Real = 3.14
 func coolness(Animal): Real
 func coolness(cat: Cat): Real = 5.0 * cat.fame
 func coolness(dog: Dog): Real = 3.0 * dog.fame
-
-// TODO (assembly): We should be able to define `A` like this. However, the assembler for the multiplication craps out
-//                  because it cannot connect the type variable `A` to an operation domain of Real.
-//func coolness(dog: Dog[A]): Real where A <: Real = 3.0 * dog.fame
 
 func coolness(Vehicle): Real
 func coolness(Car): Real = 2.7

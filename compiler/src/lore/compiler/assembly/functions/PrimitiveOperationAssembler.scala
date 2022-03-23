@@ -61,12 +61,17 @@ object PrimitiveOperationAssembler {
   /**
     * Computes the basic type which represents the domain of the operation. This determines the exact operation code
     * used, such as RealAdd if the domain type is Real, or IntAdd if the domain type is Int.
+    *
+    * In niche cases, an operand might be a type variable with a basic type upper bound. For example, we could have a
+    * type variable `A <: Real`. This is nonsensical in a practical sense, but still valid Lore code. The
+    * transformation phase allows `A` to use `Real` operations, so the operation assembler also has to support this.
+    * Hence, we're checking with subtyping instead of type equality to find out the domain type.
     */
   private def getDomainType(operandTypes: Type*): BasicType = {
-    if (operandTypes.forall(_ == BasicType.Boolean)) BasicType.Boolean
-    else if (operandTypes.forall(_ == BasicType.String)) BasicType.String
-    else if (operandTypes.forall(_ == BasicType.Int)) BasicType.Int
-    else if (operandTypes.forall(t => t == BasicType.Real || t == BasicType.Int)) BasicType.Real
+    if (operandTypes.forall(_ <= BasicType.Boolean)) BasicType.Boolean
+    else if (operandTypes.forall(_ <= BasicType.String)) BasicType.String
+    else if (operandTypes.forall(_ <= BasicType.Int)) BasicType.Int
+    else if (operandTypes.forall(t => t <= BasicType.Real || t <= BasicType.Int)) BasicType.Real
     else throw CompilationException(s"Invalid operand types combination to compute domain type: $operandTypes.")
   }
 
