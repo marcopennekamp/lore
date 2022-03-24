@@ -13,6 +13,11 @@ case class NamePath(segments: Vector[String]) {
   def +(name: String): NamePath = NamePath(segments :+ name)
 
   /**
+    * Whether the first segment <b>equals</b> the given string.
+    */
+  def hasPrefix(string: String): Boolean = segments.headOption.contains(string)
+
+  /**
     * Appends the given string to the last segment of the name path.
     */
   def appendToLastSegment(string: String): NamePath = NamePath(segments.init :+ (segments.last + string))
