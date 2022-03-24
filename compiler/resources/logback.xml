@@ -33,4 +33,15 @@
     <logger name="lore.compiler.typing.blank" additivity="false">
         <appender-ref ref="minimal"/>
     </logger>
+
+    <!-- Assembly logging should only be set to debug or trace if assembly bugs need to be traced. -->
+    <logger name="lore.compiler.assembly" level="info" />
+    <logger name="lore.compiler.assembly.blank" additivity="false">
+        <appender-ref ref="minimal"/>
+    </logger>
+
+    <logger name="lore.compiler.assembly.registerAllocation" level="info" />
+    <logger name="lore.compiler.assembly.registerAllocation.blank" additivity="false">
+        <appender-ref ref="minimal"/>
+    </logger>
 </configuration>

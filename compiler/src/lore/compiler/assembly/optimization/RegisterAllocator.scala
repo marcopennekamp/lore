@@ -1,5 +1,6 @@
 package lore.compiler.assembly.optimization
 
+import com.typesafe.scalalogging.Logger
 import lore.compiler.core.CompilationException
 import lore.compiler.poem.{Poem, PoemInstruction}
 import lore.compiler.utils.CollectionExtensions.MapExtension
@@ -7,6 +8,9 @@ import lore.compiler.utils.CollectionExtensions.MapExtension
 import scala.collection.immutable.{HashMap, SortedSet}
 
 object RegisterAllocator {
+
+  val logger: Logger = Logger("lore.compiler.assembly.registerAllocation")
+  val loggerBlank: Logger = Logger("lore.compiler.assembly.registerAllocation.blank")
 
   /**
     * Reallocates the registers in the given instructions to reduce the number of used registers. The assignment
@@ -22,6 +26,11 @@ object RegisterAllocator {
     */
   def optimize(instructions: Vector[PoemInstruction], parameterCount: Int): Vector[PoemInstruction] = {
     val liveness = Liveness.compute(instructions)
+
+    logger.whenTraceEnabled {
+      Liveness.stringify(liveness).foreach(logger.trace(_))
+    }
+
     assignRegisters(instructions, parameterCount, liveness)
   }
 
@@ -91,7 +100,10 @@ object RegisterAllocator {
       if (activeAssignments.contains(variable)) {
         throw CompilationException(s"Variable `$variable` is already allocated to a register.")
       }
-      activeAssignments += variable -> registerPool.allocate()
+      val register = registerPool.allocate()
+      activeAssignments += variable -> register
+
+      logger.trace(s"Allocate register $register for variable $variable")
     }
 
     def freeVariable(variable: Poem.Register): Unit = {
@@ -101,6 +113,8 @@ object RegisterAllocator {
       val register = activeAssignments(variable)
       activeAssignments -= variable
       registerPool.free(register)
+
+      logger.trace(s"Free register $register of variable $variable")
     }
 
     // Allocate registers for the parameters, then free the ones that aren't contained in the liveness information in

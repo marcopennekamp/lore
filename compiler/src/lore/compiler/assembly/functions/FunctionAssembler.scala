@@ -1,6 +1,6 @@
 package lore.compiler.assembly.functions
 
-import lore.compiler.assembly.AsmChunk
+import lore.compiler.assembly.{AsmChunk, AssemblyPhase}
 import lore.compiler.assembly.optimization.{ConstSmasher, RegisterAllocator}
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.core.CompilationException
@@ -65,12 +65,15 @@ object FunctionAssembler {
       case Some(bodyChunk) =>
         val instructions = finalizeBody(signature, bodyChunk)
 
-        // TODO (assembly): Turn this into a trace log.
-        println(s"Instructions for function ${signature.name}:")
-        instructions.zipWithIndex.foreach { case (instruction, index) =>
-          println(s"$index: " + instruction)
+        // TODO (assembly): We should print this in a later stage in alphabetic order so that the logs are predictable
+        //                  to read.
+        AssemblyPhase.logger.whenDebugEnabled {
+          AssemblyPhase.logger.debug(s"Instructions for function $signature:")
+          instructions.zipWithIndex.foreach { case (instruction, index) =>
+            AssemblyPhase.logger.debug(s"$index: " + instruction)
+          }
+          AssemblyPhase.loggerBlank.debug("")
         }
-        println()
 
         instructions
 
@@ -114,7 +117,11 @@ object FunctionAssembler {
     var instructions = bodyChunk.instructions ++ returnInstructions
     instructions = LabelResolver.resolve(instructions, signature.position)
     instructions = ConstSmasher.optimize(instructions)
+
+    RegisterAllocator.logger.trace(s"Register allocation for function $signature:")
     instructions = RegisterAllocator.optimize(instructions, signature.parameters.length)
+    RegisterAllocator.loggerBlank.trace("")
+
     instructions
   }
 

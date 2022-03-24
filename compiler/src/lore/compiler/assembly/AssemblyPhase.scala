@@ -1,5 +1,6 @@
 package lore.compiler.assembly
 
+import com.typesafe.scalalogging.Logger
 import lore.compiler.assembly.functions.FunctionAssembler
 import lore.compiler.assembly.globals.GlobalVariableAssembler
 import lore.compiler.assembly.schemas.DeclaredSchemaAssembler
@@ -12,6 +13,9 @@ import lore.compiler.types.DeclaredSchema
 import java.nio.file.Path
 
 object AssemblyPhase {
+
+  val logger: Logger = Logger("lore.compiler.assembly")
+  val loggerBlank: Logger = Logger("lore.compiler.assembly.blank")
 
   def process(implicit compilerOptions: CompilerOptions, registry: Registry): Vector[AssembledFragment] = {
     // TODO (assembly): The assembly phase should generate PoemFragments that resemble the actual Fragments. So all
