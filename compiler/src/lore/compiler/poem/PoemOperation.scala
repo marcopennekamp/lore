@@ -11,7 +11,7 @@ object PoemOperation extends Enumeration {
   val Const = Value
   val IntConst, IntNeg, IntAdd, IntSub, IntMul, IntDiv, IntEq, IntLt, IntLte, IntToReal = Value
   val RealNeg, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte = Value
-  val BooleanConst, BooleanNot, BooleanOr, BooleanAnd = Value
+  val BooleanConst, BooleanNot, BooleanOr, BooleanAnd, BooleanEq = Value
   val StringOf, StringConcat, StringEq, StringLt, StringLte = Value
   val Tuple, TupleGet = Value
   val FunctionCall, FunctionSingle, Lambda, LambdaLocal = Value

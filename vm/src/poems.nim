@@ -112,6 +112,7 @@ type
     BooleanNot
     BooleanOr
     BooleanAnd
+    BooleanEq
 
     StringOf
     StringConcat
@@ -1184,8 +1185,8 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
   of Assign, Const, IntConst, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, LambdaLocal, ListLength,
      JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeOf: 2
   of IntAdd, IntSub, IntMul, IntDiv, IntEq, IntLt, IntLte, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte,
-     BooleanOr, BooleanAnd, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped, ListGet,
-     SymbolEq, StructEq, TypePathIndex, TypePathProperty: 3
+     BooleanOr, BooleanAnd, BooleanEq, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped,
+     ListGet, SymbolEq, StructEq, TypePathIndex, TypePathProperty: 3
   of TypePathTypeArgument: 4
   of PoemOperation.Tuple, FunctionCall, FunctionSingle, PoemOperation.Lambda, PoemOperation.Shape, PoemOperation.List,
      ListAppend, PoemOperation.Struct, StructPoly, PropertyGet, PropertySet, Intrinsic, GlobalGet, Dispatch, Call,

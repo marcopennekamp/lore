@@ -104,6 +104,9 @@ type
     BooleanAnd
       ## reg(arg0) <- reg(arg1) and reg(arg2)
 
+    BooleanEq
+      ## reg(arg0) <- reg(arg1) == reg(arg2)
+
     StringOf
       ## reg(arg0) <- string_of(reg(arg1))
       ##

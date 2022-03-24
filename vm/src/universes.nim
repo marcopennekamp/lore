@@ -689,6 +689,7 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.BooleanNot: Operation.BooleanNot
   of PoemOperation.BooleanOr: Operation.BooleanOr
   of PoemOperation.BooleanAnd: Operation.BooleanAnd
+  of PoemOperation.BooleanEq: Operation.BooleanEq
 
   of PoemOperation.StringOf: Operation.StringOf
   of PoemOperation.StringConcat: Operation.StringConcat

@@ -152,8 +152,8 @@ object PrimitiveOperationAssembler {
       }
 
       case BasicType.Boolean => operator match {
-        // TODO (assembly): Ensure that Boolean comparisons (including LT/LTE) never reach the assembly phase.
-        case BinaryOperator.Equals => throw CompilationException("Boolean equality can be resolved statically.")
+        // TODO (assembly): Ensure that Boolean less than/less than equals never reaches the assembly phase.
+        case BinaryOperator.Equals => PoemOperation.BooleanEq
         case _ => invalidOperator
       }
 

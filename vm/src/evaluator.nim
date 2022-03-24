@@ -390,6 +390,7 @@ proc evaluate(frame: FramePtr) =
     of Operation.BooleanNot: generate_unary_operator("bool", "bool", not v)
     of Operation.BooleanOr: generate_binary_operator("bool", "bool", a or b)
     of Operation.BooleanAnd: generate_binary_operator("bool", "bool", a and b)
+    of Operation.BooleanEq: generate_binary_operator("bool", "bool", a == b)
 
     of Operation.StringOf:
       let string = $regv_get_arg(1)
