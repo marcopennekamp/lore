@@ -198,6 +198,10 @@ type
       ## optimize these accesses given some type information from the compiler. `Any` can always be chosen if the type
       ## of the value isn't clear at compile time.
       ##
+      ## The instance kind `Shape` should only be used if the compiler can guarantee that the instance value is always
+      ## a shape and can never be a struct. This is NOT the case if a variable simply has a shape type, but can be used
+      ## by a smart compiler to optimize certain shape accesses.
+      ##
       ## The compiler does not need to be aware of the memory layout of struct properties to take advantage of direct,
       ## index-based property accesses. To resolve this instruction to an index-based access, the VM needs to know the
       ## struct schema, which is passed via `instance_schema`. `instance_schema` exists if and only if `instance_kind`

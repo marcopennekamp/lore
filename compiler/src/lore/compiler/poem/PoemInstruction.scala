@@ -102,10 +102,14 @@ object PoemInstruction {
     case object Trait extends InstanceKind
     case class Struct(instanceSchema: PSch) extends InstanceKind
 
+    /**
+      * Computes the instance kind from the given type. Shape types do <b>not</b> result in an instance kind `Shape`,
+      * because a shape type may hide an underlying struct value. The instance kind `Shape` would be used by a smarter
+      * compiler that can rule out struct values, for example when a global variable is initialized with a shape value.
+      */
     def of(tpe: Type): InstanceKind = tpe match {
       // TODO (assembly): This doesn't cover all types optimally. For example, an intersection or sum type of two
       //                  traits could be classified as `.Trait`, but is currently classified as `.Any`.
-      case _: ShapeType => InstanceKind.Shape
       case _: TraitType => InstanceKind.Trait
       case tpe: StructType => InstanceKind.Struct(tpe.schema)
       case _ => InstanceKind.Any
