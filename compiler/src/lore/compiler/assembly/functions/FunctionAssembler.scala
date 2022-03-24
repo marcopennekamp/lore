@@ -4,7 +4,7 @@ import lore.compiler.assembly.{AsmChunk, AssemblyPhase}
 import lore.compiler.assembly.optimization.{ConstSmasher, RegisterAllocator}
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.core.CompilationException
-import lore.compiler.poem.{Poem, PoemFunction, PoemInstruction}
+import lore.compiler.poem.{Poem, PoemFunction, PoemInstruction, PoemOperation}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature}
@@ -81,10 +81,11 @@ object FunctionAssembler {
 
   private def finalizeBody(signature: FunctionSignature, bodyChunk: AsmChunk): Vector[PoemInstruction] = {
     // We have to either return the result of `bodyChunk` from the function, or return the unit value if `bodyChunk`
-    // has no result.
+    // has no result. If the last instruction of the body is already a return instruction, we don't need to add any
+    // additional instructions.
     val returnInstructions = bodyChunk.result match {
       case Some(regValue) => Vector(PoemInstruction.Return(regValue))
-
+      case None if bodyChunk.instructions.lastOption.exists(PoemInstruction.isReturn) => Vector.empty
       case None =>
         if (TupleType.UnitType </= signature.outputType) {
           throw CompilationException("A block with a unit result can only be returned from a function that has a Unit" +
