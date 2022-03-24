@@ -12,7 +12,7 @@ object Gold extends Metal[HighPrice]
 object Silver extends Metal[MediumPrice]
 object Iron extends Metal[LowPrice]
 
-func price(Box[Metal[Price]]): Real = 0
+func price(Box[Metal[Price]]): Real = 0.0
 func price(Box[Metal[HighPrice]]): Real = 48.5
 func price(Box[Metal[MediumPrice]]): Real = 17.2
 func price(Box[Metal[LowPrice]]): Real = 1.6
