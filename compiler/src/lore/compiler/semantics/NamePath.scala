@@ -13,9 +13,14 @@ case class NamePath(segments: Vector[String]) {
   def +(name: String): NamePath = NamePath(segments :+ name)
 
   /**
+    * The first segment of the name path.
+    */
+  lazy val prefix: Option[String] = segments.headOption
+
+  /**
     * Whether the first segment <b>equals</b> the given string.
     */
-  def hasPrefix(string: String): Boolean = segments.headOption.contains(string)
+  def hasPrefix(string: String): Boolean = prefix.contains(string)
 
   /**
     * Appends the given string to the last segment of the name path.

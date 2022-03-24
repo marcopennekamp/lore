@@ -62,28 +62,14 @@ object FunctionAssembler {
     */
   def generate(signature: FunctionSignature, bodyChunk: Option[AsmChunk])(implicit registry: Registry): PoemFunction = {
     val instructions = bodyChunk match {
-      case Some(bodyChunk) =>
-        val instructions = finalizeBody(signature, bodyChunk)
-
-        // TODO (assembly): We should print this in a later stage in alphabetic order so that the logs are predictable
-        //                  to read.
-        AssemblyPhase.logger.whenDebugEnabled {
-          AssemblyPhase.logger.debug(s"Instructions for function $signature:")
-          instructions.zipWithIndex.foreach { case (instruction, index) =>
-            AssemblyPhase.logger.debug(s"$index: " + instruction)
-          }
-          AssemblyPhase.loggerBlank.debug("")
-        }
-
-        instructions
-
+      case Some(bodyChunk) => finalizeBody(signature, bodyChunk)
       case None => Vector.empty
     }
 
     val typeParameters = signature.typeParameters.map(TypeAssembler.generateParameter)
     val registerCount = PoemInstruction.registerCount(instructions)
     PoemFunction(
-      signature.name,
+      signature,
       typeParameters,
       TypeAssembler.generate(signature.inputType),
       TypeAssembler.generate(signature.outputType),
@@ -118,7 +104,7 @@ object FunctionAssembler {
     instructions = LabelResolver.resolve(instructions, signature.position)
     instructions = ConstSmasher.optimize(instructions)
 
-    RegisterAllocator.logger.trace(s"Register allocation for function $signature:")
+    RegisterAllocator.logger.trace(s"Register allocation for function `$signature`:")
     instructions = RegisterAllocator.optimize(instructions, signature.parameters.length)
     RegisterAllocator.loggerBlank.trace("")
 

@@ -47,6 +47,8 @@ object AssemblyPhase {
 
     val poemFragment = PoemFragment(poemSchemas, poemGlobalVariables, poemFunctions)
 
+    logPoemFunctions(poemFunctions)
+
     // TODO (assembly): Support introspection (probably needs VM support).
     /* val introspectionInitialization = {
       val tpe = TypeTranspiler.transpile(registry.core.Type.schema.get.representative)(Map.empty, symbolHistory)
@@ -57,6 +59,29 @@ object AssemblyPhase {
     } */
 
     Vector(AssembledFragment(Path.of("binary.poem"), PoemWriter.writeFragment(poemFragment)))
+  }
+
+  /**
+    * Logs the generated instructions of the given poem functions. The functions are ordered by their name so that
+    * individual functions (alone or in groups) can be found quickly. All Pyramid functions inside the parent module
+    * `lore` will be ordered before any non-Pyramid functions.
+    */
+  private def logPoemFunctions(poemFunctions: Vector[PoemFunction]): Unit = {
+    AssemblyPhase.logger.whenDebugEnabled {
+      poemFunctions
+        .sortWith { case (f1, f2) =>
+          if (f1.name.hasPrefix("lore") && !f2.name.hasPrefix("lore")) true
+          else if (!f1.name.hasPrefix("lore") && f2.name.hasPrefix("lore")) false
+          else f1.name.toString < f2.name.toString
+        }
+        .foreach { function =>
+          AssemblyPhase.logger.debug(s"Instructions for function `${function.signature}`:")
+          function.instructions.zipWithIndex.foreach { case (instruction, index) =>
+            AssemblyPhase.logger.debug(s"$index: " + instruction)
+          }
+          AssemblyPhase.loggerBlank.debug("")
+        }
+    }
   }
 
 }

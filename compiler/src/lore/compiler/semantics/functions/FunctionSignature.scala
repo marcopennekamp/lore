@@ -20,7 +20,7 @@ case class FunctionSignature(
   val isMonomorphic: Boolean = !isPolymorphic
   val arity: Int = parameters.size
   val functionType: FunctionType = FunctionType(inputType, outputType)
-  override def toString: String = s"$name$inputType: $outputType"
+  override def toString: String = s"$name(${inputType.elements.mkString(", ")}): $outputType"
   override val hashCode: Int = MurmurHash3.productHash((name, inputType, outputType))
 
   /**
