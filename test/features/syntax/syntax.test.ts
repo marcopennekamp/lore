@@ -129,7 +129,7 @@ Deno.test(`${base}/operators`, async () => {
   ])
 })
 
-Deno.test(`${base}/simple`, async () => {
+Deno.test(`${base}/return`, async () => {
   const result: ListValue<number> = await LoreTest.run(`${base}/return.lore`)
   assertListEquals(result, [10, 1, 5, 5])
 })
@@ -155,7 +155,7 @@ Deno.test(`${base}/strings`, async () => {
   ])
 })
 
-Deno.test(`${base}/trailing-commmas`, async () => {
+Deno.test(`${base}/trailing-commas`, async () => {
   const result: ListValue<string> = await LoreTest.run(`${base}/trailing-commas.lore`)
   assertListEquals(result, [
     'bar',

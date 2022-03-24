@@ -1,5 +1,7 @@
 use lore.String
 
+// TODO (assembly): Needs `String.length` to be implemented.
+
 // This ensures that function types are parsed with right associativity.
 func function_associativity(): Int = do
   let f: Int => String => Int = n => s => n + String.length(s)

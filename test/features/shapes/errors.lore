@@ -1,5 +1,7 @@
 use lore.Enum.[filter, map]
 
+// TODO (assembly): Needs `lore.core.are_equal?` to be implemented.
+
 type Status = #ok | #error
 type Result[A] = %{ status: Status, result: A }
 

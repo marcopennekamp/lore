@@ -1,5 +1,7 @@
-func divide_by_2(a: Real, b: Real): Real = do
-  let mut r = a
+use lore.Int.to_real
+
+func divide_by_2(a: Int, b: Int): Real = do
+  let mut r = to_real(a)
   while r > b yield r /= 2
   r
 end
@@ -20,7 +22,7 @@ func add_pairs(as: [Int], bs: [Int]): [Int] = do
   end
 end
 
-func test(): [[Real]] = do
+func test(): [[Real] | [Int]] = do
   [
     [
       divide_by_2(10, 20),

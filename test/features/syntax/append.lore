@@ -1,16 +1,16 @@
 func test(): [[Real | String]] = do
   let a = []
-  let b = [12, 14.5]
-  let c = [44, -5, 7]
+  let b = [12.0, 14.5]
+  let c = [44.0, -5.0, 7.0]
 
   [
-    a :+ 10,
+    a :+ 10.0,
     a :+ 5.5,
     a :+ 'hello',
-    b :+ 10,
+    b :+ 10.0,
     b :+ 5.5,
     b :+ 'hello',
-    c :+ 10,
+    c :+ 10.0,
     c :+ 5.5,
     c :+ 'hello',
     c :+ 'hello' :+ 'world',

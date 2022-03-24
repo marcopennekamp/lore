@@ -1,5 +1,7 @@
 use lore.Tuple.[first, second]
 
+// TODO (assembly): Needs map support.
+
 let dummy_map: #[String -> Int] = #['a' -> 0, 'b' -> 1, 'c' -> 2]
 
 func test(): [String] = do

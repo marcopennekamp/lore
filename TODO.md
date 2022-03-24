@@ -16,6 +16,7 @@
   - Rename `act` to `proc`? This would be in line with `func` and `iter`.
   - Rename `Boolean` to `Bool`? Int is also abbreviated.
   - Rename `let mut` to `var`? It's less to write and in line with `let`.
+  - Implement implicit real conversions for integer literals standing in Real contexts.
 - Allow inherited shape type properties to reference declared types placed lower in the resolution order. The reasoning for this is simple: Struct properties are immune to the resolution order, because they are resolved in a second step. This allows structs to include each other as properties. Inherited shape types essentially specify the properties of a trait, so they should enjoy the same privileges. There is nothing but complexity that keeps us from realizing the resolution of inherited shape types in a second step.
   - The VM already handles this correctly.
 - Implement a new backend for lists.

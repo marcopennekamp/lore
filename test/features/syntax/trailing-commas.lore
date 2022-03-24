@@ -2,6 +2,8 @@ use lore.core.to_string
 use lore.Map
 use lore.Tuple
 
+// TODO (assembly): Needs map support.
+
 trait Thing[A, B,]
 type Thing2[C,] = Thing[C, C,]
 

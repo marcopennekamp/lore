@@ -1,4 +1,4 @@
-func test(): [Real | Boolean] = do
+func test(): [Int | Real | Boolean] = do
   let a = 10
   let b = 5
   let c = 40
