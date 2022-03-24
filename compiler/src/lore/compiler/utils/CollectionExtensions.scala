@@ -106,7 +106,7 @@ object CollectionExtensions {
 
   implicit class MapVectorExtension[K, V](vector: Vector[Map[K, V]]) {
     /**
-      * Merges all maps in `vector` such that map values occurring at same key are merged into a vector.
+      * Merges all maps in `vector` such that map values occurring at the same key are merged into a vector.
       */
     def merged: Map[K, Vector[V]] = {
       vector.foldLeft(Map.empty[K, Vector[V]]) { case (result, map) =>
@@ -114,6 +114,18 @@ object CollectionExtensions {
           case (result, (key, value)) => result.appended(key, value)
         }
       }
+    }
+  }
+
+  implicit class MapTuple2Extension[K, V1, V2](tuple: (Map[K, V1], Map[K, V2])) {
+    /**
+      * Merges the maps in `tuple` such that map values occurring at same key are merged into a tuple. Missing values
+      * are represented by `None`.
+      */
+    def merged: Map[K, (Option[V1], Option[V2])] = {
+      val (map1, map2) = tuple
+      val keys = (map1.keys.toVector ++ map2.keys).distinct
+      keys.map(key => key -> (map1.get(key), map2.get(key))).toMap
     }
   }
 

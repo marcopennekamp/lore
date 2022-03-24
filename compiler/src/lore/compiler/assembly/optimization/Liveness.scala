@@ -1,15 +1,16 @@
 package lore.compiler.assembly.optimization
 
 import lore.compiler.poem.{Poem, PoemInstruction}
+import lore.compiler.utils.CollectionExtensions.MapTuple2Extension
 
 import scala.collection.immutable.HashMap
 import scala.collection.mutable
 
 /**
   * The liveness phase determines whether a liveness intervals starts/ends at the `use` phase or the `def` phase. An
-  * interval `(1, Def) to (2, Use)` and an interval `(2, Def) to (4, Use)` don't overlap, because the former is only
-  * live until variables have been used in instruction 2, while the latter only begins to live after the target has
-  * been defined in instruction 2.
+  * interval `1/Def to 2/Use` and an interval `2/Def to 4/Use` don't overlap, because the former is only live until
+  * variables have been used in instruction 2, while the latter only begins to live after the target has been defined
+  * in instruction 2.
   */
 sealed trait LivenessPhase {
   def <(other: LivenessPhase): Boolean = this == LivenessPhase.Use && other == LivenessPhase.Def
@@ -23,6 +24,8 @@ object LivenessPhase {
 case class LivenessPoint(line: Int, phase: LivenessPhase) {
   def <(other: LivenessPoint): Boolean = line < other.line || line == other.line && phase < other.phase
   def <=(other: LivenessPoint): Boolean = this == other || this < other
+
+  override def toString: String = s"$line/$phase"
 }
 
 case class Liveness(startPoints: Map[Poem.Register, LivenessPoint], endPoints: Map[Poem.Register, LivenessPoint])
@@ -145,6 +148,18 @@ object Liveness {
     }
 
     Liveness(startPoints.entries, endPoints.entries)
+  }
+
+  /**
+    * Stringifies the liveness entries line by line, grouping and ordering by register ID.
+    */
+  def stringify(liveness: Liveness): Vector[String] = {
+    (liveness.startPoints, liveness.endPoints).merged.toVector.sortBy(_._1.id).map {
+      case (register, (startPoint, endPoint)) =>
+        val start = startPoint.map(_.toString).getOrElse("_")
+        val end = endPoint.map(_.toString).getOrElse("_")
+        s"$register: $start to $end"
+    }
   }
 
 }
