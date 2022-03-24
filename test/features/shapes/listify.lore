@@ -14,10 +14,10 @@ func generic_listify_3D(shape: %{ x: X, y: Y, z: Z }): [X | Y | Z] = [shape.x, s
 
 
 func test(): [[Real]] = do
-  let pos_2D = Position2D(1.2, 5)
-  let pos_3D = Position3D(0, 5.1, 4.8)
-  let pos_2D_shape = %{ x: 1.2, y: 5 }
-  let pos_3D_shape = %{ x: 0, y: 5.1, z: 4.8 }
+  let pos_2D = Position2D(1.2, 5.0)
+  let pos_3D = Position3D(0.0, 5.1, 4.8)
+  let pos_2D_shape = %{ x: 1.2, y: 5.0 }
+  let pos_3D_shape = %{ x: 0.0, y: 5.1, z: 4.8 }
   [
     listify(pos_2D),
     listify(pos_3D),
