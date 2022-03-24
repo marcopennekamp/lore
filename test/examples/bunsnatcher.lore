@@ -38,8 +38,8 @@ func tool(Gardener): Tool = Spade
 func tool(Assassin): Tool = Dagger
 
 func sharpness(Tool): Real
-func sharpness(sharp_tool: Scissors | Paperknife | Dagger): Real = 1
-func sharpness(blunt_tool: Suitcase | Spade): Real = 0
+func sharpness(sharp_tool: Scissors | Paperknife | Dagger): Real = 1.0
+func sharpness(blunt_tool: Suitcase | Spade): Real = 0.0
 
 func bluntness(tool: Tool): Real = 1 - sharpness(tool)
 
@@ -174,7 +174,7 @@ func test(): [Real] = do
     Suspect('Redmond Riley', Red, Red, Tailor, Socialising, Friends),
     Suspect('Mary Monroe', Red, Blue, Assassin, Indifferent, Lovers),
     Suspect('Burke Partnerton', Black, Black, Entrepreneur, Socialising, Professional),
-    Suspect('Meredith Partnertwon', Red, Black, Entrepreneur, Calculating, Professional),
+    Suspect('Meredith Partnerton', Red, Black, Entrepreneur, Calculating, Professional),
     Suspect('Ella Marsk', Brown, Blue, Gardener, Socialising, Shunned),
     Suspect('Rooney Rudigiani', Black, Brown, Lawyer, Socialising, Lovers),
     Suspect('Goodman Niceman', Black, Black, Assassin, Honest, Cordial),

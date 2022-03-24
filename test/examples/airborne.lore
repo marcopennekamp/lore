@@ -54,10 +54,10 @@ func check(v1: Named, v2: Named): [String] = if v1 == v2 then ['${name(v1)} == $
 func test(): [String] = do
   let airbornes = [
     Bird('Raven', 1.5, 1.2),
-    Bird('Dragon', 6000.0, 12),
+    Bird('Dragon', 6000.0, 12.0),
     Bird('Crow', 1.0, 1.2),
     Plane('B-2 Spirit', 2, 52.4),
-    Plane('Cessna', 2, 12),
+    Plane('Cessna', 2, 12.0),
     Plane('Model Plane', 0, 1.2),
   ]
 
