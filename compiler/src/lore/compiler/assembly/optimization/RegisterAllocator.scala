@@ -103,15 +103,19 @@ object RegisterAllocator {
       registerPool.free(register)
     }
 
-    // Allocate registers for the parameters, then immediately free the ones that aren't contained in the liveness
-    // information.
+    // Allocate registers for the parameters, then free the ones that aren't contained in the liveness information in
+    // a second step. Don't free any of the registers until all parameters have been allocated, as an argument value is
+    // placed at a fixed register ID at run time.
     for (index <- 0 until parameterCount) {
-      val register = registerPool.allocate()
-      if (liveness.endPoints.contains(Poem.Register(index))) {
-        // The parameter is used and will later be freed.
-        activeAssignments += Poem.Register(index) -> register
-      } else {
-        registerPool.free(register)
+      val variable = Poem.Register(index)
+      allocateVariable(variable)
+    }
+
+    for (index <- 0 until parameterCount) {
+      val variable = Poem.Register(index)
+      if (!liveness.endPoints.contains(variable)) {
+        // The parameter is unused. Its register must be freed immediately.
+        freeVariable(variable)
       }
     }
 
