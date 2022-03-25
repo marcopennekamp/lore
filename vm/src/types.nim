@@ -969,6 +969,11 @@ proc variable_subtypes_type(substitution_mode: SubstitutionMode, tv1: TypeVariab
     is_subtype_substitute1(t1, t2, assignments)
 
 proc type_subtypes_variable(substitution_mode: SubstitutionMode, t1: Type, tv2: TypeVariable, assignments: open_array[Type]): bool =
+  # TODO (assembly): This equality check is a bandaid fix that should be caught by referential equality. We'll be able
+  #                  to change this after the referential equality of type variables has been ensured.
+  if t1.kind == Kind.TypeVariable and are_equal(t1, tv2):
+    return true
+
   case substitution_mode
   of SubstitutionMode.None, SubstitutionMode.T1:
     assert(tv2.parameter != nil)
@@ -1142,7 +1147,10 @@ proc is_subtype_impl(
   case t1.kind
   of Kind.TypeVariable:
     let tv1 = cast[TypeVariable](t1)
-    return variable_subtypes_type(substitution_mode, tv1, t2, assignments)
+    # We can't return immediately here, because we'll have to check type variable bounds in the other direction if `t2`
+    # is also a type variable.
+    if variable_subtypes_type(substitution_mode, tv1, t2, assignments):
+      return true
 
   of Kind.Nothing:
     return true
