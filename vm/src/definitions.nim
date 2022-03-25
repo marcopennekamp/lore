@@ -187,6 +187,10 @@ proc instantiate_single_function_unchecked*(mf: MultiFunction, type_arguments: I
 
 proc `$`*(function: Function): string = fmt"{function.multi_function.name}{function.input_type}: {function.output_type}"
 
+proc `$`*(instance: ptr FunctionInstance): string =
+  let function_type = instance.get_function_type()
+  fmt"{instance.function.multi_function.name}{function_type.input}: {function_type.output}"
+
 ########################################################################################################################
 # Constants.                                                                                                           #
 ########################################################################################################################

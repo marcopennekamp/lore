@@ -46,16 +46,15 @@ proc find_dispatch_target*(mf: MultiFunction, input_types: open_array[Type], tar
           break
     if is_most_specific: most_specific.add(candidate)
 
-  # TODO (vm): Improve these error messages by including the input type and the candidates (if ambiguous).
-  if most_specific.len == 0:
-    quit(fmt"Cannot call multi-function {mf.name}: empty fit.")
-  elif most_specific.len > 1:
-    quit(fmt"Cannot call multi-function {mf.name}: ambiguous call.")
+  if unlikely(most_specific.len == 0):
+    quit(fmt"Cannot call multi-function {mf.name} given input types `{input_types}`: empty fit.")
+  elif unlikely(most_specific.len > 1):
+    let signature_strings = new_immutable_seq(candidates).join("\n")
+    quit(fmt"Cannot call multi-function {mf.name} given input types `{input_types}`: ambiguous call. Candidates:{'\n'}{signature_strings}.")
 
   target = most_specific[0][]
   if target.function.is_abstract:
-    # TODO (vm): Specify the exact offending function.
-    quit(fmt"Cannot call multi-function {mf.name}: the chosen target function is abstract.")
+    quit(fmt"Cannot call multi-function {mf.name}: the chosen target function `{target.function}` is abstract.")
 
 proc find_dispatch_target_from_arguments*(mf: MultiFunction, target: var FunctionInstance) =
   find_dispatch_target(mf, [], target)
