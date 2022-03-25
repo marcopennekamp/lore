@@ -2,9 +2,9 @@ use lore.Enum._
 
 func test(): [Real] = do
   let shapes = [
-    BoundingBox(0, 10, -5, 20),
-    Circle(0, 5, 2.7),
-    Rectangle(-5, -5, 20, 77),
+    BoundingBox(0.0, 10.0, -5.0, 20.0),
+    Circle(0.0, 5.0, 2.7),
+    Rectangle(-5.0, -5.0, 20.0, 77.0),
   ]
   shapes |> map(area)
 end

@@ -27,9 +27,9 @@ func check(s1: Shape, s2: Shape): [String] = do
 end
 
 func test(): [String] = do
-  let rect = Rectangle(0, 0, 6, 8)
-  let box = BoundingBox(2, 10, 8, 14)
-  let circle = Circle(0, 0, 5)
+  let rect = Rectangle(0.0, 0.0, 6.0, 8.0)
+  let box = BoundingBox(2.0, 10.0, 8.0, 14.0)
+  let circle = Circle(0.0, 0.0, 5.0)
 
   [
     check(rect, box),
