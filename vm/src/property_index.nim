@@ -73,8 +73,9 @@ proc find_result_edge(property_index: PropertyIndex, name: open_array[char]): In
   var current_node: IndexNode = property_index.root
   while true:
     let significant = name.significant_at(current_node.position)
+    let edge_count = current_node.edge_count
     var i = 0'u16
-    while i < current_node.edge_count:
+    while i < edge_count:
       let edge = current_node.edges[i]
       if edge.significant == significant:
         if edge.is_result:
@@ -85,7 +86,7 @@ proc find_result_edge(property_index: PropertyIndex, name: open_array[char]): In
       i += 1
 
     # No edge corresponds to the current `significant`: the name isn't included in the property index.
-    if i == current_node.edge_count:
+    if i == edge_count:
       return nil
 
 proc find_offset*(property_index: PropertyIndex, name: open_array[char]): uint16 =
