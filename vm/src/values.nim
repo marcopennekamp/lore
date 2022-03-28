@@ -372,9 +372,7 @@ func `$`*(tagged_values: seq[TaggedValue]): string = tagged_values.join(", ")
 func `$`*(value: Value): string =
   case value.tpe.kind
   of Kind.Real: $cast[RealValue](value).real
-  # TODO (assembly): This function is also used as the default implementation of `lore.core.to_string`, so the single
-  #                  quotes should be removed again.
-  of Kind.String: "'" & cast[StringValue](value).string & "'"
+  of Kind.String: cast[StringValue](value).string
   of Kind.Tuple:
     let tpl = cast[TupleValue](value)
     "(" & $tpl.elements.join(", ") & ")"
