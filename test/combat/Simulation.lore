@@ -22,7 +22,7 @@ end
 
 struct CombatantState
   combatant: Combatant
-  mut health: Real
+  mut health: Int
   mut dodge: Real = 0.0
 end
 
