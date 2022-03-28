@@ -34,7 +34,7 @@ proc resolve(universe: Universe, poem_value: PoemValue): TaggedValue
 
 template resolve_many(universe, sequence): untyped = sequence.map(o => universe.resolve(o))
 
-proc resolve_instructions(poem_function: PoemFunction, universe: Universe)
+proc resolve_instructions(poem_function: PoemFunction, universe: Universe): seq[Instruction]
 
 proc attach_type_parameters(tpe: Type, type_parameters: ImSeq[TypeParameter])
 proc attach_type_parameters(types: ImSeq[Type], type_parameters: ImSeq[TypeParameter])
@@ -90,7 +90,7 @@ proc attach_constants(universe: Universe, poem: Poem) =
   let constants = universe.resolve(poem.constants)
   for poem_function in poem.functions:
     poem_function.resolved_function.constants = constants
-    poem_function.resolve_instructions(universe)
+    poem_function.resolved_function.instructions = poem_function.resolve_instructions(universe)
 
 proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
   let constants = new_constants()
@@ -330,19 +330,22 @@ type
   InstructionResolutionContext = ref object
     universe: Universe
     poem_function: PoemFunction
-    pc_offset: int
-      ## The program counter offset grows when a PoemInstruction generates more than one Instruction. The target
-      ## locations of all following jump instructions must be incremented by this offset.
+    instructions: seq[Instruction]
+    location_mapping: seq[int]
+      ## Maps each original PoemInstruction location to the first corresponding Instruction location, which might
+      ## differ once multiple Instructions are generated for a single PoemInstruction. Each index of the sequence
+      ## represents the original PoemInstruction location number, while sequence values are Instruction location
+      ## numbers. This is used to update the target location of jump instructions.
 
 proc get_function(context: InstructionResolutionContext): Function = context.poem_function.resolved_function
 proc get_constants(context: InstructionResolutionContext): Constants = context.get_function.constants
 
 proc add_instructions(context: InstructionResolutionContext, instructions: open_array[Instruction]) =
-  ## Adds the given instructions to the resolved function. This function assumes that the given instructions were
-  ## spawned from a single PoemInstruction and increments the `pc_offset` accordingly.
+  ## Adds the given instructions to the context. This function assumes that the given instructions were spawned from a
+  ## single PoemInstruction and updates `location_mapping` accordingly.
+  context.location_mapping.add(context.instructions.len)
   for instruction in instructions:
-    context.get_function.instructions.add(instruction)
-  context.pc_offset += instructions.len - 1
+    context.instructions.add(instruction)
 
 proc generate_xary_application(
   operation_opl: Operation,
@@ -373,21 +376,28 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
 method resolve_instruction(poem_instruction: PoemInstruction, context: InstructionResolutionContext): seq[Instruction] {.base, locks: "unknown".} =
   quit("Please implement `resolve_instruction` for all poem instructions.")
 
-proc resolve_instructions(poem_function: PoemFunction, universe: Universe) =
-  let context = InstructionResolutionContext(universe: universe, poem_function: poem_function, pc_offset: 0)
+proc resolve_instructions(poem_function: PoemFunction, universe: Universe): seq[Instruction] =
+  let context = InstructionResolutionContext(
+    universe: universe,
+    poem_function: poem_function,
+    instructions: @[],
+    location_mapping: @[],
+  )
   for poem_instruction in poem_function.instructions:
     let instructions = poem_instruction.resolve_instruction(context)
     context.add_instructions(instructions)
 
+  # Update jump locations in a second iteration, after the location mapping is built during the first iteration.
+  for instruction in context.instructions.mitems:
+    if instruction.operation.is_jump_operation:
+      let target_index = int(instruction.arg(0))
+      instruction.set_arg(0, uint16(context.location_mapping[target_index]))
+
+  context.instructions
+
 method resolve_instruction(poem_instruction: PoemSimpleInstruction, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   let operation = simple_poem_operation_to_operation(poem_instruction.operation)
-  var instruction = new_instruction(operation, poem_instruction.arguments)
-
-  # We have to add `pc_offset` to the `pc` of all jump instructions.
-  if operation.is_jump_operation:
-    instruction.set_arg(0, uint16(int(instruction.arg(0)) + context.pc_offset))
-
-  @[instruction]
+  @[new_instruction(operation, poem_instruction.arguments)]
 
 method resolve_instruction(poem_instruction: PoemInstructionTuple, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   generate_xary_application(
