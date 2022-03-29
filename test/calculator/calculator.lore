@@ -20,7 +20,7 @@ module Stack do
       // For now, instead of throwing an error when not enough elements are on the stack to perform an operation, we
       // assume an endless well of zeroes.
       if empty?(stack.elements)
-        return 0
+        return 0.0
       end
 
       let result = List.last(stack.elements)

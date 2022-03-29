@@ -2,9 +2,9 @@ module Tokenizer
 
 use lore.Enum.[map, empty?]
 use lore.IO.println
-use lore.Number
 use lore.Option
 use lore.Option.[Some, None, or_else]
+use lore.Real
 use lore.String
 use lore.Tuple
 
@@ -20,9 +20,11 @@ func tokenize(term: String): Option[[Token]] = do
   while position < term_length
     position = skip_whitespace(term, position)
 
+    // Mutable variables like `position` cannot be captured in anonymous functions yet.
+    let current_position = position
     let result_tuple_option =
       try_operand(term, position)
-        |> or_else(() => try_operator(term, position))
+        |> or_else(() => try_operator(term, current_position))
 
     // TODO (case): This could be pattern-matched. Alternatively, we could support non-local returns in anonymous
     //              functions and write `|> get_or_else(() => return None)`.
@@ -45,27 +47,33 @@ end
 func skip_whitespace(term: String, position: Position): Position = do
   let mut pos = position
   let term_length = String.length(term)
-  while pos < term_length && String.at!(term, pos) |> String.whitespace?
+  while pos < term_length && String.at!(term, pos) |> String.all_whitespace?
     pos += 1
   end
   pos
 end
 
+/**
+  * Tries to parse a real-value operand.
+  */
 func try_operand(term: String, position: Position): Option[(Operand, Position)] = do
   let mut number_string = ''
   let mut pos = position
   let term_length = String.length(term)
 
-  while pos < term_length && String.at!(term, pos) |> String.digits?
+  while pos < term_length && String.at!(term, pos) |> String.all_digits?
     number_string = String.concat(number_string, String.at!(term, pos))
     pos += 1
   end
 
+  // Mutable variables like `pos` cannot be captured in anonymous functions yet.
+  let result_pos = pos
+
   // If not a single digit has been parsed, `Number.parse` will consume the empty string and return None.
   // TODO (syntax): This is essentially a trailing lambda.
-  number_string |> Number.parse |> map(number => do
+  number_string |> Real.parse |> map(number => do
     let operand = Operand(number)
-    (operand, pos)
+    (operand, result_pos)
   end)
 end
 
