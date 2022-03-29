@@ -16,6 +16,15 @@ func f3(): Int = do
   0
 end
 
+// TODO: Implement this test once non-local returns have been added.
+//func f4(): Int = do
+//  let lambda = () => do
+//    return 10
+//  end
+//  lambda()
+//  5
+//end
+
 let v1: Int = do
   if 'x' != 'y' then return 5 else return 10
 end

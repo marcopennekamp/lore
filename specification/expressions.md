@@ -75,7 +75,7 @@ a /= b  // a = a / b
 
 ### Return
 
-The **return** top-level expression returns a value from a function. The syntax is `return expr`, with `expr` evaluating to the returned value. Use return only if you 'desperately' need to return early from a function. Prefer using blocks and control structures as expressions. Return evaluates to the `Nothing` type, since it interrupts code execution.
+The **return** top-level expression returns a value from a function. The syntax is `return expr`, with `expr` evaluating to the returned value. Use return only if you need to return early from a function. Prefer using blocks and control structures as expressions. The return expression evaluates to the `Nothing` type, since it interrupts code execution.
 
 ###### Syntax Example
 
@@ -105,6 +105,8 @@ Lore's semantics would not be well defined if we allowed such constellations. Re
 - **Variable declarations and assignments:** The right-hand side may contain returns.
 - **`if` and `cond` expressions:** The conditions may *not* contain returns, but the bodies may.
 - **`while` and `for` expressions:** The conditions/extractors may *not* contain returns, but the bodies may.
+
+Anonymous function bodies may also not contain return expressions at this time. The goal is to implement non-local returns. Allowing local returns now and changing their semantics later would break existing Lore code, so we are disallowing any returns inside anonymous functions. 
 
 
 
@@ -238,7 +240,7 @@ Two tuples are equal if they have the same size and their elements are equal.
 
 In addition to multi-functions, Lore supports **anonymous functions**. An anonymous function is created as an immediate function value without dispatch mechanics. Parameter types may be specified optionally, but can also be inferred from *local* context. The return type of the anonymous function is always inferred.
 
-**TODO:** How should we handle returns in anonymous functions?
+Anonymous functions may not contain return expressions, as noted in the section about return expressions. They will eventually be supported as non-local returns.
 
 ###### Example
 

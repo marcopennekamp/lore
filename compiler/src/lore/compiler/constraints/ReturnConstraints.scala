@@ -23,7 +23,9 @@ object ReturnConstraints {
     * - Any return must not be followed by code in the same block. This effectively disallows dead code after a return
     *   top-level expression.
     * - Constructions such as `if ({ return 0 }) a else b` are not allowed. Returning should only be possible from
-    *   top-level expressions.
+    *   top-level expressions. This verification also currently excludes returns inside the bodies of anonymous
+    *   functions, which will later be implemented as non-local returns and are as such prohibited entirely to preserve
+    *   backwards compatibility.
     */
   def verify(body: TopLevelExprNode)(implicit reporter: Reporter): Unit = {
     verifyNoDeadCode(body)
