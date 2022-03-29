@@ -1,6 +1,6 @@
 use lore.Tuple.[first, second]
 
-// TODO (assembly): Needs map support.
+// TODO (maps): Needs map support.
 
 let dummy_map: #[String -> Int] = #['a' -> 0, 'b' -> 1, 'c' -> 2]
 
