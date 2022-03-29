@@ -4,6 +4,7 @@ module List do
   use Enum._
   use Option._
 
+  // TODO (assembly): `get!` should panic if the index is out of bounds.
   @where A
   func get!(list: [A], index: Int): A = intrinsic[A]('lore.list.get!', list, index)
 

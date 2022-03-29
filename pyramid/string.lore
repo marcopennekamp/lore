@@ -8,48 +8,120 @@ use lore.Option
 use lore.Option.[Some, None]
 
 /**
-  * Please note: This version of string handling is currently bound to the way that our target language, Javascript,
-  * handles strings. In particular, the `length` of a string doesn't necessarily correspond to the number of graphemes
-  * in the string, and neither does `at` always return a grapheme.
+  * Strings are UTF-8 encoded. Its basic functions like `length` and `at` operate with code points as elements. That
+  * is, the length of the string doesn't necessarily correspond to its byte size. Because code point-based operations
+  * often exhibit linear instead of constant time, there are additional functions such as `at_index`, `byte_size` and
+  * `byte_at` which support more efficient string handling.
   *
-  * TODO (assembly): We need to completely rewrite this module again as strings have changed going from JS to the VM.
-  *                  `length` and `at!` need to work on code points, but we should also provide functions `byte_size`,
-  *                  `byte_get!`, and `byte_at!` (next code point starting from the given byte index, which is a hybrid
-  *                  of `at!` and `byte_get!`), as well as provide an iterator that can be used to efficiently iterate
-  *                  through a string. The iterator itself can be written in Lore and should use `byte_size` and
-  *                  `byte_at!`. The string's length should be cached by the VM.
+  * In the context of strings, `position` and `index` are two different terms. Positions refer to code points, while
+  * indices refer to bytes. For example, the `'b'` in the string `'Über'` has position 1, but index 2, because `'Ü'`
+  * is encoded as two bytes in UTF-8.
   */
 module String do
   /**
-    * Returns the number of code units in the UTF-16 string.
+    * Returns the number of code points in the UTF-8 string.
+    *
+    * `length` runs in linear time due to its handling of code points.
     */
-  func length(string: String): Int = panic('`lore.String.length` is not supported yet.')
-
-  /**
-    * Returns the code unit at the given position in the UTF-16 string. If `position` is out of range, the result is
-    * the empty string.
-    */
-  func at!(string: String, index: Int): String = panic('`lore.String.at!` is not supported yet.')
-
-  /**
-    * Returns the code unit at the given position in the UTF-16 string. If `position` is out of range, the result is
-    * `None`.
-    */
-  func at(string: String, index: Int): Option[String] = do
-    //let result = intrinsic[String]('lore.string.at', string, index)
-    //if present?(result) then Some(result) else None
-    panic('`lore.String.at` is not supported yet.')
-  end
+  func length(string: String): Int = intrinsic[Int]('lore.string.length', string)
 
   /**
     * Whether `string` is empty.
     */
-  func empty?(string: String): Boolean = length(string) == 0
+  func empty?(string: String): Boolean = byte_size(string) == 0
 
   /**
-    * Whether `string` has at least one grapheme.
+    * Whether `string` has at least one code point.
     */
   func present?(string: String): Boolean = !empty?(string)
+
+  /**
+    * Whether `position` is in the string's length bounds.
+    *
+    * `bounds_contain?` runs in linear time due to its handling of code points.
+    */
+  func bounds_contain?(string: String, position: Int): Boolean = position >= 0 && position < length(string)
+
+  /**
+    * Returns the code point at the given position in the UTF-8 string. If `position` is out of range, `at!` panics.
+    *
+    * `at!` runs in linear time due to its handling of code points.
+    */
+  func at!(string: String, position: Int): String = do
+    if !bounds_contain?(string, position)
+      panic('Position out of bounds for `String.at!`: $position.')
+    end
+    intrinsic[String]('lore.string.at!', string, position)
+  end
+
+  /**
+    * Returns the code point at the given position in the UTF-8 string. If `position` is out of range, the result is
+    * `None`.
+    *
+    * `at` runs in linear time due to its handling of code points.
+    */
+  func at(string: String, position: Int): Option[String] = do
+    if bounds_contain?(string, position)
+      // Using the intrinsic instead of `at!` avoids a second bounds check.
+      Some(intrinsic[String]('lore.string.at!', string, position))
+    else None
+  end
+
+  /**
+    * Returns the code point starting at the given byte `index`. If `index` is out of range, `at_index!` panics.
+    *
+    * `at_index!` is used to get a full code point via a byte index *in constant time*.
+    */
+  func at_index!(string: String, index: Int): String = do
+    if !byte_bounds_contain?(string, index)
+      panic('Index out of bounds for `at_index!`: $index.')
+    end
+    intrinsic[String]('lore.string.at_index!', string, index)
+  end
+
+  /**
+    * Returns the code point starting at the given byte `index`. If `index` is out of range, returns None.
+    *
+    * `at_index` is used to get a full code point via a byte index *in constant time*.
+    */
+  func at_index(string: String, index: Int): Option[String] = do
+    if byte_bounds_contain?(string, index)
+      // Using the intrinsic instead of `at_index!` avoids a second bounds check.
+      Some(intrinsic[String]('lore.string.at_index!', string, index))
+    else None
+  end
+
+  /**
+    * Returns the byte size of the string.
+    *
+    * `byte_size` runs in constant time.
+    */
+  func byte_size(string: String): Int = intrinsic[Int]('lore.string.byte_size', string)
+
+  /**
+    * Whether `index` is in the string's byte size bounds.
+    */
+  func byte_bounds_contain?(string: String, index: Int): Boolean = index >= 0 && index < byte_size(string)
+
+  /**
+    * Returns the byte at the given `index`. If `index` is out of range, `byte_at!` panics.
+    */
+  func byte_at!(string: String, index: Int): Int = do
+    if !byte_bounds_contain?(string, index)
+      panic('Index out of bounds for `byte_at!`: $index.')
+    end
+    intrinsic[Int]('lore.string.byte_at!', string, index)
+  end
+
+  /**
+    * Returns the byte at the given `index`. If `index` is out of range, returns `None`.
+    */
+  func byte_at(string: String, index: Int): Option[Int] = do
+    if byte_bounds_contain?(string, index)
+      // Using the intrinsic instead of `byte_at!` avoids a second bounds check.
+      Some(intrinsic[Int]('lore.string.byte_at!', string, index))
+    else None
+  end
 
   /**
     * Concatenates `a` and `b` into a single string.
@@ -81,6 +153,11 @@ module String do
   end
 
   /**
+    * Prefixes `string` with `prefix` and suffixes it with `suffix`.
+    */
+  func affix(string: String, prefix: String, suffix: String): String = '$prefix$string$suffix'
+
+  /**
     * Whether the given predicate is true for all code units of the string.
     *
     * TODO (pyramid): Functions like `all?` suggest that String should also be treated as an Enum. `at` could be
@@ -98,28 +175,20 @@ module String do
     true
   end
 
-  /**
-    * Prefixes `string` with `prefix` and suffixes it with `suffix`.
-    */
-  func affix(string: String, prefix: String, suffix: String): String = '$prefix$string$suffix'
-
   // TODO (pyramid): We should probably replace the following functions with regex solutions. Also look at how
   //                 fastparse solves this to keep performance high.
 
   /**
     * Whether the given string consists entirely of whitespace characters.
-    *
-    * TODO (pyramid): Rename to `all_whitespace?`.
     */
-  func whitespace?(string: String): Boolean = string |> all?(c => c == ' ' || c == '\t' || c == '\n' || c == '\r')
+  func all_whitespace?(string: String): Boolean = string |> all?(c => c == ' ' || c == '\t' || c == '\n' || c == '\r')
 
   /**
     * Whether the given string consists entirely of digits from 0 to 9.
     *
-    * TODO (pyramid): Rename to `all_digits?`.
     * TODO (pyramid): This is obviously not optimized.
     */
-  func digits?(string: String): Boolean = string |> all?(c => c == '0' || c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9')
+  func all_digits?(string: String): Boolean = string |> all?(c => c == '0' || c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9')
 end
 
 module core do
