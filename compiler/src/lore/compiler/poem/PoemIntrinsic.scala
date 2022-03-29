@@ -24,6 +24,10 @@ object PoemIntrinsic {
     intr("lore.real.nan?", 1),
 
     intr("lore.string.length", 1),
+    intr("lore.string.at!", 2),
+    intr("lore.string.at_index!", 2),
+    intr("lore.string.byte_size", 1),
+    intr("lore.string.byte_at!", 2),
 
     intr("lore.tuple.get!", 2, isVirtual = true),
 

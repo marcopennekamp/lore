@@ -1,6 +1,7 @@
 from std/math import nil
 import std/strformat
 import std/strutils
+from std/unicode import runeLen, runeAt, runeAtPos, toUTF8
 
 from definitions import FramePtr, Intrinsic, IntrinsicFunction
 from evaluator import nil
@@ -60,7 +61,21 @@ proc real_is_nan(frame: FramePtr, arguments: Arguments): TaggedValue =
   tag_boolean(arg_real(0) == NaN)
 
 proc string_length(frame: FramePtr, arguments: Arguments): TaggedValue =
+  tag_int(arg_string(0).runeLen)
+
+proc string_at(frame: FramePtr, arguments: Arguments): TaggedValue =
+  let rune = arg_string(0).runeAtPos(int(arg_int(1)))
+  new_string_value_tagged(rune.toUTF8)
+
+proc string_at_index(frame: FramePtr, arguments: Arguments): TaggedValue =
+  let rune = arg_string(0).runeAt(arg_int(1))
+  new_string_value_tagged(rune.toUTF8)
+
+proc string_byte_size(frame: FramePtr, arguments: Arguments): TaggedValue =
   tag_int(arg_string(0).len)
+
+proc string_byte_at(frame: FramePtr, arguments: Arguments): TaggedValue =
+  tag_int(arg_string(0)[arg_int(1)].ord)
 
 proc list_concat(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## concat(list1: [A], list2: [B]): [A | B]
@@ -165,8 +180,11 @@ let intrinsics*: seq[Intrinsic] = @[
   intr("lore.real.parse", real_parse, 1),
   intr("lore.real.nan?", real_is_nan, 1),
 
-  #binary("lore.string.at", string_at),
   intr("lore.string.length", string_length, 1),
+  intr("lore.string.at!", string_at, 2),
+  intr("lore.string.at_index!", string_at_index, 2),
+  intr("lore.string.byte_size", string_byte_size, 1),
+  intr("lore.string.byte_at!", string_byte_at, 2),
 
   intr("lore.list.concat", list_concat, 2),
   intr("lore.list.slice", list_slice, 3),
