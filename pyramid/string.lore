@@ -159,18 +159,16 @@ module String do
 
   /**
     * Whether the given predicate is true for all code units of the string.
-    *
-    * TODO (pyramid): Functions like `all?` suggest that String should also be treated as an Enum. `at` could be
-    *                 renamed to `get`.
     */
   func all?(string: String, predicate: String => Boolean): Boolean = do
-    let len = length(string)
+    let size = byte_size(string)
     let mut i = 0
-    while i < len
-      if !predicate(at!(string, i))
+    while i < size
+      let codepoint = at_index!(string, i)
+      if !predicate(codepoint)
         return false
       end
-      i += 1
+      i += byte_size(codepoint)
     end
     true
   end
