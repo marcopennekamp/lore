@@ -44,7 +44,7 @@ You are welcome to clone the repository and make it work yourself, however. Here
    - The folder `pyramid` contains all standard types and functions you can use. As there is currently no HTML-based documentation, you're encouraged to read the source code for documentation. Notice how the test examples import various types and functions from the module `lore`. You will have to do the same in your own code.
    - The parser's error reporting is currently very bad, as Lore uses a parser combinator instead of a handwritten parser. It frequently reports errors on the wrong line with cryptic error messages. Don't get discouraged if you encounter such an error! Try to comment out parts of the code until it compiles to single out the issue. If you're stuck, don't hesitate to contact me (info below).
 
-I have only tested this workflow on Linux and you might run into additional problems if you're using another operating system. If you have any questions or issues, feel free to email me at my [Github profile's](https://github.com/marcopennekamp) listed email address, or contact Marco#9733 on Discord.
+I have only tested this workflow on Linux and you might run into additional problems if you're using another operating system. If you have any questions or issues, feel free to email me at my [Github profile's](https://github.com/marcopennekamp) listed email address, or contact `Marco#9733` on Discord.
 
 
 

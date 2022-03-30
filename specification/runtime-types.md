@@ -1,4 +1,4 @@
-# Runtime Types
+# Run-time Types
 
 Since Lore decides multiple dispatch based on actual types at run-time, we have to decide *when* and *how* certain types get assigned. Due to reasons of semantics, practicality, and performance, we cannot type all values to arbitrary depth at run-time.
 
