@@ -34,7 +34,8 @@
   - Add clear covariance/contravariance type semantics.
   - Make maps immutable and support this in the runtime.
   - Implement a clear appends operation for maps and make them generally usable.
-  - Change the map syntax to `` to avoid clashing with hash sets.
+  - Change the map syntax to avoid clashing with hash sets.
+  - Update `runtime-types.md`.
   - Clear all `TODO (maps)` entries.
 - Equality and ordering:
   - Well-defined equality and order semantics for all kinds of types, including shapes, tuples, lists, maps, and so on, using `are_equal?` and `less_than?`. These functions should be specializable for specific types, such as specific lists and maps.
@@ -109,11 +110,6 @@
 
 - We might want to "degrade" the abstractness and totality constraints to warnings. The type system is so complex that the compiler cannot understand all occurrences of abstract types. Sometimes types are not really abstract, but practically/pragmatically abstract through convention. (Such as `Metal[Price]` in `schemas/goods.lore`.) In these cases, we shouldn't force the programmer to define a function that they want to keep abstract. This is rather in the spirit of dynamic languages, but would enrich Lore, I think.
   - There might also come a time when the **totality constraint** cannot be fully verified for a particularly complex multi-function. For example, when we have to cycle through an exponentially growing number of concrete subtype combinations, the compiler might choke, making the program virtually uncompilable. We might need to implement upper bounds on the number of subtypes tested.
-
-
-#### Specification
-
-- Finish writing the `runtime-types` document.
 
 
 #### Testing
