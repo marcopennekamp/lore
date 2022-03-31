@@ -32,7 +32,7 @@ A **variable declaration** is a top-level expression that lets you define a new 
 
 Variables can be **immutable or mutable**. Only mutable variables can be changed after their initial declaration. We recommend to declare all variables as immutable unless mutability is specifically needed. This is also one reason why the mutability syntax is relatively verbose.
 
-A **variable expression** is an expression that evaluates to the value of its named variable. A variable expression may also evaluate to the function value of a multi-function with the same name.
+A **variable expression** is an expression that evaluates to the value of its named variable.
 
 Variable **identifiers** may be a combination of letters, numbers, underscores, and question marks.
 
@@ -407,7 +407,7 @@ target(a1, a2, ...)
 
 - If the target is a **multi-function**, the compiler will simulate multiple dispatch to find the correct function implementation. The semantics of such multi-function calls are defined in [multi-functions](multi-functions.md).
 
-  We say *multi-function call*, because it only becomes a function call at run-time, when a function has been chosen according to the dispatch semantics. At compile-time, we are calling a whole multi-function with a bounded but unknown input type.
+  We say *multi-function call*, because it only becomes a function call once a function has been chosen according to the dispatch semantics.
 
 - If the target is a **function value**, the function will be called directly at run time. Anonymous functions and constructors will be called directly, but if the function value refers to a multi-function, multiple dispatch will of course still be performed.
 
@@ -447,6 +447,30 @@ String.join(
 
 
 
+### Multi-Function Values
+
+A **multi-function value** is a *function value* created from a multi-function referenced by name but not called, e.g. `to_string` in `map(list, to_string)`. Compile-time dispatch is simulated with the expected argument types, which decides the output type of the function value. For example, if the argument types are `(A)` and dispatch finds a function `foo(a: A): B`, the resulting type of the multi-function value would be `A => B`. At run time, calling a multi-function value performs multiple dispatch normally, even though the multi-function is "hidden" behind a function value interface.
+
+Multi-function values allow passing multi-functions as regular functions without wrapping them in an anonymous function. Their use is central to concise functional programming in Lore.
+
+###### Example
+
+```
+[1, 2, 3] |> map(to_string)
+```
+
+`to_string` is a multi-function that is passed as a function value to the multi-function call of `map`. Dispatch of `to_string` is simulated with the input type `(Int)`, resulting in an output type `String`. The function value's type thus becomes `Int => String`. 
+
+If a type context cannot be inferred, a variable declaration or a type ascription can be used to inform the multi-function value's type:
+
+```
+let f: Int => String = to_string
+
+to_string :: Int => String
+```
+
+
+
 ### Fixing Functions at Compile-Time
 
 Instead of deciding dispatch at run-time, you can **fix a function at compile-time:**
@@ -455,7 +479,7 @@ Instead of deciding dispatch at run-time, you can **fix a function at compile-ti
 f.fixed[T1, T2, ...]
 ```
 
-The expression evaluates to a **function value** which may be subsequently invoked or passed around.
+The expression evaluates to a **function value** which may be subsequently invoked or passed around. See the section about fixed functions in the [multi-functions](multi-functions.md) document for a more in-depth explanation.
 
 
 

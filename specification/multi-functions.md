@@ -296,12 +296,6 @@ end
 
 
 
-### Multi-Function Values
-
-When a multi-function isn't immediately called, a **multi-function value** is created. This is a function value taken from the multi-function based on the given type context. For example, if we have an expression `map([1, 2, 3], foo)` and `foo` is a multi-function, the type inference algorithm will simulate multiple dispatch for the input type `(Int)`, because we're mapping over a list of numbers. If exactly one function `foo: Int => String` is in the fit, the type of the resulting function value will also be `Int => String`. At run time, multiple dispatch is still performed every time the function value is called.
-
-
-
 ### Practical Uses
 
 Multi-functions and multiple dispatch have a multitude of **practical uses**. Truly, they are *the* core of Lore, and thus at the center of many language features and best practices.
