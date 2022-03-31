@@ -49,9 +49,9 @@ end
 
 Lore supports **immutable global variables**. Every global variable has a type and must be initialized immediately.
 
-Global variables may be initialized with complex expressions. However, similar to how object properties are handled, an expression that refers to a function, constructor, object, or another global variable requires the global variable to be initialized **lazily**. Cyclical use is currently undefined behavior and will lead to run-time errors.
+Global variables may be initialized with complex expressions. However, similar to how object properties are handled, an expression that refers to a function, constructor, object, or another global variable requires the global variable to be initialized **lazily**. Cyclical use is undefined behavior and will lead to run-time errors.
 
-Declaring a global variable and function with the **same name** is illegal and results in a compilation error. The same applies to two or more global variables that share a name.
+Declaring a global variable and function with the **same name** is illegal and results in a compilation error. The same applies to two global variables that share a name.
 
 ###### Example
 
@@ -76,7 +76,7 @@ end
 
 A **domain** is a purely syntactical construct that surrounds function declarations. For each domain, one can specify a list of parameters and type parameters that get *prepended* to the parameter and type parameter lists of every function in the domain. Domains are **resolved** during parsing and have no bearing on run-time semantics or the execution environment. Domains cannot be nested and may only contain function declarations, but they may be contained in a module.
 
-Domains help to **avoid repetition** when defining multiple functions over the same partial set of parameters and type parameters. They are inspired by methods found in object-oriented languages, but obviously not constrained to such usage. While we don't want to tie functions to objects, like object-oriented programming does, we still want to provide some syntactic advantages that object-oriented programming offers. Like many other syntactic features in Lore, there is no obligation to use domains. It is simply a question of style.
+Domains help to avoid repetition when defining multiple functions over the same partial set of parameters and type parameters. They are inspired by methods found in object-oriented languages, but obviously not constrained to such usage. While we don't want to tie functions to objects, like object-oriented programming does, we still want to provide some syntactic advantages that object-oriented programming offers. Like many other syntactic features in Lore, there is no obligation to use domains. It is simply a question of style.
 
 ###### Example 1
 
