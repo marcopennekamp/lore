@@ -111,6 +111,8 @@ Any value that is *both* a `Fish` *and* a `Mammal` is typed by `Fish & Mammal`.
 
 A **tuple type** describes tuples. It consists of a list of types called its elements.
 
+The empty tuple `()` is an important type, as it signifies the absence of a value. `Unit` is an alias for `()`, defined in Pyramid's preamble, and should be preferred.
+
 ###### Syntax Example
 
 ```
