@@ -10,30 +10,15 @@ Lore has various **type constructors** with which complex types can be built, as
 
 A **type expression** is a representation of a particular type, built with the toolbox of named types and type constructors. Their syntax can be described as such:
 
-- `id` — A **named type** (basic type, declared type, type variable, type alias) is accessible via its name. It has to be declared or bound in an outer or the current scope before it can be used in a type expression.
-  
-  - The name of a type may contain the following **special characters:**
-  
-    ```
-    + ?
-    ```
-  
-    **Struct names** cannot contain these special characters because a struct's name is also the name of its constructor. **Type variable names** may not contain a `+`, because this symbol is also used to declare covariant type parameters.
-  
+- `id` — A **named type** (basic type, declared type, type variable, type alias) is accessible via its name. It has to be declared or bound in an accessible scope before it can be used in a type expression.
+  - See [identifiers](identifiers.md) for rules governing type names.
 - `t1 | t2 | t3` — A **sum type** is simply constructed by connecting different type expressions with `|`.
-
 - `t1 & t2 & t3` — An **intersection type** is constructed using the `&` symbol.
-
 - `(t1, t2, t3)` — **Tuple types** describing tuple values.
-
 - `t1 => t2` — **Function types** describing function values.
-
 - `[t]` — **List types** describing *immutable* lists.
-
 - `#[t1 -> t2]` — **Map types** describing *immutable* maps.
-
 - `%{ a: A, b: B }` — **Shape types** describing structs (partially) and shape values.
-
 - `#name` — **Symbol types** describing symbol values.
 
 Note that the compiler immediately performs the following **simplifications** on sum and intersection types:

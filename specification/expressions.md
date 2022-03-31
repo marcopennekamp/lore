@@ -34,7 +34,7 @@ Variables can be **immutable or mutable**. Only mutable variables can be changed
 
 A **variable expression** is an expression that evaluates to the value of its named variable.
 
-Variable **identifiers** may be a combination of letters, numbers, underscores, and question marks.
+See [identifiers](identifiers.md) for more information about valid and invalid variable names.
 
 ###### Syntax Example
 
