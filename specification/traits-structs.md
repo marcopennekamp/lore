@@ -1,11 +1,11 @@
 # Traits and Structs
 
-**Traits and structs** are the abstractions with which complex data types can be built in Lore. These two concepts can be roughly differentiated as such:
+**Traits and structs** are used to create user-defined data types. These two concepts can be roughly differentiated as such:
 
 - **Traits** are abstractions of hierarchy and behavior. They are Lore's solution to the questions of data type abstraction, inheritance, and interfaces. Traits cannot be instantiated directly: they have to be backed by a struct.
-- **Structs** are data type definitions that can stand on their own, possibly extending some number of traits. A struct is always a subtype of all the traits that it extends and also carries this information at run-time.
+- **Structs** carry properties and can be instantiated, possibly extending some number of traits. A struct is always a subtype of all the traits that it extends.
 
-Both traits and structs have a set of **common features**, including inheritance and type parameters.
+Both traits and structs have a set of common features, including inheritance and type parameters.
 
 
 
@@ -19,11 +19,13 @@ A **trait** is an abstract type that can be extended by other traits and structs
 trait T extends A, B, %{ property: C }
 ```
 
+Extending the shape type `%{ property: C }` adds a member `property: C` to `T`.
+
 
 
 ### Structs
 
-A **struct** is a set of **properties** with optional default values and optional mutability. As structs describe actual instances, a struct type is **always concrete and never abstract**. A struct may extend traits and shapes, which is elaborated on further below.
+A **struct** is a data type carrying a set of **properties** with optional default values and optional mutability. As structs describe actual instances, a struct type is always concrete and never abstract. A struct may extend traits and shapes, which is elaborated on further below.
 
 Structs can be defined using two **syntax styles**, either with properties in parentheses directly after the name, or with properties in a block, which offers more flexibility. In the block style, properties can be delimited using commas and newlines. Both approaches are permitted interchangeably, giving the ability to use both commas and newlines in the same struct definition. All styles and approaches should be chosen based on readability.
 
@@ -56,12 +58,12 @@ end
 
 ##### Construction
 
-Creating new struct instances is possible with two independent **constructor** syntaxes: 
+Creating new struct instances is possible with two independent **construction** syntaxes: 
 
 - The **call syntax** is a convenient way to create instances, but with the requirement that all properties need to be specified, including those that could have a default value. The call-syntax constructor is a **function value** that may be passed around.
 - In contrast, the **map syntax** is most convenient when default values should be applied to properties or when more self-evident code is desired. It is also useful when properties should be specified out of order. When using the map syntax, one may **omit some verbosity** in a definition like `property = value` if the value is a variable and named exactly like the property. An example of this is included below.
 
-Apart from these two constructor styles, all **derivative constructors** have to be defined as ordinary (multi-)functions. Lore doesn't support the kind of constructors that you might know from object-oriented languages.
+Apart from these two constructor styles, all **derivative constructors** have to be defined as ordinary (multi-)functions. Lore doesn't support the kind of overloaded constructors that you might know from object-oriented languages.
 
 ###### Example
 
@@ -94,9 +96,9 @@ end
 
 An **object** is a special struct of which only one instance exists. The corresponding value of an object `None` is also called `None`. In this sense an object is like a singleton, just with better language-level guarantees.
 
-While objects may have properties, they each have to have a default value, which becomes the object's **property value**. This is because an object is instantiated when the Lore program is initialized. A Lore programmer has no control over the relevant constructor invocation. Objects cannot have type parameters.
+While objects may have properties, they each have to have a default value, which becomes the object's **property value**. This is because an object is instantiated by the Lore VM. A Lore programmer has no control over the relevant constructor invocation. Objects cannot have type parameters.
 
-It is possible to use objects inside the property values of other objects. Objects with property values that refer to functions, structs, objects, or global variables are initialized **lazily** to avoid any ordering issues that may arise. Cyclical use is currently undefined behavior and will lead to run-time errors.
+It is possible to use objects inside the property values of other objects. Objects with property values that refer to functions, structs, objects, or global variables are initialized **lazily** to avoid any ordering issues that may arise. Cyclical use is undefined behavior that will lead to run-time errors.
 
 ###### Syntax Example
 
@@ -106,15 +108,15 @@ object None extends Option[Nothing]
 // Accessing an object via its name.
 let option: Option[Int] = None
 
-// Objects (None) can be used in the properties of other objects (Game). This particular example essentially creates 
-// mutable global state, which should be avoided if possible. Handle mutability with care!
+// Objects (e.g. None) can be used in the properties of other objects (e.g. Game). This particular example essentially 
+// creates mutable global state, which should be avoided if possible. Handle mutability with care!
 object Game do
   name: String = 'Match Four'
   mut player: Option[Player] = None
 end
 ```
 
-Note that a **block-style** object requires the keyword `do`. This is because a very important form of objects, propertyless "empty" objects like `None` in the example, can be declared without parentheses and the `end` keyword. The approachable syntax for this common case introduces an ambiguity for block-style objects in the `end` keyword. It is resolved with the `do`.
+Note that a **block-style** object requires the keyword `do`. This is because a very important form of objects, propertyless "empty" objects like `None` in the example, can be declared without parentheses and the `end` keyword. The intuitive syntax for this common case introduces an ambiguity for block-style objects in the `end` keyword. It is resolved with the `do`.
 
 
 
@@ -124,7 +126,7 @@ Traits and structs can **inherit** from any number of traits and shapes. A trait
 
 **Structs cannot be extended**. Traits are the mechanism for building type hierarchies, which has the advantage of cleanly separating the concerns of data representation (structs) and abstract structure/behavior (traits, shapes).
 
-If a trait inherits from a shape directly or indirectly, all properties declared in the shape will become (virtual) members of the trait. The combination of all extended shape types is called the **inherited shape type**. This type definitely specifies all properties of a trait. A struct, in contrast, treats the inherited shape type as a contract: it must specify all properties contained in the inherited shape type as struct properties, with compatible types.
+If a trait inherits from a shape directly or indirectly, all properties declared in the shape will become (virtual) members of the trait. The combination of all extended shape types is called the **inherited shape type**. This type definitely specifies all properties of a trait. A struct, in contrast, treats the inherited shape type as a contract: it must define all properties contained in the inherited shape type as struct properties, with compatible types.
 
 Since a struct is always a concrete type, **all abstract functions** of the traits a struct extends will have to be implemented for the struct. This is implicitly handled by the constraints governing abstract functions and doesn't need to be handled specially for structs.
 
@@ -198,7 +200,7 @@ let opt: Option[Real] = Some[Int](32)
 
 ##### Open Type Variables
 
-Type variable instantiations are **fixed at compile-time**. This is what we want most of the time. For example, a mutable array type `Array[A]` should not vary based on its run-time contents. Some structs may not associate a type variable with a property, either, so the type argument can only be inferred at compile-time.
+Type variable instantiations are **fixed at compile-time**. This is what we want most of the time. For example, a mutable array type `Array[A]` should not vary based on its run-time contents. Some structs may not associate a type variable with a property, either, so the type argument can only be inferred or manually specified at compile-time.
 
 There are cases in which we want the type variable to be instantiated **based on the run-time type of a property**. `Option[A]` is such a case. We want to be able to specialize functions on options without unpacking the options. Consider the following code:
 
@@ -210,14 +212,14 @@ let animal: Animal = Fox()
 process(Some(animal))
 ```
 
-If `A` is fixed at compile-time, `process(Some(animal))` will evaluate to "Maybe Animal." This goes against intuition. A Some contains a single, immutable value. By all accounts, it should be possible for multiple dispatch to take the value's run-time type into account.
+If `A` is fixed at compile-time, `process(Some(animal))` will evaluate to `'Maybe Animal.'`. This goes against intuition. A `Some` contains a single, immutable value. By all accounts, it should be possible for multiple dispatch to take the value's run-time type into account.
 
-**Open type variables** fill exactly this niche. In similar spirit to open properties, an open type variable is populated at run-time with the actual type of a given value. This feature is very powerful and, like all good comic book heroes (and villains), it comes with a few limitations:
+**Open type variables** fill exactly this niche. In similar spirit to open properties, an open type variable is populated at run-time with the actual type of a given value. This feature is very powerful and comes with a few limitations:
 
 - Open type variables can only be part of **structs**. They make no sense in traits, because traits aren't instantiated directly.
-- Open type variables must be **covariant**. This is easy to see: if we have a type `Some[A]` with `A` being open, we could have a variable of type `Option[Animal]` at compile time, but a value of `Some[Fox]` at run time. If `A` was invariant, we could not put this value into the variable, because `Some[Fox]` would not be a subtype of `Option[Animal]`.
+- Open type variables must be **covariant**. This is easy to see: if we have a type `Some[A]` with `A` being open, we could have a variable of type `Option[Animal]` at compile time, but a value of `Some[Fox]` at run time. If `A` was invariant, `Some[Fox]` would not be a subtype of `Option[Animal]`.
 - Open type variables may not have a **lower bound**, because they can easily lead to run-time errors.
-- Open type variables must be **uniquely deducible**. This means that the type variable may only occur in one position of a single property.
+- Open type variables must be **uniquely deducible**. This means that the type variable may only occur in one position of a single property type.
 - Properties typed with an open type variable must be **immutable**.
 
 The option example demonstrates how open type variables can be **declared:**
@@ -234,17 +236,17 @@ Open type variables may still be **manually specified**, but their run-time type
 let option = Some[Animal](Fox())  // option: Some[Animal]
 ```
 
-The variable `option` will have the type `Some[Animal]` at compile time, even though inference would usually have given it the type `Some[Fox]`. However, at run-time, since the type parameter is open, `option` will still contain a value of type `Some[Fox]`.
+`option` will have the type `Some[Animal]` at compile time, even though inference would usually have given it the type `Some[Fox]`. However, at run-time, since the type parameter is open, `option` will contain a value of type `Some[Fox]`.
 
 
 
 ### Usage
 
-This section contains **examples** on the usage of traits and structs. These aren't strictly language features, but still so fundamental to idiomatic Lore that they are worth elaborating on.
+This section contains examples on the **usage** of traits and structs. These aren't strictly language features, but still so fundamental to idiomatic Lore that they are worth elaborating on.
 
 ##### Data Abstraction
 
-Using a trait to create **data abstractions** is as simple as defining the right (abstract) functions. This is not a special language feature, because we are using existing features such as multi-functions and multiple dispatch. We could define a trait `Position` that declares the following abstract functions:
+Using a trait to define **data abstractions** is as simple as defining (abstract) functions. This is not a special language feature, because we are using existing features such as multi-functions and multiple dispatch. We could define a trait `Position` that declares the following abstract functions:
 
 ```
 trait Position
@@ -308,11 +310,11 @@ func z(Position3D): Real
 
 Any struct extending `Position3D` will have to provide a definition for all three of these abstract functions.
 
-In the future, we might introduce **syntactic sugar** for the simpler forms of data abstraction, especially so that implementing data-heavy traits with a struct isn't ultra tedious. For now, we want to keep it simple though, and the idea of multi-functions once again proves to be powerful enough to get there.
+In the future, we might introduce **syntactic sugar** for the simpler forms of data abstraction, especially so that implementing data-heavy traits with a struct isn't so tedious. Virtual properties (like `x`, `y`, and `z` above) and inherited shape types currently fulfill a similar purpose, but are not compatible with each other. This is a design oversight that we want to remedy eventually.
 
 ##### Behavioral Abstraction
 
-Traits are natural abstractions for **behavior**. Just as with data abstraction, multiple dispatch provides the ability to work with abstract and concrete functions. To Lore, a trait itself is just an "empty" type. All the magic happens within the multi-functions.
+Traits are natural abstractions for **behavior**. Just as with data abstraction, multiple dispatch provides the ability to work with abstract and concrete functions. To Lore, a trait itself is mostly just an "empty" type. All the magic happens within the multi-functions.
 
 As a simple example of behavior abstractions, consider a trait `Hashable` that requires its implementors to provide a `hash` function:
 
@@ -360,163 +362,4 @@ act hit(monster: Monster & Dead)
 end
 ```
 
-Right now, it is not possible to attach a label type to a value at run-time, so label types can only be "attached" by having a struct extend the label type. But once we introduce **dynamic specialization and generalization**, label types will be attachable to and removable from existing values, provided their compile-time types still agree. Then it becomes a matter of moving labels traditionally handled as properties to the type space and harnessing the power of multiple dispatch. For example, one could attach their own label type to values that are declared in a library, then specialize some library functions for types that also have the label.
-
-
-
-### TODOs
-
-- **Map syntax alternative:**
-
-  ```
-  %{ name: 'Mellow', position } as Person
-  Person(%{ name: 'Mellow', position })  // This clashes with the idea that Person is a unique function value.
-  %Person{ name: 'Mellow', position }
-  ```
-
-  This allows us to work with the established shape syntax instead of having two parallel syntaxes.
-
-- Easy **getters and setters** for struct properties?
-
-- **Visibility declarations** like private/public/protected for struct properties?
-
-  - It'd probably be best to keep visibility in the module system. I don't see many advantages in building firewalls for data definitions. If a struct desperately needs to hide some data, it should hide behind a trait abstraction.
-
-- **Syntactic Sugar for Properties:**
-
-  ```
-  trait Position
-  property x: Real of Position
-  
-  act test(pos: Position)
-    println(pos.x)
-  end
-  ```
-
-  This is internally still a multi-function definition. Here is the general syntax:
-
-  ```
-  property name: Type of Trait
-  --> func name(self: Trait): Type
-  
-  property mut name: Type of Trait
-  --> func name(self: Trait): Type
-  --> func set_name(self: Trait, value: Type): ()
-  ```
-
-  And then implement it like this:
-
-  ```
-  // Direct mapping
-  struct Point extends Position
-    x: Real implements Position.x
-  end
-  
-  // Indirect mapping
-  property x: Real of box: Box = box.x_start + width(box) / 2
-  ```
-
-  This could also be used as syntactic sugar for derived properties:
-
-  ```
-  property width: Real of box: Box = box.x_end - box.x_start
-  property x: Real of box: Box = box.x_start + box.width / 2
-  ```
-
-  The `property` syntax thus wouldn't only be allowed for traits but for any types. We could define properties over tuples:
-
-  ```
-  property first: A of tuple: (A, B) where A, B = get(tuple, 0)
-  ```
-  
-  Note: Since this proposal does not add any additional expressiveness to the language (only convenience), it is not a candidate for the MVL itself. Also, another question is how this system interacts with namespacing, and thus it would be prudent to define the module system first and THEN turn our attention to this proposal.
-  
-  - **Alternative:**
-  
-    ```
-    trait Position
-      x: Real
-    end
-    
-    act test(pos: Position)
-      println(pos.x)
-    end
-    
-    // Direct mapping
-    struct Point extends Position
-      x: Real implements Position.x
-    end
-    
-    // Indirect mapping
-    property x: Real of box: Box = box.x_start + width(box) / 2
-    // or:
-    func x(box: Box): Real = box.x_start + width(box) / 2
-    // or:
-    property x(box: Box): Real = box.x_start + width(box) / 2
-    ```
-  
-    This would internally still be represented by multi-functions, but the declaration in traits is shorter and more natural. **Potential downside:** This way of declaring trait properties could confuse users into thinking that properties are inherited. It could also make the idea that trait properties are just multi-functions under the hood harder to convey. Another question is which namespace/module these property functions will be part of.
-  
-    Another downside is that we can't easily tie properties to ANY types with this syntax, which would be especially problematic for computed properties of structs. However, we could consider supporting both syntaxes. In fact, the trait property syntax would be the natural way for traits (at the trait's declaration site, of course, not for "monkey patching"), while the `property` syntax would be the natural way for other types. Going a step further: `property` would be the keyword for functions that accept a single `instance` parameter and are called like `instance.property` *without* parentheses. (What about setters, then?)
-  
-- One step further: Automatic, optional **memoization of properties**.
-
-- The lack of struct inheritance currently has the big disadvantage that one cannot **"mix in" property definitions**. If you have a trait `Entity` that requires all its implementors to specify `name: String` and `sprite: Sprite` properties, this has to be re-declared inside every struct that extends `Entity`. I can see two main ways to solve this problem: (1) add mixins as a language feature or (2) allow users to solve this problem with a macro system. **Mixins** would firmly concern themselves with the realm of data representation; they would not even define their own types. Hence, adding mixins would preserve our stated goal of separating data representation and abstract data structure and behavior. You could declare a mixin alongside a trait if close data coupling is desired, but each struct would at least have to declare that it's using the mixin. There would be no language-level coupling between mixins and traits.
-
-  - A way to implement mixins would be **mixing in shape types**.
-
-    ```
-    struct Position
-      mut x: Real, mut y: Real
-    end
-    
-    type +Position = %{ position: Position }
-    
-    struct Player
-      mix +Position
-    end
-    ```
-
-- **Companion namespaces** for any declared type. (See also the next proposal in this list.)
-
-- **Ad-hoc envelope types:** Lore will support envelope types. To make "type all the things!" particularly easy, Lore allows you to **create ad-hoc open envelope types when defining structs:**
-
-  ```
-  struct Position
-    x: Real as X
-    y: Real as Y
-    z: Real as Z
-  end
-  ```
-
-  Each envelope type becomes part of the (companion) module of the struct , so the code above implicitly declares the following:
-
-  ```
-  module Position
-    envelope X(Real)
-    envelope Y(Real)
-    envelope Z(Real)
-  end
-  ```
-
-  However, the ad-hoc definition has the additional advantage that **envelope types are constructed internally**. Take the following example:
-
-  ```
-  struct Account
-    id: Int as Id
-    name: String as Name
-    score: Real as Score
-  end
-  
-  let jeremy = Account(1, "Jeremy", 15.37)
-  > jeremy.id : Account.Id
-  > jeremy.name : Account.Name
-  > jeremy.score : Account.Score
-  ```
-  
-  The constructor takes the underlying values as arguments and doesn't require any envelope boilerplate.
-  
-- **Attaching properties at run-time:** Adding properties to arbitrary structs and shapes could be very powerful combined with structural dispatch. (Especially to dynamically add components to a struct.)
-
-- **Named type parameters:** If a struct has multiple type parameters, but only one needs to be inferred, the user should be able to specify only that one type parameter manually. We can add named type parameters here.
-
+Right now, it is not possible to attach a label type to a value at run-time, so label types can only be "attached" by having a struct extend the label type. But if we introduce **dynamic specialization and generalization**, label types will be attachable to and removable from existing values, provided their compile-time types still agree. Then it becomes a matter of moving labels traditionally handled as properties to the type space and harnessing the power of multiple dispatch. For example, one could attach their own label type to values that are declared in a library, then specialize some library functions for types that also have the label.
