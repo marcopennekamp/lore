@@ -1,8 +1,8 @@
 # Shapes
 
-A **shape** is a partial view on structured data, with the option for ad-hoc representation. A shape consists of a set of **immutable properties**, much like a struct. However, a shape does not define a constructor of any kind and, crucially, has **no name**. If properties agree, a shape type can describe a struct, making the struct a **subtype** of the shape. **Shape values** can also be created in place, without specifying a type. Such an ad-hoc representation is similar (especially in convenience) to maps, dictionaries, or objects from dynamically typed languages. Shapes offer the power of structural typing.
+A **shape** is a view on values that have properties, offering the power of structural typing. A shape consists of a set of **immutable properties**, much like a struct, but shapes are unnamed and define no constructor function. If properties agree, struct type can be a subtype of a shape, allowing you to pass structs to functions that expect shapes. **Shape values** can also be created as ad-hoc representations of shape types. Such a representation is similar dictionaries in dynamically typed languages.
 
-At run time, multi-function calls are **dispatched** based on the actual property types contained in the shape value, or struct if the property is open. This allows a Lore programmer to specialize functions based on actual property types, effectively enabling styles such as **component-based programming**.
+At run time, multi-function calls are **dispatched** based on the property types contained in the shape or struct value. This allows a Lore programmer to specialize functions based on actual property types, effectively enabling styles such as component-based programming.
 
 ###### Syntax Example
 
@@ -16,7 +16,7 @@ type Spaced = Positioned & Dimensioned
 
 ### Shape Values
 
-Shapes can be directly constructed as **values**. This comes in handy for ad-hoc data structures, such as multi-part values returned from a function, or options passed into a function or constructor. Such values are **not** structs. All properties of a shape value are immutable.
+Shapes can be directly constructed as **values**. This comes in handy for ad-hoc data structures, such as multiple values returned from a function, or options passed into a function or constructor. Shape values are **not** structs. All properties of a shape value are immutable.
 
 ###### Syntax Example
 
@@ -34,7 +34,7 @@ end
 
 ### Type Semantics
 
-Shape types are *structural types*. A struct or shape type A is a **subtype** of another shape type B if A contains and subtypes all properties of B.
+Shape types are *structural types*. A struct or shape type `A` is a **subtype** of another shape type `B` if `A` contains all properties of `B` and each property type is a subtype of its opposite in `B`.
 
 ###### Example
 
@@ -58,7 +58,7 @@ Open properties are generally slower, because they lead to more difficult run-ti
 
 ```
 func free(cage: %{ content: Animal }): Animal = cage.content
-func free(cage: %{ content: Tiger }): Nothing = error('Are you insane?')
+func free(cage: %{ content: Tiger }): Nothing = panic('Are you insane?')
 
 struct Blackbox(content: Animal)
 struct Whitebox
@@ -66,9 +66,9 @@ struct Whitebox
 end
 
 free(%{ content: fish })   // --> returns the fish
-free(%{ content: tiger })  // --> throws the error
+free(%{ content: tiger })  // --> panics
 free(Blackbox(tiger))      // --> returns the tiger, oh-oh!
-free(Whitebox(tiger))      // --> throws the error
+free(Whitebox(tiger))      // --> panics
 ```
 
 `Blackbox` doesn't know what the run-time type of `content` is, because the property is static. Hence, calling `free` with a black box filled with a tiger results in the first function being called. In contrast, `Whitebox` lets `free` make the smart decision of not releasing the tiger, because the open property provides enough information at run-time.
@@ -112,7 +112,7 @@ struct Hero extends +Position, +Shape
 end
 ```
 
-The remarkable benefit of this approach: any struct or shape that contains a property `position: Position` and `shape: Shape` can be used as an entity for the  `move` and `render` functions. We can conceive any number of additional entities that can just as much use these already existing functions. This enables **generic programming over partial structures**, i.e. entities and components.
+The benefit of this approach: any struct or shape that contains a property `position: Position` and `shape: Shape` can be used as an entity for the  `move` and `render` functions. We can conceive any number of additional entities that can just as much use these already existing functions. This enables **generic programming over partial structures**, i.e. entities and components.
 
 **Specialization** is another great aspect of this programming model. Imagine we want to implement an additional `render` function for those entities that not only have `Position` and `Shape`, but also `Color`. We can simply write a second function:
 
@@ -128,9 +128,9 @@ end
 
 The ability to dispatch on property types effectively turns a struct type into a *family* of possible types. For each combination of actual run-time property types, a new struct type has to be created if we want to support shape dispatch. This has the following drawbacks:
 
-1. Much like with shape types, a struct type would have to be created for each instantiation of a new struct value. This is a **costly** operation, likely more expensive than creating the struct value itself. Furthermore, the more type values exist for the "same" struct type, the more type instances have to be taken into account during multiple dispatch. Non-interned but equal struct types require a costly equality check each time the dispatch cache is hit. Struct types with different run-time property types have to produce different hashes, with each different type instance taking a new place in the dispatch cache. This possibly bloats the dispatch cache of countless methods.
+1. Much like with shape types, a struct type would have to be created for each instantiation of a new struct value. This is a **costly** operation, often more expensive than creating the struct value itself. Furthermore, the more type values exist for the "same" struct type, the more type instances have to be taken into account during multiple dispatch. Non-interned but equal struct types require a costly equality check each time the dispatch cache is hit. Struct types with different run-time property types have to produce different hashes, with each different type instance taking a new place in the dispatch cache. This possibly bloats the dispatch cache of countless methods.
 
-2. Multiple dispatch suffers from the nasty problem that **subtyping and type equality** are of extreme importance to generic functions. Hence, it is quite important that the usual norms of subtyping and type equality are not broken by accident. Making all struct types dependent on run-time property types without giving the programmer control over the matter is a dangerous, implicit, accident-producing feature.
+2. Multiple dispatch suffers from the nasty problem that **subtyping and type equality** are of extreme importance to generic functions. Hence, it is important that the usual norms of subtyping and type equality are not broken by accident. Making all struct types dependent on run-time property types without giving the programmer control over the matter is a dangerous, implicit, accident-producing feature.
 
    Take the following example. If we assume that `Coffin`'s type takes into account the run-time property type of `nail`, we have it quite trivially and on good account that the two coffins compared in the last line don't have equal types. Even worse, they are not even subtypes of one another. Since the programmer probably doesn't expect two types of the same name (in a mostly nominal typing context) to *not* be equal, this might lead to a lot of confusion. Unless the programmer specifically *states* that "yes, I want run-time struct types of the same name to vary," it's probably not a good idea to trip her up like this.
 
@@ -150,11 +150,11 @@ The ability to dispatch on property types effectively turns a struct type into a
      let coffin_fancy = Coffin(fancy)
      let coffin_bloody = Coffin(bloody)
      
-     equalTypes(coffin_fancy, coffin_bloody) // --> false
+     equal_types(coffin_fancy, coffin_bloody) // --> false
    end
    ```
 
-From the first point, it is clear that we cannot just have all properties marked as "dispatchable". There is the opportunity for different **optimizations**, but none of them are straight-forward. If the compiler could analyze this problem perfectly, it would only mark the properties as dispatchable that are actually involved in structural dispatch. But deciding whether a run-time property type is used for run-time dispatch is impossible. It likely reduces to the halting problem.
+From the first point, it is clear that we cannot just have all properties marked as "dispatchable". There is the opportunity for different **optimizations**, but none of them are straight-forward. If the compiler could analyze this problem perfectly, it would only mark the properties as dispatchable that are actually involved in structural dispatch. But deciding whether a run-time property type is used for run-time dispatch is impossible.
 
 Taking the second point into account, assuming "open" properties to be the default not only seems detrimental to performance, but also seems like an **unsound design decision**. There are legitimate cases in which we want to have run-time dispatch on property types, but there seem to be at least as many cases in which we *don't* want to differentiate between run-time property types.
 
@@ -174,6 +174,7 @@ type +Position3D = %{ position: Position3D }
 act move(entity: +Position)
   ...
 end
+
 act move(entity: +Position3D)
   ...
 end
@@ -186,4 +187,3 @@ act test()
   move(hero)
 end
 ```
-
