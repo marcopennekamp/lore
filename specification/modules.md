@@ -1,10 +1,10 @@
 # Modules
 
-**Modules** separate top-level definitions into logical units. Modules are *not* restricted to files or library bounds: you can declare a module anywhere, regardless of the source file's name. You can split a module across many files, and declare multiple modules in the same file. You can even extend a module first declared in a library with additional specialized functions, types, global variables, and modules. Modules can be nested arbitrarily.
+**Modules** separate top-level definitions into logical units. Modules are *not* restricted to files or library bounds: you can declare a module anywhere, regardless of the source file's name. You can split a module across many files, and declare multiple modules in the same file. You can even extend a module first declared in a library (including Lore's standard library Pyramid) with additional specialized functions, types, global variables, and modules. Modules can be nested arbitrarily.
 
 A module can be **declared** in two ways:
 
-1. **At the top of a file**, a declaration `module Name` will include all other declarations in the file into the module called `Name`. Each file can only have a single top module declaration.
+1. **At the top of a file**, a declaration `module Name` will include all other declarations in the file in the module called `Name`. Each file can only have a single top module declaration.
 2. With a **block scope**, a module can be declared at any declaration-level position in the file. All declarations inside the module's block will be put into the module.
 
 A declaration inside a module is called a **module member**. Module members may be accessed with the member access notation: `Module.member`. Such an expression is also called a **module path**.
@@ -25,7 +25,7 @@ module Name2 do
 end
 ```
 
-The module `Name2` is located inside the surrounding module `Name`. Without any `use` qualifiers, the functions can be accessed using `Name.foo` and `Name.Name2.foo`. Both `foo` multi-functions are completely distinct, as their full names are different. Hence we each have a multi-function that contains only one function instance.
+The module `Name2` is located inside the surrounding module `Name`. Without any `use` qualifiers, the functions can be accessed using `Name.foo` and `Name.Name2.foo`. Both `foo` multi-functions are completely distinct, as their full names are different. Hence we each have a multi-function that contains only one function definition.
 
 The requirement for the `do` when declaring module `Name2` is purely due to parsing ambiguities that would arise otherwise. Without the `do`, the parser might have to read the whole file to find the `end` that closes the block module declaration which the parser would first assume to be a top module declaration. This will eventually be removed once we introduce significant indentation.
 
@@ -46,9 +46,9 @@ lore.String.concat(['Hello', ', ', 'world', '!'])  // --> 'Hello, world!'
 
 **By default**, module members have access to certain other module members by their simple name. A member in a module `foo.bar` has default access to the following module members by simple name (and in this order):
 
-- Locally declared members in the **same** local module.
+- Locally declared members in the same **local module**.
 - Imports of the local module `foo.bar`.
-- Locally declared members in the surrounding module `foo`.
+- Locally declared members in the surrounding local module `foo`.
 - Imports of the local module `foo`.
 - Locally declared members in the surrounding local root module. 
   - Note: If a module is nested twice, the inner parent has precedence over the outer parent, and so on. In this case, `foo` has precedence over the local root module.
@@ -59,6 +59,8 @@ lore.String.concat(['Hello', ', ', 'world', '!'])  // --> 'Hello, world!'
 A **local module** in respect to e.g. a function declaration refers to the module declaration that's placed specifically around the function declaration in source code. Because modules may be comprised of many module declarations sharing the same name across multiple fragments, the term local module is a necessary contrast to global modules.
 
 Note that, given these precedence rules, the following situation occurs: If we access `baz` in a local module `foo.bar`, but `foo.bar.baz` is declared in a non-local module, and the current fragment has an import `use bin.ban.baz`, the import is preferred, so `baz` refers to `bin.ban.baz`. This is necessary so that adding a name to a module doesn't break existing code in other fragments.
+
+Also note that in the example above, globally declared members of the parent module `foo` *cannot* be referred to via simple name. They'd have to be imported manually.
 
 ###### Example
 
@@ -88,27 +90,27 @@ In this example, `test` has access to `west` as it's locally declared, `baz` fro
 
 ##### Use Declarations
 
-The `use` declaration can be used to **introduce simple names** for other module members at their point of use. It is also called an **import**. It has three flavors:
+The `use` declaration can be used to introduce simple names for other module members at their point of use. It is also called an **import**. It has three flavors:
 
-1. **Simple:** Use a single member.
+1. **Simple:** Import a single member.
 
    ```
    use lore.Enum.map
    ```
 
-2. **Multiple:** Use multiple members of the same module.
+2. **Multiple:** Import multiple members of the same module.
 
    ```
    use lore.Enum.[map, flat_map]
    ```
 
-3. **Wildcard:** Use all members of a module.
+3. **Wildcard:** Import all members of a module.
 
    ```
    use lore.Enum._
    ```
 
-The `use` declaration can only be placed at the beginning of a module declaration. As fragments are also modules even without a top module declaration, `use` can also stand at the beginning of a file. If a name is imported multiple times (from potentially different sources), the last `use` wins.
+The `use` declaration can only be placed at the beginning of a module declaration and at the beginning of a file. If a name is imported multiple times (from potentially different sources), the last `use` wins.
 
 ###### Example
 
@@ -161,7 +163,7 @@ Modules are essentially used in two ways, which determines their naming conventi
 
 ### TODO: Visibility
 
-*(Visibility is not yet implemented in the compiler and won't be for some time. It's a relatively tangential feature that isn't crucial for building Lore's compiler in Lore.)*
+*(Visibility is not yet implemented in the compiler and won't be for some time. The feature's design is not finalized.)*
 
 Module members have two modes of **visibility:**
 
@@ -196,13 +198,3 @@ module Foo do
   end
 end
 ```
-
-
-
-### TODOs
-
-- **Use anywhere:** The `use` declaration should be usable anywhere (inside expressions as a top-level expression) for more fine-grained control of names.
-  - To support this, we can implement imports in *local scopes* as well.
-- **Aliases:** The `use` declaration should allow the programmer to rename a given symbol.
-- **Complex imports:** Allow imports such as `use lore.[Enum._, Tuple]` and `use lore.[Enum.[flat_map, map], Tuple]`.
-- **Absolute declarations:** With the syntax `func .lore.core.to_string` (and the equivalent for other top-level declarations), a user can declare a function with an absolute path, which would disregard its surrounding module declarations. This would allow us to override core functions without the need for specifying a new module. Especially so because currently, wanting to override core/Enum/... functions basically disallows using a top module declaration. For many modules, this either necessitates defining core/Enum/... functions in a separate file, or surrounding all definitions in the file with a module declaration, even the "main" definitions (such as `lore.List` definitions in `pyramid/list.lore`). The latter approach introduces needless indentation, while the former approach fragments a logical unit into multiple files.
