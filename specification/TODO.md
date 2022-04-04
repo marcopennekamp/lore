@@ -159,7 +159,10 @@
   The constructor takes the underlying values as arguments and doesn't require any envelope boilerplate.
 
 
-#### Shapes
-
-
 #### Expressions
+
+- Currently, we have type ascriptions, which cannot convert values to other values, and type conversions from int to real and real to int. We are missing **declared type narrowing**, i.e. an operator that allows casting a declared type to a narrower type, such as `Animal` to `Fox`. This would be accompanied by a run-time check.
+  - We can implement this as a function, as it mirrors the "type filter" approach, but the multi-function would need to take a concrete type argument. This is only possible via the "struct hack" also employed by `type-filer.lore`. Instead, we can first implement static functions without dispatch, which is already a proposal, and then use those to easily implement a narrowing cast.
+- Consider introducing **Swift-style `guard` statements** with a twist: They operate within blocks. If the condition is false, continue the code, otherwise *return the value of the else part from the block*.
+- A feature such as Swift's **trailing closures**.
+- **If-else evaluating to Option:** If only the truthy branch of an if-else expression is defined, return an `Option`, with the implicit `else` returning `None`.

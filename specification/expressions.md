@@ -1,8 +1,6 @@
 # Expressions
 
-Lore is an expression-based language, which means that there are no statements, only expressions. This document presents the kinds of **values and expressions** available in Lore.
-
-**TODO:** How do we implement type casts?
+Lore is an expression-based language. This document presents the kinds of **values and expressions** available in Lore.
 
 
 
@@ -28,11 +26,11 @@ Top-level expressions are currently **variable declarations**, **assignments**, 
 
 ### Variable Declarations and Expressions
 
-A **variable declaration** is a top-level expression that lets you define a new variable. The type of the variable will be inferred from the assignment, but you can specify the type manually. Values need to be explicitly assigned to declared variables, even if they are desired to be `0`, `''`, `[]`, etc. We believe in the value of explicitness when it comes to "default" values.
+A **variable declaration** is a top-level expression that lets you define a new variable. The type of the variable will be inferred from the assigned value, but you can specify the type manually. Values need to be explicitly assigned to declared variables, even if they are mutable and are desired to be `0`, `''`, `[]`, etc., as Lore wants you to be explicit instead of relying on a default value.
 
-Variables can be **immutable or mutable**. Only mutable variables can be changed after their initial declaration. We recommend to declare all variables as immutable unless mutability is specifically needed. This is also one reason why the mutability syntax is relatively verbose.
+Variables can be **immutable or mutable**. Only mutable variables can be changed after their initial declaration. We recommend declaring all variables as immutable unless mutability is specifically needed. This is also one reason why the mutability syntax is relatively verbose.
 
-A **variable expression** is an expression that evaluates to the value of its named variable.
+A **variable expression** is an expression that evaluates to the value of its named variable. 
 
 See [identifiers](identifiers.md) for more information about valid and invalid variable names.
 
@@ -43,14 +41,14 @@ let x: T = v1      // immutable variable declaration
 let x = v1         // inferred immutable variable declaration
 let mut x: T = v1  // mutable variable declaration
 let mut x = v1     // inferred mutable variable declaration
-x				   // variable expression
+x                  // variable expression
 ```
 
 
 
 ### Assignments
 
-An **assignment** lets you assign a new value to a mutable variable or property. The type of the right-side value must be compatible with the type of the variable or property. Assignment is a **top-level expression** that evaluates to unit.
+An **assignment** assigns a new value to a mutable variable or property. The type of the right-side value must be compatible with the type of the variable or property. Assignment is a **top-level expression** that evaluates to `Unit`.
 
 ###### Syntax Example
 
@@ -75,17 +73,30 @@ a /= b  // a = a / b
 
 ### Return
 
-The **return** top-level expression returns a value from a function. The syntax is `return expr`, with `expr` evaluating to the returned value. Use return only if you need to return early from a function. Prefer using blocks and control structures as expressions. The return expression evaluates to the `Nothing` type, since it interrupts code execution.
+The **return** top-level expression returns a value from a function. The syntax is `return expr`, with `expr` evaluating to the returned value. Use a return only if you need to return early from a function, otherwise use the fact that blocks and control structures are expressions. The return expression itself evaluates to the `Nothing` type, since it interrupts code execution.
 
-###### Syntax Example
+###### Example 1
+
+```
+func contains?(strings: [String], string: String): Boolean = do
+  for string2 <- strings
+    if string == string2
+      return true
+    end
+  end
+  false
+end
+```
+
+###### Example 2
 
 **Early returns** are a useful way to achieve cleaner code:
 
 ```
-func foo(x: Int): String = do
-  if bar(x) then return 'cool'
-  if baz(x + 2) then return 'cruel'
-  'ouch!'
+act move(entity: Entity, distance: Int) do
+  if rooted?(entity) then return
+  if collision_ahead?(entity) then return  
+  // Move the entity...
 end
 ```
 
@@ -99,20 +110,20 @@ func foo(): String = do
 end
 ```
 
-Lore's semantics would not be well defined if we allowed such constellations. Returns may be placed in the following kinds of expressions, provided the expression itself occurs in a permissible context:
+Returns may be placed in the following kinds of expressions, provided the expression itself occurs in a permissible context:
 
-- **Blocks.**
-- **Variable declarations and assignments:** The right-hand side may contain returns.
+- **Blocks**
+- **Variable declarations and assignments:** The right-hand value expression may contain returns.
 - **`if` and `cond` expressions:** The conditions may *not* contain returns, but the bodies may.
 - **`while` and `for` expressions:** The conditions/extractors may *not* contain returns, but the bodies may.
 
-Anonymous function bodies may also not contain return expressions at this time. The goal is to implement non-local returns. Allowing local returns now and changing their semantics later would break existing Lore code, so we are disallowing any returns inside anonymous functions. 
+Anonymous function bodies may also not contain return expressions at this time, as the goal is to implement non-local returns. Allowing local returns now and changing their semantics later would break existing Lore code, so we are disallowing any returns inside anonymous functions. 
 
 
 
 ### Blocks
 
-A **block** is a sequence of expressions, the last of which is what the block evaluates to. *Blocks are expressions*. You can write code like this:
+A **block** is a sequence of expressions. Blocks are expressions, as they evaluate to the value of their last expression. For example:
 
 ```
 let result = do
@@ -123,20 +134,20 @@ let result = do
 end
 ```
 
-Blocks also give you the luxury of **lexical scoping**, so make sure you declare variables exactly where you need them. In the example above, neither a, b, nor c are visible outside the block.
+Blocks also open a new **lexical scope**. In the example above, neither `a`, `b`, or `c` are visible outside the block.
 
 
 
 ### Numbers
 
-Lore has two numeric data types, **Int** and **Real**. Neither is a subtype of the other.   
+Lore has two distinct numeric data types, **Int** and **Real**.
 
-For now, we want to keep literal grammar to a minimum. Hence, we do not support scientific notation and only support decimal numbers. Here are the **valid number formats:**
+For now, we want to keep the grammar of literals to a minimum. Hence, we do not support scientific notation and only support decimal numbers. Here are the **valid number formats:**
 
 - **Int:** `x` or `-x`, x being any number from 0 to MAX_SAFE_INTEGER.
 - **Real:** `x.y` or `-x.y`, with both x and y being numbers. We do not allow notations such as `.0` or `1.`.
 
-Conversions between integers and reals can be done with the functions `lore.core.to_int` and `lore.core.to_real`.
+Conversions between integers and reals can be done with the functions `lore.Int.to_real` and `lore.Real.to_int`.
 
 ##### Arithmetic Operators
 
@@ -152,17 +163,17 @@ a / b  // Division
 
 If `a` or `b` is a `Real` and the other is an `Int`, the `Int` will be implicitly converted to `Real`.
 
-Divisions of two integers is explicitly defined as integer division, so `10 / 4` will result in `2` not `2.5`.
+Division of two integers is explicitly defined as integer division, so `10 / 4` will result in `2` not `2.5`.
 
 ##### Equality and Order
 
-Numbers are equal and ordered in accordance with the rules of sanity.
+Numbers are equal and ordered in accordance to mathematical norms.
 
 
 
 ### Booleans
 
-Lore supports **booleans**. Their type is `Boolean`. They are implemented using the standard Javascript boolean type. There are two boolean **values:** `true` and `false`. 
+Lore supports **booleans**. Their type is `Boolean`. There are two boolean **values:** `true` and `false`. 
 
 ##### Logical Operators
 
@@ -182,13 +193,11 @@ True is equal to true, false is equal to false. Booleans are unordered.
 
 ### Strings
 
-Lore supports UTF-8 **strings**. Their type is `String`. Strings are implemented using the standard Javascript string type. Javascript's string functions will *not* be available by default; instead, Lore will define its own functions.
+Lore supports UTF-8 **strings**. Their type is `String`. Conceptually, a string is *not* a list of characters. Accessing a single character at a specific position or index with the `lore.String.at` functions will result in a string. 
 
-Conceptually, a string is *not* a list of characters. **A string is just a string.** If you access a single character at a specific index either with iteration or the `character` function, you will get another string. We believe this is a more unified framework than adding a type just for characters.
+A string is always written within single quotes: `'text'`. We reserve the ability to use the double quotes symbol for string-related features later on or something else entirely. Strings are also interpolated by default. You can use `$e` for simple expressions and `${expr}` for complex ones.
 
-A string is always written within **single quotes**: `'text'`. We reserve the ability to use the double quotes symbol for string-related features later on or something else entirely.
-
-Strings are **interpolated** by default. You can use `$e` for simple expressions and `${expr}` for complex ones.
+In the world of strings, the terms **index** and **position** refer to two distinct concepts. An index refers to the individual bytes in the UTF-8 string, while a position refers to a code point. The default string functions operate on code points, but can be inefficient especially when accessing code points at specific positions. Hence, there are also byte-based functions that work with indices.
 
 The following **escaped characters** are available: `\n`, `\r`, `\t`, `\'`, `\$`, `\\`, as well as Unicode escapes such as `\u0008`.
 
@@ -204,23 +213,23 @@ let announcement = '${p.name}, you have $k apples. Please claim your ${if k < 10
 
 ##### String Operators
 
-One might expect the plus operator to support **string concatenation**. This is not the case in Lore. In most cases, *interpolation* will be the preferable option compared to operative concatenation. In all other cases, most likely when you're working algorithmically with strings, concatenation is provided as a function `concat`.
-
-(**Note:** This will obviously change when we introduce user-defined operators.)
+One might expect the plus operator to support **string concatenation**. This is not the case in Lore. In most cases, *interpolation* will be the preferable option compared to operative concatenation. In all other cases, most likely when you're working algorithmically with strings, concatenation is provided as a function `lore.String.concat`.
 
 ##### Equality and Order
 
-Two strings are equal if they have the same length and characters. Strings are ordered alphabetically.
+Two strings are equal if they have exactly the same bytes. Strings are ordered alphabetically.
 
 
 
 ### Tuples
 
-Lore supports **tuples**. As described by tuple types, tuples are fixed-size, heterogeneous lists of values. Tuples are simply created by putting parentheses around comma-separated values: `(a, b, c)`. A tuple value's type is the tuple type of the respective element types.
+Lore supports **tuples**. As described by tuple types, tuples are fixed-size, heterogeneous lists of values. Tuples are created by putting parentheses around comma-separated values: `(a, b, c)`. The tuple's type is constructed from the element types.
 
 ###### Example
 
 ```
+use lore.Tuple.get
+
 let t = (a, b, c)
 get(t, 0) // a
 get(t, 2) // c
@@ -232,7 +241,7 @@ Lore supports a **unit** value, which is simply the empty tuple. It is written `
 
 ##### Equality and Order
 
-Two tuples are equal if they have the same size and their elements are equal.
+Two tuples are equal if they have the same size and their elements are equal under `lore.core.equal?`. Tuples are unordered by default.
 
 
 
@@ -249,27 +258,33 @@ let square: Real => Real = v => v * v
 map([1, 2, 3, 4, 5], v => v + 3)
 ```
 
+##### Equality and Order
+
+Anonymous functions are equal by reference and unordered.
+
 
 
 ### Lists
 
-Lore supports **lists** as first-class constructs. A list is a homogeneous, linear collection of an arbitrary number of elements. Lists are *immutable*. List types are denoted `[A]`. We will eventually differentiate between immutable lists and (mutable) arrays.
+Lore supports **lists** as first-class constructs. A list is an immutable, homogeneous, linear collection of an arbitrary number of elements. List types are denoted `[A]`.
 
-You can **construct** a list by putting comma-separated elements inside square brackets: `[a, b, c]`. The empty list is denoted simply `[]`. You can **append** to a list with the `:+` operator, which is the native way to expand a list.
+You can **construct** a list by putting comma-separated elements inside square brackets: `[a, b, c]`. The empty list is denoted simply `[]` and has the type `Nothing`. You can **append** to a list with the `:+` operator, which is the native way to expand a list.
+
+Lore currently has no native, mutable array type. They will eventually be added to Pyramid with VM support.
 
 ##### Equality and Order
 
-Two lists are equal if they have the same lengths and each of their elements, considered in order, are equal. Lists are unordered by default.
+Two lists are equal if they have the same lengths and each of their elements, considered in order, are equal under `lore.core.equal?`. Lists are unordered by default.
 
 
 
 ### Maps
 
-Lore supports **maps** as first-class constructs. A map is a homogeneous, indexed collection of key/value pairs. Maps are *immutable*. Map types are denoted `#[A -> B]`. We will eventually differentiate between immutable and mutable maps.
+Lore supports **maps** as first-class constructs. A map is an immutable, homogeneous, indexed collection of key/value pairs. Map types are denoted `#[A -> B]`. We will eventually differentiate between immutable and mutable maps.
 
 You can **construct** a map with the following syntax: `#[k1 -> v1, k2 -> v2, k3 -> v3]`. The empty map is denoted `#[]`.
 
-**TODO:** Appending to a map?
+*Note:* Maps are currently unsupported and will be revised soon.
 
 ###### Example
 
@@ -282,13 +297,13 @@ let points = #['Ameela' -> 120, 'Bart' -> 14, 'Morrigan' -> 50]
 
 ##### Equality and Order
 
-Two maps are equal if for each key/value pair in the first map, there is a key/value pair in the second map, and vice versa. Maps are unordered by default.
+Two maps are equal if they have the same size and for each key/value pair in the first map, there is a key/value pair in the second map that is equal under `lore.core.equal?`. Maps are unordered by default.
 
 
 
 ### Shapes
 
-**Shapes** are first-class values. Refer to [structs, traits, and shapes]() for more information.
+**Shapes** are first-class values. Refer to [shapes](shapes.md) for more information.
 
 ###### Example
 
@@ -307,7 +322,7 @@ Two shapes are equal if their properties are equal. Shapes are unordered by defa
 
 A **symbol** is a value simply identified and typed by its name. A symbol named `foo` is written `#foo` and its type is `#foo`. Symbols are interned at run time.
 
-We suggest using a snake_case naming convention for symbols.
+We suggest using a `#snake_case` naming convention for symbols.
 
 ###### Example
 
@@ -327,7 +342,7 @@ Two symbols are equal if they have the same name. Symbols are unordered.
 
 ### Structs
 
-Lore supports **struct instantiation**. There are two possible syntax flavors:
+Lore supports **struct instantiation** using the call syntax or the map syntax:
 
 ```
 struct A(b: B)
@@ -344,7 +359,7 @@ The call-syntax constructor is an ordinary **function value** and can be used as
 func construct(f: B => A, b: B): A = f(b)
 
 let b = B()
-let a = construct(A, b)
+let a = construct(A, b)  // Pass the constructor `A` to `construct`.
 ```
 
 A **struct type alias** also defines a corresponding constructor function value:
@@ -358,7 +373,11 @@ let box = StringBox('I am in a box.')
 
 ##### Equality and Order
 
-Struct equality is defined as **referential equality** by default. (**TODO:** Really? Not very useful. Structs should have some default notion of equality.)
+Struct equality is handled by the default implementation of `lore.core.equal?`, which compares the structs' types for equality and its properties with `lore.core.equal?`. You can override `lore.core.equal?` with your own definition for any combination of types.
+
+The default implementation of struct equality considers two structs with different open property types as unequal, as the struct types aren't equal, even if the property values might be equal under `lore.core.equal?`. Keep that in mind if you rely on the default definition of equality. In practice, this issue should almost never crop up.
+
+Struct ordering is governed by `lore.core.less_than?`, which by default returns `false` as it assumes that structs are unordered. You can override `lore.core.less_than?` with your own definition for any combination of types.
 
 
 
@@ -383,15 +402,17 @@ a >= b   // Greater than or equal
 
 Comparisons of `Real` and `Int` implicitly convert the `Int` to `Real`.
 
-To **define equality** for a non-basic type, you can specialize the function `equal?(a, b)`. Inequality is strictly defined as `!equal?(a, b)`.
+To define **equality** for a non-basic, non-symbol type, you can specialize the function `lore.core.equal?`. Inequality is strictly defined as `!equal?(a, b)`.
 
 ```
-func equal?(c1: Car, c2: Car): Boolean = ...
-func equal?(SportsCar, CheapCar): Boolean = false
-func equal?(CheapCar, SportsCar): Boolean = false // Don't forget to be symmetric!
+module lore.core do
+  func equal?(c1: Car, c2: Car): Boolean = ...
+  func equal?(SportsCar, CheapCar): Boolean = false
+  func equal?(CheapCar, SportsCar): Boolean = false  // Don't forget to be symmetric!
+end
 ```
 
-To **define order** for a given type, specialize the function `less_than?(a, b)` and optionally `less_than_equal?(a, b)`. The latter is already defined as `less_than?(a, b) || equal?(a, b)` in Pyramid. Greater than, `a > b`, is strictly defined as `b < a`, and `b >= a` as `a <= b` .
+To define **order** for a non-basic, non-symbol type, specialize the function `lore.core.less_than?` and optionally `lore.core.less_than_equal?`. The latter is already defined as `less_than?(a, b) || equal?(a, b)` in Pyramid. Greater than, `a > b`, is strictly defined as `b < a`, and `b >= a` as `a <= b` .
 
 
 
@@ -405,11 +426,11 @@ target(a1, a2, ...)
 
 **Call semantics** depend on the `target`:
 
-- If the target is a **multi-function**, the compiler will simulate multiple dispatch to find the correct function implementation. The semantics of such multi-function calls are defined in [multi-functions](multi-functions.md).
+- If the target is a **multi-function**, the compiler will simulate multiple dispatch to find the correct function definition. The semantics of such multi-function calls are defined in [multi-functions](multi-functions.md).
 
   We say *multi-function call*, because it only becomes a function call once a function has been chosen according to the dispatch semantics.
 
-- If the target is a **function value**, the function will be called directly at run time. Anonymous functions and constructors will be called directly, but if the function value refers to a multi-function, multiple dispatch will of course still be performed.
+- If the target is a **function value**, the function will be called directly at run time. Anonymous functions and constructors will be called directly, but if the function value refers to a multi-function, multiple dispatch will of course still be performed at run time.
 
 ##### Pipes
 
@@ -479,21 +500,23 @@ Instead of deciding dispatch at run-time, you can **fix a function at compile-ti
 f.fixed[T1, T2, ...]
 ```
 
-The expression evaluates to a **function value** which may be subsequently invoked or passed around. See the section about fixed functions in the [multi-functions](multi-functions.md) document for a more in-depth explanation.
+The expression evaluates to a **function value** which may be subsequently invoked or passed around. See the section about fixed functions in [multi-functions](multi-functions.md) for a more in-depth explanation.
 
 
 
 ### Intrinsic Function Calls
 
-Many functions in the Lore standard library, especially the most fundamental ones, defer their implementation to **intrinsic function calls**. Intrinsics are functions built into the Lore VM.
+Many functions in the Lore standard library, especially the most fundamental ones, defer their implementation to **intrinsics**, which are functions built into the Lore VM.
 
-The **syntax** of an intrinsic function call is as follows:
+The syntax of an intrinsic function call is as follows:
 
 ```
 intrinsic[ResultType]('f', a1, a2, ...)
 ```
 
-The first argument is the name of the intrinsic. These are statically defined by the VM and cannot be added or removed by a Lore user. The compiler checks the existence and the arity of the intrinsic, but trusts the programmer about the argument types. Unless you're absolutely sure what you're doing, avoid using intrinsics.
+The first argument is the name of the intrinsic, which must be a string constant. These are statically defined by the VM and cannot be added or removed by a Lore user. The compiler checks the existence and the arity of the intrinsic, but trusts the programmer about the argument types. 
+
+Unless you're absolutely sure what you're doing, avoid using intrinsics. There will usually be a multi-function available from Pyramid that offers the intrinsic's functionality.
 
 
 
@@ -519,7 +542,7 @@ else
 end
 ```
 
-Note that either top-level expression (TLE) (or even `condition`) may be a block. The else part is, of course, optional. The so-called **dangling else** is always parsed as belonging to the `if` closest to it.
+Note that either top-level expression (TLE) (or even `condition`) may be a block. The else part is, of course, optional. The so-called dangling else is always parsed as belonging to the `if` closest to it.
 
 The if-expressions without a `then` require the top-level expression(s) to be placed on the next line. This also implicitly opens a block, which must be closed with an `end` or an `else`. An `else` with an implicit block must also be closed with an `end`. 
 
@@ -533,7 +556,7 @@ else
 end
 ```
 
-Does the `else` belong to the outer or inner `if`? With the restriction, it belongs to the outer. Without, there would be an ambiguity which would be parsed, due to the dangling else rule, as belonging to the inner `if`.
+Does the `else` belong to the outer or inner `if`? With the restriction, it belongs to the outer. Without, there would be an ambiguity which would be parsed, due to the dangling else rule, as belonging to the inner `if`, contradicting the user's indentation.
 
 ##### Cond
 
@@ -556,11 +579,11 @@ A newline must always follow `cond` and it must always be closed with an `end`. 
 
 ### Loops
 
-**Loops** represent repeating control flow. For now, we support while loops and for comprehensions.
+**Loops** represent repeating control flow. For now, we support `while` loops and `for` comprehensions.
 
 ##### While Loop
 
-In Lore, a **while loop** repeats some piece of code as long as a given boolean expression is true:
+A **while loop** repeats some piece of code as long as a given boolean expression is true:
 
 ```
 while condition yield tle
@@ -574,7 +597,7 @@ We have decided to provide **no support for do-while loops**, because we feel th
 
 ##### For Comprehension
 
-A **for comprehension** iterates over some kind of collection:
+A **for comprehension** iterates over a list or map:
 
 ```
 for e1 <- col1, e2 <- col2, ... yield tle
@@ -584,38 +607,29 @@ for e1 <- col1, e2 <- col2
 end
 ```
 
-In the syntax above, `col2` is fully iterated for each `e1` and so on, so supplying multiple extractors effectively turns the comprehension into **nested iteration**.
+In the syntax above, `col2` is fully iterated for each `e1` and so on, so supplying multiple extractors effectively turns the `for` comprehension into **nested iteration**.
 
-For now, we only define iteration for **lists and maps**. Ultimately, we want any type defining a monadic `flatMap` to be iterable using a for comprehension. (Or, alternatively, any type implementing an enumerable-like interface.)
+For now, the only collections allowed are lists and maps, but we want to extend `for` comprehensions to arbitrary iterables.
 
-As we don't support pattern matching yet, **map iteration** looks like this:
+##### Loops as Expressions
 
-```
-for kv <- m              // kv is a tuple
-  let key = first(kv)
-  let value = second(kv)
-end
-```
+Loops are expressions, too. Similar to `if` expressions and blocks, the loop body expression determines the result of the loop. However, these evaluations are **aggregated into a list**.
 
-##### Loop Expressions
-
-Loops are expressions, too. Similar to if-expressions and blocks, the loop body expression determines the result of the loop. However, these evaluations are **aggregated into a list**.
-
-Take the following **example:**
+Take the following example:
 
 ```
 let names = for animal <- animals yield animal.name
 ```
 
-The for comprehension **aggregates the names** of all animals in a list of type `[String]`. 
-
-In the implementation, we can of course **optimize** the following case: When the result of a loop isn't assigned or used, we can forgo creating and filling the list.
+The for comprehension **aggregates the names** of all animals in a list of type `[String]`. The compiler optimizes away the creation of the resulting list if it isn't used.
 
 
 
 ### Type Ascriptions
 
 The **type ascription operator** `::` informs the compiler about the intended type of an expression. This can be used in situations where the compiler cannot infer a type, or doesn't infer the desired type.
+
+The type ascription operator *cannot* cast a value's type to an incompatible type. For example, type ascription cannot be used to cast an `Animal` value to the `Fox` type. Such narrowing of types is currently not supported by Lore, but will become available in a future version.
 
 ###### Example
 
@@ -627,7 +641,7 @@ let mut option = Option.some(Fox() :: Animal)  // option: Option[Animal]
 
 ### Operator Precedence
 
-Our **operator precedence** is as follows, from lowest to highest precedence:
+The **operator precedence** is defined as follows, from lowest to highest precedence:
 
 ```
 ||
@@ -643,31 +657,8 @@ Our **operator precedence** is as follows, from lowest to highest precedence:
 atoms (including function application)
 ```
 
-Note that we don't view assignments as operators. **Complex expressions** such as conditionals cannot stand as an operand; you will have to enclose them in parentheses to use them with addition, for example:
+Note that we don't view assignments as operators. **Complex expressions** such as conditionals or blocks cannot stand as an operand; you will have to enclose them in parentheses to use them with addition, for example:
 
 ```
 5 + (do 10 end) + (if a == b then 5 else 15)
 ```
-
-
-
-### Post-MVL Extensions (Ideas)
-
-- Consider introducing **Swift-style `guard` statements** with a twist: They operate within blocks. If the condition is false, continue the code, otherwise *return the value of the else part from the block*. I think this could be super useful in game development.
-
-- We could consider, once we have introduced Options, to **turn the logical operators into operators that accept any argument types** and return "truthy" values. Compare to Clojure, Elixir, or Javascript.
-
-- **Lists:**
-
-  - Define a default **order** for lists, which would probably make programmer life easier.
-
-- **Tuples:**
-
-  - How can we define `get` such that it **supports tuples of arbitrary length**? Give every tuple type a supertype called `Tuple` and implement `get` via multiple dispatch?
-  - Implement some default tuple **ordering**.
-
-- A feature such as Swift's **trailing closures**, maybe add some way to pass two or more closures. (Or just multiple parameter lists.)
-
-- **If-else:**
-
-  - If only **one branch** of an if-else expression supplies a value, return an **option** of the evaluated type.
