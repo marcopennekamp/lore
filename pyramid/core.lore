@@ -45,10 +45,12 @@ func hash(value: Any): Int = panic('`lore.core.hash` is not supported yet.')
 //                 explicitly implemented can be used in string interpolation.
 
 /**
- * Converts any Lore value to a string using the VM's native stringifier. You should specialize this function for your
- * own types. `to_string` is used by library functions such as `lore.io.println`, as well as string interpolation.
+ * Creates a string representation from the given value. `to_string` is used by string interpolation and library
+ * functions such as `lore.io.println`. It can be specialized to stringify custom types.
+ *
+ * The default implementation uses the VM's native stringifier, which uses `to_string` recursively.
  */
-func to_string(value: Any): String = intrinsic[String]('lore.core.to_string', value)
+func to_string(value: Any): String = intrinsic[String]('lore.core.to_string', value, to_string :: Any => String)
 
 /**
   * A run-time type. The struct type that backs this trait is defined ad-hoc in the runtime. Various introspection

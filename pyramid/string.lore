@@ -188,9 +188,3 @@ module String do
     */
   func all_digits?(string: String): Boolean = string |> all?(c => c == '0' || c == '1' || c == '2' || c == '3' || c == '4' || c == '5' || c == '6' || c == '7' || c == '8' || c == '9')
 end
-
-module core do
-  func to_string(value: String): String = value
-
-  // TODO (pyramid): Implement other core functions.
-end

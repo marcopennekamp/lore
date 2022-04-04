@@ -1,0 +1,21 @@
+// This test ensures that the default implementation of `to_string`, which covers lists natively, properly recursively
+// calls `to_string` for nested values.
+
+use lore.core.to_string
+use lore.Option._
+
+struct Person(name: String, age: Int)
+
+module lore.core do
+  func to_string(person: Person): String = '${person.name} is ${person.age} years old'
+end
+
+// Expected output: [Some(5), None, joe is 32 years old, Some([5.0, #hello, amy is 25 years old])] :: String
+func test(): String = do
+  to_string([
+    Some(5),
+    None,
+    Person('joe', 32),
+    Some([5.0, #hello, Person('amy', 25)]),
+  ])
+end

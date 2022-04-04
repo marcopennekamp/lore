@@ -16,22 +16,6 @@ module Tuple do
   end
 end
 
-module core do
-  use lore.Tuple._
-
-  @where A, B
-  domain tuple: (A, B)
-    func to_string(): String = '(${first(tuple)}, ${second(tuple)})'
-  end
-
-  @where A, B, C
-  domain tuple: (A, B, C)
-    func to_string(): String = '(${first(tuple)}, ${second(tuple)}, ${third(tuple)})'
-  end
-
-  // TODO (pyramid): Implement other core functions.
-end
-
 // TODO (pyramid): Map function on tuples:
 // @where A, B, R
 // func map(tuple: (A, B), f: A | B => R): (R, R) = (f(first(tuple)), f(second(tuple)))

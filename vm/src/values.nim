@@ -1,4 +1,6 @@
-import std/strformat, std/strutils
+import std/strformat
+import std/strutils
+import std/sugar
 
 import imseqs
 import property_index
@@ -108,8 +110,11 @@ proc `==`(v1: TaggedValue, v2: TaggedValue): bool =
 # This is called `get_type` so it doesn't clash with Nim's system function `typeof`.
 proc get_type*(value: TaggedValue): Type
 
-func `$`*(tagged_value: TaggedValue): string
-func `$`*(value: Value): string
+proc stringify*(tagged_value: TaggedValue, rec: TaggedValue -> string): string
+proc stringify*(value: Value, rec: TaggedValue -> string): string
+
+proc `$`*(tagged_value: TaggedValue): string
+proc `$`*(value: Value): string
 
 ########################################################################################################################
 # Primitives.                                                                                                          #
@@ -351,14 +356,13 @@ proc get_type*(value: TaggedValue): Type =
 # Stringification.                                                                                                     #
 ########################################################################################################################
 
-func `$`*(tagged_value: TaggedValue): string =
+proc stringify*(tagged_value: TaggedValue, rec: TaggedValue -> string): string =
+  ## Stringifies the given value, using `rec` to stringify sub-values.
   let tag = get_tag(tagged_value)
   if tag == TagReference:
     let value = untag_reference(tagged_value)
-    if value != nil:
-      $value
-    else:
-      "nil"
+    if value != nil: stringify(value, rec)
+    else: "nil"
   elif tag == TagInt:
     $untag_int(tagged_value)
   elif tag == TagBoolean:
@@ -367,15 +371,14 @@ func `$`*(tagged_value: TaggedValue): string =
   else:
     "unknown"
 
-func `$`*(tagged_values: seq[TaggedValue]): string = tagged_values.join(", ")
-
-func `$`*(value: Value): string =
+proc stringify*(value: Value, rec: TaggedValue -> string): string =
+  ## Stringifies the given value, using `rec` to stringify sub-values.
   case value.tpe.kind
   of Kind.Real: $cast[RealValue](value).real
   of Kind.String: cast[StringValue](value).string
   of Kind.Tuple:
     let tpl = cast[TupleValue](value)
-    "(" & $tpl.elements.join(", ") & ")"
+    "(" & $tpl.elements.map_it(string, rec(it)).join(", ") & ")"
   of Kind.Function:
     # TODO (vm): We should print the name instead of the target address, but this is non-trivial when avoiding cyclic dependencies.
     let function = cast[FunctionValue](value)
@@ -384,21 +387,30 @@ func `$`*(value: Value): string =
     of FunctionValueVariant.Single: "<single function: " & $cast[uint](function.target) & ">"
   of Kind.List:
     let list = cast[ListValue](value)
-    "[" & $list.elements.join(", ") & "]"
+    "[" & $list.elements.map_it(string, rec(it)).join(", ") & "]"
   of Kind.Shape:
     let shape = cast[ShapeValue](value)
     var properties = new_seq[string]()
     for i in 0 ..< shape.property_count:
-      properties.add(shape.meta.property_names[i] & ": " & $shape.property_values[i])
+      properties.add(shape.meta.property_names[i] & ": " & rec(shape.property_values[i]))
     "%{ " & properties.join(", ") & " }"
   of Kind.Symbol:
     let symbol = cast[SymbolValue](value)
     "#" & symbol.name
   of Kind.Struct:
+    # TODO (assembly): The property values are in lexicographic instead of declaration order, which is incorrect
+    #                  considering that structs are stringified without property names. Either we have to specify the
+    #                  property names, or the property values have to be printed in declaration order.
     let struct = cast[StructValue](value)
     let schema = struct.struct_type.get_schema
     var properties = new_seq[string]()
     for i in 0 ..< struct.property_count:
-      properties.add($struct.property_values[i])
+      properties.add(rec(struct.property_values[i]))
     schema.name & "(" & properties.join(", ") & ")"
   else: "unknown"
+
+proc `$`*(tagged_value: TaggedValue): string = stringify(tagged_value, v => $v)
+
+#proc `$`*(tagged_values: seq[TaggedValue]): string = tagged_values.join(", ")
+
+proc `$`*(value: Value): string = stringify(value, v => $v)

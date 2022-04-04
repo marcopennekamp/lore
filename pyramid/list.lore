@@ -134,16 +134,3 @@ module Enum do
     result
   end
 end
-
-module core do
-  use Enum.map
-  use lore.String
-
-  /**
-    * Converts a Lore list to a string by separating stringified elements with commas, then surrounding the list with
-    * square brackets.
-    */
-  func to_string(list: [Any]): String = list |> map(to_string) |> String.join(', ') |> String.affix('[', ']')
-
-  // TODO (pyramid): Implement other core functions.
-end

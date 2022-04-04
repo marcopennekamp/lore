@@ -1,6 +1,7 @@
 from std/math import nil
 import std/strformat
 import std/strutils
+import std/sugar
 from std/unicode import runeLen, runeAt, runeAtPos, toUTF8
 
 from definitions import FramePtr, Intrinsic, IntrinsicFunction
@@ -37,7 +38,14 @@ proc core_less_than(frame: FramePtr, arguments: Arguments): TaggedValue =
   quit("`core_less_than` is not yet implemented.")
 
 proc core_to_string(frame: FramePtr, arguments: Arguments): TaggedValue =
-  values.new_string_value_tagged($arg(0))
+  ## to_string(value: Any, rec: Any => String): String
+  ##
+  ## `to_string` accepts a function value `rec` to handle the stringification of sub-values, which should ordinarily be
+  ## `lore.core.to_string`. It allows this default implementation to still call into the user-defined `to_string`
+  ## function recursively.
+  let value = arg(0)
+  let rec = arg_function(1)
+  new_string_value_tagged(stringify(value, v => untag_reference(evaluator.evaluate_function_value(rec, frame, v), StringValue).string))
 
 proc core_panic(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## panic(message: String): Nothing
@@ -181,7 +189,7 @@ proc intr(name: string, function: IntrinsicFunction, arity: int): Intrinsic {.in
 let intrinsics*: seq[Intrinsic] = @[
   intr("lore.core.equal?", core_equal, 2),
   intr("lore.core.less_than?", core_less_than, 2),
-  intr("lore.core.to_string", core_to_string, 1),
+  intr("lore.core.to_string", core_to_string, 2),
   intr("lore.core.panic", core_panic, 1),
 
   intr("lore.int.to_real", int_to_real, 1),
