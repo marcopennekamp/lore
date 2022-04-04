@@ -73,14 +73,14 @@ object TypingFeedback {
 
     case class TypeContextExpected(expression: Expression.MultiFunctionValue) extends Feedback.Error(expression) {
       override def message: String = s"The multi-function cannot be coerced to a function value without a proper type context." +
-        s" Please provide a function type in an outer expression."
+        s" Please provide a function type in an outer expression (e.g. with a type ascription)."
     }
   }
 
   object ConstructorValues {
     case class TypeContextExpected(expression: Expression.UntypedConstructorValue) extends Feedback.Error(expression) {
       override def message: String = s"The constructor value's type arguments cannot be inferred without a proper type context." +
-        s" Please provide a function type in an outer expression."
+        s" Please provide a function type in an outer expression (e.g. with a type ascription)."
     }
   }
 
