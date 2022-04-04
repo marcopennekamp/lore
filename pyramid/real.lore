@@ -26,4 +26,4 @@ func result_to_option(result: Real | #error): Option[Real]
 func result_to_option(result: Real): Some[Real] = Some(result)
 func result_to_option(#error): None = None
 
-func nan?(number: Real): Boolean = intrinsic[Boolean]('lore.real.nan?', number)
+func nan?(value: Real): Boolean = intrinsic[Boolean]('lore.real.nan?', value)

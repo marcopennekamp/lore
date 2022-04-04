@@ -40,9 +40,11 @@ proc core_to_string(frame: FramePtr, arguments: Arguments): TaggedValue =
   values.new_string_value_tagged($arg(0))
 
 proc core_panic(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## panic(message: String): Nothing
   quit(fmt"Panic: {arg(0)}")
 
 proc int_to_real(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## to_real(value: Int): Real
   let value = arg_int(0)
   new_real_value_tagged(float64(value))
 
@@ -58,23 +60,29 @@ proc real_parse(frame: FramePtr, arguments: Arguments): TaggedValue =
     get_error_symbol()
 
 proc real_is_nan(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## nan?(value: Real): Boolean
   tag_boolean(arg_real(0) == NaN)
 
 proc string_length(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## length(string: String): Int
   tag_int(arg_string(0).runeLen)
 
 proc string_at(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## at(string: String, position: Int): String
   let rune = arg_string(0).runeAtPos(int(arg_int(1)))
   new_string_value_tagged(rune.toUTF8)
 
 proc string_at_index(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## at_index(string: String, index: Int): String
   let rune = arg_string(0).runeAt(arg_int(1))
   new_string_value_tagged(rune.toUTF8)
 
 proc string_byte_size(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## byte_size(string: String): Int
   tag_int(arg_string(0).len)
 
 proc string_byte_at(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## byte_at(string: String, index: Int): Int
   tag_int(arg_string(0)[arg_int(1)].ord)
 
 proc list_concat(frame: FramePtr, arguments: Arguments): TaggedValue =
@@ -137,9 +145,11 @@ proc list_filter(frame: FramePtr, arguments: Arguments): TaggedValue =
   new_list_value_tagged(elements, list.tpe)
 
 proc symbol_name(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## name(value: Any): String
   new_string_value_tagged(arg_symbol(0).name)
 
 proc io_println(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## println(value: Any): Unit
   echo arg(0)
   values.unit_value_tagged
 
