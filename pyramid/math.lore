@@ -1,6 +1,7 @@
 module lore.Math
 
 use lore.core.panic
+use lore.Enum.fold
 
 let pi: Real = 3.14159265359
 
@@ -33,4 +34,15 @@ func max(x: Real, y: Real): Real = if x > y then x else y
 func absolute(x: Int): Int = if x < 0 then -x else x
 func absolute(x: Real): Real = if x < 0 then -x else x
 
+func increment(x: Int): Int = x + 1
+func decrement(x: Int): Int = x - 1
+
 func pow(base: Real, exponent: Real): Real = intrinsic[Real]('lore.math.pow', base, exponent)
+
+// TODO (pyramid): Add a `sqrt` function.
+
+func sum(list: [Int]): Int = list |> fold(0, (a, b) => a + b)
+func sum(list: [Real]): Real = list |> fold(0.0, (a, b) => a + b)
+
+func product(list: [Int]): Int = list |> fold(1, (a, b) => a * b)
+func product(list: [Real]): Real = list |> fold(1.0, (a, b) => a * b)
