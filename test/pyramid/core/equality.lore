@@ -1,0 +1,152 @@
+// This test ensures that the default implementation of equality is correct and calls back into `lore.core.equal?`.
+use lore.IO.println
+use lore.String
+
+trait Position
+struct Position2(x: Real, y: Real) extends Position
+struct Position3(x: Real, y: Real, z: Real) extends Position
+
+// IgnoreCase wraps a string and redefines string equality as lower-case equality.
+struct IgnoreCase(string: String)
+struct Person(name: IgnoreCase, age: Int)
+
+trait Material
+object Leather extends Material
+object Cloth extends Material
+
+struct Bag(open material: Material)
+
+struct Parameterized[A](value: Int)
+
+module lore.core do
+  func equal?(a: IgnoreCase, b: IgnoreCase): Boolean = String.to_lower(a.string) == String.to_lower(b.string)
+  func hash(value: IgnoreCase): Int = String.to_lower(value.string) |> hash
+end
+
+func test(): [Boolean] = do
+  // We have to use `Any` as a type so that the compiler doesn't generate the direct comparison operations for
+  // primitives.
+  let x1: Any = 7
+  let x2: Any = 5
+  let x3: Any = 5
+  let x4: Any = 7.0
+  let x5: Any = 5.0
+  let x6: Any = 5.0
+
+  let tru1: Any = true
+  let tru2: Any = true
+  let fls1: Any = false
+  let fls2: Any = false
+
+  let str1: Any = 'Hello'
+  let str2: Any = 'bar'
+  let str3: Any = 'Hello'
+
+  let tpl1 = (str1, str2)
+  let tpl2 = (str1, str2, str3)
+  let tpl3 = (str3, str2, str1)
+
+  let fun1 = () => println('Hello')
+  let fun2 = () => println('Hello')
+
+  let list1 = []
+  let list2 = [str1, str2, str3]
+  let list3 = [str3, str2, str1]
+  let list4 = [tpl1, tpl2, tpl3]
+  let list5 = [tpl1, tpl3, tpl2]
+
+  let sym1: Any = #name
+  let sym2: Any = #name
+  let sym3: Any = #foo
+  let sym4: Any = #bar
+
+  let pos1 = Position2(5.0, 7.0)
+  let pos2 = Position3(5.0, 7.0, 1.0)
+  let pos3 = Position2(5.0, 9.0)
+  let pos4 = Position3(5.0, 7.0, 1.0)
+  let pos5 = Position2(5.0, 7.0)
+
+  let pers1 = Person(IgnoreCase('john'), 25)
+  let pers2 = Person(IgnoreCase('JOHN'), 30)
+  let pers3 = Person(IgnoreCase('jOhn'), 25)
+  let pers4 = Person(IgnoreCase('aMy'), 25)
+  let pers5 = Person(IgnoreCase('johN'), 30)
+
+  let bag1 = Bag(Leather)
+  let bag2 = Bag(Cloth)
+  let bag3 = Bag(Leather)
+
+  let prm1 = Parameterized[#foo](5)
+  let prm2 = Parameterized[#bar](5)
+  let prm3 = Parameterized[#foo](7)
+  let prm4 = Parameterized[#foo](5)
+
+  [
+    // Integers and Reals
+    x1 == x2,  // false
+    x1 == x3,  // false
+    x2 == x3,  // true
+    x4 == x5,  // false
+    x4 == x6,  // false
+    x5 == x6,  // true
+    x3 == x6,  // false
+
+    // Booleans
+    tru1 == tru2,  // true
+    fls1 == fls2,  // true
+    tru1 == fls1,  // false
+
+    // Strings
+    str1 == str2,  // false
+    str1 == str3,  // true
+    str2 == str3,  // false
+
+    // Tuples
+    tpl1 == tpl2,  // false
+    tpl1 == tpl3,  // false
+    tpl2 == tpl3,  // true
+
+    // Tuples: Ensure that the default implementation calls back into `lore.core.equal?`.
+    (pers1, pers2) == (pers3, pers5),  // true
+    (pers1, pers2, pers3) == (pers3, pers4, pers5),  // false
+
+    // Functions
+    fun1 == fun1,  // true
+    fun2 == fun2,  // true
+    fun1 == fun2,  // false
+
+    // Lists
+    list1 == list2,  // false
+    list2 == list3,  // true
+    list3 == list4,  // false
+    list4 == list5,  // true
+
+    // Lists: Ensure that the default implementation calls back into `lore.core.equal?`.
+    [pers1, pers2] == [pers3, pers5],  // true
+    [bag1, bag3] == [bag3, bag1],  // true
+
+    // Symbols
+    sym1 == sym2,  // true
+    sym3 == sym4,  // false
+
+    // Structs
+    pos1 == pos2,  // false
+    pos1 == pos3,  // false
+    pos1 == pos5,  // true
+    pos2 == pos4,  // true
+    pos2 == pos5,  // false
+    bag1 == bag2,  // false
+    bag1 == bag3,  // true
+
+    // Structs: Ensure that the default implementation calls back into `lore.core.equal?`.
+    pers1 == pers2,  // false
+    pers1 == pers3,  // true
+    pers1 == pers4,  // false
+    pers2 == pers5,  // true
+
+    // Structs: Ensure that type parameters are not taken into account under default equality.
+    prm1 == prm2,  // true
+    prm1 == prm3,  // false
+    prm1 == prm4,  // true
+  ]
+end
