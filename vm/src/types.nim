@@ -313,7 +313,7 @@ proc get_meta_shape_safe*(property_names: seq[string]): MetaShape =
   names = deduplicate(names, is_sorted = true)
   get_meta_shape(names)
 
-proc `===`(a: MetaShape, b: MetaShape): bool {.inline.} =
+proc `===`*(a: MetaShape, b: MetaShape): bool {.inline.} =
   ## Checks the equality of two interned meta shapes.
   cast[pointer](a) == cast[pointer](b)
 
@@ -937,6 +937,7 @@ proc are_open_property_types_equal(t1: StructType, t2: StructType): bool =
   if t1.open_property_types == nil and t2.open_property_types == nil:
     true
   elif t1.open_property_types != nil and t2.open_property_types != nil:
+    # If both types have open property types, we can bypass `get_property_type`.
     for i in 0 ..< t1.open_property_types.len:
       if not are_equal(t1.open_property_types[i], t2.open_property_types[i]):
         return false

@@ -104,11 +104,13 @@ const
   False: TaggedValue = TaggedValue(0 or TagBoolean)
   True: TaggedValue = TaggedValue((1 shl 3) or TagBoolean)
 
-proc `==`(v1: TaggedValue, v2: TaggedValue): bool =
-  uint64(v1) == uint64(v2)
+proc `===`(v1: TaggedValue, v2: TaggedValue): bool = uint64(v1) == uint64(v2)
+proc `===`(v1: Value, v2: Value): bool = cast[uint](v1) == cast[uint](v2)
 
-# This is called `get_type` so it doesn't clash with Nim's system function `typeof`.
 proc get_type*(value: TaggedValue): Type
+
+proc are_equal*(v1: TaggedValue, v2: TaggedValue, rec: (TaggedValue, TaggedValue) -> bool): bool
+proc are_equal*(v1: Value, v2: Value, rec: (TaggedValue, TaggedValue) -> bool): bool
 
 proc stringify*(tagged_value: TaggedValue, rec: TaggedValue -> string): string
 proc stringify*(value: Value, rec: TaggedValue -> string): string
@@ -134,7 +136,7 @@ proc tag_int*(value: int64): TaggedValue = cast[TaggedValue]((value shl 3) or ca
 proc untag_int*(value: TaggedValue): int64 = cast[int64](value) shr 3
 
 proc tag_boolean*(value: bool): TaggedValue = (if value: True else: False)
-proc untag_boolean*(value: TaggedValue): bool = value == True
+proc untag_boolean*(value: TaggedValue): bool = value === True
 
 proc new_real_value*(value: float64): Value = RealValue(tpe: types.real_type, real: value)
 proc new_real_value_tagged*(value: float64): TaggedValue = tag_reference(new_real_value(value))
@@ -341,6 +343,8 @@ proc get_property_value*(instance: TaggedValue, name: string): TaggedValue =
 ########################################################################################################################
 
 proc get_type*(value: TaggedValue): Type =
+  ## Returns the type of `value`. This function is called `get_type` so it doesn't clash with Nim's system function
+  ## `typeof`.
   let tag = get_tag(value)
   if tag == TagReference:
     let ref_value = untag_reference(value)
@@ -351,6 +355,77 @@ proc get_type*(value: TaggedValue): Type =
     types.boolean_type
   else:
     quit(fmt"Unknown tag {tag}.")
+
+########################################################################################################################
+# Value equality and comparison.                                                                                       #
+########################################################################################################################
+
+proc are_equal*(v1: TaggedValue, v2: TaggedValue, rec: (TaggedValue, TaggedValue) -> bool): bool =
+  ## Whether `v1` and `v2` are equal under native equality, using `rec` to compare sub-values. This function is the
+  ## default implementation for `lore.core.equal?`.
+  # The first case covers the equality of Int and Boolean values.
+  if v1 === v2: true
+  else: get_tag(v1) == TagReference and get_tag(v2) == TagReference and are_equal(untag_reference(v1), untag_reference(v2), rec)
+
+proc are_equal*(v1: Value, v2: Value, rec: (TaggedValue, TaggedValue) -> bool): bool =
+  ## Whether `v1` and `v2` are equal under native equality, using `rec` to compare sub-values. This function is a part
+  ## of the default implementation for `lore.core.equal?`.
+  if v1 === v2:
+    return true
+
+  # If their kinds differ, `v1` and `v2` cannot be equal under the rules of default equality.
+  if v1.tpe.kind != v2.tpe.kind:
+    return false
+
+  case v1.tpe.kind
+  of Kind.Real:
+    cast[RealValue](v1).real == cast[RealValue](v2).real
+  of Kind.String:
+    cast[StringValue](v1).string == cast[StringValue](v2).string
+  of Kind.Tuple:
+    let v1 = cast[TupleValue](v1)
+    let v2 = cast[TupleValue](v2)
+    if v1.elements.len != v2.elements.len:
+      return false
+    for i in 0 ..< v1.elements.len:
+      if not rec(v1.elements[i], v2.elements[i]):
+        return false
+    true
+  of Kind.List:
+    let v1 = cast[ListValue](v1)
+    let v2 = cast[ListValue](v2)
+    if v1.elements.len != v2.elements.len:
+      return false
+    for i in 0 ..< v1.elements.len:
+      if not rec(v1.elements[i], v2.elements[i]):
+        return false
+    true
+  of Kind.Shape:
+    let v1 = cast[ShapeValue](v1)
+    let v2 = cast[ShapeValue](v2)
+    if v1.meta != v2.meta:
+      return false
+    # As the meta shapes are equal, the property values must be in the same order.
+    for i in 0 ..< v1.property_count:
+      if not rec(v1.property_values[i], v2.property_values[i]):
+        return false
+    true
+  of Kind.Symbol:
+    # TODO (vm): Once symbol values are interned, this case is already covered by the `v1 === v2` check above.
+    cast[SymbolValue](v1).name == cast[SymbolValue](v2).name
+  of Kind.Struct:
+    let v1 = cast[StructValue](v1)
+    let v2 = cast[StructValue](v2)
+    if v1.struct_type.schema !== v2.struct_type.schema:
+      return false
+    # As the struct schemas are equal, the property values must be in the same order.
+    for i in 0 ..< v1.property_count:
+      if not rec(v1.property_values[i], v2.property_values[i]):
+        return false
+    true
+  else:
+    # Functions can only be referentially equal, so they are covered by this case.
+    false
 
 ########################################################################################################################
 # Stringification.                                                                                                     #
@@ -366,7 +441,7 @@ proc stringify*(tagged_value: TaggedValue, rec: TaggedValue -> string): string =
   elif tag == TagInt:
     $untag_int(tagged_value)
   elif tag == TagBoolean:
-    if tagged_value == True: "true"
+    if tagged_value === True: "true"
     else: "false"
   else:
     "unknown"

@@ -314,7 +314,7 @@ let bark_options = %{ show_teeth: true, volume: 80 }
 
 ##### Equality and Order
 
-Two shapes are equal if their properties are equal. Shapes are unordered by default.
+Two shapes are equal if their properties are equal under `lore.core.equal?`. Shapes are unordered by default.
 
 
 
@@ -373,9 +373,9 @@ let box = StringBox('I am in a box.')
 
 ##### Equality and Order
 
-Struct equality is handled by the default implementation of `lore.core.equal?`, which compares the structs' types for equality and its properties with `lore.core.equal?`. You can override `lore.core.equal?` with your own definition for any combination of types.
+Struct equality is handled by the default implementation of `lore.core.equal?`, which compares the structs' schemas for equality and its properties with `lore.core.equal?`. You can override `lore.core.equal?` with your own definition for any combination of types.
 
-The default implementation of struct equality considers two structs with different open property types as unequal, as the struct types aren't equal, even if the property values might be equal under `lore.core.equal?`. Keep that in mind if you rely on the default definition of equality. In practice, this issue should almost never crop up.
+The default implementation of struct equality considers two structs with different open property types as equal if their property values are equal under `lore.core.equal?`, as struct types have no bearing on the definition of equality.
 
 Struct ordering is governed by `lore.core.less_than?`, which by default returns `false` as it assumes that structs are unordered. You can override `lore.core.less_than?` with your own definition for any combination of types.
 

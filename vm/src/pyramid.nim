@@ -30,8 +30,15 @@ proc get_error_symbol(): TaggedValue =
   error_symbol
 
 proc core_equal(frame: FramePtr, arguments: Arguments): TaggedValue =
-  # TODO (assembly): Implement.
-  quit("`core_equal` is not yet implemented.")
+  ## equal?(a: Any, b: Any, rec: (Any, Any) => Boolean): Boolean
+  ##
+  ## `core_equal` accepts a function value `rec` to handle the comparison of sub-values, which should ordinarily be
+  ## `lore.core.euqal?`. It allows this default implementation to still call into the user-defined `equal?` function
+  ## recursively.
+  let v1 = arg(0)
+  let v2 = arg(1)
+  let rec = arg_function(2)
+  tag_boolean(are_equal(v1, v2, (v1, v2) => untag_boolean(evaluator.evaluate_function_value(rec, frame, v1, v2))))
 
 proc core_less_than(frame: FramePtr, arguments: Arguments): TaggedValue =
   # TODO (assembly): Implement.
@@ -195,8 +202,8 @@ proc intr(name: string, function: IntrinsicFunction, arity: int): Intrinsic {.in
   Intrinsic(name: name, function: function, arity: arity)
 
 let intrinsics*: seq[Intrinsic] = @[
-  intr("lore.core.equal?", core_equal, 2),
   intr("lore.core.less_than?", core_less_than, 2),
+  intr("lore.core.equal?", core_equal, 3),
   intr("lore.core.to_string", core_to_string, 2),
   intr("lore.core.panic", core_panic, 1),
 
