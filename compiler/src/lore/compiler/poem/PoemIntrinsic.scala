@@ -28,6 +28,8 @@ object PoemIntrinsic {
     intr("lore.string.at_index!", 2),
     intr("lore.string.byte_size", 1),
     intr("lore.string.byte_at!", 2),
+    intr("lore.string.to_lower", 1),
+    intr("lore.string.to_upper", 1),
 
     intr("lore.tuple.get!", 2, isVirtual = true),
 

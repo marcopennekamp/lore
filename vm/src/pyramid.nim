@@ -2,7 +2,7 @@ from std/math import nil
 import std/strformat
 import std/strutils
 import std/sugar
-from std/unicode import runeLen, runeAt, runeAtPos, toUTF8
+from std/unicode import rune_len, rune_at, rune_at_pos, to_utf8, to_lower, to_upper
 
 from definitions import FramePtr, Intrinsic, IntrinsicFunction
 from evaluator import nil
@@ -73,17 +73,17 @@ proc real_is_nan(frame: FramePtr, arguments: Arguments): TaggedValue =
 
 proc string_length(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## length(string: String): Int
-  tag_int(arg_string(0).runeLen)
+  tag_int(arg_string(0).rune_len)
 
 proc string_at(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## at(string: String, position: Int): String
-  let rune = arg_string(0).runeAtPos(int(arg_int(1)))
-  new_string_value_tagged(rune.toUTF8)
+  let rune = arg_string(0).rune_at_pos(int(arg_int(1)))
+  new_string_value_tagged(rune.to_utf8)
 
 proc string_at_index(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## at_index(string: String, index: Int): String
-  let rune = arg_string(0).runeAt(arg_int(1))
-  new_string_value_tagged(rune.toUTF8)
+  let rune = arg_string(0).rune_at(arg_int(1))
+  new_string_value_tagged(rune.to_utf8)
 
 proc string_byte_size(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## byte_size(string: String): Int
@@ -92,6 +92,14 @@ proc string_byte_size(frame: FramePtr, arguments: Arguments): TaggedValue =
 proc string_byte_at(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## byte_at(string: String, index: Int): Int
   tag_int(arg_string(0)[arg_int(1)].ord)
+
+proc string_to_lower(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## to_lower(string: String): String
+  new_string_value_tagged(arg_string(0).to_lower)
+
+proc string_to_upper(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## to_upper(string: String): String
+  new_string_value_tagged(arg_string(0).to_upper)
 
 proc list_concat(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## concat(list1: [A], list2: [B]): [A | B]
@@ -203,6 +211,8 @@ let intrinsics*: seq[Intrinsic] = @[
   intr("lore.string.at_index!", string_at_index, 2),
   intr("lore.string.byte_size", string_byte_size, 1),
   intr("lore.string.byte_at!", string_byte_at, 2),
+  intr("lore.string.to_lower", string_to_lower, 1),
+  intr("lore.string.to_upper", string_to_upper, 1),
 
   intr("lore.list.concat", list_concat, 2),
   intr("lore.list.slice", list_slice, 3),

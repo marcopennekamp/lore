@@ -153,6 +153,16 @@ module String do
   end
 
   /**
+    * Converts each code point in `string` to lower case.
+    */
+  func to_lower(string: String): String = intrinsic[String]('lore.string.to_lower', string)
+
+  /**
+    * Converts each code point in `string` to upper case.
+    */
+  func to_upper(string: String): String = intrinsic[String]('lore.string.to_upper', string)
+
+  /**
     * Prefixes `string` with `prefix` and suffixes it with `suffix`.
     */
   func affix(string: String, prefix: String, suffix: String): String = '$prefix$string$suffix'
