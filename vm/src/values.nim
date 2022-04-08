@@ -320,16 +320,18 @@ proc get_open_property_types*(schema: StructSchema, property_values: open_array[
 
 proc struct_type*(struct: StructValue): StructType {.inline.} = cast[StructType](struct.tpe)
 
-proc property_count*(struct: StructValue): int {.inline.} = struct.struct_type.get_schema.properties.len
+proc get_schema*(struct: StructValue): StructSchema {.inline.} = struct.struct_type.get_schema
+
+proc property_count*(struct: StructValue): int {.inline.} = struct.get_schema.properties.len
 
 proc get_property_value*(struct: StructValue, name: string): TaggedValue =
   ## Gets the value associated with the property `name`. The name must be a valid property.
-  struct.property_values[struct.struct_type.get_schema.property_index.find_offset(name)]
+  struct.property_values[struct.get_schema.property_index.find_offset(name)]
 
 proc set_property_value*(struct: StructValue, name: string, value: TaggedValue) =
   ## Sets the value of the property `name` to `value`. The name must be a valid property. Open properties should NOT be
   ## mutated, but this is not enforced by `set_property_value`.
-  struct.property_values[struct.struct_type.get_schema.property_index.find_offset(name)] = value
+  struct.property_values[struct.get_schema.property_index.find_offset(name)] = value
 
 ########################################################################################################################
 # Combined property functions.                                                                                         #
@@ -483,7 +485,7 @@ proc stringify*(value: Value, rec: TaggedValue -> string): string =
     #                  considering that structs are stringified without property names. Either we have to specify the
     #                  property names, or the property values have to be printed in declaration order.
     let struct = cast[StructValue](value)
-    let schema = struct.struct_type.get_schema
+    let schema = struct.get_schema
     var properties = new_seq[string]()
     for i in 0 ..< struct.property_count:
       properties.add(rec(struct.property_values[i]))
