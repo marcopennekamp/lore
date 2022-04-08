@@ -217,7 +217,7 @@ One might expect the plus operator to support **string concatenation**. This is 
 
 ##### Equality and Order
 
-Two strings are equal if they have exactly the same bytes. Strings are ordered alphabetically.
+Two strings are equal if they have exactly the same bytes. Strings are ordered lexicographically by code point. This ordering will not produce good user-facing results, but constitutes a sensible default.
 
 
 
@@ -241,7 +241,7 @@ Lore supports a **unit** value, which is simply the empty tuple. It is written `
 
 ##### Equality and Order
 
-Two tuples are equal if they have the same size and their elements are equal under `lore.core.equal?`. Tuples are unordered by default.
+Two tuples are equal if they have the same size and their elements are equal under `lore.core.equal?`. A tuple is less than another tuple if they have the same size and their elements follow lexicographic ordering under `lore.core.less_than?`.
 
 
 
@@ -274,7 +274,7 @@ Lore currently has no native, mutable array type. They will eventually be added 
 
 ##### Equality and Order
 
-Two lists are equal if they have the same lengths and each of their elements, considered in order, are equal under `lore.core.equal?`. Lists are unordered by default.
+Two lists are equal if they have the same lengths and each of their elements, considered in order, are equal under `lore.core.equal?`. A list `v1` is less than another list `v2` if their elements follow lexicographic ordering under `lore.core.less_than?`. If all elements are equal, but `v1` is shorter than `v2`, `v1 < v2` holds.
 
 
 
@@ -314,7 +314,11 @@ let bark_options = %{ show_teeth: true, volume: 80 }
 
 ##### Equality and Order
 
-Two shapes are equal if their properties are equal under `lore.core.equal?`. Shapes are unordered by default.
+Two shapes are equal if their properties are equal under `lore.core.equal?`.
+
+A shape `s1` is less than a shape `s2` if properties in `s1` follow lexicographic order under `lore.core.less_than?` when compared to properties with the same name from `s2`. Properties are considered in the order of their names. If `s1` contains a property that isn't contained in `s2`, `s1` cannot be less than `s2`.
+
+Comparing shape values with the exact same property names follows a strict total order if the property values also follow a strict total order. Otherwise, shape value comparison follows a strict *partial* order, as not all elements are comparable. For example, `%{ foo: 5 }` and `%{ bar: 10 }` are incomparable, because neither value contains the other's property names.
 
 
 
@@ -377,7 +381,7 @@ Struct equality is handled by the default implementation of `lore.core.equal?`, 
 
 The default implementation of struct equality considers two structs with different open property types as equal if their property values are equal under `lore.core.equal?`, as struct types have no bearing on the definition of equality.
 
-Struct ordering is governed by `lore.core.less_than?`, which by default returns `false` as it assumes that structs are unordered. You can override `lore.core.less_than?` with your own definition for any combination of types.
+A struct `s1` is less than a struct `s2` if `s1` and `s2` have the same schema and their properties in their order of declaration are lexicographically ordered under `lore.core.less_than?`. You can override `lore.core.less_than?` with your own definition for any combination of (struct) types.
 
 
 
