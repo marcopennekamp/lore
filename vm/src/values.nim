@@ -119,7 +119,7 @@ proc `$`*(tagged_value: TaggedValue): string
 proc `$`*(value: Value): string
 
 ########################################################################################################################
-# Primitives.                                                                                                          #
+# Tags.                                                                                                                #
 ########################################################################################################################
 
 proc get_tag*(value: TaggedValue): uint64 = value.uint and TagMask
@@ -138,7 +138,13 @@ proc untag_int*(value: TaggedValue): int64 = cast[int64](value) shr 3
 proc tag_boolean*(value: bool): TaggedValue = (if value: True else: False)
 proc untag_boolean*(value: TaggedValue): bool = value === True
 
-proc new_real_value*(value: float64): Value = RealValue(tpe: types.real_type, real: value)
+proc is_nil_reference*(value: TaggedValue): bool = is_reference(value) and untag_reference(value) == nil
+
+########################################################################################################################
+# Reals.                                                                                                               #
+########################################################################################################################
+
+proc new_real_value*(value: float64): Value = RealValue(tpe: real_type, real: value)
 proc new_real_value_tagged*(value: float64): TaggedValue = tag_reference(new_real_value(value))
 
 ########################################################################################################################
@@ -149,7 +155,7 @@ proc new_string_value*(value: string): Value =
   ## Note that the resulting StringValue's `string` will be a shallow copy of `value`. If `value` is subsequently
   ## modified, `string` will change as well. This is a valid optimization because `new_string` will usually be called
   ## with a fresh string value.
-  let string_value = StringValue(tpe: types.string_type)
+  let string_value = StringValue(tpe: string_type)
   shallow_copy(string_value.string, value)
   string_value
 
@@ -159,7 +165,7 @@ proc new_string_value_tagged*(value: string): TaggedValue = tag_reference(new_st
 # Tuples.                                                                                                              #
 ########################################################################################################################
 
-let unit_value*: Value = TupleValue(tpe: types.unit_type, elements: empty_immutable_seq[TaggedValue]())
+let unit_value*: Value = TupleValue(tpe: unit_type, elements: empty_immutable_seq[TaggedValue]())
 let unit_value_tagged*: TaggedValue = tag_reference(unit_value)
 
 proc new_tuple_value*(elements: ImSeq[TaggedValue], tpe: Type): Value =
@@ -175,7 +181,7 @@ proc new_tuple_value*(elements: ImSeq[TaggedValue]): Value =
   var element_types = new_immutable_seq[Type](length)
   for i in 0 ..< length:
     element_types[i] = get_type(elements[i])
-  new_tuple_value(elements, types.new_tuple_type(element_types))
+  new_tuple_value(elements, new_tuple_type(element_types))
 
 proc new_tuple_value_tagged*(elements: ImSeq[TaggedValue]): TaggedValue = tag_reference(new_tuple_value(elements))
 
@@ -234,7 +240,7 @@ proc new_shape_value*(meta_shape: MetaShape, property_values: open_array[TaggedV
     shape_value.property_values[i] = property_value
     property_types[i] = get_type(property_value)
 
-  shape_value.tpe = types.new_shape_type(meta_shape, property_types)
+  shape_value.tpe = new_shape_type(meta_shape, property_types)
   shape_value
 
 proc new_shape_value_tagged*(meta_shape: MetaShape, property_values: open_array[TaggedValue]): TaggedValue =
@@ -244,7 +250,7 @@ proc get_property_value*(shape: ShapeValue, name: string): TaggedValue =
   ## Gets the value associated with the property named `name`. The name must be a valid property.
   shape.property_values[shape.meta.property_index.find_offset(name)]
 
-let empty_meta_shape*: MetaShape = types.get_meta_shape([])
+let empty_meta_shape*: MetaShape = get_meta_shape([])
 
 let empty_shape*: TaggedValue = new_shape_value_tagged(empty_meta_shape, [])
 
@@ -252,7 +258,7 @@ let empty_shape*: TaggedValue = new_shape_value_tagged(empty_meta_shape, [])
 # Symbols.                                                                                                             #
 ########################################################################################################################
 
-proc new_symbol_value*(name: string): Value = SymbolValue(tpe: types.new_symbol_type(name), name: name)
+proc new_symbol_value*(name: string): Value = SymbolValue(tpe: new_symbol_type(name), name: name)
 
 proc new_symbol_value_tagged*(name: string): TaggedValue = tag_reference(new_symbol_value(name))
 
@@ -348,11 +354,11 @@ proc get_type*(value: TaggedValue): Type =
   let tag = get_tag(value)
   if tag == TagReference:
     let ref_value = untag_reference(value)
-    if ref_value != nil: ref_value.tpe else: types.any_type
+    if ref_value != nil: ref_value.tpe else: any_type
   elif tag == TagInt:
-    types.int_type
+    int_type
   elif tag == TagBoolean:
-    types.boolean_type
+    boolean_type
   else:
     quit(fmt"Unknown tag {tag}.")
 

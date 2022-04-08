@@ -20,12 +20,12 @@ template arg_function(index: int): FunctionValue = untag_reference(arg(index), F
 template arg_list(index: int): ListValue = untag_reference(arg(index), ListValue)
 template arg_symbol(index: int): SymbolValue = untag_reference(arg(index), SymbolValue)
 
-var error_symbol: TaggedValue = TaggedValue(cast[uint64](nil))
+var error_symbol: TaggedValue = tag_reference(nil)
 
 proc get_error_symbol(): TaggedValue =
-  ## Returns a symbol value `#error`, which is used by various intrinsics to communicate an error to Pyramid. We cannoi
+  ## Returns a symbol value `#error`, which is used by various intrinsics to communicate an error to Pyramid. We cannot
   ## use Option because it's not defined within the VM.
-  if untag_reference(error_symbol) == nil:
+  if is_nil_reference(error_symbol):
     error_symbol = new_symbol_value_tagged("error")
   error_symbol
 
