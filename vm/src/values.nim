@@ -112,6 +112,9 @@ proc get_type*(value: TaggedValue): Type
 proc are_equal*(v1: TaggedValue, v2: TaggedValue, rec: (TaggedValue, TaggedValue) -> bool): bool
 proc are_equal*(v1: Value, v2: Value, rec: (TaggedValue, TaggedValue) -> bool): bool
 
+proc is_less_than*(v1: TaggedValue, v2: TaggedValue, rec: (TaggedValue, TaggedValue) -> bool): bool
+proc is_less_than*(v1: Value, v2: Value, rec: (TaggedValue, TaggedValue) -> bool): bool
+
 proc stringify*(tagged_value: TaggedValue, rec: TaggedValue -> string): string
 proc stringify*(value: Value, rec: TaggedValue -> string): string
 
@@ -250,6 +253,14 @@ proc get_property_value*(shape: ShapeValue, name: string): TaggedValue =
   ## Gets the value associated with the property named `name`. The name must be a valid property.
   shape.property_values[shape.meta.property_index.find_offset(name)]
 
+proc get_property_value_if_exists*(shape: ShapeValue, name: string): TaggedValue =
+  ## Gets the type of the property `name`. If the property does not exist, this function returns a tagged `nil`.
+  let offset = shape.meta.property_index.find_offset_if_exists(name)
+  if offset >= 0:
+    shape.property_values[offset]
+  else:
+    tag_reference(nil)
+
 let empty_meta_shape*: MetaShape = get_meta_shape([])
 
 let empty_shape*: TaggedValue = new_shape_value_tagged(empty_meta_shape, [])
@@ -369,15 +380,15 @@ proc get_type*(value: TaggedValue): Type =
 ########################################################################################################################
 
 proc are_equal*(v1: TaggedValue, v2: TaggedValue, rec: (TaggedValue, TaggedValue) -> bool): bool =
-  ## Whether `v1` and `v2` are equal under native equality, using `rec` to compare sub-values. This function is the
-  ## default implementation for `lore.core.equal?`.
+  ## Whether `v1` and `v2` are equal under the rules of default equality, using `rec` to compare sub-values. This
+  ## function is the default implementation for `lore.core.equal?`.
   # The first case covers the equality of Int and Boolean values.
   if v1 === v2: true
   else: get_tag(v1) == TagReference and get_tag(v2) == TagReference and are_equal(untag_reference(v1), untag_reference(v2), rec)
 
 proc are_equal*(v1: Value, v2: Value, rec: (TaggedValue, TaggedValue) -> bool): bool =
-  ## Whether `v1` and `v2` are equal under native equality, using `rec` to compare sub-values. This function is a part
-  ## of the default implementation for `lore.core.equal?`.
+  ## Whether `v1` and `v2` are equal under the rules of default equality, using `rec` to compare sub-values. This
+  ## function is a part of the default implementation for `lore.core.equal?`.
   if v1 === v2:
     return true
 
@@ -433,6 +444,86 @@ proc are_equal*(v1: Value, v2: Value, rec: (TaggedValue, TaggedValue) -> bool): 
     true
   else:
     # Functions can only be referentially equal, so they are covered by this case.
+    false
+
+proc is_less_than*(v1: TaggedValue, v2: TaggedValue, rec: (TaggedValue, TaggedValue) -> bool): bool =
+  ## Whether `v1` is less than `v2` under the rules of default comparisons, using `rec` to compare sub-values. This
+  ## function is the default implementation for `lore.core.less_than?`.
+  let tag1 = get_tag(v1)
+  let tag2 = get_tag(v2)
+  if tag1 != tag2:
+    return false
+
+  if tag1 == TagInt: untag_int(v1) < untag_int(v2)
+  elif tag1 == TagReference: is_less_than(untag_reference(v1), untag_reference(v2), rec)
+  else: false
+
+proc is_less_than*(v1: Value, v2: Value, rec: (TaggedValue, TaggedValue) -> bool): bool =
+  ## Whether `v1` is less than `v2` under the rules of default comparisons, using `rec` to compare sub-values. This
+  ## function is a part of the default implementation for `lore.core.less_than?`.
+  # If their kinds differ, `v1` cannot be less than `v2` under the rules of default comparisons.
+  if v1.tpe.kind != v2.tpe.kind:
+    return false
+
+  case v1.tpe.kind
+  of Kind.Real:
+    cast[RealValue](v1).real < cast[RealValue](v2).real
+  of Kind.String:
+    # This is a byte-wise comparison, but yields the same results as a code point-wise comparison in UTF-8.
+    cast[StringValue](v1).string < cast[StringValue](v2).string
+  of Kind.Tuple:
+    let v1 = cast[TupleValue](v1)
+    let v2 = cast[TupleValue](v2)
+    if v1.elements.len != v2.elements.len:
+      return false
+    for i in 0 ..< v1.elements.len:
+      if rec(v1.elements[i], v2.elements[i]):
+        return true
+      if rec(v2.elements[i], v1.elements[i]):
+        return false
+    false
+  of Kind.List:
+    let v1 = cast[ListValue](v1)
+    let v2 = cast[ListValue](v2)
+    let length = min(v1.elements.len, v2.elements.len)
+    for i in 0 ..< v1.elements.len:
+      if rec(v1.elements[i], v2.elements[i]):
+        return true
+      if rec(v2.elements[i], v1.elements[i]):
+        return false
+    # At this point, all elements are equal. If `v1` is the shorter list, it'll be less than `v2`.
+    v1.elements.len < v2.elements.len
+  of Kind.Shape:
+    let v1 = cast[ShapeValue](v1)
+    let v2 = cast[ShapeValue](v2)
+    for property_name in v1.meta.property_names:
+      let p2 = v2.get_property_value_if_exists(property_name)
+      if is_nil_reference(p2):
+        # `v1` cannot be less than `v2` if `property_name` doesn't exist in `v2`.
+        return false
+      let p1 = v1.get_property_value(property_name)
+      if rec(p1, p2):
+        return true
+      if rec(p2, p1):
+        return false
+    false
+  of Kind.Struct:
+    let v1 = cast[StructValue](v1)
+    let v2 = cast[StructValue](v2)
+    if v1.get_schema !== v2.get_schema:
+      return false
+    let schema = v1.get_schema
+    for property_name in schema.property_declaration_order:
+      let offset = schema.property_index.find_offset(property_name)
+      let p1 = v1.property_values[offset]
+      let p2 = v2.property_values[offset]
+      if rec(p1, p2):
+        return true
+      if rec(p2, p1):
+        return false
+    false
+  else:
+    # Functions and symbols have no default order.
     false
 
 ########################################################################################################################

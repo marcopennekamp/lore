@@ -19,8 +19,10 @@ func equal?(a: Any, b: Any): Boolean = intrinsic[Boolean]('lore.core.equal?', a,
 /**
  * The default "less than" function used by the compiler for comparing complex types. This function is invoked when
  * using the < and > operators with at least one non-primitive, non-symbol operand.
+ *
+ * The default implementation acts according to the specification and uses `less_than?` for recursive comparisons.
  */
-func less_than?(a: Any, b: Any): Boolean = intrinsic[Boolean]('lore.core.less_than?', a, b)
+func less_than?(a: Any, b: Any): Boolean = intrinsic[Boolean]('lore.core.less_than?', a, b, less_than? :: (Any, Any) => Boolean)
 
 /**
  * The default "less than or equal" function used by the compiler for comparing complex types. This function is invoked

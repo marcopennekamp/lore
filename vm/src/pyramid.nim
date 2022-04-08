@@ -41,8 +41,15 @@ proc core_equal(frame: FramePtr, arguments: Arguments): TaggedValue =
   tag_boolean(are_equal(v1, v2, (v1, v2) => untag_boolean(evaluator.evaluate_function_value(rec, frame, v1, v2))))
 
 proc core_less_than(frame: FramePtr, arguments: Arguments): TaggedValue =
-  # TODO (assembly): Implement.
-  quit("`core_less_than` is not yet implemented.")
+  ## less_than?(a: Any, b: Any, rec: (Any, Any) => Boolean): Boolean
+  ##
+  ## `less_than?` accepts a function value `rec` to handle the comparison of sub-values, which should ordinarily be
+  ## `lore.core.less_than?`. It allows this default implementation to still call into the user-defined `less_than?`
+  ## function recursively.
+  let v1 = arg(0)
+  let v2 = arg(1)
+  let rec = arg_function(2)
+  tag_boolean(is_less_than(v1, v2, (v1, v2) => untag_boolean(evaluator.evaluate_function_value(rec, frame, v1, v2))))
 
 proc core_to_string(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## to_string(value: Any, rec: Any => String): String
@@ -202,8 +209,8 @@ proc intr(name: string, function: IntrinsicFunction, arity: int): Intrinsic {.in
   Intrinsic(name: name, function: function, arity: arity)
 
 let intrinsics*: seq[Intrinsic] = @[
-  intr("lore.core.less_than?", core_less_than, 2),
   intr("lore.core.equal?", core_equal, 3),
+  intr("lore.core.less_than?", core_less_than, 3),
   intr("lore.core.to_string", core_to_string, 2),
   intr("lore.core.panic", core_panic, 1),
 
