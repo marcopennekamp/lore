@@ -30,6 +30,7 @@ object PoemSchemaWriter {
     writer.writeStringWithLength(property.name)
     PoemTypeWriter.write(property.tpe)
     writer.writeBoolean8(property.isOpen)
+    writer.writeUInt16(property.declarationIndex)
   }
 
 }

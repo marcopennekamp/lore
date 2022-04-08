@@ -51,6 +51,7 @@ type
     name*: string
     tpe*: PoemType
     is_open*: bool
+    declaration_index*: uint16
 
   PoemGlobalVariable* = ref object of RootObj
     name*: string
@@ -465,7 +466,8 @@ let poem_boolean_type*: PoemType = PoemBasicType(tpe: boolean_type)
 let poem_string_type*: PoemType = PoemBasicType(tpe: string_type)
 let poem_unit_type*: PoemType = PoemXaryType(kind: Kind.Tuple, types: @[])
 
-proc poem_struct_property*(name: string, tpe: PoemType, is_open: bool): PoemStructProperty = PoemStructProperty(name: name, tpe: tpe, is_open: is_open)
+proc poem_struct_property*(name: string, tpe: PoemType, is_open: bool, declaration_index: uint16): PoemStructProperty =
+  PoemStructProperty(name: name, tpe: tpe, is_open: is_open, declaration_index: declaration_index)
 
 proc poem_function_instance*(name: string): PoemFunctionInstance = PoemFunctionInstance(name: name, type_arguments: @[])
 proc poem_function_instance*(name: string, type_arguments: seq[PoemType]): PoemFunctionInstance = PoemFunctionInstance(name: name, type_arguments: type_arguments)
@@ -794,7 +796,8 @@ proc read_struct_property(stream: FileStream): PoemStructProperty =
   let name = stream.read_string_with_length()
   let tpe = stream.read_type()
   let is_open = stream.read(bool)
-  PoemStructProperty(name: name, tpe: tpe, is_open: is_open)
+  let declaration_index = stream.read(uint16)
+  PoemStructProperty(name: name, tpe: tpe, is_open: is_open, declaration_index: declaration_index)
 
 proc write_schema(stream: FileStream, schema: PoemSchema) =
   let kind_code: uint8 =
@@ -820,6 +823,7 @@ proc write_struct_property(stream: FileStream, property: PoemStructProperty) =
   stream.write_string_with_length(property.name)
   stream.write_type(property.tpe)
   stream.write(property.is_open)
+  stream.write(property.declaration_index)
 
 ########################################################################################################################
 # Global variables.                                                                                                    #

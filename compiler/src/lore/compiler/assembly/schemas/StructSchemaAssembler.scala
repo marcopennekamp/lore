@@ -24,11 +24,9 @@ object StructSchemaAssembler {
     poemTypeParameters: Vector[PoemTypeParameter],
     poemSupertraits: Vector[PoemNamedType],
   )(implicit registry: Registry): (PoemStructSchema, Vector[PoemFunction], Option[PoemGlobalVariable]) = {
-    val orderedProperties = PropertyOrder.sort(schema.definition.properties)(_.name)
-    val poemProperties = orderedProperties.map(generateProperty)
-
+    val poemProperties = generateProperties(schema.definition.properties)
     val poemSchema = PoemStructSchema(schema.kind, schema.name, poemTypeParameters, poemSupertraits, poemProperties)
-    val poemConstructor = generateConstructor(schema, orderedProperties)
+    val poemConstructor = generateConstructor(schema)
     val (poemObject, poemObjectFunctions) = if (schema.definition.isObject) {
       val (poemGlobalVariable, poemFunctions) = generateObject(schema)
       (Some(poemGlobalVariable), poemFunctions)
@@ -38,8 +36,10 @@ object StructSchemaAssembler {
     (poemSchema, poemConstructor +: (poemObjectFunctions ++ poemPropertyDefaultValueFunctions), poemObject)
   }
 
-  private def generateProperty(property: StructPropertyDefinition): PoemStructProperty = {
-    PoemStructProperty(property.name, TypeAssembler.generate(property.tpe), property.isOpen)
+  private def generateProperties(properties: Vector[StructPropertyDefinition]): Vector[PoemStructProperty] = {
+    PropertyOrder.sort(properties.zipWithIndex)(_._1.name).map { case (property, declarationIndex) =>
+      PoemStructProperty(property.name, TypeAssembler.generate(property.tpe), property.isOpen, declarationIndex)
+    }
   }
 
   /**
@@ -51,16 +51,14 @@ object StructSchemaAssembler {
     *                  constructor in the ExpressionAssembler, when it's used directly. This is true if the struct has
     *                  no open type parameters.
     */
-  private def generateConstructor(
-    schema: StructSchema,
-    orderedProperties: Vector[StructPropertyDefinition],
-  )(implicit registry: Registry): PoemFunction = {
+  private def generateConstructor(schema: StructSchema)(implicit registry: Registry): PoemFunction = {
     implicit val registerProvider: RegisterProvider = new RegisterProvider
 
     // The first N registers are reserved for the property arguments in their declaration order.
     val propertyArgumentRegisters = schema.definition.properties.map(property => property -> registerProvider.fresh()).toMap
 
     val regInstance = registerProvider.fresh()
+    val orderedProperties = PropertyOrder.sort(schema.definition.properties)(_.name)
     val valueArguments = orderedProperties.map(property => propertyArgumentRegisters(property))
     val bodyChunk = if (schema.isConstant) {
       val structType = TypeAssembler.generate(schema.constantType)

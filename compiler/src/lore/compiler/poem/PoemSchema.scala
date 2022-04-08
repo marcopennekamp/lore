@@ -29,4 +29,4 @@ case class PoemStructSchema(
   properties: Vector[PoemStructProperty],
 ) extends PoemSchema
 
-case class PoemStructProperty(name: String, tpe: PoemType, isOpen: Boolean)
+case class PoemStructProperty(name: String, tpe: PoemType, isOpen: Boolean, declarationIndex: Int)

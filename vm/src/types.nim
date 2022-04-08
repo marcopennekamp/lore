@@ -134,6 +134,9 @@ type
       ## The properties of a struct must be ordered by their name. This allows the property index to map names directly
       ## to schema properties and property values. It also allows direct property access operations to fetch a property
       ## value via its index if the value is a struct at compile time.
+    property_declaration_order*: ImSeq[string]
+      ## The property names in their original declaration order, which is used to implement lexicographic comparison
+      ## and stringification.
     property_index*: PropertyIndex
     open_property_indices*: ImSeq[uint16]
       ## A list of indices where open properties occur. This can be used to quickly access all open property types when
@@ -648,6 +651,7 @@ proc new_struct_schema*(
   type_parameters: ImSeq[TypeParameter],
   supertraits: ImSeq[TraitType],
   properties: ImSeq[StructSchemaProperty],
+  property_declaration_order: ImSeq[string],
 ): StructSchema =
   ## Creates a new struct schema from the given arguments. The properties must be ordered lexicographically by their
   ## name. Property types must be `nil`, as they are resolved in a second step.
@@ -665,6 +669,7 @@ proc new_struct_schema*(
     properties: properties,
     property_index: property_index,
     open_property_indices: open_property_indices,
+    property_declaration_order: property_declaration_order,
   )
   let type_arguments = cast[ImSeq[Type]](type_parameters.as_type_arguments())
   let representative = new_struct_type(schema, type_arguments, supertraits, nil)

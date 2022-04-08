@@ -138,6 +138,7 @@ proc resolve(universe: Universe, poem_constants: PoemConstants): Constants =
 proc get_schema_dependencies(poem_schema: PoemSchema): seq[string]
 proc resolve_schema(universe: Universe, poem_schema: PoemSchema): Schema
 proc resolve_struct_properties(universe: Universe, poem_properties: seq[PoemStructProperty]): ImSeq[StructSchemaProperty]
+proc resolve_struct_property_declaration_order(universe: Universe, poem_properties: seq[PoemStructProperty]): ImSeq[string]
 proc resolve_schema_attachments(universe: Universe, poem_schemas: TableRef[string, PoemSchema])
 
 proc resolve_schemas(universe: Universe, poems: seq[Poem]) =
@@ -202,7 +203,8 @@ proc resolve_schema(universe: Universe, poem_schema: PoemSchema): Schema =
   else:
     let poem_schema = cast[PoemStructSchema](poem_schema)
     let properties = universe.resolve_struct_properties(poem_schema.properties)
-    new_struct_schema(poem_schema.name, type_parameters, supertraits, properties)
+    let declaration_order = universe.resolve_struct_property_declaration_order(poem_schema.properties)
+    new_struct_schema(poem_schema.name, type_parameters, supertraits, properties, declaration_order)
 
 proc resolve_struct_properties(universe: Universe, poem_properties: seq[PoemStructProperty]): ImSeq[StructSchemaProperty] =
   ## Resolves struct properties from the given list of poem struct properties. Property types won't be added, as they
@@ -224,6 +226,12 @@ proc resolve_struct_properties(universe: Universe, poem_properties: seq[PoemStru
     properties[i] = property
 
   properties
+
+proc resolve_struct_property_declaration_order(universe: Universe, poem_properties: seq[PoemStructProperty]): ImSeq[string] =
+  var declaration_order = new_immutable_seq[string](poem_properties.len)
+  for poem_property in poem_properties:
+    declaration_order[poem_property.declaration_index] = poem_property.name
+  declaration_order
 
 proc resolve_schema_attachments(universe: Universe, poem_schemas: TableRef[string, PoemSchema]) =
   for name, schema in universe.schemas:

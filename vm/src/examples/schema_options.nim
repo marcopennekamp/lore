@@ -34,7 +34,7 @@ let Some: PoemSchema = PoemStructSchema(
     poem_type_parameter("A", Variance.Covariant),
   ],
   supertraits: @[poem_named_type_concrete("lore.option.Option", @[poem_type_variable(0)])],
-  properties: @[poem_struct_property("value", poem_type_variable(0), false)],
+  properties: @[poem_struct_property("value", poem_type_variable(0), false, 0)],
 )
 
 let None: PoemSchema = PoemStructSchema(
@@ -47,8 +47,8 @@ let ExampleResult: PoemSchema = PoemStructSchema(
   kind: Kind.Struct,
   name: "ExampleResult",
   properties: @[
-    poem_struct_property("number", poem_int_type, false),
-    poem_struct_property("text", poem_string_type, false),
+    poem_struct_property("number", poem_int_type, false, 0),
+    poem_struct_property("text", poem_string_type, false, 1),
   ],
 )
 

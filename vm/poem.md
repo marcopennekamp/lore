@@ -58,7 +58,7 @@ A **Schema** describes a user-defined *trait* or *struct* with optional type par
     - **Inherited shape type** (ShapeType)
   - If `Struct`:
     - **Property count** (uint16)
-    - **Properties**  (StructProperty*): Struct properties must be ordered lexicographically by their name.
+    - **Properties** (StructProperty*): Struct properties must be ordered lexicographically by their name.
 
 Any types inside any of the schema's fields may contain type variables that refer to the schema's type parameters.
 
@@ -76,6 +76,7 @@ A **StructProperty** describes a Schema struct property:
   - **Name** (String)
   - **Type** (Type): The property's type may contain type variables, which will reference the struct's type parameters.
   - **Open** (bool): Whether the property is open.
+  - **Declaration index** (uint16): The index of the property in its original declaration order.
 
 ### Global Variables
 
