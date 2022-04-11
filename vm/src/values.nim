@@ -469,7 +469,8 @@ proc is_less_than*(v1: Value, v2: Value, rec: (TaggedValue, TaggedValue) -> bool
   of Kind.Real:
     cast[RealValue](v1).real < cast[RealValue](v2).real
   of Kind.String:
-    # This is a byte-wise comparison, but yields the same results as a code point-wise comparison in UTF-8.
+    # This is a byte-wise comparison, but yields the same results as a code point-wise comparison in UTF-8. This should
+    # use the same approach as the instructions `StringLt` and `StringLte`.
     cast[StringValue](v1).string < cast[StringValue](v2).string
   of Kind.Tuple:
     let v1 = cast[TupleValue](v1)

@@ -404,9 +404,10 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.StringConcat: generate_binary_operator("string", "string", a & b)
 
-    of Operation.StringLt: quit("StringLt is not yet implemented.")
-    of Operation.StringLte: quit("StringLte is not yet implemented.")
+    # String comparisons should use the same approach as the `values.are_equal` and `values.is_less_than` functions.
     of Operation.StringEq: generate_binary_operator("string", "bool", a == b)
+    of Operation.StringLt: generate_binary_operator("string", "bool", a < b)
+    of Operation.StringLte: generate_binary_operator("string", "bool", a <= b)
 
     of Operation.Tuple:
       var elements = oplv_get_imseq_arg(1)
