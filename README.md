@@ -2,7 +2,7 @@
 
 **Lore** is a general-purpose programming language featuring multi-functions, structs and traits, a static type system with sum and intersection types, and a mix of functional and imperative programming.
 
-To learn more about the language, read the [**overview**](specification/overview.md) of our specification.
+To learn more about the language, read the [**overview**](specification/overview.md) of our specification. You can also check out some of the examples in the `tests` folder, such as [hello-name.lore](test/lessons/hello-name.lore).
 
 
 
