@@ -1,0 +1,142 @@
+// This test ensures that the default implementation of `less_than?` is correct and calls back into `lore.core.less_than?`.
+use lore.IO.println
+use lore.String
+
+trait Position
+struct Position2(x: Real, y: Real) extends Position
+struct Position3(x: Real, y: Real, z: Real) extends Position
+
+// IgnoreCase wraps a string and redefines string comparison as lower-case comparison.
+struct IgnoreCase(string: String)
+struct Person(name: IgnoreCase, age: Int)
+
+struct Parameterized[A](value: Int)
+
+module lore.core do
+  func less_than?(a: IgnoreCase, b: IgnoreCase): Boolean = String.to_lower(a.string) < String.to_lower(b.string)
+  func hash(value: IgnoreCase): Int = String.to_lower(value.string) |> hash
+end
+
+func test(): [Boolean] = do
+  // We have to use `Any` as a type so that the compiler doesn't generate the direct comparison operations for
+  // primitives.
+  let x1: Any = 7
+  let x2: Any = 5
+  let x3: Any = 10
+  let x4: Any = 7.0
+  let x5: Any = 5.0
+  let x6: Any = 10.0
+
+  let tru: Any = true
+  let fls: Any = false
+
+  let str1: Any = 'hello'
+  let str2: Any = 'helloo'
+  let str3: Any = 'bar'
+  let str4: Any = 'baz'
+
+  let tpl1 = (str1, str2)
+  let tpl2 = (str2, str1)
+  let tpl3 = (str1, str2, str3)
+  let tpl4 = (str1, str2, str4)
+
+  let fun1 = () => println('Hello')
+  let fun2 = () => println('Hello')
+
+  let list1 = []
+  let list2 = [str1, str2]
+  let list3 = [str2, str1]
+  let list4 = [tpl1, tpl2]
+  let list5 = [tpl1, tpl2, tpl3]
+
+  let pos1 = Position2(5.0, 7.0)
+  let pos2 = Position2(5.0, 9.0)
+  let pos3 = Position2(5.0, 5.0)
+  let pos4 = Position3(5.0, 7.0, 1.0)
+  let pos5 = Position3(5.0, 7.0, 10.0)
+
+  let pers1 = Person(IgnoreCase('john'), 25)
+  let pers2 = Person(IgnoreCase('JOHNNY'), 30)
+  let pers3 = Person(IgnoreCase('jOhn'), 35)
+  let pers4 = Person(IgnoreCase('aMy'), 25)
+
+  let prm1 = Parameterized[#foo](5)
+  let prm2 = Parameterized[#bar](6)
+  let prm3 = Parameterized[#foo](7)
+  let prm4 = Parameterized[#foo](2)
+
+  [
+    // Integers and Reals
+    x1 < x2,  // false
+    x1 < x3,  // true
+    x2 < x3,  // true
+    x4 < x5,  // false
+    x4 < x6,  // true
+    x5 < x6,  // true
+    x1 < x6,  // false
+
+    // Booleans
+    tru < fls,  // false
+    fls < tru,  // false
+
+    // Strings
+    str1 < str2,  // true
+    str2 < str1,  // false
+    str1 < str3,  // false
+    str3 < str1,  // true
+    str3 < str4,  // true
+    str4 < str3,  // false
+
+    // Tuples
+    tpl1 < tpl1,  // false
+    tpl1 < tpl2,  // true
+    tpl2 < tpl1,  // false
+    tpl3 < tpl2,  // false (ensures that lexicographic ordering takes tuple size into account)
+    tpl3 < tpl4,  // true
+    tpl4 < tpl3,  // false
+
+    // Tuples: Ensure that the default implementation calls back into `lore.core.less_than?`.
+    (pers1, pers4) < (pers3, pers2),  // true
+    (pers3, pers4, pers2) < (pers3, pers4, pers1),  // false
+
+    // Functions
+    fun1 < fun2,  // false
+    fun2 < fun1,  // false
+
+    // Lists
+    list1 < [],     // false
+    [] < list1,     // false
+    [] < list2,     // true
+    list2 < list3,  // true
+    list3 < list2,  // false
+    list3 < list4,  // false
+    list4 < list3,  // false
+    list4 < list5,  // true
+    list5 < list4,  // false
+
+    // Lists: Ensure that the default implementation calls back into `lore.core.less_than?`.
+    [pers1, pers4] < [pers3, pers2],  // true
+
+    // Structs
+    pos1 < pos2,  // true
+    pos2 < pos1,  // false
+    pos1 < pos3,  // false
+    pos3 < pos1,  // true
+    pos4 < pos5,  // true
+    pos5 < pos4,  // false
+
+    // Structs: Ensure that the default implementation calls back into `lore.core.less_than?`.
+    pers1 < pers2,  // true
+    pers2 < pers1,  // false
+    pers1 < pers3,  // true
+    pers3 < pers1,  // false
+    pers3 < pers4,  // false
+    pers4 < pers3,  // true
+
+    // Structs: Ensure that type parameters are not taken into account under default comparison.
+    prm1 < prm2,  // true
+    prm1 < prm3,  // true
+    prm1 < prm4,  // false
+    prm4 < prm1,  // true
+  ]
+end
