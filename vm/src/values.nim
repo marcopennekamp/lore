@@ -486,7 +486,7 @@ proc is_less_than*(v1: Value, v2: Value, rec: (TaggedValue, TaggedValue) -> bool
     let v1 = cast[ListValue](v1)
     let v2 = cast[ListValue](v2)
     let length = min(v1.elements.len, v2.elements.len)
-    for i in 0 ..< v1.elements.len:
+    for i in 0 ..< length:
       if rec(v1.elements[i], v2.elements[i]):
         return true
       if rec(v2.elements[i], v1.elements[i]):
