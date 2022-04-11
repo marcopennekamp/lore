@@ -148,6 +148,9 @@ macro generate_operand_get(index_node: int, kind: static[string]): untyped =
   of "bool":
     quote do:
       regv_get_bool_arg(`index_node`)
+  of "string":
+    quote do:
+      regv_get_ref_arg(`index_node`, StringValue).string
   else: macros.error("Unsupported kind."); nil
 
 macro generate_operation_set_result(index_node: int, result_node: untyped, kind: static[string]): untyped =
@@ -157,10 +160,13 @@ macro generate_operation_set_result(index_node: int, result_node: untyped, kind:
       regv_set_int_arg(`index_node`, `result_node`)
   of "real":
     quote do:
-      regv_set_ref_arg(`index_node`, values.new_real_value(`result_node`))
+      regv_set_ref_arg(`index_node`, new_real_value(`result_node`))
   of "bool":
     quote do:
       regv_set_bool_arg(`index_node`, `result_node`)
+  of "string":
+    quote do:
+      regv_set_ref_arg(`index_node`, new_string_value(`result_node`))
   else: macros.error("Unsupported kind."); nil
 
 macro generate_unary_operator(source_kind: static[string], result_kind: static[string], op_node) =
@@ -396,18 +402,11 @@ proc evaluate(frame: FramePtr) =
       let string = $regv_get_arg(1)
       regv_set_ref_arg(0, values.new_string_value(string))
 
-    of Operation.StringConcat:
-      let a = regv_get_ref_arg(1, StringValue)
-      let b = regv_get_ref_arg(2, StringValue)
-      regv_set_ref_arg(0, values.new_string_value(a.string & b.string))
-
-    of Operation.StringEq:
-      let a = regv_get_ref_arg(1, StringValue)
-      let b = regv_get_ref_arg(2, StringValue)
-      regv_set_bool_arg(0, a.string == b.string)
+    of Operation.StringConcat: generate_binary_operator("string", "string", a & b)
 
     of Operation.StringLt: quit("StringLt is not yet implemented.")
     of Operation.StringLte: quit("StringLte is not yet implemented.")
+    of Operation.StringEq: generate_binary_operator("string", "bool", a == b)
 
     of Operation.Tuple:
       var elements = oplv_get_imseq_arg(1)
