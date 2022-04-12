@@ -557,14 +557,11 @@ proc stringify*(value: Value, rec: TaggedValue -> string): string =
     let symbol = cast[SymbolValue](value)
     "#" & symbol.name
   of Kind.Struct:
-    # TODO (assembly): The property values are in lexicographic instead of declaration order, which is incorrect
-    #                  considering that structs are stringified without property names. Either we have to specify the
-    #                  property names, or the property values have to be printed in declaration order.
     let struct = cast[StructValue](value)
     let schema = struct.get_schema
     var properties = new_seq[string]()
-    for i in 0 ..< struct.property_count:
-      properties.add(rec(struct.property_values[i]))
+    for property_name in schema.property_declaration_order:
+      properties.add(rec(struct.get_property_value(property_name)))
     schema.name & "(" & properties.join(", ") & ")"
   else: "unknown"
 
