@@ -61,26 +61,17 @@ type
   TupleValue* {.pure, shallow.} = ref object of Value
     elements*: ImSeq[TaggedValue]
 
-  # TODO (assembly): We can actually pull the LambdaContext into the FunctionInstance. This would simplify the code
-  #                  across the board. It would also make sense that the instance of a function can carry an optional
-  #                  lambda context.
   FunctionValue* {.pure, shallow.} = ref object of Value
     variant*: FunctionValueVariant
     target*: pointer
       ## A `MultiFunction` reference if `variant` is `Multi` and a `ptr FunctionInstance` otherwise. The actual type is
       ## hidden inside the module `definitions` to avoid cyclic dependencies between Nim modules.
-    context*: LambdaContext
-      ## The lambda context may be `nil` if no variables have been captured. Lambda function values may or may not have
-      ## an associated context.
 
   FunctionValueVariant* {.pure.} = enum
     Multi
     Single
       ## A single function value can represent a direct single function, a fixed function, or a lambda function. A
-      ## lambda function may additionally have an associated context if it captures any variables.
-
-  LambdaContext* = distinct ImSeq[TaggedValue]
-    ## A LambdaContext bundles the values of captured variables for a lambda function.
+      ## lambda function instance may additionally have an associated context if it captures any variables.
 
   ListValue* {.pure, shallow.} = ref object of Value
     elements*: ImSeq[TaggedValue]
@@ -192,23 +183,16 @@ proc new_tuple_value_tagged*(elements: ImSeq[TaggedValue]): TaggedValue = tag_re
 # Functions.                                                                                                           #
 ########################################################################################################################
 
-proc new_function_value*(variant: FunctionValueVariant, target: pointer, context: LambdaContext, tpe: Type): Value =
-  FunctionValue(tpe: tpe, variant: variant, target: target, context: context)
+proc new_function_value*(variant: FunctionValueVariant, target: pointer, tpe: Type): Value =
+  FunctionValue(tpe: tpe, variant: variant, target: target)
 
 proc new_multi_function_value*(target: pointer, tpe: Type): Value =
-  new_function_value(FunctionValueVariant.Multi, target, LambdaContext(nil), tpe)
-
-proc new_single_function_value*(target: pointer, context: LambdaContext, tpe: Type): Value =
-  new_function_value(FunctionValueVariant.Single, target, context, tpe)
+  new_function_value(FunctionValueVariant.Multi, target, tpe)
 
 proc new_single_function_value*(target: pointer, tpe: Type): Value =
-  new_single_function_value(target, LambdaContext(nil), tpe)
+  new_function_value(FunctionValueVariant.Single, target, tpe)
 
 proc arity*(function: FunctionValue): int = cast[FunctionType](function.tpe).input.elements.len
-
-proc `[]`*(context: LambdaContext, index: int): TaggedValue {.borrow.}
-proc `[]`*(context: LambdaContext, index: int64): TaggedValue {.borrow.}
-proc `[]`*(context: LambdaContext, index: uint): TaggedValue {.borrow.}
 
 ########################################################################################################################
 # Lists.                                                                                                               #

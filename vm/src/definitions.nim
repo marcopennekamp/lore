@@ -4,7 +4,7 @@ import imseqs
 from instructions import Instruction
 from types import TypeParameter, Type, TupleType, FunctionType, MetaShape, Schema, new_function_type, bounds_contain,
                   substitute, `$`
-from values import TaggedValue, LambdaContext, tag_reference
+from values import TaggedValue, tag_reference
 
 type
   Frame* = object
@@ -12,9 +12,8 @@ type
     ## The memory for all frames must be preallocated before the evaluator is invoked.
     ##
     ## Frames are part of `definitions` because some intrinsics require access to frames.
-    function*: Function
-    type_arguments*: ImSeq[Type]
-    lambda_context*: LambdaContext
+    function_instance*: FunctionInstance
+      ## The function instance is embedded in the memory structure of the frame.
     registers*: UncheckedArray[uint64]
       ## Registers may contain TaggedValues and Types. Whether a register currently contains a value or a type is
       ## solely defined by the operations that act on the registers.
@@ -38,10 +37,8 @@ type
     ## initialized only when its value is first requested.
     name*: string
     value*: TaggedValue
-
     is_initialized*: bool
       ## Whether the global variable's `value` has already been initialized.
-
     initializer*: FunctionInstance
       ## The function instance that is supposed to initialize the global variable. It's empty for eager variables.
 
@@ -60,29 +57,32 @@ type
     type_parameters*: ImSeq[TypeParameter]
     input_type*: TupleType
     output_type*: Type
-
     is_abstract*: bool
       ## An abstract function has no instructions and cannot be invoked.
-
     monomorphic_instance*: FunctionInstance
       ## The monomorphic instance of a function is only defined if the function is monomorphic. This instance can be
       ## used to bypass creating new function instances every time dispatch is resolved, even though the type argument
       ## list will always be empty.
-
     register_count*: uint16
     instructions*: seq[Instruction]
-
     constants*: Constants
       ## `constants` will be initialized after all type, value, and multi-function constants have been resolved.
-
     frame_size*: uint16
       ## `frame_size` is a precomputed size for faster frame creation. It's initialized by `init_frame_stats`.
 
   FunctionInstance* = object
-    ## A function instance is a function with assigned type arguments. To avoid allocations on the heap, function
-    ## instances may sometimes be placed on the stack or passed by value.
+    ## A function instance is a function with assigned type arguments. A lambda function instance may additionally have
+    ## an associated context if it captures any variables. To avoid allocations on the heap, function instances may
+    ## sometimes be placed on the stack or passed by value.
     function*: Function
     type_arguments*: ImSeq[Type]
+    lambda_context*: LambdaContext
+      ## The lambda context may be `nil` if no variables have been captured. Lambda function instances may or may not
+      ## have an associated context. `lambda_context` isn't set during function instantiation, but after a function
+      ## instance has already been created.
+
+  LambdaContext* = distinct ImSeq[TaggedValue]
+    ## A LambdaContext bundles the values of captured variables for a lambda function.
 
   # TODO (vm): To perhaps optimize constants access by removing one layer of indirection, we could make the uint16
   #            index absolute and then turn the Constants table into a contiguous unchecked array of 8-byte values.
@@ -115,6 +115,15 @@ type
 const operand_list_limit*: int = 256
 
 proc `$`*(function: Function): string
+
+########################################################################################################################
+# Frames.                                                                                                              #
+########################################################################################################################
+
+# These accessors shouldn't produce any overhead because `function_instance` is embedded into `frame`.
+proc function*(frame: FramePtr): Function {.inline.} = frame.function_instance.function
+proc type_arguments*(frame: FramePtr): ImSeq[Type] {.inline.} = frame.function_instance.type_arguments
+proc lambda_context*(frame: FramePtr): LambdaContext {.inline.} = frame.function_instance.lambda_context
 
 ########################################################################################################################
 # Global variables.                                                                                                    #
@@ -206,6 +215,10 @@ proc `$`*(function: Function): string = fmt"{function.multi_function.name}{funct
 proc `$`*(instance: ptr FunctionInstance): string =
   let function_type = instance.get_function_type()
   fmt"{instance.function.multi_function.name}{function_type.input}: {function_type.output}"
+
+proc `[]`*(context: LambdaContext, index: int): TaggedValue {.borrow.}
+proc `[]`*(context: LambdaContext, index: int64): TaggedValue {.borrow.}
+proc `[]`*(context: LambdaContext, index: uint): TaggedValue {.borrow.}
 
 ########################################################################################################################
 # Constants.                                                                                                           #

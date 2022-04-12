@@ -26,13 +26,13 @@ proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, ar
 #            verify first that this is a problem before fixing it.
 proc create_frame(function: Function, type_arguments: ImSeq[Type], lambda_context: LambdaContext, frame_base: pointer): FramePtr {.inline.} =
   let frame = cast[FramePtr](frame_base)
-  frame.function = function
-  frame.type_arguments = type_arguments
-  frame.lambda_context = lambda_context
+  frame.function_instance = FunctionInstance(function: function, type_arguments: type_arguments, lambda_context: lambda_context)
   frame
 
-proc create_frame(instance: ptr FunctionInstance, lambda_context: LambdaContext, frame_base: pointer): FramePtr {.inline.} =
-  create_frame(instance.function, instance.type_arguments, lambda_context, frame_base)
+proc create_frame(instance: ptr FunctionInstance, frame_base: pointer): FramePtr {.inline.} =
+  let frame = cast[FramePtr](frame_base)
+  frame.function_instance = instance[]
+  frame
 
 ########################################################################################################################
 # Register access: General.                                                                                            #
@@ -232,8 +232,8 @@ template call_start(function: Function, type_arguments: ImSeq[Type], lambda_cont
   let target_frame_base = next_frame_base()
   create_frame(function, type_arguments, lambda_context, target_frame_base)
 
-template call_start(target: ptr FunctionInstance, lambda_context: LambdaContext): FramePtr =
-  call_start(target.function, target.type_arguments, lambda_context)
+template call_start(target: ptr FunctionInstance): FramePtr =
+  call_start(target.function, target.type_arguments, target.lambda_context)
 
 template get_call_result(target_frame): untyped =
   # After function evaluation has finished, it must guarantee that the return value is in the first register.
@@ -249,23 +249,23 @@ template generate_call(function: Function, type_arguments: ImSeq[Type], lambda_c
   evaluate(target_frame)
   get_call_result(target_frame)
 
-template generate_call(target: ptr FunctionInstance, lambda_context: LambdaContext, arguments): TaggedValue =
-  generate_call(target.function, target.type_arguments, lambda_context, arguments)
+template generate_call(target: ptr FunctionInstance, arguments): TaggedValue =
+  generate_call(target.function, target.type_arguments, target.lambda_context, arguments)
 
 # TODO (vm): Do we have to pass type arguments of an owning multi-function to a lambda? Or how does this work?
-template generate_call0(target: ptr FunctionInstance, lambda_context: LambdaContext): TaggedValue =
-  let target_frame = call_start(target, lambda_context)
+template generate_call0(target: ptr FunctionInstance): TaggedValue =
+  let target_frame = call_start(target)
   evaluate(target_frame)
   get_call_result(target_frame)
 
-template generate_call1(target: ptr FunctionInstance, lambda_context: LambdaContext, argument0): TaggedValue =
-  let target_frame = call_start(target, lambda_context)
+template generate_call1(target: ptr FunctionInstance, argument0): TaggedValue =
+  let target_frame = call_start(target)
   target_frame.registers[0] = cast[uint64](argument0)
   evaluate(target_frame)
   get_call_result(target_frame)
 
-template generate_call2(target: ptr FunctionInstance, lambda_context: LambdaContext, argument0, argument1): TaggedValue =
-  let target_frame = call_start(target, lambda_context)
+template generate_call2(target: ptr FunctionInstance, argument0, argument1): TaggedValue =
+  let target_frame = call_start(target)
   target_frame.registers[0] = cast[uint64](argument0)
   target_frame.registers[1] = cast[uint64](argument1)
   evaluate(target_frame)
@@ -275,43 +275,33 @@ template generate_call2(target: ptr FunctionInstance, lambda_context: LambdaCont
 template generate_dispatch(mf, arguments): TaggedValue =
   var target = FunctionInstance()
   find_dispatch_target_from_arguments(mf, arguments, target)
-  generate_call(addr target, LambdaContext(nil), arguments)
+  generate_call(addr target, arguments)
 
 template generate_dispatch0(mf): TaggedValue =
   var target = FunctionInstance()
   find_dispatch_target_from_arguments(mf, target)
-  generate_call0(addr target, LambdaContext(nil))
+  generate_call0(addr target)
 
 template generate_dispatch1(mf, argument0): TaggedValue =
   var target = FunctionInstance()
   find_dispatch_target_from_arguments(mf, argument0, target)
-  generate_call1(addr target, LambdaContext(nil), argument0)
+  generate_call1(addr target, argument0)
 
 template generate_dispatch2(mf, argument0, argument1): TaggedValue =
   var target = FunctionInstance()
   find_dispatch_target_from_arguments(mf, argument0, argument1, target)
-  generate_call2(addr target, LambdaContext(nil), argument0, argument1)
+  generate_call2(addr target, argument0, argument1)
 
 ########################################################################################################################
 # Function values.                                                                                                     #
 ########################################################################################################################
 
-proc lambda_get_function_instance(frame: FramePtr, instruction: Instruction, arg_index: uint16): ptr FunctionInstance {.inline.} =
-  let constants = frame.function.constants
-  let mf = const_multi_function_arg(arg_index)
-
+template generate_lambda(is_poly: bool, has_context: bool) =
   # We don't have to check the bounds of the type parameters, because a lambda function's must be boundless.
-  mf.instantiate_single_function_unchecked(frame.type_arguments)
-
-template generate_lambda(is_poly: bool) =
-  let function_instance = lambda_get_function_instance(frame, instruction, 1)
-  let tpe = if is_poly: substitute(const_types_arg(2), frame.type_arguments) else: const_types_arg(2)
-  let context = LambdaContext(oplv_get_imseq_arg(3))
-  let value = values.new_single_function_value(function_instance, context, tpe)
-  regv_set_ref_arg(0, value)
-
-template generate_lambda0(is_poly: bool) =
-  let function_instance = lambda_get_function_instance(frame, instruction, 1)
+  let mf = const_multi_function_arg(1)
+  var function_instance = mf.instantiate_single_function_unchecked(frame.type_arguments)
+  if has_context:
+    function_instance.lambda_context = LambdaContext(oplv_get_imseq_arg(3))
   let tpe = if is_poly: substitute(const_types_arg(2), frame.type_arguments) else: const_types_arg(2)
   let value = values.new_single_function_value(function_instance, tpe)
   regv_set_ref_arg(0, value)
@@ -337,7 +327,7 @@ proc get_global*(variable: GlobalVariable, frame: FramePtr): TaggedValue =
   ##
   ## Note that `get_global` cannot be placed in the module `definitions` because of a mutual dependency with `evaluate`.
   if not variable.is_initialized:
-    variable.value = generate_call0(addr variable.initializer, LambdaContext(nil))
+    variable.value = generate_call0(addr variable.initializer)
     variable.is_initialized = true
     when_debug: echo "Initialized lazy global variable `", variable.name, "` to value `", variable.value, "`"
   variable.value
@@ -475,10 +465,10 @@ proc evaluate(frame: FramePtr) =
       let value = new_single_function_value(cast[pointer](function_instance), tpe)
       regv_set_arg(0, value)
 
-    of Operation.Lambda: generate_lambda(false)
-    of Operation.Lambda0: generate_lambda0(false)
-    of Operation.LambdaPoly: generate_lambda(true)
-    of Operation.LambdaPoly0: generate_lambda0(true)
+    of Operation.Lambda: generate_lambda(false, true)
+    of Operation.Lambda0: generate_lambda(false, false)
+    of Operation.LambdaPoly: generate_lambda(true, true)
+    of Operation.LambdaPoly0: generate_lambda(true, false)
 
     of Operation.LambdaLocal:
       if ImSeq[TaggedValue](frame.lambda_context) == nil:
@@ -686,13 +676,13 @@ proc evaluate(frame: FramePtr) =
 
     of Operation.Call:
       let function_instance = const_function_instance_arg(1)
-      let value = generate_call(function_instance, LambdaContext(nil), oplv_get_open_array_arg(2))
+      let value = generate_call(function_instance, oplv_get_open_array_arg(2))
       regv_set_arg(0, value)
 
     of Operation.CallDirect:
       let function_instance = const_function_instance_arg(1)
       let nv = int(instruction.arg(2))
-      let value = generate_call(function_instance, LambdaContext(nil), get_direct_value_arguments_open_array(nv, 3))
+      let value = generate_call(function_instance, get_direct_value_arguments_open_array(nv, 3))
       regv_set_arg(0, value)
 
     of Operation.CallPoly:
@@ -779,7 +769,7 @@ proc evaluate(frame: FramePtr) =
       quit("The VM encountered an `Invalid` operation. This was likely caused by faulty bytecode or bytecode resolution.")
 
 proc evaluate*(entry_function: ptr FunctionInstance, frame_mem: pointer): TaggedValue =
-  let frame = create_frame(entry_function, LambdaContext(nil), frame_mem)
+  let frame = create_frame(entry_function, frame_mem)
   evaluate(frame)
 
   # The bytecode must ensure that the result is in the first register.
@@ -798,7 +788,7 @@ proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, ar
       addr function_instance
     else:
       cast[ptr FunctionInstance](function_value.target)
-  generate_call(target, function_value.context, arguments)
+  generate_call(target, arguments)
 
 proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr): TaggedValue =
   ## Evaluates a function value with a signature `() => Any`.
@@ -811,7 +801,7 @@ proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr): T
       addr function_instance
     else:
       cast[ptr FunctionInstance](function_value.target)
-  generate_call0(target, function_value.context)
+  generate_call0(target)
 
 proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue): TaggedValue =
   ## Evaluates a function value with a signature `(Any) => Any`.
@@ -824,7 +814,7 @@ proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, ar
       addr function_instance
     else:
       cast[ptr FunctionInstance](function_value.target)
-  generate_call1(target, function_value.context, argument0)
+  generate_call1(target, argument0)
 
 proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, argument0: TaggedValue, argument1: TaggedValue): TaggedValue =
   ## Evaluates a function value with a signature `(Any, Any) => Any`.
@@ -837,4 +827,4 @@ proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, ar
       addr function_instance
     else:
       cast[ptr FunctionInstance](function_value.target)
-  generate_call2(target, function_value.context, argument0, argument1)
+  generate_call2(target, argument0, argument1)
