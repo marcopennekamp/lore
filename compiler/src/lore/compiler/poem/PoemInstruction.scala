@@ -63,7 +63,7 @@ object PoemInstruction {
 
   case class Const(target: PReg, value: PVal) extends PoemInstruction(PoemOperation.Const)
 
-  case class IntConst(target: PReg, value: Int) extends PoemInstruction(PoemOperation.IntConst)
+  case class IntConst(target: PReg, value: Long) extends PoemInstruction(PoemOperation.IntConst)
   case class IntToReal(target: PReg, value: PReg) extends PoemInstruction(PoemOperation.IntToReal)
 
   case class BooleanConst(target: PReg, value: Boolean) extends PoemInstruction(PoemOperation.BooleanConst)

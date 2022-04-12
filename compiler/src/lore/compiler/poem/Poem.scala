@@ -45,16 +45,6 @@ object Poem {
   }
 
   /**
-    * The lowest integer value that may be passed through a `*Const` operation such as `IntConst`.
-    */
-  val minDirectInteger: Long = Short.MinValue
-
-  /**
-    * The highest integer value that may be passed through a `*Const` operation such as `IntConst`.
-    */
-  val maxDirectInteger: Long = Short.MaxValue
-
-  /**
     * This can be used to attach sorted property fields to a poem entity.
     */
   trait SortedProperties[A] {

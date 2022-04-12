@@ -87,8 +87,8 @@ type
 
     Const
 
-    # TODO (assembly): Allow IntConst to store up to 64 bits by using 4 uint16 arguments to store the integer.
     IntConst
+      ## target_reg: uint16, value: int64
     IntNeg
     IntAdd
     IntSub
@@ -99,7 +99,6 @@ type
     IntLte
     IntToReal
 
-    # TODO (assembly): Add RealConst, which can use 4 uint16 arguments to store the double value.
     RealNeg
     RealAdd
     RealSub
@@ -267,6 +266,10 @@ type
     ## however.
     operation*: PoemOperation
     arguments*: seq[uint16]
+
+  PoemInstructionIntConst* = ref object of PoemInstruction
+    target_reg*: uint16
+    value*: int64
 
   PoemInstructionTuple* = ref object of PoemInstruction
     target_reg*: uint16
@@ -532,6 +535,9 @@ proc poem_struct_value*(name: string, type_arguments: seq[PoemType], property_va
 
 proc poem_inst*(operation: PoemOperation, arguments: varargs[uint16]): PoemInstruction =
   PoemSimpleInstruction(operation: operation, arguments: @arguments)
+
+proc poem_inst_int_const*(target_reg: uint16, value: int64): PoemInstruction =
+  PoemInstructionIntConst(target_reg: target_reg, value: value)
 
 proc poem_inst_tuple*(target: uint16, element_regs: varargs[uint16]): PoemInstruction =
   PoemInstructionTuple(target_reg: target, element_regs: @element_regs)
@@ -900,6 +906,12 @@ proc simple_argument_count(operation: PoemOperation): uint8
 proc read_instruction(stream: FileStream): PoemInstruction =
   let operation = cast[PoemOperation](stream.read(uint16))
   case operation
+  of IntConst:
+    PoemInstructionIntConst(
+      target_reg: stream.read(uint16),
+      value: stream.read(int64),
+    )
+
   of PoemOperation.Tuple:
     PoemInstructionTuple(
       target_reg: stream.read(uint16),
@@ -1068,7 +1080,12 @@ method write(instruction: PoemSimpleInstruction, stream: FileStream) {.locks: "u
 
   stream.write_operation(instruction.operation)
   stream.write_many(instruction.arguments, write_uint16)
-  
+
+method write(instruction: PoemInstructionIntConst, stream: FileStream) {.locks: "unknown".} =
+  stream.write_operation(PoemOperation.IntConst)
+  stream.write(instruction.target_reg)
+  stream.write(instruction.value)
+
 method write(instruction: PoemInstructionTuple, stream: FileStream) {.locks: "unknown".} =
   stream.write_operation(PoemOperation.Tuple)
   stream.write(instruction.target_reg)
@@ -1186,15 +1203,15 @@ proc simple_argument_count(operation: PoemOperation): uint8 =
   ## Returns the argument length of `operation`, provided that it is a simple operation.
   case operation
   of Jump: 1
-  of Assign, Const, IntConst, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, LambdaLocal, ListLength,
+  of Assign, Const, IntNeg, IntToReal, RealNeg, BooleanConst, BooleanNot, StringOf, LambdaLocal, ListLength,
      JumpIfFalse, JumpIfTrue, GlobalSet, TypeArg, TypeOf: 2
   of IntAdd, IntSub, IntMul, IntDiv, IntEq, IntLt, IntLte, RealAdd, RealSub, RealMul, RealDiv, RealEq, RealLt, RealLte,
      BooleanOr, BooleanAnd, BooleanEq, StringConcat, StringEq, StringLt, StringLte, TupleGet, ListAppendUntyped,
      ListGet, SymbolEq, StructEq, TypePathIndex, TypePathProperty: 3
   of TypePathTypeArgument: 4
-  of PoemOperation.Tuple, FunctionCall, FunctionSingle, PoemOperation.Lambda, PoemOperation.Shape, PoemOperation.List,
-     ListAppend, PoemOperation.Struct, StructPoly, PropertyGet, PropertySet, Intrinsic, GlobalGet, Dispatch, Call,
-     CallPoly, Return, TypeConst:
+  of IntConst, PoemOperation.Tuple, FunctionCall, FunctionSingle, PoemOperation.Lambda, PoemOperation.Shape,
+     PoemOperation.List, ListAppend, PoemOperation.Struct, StructPoly, PropertyGet, PropertySet, Intrinsic, GlobalGet,
+     Dispatch, Call, CallPoly, Return, TypeConst:
     quit(fmt"Poem operation {operation} is not simple!")
 
 ########################################################################################################################

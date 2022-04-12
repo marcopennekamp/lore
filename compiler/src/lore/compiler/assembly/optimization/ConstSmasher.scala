@@ -15,12 +15,8 @@ object ConstSmasher {
   private def smash(instruction: PoemInstruction): PoemInstruction = instruction match {
     case PoemInstruction.Const(target, value) =>
       value match {
-        case PoemIntValue(value) if Poem.minDirectInteger <= value && value <= Poem.maxDirectInteger =>
-          PoemInstruction.IntConst(target, value.toInt)
-
-        case PoemBooleanValue(value) =>
-          PoemInstruction.BooleanConst(target, value)
-
+        case PoemIntValue(value) => PoemInstruction.IntConst(target, value)
+        case PoemBooleanValue(value) => PoemInstruction.BooleanConst(target, value)
         case _ => instruction
       }
 

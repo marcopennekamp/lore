@@ -407,6 +407,16 @@ method resolve_instruction(poem_instruction: PoemSimpleInstruction, context: Ins
   let operation = simple_poem_operation_to_operation(poem_instruction.operation)
   @[new_instruction(operation, poem_instruction.arguments)]
 
+method resolve_instruction(poem_instruction: PoemInstructionIntConst, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
+  if low(int16) <= poem_instruction.value and poem_instruction.value <= high(int16):
+    @[new_instruction(Operation.IntConst, poem_instruction.target_reg, cast[uint16](int16(poem_instruction.value)))]
+  else:
+    @[new_instruction64(
+      Operation.IntConst64,
+      poem_instruction.target_reg,
+      cast[uint64](poem_instruction.value),
+    )]
+
 method resolve_instruction(poem_instruction: PoemInstructionTuple, context: InstructionResolutionContext): seq[Instruction] {.locks: "unknown".} =
   generate_xary_application(
     Operation.Tuple,
@@ -683,7 +693,6 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
 
   of PoemOperation.Const: Operation.Const
 
-  of PoemOperation.IntConst: Operation.IntConst
   of PoemOperation.IntNeg: Operation.IntNeg
   of PoemOperation.IntAdd: Operation.IntAdd
   of PoemOperation.IntSub: Operation.IntSub
@@ -739,10 +748,11 @@ proc simple_poem_operation_to_operation(poem_operation: PoemOperation): Operatio
   of PoemOperation.TypePathProperty: Operation.TypePathProperty
   of PoemOperation.TypePathTypeArgument: Operation.TypePathTypeArgument
 
-  of PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.FunctionSingle, PoemOperation.Lambda,
-     PoemOperation.List, PoemOperation.ListAppend, PoemOperation.Shape, PoemOperation.Struct, PoemOperation.StructPoly,
-     PoemOperation.PropertyGet, PoemOperation.PropertySet, PoemOperation.Intrinsic, PoemOperation.GlobalGet,
-     PoemOperation.Dispatch, PoemOperation.Call, PoemOperation.CallPoly, PoemOperation.Return, PoemOperation.TypeConst:
+  of PoemOperation.IntConst, PoemOperation.Tuple, PoemOperation.FunctionCall, PoemOperation.FunctionSingle,
+     PoemOperation.Lambda, PoemOperation.List, PoemOperation.ListAppend, PoemOperation.Shape, PoemOperation.Struct,
+     PoemOperation.StructPoly, PoemOperation.PropertyGet, PoemOperation.PropertySet, PoemOperation.Intrinsic,
+     PoemOperation.GlobalGet, PoemOperation.Dispatch, PoemOperation.Call, PoemOperation.CallPoly, PoemOperation.Return,
+     PoemOperation.TypeConst:
     quit(fmt"The poem operation {poem_operation} is not simple!")
 
 ########################################################################################################################
@@ -788,7 +798,8 @@ proc resolve(universe: Universe, poem_type_parameter: PoemTypeParameter): TypePa
 # that type variables with the same index get the same type variable instance. The major blocker that keeps us from
 # changing this is that the constants table can contain type variables, which we can't associate with a single function
 # type parameter context. The most elegant solution would probably be to associate a new constants table with every
-# function instead of a whole poem file. This would also simplify resolution in general.
+# function instead of a whole poem file. This would also simplify resolution in general and allow programs of arbitrary
+# size to be contained in a single poem file.
 
 method resolve(poem_type: PoemType, universe: Universe): Type {.base, locks: "unknown".} =
   quit("Please implement `resolve` for all PoemTypes.")

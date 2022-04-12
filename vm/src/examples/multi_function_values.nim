@@ -17,7 +17,7 @@ let handle1 = PoemFunction(
   is_abstract: false,
   register_count: 2,
   instructions: @[
-    poem_inst(PoemOperation.IntConst, 1, 5),
+    poem_inst_int_const(1, 5),
     poem_inst(PoemOperation.IntAdd, 0, 0, 1),
     poem_inst_return(0),
   ],
@@ -44,7 +44,7 @@ let test = PoemFunction(
   register_count: 3,
   instructions: @[
     poem_inst(PoemOperation.Const, 0, 2),
-    poem_inst(PoemOperation.IntConst, 1, 14),
+    poem_inst_int_const(1, 14),
     poem_inst_function_call(1, 0, 1),
     poem_inst(PoemOperation.Const, 2, 0),
     poem_inst_function_call(2, 0, 2),

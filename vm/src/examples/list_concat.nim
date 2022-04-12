@@ -14,14 +14,14 @@ let concat = PoemFunction(
   register_count: 6,
   instructions: @[
     # input: list1 in reg0, list2 in reg1
-    poem_inst(PoemOperation.IntConst, 2, 0),              # i = 0
+    poem_inst_int_const(2, 0),                            # i = 0
     poem_inst(PoemOperation.ListLength, 3, 1),            # list2_len = list2.length
 
     poem_inst(PoemOperation.IntLt, 4, 2, 3),              # continue? = i < list2_len
     poem_inst(PoemOperation.JumpIfFalse, 9, 4),           # if !continue?: jump to end
     poem_inst(PoemOperation.ListGet, 5, 1, 2),            # element = list2.get(i)
     poem_inst_list_append(0, 0, 5, 0),                    # list1 = list1 :+ element
-    poem_inst(PoemOperation.IntConst, 5, 1),
+    poem_inst_int_const(5, 1),
     poem_inst(PoemOperation.IntAdd, 2, 2, 5),             # i += 1
     poem_inst(PoemOperation.Jump, 2),                     # jump to loop start
 

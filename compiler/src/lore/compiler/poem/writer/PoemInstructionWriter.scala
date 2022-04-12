@@ -21,7 +21,7 @@ object PoemInstructionWriter {
 
       case PoemInstruction.IntConst(target, value) =>
         write(target)
-        writer.writeInt16(value)
+        writer.writeInt64(value)
 
       case PoemInstruction.IntToReal(target, value) => write(target, value)
 

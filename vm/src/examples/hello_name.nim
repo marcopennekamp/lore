@@ -45,7 +45,7 @@ let test = PoemFunction(
     poem_inst(PoemOperation.Const, 0, 3),
     poem_inst_dispatch(0, 0, 0),
 
-    poem_inst(PoemOperation.IntConst, 1, 42),
+    poem_inst_int_const(1, 42),
     poem_inst_dispatch(1, 0, 1),
 
     poem_inst(PoemOperation.Const, 2, 4),

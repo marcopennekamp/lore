@@ -41,6 +41,9 @@ type
     IntConst
       ## reg(arg0) <- arg1 as int64
 
+    IntConst64
+      ## reg(arg0) <- (arg1, arg2, arg3, arg4) as int64
+
     IntNeg
       ## reg(arg0) <- -reg(arg1)
 
@@ -450,6 +453,13 @@ template argu8r*(instruction: Instruction, index: uint16): uint8 =
   ## Gets the right uint8 from a composite argument.
   cast[uint8](instruction.arg(index))
 
+template arg64*(instruction: Instruction, index: uint16): uint64 =
+  ## Gets a uint64 composed of the four arguments starting with `index`.
+  cast[uint64](instruction.arg(index)) shl 48 or
+    cast[uint64](instruction.arg(index + 1)) shl 32 or
+    cast[uint64](instruction.arg(index + 2)) shl 16 or
+    cast[uint64](instruction.arg(index + 3))
+
 template arguments_unchecked*(instruction: Instruction): ptr UncheckedArray[Argument] =
   cast[ptr UncheckedArray[Argument]](unsafe_addr instruction.arguments)
 
@@ -487,6 +497,16 @@ proc new_instruction*(operation: Operation, arg0: uint16): Instruction =
 
 proc new_instruction*(operation: Operation): Instruction =
   new_instruction(operation, 0, 0, 0, 0, 0, 0, 0)
+
+proc new_instruction64*(operation: Operation, arg0: uint16, arg1: uint64): Instruction =
+  new_instruction(
+    operation,
+    arg0,
+    cast[uint16](arg1 shr 48),
+    cast[uint16](arg1 shr 32),
+    cast[uint16](arg1 shr 16),
+    cast[uint16](arg1),
+  )
 
 proc `$`*(argument: Argument): string = $uint16(argument)
 

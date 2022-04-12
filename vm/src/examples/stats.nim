@@ -20,7 +20,7 @@ let stat_1 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    poem_inst(PoemOperation.IntConst, 0, 11),
+    poem_inst_int_const(0, 11),
     poem_inst_return(0),
   ],
 )
@@ -32,7 +32,7 @@ let stat_2 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    poem_inst(PoemOperation.IntConst, 0, 7),
+    poem_inst_int_const(0, 7),
     poem_inst_return(0),
   ],
 )
@@ -44,7 +44,7 @@ let stat_3 = PoemFunction(
   is_abstract: false,
   register_count: 1,
   instructions: @[
-    poem_inst(PoemOperation.IntConst, 0, 3),
+    poem_inst_int_const(0, 3),
     poem_inst_return(0),
   ],
 )

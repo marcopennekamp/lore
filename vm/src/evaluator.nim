@@ -374,6 +374,9 @@ proc evaluate(frame: FramePtr) =
     of Operation.IntConst:
       regv_set_int_arg(0, instruction.argi(1))
 
+    of Operation.IntConst64:
+      regv_set_int_arg(0, cast[int64](instruction.arg64(1)))
+
     of Operation.IntNeg: generate_unary_operator("int", "int", -v)
     of Operation.IntAdd: generate_binary_operator("int", "int", a + b)
     of Operation.IntSub: generate_binary_operator("int", "int", a - b)
