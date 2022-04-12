@@ -149,6 +149,17 @@ proc new_function_instance*(): ptr FunctionInstance =
   ## manually.
   new_function_instance(nil, nil)
 
+proc can_instantiate_polymorphic(function: Function, type_arguments: ImSeq[Type]): bool {.inline.} =
+  ## Whether `function` can be instantiated with the given type arguments. Assumes that `function` is polymorphic.
+  let type_parameters = function.type_parameters
+  for i in 0 ..< type_parameters.len:
+    if not bounds_contain(type_parameters[i], type_arguments[i], type_arguments.to_open_array):
+      return false
+  true
+
+proc fail_instantiation(function: Function, type_arguments: ImSeq[Type]) {.inline.} =
+  quit(fmt"Cannot instantiate function `{function}` with type arguments `{type_arguments}`.")
+
 proc instantiate*(function: Function, type_arguments: ImSeq[Type]): ptr FunctionInstance =
   # TODO (vm): When using this function, we technically only need to check lower bounds of covariant parameters and
   #            upper bounds of contravariant parameters, as we can reasonably assume that the compiler has covered the
@@ -156,11 +167,16 @@ proc instantiate*(function: Function, type_arguments: ImSeq[Type]): ptr Function
   #            as `CallPoly`.
   if function.is_monomorphic: addr function.monomorphic_instance
   else:
-    let type_parameters = function.type_parameters
-    for i in 0 ..< type_parameters.len:
-      if not bounds_contain(type_parameters[i], type_arguments[i], type_arguments.to_open_array):
-        quit(fmt"Cannot instantiate function `{function}` with type arguments `{type_arguments}`.")
+    if unlikely(not can_instantiate_polymorphic(function, type_arguments)):
+      fail_instantiation(function, type_arguments)
     new_function_instance(function, type_arguments)
+
+proc ensure_can_instantiate*(function: Function, type_arguments: ImSeq[Type]) =
+  ## Quits execution if `function` cannot be instantiated with `type_arguments`. Applies the same checks to the type
+  ## arguments as `instantiate`. This function is meant to be used in cases where a function instance is not needed.
+  ## It's not meant to be used as a check before calling `instantiate`.
+  if unlikely(function.is_polymorphic and not can_instantiate_polymorphic(function, type_arguments)):
+    fail_instantiation(function, type_arguments)
 
 proc get_function_type*(instance: ptr FunctionInstance): FunctionType =
   ## Constructs a new function type from the given function instance.

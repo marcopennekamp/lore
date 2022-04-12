@@ -24,12 +24,15 @@ proc evaluate_function_value*(function_value: FunctionValue, frame: FramePtr, ar
 # TODO (vm): We should possibly clear a frame by nilling all references so that pointers left in registers aren't
 #            causing memory leaks. However, this also incurs a big performance penalty, so we should probably rather
 #            verify first that this is a problem before fixing it.
-proc create_frame(instance: ptr FunctionInstance, lambda_context: LambdaContext, frame_base: pointer): FramePtr {.inline.} =
+proc create_frame(function: Function, type_arguments: ImSeq[Type], lambda_context: LambdaContext, frame_base: pointer): FramePtr {.inline.} =
   let frame = cast[FramePtr](frame_base)
-  frame.function = instance.function
-  frame.type_arguments = instance.type_arguments
+  frame.function = function
+  frame.type_arguments = type_arguments
   frame.lambda_context = lambda_context
   frame
+
+proc create_frame(instance: ptr FunctionInstance, lambda_context: LambdaContext, frame_base: pointer): FramePtr {.inline.} =
+  create_frame(instance.function, instance.type_arguments, lambda_context, frame_base)
 
 ########################################################################################################################
 # Register access: General.                                                                                            #
@@ -225,20 +228,29 @@ template get_direct_value_arguments_open_array(argument_count_node: int, base_in
 
 template next_frame_base(): pointer = cast[pointer](cast[uint](frame) + frame.function.frame_size)
 
-template call_start(target: ptr FunctionInstance, lambda_context: LambdaContext): FramePtr =
+template call_start(function: Function, type_arguments: ImSeq[Type], lambda_context: LambdaContext): FramePtr =
   let target_frame_base = next_frame_base()
-  create_frame(target, lambda_context, target_frame_base)
+  create_frame(function, type_arguments, lambda_context, target_frame_base)
+
+template call_start(target: ptr FunctionInstance, lambda_context: LambdaContext): FramePtr =
+  call_start(target.function, target.type_arguments, lambda_context)
 
 template get_call_result(target_frame): untyped =
   # After function evaluation has finished, it must guarantee that the return value is in the first register.
   cast[TaggedValue](target_frame.registers[0])
 
-template generate_call(target: ptr FunctionInstance, lambda_context: LambdaContext, arguments): TaggedValue =
-  let target_frame = call_start(target, lambda_context)
+# TODO (vm): The `arguments` parameter could be accidentally evaluated multiple times, but we cannot put it into a
+#            temporary variable (i.e. `let arguments = argument_nodes`) because it's an open array. Perhaps this should
+#            be an inline proc.
+template generate_call(function: Function, type_arguments: ImSeq[Type], lambda_context: LambdaContext, arguments): TaggedValue =
+  let target_frame = call_start(function, type_arguments, lambda_context)
   for i in 0 ..< arguments.len:
     target_frame.registers[i] = cast[uint64](arguments[i])
   evaluate(target_frame)
   get_call_result(target_frame)
+
+template generate_call(target: ptr FunctionInstance, lambda_context: LambdaContext, arguments): TaggedValue =
+  generate_call(target.function, target.type_arguments, lambda_context, arguments)
 
 # TODO (vm): Do we have to pass type arguments of an owning multi-function to a lambda? Or how does this work?
 template generate_call0(target: ptr FunctionInstance, lambda_context: LambdaContext): TaggedValue =
@@ -259,6 +271,7 @@ template generate_call2(target: ptr FunctionInstance, lambda_context: LambdaCont
   evaluate(target_frame)
   get_call_result(target_frame)
 
+# TODO (vm): The `arguments` parameter could be accidentally evaluated multiple times. See the other TODO above.
 template generate_dispatch(mf, arguments): TaggedValue =
   var target = FunctionInstance()
   find_dispatch_target_from_arguments(mf, arguments, target)
@@ -685,18 +698,20 @@ proc evaluate(frame: FramePtr) =
     of Operation.CallPoly:
       let mf = const_multi_function_arg(1)
       let nt = int(instruction.arg(2))
-      # TODO (assembly): Do we need to instantiate the function here? Can't we immediately create a new frame with the
-      #                  function and type arguments? This would save at least an allocation.
-      let function_instance = mf.instantiate_single_function(new_immutable_seq(type_operand_list, nt))
-      let value = generate_call(function_instance, LambdaContext(nil), oplv_get_open_array_arg_range(3, nt))
+      let function = mf.get_single_function
+      let type_arguments = new_immutable_seq(type_operand_list, nt)
+      ensure_can_instantiate(function, type_arguments)
+      let value = generate_call(function, type_arguments, LambdaContext(nil), oplv_get_open_array_arg_range(3, nt))
       regv_set_arg(0, value)
 
     of Operation.CallPolyDirect:
       let mf = const_multi_function_arg(1)
       let nt = int(instruction.argu8l(2))
       let nv = int(instruction.argu8r(2))
-      let function_instance = mf.instantiate_single_function(get_direct_type_arguments(nt, 3))
-      let value = generate_call(function_instance, LambdaContext(nil), get_direct_value_arguments_open_array(nv, 3 + nt))
+      let function = mf.get_single_function
+      let type_arguments = get_direct_type_arguments(nt, 3)
+      ensure_can_instantiate(function, type_arguments)
+      let value = generate_call(function, type_arguments, LambdaContext(nil), get_direct_value_arguments_open_array(nv, 3 + nt))
       regv_set_arg(0, value)
 
     of Operation.Return:
