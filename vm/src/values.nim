@@ -567,6 +567,4 @@ proc stringify*(value: Value, rec: TaggedValue -> string): string =
 
 proc `$`*(tagged_value: TaggedValue): string = stringify(tagged_value, v => $v)
 
-#proc `$`*(tagged_values: seq[TaggedValue]): string = tagged_values.join(", ")
-
 proc `$`*(value: Value): string = stringify(value, v => $v)
