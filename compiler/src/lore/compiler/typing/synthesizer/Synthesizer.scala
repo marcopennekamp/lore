@@ -113,7 +113,7 @@ object Synthesizer {
 
         operator match {
           case Negation => ArithmeticSynthesizer.infer(expression, Vector(value), assignments)
-          case LogicalNot => checkOperand(BasicType.Boolean).flatMap(assignOperationResult(_, expression, BasicType.Boolean))
+          case LogicalNot => checkOperand(BasicType.Boolean).flatMap(Unification.unifyEquals(expression.tpe, BasicType.Boolean, _))
         }
 
       case expression@Expression.BinaryOperation(operator, left, right, _, _) =>
@@ -126,7 +126,7 @@ object Synthesizer {
 
           case Equals | LessThan | LessThanEquals =>
             checkOperands(BasicType.Any, BasicType.Any)
-              .flatMap(assignOperationResult(_, expression, BasicType.Boolean))
+              .flatMap(Unification.unifyEquals(expression.tpe, BasicType.Boolean, _))
 
           case Append =>
             infer(left, assignments).flatMap { collectionAssignments =>
@@ -163,8 +163,8 @@ object Synthesizer {
         def checkOperands(tpe: Type) = checker.check(operands, tpe, assignments)
 
         operator match {
-          case Conjunction | Disjunction => checkOperands(BasicType.Boolean).flatMap(assignOperationResult(_, expression, BasicType.Boolean))
-          case Concatenation => checkOperands(BasicType.Any).flatMap(assignOperationResult(_, expression, BasicType.String))
+          case Conjunction | Disjunction => checkOperands(BasicType.Boolean).flatMap(Unification.unifyEquals(expression.tpe, BasicType.Boolean, _))
+          case Concatenation => checkOperands(BasicType.Any).flatMap(Unification.unifyEquals(expression.tpe, BasicType.String, _))
         }
 
       case expression@Expression.Call(target, arguments, tpe, _) =>
@@ -217,22 +217,6 @@ object Synthesizer {
 
     resultAssignments.foreach(Typing.traceExpressionType(expression, _, "Inferred"))
     resultAssignments
-  }
-
-  /**
-    * Unifies `resultType` with `operation.tpe` such that `operation.tpe` is a subtype of `resultType`.
-    *
-    * TODO (assembly): We can inline this function. The instantiation functionality isn't even used.
-    *
-    * @param resultType The result type will be instantiated by this function, so it is possible to pass an
-    *                   uninstantiated type.
-    */
-  private def assignOperationResult(
-    assignments: Assignments,
-    operation: Expression,
-    resultType: Type,
-  )(implicit reporter: Reporter): Option[Assignments] = {
-    Unification.unifyEquals(operation.tpe, InferenceVariable.instantiateCandidate(resultType, assignments), assignments)
   }
 
   def inferExtractors(extractors: Vector[Expression.Extractor], assignments: Assignments)(implicit checker: Checker, reporter: Reporter): Option[Assignments] = {

@@ -16,8 +16,6 @@ object StructSchemaAssembler {
   /**
     * Generates a PoemStructSchema for the given schema, any auxiliary functions the schema requires (including the
     * constructor), and a PoemGlobalVariable for the object.
-    *
-    * TODO (assembly): Support property default values.
     */
   def generate(
     schema: StructSchema,
@@ -47,9 +45,8 @@ object StructSchemaAssembler {
     * declaration, while the `Struct` instruction expects the property values in their name order. Hence, the
     * constructor function has to translate between these two orders.
     *
-    * TODO (assembly): If the resulting instructions are a simple `Struct` or `StructPoly`, we can inline the
-    *                  constructor in the ExpressionAssembler, when it's used directly. This is true if the struct has
-    *                  no open type parameters.
+    * TODO: If the resulting instructions are a simple `Struct` or `StructPoly`, we can inline the constructor in the
+    *       ExpressionAssembler, when it's used directly. This is true if the struct has no open type parameters.
     */
   private def generateConstructor(schema: StructSchema)(implicit registry: Registry): PoemFunction = {
     implicit val registerProvider: RegisterProvider = new RegisterProvider

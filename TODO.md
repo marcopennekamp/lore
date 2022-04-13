@@ -9,18 +9,26 @@
   - Implement simple optimizations:
     - Squash assignments to the same register such as `Assign reg0 <- reg0`, which is very common when assigning a constant to a variable (e.g. `IntConst reg0 <- 5, Assign reg0 <- reg0`).
     - Remove jumps that just skip to the next line, i.e. `Jump 23` on line 22. Such instructions are sometimes generated when compiling `if`/`cond` expressions.
-  - Allow multiple multi-function imports with the same name from different modules and implement compile-time disambiguation of such multi-function calls.
-    - This would also allow us to introduce a `list.length`-style function call syntax (even with optional parentheses for functions with no additional parameters). It might make type inference harder, though.
-    - Refactor Pyramid such that "object-domain" functions are in the same module as their type. For example, a function `get!` for `Option` should be in the same module `lore.option`, so that we have `lore.option.Option` and `lore.option.get!` that can be imported with a single wildcard import.
-      - The explanation of companion modules in `modules.md` should mention that companion modules should contain functions for constructing instances of the type, such as `lore.list.List.repeat`, or members that are otherwise "static" to the type, such as various constants.
   - Implement a new automatic testing solution to execute the functional tests. This is a great opportunity to formulate a general, simple testing solution that users can also access and which treats tests as first-class citizens. For example, we could implement tests as normal funcs with an `@test` annotation that takes an expected value. These `@test` functions would be compiled into an entry function that's executed by the VM if the program is compiled as a test program, or we could even add VM support for test functions and give the VM a `test` command. The latter would allow users of libraries to execute library tests even when they're just using a library, as the tests would always be bundled with the poem binaries.
     - `@test` functions would have to be single functions so that multiple dispatch isn't confused. Such functions shouldn't be callable. We should also consider how we can accomplish dependency injection. These considerations combined might make it necessary/prudent to define tests as distinct entities (at least in the language, not necessarily the VM) with a `test` keyword and such.
     - This framework should be used to test Pyramid. The tests would be placed in `*.test.lore` files directly in the Pyramid directory and be part of the generated binary.
     - We should leverage the test suite to also support benchmarks to be able to record performance changes when we optimize the VM. "Real" programs like `dispatch/hello-name.lore` and `combat` would be especially suitable to benchmarking, but probably also artificial cases such as `dispatch/intersection.lore`.
   - Build dispatch hierarchy and dispatch caching into the VM.
     - This optimization is already contained in the transpilation phase and Javascript run time, so we should port it to the VM before we delete the code.
-  - Remove the now obsolete Javascript run time and the transpilation capabilities of the compiler. 
+  - Remove the now obsolete Javascript run time and the transpilation capabilities of the compiler.
+  - Isn't the default `less_than_equal?` definition incorrect for some of the more complex structures? For example, a query `%{ status: #ok } <= %{ status: #ok, result: 'abc' }` returns `false` because the shapes are neither equal (the right shape has an additional property), nor is the left shape less than the right one. However, when following the lexicographic definition of a "less than equal?", `left.status <= right.status` would be a valid interpretation, which would return `true`.
   - Clear all `TODO (assembly)` entries.
+- Fix map types and values:
+  - Add clear covariance/contravariance type semantics.
+  - Make maps immutable and support this in the runtime.
+  - Implement a clear appends operation for maps and make them generally usable.
+  - Change the map syntax to avoid clashing with hash sets.
+  - Update `runtime-types.md`.
+  - Clear all `TODO (maps)` entries.
+- Allow multiple multi-function imports with the same name from different modules and implement compile-time disambiguation of such multi-function calls.
+  - This would also allow us to introduce a `list.length`-style function call syntax (even with optional parentheses for functions with no additional parameters). It might make type inference harder, though.
+  - Refactor Pyramid such that "object-domain" functions are in the same module as their type. For example, a function `get!` for `Option` should be in the same module `lore.option`, so that we have `lore.option.Option` and `lore.option.get!` that can be imported with a single wildcard import.
+    - The explanation of companion modules in `modules.md` should mention that companion modules should contain functions for constructing instances of the type, such as `lore.list.List.repeat`, or members that are otherwise "static" to the type, such as various constants.
 - Syntax changes:
   - Change `!`, `&&` and `||` to `not`, `and`, and `or`. Especially `!` is weird with the ability to put `?` or `!` into a function name: `!equal?(a, b) || !check?!(x)` vs. `not equal?(a, b) or not check?!(x)`.
   - Rename `act` to `proc`? This would be in line with `func`.
@@ -33,14 +41,7 @@
   - Implicit underscore sections (e.g. `map(things, _.name)`) or an equivalent shortcut syntax.
   - Trailing lambdas.
   - Clear all `TODO (syntax)` entries.
-- Fix map types and values:
-  - Add clear covariance/contravariance type semantics.
-  - Make maps immutable and support this in the runtime.
-  - Implement a clear appends operation for maps and make them generally usable.
-  - Change the map syntax to avoid clashing with hash sets.
-  - Update `runtime-types.md`.
-  - Clear all `TODO (maps)` entries.
-- Add pattern matching in `case` expressions, anonymous function parameters, variable declarations, and the left-hand side of assignments (e.g. for assigning tuple values to mutable variables).
+- Add `case` expressions and pattern matching in anonymous function parameters, variable declarations, and the left-hand side of assignments (e.g. for assigning tuple values to mutable variables).
   - Clear all `TODO (case)` entries.
 - Refactor Pyramid and add more types and functions.
   - Clear all `TODO (pyramid)` entries.

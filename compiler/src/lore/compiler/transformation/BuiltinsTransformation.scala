@@ -58,9 +58,9 @@ object BuiltinsTransformation {
     position: Position,
   )(implicit registry: Registry, reporter: Reporter): Expression = {
     (left.tpe, right.tpe) match {
-      // TODO (assembly): We should only allow the following comparison pairs: (Int/Real, Int/Real), (String, String),
-      //                  (Boolean, Boolean). All other pairs should be patched through to `cmf`.
-      case (t1: BasicType, t2: BasicType) if t1.isPrimitive && t2.isPrimitive =>
+      // The following type combinations can be compared by specialized instructions: `(Int | Real, Int | Real)`,
+      // `(Boolean, Boolean)`, `(String, String)`.
+      case (t1: BasicType, t2: BasicType) if (t1.isNumeric && t2.isNumeric) || (t1 == t2 && t1.isPrimitive) =>
         Expression.BinaryOperation(basicOperator, left, right, BasicType.Boolean, position)
 
       case (_: SymbolType, _: SymbolType) => cmf match {

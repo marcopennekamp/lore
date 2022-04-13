@@ -273,7 +273,6 @@ class ExpressionAssembler(
     val regResult = registerProvider.fresh()
     val valueArgumentRegs = argumentChunks.map(_.forceResult(expression.position))
 
-    // TODO (assembly): Handle direct constructor value calls.
     val callChunk = expression.target match {
       case CallTarget.MultiFunction(mf) => AsmChunk(regResult, PoemInstruction.Dispatch(regResult, mf.name, valueArgumentRegs))
 

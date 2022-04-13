@@ -22,8 +22,6 @@ object ConstructorAssembler {
     regResult: Poem.Register,
     valueArgumentRegs: Vector[Poem.Register],
   )(implicit registerProvider: RegisterProvider): AsmChunk = {
-    // TODO (assembly): We can inline the `Struct` instruction if the struct doesn't need a constructor function, which
-    //                  is the case when it has no open type parameters.
     val constructorName = AsmRuntimeNames.struct.constructor(structType.schema)
 
     // If the call has polymorphic type arguments, i.e. a type argument contains type variables, we have to use the

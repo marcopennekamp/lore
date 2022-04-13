@@ -24,7 +24,7 @@ object ExpressionFeedback {
 
   case class UnsafeInteger(node: ExprNode.IntLiteralNode) extends Feedback.Error(node) {
     override def message: String = s"The integer literal ${node.value} is outside the safe run-time range of" +
-      s" ${BasicType.Int.minSafeInteger} and ${BasicType.Int.maxSafeInteger}. The runtime will not be able to properly " +
+      s" ${BasicType.Int.minimum} and ${BasicType.Int.maximum}. The runtime will not be able to properly " +
       s" store and process integers this large."
   }
 

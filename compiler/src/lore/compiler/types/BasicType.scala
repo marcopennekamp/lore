@@ -4,9 +4,14 @@ import lore.compiler.semantics.NamePath
 
 sealed abstract class BasicType(override val name: NamePath, val kind: Kind) extends NamedType {
   /**
-    * Whether the basic type describes primitive values (numbers, strings, booleans).
+    * Whether the basic type describes primitive values (Int, Real, Boolean, String).
     */
   def isPrimitive: Boolean = false
+
+  /**
+    * Whether the basic type describes numeric values (Int, Real).
+    */
+  def isNumeric: Boolean = false
 
   override val hashCode: Int = name.hashCode
 }
@@ -24,22 +29,22 @@ object BasicType {
 
   case object Int extends BasicType(NamePath("Int"), Kind.Int) {
     override def isPrimitive: Boolean = true
-
-    // TODO (assembly): The safety limits need to be changed for the new VM.
-
-    /**
-      * The maximum safe run-time integer value supported by Javascript.
-      */
-    val maxSafeInteger: Long = 9007199254740991L
+    override def isNumeric: Boolean = true
 
     /**
-      * The minimum safe run-time integer value supported by Javascript.
+      * The maximum run-time integer value supported by the VM (61-bit signed integer).
       */
-    val minSafeInteger: Long = -9007199254740991L
+    val maximum: Long = 1152921504606846975L
+
+    /**
+      * The minimum run-time integer value supported by the VM (61-bit signed integer).
+      */
+    val minimum: Long = -1152921504606846976L
   }
 
   case object Real extends BasicType(NamePath("Real"), Kind.Real) {
     override def isPrimitive: Boolean = true
+    override def isNumeric: Boolean = true
   }
 
   case object Boolean extends BasicType(NamePath("Boolean"), Kind.Boolean) {

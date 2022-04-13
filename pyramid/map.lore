@@ -2,7 +2,7 @@ module lore
 
 use lore.core.panic
 
-// TODO (assembly): Support maps in the VM.
+// TODO (maps): Needs map support.
 
 module Map do
 //  @where K, V

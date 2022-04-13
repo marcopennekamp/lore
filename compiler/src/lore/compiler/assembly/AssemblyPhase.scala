@@ -21,6 +21,9 @@ object AssemblyPhase {
     // TODO (assembly): The assembly phase should generate PoemFragments that resemble the actual Fragments. So all
     //                  individual definitions in a fragment should be placed into the same PoemFragment. We can
     //                  achieve this by differentiating each definition's position.
+    //                  Alternatively, we can build a single big `binary.poem` file, but this requires constant tables
+    //                  to be unique per function. Since we probably have to do that anyway (see the corresponding VM
+    //                  TODO), this is likely the best approach.
     var poemSchemas = Vector.empty[PoemSchema]
     var poemGlobalVariables = Vector.empty[PoemGlobalVariable]
     var poemFunctions = Vector.empty[PoemFunction]

@@ -23,14 +23,6 @@ case class BuildOptions(
   target: Path = Path.of(BuildOptions.defaultTarget),
 
   /**
-    * Whether the generated Javascript code should be beautified with prettier. This incurs an additional compile-time
-    * cost of a few hundred milliseconds.
-    *
-    * TODO (assembly): Remove this.
-    */
-  enablePrettier: Boolean = true,
-
-  /**
     * CompilerOptions are used in the internals of the compiler, which are file- and build-agnostic.
     */
   compilerOptions: CompilerOptions = CompilerOptions(),

@@ -42,7 +42,7 @@ class ExpressionTransformationVisitor(
         .getOrElse(Expression.Hole(BasicType.Nothing, position))
 
     case node@IntLiteralNode(value, position) =>
-      if (value < BasicType.Int.minSafeInteger || BasicType.Int.maxSafeInteger < value) {
+      if (value < BasicType.Int.minimum || BasicType.Int.maximum < value) {
         reporter.error(ExpressionFeedback.UnsafeInteger(node))
       }
       Expression.Literal.integer(value, position)

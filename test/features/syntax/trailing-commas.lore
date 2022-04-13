@@ -1,8 +1,8 @@
-use lore.core.to_string
-use lore.Map
-use lore.Tuple
+// TODO (maps): Needs map support.
 
-// TODO (assembly): Needs map support.
+use lore.core.to_string
+//use lore.Map
+use lore.Tuple
 
 trait Thing[A, B,]
 type Thing2[C,] = Thing[C, C,]
@@ -20,11 +20,13 @@ func get_tuple(
   b,
 )
 
+/*
 func get_map(): #[String -> Int] = #[
   'Hieronymus' -> 5,
   'Homunculus' -> 10,
   'Harbingers' -> 3,
 ]
+*/
 
 func get_shape(): %{ name: String, level: Int, } = %{
   name: 'Aurifana',
@@ -41,14 +43,14 @@ func test(): [String] = do
     woo = 12,
   }
   let tuple = get_tuple(1, 'hello')
-  let dict = get_map()
+  //let dict = get_map()
   let shape = get_shape()
 
   [
     ahoo.woo,
     ahoo2.ah,
     Tuple.second(tuple),
-    Map.get!(dict, 'Harbingers') |> to_string,
+    //Map.get!(dict, 'Harbingers') |> to_string,
     shape.name,
   ]
 end
