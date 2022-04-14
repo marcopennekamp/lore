@@ -45,6 +45,11 @@ case class Position(fragment: Fragment, startIndex: Index, endIndex: Index) {
   }
 
   /**
+    * Creates a new 0-length position that refers to the end of this position.
+    */
+  def end: Position = Position(fragment, endIndex, endIndex)
+
+  /**
     * The actual code from the start to the end of the position.
     */
   lazy val code: String = fragment.input.slice(startIndex, endIndex).strip()

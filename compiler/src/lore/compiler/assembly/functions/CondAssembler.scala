@@ -24,8 +24,8 @@ object CondAssembler {
     // to the `endLabel` instead. If a case body has been executed, we also need to jump to `endLabel` to finish the
     // execution of the expression. Because a `cond` expression is guaranteed to be total, we don't need to add
     // additional handling for non-total `cond`s.
-    val caseLabels = cond.cases.map(_ => new Poem.Label)
-    val endLabel = new Poem.Label(isPost = true)
+    val caseLabels = cond.cases.map(condCase => new Poem.Label(condCase.condition.position))
+    val endLabel = new Poem.Label(cond.position.end, isPost = true)
     val nextLabels = caseLabels.tail :+ endLabel
 
     val fullCaseChunks = cond.cases.zip(caseChunks).zipWithIndex.map { case ((condCase, (conditionChunk, bodyChunk)), index) =>

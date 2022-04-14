@@ -1,10 +1,10 @@
 package lore.compiler.assembly.functions
 
-import lore.compiler.assembly.{AsmChunk, AssemblyPhase}
+import lore.compiler.assembly.AsmChunk
 import lore.compiler.assembly.optimization.{ConstSmasher, RegisterAllocator}
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.core.CompilationException
-import lore.compiler.poem.{Poem, PoemFunction, PoemInstruction, PoemOperation}
+import lore.compiler.poem.{Poem, PoemFunction, PoemInstruction}
 import lore.compiler.semantics.Registry
 import lore.compiler.semantics.expressions.Expression
 import lore.compiler.semantics.functions.{FunctionDefinition, FunctionSignature}
@@ -101,14 +101,19 @@ object FunctionAssembler {
         )
     }
 
+    // Label resolution is the last step so that preceding optimization steps can add or remove instructions without
+    // having to recompute absolute locations. This requires all optimization steps before label resolution to preserve
+    // labels. Register allocation cannot be executed after label resolution because some optimizations rely on
+    // optimized registers. This requires the RegisterAllocator to compute absolute locations for the liveness
+    // information on its own, but the resulting flexibility in optimizations is well worth it.
     var instructions = bodyChunk.instructions ++ returnInstructions
-    instructions = LabelResolver.resolve(instructions, signature.position)
     instructions = ConstSmasher.optimize(instructions)
 
     RegisterAllocator.logger.trace(s"Register allocation for function `$signature`:")
     instructions = RegisterAllocator.optimize(instructions, signature.parameters.length)
     RegisterAllocator.loggerBlank.trace("")
 
+    instructions = LabelResolver.resolve(instructions)
     instructions
   }
 

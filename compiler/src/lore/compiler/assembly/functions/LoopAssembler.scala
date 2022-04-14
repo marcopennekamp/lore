@@ -18,8 +18,8 @@ object LoopAssembler {
 
     // We need two labels. One label for jumping from the body back to the condition for the next iteration, and one
     // label to skip past the body.
-    val conditionLabel = new Poem.Label
-    val postBodyLabel = new Poem.Label(isPost = true)
+    val conditionLabel = new Poem.Label(loop.condition.position)
+    val postBodyLabel = new Poem.Label(loop.body.position.end, isPost = true)
 
     val checkConditionChunk = AsmChunk(
       conditionChunk.instructions,
@@ -107,15 +107,15 @@ object LoopAssembler {
     case class ExtractorPart(preBodyChunk: AsmChunk, postBodyChunk: AsmChunk)
 
     // This label will point to an instruction after the whole `loop` expression.
-    val postExpressionLabel = new Poem.Label(isPost = true)
+    val postExpressionLabel = new Poem.Label(loop.position.end, isPost = true)
 
     var extractorParts = Vector.empty[ExtractorPart]
     loop.extractors.zip(collectionChunks).foldLeft(postExpressionLabel) {
       case (outerLoopLabel, (expressionExtractor, collectionChunk)) =>
-        val checkLabel = new Poem.Label
+        val checkLabel = new Poem.Label(expressionExtractor.collection.position)
 
         // This is NOT a "post label", so `isPost = false` is correct.
-        val postBodyLabel = new Poem.Label(isPost = false)
+        val postBodyLabel = new Poem.Label(loop.body.position, isPost = false)
 
         val regList = collectionChunk.forceResult(loop.position)
         val regIndex = registerProvider.fresh()
@@ -144,11 +144,10 @@ object LoopAssembler {
 
         val regConst1 = registerProvider.fresh()
         val postBodyChunk = AsmChunk(
-          PoemInstruction.IntConst(regConst1, 1),
+          PoemInstruction.IntConst(regConst1, 1).withLabel(postBodyLabel),
           PoemInstruction.BinaryOperation(PoemOperation.IntAdd, regIndex, regIndex, regConst1),
           PoemInstruction.Jump(Poem.LabelLocation(checkLabel)),
         )
-        postBodyChunk.labelFirst(postBodyLabel)
 
         extractorParts = extractorParts :+ ExtractorPart(preBodyChunk, postBodyChunk)
         postBodyLabel

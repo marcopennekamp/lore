@@ -1,6 +1,6 @@
 package lore.compiler.assembly.optimization
 
-import lore.compiler.poem.{Poem, PoemBooleanValue, PoemInstruction, PoemIntValue}
+import lore.compiler.poem.{PoemBooleanValue, PoemInstruction, PoemIntValue}
 
 /**
   * The ConstSmasher converts instructions such as `Const(_, PoemIntValue(15))` to more direct constant instructions
@@ -15,8 +15,8 @@ object ConstSmasher {
   private def smash(instruction: PoemInstruction): PoemInstruction = instruction match {
     case PoemInstruction.Const(target, value) =>
       value match {
-        case PoemIntValue(value) => PoemInstruction.IntConst(target, value)
-        case PoemBooleanValue(value) => PoemInstruction.BooleanConst(target, value)
+        case PoemIntValue(value) => PoemInstruction.IntConst(target, value).preservingLabelsOf(instruction)
+        case PoemBooleanValue(value) => PoemInstruction.BooleanConst(target, value).preservingLabelsOf(instruction)
         case _ => instruction
       }
 

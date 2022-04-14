@@ -1,5 +1,6 @@
 package lore.compiler.assembly.optimization
 
+import lore.compiler.assembly.functions.LabelResolver
 import lore.compiler.poem.{Poem, PoemInstruction}
 import lore.compiler.utils.CollectionExtensions.MapTuple2Extension
 
@@ -32,6 +33,9 @@ case class Liveness(startPoints: Map[Poem.Register, LivenessPoint], endPoints: M
 
 object Liveness {
 
+  /**
+    * Computes the liveness information for the given instructions.
+    */
   def compute(instructions: Vector[PoemInstruction]): Liveness = {
     val (liveInSets, liveOutSets) = computeLiveInOutSets(instructions)
     computeIntervals(instructions, liveInSets, liveOutSets)
@@ -47,6 +51,9 @@ object Liveness {
     * Computes the live-in/live-out sets for all instructions with a backwards algorithm.
     */
   private def computeLiveInOutSets(instructions: Vector[PoemInstruction]): (LiveInSets, LiveOutSets) = {
+    // To compute liveness, we need to resolve labels to absolute locations.
+    val absoluteLocations = LabelResolver.computeAbsoluteLocations(instructions)
+
     val liveInSets = instructions.map(_ => mutable.HashSet[Poem.Register]())
     val liveOutSets = instructions.map(_ => mutable.HashSet[Poem.Register]())
 
@@ -74,7 +81,6 @@ object Liveness {
 
     do {
       hasChanged = false
-
       for (line <- instructions.indices.reverse) {
         val instruction = instructions(line)
         val liveIn = liveInSets(line)
@@ -90,8 +96,8 @@ object Liveness {
 
         // The live-out set is computed as follows: `liveOut[i] = union liveIn[s]` of all successor instructions `s`. A
         // "successor instruction" is an instruction that MAY immediately follow `i`. For most instructions,
-        // `s = i + 1`. Only `Jump(pc)` instructions have two successors: `i + 1` and `pc`. Because `Return`
-        // instructions have no successor, their live-out set must remain empty.
+        // `s = i + 1`. Only `Jump(location)` instructions have two successors: `i + 1` and `location`. Because
+        // `Return` instructions have no successor, their live-out set must remain empty.
         if (!PoemInstruction.isReturn(instruction)) {
           // The last instruction has no direct successor and thus an empty live-out set.
           if (line + 1 < instructions.length) {
@@ -99,7 +105,7 @@ object Liveness {
           }
 
           PoemInstruction.getJumpTarget(instruction).foreach { location =>
-            liveInSets(location.forcePc).foreach(addVariable(liveOut, _))
+            liveInSets(absoluteLocations.resolve(location).pc).foreach(addVariable(liveOut, _))
           }
         }
       }

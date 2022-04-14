@@ -16,6 +16,11 @@ import lore.compiler.types._
   * PoemInstructions may exist in an unprocessed form where `PLoc` doesn't refer to an absolute jump target, but an
   * instruction label. This will be resolved during assembly immediately after instructions for a function have been
   * flattened.
+  *
+  * The same label can be added to an instruction multiple times without changing the label set. When transforming
+  * PoemInstructions, labels must be preserved manually. Operations like `copy` do not preserve the instruction's label
+  * set. Likewise, when an instruction is intended to replace another instruction, care must be taken to preserve the
+  * labels.
   */
 sealed abstract class PoemInstruction(val operation: PoemOperation) {
 
@@ -25,14 +30,24 @@ sealed abstract class PoemInstruction(val operation: PoemOperation) {
     * All labels that have been attached to the instruction. The instruction's ultimate position will determine the
     * location of the label.
     */
-  var labels: Vector[Poem.Label] = Vector.empty
+  var labels: Set[Poem.Label] = Set.empty
 
   def addLabel(label: Poem.Label): Unit = {
-    labels = labels :+ label
+    labels = labels + label
   }
 
   def withLabel(label: Poem.Label): PoemInstruction = {
     addLabel(label)
+    this
+  }
+
+  /**
+    * Make this instruction preserve the labels of `source`, adding its labels to this instruction. This operation
+    * should be used when this instruction replaces `source`, for example when mapping registers or smashing `Const`
+    * instructions.
+    */
+  def preservingLabelsOf(source: PoemInstruction): PoemInstruction = {
+    labels ++= source.labels
     this
   }
 
@@ -227,50 +242,53 @@ object PoemInstruction {
     instruction: PoemInstruction,
     applyTarget: Poem.Register => Poem.Register,
     applySource: Poem.Register => Poem.Register,
-  ): PoemInstruction = instruction match {
-    case instruction@UnaryOperation(_, target, value) => instruction.copy(target = applyTarget(target), value = applySource(value))
-    case instruction@BinaryOperation(_, target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
-    case instruction@Assign(target, source) => instruction.copy(target = applyTarget(target), source = applySource(source))
-    case instruction@Const(target, _) => instruction.copy(target = applyTarget(target))
-    case instruction@IntConst(target, _) => instruction.copy(target = applyTarget(target))
-    case instruction@IntToReal(target, value) => instruction.copy(target = applyTarget(target), value = applySource(value))
-    case instruction@BooleanConst(target, _) => instruction.copy(target = applyTarget(target))
-    case instruction@StringOf(target, value) => instruction.copy(target = applyTarget(target), value = applySource(value))
-    case instruction@StringConcat(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
-    case instruction@Tuple(target, elements) => instruction.copy(target = applyTarget(target), elements = elements.map(applySource))
-    case instruction@TupleGet(target, tuple, _) => instruction.copy(target = applyTarget(target), tuple = applySource(tuple))
-    case instruction@FunctionCall(target, function, arguments) => instruction.copy(target = applyTarget(target), function = applySource(function), arguments = arguments.map(applySource))
-    case instruction@FunctionSingle(target, _, typeArguments) => instruction.copy(target = applyTarget(target), typeArguments = typeArguments.map(applySource))
-    case instruction@Lambda(target, _, _, capturedRegisters) => instruction.copy(target = applyTarget(target), capturedRegisters = capturedRegisters.map(applySource))
-    case instruction@LambdaLocal(target, _) => instruction.copy(target = applyTarget(target))
-    case instruction@List(target, _, elements) => instruction.copy(target = applyTarget(target), elements = elements.map(applySource))
-    case instruction@ListAppend(_, target, list, element, _) => instruction.copy(target = applyTarget(target), list = applySource(list), element = applySource(element))
-    case instruction@ListAppendUntyped(target, list, element) => instruction.copy(target = applyTarget(target), list = applySource(list), element = applySource(element))
-    case instruction@ListLength(target, list) => instruction.copy(target = applyTarget(target), list = applySource(list))
-    case instruction@ListGet(target, list, index) => instruction.copy(target = applyTarget(target), list = applySource(list), index = applySource(index))
-    case instruction@Shape(target, _, properties) => instruction.copy(target = applyTarget(target), properties = properties.map(applySource))
-    case instruction@SymbolEq(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
-    case instruction@Struct(target, _, valueArguments) => instruction.copy(target = applyTarget(target), valueArguments = valueArguments.map(applySource))
-    case instruction@StructPoly(target, _, typeArguments, valueArguments) => instruction.copy(target = applyTarget(target), typeArguments = typeArguments.map(applySource), valueArguments = valueArguments.map(applySource))
-    case instruction@StructEq(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
-    case instruction@PropertyGet(target, _, instance, _) => instruction.copy(target = applyTarget(target), instance = applySource(instance))
-    case instruction@PropertySet(_, instance, _, value) => instruction.copy(instance = applySource(instance), value = applySource(value))
-    case instruction@Jump(_) => instruction
-    case instruction@JumpIfFalse(_, predicate) => instruction.copy(predicate = applySource(predicate))
-    case instruction@JumpIfTrue(_, predicate) => instruction.copy(predicate = applySource(predicate))
-    case instruction@Intrinsic(target, _, arguments) => instruction.copy(target = applyTarget(target), arguments = arguments.map(applySource))
-    case instruction@GlobalGet(target, _) => instruction.copy(target = applyTarget(target))
-    case instruction@GlobalSet(_, value) => instruction.copy(value = applySource(value))
-    case instruction@Dispatch(target, _, arguments) => instruction.copy(target = applyTarget(target), arguments = arguments.map(applySource))
-    case instruction@Call(target, _, valueArguments) => instruction.copy(target = applyTarget(target), valueArguments = valueArguments.map(applySource))
-    case instruction@CallPoly(target, _, typeArguments, valueArguments) => instruction.copy(target = applyTarget(target), typeArguments = typeArguments.map(applySource), valueArguments = valueArguments.map(applySource))
-    case instruction@Return(value) => instruction.copy(value = applySource(value))
-    case instruction@TypeArg(target, _) => instruction.copy(target = applyTarget(target))
-    case instruction@TypeConst(target, _) => instruction.copy(target = applyTarget(target))
-    case instruction@TypeOf(target, value) => instruction.copy(target = applyTarget(target), value = applySource(value))
-    case instruction@TypePathIndex(target, tpe, _) => instruction.copy(target = applyTarget(target), tpe = applySource(tpe))
-    case instruction@TypePathProperty(target, tpe, _) => instruction.copy(target = applyTarget(target), tpe = applySource(tpe))
-    case instruction@TypePathTypeArgument(target, tpe, _, _) => instruction.copy(target = applyTarget(target), tpe = applySource(tpe))
+  ): PoemInstruction = {
+    val result = instruction match {
+      case instruction@UnaryOperation(_, target, value) => instruction.copy(target = applyTarget(target), value = applySource(value))
+      case instruction@BinaryOperation(_, target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
+      case instruction@Assign(target, source) => instruction.copy(target = applyTarget(target), source = applySource(source))
+      case instruction@Const(target, _) => instruction.copy(target = applyTarget(target))
+      case instruction@IntConst(target, _) => instruction.copy(target = applyTarget(target))
+      case instruction@IntToReal(target, value) => instruction.copy(target = applyTarget(target), value = applySource(value))
+      case instruction@BooleanConst(target, _) => instruction.copy(target = applyTarget(target))
+      case instruction@StringOf(target, value) => instruction.copy(target = applyTarget(target), value = applySource(value))
+      case instruction@StringConcat(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
+      case instruction@Tuple(target, elements) => instruction.copy(target = applyTarget(target), elements = elements.map(applySource))
+      case instruction@TupleGet(target, tuple, _) => instruction.copy(target = applyTarget(target), tuple = applySource(tuple))
+      case instruction@FunctionCall(target, function, arguments) => instruction.copy(target = applyTarget(target), function = applySource(function), arguments = arguments.map(applySource))
+      case instruction@FunctionSingle(target, _, typeArguments) => instruction.copy(target = applyTarget(target), typeArguments = typeArguments.map(applySource))
+      case instruction@Lambda(target, _, _, capturedRegisters) => instruction.copy(target = applyTarget(target), capturedRegisters = capturedRegisters.map(applySource))
+      case instruction@LambdaLocal(target, _) => instruction.copy(target = applyTarget(target))
+      case instruction@List(target, _, elements) => instruction.copy(target = applyTarget(target), elements = elements.map(applySource))
+      case instruction@ListAppend(_, target, list, element, _) => instruction.copy(target = applyTarget(target), list = applySource(list), element = applySource(element))
+      case instruction@ListAppendUntyped(target, list, element) => instruction.copy(target = applyTarget(target), list = applySource(list), element = applySource(element))
+      case instruction@ListLength(target, list) => instruction.copy(target = applyTarget(target), list = applySource(list))
+      case instruction@ListGet(target, list, index) => instruction.copy(target = applyTarget(target), list = applySource(list), index = applySource(index))
+      case instruction@Shape(target, _, properties) => instruction.copy(target = applyTarget(target), properties = properties.map(applySource))
+      case instruction@SymbolEq(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
+      case instruction@Struct(target, _, valueArguments) => instruction.copy(target = applyTarget(target), valueArguments = valueArguments.map(applySource))
+      case instruction@StructPoly(target, _, typeArguments, valueArguments) => instruction.copy(target = applyTarget(target), typeArguments = typeArguments.map(applySource), valueArguments = valueArguments.map(applySource))
+      case instruction@StructEq(target, a, b) => instruction.copy(target = applyTarget(target), a = applySource(a), b = applySource(b))
+      case instruction@PropertyGet(target, _, instance, _) => instruction.copy(target = applyTarget(target), instance = applySource(instance))
+      case instruction@PropertySet(_, instance, _, value) => instruction.copy(instance = applySource(instance), value = applySource(value))
+      case instruction@Jump(_) => instruction
+      case instruction@JumpIfFalse(_, predicate) => instruction.copy(predicate = applySource(predicate))
+      case instruction@JumpIfTrue(_, predicate) => instruction.copy(predicate = applySource(predicate))
+      case instruction@Intrinsic(target, _, arguments) => instruction.copy(target = applyTarget(target), arguments = arguments.map(applySource))
+      case instruction@GlobalGet(target, _) => instruction.copy(target = applyTarget(target))
+      case instruction@GlobalSet(_, value) => instruction.copy(value = applySource(value))
+      case instruction@Dispatch(target, _, arguments) => instruction.copy(target = applyTarget(target), arguments = arguments.map(applySource))
+      case instruction@Call(target, _, valueArguments) => instruction.copy(target = applyTarget(target), valueArguments = valueArguments.map(applySource))
+      case instruction@CallPoly(target, _, typeArguments, valueArguments) => instruction.copy(target = applyTarget(target), typeArguments = typeArguments.map(applySource), valueArguments = valueArguments.map(applySource))
+      case instruction@Return(value) => instruction.copy(value = applySource(value))
+      case instruction@TypeArg(target, _) => instruction.copy(target = applyTarget(target))
+      case instruction@TypeConst(target, _) => instruction.copy(target = applyTarget(target))
+      case instruction@TypeOf(target, value) => instruction.copy(target = applyTarget(target), value = applySource(value))
+      case instruction@TypePathIndex(target, tpe, _) => instruction.copy(target = applyTarget(target), tpe = applySource(tpe))
+      case instruction@TypePathProperty(target, tpe, _) => instruction.copy(target = applyTarget(target), tpe = applySource(tpe))
+      case instruction@TypePathTypeArgument(target, tpe, _, _) => instruction.copy(target = applyTarget(target), tpe = applySource(tpe))
+    }
+    result.preservingLabelsOf(instruction)
   }
 
   case class TargetSourceInfo(targets: Vector[Poem.Register], sources: Vector[Poem.Register])

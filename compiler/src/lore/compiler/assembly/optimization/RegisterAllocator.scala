@@ -13,16 +13,16 @@ object RegisterAllocator {
   val loggerBlank: Logger = Logger("lore.compiler.assembly.registerAllocation.blank")
 
   /**
-    * Reallocates the registers in the given instructions to reduce the number of used registers. The assignment
-    * algorithm is a linear scan, which is a simple but adequate approach. As the expression assembler assigns a new
-    * temporary index to every expression result, even a simple algorithm can achieve a good compression factor.
+    * Reallocates the registers in the given instructions to reduce the number of used registers.
+    *
+    * The assignment algorithm is a linear scan, which is a simple but adequate approach. As the expression assembler
+    * assigns a new temporary index to every expression result, even a simple algorithm can achieve a good compression
+    * factor. Because the VM offers an unlimited number of registers, we don't have to implement variable spills.
     *
     * To reduce confusion between unoptimized and optimized registers, we'll call the former "variables".
     *
     * The first `parameterCount` variables must be allocated to the first registers, because this is where the VM
     * places argument values after a function is called. The registers may be reallocated later if they are freed.
-    *
-    * Because the VM offers an unlimited number of registers, we don't have to implement variable spills.
     */
   def optimize(instructions: Vector[PoemInstruction], parameterCount: Int): Vector[PoemInstruction] = {
     val liveness = Liveness.compute(instructions)
