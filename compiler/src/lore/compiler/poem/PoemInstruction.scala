@@ -36,6 +36,10 @@ sealed abstract class PoemInstruction(val operation: PoemOperation) {
     labels = labels + label
   }
 
+  def addLabels(labels: Set[Poem.Label]): Unit = {
+    this.labels ++= labels
+  }
+
   def withLabel(label: Poem.Label): PoemInstruction = {
     addLabel(label)
     this
@@ -46,8 +50,15 @@ sealed abstract class PoemInstruction(val operation: PoemOperation) {
     * should be used when this instruction replaces `source`, for example when mapping registers or smashing `Const`
     * instructions.
     */
+  def preserveLabelsOf(source: PoemInstruction): Unit = {
+    addLabels(source.labels)
+  }
+
+  /**
+    * See [[preserveLabelsOf]].
+    */
   def preservingLabelsOf(source: PoemInstruction): PoemInstruction = {
-    labels ++= source.labels
+    preserveLabelsOf(source)
     this
   }
 
@@ -146,9 +157,13 @@ object PoemInstruction {
     value: PReg,
   ) extends PoemInstruction(PoemOperation.PropertySet)
 
-  case class Jump(target: PLoc) extends PoemInstruction(PoemOperation.Jump)
-  case class JumpIfFalse(target: PLoc, predicate: PReg) extends PoemInstruction(PoemOperation.JumpIfFalse)
-  case class JumpIfTrue(target: PLoc, predicate: PReg) extends PoemInstruction(PoemOperation.JumpIfTrue)
+  trait JumpInstruction {
+    def target: PLoc
+  }
+
+  case class Jump(target: PLoc) extends PoemInstruction(PoemOperation.Jump) with JumpInstruction
+  case class JumpIfFalse(target: PLoc, predicate: PReg) extends PoemInstruction(PoemOperation.JumpIfFalse) with JumpInstruction
+  case class JumpIfTrue(target: PLoc, predicate: PReg) extends PoemInstruction(PoemOperation.JumpIfTrue) with JumpInstruction
 
   case class Intrinsic(target: PReg, intrinsic: PIntr, arguments: Vector[PReg]) extends PoemInstruction(PoemOperation.Intrinsic)
 

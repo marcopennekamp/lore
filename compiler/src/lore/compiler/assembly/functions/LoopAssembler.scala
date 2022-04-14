@@ -19,7 +19,7 @@ object LoopAssembler {
     // We need two labels. One label for jumping from the body back to the condition for the next iteration, and one
     // label to skip past the body.
     val conditionLabel = new Poem.Label(loop.condition.position)
-    val postBodyLabel = new Poem.Label(loop.body.position.end, isPost = true)
+    val postBodyLabel = new Poem.Label(loop.body.position.end)
 
     val checkConditionChunk = AsmChunk(
       conditionChunk.instructions,
@@ -28,14 +28,14 @@ object LoopAssembler {
         conditionChunk.forceResult(loop.condition.position)
       ),
     )
-
-    val fullBodyChunk = bodyChunk ++ generateResultAppend(loop, regResult, bodyChunk) ++ AsmChunk(
-      // We have to jump back to the beginning of the loop.
-      PoemInstruction.Jump(Poem.LabelLocation(conditionLabel)),
-    )
-
     checkConditionChunk.labelFirst(conditionLabel)
-    fullBodyChunk.labelLast(postBodyLabel)
+
+    val fullBodyChunk = (
+      bodyChunk ++ generateResultAppend(loop, regResult, bodyChunk) ++ AsmChunk(
+        // We have to jump back to the beginning of the loop.
+        PoemInstruction.Jump(Poem.LabelLocation(conditionLabel)),
+      )
+    ).withPostLabel(postBodyLabel)
 
     initializationChunk ++ checkConditionChunk ++ fullBodyChunk ++ AsmChunk(regResult)
   }
@@ -107,15 +107,15 @@ object LoopAssembler {
     case class ExtractorPart(preBodyChunk: AsmChunk, postBodyChunk: AsmChunk)
 
     // This label will point to an instruction after the whole `loop` expression.
-    val postExpressionLabel = new Poem.Label(loop.position.end, isPost = true)
+    val postExpressionLabel = new Poem.Label(loop.position.end)
 
     var extractorParts = Vector.empty[ExtractorPart]
     loop.extractors.zip(collectionChunks).foldLeft(postExpressionLabel) {
       case (outerLoopLabel, (expressionExtractor, collectionChunk)) =>
         val checkLabel = new Poem.Label(expressionExtractor.collection.position)
 
-        // This is NOT a "post label", so `isPost = false` is correct.
-        val postBodyLabel = new Poem.Label(loop.body.position, isPost = false)
+        // This is NOT a "post label".
+        val postBodyLabel = new Poem.Label(loop.body.position)
 
         val regList = collectionChunk.forceResult(loop.position)
         val regIndex = registerProvider.fresh()
@@ -158,9 +158,7 @@ object LoopAssembler {
     val fullLoopChunk = extractorParts.foldRight(fullBodyChunk) { case (extractorPart, innerChunk) =>
       extractorPart.preBodyChunk ++ innerChunk ++ extractorPart.postBodyChunk
     }
-    val resultChunk = initializationChunk ++ fullLoopChunk ++ AsmChunk(regResult)
-    resultChunk.labelLast(postExpressionLabel)
-    resultChunk
+    (initializationChunk ++ fullLoopChunk ++ AsmChunk(regResult)).withPostLabel(postExpressionLabel)
   }
 
   private def shouldIgnoreResult(loop: Expression.Loop): Boolean = loop.tpe == TupleType.UnitType

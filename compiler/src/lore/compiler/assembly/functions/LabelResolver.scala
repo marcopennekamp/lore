@@ -43,17 +43,7 @@ object LabelResolver {
           case None =>
         }
 
-        val location = if (label.isPost) {
-          // We have to ensure that a post label actually refers to a valid instruction.
-          if (index + 1 >= instructions.length) {
-            throw CompilationException(s"A post label points to an instruction which doesn't exist. Label position: ${label.position}.")
-          }
-          Poem.AbsoluteLocation(index + 1)
-        } else {
-          Poem.AbsoluteLocation(index)
-        }
-
-        absoluteLocations += label -> location
+        absoluteLocations += label -> Poem.AbsoluteLocation(index)
       }
     }
 

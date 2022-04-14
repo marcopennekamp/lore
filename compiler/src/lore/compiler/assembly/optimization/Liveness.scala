@@ -1,6 +1,7 @@
 package lore.compiler.assembly.optimization
 
 import lore.compiler.assembly.functions.LabelResolver
+import lore.compiler.poem.PoemInstruction.JumpInstruction
 import lore.compiler.poem.{Poem, PoemInstruction}
 import lore.compiler.utils.CollectionExtensions.MapTuple2Extension
 
@@ -104,8 +105,9 @@ object Liveness {
             liveInSets(line + 1).foreach(addVariable(liveOut, _))
           }
 
-          PoemInstruction.getJumpTarget(instruction).foreach { location =>
-            liveInSets(absoluteLocations.resolve(location).pc).foreach(addVariable(liveOut, _))
+          instruction match {
+            case instruction: JumpInstruction => liveInSets(absoluteLocations.resolve(instruction.target).pc).foreach(addVariable(liveOut, _))
+            case _ =>
           }
         }
       }

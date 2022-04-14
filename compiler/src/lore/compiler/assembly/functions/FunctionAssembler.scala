@@ -83,9 +83,9 @@ object FunctionAssembler {
     // We have to either return the result of `bodyChunk` from the function, or return the unit value if `bodyChunk`
     // has no result. If the last instruction of the body is already a return instruction, we don't need to add any
     // additional instructions.
-    val returnInstructions = bodyChunk.result match {
-      case Some(regValue) => Vector(PoemInstruction.Return(regValue))
-      case None if bodyChunk.instructions.lastOption.exists(PoemInstruction.isReturn) => Vector.empty
+    val returnChunk = bodyChunk.result match {
+      case Some(regValue) => AsmChunk(PoemInstruction.Return(regValue))
+      case None if bodyChunk.instructions.lastOption.exists(PoemInstruction.isReturn) => AsmChunk.empty
       case None =>
         if (TupleType.UnitType </= signature.outputType) {
           throw CompilationException("A block with a unit result can only be returned from a function that has a Unit" +
@@ -95,10 +95,19 @@ object FunctionAssembler {
         // We can always use register 0, because we're at the end of the function and we have no meaningful live
         // variables.
         val regResult = Poem.Register(0)
-        Vector(
+        AsmChunk(
           PoemInstruction.Tuple(regResult, Vector.empty),
-          PoemInstruction.Return(regResult)
+          PoemInstruction.Return(regResult),
         )
+    }
+
+    // We have to take care that all post labels of `bodyChunk` are resolved. A body ending in a `Return` instruction
+    // should not generate a post label, so in the case that `returnChunk` is `AsmChunk.empty`, `bodyChunk` will likely
+    // not have any post labels. Using chunk concatenation assures that the post labels of `bodyChunk` are properly
+    // attached to the correct instruction.
+    val fullChunk = bodyChunk ++ returnChunk
+    if (fullChunk.postLabels.nonEmpty) {
+      throw CompilationException(s"The post labels of the body chunk weren't properly cleared out. Position: ${signature.position}.")
     }
 
     // Label resolution is the last step so that preceding optimization steps can add or remove instructions without
@@ -106,7 +115,7 @@ object FunctionAssembler {
     // labels. Register allocation cannot be executed after label resolution because some optimizations rely on
     // optimized registers. This requires the RegisterAllocator to compute absolute locations for the liveness
     // information on its own, but the resulting flexibility in optimizations is well worth it.
-    var instructions = bodyChunk.instructions ++ returnInstructions
+    var instructions = fullChunk.instructions
     instructions = ConstSmasher.optimize(instructions)
 
     RegisterAllocator.logger.trace(s"Register allocation for function `$signature`:")

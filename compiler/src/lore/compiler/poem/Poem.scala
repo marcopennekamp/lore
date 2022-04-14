@@ -21,10 +21,8 @@ object Poem {
     * A label refers to a specific [[PoemInstruction]] and is used to resolve label locations into absolute locations.
     *
     * @param position The position where the label is defined, or a position close to it, used for error reporting.
-    * @param isPost Post labels aren't resolved to the instruction's location but to the location of the next
-    *               instruction. This can be used to jump to the end of a block without knowing the next instruction.
     */
-  class Label(val position: Position, val isPost: Boolean = false)
+  class Label(val position: Position)
 
   /**
     * A Location is either an unresolved label or an absolute program counter position. Label locations are resolved by

@@ -25,7 +25,7 @@ object CondAssembler {
     // execution of the expression. Because a `cond` expression is guaranteed to be total, we don't need to add
     // additional handling for non-total `cond`s.
     val caseLabels = cond.cases.map(condCase => new Poem.Label(condCase.condition.position))
-    val endLabel = new Poem.Label(cond.position.end, isPost = true)
+    val endLabel = new Poem.Label(cond.position.end)
     val nextLabels = caseLabels.tail :+ endLabel
 
     val fullCaseChunks = cond.cases.zip(caseChunks).zipWithIndex.map { case ((condCase, (conditionChunk, bodyChunk)), index) =>
@@ -64,9 +64,7 @@ object CondAssembler {
       caseChunk
     }
 
-    val fullChunk = AsmChunk.concat(fullCaseChunks) ++ AsmChunk(regResult)
-    fullChunk.labelLast(endLabel)
-    fullChunk
+    (AsmChunk.concat(fullCaseChunks) ++ AsmChunk(regResult)).withPostLabel(endLabel)
   }
 
 }
