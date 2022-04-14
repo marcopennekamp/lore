@@ -6,9 +6,6 @@
 
 - Implement a compiler backend for producing poem binaries.
   - Implement introspection.
-  - Implement simple optimizations:
-    - Squash assignments to the same register such as `Assign reg0 <- reg0`, which is very common when assigning a constant to a variable (e.g. `IntConst reg0 <- 5, Assign reg0 <- reg0`).
-    - Remove jumps that just skip to the next line, i.e. `Jump 23` on line 22. Such instructions are sometimes generated when compiling `if`/`cond` expressions.
   - Implement a new automatic testing solution to execute the functional tests. This is a great opportunity to formulate a general, simple testing solution that users can also access and which treats tests as first-class citizens. For example, we could implement tests as normal funcs with an `@test` annotation that takes an expected value. These `@test` functions would be compiled into an entry function that's executed by the VM if the program is compiled as a test program, or we could even add VM support for test functions and give the VM a `test` command. The latter would allow users of libraries to execute library tests even when they're just using a library, as the tests would always be bundled with the poem binaries.
     - `@test` functions would have to be single functions so that multiple dispatch isn't confused. Such functions shouldn't be callable. We should also consider how we can accomplish dependency injection. These considerations combined might make it necessary/prudent to define tests as distinct entities (at least in the language, not necessarily the VM) with a `test` keyword and such.
     - This framework should be used to test Pyramid. The tests would be placed in `*.test.lore` files directly in the Pyramid directory and be part of the generated binary.

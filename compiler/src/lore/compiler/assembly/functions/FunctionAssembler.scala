@@ -1,7 +1,7 @@
 package lore.compiler.assembly.functions
 
 import lore.compiler.assembly.AsmChunk
-import lore.compiler.assembly.optimization.{ConstSmasher, RegisterAllocator}
+import lore.compiler.assembly.optimization.{ConstSmasher, NoopOptimizer, RegisterAllocator}
 import lore.compiler.assembly.types.TypeAssembler
 import lore.compiler.core.CompilationException
 import lore.compiler.poem.{Poem, PoemFunction, PoemInstruction}
@@ -122,6 +122,7 @@ object FunctionAssembler {
     instructions = RegisterAllocator.optimize(instructions, signature.parameters.length)
     RegisterAllocator.loggerBlank.trace("")
 
+    instructions = NoopOptimizer.optimize(instructions)
     instructions = LabelResolver.resolve(instructions)
     instructions
   }
