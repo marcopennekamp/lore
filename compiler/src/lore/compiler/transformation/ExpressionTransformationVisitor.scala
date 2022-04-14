@@ -141,10 +141,10 @@ class ExpressionTransformationVisitor(
   override def visitTernary(node: TernaryNode)(
     argument1: Expression, argument2: Expression, argument3: Expression,
   ): Expression = node match {
-    case IfElseNode(_, _, _, position) =>
+    case IfElseNode(_, _, onFalse, position) =>
       val cases = Vector(
         CondCase(argument1, argument2),
-        CondCase(Expression.Literal.boolean(true, Position.internal), argument3)
+        CondCase(Expression.Literal.boolean(true, onFalse.map(_.position).getOrElse(position)), argument3)
       )
       Expression.Cond(cases, position)
   }
