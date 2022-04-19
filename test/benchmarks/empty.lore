@@ -1,0 +1,3 @@
+// This is the baseline benchmark that ensures that the VM doesn't have too much overhead for each benchmark run. The
+// run time of this benchmark should be below 20 nanoseconds.
+func test(): Int = 0
