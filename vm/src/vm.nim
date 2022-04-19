@@ -20,7 +20,9 @@ when is_main_module:
     let poem = poems.read_poem(param_str(1))
     let universe = universes.resolve(@[poem])
     let target = addr universe.multi_functions[param_str(2)].functions[0].monomorphic_instance
-    benchmark("Execution time", 1):
-      with_frame_mem((frame_mem: pointer) => run_and_print(target, frame_mem))
+    with_frame_mem(proc (frame_mem: pointer) =
+      benchmark("Execution time", 1):
+        run_and_print(target, frame_mem)
+    )
   else:
     echo help
