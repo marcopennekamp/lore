@@ -2,7 +2,6 @@
 
 #### Features
 
-- Support type introspection.
 - Implement maps: Map values, append for maps.
 - Support parallel execution.
   - Clear all `TODO (vm/parallel)` entries.

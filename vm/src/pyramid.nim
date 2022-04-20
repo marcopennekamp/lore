@@ -4,7 +4,7 @@ import std/strutils
 import std/sugar
 from std/unicode import rune_len, rune_at, rune_at_pos, to_utf8, to_lower, to_upper
 
-from definitions import FramePtr, Intrinsic, IntrinsicFunction
+from definitions import FramePtr, Intrinsic, IntrinsicFunction, get_active_universe, new_introspection_type_value
 from evaluator import nil
 import imseqs
 import types
@@ -60,6 +60,17 @@ proc core_to_string(frame: FramePtr, arguments: Arguments): TaggedValue =
   let value = arg(0)
   let rec = arg_function(1)
   new_string_value_tagged(stringify(value, v => untag_reference(evaluator.evaluate_function_value(rec, frame, v), StringValue).string))
+
+proc core_type_of(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## type_of(value: Any): Type
+  let value = arg(0)
+  tag_reference(get_active_universe().new_introspection_type_value(value.get_type))
+
+proc core_subtype(frame: FramePtr, arguments: Arguments): TaggedValue =
+  ## subtype?(t1: Type, t2: Type): Boolean
+  let t1 = untag_reference(arg(0), IntrospectionTypeValue)
+  let t2 = untag_reference(arg(1), IntrospectionTypeValue)
+  tag_boolean(is_subtype(t1.boxed_type, t2.boxed_type))
 
 proc core_panic(frame: FramePtr, arguments: Arguments): TaggedValue =
   ## panic(message: String): Nothing
@@ -212,6 +223,8 @@ let intrinsics*: seq[Intrinsic] = @[
   intr("lore.core.equal?", core_equal, 3),
   intr("lore.core.less_than?", core_less_than, 3),
   intr("lore.core.to_string", core_to_string, 2),
+  intr("lore.core.type_of", core_type_of, 1),
+  intr("lore.core.subtype?", core_subtype, 2),
   intr("lore.core.panic", core_panic, 1),
 
   intr("lore.int.to_real", int_to_real, 1),

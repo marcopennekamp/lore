@@ -57,7 +57,7 @@ func hash(value: Any): Int = panic('`lore.core.hash` is not supported yet.')
 func to_string(value: Any): String = intrinsic[String]('lore.core.to_string', value, to_string :: Any => String)
 
 /**
-  * A run-time type. The struct type that backs this trait is defined ad-hoc in the runtime. Various introspection
+  * A run-time Lore type. The struct type that backs this trait is defined ad-hoc in the VM. Various introspection
   * functions such as `type_of` and `subtype?` work with Types.
   */
 trait Type
@@ -65,12 +65,12 @@ trait Type
 /**
   * Returns the run-time type of the given Lore value.
   */
-func type_of(value: Any): Type = panic('`lore.core.type_of` is not supported yet.')
+func type_of(value: Any): Type = intrinsic[Type]('lore.core.type_of', value)
 
 /**
   * Whether `t1` is a subtype of `t2`.
   */
-func subtype?(t1: Type, t2: Type): Boolean = panic('`lore.core.subtype?` is not supported yet.')
+func subtype?(t1: Type, t2: Type): Boolean = intrinsic[Boolean]('lore.core.subtype?', t1, t2)
 
 /**
   * Terminates the Lore program with the given message.

@@ -1,7 +1,5 @@
 use lore.core._
 
-// TODO (assembly): Needs introspection support.
-
 trait Animal
 
 struct Ox extends Animal

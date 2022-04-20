@@ -1,6 +1,6 @@
 import os, std/strformat, sugar, tables
 
-from "../definitions" import Function, FunctionInstance, is_monomorphic
+from "../definitions" import Function, FunctionInstance, set_active_universe, is_monomorphic
 from "../evaluator" import nil
 from "../poems" import Poem
 from "../universes" import nil
@@ -63,6 +63,7 @@ let examples = @[
 proc prepare_example(example: Example): ptr FunctionInstance =
   let poem = poems.read_poem(fmt"target/{example.name}.poem")
   let universe = universes.resolve(@[poem])
+  set_active_universe(universe)
   let function = universe.multi_functions[example.main].functions[0]
   if not function.is_monomorphic:
     quit(fmt"The example {example.name} must have a monomorphic entry function.")

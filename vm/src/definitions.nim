@@ -1,12 +1,13 @@
 import std/hashes
 from std/sequtils import any_it
 import std/strformat
+import std/tables
 
 import imseqs
 from instructions import Instruction
-from types import TypeParameter, Type, TupleType, FunctionType, MetaShape, Schema, new_function_type, bounds_contain,
-                  fits_poly1, substitute, `$`
-from values import TaggedValue, tag_reference
+from types import TypeParameter, Type, TupleType, FunctionType, MetaShape, Schema, StructSchema, new_function_type,
+                  bounds_contain, get_representative, fits_poly1, substitute, `$`
+from values import TaggedValue, IntrospectionTypeValue, tag_reference
 
 type
   Frame* = object
@@ -20,6 +21,15 @@ type
       ## Registers may contain TaggedValues and Types. Whether a register currently contains a value or a type is
       ## solely defined by the operations that act on the registers.
   FramePtr* = ptr Frame
+
+  Universe* = ref object
+    ## The Universe object provides access to all top-level entities of the current Lore program. The VM can only ever
+    ## have one active Universe as it must be accessible as a global variable.
+    intrinsics*: TableRef[string, Intrinsic]
+    schemas*: TableRef[string, Schema]
+    global_variables*: TableRef[string, GlobalVariable]
+    multi_functions*: TableRef[string, MultiFunction]
+    introspection_type_struct_schema*: StructSchema
 
   Intrinsic* = ref object
     ## An intrinsic is a function built into the virtual machine that can be called from bytecode. Every intrinsic
@@ -59,7 +69,8 @@ type
     ## A dispatch hierarchy node represents a function in the dispatch hierarchy and its dispatch successors. Nodes
     ## must be references so that the hierarchy builder can update the ImSeq of successor nodes.
     function*: Function
-    # TODO (assembly): Do we need the type parameters and input type cache? Are they even beneficial?
+    # TODO (vm): Do we need the type parameters and input type cache? Are they even beneficial? (This should be
+    #            revisited once we have a proper benchmarking solution.)
     type_parameters*: ImSeq[TypeParameter]
       ## This caches the type parameters of the function, removing a layer of pointer indirection.
     input_type*: TupleType
@@ -128,10 +139,33 @@ type
 
 const operand_list_limit*: int = 256
 
+const introspection_type_trait_name*: string = "lore.core.Type"
+  ## The VM needs to know the Type trait as defined in `core.lore` to properly "generate" a backing struct for it.
+
 proc `===`*(f1: Function, f2: Function): bool
 proc `!==`*(f1: Function, f2: Function): bool = not (f1 === f2)
 
 proc `$`*(function: Function): string
+
+########################################################################################################################
+# Universes.                                                                                                           #
+########################################################################################################################
+
+# TODO (vm/parallel): Make sure that `active_universe` is thread-safe. (It should be, out of the box, as the universe
+#                     won't be mutated after it's been created, but there might be things to look out for.)
+var active_universe: Universe = nil
+  ## This is the active universe which can be accessed as a global variable from across the VM.
+
+proc get_active_universe*(): Universe =
+  if active_universe == nil:
+    quit("Cannot get the active universe, as it is `nil`.")
+  active_universe
+
+proc set_active_universe*(universe: Universe) =
+  active_universe = universe
+
+proc new_introspection_type_value*(universe: Universe, boxed_type: Type): IntrospectionTypeValue =
+  IntrospectionTypeValue(tpe: universe.introspection_type_struct_schema.get_representative, boxed_type: boxed_type)
 
 ########################################################################################################################
 # Frames.                                                                                                              #

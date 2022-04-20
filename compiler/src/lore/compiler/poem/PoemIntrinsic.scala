@@ -15,6 +15,8 @@ object PoemIntrinsic {
     intr("lore.core.equal?", 3),
     intr("lore.core.less_than?", 3),
     intr("lore.core.to_string", 2),
+    intr("lore.core.type_of", 1),
+    intr("lore.core.subtype?", 2),
     intr("lore.core.panic", 1),
 
     intr("lore.int.to_real", 1),

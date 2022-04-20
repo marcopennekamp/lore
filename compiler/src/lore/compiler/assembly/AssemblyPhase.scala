@@ -52,15 +52,6 @@ object AssemblyPhase {
 
     logPoemFunctions(poemFunctions)
 
-    // TODO (assembly): Support introspection (probably needs VM support).
-    /* val introspectionInitialization = {
-      val tpe = TypeTranspiler.transpile(registry.core.Type.schema.get.representative)(Map.empty, symbolHistory)
-      Vector(
-        RuntimeApi.types.introspection.initialize(tpe),
-        Target.Divider,
-      )
-    } */
-
     Vector(AssembledFragment(Path.of("binary.poem"), PoemWriter.writeFragment(poemFragment)))
   }
 

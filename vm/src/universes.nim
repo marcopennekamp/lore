@@ -14,14 +14,6 @@ import schema_order
 import types
 import values
 
-type
-  Universe* = ref object
-    ## The Universe object provides access to all top-level entities of the current Lore program.
-    intrinsics*: TableRef[string, Intrinsic]
-    schemas*: TableRef[string, Schema]
-    global_variables*: TableRef[string, GlobalVariable]
-    multi_functions*: TableRef[string, MultiFunction]
-
 proc resolve_schemas(universe: Universe, poems: seq[Poem])
 
 proc resolve(universe: Universe, poem_global_variable: PoemGlobalVariable)
@@ -32,11 +24,13 @@ proc resolve(universe: Universe, poem_type_parameter: PoemTypeParameter): TypePa
 proc resolve(universe: Universe, poem_type: PoemType): Type
 proc resolve(universe: Universe, poem_value: PoemValue): TaggedValue
 
-proc finalize(mf: MultiFunction)
-
 template resolve_many(universe, sequence): untyped = sequence.map(o => universe.resolve(o))
 
 proc resolve_instructions(poem_function: PoemFunction, universe: Universe): seq[Instruction]
+
+proc finalize(mf: MultiFunction)
+
+proc initialize_introspection(universe: Universe)
 
 proc attach_type_parameters(tpe: Type, type_parameters: ImSeq[TypeParameter])
 proc attach_type_parameters(types: ImSeq[Type], type_parameters: ImSeq[TypeParameter])
@@ -90,6 +84,7 @@ proc resolve*(poems: seq[Poem]): Universe =
   for mf in universe.multi_functions.values:
     finalize(mf)
 
+  universe.initialize_introspection()
   universe
 
 proc attach_constants(universe: Universe, poem: Poem) =
@@ -940,6 +935,30 @@ method resolve(poem_value: PoemStructValue, universe: Universe): TaggedValue {.l
   let type_arguments = new_immutable_seq(universe.resolve_many(poem_value.tpe.type_arguments))
   let property_values = universe.resolve_many(poem_value.property_values)
   new_struct_value_tagged(schema, type_arguments, property_values)
+
+########################################################################################################################
+# Introspection.                                                                                                       #
+########################################################################################################################
+
+proc initialize_introspection(universe: Universe) =
+  ## Initializes a backing struct type for the `lore.core.Type` trait. If `Type` doesn't exist, no backing struct type
+  ## is generated, which is usually the case when executing examples.
+  if universe.schemas.has_key(introspection_type_trait_name):
+    let supertrait_schema = universe.schemas[introspection_type_trait_name]
+    if supertrait_schema.kind != Kind.Trait:
+      quit("`lore.core.Type` must be a trait.")
+
+    let supertrait = cast[TraitSchema](supertrait_schema).get_representative
+    let schema = new_struct_schema(
+      "lore.core.Type/impl",
+      empty_immutable_seq[TypeParameter](),
+      new_immutable_seq[TraitType]([supertrait]),
+      # The struct schema has no properties, because the actual value is represented by a IntrospectionTypeValue, which
+      # contains no openly available properties, but actually hides the Type as a `boxed_type` field.
+      empty_immutable_seq[StructSchemaProperty](),
+      empty_immutable_seq[string](),
+    )
+    universe.introspection_type_struct_schema = schema
 
 ########################################################################################################################
 # Helpers.                                                                                                             #

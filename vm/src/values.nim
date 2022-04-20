@@ -86,6 +86,11 @@ type
   StructValue* {.pure, shallow.} = ref object of Value
     property_values*: UncheckedArray[TaggedValue]
 
+  IntrospectionTypeValue* {.pure.} = ref object of Value
+    ## The backing value of the `lore.core.Type` trait. The value's `tpe` must be the initialized backing struct type.
+    boxed_type*: Type
+      ## The type that the introspection type value encapsulates.
+
 const
   TagMask: uint64 = 0b111
     ## This mask can filter out the lowest three tag bits of a pointer.

@@ -1,4 +1,4 @@
-from definitions import FunctionInstance
+from definitions import FunctionInstance, set_active_universe
 from evaluator import nil
 from types import `$`
 from values import `$`, get_type
@@ -19,6 +19,7 @@ when is_main_module:
   if param_count() >= 2:
     let poem = poems.read_poem(param_str(1))
     let universe = universes.resolve(@[poem])
+    set_active_universe(universe)
     let target = addr universe.multi_functions[param_str(2)].functions[0].monomorphic_instance
     with_frame_mem(proc (frame_mem: pointer) =
       benchmark("Execution time", 1):
