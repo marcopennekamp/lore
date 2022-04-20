@@ -10,8 +10,6 @@
     - `@test` functions would have to be single functions so that multiple dispatch isn't confused. Such functions shouldn't be callable. We should also consider how we can accomplish dependency injection. These considerations combined might make it necessary/prudent to define tests as distinct entities (at least in the language, not necessarily the VM) with a `test` keyword and such.
     - This framework should be used to test Pyramid. The tests would be placed in `*.test.lore` files directly in the Pyramid directory and be part of the generated binary.
     - We should leverage the test suite to also support benchmarks to be able to record performance changes when we optimize the VM. "Real" programs like `dispatch/hello-name.lore` and `combat` would be especially suitable to benchmarking, but probably also artificial cases such as `dispatch/intersection.lore`.
-  - Build dispatch hierarchy and dispatch caching into the VM.
-    - This optimization is already contained in the transpilation phase and Javascript run time, so we should port it to the VM before we delete the code.
   - Remove the now obsolete Javascript run time and the transpilation capabilities of the compiler.
   - Isn't the default `less_than_equal?` definition incorrect for some of the more complex structures? For example, a query `%{ status: #ok } <= %{ status: #ok, result: 'abc' }` returns `false` because the shapes are neither equal (the right shape has an additional property), nor is the left shape less than the right one. However, when following the lexicographic definition of a "less than equal?", `left.status <= right.status` would be a valid interpretation, which would return `true`.
   - Clear all `TODO (assembly)` entries.

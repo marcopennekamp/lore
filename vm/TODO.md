@@ -16,15 +16,17 @@
 
 - Implement declared type interning:
   - Implement hashing for all types.
+    - See the dispatch cache discussion below to reconsider how we can approach hashing.
     - Clear all `TODO (vm/hash)` entries.
   - Cache declared types within a schema.
   - Best intern declared types as weak references so that they can be reclaimed if no values use the types.
   - Clear all `TODO (vm/intern)` entries.
 - Implement symbol type/value interning.
   - Symbols can be represented by an integer into a symbol table that is resolved with the universe. We can use one of the unused tag bit patterns to avoid any allocations.
-- Implement a dispatch cache.
 - Implement fast persistent lists.
 - Implement fast persistent maps.
+- Implement a dispatch cache.
+  - Potentially. Jitting dispatch functions might bring better results across the board. My main two worries with dispatch caching are that (1) gauging the cost of plain dispatch vs. a hash table lookup with every function call is quite hard and (2) dispatch caches that never remove "old" entries might grow to very large sizes, without the programmer understanding why the program is eating so much memory. Whereas, caches with expiring entries incur a certain overhead. And additionally, using a dispatch cache in *some* functions incurs a constant run-time overhead because types have to be hashed. Hashing could be carried out lazily, but even then it might not be worth it.
 - We can flatten many `ImSeq`s into `UncheckedArray`s or `ImSeqObj`s for types and values (especially tuples, shapes, sum/intersection types, etc.). This will save allocations when creating values, but also make the VM's code a bit more complicated. We'll either have to pass around these embedded ImSeqObj as pointers, or write some glue code here and there.
 - Turn declared type subtyping into a simple HashSet lookup so that we don't need to branch up the supertype tree to decide whether one declared type is the subtype of another. This would be possible by giving each type an exhaustive (transitive) list of supertypes. Downsides might become apparent especially once we introduce dynamic specialization.
   - This is probably not an optimization we want to implement as long as the language is still immature.
