@@ -8,7 +8,7 @@ proc run_and_print*(function_instance: ptr FunctionInstance, frame_mem: pointer)
   echo "Result: ", res, " :: ", get_type(res)
 
 when is_main_module:
-  import os, sugar, tables
+  import os, tables
 
   from poems import nil
   from universes import nil
