@@ -15,38 +15,43 @@ type MinCandidate = object
   node: DispatchHierarchyNode
   type_arguments: ImSeq[Type]
 
+# TODO (vm/parallel): This is not thread-safe.
+var min_remaining: seq[MinCandidate] = new_seq_of_cap[MinCandidate](16)
+  ## `min_remaining` is used by `min` and cached as a global variable to avoid allocations during dispatch. `min`
+  ## guarantees that `min_remaining` always has length 0 between calls to `min`.
+
 iterator min(hierarchy: DispatchHierarchy, input_types: open_array[Type]): FunctionInstance =
   ## This iterator goes through all FunctionInstances in the min set of dispatch given `input_types`. The function
   ## instances are yielded by value. The same function may be yielded multiple times if multiple paths lead to it, so
   ## uniqueness must be enforced by the user of this iterator, if so desired. `input_types` may not contain any type
   ## variables.
-  # The `remaining` set contains only those nodes for which `input_types fits node.input_type` has already been proven.
-  # This allows us to have a single fits check per visited node, instead of one fits check for "visiting" a node and
-  # one fits check for "selecting" a node (i.e. making sure that none of the node's successors are in the fit as well,
-  # which proves the node to be in the min set). `MinCandidate` exists to carry the `type_arguments` forward, as they
-  # are calculated by `fits`, and are needed in case the node is selected.
-  # TODO (vm): Can we get rid of the allocation here? Maybe a sequence that is constantly reused? It has to be
-  #            benchmarked, of course.
-  var remaining = new_seq_of_cap[MinCandidate](8)
+  # The `min_remaining` set contains only those nodes for which `input_types fits node.input_type` has already been
+  # proven. This allows us to have a single fits check per visited node, instead of one fits check for "visiting" a
+  # node and one fits check for "selecting" a node (i.e. making sure that none of the node's successors are in the fit
+  # as well, which proves the node to be in the min set). `MinCandidate` exists to carry the `type_arguments` forward,
+  # as they are calculated by `fits`, and are needed in case the node is selected.
   for node in hierarchy.roots:
     let type_arguments = fits(input_types, node.input_type.elements.to_open_array, node.type_parameters)
     if type_arguments != nil:
-      remaining.add(MinCandidate(node: node, type_arguments: type_arguments))
+      min_remaining.add(MinCandidate(node: node, type_arguments: type_arguments))
 
-  while remaining.len > 0:
-    let candidate = remaining.pop()
+  while min_remaining.len > 0:
+    let candidate = min_remaining.pop()
 
     # The node will be selected for the min set if none of its children are in the fit. Otherwise, one or more children
-    # are added to `remaining` and `node` won't be yielded as a result.
+    # are added to `min_remaining` and `node` won't be yielded as a result.
     var should_select = true
     for successor in candidate.node.successors:
       let type_arguments = fits(input_types, successor.input_type.elements.to_open_array, successor.type_parameters)
       if type_arguments != nil:
         should_select = false
-        remaining.add(MinCandidate(node: successor, type_arguments: type_arguments))
+        min_remaining.add(MinCandidate(node: successor, type_arguments: type_arguments))
 
     if should_select:
       yield FunctionInstance(function: candidate.node.function, type_arguments: candidate.type_arguments)
+
+  # `min` must guarantee that `min_remaining` has length 0 after `min` is finished.
+  assert min_remaining.len == 0
 
 proc min_poly_node(roots: open_array[DispatchHierarchyNode], input_types: open_array[Type]): seq[DispatchHierarchyNode] =
   ## `min_poly_node` is used to build the dispatch hierarchy. It works like `min`, but the function doesn't require a
