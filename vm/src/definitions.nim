@@ -1,3 +1,4 @@
+from std/sequtils import any_it
 import std/strformat
 
 import imseqs
@@ -114,6 +115,9 @@ type
 
 const operand_list_limit*: int = 256
 
+proc `===`*(f1: Function, f2: Function): bool
+proc `!==`*(f1: Function, f2: Function): bool = not (f1 === f2)
+
 proc `$`*(function: Function): string
 
 ########################################################################################################################
@@ -134,6 +138,22 @@ proc new_eager_global*(name: string, value: TaggedValue): GlobalVariable =
 
 proc new_lazy_global*(name: string, initializer: FunctionInstance): GlobalVariable =
   GlobalVariable(name: name, value: tag_reference(nil), is_initialized: false, initializer: initializer)
+
+########################################################################################################################
+# Multi-functions.                                                                                                     #
+########################################################################################################################
+
+proc are_functions_unique*(mf: MultiFunction): bool =
+  ## Whether no function pairs in `mf` are equally specific.
+  for f1 in mf.functions:
+    let has_duplicate = mf.functions.any_it(
+      f1 !== it and
+        fits_poly1(f1.input_type, it.input_type, it.type_parameters) != nil and
+        fits_poly1(it.input_type, f1.input_type, f1.type_parameters) != nil
+    )
+    if has_duplicate:
+      return false
+  true
 
 ########################################################################################################################
 # Functions and instances.                                                                                             #
@@ -209,6 +229,10 @@ proc instantiate_single_function_unchecked*(mf: MultiFunction, type_arguments: I
   let function = mf.get_single_function
   if function.is_monomorphic: addr function.monomorphic_instance
   else: new_function_instance(function, type_arguments)
+
+proc `===`*(f1: Function, f2: Function): bool =
+  ## Checks the referential equality of the two functions.
+  cast[pointer](f1) == cast[pointer](f2)
 
 proc `$`*(function: Function): string = fmt"{function.multi_function.name}{function.input_type}: {function.output_type}"
 

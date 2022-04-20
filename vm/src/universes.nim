@@ -32,6 +32,8 @@ proc resolve(universe: Universe, poem_type_parameter: PoemTypeParameter): TypePa
 proc resolve(universe: Universe, poem_type: PoemType): Type
 proc resolve(universe: Universe, poem_value: PoemValue): TaggedValue
 
+proc finalize(mf: MultiFunction)
+
 template resolve_many(universe, sequence): untyped = sequence.map(o => universe.resolve(o))
 
 proc resolve_instructions(poem_function: PoemFunction, universe: Universe): seq[Instruction]
@@ -83,6 +85,10 @@ proc resolve*(poems: seq[Poem]): Universe =
   # Step 5: Resolve constants and attach them to all functions in each Poem.
   for poem in poems:
     universe.attach_constants(poem)
+
+  # Step 6: Finalize each multi-function.
+  for mf in universe.multi_functions.values:
+    finalize(mf)
 
   universe
 
@@ -330,6 +336,11 @@ proc get_or_register_multi_function(universe: Universe, name: string): MultiFunc
     )
   universe.multi_functions[name]
 
+proc finalize(mf: MultiFunction) =
+  ## Ensures that all functions of the multi-function are unique (none are equally specific) and builds the dispatch
+  ## hierarchy.
+  if not mf.are_functions_unique:
+    quit(fmt"The multi-function `{mf.name}` has two or more functions that are equally specific. Your bytecode is incorrect or you might have loaded bytecode from two conflicting compiler sources.")
 ########################################################################################################################
 # Instruction resolution.                                                                                              #
 ########################################################################################################################
