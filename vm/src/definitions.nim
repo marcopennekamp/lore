@@ -1,10 +1,11 @@
+import std/hashes
 from std/sequtils import any_it
 import std/strformat
 
 import imseqs
 from instructions import Instruction
 from types import TypeParameter, Type, TupleType, FunctionType, MetaShape, Schema, new_function_type, bounds_contain,
-                  substitute, `$`
+                  fits_poly1, substitute, `$`
 from values import TaggedValue, tag_reference
 
 type
@@ -46,12 +47,24 @@ type
   MultiFunction* = ref object
     name*: string
     functions*: seq[Function]
+    dispatch_hierarchy*: DispatchHierarchy
+      ## `dispatch_hierarchy` is initialized once all functions associated with the multi-function have been added.
 
-    # TODO (vm): We can build the hierarchy later.
-    # TODO (vm): We should keep a list (or sub-hierarchy) of functions with one argument, two arguments, etc., for each
-    #            DispatchX operation so that we can quickly access the relevant subset of functions.
-    #hierarchy: MultiFunctionHierarchy
-      ## The `hierarchy` is initialized once all functions associated with the multi-function have been loaded.
+  # TODO (vm): We should keep a list (or sub-hierarchy) of functions with one argument, two arguments, etc., for each
+  #            DispatchX operation so that we can quickly access the relevant subset of functions.
+  DispatchHierarchy* = distinct ImSeq[DispatchHierarchyNode]
+    ## The dispatch hierarchy is defined as the roots of a graph, i.e. `ImSeq[DispatchHierarchyNode]`.
+
+  DispatchHierarchyNode* = ref object
+    ## A dispatch hierarchy node represents a function in the dispatch hierarchy and its dispatch successors. Nodes
+    ## must be references so that the hierarchy builder can update the ImSeq of successor nodes.
+    function*: Function
+    # TODO (assembly): Do we need the type parameters and input type cache? Are they even beneficial?
+    type_parameters*: ImSeq[TypeParameter]
+      ## This caches the type parameters of the function, removing a layer of pointer indirection.
+    input_type*: TupleType
+      ## This caches the input type of the function, removing a layer of pointer indirection.
+    successors*: ImSeq[DispatchHierarchyNode]
 
   Function* = ref object
     multi_function*: MultiFunction
@@ -156,6 +169,24 @@ proc are_functions_unique*(mf: MultiFunction): bool =
   true
 
 ########################################################################################################################
+# Dispatch hierarchies.                                                                                                #
+########################################################################################################################
+
+proc roots*(dispatch_hierarchy: DispatchHierarchy): ImSeq[DispatchHierarchyNode] {.inline.} = cast[ImSeq[DispatchHierarchyNode]](dispatch_hierarchy)
+
+proc `===`*(n1: DispatchHierarchyNode, n2: DispatchHierarchyNode): bool =
+  ## Checks the referential equality of the two dispatch hierarchy nodes.
+  cast[pointer](n1) == cast[pointer](n2)
+
+proc `!==`*(n1: DispatchHierarchyNode, n2: DispatchHierarchyNode): bool = not (n1 === n2)
+
+proc attach_dispatch_hierarchy*(mf: MultiFunction, dispatch_hierarchy: DispatchHierarchy) =
+  ## Attaches the given hierarchy to the multi-function.
+  if cast[ImSeq[DispatchHierarchyNode]](mf.dispatch_hierarchy) != nil:
+    quit(fmt"Cannot attach a dispatch hierarchy to the multi-function `{mf.name}` as it already has a dispatch hierarchy.")
+  mf.dispatch_hierarchy = dispatch_hierarchy
+
+########################################################################################################################
 # Functions and instances.                                                                                             #
 ########################################################################################################################
 
@@ -233,6 +264,10 @@ proc instantiate_single_function_unchecked*(mf: MultiFunction, type_arguments: I
 proc `===`*(f1: Function, f2: Function): bool =
   ## Checks the referential equality of the two functions.
   cast[pointer](f1) == cast[pointer](f2)
+
+# Function equality/hashing is defined as referential equality/hashing and used for including functions in hash sets.
+proc `==`*(f1: Function, f2: Function): bool = f1 === f2
+proc hash*(function: Function): Hash = hash(cast[pointer](function))
 
 proc `$`*(function: Function): string = fmt"{function.multi_function.name}{function.input_type}: {function.output_type}"
 

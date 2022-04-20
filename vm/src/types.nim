@@ -1374,7 +1374,7 @@ proc fits*(t1: Type, t2: Type, parameters: ImSeq[TypeParameter]): ImSeq[Type] {.
   ## contain type variables.
   fits([t1], [t2], parameters)
 
-proc fits_poly1(t1: Type, t2: Type, parameters: ImSeq[TypeParameter]): ImSeq[Type] {.inline.} =
+proc fits_poly1*(t1: Type, t2: Type, parameters: ImSeq[TypeParameter]): ImSeq[Type] {.inline.} =
   ## Equivalent to `fits(t1, t2, parameters)`, but `t1` may contain type variables.
   fits_poly1([t1], [t2], parameters)
 

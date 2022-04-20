@@ -4,7 +4,7 @@ import std/tables
 import sugar
 
 import definitions
-from dispatch import find_dispatch_target
+from dispatch import find_dispatch_target, build_dispatch_hierarchy
 import imseqs
 import instructions
 import poems
@@ -341,6 +341,8 @@ proc finalize(mf: MultiFunction) =
   ## hierarchy.
   if not mf.are_functions_unique:
     quit(fmt"The multi-function `{mf.name}` has two or more functions that are equally specific. Your bytecode is incorrect or you might have loaded bytecode from two conflicting compiler sources.")
+  mf.attach_dispatch_hierarchy(mf.build_dispatch_hierarchy())
+
 ########################################################################################################################
 # Instruction resolution.                                                                                              #
 ########################################################################################################################
