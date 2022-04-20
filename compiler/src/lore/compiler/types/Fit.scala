@@ -59,6 +59,6 @@ object Fit {
   /**
     * Whether t1 is as specific as t2.
     */
-  def isEquallySpecific(t1: Type, t2: Type): Boolean = fits(t1, t2) && fits(t2, t1)
+  def areEquallySpecific(t1: Type, t2: Type): Boolean = fits(t1, t2) && fits(t2, t1)
 
 }

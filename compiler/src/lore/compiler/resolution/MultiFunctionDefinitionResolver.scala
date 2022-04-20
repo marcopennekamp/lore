@@ -49,7 +49,7 @@ object MultiFunctionDefinitionResolver {
     */
   private def filterDuplicateFunctions(functions: Vector[FunctionDefinition])(implicit reporter: Reporter): Vector[FunctionDefinition] = {
     functions.flatMap { f1 =>
-      val hasDuplicate = functions.filterNot(_ == f1).exists(f2 => Fit.isEquallySpecific(f2.signature.inputType, f1.signature.inputType))
+      val hasDuplicate = functions.filterNot(_ == f1).exists(f2 => Fit.areEquallySpecific(f2.signature.inputType, f1.signature.inputType))
       if (!hasDuplicate) {
         Vector(f1)
       } else {
